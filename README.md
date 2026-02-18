@@ -43,18 +43,51 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 
 ## What's Included
 
-`@sharpee/sharpee` is the umbrella package. One install gives you:
+`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 20 packages are published individually on npm under the `@sharpee` scope.
+
+### Foundation
 
 | Package | Description |
 |---------|-------------|
-| `@sharpee/engine` | Game runtime, turn cycle, command processor |
+| `@sharpee/sharpee` | Umbrella package — installs all dependencies |
+| `@sharpee/core` | Event system, types, utilities |
+| `@sharpee/if-domain` | Core domain model and contracts |
+| `@sharpee/if-services` | Runtime service interfaces |
+
+### Runtime
+
+| Package | Description |
+|---------|-------------|
+| `@sharpee/engine` | Game loop, turn cycle, command processor |
 | `@sharpee/world-model` | Entity system with traits and behaviors |
-| `@sharpee/stdlib` | 43 standard IF actions |
+| `@sharpee/stdlib` | 48 standard IF actions (take, drop, open, lock, etc.) |
+| `@sharpee/event-processor` | Applies semantic events to the world model |
+
+### Language & Text
+
+| Package | Description |
+|---------|-------------|
 | `@sharpee/parser-en-us` | English natural language parser |
 | `@sharpee/lang-en-us` | English language messages |
-| `@sharpee/core` | Event system, types, utilities |
-| `@sharpee/plugins` | Plugin system (NPC, scheduler, state machine) |
-| `@sharpee/text-service` | Text formatting and status line |
+| `@sharpee/text-service` | Template resolution and text formatting |
+| `@sharpee/text-blocks` | Structured text output interfaces |
+
+### Plugins
+
+| Package | Description |
+|---------|-------------|
+| `@sharpee/plugins` | Plugin contracts for turn-cycle extensibility |
+| `@sharpee/plugin-npc` | NPC behaviors and autonomous turn processing |
+| `@sharpee/plugin-scheduler` | Daemons and fuses (timed events) |
+| `@sharpee/plugin-state-machine` | Declarative puzzle and narrative orchestration |
+
+### Extensions & Tools
+
+| Package | Description |
+|---------|-------------|
+| `@sharpee/ext-basic-combat` | Generic skill-based combat system |
+| `@sharpee/ext-testing` | Debug and testing tools (`/debug`, `/trace`, `$teleport`) |
+| `@sharpee/transcript-tester` | Transcript-based testing framework |
 | `@sharpee/platform-browser` | Browser client infrastructure |
 
 ## Features
@@ -112,12 +145,16 @@ The door is automatically:
 ```
 +-----------------------------------------------+
 |              Your Story                       |
++--------------------+--------------------------+
+| stdlib (actions)   | lang-en-us (messages)    |
+| plugins (npc,      | parser-en-us (grammar)   |
+|  scheduler, state) |                          |
++--------------------+--------------------------+
+| engine | world-model | text-service           |
 +-----------------------------------------------+
-|   stdlib (actions) | lang-en-us (messages)    |
+| if-domain | if-services | event-processor     |
 +-----------------------------------------------+
-|   world-model | parser-en-us | engine         |
-+-----------------------------------------------+
-|              core (events)                    |
+|           core (events, types)                |
 +-----------------------------------------------+
 ```
 
@@ -185,7 +222,7 @@ See the [Getting Started](https://sharpee.net/docs/getting-started/installation/
 
 ## Standard Actions
 
-**Movement**: going, entering, exiting
+**Movement**: going, entering, exiting, climbing
 **Manipulation**: taking, dropping, putting, inserting, removing, giving, throwing
 **Containers/Doors**: opening, closing, locking, unlocking
 **Examination**: looking, examining, searching, reading
@@ -194,7 +231,7 @@ See the [Getting Started](https://sharpee.net/docs/getting-started/installation/
 **Wearables**: wearing, taking off
 **Consumables**: eating, drinking
 **Senses**: touching, smelling, listening
-**Meta**: inventory, score, help, save, restore, restart, quit, undo, wait, about, sleep
+**Meta**: inventory, score, help, save, restore, restart, quit, undo, again, wait, about, version, sleep
 
 ## Repository Development
 
@@ -222,6 +259,37 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 |-------|--------|-------------|
 | `dungeo` | Complete | Mainframe Zork implementation (~191 rooms, 750 points) |
 | `cloak-of-darkness` | Complete | Classic IF demo game |
+| `armoured` | Sample | Trait composition demo for equipment systems |
+
+## Roadmap
+
+Sharpee is actively developed. These are the open [Architecture Decision Records](./docs/architecture/adrs/) representing planned future work.
+
+### Accepted (Implementation Planned)
+
+- **Screen Reader Accessibility** (ADR-100) — ARIA support for the Zifmia client
+- **Graphical Client Architecture** (ADR-101) — Author-controlled multimedia: images, sound, music, animations
+
+### Proposed
+
+| Area | ADR | Description |
+|------|-----|-------------|
+| Story Paradigms | ADR-083 | Spirit PC — Non-physical player character support |
+| Story Paradigms | ADR-102 | Dialogue Extension — NPC conversation systems (ASK/TELL, menus) |
+| Story Paradigms | ADR-103 | Choice-Based Stories — CYOA-style with parser hybrid |
+| World Model | ADR-020 | Clothing and Pockets — Container hierarchy for wearable items |
+| Clients | ADR-098 | Terminal Client — CLI-based game client |
+| Clients | ADR-099 | GLK Client — Standard IF interpreter protocol |
+| Clients | ADR-122 | Rich Media and Story Styling — Embedded media in output |
+| Zifmia | ADR-125 | Panel and Windowing System — Multi-panel desktop client |
+| Zifmia | ADR-128 | Walkthrough Panel — In-client walkthrough display |
+| Zifmia | ADR-130 | Story Installers — Split runner from author packaging tool |
+| Author Tools | ADR-115 | Map Export CLI — Export story maps from code |
+| Author Tools | ADR-116 | Prompt-to-Playable — AI-assisted story development |
+| Author Tools | ADR-131 | Automated World Explorer — Regression test generator |
+| Engine | ADR-127 | Location-Scoped Interceptors — Room-tied action interceptors |
+
+See the full [ADR index](./docs/architecture/adrs/README.md) for all 128 decisions (90 implemented).
 
 ## License
 

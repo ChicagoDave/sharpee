@@ -1,225 +1,213 @@
 # Architecture Decision Records (ADRs)
 
-> **BETA DOCUMENTATION**: These ADRs document the Sharpee architecture. Some early decisions have been superseded — check status fields for current approaches.
+This directory contains all Architecture Decision Records for the Sharpee Interactive Fiction Platform. ADRs document significant architectural decisions made during development.
 
-This directory contains all Architecture Decision Records (ADRs) for the Sharpee Interactive Fiction Platform. ADRs document significant architectural decisions made during development, helping future developers understand the rationale behind design choices.
+## Status Key
 
-## What is an ADR?
+| Status | Meaning |
+|--------|---------|
+| **Implemented** | Decision is current and fully implemented |
+| **Accepted** | Approved, implementation planned or in progress |
+| **Proposed** | Under consideration, not yet approved |
+| **Future Extension** | Approved concept, deferred to a future release |
+| **On Hold** | Paused, may be revisited |
+| **Partially Accepted** | Some aspects adopted, others rejected |
+| **Informational** | Reference material, not a decision |
+| **Superseded** | Replaced by another ADR |
+| **Abandoned** | No longer relevant or viable |
 
-An Architecture Decision Record captures important architectural decisions along with their context and consequences. ADRs provide:
-- **Historical context** - Why decisions were made
-- **Trade-off analysis** - What alternatives were considered
-- **Impact assessment** - Consequences of the decision
-- **Evolution tracking** - How the architecture has changed over time
+## Complete ADR Index
 
-## Complete ADR Index (58 ADRs)
+| # | Title | Status |
+|---|-------|--------|
+| [001](./adr-001-parser-debug-events.md) | Parser Debug Events Architecture | Implemented |
+| [002](./adr-002-debug-mode-meta-commands.md) | Debug Mode Meta Commands | Implemented |
+| [003](./adr-003-internal-parser-types.md) | Internal Parser Types | Implemented |
+| [004](./adr-004-parser-validation-separation.md) | Parser-Validation-Execution Separation | Superseded (by four-phase action pattern) |
+| [005](./adr-005-action-interface-location.md) | Action Interface Location and ValidatedCommand Design | Implemented |
+| [006](./adr-006-const-objects-not-enums.md) | Use Const Objects Instead of Enums | Implemented |
+| [007](./adr-007-actions-in-stdlib.md) | Actions in Standard Library | Implemented |
+| [008](./adr-008-core-as-generic-engine.md) | Core Package as Generic Event System | Implemented |
+| [009](./adr-009-entity-cloning-strategy.md) | Deep Cloning Strategy for Entity Copies | Implemented |
+| [010](./adr-010-no-i-prefix-interfaces.md) | No I-Prefix for Interfaces | Superseded (by ADR-053) |
+| [011](./adr-011-entity-id-system.md) | Entity ID System Design | Implemented |
+| [012](./adr-012-debug-as-system-events.md) | Debug Events as System Events | Implemented |
+| [013](./adr-013-lighting-extensions.md) | Lighting as Extension System | Abandoned |
+| [014](./adr-014-unrestricted-world-model-access.md) | Unrestricted World Model Access / Author Model | Implemented |
+| [015](./adr-015-spatial-index-references.md) | SpatialIndex Pattern References | Informational |
+| [016](./adr-016-author-recorded-event-metadata.md) | Author Recorded Event Metadata | Abandoned |
+| [017](./adr-017-disambiguation.md) | Disambiguation Strategy for Entity References | Superseded (by platform events) |
+| [018](./adr-018-conversational-state-management.md) | Conversational State Management | Future Extension |
+| [019](./adr-019-platform-implementation-patterns.md) | Platform Implementation Patterns for Conversational UI | Future Extension |
+| [020](./adr-020-clothing-pockets-design.md) | Clothing and Pockets Design | Proposed |
+| [021](./adr-021-parser-edge-cases.md) | Parser Edge Cases and Complex Command Support | Superseded (by later parser ADRs) |
+| [022](./adr-022-extension-architecture.md) | Extension Architecture | Implemented |
+| [023](./adr-023-message-system-integration.md) | Message System Integration | Implemented |
+| [024](./adr-024-score-data-storage.md) | Score Data Storage | Implemented |
+| [025](./adr-025-parser-information-preservation.md) | Parser Information Preservation | Implemented |
+| [026](./adr-026-language-specific-parsers.md) | Language-Specific Parser Architecture | Implemented |
+| [027](./adr-027-parser-package-architecture.md) | Parser Package Architecture | Implemented |
+| [028](./adr-028-simplified-language-management.md) | Simplified Story Language Management | Implemented |
+| [029](./adr-029-text-service-architecture.md) | Simple Query-Based Text Service Architecture | Implemented |
+| [030](./adr-030-if-services-package.md) | Introduction of if-services Package | Implemented |
+| [031](./adr-031-self-inflating-help-system.md) | Self-Inflating Help System | Accepted |
+| [032](./adr-032-capability-refactoring-command-history.md) | Capability Refactoring and Command History | Implemented |
+| [033](./adr-033-save-restore-architecture.md) | Save/Restore Architecture | Implemented |
+| [034](./adr-034-event-sourcing-save-restore.md) | Event Sourcing for Save/Restore | Abandoned |
+| [035](./adr-035-platform-event-architecture.md) | Platform Event Architecture | Implemented |
+| [036](./adr-036-parser-contracts-if-domain.md) | Parser Contracts (IF Domain) | Implemented |
+| [037](./adr-037-parser-language-provider.md) | Parser Language Provider | Implemented |
+| [038](./adr-038-language-agnostic-actions.md) | Language-Agnostic Action Implementation | Implemented |
+| [039](./adr-039-action-event-emission-pattern.md) | Action Event Emission Pattern | Implemented |
+| [040](./adr-040-turn-based-time-progression.md) | Turn-Based Time Progression | Implemented |
+| [041](./adr-041-simplified-action-context.md) | Simplified Action Context Interface | Superseded |
+| [042](./adr-042-stdlib-action-event-types.md) | Stdlib Action Event Type Migration | Superseded |
+| [043](./adr-043-scope-and-implied-indirect-objects.md) | Scope Resolution and Implied Indirect Objects | Implemented |
+| [044](./adr-044-parser-vocabulary-gaps.md) | Parser and Vocabulary System Gaps | Implemented |
+| [045](./adr-045-scope-management-system.md) | Scope Management System | Superseded |
+| [046](./adr-046-scope-perception-architecture.md) | Scope and Perception Architecture | Implemented |
+| [047](./adr-047-entity-type-safety.md) | Entity Type Safety and Validation | Implemented |
+| [048](./adr-048-static-language-architecture.md) | Static Language, Parser, and Text Service Architecture | Abandoned |
+| [049](./adr-049-auto-save-architecture.md) | Auto-Save Architecture | Implemented |
+| [050](./adr-050-meta-commands.md) | Meta-Commands Implementation | Implemented |
+| [051](./adr-051-action-behaviors.md) | Action Behaviors for Complex Action Handling | Superseded (by ADR-052) |
+| [052](./adr-052-event-handlers-custom-logic.md) | Event Handlers and Custom Logic | Implemented (Phase 1) |
+| [053](./adr-053-interface-naming-convention.md) | Adopt I-Prefix Convention for All TypeScript Interfaces | Implemented |
+| [054](./adr-054-semantic-grammar.md) | Semantic Grammar for Command Processing | Implemented |
+| [055](./adr-055-npm-publishing.md) | NPM Publishing Strategy | Implemented |
+| [056](./adr-056-story-testing-framework.md) | Story Testing Framework | Superseded (by ADR-073) |
+| [057](./adr-057-before-after-rules.md) | Rulebook System for Story Logic | On Hold |
+| [058](./adr-058-action-report-function.md) | Action Report Function for Atomic Event Generation | Superseded |
+| [058x](./adr-058x-atomic-events.md) | Atomic Events Implementation | Implemented |
+| [059](./adr-059-action-customization-boundaries.md) | Action Customization Boundaries | Abandoned |
+| [060](./adr-060-command-executor-refactor.md) | Refactor CommandExecutor to Thin Orchestrator | Implemented |
+| [061](./adr-061-snapshot-code-smell.md) | Entity Snapshot Code Smell | Implemented |
+| [062](./adr-062-direction-language-coupling.md) | Direction Language Coupling in Going Action | Implemented |
+| [063](./adr-063-sub-actions-pattern.md) | Sub-Actions Pattern for Related Action Families | Implemented |
+| [064](./adr-064-world-events-and-action-events.md) | World Events and Action Events | Implemented |
+| [065](./adr-065-grammatical-semantic-translation.md) | Grammatical to Semantic Translation Framework | Implemented |
+| [066](./adr-066-text-snippets.md) | Text Snippets Library | Implemented |
+| [067](./adr-067-linguistics.md) | Language-Specific Linguistics Architecture | Implemented |
+| [068](./adr-068-unified-darkness-checking.md) | Unified Darkness Checking | Implemented |
+| [069](./adr-069-perception-event-filtering.md) | Perception-Based Event Filtering | Implemented |
+| [070](./adr-070-npc-system.md) | NPC System Architecture | Implemented |
+| [071](./adr-071-daemons-and-fuses.md) | Daemons and Fuses (Timed Events) | Implemented |
+| [072](./adr-072-combat-system.md) | Combat System | Moved to extension (ext-basic-combat) |
+| [073](./adr-073-transcript-story-testing.md) | Transcript-Based Story Testing | Implemented |
+| [074](./adr-074-ifid-requirements.md) | IFID Requirements | Implemented |
+| [075](./adr-075-event-handler-consolidation.md) | Effects-Based Handler Pattern | Implemented |
+| [076](./adr-076-scoring-system.md) | Scoring System Architecture | Implemented |
+| [077](./adr-077-release-build-system.md) | Release Build System | Implemented |
+| [078](./adr-078-magic-paper-puzzle.md) | Magic Paper Puzzle (Thief's Painting) | Implemented |
+| [079](./adr-079-dungeon-text-alignment.md) | Dungeon Text Alignment | Implemented |
+| [080](./adr-080-raw-text-grammar-slots.md) | Grammar Enhancements for Classic IF Patterns | Implemented |
+| [081](./adr-081-npm-release-strategy.md) | npm Release Strategy | Implemented |
+| [082](./adr-082-typed-event-system.md) | Typed Event System | Implemented |
+| [082z](./adr-082-vocabulary-constrained-slots.md) | Context-Aware Vocabulary and Extended Grammar Slots | Implemented |
+| [083](./adr-083-spirit-pc-paradigm.md) | Spirit PC Paradigm — Non-Physical Player Character | Proposed |
+| [084](./adr-084-remove-story-grammar-wrapper.md) | Remove StoryGrammarImpl Wrapper | Implemented |
+| [085](./adr-085-scoring-system.md) | Event-Based Scoring System | Implemented |
+| [086](./adr-086-event-handler-unification.md) | Event Handler Unification | Implemented |
+| [087](./adr-087-action-centric-grammar.md) | Action-Centric Grammar with Verb Aliases | Implemented |
+| [088](./adr-088-grammar-engine-refactor.md) | Grammar Engine Refactoring | Implemented |
+| [089](./adr-089-pronoun-identity-system.md) | Pronoun and Identity System | Implemented |
+| [090](./adr-090-entity-centric-action-dispatch.md) | Entity-Centric Action Dispatch via Trait Capabilities | Implemented |
+| [091](./adr-091-text-decorations.md) | Text Decorations in Message Templates | Implemented |
+| [092](./adr-092-smart-transcript-directives.md) | Smart Transcript Directives | Implemented |
+| [093](./adr-093-i18n-entity-vocabulary.md) | Entity Vocabulary and Adjective Disambiguation | Implemented |
+| [094](./adr-094-event-chaining.md) | Event Chaining | Implemented |
+| [095](./adr-095-message-templates.md) | Message Templates with Formatters | Implemented |
+| [096](./adr-096-text-service.md) | Text Service Architecture | Implemented |
+| [097](./adr-097-react-client.md) | React Client Architecture | Implemented |
+| [098](./adr-098-terminal-client.md) | Terminal Client Architecture | Proposed |
+| [099](./adr-099-glk-client.md) | GLK Client | Identified |
+| [100](./adr-100-screen-reader-client.md) | Screen Reader Accessibility | Accepted |
+| [101](./adr-101-graphical-client-architecture.md) | Graphical Client Architecture | Accepted |
+| [102](./adr-102-dialogue-extension-architecture.md) | Dialogue Extension Architecture | Proposed |
+| [103](./adr-103-choice-based-story-architecture.md) | Choice-Based Story Architecture | Proposed |
+| [104](./adr-104-implicit-inference.md) | Implicit Inference and Implicit Actions | Implemented |
+| [105](./adr-105-javascript-browser-client.md) | JavaScript Browser Client | Superseded (by ADR-114) |
+| [106](./adr-106-domain-events-and-event-sourcing.md) | Domain Events and Event Sourcing | Implemented |
+| [107](./adr-107-dual-mode-authored-content.md) | Dual-Mode Authored Content | Implemented |
+| [108](./adr-108-player-character-system.md) | Player Character System | Implemented |
+| [109](./adr-109-playtester-annotation-system.md) | Play-Tester Annotation System | Implemented |
+| [110](./adr-110-debug-tools-extension.md) | Debug & Testing Tools Extension | Implemented |
+| [111](./adr-111-extension-ecosystem.md) | Extension Ecosystem | Implemented |
+| [112](./adr-112-client-security-model.md) | Client Security Model | Abandoned |
+| [113](./adr-113-map-position-hints.md) | Map Position Hints | Abandoned |
+| [114](./adr-114-browser-platform-package.md) | Browser Platform Package | Implemented |
+| [115](./adr-115-map-export-cli.md) | Map Export CLI | Proposed |
+| [116](./adr-116-prompt-to-playable.md) | Prompt-to-Playable (Conversational Story Development) | Proposed |
+| [117](./adr-117-event-handlers-vs-capability-behaviors.md) | Eliminate Broad Use of Event Handlers | Implemented |
+| [118](./adr-118-stdlib-action-interceptors.md) | Stdlib Action Interceptors | Implemented |
+| [119](./adr-119-state-machines.md) | State Machines for Puzzles and Narratives | Implemented |
+| [120](./adr-120-engine-plugin-architecture.md) | Engine Plugin Architecture | Implemented |
+| [121](./adr-121-story-runner-architecture.md) | Story Runner Architecture | Implemented |
+| [122](./adr-122-rich-media-and-story-styling.md) | Rich Media and Story Styling | Proposed |
+| [123](./adr-123-typed-daemon-hierarchy.md) | Typed Daemon Hierarchy | Partially Accepted |
+| [124](./adr-124-entity-annotations.md) | Entity Annotations | Implemented |
+| [125](./adr-125-zifmia-panels.md) | Zifmia Panel and Windowing System | Proposed |
+| [126](./adr-126-destination-interceptors-and-room-conditions.md) | Destination Interceptors for Room Entry Conditions | Implemented |
+| [127](./adr-127-location-scoped-interceptors.md) | Location-Scoped Interceptors | Proposed |
+| [128](./adr-128-walkthrough-panel.md) | Walkthrough Panel for Zifmia | Proposed |
+| [129](./adr-129-treasure-scoring-to-story-layer.md) | Transactional Score Ledger and Treasure Scoring Split | Implemented |
+| [130](./adr-130-zifmia-packaging.md) | Zifmia vs Story Installers — Two Separate Products | Proposed |
+| [131](./adr-131-automated-world-explorer.md) | Automated World Explorer (Regression Test Generator) | Proposed |
 
-### Parser & Language Processing (ADRs 1-4, 21, 25-28, 36-37, 44, 54)
+## Summary
 
-#### Core Parser Architecture
-- [ADR-001: Parser Debug Events Architecture](./adr-001-parser-debug-events.md) - Debug event system for parser development
-- [ADR-003: Internal Parser Types](./adr-003-internal-parser-types.md) - Type system for parser internals
-- [ADR-004: Parser-Validation-Execution Separation](./adr-004-parser-validation-separation.md) - Three-phase command processing
-- [ADR-025: Parser Information Preservation](./adr-025-parser-information-preservation.md) - Maintaining parse context through pipeline
+| Status | Count |
+|--------|-------|
+| Implemented | 90 |
+| Proposed | 12 |
+| Accepted | 3 |
+| Future Extension | 2 |
+| Superseded | 10 |
+| Abandoned | 7 |
+| Other (On Hold, Partially Accepted, Informational, Moved) | 4 |
+| **Total** | **128** |
 
-#### Language Support
-- [ADR-026: Language-Specific Parser Architecture](./adr-026-language-specific-parsers.md) - Multi-language parser design
-- [ADR-027: Parser Package Architecture](./adr-027-parser-package-architecture.md) - Parser package organization
-- [ADR-028: Simplified Story Language Management](./adr-028-simplified-language-management.md) - Language configuration approach
-- [ADR-037: Parser Language Provider](./adr-037-parser-language-provider.md) - Language provider interface
+## Open ADRs (Roadmap)
 
-#### Advanced Parsing
-- [ADR-021: Parser Edge Cases and Complex Command Support](./adr-021-parser-edge-cases.md) - Handling complex grammar
-- [ADR-036: Parser Contracts (IF Domain)](./adr-036-parser-contracts-if-domain.md) - Parser interface contracts
-- [ADR-044: Parser and Vocabulary System Gaps](./adr-044-parser-vocabulary-gaps.md) - Vocabulary management
-- [ADR-054: Semantic Grammar for Command Processing](./adr-054-semantic-grammar.md) - Semantic parsing approach
+These ADRs represent planned or proposed future work.
 
-### Action System (ADRs 5, 7, 38-39, 41-42, 51)
+### Accepted (Implementation Planned)
 
-#### Core Actions
-- [ADR-005: Action Interface Location and ValidatedCommand Design](./adr-005-action-interface-location.md) - Action interface architecture
-- [ADR-007: Actions in Standard Library](./adr-007-actions-in-stdlib.md) - Stdlib action organization
-- [ADR-038: Language-Agnostic Action Implementation](./adr-038-language-agnostic-actions.md) - Cross-language action support
+- **ADR-031**: Self-Inflating Help System
+- **ADR-100**: Screen Reader Accessibility — ARIA support for Zifmia client
+- **ADR-101**: Graphical Client Architecture — Author-controlled multimedia (images, sound, music)
 
-#### Action Execution
-- [ADR-039: Action Event Emission Pattern](./adr-039-action-event-emission-pattern.md) - Event-driven action results
-- [ADR-041: Simplified Action Context Interface](./adr-041-simplified-action-context.md) - Streamlined action context
-- [ADR-042: Stdlib Action Event Type Migration](./adr-042-stdlib-action-event-types.md) - Event type standardization
-- [ADR-051: Action Behaviors for Complex Action Handling](./adr-051-action-behaviors.md) - Behavior-based actions
+### Proposed
 
-### World Model & Entities (ADRs 9, 11, 14-17, 20, 43, 45-47)
+- **ADR-020**: Clothing and Pockets Design — Container hierarchy for wearable items
+- **ADR-057**: Rulebook System for Story Logic (On Hold)
+- **ADR-083**: Spirit PC Paradigm — Non-physical player character support
+- **ADR-098**: Terminal Client Architecture — CLI-based game client
+- **ADR-099**: GLK Client (Identified, research stage)
+- **ADR-102**: Dialogue Extension Architecture — NPC conversation systems (ASK/TELL, menus)
+- **ADR-103**: Choice-Based Story Architecture — CYOA-style stories with parser hybrid
+- **ADR-115**: Map Export CLI — Export story maps from code
+- **ADR-116**: Prompt-to-Playable — Conversational (AI-assisted) story development
+- **ADR-122**: Rich Media and Story Styling — Embedded media in story output
+- **ADR-125**: Zifmia Panel and Windowing System — Multi-panel desktop client
+- **ADR-127**: Location-Scoped Interceptors — Action interceptors tied to rooms
+- **ADR-128**: Walkthrough Panel for Zifmia — In-client walkthrough display
+- **ADR-130**: Zifmia vs Story Installers — Split runner from author packaging tool
+- **ADR-131**: Automated World Explorer — Regression test generator
 
-#### Entity System
-- [ADR-009: Deep Cloning Strategy for Entity Copies](./adr-009-entity-cloning-strategy.md) - Entity immutability approach
-- [ADR-011: Entity ID System Design](./adr-011-entity-id-system.md) - Entity identification strategy
-- [ADR-014: Unrestricted World Model Access](./adr-014-unrestricted-world-model-access.md) - World model visibility
-- [ADR-047: Entity Type Safety and Validation](./adr-047-entity-type-safety.md) - Entity type system
+### Future Extensions
 
-#### Spatial & Perception
-- [ADR-015: SpatialIndex Pattern References](./adr-015-spatial-index-references.md) - Spatial indexing design
-- [ADR-045: Scope Management System](./adr-045-scope-management-system.md) - Visibility and scope
-- [ADR-046: Scope and Perception Architecture](./adr-046-scope-perception-architecture.md) - Perception modeling
+- **ADR-018**: Conversational State Management — Dialog system for NPCs
+- **ADR-019**: Platform Implementation Patterns for Conversational UI
 
-#### Entity Features
-- [ADR-016: Author Recorded Event Metadata](./adr-016-author-recorded-event-metadata.md) - Event recording system
-- [ADR-017: Disambiguation Strategy for Entity References](./adr-017-disambiguation.md) - Handling ambiguous references
-- [ADR-020: Clothing and Pockets Design](./adr-020-clothing-pockets-design.md) - Container hierarchy
-- [ADR-043: Scope Resolution and Implied Indirect Objects](./adr-043-scope-and-implied-indirect-objects.md) - Implicit object handling
+## Supporting Documents
 
-### Core Architecture (ADRs 6, 8, 10, 53)
-
-- [ADR-006: Use Const Objects Instead of Enums](./adr-006-const-objects-not-enums.md) - TypeScript pattern choice
-- [ADR-008: Core Package as Generic Event System](./adr-008-core-as-generic-engine.md) - Event-driven architecture
-- [ADR-010: No I-Prefix for Interfaces](./adr-010-no-i-prefix-interfaces.md) - Interface naming (deprecated)
-- [ADR-053: Adopt I-Prefix Convention for All TypeScript Interfaces](./adr-053-interface-naming-convention.md) - Interface naming (current)
-
-### Platform & Extensions (ADRs 13, 18-19, 22, 48, 52)
-
-#### Extension System
-- [ADR-013: Lighting as Extension System](./adr-013-lighting-extensions.md) - Extension architecture example
-- [ADR-022: Extension Architecture](./adr-022-extension-architecture.md) - Plugin system design
-- [ADR-052: Event Handlers and Custom Logic](./adr-052-event-handlers-custom-logic.md) - Custom behavior hooks
-
-#### Platform Features
-- [ADR-018: Conversational State Management](./adr-018-conversational-state-management.md) - Dialog system
-- [ADR-019: Platform Implementation Patterns for Conversational UI](./adr-019-platform-implementation-patterns.md) - UI patterns
-- [ADR-048: Static Language, Parser, and Text Service Architecture](./adr-048-static-language-architecture.md) - Static configuration
-
-### Game State & Persistence (ADRs 32-35, 40, 49)
-
-#### Save/Restore
-- [ADR-032: Capability Refactoring and Command History](./adr-032-capability-refactoring-command-history.md) - History tracking
-- [ADR-033: Save/Restore Architecture](./adr-033-save-restore-architecture.md) - Save system design
-- [ADR-034: Event Sourcing for Save/Restore](./adr-034-event-sourcing-save-restore.md) - Event-based saves
-- [ADR-049: Auto-Save Architecture](./adr-049-auto-save-architecture.md) - Automatic saving
-
-#### Game Flow
-- [ADR-035: Platform Event Architecture](./adr-035-platform-event-architecture.md) - Platform-level events
-- [ADR-040: Turn-Based Time Progression](./adr-040-turn-based-time-progression.md) - Time management
-
-### User Interface & Services (ADRs 2, 12, 23-24, 29-31, 50)
-
-#### Debug & Development
-- [ADR-002: Debug Mode Meta Commands](./adr-002-debug-mode-meta-commands.md) - Debug command system
-- [ADR-012: Debug Events as System Events](./adr-012-debug-as-system-events.md) - Debug event architecture
-- [ADR-050: Meta-Commands Implementation](./adr-050-meta-commands.md) - System command handling
-
-#### Services
-- [ADR-023: Message System Integration](./adr-023-message-system-integration.md) - Message handling
-- [ADR-024: Score Data Storage](./adr-024-score-data-storage.md) - Score tracking system
-- [ADR-029: Simple Query-Based Text Service Architecture](./adr-029-text-service-architecture.md) - Text generation
-- [ADR-030: Introduction of if-services Package](./adr-030-if-services-package.md) - Service layer
-- [ADR-031: Self-Inflating Help System](./adr-031-self-inflating-help-system.md) - Dynamic help
-
-### Development & Testing (ADRs 55-56, 73)
-
-- [ADR-055: NPM Publishing Strategy](./adr-055-npm-publishing.md) - Package publishing approach
-- [ADR-056: Story Testing Framework](./adr-056-story-testing-framework.md) - Testing infrastructure
-- [ADR-073: Transcript-Based Story Testing](./adr-073-transcript-story-testing.md) - Transcript test format
-
-### NPC & Game Systems (ADRs 70-72, 76)
-
-- [ADR-070: NPC System Architecture](./adr-070-npc-system-architecture.md) - NPC behavior framework
-- [ADR-071: Daemons and Fuses](./adr-071-daemons-and-fuses.md) - Timed event system
-- [ADR-072: Combat System](./adr-072-combat-system.md) - Combat mechanics
-- [ADR-076: Scoring System](./adr-076-scoring-system.md) - Score tracking
-
-### Metadata & Distribution (ADRs 74-75, 77)
-
-- [ADR-074: IFID Requirements](./adr-074-ifid-requirements.md) - Story identification (Treaty of Babel)
-- [ADR-075: Effects-Based Handler Pattern](./adr-075-event-handler-consolidation.md) - Effect-returning event handlers
-- [ADR-077: Release Build System](./adr-077-release-build-system.md) - **[Research]** Bundled distribution for authors
-
-### Grammar & Actions (ADRs 80, 87, 90)
-
-- [ADR-080: Multi-Object Command Support](./adr-080-multi-object-commands.md) - "take all", "drop knife and lamp"
-- [ADR-087: Action-Centric Grammar](./adr-087-action-centric-grammar.md) - `.forAction()` builder pattern
-- [ADR-090: Entity-Centric Action Dispatch](./adr-090-entity-centric-action-dispatch.md) - Capability dispatch for entity-specific verbs
-
-### Interaction Paradigms & Clients (ADRs 101-103)
-
-- [ADR-101: Graphical Client Architecture](./adr-101-graphical-client-architecture.md) - Author-controlled multimedia (images, sound, music, animations)
-- [ADR-102: Dialogue Extension Architecture](./adr-102-dialogue-extension-architecture.md) - Extension point for NPC conversation systems (ASK/TELL, menus, quips)
-- [ADR-103: Choice-Based Story Architecture](./adr-103-choice-based-story-architecture.md) - CYOA-style stories with type-safe state, testing, and static analysis
-
-### Special ADRs
-
-- [ADR-00X: Action Event Emission Pattern](./adr-00X-action-event-emission-pattern.md) - Experimental pattern (to be numbered)
-- [ADR-014-assessment: Project Assessment](./adr-014-assessment.md) - Mid-project evaluation
-- [ADR-014-intfiction: IntFiction.org Post](./adr-014-intfiction-post.md) - Community engagement
-
-## Additional Documentation
-
-### Core System ADRs
-Located in `./core-systems/`:
-- [ADR-013: Save/Load Architecture](./core-systems/adr-013-save-load-architecture.md) - Detailed save system
-- [ADR-014: Unlimited Undo System](./core-systems/adr-014-unlimited-undo-system.md) - Undo/redo implementation
-
-### Supporting Documents
-- [Traits with Built-in Container](./2025-01-19-traits-with-builtin-container.md) - Container trait design
-- [Lighting Interim Plan](./lighting-interim-plan.md) - Lighting system roadmap
-
-### Code Review Batches
-Located in `./batch/` - Contains 49 batch review files documenting code review sessions
-
-### Historical/Outdated ADRs
-Located in `./outdated/` - Superseded decisions kept for historical reference
-
-## ADR Status Key
-
-- **Accepted** - Decision is current and implemented
-- **Proposed** - Under consideration, not yet approved
-- **Deprecated** - No longer valid, see replacement
-- **Superseded** - Replaced by another ADR
-- **Experimental** - Testing approach, may change
-
-## ADR Template
-
-```markdown
-# ADR-XXX: [Title]
-
-## Status
-[Proposed | Accepted | Deprecated | Superseded by ADR-YYY]
-
-## Context
-What issue motivated this decision?
-
-## Decision
-What change are we making?
-
-## Consequences
-What becomes easier or harder?
-
-## Alternatives Considered
-What other options were evaluated?
-```
-
-## Contributing New ADRs
-
-1. **Choose the next number** - Use next sequential number (057+)
-2. **Use the template** - Start from the template above
-3. **Be specific** - Include concrete examples
-4. **Document trade-offs** - Explain why alternatives were rejected
-5. **Update this index** - Add your ADR to the appropriate category
-6. **Get review** - Have at least one other developer review
-
-## Navigation Tips
-
-- ADRs are grouped by architectural area for easier discovery
-- Numbers reflect chronological order of decisions
-- Some early ADRs have inconsistent numbering (being cleaned up)
-- Check "Superseded" status to find current approaches
-- Review batches contain detailed implementation discussions
-
-## Key Architectural Themes
-
-1. **Event-Driven Architecture** - Most state changes happen through events
-2. **Separation of Concerns** - Parser, validator, executor are distinct phases
-3. **Extensibility** - Plugin architecture for game mechanics
-4. **Type Safety** - Strong TypeScript typing throughout
-5. **Immutability** - Prefer immutable patterns for state management
-6. **Language Agnostic** - Core mechanics independent of natural language
+- [Traits with Built-in Container](./2025-01-19-traits-with-builtin-container.md) — Container trait design notes
+- [Lighting Interim Plan](./lighting-interim-plan.md) — Lighting system roadmap
+- `./core-systems/` — Detailed save/load and undo system designs
+- `./batch/` — Code review session records
+- `./outdated/` — Superseded decisions kept for historical reference
 
 ---
 
-*Last updated: January 2026 | Total ADRs: 83*
+*Last updated: February 2026 | Total ADRs: 128*
