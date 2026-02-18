@@ -289,7 +289,7 @@ Sharpee is actively developed. These are the open [Architecture Decision Records
 | Author Tools | ADR-131 | Automated World Explorer — Regression test generator |
 | Engine | ADR-127 | Location-Scoped Interceptors — Room-tied action interceptors |
 
-See the full [ADR index](./docs/architecture/adrs/README.md) for all 128 decisions (90 implemented).
+See the full [ADR index](./docs/architecture/adrs/README.md) for all 131 decisions (90 implemented).
 
 ## License
 

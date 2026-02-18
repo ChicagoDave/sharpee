@@ -1,10 +1,10 @@
 # Architecture Documentation
 
-**Version 0.9.91** — The Sharpee platform architecture is stable with 128 ADRs documenting design decisions. 90 are implemented.
+**Version 0.9.91** — The Sharpee platform architecture is stable with 131 ADRs documenting design decisions. 90 are implemented.
 
 ## Contents
 
-- **[ADRs](./adrs/)** — 128 Architecture Decision Records ([full index](./adrs/README.md))
+- **[ADRs](./adrs/)** — 131 Architecture Decision Records ([full index](./adrs/README.md))
 - **[Diagrams](./diagrams/)** — Architecture diagrams (Drawio, Mermaid)
 - **[Naming Conventions](./naming-conventions.md)** — Entity, trait, and action naming standards
 - **[Architecture Diagram](./diagram-20260203.md)** — Current system diagram

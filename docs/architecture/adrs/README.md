@@ -165,7 +165,7 @@ This directory contains all Architecture Decision Records for the Sharpee Intera
 | Superseded | 10 |
 | Abandoned | 7 |
 | Other (On Hold, Partially Accepted, Informational, Moved) | 4 |
-| **Total** | **128** |
+| **Total** | **131** |
 
 ## Open ADRs (Roadmap)
 
@@ -210,4 +210,4 @@ These ADRs represent planned or proposed future work.
 
 ---
 
-*Last updated: February 2026 | Total ADRs: 128*
+*Last updated: February 2026 | Total ADRs: 131*
