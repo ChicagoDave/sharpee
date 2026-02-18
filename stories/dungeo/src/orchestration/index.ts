@@ -146,7 +146,9 @@ export function initializeOrchestration(
       stoneRoom: config.endgameIds.stoneRoom,
       hallway: config.endgameIds.hallway,
       insideMirror: config.endgameIds.insideMirror,
-      dungeonEntrance: config.endgameIds.dungeonEntrance
+      dungeonEntrance: config.endgameIds.dungeonEntrance,
+      prisonCell: config.endgameIds.prisonCell,
+      treasury: config.endgameIds.treasury,
     }
   };
   registerPuzzleHandlers(engine, world, puzzleConfig, schedulerPlugin.getScheduler());
@@ -222,6 +224,11 @@ export function initializeOrchestration(
     balloonIds: config.balloonIds,
     treasureRoomId: config.mazeIds.treasureRoom,
     roomVisitScoring: config.roomVisitScoring,
+    endgameScoringConfig: {
+      insideMirrorId: config.endgameIds.insideMirror,
+      dungeonEntranceId: config.endgameIds.dungeonEntrance,
+      narrowCorridorId: config.endgameIds.narrowCorridor,
+    },
   };
   registerEventHandlers(engine, world, eventConfig);
 }

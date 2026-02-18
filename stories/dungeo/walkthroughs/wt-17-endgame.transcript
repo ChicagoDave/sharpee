@@ -1,0 +1,333 @@
+title: Endgame (Trivia, Dial Puzzle, Victory)
+story: dungeo
+description: Navigate to Tomb, trigger endgame, pass trivia quiz, solve dial puzzle, reach Treasury for 650/650 victory. Restores from wt-16.
+---
+
+# Restore state from wt-16 (player at Living Room, all treasures scored)
+$restore wt-16
+
+# ============================================================================
+# GOAL: Navigate from Living Room to Mirror Room
+# ============================================================================
+
+[GOAL: Navigate to Mirror Room]
+
+> down
+[OK: contains "Cellar"]
+
+> turn on lantern
+[OK: contains "lantern"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> east
+[OK: contains "Round Room"]
+
+> southeast
+[OK: contains "Winding Passage"]
+
+> east
+[OK: contains "Mirror Room"]
+
+[ENSURES: location = "Mirror Room"]
+[END GOAL]
+
+# ============================================================================
+# GOAL: Toggle mirror to State A (Hades connections) and reach Tomb
+# Mirror was left in State B (Coal Mine) after wt-12
+# ============================================================================
+
+[GOAL: Toggle mirror and reach Tomb]
+
+# Toggle mirror from State B to State A
+> rub mirror
+[OK: contains "rumble"]
+
+# Now E leads to Cave (Hades path)
+> east
+[OK: contains "Cave"]
+
+> down
+[OK: contains "Entrance to Hades"]
+
+> east
+[OK: contains "Land of the Dead"]
+
+> east
+[OK: contains "Tomb"]
+
+[ENSURES: location = "Tomb"]
+[END GOAL]
+
+# ============================================================================
+# GOAL: Trigger the endgame
+# Tomb is dark. Turn off lamp, wait 3 turns in darkness.
+# ============================================================================
+
+[GOAL: Trigger endgame from Tomb]
+
+# Turn off the lamp to make the room dark
+> turn off lantern
+[OK: contains "switch off brass lantern"]
+
+# Wait 3 turns in darkness to trigger the endgame
+# Turn 1: darkness counter increments
+> wait
+[OK: contains "Time passes..."]
+
+# Turn 2: atmosphere message
+> wait
+[OK: contains "Time passes..."]
+
+# Turn 3: endgame triggers — cloaked figure, teleport to Top of Stairs
+# Inventory stripped, given fresh lamp (350 fuel) + elvish sword
+> wait
+[OK: contains "Top of Stairs"]
+
+[ENSURES: location = "Top of Stairs"]
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate endgame rooms and push stone button
+# ============================================================================
+
+[GOAL: Navigate to Hallway via Stone Room]
+
+> west
+[OK: contains "Stone Room"]
+
+# Push the stone button (deactivates laser beam in Small Room)
+> push stone button
+[OK: contains "You push stone button"]
+
+> south
+[OK: contains "Small Room"]
+
+> south
+[OK: contains "Hallway"]
+
+[ENSURES: location = "Hallway"]
+[END GOAL]
+
+# ============================================================================
+# GOAL: Enter Inside Mirror (milestone: +15 endgame pts)
+# ============================================================================
+
+[GOAL: Enter Inside Mirror]
+
+> in
+[OK: contains "Inside Mirror"]
+
+[ENSURES: location = "Inside Mirror"]
+[END GOAL]
+
+# Exit the mirror and proceed south
+> out
+[OK: contains "Hallway"]
+
+# ============================================================================
+# GOAL: Reach Dungeon Entrance (milestone: +15 endgame pts)
+# ============================================================================
+
+[GOAL: Reach Dungeon Entrance]
+
+> south
+[OK: contains "Dungeon Entrance"]
+
+[ENSURES: location = "Dungeon Entrance"]
+[END GOAL]
+
+# ============================================================================
+# GOAL: Pass the Dungeon Master's trivia quiz
+# ============================================================================
+# The trivia starts with a random question (0-7).
+# After each correct answer, the next question is (current + 3) mod 8.
+# Need 3 correct answers to pass.
+# Use [IF: output contains "..."] to detect which question was asked.
+
+[GOAL: Pass trivia quiz]
+
+# Knock to start the trivia — DM appears and asks first question
+> knock
+[OK: contains "Dungeon Master"]
+
+# === Answer Question 1 (random starting question) ===
+
+[IF: output contains "enter, but yet not enter"]
+> answer temple
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "besides the temple"]
+> answer forest
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "minimum total value"]
+> answer 30003
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "function of the various cakes"]
+> answer flask
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "useful thing to do with the mirror"]
+> answer rub
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "body part offends"]
+> answer bones
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "object in the game is haunted"]
+> answer rusty knife
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "hello sailor"]
+> answer no
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+# === Answer Question 2 (current + 3 mod 8) ===
+
+[IF: output contains "enter, but yet not enter"]
+> answer temple
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "besides the temple"]
+> answer forest
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "minimum total value"]
+> answer 30003
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "function of the various cakes"]
+> answer flask
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "useful thing to do with the mirror"]
+> answer rub
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "body part offends"]
+> answer bones
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "object in the game is haunted"]
+> answer rusty knife
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "hello sailor"]
+> answer no
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+# === Answer Question 3 — passing answer opens the door ===
+
+[IF: output contains "enter, but yet not enter"]
+> answer temple
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "besides the temple"]
+> answer forest
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "minimum total value"]
+> answer 30003
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "function of the various cakes"]
+> answer flask
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "useful thing to do with the mirror"]
+> answer rub
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "body part offends"]
+> answer bones
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "object in the game is haunted"]
+> answer rusty knife
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[IF: output contains "hello sailor"]
+> answer no
+[OK: contains_any "Correct" "door"]
+[END IF]
+
+[END GOAL]
+
+# ============================================================================
+# GOAL: Reach Narrow Corridor (milestone: +20 endgame pts)
+# ============================================================================
+
+[GOAL: Reach Narrow Corridor]
+
+> north
+[OK: contains "Narrow Corridor"]
+
+[ENSURES: location = "Narrow Corridor"]
+[END GOAL]
+
+# ============================================================================
+# GOAL: Navigate to Parapet and solve dial puzzle
+# ============================================================================
+
+[GOAL: Solve dial puzzle and reach Treasury]
+
+> north
+[OK: contains "Corridor"]
+
+> north
+[OK: contains "Parapet"]
+
+# Set dial to 4 (cell 4 has the bronze door to Treasury)
+> set dial to 4
+[OK: contains "dial"]
+
+# Push the dial button to activate cell rotation
+> push dial button
+[OK: contains "button"]
+
+# Go down to the Prison Cell
+> down
+[OK: contains "Prison"]
+
+# Open the bronze door
+> open bronze door
+[OK: contains "open"]
+
+# Go south to the Treasury of Zork — VICTORY!
+> south
+[OK: contains "Treasury"]
+
+[ENSURES: location = "Treasury of Zork"]
+[END GOAL]
+
+$save wt-17

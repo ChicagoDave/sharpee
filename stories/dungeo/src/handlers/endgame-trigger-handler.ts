@@ -2,10 +2,12 @@
  * Endgame Trigger Handler - Crypt darkness ritual
  *
  * The endgame is triggered when the player:
- * 1. Is in the Crypt
- * 2. Has the crypt door closed
- * 3. Has the lamp off (darkness)
- * 4. Waits for 15 turns
+ * 1. Is in the Crypt (Tomb)
+ * 2. The room is dark (lamp off, no other light source)
+ * 3. Waits for 3 turns
+ *
+ * This matches FORTRAN behavior (clockr.for CEV20) — no door check,
+ * just darkness + waiting in the Tomb.
  *
  * When triggered:
  * - A cloaked figure appears
@@ -19,8 +21,8 @@ import { ISemanticEvent, EntityId } from '@sharpee/core';
 import {
   WorldModel,
   IdentityTrait,
-  OpenableTrait,
   LightSourceTrait,
+  SwitchableTrait,
   RoomTrait
 } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
@@ -39,24 +41,7 @@ const SAVING_DISABLED_KEY = 'game.savingDisabled';
 const ENDGAME_SCORE_KEY = 'scoring.endgameScore';
 const ENDGAME_MAX_SCORE_KEY = 'scoring.endgameMaxScore';
 
-const TURNS_REQUIRED = 15;
-
-/**
- * Check if the crypt door is closed
- */
-function isCryptDoorClosed(world: WorldModel, cryptId: EntityId): boolean {
-  // Find the crypt door
-  const allEntities = world.getAllEntities();
-  const cryptDoor = allEntities.find(e => {
-    const identity = e.get(IdentityTrait);
-    return identity?.name === 'crypt door';
-  });
-
-  if (!cryptDoor) return false;
-
-  const openable = cryptDoor.get(OpenableTrait);
-  return openable ? !openable.isOpen : false;
-}
+const TURNS_REQUIRED = 4; // 4 because the turn where the lamp is turned off also counts
 
 /**
  * Check if the room is dark (no active light sources)
@@ -94,20 +79,39 @@ function isRoomDark(world: WorldModel, roomId: EntityId): boolean {
 }
 
 /**
- * Find the elvish sword entity
+ * Find an entity by name or alias
  */
-function findElvishSword(world: WorldModel): EntityId | undefined {
+function findEntityByName(world: WorldModel, name: string): EntityId | undefined {
   const allEntities = world.getAllEntities();
-  const sword = allEntities.find(e => {
+  const entity = allEntities.find(e => {
     const identity = e.get(IdentityTrait);
-    return identity?.aliases?.includes('elvish sword') ||
-           identity?.name === 'elvish sword';
+    return identity?.name === name || identity?.aliases?.includes(name);
   });
-  return sword?.id;
+  return entity?.id;
+}
+
+/**
+ * Strip player inventory, returning all items to their original locations.
+ * FORTRAN: DO 20300 I=1,OLNT / CALL NEWSTA(I,0,OROOM(I),OCAN(I),0)
+ *
+ * Since we don't track original locations, items are moved to limbo (no parent).
+ * The lamp and sword are then explicitly given back.
+ */
+function stripPlayerInventory(world: WorldModel, playerId: EntityId): void {
+  const contents = world.getContents(playerId);
+  for (const item of [...contents]) {
+    world.moveEntity(item.id, null); // Move to limbo (nowhere)
+  }
 }
 
 /**
  * Trigger the endgame sequence
+ *
+ * FORTRAN (clockr.for CEV20):
+ * - Strip all items from player
+ * - Give lamp and sword
+ * - Reset lamp timer to 350 turns
+ * - Teleport to Top of Stairs
  */
 function triggerEndgame(
   world: WorldModel,
@@ -126,12 +130,32 @@ function triggerEndgame(
   // Reset turn counter
   world.setStateValue(CRYPT_WAIT_TURNS_KEY, 0);
 
-  // Give player the elvish sword if they don't have it
-  const swordId = findElvishSword(world);
+  // Strip all player inventory (FORTRAN: NEWSTA all items back to original locations)
+  stripPlayerInventory(world, player.id);
+
+  // Give player the elvish sword
+  const swordId = findEntityByName(world, 'elvish sword');
   if (swordId) {
-    const swordLocation = world.getLocation(swordId);
-    if (swordLocation !== player.id) {
-      world.moveEntity(swordId, player.id);
+    world.moveEntity(swordId, player.id);
+  }
+
+  // Give player the brass lantern with fresh batteries
+  const lanternId = findEntityByName(world, 'brass lantern');
+  if (lanternId) {
+    world.moveEntity(lanternId, player.id);
+
+    // Reset lamp fuel to 350 turns (FORTRAN: CTICK(CEVLNT)=350)
+    const lantern = world.getEntity(lanternId);
+    if (lantern) {
+      const lightSource = lantern.get(LightSourceTrait);
+      if (lightSource) {
+        lightSource.fuelRemaining = 350;
+        lightSource.isLit = true;
+      }
+      const switchable = lantern.get(SwitchableTrait);
+      if (switchable) {
+        switchable.isOn = true;
+      }
     }
   }
 
@@ -163,6 +187,30 @@ function triggerEndgame(
       destination: topOfStairsId
     }
   });
+
+  // Emit room description for Top of Stairs
+  const topRoom = world.getEntity(topOfStairsId);
+  if (topRoom) {
+    const topRoomTrait = topRoom.get(RoomTrait);
+    const topIdentity = topRoom.get(IdentityTrait);
+    const roomName = topIdentity?.name || 'Top of Stairs';
+    const roomDescription = topIdentity?.description || '';
+    events.push({
+      id: `endgame-room-desc-${Date.now()}`,
+      type: 'if.event.room.description',
+      timestamp: Date.now(),
+      entities: { location: topOfStairsId },
+      data: {
+        roomId: topOfStairsId,
+        roomName,
+        roomDescription,
+        includeContents: true,
+        verbose: true,
+        isDark: false,
+        contents: []
+      }
+    });
+  }
 
   // Emit endgame begins event
   events.push({
@@ -212,14 +260,7 @@ export function registerEndgameTriggerHandler(
       const { world } = context;
       const events: ISemanticEvent[] = [];
 
-      // Check if crypt door is closed
-      if (!isCryptDoorClosed(world, cryptId)) {
-        // Reset counter if door is open
-        world.setStateValue(CRYPT_WAIT_TURNS_KEY, 0);
-        return events;
-      }
-
-      // Check if room is dark
+      // Check if room is dark (FORTRAN: only condition besides being in Tomb)
       if (!isRoomDark(world, cryptId)) {
         // Reset counter if there's light
         world.setStateValue(CRYPT_WAIT_TURNS_KEY, 0);
@@ -231,21 +272,10 @@ export function registerEndgameTriggerHandler(
       const newTurns = currentTurns + 1;
       world.setStateValue(CRYPT_WAIT_TURNS_KEY, newTurns);
 
-      // Emit atmosphere message at certain intervals
-      if (newTurns === 5) {
+      // Emit atmosphere message on turn 2
+      if (newTurns === 2) {
         events.push({
           id: `endgame-darkness-1-${Date.now()}`,
-          type: 'game.message',
-          timestamp: Date.now(),
-          entities: {},
-          data: {
-            messageId: EndgameTriggerMessages.DARKNESS_DESCENDS,
-            turn: newTurns
-          }
-        });
-      } else if (newTurns === 10) {
-        events.push({
-          id: `endgame-darkness-2-${Date.now()}`,
           type: 'game.message',
           timestamp: Date.now(),
           entities: {},

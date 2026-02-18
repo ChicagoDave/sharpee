@@ -141,6 +141,9 @@ async function runSmartTranscript(
   // Block state stack for control flow
   const blockStack: BlockState[] = [];
 
+  // Track last command output for "output contains" conditions
+  let lastOutput = '';
+
   // Main execution loop
   let i = 0;
   while (i < items.length) {
@@ -172,6 +175,7 @@ async function runSmartTranscript(
 
       const result = await runCommand(command, engine, options);
       results.push(result);
+      lastOutput = result.actualOutput;
 
       // Capture output for DO-UNTIL blocks
       if (doBlock?.iterationOutputs) {
@@ -229,7 +233,7 @@ async function runSmartTranscript(
       if (directive.type === 'ensures') {
         const retryBlock = findRetryBlock(blockStack);
         if (retryBlock && engine.world && directive.condition) {
-          const condResult = evaluateCondition(directive.condition, engine.world as any, playerId);
+          const condResult = evaluateCondition(directive.condition, engine.world as any, playerId, lastOutput);
           if (!condResult.met) {
             retryBlock.retryCount = (retryBlock.retryCount ?? 0) + 1;
             if (retryBlock.retryCount <= retryBlock.maxRetries!) {
@@ -252,7 +256,7 @@ async function runSmartTranscript(
       }
 
       const directiveResult = await handleDirective(
-        directive, blockStack, i, items, engine, playerId, options
+        directive, blockStack, i, items, engine, playerId, options, lastOutput
       );
 
       if (directiveResult.error && options.stopOnFailure) {
@@ -353,7 +357,8 @@ async function handleDirective(
   items: TranscriptItem[],
   engine: GameEngine,
   playerId: string,
-  options: RunnerOptions
+  options: RunnerOptions,
+  lastOutput?: string
 ): Promise<{ nextIndex: number; error?: string; commandResults?: CommandResult[] }> {
   const world = engine.world;
   const verbose = options.verbose || false;
@@ -388,7 +393,7 @@ async function handleDirective(
       let allRequiresMet = true;
       if (world) {
         for (const req of requires) {
-          const result = evaluateCondition(req, world as any, playerId);
+          const result = evaluateCondition(req, world as any, playerId, lastOutput);
           if (verbose) {
             console.log(`  [GOAL "${directive.goalName}"] REQUIRES: ${req} -> ${result.met ? 'OK' : 'FAILED'}`);
           }
@@ -432,7 +437,7 @@ async function handleDirective(
       // Check ENSURES postconditions
       if (world && block.ensures) {
         for (const ens of block.ensures) {
-          const result = evaluateCondition(ens, world as any, playerId);
+          const result = evaluateCondition(ens, world as any, playerId, lastOutput);
           if (verbose) {
             console.log(`  [END GOAL "${block.goalName}"] ENSURES: ${ens} -> ${result.met ? 'OK' : 'FAILED'}`);
           }
@@ -464,7 +469,7 @@ async function handleDirective(
 
       let conditionMet = true;
       if (world && directive.condition) {
-        const result = evaluateCondition(directive.condition, world as any, playerId);
+        const result = evaluateCondition(directive.condition, world as any, playerId, lastOutput);
         conditionMet = result.met;
         if (verbose) {
           console.log(`  [IF: ${directive.condition}] -> ${conditionMet ? 'TRUE' : 'FALSE'} (${result.reason})`);
@@ -497,7 +502,7 @@ async function handleDirective(
 
       let conditionMet = true;
       if (world && directive.condition) {
-        const result = evaluateCondition(directive.condition, world as any, playerId);
+        const result = evaluateCondition(directive.condition, world as any, playerId, lastOutput);
         conditionMet = result.met;
         if (verbose) {
           console.log(`  [WHILE: ${directive.condition}] -> ${conditionMet ? 'TRUE (entering loop)' : 'FALSE (skipping loop)'}`);
@@ -531,7 +536,7 @@ async function handleDirective(
       // Re-evaluate condition
       let conditionMet = false;
       if (world && block.condition) {
-        const result = evaluateCondition(block.condition, world as any, playerId);
+        const result = evaluateCondition(block.condition, world as any, playerId, lastOutput);
         conditionMet = result.met;
         if (verbose) {
           console.log(`  [END WHILE iteration ${block.iterations}] ${block.condition} -> ${conditionMet ? 'TRUE (continue)' : 'FALSE (exit loop)'}`);

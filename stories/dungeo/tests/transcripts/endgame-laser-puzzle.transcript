@@ -17,10 +17,10 @@ description: Test laser beam and stone button puzzle mechanics
 [OK: contains "Stone Room"]
 [OK: contains "button"]
 
-# Try pushing button - currently shows "fixed in place" due to scenery trait
-# TODO: Need custom action handler for button pushing
+# Push button with laser still active — button pushes but nothing happens
 > push button
-[OK: contains "fixed"]
+[OK: contains "push"]
+[NOT: contains "fixed"]
 
 # Go south to Small Room (laser beam room)
 > south
@@ -44,7 +44,7 @@ description: Test laser beam and stone button puzzle mechanics
 > north
 [OK: contains "Stone Room"]
 
-# Button still shows fixed - need custom action for buttons
-# The event handler logic works, but scenery blocks the push action
+# Push button with laser disabled — should succeed
 > push button
-[OK: contains "fixed"]
+[OK: contains "push"]
+[NOT: contains "fixed"]

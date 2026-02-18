@@ -11,6 +11,7 @@
  * - entity "X" exists                - Entity with name X exists anywhere
  * - entity "X" alive                 - NPC entity is not dead
  * - entity "X" in "Room"             - Entity X is in specified room
+ * - output contains "text"           - Last command output contains text
  */
 
 import { ConditionResult } from './types';
@@ -146,7 +147,8 @@ function isEntityAlive(entity: any): boolean {
 export function evaluateCondition(
   condition: string,
   world: WorldModelLike,
-  playerId: string
+  playerId: string,
+  lastOutput?: string
 ): ConditionResult {
   const trimmed = condition.trim();
 
@@ -155,7 +157,10 @@ export function evaluateCondition(
   const expr = isNegated ? trimmed.slice(4).trim() : trimmed;
 
   // Try each pattern
-  let result = tryLocationEquals(expr, world, playerId);
+  let result = tryOutputContains(expr, lastOutput);
+  if (result) return applyNegation(result, isNegated);
+
+  result = tryLocationEquals(expr, world, playerId);
   if (result) return applyNegation(result, isNegated);
 
   result = tryRoomContains(expr, world, playerId);
@@ -188,6 +193,28 @@ function applyNegation(result: ConditionResult, negate: boolean): ConditionResul
   return {
     met: !result.met,
     reason: `NOT (${result.reason})`
+  };
+}
+
+/**
+ * Pattern: output contains "text"
+ */
+function tryOutputContains(
+  expr: string,
+  lastOutput?: string
+): ConditionResult | null {
+  const match = expr.match(/^output\s+contains\s+"([^"]+)"$/i);
+  if (!match) return null;
+
+  const searchText = match[1];
+  const output = lastOutput || '';
+  const met = output.toLowerCase().includes(searchText.toLowerCase());
+
+  return {
+    met,
+    reason: met
+      ? `Output contains "${searchText}"`
+      : `Output does not contain "${searchText}"`
   };
 }
 

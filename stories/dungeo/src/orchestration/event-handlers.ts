@@ -20,6 +20,7 @@ import { VisibilityBehavior } from '@sharpee/world-model';
 import { createMirrorTouchHandler, MirrorRoomConfig } from '../handlers/mirror-room-handler';
 import { registerCombatDisengagementHandler } from '../handlers/combat-disengagement-handler';
 import { registerTreasureRoomHandler } from '../handlers/treasure-room-handler';
+import { registerEndgameScoringHandler, EndgameScoringConfig } from '../handlers/endgame-scoring-handler';
 
 /**
  * Configuration for event handler registration
@@ -38,6 +39,8 @@ export interface EventHandlerConfig {
   treasureRoomId?: string;
   /** Room visit scoring map: roomId → points (RVAL from MDL) */
   roomVisitScoring?: Map<string, number>;
+  /** Endgame milestone scoring room IDs */
+  endgameScoringConfig?: EndgameScoringConfig;
 }
 
 /**
@@ -96,6 +99,16 @@ export function registerEventHandlers(
   // Summons thief to Treasure Room when player enters (thief rushes to defense)
   if (config.treasureRoomId) {
     registerTreasureRoomHandler(eventProcessor, world, config.treasureRoomId);
+  }
+
+  // ==========================================================================
+  // Endgame Milestone Scoring
+  // ==========================================================================
+
+  // Awards endgame points (separate from main score) when player enters
+  // milestone rooms: Inside Mirror (15), Dungeon Entrance (15), Narrow Corridor (20)
+  if (config.endgameScoringConfig) {
+    registerEndgameScoringHandler(eventProcessor, world, config.endgameScoringConfig);
   }
 }
 

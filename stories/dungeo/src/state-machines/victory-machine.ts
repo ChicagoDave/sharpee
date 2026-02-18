@@ -28,7 +28,7 @@ function makeVictoryEffect(): CustomEffect {
     type: 'custom',
     execute: (world, _bindings, _playerId) => {
       // Award 35 points for entering Treasury
-      const currentScore = (world.getStateValue('scoring.endgameScore') as number) ?? 65;
+      const currentScore = (world.getStateValue('scoring.endgameScore') as number) || 0;
       const finalScore = currentScore + 35;
       world.setStateValue('scoring.endgameScore', finalScore);
 
@@ -37,7 +37,7 @@ function makeVictoryEffect(): CustomEffect {
       world.setStateValue('game.ended', true);
 
       // Get main game score for total
-      const mainScore = (world.getStateValue('scoring.score') as number) ?? 616;
+      const mainScore = (world.getStateValue('scoring.score') as number) || 0;
       const totalScore = mainScore + finalScore;
 
       return {

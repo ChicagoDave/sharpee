@@ -25,7 +25,8 @@ import {
   Direction,
   DirectionType,
   SceneryTrait,
-  OpenableTrait
+  OpenableTrait,
+  PushableTrait
 } from '@sharpee/world-model';
 import { HadesEntryTrait } from '../traits';
 
@@ -300,10 +301,10 @@ function createStoneButton(world: WorldModel, roomId: string): IFEntity {
   }));
 
   button.add(new SceneryTrait());
+  button.add(new PushableTrait({ pushType: 'button' }));
 
   world.moveEntity(button.id, roomId);
 
-  button.attributes.isPushable = true;
   button.attributes.buttonType = 'stone';
 
   return button;

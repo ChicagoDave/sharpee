@@ -130,7 +130,7 @@ export function registerPuzzleMessages(language: LanguageProvider): void {
 
   language.addMessage(VictoryMessages.ENTER_TREASURY, 'You have entered the Treasury of Zork!');
   language.addMessage(VictoryMessages.VICTORY_TEXT, 'Congratulations, brave adventurer! You have completed the greatest of all treasure hunts and discovered the legendary Treasury of Zork. The riches of the Great Underground Empire are yours!');
-  language.addMessage(VictoryMessages.FINAL_SCORE, 'Your final score is {totalScore} points out of a possible 716 (616 main game + 100 endgame).\nEndgame score: {endgameScore}/100\nMain game score: {mainScore}/616');
+  language.addMessage(VictoryMessages.FINAL_SCORE, 'Your final score is {totalScore} points out of a possible 750 (650 main game + 100 endgame).\nEndgame score: {endgameScore}/100\nMain game score: {mainScore}/650');
   language.addMessage(VictoryMessages.CONGRATULATIONS, 'You have achieved the rank of MASTER ADVENTURER.\n\n*** THE END ***');
 
   // ==========================================================================

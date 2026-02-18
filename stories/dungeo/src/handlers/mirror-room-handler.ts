@@ -90,78 +90,10 @@ function createMirrorToggleEffects(
     }
   });
 
-  // 3. Update reverse connections based on new state
-  if (newState === 'A') {
-    // State A: Connect from Grail Room area back to Mirror Room
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateA.north,
-      exits: { [Direction.SOUTHWEST]: { destination: config.mirrorRoomId } }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateA.west,
-      exits: { [Direction.EAST]: { destination: config.mirrorRoomId } }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateA.east,
-      exits: { [Direction.WEST]: { destination: config.mirrorRoomId } }
-    });
-
-    // Disconnect Coal Mine rooms from Mirror Room
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateB.north,
-      exits: { [Direction.SOUTH]: null }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateB.west,
-      exits: { [Direction.EAST]: null }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateB.east,
-      exits: { [Direction.NORTH]: null }
-    });
-  } else {
-    // State B: Connect from Coal Mine area back to Mirror Room
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateB.north,
-      exits: { [Direction.SOUTH]: { destination: config.mirrorRoomId } }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateB.west,
-      exits: { [Direction.EAST]: { destination: config.mirrorRoomId } }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateB.east,
-      exits: { [Direction.NORTH]: { destination: config.mirrorRoomId } }
-    });
-
-    // Disconnect Grail Room area from Mirror Room
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateA.north,
-      exits: { [Direction.SOUTHWEST]: null }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateA.west,
-      exits: { [Direction.EAST]: null }
-    });
-    effects.push({
-      type: 'update_exits',
-      roomId: config.stateA.east,
-      exits: { [Direction.WEST]: null }
-    });
-  }
-
-  // 4. Emit the rumble/shake message
+  // 3. Emit the rumble/shake message
+  // NOTE: Surrounding rooms' exits TO Mirror Room are permanent geography.
+  // Only Mirror Room's own exits change on toggle. All 6 surrounding rooms
+  // (both State A and State B) always have their exit pointing to Mirror Room.
   effects.push({
     type: 'message',
     id: MirrorRoomMessages.ROOM_SHAKES,
