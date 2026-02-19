@@ -1,0 +1,172 @@
+regions/bank-of-zork.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/bank-of-zork.ts:  const eastOfChasm = createRoom(world, 'East of Chasm',
+regions/bank-of-zork.ts:  const westOfChasm = createRoom(world, 'West of Chasm',
+regions/bank-of-zork.ts:  const bankEntrance = createRoom(world, 'Bank Entrance',
+regions/bank-of-zork.ts:  const bankLobby = createRoom(world, 'Bank Lobby',
+regions/bank-of-zork.ts:  const westTeller = createRoom(world, "West Teller's Room",
+regions/bank-of-zork.ts:  const eastTeller = createRoom(world, 'East Teller',
+regions/bank-of-zork.ts:  const chairmansOffice = createRoom(world, "Chairman's Office",
+regions/bank-of-zork.ts:  const safetyDeposit = createRoom(world, 'Safety Depository',
+regions/bank-of-zork.ts:  const vault = createRoom(world, 'Vault',
+regions/bank-of-zork.ts:  const viewingRoom = createRoom(world, 'Viewing Room',
+regions/bank-of-zork.ts:  const smallRoom = createRoom(world, 'Small Room',
+regions/coal-mine.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/coal-mine.ts:  const coldPassage = createRoom(world, 'Cold Passage',
+regions/coal-mine.ts:  const steepCrawlway = createRoom(world, 'Steep Crawlway',
+regions/coal-mine.ts:  const slideRoom = createRoom(world, 'Slide Room',
+regions/coal-mine.ts:  slide1.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  slide2.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  slide3.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  const slideLedge = createRoom(world, 'Slide Ledge',
+regions/coal-mine.ts:  const sootyRoom = createRoom(world, 'Sooty Room',
+regions/coal-mine.ts:  const mineEntrance = createRoom(world, 'Mine Entrance',
+regions/coal-mine.ts:  const squeakyRoom = createRoom(world, 'Squeaky Room',
+regions/coal-mine.ts:  const smallRoom = createRoom(world, 'Small Room',
+regions/coal-mine.ts:  const shaftRoom = createRoom(world, 'Shaft Room',
+regions/coal-mine.ts:  const woodenTunnel = createRoom(world, 'Wooden Tunnel',
+regions/coal-mine.ts:  const smellyRoom = createRoom(world, 'Smelly Room',
+regions/coal-mine.ts:  const gasRoom = createRoom(world, 'Gas Room',
+regions/coal-mine.ts:  mineMaze1.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  mineMaze2.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  mineMaze3.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  mineMaze4.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  mineMaze5.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  mineMaze6.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  mineMaze7.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  const ladderTop = createRoom(world, 'Ladder Top',
+regions/coal-mine.ts:  const ladderBottom = createRoom(world, 'Ladder Bottom',
+regions/coal-mine.ts:  coalMineDeadEnd.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/coal-mine.ts:  const timberRoom = createRoom(world, 'Timber Room',
+regions/coal-mine.ts:  const bottomOfShaft = createRoom(world, 'Bottom of Shaft',
+regions/coal-mine.ts:  const machineRoom = createRoom(world, 'Machine Room',
+regions/dam.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/dam.ts:  const deepCanyon = createRoom(world, 'Deep Canyon',
+regions/dam.ts:  const damLobby = createRoom(world, 'Dam Lobby',
+regions/dam.ts:  const dam = createRoom(world, 'Flood Control Dam #3',
+regions/dam.ts:  const damBase = createRoom(world, 'Dam Base',
+regions/dam.ts:  const maintenanceRoom = createRoom(world, 'Maintenance Room',
+regions/dam.ts:  const reservoirSouth = createRoom(world, 'Reservoir South',
+regions/dam.ts:  const reservoir = createRoom(world, 'Reservoir',
+regions/dam.ts:  const reservoirNorth = createRoom(world, 'Reservoir North',
+regions/dam.ts:  const streamView = createRoom(world, 'Stream View',
+regions/dam.ts:  const smallCave = createRoom(world, 'Small Cave',
+regions/dam.ts:  const atlantisRoom = createRoom(world, 'Atlantis Room',
+regions/endgame.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/endgame.ts:  const topOfStairs = createRoom(world, 'Top of Stairs',
+regions/endgame.ts:  const stoneRoom = createRoom(world, 'Stone Room',
+regions/endgame.ts:  const smallRoom = createRoom(world, 'Small Room',
+regions/endgame.ts:  const hallway = createRoom(world, 'Hallway',
+regions/endgame.ts:  const insideMirror = createRoom(world, 'Inside Mirror',
+regions/endgame.ts:  const dungeonEntrance = createRoom(world, 'Dungeon Entrance',
+regions/endgame.ts:  const narrowCorridor = createRoom(world, 'Narrow Corridor',
+regions/endgame.ts:  const eastWestCorridor = createRoom(world, 'East-West Corridor',
+regions/endgame.ts:  const parapet = createRoom(world, 'Parapet',
+regions/endgame.ts:  const prisonCell = createRoom(world, 'Prison Cell',
+regions/endgame.ts:  treasury.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: false }));
+regions/endgame.ts:  entryToHades.add(new RoomTrait({
+regions/endgame.ts:  landOfDead.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/endgame.ts:  tomb.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/forest.ts:  room.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/forest.ts:  forestPath1.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/forest.ts:  forestPath2.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/forest.ts:  forestPath3.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/forest.ts:  forestPath4.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/forest.ts:  clearing.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/forest.ts:  const upATree = createRoom(world, 'Up a Tree',
+regions/forest.ts:  const canyonView = createRoom(world, 'Canyon View',
+regions/forest.ts:  const rockyLedge = createRoom(world, 'Rocky Ledge',
+regions/forest.ts:  const canyonBottom = createRoom(world, 'Canyon Bottom',
+regions/frigid-river.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors }));
+regions/frigid-river.ts:  frigidRiver1.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/frigid-river.ts:  frigidRiver2.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/frigid-river.ts:  frigidRiver3.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/frigid-river.ts:  frigidRiver4.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/frigid-river.ts:  frigidRiver5.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/frigid-river.ts:  const rockyShore = createRoom(world, 'Rocky Shore',
+regions/frigid-river.ts:  const smallCave = createRoom(world, 'Small Cave',
+regions/frigid-river.ts:  const whiteCliffsBeach1 = createRoom(world, 'White Cliffs Beach',
+regions/frigid-river.ts:  whiteCliffsBeach2.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/frigid-river.ts:  const sandyBeach = createRoom(world, 'Sandy Beach',
+regions/frigid-river.ts:  const shore = createRoom(world, 'Shore',
+regions/frigid-river.ts:  aragainFalls.add(new RoomTrait({
+regions/frigid-river.ts:  onTheRainbow.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/frigid-river.ts:  const endOfRainbow = createRoom(world, 'End of Rainbow',
+regions/house-interior.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/house-interior.ts:  const kitchen = createRoom(world, 'Kitchen',
+regions/house-interior.ts:  const livingRoom = createRoom(world, 'Living Room',
+regions/house-interior.ts:  const attic = createRoom(world, 'Attic',
+regions/maze.ts:  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/maze.ts:  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/maze.ts:  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/maze.ts:  const gratingRoom = createRoom(world, 'Grating Room',
+regions/maze.ts:  const cyclopsRoom = createRoom(world, 'Cyclops Room',
+regions/maze.ts:  const strangePassage = createRoom(world, 'Strange Passage',
+regions/maze.ts:  const treasureRoom = createRoom(world, 'Treasure Room',
+regions/round-room.ts:  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+regions/royal-puzzle.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/royal-puzzle.ts:  const squareRoom = createRoom(world, 'Square Room',
+regions/royal-puzzle.ts:  const puzzleRoom = createRoom(world, 'Puzzle Room',
+regions/royal-puzzle.ts:  const roomInPuzzle = createRoom(world, 'Room in a Puzzle',
+regions/temple.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/temple.ts:  const temple = createRoom(world, 'Temple',
+regions/temple.ts:  const altar = createRoom(world, 'Altar',
+regions/temple.ts:  const northSouthPassage = createRoom(world, 'North/South Passage',
+regions/temple.ts:  const grailRoom = createRoom(world, 'Grail Room',
+regions/temple.ts:  const windingPassage = createRoom(world, 'Winding Passage',
+regions/temple.ts:  const mirrorRoom = createRoom(world, 'Mirror Room',
+regions/temple.ts:  const narrowCrawlway = createRoom(world, 'Narrow Crawlway',
+regions/temple.ts:  const loudRoom = createRoom(world, 'Loud Room',
+regions/temple.ts:  const dampCave = createRoom(world, 'Damp Cave',
+regions/temple.ts:  const ancientChasm = createRoom(world, 'Ancient Chasm',
+regions/temple.ts:  const basinRoom = createRoom(world, 'Basin Room',
+regions/temple.ts:  const deadEnd1 = createRoom(world, 'Dead End',
+regions/temple.ts:  const deadEnd2 = createRoom(world, 'Dead End',
+regions/temple.ts:  const smallCave = createRoom(world, 'Small Cave',
+regions/underground.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/underground.ts:  const cellar = createRoom(world, 'Cellar',
+regions/underground.ts:  const westOfChasm = createRoom(world, 'West of Chasm',
+regions/underground.ts:  const gallery = createRoom(world, 'Gallery',
+regions/underground.ts:  const northSouthCrawlway = createRoom(world, 'North/South Crawlway',
+regions/underground.ts:  const trollRoom = createRoom(world, 'Troll Room',
+regions/underground.ts:  const eastWestPassage = createRoom(world, 'East-West Passage',
+regions/underground.ts:  const deepRavine = createRoom(world, 'Deep Ravine',
+regions/underground.ts:  const rockyCrawl = createRoom(world, 'Rocky Crawl',
+regions/underground.ts:  const domeRoom = createRoom(world, 'Dome Room',
+regions/underground.ts:  const tinyRoom = createRoom(world, 'Tiny Room',
+regions/underground.ts:  const drearyRoom = createRoom(world, 'Dreary Room',
+regions/underground.ts:  const chasm = createRoom(world, 'Chasm',
+regions/underground.ts:  const studio = createRoom(world, 'Studio',
+regions/underground.ts:  const torchRoom = createRoom(world, 'Torch Room',
+regions/volcano.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/volcano.ts:  const egyptianRoom = createRoom(world, 'Egyptian Room',
+regions/volcano.ts:  const glacierRoom = createRoom(world, 'Glacier Room',
+regions/volcano.ts:  const volcanoView = createRoom(world, 'Volcano View',
+regions/volcano.ts:  const rubyRoom = createRoom(world, 'Ruby Room',
+regions/volcano.ts:  const lavaRoom = createRoom(world, 'Lava Room',
+regions/volcano.ts:  const volcanoBottom = createRoom(world, 'Volcano Bottom',
+regions/volcano.ts:  const wideLedge = createRoom(world, 'Wide Ledge',
+regions/volcano.ts:  const narrowLedge = createRoom(world, 'Narrow Ledge',
+regions/volcano.ts:  const dustyRoom = createRoom(world, 'Dusty Room',
+regions/volcano.ts:  const library = createRoom(world, 'Library',
+regions/volcano.ts:  const volcanoNearWideLedge = createRoom(world, 'Volcano Near Wide Ledge',
+regions/volcano.ts:  const volcanoNearViewingLedge = createRoom(world, 'Volcano Near Viewing Ledge',
+regions/volcano.ts:  const volcanoNearSmallLedge = createRoom(world, 'Volcano Near Small Ledge',
+regions/volcano.ts:  const volcanoCore = createRoom(world, 'Volcano Core',
+regions/well-room.ts:  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+regions/well-room.ts:  const engravingsCave = createRoom(world, 'Engravings Cave',
+regions/well-room.ts:  const riddleRoom = createRoom(world, 'Riddle Room',
+regions/well-room.ts:  const pearlRoom = createRoom(world, 'Broom Closet',
+regions/well-room.ts:  const wellBottom = createRoom(world, 'Well Bottom',
+regions/well-room.ts:  const topOfWell = createRoom(world, 'Top of Well',
+regions/well-room.ts:  const lowRoom = createRoom(world, 'Low Room',
+regions/well-room.ts:  const machineRoom = createRoom(world, 'Machine Room',
+regions/well-room.ts:  const dingyCloset = createRoom(world, 'Dingy Closet',
+regions/well-room.ts:  const teaRoom = createRoom(world, 'Tea Room',
+regions/well-room.ts:  const postsRoom = createRoom(world, 'Posts Room',
+regions/well-room.ts:  const poolRoom = createRoom(world, 'Pool Room',
+regions/well-room.ts:  const cave = createRoom(world, 'Cave',
+regions/white-house.ts:  room.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+regions/white-house.ts:  const westOfHouse = createRoom(world, 'West of House',
+regions/white-house.ts:  const northOfHouse = createRoom(world, 'North of House',
+regions/white-house.ts:  const southOfHouse = createRoom(world, 'South of House',
+regions/white-house.ts:  const behindHouse = createRoom(world, 'Behind House',

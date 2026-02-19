@@ -479,6 +479,9 @@ export class GameEngine {
     this.saveRestoreService.clearUndoSnapshots();
     this.hasEmittedInitialized = false;
 
+    // Clear plugin registry so story can re-register plugins
+    this.pluginRegistry.clear();
+
     // Re-initialize the story (creates entities, player, custom actions, etc.)
     this.setStory(this.story);
 

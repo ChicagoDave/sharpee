@@ -30,6 +30,13 @@
       "imports": "preserve",
       "declarations": true
     },
+    "esm": {
+      "module": "es2022",
+      "outDir": "dist-esm",
+      "imports": "preserve",
+      "declarations": true,
+      "condition": "esm"
+    },
     "npm": {
       "module": "commonjs",
       "outDir": "dist",

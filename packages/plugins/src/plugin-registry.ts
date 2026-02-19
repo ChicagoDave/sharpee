@@ -14,6 +14,10 @@ export class PluginRegistry {
     this.plugins.delete(id);
   }
 
+  clear(): void {
+    this.plugins.clear();
+  }
+
   getAll(): TurnPlugin[] {
     return Array.from(this.plugins.values()).sort(
       (a, b) => b.priority - a.priority

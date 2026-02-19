@@ -24,11 +24,14 @@ export function useTranscript(): UseTranscriptResult {
   const { transcript, turns } = useGameState();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when transcript updates
+  // Auto-scroll to bottom when transcript updates.
+  // Use requestAnimationFrame to ensure DOM has laid out new content.
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
-    }
+    requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      }
+    });
   }, [transcript]);
 
   const scrollToBottom = useCallback(() => {

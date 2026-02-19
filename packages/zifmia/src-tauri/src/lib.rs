@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use tauri::Manager;
 
 /// Get the saves directory: ~/.sharpee/saves/{storyId}/
 fn saves_dir(story_id: &str) -> PathBuf {
@@ -204,6 +205,13 @@ pub fn run() {
             load_auto_save,
             has_auto_save,
         ])
+        .setup(|app| {
+            // Always open devtools (enabled via "devtools" feature in Cargo.toml)
+            if let Some(window) = app.get_webview_window("main") {
+                window.open_devtools();
+            }
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

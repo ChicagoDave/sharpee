@@ -5,8 +5,7 @@
  * Available themes: classic-light, modern-dark, retro-terminal, paper
  */
 
-/* Google Fonts - All fonts used across themes */
-@import url('https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+/* Fonts: system fallbacks used; no external font dependencies */
 
 /* Enchanted Land font for Zifmia branding */
 @font-face {
@@ -664,11 +663,15 @@ body {
 
 .game-shell__transcript-container {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow: hidden;
 }
 
 .game-shell__transcript {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--sharpee-spacing-lg);
 }

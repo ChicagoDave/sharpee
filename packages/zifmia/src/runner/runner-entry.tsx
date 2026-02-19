@@ -18,6 +18,23 @@ import { StoryLibrary, addRecentStory } from './StoryLibrary';
 import type { LoadedBundle } from '../loader';
 import { isTauri, TauriStorageProvider } from '../storage/tauri-storage-provider';
 import { BrowserStorageProvider } from '../storage/index.js';
+import { CLIENT_VERSION } from '../version';
+
+// On version change (fresh install or upgrade), clear stale localStorage.
+// In Tauri mode saves go to filesystem, so localStorage data is leftover.
+const VERSION_KEY = 'zifmia-app-version';
+const storedVersion = localStorage.getItem(VERSION_KEY);
+if (storedVersion !== CLIENT_VERSION) {
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key !== VERSION_KEY) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((k) => localStorage.removeItem(k));
+  localStorage.setItem(VERSION_KEY, CLIENT_VERSION);
+}
 
 const storageProvider = isTauri() ? new TauriStorageProvider() : new BrowserStorageProvider();
 
