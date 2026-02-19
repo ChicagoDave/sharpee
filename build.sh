@@ -347,7 +347,7 @@ EOF
 
         # Update Cargo.toml version line
         if [ -f "$ZIFMIA_CARGO" ]; then
-            sed -i "s/^version = \".*\"/version = \"$NATIVE_VER\"/" "$ZIFMIA_CARGO"
+            sed -i '' "s/^version = \".*\"/version = \"$NATIVE_VER\"/" "$ZIFMIA_CARGO"
         fi
 
         log_ok "zifmia $SHARPEE_VERSION (native: $NATIVE_VER)"
@@ -775,7 +775,7 @@ build_browser_client() {
     # Copy HTML template
     if [ -f "templates/browser/index.html" ]; then
         cp templates/browser/index.html "$OUTDIR/"
-        sed -i "s/{{TITLE}}/${STORY_NAME}/g" "$OUTDIR/index.html"
+        sed -i '' "s/{{TITLE}}/${STORY_NAME}/g" "$OUTDIR/index.html"
         log_ok "html"
     fi
 

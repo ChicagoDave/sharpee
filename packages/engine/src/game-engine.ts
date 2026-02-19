@@ -251,13 +251,13 @@ export class GameEngine {
     // Build narrative settings from story config (ADR-089)
     this.narrativeSettings = buildNarrativeSettings(story.config.narrative);
 
-    // Initialize story-specific world content
-    story.initializeWorld(this.world);
-    
-    // Create player if needed (or replace existing one)
+    // Create player first so initializeWorld() can place them
     const newPlayer = story.createPlayer(this.world);
     this.context.player = newPlayer;
     this.world.setPlayer(newPlayer.id);
+
+    // Initialize story-specific world content (player must exist first)
+    story.initializeWorld(this.world);
 
     // Configure language provider with narrative settings (ADR-089)
     this.configureLanguageProviderNarrative(newPlayer);

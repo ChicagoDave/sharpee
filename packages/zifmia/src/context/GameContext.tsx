@@ -216,7 +216,6 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       const cmd = pendingCommand.current?.trim().toLowerCase();
       const isSaveCommand = cmd === 'save';
       const isRestoreCommand = cmd === 'restore';
-      const suppressText = isSaveRestore || isSaveCommand || isRestoreCommand || isRestart;
 
       // Fire save/restore dialogs from command detection (fallback when events don't fire)
       if (isSaveCommand && !isSaveRestore && onSaveRequestedRef.current) {
@@ -226,13 +225,18 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
         onRestoreRequestedRef.current();
       }
 
-      dispatch({
-        type: 'TURN_COMPLETED',
-        turn: turn as number,
-        text: suppressText ? '' : text,
-        command: pendingCommand.current,
-        events: turnEvents,
-      });
+      // Skip TURN_COMPLETED entirely for restart — GAME_RESTARTED already cleared
+      // the transcript, and the deferred look will add the initial room description
+      if (!isRestart) {
+        const suppressText = isSaveRestore || isSaveCommand || isRestoreCommand;
+        dispatch({
+          type: 'TURN_COMPLETED',
+          turn: turn as number,
+          text: suppressText ? '' : text,
+          command: pendingCommand.current,
+          events: turnEvents,
+        });
+      }
       pendingCommand.current = undefined;
 
       // Notify parent for auto-save (state updates asynchronously, use next tick)
@@ -297,12 +301,30 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
         onRestoreRequestedRef.current();
       }
 
-      // Handle restart completed — reset UI and issue initial look
+      // Handle restart completed — reset UI, restore room info, and issue initial look
       if (evt.type === 'platform.restart_completed') {
         const data = evt.data as { success?: boolean };
         if (data?.success !== false) {
           dispatch({ type: 'GAME_RESTARTED' });
-          // Defer look to next tick to avoid nested executeTurn
+
+          // Re-extract room (GAME_RESTARTED wiped the room that game.started set)
+          const player = world.getPlayer();
+          if (player) {
+            const locationId = world.getLocation(player.id);
+            if (locationId) {
+              const room = extractCurrentRoom(world, locationId);
+              if (room) {
+                room.firstVisit = true;
+                dispatch({ type: 'ROOM_CHANGED', room });
+              }
+            }
+          }
+
+          // Clear event buffer so deferred look gets a clean buffer
+          // (restart turn may not emit text:output, leaving stale events)
+          turnEventsBuffer.current = [];
+
+          // Defer look to next tick so it's a separate turn with a clean event buffer
           setTimeout(() => eng.executeTurn('look'), 0);
         }
       }
