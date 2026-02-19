@@ -6,6 +6,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { IParsedCommand, IValidatedCommand, IFEntity } from '@sharpee/world-model';
+import { ITextBlock } from '@sharpee/text-blocks';
 
 // Re-export perception types from stdlib for convenience
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
@@ -104,7 +105,14 @@ export interface TurnResult {
    * All events generated this turn (in sequence)
    */
   events: SequencedEvent[];
-  
+
+  /**
+   * Structured text blocks from TextService (ADR-133).
+   * Clients render these according to their capabilities.
+   * Empty array or undefined when no text output was produced.
+   */
+  blocks?: ITextBlock[];
+
   /**
    * Whether the turn succeeded
    */

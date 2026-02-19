@@ -8,6 +8,7 @@
 import type { GameEngine, SequencedEvent } from '@sharpee/engine';
 import type { WorldModel } from '@sharpee/world-model';
 import type { ISaveRestoreHooks, ISaveData, IRestartContext } from '@sharpee/core';
+import { renderToString } from '@sharpee/text-service';
 
 import type {
   BrowserClientConfig,
@@ -169,7 +170,8 @@ export class BrowserClient implements BrowserClientInterface {
    */
   private setupEngineHandlers(): void {
     // Handle text output
-    this.engine.on('text:output', (text: string, turn: number) => {
+    this.engine.on('text:output', (blocks, turn) => {
+      const text = renderToString(blocks);
       console.log('[text:output]', { text, turn, turnOffset: this.turnOffset });
       this.textDisplay.displayText(text);
 

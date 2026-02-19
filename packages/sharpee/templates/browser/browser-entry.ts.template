@@ -10,6 +10,7 @@ import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
+import { renderToString } from '@sharpee/text-service';
 import { story, config } from './index.js';
 
 // DOM elements
@@ -61,8 +62,8 @@ function initializeGame(): void {
   });
 
   // Set up event handlers
-  engine.on('text:output', (text: string, turn: number) => {
-    displayText(text);
+  engine.on('text:output', (blocks, turn) => {
+    displayText(renderToString(blocks));
     currentTurn = turn;
     updateStatusLine();
   });

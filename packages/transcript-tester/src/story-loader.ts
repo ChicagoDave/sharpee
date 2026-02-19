@@ -6,6 +6,7 @@
 
 import * as path from 'path';
 import { GameEngine, TurnResult, SequencedEvent } from '@sharpee/engine';
+import { renderToString } from '@sharpee/text-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
@@ -109,8 +110,8 @@ export function createTestableGame(story: any): TestableGame {
   let lastEvents: SequencedEvent[] = [];
   let lastTurnResult: TurnResult | null = null;
 
-  engine.on('text:output', (text: string) => {
-    outputBuffer.push(text);
+  engine.on('text:output', (blocks) => {
+    outputBuffer.push(renderToString(blocks));
   });
 
   // Capture ALL events through the event emitter (includes scheduler/NPC events)

@@ -29,7 +29,7 @@ const bundlePath = path.resolve(__dirname, '..', '..', '..', 'dist', 'sharpee.js
 const platform = require(bundlePath);
 
 // Extract what we need from the bundle
-const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService, TestingExtension } = platform;
+const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService, TestingExtension, renderToString } = platform;
 
 interface CliOptions {
   transcriptPaths: string[];
@@ -194,8 +194,8 @@ function loadStoryAndCreateGame(storyPath: string): TestableGame {
   let lastEvents: any[] = [];
   let lastTurnResult: any = null;
 
-  engine.on('text:output', (text: string) => {
-    outputBuffer.push(text);
+  engine.on('text:output', (blocks: any) => {
+    outputBuffer.push(renderToString(blocks));
   });
 
   let eventBuffer: any[] = [];

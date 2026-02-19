@@ -33,7 +33,8 @@ import {
   createScopeResolver
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
-import { ITextService, createTextService, renderToString } from '@sharpee/text-service';
+import { ITextService, createTextService } from '@sharpee/text-service';
+import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
@@ -71,8 +72,7 @@ export interface GameEngineEvents {
   'event': (event: SequencedEvent) => void;
   'state:changed': (context: GameContext) => void;
   'game:over': (context: GameContext) => void;
-  'text:output': (text: string, turn: number) => void;
-  'text:channel': (channel: string, text: string, turn: number) => void;
+  'text:output': (blocks: ITextBlock[], turn: number) => void;
 }
 
 type GameEngineEventName = keyof GameEngineEvents;
@@ -721,13 +721,13 @@ export class GameEngine {
         result.events = allTurnEvents as any; // Platform ops may have added completion events
       }
 
-      // Process text output (ADR-096)
+      // Process text output (ADR-096, ADR-133)
       if (this.textService) {
         const turnEvents = this.turnEvents.get(turn) || [];
         const blocks = this.textService.processTurn(turnEvents);
-        const output = renderToString(blocks);
-        if (output) {
-          this.emit('text:output', output, turn);
+        result.blocks = blocks;
+        if (blocks.length > 0) {
+          this.emit('text:output', blocks, turn);
         }
       }
 
@@ -940,13 +940,11 @@ export class GameEngine {
       this.emit('event', event as any);
     }
 
-    // Process events through text service
+    // Process events through text service (ADR-133: emit structured blocks)
     const blocks = this.textService.processTurn(events);
-    const output = renderToString(blocks);
 
-    if (output) {
-      // Emit text output with current turn number (for display context only)
-      this.emit('text:output', output, this.context.currentTurn);
+    if (blocks.length > 0) {
+      this.emit('text:output', blocks, this.context.currentTurn);
     }
   }
 

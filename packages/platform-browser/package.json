@@ -19,6 +19,7 @@
   "peerDependencies": {
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
+    "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "dependencies": {

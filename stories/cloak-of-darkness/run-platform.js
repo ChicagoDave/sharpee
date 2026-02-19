@@ -63,6 +63,7 @@ async function runStory() {
     // Import required modules
     const { WorldModel, EntityType } = require('@sharpee/world-model');
     const { GameEngine } = require('@sharpee/engine');
+    const { renderToString } = require('@sharpee/text-service');
     const { Parser } = require('@sharpee/parser-en-us');
     const { EnglishLanguageProvider } = require('@sharpee/lang-en-us');
     const { TextService } = require('@sharpee/text-services');
@@ -104,8 +105,8 @@ async function runStory() {
 
     // Set up event listeners BEFORE starting the engine
     // Listen for text output
-    engine.on('text:output', (text, turn) => {
-      console.log(text);
+    engine.on('text:output', (blocks, turn) => {
+      console.log(renderToString(blocks));
     });
 
     // Listen for all events

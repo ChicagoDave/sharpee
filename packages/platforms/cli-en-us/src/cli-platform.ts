@@ -1,7 +1,7 @@
 import type { GameEngine, SequencedEvent, PlatformEvent, SaveContext, RestoreContext, QuitContext, RestartContext } from '@sharpee/sharpee';
-import { 
-  QueryManager, 
-  createQueryManager, 
+import {
+  QueryManager,
+  createQueryManager,
   PendingQuery,
   QueryResponse,
   QuerySource,
@@ -13,7 +13,8 @@ import {
   createQuitConfirmedEvent,
   createQuitCancelledEvent,
   createRestartCompletedEvent,
-  SemanticEvent
+  SemanticEvent,
+  renderToString
 } from '@sharpee/sharpee';
 import { CLIInput } from './cli-input';
 import { CLIOutput } from './cli-output';
@@ -109,8 +110,8 @@ export class CLIPlatform {
     });
     
     // Listen for text output
-    this.engine.on('text:output', (text: string, turn: number) => {
-      this.output.write(text);
+    this.engine.on('text:output', (blocks, turn) => {
+      this.output.write(renderToString(blocks));
     });
   }
   

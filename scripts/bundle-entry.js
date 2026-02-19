@@ -230,8 +230,8 @@ Examples:
     let outputBuffer = [];
     let lastEvents = [];
 
-    engine.on('text:output', (text) => {
-      outputBuffer.push(text);
+    engine.on('text:output', (blocks) => {
+      outputBuffer.push(exports.renderToString(blocks));
     });
 
     let eventBuffer = [];

@@ -8,6 +8,7 @@ import { GameEngine, TurnResult } from '@sharpee/engine';
 import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
+import { renderToString } from '@sharpee/text-service';
 // @ts-ignore - lang-en-us types not available yet
 import { LanguageProvider } from '@sharpee/lang-en-us';
 // @ts-ignore - text-services types not available yet
@@ -58,8 +59,8 @@ async function runStory() {
     console.log('Engine started, running:', (engine as any).running);
     
     // Listen for text output
-    engine.on('text:output', (text: string, turn: number) => {
-      console.log(text);
+    engine.on('text:output', (blocks, turn) => {
+      console.log(renderToString(blocks));
     });
     
     // Listen for turn completion

@@ -71,7 +71,7 @@ function createGame() {
   let eventBuffer = [];
   let lastTurnResult = null;
 
-  engine.on('text:output', (text) => { outputBuffer.push(text); });
+  engine.on('text:output', (blocks) => { outputBuffer.push(exports.renderToString(blocks)); });
   engine.on('event', (event) => { eventBuffer.push(event); });
 
   return {

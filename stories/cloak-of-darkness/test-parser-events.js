@@ -11,6 +11,7 @@ const runStory = async () => {
     
     // Initialize the game engine 
     const { GameEngine } = require('@sharpee/engine');
+    const { renderToString } = require('@sharpee/text-service');
     const { EnglishParser } = require('@sharpee/parser-en-us');
     const { EnglishLanguageProvider } = require('@sharpee/lang-en-us');
     const { TextService } = require('../../packages/text-services/dist/index.js');
@@ -38,8 +39,8 @@ const runStory = async () => {
     console.log('Engine started successfully\n');
     
     // Listen for text output
-    engine.on('text:output', (text, turn) => {
-      console.log(text);
+    engine.on('text:output', (blocks, turn) => {
+      console.log(renderToString(blocks));
     });
     
     // Listen for turn completion

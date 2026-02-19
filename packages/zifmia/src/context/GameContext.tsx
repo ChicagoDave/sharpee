@@ -25,6 +25,8 @@ import {
   CurrentRoom,
   GameEvent,
 } from '../types/game-state';
+import { renderToString } from '@sharpee/text-service';
+import type { ITextBlock } from '@sharpee/text-blocks';
 
 interface GameEngineInterface {
   on(event: string, handler: (...args: unknown[]) => void): void;
@@ -194,8 +196,9 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
     const eng = engineRef.current;
     const world = eng.getWorld();
 
-    // Text output handler - fires at end of turn with collected events
-    const handleTextOutput = (text: unknown, turn: unknown) => {
+    // Text output handler - fires at end of turn with collected events (ADR-133: blocks)
+    const handleTextOutput = (blocks: unknown, turn: unknown) => {
+      const text = renderToString(blocks as ITextBlock[]);
       // Log text output to console (matching thin web client behavior)
       console.log('[text:output]', { text, turn });
 
@@ -226,7 +229,7 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       dispatch({
         type: 'TURN_COMPLETED',
         turn: turn as number,
-        text: suppressText ? '' : text as string,
+        text: suppressText ? '' : text,
         command: pendingCommand.current,
         events: turnEvents,
       });

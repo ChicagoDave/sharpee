@@ -17,7 +17,8 @@ import {
   createRestoreCompletedEvent,
   createQuitConfirmedEvent,
   createQuitCancelledEvent,
-  createRestartCompletedEvent
+  createRestartCompletedEvent,
+  renderToString
 } from '@sharpee/sharpee';
 import { BrowserClient } from './browser-client';
 
@@ -102,10 +103,10 @@ export class BrowserPlatform {
     });
     
     // Listen for text output from the text service
-    this.engine.on('text:output', (text: string, turn: number) => {
+    this.engine.on('text:output', (blocks, turn) => {
       // Display the narrative text
-      this.client.displayText(text);
-      
+      this.client.displayText(renderToString(blocks));
+
       // Update turn counter
       this.currentTurn = turn;
       this.updateStatusLine();
