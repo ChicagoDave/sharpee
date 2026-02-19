@@ -170,6 +170,7 @@ Authors should:
 | ADR-097 | React client (Zifmia) — primary target for ARIA implementation |
 | ADR-091 | Decoration types map to HTML emphasis elements |
 | ADR-124 | Illustrations include alt text support |
+| ADR-133 | Structured text output — delivers `ITextBlock[]` to clients with keys intact, enabling per-block ARIA semantics (e.g., `location` blocks → `<section aria-label="Location">`, `score` blocks → `role="status"` region) instead of applying ARIA only to flat-text containers |
 
 ## References
 
