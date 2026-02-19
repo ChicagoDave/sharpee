@@ -206,29 +206,25 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       const turnEvents = [...turnEventsBuffer.current];
       turnEventsBuffer.current = [];
 
-      // Detect save/restore/restart by events OR by command (events may not fire if action validate fails)
-      const isSaveRestore = turnEvents.some(e =>
-        e.type === 'if.event.save_requested' || e.type === 'if.event.restore_requested'
-      );
-      const isRestart = turnEvents.some(e =>
-        e.type === 'platform.restart_completed'
-      );
+      // Detect save/restore/restart by command text
+      // (platform events are no longer in the buffer — they're handled in the event handler)
       const cmd = pendingCommand.current?.trim().toLowerCase();
       const isSaveCommand = cmd === 'save';
       const isRestoreCommand = cmd === 'restore';
+      const isRestart = cmd === 'restart';
 
-      // Fire save/restore dialogs from command detection (fallback when events don't fire)
-      if (isSaveCommand && !isSaveRestore && onSaveRequestedRef.current) {
+      // Fire save/restore dialogs from command detection
+      if (isSaveCommand && onSaveRequestedRef.current) {
         onSaveRequestedRef.current();
       }
-      if (isRestoreCommand && !isSaveRestore && onRestoreRequestedRef.current) {
+      if (isRestoreCommand && onRestoreRequestedRef.current) {
         onRestoreRequestedRef.current();
       }
 
       // Skip TURN_COMPLETED entirely for restart — GAME_RESTARTED already cleared
       // the transcript, and the deferred look will add the initial room description
       if (!isRestart) {
-        const suppressText = isSaveRestore || isSaveCommand || isRestoreCommand;
+        const suppressText = isSaveCommand || isRestoreCommand;
         dispatch({
           type: 'TURN_COMPLETED',
           turn: turn as number,
@@ -239,8 +235,8 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       }
       pendingCommand.current = undefined;
 
-      // Notify parent for auto-save (state updates asynchronously, use next tick)
-      if (onTurnCompletedRef.current) {
+      // Notify parent for auto-save (skip for restart — deferred look will trigger it)
+      if (!isRestart && onTurnCompletedRef.current) {
         setTimeout(() => onTurnCompletedRef.current?.(stateRef.current), 0);
       }
     };
@@ -252,8 +248,14 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       // Log events to console (matching thin web client behavior)
       console.log('[event]', evt.type, evt.data);
 
-      // Add to buffer for Commentary panel
-      turnEventsBuffer.current.push(evt);
+      // Add to buffer for Commentary panel — skip platform/save/restore events
+      // so auto-save between turns doesn't poison the next turn's buffer
+      // (which would suppress text via the isSaveRestore check in handleTextOutput)
+      if (!evt.type.startsWith('platform.') &&
+          evt.type !== 'if.event.save_requested' &&
+          evt.type !== 'if.event.restore_requested') {
+        turnEventsBuffer.current.push(evt);
+      }
 
       // Handle room changes
       if (evt.type === 'if.event.actor_moved') {
@@ -320,12 +322,19 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
             }
           }
 
-          // Clear event buffer so deferred look gets a clean buffer
-          // (restart turn may not emit text:output, leaving stale events)
+          // Clear event buffer so deferred look doesn't see stale restart_completed
+          // (which would cause handleTextOutput to skip the look's TURN_COMPLETED)
           turnEventsBuffer.current = [];
 
-          // Defer look to next tick so it's a separate turn with a clean event buffer
-          setTimeout(() => eng.executeTurn('look'), 0);
+          // Defer look to next tick so it's a separate turn with a clean event buffer.
+          // Clear pendingCommand here because the restart meta produces no text blocks,
+          // so text:output never fires and handleTextOutput never clears it.
+          setTimeout(() => {
+            pendingCommand.current = undefined;
+            eng.executeTurn('look').catch((err: unknown) => {
+              console.error('[restart] deferred look failed:', err);
+            });
+          }, 0);
         }
       }
 

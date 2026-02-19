@@ -21,12 +21,12 @@ export function CommandInput({
   const { value, setValue, addToHistory, handleKeyDown } = useCommandHistory();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus on mount and after each command
+  // Auto-focus on mount, after each command, and after dialogs (e.g. save/restore)
   useEffect(() => {
     if (autoFocus && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [autoFocus, state.turns]);
+  }, [autoFocus, state.turns, state.transcript.length]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
