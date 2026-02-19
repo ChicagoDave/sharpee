@@ -155,6 +155,12 @@ export interface GameLifecycleSessionRestoredData {
   [key: string]: unknown;
 }
 
+export interface GameLifecyclePcSwitchedData {
+  previousPlayerId: string;
+  newPlayerId: string;
+  [key: string]: unknown;
+}
+
 export interface GameLifecycleInitFailedData {
   error: GameEventErrorData;
   [key: string]: unknown;
@@ -200,7 +206,10 @@ export const GameEventType = {
   SESSION_SAVED: 'game.session_saved',           // Save completed
   SESSION_RESTORING: 'game.session_restoring',   // Restore in progress  
   SESSION_RESTORED: 'game.session_restored',     // Restore completed
-  
+
+  // Player character events (ADR-132)
+  PC_SWITCHED: 'game.pc_switched',               // Player character changed
+
   // Error events
   INITIALIZATION_FAILED: 'game.initialization_failed',
   STORY_LOAD_FAILED: 'game.story_load_failed',
@@ -423,6 +432,13 @@ export function createGameAbortedEvent(
     error: {
       message: error
     }
+  });
+}
+
+export function createPcSwitchedEvent(previousPlayerId: string, newPlayerId: string): ISemanticEvent {
+  return createGameEvent<GameLifecyclePcSwitchedData>(GameEventType.PC_SWITCHED, {
+    previousPlayerId,
+    newPlayerId
   });
 }
 

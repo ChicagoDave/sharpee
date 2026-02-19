@@ -61,6 +61,7 @@ export interface EventDataRegistry {
   'game.lost': GameEndedData;
   'game.quit': EmptyData;
   'game.aborted': EmptyData;
+  'game.pc_switched': PcSwitchedData;
 
   // ============================================================
   // Platform Events
@@ -162,6 +163,11 @@ export interface GameEndedData {
   moves?: number;
   reason?: string;
   rank?: string;
+}
+
+export interface PcSwitchedData {
+  previousPlayerId: string;
+  newPlayerId: string;
 }
 
 // ============================================================

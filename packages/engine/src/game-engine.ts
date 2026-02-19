@@ -35,7 +35,7 @@ import {
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { ITextService, createTextService } from '@sharpee/text-service';
 import { ITextBlock } from '@sharpee/text-blocks';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
 
@@ -1074,6 +1074,64 @@ export class GameEngine {
   }
 
   /**
+   * Switch the player character to a different entity (ADR-132).
+   *
+   * Synchronizes all three player identity layers:
+   * 1. ActorTrait.isPlayer on old/new entities
+   * 2. WorldModel.playerId
+   * 3. GameContext.player
+   *
+   * Also resets parser context, vocabulary, and narrative settings.
+   *
+   * Must be called between turns only. Appropriate call sites:
+   * - An interceptor's postExecute() phase
+   * - A daemon/fuse callback
+   * - A story-specific action's execute() phase
+   *
+   * Story code must position the new PC (via world.moveEntity) BEFORE
+   * calling switchPlayer, since parser context uses the entity's current location.
+   */
+  switchPlayer(entityId: string): void {
+    const newPlayer = this.world.getEntity(entityId);
+    if (!newPlayer) {
+      throw new Error(`Cannot switch player: entity '${entityId}' not found`);
+    }
+
+    const newActorTrait = newPlayer.get<ActorTrait>('actor');
+    if (!newActorTrait) {
+      throw new Error(`Cannot switch player: entity '${entityId}' does not have ActorTrait`);
+    }
+
+    if (!newActorTrait.isPlayable) {
+      throw new Error(`Cannot switch player: entity '${entityId}' is not playable`);
+    }
+
+    const oldPlayer = this.context.player;
+    if (oldPlayer.id === entityId) {
+      return;
+    }
+
+    // Clear old PC's flag
+    const oldActorTrait = oldPlayer.get<ActorTrait>('actor');
+    if (oldActorTrait) {
+      oldActorTrait.isPlayer = false;
+    }
+
+    // Set new PC's flag
+    newActorTrait.isPlayer = true;
+
+    // Update WorldModel canonical reference
+    this.world.setPlayer(entityId);
+
+    // Sync all derived state
+    this.syncPlayerState(entityId);
+
+    // Emit events
+    this.emitGameEvent(createPcSwitchedEvent(oldPlayer.id, entityId));
+    this.emit('state:changed', this.context);
+  }
+
+  /**
    * Get world model
    */
   getWorld(): WorldModel {
@@ -1140,6 +1198,34 @@ export class GameEngine {
 
     // Configure language provider
     (this.languageProvider as any).setNarrativeSettings(narrativeContext);
+  }
+
+  /**
+   * Synchronize all derived player state after a player identity change (ADR-132).
+   *
+   * Updates GameContext.player, parser world context, pronoun context,
+   * scope vocabulary, and narrative settings. WorldModel.playerId and
+   * ActorTrait.isPlayer must already be set before calling this.
+   */
+  private syncPlayerState(newPlayerId: string): void {
+    const newPlayer = this.world.getEntity(newPlayerId);
+    if (!newPlayer) {
+      throw new Error(`Cannot sync player state: entity '${newPlayerId}' not found`);
+    }
+
+    this.context.player = newPlayer;
+
+    if (this.parser && hasWorldContext(this.parser)) {
+      const playerLocation = this.world.getLocation(newPlayerId) || '';
+      (this.parser as any).setWorldContext(this.world, newPlayerId, playerLocation);
+    }
+
+    if (this.parser && hasPronounContext(this.parser)) {
+      this.parser.resetPronounContext();
+    }
+
+    this.updateScopeVocabulary();
+    this.configureLanguageProviderNarrative(newPlayer);
   }
 
   /**
@@ -1258,8 +1344,11 @@ export class GameEngine {
     // Restore turn counter
     this.context.currentTurn = result.turn;
 
-    // Update vocabulary for current scope
-    this.updateScopeVocabulary();
+    // Re-sync player state from restored world model (ADR-132)
+    const restoredPlayer = this.world.getPlayer();
+    if (restoredPlayer) {
+      this.syncPlayerState(restoredPlayer.id);
+    }
 
     this.emit('state:changed', this.context);
     return true;
@@ -1354,13 +1443,11 @@ export class GameEngine {
       this.eventSource
     );
 
-    // Reset pronoun context - old references may not be valid (ADR-089)
-    if (this.parser && hasPronounContext(this.parser)) {
-      this.parser.resetPronounContext();
+    // Re-sync player state from restored world model (ADR-132)
+    const restoredPlayer = this.world.getPlayer();
+    if (restoredPlayer) {
+      this.syncPlayerState(restoredPlayer.id);
     }
-
-    // Update vocabulary for current scope
-    this.updateScopeVocabulary();
 
     this.emit('state:changed', this.context);
   }

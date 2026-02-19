@@ -1,7 +1,7 @@
 # ADR-132: Player Character Switching
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 
