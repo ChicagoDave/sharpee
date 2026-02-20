@@ -40,6 +40,8 @@ export interface TranscriptEntry {
   };
   /** ADR-124 illustrations paired with this entry */
   illustrations?: TranscriptIllustration[];
+  /** Filtered overlay-relevant events from this turn (e.g., game.pc_switched) */
+  events?: GameEvent[];
 }
 
 /**
@@ -194,6 +196,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             })
           : undefined;
 
+      // Filter to overlay-relevant events (keep save size small)
+      const overlayEvents = action.events.filter(e =>
+        e.type === 'game.pc_switched'
+      );
+
       const entry: TranscriptEntry = {
         id: `turn-${action.turn}-${Date.now()}`,
         turn: action.turn,
@@ -202,6 +209,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         blocks: action.blocks,
         timestamp: Date.now(),
         illustrations,
+        events: overlayEvents.length > 0 ? overlayEvents : undefined,
       };
       return {
         ...state,

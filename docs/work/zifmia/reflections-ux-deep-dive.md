@@ -547,53 +547,261 @@ For restoring pre-blocks saves: `blocks` is optional. If absent, ChatOverlay fal
 
 ## Implementation Order
 
-### Phase 1: Plumbing (no visual change)
+### Phase 1: Plumbing (no visual change) — COMPLETE
 
-1. Add `blocks?: ITextBlock[]` to `TranscriptEntry` and `TURN_COMPLETED` action
-2. Store blocks in reducer alongside text
-3. Extract current transcript/input JSX from GameShell into `TranscriptOverlay`
-4. Add `overlay` prop to GameShell, default `'transcript'`
-5. GameShell renders `TranscriptOverlay` when overlay is `'transcript'`
+1. ✅ Add `blocks?: ITextBlock[]` to `TranscriptEntry` and `TURN_COMPLETED` action
+2. ✅ Store blocks in reducer alongside text
+3. ✅ Extract current transcript/input JSX from GameShell into `TranscriptOverlay`
+4. ✅ Add `overlay` prop to GameShell, default `'transcript'`
+5. ✅ GameShell renders `TranscriptOverlay` when overlay is `'transcript'`
 
-**Verify**: Dungeo works identically. No visual change.
+**Files**: `game-state.ts`, `GameShell.tsx`, `overlays/TranscriptOverlay.tsx`, `runner/index.tsx`
 
-### Phase 2: Chat skeleton
+### Phase 2: Chat skeleton — COMPLETE
 
-6. Create `ChatOverlay` component with basic message rendering
-7. Create `ChatBubble`, `SystemBubble`, `CommandBubble` components
-8. Implement `routeBlocksToMessages()` with key-based routing
-9. Wire GameShell to render `ChatOverlay` when overlay is `'chat'`
-10. Chat CSS: bubbles, alignment, scrolling
+6. ✅ Create `ChatOverlay` component with basic message rendering
+7. ✅ Create `ChatBubble`, `SystemBubble`, `CommandBubble` components
+8. ✅ Implement `routeBlocksToMessages()` with key-based routing
+9. ✅ Wire GameShell to render `ChatOverlay` when overlay is `'chat'`
+10. ✅ Chat CSS: bubbles, alignment, scrolling
+11. ✅ MenuBar > Settings > Overlay submenu for runtime switching
+12. ✅ StatusLine hidden for chat overlay
+13. ✅ CommandInput chat-style restyling (rounded, hidden prompt)
 
-**Verify**: Hardcoded test with Dungeo in chat mode — every message appears as a system bubble (no `narration.*` keys). Proves the plumbing works.
+**Files**: `overlays/ChatOverlay.tsx`, `overlays/index.ts`, `GameShell.tsx`, `menu/MenuBar.tsx`, `styles/themes.css`
 
-### Phase 3: Character integration
+**Verified**: Dungeo in chat mode — all messages render as system bubbles (no `narration.*` keys). Switching between transcript/chat works at runtime via Settings menu.
 
-11. Parse `config.custom.characters` in runner, pass as `overlayConfig` to GameShell
-12. Implement `useCurrentPc` hook for PC switch tracking
-13. Wire character names, colors, alignment into ChatBubble
-14. PC switch announcements as system bubbles
-15. Message grouping (consecutive same-speaker messages)
+### Phase 3: Character integration — IN PROGRESS
 
-**Verify**: Needs a test story (or Reflections prototype) that emits `narration.*` keys and `game.pc_switched` events.
+Current state of `ChatOverlay.tsx`:
+- `routeBlocksToMessages()` extracts `narration.{characterId}` keys correctly
+- `ChatBubble` alignment is hardcoded to `'left'` (stub comment: "Phase 3: isPC ? 'right' : 'left'")
+- `config` prop is accepted but not consumed (no character lookup)
+- Action blocks use `effectiveCharId = ''` instead of actual PC ID
+
+#### 3a. Store events on TranscriptEntry
+
+**Decision**: Store events on `TranscriptEntry`. The `TURN_COMPLETED` action already carries `events: GameEvent[]`, but the reducer doesn't save them on the entry. This is needed for per-entry PC switch detection.
+
+Add `events?: GameEvent[]` to `TranscriptEntry`:
+
+```typescript
+// game-state.ts
+export interface TranscriptEntry {
+  // ...existing fields...
+  /** Events from this turn (for overlay rendering: PC switches, etc.) */
+  events?: GameEvent[];
+}
+```
+
+In the reducer, store them (filtered to relevant overlay events to limit save size):
+
+```typescript
+// In TURN_COMPLETED case:
+const overlayEvents = action.events.filter(e =>
+  e.type === 'game.pc_switched'
+);
+
+const entry: TranscriptEntry = {
+  // ...existing fields...
+  events: overlayEvents.length > 0 ? overlayEvents : undefined,
+};
+```
+
+#### 3b. Character config types
+
+Define a clean interface for character config passed through `overlayConfig`:
+
+```typescript
+// In ChatOverlay.tsx or a shared types file
+interface CharacterConfig {
+  name: string;           // "The Thief"
+  shortName: string;      // "Thief"
+  color: string;          // CSS color or variable: "var(--reflections-thief)"
+  avatar?: string;        // Asset path: "assets/thief-avatar.png"
+  alignment: 'pc' | 'npc'; // Default side (overridden by PC switch tracking)
+}
+
+type CharacterMap = Record<string, CharacterConfig>;
+```
+
+Parse from `config.characters` in `ChatOverlay`:
+
+```typescript
+export function ChatOverlay({ config }: ChatOverlayProps) {
+  const characters = (config?.characters ?? {}) as CharacterMap;
+  // ...pass to ChatTurn...
+}
+```
+
+#### 3c. useCurrentPc hook
+
+Track the current PC by scanning `lastTurnEvents` for `game.pc_switched`:
+
+```typescript
+// hooks/useCurrentPc.ts
+export function useCurrentPc(): string {
+  const { lastTurnEvents } = useGameState();
+  const [pcId, setPcId] = useState<string>('');
+
+  useEffect(() => {
+    const switchEvent = lastTurnEvents.find(e => e.type === 'game.pc_switched');
+    if (switchEvent) {
+      const data = switchEvent.data as { newPlayerId: string };
+      setPcId(data.newPlayerId);
+    }
+  }, [lastTurnEvents]);
+
+  return pcId;
+}
+```
+
+Used in `ChatOverlay` to determine alignment and attribute action blocks.
+
+#### 3d. Wire character data into ChatBubble
+
+Update `ChatTurn` to pass characters and pcId:
+
+```typescript
+function ChatTurn({ entry, characters, currentPcId }: ChatTurnProps) {
+  if (!entry.blocks) {
+    return <SystemBubble text={entry.text} />;
+  }
+
+  // Check for PC switch in this entry's events
+  const switchEvent = entry.events?.find(e => e.type === 'game.pc_switched');
+
+  const messages = routeBlocksToMessages(entry.blocks, currentPcId);
+
+  return (
+    <>
+      {switchEvent && (
+        <SystemBubble text={`You are now ${
+          characters[(switchEvent.data as any).newPlayerId]?.name ?? 'someone else'
+        }.`} />
+      )}
+      {entry.command && <CommandBubble command={entry.command} />}
+      {messages.map((msg, i) =>
+        msg.type === 'system'
+          ? <SystemBubble key={i} text={renderToString(msg.blocks)} />
+          : <ChatBubble
+              key={i}
+              message={msg}
+              character={characters[msg.characterId ?? '']}
+              isPC={msg.characterId === currentPcId}
+            />
+      )}
+    </>
+  );
+}
+```
+
+Update `ChatBubble` to render character identity and alignment:
+
+```typescript
+function ChatBubble({ message, character, isPC }: ChatBubbleProps) {
+  const alignment = isPC ? 'right' : 'left';
+  const text = renderToString(message.blocks);
+
+  return (
+    <div className={`chat-bubble chat-bubble--${alignment}`}>
+      {!isPC && character?.avatar && (
+        <img className="chat-avatar" src={character.avatar} alt={character.shortName} />
+      )}
+      <div className="chat-bubble__content" style={{ borderColor: character?.color }}>
+        {character && (
+          <div className="chat-bubble__name" style={{ color: character.color }}>
+            {character.shortName}
+          </div>
+        )}
+        <div
+          className="chat-bubble__text"
+          dangerouslySetInnerHTML={{ __html: formatText(text) }}
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+#### 3e. Update routeBlocksToMessages to accept currentPcId
+
+Action blocks need the actual PC ID for attribution:
+
+```typescript
+function routeBlocksToMessages(blocks: ITextBlock[], currentPcId: string): ChatMessage[] {
+  // ...existing grouping logic...
+  const effectiveCharId = isAction ? currentPcId : charId;
+  // ...rest unchanged...
+}
+```
+
+#### 3f. Message grouping
+
+Consecutive messages from the same character should visually group (hide repeated avatar/name). Add a `sameSpeaker` flag:
+
+```typescript
+// In ChatTurn, after building messages array:
+{messages.map((msg, i) => {
+  const prevMsg = i > 0 ? messages[i - 1] : null;
+  const sameSpeaker = prevMsg?.characterId === msg.characterId && prevMsg?.type !== 'system';
+
+  return msg.type === 'system'
+    ? <SystemBubble key={i} text={renderToString(msg.blocks)} />
+    : <ChatBubble
+        key={i}
+        message={msg}
+        character={characters[msg.characterId ?? '']}
+        isPC={msg.characterId === currentPcId}
+        sameSpeaker={sameSpeaker}
+      />;
+})}
+```
+
+CSS handles the grouping (already defined in themes.css):
+
+```css
+.chat-bubble--same-speaker .chat-bubble__name,
+.chat-bubble--same-speaker .chat-avatar {
+  visibility: hidden;
+  height: 0;
+}
+```
+
+#### Phase 3 verification
+
+Needs a test story (or Reflections prototype) that:
+- Declares `config.custom.overlay: 'chat'` and `config.custom.characters`
+- Emits `narration.{characterId}` text blocks via text service
+- Fires `game.pc_switched` events via `engine.switchPlayer()`
+
+Alternative: temporarily hack Dungeo to emit character-keyed blocks for the troll/thief encounters to validate routing without building Reflections.
 
 ### Phase 4: Polish
 
-16. Avatar rendering (from bundle assets)
-17. Responsive behavior (narrower bubbles on mobile)
-18. Typing indicator animation (optional, story-driven via events)
-19. StatusLine suppression in chat overlay
-20. CommandInput chat-style restyling
+14. Avatar rendering (resolve paths from .sharpee bundle assets)
+15. Responsive behavior (narrower bubbles on mobile, max-width adjustments)
+16. Typing indicator animation (optional, story-driven via `game.typing_started` / `game.typing_ended` events)
+17. Scroll-to-bottom behavior refinement (smooth scroll, "new messages" indicator if scrolled up)
+18. Accessibility: ARIA roles on bubbles (`role="log"` on container, `role="listitem"` on messages)
+19. Save/restore: ensure `events` field round-trips correctly through JSON serialization
+
+## Resolved Questions
+
+1. **Events on TranscriptEntry**: YES — store filtered overlay events (just `game.pc_switched` for now) on the entry. The `TURN_COMPLETED` reducer filters to relevant events to keep save size small. This avoids needing a synthetic text block for PC switches.
+
+2. **Narration key convention**: `narration.{characterId}` is confirmed. It groups all character output under one namespace, making routing in `routeBlocksToMessages` clean (single regex match). This is already implemented in Phase 2.
+
+3. **Room descriptions in chat overlay**: System bubbles (centered, muted). Already implemented — `room.*` keys route to `SystemBubble` in `routeBlocksToMessages()`.
 
 ## Open Questions
 
-1. **Should `events` be stored on TranscriptEntry?** Currently `lastTurnEvents` is a single-turn snapshot in GameState. For PC switch detection per-entry, either store events on the entry or emit a dedicated text block with key `game.pc_switched`. Storing events is simpler but increases save size.
+1. **Future overlays**: If we add a third overlay (e.g., `split` for side-by-side transcripts), the `overlay` string and `OverlaySwitch` pattern scales cleanly. Each overlay is just a component that consumes GameContext.
 
-2. **Narration key convention**: Is `narration.{characterId}` the right pattern? Alternative: `character.{id}.narration`, `voice.{id}`. The `narration.*` prefix groups all character output under one namespace, which is clean for routing.
+2. **Initial PC detection**: `useCurrentPc` only sets the PC ID when it sees a `game.pc_switched` event. On game start (before any switch), the PC ID is empty string. Should the hook initialize from the engine's current player? Or should the story emit a synthetic switch event at start?
 
-3. **Room descriptions in chat overlay**: Should room descriptions appear as system bubbles, or as narration attributed to the current PC? iMessage doesn't have "environment" messages, but system bubbles (centered, muted) handle this naturally.
-
-4. **Future overlays**: If we add a third overlay (e.g., `split` for side-by-side transcripts), the `overlay` string and `OverlaySwitch` pattern scales cleanly. Each overlay is just a component that consumes GameContext.
+3. **Character config for Dungeo NPCs**: If Dungeo ever uses chat mode (e.g., for debugging NPC dialogue), should there be a default character map that auto-generates entries from entity IDs? Or is chat mode strictly opt-in per story?
 
 ## Relationship to ADR-125
 
