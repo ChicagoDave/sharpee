@@ -474,6 +474,16 @@ build_platform() {
 }
 
 # ============================================================================
+# Claude API Reference
+# ============================================================================
+
+generate_claude_api() {
+    log_step "Generating Claude API Reference"
+    node scripts/generate-claude-api.js
+    echo ""
+}
+
+# ============================================================================
 # Bundle
 # ============================================================================
 
@@ -976,7 +986,8 @@ if [ -n "$VERSION_OVERRIDE" ]; then
 fi
 echo "  1. Update versions"
 echo "  2. Build platform packages"
-echo "  3. Bundle -> dist/cli/sharpee.js"
+echo "  3. Generate Claude API reference"
+echo "  4. Bundle -> dist/cli/sharpee.js"
 if [ -n "$STORY" ]; then
     echo "  4. Build story: $STORY"
 fi
@@ -1001,6 +1012,7 @@ echo ""
 # Execute build steps
 update_versions
 build_platform
+generate_claude_api
 
 if [ -n "$STORY" ]; then
     build_story "$STORY"

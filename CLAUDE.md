@@ -555,6 +555,7 @@ If stuck or have questions during autonomous work:
 
 ## Key Locations
 
+- **API Reference**: `docs/claude-api/` — auto-generated from `.d.ts` files, read these first instead of exploring packages. See `docs/claude-api/index.md` for navigation.
 - Traits: `packages/world-model/src/traits/`
 - Behaviors: `packages/world-model/src/behaviors/`
 - Actions: `packages/stdlib/src/actions/standard/` (each action has action.ts, action-events.ts, action-data.ts)
