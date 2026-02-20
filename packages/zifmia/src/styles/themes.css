@@ -533,6 +533,37 @@ body {
   color: #d0d0d8;
 }
 
+/* Wide variant for death prompt (4 equal buttons) */
+.zifmia-dialog-buttons--wide {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.zifmia-dialog-buttons--wide button {
+  flex: 1;
+  min-width: 80px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #c8c8d0;
+  font-weight: 500;
+}
+
+.zifmia-dialog-buttons--wide button:first-child {
+  background: linear-gradient(135deg, #c9a84c, #a8893a);
+  color: #1a1a2e;
+  border: none;
+  font-weight: 600;
+}
+
+.zifmia-dialog-buttons--wide button:first-child:hover {
+  background: linear-gradient(135deg, #dbb85c, #c9a84c);
+}
+
+.zifmia-dialog-buttons--wide button:not(:first-child):hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e8;
+}
+
 /* Modal styles for About dialog */
 .modal-overlay {
   position: fixed;

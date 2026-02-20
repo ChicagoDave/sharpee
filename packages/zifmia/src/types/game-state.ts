@@ -109,6 +109,9 @@ export interface GameState {
 
   // Events from current turn (for commentary/map hooks)
   lastTurnEvents: GameEvent[];
+
+  // Input disabled (e.g., player died, awaiting prompt)
+  inputDisabled: boolean;
 }
 
 /**
@@ -124,6 +127,8 @@ export type GameAction =
   | { type: 'TRANSCRIPT_CLEARED' }
   | { type: 'TRANSCRIPT_RESTORED'; transcript: TranscriptEntry[]; turns: number; score: number }
   | { type: 'SYSTEM_MESSAGE'; text: string }
+  | { type: 'PLAYER_DIED' }
+  | { type: 'INPUT_ENABLED' }
   | { type: 'ENGINE_STOPPED' };
 
 /**
@@ -139,6 +144,7 @@ export const initialGameState: GameState = {
   turns: 0,
   transcript: [],
   lastTurnEvents: [],
+  inputDisabled: false,
 };
 
 /**
@@ -245,6 +251,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         transcript: [...state.transcript, sysEntry],
       };
     }
+
+    case 'PLAYER_DIED':
+      return {
+        ...state,
+        inputDisabled: true,
+      };
+
+    case 'INPUT_ENABLED':
+      return {
+        ...state,
+        inputDisabled: false,
+      };
 
     case 'ENGINE_STOPPED':
       return {

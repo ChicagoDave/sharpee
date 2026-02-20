@@ -50,6 +50,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [showDeathPrompt, setShowDeathPrompt] = useState(false);
   const [overlay, setOverlay] = useState<'transcript' | 'chat'>('transcript');
   const { theme, setTheme } = useTheme();
 
@@ -233,6 +234,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
       score: restored.score,
     });
     setShowRestoreDialog(false);
+    handle.dispatch({ type: 'INPUT_ENABLED' });
     handle.dispatch({ type: 'SYSTEM_MESSAGE', text: `Game restored from "${slotName}".` });
   }, [storageProvider]);
 
@@ -281,6 +283,39 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
     storageProvider.autoSave(srm.getStoryId(), saveData);
   }, [storageProvider]);
 
+  // --- Death prompt handlers ---
+
+  const handlePlayerDied = useCallback(() => {
+    setShowDeathPrompt(true);
+  }, []);
+
+  const handleDeathUndo = useCallback(async () => {
+    setShowDeathPrompt(false);
+    const handle = gameHandleRef.current;
+    if (!handle) return;
+    handle.dispatch({ type: 'INPUT_ENABLED' });
+    if (state.phase === 'running') {
+      await state.engine.executeTurn('undo');
+    }
+  }, [state]);
+
+  const handleDeathRestore = useCallback(() => {
+    setShowDeathPrompt(false);
+    setShowRestoreDialog(true);
+  }, []);
+
+  const handleDeathRestart = useCallback(async () => {
+    setShowDeathPrompt(false);
+    if (state.phase === 'running') {
+      await state.engine.executeTurn('restart');
+    }
+  }, [state]);
+
+  const handleDeathQuit = useCallback(() => {
+    setShowDeathPrompt(false);
+    handleQuit();
+  }, [handleQuit]);
+
   // --- Render ---
 
   if (state.phase === 'loading') {
@@ -310,6 +345,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
         onTurnCompleted={handleTurnCompleted}
         onSaveRequested={handleSave}
         onRestoreRequested={handleRestore}
+        onPlayerDied={handlePlayerDied}
         assetMap={state.bundle.assets}
       >
         <GameShell
@@ -373,6 +409,21 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
                 restartResolverRef.current?.(false);
                 restartResolverRef.current = null;
               }}>No</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeathPrompt && (
+        <div className="zifmia-dialog-overlay">
+          <div className="zifmia-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="You have died">
+            <h2>You have died</h2>
+            <p>What would you like to do?</p>
+            <div className="zifmia-dialog-buttons zifmia-dialog-buttons--wide">
+              <button autoFocus onClick={handleDeathUndo}>Undo</button>
+              <button onClick={handleDeathRestore}>Restore</button>
+              <button onClick={handleDeathRestart}>Restart</button>
+              <button onClick={handleDeathQuit}>Quit</button>
             </div>
           </div>
         </div>

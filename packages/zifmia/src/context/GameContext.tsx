@@ -122,6 +122,8 @@ interface GameProviderProps {
   onSaveRequested?: () => void;
   /** Called immediately when the engine emits a restore-requested event */
   onRestoreRequested?: () => void;
+  /** Called when the player dies (if.event.player.died) */
+  onPlayerDied?: () => void;
   /** Asset map from bundle (path → blob URL) */
   assetMap?: Map<string, string>;
   children: ReactNode;
@@ -165,7 +167,7 @@ function extractCurrentRoom(world: WorldInterface, roomId: string): CurrentRoom 
  */
 const EMPTY_ASSET_MAP = new Map<string, string>();
 
-export function GameProvider({ engine, children, handleRef, onTurnCompleted, onSaveRequested, onRestoreRequested, assetMap }: GameProviderProps) {
+export function GameProvider({ engine, children, handleRef, onTurnCompleted, onSaveRequested, onRestoreRequested, onPlayerDied, assetMap }: GameProviderProps) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
   const pendingCommand = useRef<string | undefined>();
   const engineRef = useRef(engine);
@@ -178,6 +180,8 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
   onSaveRequestedRef.current = onSaveRequested;
   const onRestoreRequestedRef = useRef(onRestoreRequested);
   onRestoreRequestedRef.current = onRestoreRequested;
+  const onPlayerDiedRef = useRef(onPlayerDied);
+  onPlayerDiedRef.current = onPlayerDied;
   const onTurnCompletedRef = useRef(onTurnCompleted);
   onTurnCompletedRef.current = onTurnCompleted;
 
@@ -302,6 +306,12 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
       }
       if (evt.type === 'if.event.restore_requested' && onRestoreRequestedRef.current) {
         onRestoreRequestedRef.current();
+      }
+
+      // Handle player death — disable input and notify runner
+      if (evt.type === 'if.event.player.died') {
+        dispatch({ type: 'PLAYER_DIED' });
+        onPlayerDiedRef.current?.();
       }
 
       // Handle restart completed — reset UI, restore room info, and issue initial look

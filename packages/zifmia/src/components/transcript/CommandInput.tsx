@@ -62,7 +62,7 @@ export function CommandInput({
         autoCapitalize="none"
         autoCorrect="off"
         spellCheck={false}
-        disabled={!state.isPlaying}
+        disabled={!state.isPlaying || state.inputDisabled}
       />
     </form>
   );
