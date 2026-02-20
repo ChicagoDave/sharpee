@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT_DIR = path.join(ROOT, 'docs', 'claude-api');
+const OUT_DIR = path.join(ROOT, 'packages', 'sharpee', 'docs', 'claude-api');
 
 // ---------------------------------------------------------------------------
 // Package → output file mapping

@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. Read these files instead of exploring the codebase when you need to understand an API.
 
-Generated: 2026-02-20 20:16:06 UTC
+Generated: 2026-02-20 20:25:06 UTC
 
 ## Quick Start
 
