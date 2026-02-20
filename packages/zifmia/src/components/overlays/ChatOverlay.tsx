@@ -9,8 +9,8 @@
  * Falls back to SystemBubble for entries without blocks (system messages, pre-blocks saves).
  */
 
-import React, { useRef, useEffect } from 'react';
-import { useGameState } from '../../context/GameContext';
+import React, { useRef, useEffect, useCallback } from 'react';
+import { useGameState, useAssetMap } from '../../context/GameContext';
 import { useCurrentPc } from '../../hooks/useCurrentPc';
 import { CommandInput } from '../transcript/CommandInput';
 import { renderToString } from '@sharpee/text-service';
@@ -43,6 +43,7 @@ interface ChatTurnProps {
   entry: TranscriptEntry;
   characters: CharacterMap;
   currentPcId: string;
+  assetMap: Map<string, string>;
 }
 
 interface ChatBubbleProps {
@@ -50,34 +51,58 @@ interface ChatBubbleProps {
   character?: CharacterConfig;
   isPC: boolean;
   sameSpeaker: boolean;
+  avatarUrl?: string;
 }
 
 // -- Components --
 
 export function ChatOverlay({ config }: ChatOverlayProps) {
   const { transcript } = useGameState();
+  const assetMap = useAssetMap();
   const currentPcId = useCurrentPc();
   const characters = (config?.characters ?? {}) as CharacterMap;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
 
-  // Auto-scroll to bottom when transcript updates
+  // Track whether user is scrolled to bottom
+  const handleScroll = useCallback(() => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 40;
+    }
+  }, []);
+
+  // Auto-scroll to bottom when transcript updates (only if already at bottom)
   useEffect(() => {
-    requestAnimationFrame(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }
-    });
+    if (isAtBottomRef.current) {
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({
+            top: scrollRef.current.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+      });
+    }
   }, [transcript]);
 
   return (
     <div className="chat-overlay">
-      <div className="chat-messages" ref={scrollRef}>
+      <div
+        className="chat-messages"
+        ref={scrollRef}
+        onScroll={handleScroll}
+        role="log"
+        aria-label="Chat messages"
+        aria-live="polite"
+      >
         {transcript.map(entry => (
           <ChatTurn
             key={entry.id}
             entry={entry}
             characters={characters}
             currentPcId={currentPcId}
+            assetMap={assetMap}
           />
         ))}
       </div>
@@ -88,7 +113,7 @@ export function ChatOverlay({ config }: ChatOverlayProps) {
   );
 }
 
-function ChatTurn({ entry, characters, currentPcId }: ChatTurnProps) {
+function ChatTurn({ entry, characters, currentPcId, assetMap }: ChatTurnProps) {
   if (!entry.blocks) {
     // Fallback: system messages, pre-blocks saves, annotation entries
     return <SystemBubble text={entry.text} />;
@@ -109,15 +134,18 @@ function ChatTurn({ entry, characters, currentPcId }: ChatTurnProps) {
       {messages.map((msg, i) => {
         const prevMsg = i > 0 ? messages[i - 1] : null;
         const sameSpeaker = !!(prevMsg && prevMsg.characterId === msg.characterId && prevMsg.type !== 'system');
+        const character = characters[msg.characterId ?? ''];
+        const avatarUrl = resolveAvatar(character, assetMap);
 
         return msg.type === 'system'
           ? <SystemBubble key={i} text={renderToString(msg.blocks)} />
           : <ChatBubble
               key={i}
               message={msg}
-              character={characters[msg.characterId ?? '']}
+              character={character}
               isPC={msg.characterId === currentPcId}
               sameSpeaker={sameSpeaker}
+              avatarUrl={avatarUrl}
             />;
       })}
     </>
@@ -129,16 +157,17 @@ function SystemBubble({ text }: { text: string }) {
   return (
     <div
       className="system-bubble"
+      role="status"
       dangerouslySetInnerHTML={{ __html: formatText(text) }}
     />
   );
 }
 
 function CommandBubble({ command }: { command: string }) {
-  return <div className="command-bubble">{command}</div>;
+  return <div className="command-bubble" role="listitem">{command}</div>;
 }
 
-function ChatBubble({ message, character, isPC, sameSpeaker }: ChatBubbleProps) {
+function ChatBubble({ message, character, isPC, sameSpeaker, avatarUrl }: ChatBubbleProps) {
   const text = renderToString(message.blocks);
   const alignment = isPC ? 'right' : 'left';
   const classes = [
@@ -148,12 +177,12 @@ function ChatBubble({ message, character, isPC, sameSpeaker }: ChatBubbleProps) 
   ].filter(Boolean).join(' ');
 
   return (
-    <div className={classes}>
-      {!isPC && character?.avatar && (
-        <img className="chat-avatar" src={character.avatar} alt={character.shortName} />
+    <div className={classes} role="listitem">
+      {!isPC && avatarUrl && (
+        <img className="chat-avatar" src={avatarUrl} alt={character?.shortName ?? ''} />
       )}
       <div className="chat-bubble__content" style={{ borderColor: character?.color }}>
-        {character && (
+        {character && !sameSpeaker && (
           <div className="chat-bubble__name" style={{ color: character.color }}>
             {character.shortName}
           </div>
@@ -168,6 +197,18 @@ function ChatBubble({ message, character, isPC, sameSpeaker }: ChatBubbleProps) 
 }
 
 // -- Utilities --
+
+/**
+ * Resolve a character's avatar path to a blob URL via the asset map.
+ * Tries the path as-is, then with 'assets/' prefix (matching illustration resolution).
+ */
+function resolveAvatar(
+  character: CharacterConfig | undefined,
+  assetMap: Map<string, string>,
+): string | undefined {
+  if (!character?.avatar) return undefined;
+  return assetMap.get(character.avatar) ?? assetMap.get(`assets/${character.avatar}`);
+}
 
 /**
  * Route blocks to chat messages by key prefix.

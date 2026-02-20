@@ -738,6 +738,14 @@ body {
   border-right: 3px solid var(--sharpee-accent);
 }
 
+.chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .chat-bubble__name {
   font-family: var(--sharpee-font-ui);
   font-size: 0.8em;
@@ -755,6 +763,16 @@ body {
 
 .chat-bubble__text p + p {
   margin-top: 0.4em;
+}
+
+/* Message grouping: consecutive messages from same character */
+.chat-bubble--same-speaker {
+  margin-top: calc(-1 * var(--sharpee-spacing-sm) + 2px);
+}
+
+.chat-bubble--same-speaker .chat-avatar {
+  visibility: hidden;
+  width: 32px; /* preserve layout space */
 }
 
 .system-bubble {
@@ -1688,5 +1706,23 @@ body {
 
   .game-shell__main {
     flex: 1;
+  }
+
+  /* Chat overlay: wider bubbles on small screens */
+  .chat-bubble {
+    max-width: 88%;
+  }
+
+  .command-bubble {
+    max-width: 88%;
+  }
+
+  .chat-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .chat-bubble--same-speaker .chat-avatar {
+    width: 24px;
   }
 }
