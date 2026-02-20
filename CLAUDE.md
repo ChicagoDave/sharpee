@@ -170,6 +170,14 @@ Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
 All 43 stdlib actions now follow four-phase pattern (validate/execute/report/blocked):
 about, attacking, climbing, drinking, eating, opening, closing, pulling, pushing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining, waiting, locking, unlocking, switching_on, switching_off, wearing, taking_off, giving, throwing, touching, smelling, listening, talking, searching, reading, showing, sleeping, help, inventory, quitting, scoring, restarting, restoring, saving
 
+## API Reference (GenAI)
+
+**Before exploring source code**, check `packages/sharpee/docs/genai-api/` for auto-generated API declarations. These files contain full type signatures extracted from `.d.ts` files and are faster to read than navigating the source tree.
+
+- `packages/sharpee/docs/genai-api/index.md` — navigation and quick start
+- Read `engine.md` first for the `Story` interface, then `world-model.md` for entities/traits
+- Also shipped in the npm package at `node_modules/@sharpee/sharpee/docs/genai-api/`
+
 ## Core Concepts Reference
 
 Read `/docs/reference/core-concepts.md` at the start of each session for:
