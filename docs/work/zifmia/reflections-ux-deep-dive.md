@@ -778,14 +778,16 @@ Needs a test story (or Reflections prototype) that:
 
 Alternative: temporarily hack Dungeo to emit character-keyed blocks for the troll/thief encounters to validate routing without building Reflections.
 
-### Phase 4: Polish
+### Phase 4: Polish — COMPLETE
 
-14. Avatar rendering (resolve paths from .sharpee bundle assets)
-15. Responsive behavior (narrower bubbles on mobile, max-width adjustments)
-16. Typing indicator animation (optional, story-driven via `game.typing_started` / `game.typing_ended` events)
-17. Scroll-to-bottom behavior refinement (smooth scroll, "new messages" indicator if scrolled up)
-18. Accessibility: ARIA roles on bubbles (`role="log"` on container, `role="listitem"` on messages)
-19. Save/restore: ensure `events` field round-trips correctly through JSON serialization
+14. ✅ Avatar rendering — `resolveAvatar()` uses `useAssetMap()` to resolve `character.avatar` paths to blob URLs (same pattern as illustration resolution: try bare path, then `assets/` prefix)
+15. ✅ Responsive behavior — `@media (max-width: 768px)`: wider bubbles (88% max-width), smaller avatars (24px)
+16. ⏳ Typing indicator animation — deferred, requires story-driven events (`game.typing_started` / `game.typing_ended`) that don't exist yet
+17. ✅ Scroll-to-bottom refinement — `isAtBottomRef` tracks scroll position, only auto-scrolls if user is at bottom, uses `behavior: 'smooth'`
+18. ✅ Accessibility — `role="log"` + `aria-live="polite"` on message container, `role="listitem"` on bubbles, `role="status"` on system bubbles
+19. ✅ Save/restore — `events` field is `GameEvent[]` (pure JSON-serializable), stored only when present (undefined otherwise)
+
+**Files**: `overlays/ChatOverlay.tsx`, `styles/themes.css`
 
 ## Resolved Questions
 
