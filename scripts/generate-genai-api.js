@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 /**
- * generate-claude-api.js
+ * generate-genai-api.js
  *
  * Reads generated .d.ts files from each Sharpee package and produces
- * organized markdown files in docs/claude-api/ for Claude to reference
- * when writing code against the platform.
+ * organized markdown files in docs/genai-api/ for AI coding assistants
+ * to reference when writing code against the platform.
  *
- * Run: node scripts/generate-claude-api.js
+ * Run: node scripts/generate-genai-api.js
  * Integrated into build.sh after platform build.
+ * Ships with the @sharpee/sharpee npm package.
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const OUT_DIR = path.join(ROOT, 'packages', 'sharpee', 'docs', 'claude-api');
+const OUT_DIR = path.join(ROOT, 'packages', 'sharpee', 'docs', 'genai-api');
 
 // ---------------------------------------------------------------------------
 // Package → output file mapping
@@ -312,10 +313,10 @@ function generateGroupMarkdown(group) {
  */
 function generateIndex(groups, stats) {
   const lines = [];
-  lines.push('# Sharpee API Reference (for Claude)');
+  lines.push('# Sharpee API Reference');
   lines.push('');
   lines.push(
-    'Auto-generated from `.d.ts` declarations. Read these files instead of exploring the codebase when you need to understand an API.'
+    'Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.'
   );
   lines.push('');
   lines.push(`Generated: ${new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC')}`);

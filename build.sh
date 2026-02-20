@@ -474,12 +474,12 @@ build_platform() {
 }
 
 # ============================================================================
-# Claude API Reference
+# GenAI API Reference
 # ============================================================================
 
-generate_claude_api() {
-    log_step "Generating Claude API Reference"
-    node scripts/generate-claude-api.js
+generate_genai_api() {
+    log_step "Generating GenAI API Reference"
+    node scripts/generate-genai-api.js
     echo ""
 }
 
@@ -986,7 +986,7 @@ if [ -n "$VERSION_OVERRIDE" ]; then
 fi
 echo "  1. Update versions"
 echo "  2. Build platform packages"
-echo "  3. Generate Claude API reference"
+echo "  3. Generate GenAI API reference"
 echo "  4. Bundle -> dist/cli/sharpee.js"
 if [ -n "$STORY" ]; then
     echo "  4. Build story: $STORY"
@@ -1012,7 +1012,7 @@ echo ""
 # Execute build steps
 update_versions
 build_platform
-generate_claude_api
+generate_genai_api
 
 if [ -n "$STORY" ]; then
     build_story "$STORY"
