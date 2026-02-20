@@ -140,6 +140,13 @@ function handleVillainDeath(
         world.removeEntity(item.id);
       }
       world.removeEntity(villain.id);
+
+      // Store death messages for postReport to emit
+      sharedData.deathMessages = [
+        'Almost as soon as the troll breathes his last, a cloud of sinister black smoke envelops him, and when the fog lifts, the carcass has disappeared.',
+        'With the troll dispatched, the passage to the north is now clear.',
+      ];
+
       return true; // Entity cleanup handled — skip default inventory drop
     }
 

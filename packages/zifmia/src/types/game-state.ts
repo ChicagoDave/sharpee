@@ -5,6 +5,8 @@
  * to avoid bundling issues with esbuild. The actual engine is passed in at runtime.
  */
 
+import type { ITextBlock } from '@sharpee/text-blocks';
+
 /**
  * ADR-109 play-tester annotation types
  */
@@ -28,6 +30,8 @@ export interface TranscriptEntry {
   turn: number;
   command?: string;
   text: string;
+  /** Raw structured blocks for overlay rendering (ADR-133) */
+  blocks?: ITextBlock[];
   timestamp: number;
   /** ADR-109 play-tester annotation (when this entry is an annotation rather than game output) */
   annotation?: {
@@ -114,7 +118,7 @@ export type GameAction =
   | { type: 'GAME_RESTARTED' }
   | { type: 'ROOM_CHANGED'; room: CurrentRoom }
   | { type: 'SCORE_CHANGED'; score: number; maxScore?: number }
-  | { type: 'TURN_COMPLETED'; turn: number; text: string; command?: string; events: GameEvent[] }
+  | { type: 'TURN_COMPLETED'; turn: number; text: string; blocks?: ITextBlock[]; command?: string; events: GameEvent[] }
   | { type: 'TRANSCRIPT_CLEARED' }
   | { type: 'TRANSCRIPT_RESTORED'; transcript: TranscriptEntry[]; turns: number; score: number }
   | { type: 'SYSTEM_MESSAGE'; text: string }
@@ -195,6 +199,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         turn: action.turn,
         command: action.command,
         text: action.text,
+        blocks: action.blocks,
         timestamp: Date.now(),
         illustrations,
       };

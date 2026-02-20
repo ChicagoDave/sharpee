@@ -43,13 +43,14 @@ export interface ZifmiaRunnerProps {
 type RunnerState =
   | { phase: 'loading' }
   | { phase: 'error'; error: Error }
-  | { phase: 'running'; engine: GameEngine; bundle: LoadedBundle; world: WorldModel };
+  | { phase: 'running'; engine: GameEngine; bundle: LoadedBundle; world: WorldModel; storyCustom?: Record<string, any> };
 
 export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded }: ZifmiaRunnerProps) {
   const [state, setState] = useState<RunnerState>({ phase: 'loading' });
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [overlay, setOverlay] = useState<'transcript' | 'chat'>('transcript');
   const { theme, setTheme } = useTheme();
 
   const gameHandleRef = useRef<GameProviderHandle | null>(null);
@@ -151,7 +152,9 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
         }
 
         onLoaded?.(loadedBundle.metadata);
-        setState({ phase: 'running', engine: engine as unknown as GameEngine, bundle: loadedBundle, world });
+        const initialOverlay = (story.config.custom?.overlay as 'transcript' | 'chat') ?? 'transcript';
+        setOverlay(initialOverlay);
+        setState({ phase: 'running', engine: engine as unknown as GameEngine, bundle: loadedBundle, world, storyCustom: story.config.custom });
       } catch (err) {
         if (cancelled) return;
         const error = err instanceof Error ? err : new Error(String(err));
@@ -296,6 +299,7 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
 
   const storyTitle = state.bundle.metadata.title;
   const storyId = getStoryId();
+  const overlayConfig = state.storyCustom;
 
   return (
     <>
@@ -314,6 +318,9 @@ export function ZifmiaRunner({ bundleUrl, bundleData, onClose, onError, onLoaded
           storyMetadata={state.bundle.metadata}
           zifmiaVersion={CLIENT_VERSION}
           engineVersion={ENGINE_VERSION}
+          overlay={overlay}
+          overlayConfig={overlayConfig}
+          onOverlayChange={setOverlay as (overlay: string) => void}
           onSave={handleSave}
           onRestore={handleRestore}
           onQuit={handleQuit}

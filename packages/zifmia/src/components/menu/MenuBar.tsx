@@ -14,6 +14,8 @@ export interface MenuBarProps {
   onExportWalkthrough?: () => void;
   onThemeChange?: (theme: string) => void;
   currentTheme?: string;
+  onOverlayChange?: (overlay: string) => void;
+  currentOverlay?: string;
   storyTitle?: string;
   storyMetadata?: StoryMetadata;
   zifmiaVersion?: string;
@@ -36,6 +38,11 @@ const THEMES = [
   { id: 'paper', label: 'Paper' },
 ];
 
+const OVERLAYS = [
+  { id: 'transcript', label: 'Transcript' },
+  { id: 'chat', label: 'Chat' },
+];
+
 export function MenuBar({
   onSave,
   onRestore,
@@ -44,6 +51,8 @@ export function MenuBar({
   onExportWalkthrough,
   onThemeChange,
   currentTheme = 'classic-light',
+  onOverlayChange,
+  currentOverlay = 'transcript',
   storyTitle = 'Sharpee',
   storyMetadata,
   zifmiaVersion,
@@ -129,6 +138,14 @@ export function MenuBar({
           checked: preferences.illustrationSize === size.id,
         })),
       ],
+    },
+    {
+      label: 'Overlay',
+      submenu: OVERLAYS.map(o => ({
+        label: o.label,
+        action: () => onOverlayChange?.(o.id),
+        checked: currentOverlay === o.id,
+      })),
     },
   ];
 

@@ -229,6 +229,7 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
           type: 'TURN_COMPLETED',
           turn: turn as number,
           text: suppressText ? '' : text,
+          blocks: suppressText ? undefined : (blocks as ITextBlock[]),
           command: pendingCommand.current,
           events: turnEvents,
         });

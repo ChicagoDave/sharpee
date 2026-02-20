@@ -1,3 +1,25 @@
+<html lang="en" data-theme="paper"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DUNGEON — Zifmia</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "@sharpee/core": "./modules/platform.js",
+      "@sharpee/world-model": "./modules/platform.js",
+      "@sharpee/engine": "./modules/platform.js",
+      "@sharpee/stdlib": "./modules/platform.js",
+      "@sharpee/parser-en-us": "./modules/platform.js",
+      "@sharpee/lang-en-us": "./modules/platform.js",
+      "@sharpee/plugin-npc": "./modules/platform.js",
+      "@sharpee/plugin-scheduler": "./modules/platform.js",
+      "@sharpee/plugin-state-machine": "./modules/platform.js",
+      "@sharpee/if-domain": "./modules/platform.js",
+      "@sharpee/if-services": "./modules/platform.js"
+    }
+  }
+  </script>
+  <style nonce="">
 /**
  * Sharpee React Client - Combined Themes
  *
@@ -688,117 +710,6 @@ body {
   border-left: 1px solid var(--sharpee-border);
   overflow: hidden;
   background-color: var(--sharpee-panel-bg);
-}
-
-/* ============================================================================
-   Chat Overlay
-   ============================================================================ */
-
-.chat-overlay {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-
-.chat-messages {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--sharpee-spacing-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sharpee-spacing-sm);
-}
-
-.chat-bubble {
-  display: flex;
-  gap: var(--sharpee-spacing-sm);
-  max-width: 75%;
-}
-
-.chat-bubble--right {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.chat-bubble--left {
-  align-self: flex-start;
-}
-
-.chat-bubble__content {
-  background: var(--sharpee-panel-bg);
-  border-radius: 12px;
-  border-left: 3px solid var(--sharpee-accent);
-  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-md);
-}
-
-.chat-bubble--right .chat-bubble__content {
-  border-left: none;
-  border-right: 3px solid var(--sharpee-accent);
-}
-
-.chat-bubble__name {
-  font-family: var(--sharpee-font-ui);
-  font-size: 0.8em;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.chat-bubble__text {
-  font-family: var(--sharpee-font-transcript);
-}
-
-.chat-bubble__text p {
-  margin: 0;
-}
-
-.chat-bubble__text p + p {
-  margin-top: 0.4em;
-}
-
-.system-bubble {
-  text-align: center;
-  color: var(--sharpee-text-muted);
-  font-style: italic;
-  padding: var(--sharpee-spacing-xs) 0;
-  font-size: 0.9em;
-  font-family: var(--sharpee-font-transcript);
-}
-
-.system-bubble p {
-  margin: 0;
-}
-
-.system-bubble p + p {
-  margin-top: 0.4em;
-}
-
-.command-bubble {
-  align-self: flex-end;
-  max-width: 75%;
-  background: var(--sharpee-accent);
-  color: var(--sharpee-bg);
-  border-radius: 12px;
-  padding: var(--sharpee-spacing-xs) var(--sharpee-spacing-md);
-  font-family: var(--sharpee-font-input, var(--sharpee-font-ui));
-}
-
-.chat-input-area {
-  flex-shrink: 0;
-  border-top: 1px solid var(--sharpee-border);
-  padding: var(--sharpee-spacing-sm) var(--sharpee-spacing-md);
-  background: var(--sharpee-bg);
-}
-
-.chat-input-area .command-input-form {
-  background: var(--sharpee-panel-bg);
-  border-radius: 20px;
-  padding: var(--sharpee-spacing-xs) var(--sharpee-spacing-md);
-}
-
-.chat-input-area .command-prompt {
-  display: none;
 }
 
 /* ============================================================================
@@ -1690,3 +1601,11 @@ body {
     flex: 1;
   }
 }
+
+  </style>
+</head>
+<body>
+  <div id="root"><div class="game-shell "><div class="menu-bar"><div class="menu-bar__title">DUNGEON</div><div class="menu-bar__menus"><div class="menu-bar__menu"><button class="menu-bar__button ">File</button></div><div class="menu-bar__menu"><button class="menu-bar__button ">Settings</button></div><div class="menu-bar__menu"><button class="menu-bar__button ">Help</button></div></div></div><div class="status-line game-shell__status"><span class="status-location">Living Room</span><span class="status-right"><span class="status-score">Score: 0</span><span class="status-separator"> | </span><span class="status-turns">Turns: 8</span></span></div><div class="game-shell__content"><div class="game-shell__main game-shell__main--full"><div class="story-content"><div class="game-shell__transcript-container"><div class="transcript game-shell__transcript" style="font-family: Literata, &quot;Crimson Text&quot;, Georgia, serif; font-size: 16px;"><div class="transcript-entry"><div class="transcript-text"><p>DUNGEON</p><p>Story v0.9.91-beta (built 2026-02-19)<br>Sharpee v0.9.91-beta</p><p>A port of Mainframe Zork (1981)<br>By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling<br>Ported by David Cornelson</p><p>Type HELP for instructions, ABOUT for credits.</p><p>West of House</p><p>This is an open field west of a white house with a boarded front door.</p><p>You can see small mailbox, front door, welcome mat, white house here.</p></div></div><div class="transcript-entry"><div class="transcript-command"><span class="transcript-prompt">&gt; </span>open mailbox</div><div class="transcript-text"><p>You open small mailbox.<br>Inside the small mailbox you see leaflet.</p></div></div><div class="transcript-entry"><div class="transcript-command"><span class="transcript-prompt">&gt; </span>get all</div><div class="transcript-text"><p>leaflet: Taken.<br>welcome mat: Taken.</p></div></div><div class="transcript-entry"><div class="transcript-command"><span class="transcript-prompt">&gt; </span>n</div><div class="transcript-text"><p>North of House</p><p>You are facing the north side of a white house. There is no door here, and all the windows are barred.</p><p>You can see white house here.</p></div></div><div class="transcript-entry"><div class="transcript-command"><span class="transcript-prompt">&gt; </span>e</div><div class="transcript-text"><p>Behind House</p><p>You are behind the white house. In one corner of the house there is a small window which is slightly ajar.</p><p>You can see window, white house here.</p></div></div><div class="transcript-entry"><div class="transcript-command"><span class="transcript-prompt">&gt; </span>open window</div><div class="transcript-text"><p>With great effort, you open the window far enough to allow entry.</p></div></div><div class="transcript-entry"><div class="transcript-command"><span class="transcript-prompt">&gt; </span>in</div><div class="transcript-text"><p>Kitchen</p><p>This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.</p><p>You can see kitchen table, elongated brown sack, glass bottle here.</p></div></div><div class="transcript-entry"><div class="transcript-command"><span class="transcript-prompt">&gt; </span>w</div><div class="transcript-text"><p>Living Room</p><p>This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.</p><p>You can see trophy case, elvish sword, brass lantern, large oriental rug, wooden door here.</p></div></div></div></div><div class="game-shell__input-container"><form class="command-input-form game-shell__input"><span class="command-prompt">&gt;</span><input type="text" class="command-input" placeholder="" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" value=""></form></div></div></div></div></div></div>
+  <script src="runner.js"></script>
+
+</body></html>

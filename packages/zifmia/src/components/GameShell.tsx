@@ -9,8 +9,7 @@
 import React from 'react';
 import { MenuBar } from './menu/MenuBar';
 import { StatusLine } from './status/StatusLine';
-import { Transcript } from './transcript/Transcript';
-import { CommandInput } from './transcript/CommandInput';
+import { TranscriptOverlay, ChatOverlay } from './overlays';
 import type { StoryMetadata } from '../types/story-metadata';
 
 export interface GameShellProps {
@@ -34,6 +33,11 @@ export interface GameShellProps {
   onExportWalkthrough?: () => void;
   onThemeChange?: (theme: string) => void;
   currentTheme?: string;
+  onOverlayChange?: (overlay: string) => void;
+  /** Overlay type: 'transcript' (default) or 'chat' */
+  overlay?: 'transcript' | 'chat';
+  /** Overlay configuration from story config.custom */
+  overlayConfig?: Record<string, unknown>;
 }
 
 export function GameShell({
@@ -50,6 +54,9 @@ export function GameShell({
   onExportWalkthrough,
   onThemeChange,
   currentTheme,
+  onOverlayChange,
+  overlay = 'transcript',
+  overlayConfig,
 }: GameShellProps) {
   const showMenuBar = onSave || onRestore || onQuit;
 
@@ -68,20 +75,19 @@ export function GameShell({
           onExportWalkthrough={onExportWalkthrough}
           onThemeChange={onThemeChange}
           currentTheme={currentTheme}
+          onOverlayChange={onOverlayChange}
+          currentOverlay={overlay}
         />
       )}
 
-      <StatusLine className="game-shell__status" />
+      {overlay !== 'chat' && <StatusLine className="game-shell__status" />}
 
       <div className="game-shell__content">
         <div className="game-shell__main game-shell__main--full">
           <div className="story-content">
-            <div className="game-shell__transcript-container">
-              <Transcript className="game-shell__transcript" />
-            </div>
-            <div className="game-shell__input-container">
-              <CommandInput className="game-shell__input" />
-            </div>
+            {overlay === 'chat'
+              ? <ChatOverlay config={overlayConfig} />
+              : <TranscriptOverlay />}
           </div>
         </div>
       </div>
