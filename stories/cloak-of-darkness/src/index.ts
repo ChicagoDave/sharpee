@@ -11,6 +11,7 @@
  */
 
 import { Story, StoryConfig } from '@sharpee/engine';
+import type { CustomVocabulary } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 // @ts-ignore - lang-en-us types not available yet
 import type { LanguageProvider } from '@sharpee/lang-en-us';
@@ -654,39 +655,38 @@ export class CloakOfDarknessStory implements Story {
   /**
    * Extend the parser with custom vocabulary for this story
    */
-  extendParser(parser: Parser): void {
-    // Add HANG verb with prepositions
-    parser.addVerb('HANG', ['hang', 'hook'], 'VERB NOUN PREP NOUN', ['on']);
-    
-    // READ is already a standard verb, no need to add it
+  extendParser(_parser: Parser): void {
+    // Verbs are registered via getCustomVocabulary() — no parser.addVerb needed
+  }
+
+  /**
+   * Register custom vocabulary — "hang" as a PUT_ON synonym
+   */
+  getCustomVocabulary(): CustomVocabulary {
+    return {
+      verbs: [
+        {
+          actionId: 'PUT_ON',
+          verbs: ['hang', 'hook'],
+          pattern: 'VERB NOUN PREP NOUN',
+          prepositions: ['on']
+        }
+      ]
+    };
   }
   
   /**
    * Extend the language provider with custom messages for this story
    */
   extendLanguage(language: LanguageProvider): void {
-    // Add custom messages for HANG action
-    language.addMessage('action.hang.success', 'You hang {item} on {supporter}.');
-    language.addMessage('action.hang.error.incomplete_command', 'What do you want to hang on what?');
-    language.addMessage('action.hang.error.cant_hang_that_way', 'You can\'t hang things that way.');
-    language.addMessage('action.hang.error.not_found', 'You can\'t see that here.');
-    language.addMessage('action.hang.error.not_carrying', 'You need to be carrying {item} first.');
-    language.addMessage('action.hang.error.cant_hang_that', 'You can\'t hang {item} on {supporter}.');
-    language.addMessage('action.hang.success.hung_cloak', 'You carefully hang the velvet cloak on the small brass hook.');
-    
-    // Add custom messages for READ action
+    // Stumble message for dark bar
+    language.addMessage('cloak.stumble', 'Blundering around in the dark isn\'t a good idea!');
+
+    // Custom messages for READ action
     language.addMessage('action.read.error.what_to_read', 'What do you want to read?');
     language.addMessage('READ.cant_read_message', '{reason}');
     language.addMessage('action.read.success.read_message', '{description}\n\n{text}');
     language.addMessage('action.read.error.nothing_to_read', 'There\'s nothing written on {item}.');
-    
-    // Add help for HANG action
-    language.addActionHelp('HANG', {
-      description: 'Hang an item on a support like a hook or peg',
-      verbs: ['hang', 'put'],
-      summary: 'Hang something on a support',
-      examples: ['hang cloak on hook', 'hang coat on peg']
-    });
   }
   
   /**
@@ -694,125 +694,6 @@ export class CloakOfDarknessStory implements Story {
    */
   getCustomActions(): any[] {
     return [
-      // Custom HANG action for hanging the cloak
-      {
-        id: 'HANG',
-        // verbs are registered via getCustomVocabulary
-        patterns: ['VERB NOUN PREP NOUN'],
-        
-        execute: (context: any) => {
-          const events: any[] = [];
-          const { directObject, preposition, indirectObject } = context.command;
-          
-          console.log('HANG action executed!');
-          console.log('Command:', JSON.stringify(context.command, null, 2));
-          console.log('Direct object:', directObject);
-          console.log('Indirect object:', indirectObject);
-          
-          // Check if we have the required parts
-          if (!directObject || !preposition || !indirectObject) {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'incomplete_command',
-              reason: 'missing_parts'
-            })];
-          }
-          
-          // Check if it's "hang X on Y"
-          const prep = preposition.text?.toLowerCase();
-          if (prep !== 'on') {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'cant_hang_that_way',
-              reason: 'wrong_preposition'
-            })];
-          }
-          
-          // Get the entities
-          const item = directObject.entity;
-          const supporter = indirectObject.entity;
-          
-          if (!item || !supporter) {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'not_found',
-              reason: 'entity_not_found'
-            })];
-          }
-          
-          // Check if we're hanging the cloak on the hook
-          const isCloak = item.name === 'velvet cloak' || item.name === 'cloak';
-          const isHook = supporter.name === 'brass hook' || supporter.name === 'hook';
-          if (isCloak && isHook) {
-            // Check if player is carrying the cloak
-            const cloakLocation = context.world.getLocation(item.id);
-            if (cloakLocation !== context.player.id) {
-              return [context.event('action.failure', {
-                actionId: context.action.id,
-                messageId: 'not_carrying',
-                reason: 'not_carrying',
-                params: { item: item.name }
-              })];
-            }
-            
-            // Move the cloak to the hook (this is still needed for game state)
-            context.world.moveEntity(item.id, supporter.id);
-            
-            // Create entity snapshots for atomic events
-            const itemSnapshot = {
-              id: item.id,
-              name: item.name,
-              description: item.description
-            };
-            
-            const supporterSnapshot = {
-              id: supporter.id,
-              name: supporter.name,
-              description: supporter.description
-            };
-            
-            // Emit the events with snapshots - the hook's event handler will respond
-            return [
-              context.event('if.event.put_on', {
-                itemId: item.id,
-                targetId: supporter.id,
-                itemSnapshot: itemSnapshot,
-                targetSnapshot: supporterSnapshot,
-                actorId: context.player.id
-              }),
-              context.event('action.success', {
-                actionId: context.action.id,
-                messageId: 'hung_cloak',
-                params: {
-                  item: item.name,
-                  supporter: supporter.name,
-                  itemSnapshot: itemSnapshot,
-                  targetSnapshot: supporterSnapshot
-                }
-              })
-            ];
-          } else {
-            // Generic hang message
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'cant_hang_that',
-              reason: 'invalid_combination',
-              params: {
-                item: item.name,
-                supporter: supporter.name
-              }
-            })];
-          }
-        },
-        
-        metadata: {
-          requiresDirectObject: true,
-          requiresIndirectObject: true,
-          directObjectScope: 'CARRIED',
-          indirectObjectScope: 'REACHABLE'
-        }
-      },
-      
       // Custom READ action for reading the message
       {
         id: 'READ',
