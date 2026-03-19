@@ -15,8 +15,8 @@ import type { GameEngine, CustomVocabulary } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 // @ts-ignore - lang-en-us types not available yet
 import type { LanguageProvider } from '@sharpee/lang-en-us';
-import { 
-  WorldModel, 
+import {
+  WorldModel,
   IFEntity,
   IdentityTrait,
   ActorTrait,
@@ -27,11 +27,9 @@ import {
   SceneryTrait,
   ReadableTrait,
   IScopeRule,
-  LightSourceTrait,
   EntityType,
   Direction
 } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
 import type { IGameEvent, Effect, WorldQuery } from '@sharpee/event-processor';
 
 /**
@@ -665,64 +663,8 @@ export class CloakOfDarknessStory implements Story {
           requiresDirectObject: true,
           directObjectScope: 'VISIBLE'
         }
-      },
-      
-      // Override GO action to handle bar entry in darkness
-      {
-      id: 'GO_ENHANCED',
-      verbs: ['go', 'walk'],
-      priority: 100, // Higher priority than standard GO
-      
-      // Let standard GO do validation
-      validate: () => ({ valid: true }),
-      
-      execute: (command: any, context: any) => {
-        const events: any[] = [];
-        const direction = command.parsed?.direction || command.entities?.direction;
-        
-        // Get current location
-        const currentLoc = context.world.getLocation(context.actor.id);
-        const currentRoom = context.world.getEntity(currentLoc);
-        
-        if (currentRoom) {
-          const roomTrait = currentRoom.get(RoomTrait);
-          const exit = roomTrait?.exits?.[direction];
-          
-          // Check if we're entering the bar
-          if (exit?.destination === this.roomIds['bar']) {
-            // Move the player
-            context.world.moveEntity(context.actor.id, this.roomIds['bar']);
-            
-            // Emit the movement event - the bar's event handler will handle darkness
-            events.push(context.event('if.event.actor_moved', {
-              actorId: context.actor.id,
-              fromLocation: currentLoc,
-              toLocation: this.roomIds['bar'],
-              direction: direction
-            }));
-            
-            // Standard success message
-            events.push(context.event('action.success', {
-              actionId: 'GO',
-              messageId: 'moved',
-              params: {
-                direction: direction
-              }
-            }));
-            
-            return events;
-          }
-        }
-        
-        // Not going to bar, use standard GO action
-        const standardGo = context.stdlib.getAction('GO');
-        if (standardGo) {
-          return standardGo.execute(command, context);
-        }
-        
-        return events;
       }
-    }];
+    ];
   }
   
   /**
