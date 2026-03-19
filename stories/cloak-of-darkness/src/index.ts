@@ -11,11 +11,12 @@
  */
 
 import { Story, StoryConfig } from '@sharpee/engine';
+import type { GameEngine, CustomVocabulary } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 // @ts-ignore - lang-en-us types not available yet
 import type { LanguageProvider } from '@sharpee/lang-en-us';
-import { 
-  WorldModel, 
+import {
+  WorldModel,
   IFEntity,
   IdentityTrait,
   ActorTrait,
@@ -26,11 +27,10 @@ import {
   SceneryTrait,
   ReadableTrait,
   IScopeRule,
-  LightSourceTrait,
   EntityType,
   Direction
 } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import type { IGameEvent, Effect, WorldQuery } from '@sharpee/event-processor';
 
 /**
  * Cloak of Darkness story configuration
@@ -54,6 +54,8 @@ export class CloakOfDarknessStory implements Story {
   private disturbances = 0; // Times the message has been disturbed
   private roomIds: Record<string, string> = {}; // Map of room names to IDs
   private messageEntity!: IFEntity; // Reference to the message entity
+  private hookId!: string;
+  private cloakId!: string;
   
   /**
    * Update the message based on current game state
@@ -397,63 +399,6 @@ export class CloakOfDarknessStory implements Story {
       article: 'the'
     }));
     
-    // Add event handler for when player enters the bar
-    bar.on = {
-      'if.event.actor_moved': (event: any): ISemanticEvent[] | undefined => {
-        const eventData = event.data || {};
-
-        // Use the new atomic event structure with snapshots
-        const actorSnapshot = eventData.actor;
-        const destinationSnapshot = eventData.destinationRoom;
-
-        // Check if this is the player entering this bar
-        // Use snapshot data instead of world queries
-        // Player can have various IDs/names depending on creation, so check if it matches world's player
-        const worldPlayer = this.world.getPlayer();
-        const isPlayer = actorSnapshot?.id === worldPlayer?.id;
-        const isThisBar = destinationSnapshot?.id === bar.id || eventData.toRoom === bar.id;
-
-        console.log(`[BAR HANDLER] Event: ${event.type}`);
-        console.log(`[BAR HANDLER] actorSnapshot?.id: ${actorSnapshot?.id}, worldPlayer?.id: ${worldPlayer?.id}`);
-        console.log(`[BAR HANDLER] destinationSnapshot?.id: ${destinationSnapshot?.id}, bar.id: ${bar.id}, toRoom: ${eventData.toRoom}`);
-        console.log(`[BAR HANDLER] isPlayer: ${isPlayer}, isThisBar: ${isThisBar}`);
-
-        if (isPlayer && isThisBar) {
-          // Check if player is carrying the cloak (look in actor's contents)
-          console.log(`[BAR HANDLER] actorSnapshot.contents:`, actorSnapshot?.contents);
-          const hasCloak = actorSnapshot?.contents?.some((item: any) =>
-            item.name === 'velvet cloak' || item.name === 'cloak'
-          ) || false;
-          console.log(`[BAR HANDLER] hasCloak: ${hasCloak}, isDark: ${destinationSnapshot?.isDark}`);
-          console.log(`[BAR HANDLER] disturbances before: ${this.disturbances}`);
-          
-          // Check if the bar is dark (from room snapshot)
-          const isDark = destinationSnapshot?.isDark === true;
-          
-          // If dark AND player has cloak, it's pitch dark
-          if (isDark && hasCloak) {
-            this.disturbances++;
-            this.updateMessage();
-            
-            // Return an event to show the stumbling message
-            return [{
-              id: `${Date.now()}-stumble`,
-              type: 'game.message',
-              timestamp: Date.now(),
-              data: {
-                message: 'Blundering around in the dark isn\'t a good idea!'
-              },
-              entities: {}
-            }];
-          } else {
-            // Update message visibility when entering in light
-            this.updateMessage();
-          }
-        }
-        return undefined;
-      }
-    };
-    
     return bar;
   }
   
@@ -499,7 +444,8 @@ export class CloakOfDarknessStory implements Story {
     }));
     
     // The cloak's darkness effect will be handled by game logic
-    
+    this.cloakId = cloak.id;
+
     return cloak;
   }
   
@@ -524,39 +470,9 @@ export class CloakOfDarknessStory implements Story {
     }));
     
     hook.add(new SceneryTrait());
-    
-    // Add event handler for when something is placed on the hook
-    hook.on = {
-      'if.event.put_on': (event: any): ISemanticEvent[] | undefined => {
-        const eventData = event.data || {};
-        
-        // Use the new atomic event structure with snapshots
-        const itemSnapshot = eventData.itemSnapshot;
-        const targetSnapshot = eventData.targetSnapshot;
-        
-        // Check if this is the hook being targeted and the cloak being hung
-        const isThisHook = targetSnapshot?.id === hook.id || eventData.targetId === hook.id;
-        const isCloak = itemSnapshot?.name === 'velvet cloak' || 
-                       itemSnapshot?.name === 'cloak' ||
-                       eventData.itemId === 'i01'; // fallback for old ID
-        
-        if (isThisHook && isCloak) {
-          // The cloak has been hung! This makes the bar visible
-          const bar = this.world.getEntity(this.roomIds['bar']);
-          if (bar) {
-            const roomTrait = bar.get(RoomTrait);
-            if (roomTrait) {
-              roomTrait.isDark = false; // Turn on the lights!
-              console.log('Cloak hung on hook - bar is now lit');
-              // Update the message in case we need to show it properly
-              this.updateMessage();
-            }
-          }
-        }
-        return undefined;
-      }
-    };
-    
+
+    this.hookId = hook.id;
+
     // Place hook in cloakroom
     this.world.moveEntity(hook.id, cloakroom.id);
     
@@ -582,43 +498,6 @@ export class CloakOfDarknessStory implements Story {
     message.add(new ReadableTrait({
       text: this.winningText
     }));
-    
-    // Add event handler for when the message is read
-    message.on = {
-      'if.event.read': (event: any): ISemanticEvent[] | undefined => {
-        const eventData = event.data || {};
-        
-        // Check if this message was read (using event data)
-        const isThisMessage = eventData.targetId === message.id || 
-                            eventData.target === message.id;
-        
-        // Check if message was read successfully
-        if (isThisMessage && this.disturbances === 0) {
-          // Mark the story as complete!
-          this.world.setStateValue('message_read_successfully', true);
-          
-          // Get player ID from event data if available
-          const playerId = eventData.actorId || eventData.actor?.id || 'player';
-          
-          // Emit a victory event that can be picked up by the engine
-          return [{
-            id: `victory-${Date.now()}`,
-            type: 'story.victory',
-            timestamp: Date.now(),
-            entities: {
-              actor: playerId,
-              target: message.id
-            },
-            data: {
-              message: 'Congratulations! You have won!',
-              reason: 'Message read without disturbing the sawdust',
-              disturbances: this.disturbances
-            }
-          }];
-        }
-        return undefined;
-      }
-    };
     
     // Place message in bar
     this.world.moveEntity(message.id, bar.id);
@@ -654,39 +533,38 @@ export class CloakOfDarknessStory implements Story {
   /**
    * Extend the parser with custom vocabulary for this story
    */
-  extendParser(parser: Parser): void {
-    // Add HANG verb with prepositions
-    parser.addVerb('HANG', ['hang', 'hook'], 'VERB NOUN PREP NOUN', ['on']);
-    
-    // READ is already a standard verb, no need to add it
+  extendParser(_parser: Parser): void {
+    // Verbs are registered via getCustomVocabulary() — no parser.addVerb needed
+  }
+
+  /**
+   * Register custom vocabulary — "hang" as a PUT_ON synonym
+   */
+  getCustomVocabulary(): CustomVocabulary {
+    return {
+      verbs: [
+        {
+          actionId: 'PUT_ON',
+          verbs: ['hang', 'hook'],
+          pattern: 'VERB NOUN PREP NOUN',
+          prepositions: ['on']
+        }
+      ]
+    };
   }
   
   /**
    * Extend the language provider with custom messages for this story
    */
   extendLanguage(language: LanguageProvider): void {
-    // Add custom messages for HANG action
-    language.addMessage('action.hang.success', 'You hang {item} on {supporter}.');
-    language.addMessage('action.hang.error.incomplete_command', 'What do you want to hang on what?');
-    language.addMessage('action.hang.error.cant_hang_that_way', 'You can\'t hang things that way.');
-    language.addMessage('action.hang.error.not_found', 'You can\'t see that here.');
-    language.addMessage('action.hang.error.not_carrying', 'You need to be carrying {item} first.');
-    language.addMessage('action.hang.error.cant_hang_that', 'You can\'t hang {item} on {supporter}.');
-    language.addMessage('action.hang.success.hung_cloak', 'You carefully hang the velvet cloak on the small brass hook.');
-    
-    // Add custom messages for READ action
+    // Stumble message for dark bar
+    language.addMessage('cloak.stumble', 'Blundering around in the dark isn\'t a good idea!');
+
+    // Custom messages for READ action
     language.addMessage('action.read.error.what_to_read', 'What do you want to read?');
     language.addMessage('READ.cant_read_message', '{reason}');
     language.addMessage('action.read.success.read_message', '{description}\n\n{text}');
     language.addMessage('action.read.error.nothing_to_read', 'There\'s nothing written on {item}.');
-    
-    // Add help for HANG action
-    language.addActionHelp('HANG', {
-      description: 'Hang an item on a support like a hook or peg',
-      verbs: ['hang', 'put'],
-      summary: 'Hang something on a support',
-      examples: ['hang cloak on hook', 'hang coat on peg']
-    });
   }
   
   /**
@@ -694,125 +572,6 @@ export class CloakOfDarknessStory implements Story {
    */
   getCustomActions(): any[] {
     return [
-      // Custom HANG action for hanging the cloak
-      {
-        id: 'HANG',
-        // verbs are registered via getCustomVocabulary
-        patterns: ['VERB NOUN PREP NOUN'],
-        
-        execute: (context: any) => {
-          const events: any[] = [];
-          const { directObject, preposition, indirectObject } = context.command;
-          
-          console.log('HANG action executed!');
-          console.log('Command:', JSON.stringify(context.command, null, 2));
-          console.log('Direct object:', directObject);
-          console.log('Indirect object:', indirectObject);
-          
-          // Check if we have the required parts
-          if (!directObject || !preposition || !indirectObject) {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'incomplete_command',
-              reason: 'missing_parts'
-            })];
-          }
-          
-          // Check if it's "hang X on Y"
-          const prep = preposition.text?.toLowerCase();
-          if (prep !== 'on') {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'cant_hang_that_way',
-              reason: 'wrong_preposition'
-            })];
-          }
-          
-          // Get the entities
-          const item = directObject.entity;
-          const supporter = indirectObject.entity;
-          
-          if (!item || !supporter) {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'not_found',
-              reason: 'entity_not_found'
-            })];
-          }
-          
-          // Check if we're hanging the cloak on the hook
-          const isCloak = item.name === 'velvet cloak' || item.name === 'cloak';
-          const isHook = supporter.name === 'brass hook' || supporter.name === 'hook';
-          if (isCloak && isHook) {
-            // Check if player is carrying the cloak
-            const cloakLocation = context.world.getLocation(item.id);
-            if (cloakLocation !== context.player.id) {
-              return [context.event('action.failure', {
-                actionId: context.action.id,
-                messageId: 'not_carrying',
-                reason: 'not_carrying',
-                params: { item: item.name }
-              })];
-            }
-            
-            // Move the cloak to the hook (this is still needed for game state)
-            context.world.moveEntity(item.id, supporter.id);
-            
-            // Create entity snapshots for atomic events
-            const itemSnapshot = {
-              id: item.id,
-              name: item.name,
-              description: item.description
-            };
-            
-            const supporterSnapshot = {
-              id: supporter.id,
-              name: supporter.name,
-              description: supporter.description
-            };
-            
-            // Emit the events with snapshots - the hook's event handler will respond
-            return [
-              context.event('if.event.put_on', {
-                itemId: item.id,
-                targetId: supporter.id,
-                itemSnapshot: itemSnapshot,
-                targetSnapshot: supporterSnapshot,
-                actorId: context.player.id
-              }),
-              context.event('action.success', {
-                actionId: context.action.id,
-                messageId: 'hung_cloak',
-                params: {
-                  item: item.name,
-                  supporter: supporter.name,
-                  itemSnapshot: itemSnapshot,
-                  targetSnapshot: supporterSnapshot
-                }
-              })
-            ];
-          } else {
-            // Generic hang message
-            return [context.event('action.failure', {
-              actionId: context.action.id,
-              messageId: 'cant_hang_that',
-              reason: 'invalid_combination',
-              params: {
-                item: item.name,
-                supporter: supporter.name
-              }
-            })];
-          }
-        },
-        
-        metadata: {
-          requiresDirectObject: true,
-          requiresIndirectObject: true,
-          directObjectScope: 'CARRIED',
-          indirectObjectScope: 'REACHABLE'
-        }
-      },
-      
       // Custom READ action for reading the message
       {
         id: 'READ',
@@ -840,11 +599,11 @@ export class CloakOfDarknessStory implements Story {
           
           // Check if it's the message (could be 'message' or 'message in the sawdust')
           if (item.name === 'message' || item.name === 'message in the sawdust') {
+            // Ensure message state is current before checking readability
+            this.updateMessage();
             const readable = item.get(ReadableTrait);
 
             if (!readable || !readable.isReadable) {
-              // Can't read it (too dark or too disturbed)
-              // Also emit a loss event if the message is destroyed
               const reasonText = readable?.text || "You can't read that.";
               const events: any[] = [
                 context.event('action.failure', {
@@ -872,30 +631,20 @@ export class CloakOfDarknessStory implements Story {
 
               return events;
             }
-            
-            // Emit success event with entity snapshots - the message's event handler will check for victory
-            const itemSnapshot = {
-              id: item.id,
-              name: item.name,
-              description: item.get(IdentityTrait)?.description,
-              text: readable.text
-            };
-            
+
+            // Emit read event — story-level handler checks for victory
             return [
               context.event('if.event.read', {
                 targetId: item.id,
                 target: item.id,
-                actorId: context.player.id,
-                actor: { id: context.player.id, name: context.player.name },
-                targetSnapshot: itemSnapshot
+                actorId: context.player.id
               }),
               context.event('action.success', {
                 actionId: context.action.id,
                 messageId: 'read_message',
                 params: {
                   text: readable.text,
-                  description: item.get(IdentityTrait)?.description,
-                  target: itemSnapshot
+                  description: item.get(IdentityTrait)?.description
                 }
               })
             ];
@@ -914,64 +663,8 @@ export class CloakOfDarknessStory implements Story {
           requiresDirectObject: true,
           directObjectScope: 'VISIBLE'
         }
-      },
-      
-      // Override GO action to handle bar entry in darkness
-      {
-      id: 'GO_ENHANCED',
-      verbs: ['go', 'walk'],
-      priority: 100, // Higher priority than standard GO
-      
-      // Let standard GO do validation
-      validate: () => ({ valid: true }),
-      
-      execute: (command: any, context: any) => {
-        const events: any[] = [];
-        const direction = command.parsed?.direction || command.entities?.direction;
-        
-        // Get current location
-        const currentLoc = context.world.getLocation(context.actor.id);
-        const currentRoom = context.world.getEntity(currentLoc);
-        
-        if (currentRoom) {
-          const roomTrait = currentRoom.get(RoomTrait);
-          const exit = roomTrait?.exits?.[direction];
-          
-          // Check if we're entering the bar
-          if (exit?.destination === this.roomIds['bar']) {
-            // Move the player
-            context.world.moveEntity(context.actor.id, this.roomIds['bar']);
-            
-            // Emit the movement event - the bar's event handler will handle darkness
-            events.push(context.event('if.event.actor_moved', {
-              actorId: context.actor.id,
-              fromLocation: currentLoc,
-              toLocation: this.roomIds['bar'],
-              direction: direction
-            }));
-            
-            // Standard success message
-            events.push(context.event('action.success', {
-              actionId: 'GO',
-              messageId: 'moved',
-              params: {
-                direction: direction
-              }
-            }));
-            
-            return events;
-          }
-        }
-        
-        // Not going to bar, use standard GO action
-        const standardGo = context.stdlib.getAction('GO');
-        if (standardGo) {
-          return standardGo.execute(command, context);
-        }
-        
-        return events;
       }
-    }];
+    ];
   }
   
   /**
@@ -981,7 +674,105 @@ export class CloakOfDarknessStory implements Story {
     // Initialize message state
     this.updateMessage();
   }
-  
+
+  /**
+   * Register story-level event handlers via EventProcessor (ADR-075).
+   * These fire for ALL events of a given type, regardless of entities.target.
+   */
+  onEngineReady(engine: GameEngine): void {
+    const eventProcessor = engine.getEventProcessor();
+
+    // Handler: when player enters the bar while carrying cloak
+    eventProcessor.registerHandler('if.event.actor_moved',
+      (event: IGameEvent, query: WorldQuery): Effect[] => {
+        const eventData = event.data || {};
+        const actorSnapshot = eventData.actor;
+        const destinationSnapshot = eventData.destinationRoom;
+
+        const worldPlayer = query.getPlayer();
+        const isPlayer = actorSnapshot?.id === worldPlayer?.id;
+        const isBar = destinationSnapshot?.id === this.roomIds['bar'] ||
+                      eventData.toRoom === this.roomIds['bar'];
+
+        if (!isPlayer || !isBar) return [];
+
+        const hasCloak = actorSnapshot?.contents?.some((item: any) =>
+          item.name === 'velvet cloak' || item.name === 'cloak'
+        ) || false;
+
+        const isDark = destinationSnapshot?.isDark === true;
+
+        if (isDark && hasCloak) {
+          this.disturbances++;
+          this.updateMessage();
+          return [{
+            type: 'message',
+            id: 'cloak.stumble',
+            data: { text: "Blundering around in the dark isn't a good idea!" }
+          }];
+        } else {
+          this.updateMessage();
+        }
+        return [];
+      }
+    );
+
+    // Handler: when cloak is placed on the hook, light the bar
+    eventProcessor.registerHandler('if.event.put_on',
+      (event: IGameEvent, _query: WorldQuery): Effect[] => {
+        const eventData = event.data || {};
+        const isHook = eventData.targetId === this.hookId;
+        const isCloak = eventData.itemId === this.cloakId;
+
+        if (isHook && isCloak) {
+          // Directly update room trait — pragmatic approach during ADR-075 migration
+          const bar = this.world.getEntity(this.roomIds['bar']);
+          if (bar) {
+            const roomTrait = bar.get(RoomTrait);
+            if (roomTrait) {
+              roomTrait.isDark = false;
+            }
+          }
+          this.updateMessage();
+        }
+        return [];
+      }
+    );
+
+    // Handler: victory check when message is read
+    eventProcessor.registerHandler('if.event.read',
+      (event: IGameEvent, _query: WorldQuery): Effect[] => {
+        const eventData = event.data || {};
+        const isMessage = eventData.targetId === this.messageEntity?.id ||
+                          eventData.target === this.messageEntity?.id;
+
+        if (isMessage && this.disturbances === 0) {
+          return [
+            { type: 'set_state', key: 'message_read_successfully', value: true },
+            {
+              type: 'emit',
+              event: {
+                id: `victory-${Date.now()}`,
+                type: 'story.victory',
+                timestamp: Date.now(),
+                entities: {
+                  actor: eventData.actorId || 'player',
+                  target: this.messageEntity.id
+                },
+                data: {
+                  message: 'Congratulations! You have won!',
+                  reason: 'Message read without disturbing the sawdust',
+                  disturbances: this.disturbances
+                }
+              }
+            }
+          ];
+        }
+        return [];
+      }
+    );
+  }
+
   /**
    * Check if the story is complete
    */
