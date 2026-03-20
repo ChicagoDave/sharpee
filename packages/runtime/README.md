@@ -2,6 +2,10 @@
 
 Headless Sharpee engine for embedding interactive fiction in any web page. The runtime runs inside an iframe and communicates with your page via `postMessage` — you control the UI, it runs the game.
 
+> **Status: Draft — Incomplete and Untested**
+>
+> This README was written alongside the initial implementation and has not been validated against real integration. The Lantern IDE work revealed gaps in the protocol, story loading, and output handling documented here. Treat code examples as illustrative, not copy-paste ready. The protocol reference may be out of date.
+
 ## Quick Start
 
 ### 1. Build the runtime
