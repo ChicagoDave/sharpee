@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../engine" },
+    { "path": "../event-processor" },
+    { "path": "../if-domain" },
+    { "path": "../if-services" },
+    { "path": "../lang-en-us" },
+    { "path": "../parser-en-us" },
+    { "path": "../plugins" },
+    { "path": "../plugin-npc" },
+    { "path": "../plugin-scheduler" },
+    { "path": "../plugin-state-machine" },
+    { "path": "../stdlib" },
+    { "path": "../text-blocks" },
+    { "path": "../text-service" },
+    { "path": "../world-model" }
+  ]
+}

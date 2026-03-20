@@ -28,6 +28,7 @@ VERBOSE=false
 SHOW_HELP=false
 STORY_BUNDLE=false
 BUILD_RUNNER=false
+BUILD_RUNTIME=false
 BUILD_TEST=false
 VERSION_OVERRIDE=""
 
@@ -55,6 +56,7 @@ Options:
   -b, --story-bundle   Create .sharpee story bundle (requires -s)
       --test           Build fast test bundle (requires -s)
       --runner         Build Zifmia runner (loads .sharpee bundles in browser)
+      --runtime        Build headless runtime for Lantern (postMessage bridge)
   -v, --verbose        Show build details
   -h, --help           Show this help
 
@@ -73,6 +75,7 @@ Examples:
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
   ./build.sh -s dungeo --test                Build fast test bundle
   ./build.sh --runner                        Build Zifmia runner
+  ./build.sh --runtime                       Build headless runtime for Lantern
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
 Output:
@@ -80,6 +83,7 @@ Output:
   dist/cli/{story}-test.js     Fast test bundle (with --test)
   dist/stories/{story}.sharpee  Story bundle (with -b)
   dist/runner/                       Zifmia client (with -c zifmia or --runner)
+  dist/runtime/sharpee-runtime.js  Headless runtime (with --runtime)
   dist/web/{story}/             Browser client
 
 For more information, see docs/reference/building.md
@@ -125,6 +129,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --runner)
             BUILD_RUNNER=true
+            shift
+            ;;
+        --runtime)
+            BUILD_RUNTIME=true
             shift
             ;;
         --version)
@@ -973,6 +981,60 @@ HTMLEOF
 }
 
 # ============================================================================
+# Headless Runtime Build (for Lantern)
+# ============================================================================
+
+build_runtime() {
+    local OUTDIR="dist/runtime"
+    local ENTRY="packages/runtime/src/runtime-entry.ts"
+
+    log_step "Building Headless Runtime"
+
+    if [ ! -f "$ENTRY" ]; then
+        echo -e "${RED}Error: Runtime entry not found: $ENTRY${NC}"
+        exit 1
+    fi
+
+    mkdir -p "$OUTDIR"
+
+    # Bundle everything into a single IIFE that exposes window.Sharpee
+    run_build "sharpee-runtime.js" "npx esbuild '$ENTRY' \
+        --bundle --platform=browser --target=es2020 \
+        --format=iife --global-name=SharpeeRuntime \
+        --outfile='$OUTDIR/sharpee-runtime.js' \
+        --sourcemap --minify \
+        --define:process.env.PARSER_DEBUG=undefined \
+        --define:process.env.DEBUG_PRONOUNS=undefined \
+        --define:process.env.NODE_ENV=\\\"production\\\" \
+        --alias:@sharpee/core=./packages/core/dist/index.js \
+        --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
+        --alias:@sharpee/world-model=./packages/world-model/dist/index.js \
+        --alias:@sharpee/stdlib=./packages/stdlib/dist/index.js \
+        --alias:@sharpee/engine=./packages/engine/dist/index.js \
+        --alias:@sharpee/parser-en-us=./packages/parser-en-us/dist/index.js \
+        --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
+        --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
+        --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
+        --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
+        --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
+        --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
+        --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
+        --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
+        --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js"
+
+    # Copy runtime frame HTML and test harness
+    cp packages/runtime/runtime-frame.html "$OUTDIR/"
+    log_ok "runtime-frame.html"
+
+    cp packages/runtime/test-harness.html "$OUTDIR/"
+    log_ok "test-harness.html"
+
+    local BUNDLE_SIZE=$(ls -lh "$OUTDIR/sharpee-runtime.js" | awk '{print $5}')
+    echo "Output: $OUTDIR/sharpee-runtime.js ($BUNDLE_SIZE)"
+    echo ""
+}
+
+# ============================================================================
 # Main Build Flow
 # ============================================================================
 
@@ -999,6 +1061,9 @@ if [ "$STORY_BUNDLE" = true ]; then
 fi
 if [ "$BUILD_RUNNER" = true ]; then
     echo "  6. Build Zifmia runner"
+fi
+if [ "$BUILD_RUNTIME" = true ]; then
+    echo "  6. Build headless runtime (Lantern)"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "zifmia" ]; then
@@ -1030,6 +1095,10 @@ fi
 
 if [ "$BUILD_RUNNER" = true ]; then
     build_runner
+fi
+
+if [ "$BUILD_RUNTIME" = true ]; then
+    build_runtime
 fi
 
 for CLIENT in "${CLIENTS[@]}"; do
@@ -1067,6 +1136,9 @@ fi
 if [ "$BUILD_RUNNER" = true ]; then
     echo "  dist/runner/ - Zifmia runner"
 fi
+if [ "$BUILD_RUNTIME" = true ]; then
+    echo "  dist/runtime/sharpee-runtime.js - Headless runtime (Lantern)"
+fi
 
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do
@@ -1083,6 +1155,9 @@ echo "Next steps:"
 echo "  Test CLI:     node dist/cli/sharpee.js --play"
 if [ "$BUILD_TEST" = true ]; then
     echo "  Fast tests:   node dist/cli/${STORY}-test.js --chain stories/${STORY}/walkthroughs/wt-*.transcript"
+fi
+if [ "$BUILD_RUNTIME" = true ]; then
+    echo "  Test Runtime: npx serve dist/runtime  (open test-harness.html)"
 fi
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpee Runtime Test Harness</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'JetBrains Mono', 'Fira Code', monospace; background: #1e1e2e; color: #cdd6f4; height: 100vh; display: flex; flex-direction: column; }
+    h1 { padding: 12px 16px; background: #313244; font-size: 14px; font-weight: 600; }
+    .panels { display: flex; flex: 1; overflow: hidden; }
+    .panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #45475a; }
+    .panel:last-child { border-right: none; }
+    .panel-header { padding: 8px 12px; background: #313244; font-size: 12px; font-weight: 600; color: #a6adc8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .panel-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 13px; line-height: 1.5; }
+    #output .line { margin-bottom: 4px; }
+    #output .line.status { color: #89b4fa; }
+    #output .line.error { color: #f38ba8; }
+    #output .line.system { color: #a6e3a1; }
+    #output .line.command { color: #f9e2af; }
+    #log .entry { margin-bottom: 2px; color: #6c7086; }
+    #log .entry.inbound { color: #89dceb; }
+    #log .entry.outbound { color: #cba6f7; }
+    .input-area { display: flex; padding: 8px 12px; background: #313244; gap: 8px; }
+    .input-area input { flex: 1; background: #1e1e2e; border: 1px solid #45475a; color: #cdd6f4; padding: 6px 10px; font-family: inherit; font-size: 13px; border-radius: 4px; }
+    .input-area input:focus { outline: none; border-color: #89b4fa; }
+    .input-area button { background: #89b4fa; color: #1e1e2e; border: none; padding: 6px 14px; font-family: inherit; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; }
+    .input-area button:hover { background: #74c7ec; }
+    .controls { padding: 8px 12px; background: #181825; display: flex; gap: 8px; align-items: center; }
+    .controls button { background: #45475a; color: #cdd6f4; border: none; padding: 4px 10px; font-family: inherit; font-size: 11px; border-radius: 3px; cursor: pointer; }
+    .controls button:hover { background: #585b70; }
+    .controls .status-badge { margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: 3px; }
+    .controls .status-badge.ready { background: #a6e3a1; color: #1e1e2e; }
+    .controls .status-badge.not-ready { background: #f38ba8; color: #1e1e2e; }
+    iframe { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Sharpee Runtime Test Harness</h1>
+
+  <div class="controls">
+    <button onclick="loadTestStory()">Load Test Story</button>
+    <button onclick="sendStart()">Start</button>
+    <button onclick="sendRestart()">Restart</button>
+    <button onclick="sendSave()">Save</button>
+    <button onclick="clearOutput()">Clear</button>
+    <span id="status-badge" class="status-badge not-ready">Not Ready</span>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-header">Game Output</div>
+      <div class="panel-body" id="output"></div>
+      <div class="input-area">
+        <input type="text" id="command-input" placeholder="Enter command..." autofocus>
+        <button onclick="sendCommand()">Send</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">PostMessage Log</div>
+      <div class="panel-body" id="log"></div>
+    </div>
+  </div>
+
+  <!-- Runtime iframe — src will be set to the bundle once built -->
+  <iframe id="runtime-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+
+  <script>
+    const output = document.getElementById('output');
+    const log = document.getElementById('log');
+    const commandInput = document.getElementById('command-input');
+    const statusBadge = document.getElementById('status-badge');
+    const runtimeFrame = document.getElementById('runtime-frame');
+    let runtimeReady = false;
+    let storyLoaded = false;
+
+    // ─── PostMessage listener ─────────────────────────────────
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || !data.type || !data.type.startsWith('sharpee:')) return;
+
+      logMessage('outbound', data);
+
+      switch (data.type) {
+        case 'sharpee:ready':
+          runtimeReady = true;
+          statusBadge.textContent = 'Ready v' + data.version;
+          statusBadge.className = 'status-badge ready';
+          addOutput('system', `Runtime ready (v${data.version})`);
+          break;
+
+        case 'sharpee:story-loaded':
+          storyLoaded = true;
+          addOutput('system', `Story loaded: "${data.title}" by ${data.author}`);
+          break;
+
+        case 'sharpee:started':
+          addOutput('system', 'Engine started');
+          break;
+
+        case 'sharpee:output':
+          for (const block of data.blocks) {
+            const text = extractText(block.content);
+            if (text.trim()) {
+              addOutput('line', `[${block.key}] ${text}`);
+            }
+          }
+          break;
+
+        case 'sharpee:status':
+          addOutput('status', `📍 ${data.location} | Score: ${data.score ?? '—'} | Turns: ${data.turns ?? '—'}`);
+          break;
+
+        case 'sharpee:save-data':
+          addOutput('system', `Save data received (${data.data.length} bytes)`);
+          localStorage.setItem('sharpee-test-save', data.data);
+          break;
+
+        case 'sharpee:restored':
+          addOutput('system', 'Game restored');
+          break;
+
+        case 'sharpee:error':
+          addOutput('error', `[${data.category}] ${data.message}`);
+          break;
+      }
+    });
+
+    // ─── Send helpers ─────────────────────────────────────────
+
+    function sendToRuntime(message) {
+      logMessage('inbound', message);
+      runtimeFrame.contentWindow.postMessage(message, '*');
+    }
+
+    function sendCommand() {
+      const text = commandInput.value.trim();
+      if (!text) return;
+      addOutput('command', `> ${text}`);
+      sendToRuntime({ type: 'sharpee:command', text });
+      commandInput.value = '';
+    }
+
+    function sendStart() {
+      sendToRuntime({ type: 'sharpee:start' });
+    }
+
+    function sendRestart() {
+      sendToRuntime({ type: 'sharpee:restart' });
+    }
+
+    function sendSave() {
+      sendToRuntime({ type: 'sharpee:save' });
+    }
+
+    function loadTestStory() {
+      if (!runtimeReady) {
+        addOutput('error', 'Runtime not ready yet');
+        return;
+      }
+
+      // Minimal test story — one room, one object
+      const storyCode = `
+        const { WorldModel, EntityType, IdentityTrait, RoomTrait, ContainerTrait } = window.Sharpee;
+
+        window.SharpeeStory = {
+          config: {
+            id: 'test-story',
+            title: 'Test Story',
+            author: 'Harness',
+            version: '0.1.0',
+          },
+
+          createPlayer(world) {
+            const player = world.createEntity('player', 'actor');
+            player.add(new IdentityTrait({ name: 'you' }));
+            return player;
+          },
+
+          initializeWorld(world) {
+            // Create a simple room
+            const room = world.createEntity('start-room', 'room');
+            room.add(new IdentityTrait({
+              name: 'Test Room',
+              description: 'A simple room for testing the Sharpee runtime bridge. The walls are plain and white. There is a door to the north.',
+            }));
+            room.add(new RoomTrait());
+
+            // Create an object
+            const lamp = world.createEntity('brass-lantern', 'object');
+            lamp.add(new IdentityTrait({
+              name: 'brass lantern',
+              description: 'A battered but serviceable brass lantern.',
+            }));
+            world.moveEntity(lamp.id, room.id);
+
+            // Place player
+            const player = world.getPlayer();
+            world.moveEntity(player.id, room.id);
+          },
+        };
+      `;
+
+      sendToRuntime({ type: 'sharpee:load-story', code: storyCode });
+    }
+
+    // ─── UI helpers ───────────────────────────────────────────
+
+    function addOutput(cls, text) {
+      const div = document.createElement('div');
+      div.className = 'line ' + cls;
+      div.textContent = text;
+      output.appendChild(div);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function logMessage(direction, msg) {
+      const div = document.createElement('div');
+      div.className = 'entry ' + direction;
+      const arrow = direction === 'inbound' ? '→' : '←';
+      div.textContent = `${arrow} ${msg.type} ${JSON.stringify(msg).substring(0, 120)}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function extractText(content) {
+      if (!content) return '';
+      return content.map(c => {
+        if (typeof c === 'string') return c;
+        if (c.content) return extractText(c.content);
+        return '';
+      }).join('');
+    }
+
+    function clearOutput() {
+      output.innerHTML = '';
+    }
+
+    // ─── Input handling ───────────────────────────────────────
+
+    commandInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendCommand();
+    });
+
+    // ─── Load runtime bundle ──────────────────────────────────
+
+    // Point to the built bundle — adjust path as needed
+    // When running from packages/runtime/, the bundle will be at ../../dist/runtime/sharpee-runtime.js
+    runtimeFrame.src = './runtime-frame.html';
+  </script>
+</body>
+</html>
