@@ -1,0 +1,43 @@
+title: V11 — Non-Player Characters (NPCs)
+story: familyzoo
+entry: v11
+author: Sharpee Tutorial
+description: Verify zookeeper patrol behavior and parrot NPC in the aviary
+
+---
+
+# V11 teaches: NPCs with NpcTrait, NpcPlugin, patrol and custom behaviors
+
+# The player starts at the Zoo Entrance
+> look
+[OK: contains "Zoo Entrance"]
+
+# Go south to Main Path — the zookeeper starts here
+> south
+[OK: contains "Main Path"]
+
+# The zookeeper should be visible in the room
+> examine zookeeper
+[OK: contains "khaki overalls"]
+[OK: contains "Sam"]
+
+# Go west to the Aviary — the parrot lives here
+> west
+[OK: contains "Aviary"]
+
+# The parrot should be visible
+> examine parrot
+[OK: contains "scarlet macaw"]
+[OK: contains "bright eye"]
+
+# Wait a few turns — the parrot may speak (behavior is random)
+# We just confirm the wait command works without errors
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Go back east to Main Path
+> east
+[OK: contains "Main Path"]

@@ -1,0 +1,66 @@
+title: V12 — Event Handlers
+story: familyzoo
+entry: v12
+author: Sharpee Tutorial
+description: Verify event chain handlers for feed-dropping and penny-pressing
+
+---
+
+# V12 teaches: world.chainEvent() for reacting to stdlib actions
+
+# Go to the Petting Zoo and pick up the feed
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+
+# Drop the feed — the goats should react
+> drop feed
+[OK: contains "goats"]
+[OK: contains "bleating"]
+
+# Go to the Gift Shop via Aviary
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> west
+[OK: contains "Gift Shop"]
+
+# Examine the souvenir press
+> examine press
+[OK: contains "cast-iron"]
+[OK: contains "INSERT PENNY"]
+
+# Go get the penny from Main Path
+> east
+[OK: contains "Aviary"]
+
+> east
+[OK: contains "Main Path"]
+
+> take penny
+[OK: contains "Taken"]
+
+# Go back to the Gift Shop
+> west
+[OK: contains "Aviary"]
+
+> west
+[OK: contains "Gift Shop"]
+
+# Put the penny in the press — should trigger transformation
+> put penny in press
+[OK: contains "CLUNK"]
+[OK: contains "pressed penny"]
+[OK: contains "toucan"]
+
+# Check inventory — the pressed penny should be there
+> inventory
+[OK: contains "pressed penny"]

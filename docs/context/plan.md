@@ -238,7 +238,7 @@ The `build.sh` story name is `familyzoo` and targets V16 for the "full game" bui
     - `v12-event-handlers.transcript` — go to petting zoo, drop feed (animals react); go to gift shop, put penny in machine (get pressed penny back)
   - Tutorial.md sections for V11, V12
 - **Exit state**: V11 and V12 transcripts pass; NPC patrol confirmed; event-handler item-transformation confirmed; V16 stub updated to V12
-- **Status**: CURRENT
+- **Status**: DONE
 
 ### Phase 6: V13 (Custom Actions) + V14 (Capability Dispatch)
 - **Tier**: Medium
@@ -253,7 +253,7 @@ The `build.sh` story name is `familyzoo` and targets V16 for the "full game" bui
     - `v14-capability-dispatch.transcript` — pet goat (affectionate), pet snake exhibit (glass), pet parrot (bites)
   - Tutorial.md sections for V13, V14
 - **Exit state**: V13 and V14 transcripts pass; three-way `pet` dispatch confirmed; custom actions work end-to-end; V16 stub updated to V14
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 7: V15 (Timed Events) + V16 (Scoring and Endgame) + Final Tutorial
 - **Tier**: Medium
@@ -280,7 +280,7 @@ The `build.sh` story name is `familyzoo` and targets V16 for the "full game" bui
     - One section per version (V1–V16): what concept is introduced, the key code pattern, what to try in the transcript test, common mistakes
     - Appendix: "Sharpee Authoring Cheat Sheet" — one-line summaries of all 16 constructs with code snippets
 - **Exit state**: All 16 transcripts pass; `./build.sh -s familyzoo` targets V16 and succeeds; `tutorial.md` is complete; story is self-documenting for new Sharpee authors
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ---
 

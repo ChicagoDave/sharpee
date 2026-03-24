@@ -874,6 +874,9 @@ importers:
       '@sharpee/parser-en-us':
         specifier: file:../../packages/parser-en-us
         version: file:packages/parser-en-us
+      '@sharpee/plugin-npc':
+        specifier: file:../../packages/plugin-npc
+        version: file:packages/plugin-npc
       '@sharpee/stdlib':
         specifier: file:../../packages/stdlib
         version: file:packages/stdlib
@@ -1628,6 +1631,10 @@ packages:
 
   '@sharpee/parser-en-us@file:packages/parser-en-us':
     resolution: {directory: packages/parser-en-us, type: directory}
+    engines: {node: '>=18.0.0'}
+
+  '@sharpee/plugin-npc@file:packages/plugin-npc':
+    resolution: {directory: packages/plugin-npc, type: directory}
     engines: {node: '>=18.0.0'}
 
   '@sharpee/stdlib@file:packages/stdlib':
@@ -5166,6 +5173,13 @@ snapshots:
       '@sharpee/core': link:packages/core
       '@sharpee/if-domain': link:packages/if-domain
       '@sharpee/lang-en-us': link:packages/lang-en-us
+      '@sharpee/world-model': link:packages/world-model
+
+  '@sharpee/plugin-npc@file:packages/plugin-npc':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/plugins': link:packages/plugins
+      '@sharpee/stdlib': link:packages/stdlib
       '@sharpee/world-model': link:packages/world-model
 
   '@sharpee/stdlib@file:packages/stdlib':

@@ -1,0 +1,41 @@
+title: V14 — Capability Dispatch
+story: familyzoo
+entry: v14
+author: Sharpee Tutorial
+description: Verify capability dispatch with different petting responses per animal
+
+---
+
+# V14 teaches: Capability dispatch — same verb, different behavior per entity
+
+# Go to petting zoo
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+# Pet the goats — affectionate response
+> pet goats
+[OK: contains "pet"]
+[OK: contains "bleats happily"]
+
+# Pet the rabbits — soft and fuzzy
+> pet rabbits
+[OK: contains "soft"]
+[OK: contains "nose"]
+
+# Try to pet the hay bale — blocked (no PettableTrait)
+> pet hay bale
+[OK: contains "can't pet"]
+
+# Go to aviary and pet the parrot — it bites!
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> pet parrot
+[OK: contains "CHOMP"]
+[OK: contains "NO TOUCHING"]
