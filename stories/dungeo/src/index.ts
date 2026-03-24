@@ -344,8 +344,7 @@ export class DungeoStory implements Story {
     connectFrigidRiverToDam(world, this.frigidRiverIds, this.damIds.damBase);
     connectRainbowToCanyon(world, this.frigidRiverIds, this.forestIds.canyonBottom);
 
-    // Maze connections
-    connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing);
+    // Maze connections (grating connection deferred until after createMazeObjects)
     connectCyclopsToLivingRoom(world, this.mazeIds, this.houseInteriorIds.livingRoom);
     connectMazeToTrollRoom(world, this.mazeIds, this.undergroundIds.trollRoom);
     connectMazeToRoundRoom(world, this.mazeIds, this.roundRoomIds.roundRoom);
@@ -383,7 +382,9 @@ export class DungeoStory implements Story {
     createBankObjects(world, this.bankIds);
     createWellRoomObjects(world, this.wellRoomIds);
     createFrigidRiverObjects(world, this.frigidRiverIds);
-    createMazeObjects(world, this.mazeIds);
+    const { gratingId } = createMazeObjects(world, this.mazeIds);
+    // Now that grating entity exists, wire the Clearing ↔ Grating Room exits through it
+    connectMazeToClearing(world, this.mazeIds, this.forestIds.clearing, gratingId);
     createRoundRoomObjects(world, this.roundRoomIds);
     createEndgameObjects(world, {
       smallRoom: this.endgameIds.smallRoom,

@@ -13,6 +13,7 @@ Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | - | - |
 | ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - | - |
 | ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | 2026-02-13 |
+| ISSUE-053 | Grating/skeleton key wiring broken — duplicate entities, no keyId, exits bypass lock | High | dungeo, parser | 2026-03-23 | - | 2026-03-23 |
 
 ---
 
@@ -105,6 +106,19 @@ All English text strings in the Dungeo story are currently spread across multipl
 - Room descriptions and entity descriptions
 
 **Priority**: Low — the language layer architecture already supports this via message IDs. This is a refactoring task to group all text in one place, not a functional change.
+
+---
+
+### ISSUE-053: Grating/skeleton key wiring broken
+
+**Reported**: 2026-03-23
+**Severity**: High
+**Component**: dungeo (story)
+
+**Description**:
+Four problems make the grating puzzle non-functional: duplicate grating entities (forest.ts and maze.ts), `key.attributes.unlocksId` is a no-op, `LockableTrait` has no `keyId`, and exits don't use `via` to check the grating's open/locked state.
+
+**Details**: See [issue-053-grating-key-wiring.md](issue-053-grating-key-wiring.md)
 
 ---
 

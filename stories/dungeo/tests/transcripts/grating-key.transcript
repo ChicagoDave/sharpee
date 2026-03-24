@@ -1,0 +1,70 @@
+title: Grating and Skeleton Key Puzzle
+story: dungeo
+author: Sharpee Team
+description: Test the grating puzzle — locked/closed blocking, unlock with skeleton key, open, traverse both directions (ISSUE-053 regression)
+
+---
+
+# Setup: get lantern and skeleton key via GDT
+> gdt
+[OK: contains "GDT"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> tk skeleton key
+[OK: contains "Taken"]
+
+# Teleport to the Clearing
+> ah Clearing
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> switch on lantern
+[OK: contains "on"]
+
+> look
+[OK: contains "Clearing"]
+
+# Try going down through the locked grating — should be blocked
+> down
+[OK: contains "locked"]
+
+# Teleport to the Grating Room to test from below
+> gdt
+[OK: contains "GDT"]
+
+> ah Grating Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: contains "Grating Room"]
+
+# Try going up through locked grating — should be blocked
+> up
+[OK: contains "locked"]
+
+# Try opening the locked grating — should fail
+> open grating
+[OK: contains "locked"]
+
+# Unlock the grating with the skeleton key
+> unlock grating with skeleton key
+[OK: contains "unlock"]
+
+# Now open it
+> open grating
+[OK: contains "open"]
+
+# Go up to the Clearing
+> up
+[OK: contains "Clearing"]
+
+# Go back down to the Grating Room
+> down
+[OK: contains "Grating Room"]

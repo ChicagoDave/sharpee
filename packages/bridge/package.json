@@ -1,0 +1,49 @@
+{
+  "name": "@sharpee/bridge",
+  "version": "0.9.92-beta",
+  "description": "Native engine bridge for Sharpee — Node.js subprocess with newline-delimited JSON over stdin/stdout",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/event-processor": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/if-services": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/plugins": "workspace:*",
+    "@sharpee/plugin-npc": "workspace:*",
+    "@sharpee/plugin-scheduler": "workspace:*",
+    "@sharpee/plugin-state-machine": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*",
+    "@sharpee/text-service": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "fflate": "^0.8.2"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/bridge"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

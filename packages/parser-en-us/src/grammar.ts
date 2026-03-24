@@ -478,6 +478,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Taking from container with tool
   grammar
     .define('take :item from :container with :tool')
+    .instrument('tool')
     .mapsTo('if.action.taking_with')
     .withPriority(110)
     .build(); // Higher priority than simple take
@@ -485,6 +486,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Unlocking with key
   grammar
     .define('unlock :door with :key')
+    .instrument('key')
     .mapsTo('if.action.unlocking')
     .withPriority(110)
     .build(); // Higher priority than simple unlock
@@ -492,6 +494,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Opening with tool
   grammar
     .define('open :container with :tool')
+    .instrument('tool')
     .hasTrait('container', TraitType.OPENABLE)
     .mapsTo('if.action.opening_with')
     .withPriority(110)
@@ -500,6 +503,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Cutting with tool
   grammar
     .define('cut :object with :tool')
+    .instrument('tool')
     .mapsTo('if.action.cutting')
     .withPriority(110)
     .build(); // Higher priority than simple cut
@@ -514,24 +518,28 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Attacking with weapon (higher priority than simple attack)
   grammar
     .define('attack :target with :weapon')
+    .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build();
 
   grammar
     .define('kill :target with :weapon')
+    .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build();
 
   grammar
     .define('hit :target with :weapon')
+    .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build();
 
   grammar
     .define('strike :target with :weapon')
+    .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build();
@@ -539,6 +547,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Digging with tool
   grammar
     .define('dig :location with :tool')
+    .instrument('tool')
     .mapsTo('if.action.digging')
     .withPriority(110)
     .build(); // Higher priority than simple dig

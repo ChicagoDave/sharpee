@@ -249,17 +249,9 @@ function createClearingObjects(world: WorldModel, roomId: string): void {
   leaves.add(new SceneryTrait());
   world.moveEntity(leaves.id, roomId);
 
-  const grating = world.createEntity('grating', EntityType.SCENERY);
-  grating.add(new IdentityTrait({
-    name: 'grating',
-    aliases: ['grate', 'iron grating', 'metal grating'],
-    description: 'A grating firmly fixed into the ground. It appears to lead underground.',
-    properName: false,
-    article: 'a'
-  }));
-  grating.add(new OpenableTrait({ isOpen: false }));
-  grating.add(new SceneryTrait());
-  world.moveEntity(grating.id, roomId);
+  // NOTE: The grating is a single entity created in maze.ts (createGratingRoomObjects).
+  // It lives in the Grating Room and is referenced by both exits via the `via` field.
+  // See connectMazeToClearing() for the wiring.
 }
 
 // ============= Up a Tree Objects =============

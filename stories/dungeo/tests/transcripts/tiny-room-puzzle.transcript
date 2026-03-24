@@ -85,7 +85,7 @@ description: Test the classic IF "key under door" puzzle in the Tiny Room
 
 # Step 4: Unlock the door
 > unlock door with key
-[OK: contains "unlock"]
+[OK: contains "You unlock"]
 
 # Step 5: Open and go through
 > open door

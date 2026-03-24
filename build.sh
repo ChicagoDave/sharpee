@@ -30,6 +30,7 @@ STORY_BUNDLE=false
 BUILD_RUNNER=false
 BUILD_RUNTIME=false
 BUILD_TEST=false
+BUILD_BRIDGE=false
 VERSION_OVERRIDE=""
 
 # ============================================================================
@@ -57,6 +58,7 @@ Options:
       --test           Build fast test bundle (requires -s)
       --runner         Build Zifmia runner (loads .sharpee bundles in browser)
       --runtime        Build headless runtime for Lantern (postMessage bridge)
+      --bridge         Build native engine bridge (Node.js subprocess, ADR-135)
   -v, --verbose        Show build details
   -h, --help           Show this help
 
@@ -76,6 +78,7 @@ Examples:
   ./build.sh -s dungeo --test                Build fast test bundle
   ./build.sh --runner                        Build Zifmia runner
   ./build.sh --runtime                       Build headless runtime for Lantern
+  ./build.sh --bridge                        Build native engine bridge (ADR-135)
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
 Output:
@@ -84,6 +87,7 @@ Output:
   dist/stories/{story}.sharpee  Story bundle (with -b)
   dist/runner/                       Zifmia client (with -c zifmia or --runner)
   dist/runtime/sharpee-runtime.js  Headless runtime (with --runtime)
+  dist/bridge/node_bridge.js    Native engine bridge (with --bridge)
   dist/web/{story}/             Browser client
 
 For more information, see docs/reference/building.md
@@ -133,6 +137,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --runtime)
             BUILD_RUNTIME=true
+            shift
+            ;;
+        --bridge)
+            BUILD_BRIDGE=true
             shift
             ;;
         --version)
@@ -1035,6 +1043,55 @@ build_runtime() {
 }
 
 # ============================================================================
+# Native Engine Bridge (ADR-135)
+# ============================================================================
+
+build_bridge() {
+    local OUTDIR="dist/bridge"
+    local ENTRY="packages/bridge/src/bridge-entry.ts"
+
+    log_step "Building Native Engine Bridge (ADR-135)"
+
+    if [ ! -f "$ENTRY" ]; then
+        echo -e "${RED}Error: Bridge entry not found: $ENTRY${NC}"
+        exit 1
+    fi
+
+    mkdir -p "$OUTDIR"
+
+    # Bundle everything into a single CJS file for Node.js subprocess use
+    # esbuild is external — required at runtime for storyPath authoring mode
+    run_build "node_bridge.js" "npx esbuild '$ENTRY' \
+        --bundle --platform=node --target=node18 \
+        --format=cjs \
+        --outfile='$OUTDIR/node_bridge.js' \
+        --sourcemap \
+        --define:process.env.PARSER_DEBUG=undefined \
+        --define:process.env.DEBUG_PRONOUNS=undefined \
+        --define:process.env.NODE_ENV=\\\"production\\\" \
+        --external:esbuild \
+        --alias:@sharpee/core=./packages/core/dist/index.js \
+        --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
+        --alias:@sharpee/world-model=./packages/world-model/dist/index.js \
+        --alias:@sharpee/stdlib=./packages/stdlib/dist/index.js \
+        --alias:@sharpee/engine=./packages/engine/dist/index.js \
+        --alias:@sharpee/parser-en-us=./packages/parser-en-us/dist/index.js \
+        --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
+        --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
+        --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
+        --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
+        --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
+        --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
+        --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
+        --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
+        --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js"
+
+    local BUNDLE_SIZE=$(ls -lh "$OUTDIR/node_bridge.js" | awk '{print $5}')
+    echo "Output: $OUTDIR/node_bridge.js ($BUNDLE_SIZE)"
+    echo ""
+}
+
+# ============================================================================
 # Main Build Flow
 # ============================================================================
 
@@ -1064,6 +1121,9 @@ if [ "$BUILD_RUNNER" = true ]; then
 fi
 if [ "$BUILD_RUNTIME" = true ]; then
     echo "  6. Build headless runtime (Lantern)"
+fi
+if [ "$BUILD_BRIDGE" = true ]; then
+    echo "  6. Build native engine bridge (ADR-135)"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "zifmia" ]; then
@@ -1099,6 +1159,10 @@ fi
 
 if [ "$BUILD_RUNTIME" = true ]; then
     build_runtime
+fi
+
+if [ "$BUILD_BRIDGE" = true ]; then
+    build_bridge
 fi
 
 for CLIENT in "${CLIENTS[@]}"; do
@@ -1139,6 +1203,9 @@ fi
 if [ "$BUILD_RUNTIME" = true ]; then
     echo "  dist/runtime/sharpee-runtime.js - Headless runtime (Lantern)"
 fi
+if [ "$BUILD_BRIDGE" = true ]; then
+    echo "  dist/bridge/node_bridge.js - Native engine bridge (ADR-135)"
+fi
 
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do
@@ -1158,6 +1225,9 @@ if [ "$BUILD_TEST" = true ]; then
 fi
 if [ "$BUILD_RUNTIME" = true ]; then
     echo "  Test Runtime: npx serve dist/runtime  (open test-harness.html)"
+fi
+if [ "$BUILD_BRIDGE" = true ]; then
+    echo "  Test Bridge:  echo '{\"method\":\"start\",\"bundle\":\"dist/stories/dungeo.sharpee\"}' | node dist/bridge/node_bridge.js"
 fi
 if [ -n "$STORY" ]; then
     for CLIENT in "${CLIENTS[@]}"; do

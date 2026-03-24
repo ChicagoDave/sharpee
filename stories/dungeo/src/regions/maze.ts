@@ -423,19 +423,22 @@ function connectMazeRooms(world: WorldModel, roomIds: MazeRoomIds): void {
 // ============================================================================
 
 /**
- * Connect Maze to Clearing (surface) via grating
+ * Connect Maze to Clearing (surface) via grating.
+ * The grating entity acts as a barrier on both exits — the going action
+ * checks its OpenableTrait/LockableTrait via the `via` field.
  */
 export function connectMazeToClearing(
   world: WorldModel,
   mazeIds: MazeRoomIds,
-  clearingId: string
+  clearingId: string,
+  gratingId: string
 ): void {
-  // Grating Room UP to Clearing
+  // Grating Room UP to Clearing (through grating)
   const gratingRoom = world.getEntity(mazeIds.gratingRoom);
   if (gratingRoom) {
     const roomTrait = gratingRoom.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.UP] = { destination: clearingId };
+      roomTrait.exits[Direction.UP] = { destination: clearingId, via: gratingId };
     }
   }
 
@@ -444,7 +447,7 @@ export function connectMazeToClearing(
   if (clearing) {
     const roomTrait = clearing.get(RoomTrait);
     if (roomTrait) {
-      roomTrait.exits[Direction.DOWN] = { destination: mazeIds.gratingRoom };
+      roomTrait.exits[Direction.DOWN] = { destination: mazeIds.gratingRoom, via: gratingId };
     }
   }
 }
@@ -547,23 +550,26 @@ export function connectMazeToRoundRoom(
 // ============================================================================
 
 /**
- * Create all objects in the Maze region
+ * Create all objects in the Maze region.
+ * Returns the grating entity ID so connectMazeToClearing can wire exits.
  */
-export function createMazeObjects(world: WorldModel, roomIds: MazeRoomIds): void {
-  // Grating Room objects
-  createGratingRoomObjects(world, roomIds.gratingRoom);
+export function createMazeObjects(world: WorldModel, roomIds: MazeRoomIds): { gratingId: string } {
+  // Maze 5 objects first — we need the key ID for the grating
+  const keyId = createMaze5Objects(world, roomIds.maze5);
 
-  // Maze 5 objects (skeleton, coins, key, knife per 1981 MDL source)
-  createMaze5Objects(world, roomIds.maze5);
+  // Grating Room objects — wire the skeleton key as the grating's key
+  const gratingId = createGratingRoomObjects(world, roomIds.gratingRoom, keyId);
 
   // Treasure Room objects (Thief's lair)
   createTreasureRoomObjects(world, roomIds.treasureRoom);
+
+  return { gratingId };
 }
 
 // ============= Grating Room Objects =============
 
-function createGratingRoomObjects(world: WorldModel, roomId: string): void {
-  // Metal grating (scenery, openable, lockable)
+function createGratingRoomObjects(world: WorldModel, roomId: string, keyId: string): string {
+  // Metal grating (scenery, openable, lockable — single entity for both Clearing and Grating Room)
   const grating = world.createEntity('metal grating', EntityType.SCENERY);
   grating.add(new IdentityTrait({
     name: 'metal grating',
@@ -576,14 +582,16 @@ function createGratingRoomObjects(world: WorldModel, roomId: string): void {
   grating.add(new OpenableTrait({ isOpen: false }));
   grating.add(new LockableTrait({
     startsLocked: true,
-    isLocked: true
+    isLocked: true,
+    keyId,
   }));
   world.moveEntity(grating.id, roomId);
+  return grating.id;
 }
 
 // ============= Maze 5 Objects (per 1981 MDL: BONES, BAGCO, KEYS, BLANT, RKNIF) =============
 
-function createMaze5Objects(world: WorldModel, roomId: string): void {
+function createMaze5Objects(world: WorldModel, roomId: string): string {
   // Skeleton (scenery - dead adventurer) - BONES in MDL
   const skeleton = world.createEntity('skeleton', EntityType.SCENERY);
   skeleton.add(new IdentityTrait({
@@ -623,8 +631,6 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
     article: 'a',
     weight: 25
   }));
-  // Mark the key as being able to unlock the grating
-  key.attributes.unlocksId = 'metal grating';
   world.moveEntity(key.id, roomId);
 
   // Rusty knife - RKNIF in MDL (not a great weapon)
@@ -643,6 +649,8 @@ function createMaze5Objects(world: WorldModel, roomId: string): void {
   // The skeleton was a devotee who died with this incense
   const incense = createIncense(world);
   world.moveEntity(incense.id, roomId);
+
+  return key.id;
 }
 
 // ============= Treasure Room Objects =============

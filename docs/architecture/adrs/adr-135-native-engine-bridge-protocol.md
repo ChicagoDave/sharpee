@@ -1,7 +1,7 @@
 # ADR-135: Native Engine Bridge Protocol
 
 ## Status
-Proposed
+Accepted (implemented in `packages/bridge/`)
 
 ## Context
 
