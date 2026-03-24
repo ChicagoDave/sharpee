@@ -10,7 +10,7 @@ description: Verify scoring for room visits, feeding, item collection, and win s
 
 # Check initial score
 > score
-[OK: contains "0"]
+[OK: contains "scored 0"]
 
 # Collect zoo map (5 pts) and brochure
 > take map
@@ -112,4 +112,4 @@ description: Verify scoring for room visits, feeding, item collection, and win s
 # Victory should have triggered — check for win message
 # (The victory daemon runs after the player's turn)
 > score
-[OK: contains "75"]
+[OK: contains "perfect score"]

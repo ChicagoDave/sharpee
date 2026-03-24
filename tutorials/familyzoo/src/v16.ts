@@ -191,7 +191,10 @@ const pettingBehavior: CapabilityBehavior = {
   validate(_entity: IFEntity, _world: WorldModel, _actorId: string, _sharedData: CapabilitySharedData): CapabilityValidationResult {
     return { valid: true };
   },
-  execute(_entity: IFEntity, _world: WorldModel, _actorId: string, _sharedData: CapabilitySharedData): void {},
+  execute(_entity: IFEntity, world: WorldModel, _actorId: string, _sharedData: CapabilitySharedData): void {
+    // --- V16: Award score for petting ---
+    world.awardScore(ScoreIds.PET_ANIMAL, ScorePoints[ScoreIds.PET_ANIMAL], 'Petted an animal');
+  },
   report(entity: IFEntity, _world: WorldModel, _actorId: string, _sharedData: CapabilitySharedData): CapabilityEffect[] {
     const pettable = entity.get(PettableTrait);
     let messageId: string = PetMessages.CANT_PET;
@@ -236,8 +239,6 @@ const pettingAction: Action = {
     const sharedData = context.sharedData.capSharedData as CapabilitySharedData;
     if (entity && behavior) {
       behavior.execute(entity, context.world, context.player.id, sharedData);
-      // --- NEW IN V16: Award score for petting ---
-      context.world.awardScore(ScoreIds.PET_ANIMAL, ScorePoints[ScoreIds.PET_ANIMAL], 'Petted an animal');
     }
   },
   report(context: ActionContext): ISemanticEvent[] {
