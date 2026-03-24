@@ -1,0 +1,36 @@
+title: V06 — Openable Things
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify OpenableTrait on lunchbox and feed dispenser
+
+---
+
+# V6 teaches: OpenableTrait — open and close containers
+
+# Go to Main Path where the lunchbox is
+> south
+[OK: contains "Main Path"]
+
+# The lunchbox is closed
+> open lunchbox
+[OK: contains "open"]
+
+# Now we can see inside
+> look in lunchbox
+[OK: contains "juice box"]
+
+# Close it again
+> close lunchbox
+[OK: contains "close"]
+
+# Go to Petting Zoo for the feed dispenser
+> east
+[OK: contains "Petting Zoo"]
+
+# Dispenser starts closed
+> open dispenser
+[OK: contains "open"]
+
+# Try to take it — it's scenery
+> take dispenser
+[OK: contains "fixed in place"]

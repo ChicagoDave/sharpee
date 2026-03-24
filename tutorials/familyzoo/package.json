@@ -1,0 +1,33 @@
+{
+  "name": "@sharpee/tutorial-familyzoo",
+  "version": "0.1.0-beta",
+  "description": "Family Zoo — A progressive Sharpee tutorial in 16 versions",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "file:../../packages/core",
+    "@sharpee/engine": "file:../../packages/engine",
+    "@sharpee/stdlib": "file:../../packages/stdlib",
+    "@sharpee/world-model": "file:../../packages/world-model",
+    "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
+    "@sharpee/parser-en-us": "file:../../packages/parser-en-us",
+    "@sharpee/text-service": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "tutorial",
+    "family-zoo"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

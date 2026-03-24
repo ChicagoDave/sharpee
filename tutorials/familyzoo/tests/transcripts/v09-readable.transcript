@@ -1,0 +1,67 @@
+title: V09 — Readable Objects
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify ReadableTrait on plaques, brochure, and warning sign
+
+---
+
+# V9 teaches: ReadableTrait — read vs examine
+
+# Take and read the zoo brochure (portable + readable)
+> take brochure
+[OK: contains "Taken"]
+
+> read brochure
+[OK: contains "WILLOWBROOK FAMILY ZOO"]
+[OK: contains "Petting Zoo"]
+
+# Examine shows physical description, not text
+> examine brochure
+[OK: contains "glossy"]
+
+# Go to Petting Zoo and read the plaque
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> read plaque
+[OK: contains "PYGMY GOATS"]
+[OK: contains "Nigerian Dwarf"]
+
+# Go to Aviary and read that plaque
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> read plaque
+[OK: contains "TOCO TOUCAN"]
+
+# Navigate to supply room for the warning sign
+> east
+[OK: contains "Main Path"]
+
+> north
+[OK: contains "Zoo Entrance"]
+
+> take keycard
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Main Path"]
+
+> unlock gate with keycard
+[OK: contains "unlock"]
+
+> open gate
+[OK: contains "open"]
+
+> south
+[OK: contains "Supply Room"]
+
+> read warning
+[OK: contains "CAUTION"]
+[OK: contains "flashlight"]

@@ -34,6 +34,32 @@ BUILD_BRIDGE=false
 VERSION_OVERRIDE=""
 
 # ============================================================================
+# Story/Tutorial Directory Resolution
+# ============================================================================
+# Stories live in stories/ or tutorials/. These helpers find the right one.
+
+resolve_story_dir() {
+    local NAME="$1"
+    if [ -d "stories/${NAME}" ]; then
+        echo "stories/${NAME}"
+    elif [ -d "tutorials/${NAME}" ]; then
+        echo "tutorials/${NAME}"
+    else
+        echo ""
+    fi
+}
+
+resolve_story_pkg() {
+    local NAME="$1"
+    local DIR=$(resolve_story_dir "$NAME")
+    if [[ "$DIR" == tutorials/* ]]; then
+        echo "@sharpee/tutorial-${NAME}"
+    else
+        echo "@sharpee/story-${NAME}"
+    fi
+}
+
+# ============================================================================
 # Help
 # ============================================================================
 
@@ -560,7 +586,7 @@ EOF
 
 build_test_bundle() {
     local STORY_NAME="$1"
-    local STORY_DIR="stories/${STORY_NAME}"
+    local STORY_DIR=$(resolve_story_dir "$STORY_NAME")
     local STORY_DIST="${STORY_DIR}/dist/index.js"
 
     log_step "Building Test Bundle: ${STORY_NAME}-test.js"
@@ -613,8 +639,9 @@ build_test_bundle() {
 
 run_tests() {
     local STORY_NAME="$1"
-    local WT_DIR="stories/${STORY_NAME}/walkthroughs"
-    local UT_DIR="stories/${STORY_NAME}/tests/transcripts"
+    local STORY_DIR_RESOLVED=$(resolve_story_dir "$STORY_NAME")
+    local WT_DIR="${STORY_DIR_RESOLVED}/walkthroughs"
+    local UT_DIR="${STORY_DIR_RESOLVED}/tests/transcripts"
 
     log_step "Running Tests: ${STORY_NAME}"
 
@@ -680,13 +707,13 @@ run_tests() {
 
 build_story() {
     local STORY_NAME="$1"
-    local STORY_DIR="stories/${STORY_NAME}"
-    local STORY_PKG="@sharpee/story-${STORY_NAME}"
+    local STORY_DIR=$(resolve_story_dir "$STORY_NAME")
+    local STORY_PKG=$(resolve_story_pkg "$STORY_NAME")
 
     log_step "Building Story: ${STORY_NAME}"
 
-    if [ ! -d "$STORY_DIR" ]; then
-        echo -e "${RED}Error: Story not found: $STORY_DIR${NC}"
+    if [ -z "$STORY_DIR" ] || [ ! -d "$STORY_DIR" ]; then
+        echo -e "${RED}Error: Story not found in stories/ or tutorials/: ${STORY_NAME}${NC}"
         exit 1
     fi
 
@@ -708,7 +735,7 @@ build_story() {
 
 build_story_bundle() {
     local STORY_NAME="$1"
-    local STORY_DIR="stories/${STORY_NAME}"
+    local STORY_DIR=$(resolve_story_dir "$STORY_NAME")
     local STORY_SRC="${STORY_DIR}/src/index.ts"
     local STORY_DIST="${STORY_DIR}/dist/index.js"
     local OUT_DIR="dist/stories"

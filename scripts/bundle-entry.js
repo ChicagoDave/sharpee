@@ -42,13 +42,18 @@ exports.createEditorSession = function createEditorSession(storyId, projectPath)
   const path = require('path');
   const fs = require('fs');
 
-  // Find story in stories/ folder
+  // Find story in stories/ or tutorials/ folder
   const basePath = projectPath || process.cwd();
-  const storyPath = path.resolve(basePath, 'stories', storyId);
-  const distPath = path.join(storyPath, 'dist', 'index.js');
+  let storyPath = path.resolve(basePath, 'stories', storyId);
+  let distPath = path.join(storyPath, 'dist', 'index.js');
 
   if (!fs.existsSync(distPath)) {
-    throw new Error(`Story not found: ${storyId}. Expected at ${distPath}`);
+    storyPath = path.resolve(basePath, 'tutorials', storyId);
+    distPath = path.join(storyPath, 'dist', 'index.js');
+  }
+
+  if (!fs.existsSync(distPath)) {
+    throw new Error(`Story not found: ${storyId}. Expected in stories/ or tutorials/`);
   }
 
   // Clear require cache to get fresh story

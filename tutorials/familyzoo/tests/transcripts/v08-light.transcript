@@ -1,0 +1,62 @@
+title: V08 — Light & Dark
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify dark nocturnal exhibit and flashlight illumination
+
+---
+
+# V8 teaches: isDark rooms, LightSourceTrait, SwitchableTrait
+
+# Get the keycard and unlock the staff gate
+> take keycard
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Main Path"]
+
+> unlock gate with keycard
+[OK: contains "unlock"]
+
+> open gate
+[OK: contains "open"]
+
+> south
+[OK: contains "Supply Room"]
+
+# Take the flashlight
+> take flashlight
+[OK: contains "Taken"]
+
+# Go to the nocturnal exhibit (dark!)
+> south
+[OK: contains "dark"]
+
+# Can't see anything
+> look
+[OK: contains "dark"]
+
+# Go back and switch on the flashlight
+> north
+[OK: contains "Supply Room"]
+
+> switch on flashlight
+[OK: contains "on"]
+
+# Now re-enter the nocturnal exhibit
+> south
+[OK: contains "Nocturnal Animals"]
+
+# With the flashlight on, we can see the animals!
+> look
+[OK: contains "sugar gliders"]
+
+> examine owl
+[OK: contains "barn owl"]
+[OK: contains "heart-shaped"]
+
+> examine galagos
+[OK: contains "large round eyes"]
+
+# Go back out
+> north
+[OK: contains "Supply Room"]

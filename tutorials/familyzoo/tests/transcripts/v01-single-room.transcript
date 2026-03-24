@@ -1,0 +1,31 @@
+title: V01 — A Single Room
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify that the Zoo Entrance room exists with scenery objects
+
+---
+
+# V1 teaches: look and examine in a single room
+
+# The game starts at the Zoo Entrance
+> look
+[OK: contains "Zoo Entrance"]
+[OK: contains "Willowbrook Family Zoo"]
+[OK: contains "welcome sign"]
+[OK: contains "ticket booth"]
+
+# Examine the welcome sign
+> examine sign
+[OK: contains "WELCOME TO WILLOWBROOK"]
+
+# Examine the ticket booth
+> examine booth
+[OK: contains "Self-Guided Tours"]
+
+# Scenery can't be taken
+> take sign
+[OK: contains "fixed in place"]
+
+# Try looking again to confirm the room is stable
+> look
+[OK: contains "Zoo Entrance"]

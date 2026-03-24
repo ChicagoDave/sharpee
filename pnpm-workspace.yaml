@@ -8,6 +8,7 @@ packages:
   - '!packages/dev-tools'
   - '!packages/forge'
   - stories/dungeo
+  - tutorials/familyzoo
 
 ignoredBuiltDependencies:
   - electron

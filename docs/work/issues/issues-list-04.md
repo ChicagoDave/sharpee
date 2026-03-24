@@ -14,6 +14,8 @@ Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
 | ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - | - |
 | ISSUE-052 | Capability registry uses module-level Map; not shared across require() | High | world-model | 2026-02-08 | - | 2026-02-13 |
 | ISSUE-053 | Grating/skeleton key wiring broken — duplicate entities, no keyId, exits bypass lock | High | dungeo, parser | 2026-03-23 | - | 2026-03-23 |
+| ISSUE-054 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us | 2026-03-23 | - | - |
+| ISSUE-055 | Entity creation is excessively repetitive — needs builder/helper API | Low | world-model | 2026-03-23 | - | - |
 
 ---
 
@@ -119,6 +121,110 @@ All English text strings in the Dungeo story are currently spread across multipl
 Four problems make the grating puzzle non-functional: duplicate grating entities (forest.ts and maze.ts), `key.attributes.unlocksId` is a no-op, `LockableTrait` has no `keyId`, and exits don't use `via` to check the grating's open/locked state.
 
 **Details**: See [issue-053-grating-key-wiring.md](issue-053-grating-key-wiring.md)
+
+---
+
+### ISSUE-055: Entity creation is excessively repetitive — needs builder/helper API
+
+**Reported**: 2026-03-23
+**Severity**: Low (DX improvement, not a bug)
+**Component**: Platform (world-model)
+**Type**: Enhancement
+
+**Description**:
+Creating entities requires 3-4 separate calls every time, which becomes extremely repetitive in story code:
+
+```typescript
+// Current: 4 calls per entity
+const fence = world.createEntity('iron fence', EntityType.SCENERY);
+fence.add(new IdentityTrait({ name: 'iron fence', description: '...', aliases: ['fence'], properName: false, article: 'an' }));
+fence.add(new SceneryTrait());
+world.moveEntity(fence.id, entrance.id);
+```
+
+The Family Zoo tutorial V8 has ~30 entities, each requiring this pattern. The repetition is:
+- `createEntity` + `IdentityTrait` (every entity)
+- `SceneryTrait` (most environmental objects)
+- `moveEntity` (every entity)
+- Name appears in both `createEntity()` and `IdentityTrait.name` (always duplicated)
+
+**Possible approaches** (needs discussion):
+
+**A. Factory helpers on WorldModel:**
+```typescript
+// Scenery: create + identity + scenery + place in one call
+const fence = world.createScenery('iron fence', entrance.id, {
+  description: '...',
+  aliases: ['fence'],
+  article: 'an',
+});
+
+// Portable item: create + identity + place
+const map = world.createItem('zoo map', entrance.id, {
+  description: '...',
+  aliases: ['map'],
+});
+
+// Room: create + room trait + identity
+const hall = world.createRoom('Great Hall', {
+  description: '...',
+  isDark: false,
+});
+```
+
+**B. Builder/fluent API:**
+```typescript
+const fence = world.build('iron fence', EntityType.SCENERY)
+  .description('A tall wrought-iron fence.')
+  .aliases('fence', 'railing')
+  .article('an')
+  .scenery()
+  .placeIn(entrance)
+  .done();
+```
+
+**C. Story-level helpers (no platform change):**
+```typescript
+// Helpers defined in the story file or a shared module
+function scenery(world, name, room, opts) { ... }
+function item(world, name, room, opts) { ... }
+```
+
+**Trade-offs**:
+- (A) is the most ergonomic but adds API surface to WorldModel
+- (B) is flexible but may be over-engineered for what's essentially sugar
+- (C) requires no platform changes and can ship in the tutorial itself
+
+**Priority**: Low — the verbose pattern works, is explicit, and teaches well. But it's a paper cut for experienced authors writing real stories.
+
+**Discovered during**: Family Zoo tutorial development — the pattern repeats 30+ times in a single file.
+
+---
+
+### ISSUE-054: Multi-word aliases don't resolve in the parser
+
+**Reported**: 2026-03-23
+**Severity**: Medium
+**Component**: Platform (parser-en-us)
+
+**Description**:
+Entity aliases with spaces (multi-word aliases) don't resolve when used in player commands. For example, an entity with `aliases: ['bush babies', 'bush baby', 'galagos']` can be referenced by `examine galagos` but NOT by `examine bush babies`.
+
+**Reproduction**:
+```typescript
+const bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
+bushBabies.add(new IdentityTrait({
+  name: 'bush babies',
+  aliases: ['bush babies', 'bush baby', 'galagos'],
+}));
+```
+- `examine galagos` → works (single-word alias)
+- `examine bush babies` → "You can't see any such thing." (multi-word alias fails)
+- `examine bush baby` → needs testing
+
+**Impact**: Authors must provide single-word aliases as workarounds. Multi-word names like "flower beds", "hay bale", "rope perches" also fail as aliases (but work as the primary `name` in some contexts). Discovered during Family Zoo tutorial development.
+
+**Workaround**: Always include at least one single-word alias for every entity.
 
 ---
 

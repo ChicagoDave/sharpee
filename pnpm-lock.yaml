@@ -860,6 +860,40 @@ importers:
         specifier: ^1.3.0
         version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(lightningcss@1.30.2)(terser@5.44.1)
 
+  tutorials/familyzoo:
+    dependencies:
+      '@sharpee/core':
+        specifier: file:../../packages/core
+        version: link:../../packages/core
+      '@sharpee/engine':
+        specifier: file:../../packages/engine
+        version: file:packages/engine
+      '@sharpee/lang-en-us':
+        specifier: file:../../packages/lang-en-us
+        version: file:packages/lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: file:../../packages/parser-en-us
+        version: file:packages/parser-en-us
+      '@sharpee/stdlib':
+        specifier: file:../../packages/stdlib
+        version: file:packages/stdlib
+      '@sharpee/text-service':
+        specifier: workspace:*
+        version: link:../../packages/text-service
+      '@sharpee/world-model':
+        specifier: file:../../packages/world-model
+        version: file:packages/world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
 packages:
 
   '@ampproject/remapping@2.3.0':
@@ -1583,6 +1617,26 @@ packages:
     resolution: {integrity: sha512-hYT5d3YNdSh3mbCU1gwQyPgQd3T2ne0A3KG8KSBdav5TiBg6eInVmV+TeR5uHufiIgSFg0XsOWGW5/RhNcSvPg==}
     cpu: [x64]
     os: [win32]
+
+  '@sharpee/engine@file:packages/engine':
+    resolution: {directory: packages/engine, type: directory}
+    engines: {node: '>=18.0.0'}
+
+  '@sharpee/lang-en-us@file:packages/lang-en-us':
+    resolution: {directory: packages/lang-en-us, type: directory}
+    engines: {node: '>=18.0.0'}
+
+  '@sharpee/parser-en-us@file:packages/parser-en-us':
+    resolution: {directory: packages/parser-en-us, type: directory}
+    engines: {node: '>=18.0.0'}
+
+  '@sharpee/stdlib@file:packages/stdlib':
+    resolution: {directory: packages/stdlib, type: directory}
+    engines: {node: '>=18.0.0'}
+
+  '@sharpee/world-model@file:packages/world-model':
+    resolution: {directory: packages/world-model, type: directory}
+    engines: {node: '>=18.0.0'}
 
   '@sigstore/bundle@2.3.2':
     resolution: {integrity: sha512-wueKWDk70QixNLB363yHc2D2ItTgYiMTdPwK8D9dKQMR3ZQ0c35IxP5xnwQ8cNLoCgCRcHf14kE+CLIvNX1zmA==}
@@ -5087,6 +5141,45 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.54.0':
     optional: true
+
+  '@sharpee/engine@file:packages/engine':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/event-processor': link:packages/event-processor
+      '@sharpee/if-domain': link:packages/if-domain
+      '@sharpee/if-services': link:packages/if-services
+      '@sharpee/lang-en-us': link:packages/lang-en-us
+      '@sharpee/parser-en-us': link:packages/parser-en-us
+      '@sharpee/plugins': link:packages/plugins
+      '@sharpee/stdlib': link:packages/stdlib
+      '@sharpee/text-blocks': link:packages/text-blocks
+      '@sharpee/text-service': link:packages/text-service
+      '@sharpee/world-model': link:packages/world-model
+
+  '@sharpee/lang-en-us@file:packages/lang-en-us':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/if-domain': link:packages/if-domain
+
+  '@sharpee/parser-en-us@file:packages/parser-en-us':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/if-domain': link:packages/if-domain
+      '@sharpee/lang-en-us': link:packages/lang-en-us
+      '@sharpee/world-model': link:packages/world-model
+
+  '@sharpee/stdlib@file:packages/stdlib':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/if-domain': link:packages/if-domain
+      '@sharpee/if-services': link:packages/if-services
+      '@sharpee/lang-en-us': link:packages/lang-en-us
+      '@sharpee/world-model': link:packages/world-model
+
+  '@sharpee/world-model@file:packages/world-model':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/if-domain': link:packages/if-domain
 
   '@sigstore/bundle@2.3.2':
     dependencies:

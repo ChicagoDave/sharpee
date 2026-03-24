@@ -1,0 +1,37 @@
+title: V07 — Locked Doors & Keys
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify locked staff gate, keycard, unlock, and supply room access
+
+---
+
+# V7 teaches: LockableTrait, keyId wiring, exit via property
+
+# Pick up the keycard at the entrance
+> take keycard
+[OK: contains "Taken"]
+
+# Go to Main Path
+> south
+[OK: contains "Main Path"]
+
+# Try to go south — blocked by the locked gate
+> south
+[OK: contains "locked"]
+
+# Unlock the gate with the keycard
+> unlock gate with keycard
+[OK: contains "unlock"]
+
+# Open the gate
+> open gate
+[OK: contains "open"]
+
+# Now walk through
+> south
+[OK: contains "Supply Room"]
+[OK: contains "shelves"]
+
+# We can go back north through the open gate
+> north
+[OK: contains "Main Path"]

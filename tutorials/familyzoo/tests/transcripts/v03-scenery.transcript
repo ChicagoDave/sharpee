@@ -1,0 +1,65 @@
+title: V03 — Scenery
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify scenery objects can be examined but not taken
+
+---
+
+# V3 teaches: SceneryTrait — examine yes, take no
+
+# Check scenery at the entrance
+> look
+[OK: contains "Zoo Entrance"]
+[OK: contains "iron fence"]
+
+> examine fence
+[OK: contains "wrought-iron"]
+[OK: contains "animal silhouettes"]
+
+> take fence
+[OK: contains "fixed in place"]
+
+# Go to Main Path and check new scenery
+> south
+[OK: contains "Main Path"]
+
+> examine bench
+[OK: contains "park bench"]
+
+> examine flowers
+[OK: contains "marigolds"]
+
+> take bench
+[OK: contains "fixed in place"]
+
+# Go to Petting Zoo and check animal scenery
+> east
+[OK: contains "Petting Zoo"]
+
+> examine hay bale
+[OK: contains "golden hay"]
+
+> take hay bale
+[OK: contains "fixed in place"]
+
+> examine rabbits
+[OK: contains "Holland Lop"]
+
+# Go to Aviary and check scenery
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> examine parrots
+[OK: contains "macaws"]
+
+> examine waterfall
+[OK: contains "waterfall"]
+
+> take waterfall
+[OK: contains "fixed in place"]
+
+> examine perches
+[OK: contains "sisal rope"]

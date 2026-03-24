@@ -1,0 +1,41 @@
+title: V10 — Switchable Devices
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify SwitchableTrait on radio (standalone, no light)
+
+---
+
+# V10 teaches: SwitchableTrait standalone (on/off without light)
+
+# Navigate to supply room
+> take keycard
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Main Path"]
+
+> unlock gate with keycard
+[OK: contains "unlock"]
+
+> open gate
+[OK: contains "open"]
+
+> south
+[OK: contains "Supply Room"]
+
+# Examine the radio
+> examine radio
+[OK: contains "duct tape"]
+[OK: contains "ZOO FM"]
+
+# Switch on the radio
+> switch on radio
+[OK: contains "hums to life"]
+
+# Switch off the radio
+> switch off radio
+[OK: contains "powers down"]
+
+# Can't take it — it's scenery
+> take radio
+[OK: contains "fixed in place"]
