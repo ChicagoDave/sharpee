@@ -234,3 +234,70 @@ bushBabies.add(new IdentityTrait({
 **Severity**: High
 **Component**: Platform (world-model / capability-registry.ts)
 **Status**: Fixed 2026-02-13 — `capability-registry.ts` now uses `globalThis` storage via `__sharpee_capability_behaviors__` key, matching the pattern in `interceptor-registry.ts`.
+
+---
+
+### ISSUE-053: Transcript tester `story:` header field is metadata-only
+
+**Reported**: 2026-03-24
+**Severity**: Low (DX)
+**Component**: Platform (transcript-tester / fast-cli.ts)
+**Status**: Open
+
+The `story:` field in transcript headers (e.g., `story: familyzoo`) is not used by the transcript runner to load the story at runtime. The runner always uses the `--story` CLI flag (default: `stories/dungeo`). Authors must remember to pass `--story tutorials/familyzoo` on every test invocation.
+
+**Expected**: The runner should auto-resolve the story path from the `story:` header field when no `--story` flag is provided.
+
+**Workaround**: Always pass `--story <path>` when running transcripts for non-default stories.
+
+---
+
+### ISSUE-054: No "execute but don't assert" transcript assertion
+
+**Reported**: 2026-03-24
+**Severity**: Low (DX)
+**Component**: Platform (transcript-tester / parser.ts)
+**Status**: Open
+
+There is no assertion format that means "run the command but always pass." The available options:
+- `[SKIP]` — skips execution entirely (needed for DO-UNTIL loop support, see commit `f80df965`)
+- `[OK]` — requires exact match against expected output; fails when output exists but no expected output is given
+- `[OK: contains "X"]` — requires specific text in output
+
+Authors writing transcripts with "don't care" commands (e.g., `wait` to burn turns) must use `[OK: contains "Time passes"]` as a workaround. A `[RUN]` or `[OK: any]` assertion type would be useful.
+
+**Workaround**: Use `[OK: contains "Time passes"]` or similar broad assertion.
+
+---
+
+### ISSUE-055: Multi-word entity names fail in story grammar `:thing` slots
+
+**Reported**: 2026-03-24
+**Severity**: Medium
+**Component**: Platform (parser-en-us)
+**Status**: Open
+
+When a story grammar pattern uses `:thing` (e.g., `photograph :thing`), multi-word entity names and aliases fail to resolve. Example:
+```
+> photograph stuffed animals   → "You can't see any such thing."
+> photograph toys              → works (single-word alias)
+```
+
+The entity has `aliases: ['stuffed animals', 'plush', 'toys']` and is in the current room. This is the same root cause as ISSUE-051 (multi-word aliases in stdlib grammar) but confirmed to also affect story-defined grammar patterns.
+
+**Workaround**: Always include single-word aliases for entities that will be targets of story-specific grammar patterns.
+
+---
+
+### ISSUE-056: Fuse `skipNextTick` behavior undocumented at API level
+
+**Reported**: 2026-03-24
+**Severity**: Low (Documentation)
+**Component**: Platform (plugin-scheduler)
+**Status**: Open
+
+When a fuse is set via `scheduler.setFuse()`, it internally sets `skipNextTick: true` on the `FuseState`. This means a fuse with `turns: 10` actually fires ~11 ticks after registration (10 countdown ticks + 1 skipped tick). The `skipNextTick` field exists on the `FuseState` interface with a brief comment, but this behavior is not documented in the API reference or the `Fuse` interface itself.
+
+**Impact**: Authors setting fuses get off-by-one timing. Discovered during Family Zoo V15 implementation when timed events fired one turn later than expected.
+
+**Workaround**: Account for the extra tick when setting fuse turn counts (use `turns: N-1` if you want the fuse to fire after N player turns).

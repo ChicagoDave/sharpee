@@ -16,7 +16,8 @@
     "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
     "@sharpee/parser-en-us": "file:../../packages/parser-en-us",
     "@sharpee/text-service": "workspace:*",
-    "@sharpee/plugin-npc": "file:../../packages/plugin-npc"
+    "@sharpee/plugin-npc": "file:../../packages/plugin-npc",
+    "@sharpee/plugin-scheduler": "file:../../packages/plugin-scheduler"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

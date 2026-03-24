@@ -1,0 +1,115 @@
+title: V16 — Scoring and Endgame
+story: familyzoo
+entry: v16
+author: Sharpee Tutorial
+description: Verify scoring for room visits, feeding, item collection, and win state
+
+---
+
+# V16 teaches: Scoring with world.awardScore() and victory daemon
+
+# Check initial score
+> score
+[OK: contains "0"]
+
+# Collect zoo map (5 pts) and brochure
+> take map
+[OK: contains "Taken"]
+
+> take brochure
+[OK: contains "Taken"]
+
+# Read brochure (5 pts)
+> read brochure
+[OK: contains "WILLOWBROOK"]
+
+# Go south to Main Path (no score for entrance or main path)
+> south
+[OK: contains "Main Path"]
+
+# Take the penny for later
+> take penny
+[OK: contains "Taken"]
+
+# Visit Petting Zoo (5 pts)
+> east
+[OK: contains "Petting Zoo"]
+
+# Pick up feed and feed the goats (10 pts)
+> take feed
+[OK: contains "Taken"]
+
+> feed goats
+[OK: contains "feed"]
+
+# Feed the rabbits (10 pts)
+> feed rabbits
+[OK: contains "pellets"]
+
+# Pet the goats (5 pts)
+> pet goats
+[OK: contains "pet"]
+
+# Go to Aviary (5 pts)
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+# Go to Gift Shop (5 pts)
+> west
+[OK: contains "Gift Shop"]
+
+# Take camera and photograph something (5 pts)
+> take camera
+[OK: contains "Taken"]
+
+> photograph toys
+[OK: contains "photo"]
+
+# Press the penny (10 pts)
+> put penny in press
+[OK: contains "CLUNK"]
+
+# Go back and unlock supply room
+> east
+[OK: contains "Aviary"]
+
+> east
+[OK: contains "Main Path"]
+
+> north
+[OK: contains "Zoo Entrance"]
+
+> take keycard
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Main Path"]
+
+> unlock gate with keycard
+[OK: contains "unlock"]
+
+> open gate
+[OK: contains "open"]
+
+# Visit Supply Room (5 pts)
+> south
+[OK: contains "Supply Room"]
+
+# Get flashlight for nocturnal exhibit
+> take flashlight
+[OK: contains "Taken"]
+
+> switch on flashlight
+[OK: contains "switch"]
+
+# Visit Nocturnal Exhibit (5 pts) — this should trigger victory (75 pts total)
+> south
+[OK: contains "Nocturnal"]
+
+# Victory should have triggered — check for win message
+# (The victory daemon runs after the player's turn)
+> score
+[OK: contains "75"]

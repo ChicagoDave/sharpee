@@ -280,7 +280,7 @@ The `build.sh` story name is `familyzoo` and targets V16 for the "full game" bui
     - One section per version (V1–V16): what concept is introduced, the key code pattern, what to try in the transcript test, common mistakes
     - Appendix: "Sharpee Authoring Cheat Sheet" — one-line summaries of all 16 constructs with code snippets
 - **Exit state**: All 16 transcripts pass; `./build.sh -s familyzoo` targets V16 and succeeds; `tutorial.md` is complete; story is self-documenting for new Sharpee authors
-- **Status**: CURRENT
+- **Status**: DONE
 
 ---
 

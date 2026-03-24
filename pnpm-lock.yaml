@@ -877,6 +877,9 @@ importers:
       '@sharpee/plugin-npc':
         specifier: file:../../packages/plugin-npc
         version: file:packages/plugin-npc
+      '@sharpee/plugin-scheduler':
+        specifier: file:../../packages/plugin-scheduler
+        version: file:packages/plugin-scheduler
       '@sharpee/stdlib':
         specifier: file:../../packages/stdlib
         version: file:packages/stdlib
@@ -1635,6 +1638,10 @@ packages:
 
   '@sharpee/plugin-npc@file:packages/plugin-npc':
     resolution: {directory: packages/plugin-npc, type: directory}
+    engines: {node: '>=18.0.0'}
+
+  '@sharpee/plugin-scheduler@file:packages/plugin-scheduler':
+    resolution: {directory: packages/plugin-scheduler, type: directory}
     engines: {node: '>=18.0.0'}
 
   '@sharpee/stdlib@file:packages/stdlib':
@@ -5180,6 +5187,12 @@ snapshots:
       '@sharpee/core': link:packages/core
       '@sharpee/plugins': link:packages/plugins
       '@sharpee/stdlib': link:packages/stdlib
+      '@sharpee/world-model': link:packages/world-model
+
+  '@sharpee/plugin-scheduler@file:packages/plugin-scheduler':
+    dependencies:
+      '@sharpee/core': link:packages/core
+      '@sharpee/plugins': link:packages/plugins
       '@sharpee/world-model': link:packages/world-model
 
   '@sharpee/stdlib@file:packages/stdlib':
