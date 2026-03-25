@@ -15,12 +15,7 @@ description: Verify NPC exists, can be examined, and produces autonomous behavio
 [OK: contains "wheeled robot"]
 [OK: contains "optical sensor"]
 
-# Wait a few turns — the bot should speak (60% chance per turn when visible)
+# Wait until the bot speaks (60% chance per turn — DO/UNTIL handles randomness)
+[DO]
 > wait
-[SKIP]
-> wait
-[SKIP]
-> wait
-[SKIP]
-> wait
-[SKIP]
+[UNTIL "BEEP" OR "BOOP" OR "WHIRR"]
