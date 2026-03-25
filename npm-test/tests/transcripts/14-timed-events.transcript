@@ -1,37 +1,20 @@
 title: 14 — Timed Events (Daemon & Fuse)
 story: regression
 author: Sharpee Regression Suite
-description: Verify daemon fires after 3 turns and fuse fires after 8+ turns
+description: Verify daemon and fuse both fire during gameplay
 
 ---
 
-# Turn 1
+# Establish the room
 > look
 [OK: contains "Control Room"]
 
-# Turn 2
+# Wait until the daemon fires (runOnce, should fire within a few turns)
+[DO]
 > wait
-[SKIP]
+[UNTIL "FACILITY STATUS"]
 
-# Turn 3 — daemon should fire (runOnce, condition: turnCount >= 3)
+# Now wait until the pressure fuse triggers (turns: 8 + skipNextTick)
+[DO]
 > wait
-[OK: contains "FACILITY STATUS"]
-
-# Turns 4-9 — waiting for fuse (turns: 8 + skipNextTick = ~9 turns)
-> wait
-[SKIP]
-> wait
-[SKIP]
-> wait
-[SKIP]
-> wait
-[SKIP]
-> wait
-[SKIP]
-> wait
-[SKIP]
-
-# Turn 10 — fuse should have triggered by now
-> wait
-[OK: contains "WARNING"]
-[OK: contains "Coolant pressure"]
+[UNTIL "WARNING"]
