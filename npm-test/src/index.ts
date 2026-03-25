@@ -637,6 +637,32 @@ class RegressionStory implements Story {
       .mapsTo(PING_ACTION_ID)
       .withPriority(150)
       .build();
+
+    // WEAR :thing — wearing grammar not in stdlib parser yet
+    grammar
+      .forAction('if.action.wearing')
+      .verbs(['wear', 'don'])
+      .pattern(':target')
+      .build();
+
+    grammar
+      .define('put on :target')
+      .mapsTo('if.action.wearing')
+      .withPriority(95)
+      .build();
+
+    // TAKE OFF :thing — removing worn items
+    grammar
+      .define('take off :target')
+      .mapsTo('if.action.taking_off')
+      .withPriority(95)
+      .build();
+
+    grammar
+      .define('remove :target')
+      .mapsTo('if.action.taking_off')
+      .withPriority(95)
+      .build();
   }
 
   /**
