@@ -53,6 +53,6 @@ description: Verify openable, lockable container with key, put in, and take from
 > close toolbox
 [OK: contains "close"]
 
-# Lock it (key was put inside — can't lock without holding it)
+# Lock it — should fail because key is inside the toolbox
 > lock toolbox with key
-[SKIP]
+[OK: contains "need to be holding"]
