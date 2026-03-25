@@ -1,525 +1,93 @@
-# Session Plan: packages/bridge — Native Engine Bridge Protocol (ADR-135)
+# Plan: Fix Stdlib Golden Tests
 
-**Created**: 2026-03-20
-**Overall scope**: Create a new `packages/bridge/` package (`@sharpee/bridge`) that implements the ADR-135 native engine bridge protocol. The bridge runs as a Node.js subprocess, reads newline-delimited JSON from stdin, drives the Sharpee engine, and writes newline-delimited JSON to stdout. Builds to a standalone `node_bridge.js` via esbuild for native host apps (Lantern, Zifmia desktop).
-**Bounded contexts touched**: N/A — infrastructure/tooling; no domain model changes
-**Key domain language**: N/A — this is a platform packaging and bridge concern
-
----
-
-## Reference: Existing runtime package
-
-`packages/runtime/` is the browser PostMessage equivalent. Use it as the structural template:
-- `src/protocol.ts` — typed message unions (runtime uses `sharpee:` prefix; bridge uses plain `method`/`type` fields per ADR-135)
-- `src/bridge.ts` — `SharpeeRuntimeBridge` class (bridge equivalent will be `NativeEngineBridge`)
-- `src/runtime-entry.ts` — browser IIFE entry; bridge equivalent will be a plain Node.js `main()` entry
-- `src/index.ts` — re-exports (bridge will need the same engine API re-exports for the `storyPath` authoring mode)
-
-`.sharpee` bundle loading: The browser runner uses `fflate` to unzip, reads `meta.json` + `story.js`. Node.js bridge can use the built-in `fs` + `node:zlib` / `adm-zip` or `fflate` (Node target) to do the same. The story code in a `.sharpee` bundle is browser ESM with `@sharpee/*` as externals — in the Node bridge context, we use Node's `vm.runInNewContext` or `new Function` to evaluate it against the bundled engine.
-
----
-
-## Phases
-
-### Phase 1: Package Scaffold and Protocol Types
-- **Tier**: Small
-- **Budget**: ~100 tool calls
-- **Domain focus**: N/A — infrastructure
-- **Entry state**: `packages/runtime/` exists and is the reference; `packages/bridge/` does not exist
-- **Deliverable**:
-  - `packages/bridge/package.json` — `@sharpee/bridge`, same engine workspace deps as `@sharpee/runtime`, plus `fflate` for zip reading; Node.js target
-  - `packages/bridge/tsconfig.json` — extends `../../tsconfig.base.json`; same project references as runtime; no `lib: ["dom"]` (Node only)
-  - `packages/bridge/src/protocol.ts` — fully typed ADR-135 message unions:
-    - Inbound: `StartMessage` (with `bundle?: string`, `storyPath?: string`), `CommandMessage`, `SaveMessage`, `RestoreMessage`, `QuitMessage`
-    - Outbound: `ReadyMessage` (with `version: string`), `BlocksMessage` (with `blocks: ITextBlock[]`), `EventsMessage` (with `events: DomainEvent[]`), `StatusMessage` (with `location: string`, `turn: number`), `ErrorMessage`, `ByeMessage`
-    - `DomainEvent` interface (`type: string`, `data: object`)
-    - Type guards for inbound/outbound
-    - `BRIDGE_PROTOCOL_VERSION` constant
-  - `packages/bridge/src/index.ts` — re-exports of protocol types and engine API surface (same shape as `packages/runtime/src/index.ts` minus browser-only exports)
-  - No bridge logic yet; no build integration yet
-- **Exit state**: Package directory exists; `tsc --noEmit` passes; protocol types cover the full ADR-135 message set
-- **Status**: DONE
-
-### Phase 2: NativeEngineBridge Class
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: N/A — infrastructure bridge
-- **Entry state**: Phase 1 complete; `protocol.ts` and `index.ts` exist; package compiles
-- **Deliverable**:
-  - `packages/bridge/src/bridge.ts` — `NativeEngineBridge` class:
-    - **I/O**: reads newline-delimited JSON from a `Readable` (stdin), writes newline-delimited JSON to a `Writable` (stdout); uses Node.js `readline` interface
-    - **Command queue**: internal async queue enforces sequential command processing; next command dequeued only after `status` (or `error`) is sent for the current command
-    - **Message dispatch**: `start`, `command`, `save`, `restore`, `quit`
-    - **`start` handler**:
-      - If `bundle` field present: unzip `.sharpee` file (using `fflate` Node target), extract `story.js`, use `vm.runInNewContext` or `new Function` to execute it with the bundled engine API in scope, obtain a `Story` object
-      - If `storyPath` field present: invoke esbuild programmatically to compile the `.ts` file to an in-memory JS string (esbuild API, not CLI subprocess), then execute via `new Function`
-      - Bootstrap engine: `WorldModel`, `EnglishParser`, `EnglishLanguageProvider`, `PerceptionService`, `GameEngine`
-      - Wire `engine.on('text:output', ...)` → send `blocks` message
-      - Wire `engine.on('event', ...)` → filter to `if.event.*` and `platform.*` → batch into `events` message (sent after blocks, before status)
-      - Send `ready` message after bootstrap, before `start` handler runs the opening turn
-      - Run opening turn after sending `ready`; send `status` when done
-    - **`command` handler**: `engine.executeTurn(text)` → send `blocks` + `events` + `status`
-    - **`save` handler**: `engine.save()` triggers save hook → save hook emits `platform.save_completed` event (flows through event channel, no bespoke outbound message)
-    - **`restore` handler**: install temporary restore hook returning parsed save data, call `engine.restore()`
-    - **`quit` handler**: send `bye`, flush stdout, exit process
-    - **Error handling**: uncaught errors send `error` message; process does not exit on command errors
-  - `packages/bridge/src/bridge-entry.ts` — Node.js `main()` entry point:
-    - Creates `NativeEngineBridge` with `process.stdin` and `process.stdout`
-    - Calls `bridge.listen()`
-    - Handles `SIGTERM`/`SIGINT` by sending `bye` and exiting cleanly
-- **Exit state**: Bridge compiles; manual test (pipe JSON via stdin) demonstrates full round-trip: `start` → `ready` + `blocks` + `events` + `status`; `command "north"` → `blocks` + `events` + `status`; `quit` → `bye`
-- **Status**: DONE
-
-### Phase 3: Build Integration
-- **Tier**: Small
-- **Budget**: ~100 tool calls
-- **Domain focus**: N/A — infrastructure
-- **Entry state**: Phase 2 complete; bridge entry point compiles and passes manual test
-- **Deliverable**:
-  - `build.sh` updated: new `--bridge` flag triggers `build_bridge()` function
-    - esbuild invocation: `--platform=node --target=node18 --format=cjs --bundle --outfile=dist/bridge/node_bridge.js`
-    - `--external:readline` (Node built-in)
-    - Same `--alias:@sharpee/*` flags as the existing `build_bundle()` function (points at `dist/` CJS outputs)
-    - Sourcemap enabled; no minification by default
-  - `build.sh` help text updated to document `--bridge` flag and `dist/bridge/node_bridge.js` output
-  - `packages/bridge/package.json` `build` script: `tsc --noEmit` (actual artifact from esbuild in build.sh)
-  - Output: `dist/bridge/node_bridge.js` (single CJS file, all engine code inlined, runs with `node node_bridge.js`)
-  - Quick smoke test: `echo '{"method":"start","bundle":"dist/stories/dungeo.sharpee"}' | node dist/bridge/node_bridge.js` produces `ready`, `blocks`, `events`, `status` on stdout
-- **Exit state**: `./build.sh --bridge` completes; `dist/bridge/node_bridge.js` exists; smoke test produces correct output sequence; bundle size reported
-- **Status**: DONE
-
----
-
----
-
-# Session Plan: Zoo Tutorial Story — 16-Version Progressive Sharpee Tutorial
-
-**Created**: 2026-03-23
-**Overall scope**: Create a new tutorial at `tutorials/familyzoo/` that teaches Sharpee authoring through 16 progressively richer versions of a family zoo. Each version adds exactly one new platform concept, is independently buildable and playable, and ships with at least one transcript test demonstrating the concept introduced.
-**Bounded contexts touched**: N/A — story-level work only; no changes to packages/
-**Key domain language**: N/A — tutorial/infrastructure work; domain is "zoo" but concepts are Sharpee API constructs
-
----
-
-## Platform Gap Analysis (Pre-work)
-
-Before implementation begins, verify the following constructs exist and are usable from story code:
-
-| Construct | Status | Notes |
-|---|---|---|
-| `RoomTrait`, `IdentityTrait`, `ActorTrait` | Confirmed present | Core world-model exports |
-| `SceneryTrait` | Confirmed present | world-model export |
-| `ContainerTrait`, `SupporterTrait` | Confirmed present | world-model exports |
-| `OpenableTrait`, `LockableTrait` | Confirmed present | world-model exports |
-| `SwitchableTrait`, `ReadableTrait` | Confirmed present | world-model exports |
-| `LightSourceTrait` | Confirmed present | world-model exports |
-| `NpcPlugin`, `INpcService` | Confirmed present | @sharpee/plugin-npc |
-| `SchedulerPlugin` (daemons/fuses) | Confirmed present | @sharpee/plugin-scheduler |
-| `world.awardScore()` | Confirmed present | WorldModel method |
-| `world.getStateValue/setStateValue` | Confirmed present | WorldModel method |
-| `registerCapabilityBehavior` | Confirmed present | world-model export |
-| `world.registerEventHandler` (entity `.on`) | Confirmed present | IFEntity.on pattern |
-| Scoring win-state (endgame trigger) | Needs verification | Check if engine has a built-in win hook or requires manual event handler; see dungeo victory-handler |
-| Tutorial document generator | Not planned as code | Written by hand per phase |
-
----
-
-## Story Structure
-
-Each version is a **single self-contained .ts file** with heavy beginner-friendly comments explaining every construct. No shared helpers, no subdirectories — each file is a complete, readable teaching example that a newcomer can read top-to-bottom.
-
-```
-tutorials/familyzoo/
-├── package.json               # Single package for all versions
-├── tsconfig.json
-├── src/
-│   ├── v01.ts                 # V1: single room (complete story in one file)
-│   ├── v02.ts                 # V2: rooms + connections
-│   │   ...
-│   └── v16.ts                 # V16: full tutorial (default build target)
-├── tests/
-│   └── transcripts/
-│       ├── v01-single-room.transcript
-│       ├── v02-navigation.transcript
-│       │   ...
-│       └── v16-scoring.transcript
-└── docs/
-    └── tutorial.md            # Human-readable tutorial document
-```
-
-**Comment style**: "Kindergarten level" — assume the reader has never seen Sharpee or IF engine code. Every import, every trait, every method call gets a plain-English explanation. Comments explain *why* and *what this does in IF terms*, not just what the TypeScript syntax means. Later versions only comment on the NEW concept introduced; carried-forward code gets a brief "// Same as V03 — see v03.ts for details" note.
-
-The `build.sh` story name is `familyzoo` and targets V16 for the "full game" build. Individual versions are tested via their own transcripts.
-
----
-
-## Phases
-
-### Phase 1: Project Scaffold + V1 (Single Room) + V2 (Navigation)
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: Story project setup; `RoomTrait`, `IdentityTrait`, `ActorTrait`; exits and `going` action
-- **Entry state**: `tutorials/familyzoo/` does not exist; build.sh accepts any story name without registration
-- **Deliverable**:
-  - `tutorials/familyzoo/package.json` — `@sharpee/tutorial-familyzoo`, same workspace deps as cloak-of-darkness
-  - `tutorials/familyzoo/tsconfig.json` — project references matching other stories
-  - `tutorials/familyzoo/src/v01.ts` — V1 story: Zoo Entrance room only; `look` and `examine sign` work; `StoryInfoTrait` set; player placed in room. Single file, every line commented.
-  - `tutorials/familyzoo/src/v02.ts` — V2 story: Zoo Entrance + Main Path + Petting Zoo + Aviary; exits wired with `Direction`; `going` works between all rooms. Single file, new concepts commented, carried-forward code has brief back-references.
-  - `tutorials/familyzoo/src/v16.ts` — V16 stub (re-exports V2 for now so `./build.sh -s familyzoo` succeeds)
-  - `tutorials/familyzoo/tests/transcripts/v01-single-room.transcript` — verifies look shows room name and description; examine sign works
-  - `tutorials/familyzoo/tests/transcripts/v02-navigation.transcript` — verifies go south enters Main Path; go east enters Petting Zoo; go back; go north enters Aviary
-  - `tutorials/familyzoo/docs/tutorial.md` stubs for V1 and V2 sections
-  - Both versions pass transcript tests via `node dist/cli/sharpee.js --test`
-- **Exit state**: `./build.sh -s familyzoo` succeeds (targeting V16 stub); V1 and V2 transcripts pass; package is registered in pnpm workspace
-- **Status**: DONE
-
-### Phase 2: V3 (Scenery) + V4 (Portable Objects) + V5 (Containers)
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: `SceneryTrait` (non-portable objects); `taking`/`dropping`/`inventory` actions; `ContainerTrait` and `SupporterTrait`
-- **Entry state**: Phase 1 complete; V1 and V2 pass tests; project scaffolded
-- **Deliverable**:
-  - `tutorials/familyzoo/src/v03.ts` — V3: all V2 rooms plus animal enclosures, benches, trees, fences as `SceneryTrait` entities; single file; SceneryTrait heavily commented, rest back-referenced
-  - `tutorials/familyzoo/src/v04.ts` — V4: all V3 content plus zoo map, bag of animal feed, souvenir penny as portable items; portable objects and inventory commented
-  - `tutorials/familyzoo/src/v05.ts` — V5: all V4 content plus a backpack (`ContainerTrait`, portable), a feed dispenser (`ContainerTrait`, scenery), a bench (`SupporterTrait`); container/supporter concepts commented
-  - Transcript tests:
-    - `v03-scenery.transcript` — take bench (blocked), examine fence (works), look shows enclosures
-    - `v04-portable.transcript` — take map, inventory shows map, drop map in different room
-    - `v05-containers.transcript` — put map in backpack, look in backpack, put penny on bench, get feed from dispenser
-  - Tutorial.md sections for V3, V4, V5
-- **Exit state**: All three versions build and their transcripts pass; V16 stub updated to point at V5
-- **Status**: DONE
-
-### Phase 3: V6 (Openable) + V7 (Locked Doors) + V8 (Light and Dark)
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: `OpenableTrait`; `LockableTrait` with a key entity; `LightSourceTrait` and room `isDark`
-- **Entry state**: Phase 2 complete; V3–V5 pass tests
-- **Deliverable**:
-  - `tutorials/familyzoo/src/v06.ts` — V6: all V5 content plus feed dispenser has `OpenableTrait`; a lunchbox in the picnic area; OpenableTrait commented
-  - `tutorials/familyzoo/src/v07.ts` — V7: all V6 content plus a staff-only gate (`LockableTrait`, `OpenableTrait`) to a supply room; a keycard; LockableTrait and key wiring commented
-  - `tutorials/familyzoo/src/v08.ts` — V8: all V7 content plus a Nocturnal Animals exhibit (`isDark: true`); a flashlight (`LightSourceTrait`); light/dark mechanics commented
-  - Transcript tests:
-    - `v06-openable.transcript` — open dispenser, close dispenser, open lunchbox, try to put feed in closed dispenser (blocked)
-    - `v07-locked.transcript` — find keycard, unlock gate, open gate, enter supply room
-    - `v08-light.transcript` — enter nocturnal exhibit (dark), retreat, get flashlight from supply room, switch on flashlight, re-enter exhibit (lit), examine animals
-  - Tutorial.md sections for V6, V7, V8
-- **Exit state**: V6, V7, V8 transcripts pass; darkness/light mechanics confirmed working without platform changes; V16 stub updated to V8
-- **Status**: DONE
-
-### Phase 4: V9 (Readable) + V10 (Switchable Devices)
-- **Tier**: Small
-- **Budget**: ~100 tool calls
-- **Domain focus**: `ReadableTrait`; `SwitchableTrait` (standalone switchable with event handler side effect)
-- **Entry state**: Phase 3 complete; V6–V8 pass tests
-- **Deliverable**:
-  - `tutorials/familyzoo/src/v09.ts` — V9: all V8 content plus animal info plaques (`ReadableTrait`, `SceneryTrait`), a zoo brochure (portable, `ReadableTrait`), a warning sign; ReadableTrait commented
-  - `tutorials/familyzoo/src/v10.ts` — V10: all V9 content plus a radio (`SwitchableTrait`), an exhibit lighting panel that controls darkness via event handler; SwitchableTrait commented
-  - Transcript tests:
-    - `v09-readable.transcript` — read brochure, read plaque at petting zoo, read warning sign at reptile house
-    - `v10-switchable.transcript` — switch on radio (message), switch off lighting panel (nocturnal exhibit goes dark), switch on lighting panel (goes light again)
-  - Tutorial.md sections for V9, V10
-- **Exit state**: V9 and V10 transcripts pass; V10 demonstrates SwitchableTrait standalone (radio); V16 stub updated to V10
-- **Status**: DONE
-
-### Phase 5: V11 (NPCs) + V12 (Event Handlers)
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: `NpcPlugin`, `NpcTrait`, `INpcService`, `NpcBehavior`; story-level event handlers reacting to stdlib actions
-- **Entry state**: Phase 4 complete; V9–V10 pass tests
-- **Deliverable**:
-  - **Pre-work**: Read `stories/dungeo/src/npcs/` to confirm the exact `NpcBehavior` interface shape used with `INpcService` before writing any NPC code
-  - `tutorials/familyzoo/src/v11.ts` — V11: all V10 content plus a zookeeper NPC with patrol behavior and a parrot; NPC system commented
-  - `tutorials/familyzoo/src/v12.ts` — V12: all V11 content plus two event handlers:
-    - Dropping the bag of animal feed near an animal enclosure triggers an `if.event.dropped` handler that emits a "the goats rush to eat" message
-    - Putting the souvenir penny in a souvenir press machine (`ContainerTrait`) triggers an `if.event.put_in` handler that produces a pressed penny in the player's inventory and removes the blank penny
-  - Transcript tests:
-    - `v11-npcs.transcript` — wait several turns to watch zookeeper move; talk to zookeeper; go to aviary and interact with parrot
-    - `v12-event-handlers.transcript` — go to petting zoo, drop feed (animals react); go to gift shop, put penny in machine (get pressed penny back)
-  - Tutorial.md sections for V11, V12
-- **Exit state**: V11 and V12 transcripts pass; NPC patrol confirmed; event-handler item-transformation confirmed; V16 stub updated to V12
-- **Status**: DONE
-
-### Phase 6: V13 (Custom Actions) + V14 (Capability Dispatch)
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: Story-specific action creation; grammar extension via `extendParser`; `registerCapabilityBehavior` with entity-specific verb behavior
-- **Entry state**: Phase 5 complete; V11–V12 pass tests
-- **Deliverable**:
-  - `tutorials/familyzoo/src/v13.ts` — V13: all V12 content plus `zoo.action.feed` and `zoo.action.photograph` story actions defined inline; grammar extension for `feed :animal` and `photograph :thing`; custom action pattern heavily commented
-  - `tutorials/familyzoo/src/v14.ts` — V14: all V13 content plus `PettingTrait` with capability dispatch defined inline; three entities respond differently to `pet`: goats (affectionate), snake exhibit (glass blocks), parrot (bites); capability dispatch pattern commented
-  - Transcript tests:
-    - `v13-custom-actions.transcript` — feed goat, photograph aviary sign, try to photograph without camera (blocked)
-    - `v14-capability-dispatch.transcript` — pet goat (affectionate), pet snake exhibit (glass), pet parrot (bites)
-  - Tutorial.md sections for V13, V14
-- **Exit state**: V13 and V14 transcripts pass; three-way `pet` dispatch confirmed; custom actions work end-to-end; V16 stub updated to V14
-- **Status**: DONE
-
-### Phase 7: V15 (Timed Events) + V16 (Scoring and Endgame) + Final Tutorial
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: `SchedulerPlugin` (daemons and fuses); `world.awardScore()`; win-state via event handler or turn daemon; complete tutorial document
-- **Entry state**: Phase 6 complete; V13–V14 pass tests
-- **Deliverable**:
-  - **Pre-work**: Verify win-state pattern by reading `stories/dungeo/src/handlers/victory-handler.ts` before implementing V16 endgame
-  - `tutorials/familyzoo/src/v15.ts` — V15: all V14 content plus:
-    - A repeating daemon (every 5 turns) that emits zoo PA announcements counting down from 3 before the zoo "closes" (cosmetic only)
-    - A fuse (10 turns from game start) that triggers "Feeding time at the Petting Zoo!" and then repeats every 8 turns
-    - If feeding time passes without feeding, goats bleat each turn for 3 turns
-    - Zookeeper patrol becomes daemon-driven via `SchedulerPlugin` (replacing manual NPC-behavior cycle from V11)
-  - `tutorials/familyzoo/src/v16.ts` — V16 (final version): all V15 content plus:
-    - Scoring: `world.awardScore()` called for visiting each exhibit (5 pts each x 5 = 25 pts), feeding animals (10 pts), collecting all 4 items: map + penny + pressed penny + photo (10 pts each = 40 pts), total possible = 75 pts
-    - Win condition: a turn daemon checks `world.getStateValue('score') >= 75` each turn and triggers the "Junior Zookeeper badge" ending
-    - `score` command works to check current score
-  - `tutorials/familyzoo/src/v16.ts` becomes the permanent default build target (no longer a stub)
-  - Transcript tests:
-    - `v15-timed-events.transcript` — wait 5 turns (PA announcement fires); wait 10 turns (feeding time fires); go to petting zoo and feed goats (bleating stops)
-    - `v16-scoring.transcript` — visit all 5 exhibits (score increases), feed goats (score), collect all 4 items (score), check score, reach win state
-  - `tutorials/familyzoo/docs/tutorial.md` — complete human-readable tutorial document:
-    - Introduction: "How to use this tutorial"
-    - One section per version (V1–V16): what concept is introduced, the key code pattern, what to try in the transcript test, common mistakes
-    - Appendix: "Sharpee Authoring Cheat Sheet" — one-line summaries of all 16 constructs with code snippets
-- **Exit state**: All 16 transcripts pass; `./build.sh -s familyzoo` targets V16 and succeeds; `tutorial.md` is complete; story is self-documenting for new Sharpee authors
-- **Status**: DONE
-
----
-
----
-
-# Session Plan: Family Zoo Tutorial — V17 After Hours
-
-**Created**: 2026-03-24
-**Overall scope**: Add V17 to the Family Zoo tutorial, introducing runtime NPC behavior switching and conditional after-hours daemons. After the 4th PA announcement ("zoo is now closed"), the zookeeper disappears and the animals begin speaking candidly. Four animals gain distinct after-hours dialogue. Bonus scoring (25 pts, new max 100) rewards the player for witnessing each animal's secret voice.
-**Bounded contexts touched**: N/A — story-level work only; no changes to packages/
-**Key domain language**: N/A — tutorial/infrastructure; concepts are Sharpee API constructs (behavior switching, conditional daemons, world state flags)
-
----
-
-## Phases
-
-### Phase 1: V17 After Hours — NPC Behavior Switching and Conditional Daemons
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: Runtime behavior switching (NpcService.unregisterBehavior / registerBehavior); conditional after-hours daemons; bonus scoring; tutorial documentation
-- **Entry state**: V16 (`tutorials/familyzoo/src/v16.ts`) is complete and its transcript passes; `tutorials/familyzoo/src/index.ts` exports V16 as default; `tutorials/familyzoo/docs/tutorial.md` covers V1–V16
-- **Deliverable**:
-
-  **New file: `tutorials/familyzoo/src/v17.ts`**
-  - Copy V16 in full; bump config version to `1.1.0`
-  - Add `AfterHoursMessages` constant block with message IDs for all after-hours animal dialogue:
-    - Goat complaint (`zoo.after_hours.goats`)
-    - Rabbit food critique (`zoo.after_hours.rabbits`)
-    - Parrot candid rant (`zoo.after_hours.parrot`)
-    - Snake/nocturnal animal lighting complaint (`zoo.after_hours.snake`)
-  - Add `AfterHoursScoreIds` and `AfterHoursScorePoints` for hearing each animal's secret dialogue (5 pts each, 4 animals = 20 pts bonus); raise `MAX_SCORE` from 75 to 95
-  - Modify `createPAAnnouncementDaemon()`: on the 4th announcement (zoo closed), also set world state `zoo.after_hours = true`
-  - Add `createAfterHoursDaemon()`: a location-aware daemon that:
-    - Only runs when `zoo.after_hours === true`
-    - Fires once every 2 turns (uses turn parity or an internal counter)
-    - Checks `ctx.playerLocation` against the room IDs for Petting Zoo, Aviary, and Nocturnal Exhibit
-    - Emits the appropriate animal monologue for the room the player is in
-    - Awards the matching bonus score (idempotent via `awardScore`)
-  - Add `createZookeeperDepartureDaemon()`: runs once when `zoo.after_hours === true` and the zookeeper entity exists in the world; moves the zookeeper to a "limbo" location (creates a hidden off-map room called `staff_lounge` or simply moves zookeeper to `null`/removes from world); emits a farewell message (`zoo.after_hours.keeper_leaves`); marks itself done with a closure flag
-  - Switch the parrot's daytime NpcBehavior to an after-hours NpcBehavior when after-hours activates. Two implementation approaches (choose one and comment the tradeoff):
-    - **Option A (simpler)**: modify `parrotBehavior.onTurn` to branch on `ctx.world.getStateValue('zoo.after_hours')`
-    - **Option B (canonical)**: register a second behavior `zoo-parrot-after-hours`; in `onEngineReady`, listen for `zoo.after_hours` state change (via a daemon) and call `npcService.unregisterBehavior('zoo-parrot')` + `npcService.registerBehavior(parrotAfterHoursBehavior)`. Comment explains this is the "runtime behavior swap" pattern.
-    - Use Option B in v17.ts and comment it as the tutorial's showcase of the pattern
-  - Register all new daemons in `onEngineReady()` after the existing scheduler setup
-  - Add all new messages in `extendLanguage()` with well-written, humorous animal dialogue:
-    - Goats: "You wouldn't BELIEVE the kid who grabbed my ear today. Some people have NO manners."
-    - Rabbits: "Honestly? The pellets have gotten worse. Last spring they had dried parsley. Now it's just plain corn. I've filed a complaint."
-    - Parrot: "Oh thank goodness the humans are gone. Do you have ANY idea how exhausting it is to say 'Polly wants a cracker' forty times a day? I have a PhD."
-    - Snake/nocturnal: "The red light is a nice thought, but it's twenty percent too bright. I've mentioned this. No one listens."
-    - Zookeeper departure: "Sam the zookeeper waves goodbye from across the park, whistling cheerfully, and heads for the parking lot."
-
-  **New file: `tutorials/familyzoo/tests/transcripts/v17-after-hours.transcript`**
-  - Header: `title: V17 — After Hours`, `story: familyzoo`, `entry: v17`
-  - Play far enough to trigger the 4th PA announcement (wait 20 turns or move around)
-  - Verify zookeeper departure message fires
-  - Go to Petting Zoo — verify goat after-hours dialogue appears
-  - Go to Aviary — verify parrot after-hours dialogue appears (and differs from daytime phrases)
-  - Go to Nocturnal Exhibit (with flashlight) — verify snake/nocturnal dialogue
-  - Check score shows bonus points (above 75)
-
-  **Update: `tutorials/familyzoo/src/index.ts`**
-  - Change export from V16 to V17
-
-  **New file: `tutorials/familyzoo/docs/v17-after-hours.md`**
-  - Tutorial concept doc explaining:
-    - Why runtime behavior switching matters (NPCs that respond to world phase changes)
-    - The Option A vs Option B tradeoff (conditional branch vs. re-registration)
-    - How conditional daemons differ from unconditional ones (the `condition` guard)
-    - The world state flag pattern (`zoo.after_hours`) as a game phase switch
-    - Code snippets for each pattern
-
-  **Update: `tutorials/familyzoo/docs/tutorial.md`**
-  - Change the default build target note from V16 to V17
-  - Add V17 section at the end: concept, key patterns, transcript test instructions
-
-- **Exit state**: `./build.sh -s familyzoo` targets V17 and succeeds; `v17-after-hours.transcript` passes; V1–V16 transcripts are unaffected; `tutorial.md` covers V1–V17; `index.ts` exports V17
-- **Status**: DONE
-
----
-
-## Cross-Phase Implementation Notes
-
-**Single-file rule**: Every version is ONE .ts file (`src/v01.ts` through `src/v16.ts`). No subdirectories, no shared modules, no imports between versions. Each file is a complete, standalone teaching example. Duplication is intentional and desirable — the reader should never have to open a second file.
-
-**Comment style**: Kindergarten-level. Every import gets a comment. Every trait gets "what this does in IF terms." Every method call gets "why we call this." New concepts introduced in that version get the heaviest commenting. Carried-forward code from prior versions gets a one-line back-reference: `// Same as V03 — see v03.ts for full explanation`.
-
-**Build integration**: `build.sh` accepts any story name as `-s NAME` and looks for `stories/NAME/` without registration. The story `package.json` `main` targets `dist/v16.js`. Transcript tests reference version-specific story entry points via the `story:` field in the transcript header.
-
-**NPC behavior interface**: Verify exact shape against `stories/dungeo/src/npcs/` before Phase 5. The `plugins.md` API shows the plugin wrapper but not the `NpcBehavior` interface.
-
-**Tutorial document authoring**: Write each section after the corresponding version is confirmed working and tested. Do not write tutorial prose speculatively.
-
-## Key design decisions to confirm during Phase 2
-
-1. **Event batching strategy**: The ADR says `blocks`, then `events`, then `status` per turn. The engine emits `text:output` and `event` separately and potentially interleaved. The bridge needs to collect all events for a turn before flushing. The most reliable approach: accumulate events in an array during `executeTurn()`, then flush `blocks` + `events` + `status` atomically after `executeTurn()` resolves. The `engine.on('event', ...)` listener appends to the accumulator; it is cleared at the start of each turn.
-
-2. **`.sharpee` bundle evaluation in Node.js**: The browser runner uses `URL.createObjectURL` + dynamic `import()` to load story.js as a true ES module. Node.js does not have `URL.createObjectURL`. The story.js in a bundle is browser ESM with `@sharpee/*` as externals. Options:
-   - Write the bytes to a temp file, then `import()` (Node supports ESM dynamic import); clean up after
-   - Use `vm.runInNewContext` with a synthetic module context that stubs `@sharpee/*` imports — but this does not support `import` statements
-   - **Recommended**: esbuild the story bundle's story.js a second time at load time (CJS conversion, inlining the engine from the bridge's own bundled scope) — or simpler, re-bundle from source when `storyPath` is given; for `bundle` mode, write story.js to tmp file and `require()` it (the story.js in a `.sharpee` bundle is transpiled to browser ESM; for Node we need CJS). This may require the `.sharpee` format to include a Node-compatible CJS variant of story.js, or the bridge to run story.js through esbuild at load time.
-   - **Alternative**: For Phase 2, only fully implement `storyPath` mode (esbuild → CJS in memory → eval); treat `bundle` mode as a stub that extracts story.js from the zip and then runs it through the same esbuild CJS pipeline. Revisit bundle mode after integration testing.
-
-3. **esbuild programmatic API availability**: The bridge will use `require('esbuild')` programmatically for both `storyPath` compilation and (optionally) bundle mode story.js conversion. esbuild is already in the monorepo as a dev dependency. The standalone `node_bridge.js` built by esbuild will need esbuild itself as a runtime dependency (not just build-time) for the `storyPath` authoring mode. Either bundle esbuild's WASM into `node_bridge.js`, or keep esbuild external and require the host to provide it (note: esbuild ships a self-contained native binary — complex to bundle). Simplest: require `esbuild` to be installed alongside `node_bridge.js` (or installed as a peer dep in the native app's node_modules). Document this requirement.
-
----
-
----
-
-# Session Plan: npm Regression Test Suite
-
+**Status**: CURRENT
 **Created**: 2026-03-25
-**Overall scope**: Create `npm-test/` — a self-contained regression harness that installs published npm packages into a temp directory, compiles a purpose-built story, and runs one transcript per platform feature to verify the published packages work correctly in isolation.
-**Bounded contexts touched**: N/A — infrastructure/tooling; no changes to any package source
-**Key domain language**: N/A — this is a packaging and regression verification concern
+**Scope**: packages/stdlib/tests/ — 352 failing tests across 42 files
 
----
+## Problem
 
-## Design Notes
+352 stdlib test failures. 37 golden test files share two root causes plus 5 non-golden files with individual issues.
 
-### Story setting: Maintenance Facility
+### Root Cause 1: Wrong `executeAction` helper (3 variants, 2 broken)
 
-Four rooms — Control Room (start), Supply Closet (dark, connected west), Server Room (north), Rooftop (up via locked hatch). Each room exists solely to exercise one or more platform features with zero narrative fluff. The story imports only from `@sharpee/sharpee`.
+| Variant | Count | Failure Path | Success Path |
+|---------|-------|-------------|--------------|
+| A (correct) | ~18 | `action.blocked(ctx, result)` | `action.report(ctx)` |
+| B (broken) | 2 | `action.report(ctx, result)` — calls report instead of blocked | `action.report(ctx, result)` — passes unused param |
+| C (hand-rolled) | ~15 | Manually creates `action.error` event | `action.report(ctx)` — correct call |
 
-### Feature-to-room mapping
+**Fix**: Replace all local helpers with `executeWithValidation` from test-utils.
 
-| Feature | Location |
-|---|---|
-| Rooms & navigation | Control Room ↔ Server Room (N/S), ↔ Supply Closet (E/W), ↔ Rooftop (hatch, up/down) |
-| Scenery | Control panel (Control Room), server rack (Server Room) |
-| Portable objects | Flashlight, keycard, toolkit |
-| Containers | Storage bin (Control Room, closed, openable) |
-| Openable | Storage bin, hatch |
-| Lockable | Hatch (locked with keycard) |
-| Light/dark | Supply Closet (dark, needs flashlight) |
-| Readable | Safety manual (portable), warning placard (scenery) |
-| Switchable | Emergency light (switchable, no side effect — stand-alone test) |
-| NPCs | Security guard (patrols Control Room ↔ Server Room) |
-| Event handler | Picking up the toolkit triggers a "calibration started" message via `if.event.taken` handler |
-| Custom action | `PING` command (story-specific, no target) |
-| Capability dispatch | `INSPECT` verb: control panel prints diagnostics, server rack prints uptime, other objects print generic message |
-| Timed events | Daemon: beeping sound every 3 turns; fuse: "system warning" fires 8 turns from start |
-| Scoring | 5 pts per room visited (4 rooms = 20 pts max); `score` command |
-| Wearable | Hard hat (wear / remove) |
-| Supporters | Workbench (put items on surface) |
+### Root Cause 2: Wrong event type assertions
 
-### CommonJS constraint
+All 37 files assert on `action.success` / `action.error`. Actual actions emit domain events:
+- Success: `if.event.taken`, `if.event.opened`, `if.event.dropped`, etc.
+- Blocked: `if.event.take_blocked`, `if.event.open_blocked`, `if.event.drop_blocked`, etc.
 
-The npm packages publish as CommonJS (`require`). The story's `tsconfig.json` must target `"module": "CommonJS"` (not NodeNext) to produce `dist/index.js` that `require()` can load. The `package.json` must NOT set `"type": "module"`.
+**Fix**: Update assertions to match actual domain event types per the mapping below.
 
-### run.sh invocation of transcript-tester
+### Non-golden failures (5 files)
 
-The transcript-tester CLI signature is:
-```
-transcript-test <story-path> [transcript-files...] [options]
-```
-In the temp folder, story-path is `.` (current directory, which is the temp folder root). Transcript files are passed explicitly. The binary is invoked via `npx transcript-test`.
+| File | Issue |
+|------|-------|
+| `scope-integration.test.ts` | Scope API behavior changed |
+| `action-language-integration.test.ts` | Asserts `action.success`/`action.error` |
+| `report-helpers.test.ts` | Asserts `action.success` |
+| `command-validator-golden.test.ts` | Validator API changed |
+| `quitting.test.ts` | Query system mismatch |
 
----
+## Approach
 
-## Phases
+### Phase 1: Fix golden test files (37 files, systematic)
 
-### Phase 1: Scaffold — package.json, tsconfig.json, run.sh
-- **Tier**: Small
-- **Budget**: ~100 tool calls
-- **Domain focus**: N/A — infrastructure
-- **Entry state**: `npm-test/` does not exist
-- **Deliverable**:
-  - `npm-test/package.json` — name `sharpee-npm-regression`, no `"type": "module"`, dependencies: `@sharpee/sharpee@0.9.95` and `@sharpee/transcript-tester@0.9.95`; no workspace references
-  - `npm-test/tsconfig.json` — `"module": "CommonJS"`, `"moduleResolution": "node"`, `"target": "ES2022"`, `"outDir": "dist"`, `"rootDir": "src"`, `"strict": true`, `"esModuleInterop": true`, `"skipLibCheck": true`
-  - `npm-test/run.sh` — full orchestration script:
-    1. `TMPDIR=$(mktemp -d)`
-    2. `trap "rm -rf $TMPDIR" EXIT` (cleanup on exit or failure)
-    3. `cp -r . $TMPDIR` (copy npm-test contents)
-    4. `cd $TMPDIR && npm install` (install from registry, fully isolated)
-    5. `npx tsc` (compile story)
-    6. Iterate over `tests/transcripts/*.transcript` and invoke `npx transcript-test . <file>` for each, accumulating pass/fail
-    7. Exit 0 if all pass, exit 1 if any fail; print summary line `N/M transcripts passed`
-  - `npm-test/.gitignore` — ignores `dist/`, `node_modules/`
-- **Exit state**: Files exist and are syntactically valid; `run.sh` is executable; no story code yet
-- **Status**: CURRENT
+Per file:
+1. Remove local `executeAction`/`executeWithValidation` helper
+2. Import `executeWithValidation` from `../../test-utils`
+3. Replace `expectEvent(events, 'action.success', ...)` with correct domain event
+4. Replace `expectEvent(events, 'action.error', ...)` with correct blocked event
+5. Update event data shape where needed (messageId/reason → domain-specific data)
 
-### Phase 2: Story — src/index.ts (Maintenance Facility)
-- **Tier**: Large
-- **Budget**: ~400 tool calls
-- **Domain focus**: All 17 platform features exercised in one compact story
-- **Entry state**: Phase 1 complete; scaffold files exist
-- **Deliverable**: `npm-test/src/index.ts` — single-file story implementing:
-  - Four rooms: Control Room, Supply Closet (dark), Server Room, Rooftop
-  - Room connections: N/S between Control and Server; E/W between Control and Supply Closet; up/down between Control and Rooftop via hatch
-  - Scenery: control panel (`SceneryTrait`), server rack (`SceneryTrait`), warning placard (`SceneryTrait`, `ReadableTrait`)
-  - Portable items: flashlight (`LightSourceTrait`), keycard, toolkit, safety manual (`ReadableTrait`), hard hat (`WearableTrait`)
-  - Storage bin: `ContainerTrait`, `OpenableTrait`, initially closed; toolkit placed inside via `AuthorModel` at init
-  - Hatch: `OpenableTrait`, `LockableTrait`, keyed to keycard; initially locked and closed
-  - Workbench: `SupporterTrait` (Server Room)
-  - Emergency light: `SwitchableTrait` (Control Room, scenery)
-  - NPC: security guard with simple two-room patrol behavior using `NpcPlugin`
-  - Event handler: `if.event.taken` on toolkit entity → emits "Calibration sequence started" message
-  - Custom action: `PING` maps to `regression.action.ping`; registered in `extendParser()`; prints "PONG" via `extendLanguage()`
-  - Capability dispatch: `regression.action.inspect` verb; `InspectableTrait` with behaviors for control panel (diagnostics output), server rack (uptime output), default (generic output); registered with `registerCapabilityBehavior()`
-  - Daemon: `SchedulerPlugin` repeating every 3 turns — "The system beeps softly."
-  - Fuse: fires at turn 8 — "WARNING: Thermal threshold exceeded."
-  - Scoring: `world.awardScore()` called when player first enters each room; `score` command works
-  - All messages defined in `extendLanguage()` (no hardcoded English in action logic)
-  - Story exports `default story` (CommonJS compatible via `export default`)
-- **Exit state**: `tsc` compiles without errors; `dist/index.js` exists and is loadable via `require()`; story can be loaded by transcript-tester story-loader
-- **Status**: PENDING
+### Phase 2: Fix non-golden files (5 files, individual)
 
-### Phase 3: Transcripts — one per feature group
-- **Tier**: Medium
-- **Budget**: ~250 tool calls
-- **Domain focus**: Verifying each platform feature works from published npm packages
-- **Entry state**: Phase 2 complete; story compiles and loads
-- **Deliverable**: 12 transcript files in `npm-test/tests/transcripts/`:
-  - `01-navigation.transcript` — look in Control Room; go north (Server Room); go south (Control Room); go west (Supply Closet, dark message); go east (back); go up (blocked, hatch locked)
-  - `02-scenery-examine.transcript` — examine control panel (works); take control panel (blocked, scenery); examine warning placard
-  - `03-portable-objects.transcript` — take flashlight; inventory shows flashlight; drop flashlight; take safety manual
-  - `04-containers.transcript` — open storage bin; look in bin; take toolkit from bin; close bin; try to take from closed bin (blocked)
-  - `05-openable-lockable.transcript` — take keycard; go up (blocked, locked); unlock hatch with keycard; open hatch; go up (Rooftop); go down
-  - `06-light-dark.transcript` — go west (dark, can't see); go east; take flashlight; switch on flashlight; go west (lit, see room); go east
-  - `07-readable-switchable.transcript` — read safety manual; read warning placard; switch on emergency light; switch off emergency light
-  - `08-npc.transcript` — wait 3 turns; guard should have moved; look (guard present or absent based on patrol position)
-  - `09-event-handler.transcript` — open bin; take toolkit (calibration message fires); examine toolkit
-  - `10-custom-action.transcript` — ping (PONG response); try unknown command (parser rejects)
-  - `11-capability-dispatch.transcript` — inspect control panel (diagnostics); inspect server rack (uptime); inspect flashlight (generic)
-  - `12-timed-scoring-wearable-supporter.transcript` — wait 3 turns (beep fires); wait to turn 8 (thermal warning fires); wear hard hat; remove hard hat; put flashlight on workbench; take flashlight from workbench; score (shows points > 0)
-- **Exit state**: All 12 transcripts pass when run against the compiled story in a real temp-dir npm install; `run.sh` exits 0
-- **Status**: PENDING
+### Phase 3: Run full suite, verify
 
-### Phase 4: Documentation — README.md
-- **Tier**: Small
-- **Budget**: ~100 tool calls
-- **Domain focus**: N/A — documentation
-- **Entry state**: Phases 1–3 complete; all transcripts passing
-- **Deliverable**: `npm-test/README.md` covering:
-  - Purpose: "What this is and why it exists" — regression suite for published npm packages, not the monorepo build
-  - Prerequisites: Node.js 18+, npm access to `@sharpee/*` packages
-  - How to run: `cd npm-test && bash run.sh`; expected output format; exit codes
-  - What the story covers: table mapping each transcript to the platform feature it verifies
-  - Troubleshooting: common failure modes (stale npm version, CJS/ESM mismatch, transcript-tester CLI path)
-  - How to add a new transcript: file naming convention, transcript format reference, where to place it
-- **Exit state**: README.md exists; `npm-test/` directory is self-explanatory to a developer who has never seen it before
-- **Status**: PENDING
+## Event Type Mapping
+
+| Action | Success Event | Blocked Event |
+|--------|--------------|---------------|
+| about | `if.event.about_displayed` | `if.event.about_displayed` |
+| attacking | `if.event.attacked` | `if.event.attacked` |
+| climbing | `if.event.climbed` | `if.event.climbed` |
+| closing | `if.event.closed` | `if.event.close_blocked` |
+| drinking | `if.event.drunk` | `if.event.drunk` |
+| dropping | `if.event.dropped` | `if.event.drop_blocked` |
+| eating | `if.event.eaten` | `if.event.eaten` |
+| entering | `if.event.entered` | `if.event.entered` |
+| examining | `if.event.examined` | `if.event.examined` |
+| exiting | `if.event.exited` | `if.event.exited` |
+| giving | `if.event.given` | `if.event.give_blocked` |
+| going | `if.event.went` | `if.event.went` |
+| inserting | `if.event.put_in` | `if.event.insert_blocked` |
+| inventory | `if.event.inventory` | `if.event.inventory` |
+| listening | `if.event.listened` | `if.event.listen_blocked` |
+| locking | `if.event.locked` | `if.event.lock_blocked` |
+| looking | `if.event.looked` | `if.event.looked` |
+| opening | `if.event.opened` | `if.event.open_blocked` |
+| pulling | `if.event.pulled` | `if.event.pulled` |
+| pushing | `if.event.pushed` | `if.event.pushed` |
+| putting | `if.event.put_in`/`if.event.put_on` | `if.event.put_blocked` |
+| reading | `if.event.read` | `if.event.read` |
+| removing | `if.event.taken` | `if.event.remove_blocked` |
+| searching | `if.event.searched` | `if.event.searched` |
+| showing | `if.event.shown` | `if.event.show_blocked` |
+| smelling | `if.event.smelled` | `if.event.smell_blocked` |
+| switching_off | `if.event.switched_off` | `if.event.switch_off_blocked` |
+| switching_on | `if.event.switched_on` | `if.event.switch_on_blocked` |
+| taking | `if.event.taken` | `if.event.take_blocked` |
+| taking_off | `if.event.removed` | `if.event.take_off_blocked` |
+| talking | `if.event.talked` | `if.event.talk_blocked` |
+| throwing | `if.event.thrown` | `if.event.thrown` |
+| touching | `if.event.touched` | `if.event.touch_blocked` |
+| unlocking | `if.event.unlocked` | `if.event.unlock_blocked` |
+| waiting | `if.event.waited` | `if.event.wait_blocked` |
+| wearing | `if.event.worn` | `if.event.wear_blocked` |

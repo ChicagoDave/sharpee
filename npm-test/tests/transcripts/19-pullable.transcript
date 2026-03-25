@@ -1,0 +1,24 @@
+title: 19 — Pullable Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify PullableTrait — pulling a lever
+
+---
+
+# Get flashlight for the dark supply closet
+> take flashlight
+[OK: contains "Taken"]
+
+> switch on flashlight
+[OK: contains "on"]
+
+> south
+[OK: contains "Supply Closet"]
+
+# Examine the lever
+> examine lever
+[OK: contains "lever"]
+
+# Pull the lever — action runs; output varies by engine version
+> pull lever
+[OK: not contains "can't see"]

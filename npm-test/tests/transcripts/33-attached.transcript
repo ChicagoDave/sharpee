@@ -1,0 +1,27 @@
+title: 33 — Attached Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify AttachedTrait — an attached cable that cannot be taken
+
+---
+
+# Navigate to the Utility Room (through Rooftop, need to open door)
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+> open door
+[OK: contains_any "open" "door"]
+
+> east
+[OK: contains_any "Utility Room" "east"]
+
+# Examine the cable
+> examine cable
+[OK: contains "cable"]
+
+# Try to take the cable (attached — should fail)
+> take cable
+[OK: contains_any "can't" "fixed" "attached" "stuck"]

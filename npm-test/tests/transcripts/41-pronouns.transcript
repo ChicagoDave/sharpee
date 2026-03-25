@@ -1,0 +1,22 @@
+title: 41 — Pronoun Resolution
+story: regression
+author: Sharpee Regression Suite
+description: Verify pronoun resolution — take item then "drop it"
+
+---
+
+# Take the clipboard
+> take clipboard
+[OK: contains "Taken"]
+
+# Drop it using pronoun
+> drop it
+[OK: contains "Dropped"]
+
+# Take the flashlight
+> take flashlight
+[OK: contains "Taken"]
+
+# Examine it using pronoun
+> examine it
+[OK: contains "flashlight"]

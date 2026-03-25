@@ -1,0 +1,11 @@
+title: 38 — Custom State
+story: regression
+author: Sharpee Regression Suite
+description: Verify world.setStateValue() / getStateValue() — read facility status via custom action
+
+---
+
+# Use the STATUS command to read custom state values
+> status
+[OK: contains "operational"]
+[OK: contains "green"]

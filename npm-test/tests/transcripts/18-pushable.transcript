@@ -1,0 +1,22 @@
+title: 18 — Pushable Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify PushableTrait — pushing a heavy crate
+
+---
+
+# Go to the server room where the crate is
+> east
+[OK: contains "Server Room"]
+
+# Examine the crate
+> examine crate
+[OK: contains "crate"]
+
+# Try to take the crate (it's scenery — should fail)
+> take crate
+[OK: contains_any "can't" "fixed" "attached" "budge" "heavy"]
+
+# Push the crate
+> push crate
+[OK: contains_any "push" "nudge" "budge" "effort" "move"]

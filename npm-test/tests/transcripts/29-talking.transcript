@@ -1,0 +1,14 @@
+title: 29 — Talking
+story: regression
+author: Sharpee Regression Suite
+description: Verify talking action — talk to an NPC
+
+---
+
+# Go to the server room where the bot is
+> east
+[OK: contains "Server Room"]
+
+# Talk to the maintenance bot
+> talk to bot
+[OK: not contains "can't see"]

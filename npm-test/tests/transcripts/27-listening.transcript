@@ -1,0 +1,18 @@
+title: 27 — Listening
+story: regression
+author: Sharpee Regression Suite
+description: Verify listening action — listen to an object or room
+
+---
+
+# Listen in the Control Room (general listen)
+> listen
+[OK: not contains "don't understand"]
+
+# Go to Server Room (has humming servers)
+> east
+[OK: contains "Server Room"]
+
+# Listen to the server rack
+> listen to rack
+[OK: not contains "can't see"]

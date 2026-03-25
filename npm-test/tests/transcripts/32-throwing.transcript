@@ -1,0 +1,14 @@
+title: 32 — Throwing
+story: regression
+author: Sharpee Regression Suite
+description: Verify throwing action — throw an item at a target
+
+---
+
+# Take the clipboard
+> take clipboard
+[OK: contains "Taken"]
+
+# Throw it at the monitors (grammar: throw :item at :target)
+> throw clipboard at monitors
+[OK: contains_any "throw" "toss" "hurl" "drop" "Dropped" "clipboard" "monitors"]

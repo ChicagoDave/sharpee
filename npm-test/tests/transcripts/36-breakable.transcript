@@ -1,0 +1,21 @@
+title: 36 — Breakable Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify BreakableTrait — a breakable glass panel
+
+---
+
+# Navigate to the rooftop where the glass panel is
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+# Examine the glass (using alias)
+> examine glass
+[OK: contains "glass"]
+
+# Attack the glass
+> attack glass
+[OK: contains_any "attack" "hit" "break" "shatter" "glass" "swing"]

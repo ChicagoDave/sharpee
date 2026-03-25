@@ -1,0 +1,18 @@
+title: 31 — Showing
+story: regression
+author: Sharpee Regression Suite
+description: Verify showing action — show an item to an NPC
+
+---
+
+# Take the clipboard
+> take clipboard
+[OK: contains "Taken"]
+
+# Go to the server room where the bot is
+> east
+[OK: contains "Server Room"]
+
+# Show the clipboard to the bot
+> show clipboard to bot
+[OK: contains_any "show" "bot" "not interested" "unimpressed" "doesn't"]

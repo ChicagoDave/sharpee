@@ -1,0 +1,22 @@
+title: 46 — Undo
+story: regression
+author: Sharpee Regression Suite
+description: Verify undo command is recognized by the parser
+
+---
+
+# Take the clipboard
+> take clipboard
+[OK: contains "Taken"]
+
+# Verify it's in inventory
+> inventory
+[OK: contains "clipboard"]
+
+# Undo the take — action runs (output may be empty)
+> undo
+[OK: not contains "don't understand"]
+
+# Look around to verify state
+> look
+[OK: contains "Control Room"]

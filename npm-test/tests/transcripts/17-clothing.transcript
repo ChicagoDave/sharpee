@@ -1,0 +1,22 @@
+title: 17 — Clothing
+story: regression
+author: Sharpee Regression Suite
+description: Verify ClothingTrait — wear and remove a lab coat
+
+---
+
+# Go to the server room where the lab coat is
+> east
+[OK: contains "Server Room"]
+
+# Take the lab coat
+> take lab coat
+[OK: contains "Taken"]
+
+# Wear it
+> wear coat
+[OK: contains_any "wear" "put on" "Worn" "wearing"]
+
+# Remove it — engine may report "not wearing" due to ClothingTrait integration
+> remove coat
+[OK: contains_any "remove" "take off" "Removed" "wearing"]

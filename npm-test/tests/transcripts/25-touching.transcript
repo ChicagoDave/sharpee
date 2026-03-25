@@ -1,0 +1,14 @@
+title: 25 — Touching
+story: regression
+author: Sharpee Regression Suite
+description: Verify touching action — touch an object for sensory feedback
+
+---
+
+# Touch the monitors in the Control Room
+> touch monitors
+[OK: contains_any "touch" "feel" "smooth" "warm" "cold" "nothing" "solid" "immovable"]
+
+# Touch the workbench
+> touch workbench
+[OK: contains_any "touch" "feel" "smooth" "warm" "cold" "nothing"]

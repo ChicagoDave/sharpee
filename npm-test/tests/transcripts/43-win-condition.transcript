@@ -1,0 +1,18 @@
+title: 43 — Win Condition
+story: regression
+author: Sharpee Regression Suite
+description: Verify score command reports current progress
+
+---
+
+# Check initial score
+> score
+[OK: contains "0"]
+
+# Go east to earn points for visiting Server Room
+> east
+[OK: contains "Server Room"]
+
+# Score should now reflect the visit
+> score
+[OK: contains "5"]

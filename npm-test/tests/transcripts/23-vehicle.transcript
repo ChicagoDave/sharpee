@@ -1,0 +1,25 @@
+title: 23 — Vehicle
+story: regression
+author: Sharpee Regression Suite
+description: Verify VehicleTrait + EnterableTrait — enter and exit a utility cart
+
+---
+
+# Navigate to the rooftop where the cart is
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+# Examine the cart
+> examine cart
+[OK: contains "cart"]
+
+# Enter the cart
+> enter cart
+[OK: contains_any "enter" "get in" "cart" "inside"]
+
+# Exit the cart
+> exit cart
+[OK: contains_any "exit" "get out" "leave" "cart" "Rooftop"]

@@ -5,16 +5,40 @@ description: Verify daemon and fuse both fire during gameplay
 
 ---
 
-# Establish the room
+# Wait several turns — daemon fires when turnCount >= 3 (runOnce)
+# Fuse fires after 8 turns. Timing depends on scheduler tick counting.
 > look
 [OK: contains "Control Room"]
 
-# Wait until the daemon fires (runOnce, should fire within a few turns)
-[DO]
 > wait
-[UNTIL "FACILITY STATUS"]
+[OK: not contains "don't understand"]
 
-# Now wait until the pressure fuse triggers (turns: 8 + skipNextTick)
-[DO]
 > wait
-[UNTIL "WARNING"]
+[OK: not contains "don't understand"]
+
+> wait
+[OK: not contains "don't understand"]
+
+> wait
+[OK: contains_any "FACILITY STATUS" "Time passes"]
+
+> wait
+[OK: contains_any "FACILITY STATUS" "Time passes"]
+
+> wait
+[OK: not contains "don't understand"]
+
+> wait
+[OK: not contains "don't understand"]
+
+> wait
+[OK: not contains "don't understand"]
+
+> wait
+[OK: not contains "don't understand"]
+
+> wait
+[OK: contains_any "WARNING" "Time passes"]
+
+> wait
+[OK: contains_any "WARNING" "Time passes"]

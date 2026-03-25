@@ -1,0 +1,16 @@
+title: 44 — Custom Vocabulary
+story: regression
+author: Sharpee Regression Suite
+description: Verify getCustomVocabulary() is callable — story defines custom nouns without breaking
+
+---
+
+# The story implements getCustomVocabulary() with a noun synonym.
+# Verify the story loads and runs correctly with this method defined.
+# (Noun resolution depends on parser integration which varies by version.)
+> look
+[OK: contains "Control Room"]
+
+# Verify standard item still works
+> examine flashlight
+[OK: contains "flashlight"]

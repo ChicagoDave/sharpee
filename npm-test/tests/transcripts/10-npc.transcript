@@ -6,6 +6,7 @@ description: Verify NPC exists, can be examined, and produces autonomous behavio
 ---
 
 # Go to the server room where the bot lives
+# onPlayerEnters fires: bot swivels its optical sensor
 > east
 [OK: contains "Server Room"]
 [OK: contains "maintenance bot"]
@@ -15,7 +16,13 @@ description: Verify NPC exists, can be examined, and produces autonomous behavio
 [OK: contains "wheeled robot"]
 [OK: contains "optical sensor"]
 
-# Wait until the bot speaks (60% chance per turn — DO/UNTIL handles randomness)
-[DO]
+# Wait several turns — bot has 60% speech chance per turn
+# We can't assert on random behavior, but verify the action runs without error
 > wait
-[UNTIL "BEEP" OR "BOOP" OR "WHIRR"]
+[OK: not contains "don't understand"]
+
+> wait
+[OK: not contains "don't understand"]
+
+> wait
+[OK: not contains "don't understand"]

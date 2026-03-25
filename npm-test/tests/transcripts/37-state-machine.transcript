@@ -1,0 +1,17 @@
+title: 37 — State Machine
+story: regression
+author: Sharpee Regression Suite
+description: Verify StateMachinePlugin — a generator that activates when PING is used on the rooftop
+
+---
+
+# Navigate to the rooftop and ping to trigger the state machine transition
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+# Ping triggers the state machine transition from inactive to active
+> ping
+[OK: contains "PING"]

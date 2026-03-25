@@ -1,0 +1,18 @@
+title: 35 — Combat
+story: regression
+author: Sharpee Regression Suite
+description: Verify WeaponTrait + CombatantTrait + registerBasicCombat — attack a training dummy
+
+---
+
+# Go to the server room where the dummy is
+> east
+[OK: contains "Server Room"]
+
+# Examine the training dummy
+> examine dummy
+[OK: contains "dummy"]
+
+# Attack the dummy (bare-handed)
+> attack dummy
+[OK: contains_any "attack" "hit" "strike" "miss" "dummy" "swing"]

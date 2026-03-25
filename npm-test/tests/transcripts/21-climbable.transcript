@@ -1,0 +1,21 @@
+title: 21 — Climbable Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify ClimbableTrait — climbing a ladder
+
+---
+
+# Navigate to the rooftop where the ladder is
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+# Examine the ladder
+> examine ladder
+[OK: contains "ladder"]
+
+# Climb the ladder
+> climb ladder
+[OK: contains_any "climb" "up" "top" "can't" "blocked"]

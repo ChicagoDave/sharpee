@@ -1,0 +1,27 @@
+title: 34 — Moveable Scenery
+story: regression
+author: Sharpee Regression Suite
+description: Verify MoveableSceneryTrait — a heavy panel that can be pushed
+
+---
+
+# Navigate to the Utility Room
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+> open door
+[OK: contains_any "open" "door"]
+
+> east
+[OK: contains_any "Utility Room" "east"]
+
+# Examine the panel
+> examine panel
+[OK: contains "panel"]
+
+# Push it (MoveableSceneryTrait allows push)
+> push panel
+[OK: contains_any "push" "move" "slide" "budge" "heavy"]

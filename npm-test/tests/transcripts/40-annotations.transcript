@@ -1,0 +1,12 @@
+title: 40 — Annotations
+story: regression
+author: Sharpee Regression Suite
+description: Verify entity.annotate() / getAnnotations() — check room annotation count
+
+---
+
+# The Control Room has an illustration annotation attached
+# Use CHECK ROOM to read the annotation count
+> check room
+[OK: contains "1"]
+[OK: contains "illustration"]

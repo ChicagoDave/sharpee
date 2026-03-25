@@ -1,0 +1,22 @@
+title: 16 — Edible Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify EdibleTrait — eating an item consumes it
+
+---
+
+# Examine the energy bar
+> examine energy bar
+[OK: contains "energy bar"]
+
+# Take it
+> take energy bar
+[OK: contains "Taken"]
+
+# Eat it
+> eat energy bar
+[OK: contains "eat"]
+
+# Try to eat it again — should be gone
+> eat energy bar
+[OK: contains_any "not" "don't see" "can't"]

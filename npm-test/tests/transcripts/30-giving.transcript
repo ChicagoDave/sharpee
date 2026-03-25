@@ -1,0 +1,18 @@
+title: 30 — Giving
+story: regression
+author: Sharpee Regression Suite
+description: Verify giving action — give an item to an NPC
+
+---
+
+# Take the clipboard
+> take clipboard
+[OK: contains "Taken"]
+
+# Go to the server room where the bot is
+> east
+[OK: contains "Server Room"]
+
+# Give the clipboard to the bot
+> give clipboard to bot
+[OK: contains_any "give" "bot" "not interested" "refuse" "doesn't"]

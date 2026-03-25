@@ -1,0 +1,14 @@
+title: 26 — Smelling
+story: regression
+author: Sharpee Regression Suite
+description: Verify smelling action — smell an object
+
+---
+
+# Smell the energy bar
+> smell energy bar
+[OK: not contains "can't see"]
+
+# Smell the clipboard
+> smell clipboard
+[OK: not contains "can't see"]

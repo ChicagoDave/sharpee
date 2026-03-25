@@ -1,0 +1,21 @@
+title: 20 — Button
+story: regression
+author: Sharpee Regression Suite
+description: Verify ButtonTrait + PushableTrait — pushing a wall button
+
+---
+
+# Navigate to the rooftop where the button is
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+# Examine the button
+> examine red button
+[OK: contains "button"]
+
+# Push the button
+> push button
+[OK: contains_any "push" "press" "click" "button"]

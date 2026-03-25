@@ -1,0 +1,23 @@
+title: 28 — Searching
+story: regression
+author: Sharpee Regression Suite
+description: Verify searching action — search a container or supporter
+
+---
+
+# Search the workbench (supporter in Control Room)
+> search workbench
+[OK: contains_any "search" "find" "nothing" "empty" "workbench"]
+
+# Search the toolbox (container in Supply Closet, need light)
+> take flashlight
+[OK: contains "Taken"]
+
+> switch on flashlight
+[OK: contains "on"]
+
+> south
+[OK: contains "Supply Closet"]
+
+> search toolbox
+[OK: contains_any "search" "find" "locked" "closed" "toolbox"]

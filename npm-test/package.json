@@ -14,7 +14,9 @@
     "@sharpee/core": "^0.9.95",
     "@sharpee/stdlib": "^0.9.95",
     "@sharpee/plugin-npc": "^0.9.95",
-    "@sharpee/plugin-scheduler": "^0.9.95"
+    "@sharpee/plugin-scheduler": "^0.9.95",
+    "@sharpee/ext-basic-combat": "^0.9.95",
+    "@sharpee/plugin-state-machine": "^0.9.95"
   },
   "devDependencies": {
     "@sharpee/transcript-tester": "^0.9.95",

@@ -1,0 +1,11 @@
+title: 39 — Scope Override
+story: regression
+author: Sharpee Regression Suite
+description: Verify entity.setMinimumScope() — antenna visible from any room
+
+---
+
+# The antenna is on the Rooftop but has setMinimumScope(2) = VISIBLE everywhere
+# From the Control Room, we should be able to examine it
+> examine antenna
+[OK: contains "aluminum rods"]

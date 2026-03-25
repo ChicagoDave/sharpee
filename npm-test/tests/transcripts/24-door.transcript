@@ -1,0 +1,25 @@
+title: 24 — Door
+story: regression
+author: Sharpee Regression Suite
+description: Verify DoorTrait + OpenableTrait — open a door and go through it
+
+---
+
+# Navigate to the rooftop where the door is
+> east
+[OK: contains "Server Room"]
+
+> south
+[OK: contains "Rooftop"]
+
+# Examine the door
+> examine door
+[OK: contains "door"]
+
+# Open the door
+> open door
+[OK: contains_any "open" "door"]
+
+# Go through the door to the Utility Room
+> east
+[OK: contains_any "Utility Room" "east"]
