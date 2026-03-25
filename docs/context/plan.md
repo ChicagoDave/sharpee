@@ -284,6 +284,83 @@ The `build.sh` story name is `familyzoo` and targets V16 for the "full game" bui
 
 ---
 
+---
+
+# Session Plan: Family Zoo Tutorial — V17 After Hours
+
+**Created**: 2026-03-24
+**Overall scope**: Add V17 to the Family Zoo tutorial, introducing runtime NPC behavior switching and conditional after-hours daemons. After the 4th PA announcement ("zoo is now closed"), the zookeeper disappears and the animals begin speaking candidly. Four animals gain distinct after-hours dialogue. Bonus scoring (25 pts, new max 100) rewards the player for witnessing each animal's secret voice.
+**Bounded contexts touched**: N/A — story-level work only; no changes to packages/
+**Key domain language**: N/A — tutorial/infrastructure; concepts are Sharpee API constructs (behavior switching, conditional daemons, world state flags)
+
+---
+
+## Phases
+
+### Phase 1: V17 After Hours — NPC Behavior Switching and Conditional Daemons
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: Runtime behavior switching (NpcService.unregisterBehavior / registerBehavior); conditional after-hours daemons; bonus scoring; tutorial documentation
+- **Entry state**: V16 (`tutorials/familyzoo/src/v16.ts`) is complete and its transcript passes; `tutorials/familyzoo/src/index.ts` exports V16 as default; `tutorials/familyzoo/docs/tutorial.md` covers V1–V16
+- **Deliverable**:
+
+  **New file: `tutorials/familyzoo/src/v17.ts`**
+  - Copy V16 in full; bump config version to `1.1.0`
+  - Add `AfterHoursMessages` constant block with message IDs for all after-hours animal dialogue:
+    - Goat complaint (`zoo.after_hours.goats`)
+    - Rabbit food critique (`zoo.after_hours.rabbits`)
+    - Parrot candid rant (`zoo.after_hours.parrot`)
+    - Snake/nocturnal animal lighting complaint (`zoo.after_hours.snake`)
+  - Add `AfterHoursScoreIds` and `AfterHoursScorePoints` for hearing each animal's secret dialogue (5 pts each, 4 animals = 20 pts bonus); raise `MAX_SCORE` from 75 to 95
+  - Modify `createPAAnnouncementDaemon()`: on the 4th announcement (zoo closed), also set world state `zoo.after_hours = true`
+  - Add `createAfterHoursDaemon()`: a location-aware daemon that:
+    - Only runs when `zoo.after_hours === true`
+    - Fires once every 2 turns (uses turn parity or an internal counter)
+    - Checks `ctx.playerLocation` against the room IDs for Petting Zoo, Aviary, and Nocturnal Exhibit
+    - Emits the appropriate animal monologue for the room the player is in
+    - Awards the matching bonus score (idempotent via `awardScore`)
+  - Add `createZookeeperDepartureDaemon()`: runs once when `zoo.after_hours === true` and the zookeeper entity exists in the world; moves the zookeeper to a "limbo" location (creates a hidden off-map room called `staff_lounge` or simply moves zookeeper to `null`/removes from world); emits a farewell message (`zoo.after_hours.keeper_leaves`); marks itself done with a closure flag
+  - Switch the parrot's daytime NpcBehavior to an after-hours NpcBehavior when after-hours activates. Two implementation approaches (choose one and comment the tradeoff):
+    - **Option A (simpler)**: modify `parrotBehavior.onTurn` to branch on `ctx.world.getStateValue('zoo.after_hours')`
+    - **Option B (canonical)**: register a second behavior `zoo-parrot-after-hours`; in `onEngineReady`, listen for `zoo.after_hours` state change (via a daemon) and call `npcService.unregisterBehavior('zoo-parrot')` + `npcService.registerBehavior(parrotAfterHoursBehavior)`. Comment explains this is the "runtime behavior swap" pattern.
+    - Use Option B in v17.ts and comment it as the tutorial's showcase of the pattern
+  - Register all new daemons in `onEngineReady()` after the existing scheduler setup
+  - Add all new messages in `extendLanguage()` with well-written, humorous animal dialogue:
+    - Goats: "You wouldn't BELIEVE the kid who grabbed my ear today. Some people have NO manners."
+    - Rabbits: "Honestly? The pellets have gotten worse. Last spring they had dried parsley. Now it's just plain corn. I've filed a complaint."
+    - Parrot: "Oh thank goodness the humans are gone. Do you have ANY idea how exhausting it is to say 'Polly wants a cracker' forty times a day? I have a PhD."
+    - Snake/nocturnal: "The red light is a nice thought, but it's twenty percent too bright. I've mentioned this. No one listens."
+    - Zookeeper departure: "Sam the zookeeper waves goodbye from across the park, whistling cheerfully, and heads for the parking lot."
+
+  **New file: `tutorials/familyzoo/tests/transcripts/v17-after-hours.transcript`**
+  - Header: `title: V17 — After Hours`, `story: familyzoo`, `entry: v17`
+  - Play far enough to trigger the 4th PA announcement (wait 20 turns or move around)
+  - Verify zookeeper departure message fires
+  - Go to Petting Zoo — verify goat after-hours dialogue appears
+  - Go to Aviary — verify parrot after-hours dialogue appears (and differs from daytime phrases)
+  - Go to Nocturnal Exhibit (with flashlight) — verify snake/nocturnal dialogue
+  - Check score shows bonus points (above 75)
+
+  **Update: `tutorials/familyzoo/src/index.ts`**
+  - Change export from V16 to V17
+
+  **New file: `tutorials/familyzoo/docs/v17-after-hours.md`**
+  - Tutorial concept doc explaining:
+    - Why runtime behavior switching matters (NPCs that respond to world phase changes)
+    - The Option A vs Option B tradeoff (conditional branch vs. re-registration)
+    - How conditional daemons differ from unconditional ones (the `condition` guard)
+    - The world state flag pattern (`zoo.after_hours`) as a game phase switch
+    - Code snippets for each pattern
+
+  **Update: `tutorials/familyzoo/docs/tutorial.md`**
+  - Change the default build target note from V16 to V17
+  - Add V17 section at the end: concept, key patterns, transcript test instructions
+
+- **Exit state**: `./build.sh -s familyzoo` targets V17 and succeeds; `v17-after-hours.transcript` passes; V1–V16 transcripts are unaffected; `tutorial.md` covers V1–V17; `index.ts` exports V17
+- **Status**: DONE
+
+---
+
 ## Cross-Phase Implementation Notes
 
 **Single-file rule**: Every version is ONE .ts file (`src/v01.ts` through `src/v16.ts`). No subdirectories, no shared modules, no imports between versions. Each file is a complete, standalone teaching example. Duplication is intentional and desirable — the reader should never have to open a second file.
