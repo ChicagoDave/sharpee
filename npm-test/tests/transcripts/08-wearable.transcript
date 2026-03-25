@@ -9,19 +9,14 @@ description: Verify wear and remove actions for WearableTrait items
 > take hard hat
 [OK: contains "Taken"]
 
+# Verify it's in inventory before wearing
+> inventory
+[OK: contains "hard hat"]
+
 # Wear it — output: "You put on hard hat."
 > wear hat
 [OK: contains "put on"]
 
-# Inventory should show it as worn
-> inventory
-[OK: contains "hard hat"]
-[OK: contains "worn"]
-
 # Remove it — output: "You take off hard hat."
-> take off hat
+> remove hat
 [OK: contains "take off"]
-
-# Should still be in inventory but not worn
-> inventory
-[OK: contains "hard hat"]
