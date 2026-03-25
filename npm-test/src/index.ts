@@ -40,8 +40,10 @@ import {
   WorldModel,
   IFEntity,
   EntityType,
+  Direction,
   ITrait,
   IWorldModel,
+  AuthorModel,
   CapabilityBehavior,
   CapabilityValidationResult,
   CapabilitySharedData,
@@ -408,10 +410,10 @@ class RegressionStory implements Story {
 
     // ---- CONNECTIONS ----
 
-    world.connectRooms(controlRoom.id, 'east', serverRoom.id);
-    world.connectRooms(controlRoom.id, 'south', supplyCloset.id);
-    world.connectRooms(serverRoom.id, 'south', rooftop.id);
-    world.connectRooms(supplyCloset.id, 'east', rooftop.id);
+    world.connectRooms(controlRoom.id, serverRoom.id, Direction.EAST);
+    world.connectRooms(controlRoom.id, supplyCloset.id, Direction.SOUTH);
+    world.connectRooms(serverRoom.id, rooftop.id, Direction.SOUTH);
+    world.connectRooms(supplyCloset.id, rooftop.id, Direction.EAST);
 
     // ---- SCENERY ----
 
@@ -521,7 +523,7 @@ class RegressionStory implements Story {
         article: 'a',
       }),
     );
-    const authorModel = world.getAuthorModel();
+    const authorModel = new AuthorModel(world.getDataStore());
     authorModel.moveEntity(wrench.id, toolbox.id);
 
     // Key for the toolbox
@@ -641,25 +643,18 @@ class RegressionStory implements Story {
    * Extend the language with story-specific messages.
    */
   extendLanguage(language: LanguageProvider): void {
-    language.addMessages({
-      // Inspect messages
-      'regression.inspect.result': (params: Record<string, unknown>) =>
-        `INSPECTION REPORT — ${params.target}: ${params.detail}`,
-      'regression.inspect.blocked': (params: Record<string, unknown>) =>
-        `You can't inspect ${params.target}.`,
-      'regression.inspect.no_target': 'Inspect what?',
-      'regression.inspect.not_inspectable': "That's not something you can inspect.",
+    // Inspect messages
+    language.addMessage('regression.inspect.result', 'INSPECTION REPORT — Temperature: 22°C. Load: 73%. All drives healthy.');
+    language.addMessage('regression.inspect.blocked', "You can't inspect that.");
+    language.addMessage('regression.inspect.no_target', 'Inspect what?');
+    language.addMessage('regression.inspect.not_inspectable', "That's not something you can inspect.");
 
-      // Ping messages
-      'regression.ping.success':
-        'You send a diagnostic ping through the antenna array. PING... PONG! Signal strong. All clear.',
-      'regression.ping.wrong_room':
-        'There is no antenna here to ping.',
+    // Ping messages
+    language.addMessage('regression.ping.success', 'You send a diagnostic ping through the antenna array. PING... PONG! Signal strong. All clear.');
+    language.addMessage('regression.ping.wrong_room', 'There is no antenna here to ping.');
 
-      // Event handler messages
-      'regression.taken.alarm':
-        'A small alarm chirps briefly as you pick that up. The inventory system has been updated.',
-    });
+    // Event handler messages
+    language.addMessage('regression.taken.alarm', 'A small alarm chirps briefly as you pick that up. The inventory system has been updated.');
   }
 
   /**
