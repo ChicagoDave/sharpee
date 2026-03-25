@@ -36,9 +36,10 @@ description: Verify openable, lockable container with key, put in, and take from
 > look in toolbox
 [OK: contains "wrench"]
 
-# Take the wrench
+# Take the wrench (from container says "You take X from Y")
 > take wrench
-[OK: contains "Taken"]
+[OK: contains "take"]
+[OK: contains "wrench"]
 
 # Put the key in the toolbox
 > put key in toolbox
@@ -50,7 +51,7 @@ description: Verify openable, lockable container with key, put in, and take from
 
 # Close the toolbox
 > close toolbox
-[OK: contains "closed"]
+[OK: contains "close"]
 
 # Lock it (key was put inside — can't lock without holding it)
 > lock toolbox with key

@@ -9,9 +9,10 @@ description: Verify story-specific PING action works on rooftop, blocked elsewhe
 > ping
 [OK: contains "no antenna"]
 
-# Go to the rooftop
+# Go to the rooftop via Server Room
 > east
-[SKIP]
+[OK: contains "Server Room"]
+
 > south
 [OK: contains "Rooftop"]
 

@@ -14,9 +14,17 @@ description: Verify scenery objects cannot be taken but can be examined
 > take monitors
 [OK: contains "fixed in place"]
 
-# Go to rooftop and try to take the antenna
+# Workbench is also scenery
+> examine workbench
+[OK: contains "steel workbench"]
+
+> take workbench
+[OK: contains "fixed in place"]
+
+# Go east to Server Room, then south to Rooftop for antenna test
 > east
-[SKIP]
+[OK: contains "Server Room"]
+
 > south
 [OK: contains "Rooftop"]
 
