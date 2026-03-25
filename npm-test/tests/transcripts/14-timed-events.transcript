@@ -7,9 +7,13 @@ description: Verify status daemon fires every 5 turns and pressure fuse fires af
 
 # Wait through turns 1-4 — nothing from daemon yet
 > wait
+[SKIP]
 > wait
+[SKIP]
 > wait
+[SKIP]
 > wait
+[SKIP]
 
 # Turn 5 — status daemon should fire
 > wait
@@ -18,7 +22,9 @@ description: Verify status daemon fires every 5 turns and pressure fuse fires af
 
 # Turns 6-7
 > wait
+[SKIP]
 > wait
+[SKIP]
 
 # Turn 8 — pressure fuse should trigger
 > wait

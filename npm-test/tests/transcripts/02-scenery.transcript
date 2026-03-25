@@ -16,6 +16,7 @@ description: Verify scenery objects cannot be taken but can be examined
 
 # Go to rooftop and try to take the antenna
 > east
+[SKIP]
 > south
 [OK: contains "Rooftop"]
 

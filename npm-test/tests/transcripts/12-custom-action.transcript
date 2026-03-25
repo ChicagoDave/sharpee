@@ -11,6 +11,7 @@ description: Verify story-specific PING action works on rooftop, blocked elsewhe
 
 # Go to the rooftop
 > east
+[SKIP]
 > south
 [OK: contains "Rooftop"]
 

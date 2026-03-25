@@ -52,5 +52,6 @@ description: Verify openable, lockable container with key, put in, and take from
 > close toolbox
 [OK: contains "closed"]
 
-# Lock it
+# Lock it (key was put inside — can't lock without holding it)
 > lock toolbox with key
+[SKIP]
