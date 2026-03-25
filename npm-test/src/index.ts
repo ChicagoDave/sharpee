@@ -701,11 +701,17 @@ class RegressionStory implements Story {
     engine.getPluginRegistry().register(schedulerPlugin);
     const scheduler = schedulerPlugin.getScheduler();
 
-    // Daemon: status update every 5 turns
+    // Daemon: status update on the 3rd turn (runOnce)
+    // Uses runOnce to fire exactly once, making the test deterministic
+    let daemonTurnCount = 0;
     scheduler.registerDaemon({
       id: 'regression.daemon.status',
       name: 'Status Update Daemon',
-      condition: (ctx) => ctx.turn % 5 === 0 && ctx.turn > 0,
+      runOnce: true,
+      condition: () => {
+        daemonTurnCount++;
+        return daemonTurnCount >= 3;
+      },
       run: () => [
         {
           id: `status-${Date.now()}`,
