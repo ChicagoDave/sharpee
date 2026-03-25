@@ -1,0 +1,56 @@
+title: 04 — Containers (Open, Close, Lock, Unlock, Put In, Take From)
+story: regression
+author: Sharpee Regression Suite
+description: Verify openable, lockable container with key, put in, and take from
+
+---
+
+# Get the key and flashlight first
+> take key
+[OK: contains "Taken"]
+
+> take flashlight
+[OK: contains "Taken"]
+
+# Turn on flashlight so we can see in the dark closet
+> switch on flashlight
+[OK: contains "on"]
+
+# Go to the supply closet (dark room)
+> south
+[OK: contains "Supply Closet"]
+
+# The toolbox is here — try to open it (locked)
+> open toolbox
+[OK: contains "locked"]
+
+# Unlock it with the key
+> unlock toolbox with key
+[OK: contains "unlock"]
+
+# Now open it
+> open toolbox
+[OK: contains "open"]
+
+# Look inside — wrench should be there
+> look in toolbox
+[OK: contains "wrench"]
+
+# Take the wrench
+> take wrench
+[OK: contains "Taken"]
+
+# Put the key in the toolbox
+> put key in toolbox
+[OK: contains "put"]
+
+# Verify key is inside
+> look in toolbox
+[OK: contains "key"]
+
+# Close the toolbox
+> close toolbox
+[OK: contains "closed"]
+
+# Lock it
+> lock toolbox with key

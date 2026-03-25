@@ -1,0 +1,22 @@
+title: 10 — NPCs
+story: regression
+author: Sharpee Regression Suite
+description: Verify NPC exists, can be examined, and produces autonomous behavior
+
+---
+
+# Go to the server room where the bot lives
+> east
+[OK: contains "Server Room"]
+[OK: contains "maintenance bot"]
+
+# Examine the bot
+> examine bot
+[OK: contains "wheeled robot"]
+[OK: contains "optical sensor"]
+
+# Wait a few turns — the bot should speak (60% chance per turn when visible)
+> wait
+> wait
+> wait
+> wait

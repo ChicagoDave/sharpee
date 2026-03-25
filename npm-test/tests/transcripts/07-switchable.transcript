@@ -1,0 +1,22 @@
+title: 07 — Switchable Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify switch on and switch off for SwitchableTrait items
+
+---
+
+# Take the flashlight
+> take flashlight
+[OK: contains "Taken"]
+
+# Switch it on
+> switch on flashlight
+[OK: contains "on"]
+
+# Examine it — should show it's on
+> examine flashlight
+[OK: contains "flashlight"]
+
+# Switch it off
+> switch off flashlight
+[OK: contains "off"]

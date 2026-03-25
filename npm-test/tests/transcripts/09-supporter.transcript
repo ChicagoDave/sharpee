@@ -1,0 +1,18 @@
+title: 09 — Supporters
+story: regression
+author: Sharpee Regression Suite
+description: Verify put on surface for SupporterTrait items
+
+---
+
+# Take the clipboard
+> take clipboard
+[OK: contains "Taken"]
+
+# Put it on the workbench
+> put clipboard on workbench
+[OK: contains "put"]
+
+# Look — clipboard should be described on the workbench
+> look
+[OK: contains "workbench"]

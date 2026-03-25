@@ -361,42 +361,29 @@ extendParser(parser: Parser): void {
 
 ## Transcript Testing
 
-Create `.transcript` files to test your story:
+Create `.transcript` files to test your story as you build it:
 
 ```
-# tests/transcripts/basic.transcript
-# Test basic navigation
+title: Basic Navigation
+story: my-story
+description: Test rooms and taking objects
+
+---
 
 > look
-* Living Room
-* cozy
+[OK: contains "Living Room"]
 
 > take lamp
-* Taken
+[OK: contains "Taken"]
 
 > inventory
-* brass lamp
+[OK: contains "brass lamp"]
 
 > north
-* Kitchen
+[OK: contains "Kitchen"]
 ```
 
-### Transcript Syntax
-
-- `> command` - Player input
-- `* pattern` - Output must contain pattern
-- `! pattern` - Output must NOT contain pattern
-- `# comment` - Ignored
-
-### Running Tests
-
-```bash
-# Run single transcript
-node dist/cli/sharpee.js --test stories/my-story/tests/transcripts/basic.transcript
-
-# Run all transcripts
-node dist/cli/sharpee.js --test stories/my-story/tests/transcripts/*.transcript
-```
+For the full syntax reference — assertions, events, state checks, control flow, walkthroughs, and CLI flags — see the **[Transcript Testing Guide](./transcript-testing.md)**.
 
 ## Best Practices
 

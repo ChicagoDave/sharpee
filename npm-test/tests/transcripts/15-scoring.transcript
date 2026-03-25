@@ -1,0 +1,31 @@
+title: 15 — Scoring
+story: regression
+author: Sharpee Regression Suite
+description: Verify score awards for visiting rooms and custom actions
+
+---
+
+# Check initial score
+> score
+[OK: contains "0"]
+
+# Visit the server room — should award 5 points
+> east
+[OK: contains "Server Room"]
+
+> score
+[OK: contains "5"]
+
+# Visit the rooftop — another 5 points
+> south
+[OK: contains "Rooftop"]
+
+> score
+[OK: contains "10"]
+
+# Ping the antenna — 10 points
+> ping
+[OK: contains "PING"]
+
+> score
+[OK: contains "20"]

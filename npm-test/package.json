@@ -1,0 +1,26 @@
+{
+  "name": "sharpee-npm-regression",
+  "version": "1.0.0",
+  "description": "Regression tests for Sharpee npm packages",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "npx transcript-test . tests/transcripts/*.transcript"
+  },
+  "dependencies": {
+    "@sharpee/sharpee": "^0.9.95",
+    "@sharpee/engine": "^0.9.95",
+    "@sharpee/world-model": "^0.9.95",
+    "@sharpee/core": "^0.9.95",
+    "@sharpee/stdlib": "^0.9.95",
+    "@sharpee/plugin-npc": "^0.9.95",
+    "@sharpee/plugin-scheduler": "^0.9.95"
+  },
+  "devDependencies": {
+    "@sharpee/transcript-tester": "^0.9.95",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["sharpee", "regression-test"],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

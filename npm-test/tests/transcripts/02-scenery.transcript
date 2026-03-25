@@ -1,0 +1,26 @@
+title: 02 — Scenery
+story: regression
+author: Sharpee Regression Suite
+description: Verify scenery objects cannot be taken but can be examined
+
+---
+
+# Examine the monitors (scenery in Control Room)
+> examine monitors
+[OK: contains "CRT monitors"]
+[OK: contains "system logs"]
+
+# Try to take the monitors — should fail
+> take monitors
+[OK: contains "fixed in place"]
+
+# Go to rooftop and try to take the antenna
+> east
+> south
+[OK: contains "Rooftop"]
+
+> examine antenna
+[OK: contains "aluminum rods"]
+
+> take antenna
+[OK: contains "fixed in place"]

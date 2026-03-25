@@ -1,0 +1,26 @@
+title: 14 — Timed Events (Daemon & Fuse)
+story: regression
+author: Sharpee Regression Suite
+description: Verify status daemon fires every 5 turns and pressure fuse fires after 8
+
+---
+
+# Wait through turns 1-4 — nothing from daemon yet
+> wait
+> wait
+> wait
+> wait
+
+# Turn 5 — status daemon should fire
+> wait
+[OK: contains "FACILITY STATUS"]
+[OK: contains "operational"]
+
+# Turns 6-7
+> wait
+> wait
+
+# Turn 8 — pressure fuse should trigger
+> wait
+[OK: contains "WARNING"]
+[OK: contains "Coolant pressure"]

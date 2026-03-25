@@ -1,0 +1,47 @@
+title: 01 — Rooms & Navigation
+story: regression
+author: Sharpee Regression Suite
+description: Verify 4 rooms exist and cardinal direction navigation works
+
+---
+
+# Start in the Control Room
+> look
+[OK: contains "Control Room"]
+[OK: contains "workbench"]
+[OK: contains "monitors"]
+
+# Go east to Server Room
+> east
+[OK: contains "Server Room"]
+[OK: contains "server rack"]
+[OK: contains "maintenance bot"]
+
+# Go south to Rooftop
+> south
+[OK: contains "Rooftop"]
+[OK: contains "antenna"]
+
+# Go west to Supply Closet (dark — we won't see much)
+> west
+[OK: contains "dark"]
+
+# Go north back to Control Room
+> north
+[OK: contains "Control Room"]
+
+# Verify south goes to Supply Closet
+> south
+[OK: contains "dark"]
+
+# And east from Supply Closet goes to Rooftop
+> east
+[OK: contains "Rooftop"]
+
+# North from Rooftop goes to Server Room
+> north
+[OK: contains "Server Room"]
+
+# West from Server Room goes to Control Room
+> west
+[OK: contains "Control Room"]

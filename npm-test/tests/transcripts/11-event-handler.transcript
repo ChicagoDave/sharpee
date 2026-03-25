@@ -1,0 +1,12 @@
+title: 11 — Event Handlers
+story: regression
+author: Sharpee Regression Suite
+description: Verify event chain fires when taking an item (alarm chirp)
+
+---
+
+# Take the clipboard — should trigger the taken alarm event chain
+> take clipboard
+[OK: contains "Taken"]
+[OK: contains "alarm chirps"]
+[OK: contains "inventory system"]

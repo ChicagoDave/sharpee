@@ -1,0 +1,44 @@
+title: 05 — Light & Dark Rooms
+story: regression
+author: Sharpee Regression Suite
+description: Verify dark room blocks vision, flashlight provides light
+
+---
+
+# Go south to the supply closet without a light
+> south
+[OK: contains "dark"]
+
+# Can't see anything
+> look
+[OK: contains "dark"]
+
+# Go back and get the flashlight
+> north
+[OK: contains "Control Room"]
+
+> take flashlight
+[OK: contains "Taken"]
+
+# Flashlight is off — closet still dark
+> south
+[OK: contains "dark"]
+
+> north
+[OK: contains "Control Room"]
+
+# Turn on the flashlight
+> switch on flashlight
+[OK: contains "on"]
+
+# Now the closet should be lit
+> south
+[OK: contains "Supply Closet"]
+[OK: contains "toolbox"]
+
+# Turn off flashlight — dark again
+> switch off flashlight
+[OK: contains "off"]
+
+> look
+[OK: contains "dark"]

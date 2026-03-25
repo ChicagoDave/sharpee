@@ -384,3 +384,142 @@ The `build.sh` story name is `familyzoo` and targets V16 for the "full game" bui
    - **Alternative**: For Phase 2, only fully implement `storyPath` mode (esbuild → CJS in memory → eval); treat `bundle` mode as a stub that extracts story.js from the zip and then runs it through the same esbuild CJS pipeline. Revisit bundle mode after integration testing.
 
 3. **esbuild programmatic API availability**: The bridge will use `require('esbuild')` programmatically for both `storyPath` compilation and (optionally) bundle mode story.js conversion. esbuild is already in the monorepo as a dev dependency. The standalone `node_bridge.js` built by esbuild will need esbuild itself as a runtime dependency (not just build-time) for the `storyPath` authoring mode. Either bundle esbuild's WASM into `node_bridge.js`, or keep esbuild external and require the host to provide it (note: esbuild ships a self-contained native binary — complex to bundle). Simplest: require `esbuild` to be installed alongside `node_bridge.js` (or installed as a peer dep in the native app's node_modules). Document this requirement.
+
+---
+
+---
+
+# Session Plan: npm Regression Test Suite
+
+**Created**: 2026-03-25
+**Overall scope**: Create `npm-test/` — a self-contained regression harness that installs published npm packages into a temp directory, compiles a purpose-built story, and runs one transcript per platform feature to verify the published packages work correctly in isolation.
+**Bounded contexts touched**: N/A — infrastructure/tooling; no changes to any package source
+**Key domain language**: N/A — this is a packaging and regression verification concern
+
+---
+
+## Design Notes
+
+### Story setting: Maintenance Facility
+
+Four rooms — Control Room (start), Supply Closet (dark, connected west), Server Room (north), Rooftop (up via locked hatch). Each room exists solely to exercise one or more platform features with zero narrative fluff. The story imports only from `@sharpee/sharpee`.
+
+### Feature-to-room mapping
+
+| Feature | Location |
+|---|---|
+| Rooms & navigation | Control Room ↔ Server Room (N/S), ↔ Supply Closet (E/W), ↔ Rooftop (hatch, up/down) |
+| Scenery | Control panel (Control Room), server rack (Server Room) |
+| Portable objects | Flashlight, keycard, toolkit |
+| Containers | Storage bin (Control Room, closed, openable) |
+| Openable | Storage bin, hatch |
+| Lockable | Hatch (locked with keycard) |
+| Light/dark | Supply Closet (dark, needs flashlight) |
+| Readable | Safety manual (portable), warning placard (scenery) |
+| Switchable | Emergency light (switchable, no side effect — stand-alone test) |
+| NPCs | Security guard (patrols Control Room ↔ Server Room) |
+| Event handler | Picking up the toolkit triggers a "calibration started" message via `if.event.taken` handler |
+| Custom action | `PING` command (story-specific, no target) |
+| Capability dispatch | `INSPECT` verb: control panel prints diagnostics, server rack prints uptime, other objects print generic message |
+| Timed events | Daemon: beeping sound every 3 turns; fuse: "system warning" fires 8 turns from start |
+| Scoring | 5 pts per room visited (4 rooms = 20 pts max); `score` command |
+| Wearable | Hard hat (wear / remove) |
+| Supporters | Workbench (put items on surface) |
+
+### CommonJS constraint
+
+The npm packages publish as CommonJS (`require`). The story's `tsconfig.json` must target `"module": "CommonJS"` (not NodeNext) to produce `dist/index.js` that `require()` can load. The `package.json` must NOT set `"type": "module"`.
+
+### run.sh invocation of transcript-tester
+
+The transcript-tester CLI signature is:
+```
+transcript-test <story-path> [transcript-files...] [options]
+```
+In the temp folder, story-path is `.` (current directory, which is the temp folder root). Transcript files are passed explicitly. The binary is invoked via `npx transcript-test`.
+
+---
+
+## Phases
+
+### Phase 1: Scaffold — package.json, tsconfig.json, run.sh
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: N/A — infrastructure
+- **Entry state**: `npm-test/` does not exist
+- **Deliverable**:
+  - `npm-test/package.json` — name `sharpee-npm-regression`, no `"type": "module"`, dependencies: `@sharpee/sharpee@0.9.95` and `@sharpee/transcript-tester@0.9.95`; no workspace references
+  - `npm-test/tsconfig.json` — `"module": "CommonJS"`, `"moduleResolution": "node"`, `"target": "ES2022"`, `"outDir": "dist"`, `"rootDir": "src"`, `"strict": true`, `"esModuleInterop": true`, `"skipLibCheck": true`
+  - `npm-test/run.sh` — full orchestration script:
+    1. `TMPDIR=$(mktemp -d)`
+    2. `trap "rm -rf $TMPDIR" EXIT` (cleanup on exit or failure)
+    3. `cp -r . $TMPDIR` (copy npm-test contents)
+    4. `cd $TMPDIR && npm install` (install from registry, fully isolated)
+    5. `npx tsc` (compile story)
+    6. Iterate over `tests/transcripts/*.transcript` and invoke `npx transcript-test . <file>` for each, accumulating pass/fail
+    7. Exit 0 if all pass, exit 1 if any fail; print summary line `N/M transcripts passed`
+  - `npm-test/.gitignore` — ignores `dist/`, `node_modules/`
+- **Exit state**: Files exist and are syntactically valid; `run.sh` is executable; no story code yet
+- **Status**: CURRENT
+
+### Phase 2: Story — src/index.ts (Maintenance Facility)
+- **Tier**: Large
+- **Budget**: ~400 tool calls
+- **Domain focus**: All 17 platform features exercised in one compact story
+- **Entry state**: Phase 1 complete; scaffold files exist
+- **Deliverable**: `npm-test/src/index.ts` — single-file story implementing:
+  - Four rooms: Control Room, Supply Closet (dark), Server Room, Rooftop
+  - Room connections: N/S between Control and Server; E/W between Control and Supply Closet; up/down between Control and Rooftop via hatch
+  - Scenery: control panel (`SceneryTrait`), server rack (`SceneryTrait`), warning placard (`SceneryTrait`, `ReadableTrait`)
+  - Portable items: flashlight (`LightSourceTrait`), keycard, toolkit, safety manual (`ReadableTrait`), hard hat (`WearableTrait`)
+  - Storage bin: `ContainerTrait`, `OpenableTrait`, initially closed; toolkit placed inside via `AuthorModel` at init
+  - Hatch: `OpenableTrait`, `LockableTrait`, keyed to keycard; initially locked and closed
+  - Workbench: `SupporterTrait` (Server Room)
+  - Emergency light: `SwitchableTrait` (Control Room, scenery)
+  - NPC: security guard with simple two-room patrol behavior using `NpcPlugin`
+  - Event handler: `if.event.taken` on toolkit entity → emits "Calibration sequence started" message
+  - Custom action: `PING` maps to `regression.action.ping`; registered in `extendParser()`; prints "PONG" via `extendLanguage()`
+  - Capability dispatch: `regression.action.inspect` verb; `InspectableTrait` with behaviors for control panel (diagnostics output), server rack (uptime output), default (generic output); registered with `registerCapabilityBehavior()`
+  - Daemon: `SchedulerPlugin` repeating every 3 turns — "The system beeps softly."
+  - Fuse: fires at turn 8 — "WARNING: Thermal threshold exceeded."
+  - Scoring: `world.awardScore()` called when player first enters each room; `score` command works
+  - All messages defined in `extendLanguage()` (no hardcoded English in action logic)
+  - Story exports `default story` (CommonJS compatible via `export default`)
+- **Exit state**: `tsc` compiles without errors; `dist/index.js` exists and is loadable via `require()`; story can be loaded by transcript-tester story-loader
+- **Status**: PENDING
+
+### Phase 3: Transcripts — one per feature group
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: Verifying each platform feature works from published npm packages
+- **Entry state**: Phase 2 complete; story compiles and loads
+- **Deliverable**: 12 transcript files in `npm-test/tests/transcripts/`:
+  - `01-navigation.transcript` — look in Control Room; go north (Server Room); go south (Control Room); go west (Supply Closet, dark message); go east (back); go up (blocked, hatch locked)
+  - `02-scenery-examine.transcript` — examine control panel (works); take control panel (blocked, scenery); examine warning placard
+  - `03-portable-objects.transcript` — take flashlight; inventory shows flashlight; drop flashlight; take safety manual
+  - `04-containers.transcript` — open storage bin; look in bin; take toolkit from bin; close bin; try to take from closed bin (blocked)
+  - `05-openable-lockable.transcript` — take keycard; go up (blocked, locked); unlock hatch with keycard; open hatch; go up (Rooftop); go down
+  - `06-light-dark.transcript` — go west (dark, can't see); go east; take flashlight; switch on flashlight; go west (lit, see room); go east
+  - `07-readable-switchable.transcript` — read safety manual; read warning placard; switch on emergency light; switch off emergency light
+  - `08-npc.transcript` — wait 3 turns; guard should have moved; look (guard present or absent based on patrol position)
+  - `09-event-handler.transcript` — open bin; take toolkit (calibration message fires); examine toolkit
+  - `10-custom-action.transcript` — ping (PONG response); try unknown command (parser rejects)
+  - `11-capability-dispatch.transcript` — inspect control panel (diagnostics); inspect server rack (uptime); inspect flashlight (generic)
+  - `12-timed-scoring-wearable-supporter.transcript` — wait 3 turns (beep fires); wait to turn 8 (thermal warning fires); wear hard hat; remove hard hat; put flashlight on workbench; take flashlight from workbench; score (shows points > 0)
+- **Exit state**: All 12 transcripts pass when run against the compiled story in a real temp-dir npm install; `run.sh` exits 0
+- **Status**: PENDING
+
+### Phase 4: Documentation — README.md
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: N/A — documentation
+- **Entry state**: Phases 1–3 complete; all transcripts passing
+- **Deliverable**: `npm-test/README.md` covering:
+  - Purpose: "What this is and why it exists" — regression suite for published npm packages, not the monorepo build
+  - Prerequisites: Node.js 18+, npm access to `@sharpee/*` packages
+  - How to run: `cd npm-test && bash run.sh`; expected output format; exit codes
+  - What the story covers: table mapping each transcript to the platform feature it verifies
+  - Troubleshooting: common failure modes (stale npm version, CJS/ESM mismatch, transcript-tester CLI path)
+  - How to add a new transcript: file naming convention, transcript format reference, where to place it
+- **Exit state**: README.md exists; `npm-test/` directory is self-explanatory to a developer who has never seen it before
+- **Status**: PENDING

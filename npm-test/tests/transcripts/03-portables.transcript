@@ -1,0 +1,44 @@
+title: 03 — Portable Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify take, drop, examine, and inventory for portable items
+
+---
+
+# Take the clipboard
+> take clipboard
+[OK: contains "Taken"]
+
+# Check inventory
+> inventory
+[OK: contains "clipboard"]
+
+# Examine it
+> examine clipboard
+[OK: contains "maintenance checklist"]
+
+# Drop it
+> drop clipboard
+[OK: contains "Dropped"]
+
+# Verify it's in the room
+> look
+[OK: contains "clipboard"]
+
+# Take the hard hat
+> take hard hat
+[OK: contains "Taken"]
+
+# Take the flashlight
+> take flashlight
+[OK: contains "Taken"]
+
+# Take the key
+> take key
+[OK: contains "Taken"]
+
+# Inventory should show all three
+> inventory
+[OK: contains "hard hat"]
+[OK: contains "flashlight"]
+[OK: contains "key"]

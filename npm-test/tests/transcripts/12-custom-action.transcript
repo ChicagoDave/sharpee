@@ -1,0 +1,21 @@
+title: 12 — Custom Actions (PING)
+story: regression
+author: Sharpee Regression Suite
+description: Verify story-specific PING action works on rooftop, blocked elsewhere
+
+---
+
+# Try to ping from the Control Room — should fail
+> ping
+[OK: contains "no antenna"]
+
+# Go to the rooftop
+> east
+> south
+[OK: contains "Rooftop"]
+
+# Ping the antenna
+> ping
+[OK: contains "PING"]
+[OK: contains "PONG"]
+[OK: contains "Signal strong"]

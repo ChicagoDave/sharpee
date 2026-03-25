@@ -1,0 +1,12 @@
+title: 06 — Readable Objects
+story: regression
+author: Sharpee Regression Suite
+description: Verify the read action works on items with ReadableTrait
+
+---
+
+# Read the clipboard
+> read clipboard
+[OK: contains "MAINTENANCE CHECKLIST"]
+[OK: contains "Check server rack"]
+[OK: contains "diagnostic ping"]

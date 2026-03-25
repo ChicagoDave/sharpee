@@ -1,0 +1,21 @@
+title: 13 — Capability Dispatch (INSPECT)
+story: regression
+author: Sharpee Regression Suite
+description: Verify capability dispatch routes INSPECT to entity-specific behavior
+
+---
+
+# Go to the server room
+> east
+[OK: contains "Server Room"]
+
+# Inspect the server rack — has InspectableTrait
+> inspect rack
+[OK: contains "INSPECTION REPORT"]
+[OK: contains "Temperature"]
+[OK: contains "22"]
+[OK: contains "drives healthy"]
+
+# Try to inspect the bot — no InspectableTrait, should fail
+> inspect bot
+[OK: contains "not something you can inspect"]

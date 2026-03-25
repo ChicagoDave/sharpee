@@ -31,7 +31,7 @@ docs/
 | [Creating Stories](./guides/creating-stories.md) | Complete guide to building IF games |
 | [Event Handlers](./guides/event-handlers.md) | React to game events with custom logic |
 | [Build System](./guides/build-system.md) | Building and bundling stories |
-| [Transcript Testing](./reference/transcript-testing.md) | Test your story with transcript files |
+| [Transcript Testing](./guides/transcript-testing.md) | Test your story with transcript files |
 
 ## For Developers
 
