@@ -145,6 +145,14 @@ export class StandardScopeResolver implements ScopeResolver {
     // Check if target is in/on something in the room
     const targetContainer = targetLocation ? this.world.getEntity(targetLocation) : null;
     if (targetContainer) {
+      // NPC inventory: visible but not reachable by default.
+      // Like a closed transparent container — you can see the thief's knife
+      // but can't grab it. Authors add OpenInventoryTrait for accessible NPCs
+      // (e.g., a horse with saddlebags, a dead NPC).
+      if (targetContainer.has(TraitType.ACTOR) && targetContainer.id !== actor.id) {
+        return targetContainer.has(TraitType.OPEN_INVENTORY);
+      }
+
       // On a supporter - reachable if we can see it
       if (targetContainer.has(TraitType.SUPPORTER)) {
         return true;
@@ -153,7 +161,7 @@ export class StandardScopeResolver implements ScopeResolver {
       // In an open container - check depth
       if (targetContainer.has(TraitType.CONTAINER)) {
         const containerTrait = targetContainer.getTrait(TraitType.CONTAINER);
-        
+
         // Must be open
         if (targetContainer.has(TraitType.OPENABLE)) {
           const openable = targetContainer.getTrait(TraitType.OPENABLE);

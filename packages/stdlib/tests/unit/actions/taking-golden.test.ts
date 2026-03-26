@@ -353,13 +353,14 @@ describe('takingAction (Golden Pattern)', () => {
       
       const npc = world.createEntity('guard', 'actor');
       npc.add({ type: TraitType.ACTOR });
+      npc.add({ type: TraitType.OPEN_INVENTORY }); // NPC inventory accessible to player
       const hat = world.createEntity('fancy hat', 'object');
       hat.add({
         type: TraitType.WEARABLE,
         worn: true,
         slot: 'head'
       });
-      
+
       world.moveEntity(npc.id, room.id);
       world.moveEntity(hat.id, npc.id);
       

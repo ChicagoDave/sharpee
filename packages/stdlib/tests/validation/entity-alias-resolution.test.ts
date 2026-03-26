@@ -260,6 +260,160 @@ describe('Entity alias resolution', () => {
     }
   });
 
+  describe('multi-word alias resolution (ISSUE-057)', () => {
+    let bushBabies: IFEntity;
+
+    beforeEach(() => {
+      // Create entity with multi-word aliases and no single-word fallback
+      bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
+      bushBabies.add(new IdentityTrait({
+        name: 'bush babies',
+        description: 'A family of bush babies peers at you from the branches.',
+        aliases: ['bush babies', 'bush baby', 'galagos'],
+        properName: false,
+        article: 'the'
+      }));
+      world.moveEntity(bushBabies.id, room.id);
+    });
+
+    it('should resolve multi-word alias "bush babies" via full text match', async () => {
+      const command: ParsedCommand = {
+        pattern: 'VERB_NOUN',
+        confidence: 1,
+        action: 'if.action.examining',
+        structure: {
+          verb: 'examine',
+          directObject: {
+            text: 'bush babies',
+            head: 'babies',     // Parser sets head to last token
+            modifiers: ['bush'],
+            determiner: null,
+            quantity: null,
+            isAll: false
+          } as NounPhrase
+        }
+      };
+
+      const result = await validator.validate(command);
+      expect(result.success).toBe(true);
+      if (result.success && result.value.directObject) {
+        expect(result.value.directObject.entity.id).toBe(bushBabies.id);
+      }
+    });
+
+    it('should resolve single-word alias "galagos" normally', async () => {
+      const command: ParsedCommand = {
+        pattern: 'VERB_NOUN',
+        confidence: 1,
+        action: 'if.action.examining',
+        structure: {
+          verb: 'examine',
+          directObject: {
+            text: 'galagos',
+            head: 'galagos',
+            modifiers: [],
+            determiner: null,
+            quantity: null,
+            isAll: false
+          } as NounPhrase
+        }
+      };
+
+      const result = await validator.validate(command);
+      expect(result.success).toBe(true);
+      if (result.success && result.value.directObject) {
+        expect(result.value.directObject.entity.id).toBe(bushBabies.id);
+      }
+    });
+
+    it('should resolve multi-word entity name as primary name', async () => {
+      // "bush babies" is the entity name, not just an alias
+      const command: ParsedCommand = {
+        pattern: 'VERB_NOUN',
+        confidence: 1,
+        action: 'if.action.examining',
+        structure: {
+          verb: 'examine',
+          directObject: {
+            text: 'bush babies',
+            head: 'babies',
+            modifiers: ['bush'],
+            determiner: null,
+            quantity: null,
+            isAll: false
+          } as NounPhrase
+        }
+      };
+
+      const result = await validator.validate(command);
+      expect(result.success).toBe(true);
+    });
+
+    it('should prefer full text match over head-only match for disambiguation', async () => {
+      // Create a second entity that matches "babies" (head token)
+      const babies = world.createEntity('babies', EntityType.OBJECT);
+      babies.add(new IdentityTrait({
+        name: 'babies',
+        description: 'Some baby dolls.',
+        aliases: ['babies', 'dolls'],
+        properName: false,
+        article: 'the'
+      }));
+      world.moveEntity(babies.id, room.id);
+
+      // "examine bush babies" — full text "bush babies" should match bush-babies entity,
+      // not the "babies" entity (which only matches the head token)
+      const command: ParsedCommand = {
+        pattern: 'VERB_NOUN',
+        confidence: 1,
+        action: 'if.action.examining',
+        structure: {
+          verb: 'examine',
+          directObject: {
+            text: 'bush babies',
+            head: 'babies',
+            modifiers: ['bush'],
+            determiner: null,
+            quantity: null,
+            isAll: false
+          } as NounPhrase
+        }
+      };
+
+      const result = await validator.validate(command);
+      expect(result.success).toBe(true);
+      if (result.success && result.value.directObject) {
+        expect(result.value.directObject.entity.id).toBe(bushBabies.id);
+      }
+    });
+
+    it('should fall back to head noun when full text has no match', async () => {
+      // "examine old hook" — no entity named "old hook", but "hook" is an alias
+      const command: ParsedCommand = {
+        pattern: 'VERB_NOUN',
+        confidence: 1,
+        action: 'if.action.examining',
+        structure: {
+          verb: 'examine',
+          directObject: {
+            text: 'old hook',
+            head: 'hook',
+            modifiers: ['old'],
+            determiner: null,
+            quantity: null,
+            isAll: false
+          } as NounPhrase
+        }
+      };
+
+      const result = await validator.validate(command);
+      expect(result.success).toBe(true);
+      if (result.success && result.value.directObject) {
+        expect(result.value.directObject.entity.id).toBe(hook.id);
+      }
+    });
+  });
+
   it('should handle entities with same aliases in different locations', async () => {
     // Create another room with another hook
     const otherRoom = world.createEntity('Other Room', EntityType.ROOM);

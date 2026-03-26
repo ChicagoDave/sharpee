@@ -635,10 +635,14 @@ export class CommandValidator implements CommandValidator {
       // Entity ID was set but entity not found - fall through to error
     }
 
-    // Find candidate entities by head noun (e.g., "box" from "wooden box")
-    // The head noun is the main identifier, modifiers are used for disambiguation
-    const searchTerm = ref.head || ref.text;
+    // Maximal munch entity resolution (ISSUE-057):
+    // Try full text first (e.g., "brass lantern"), fall back to head noun (e.g., "lantern").
+    // The parser's slot consumer already builds multi-word phrases correctly;
+    // this ensures the validator uses them for entity lookup.
+    const fullText = ref.text;
+    const headNoun = ref.head || ref.text;
     let candidates: IFEntity[] = [];
+    let searchTerm = fullText;
 
     // For AWARE scope (hearing/smelling), we need to search more broadly
     // because entities might be in other rooms
@@ -651,41 +655,52 @@ export class CommandValidator implements CommandValidator {
         e.type !== 'room' && e.id !== this.world.getPlayer()?.id
       );
 
-      // Filter candidates by name/type/synonym match with head noun
+      // Filter candidates by name/type/synonym match — try full text first, then head noun
       candidates = candidates.filter(entity => {
         const name = this.getEntityName(entity).toLowerCase();
         const type = entity.type?.toLowerCase() || '';
         const synonyms = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
-        const searchLower = searchTerm.toLowerCase();
+        const fullTextLower = fullText.toLowerCase();
 
-        return name === searchLower || type === searchLower || synonyms.includes(searchLower);
+        return name === fullTextLower || type === fullTextLower || synonyms.includes(fullTextLower);
       });
+
+      // Fall back to head noun if full text found nothing
+      if (candidates.length === 0 && headNoun !== fullText) {
+        searchTerm = headNoun;
+        candidates = this.world.getAllEntities().filter(e =>
+          e.type !== 'room' && e.id !== this.world.getPlayer()?.id
+        );
+        candidates = candidates.filter(entity => {
+          const name = this.getEntityName(entity).toLowerCase();
+          const type = entity.type?.toLowerCase() || '';
+          const synonyms = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
+          const headLower = headNoun.toLowerCase();
+
+          return name === headLower || type === headLower || synonyms.includes(headLower);
+        });
+      }
     } else {
-      // For other scopes, use targeted search by head noun
-      // Look for entities by name, type, or synonym
-      const byName = this.getEntitiesByName(searchTerm);
-      candidates = byName;
-
-      // Also check type matches
-      const byType = this.getEntitiesByType(searchTerm);
-      candidates.push(...byType);
-
-      // And synonym matches
-      const bySynonym = this.getEntitiesBySynonym(searchTerm);
-      candidates.push(...bySynonym);
+      // Try full text first (maximal munch)
+      candidates = this.findCandidatesByTerm(fullText);
 
       this.emitDebugEvent('entity_search', command, {
-        searchTerm,
-        byName: byName.length,
-        byType: byType.length,
-        bySynonym: bySynonym.length,
-        totalBeforeDedupe: candidates.length
+        searchTerm: fullText,
+        fullTextCandidates: candidates.length,
+        strategy: 'maximal_munch_full_text'
       });
 
-      // Remove duplicates
-      candidates = candidates.filter((e, i, arr) =>
-        arr.findIndex(x => x.id === e.id) === i
-      );
+      // Fall back to head noun if full text found nothing and they differ
+      if (candidates.length === 0 && headNoun !== fullText) {
+        searchTerm = headNoun;
+        candidates = this.findCandidatesByTerm(headNoun);
+
+        this.emitDebugEvent('entity_search', command, {
+          searchTerm: headNoun,
+          headNounCandidates: candidates.length,
+          strategy: 'maximal_munch_head_fallback'
+        });
+      }
 
       // Fallback: If no candidates found by name/type/synonym, try adjective search
       // This handles "press yellow" when yellow is an adjective on "yellow button"
@@ -899,6 +914,23 @@ export class CommandValidator implements CommandValidator {
   }
 
   /**
+   * Find candidate entities by name, type, or synonym for a given search term.
+   * Returns deduplicated results.
+   */
+  private findCandidatesByTerm(term: string): IFEntity[] {
+    const byName = this.getEntitiesByName(term);
+    const byType = this.getEntitiesByType(term);
+    const bySynonym = this.getEntitiesBySynonym(term);
+
+    const candidates = [...byName, ...byType, ...bySynonym];
+
+    // Remove duplicates
+    return candidates.filter((e, i, arr) =>
+      arr.findIndex(x => x.id === e.id) === i
+    );
+  }
+
+  /**
    * Get entities by exact name match
    */
   private getEntitiesByName(name: string): IFEntity[] {
@@ -996,7 +1028,8 @@ export class CommandValidator implements CommandValidator {
     if (!ref) return [];
 
     const scored: ScoredEntityMatch[] = [];
-    const searchTerm = (ref.head || ref.text).toLowerCase();
+    const fullText = ref.text?.toLowerCase() || '';
+    const headNoun = (ref.head || ref.text).toLowerCase();
 
     // Extract modifiers from ref, or infer from text vs head if not set
     // (The parser may not always populate the modifiers field)
@@ -1018,20 +1051,33 @@ export class CommandValidator implements CommandValidator {
       const adjectives = this.getEntityAdjectives(entity).map(a => a.toLowerCase());
       const synonyms = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
 
-      // Base score for matching the search term (head noun)
-      if (name === searchTerm) {
-        score += 10;
-        matchReasons.push('exact_name_match');
-      } else if (type === searchTerm) {
-        score += 8;
-        matchReasons.push('type_match');
-      } else if (synonyms.includes(searchTerm)) {
-        score += 6;
-        matchReasons.push('synonym_match');
-      } else if (adjectives.includes(searchTerm)) {
-        // Adjective fallback: "press yellow" finds "yellow button"
-        score += 4;
-        matchReasons.push('adjective_match');
+      // Full text match scores highest (maximal munch — longer match = more specific)
+      if (fullText && fullText !== headNoun) {
+        if (name === fullText) {
+          score += 15;
+          matchReasons.push('full_text_name_match');
+        } else if (synonyms.includes(fullText)) {
+          score += 12;
+          matchReasons.push('full_text_synonym_match');
+        }
+      }
+
+      // Base score for matching the head noun (falls through if full text already matched)
+      if (score === 0) {
+        if (name === headNoun) {
+          score += 10;
+          matchReasons.push('exact_name_match');
+        } else if (type === headNoun) {
+          score += 8;
+          matchReasons.push('type_match');
+        } else if (synonyms.includes(headNoun)) {
+          score += 6;
+          matchReasons.push('synonym_match');
+        } else if (adjectives.includes(headNoun)) {
+          // Adjective fallback: "press yellow" finds "yellow button"
+          score += 4;
+          matchReasons.push('adjective_match');
+        }
       }
 
       // Modifier matching - this is key for disambiguation

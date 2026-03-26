@@ -53,6 +53,7 @@ export const TraitType = {
 
   // NPC traits (ADR-070)
   NPC: 'npc',
+  OPEN_INVENTORY: 'openInventory',
 
   // Transport traits
   VEHICLE: 'vehicle',
@@ -128,6 +129,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
 
   // NPC traits
   [TraitType.NPC]: TraitCategory.STANDARD,
+  [TraitType.OPEN_INVENTORY]: TraitCategory.STANDARD,
 
   // Transport traits
   [TraitType.VEHICLE]: TraitCategory.INTERACTIVE,

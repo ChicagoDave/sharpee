@@ -18,11 +18,11 @@ original numbers.
 | ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - |
 | ISSUE-052 | Capability registry module-level Map not shared across require() | High | world-model | 2026-02-08 | 2026-02-13 |
 | ISSUE-053 | Grating/skeleton key wiring broken | High | dungeo | 2026-03-23 | 2026-03-23 |
-| ISSUE-057 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us | 2026-03-23 | - |
+| ISSUE-057 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us, stdlib | 2026-03-23 | 2026-03-26 |
 | ISSUE-058 | Entity creation is excessively repetitive — needs builder/helper API | Low | world-model | 2026-03-23 | - |
 | ISSUE-059 | Transcript tester `story:` header field is metadata-only | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
-| ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | - |
+| ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
 | ISSUE-062 | Fuse `skipNextTick` behavior undocumented at API level | Low | plugin-scheduler | 2026-03-24 | - |
 | ISSUE-063 | `as any` regression — 1,035 occurrences across 203 files | High | platform-wide | 2026-03-26 | - |
 | ISSUE-064 | VisibilityBehavior has 3 duplicate container-walk traversals | Medium | world-model | 2026-03-26 | - |
@@ -55,6 +55,36 @@ original numbers.
 Four problems made the grating puzzle non-functional: duplicate grating entities (forest.ts and maze.ts), `key.attributes.unlocksId` is a no-op, `LockableTrait` has no `keyId`, and exits don't use `via` to check the grating's open/locked state.
 
 **Details**: See [issue-053-grating-key-wiring.md](issue-053-grating-key-wiring.md)
+
+### ISSUE-057: Multi-word aliases don't resolve in the parser
+
+**Reported**: 2026-03-23
+**Severity**: Medium
+**Component**: Platform (stdlib / command-validator, world-model / scope-resolver)
+**Status**: Fixed 2026-03-26
+
+**Root cause**: The command validator searched by `ref.head` (last token, e.g., "babies" from "bush babies") instead of `ref.text` (full phrase "bush babies"). The parser's slot consumer already built multi-word phrases correctly — the validator just wasn't using them.
+
+**Fix**: Maximal munch in `resolveEntity()` — try full `ref.text` first, fall back to `ref.head`. Also added full-text scoring tiers in `scoreEntities()` (15/12 for full text vs 10/8/6/4 for head-only).
+
+**Also exposed**: NPC inventory items were treated as REACHABLE by default, causing disambiguation when player and NPC both carried items with the same alias ("knife"). Fixed by adding `OpenInventoryTrait` — NPC inventory defaults to VISIBLE-only, authors opt in to REACHABLE with the trait.
+
+**Also fixes**: ISSUE-061 (multi-word names in story grammar `:thing` slots) — same root cause.
+
+**Details**: See [plans/issue-057-plan.md](plans/issue-057-plan.md) for full root cause analysis.
+
+---
+
+### ISSUE-061: Multi-word entity names fail in story grammar `:thing` slots
+
+**Reported**: 2026-03-24
+**Severity**: Medium
+**Component**: Platform (parser-en-us)
+**Status**: Fixed 2026-03-26 (same root cause as ISSUE-057)
+
+Same root cause as ISSUE-057. The maximal munch fix in the command validator resolves both stdlib grammar and story grammar `:thing` slots.
+
+---
 
 ### ISSUE-047: Zifmia console output panel
 
@@ -125,56 +155,6 @@ All English text strings in the Dungeo story are currently spread across multipl
 ---
 
 ## Open Issues — Parser
-
-### ISSUE-057: Multi-word aliases don't resolve in the parser
-
-**Reported**: 2026-03-23
-**Severity**: Medium
-**Component**: Platform (parser-en-us)
-
-**Description**:
-Entity aliases with spaces (multi-word aliases) don't resolve when used in player commands. For example, an entity with `aliases: ['bush babies', 'bush baby', 'galagos']` can be referenced by `examine galagos` but NOT by `examine bush babies`.
-
-**Reproduction**:
-```typescript
-const bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
-bushBabies.add(new IdentityTrait({
-  name: 'bush babies',
-  aliases: ['bush babies', 'bush baby', 'galagos'],
-}));
-```
-- `examine galagos` → works (single-word alias)
-- `examine bush babies` → "You can't see any such thing." (multi-word alias fails)
-- `examine bush baby` → needs testing
-
-**Impact**: Authors must provide single-word aliases as workarounds. Multi-word names like "flower beds", "hay bale", "rope perches" also fail as aliases (but work as the primary `name` in some contexts). Discovered during Family Zoo tutorial development.
-
-**Workaround**: Always include at least one single-word alias for every entity.
-
-**Dungeo blast radius**: **171 alias declarations across 22 files** contain multi-word aliases. Heaviest files: `frigid-river.ts` (17), `volcano.ts` (17), `well-room.ts` (16), `coal-mine.ts` (16), `endgame.ts` (15), `house-interior.ts` (13), `dam.ts` (11), `underground.ts` (10). Many entities like "brass lantern", "nasty knife", "jeweled egg" rely on single-word fallbacks ("lantern", "knife", "egg") that work, but multi-word aliases like "thief knife", "pile of plastic", "stick of incense" silently fail. Players referencing these get "You can't see any such thing" despite the item being present. This is the most player-visible issue in the list.
-
----
-
-### ISSUE-061: Multi-word entity names fail in story grammar `:thing` slots
-
-**Reported**: 2026-03-24
-**Severity**: Medium
-**Component**: Platform (parser-en-us)
-
-**Description**:
-When a story grammar pattern uses `:thing` (e.g., `photograph :thing`), multi-word entity names and aliases fail to resolve. Example:
-```
-> photograph stuffed animals   → "You can't see any such thing."
-> photograph toys              → works (single-word alias)
-```
-
-The entity has `aliases: ['stuffed animals', 'plush', 'toys']` and is in the current room. This is the same root cause as ISSUE-057 (multi-word aliases in stdlib grammar) but confirmed to also affect story-defined grammar patterns.
-
-**Workaround**: Always include single-word aliases for entities that will be targets of story-specific grammar patterns.
-
-**Dungeo blast radius**: Same root cause as ISSUE-057. The GDT debug commands already work around this — `ao`, `tk`, and `ah` all join args to support multi-word names (e.g., `stories/dungeo/src/actions/gdt/commands/ao.ts:33`). Story grammar patterns in `gdt-grammar.ts` use `:arg...` greedy slots as a workaround. Any future story-specific grammar patterns (e.g., `RING :thing`, `WAVE :thing`) will hit this if the target has a multi-word name.
-
----
 
 ### ISSUE-066: Entering/exiting grammar explosion — 14+ patterns for 2 actions
 

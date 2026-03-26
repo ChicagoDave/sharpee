@@ -45,6 +45,7 @@ export * from './enterable';
 
 // NPC traits
 export * from './npc';
+export * from './open-inventory';
 
 // System traits
 export * from './story-info';
