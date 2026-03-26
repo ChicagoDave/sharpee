@@ -1,93 +1,70 @@
-# Plan: Fix Stdlib Golden Tests
+# Session Plan: ISSUE-063 — Eliminate `as any` Casts
 
-**Status**: DONE
-**Created**: 2026-03-25
-**Scope**: packages/stdlib/tests/ — 352 failing tests across 42 files
+**Created**: 2026-03-26
+**Overall scope**: Eliminate `as any` casts caused by trait access. The `getTrait` method already supports a constructor-based generic pattern — `getTrait(OpenableTrait)` returns `OpenableTrait | undefined` — but callers use `getTrait(TraitType.OPENABLE) as any` instead. This is a caller-side cleanup: replace `TraitType` constant + `as any` with trait class import + constructor call.
+**Bounded contexts touched**: N/A — infrastructure/tooling (TypeScript type system, no domain behavior change)
+**Key domain language**: N/A
 
-## Problem
+## Discovery
 
-352 stdlib test failures. 37 golden test files share two root causes plus 5 non-golden files with individual issues.
+`getTrait` is **already generic** with signature:
+```typescript
+getTrait<T extends ITrait>(type: TraitType | string | ITraitConstructor<T>): T | undefined
+```
 
-### Root Cause 1: Wrong `executeAction` helper (3 variants, 2 broken)
+When passed a trait constructor (e.g., `OpenableTrait`), TypeScript infers `T` automatically and the return type is `OpenableTrait | undefined`. No platform change needed — the fix is purely updating callers.
 
-| Variant | Count | Failure Path | Success Path |
-|---------|-------|-------------|--------------|
-| A (correct) | ~18 | `action.blocked(ctx, result)` | `action.report(ctx)` |
-| B (broken) | 2 | `action.report(ctx, result)` — calls report instead of blocked | `action.report(ctx, result)` — passes unused param |
-| C (hand-rolled) | ~15 | Manually creates `action.error` event | `action.report(ctx)` — correct call |
+Pattern:
+```typescript
+// Before — untyped, requires cast
+const openable = entity.getTrait(TraitType.OPENABLE) as any;
 
-**Fix**: Replace all local helpers with `executeWithValidation` from test-utils.
+// After — pass the class, T is inferred
+const openable = entity.getTrait(OpenableTrait);
+```
 
-### Root Cause 2: Wrong event type assertions
+## Phases
 
-All 37 files assert on `action.success` / `action.error`. Actual actions emit domain events:
-- Success: `if.event.taken`, `if.event.opened`, `if.event.dropped`, etc.
-- Blocked: `if.event.take_blocked`, `if.event.open_blocked`, `if.event.drop_blocked`, etc.
+### Phase 1: Clean Up Worst Offender Source Files — COMPLETE
+- **Status**: COMPLETE
+- **Result**: All trait-access `as any` casts removed from 8 platform source files
 
-**Fix**: Update assertions to match actual domain event types per the mapping below.
+| File | Before | After | Notes |
+|------|--------|-------|-------|
+| `VisibilityBehavior.ts` | 21 | 0 | All trait-access casts removed |
+| `WorldModel.ts` | 12 | 0 | Trait-access + exit info typed |
+| `if-entity.ts` | 12 | 2 | 2 structural (dynamic property lookup) |
+| `AuthorModel.ts` | 8 | 2 | 2 structural (`worldModel.playerId`) |
+| `attack.ts` | 6 | 0 | Weapon/equipped casts removed |
+| `scope-resolver.ts` | 12 | 6 | 6 structural (`customProperties`) |
+| `npc-service.ts` | 3 | 0 | Also fixed Direction type mismatch |
+| `weapon-utils.ts` | 1 | 0 | Equipped trait cast removed |
 
-### Non-golden failures (5 files)
+**Additional fixes discovered during Phase 1:**
+- `requiredKey` → `keyId` bug in `AuthorModel.setupContainer()` — was setting a non-existent property via `as any`
+- Removed duplicate lowercase `Direction` type from NPC types, now uses `DirectionType` from world-model
+- Exported `IExitInfo` from room trait barrel
 
-| File | Issue |
-|------|-------|
-| `scope-integration.test.ts` | Scope API behavior changed |
-| `action-language-integration.test.ts` | Asserts `action.success`/`action.error` |
-| `report-helpers.test.ts` | Asserts `action.success` |
-| `command-validator-golden.test.ts` | Validator API changed |
-| `quitting.test.ts` | Query system mismatch |
+**Tests updated:** 3 files
+- `author-model.test.ts` (both copies): `requiredKey` → `keyId`
+- `if-entity.test.ts`: corrected name priority assertion (IdentityTrait is authoritative)
 
-## Approach
+**Verification:** Build passes, stdlib 1113/1113, walkthroughs 835/835
 
-### Phase 1: Fix golden test files (37 files, systematic)
+### Phase 2: Clean Up Remaining Source Files
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: N/A — platform type cleanup
+- **Entry state**: Phase 1 complete; worst offenders cleaned
+- **Deliverable**: All remaining `as any` trait-access casts in non-test platform source files eliminated; other `as any` patterns (`sharedData as any`, `world as any`) addressed where straightforward; build passes
+- **Exit state**: `as any` count in `packages/` source files (excluding tests) materially reduced; baseline documented for future CI enforcement
+- **Status**: PENDING
 
-Per file:
-1. Remove local `executeAction`/`executeWithValidation` helper
-2. Import `executeWithValidation` from `../../test-utils`
-3. Replace `expectEvent(events, 'action.success', ...)` with correct domain event
-4. Replace `expectEvent(events, 'action.error', ...)` with correct blocked event
-5. Update event data shape where needed (messageId/reason → domain-specific data)
-
-### Phase 2: Fix non-golden files (5 files, individual)
-
-### Phase 3: Run full suite, verify
-
-## Event Type Mapping
-
-| Action | Success Event | Blocked Event |
-|--------|--------------|---------------|
-| about | `if.event.about_displayed` | `if.event.about_displayed` |
-| attacking | `if.event.attacked` | `if.event.attacked` |
-| climbing | `if.event.climbed` | `if.event.climbed` |
-| closing | `if.event.closed` | `if.event.close_blocked` |
-| drinking | `if.event.drunk` | `if.event.drunk` |
-| dropping | `if.event.dropped` | `if.event.drop_blocked` |
-| eating | `if.event.eaten` | `if.event.eaten` |
-| entering | `if.event.entered` | `if.event.entered` |
-| examining | `if.event.examined` | `if.event.examined` |
-| exiting | `if.event.exited` | `if.event.exited` |
-| giving | `if.event.given` | `if.event.give_blocked` |
-| going | `if.event.went` | `if.event.went` |
-| inserting | `if.event.put_in` | `if.event.insert_blocked` |
-| inventory | `if.event.inventory` | `if.event.inventory` |
-| listening | `if.event.listened` | `if.event.listen_blocked` |
-| locking | `if.event.locked` | `if.event.lock_blocked` |
-| looking | `if.event.looked` | `if.event.looked` |
-| opening | `if.event.opened` | `if.event.open_blocked` |
-| pulling | `if.event.pulled` | `if.event.pulled` |
-| pushing | `if.event.pushed` | `if.event.pushed` |
-| putting | `if.event.put_in`/`if.event.put_on` | `if.event.put_blocked` |
-| reading | `if.event.read` | `if.event.read` |
-| removing | `if.event.taken` | `if.event.remove_blocked` |
-| searching | `if.event.searched` | `if.event.searched` |
-| showing | `if.event.shown` | `if.event.show_blocked` |
-| smelling | `if.event.smelled` | `if.event.smell_blocked` |
-| switching_off | `if.event.switched_off` | `if.event.switch_off_blocked` |
-| switching_on | `if.event.switched_on` | `if.event.switch_on_blocked` |
-| taking | `if.event.taken` | `if.event.take_blocked` |
-| taking_off | `if.event.removed` | `if.event.take_off_blocked` |
-| talking | `if.event.talked` | `if.event.talk_blocked` |
-| throwing | `if.event.thrown` | `if.event.thrown` |
-| touching | `if.event.touched` | `if.event.touch_blocked` |
-| unlocking | `if.event.unlocked` | `if.event.unlock_blocked` |
-| waiting | `if.event.waited` | `if.event.wait_blocked` |
-| wearing | `if.event.worn` | `if.event.wear_blocked` |
+### Phase 3: Clean Up Story Files
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: N/A — story type cleanup
+- **Entry state**: Phase 2 complete; platform files cleaned
+- **Deliverable**: Trait-access `as any` casts in `stories/dungeo/` source files replaced with constructor pattern; build passes
+- **Exit state**: Story-side trait access is fully typed; baseline count documented
+- **Status**: PENDING

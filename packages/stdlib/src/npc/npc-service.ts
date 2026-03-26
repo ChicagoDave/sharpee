@@ -5,12 +5,11 @@
  */
 
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, IExitInfo, DirectionType } from '@sharpee/world-model';
 import {
   NpcBehavior,
   NpcContext,
   NpcAction,
-  Direction,
 } from './types';
 import { NpcMessages } from './npc-messages';
 
@@ -413,18 +412,18 @@ export class NpcService implements INpcService {
     world: WorldModel,
     roomId: EntityId,
     npc: IFEntity
-  ): { direction: Direction; destination: EntityId }[] {
+  ): { direction: DirectionType; destination: EntityId }[] {
     const room = world.getEntity(roomId);
     if (!room) return [];
 
-    const roomTrait = room.get(TraitType.ROOM) as any;
+    const roomTrait = room.get(RoomTrait);
     if (!roomTrait?.exits) return [];
 
     const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-    const exits: { direction: Direction; destination: EntityId }[] = [];
+    const exits: { direction: DirectionType; destination: EntityId }[] = [];
 
     for (const [direction, exit] of Object.entries(roomTrait.exits)) {
-      const exitData = exit as any;
+      const exitData = exit as IExitInfo;
       if (exitData.destination) {
         // Inline canEnterRoom() — method doesn't survive loadJSON() deserialization
         const dest = exitData.destination;
@@ -433,7 +432,7 @@ export class NpcService implements INpcService {
         if (npcTrait.allowedRooms && !npcTrait.allowedRooms.includes(dest)) continue;
 
         exits.push({
-          direction: direction as Direction,
+          direction: direction as DirectionType,
           destination: dest,
         });
       }
@@ -521,7 +520,7 @@ export class NpcService implements INpcService {
 
   private executeMove(
     npc: IFEntity,
-    direction: Direction,
+    direction: DirectionType,
     world: WorldModel
   ): ISemanticEvent[] {
     const currentLocation = world.getLocation(npc.id);
@@ -530,7 +529,7 @@ export class NpcService implements INpcService {
     const currentRoom = world.getEntity(currentLocation);
     if (!currentRoom) return [];
 
-    const roomTrait = currentRoom.get(TraitType.ROOM) as any;
+    const roomTrait = currentRoom.get(RoomTrait);
     if (!roomTrait?.exits?.[direction]) return [];
 
     const destination = roomTrait.exits[direction].destination;

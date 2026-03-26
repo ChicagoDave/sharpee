@@ -7,6 +7,8 @@
 import { IFEntity } from '../entities/if-entity';
 import { WorldModel } from '../world/WorldModel';
 import { TraitType } from '../traits/trait-types';
+import { EquippedTrait } from '../traits/equipped/equippedTrait';
+import { WeaponTrait } from '../traits/weapon/weaponTrait';
 import { EntityId } from '@sharpee/core';
 import { WeaponBehavior, IWeaponDamageResult } from '../traits/weapon/weaponBehavior';
 import { BreakableBehavior, IBreakResult } from '../traits/breakable/breakableBehavior';
@@ -160,28 +162,28 @@ export class AttackBehavior {
     // Prefer equipped weapons
     const equipped = weapons.filter(w => {
       if (!w.has(TraitType.EQUIPPED)) return false;
-      const equippedTrait = w.get(TraitType.EQUIPPED);
-      return equippedTrait && (equippedTrait as any).isEquipped;
+      const equippedTrait = w.get(EquippedTrait);
+      return equippedTrait && equippedTrait.isEquipped;
     });
     if (equipped.length > 0) {
       // Return equipped weapon with highest max damage
       return equipped.reduce((best, current) => {
-        const bestWeapon = best.get(TraitType.WEAPON);
-        const currentWeapon = current.get(TraitType.WEAPON);
+        const bestWeapon = best.get(WeaponTrait);
+        const currentWeapon = current.get(WeaponTrait);
         if (!bestWeapon || !currentWeapon) return best;
-        const bestDamage = (bestWeapon as any).maxDamage || 0;
-        const currentDamage = (currentWeapon as any).maxDamage || 0;
+        const bestDamage = bestWeapon.maxDamage || 0;
+        const currentDamage = currentWeapon.maxDamage || 0;
         return currentDamage > bestDamage ? current : best;
       });
     }
     
     // No equipped weapons, return weapon with highest max damage
     return weapons.reduce((best, current) => {
-      const bestWeapon = best.get(TraitType.WEAPON);
-      const currentWeapon = current.get(TraitType.WEAPON);
+      const bestWeapon = best.get(WeaponTrait);
+      const currentWeapon = current.get(WeaponTrait);
       if (!bestWeapon || !currentWeapon) return best;
-      const bestDamage = (bestWeapon as any).maxDamage || 0;
-      const currentDamage = (currentWeapon as any).maxDamage || 0;
+      const bestDamage = bestWeapon.maxDamage || 0;
+      const currentDamage = currentWeapon.maxDamage || 0;
       return currentDamage > bestDamage ? current : best;
     });
   }

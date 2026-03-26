@@ -321,25 +321,25 @@ export class AuthorModel {
     if (!container) return;
 
     if (isOpen !== undefined) {
-      const openable = container.getTrait(TraitType.OPENABLE) as OpenableTrait;
+      const openable = container.getTrait(OpenableTrait);
       if (openable) {
-        (openable as any).isOpen = isOpen;
+        openable.isOpen = isOpen;
       } else {
         const newOpenable = new OpenableTrait();
-        (newOpenable as any).isOpen = isOpen;
+        newOpenable.isOpen = isOpen;
         this.addTrait(containerId, newOpenable, recordEvent);
       }
     }
 
     if (isLocked !== undefined) {
-      const lockable = container.getTrait(TraitType.LOCKABLE) as LockableTrait;
+      const lockable = container.getTrait(LockableTrait);
       if (lockable) {
-        (lockable as any).isLocked = isLocked;
-        if (keyId) (lockable as any).requiredKey = keyId;
+        lockable.isLocked = isLocked;
+        if (keyId) lockable.keyId = keyId;
       } else {
         const newLockable = new LockableTrait();
-        (newLockable as any).isLocked = isLocked;
-        if (keyId) (newLockable as any).requiredKey = keyId;
+        newLockable.isLocked = isLocked;
+        if (keyId) newLockable.keyId = keyId;
         this.addTrait(containerId, newLockable, recordEvent);
       }
     }

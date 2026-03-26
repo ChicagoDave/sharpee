@@ -5,24 +5,7 @@
  */
 
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
-
-/**
- * Direction for NPC movement
- */
-export type Direction =
-  | 'north'
-  | 'south'
-  | 'east'
-  | 'west'
-  | 'northeast'
-  | 'northwest'
-  | 'southeast'
-  | 'southwest'
-  | 'up'
-  | 'down'
-  | 'in'
-  | 'out';
+import { IFEntity, WorldModel, DirectionType } from '@sharpee/world-model';
 
 /**
  * Context passed to NPC behavior hooks
@@ -56,7 +39,7 @@ export interface NpcContext {
   getEntitiesInRoom(): IFEntity[];
 
   /** Get exits from the NPC's current room */
-  getAvailableExits(): { direction: Direction; destination: EntityId }[];
+  getAvailableExits(): { direction: DirectionType; destination: EntityId }[];
 }
 
 /**
@@ -65,7 +48,7 @@ export interface NpcContext {
  * All actions use semantic data (message IDs, entity IDs) rather than raw text.
  */
 export type NpcAction =
-  | { type: 'move'; direction: Direction }
+  | { type: 'move'; direction: DirectionType }
   | { type: 'moveTo'; roomId: EntityId }
   | { type: 'take'; target: EntityId }
   | { type: 'drop'; target: EntityId }
@@ -152,7 +135,7 @@ export interface NpcMovedData {
   npc: EntityId;
   from: EntityId;
   to: EntityId;
-  direction?: Direction;
+  direction?: DirectionType;
 }
 
 /**

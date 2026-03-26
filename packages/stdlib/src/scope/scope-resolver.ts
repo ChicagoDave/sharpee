@@ -5,7 +5,7 @@
  * based on IF conventions and physical laws.
  */
 
-import { IFEntity, WorldModel, TraitType, IdentityBehavior, IdentityTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, IdentityBehavior, IdentityTrait, OpenableTrait, DoorTrait, SwitchableTrait } from '@sharpee/world-model';
 import { ScopeLevel, ScopeResolver } from './types';
 
 /**
@@ -164,8 +164,8 @@ export class StandardScopeResolver implements ScopeResolver {
 
         // Must be open
         if (targetContainer.has(TraitType.OPENABLE)) {
-          const openable = targetContainer.getTrait(TraitType.OPENABLE);
-          if (openable && !(openable as any).isOpen) {
+          const openable = targetContainer.getTrait(OpenableTrait);
+          if (openable && !openable.isOpen) {
             return false;
           }
         }
@@ -427,8 +427,8 @@ export class StandardScopeResolver implements ScopeResolver {
       if (container.has(TraitType.CONTAINER)) {
         // Closed opaque containers block sight
         if (container.has(TraitType.OPENABLE)) {
-          const openable = container.getTrait(TraitType.OPENABLE);
-          if (openable && !(openable as any).isOpen) {
+          const openable = container.getTrait(OpenableTrait);
+          if (openable && !openable.isOpen) {
             // TODO: Check for transparent trait
             return false;
           }
@@ -462,14 +462,15 @@ export class StandardScopeResolver implements ScopeResolver {
     const checkDoors = (entities: IFEntity[]) => {
       for (const entity of entities) {
         if (entity.has(TraitType.DOOR)) {
-          const doorTrait = entity.get(TraitType.DOOR) as any;
+          const doorTrait = entity.get(DoorTrait);
+          if (!doorTrait) continue;
           // Check if this door connects our two rooms
           if ((doorTrait.room1 === room1.id && doorTrait.room2 === room2.id) ||
               (doorTrait.room1 === room2.id && doorTrait.room2 === room1.id)) {
             // Found a connecting door, check if it's open
             if (entity.has(TraitType.OPENABLE)) {
-              const openable = entity.get(TraitType.OPENABLE) as any;
-              return { isOpen: openable.isOpen };
+              const openable = entity.get(OpenableTrait);
+              return { isOpen: openable?.isOpen ?? false };
             }
             // Door without openable trait is always open
             return { isOpen: true };
@@ -567,8 +568,8 @@ export class StandardScopeResolver implements ScopeResolver {
       const lightSource = entity.getTrait(TraitType.LIGHT_SOURCE);
       // Check if it's currently on
       if (entity.has(TraitType.SWITCHABLE)) {
-        const switchable = entity.getTrait(TraitType.SWITCHABLE);
-        return switchable ? (switchable as any).isOn === true : false;
+        const switchable = entity.getTrait(SwitchableTrait);
+        return switchable ? switchable.isOn === true : false;
       }
       return true; // Light sources without switches are always on
     }
@@ -606,8 +607,8 @@ export class StandardScopeResolver implements ScopeResolver {
 
       // Check if this is a closed container
       if (container.has(TraitType.CONTAINER) && container.has(TraitType.OPENABLE)) {
-        const openable = container.getTrait(TraitType.OPENABLE);
-        if (openable && !(openable as any).isOpen) {
+        const openable = container.getTrait(OpenableTrait);
+        if (openable && !openable.isOpen) {
           return true;
         }
       }

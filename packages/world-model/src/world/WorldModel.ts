@@ -13,6 +13,9 @@ import { SceneryTrait } from '../traits/scenery';
 import { IdentityTrait } from '../traits/identity/identityTrait';
 import { OpenableTrait } from '../traits/openable/openableTrait';
 import { LockableTrait } from '../traits/lockable/lockableTrait';
+import { WearableTrait } from '../traits/wearable/wearableTrait';
+import { ClothingTrait } from '../traits/clothing/clothingTrait';
+import { ExitTrait } from '../traits/exit/exitTrait';
 import { DirectionType, getOppositeDirection } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
@@ -528,18 +531,18 @@ export class WorldModel implements IWorldModel {
     if (options.visibleOnly) {
       // Filter to only visible entities
       entities = entities.filter(e => {
-        const scenery = e.getTrait(TraitType.SCENERY);
-        return !scenery || (scenery as any).visible !== false;
+        const scenery = e.getTrait(SceneryTrait);
+        return !scenery || scenery.visible !== false;
       });
     }
 
     if (!options.includeWorn) {
       // Filter out worn items (check both WEARABLE and CLOTHING traits)
       entities = entities.filter(e => {
-        const wearable = e.getTrait(TraitType.WEARABLE);
-        const clothing = e.getTrait(TraitType.CLOTHING);
-        const wornFromWearable = wearable && (wearable as any).isWorn;
-        const wornFromClothing = clothing && (clothing as any).isWorn;
+        const wearable = e.getTrait(WearableTrait);
+        const clothing = e.getTrait(ClothingTrait);
+        const wornFromWearable = wearable && wearable.isWorn;
+        const wornFromClothing = clothing && clothing.isWorn;
         return !(wornFromWearable || wornFromClothing);
       });
     }
@@ -600,8 +603,8 @@ export class WorldModel implements IWorldModel {
 
     // Check container constraints
     if (target.hasTrait(TraitType.CONTAINER) && target.hasTrait(TraitType.OPENABLE)) {
-      const openable = target.getTrait(TraitType.OPENABLE);
-      if (openable && !(openable as any).isOpen) {
+      const openable = target.getTrait(OpenableTrait);
+      if (openable && !openable.isOpen) {
         return false;
       }
     }
@@ -802,7 +805,8 @@ export class WorldModel implements IWorldModel {
       const room = this.getEntity(roomId);
       if (!room) continue;
 
-      const exits = (room.getTrait(TraitType.ROOM) as any)?.exits || {};
+      const roomTrait = room.getTrait(RoomTrait);
+      const exits = roomTrait?.exits || {};
 
       for (const [direction, exitInfo] of Object.entries(exits)) {
         let targetRoom: string | undefined;
@@ -814,26 +818,26 @@ export class WorldModel implements IWorldModel {
           pathElement = exitInfo; // For now, use room ID as path element
         } else if (typeof exitInfo === 'object') {
           // ExitInfo object
-          if ((exitInfo as any).via) {
+          if (exitInfo.via) {
             // Has a door/exit entity
-            const exitEntity = this.getEntity((exitInfo as any).via);
+            const exitEntity = this.getEntity(exitInfo.via);
             if (!exitEntity) continue;
 
-            pathElement = (exitInfo as any).via;
+            pathElement = exitInfo.via;
 
             // Get destination based on entity type
             if (exitEntity.hasTrait(TraitType.DOOR)) {
-              const door = exitEntity.getTrait(TraitType.DOOR) as any;
+              const door = exitEntity.getTrait(DoorTrait);
               targetRoom = door?.room1 === roomId ? door?.room2 : door?.room1;
             } else if (exitEntity.hasTrait(TraitType.EXIT)) {
-              targetRoom = (exitEntity.getTrait(TraitType.EXIT) as any)?.to;
+              targetRoom = exitEntity.getTrait(ExitTrait)?.to;
             } else {
               // Not a valid door/exit entity
               continue;
             }
-          } else if ((exitInfo as any).destination) {
+          } else if (exitInfo.destination) {
             // Direct room connection
-            targetRoom = (exitInfo as any).destination;
+            targetRoom = exitInfo.destination;
             pathElement = targetRoom; // Use room ID as path element
           }
         }

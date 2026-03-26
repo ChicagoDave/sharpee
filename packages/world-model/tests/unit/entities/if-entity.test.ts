@@ -168,11 +168,11 @@ describe('IFEntity', () => {
       entity.attributes.displayName = 'Display Name';
       expect(entity.name).toBe('Display Name');
       
-      // Test identity trait name (second priority)
+      // Test identity trait name (highest priority when present)
       const identity = new IdentityTrait();
       identity.name = 'Identity Name';
       entity.add(identity);
-      expect(entity.name).toBe('Display Name'); // displayName still takes priority
+      expect(entity.name).toBe('Identity Name'); // IdentityTrait is authoritative
       
       // Remove displayName to test fallback
       delete entity.attributes.displayName;

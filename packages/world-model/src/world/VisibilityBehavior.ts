@@ -6,6 +6,12 @@ import { WorldModel } from './WorldModel';
 import { TraitType } from '../traits/trait-types';
 import { SwitchableBehavior } from '../traits/switchable/switchableBehavior';
 import { VehicleTrait } from '../traits/vehicle/vehicleTrait';
+import { RoomTrait } from '../traits/room/roomTrait';
+import { ContainerTrait } from '../traits/container/containerTrait';
+import { OpenableTrait } from '../traits/openable/openableTrait';
+import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
+import { SceneryTrait } from '../traits/scenery/sceneryTrait';
+import { IdentityTrait } from '../traits/identity/identityTrait';
 import { findTraitWithCapability, getBehaviorForCapability } from '../capabilities';
 
 /**
@@ -30,8 +36,8 @@ export class VisibilityBehavior extends Behavior {
    * @returns true if the room is dark and has no accessible light sources
    */
   static isDark(room: IFEntity, world: WorldModel): boolean {
-    const roomTrait = room.getTrait(TraitType.ROOM);
-    if (!roomTrait || !(roomTrait as any).isDark) {
+    const roomTrait = room.getTrait(RoomTrait);
+    if (!roomTrait || !roomTrait.isDark) {
       return false; // Room isn't marked as dark
     }
     return !this.hasLightSource(room, world);
@@ -47,7 +53,7 @@ export class VisibilityBehavior extends Behavior {
    * 3. Default to lit (e.g., glowing gems, phosphorescent moss)
    */
   private static isLightActive(entity: IFEntity): boolean {
-    const lightTrait = entity.getTrait(TraitType.LIGHT_SOURCE) as any;
+    const lightTrait = entity.getTrait(LightSourceTrait);
 
     // Explicit isLit property takes precedence
     if (lightTrait?.isLit !== undefined) {
@@ -71,8 +77,8 @@ export class VisibilityBehavior extends Behavior {
     if (observer.id === target.id) return true;
 
     // Check if target is invisible via SceneryTrait
-    const targetScenery = target.getTrait(TraitType.SCENERY);
-    if (targetScenery && (targetScenery as any).visible === false) {
+    const targetScenery = target.getTrait(SceneryTrait);
+    if (targetScenery && targetScenery.visible === false) {
       return false;
     }
 
@@ -107,14 +113,14 @@ export class VisibilityBehavior extends Behavior {
     }
 
     // Check if room is dark
-    const roomTrait = observerRoom.getTrait(TraitType.ROOM);
-    if (roomTrait && (roomTrait as any).isDark) {
+    const roomTrait = observerRoom.getTrait(RoomTrait);
+    if (roomTrait && roomTrait.isDark) {
       // In a dark room, need light to see
       if (!this.hasLightSource(observerRoom, world)) {
         // Special cases in darkness:
         // 1. Can see lit light sources
-        if (target.hasTrait(TraitType.LIGHT_SOURCE) && 
-            (target.getTrait(TraitType.LIGHT_SOURCE) as any)?.isLit === true) {
+        if (target.hasTrait(TraitType.LIGHT_SOURCE) &&
+            target.getTrait(LightSourceTrait)?.isLit === true) {
           return true;
         }
         // 2. Can see items you're carrying (by feel)
@@ -149,8 +155,8 @@ export class VisibilityBehavior extends Behavior {
     }
 
     // Check if room is dark
-    const roomTrait = observerRoom.getTrait(TraitType.ROOM);
-    const isDark = roomTrait && (roomTrait as any).isDark;
+    const roomTrait = observerRoom.getTrait(RoomTrait);
+    const isDark = roomTrait && roomTrait.isDark;
     const hasLight = this.hasLightSource(observerRoom, world);
     
     // If it's dark and no light, only see specific things
@@ -168,7 +174,7 @@ export class VisibilityBehavior extends Behavior {
       const roomContents = world.getAllContents(observerRoom.id, { recursive: true });
       for (const entity of roomContents) {
         if (entity.hasTrait(TraitType.LIGHT_SOURCE)) {
-          const light = entity.getTrait(TraitType.LIGHT_SOURCE) as any;
+          const light = entity.getTrait(LightSourceTrait);
           if (light && light.isLit === true && !seen.has(entity.id)) {
             visible.push(entity);
             seen.add(entity.id);
@@ -185,14 +191,14 @@ export class VisibilityBehavior extends Behavior {
     for (const entity of roomContents) {
       if (entity.id !== observer.id && !seen.has(entity.id)) {
         // Check if entity is concealed (hidden until revealed via SEARCH or game event)
-        const identity = entity.getTrait(TraitType.IDENTITY);
-        if (identity && (identity as any).concealed === true) {
+        const identity = entity.getTrait(IdentityTrait);
+        if (identity && identity.concealed === true) {
           continue;
         }
 
         // Check if entity is visible via SceneryTrait
-        const scenery = entity.getTrait(TraitType.SCENERY);
-        if (scenery && (scenery as any).visible === false) {
+        const scenery = entity.getTrait(SceneryTrait);
+        if (scenery && scenery.visible === false) {
           continue;
         }
 
@@ -248,11 +254,11 @@ export class VisibilityBehavior extends Behavior {
   ): void {
     // Check if we can see inside this container
     if (container.hasTrait(TraitType.CONTAINER)) {
-      const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
+      const containerTrait = container.getTrait(ContainerTrait);
       const isTransparent = containerTrait?.isTransparent ?? false;
-      
+
       if (!isTransparent && container.hasTrait(TraitType.OPENABLE)) {
-        const openable = container.getTrait(TraitType.OPENABLE) as any;
+        const openable = container.getTrait(OpenableTrait);
         const isOpen = openable?.isOpen ?? false;
         if (!isOpen) {
           return; // Can't see inside closed opaque container
@@ -266,8 +272,8 @@ export class VisibilityBehavior extends Behavior {
     for (const entity of contents) {
       if (!seen.has(entity.id)) {
         // Check if entity is visible via SceneryTrait
-        const scenery = entity.getTrait(TraitType.SCENERY);
-        if (scenery && (scenery as any).visible === false) {
+        const scenery = entity.getTrait(SceneryTrait);
+        if (scenery && scenery.visible === false) {
           continue;
         }
 
@@ -344,11 +350,11 @@ export class VisibilityBehavior extends Behavior {
       
       // If it's in an opaque, closed container, it's not accessible
       if (container.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
+        const containerTrait = container.getTrait(ContainerTrait);
         const isTransparent = containerTrait?.isTransparent ?? false;
         if (!isTransparent) {
           if (container.hasTrait(TraitType.OPENABLE)) {
-            const openable = container.getTrait(TraitType.OPENABLE) as any;
+            const openable = container.getTrait(OpenableTrait);
             const isOpen = openable?.isOpen ?? false;
             if (!isOpen) {
               return false; // Closed opaque container blocks access
@@ -386,15 +392,15 @@ export class VisibilityBehavior extends Behavior {
       
       // If it's in a container, check if we can see inside
       if (containerEntity.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = containerEntity.getTrait(TraitType.CONTAINER) as any;
-        
+        const containerTrait = containerEntity.getTrait(ContainerTrait);
+
         // Opaque containers block sight when closed
         // Default isTransparent to false if not specified
         const isTransparent = containerTrait?.isTransparent ?? false;
         if (!isTransparent) {
           // If it's opaque, check if it's openable and closed
           if (containerEntity.hasTrait(TraitType.OPENABLE)) {
-            const openable = containerEntity.getTrait(TraitType.OPENABLE) as any;
+            const openable = containerEntity.getTrait(OpenableTrait);
             // Default isOpen to false if not specified
             const isOpen = openable?.isOpen ?? false;
             if (!isOpen) {
@@ -440,8 +446,8 @@ export class VisibilityBehavior extends Behavior {
    */
   static isVisible(entity: IFEntity, world: WorldModel): boolean {
     // Check if explicitly invisible via SceneryTrait
-    const scenery = entity.getTrait(TraitType.SCENERY);
-    if (scenery && (scenery as any).visible === false) {
+    const scenery = entity.getTrait(SceneryTrait);
+    if (scenery && scenery.visible === false) {
       return false;
     }
 
@@ -476,13 +482,13 @@ export class VisibilityBehavior extends Behavior {
 
       // Check if this container blocks visibility
       if (container.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = container.getTrait(TraitType.CONTAINER) as any;
+        const containerTrait = container.getTrait(ContainerTrait);
 
         // If container is opaque and closed, entity is not visible
         const isTransparent = containerTrait?.isTransparent ?? false;
         if (!isTransparent) {
           if (container.hasTrait(TraitType.OPENABLE)) {
-            const openable = container.getTrait(TraitType.OPENABLE) as any;
+            const openable = container.getTrait(OpenableTrait);
             const isOpen = openable?.isOpen ?? false;
             if (!isOpen) {
               return false; // In closed opaque container
@@ -530,8 +536,8 @@ export class VisibilityBehavior extends Behavior {
 
     // Check if we're in a vehicle
     if (immediateLocation.hasTrait(TraitType.VEHICLE)) {
-      const vehicleTrait = immediateLocation.getTrait(TraitType.VEHICLE) as VehicleTrait;
-      if (vehicleTrait.transparent) {
+      const vehicleTrait = immediateLocation.getTrait(VehicleTrait);
+      if (vehicleTrait?.transparent) {
         // Transparent vehicle - describe the room
         const room = world.getContainingRoom(observer.id);
         if (room) {
@@ -546,7 +552,7 @@ export class VisibilityBehavior extends Behavior {
     if (immediateLocation.hasTrait(TraitType.CONTAINER)) {
       // Check if container is open (visibility passes through)
       if (immediateLocation.hasTrait(TraitType.OPENABLE)) {
-        const openable = immediateLocation.getTrait(TraitType.OPENABLE) as any;
+        const openable = immediateLocation.getTrait(OpenableTrait);
         if (openable?.isOpen) {
           // Open container - describe the room
           const room = world.getContainingRoom(observer.id);

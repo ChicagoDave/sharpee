@@ -210,7 +210,7 @@ describe('AuthorModel', () => {
       expect(openable.isOpen).toBe(false);
       expect(lockable).toBeDefined();
       expect(lockable.isLocked).toBe(true);
-      expect(lockable.requiredKey).toBe(key.id);
+      expect(lockable.keyId).toBe(key.id);
     });
   });
 

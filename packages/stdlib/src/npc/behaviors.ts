@@ -6,7 +6,7 @@
  * Game-specific behaviors (thief, cyclops, etc.) should be defined in the story.
  */
 
-import { NpcBehavior, NpcContext, NpcAction, Direction } from './types';
+import { NpcBehavior, NpcContext, NpcAction } from './types';
 import { NpcMessages } from './npc-messages';
 import { TraitType, CombatantTrait } from '@sharpee/world-model';
 

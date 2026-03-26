@@ -1,7 +1,10 @@
-# Known Issues (List 04)
+# Platform Known Issues (List 04)
 
-Catalog of known bugs and issues to be addressed.
+Catalog of known platform bugs and issues to be addressed.
 Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
+
+**Dungeo-specific issues** are tracked separately in
+[docs/work/dungeo/issues/issues-list-01.md](../dungeo/issues/issues-list-01.md).
 
 **Numbering note**: Issues 031-056 were assigned in lists 01-03. This list
 starts new issues at 057. Carried-over issues from list-03 keep their
@@ -11,20 +14,17 @@ original numbers.
 
 | Issue | Description | Severity | Component | Identified | Fixed |
 |-------|-------------|----------|-----------|------------|-------|
-| ISSUE-032 | Version transcript needs update for DUNGEON name | Low | test | 2026-01-22 | - |
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | 2026-03-26 |
 | ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | 2026-03-26 (closed — ongoing release workflow, not a tracked issue) |
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | 2026-03-26 (deferred — logic gates in transcript-tester cover this) |
-| ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - |
 | ISSUE-052 | Capability registry module-level Map not shared across require() | High | world-model | 2026-02-08 | 2026-02-13 |
-| ISSUE-053 | Grating/skeleton key wiring broken | High | dungeo | 2026-03-23 | 2026-03-23 |
 | ISSUE-057 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us, stdlib | 2026-03-23 | 2026-03-26 |
 | ISSUE-058 | Entity creation is excessively repetitive — needs builder/helper API | Low | world-model | 2026-03-23 | - |
 | ISSUE-059 | Transcript tester `story:` header field is metadata-only | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
 | ISSUE-062 | Fuse `skipNextTick` behavior undocumented at API level | Low | plugin-scheduler | 2026-03-24 | - |
-| ISSUE-063 | `as any` regression — 1,035 occurrences across 203 files | High | platform-wide | 2026-03-26 | - |
+| ISSUE-063 | `as any` regression — 258 remaining in source (was 319), Phase 1 complete | High | platform-wide | 2026-03-26 | In progress |
 | ISSUE-064 | VisibilityBehavior has 3 duplicate container-walk traversals | Medium | world-model | 2026-03-26 | - |
 | ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
@@ -44,17 +44,6 @@ original numbers.
 `capability-registry.ts` now uses `globalThis` storage via `__sharpee_capability_behaviors__` key, matching the pattern in `interceptor-registry.ts`.
 
 ---
-
-### ISSUE-053: Grating/skeleton key wiring broken
-
-**Reported**: 2026-03-23
-**Severity**: High
-**Component**: dungeo (story)
-**Status**: Fixed 2026-03-23
-
-Four problems made the grating puzzle non-functional: duplicate grating entities (forest.ts and maze.ts), `key.attributes.unlocksId` is a no-op, `LockableTrait` has no `keyId`, and exits don't use `via` to check the grating's open/locked state.
-
-**Details**: See [issue-053-grating-key-wiring.md](issue-053-grating-key-wiring.md)
 
 ### ISSUE-057: Multi-word aliases don't resolve in the parser
 
@@ -114,43 +103,6 @@ Closed — this is an ongoing release workflow concern, not a tracked issue. Zif
 **Status**: Deferred 2026-03-26
 
 Deferred — the transcript-tester's logic gates (DO-UNTIL, WHILE, ENSURES) handle randomness and alternate paths as live tests, which is a better approach than seeding a PRNG. Revisit only if logic gates prove insufficient.
-
----
-
-## Open Issues — Carried Over
-
-### ISSUE-032: Version transcript needs update for DUNGEON name
-
-**Reported**: 2026-01-22
-**Severity**: Low
-**Component**: Test
-
-**Description**:
-The version.transcript test expects "DUNGEO v" but the story was renamed to "DUNGEON" (full spelling). The "DUNGEO" spelling was a nostalgia reference to the PDP-11 era filename limit, but the game title should use the full spelling.
-
-**Resolution**: Update test to expect "DUNGEON" instead of "DUNGEO v".
-
----
-
-### ISSUE-050: Consolidate all Dungeo text into dungeo-en-us.ts for i18n
-
-**Reported**: 2026-02-07
-**Severity**: Low
-**Component**: dungeo (story)
-
-**Description**:
-All English text strings in the Dungeo story are currently spread across multiple files (melee-messages.ts, npc-messages.ts, object-messages.ts, action-messages.ts, puzzle-messages.ts, etc.). To enable future translation to other languages, all story text should be consolidated into a single `dungeo-en-us.ts` file (or a `dungeo-en-us/` directory) that serves as the single source of truth for all player-facing strings.
-
-**Scope**:
-- Melee combat messages (sword, knife, troll, thief, cyclops tables)
-- NPC messages (thief, troll, cyclops, robot, dungeon master)
-- Action messages (say, ring, break, burn, pray, diagnose, etc.)
-- Puzzle messages (royal puzzle, mirror, laser, exorcism, etc.)
-- Object messages (cakes, boat, dam, etc.)
-- Scheduler messages (lantern, candles, dam, balloon)
-- Room descriptions and entity descriptions
-
-**Priority**: Low — the language layer architecture already supports this via message IDs. This is a refactoring task to group all text in one place, not a functional change.
 
 ---
 
@@ -257,15 +209,22 @@ This reduces 10 rules to 1, and new subsystems require only a vocabulary entry r
 
 ## Open Issues — Platform Type Safety
 
-### ISSUE-063: `as any` regression — 1,035 occurrences across 203 files
+### ISSUE-063: `as any` regression — Phase 1 complete, 258 remaining in source files
 
 **Reported**: 2026-03-26
 **Severity**: High
 **Component**: Platform-wide (all packages)
 **Type**: Tech debt / type safety regression
+**Status**: In progress (branch `issue-063-as-any-cleanup`)
 
 **Description**:
-A previous refactor removed all `as any` casts from the codebase. They have regressed significantly — there are now **1,035 occurrences across 203 files** in `packages/`. This undermines TypeScript's type safety guarantees and has been a source of bugs (the "dropping bug" was caused by actions that appeared to work because types weren't enforced).
+A previous refactor removed all `as any` casts from the codebase. They have regressed significantly. This undermines TypeScript's type safety guarantees and has been a source of bugs (the "dropping bug" was caused by actions that appeared to work because types weren't enforced).
+
+**Key discovery**: `getTrait` is already generic — passing a trait constructor (e.g., `getTrait(OpenableTrait)`) infers the return type automatically. No platform redesign needed; the fix is updating callers to use the constructor pattern instead of `getTrait(TraitType.X) as any`.
+
+**Phase 1 complete (2026-03-26)**: Cleaned 8 worst-offender source files (61 casts removed, 319 → 258). Also fixed `requiredKey` → `keyId` bug in `AuthorModel.setupContainer()` and removed duplicate `Direction` type from NPC system. See `docs/context/plan.md` for full results.
+
+**Remaining phases**: Phase 2 (remaining source files), Phase 3 (story files), Phase 4 (test files), Phase 5 (CI enforcement).
 
 **Worst offenders (source files)**:
 
