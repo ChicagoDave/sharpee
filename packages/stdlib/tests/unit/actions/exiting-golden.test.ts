@@ -8,45 +8,18 @@
  * - Validate container states when exiting
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Updated to support four-phase pattern (validate/execute/blocked/report)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    // For four-phase actions, use blocked method
-    if (action.blocked) {
-      return action.blocked(context, validation);
-    }
-    // Fallback for old-style actions
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      params: validation.params || {}
-    })];
-  }
-
-  // For four-phase pattern: execute (mutations) then report (events)
-  if (action.report) {
-    action.execute(context); // Returns void
-    return action.report(context); // Returns events
-  }
-
-  // Fallback for old-style actions that return events directly
-  return action.execute(context);
-};
 
 describe('exitingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -77,8 +50,10 @@ describe('exitingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(exitingAction, context);
       
-      expectEvent(events, 'action.blocked', {
-        messageId: 'already_outside'
+      expectEvent(events, 'if.event.exited', {
+        blocked: true,
+        messageId: 'if.action.exiting.already_outside',
+        reason: 'already_outside'
       });
     });
 
@@ -95,8 +70,10 @@ describe('exitingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(exitingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'nowhere_to_go'
+      expectEvent(events, 'if.event.exited', {
+        blocked: true,
+        messageId: 'if.action.exiting.nowhere_to_go',
+        reason: 'nowhere_to_go'
       });
     });
 
@@ -117,8 +94,10 @@ describe('exitingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(exitingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'nowhere_to_go'
+      expectEvent(events, 'if.event.exited', {
+        blocked: true,
+        messageId: 'if.action.exiting.nowhere_to_go',
+        reason: 'nowhere_to_go'
       });
     });
 
@@ -144,9 +123,10 @@ describe('exitingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(exitingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('closed'),
-        params: { container: 'shipping crate' }
+      expectEvent(events, 'if.event.exited', {
+        blocked: true,
+        messageId: 'if.action.exiting.container_closed',
+        reason: 'container_closed'
       });
     });
 
@@ -168,9 +148,10 @@ describe('exitingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(exitingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('exit'),
-        params: { place: 'phone booth' }
+      expectEvent(events, 'if.event.exited', {
+        blocked: true,
+        messageId: 'if.action.exiting.cant_exit',
+        reason: 'cant_exit'
       });
     });
   });
@@ -193,20 +174,13 @@ describe('exitingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(exitingAction, context);
       
-      // Should emit EXITED event
+      // Should emit EXITED event with success data
       expectEvent(events, 'if.event.exited', {
+        messageId: 'if.action.exiting.exited',
+        params: { place: 'cardboard box' },
         fromLocation: box.id,
         toLocation: room.id,
         preposition: 'out of'
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('exited'),
-        params: { 
-          place: 'cardboard box',
-          preposition: 'out of'
-        }
       });
     });
 
@@ -228,17 +202,11 @@ describe('exitingAction (Golden Pattern)', () => {
       const events = executeWithValidation(exitingAction, context);
       
       expectEvent(events, 'if.event.exited', {
+        messageId: 'if.action.exiting.exited',
+        params: { place: 'raised platform' },
         fromLocation: platform.id,
         toLocation: room.id,
         preposition: 'off'
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('exited'),
-        params: { 
-          place: 'raised platform',
-          preposition: 'off'
-        }
       });
     });
 
@@ -299,12 +267,11 @@ describe('exitingAction (Golden Pattern)', () => {
           preposition: exit
         });
         
-        // Special message for 'off'
-        if (exit === 'off') {
-          expectEvent(events, 'action.success', {
-            messageId: expect.stringContaining('exited_from')
-          });
-        }
+        // All exits use the same event type with messageId
+        expectEvent(events, 'if.event.exited', {
+          messageId: 'if.action.exiting.exited',
+          preposition: exit
+        });
       });
     });
 

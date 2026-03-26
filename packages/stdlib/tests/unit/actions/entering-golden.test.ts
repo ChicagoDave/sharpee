@@ -8,35 +8,18 @@
  * - Validate container states (open/closed)
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action using the four-phase pattern
-const executeWithValidation = (action: any, context: ActionContext) => {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validation = action.validate(context);
-
-  if (!validation.valid) {
-    // Use blocked() for validation failures
-    return action.blocked(context, validation);
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates success events
-  return action.report(context);
-};
 
 describe('enteringAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -67,26 +50,27 @@ describe('enteringAction (Golden Pattern)', () => {
       const context = createRealTestContext(enteringAction, world, command);
       
       const events = executeWithValidation(enteringAction, context);
-      
-      expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('no_target')
+
+      expectEvent(events, 'if.event.entered', {
+        messageId: expect.stringContaining('no_target'),
+        reason: 'no_target'
       });
     });
 
     test('should fail when target is not enterable', () => {
       const { world, player, object } = TestData.withObject('red ball');
       // Ball has no entry, container, or supporter traits
-      
+
       const command = createCommand(IFActions.ENTERING, {
         entity: object
       });
       const context = createRealTestContext(enteringAction, world, command);
-      
+
       const events = executeWithValidation(enteringAction, context);
-      
-      expectEvent(events, 'action.blocked', {
+
+      expectEvent(events, 'if.event.entered', {
         messageId: expect.stringContaining('not_enterable'),
-        params: { place: 'red ball' }
+        reason: 'not_enterable'
       });
     });
 
@@ -111,9 +95,9 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.entered', {
         messageId: expect.stringContaining('already_inside'),
-        params: { place: 'sports car' }
+        reason: 'already_inside'
       });
     });
 
@@ -136,11 +120,9 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.entered', {
         messageId: expect.stringContaining('not_enterable'),
-        params: { 
-          place: 'phone booth'
-        }
+        reason: 'not_enterable'
       });
     });
 
@@ -169,9 +151,9 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.entered', {
         messageId: expect.stringContaining('container_closed'),
-        params: { container: 'wooden crate' }
+        reason: 'container_closed'
       });
     });
 
@@ -196,11 +178,9 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.entered', {
         messageId: expect.stringContaining('too_full'),
-        params: { 
-          place: 'small elevator'
-        }
+        reason: 'too_full'
       });
     });
   });
@@ -227,20 +207,12 @@ describe('enteringAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(enteringAction, context);
       
-      // Should emit ENTERED event
+      // Should emit ENTERED event with messageId for text rendering
       expectEvent(events, 'if.event.entered', {
         targetId: car.id,
         fromLocation: room.id,
-        preposition: 'in'  // Containers use 'in'
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('entered'),
-        params: { 
-          place: 'luxury car',
-          preposition: 'in'
-        }
+        preposition: 'in',  // Containers use 'in'
+        messageId: expect.stringContaining('entered')
       });
     });
 
@@ -273,15 +245,8 @@ describe('enteringAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.entered', {
         targetId: box.id,
         fromLocation: room.id,
-        preposition: 'in'
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('entered'),
-        params: { 
-          place: 'large box',
-          preposition: 'in'
-        }
+        preposition: 'in',
+        messageId: expect.stringContaining('entered')
       });
     });
 
@@ -309,15 +274,8 @@ describe('enteringAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.entered', {
         targetId: bed.id,
         fromLocation: room.id,
-        preposition: 'on'  // Supporters use 'on'
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('entered_on'),  // Different message for 'on'
-        params: { 
-          place: 'comfortable bed',
-          preposition: 'on'
-        }
+        preposition: 'on',  // Supporters use 'on'
+        messageId: expect.stringContaining('entered_on')  // Different message for 'on'
       });
     });
 

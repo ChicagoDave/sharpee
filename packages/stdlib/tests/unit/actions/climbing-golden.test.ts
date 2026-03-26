@@ -12,31 +12,15 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('climbingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -68,9 +52,9 @@ describe('climbingAction (Golden Pattern)', () => {
       const context = createRealTestContext(climbingAction, world, command);
       
       const events = executeWithValidation(climbingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
+
+      expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.no_target',
         reason: 'no_target'
       });
     });
@@ -78,23 +62,23 @@ describe('climbingAction (Golden Pattern)', () => {
     test('should fail when object is not climbable', () => {
       const { world, player, room, object } = TestData.withObject('red ball');
       // Ball has no entry or supporter traits
-      
+
       const command = createCommand(IFActions.CLIMBING, {
         entity: object
       });
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_climbable'),
-        params: { object: 'red ball' }
+
+      expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.not_climbable',
+        reason: 'not_climbable'
       });
     });
 
     test('should fail when already on target', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const platform = world.createEntity('wooden platform', EntityType.SUPPORTER);
       platform.add({
         type: TraitType.SUPPORTER,
@@ -102,17 +86,17 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       world.moveEntity(platform.id, room.id);
       world.moveEntity(player.id, platform.id); // Already on platform
-      
+
       const command = createCommand(IFActions.CLIMBING, {
         entity: platform
       });
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_there'),
-        params: { place: 'wooden platform' }
+
+      expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.already_there',
+        reason: 'already_there'
       });
     });
 
@@ -120,20 +104,20 @@ describe('climbingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const command = createCommand(IFActions.CLIMBING);
       command.parsed.extras = { direction: 'north' }; // Invalid for climbing
-      
+
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('cant_go_that_way'),
-        params: { direction: 'north' }
+
+      expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.cant_go_that_way',
+        reason: 'cant_go_that_way'
       });
     });
 
     test('should fail when no exit in climb direction', () => {
       const world = new WorldModel();
-      
+
       const room = world.createEntity('Ground Floor', EntityType.ROOM);
       room.add({
         type: TraitType.ROOM,
@@ -141,46 +125,46 @@ describe('climbingAction (Golden Pattern)', () => {
           north: { to: 'room2' }  // No up/down exits
         }
       });
-      
+
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, room.id);
-      
+
       const command = createCommand(IFActions.CLIMBING);
       command.parsed.extras = { direction: 'up' };
-      
+
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('cant_go_that_way'),
-        params: { direction: 'up' }
+
+      expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.cant_go_that_way',
+        reason: 'cant_go_that_way'
       });
     });
 
     test('should fail when not in a room for directional climbing', () => {
       const world = new WorldModel();
-      
+
       const container = world.createEntity('box', EntityType.CONTAINER);
       container.add({ type: TraitType.CONTAINER });
-      
+
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, container.id);
-      
+
       const command = createCommand(IFActions.CLIMBING);
       command.parsed.extras = { direction: 'up' };
-      
+
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('cant_go_that_way'),
-        params: { direction: 'up' }
+
+      expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.cant_go_that_way',
+        reason: 'cant_go_that_way'
       });
     });
   });
@@ -221,13 +205,14 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(climbingAction, context);
       
-      // Should emit CLIMBED event
+      // Should emit CLIMBED event with messageId for text rendering
       expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.climbed_up',
         direction: 'up',
         method: 'directional',
         destinationId: attic.id
       });
-      
+
       // Should emit movement event
       expectEvent(events, 'if.event.moved', {
         direction: 'up',
@@ -235,19 +220,14 @@ describe('climbingAction (Golden Pattern)', () => {
         toRoom: attic.id,
         method: 'climbing'
       });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('climbed_up')
-      });
     });
 
     test('should climb down when exit exists', () => {
       const world = new WorldModel();
-      
+
       const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
       groundFloor.add({ type: TraitType.ROOM });
-      
+
       const attic = world.createEntity('Attic', EntityType.ROOM);
       attic.add({
         type: TraitType.ROOM,
@@ -255,27 +235,24 @@ describe('climbingAction (Golden Pattern)', () => {
           down: { to: groundFloor.id }
         }
       });
-      
+
       const player = world.createEntity('yourself', EntityType.ACTOR);
       player.add({ type: TraitType.ACTOR, isPlayer: true });
       world.setPlayer(player.id);
       world.moveEntity(player.id, attic.id);
-      
+
       const command = createCommand(IFActions.CLIMBING);
       command.parsed.extras = { direction: 'down' };
-      
+
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
+
       expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.climbed_down',
         direction: 'down',
         method: 'directional',
         destinationId: groundFloor.id
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('climbed_down')
       });
     });
 
@@ -296,23 +273,19 @@ describe('climbingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(climbingAction, context);
       
-      // Should emit CLIMBED event
+      // Should emit CLIMBED event with messageId for text rendering
       expectEvent(events, 'if.event.climbed', {
+        messageId: 'if.action.climbing.climbed_onto',
+        params: { target: 'oak tree' },
         targetId: tree.id,
         method: 'onto'
       });
-      
+
       // Should emit ENTERED event for climbing onto
       expectEvent(events, 'if.event.entered', {
         targetId: tree.id,
         method: 'climbing',
         preposition: 'onto'
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('climbed_onto'),
-        params: { object: 'oak tree' }
       });
     });
 

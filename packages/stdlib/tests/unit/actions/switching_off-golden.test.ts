@@ -15,27 +15,14 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOffAction } from '../../../src/actions/standard/switching_off';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    // Use blocked() method for validation failures
-    return action.blocked(context, validation);
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('switchingOffAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -71,8 +58,8 @@ describe('switchingOffAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(switchingOffAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_target'
+      expectEvent(events, 'if.event.switch_off_blocked', {
+        messageId: expect.stringContaining('no_target')
       });
     });
 
@@ -89,8 +76,8 @@ describe('switchingOffAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(switchingOffAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_switchable',
+      expectEvent(events, 'if.event.switch_off_blocked', {
+        messageId: expect.stringContaining('not_switchable'),
         params: { target: 'ordinary rock' }
       });
     });
@@ -110,8 +97,8 @@ describe('switchingOffAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(switchingOffAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'already_off',
+      expectEvent(events, 'if.event.switch_off_blocked', {
+        messageId: expect.stringContaining('already_off'),
         params: { target: 'portable radio' }
       });
     });
@@ -140,7 +127,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       });
       
       // Should emit device_stops message for non-light devices
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('device_stops'),
         params: { target: 'ceiling fan' }
       });
@@ -168,7 +155,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       });
       
       // Should emit with_sound message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('with_sound'),
         params: { 
           target: 'diesel engine',
@@ -199,7 +186,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       });
       
       // Should emit silence_falls message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('silence_falls'),
         params: { target: 'power generator' }
       });
@@ -228,7 +215,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       });
       
       // Should emit was_temporary message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('was_temporary'),
         params: { 
           target: 'kitchen timer',
@@ -267,7 +254,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       });
       
       // Should emit light_off message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('light_off'),
         params: { target: 'bright lamp' }
       });
@@ -304,7 +291,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOffAction, context);
       
       // Should emit light_off_still_lit message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('light_off_still_lit'),
         params: { target: 'desk lamp' }
       });
@@ -341,7 +328,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       const events = executeWithValidation(switchingOffAction, context);
       
       // Should not darken because of carried light
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('light_off_still_lit')
       });
     });
@@ -402,7 +389,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       });
       
       // Should emit door_closes message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('door_closes'),
         params: { target: 'automatic door' }
       });
@@ -437,7 +424,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       expect(switchedEvent?.data.willClose).toBeUndefined();
       
       // Should emit device_stops message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('device_stops')
       });
     });

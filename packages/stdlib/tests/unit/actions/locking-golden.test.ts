@@ -12,35 +12,15 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { lockingAction } from '../../../src/actions/standard/locking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
-  createRealTestContext, 
+import {
+  createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    // Use blocked() for validation failures
-    if (action.blocked) {
-      return action.blocked(context, validation);
-    }
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('lockingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -74,8 +54,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(lockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_target'
+      expectEvent(events, 'if.event.lock_blocked', {
+        messageId: 'if.action.locking.no_target'
       });
     });
 
@@ -98,8 +78,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(lockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_lockable',
+      expectEvent(events, 'if.event.lock_blocked', {
+        messageId: 'if.action.locking.not_lockable',
         params: { item: 'wooden box' }
       });
     });
@@ -123,8 +103,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(lockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'already_locked',
+      expectEvent(events, 'if.event.lock_blocked', {
+        messageId: 'if.action.locking.already_locked',
         params: { item: 'treasure chest' }
       });
     });
@@ -151,8 +131,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(lockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_closed',
+      expectEvent(events, 'if.event.lock_blocked', {
+        messageId: 'if.action.locking.not_closed',
         params: { item: 'cabinet' }
       });
     });
@@ -183,8 +163,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(lockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_key'
+      expectEvent(events, 'if.event.lock_blocked', {
+        messageId: 'if.action.locking.no_key'
       });
     });
 
@@ -216,8 +196,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(lockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'key_not_held',
+      expectEvent(events, 'if.event.lock_blocked', {
+        messageId: 'if.action.locking.key_not_held',
         params: { key: 'iron key' }
       });
     });
@@ -250,8 +230,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(lockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'wrong_key',
+      expectEvent(events, 'if.event.lock_blocked', {
+        messageId: 'if.action.locking.wrong_key',
         params: {
           key: 'silver key',
           item: 'door'
@@ -288,11 +268,8 @@ describe('lockingAction (Golden Pattern)', () => {
       const events = executeWithValidation(lockingAction, context);
       
       expectEvent(events, 'if.event.locked', {
-        targetId: box.id
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: 'locked',
+        targetId: box.id,
+        messageId: 'if.action.locking.locked',
         params: {
           item: 'small box',
           isContainer: true
@@ -332,11 +309,8 @@ describe('lockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.locked', {
         targetId: safe.id,
-        keyId: key.id
-      });
-
-      expectEvent(events, 'action.success', {
-        messageId: 'locked_with',
+        keyId: key.id,
+        messageId: 'if.action.locking.locked_with',
         params: {
           item: 'wall safe',
           key: 'safe key'
@@ -379,11 +353,9 @@ describe('lockingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.locked', {
         targetId: door.id,
-        keyId: key.id
-      });
-      
-      expectEvent(events, 'action.success', {
-        params: { 
+        keyId: key.id,
+        messageId: 'if.action.locking.locked_with',
+        params: {
           item: 'front door',
           key: 'house key',
           isDoor: true
@@ -452,11 +424,9 @@ describe('lockingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.locked', {
         targetId: vault.id,
-        sound: 'heavy clunk'
-      });
-      
-      expectEvent(events, 'action.success', {
-        params: { 
+        sound: 'heavy clunk',
+        messageId: 'if.action.locking.locked',
+        params: {
           item: 'bank vault'
         }
       });

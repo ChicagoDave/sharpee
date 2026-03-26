@@ -18,33 +18,11 @@ import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Supports both old two-phase and new three-phase actions
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      reason: validation.error,
-      params: validation.params || {}
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('smellingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -88,16 +66,12 @@ describe('smellingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event with scent info
+
+      // Should emit SMELLED event with scent info and message
       expectEvent(events, 'if.event.smelled', {
         target: bread.id,
         hasScent: true,
-        scentType: 'edible'
-      });
-      
-      // Should emit food_scent message
-      expectEvent(events, 'action.success', {
+        scentType: 'edible',
         messageId: expect.stringContaining('food_scent'),
         params: { target: 'fresh bread' }
       });
@@ -118,16 +92,12 @@ describe('smellingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event with scent info
+
+      // Should emit SMELLED event with scent info and message
       expectEvent(events, 'if.event.smelled', {
         target: coffee.id,
         hasScent: true,
-        scentType: 'drinkable'
-      });
-      
-      // Should emit drink_scent message
-      expectEvent(events, 'action.success', {
+        scentType: 'drinkable',
         messageId: expect.stringContaining('drink_scent'),
         params: { target: 'hot coffee' }
       });
@@ -147,16 +117,12 @@ describe('smellingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event with burning scent
+
+      // Should emit SMELLED event with burning scent and message
       expectEvent(events, 'if.event.smelled', {
         target: torch.id,
         hasScent: true,
-        scentType: 'burning'
-      });
-      
-      // Should emit burning_scent message
-      expectEvent(events, 'action.success', {
+        scentType: 'burning',
         messageId: expect.stringContaining('burning_scent'),
         params: { target: 'burning torch' }
       });
@@ -176,9 +142,10 @@ describe('smellingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit no_particular_scent message
-      expectEvent(events, 'action.success', {
+
+      // Should emit SMELLED event with no_particular_scent message
+      expectEvent(events, 'if.event.smelled', {
+        target: candle.id,
         messageId: expect.stringContaining('no_particular_scent'),
         params: { target: 'unlit candle' }
       });
@@ -211,17 +178,13 @@ describe('smellingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event with container contents
+
+      // Should emit SMELLED event with container contents and message
       expectEvent(events, 'if.event.smelled', {
         target: basket.id,
         hasScent: true,
         scentType: 'container_contents',
-        scentSources: [apple.id]
-      });
-      
-      // Should emit container_food_scent message
-      expectEvent(events, 'action.success', {
+        scentSources: [apple.id],
         messageId: expect.stringContaining('container_food_scent'),
         params: { target: 'wicker basket' }
       });
@@ -254,9 +217,10 @@ describe('smellingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit no_particular_scent message (container is closed)
-      expectEvent(events, 'action.success', {
+
+      // Should emit SMELLED event with no_particular_scent (container is closed)
+      expectEvent(events, 'if.event.smelled', {
+        target: box.id,
         messageId: expect.stringContaining('no_particular_scent'),
         params: { target: 'sealed box' }
       });
@@ -272,15 +236,10 @@ describe('smellingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event without scent
+
+      // Should emit SMELLED event with no_particular_scent message
       expectEvent(events, 'if.event.smelled', {
-        target: rock.id
-        // No hasScent or scentType
-      });
-      
-      // Should emit no_particular_scent message
-      expectEvent(events, 'action.success', {
+        target: rock.id,
         messageId: expect.stringContaining('no_particular_scent'),
         params: { target: 'ordinary rock' }
       });
@@ -295,15 +254,11 @@ describe('smellingAction (Golden Pattern)', () => {
       // No command.directObject - smelling environment
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event for environment
+
+      // Should emit SMELLED event for environment with no_scent message
       expectEvent(events, 'if.event.smelled', {
         smellingEnvironment: true,
-        roomId: room.id
-      });
-      
-      // Should emit no_scent message
-      expectEvent(events, 'action.success', {
+        roomId: room.id,
         messageId: expect.stringContaining('no_scent')
       });
     });
@@ -322,16 +277,12 @@ describe('smellingAction (Golden Pattern)', () => {
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event with food sources
+
+      // Should emit SMELLED event with food sources and message
       expectEvent(events, 'if.event.smelled', {
         smellingEnvironment: true,
         roomId: room.id,
-        scentSources: [sandwich.id]
-      });
-      
-      // Should emit food_nearby message
-      expectEvent(events, 'action.success', {
+        scentSources: [sandwich.id],
         messageId: expect.stringContaining('food_nearby')
       });
     });
@@ -350,16 +301,12 @@ describe('smellingAction (Golden Pattern)', () => {
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event with smoke source
+
+      // Should emit SMELLED event with smoke source and message
       expectEvent(events, 'if.event.smelled', {
         smellingEnvironment: true,
         roomId: room.id,
-        scentSources: [fireplace.id]
-      });
-      
-      // Should emit smoke_detected message
-      expectEvent(events, 'action.success', {
+        scentSources: [fireplace.id],
         messageId: expect.stringContaining('smoke_detected')
       });
     });
@@ -385,16 +332,12 @@ describe('smellingAction (Golden Pattern)', () => {
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit SMELLED event with both sources
+
+      // Should emit SMELLED event with both sources, smoke message takes priority
       expectEvent(events, 'if.event.smelled', {
         smellingEnvironment: true,
         roomId: room.id,
-        scentSources: [candle.id, pie.id]
-      });
-      
-      // Should prioritize smoke_detected message
-      expectEvent(events, 'action.success', {
+        scentSources: [candle.id, pie.id],
         messageId: expect.stringContaining('smoke_detected')
       });
     });
@@ -410,9 +353,11 @@ describe('smellingAction (Golden Pattern)', () => {
       const context = createRealTestContext(smellingAction, world, createCommand(IFActions.SMELLING));
       
       const events = executeWithValidation(smellingAction, context);
-      
-      // Should emit no_scent message (flowers don't have EDIBLE or lit LIGHT_SOURCE)
-      expectEvent(events, 'action.success', {
+
+      // Should emit SMELLED event with no_scent (flowers don't have EDIBLE or lit LIGHT_SOURCE)
+      expectEvent(events, 'if.event.smelled', {
+        smellingEnvironment: true,
+        roomId: room.id,
         messageId: expect.stringContaining('no_scent')
       });
     });

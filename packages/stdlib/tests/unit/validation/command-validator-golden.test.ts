@@ -561,7 +561,8 @@ describe('CommandValidator (Golden Pattern)', () => {
       const box = author.createEntity('box', EntityType.CONTAINER);
       box.add({
         type: TraitType.IDENTITY,
-        name: 'wooden box'
+        name: 'wooden box',
+        aliases: ['box']
       });
       author.moveEntity(box.id, room.id);
       
@@ -593,12 +594,14 @@ describe('CommandValidator (Golden Pattern)', () => {
       const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({
         type: TraitType.IDENTITY,
-        name: 'red ball'
+        name: 'ball',
+        adjectives: ['red']
       });
       const box = author.createEntity('box', EntityType.CONTAINER);
       box.add({
         type: TraitType.IDENTITY,
-        name: 'wooden box'
+        name: 'box',
+        adjectives: ['wooden']
       });
       box.add({
         type: TraitType.CONTAINER

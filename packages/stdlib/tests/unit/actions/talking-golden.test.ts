@@ -17,33 +17,11 @@ import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Supports both old two-phase and new three-phase actions
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      reason: validation.error,
-      params: validation.params || {}
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('talkingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -76,9 +54,9 @@ describe('talkingAction (Golden Pattern)', () => {
       const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING));
       
       const events = executeWithValidation(talkingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
+
+      expectEvent(events, 'if.event.talk_blocked', {
+        messageId: 'if.action.talking.no_target',
         reason: 'no_target'
       });
     });
@@ -89,35 +67,32 @@ describe('talkingAction (Golden Pattern)', () => {
       const statue = world.createEntity('marble statue', 'object');
       world.moveEntity(statue.id, room.id);
       // statue has no ACTOR trait
-      
+
       const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING, {
         entity: statue
       }));
-      
+
       const events = executeWithValidation(talkingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_actor'),
+
+      expectEvent(events, 'if.event.talk_blocked', {
+        messageId: 'if.action.talking.not_actor',
         reason: 'not_actor'
       });
     });
 
     test('should fail when trying to talk to self', () => {
       const { world, player } = setupBasicWorld();
-      
-      // Add ACTOR trait to player
-      player.add({
-        type: TraitType.ACTOR
-      });
-      
+
+      // Player already has ACTOR trait from setupBasicWorld
+
       const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING, {
         entity: player // Talking to self
       }));
-      
+
       const events = executeWithValidation(talkingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('self'),
+
+      expectEvent(events, 'if.event.talk_blocked', {
+        messageId: 'if.action.talking.self',
         reason: 'self'
       });
     });
@@ -131,17 +106,17 @@ describe('talkingAction (Golden Pattern)', () => {
           isAvailable: false
         }
       });
-      
+
       world.moveEntity(busyNpc.id, room.id);
-      
+
       const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING, {
         entity: busyNpc
       }));
-      
+
       const events = executeWithValidation(talkingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_available'),
+
+      expectEvent(events, 'if.event.talk_blocked', {
+        messageId: 'if.action.talking.not_available',
         params: { target: 'busy worker' }
       });
     });
@@ -163,16 +138,12 @@ describe('talkingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(talkingAction, context);
-      
-      // Should emit TALKED event
+
+      // report() emits a single 'if.event.talked' event with messageId and entity data
       expectEvent(events, 'if.event.talked', {
         target: simpleNpc.id,
-        targetName: 'service robot'
-      });
-      
-      // Should emit no_response message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('no_response'),
+        targetName: 'service robot',
+        messageId: 'if.action.talking.no_response',
         params: { target: 'service robot' }
       });
     });
@@ -197,17 +168,13 @@ describe('talkingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(talkingAction, context);
-      
-      // Should emit TALKED event with first meeting flag
+
+      // report() emits a single 'if.event.talked' with all data
       expectEvent(events, 'if.event.talked', {
         target: newNpc.id,
         firstMeeting: true,
-        conversationState: 'initial'
-      });
-      
-      // Should emit first_meeting message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('first_meeting'),
+        conversationState: 'initial',
+        messageId: 'if.action.talking.first_meeting',
         params: { target: 'traveling merchant' }
       });
     });
@@ -231,9 +198,8 @@ describe('talkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(talkingAction, context);
       
-      // Should emit formal_greeting message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('formal_greeting'),
+      expectEvent(events, 'if.event.talked', {
+        messageId: 'if.action.talking.formal_greeting',
         params: { target: 'distinguished professor' }
       });
     });
@@ -257,9 +223,8 @@ describe('talkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(talkingAction, context);
       
-      // Should emit casual_greeting message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('casual_greeting'),
+      expectEvent(events, 'if.event.talked', {
+        messageId: 'if.action.talking.casual_greeting',
         params: { target: 'friendly bartender' }
       });
     });
@@ -285,9 +250,8 @@ describe('talkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(talkingAction, context);
       
-      // Should emit friendly_greeting message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('friendly_greeting'),
+      expectEvent(events, 'if.event.talked', {
+        messageId: 'if.action.talking.friendly_greeting',
         params: { target: 'trusted ally' }
       });
     });
@@ -311,9 +275,8 @@ describe('talkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(talkingAction, context);
       
-      // Should emit remembers_you message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('remembers_you'),
+      expectEvent(events, 'if.event.talked', {
+        messageId: 'if.action.talking.remembers_you',
         params: { target: 'old innkeeper' }
       });
     });
@@ -337,9 +300,8 @@ describe('talkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(talkingAction, context);
       
-      // Should emit greets_again message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('greets_again'),
+      expectEvent(events, 'if.event.talked', {
+        messageId: 'if.action.talking.greets_again',
         params: { target: 'store clerk' }
       });
     });
@@ -369,15 +331,11 @@ describe('talkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(talkingAction, context);
       
-      // Should emit TALKED event with hasTopics flag
+      // report() emits a single 'if.event.talked' with all data
       expectEvent(events, 'if.event.talked', {
         target: informativeNpc.id,
-        hasTopics: true
-      });
-      
-      // Should emit has_topics message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('has_topics'),
+        hasTopics: true,
+        messageId: 'if.action.talking.has_topics',
         params: { target: 'helpful librarian' }
       });
     });
@@ -401,9 +359,8 @@ describe('talkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(talkingAction, context);
       
-      // Should emit nothing_to_say message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('nothing_to_say'),
+      expectEvent(events, 'if.event.talked', {
+        messageId: 'if.action.talking.nothing_to_say',
         params: { target: 'silent guard' }
       });
     });

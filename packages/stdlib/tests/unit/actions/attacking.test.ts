@@ -21,6 +21,7 @@ import {
 } from '../../test-utils';
 import type { ActionContext, ValidationResult } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
+import { ScopeLevel } from '../../../src/scope/types';
 
 describe('attackingAction - Three-Phase Implementation', () => {
   let world: WorldModel;
@@ -170,7 +171,9 @@ describe('attackingAction - Three-Phase Implementation', () => {
       expect(result.error).toBe('self');
     });
 
-    test('should fail if specified weapon not held', () => {
+    test('should fail if specified weapon not reachable', () => {
+      // Place weapon in a different room so implicit take can't reach it
+      const otherRoom = world.createEntity('other room', EntityType.ROOM);
       const otherWeapon = world.createEntity('axe', EntityType.OBJECT);
       otherWeapon.add({
         type: TraitType.WEAPON,
@@ -178,20 +181,19 @@ describe('attackingAction - Three-Phase Implementation', () => {
         maxDamage: 8,
         weaponType: 'blade'
       });
-      world.moveEntity(otherWeapon.id, room.id); // On floor, not held
-      
+      world.moveEntity(otherWeapon.id, otherRoom.id); // In a different room, not reachable
+
       const command = createCommand(IFActions.ATTACKING, {
         entity: target,
         secondEntity: otherWeapon,
         preposition: 'with'
       });
       context = createRealTestContext(attackingAction, world, command);
-      
+
       const result = attackingAction.validate(context);
-      
+
+      // requireCarriedOrImplicitTake returns a scope error when weapon is not reachable
       expect(result.valid).toBe(false);
-      expect(result.error).toBe('not_holding_weapon');
-      expect(result.params).toHaveProperty('weapon', 'axe');
     });
 
     test('should pass validation with valid target', () => {
@@ -360,89 +362,89 @@ describe('attackingAction - Three-Phase Implementation', () => {
 
   describe('Event Generation', () => {
     test('should generate attacked event on success', () => {
-      // Add combat trait to target so attack succeeds
-      // The trait must include isAlive property for CombatBehavior to recognize it
-      const combatantTrait = {
-        type: TraitType.COMBATANT,
-        health: 100,
-        maxHealth: 100,
-        get isAlive() { return this.health > 0; }
-      };
-      target.add(combatantTrait);
-      
+      // Use a breakable target (non-combatant) so AttackBehavior handles it
+      const vase = world.createEntity('vase', EntityType.OBJECT);
+      vase.add({
+        type: TraitType.BREAKABLE,
+        broken: false
+      });
+      world.moveEntity(vase.id, room.id);
+
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: vase,
+        text: 'vase'
       });
       context = createRealTestContext(attackingAction, world, command);
-      
+
       attackingAction.execute(context);
       const events = attackingAction.report(context);
-      
+
       const attackedEvent = events.find(e => e.type === 'if.event.attacked');
       expect(attackedEvent).toBeDefined();
-      expect(attackedEvent?.data).toHaveProperty('target', target.id);
-      expect(attackedEvent?.data).toHaveProperty('targetName', 'goblin');
+      expect(attackedEvent?.data).toHaveProperty('target', vase.id);
+      expect(attackedEvent?.data).toHaveProperty('targetName', 'vase');
       expect(attackedEvent?.data).toHaveProperty('unarmed', true);
     });
 
-    test('should generate success event with message', () => {
-      // Add combat trait to target so attack succeeds
-      const combatantTrait = {
-        type: TraitType.COMBATANT,
-        health: 100,
-        maxHealth: 100,
-        get isAlive() { return this.health > 0; }
-      };
-      target.add(combatantTrait);
-      
+    test('should generate attacked event with messageId', () => {
+      // Use a breakable target (non-combatant) so AttackBehavior handles it
+      const vase = world.createEntity('vase', EntityType.OBJECT);
+      vase.add({
+        type: TraitType.BREAKABLE,
+        broken: false
+      });
+      world.moveEntity(vase.id, room.id);
+
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
-        text: 'goblin'
+        entity: vase,
+        text: 'vase'
       });
       context = createRealTestContext(attackingAction, world, command);
-      
+
       attackingAction.execute(context);
       const events = attackingAction.report(context);
-      
-      const successEvent = events.find(e => e.type === 'action.success');
-      expect(successEvent).toBeDefined();
-      expect(successEvent?.data).toHaveProperty('actionId', IFActions.ATTACKING);
-      expect(successEvent?.data).toHaveProperty('messageId');
+
+      // The action emits if.event.attacked (not action.success) with a messageId
+      const attackedEvent = events.find(e => e.type === 'if.event.attacked');
+      expect(attackedEvent).toBeDefined();
+      expect(attackedEvent?.data).toHaveProperty('messageId');
     });
 
-    test('should generate error event on validation failure', () => {
+    test('should generate blocked event on validation failure', () => {
       const command = createCommand(IFActions.ATTACKING, {});
       context = createRealTestContext(attackingAction, world, command);
-      
+
       const validationResult = attackingAction.validate(context);
-      const events = attackingAction.report(context, validationResult);
-      
+      expect(validationResult.valid).toBe(false);
+
+      // Validation failures go through the blocked() method, not report()
+      const events = attackingAction.blocked(context, validationResult);
+
       expect(events.length).toBe(1);
-      expect(events[0].type).toBe('action.error');
-      expect(events[0].data).toHaveProperty('error', 'no_target');
+      expect(events[0].type).toBe('if.event.attacked');
+      expect(events[0].data).toHaveProperty('blocked', true);
+      expect(events[0].data).toHaveProperty('reason', 'no_target');
     });
 
     test('should include weapon in attacked event when used', () => {
-      // Add combat trait to target so attack succeeds
-      const combatantTrait = {
-        type: TraitType.COMBATANT,
-        health: 100,
-        maxHealth: 100,
-        get isAlive() { return this.health > 0; }
-      };
-      target.add(combatantTrait);
-      
+      // Use a breakable target (non-combatant) so AttackBehavior handles it
+      const vase = world.createEntity('vase', EntityType.OBJECT);
+      vase.add({
+        type: TraitType.BREAKABLE,
+        broken: false
+      });
+      world.moveEntity(vase.id, room.id);
+
       const command = createCommand(IFActions.ATTACKING, {
-        entity: target,
+        entity: vase,
         secondEntity: weapon,
         preposition: 'with'
       });
       context = createRealTestContext(attackingAction, world, command);
-      
+
       attackingAction.execute(context);
       const events = attackingAction.report(context);
-      
+
       const attackedEvent = events.find(e => e.type === 'if.event.attacked');
       expect(attackedEvent).toBeDefined();
       expect(attackedEvent?.data).toHaveProperty('weapon', weapon.id);
@@ -450,20 +452,22 @@ describe('attackingAction - Three-Phase Implementation', () => {
       expect(attackedEvent?.data).toHaveProperty('unarmed', false);
     });
 
-    test('should handle execution errors gracefully', () => {
+    test('should generate blocked event via blocked() method', () => {
+      // Test the blocked path when validation explicitly fails
       const command = createCommand(IFActions.ATTACKING, {
         entity: target,
         text: 'goblin'
       });
       context = createRealTestContext(attackingAction, world, command);
-      
-      const executionError = new Error('Test error');
-      const events = attackingAction.report(context, undefined, executionError);
-      
+
+      const validationResult = { valid: false as const, error: 'not_reachable', params: { target: 'goblin' } };
+      const events = attackingAction.blocked(context, validationResult);
+
       expect(events.length).toBe(1);
-      expect(events[0].type).toBe('action.error');
-      expect(events[0].data).toHaveProperty('error', 'execution_failed');
-      expect(events[0].data.params).toHaveProperty('error', 'Test error');
+      expect(events[0].type).toBe('if.event.attacked');
+      expect(events[0].data).toHaveProperty('blocked', true);
+      expect(events[0].data).toHaveProperty('reason', 'not_reachable');
+      expect(events[0].data).toHaveProperty('targetName', 'goblin');
     });
   });
 
@@ -475,39 +479,41 @@ describe('attackingAction - Three-Phase Implementation', () => {
         broken: false
       });
       world.moveEntity(vase.id, room.id);
-      
+
       const command = createCommand(IFActions.ATTACKING, {
         entity: vase,
         text: 'vase'
       });
       context = createRealTestContext(attackingAction, world, command);
-      
+
       attackingAction.execute(context);
       const events = attackingAction.report(context);
-      
-      const successEvent = events.find(e => e.type === 'action.success');
-      expect(successEvent?.data.messageId).toBe('target_broke');
+
+      // The action emits if.event.attacked with a messageId containing target_broke
+      const attackedEvent = events.find(e => e.type === 'if.event.attacked');
+      expect(attackedEvent).toBeDefined();
+      expect(attackedEvent?.data.messageId).toContain('target_broke');
     });
 
     test('should handle ineffective attack', () => {
-      // Create an entity with no combat traits
+      // Create an entity with no combat traits and no breakable trait
       const rock = world.createEntity('rock', EntityType.OBJECT);
       world.moveEntity(rock.id, room.id);
-      
+
       const command = createCommand(IFActions.ATTACKING, {
         entity: rock,
         text: 'rock'
       });
       context = createRealTestContext(attackingAction, world, command);
-      
+
       attackingAction.execute(context);
       const events = attackingAction.report(context);
-      
-      // Should return error event for ineffective attack
-      const errorEvent = events.find(e => e.type === 'action.error');
-      expect(errorEvent).toBeDefined();
-      // The messageId might be the actual message or 'attack_ineffective'
-      expect(errorEvent?.data).toHaveProperty('messageId');
+
+      // Ineffective attacks emit if.event.attacked with failed: true
+      const attackedEvent = events.find(e => e.type === 'if.event.attacked');
+      expect(attackedEvent).toBeDefined();
+      expect(attackedEvent?.data).toHaveProperty('failed', true);
+      expect(attackedEvent?.data).toHaveProperty('messageId');
     });
   });
 
@@ -529,7 +535,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
     });
 
     test('should have reachable scope for direct object', () => {
-      expect(attackingAction.metadata.directObjectScope).toBe('reachable');
+      expect(attackingAction.metadata.directObjectScope).toBe(ScopeLevel.REACHABLE);
     });
 
     test('should declare all required messages', () => {

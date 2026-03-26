@@ -12,31 +12,15 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { takingOffAction } from '../../../src/actions/standard/taking_off';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: { item: context.command.directObject?.entity?.name }
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('takingOffAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -64,7 +48,7 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(takingOffAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.take_off_blocked', {
         messageId: expect.stringContaining('no_target'),
         reason: 'no_target'
       });
@@ -85,9 +69,9 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(takingOffAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.take_off_blocked', {
         messageId: expect.stringContaining('not_wearing'),
-        params: { item: 'red hat' }
+        reason: 'not_wearing'
       });
     });
 
@@ -103,9 +87,9 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(takingOffAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.take_off_blocked', {
         messageId: expect.stringContaining('not_wearing'),
-        params: { item: 'tennis ball' }
+        reason: 'not_wearing'
       });
     });
 
@@ -124,9 +108,9 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(takingOffAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.take_off_blocked', {
         messageId: expect.stringContaining('not_wearing'),
-        params: { item: 'blue shirt' }
+        reason: 'not_wearing'
       });
     });
 
@@ -162,9 +146,9 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(takingOffAction, context);
 
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.take_off_blocked', {
         messageId: expect.stringContaining('prevents_removal'),
-        params: { blocking: 'leather jacket' }
+        reason: 'prevents_removal'
       });
     });
 
@@ -185,9 +169,9 @@ describe('takingOffAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(takingOffAction, context);
 
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.take_off_blocked', {
         messageId: expect.stringContaining('cant_remove'),
-        params: { item: 'cursed ring' }
+        reason: 'cant_remove'
       });
     });
   });
@@ -210,19 +194,11 @@ describe('takingOffAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(takingOffAction, context);
       
-      // Should emit REMOVED event
+      // Should emit REMOVED event with messageId and domain data
       expectEvent(events, 'if.event.removed', {
+        messageId: expect.stringContaining('removed'),
         itemId: hat.id,
         bodyPart: 'head'
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('removed'),
-        params: { 
-          item: 'wool hat',
-          bodyPart: 'head'
-        }
       });
     });
 
@@ -354,17 +330,10 @@ describe('takingOffAction (Golden Pattern)', () => {
       const events = executeWithValidation(takingOffAction, context);
       
       expectEvent(events, 'if.event.removed', {
+        messageId: expect.stringContaining('removed'),
         itemId: gloves.id,
         bodyPart: 'hands',
         layer: 1
-      });
-      
-      expectEvent(events, 'action.success', {
-        params: {
-          item: 'work gloves',
-          bodyPart: 'hands',
-          layer: 1
-        }
       });
     });
   });

@@ -157,12 +157,13 @@ describe('quittingAction', () => {
       expect(quitContext.hasUnsavedChanges).toBe(true);
       expect(quitContext.force).toBe(false);
       
-      // Should emit success message with hint about unsaved progress
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('quit_requested'),
-        params: {
-          hint: 'You have unsaved progress. The game will ask for confirmation.'
-        }
+      // Unsaved progress is conveyed via hasUnsavedChanges in the quit_requested event
+      expectEvent(events, 'if.event.quit_requested', {
+        timestamp: expect.any(Number),
+        hasUnsavedChanges: true,
+        force: false,
+        score: 50,
+        moves: 30
       });
     });
 

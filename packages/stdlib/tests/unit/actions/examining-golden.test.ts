@@ -12,32 +12,15 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { examiningAction } from '../../../src/actions/standard/examining'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-import { SemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the four-phase pattern
-function executeAction(action: any, context: ActionContext): SemanticEvent[] {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validationResult = action.validate(context);
-
-  if (!validationResult.valid) {
-    // Use blocked() for validation failures
-    return action.blocked(context, validationResult);
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates success events
-  return action.report(context);
-}
 
 describe('examiningAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -72,10 +55,11 @@ describe('examiningAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.EXAMINING);
       const context = createRealTestContext(examiningAction, world, command);
 
-      const events = executeAction(examiningAction, context);
+      const events = executeWithValidation(examiningAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_target'
+      expectEvent(events, 'if.event.examined', {
+        blocked: true,
+        messageId: 'if.action.examining.no_target'
       });
     });
 
@@ -92,10 +76,11 @@ describe('examiningAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(examiningAction, world, command);
 
-      const events = executeAction(examiningAction, context);
+      const events = executeWithValidation(examiningAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_visible',
+      expectEvent(events, 'if.event.examined', {
+        blocked: true,
+        messageId: 'if.action.examining.scope.not_known',
         params: expect.objectContaining({
           target: 'red ball'
         })
@@ -104,23 +89,19 @@ describe('examiningAction (Golden Pattern)', () => {
 
     test('should always allow examining self even if not visible', () => {
       const { world, player } = setupBasicWorld();
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: player
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         targetId: player.id,
         targetName: 'yourself',
-        self: true
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('examined_self'),
-        params: {}
+        self: true,
+        messageId: 'if.action.examining.examined_self'
       });
     });
   });
@@ -128,20 +109,17 @@ describe('examiningAction (Golden Pattern)', () => {
   describe('Basic Examining', () => {
     test('should examine simple object', () => {
       const { world, player, object } = TestData.withObject('red ball');
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         targetId: object.id,
-        targetName: 'red ball'
-      });
-      
-      expectEvent(events, 'action.success', {
+        targetName: 'red ball',
         messageId: expect.stringContaining('examined'),
         params: { target: 'red ball' }
       });
@@ -155,25 +133,22 @@ describe('examiningAction (Golden Pattern)', () => {
           brief: 'A landscape painting.'
         }
       });
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         hasDescription: true,
-        hasBrief: true
-      });
-      
-      expectEvent(events, 'action.success', {
+        hasBrief: true,
         messageId: expect.stringContaining('examined'),
-        params: { 
+        params: expect.objectContaining({
           target: 'old painting',
           description: 'A faded landscape painting in a golden frame.'
-        }
+        })
       });
     });
   });
@@ -181,27 +156,27 @@ describe('examiningAction (Golden Pattern)', () => {
   describe('Container Examining', () => {
     test('should examine open container with contents', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const box = world.createEntity('wooden box', 'container');
       box.add({ type: TraitType.CONTAINER });
-      box.add({ 
+      box.add({
         type: TraitType.OPENABLE,
         isOpen: true
       });
       world.moveEntity(box.id, room.id);
-      
+
       const coin = world.createEntity('gold coin', 'object');
       const gem = world.createEntity('ruby', 'object');
       world.moveEntity(coin.id, box.id);
       world.moveEntity(gem.id, box.id);
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: box
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         isContainer: true,
         isOpenable: true,
@@ -211,33 +186,30 @@ describe('examiningAction (Golden Pattern)', () => {
         contents: [
           { id: coin.id, name: 'gold coin' },
           { id: gem.id, name: 'ruby' }
-        ]
-      });
-      
-      expectEvent(events, 'action.success', {
+        ],
         messageId: expect.stringContaining('examined_container'),
-        params: { 
+        params: expect.objectContaining({
           isOpen: true
-        }
+        })
       });
     });
 
     test('should examine closed container', () => {
       const { world, player, object } = TestData.withObject('treasure chest', {
         [TraitType.CONTAINER]: { type: TraitType.CONTAINER },
-        [TraitType.OPENABLE]: { 
+        [TraitType.OPENABLE]: {
           type: TraitType.OPENABLE,
           isOpen: false
         }
       });
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         targetId: object.id,
         targetName: 'treasure chest',
@@ -246,14 +218,11 @@ describe('examiningAction (Golden Pattern)', () => {
         isOpen: false,
         hasContents: false,
         contentCount: 0,
-        contents: []
-      });
-      
-      expectEvent(events, 'action.success', {
+        contents: [],
         messageId: expect.stringContaining('examined_container'),
-        params: {
+        params: expect.objectContaining({
           isOpen: false
-        }
+        })
       });
     });
 
@@ -261,14 +230,14 @@ describe('examiningAction (Golden Pattern)', () => {
       const { world, player, object } = TestData.withObject('wicker basket', {
         [TraitType.CONTAINER]: { type: TraitType.CONTAINER }
       });
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         targetId: object.id,
         targetName: 'wicker basket',
@@ -276,14 +245,11 @@ describe('examiningAction (Golden Pattern)', () => {
         isOpen: true,  // Default to open
         hasContents: false,
         contentCount: 0,
-        contents: []
-      });
-      
-      expectEvent(events, 'action.success', {
+        contents: [],
         messageId: expect.stringContaining('examined_container'),
-        params: {
+        params: expect.objectContaining({
           isOpen: true
-        }
+        })
       });
     });
   });
@@ -291,32 +257,28 @@ describe('examiningAction (Golden Pattern)', () => {
   describe('Supporter Examining', () => {
     test('should examine supporter with objects', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const table = world.createEntity('oak table', 'supporter');
       table.add({ type: TraitType.SUPPORTER });
       world.moveEntity(table.id, room.id);
-      
+
       const book = world.createEntity('old book', 'object');
       const lamp = world.createEntity('brass lamp', 'object');
       world.moveEntity(book.id, table.id);
       world.moveEntity(lamp.id, table.id);
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: table
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         isSupporter: true,
         hasContents: true,
-        contentCount: 2
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('examined_supporter'),
-        params: {}
+        contentCount: 2,
+        messageId: expect.stringContaining('examined_supporter')
       });
     });
   });
@@ -329,24 +291,21 @@ describe('examiningAction (Golden Pattern)', () => {
           isOn: true
         }
       });
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         isSwitchable: true,
-        isOn: true
-      });
-      
-      expectEvent(events, 'action.success', {
+        isOn: true,
         messageId: expect.stringContaining('examined_switchable'),
-        params: { 
+        params: expect.objectContaining({
           isOn: true
-        }
+        })
       });
     });
 
@@ -357,24 +316,21 @@ describe('examiningAction (Golden Pattern)', () => {
           text: 'Meet me at midnight by the old oak tree.'
         }
       });
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         isReadable: true,
-        hasText: true
-      });
-      
-      expectEvent(events, 'action.success', {
+        hasText: true,
         messageId: expect.stringContaining('examined_readable'),
-        params: { 
+        params: expect.objectContaining({
           text: 'Meet me at midnight by the old oak tree.'
-        }
+        })
       });
     });
 
@@ -386,24 +342,21 @@ describe('examiningAction (Golden Pattern)', () => {
           slot: 'head'
         }
       });
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         isWearable: true,
-        isWorn: false
-      });
-      
-      expectEvent(events, 'action.success', {
+        isWorn: false,
         messageId: expect.stringContaining('examined_wearable'),
-        params: { 
+        params: expect.objectContaining({
           isWorn: false
-        }
+        })
       });
     });
 
@@ -423,27 +376,24 @@ describe('examiningAction (Golden Pattern)', () => {
           keyId: 'brass_key'
         }
       });
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       expectEvent(events, 'if.event.examined', {
         isDoor: true,
         isOpenable: true,
         isOpen: false,
         isLockable: true,
-        isLocked: true
-      });
-      
-      expectEvent(events, 'action.success', {
+        isLocked: true,
         messageId: expect.stringContaining('examined_door'),
-        params: { 
+        params: expect.objectContaining({
           isLocked: true
-        }
+        })
       });
     });
   });
@@ -451,12 +401,12 @@ describe('examiningAction (Golden Pattern)', () => {
   describe('Complex Objects', () => {
     test('should handle object with multiple traits', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       // A container that is also a supporter and switchable (e.g., a display case with lights)
       const displayCase = world.createEntity('display case', 'container');
       displayCase.add({ type: TraitType.CONTAINER });
       displayCase.add({ type: TraitType.SUPPORTER });
-      displayCase.add({ 
+      displayCase.add({
         type: TraitType.OPENABLE,
         isOpen: true
       });
@@ -465,17 +415,18 @@ describe('examiningAction (Golden Pattern)', () => {
         isOn: true
       });
       world.moveEntity(displayCase.id, room.id);
-      
+
       const trophy = world.createEntity('golden trophy', 'object');
       world.moveEntity(trophy.id, displayCase.id);
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: displayCase
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
+      // Container message takes precedence
       expectEvent(events, 'if.event.examined', {
         isContainer: true,
         isSupporter: true,
@@ -483,15 +434,11 @@ describe('examiningAction (Golden Pattern)', () => {
         isOpen: true,
         isOn: true,
         hasContents: true,
-        contentCount: 1
-      });
-      
-      // Container message takes precedence
-      expectEvent(events, 'action.success', {
+        contentCount: 1,
         messageId: expect.stringContaining('examined_container'),
-        params: {
+        params: expect.objectContaining({
           isOpen: true
-        }
+        })
       });
     });
   });
@@ -499,14 +446,14 @@ describe('examiningAction (Golden Pattern)', () => {
   describe('Event Structure Validation', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room, object } = TestData.withObject('ornate mirror');
-      
+
       const command = createCommand(IFActions.EXAMINING, {
         entity: object
       });
       const context = createRealTestContext(examiningAction, world, command);
-      
-      const events = executeAction(examiningAction, context);
-      
+
+      const events = executeWithValidation(examiningAction, context);
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
@@ -537,7 +484,7 @@ describe('examiningAction (Golden Pattern)', () => {
       const executeSpy = vi.spyOn(examiningAction, 'execute');
       const reportSpy = vi.spyOn(examiningAction as any, 'report');
 
-      const events = executeAction(examiningAction, context);
+      const events = executeWithValidation(examiningAction, context);
 
       // Verify four-phase pattern was followed (report called with context only)
       expect(validateSpy).toHaveBeenCalledWith(context);
@@ -561,7 +508,7 @@ describe('examiningAction (Golden Pattern)', () => {
 
       // Mock validation failure
       const mockValidationResult = {
-        valid: false,
+        valid: false as const,
         error: 'test_error',
         params: { test: 'value' }
       };
@@ -569,13 +516,14 @@ describe('examiningAction (Golden Pattern)', () => {
       // Call blocked() with validation result
       const events = examiningAction.blocked!(context, mockValidationResult);
 
-      // Should create blocked event
+      // Should create blocked event (if.event.examined with blocked: true)
       expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('action.blocked');
+      expect(events[0].type).toBe('if.event.examined');
       expect(events[0].data).toMatchObject({
-        actionId: IFActions.EXAMINING,
-        messageId: 'test_error',
-        params: expect.objectContaining({ test: 'value' })
+        blocked: true,
+        messageId: 'if.action.examining.test_error',
+        params: expect.objectContaining({ test: 'value' }),
+        reason: 'test_error'
       });
     });
   });
@@ -589,25 +537,22 @@ describe('Examining Action Edge Cases', () => {
         // No text property
       }
     });
-    
+
     const command = createCommand(IFActions.EXAMINING, {
       entity: object
     });
     const context = createRealTestContext(examiningAction, world, command);
-    
-    const events = executeAction(examiningAction, context);
-    
+
+    const events = executeWithValidation(examiningAction, context);
+
+    // Should use basic examined message, not examined_readable
     expectEvent(events, 'if.event.examined', {
       isReadable: true,
-      hasText: false
-    });
-    
-    // Should use basic examined message, not examined_readable
-    expectEvent(events, 'action.success', {
+      hasText: false,
       messageId: expect.stringContaining('examined'),
-      params: {
+      params: expect.objectContaining({
         target: 'blank book'
-      }
+      })
     });
   });
 
@@ -616,25 +561,22 @@ describe('Examining Action Edge Cases', () => {
       [TraitType.CONTAINER]: { type: TraitType.CONTAINER },
       [TraitType.SUPPORTER]: { type: TraitType.SUPPORTER }
     });
-    
+
     const command = createCommand(IFActions.EXAMINING, {
       entity: object
     });
     const context = createRealTestContext(examiningAction, world, command);
-    
-    const events = executeAction(examiningAction, context);
-    
+
+    const events = executeWithValidation(examiningAction, context);
+
+    // Container message takes precedence over supporter
     expectEvent(events, 'if.event.examined', {
       isContainer: true,
-      isSupporter: true
-    });
-    
-    // Container message takes precedence over supporter
-    expectEvent(events, 'action.success', {
+      isSupporter: true,
       messageId: expect.stringContaining('examined_container'),
-      params: {
+      params: expect.objectContaining({
         isOpen: true
-      }
+      })
     });
   });
 });

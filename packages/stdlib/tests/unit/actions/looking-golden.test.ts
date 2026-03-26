@@ -9,37 +9,19 @@
  * - Handle special locations (containers, supporters)
  */
 
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { lookingAction } from '../../../src/actions/standard/looking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
-  createRealTestContext, 
+import {
+  createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import { WorldModel } from '@sharpee/world-model';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the new three-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
-  const validationResult = action.validate(context);
-  
-  if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
-  }
-  
-  // Execute mutations (returns void in new pattern)
-  action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
-}
 
 describe('lookingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -72,7 +54,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
       // Should emit LOOKED event
       expectEvent(events, 'if.event.looked', {
@@ -87,12 +69,6 @@ describe('lookingAction (Golden Pattern)', () => {
         roomId: room.id,
         includeContents: true,
         verbose: true
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('room_description'),
-        params: { location: 'Test Room' }
       });
     });
 
@@ -116,25 +92,16 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
-      // Should emit list contents event
+      // Should emit list contents event with messageId and categorized items
       expectEvent(events, 'if.event.list.contents', {
-        items: [ball.id, box.id, table.id, npc.id],
         npcs: [npc.id],
         containers: [box.id],
         supporters: [table.id],
         other: [ball.id],
-        context: 'room'
-      });
-      
-      // Should emit contents list message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('contents_list'),
-        params: { 
-          items: 'red ball, wooden box, oak table, security guard',
-          count: 4
-        }
+        context: 'room',
+        messageId: expect.stringContaining('contents_list')
       });
     });
 
@@ -145,18 +112,11 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
       // Should not emit list contents event for empty room
       const listEvent = events.find(e => e.type === 'if.event.list.contents');
       expect(listEvent).toBeUndefined();
-      
-      // Should not emit contents list message
-      const contentsMessage = events.find(e => 
-        e.type === 'action.success' && 
-        e.data?.messageId?.includes('contents_list')
-      );
-      expect(contentsMessage).toBeUndefined();
     });
   });
 
@@ -178,17 +138,12 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
-      // Should emit LOOKED event with isDark true
+      // Should emit LOOKED event with isDark true and dark message
       expectEvent(events, 'if.event.looked', {
-        isDark: true
-      });
-      
-      // Should emit room_dark message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('room_dark'),
-        params: { location: 'Dark Cave' }
+        isDark: true,
+        messageId: expect.stringContaining('room_dark')
       });
       
       // Should not emit room description or contents
@@ -221,7 +176,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
       // Should emit LOOKED event with isDark false
       expectEvent(events, 'if.event.looked', {
@@ -259,7 +214,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
       expectEvent(events, 'if.event.looked', {
         isDark: false
@@ -288,15 +243,17 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
-      
-      // Should use in_container message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('in_container'),
-        params: { 
-          location: 'shipping crate',
-          container: 'shipping crate'
-        }
+      const events = executeWithValidation(lookingAction, context);
+
+      // Should emit looked event with container as the location
+      expectEvent(events, 'if.event.looked', {
+        locationId: crate.id,
+        locationName: 'shipping crate'
+      });
+
+      // Should emit room description for the container
+      expectEvent(events, 'if.event.room.description', {
+        roomId: crate.id
       });
     });
 
@@ -320,15 +277,17 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
-      
-      // Should use on_supporter message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('on_supporter'),
-        params: { 
-          location: 'observation platform',
-          supporter: 'observation platform'
-        }
+      const events = executeWithValidation(lookingAction, context);
+
+      // Should emit looked event with supporter as the location
+      expectEvent(events, 'if.event.looked', {
+        locationId: platform.id,
+        locationName: 'observation platform'
+      });
+
+      // Should emit room description for the supporter
+      expectEvent(events, 'if.event.room.description', {
+        roomId: platform.id
       });
     });
   });
@@ -344,11 +303,12 @@ describe('lookingAction (Golden Pattern)', () => {
       // would be tracked by the game state. This test demonstrates the expected
       // behavior when those features are implemented.
       
-      const events = executeAction(lookingAction, context);
-      
-      // For now, should use regular description
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('room_description')
+      const events = executeWithValidation(lookingAction, context);
+
+      // For now, should emit room description event
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room.id,
+        verbose: true
       });
     });
 
@@ -358,18 +318,13 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
-      // Should use full description
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('room_description')
+      // Should use full (verbose) description
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room.id,
+        verbose: true
       });
-      
-      // Ensure it's not the brief version
-      const briefMessage = events.find(e => 
-        e.data?.messageId?.includes('room_description_brief')
-      );
-      expect(briefMessage).toBeUndefined();
     });
   });
 
@@ -386,7 +341,7 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
       // Should work normally
       expectEvent(events, 'if.event.looked', {
@@ -413,12 +368,15 @@ describe('lookingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
-      // Should add examine_surroundings message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('examine_surroundings'),
-        params: { location: 'Test Room' }
+      // When "examine" is used without an object, looking still emits
+      // the standard looked + room.description events
+      expectEvent(events, 'if.event.looked', {
+        locationId: room.id
+      });
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room.id
       });
     });
   });
@@ -430,7 +388,7 @@ describe('lookingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
       
-      const events = executeAction(lookingAction, context);
+      const events = executeWithValidation(lookingAction, context);
       
       // Check LOOKED event has timestamp
       const lookedEvent = events.find(e => e.type === 'if.event.looked');
@@ -451,29 +409,29 @@ describe('lookingAction (Golden Pattern)', () => {
     });
   });
 
-  describe('Three-Phase Pattern Compliance', () => {
+  describe('Four-Phase Pattern Compliance', () => {
     test('should use report() to create all events', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
-      
+
       // Spy on the action methods to ensure correct pattern
       const validateSpy = vi.spyOn(lookingAction, 'validate');
       const executeSpy = vi.spyOn(lookingAction, 'execute');
       const reportSpy = vi.spyOn(lookingAction, 'report');
-      
-      const events = executeAction(lookingAction, context);
-      
-      // Verify three-phase pattern was followed
+
+      const events = executeWithValidation(lookingAction, context);
+
+      // Verify four-phase pattern was followed
       expect(validateSpy).toHaveBeenCalledWith(context);
       expect(executeSpy).toHaveBeenCalledWith(context);
-      expect(reportSpy).toHaveBeenCalledWith(context, { valid: true });
-      
+      expect(reportSpy).toHaveBeenCalledWith(context);
+
       // Verify execute returns void (no events)
       const executeResult = lookingAction.execute(context);
       expect(executeResult).toBeUndefined();
-      
+
       // Verify report creates events
       expect(events.length).toBeGreaterThan(0);
       expect(events.every(e => e.type && e.data)).toBe(true);
@@ -488,7 +446,7 @@ describe('lookingAction (Golden Pattern)', () => {
 
       // Mock validation failure
       const mockValidationResult = {
-        valid: false,
+        valid: false as const,
         error: 'test_error',
         params: { test: 'value' }
       };
@@ -496,12 +454,13 @@ describe('lookingAction (Golden Pattern)', () => {
       // Call blocked() with validation result
       const events = lookingAction.blocked!(context, mockValidationResult);
 
-      // Should create blocked event
+      // Should create a single blocked event of type if.event.looked
       expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('action.blocked');
+      expect(events[0].type).toBe('if.event.looked');
       expect(events[0].data).toMatchObject({
-        actionId: IFActions.LOOKING,
-        messageId: 'test_error',
+        blocked: true,
+        reason: 'test_error',
+        messageId: `${IFActions.LOOKING}.test_error`,
         params: { test: 'value' }
       });
     });

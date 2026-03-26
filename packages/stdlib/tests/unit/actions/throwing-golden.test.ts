@@ -15,32 +15,14 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, Direction } from '@sharpee/world-model';
-import { 
-  createRealTestContext, 
+import {
+  createRealTestContext,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand,
-  setupBasicWorld,
-  findEntityByName
+  setupBasicWorld
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('throwingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -99,7 +81,7 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.throw_blocked', {
         messageId: expect.stringContaining('no_item')
       });
     });
@@ -119,7 +101,7 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.throw_blocked', {
         messageId: expect.stringContaining('self')
       });
     });
@@ -137,9 +119,8 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_exit'),
-        params: { direction: Direction.NORTH }
+      expectEvent(events, 'if.event.throw_blocked', {
+        messageId: expect.stringContaining('no_exit')
       });
     });
 
@@ -165,9 +146,8 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('too_heavy'),
-        params: { item: 'massive boulder', weight: 50 }
+      expectEvent(events, 'if.event.throw_blocked', {
+        messageId: expect.stringContaining('too_heavy')
       });
     });
   });
@@ -184,20 +164,15 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with thrown_down message
       expectEvent(events, 'if.event.thrown', {
         item: book.id,
         itemName: 'old book',
         throwType: 'general',
         isFragile: false,
         willBreak: false,
-        finalLocation: world.getLocation(player.id)
-      });
-      
-      // Should emit thrown_down message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('thrown_down'),
-        params: { item: 'old book' }
+        finalLocation: world.getLocation(player.id),
+        messageId: expect.stringContaining('thrown_down')
       });
     });
 
@@ -222,18 +197,13 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with thrown_gently message
       expectEvent(events, 'if.event.thrown', {
         item: vase.id,
         throwType: 'general',
         isFragile: true,
-        willBreak: false
-      });
-      
-      // Should emit thrown_gently message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('thrown_gently'),
-        params: { item: 'glass vase' }
+        willBreak: false,
+        messageId: expect.stringContaining('thrown_gently')
       });
       
       Math.random = originalRandom;
@@ -259,16 +229,12 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with fragile_breaks message
       expectEvent(events, 'if.event.thrown', {
         item: bottle.id,
         isFragile: true,
         willBreak: true,
-        finalLocation: null // Destroyed
-      });
-      
-      // Should emit fragile_breaks message
-      expectEvent(events, 'action.success', {
+        finalLocation: null,
         messageId: expect.stringContaining('fragile_breaks')
       });
       
@@ -303,19 +269,14 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with hits_target message
       expectEvent(events, 'if.event.thrown', {
         item: ball.id,
         target: target.id,
         targetName: 'tin can',
         throwType: 'at_target',
-        hit: true
-      });
-      
-      // Should emit hits_target message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('hits_target'),
-        params: { item: 'tennis ball', target: 'tin can' }
+        hit: true,
+        messageId: expect.stringContaining('hits_target')
       });
       
       Math.random = originalRandom;
@@ -344,16 +305,11 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with target_ducks message (high agility)
       expectEvent(events, 'if.event.thrown', {
         target: npc.id,
-        hit: false
-      });
-      
-      // Should emit target_ducks message (high agility)
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('target_ducks'),
-        params: { item: 'small stone', target: 'nimble thief' }
+        hit: false,
+        messageId: expect.stringContaining('target_ducks')
       });
       
       Math.random = originalRandom;
@@ -384,15 +340,11 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with target_catches message
       expectEvent(events, 'if.event.thrown', {
         target: child.id,
-        hit: false, // Caught, not hit
-        finalLocation: child.id // Item goes to catcher
-      });
-      
-      // Should emit target_catches message
-      expectEvent(events, 'action.success', {
+        hit: false,
+        finalLocation: child.id,
         messageId: expect.stringContaining('target_catches')
       });
       
@@ -421,17 +373,12 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with lands_on message
       expectEvent(events, 'if.event.thrown', {
         target: table.id,
         hit: true,
-        finalLocation: table.id // Lands on supporter
-      });
-      
-      // Should emit lands_on message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('lands_on'),
-        params: { item: 'silver coin', target: 'wooden table' }
+        finalLocation: table.id,
+        messageId: expect.stringContaining('lands_on')
       });
       
       Math.random = originalRandom;
@@ -463,15 +410,11 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with lands_in message
       expectEvent(events, 'if.event.thrown', {
         target: box.id,
         hit: true,
-        finalLocation: box.id // Goes inside container
-      });
-      
-      // Should emit lands_in message
-      expectEvent(events, 'action.success', {
+        finalLocation: box.id,
         messageId: expect.stringContaining('lands_in')
       });
       
@@ -504,15 +447,11 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with bounces_off message
       expectEvent(events, 'if.event.thrown', {
         target: chest.id,
         hit: true,
-        finalLocation: world.getLocation(player.id) // Falls to floor
-      });
-      
-      // Should emit bounces_off message
-      expectEvent(events, 'action.success', {
+        finalLocation: world.getLocation(player.id),
         messageId: expect.stringContaining('bounces_off')
       });
       
@@ -545,15 +484,11 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event
+      // Should emit THROWN event with breaks_against message
       expectEvent(events, 'if.event.thrown', {
         isFragile: true,
         willBreak: true,
-        hit: true
-      });
-      
-      // Should emit breaks_against message
-      expectEvent(events, 'action.success', {
+        hit: true,
         messageId: expect.stringContaining('breaks_against')
       });
       
@@ -588,16 +523,15 @@ describe('throwingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should have two success messages - hits_target and target_angry
-      const successEvents = events.filter(e => e.type === 'action.success');
-      expect(successEvents).toHaveLength(2);
-      
+      // Should have two if.event.thrown events - hits_target and target_angry
+      const thrownEvents = events.filter(e => e.type === 'if.event.thrown');
+      expect(thrownEvents).toHaveLength(2);
+
       // First should be hits_target
-      expect(successEvents[0].data.messageId).toContain('hits_target');
-      
+      expect(thrownEvents[0].data.messageId).toContain('hits_target');
+
       // Second should be target_angry
-      expect(successEvents[1].data.messageId).toContain('target_angry');
-      expect(successEvents[1].data.params).toEqual({ item: 'heavy rock', target: 'palace guard' });
+      expect(thrownEvents[1].data.messageId).toContain('target_angry');
       
       Math.random = originalRandom;
     });

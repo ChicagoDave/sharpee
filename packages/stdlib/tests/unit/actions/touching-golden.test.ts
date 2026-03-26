@@ -13,38 +13,16 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { touchingAction } from '../../../src/actions/standard/touching';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
-  createRealTestContext, 
+import {
+  createRealTestContext,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand,
   setupBasicWorld,
   findEntityByName
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Supports both old two-phase and new three-phase actions
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      reason: validation.error,
-      params: validation.params || {}
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('touchingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -81,8 +59,8 @@ describe('touchingAction (Golden Pattern)', () => {
       const context = createRealTestContext(touchingAction, world, command);
       
       const events = executeWithValidation(touchingAction, context);
-      
-      expectEvent(events, 'action.error', {
+
+      expectEvent(events, 'if.event.touch_blocked', {
         messageId: expect.stringContaining('no_target'),
         reason: 'no_target'
       });
@@ -108,15 +86,11 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with temperature
+      // Should emit TOUCHED event with temperature and message
       expectEvent(events, 'if.event.touched', {
         target: lantern.id,
         temperature: 'hot',
-        isLit: true
-      });
-      
-      // Should emit feels_hot message
-      expectEvent(events, 'action.success', {
+        isLit: true,
         messageId: expect.stringContaining('feels_hot'),
         params: { target: 'brass lantern' }
       });
@@ -138,15 +112,11 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with temperature
+      // Should emit TOUCHED event with temperature and message
       expectEvent(events, 'if.event.touched', {
         target: radio.id,
         temperature: 'warm',
-        isActive: true
-      });
-      
-      // Should emit feels_warm message
-      expectEvent(events, 'action.success', {
+        isActive: true,
         messageId: expect.stringContaining('feels_warm'),
         params: { target: 'portable radio' }
       });
@@ -174,7 +144,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit device_vibrating message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('device_vibrating'),
         params: { target: 'vibrating phone' }
       });
@@ -198,14 +168,10 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with texture
+      // Should emit TOUCHED event with texture and message
       expectEvent(events, 'if.event.touched', {
         target: sweater.id,
-        texture: 'soft'
-      });
-      
-      // Should emit feels_soft message
-      expectEvent(events, 'action.success', {
+        texture: 'soft',
         messageId: expect.stringContaining('feels_soft'),
         params: { target: 'wool sweater' }
       });
@@ -227,15 +193,11 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with texture
+      // Should emit TOUCHED event with texture and message
       expectEvent(events, 'if.event.touched', {
         target: door.id,
         texture: 'smooth',
-        material: 'hard'
-      });
-      
-      // Should emit feels_smooth message
-      expectEvent(events, 'action.success', {
+        material: 'hard',
         messageId: expect.stringContaining('feels_smooth'),
         params: { target: 'wooden door' }
       });
@@ -257,14 +219,10 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with texture  
+      // Should emit TOUCHED event with texture and message
       expectEvent(events, 'if.event.touched', {
         target: box.id,
-        texture: 'solid'
-      });
-      
-      // Containers are detected as hard surfaces
-      expectEvent(events, 'action.success', {
+        texture: 'solid',
         messageId: expect.stringContaining('feels_hard'),
         params: { target: 'metal box' }
       });
@@ -286,14 +244,10 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with texture
+      // Should emit TOUCHED event with texture and message
       expectEvent(events, 'if.event.touched', {
         target: water.id,
-        texture: 'liquid'
-      });
-      
-      // Should emit feels_wet message
-      expectEvent(events, 'action.success', {
+        texture: 'liquid',
         messageId: expect.stringContaining('feels_wet'),
         params: { target: 'puddle of water' }
       });
@@ -328,7 +282,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit liquid_container message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('liquid_container'),
         params: { target: 'glass bottle' }
       });
@@ -349,14 +303,10 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with immovable flag
+      // Should emit TOUCHED event with immovable flag and message
       expectEvent(events, 'if.event.touched', {
         target: statue.id,
-        immovable: true
-      });
-      
-      // Should emit immovable_object message
-      expectEvent(events, 'action.success', {
+        immovable: true,
         messageId: expect.stringContaining('immovable_object'),
         params: { target: 'marble statue' }
       });
@@ -399,7 +349,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit touched message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('touched'),
         params: { target: 'wooden table' }
       });
@@ -422,7 +372,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit poked message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('poked'),
         params: { target: 'soft cushion' }
       });
@@ -445,7 +395,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit prodded message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('prodded'),
         params: { target: 'fallen log' }
       });
@@ -468,7 +418,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit patted message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('patted'),
         params: { target: 'friendly dog' }
       });
@@ -491,7 +441,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit stroked message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('stroked'),
         params: { target: 'sleeping cat' }
       });
@@ -514,7 +464,7 @@ describe('touchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(touchingAction, context);
       
       // Should emit touched_gently message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('touched_gently'),
         params: { target: 'silk fabric' }
       });
@@ -542,16 +492,12 @@ describe('touchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(touchingAction, context);
       
-      // Should emit TOUCHED event with both properties
+      // Should emit TOUCHED event with both properties and temperature message
       expectEvent(events, 'if.event.touched', {
         target: jacket.id,
         temperature: 'warm',
         texture: 'soft',
-        isActive: true
-      });
-      
-      // Should prioritize temperature message
-      expectEvent(events, 'action.success', {
+        isActive: true,
         messageId: expect.stringContaining('feels_warm'),
         params: { target: 'heated jacket' }
       });

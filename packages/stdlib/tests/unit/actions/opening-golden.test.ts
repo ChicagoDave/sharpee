@@ -18,29 +18,13 @@ import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { WorldModel } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the four-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validationResult = action.validate(context);
-
-  if (!validationResult.valid) {
-    // Use blocked() for validation failures
-    return action.blocked(context, validationResult);
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates success events
-  return action.report(context);
-}
 
 describe('openingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -62,7 +46,7 @@ describe('openingAction (Golden Pattern)', () => {
       const context = createRealTestContext(openingAction, world, command);
       
       // The executeAction helper properly tests the three-phase pattern
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
       
       // All events should be generated via report()
       expect(events).toBeDefined();
@@ -97,10 +81,10 @@ describe('openingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.OPENING);
       const context = createRealTestContext(openingAction, world, command);
 
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_target'
+      expectEvent(events, 'if.event.open_blocked', {
+        messageId: 'if.action.opening.no_target'
       });
     });
 
@@ -113,10 +97,10 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
 
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_openable',
+      expectEvent(events, 'if.event.open_blocked', {
+        messageId: 'if.action.opening.not_openable',
         params: expect.objectContaining({ item: 'rock' })
       });
     });
@@ -135,10 +119,10 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
 
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'already_open',
+      expectEvent(events, 'if.event.open_blocked', {
+        messageId: 'if.action.opening.already_open',
         params: expect.objectContaining({ item: 'box' })
       });
     });
@@ -162,10 +146,10 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
 
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'locked',
+      expectEvent(events, 'if.event.open_blocked', {
+        messageId: 'if.action.opening.locked',
         params: expect.objectContaining({ item: 'treasure chest' })
       });
     });
@@ -186,7 +170,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
       
       // The atomic opened event should only have targetId and targetName
       expectEvent(events, 'if.event.opened', {
@@ -244,7 +228,7 @@ describe('openingAction (Golden Pattern)', () => {
       const context = createRealTestContext(openingAction, world, command);
       console.log('Context created, executing action...');
       
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
       console.log('Action executed, got events:', events.length);
       
       // Should have one opened event
@@ -298,23 +282,19 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
       
-      // Should have minimal opened event
+      // Should have opened event with empty-container message
       expectEvent(events, 'if.event.opened', {
         targetId: object.id,
-        targetName: 'empty box'
-      });
-      
-      // Should NOT have any revealed events (empty container)
-      const revealedEvents = events.filter(e => e.type === 'if.event.revealed');
-      expect(revealedEvents).toHaveLength(0);
-      
-      // Should use empty message
-      expectEvent(events, 'action.success', {
+        targetName: 'empty box',
         messageId: expect.stringContaining('its_empty'),
         params: { container: 'empty box' }
       });
+
+      // Should NOT have any revealed events (empty container)
+      const revealedEvents = events.filter(e => e.type === 'if.event.revealed');
+      expect(revealedEvents).toHaveLength(0);
     });
 
     test('should open a door', () => {
@@ -335,21 +315,18 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
       
-      // Should have minimal opened event
+      // Should have opened event with messageId and params
       expectEvent(events, 'if.event.opened', {
         targetId: object.id,
-        targetName: 'oak door'
-      });
-      
-      // Note: exit_revealed events would be emitted but require 
-      // proper room setup with exits, which is complex to test here
-      
-      expectEvent(events, 'action.success', {
+        targetName: 'oak door',
         messageId: expect.stringContaining('opened'),
         params: { item: 'oak door' }
       });
+
+      // Note: exit_revealed events would be emitted but require
+      // proper room setup with exits, which is complex to test here
     });
   });
 
@@ -379,7 +356,7 @@ describe('openingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(openingAction, world, command);
       
-      const events = executeAction(openingAction, context);
+      const events = executeWithValidation(openingAction, context);
       
       // Check we have the right event types
       const eventTypes = events.map(e => e.type);
@@ -427,7 +404,7 @@ describe('Opening Action Edge Cases', () => {
     );
     const context = createRealTestContext(openingAction, world, command);
     
-    const events = executeAction(openingAction, context);
+    const events = executeWithValidation(openingAction, context);
     
     // Should succeed - it's unlocked
     expectEvent(events, 'if.event.opened', {
@@ -451,14 +428,11 @@ describe('Opening Action Edge Cases', () => {
     );
     const context = createRealTestContext(openingAction, world, command);
     
-    const events = executeAction(openingAction, context);
+    const events = executeWithValidation(openingAction, context);
     
     expectEvent(events, 'if.event.opened', {
       targetId: object.id,
-      targetName: 'thick book'
-    });
-    
-    expectEvent(events, 'action.success', {
+      targetName: 'thick book',
       messageId: expect.stringContaining('opened'),
       params: { item: 'thick book' }
     });
@@ -497,7 +471,7 @@ describe('Opening Action Edge Cases', () => {
     );
     const context = createRealTestContext(openingAction, world, command);
     
-    const events = executeAction(openingAction, context);
+    const events = executeWithValidation(openingAction, context);
     
     // Should have one opened event
     const openedEvents = events.filter(e => e.type === 'if.event.opened');

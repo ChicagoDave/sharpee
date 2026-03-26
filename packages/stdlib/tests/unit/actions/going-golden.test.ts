@@ -13,40 +13,14 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { goingAction } from '../../../src/actions/standard/going'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, Direction, DirectionType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the four-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validationResult = action.validate(context);
-
-  if (!validationResult.valid) {
-    // Use blocked() for validation failures
-    if (action.blocked) {
-      return action.blocked(context, validationResult);
-    }
-    // Fallback for old-style actions
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validationResult.error,
-      params: validationResult.params || {}
-    })];
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates all success events
-  return action.report(context);
-}
 
 describe('goingAction (Golden Pattern)', () => {
   describe('Four-Phase Pattern Compliance', () => {
@@ -72,8 +46,8 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      // The executeAction helper properly tests the three-phase pattern
-      const events = executeAction(goingAction, context);
+      // The executeWithValidation helper properly tests the four-phase pattern
+      const events = executeWithValidation(goingAction, context);
       
       // All events should be generated via report()
       expect(events).toBeDefined();
@@ -120,10 +94,10 @@ describe('goingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.GOING);
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_direction'
+      expectEvent(events, 'if.event.went', {
+        reason: 'no_direction'
       });
     });
 
@@ -139,10 +113,10 @@ describe('goingAction (Golden Pattern)', () => {
 
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_in_room'
+      expectEvent(events, 'if.event.went', {
+        reason: 'not_in_room'
       });
     });
 
@@ -164,10 +138,10 @@ describe('goingAction (Golden Pattern)', () => {
 
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_exits'
+      expectEvent(events, 'if.event.went', {
+        reason: 'no_exits'
       });
     });
 
@@ -194,10 +168,10 @@ describe('goingAction (Golden Pattern)', () => {
 
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_exit_that_way',
+      expectEvent(events, 'if.event.went', {
+        reason: 'no_exit_that_way',
         params: { direction: Direction.NORTH }
       });
     });
@@ -232,10 +206,10 @@ describe('goingAction (Golden Pattern)', () => {
 
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('closed'),
+      expectEvent(events, 'if.event.went', {
+        reason: 'door_closed',
         params: {
           direction: Direction.NORTH,
           door: 'wooden door'
@@ -278,11 +252,11 @@ describe('goingAction (Golden Pattern)', () => {
 
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
       // The door is both closed and locked, so it should report as locked
-      expectEvent(events, 'action.blocked', {
-        messageId: expect.stringContaining('locked'),
+      expectEvent(events, 'if.event.went', {
+        reason: 'door_locked',
         params: {
           direction: Direction.EAST,
           door: 'iron door',
@@ -312,10 +286,10 @@ describe('goingAction (Golden Pattern)', () => {
 
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'destination_not_found',
+      expectEvent(events, 'if.event.went', {
+        reason: 'destination_not_found',
         params: { direction: Direction.WEST }
       });
     });
@@ -350,7 +324,7 @@ describe('goingAction (Golden Pattern)', () => {
 
       const context = createRealTestContext(goingAction, world, command);
 
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
 
       // Should succeed - darkness affects visibility, not movement
       expectEvent(events, 'if.event.actor_moved', {
@@ -393,7 +367,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
       
       // Should emit exit event
       expectEvent(events, 'if.event.actor_exited', {
@@ -449,7 +423,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
       
       expectEvent(events, 'if.event.actor_moved', {
         direction: Direction.NORTHEAST,  // Normalized
@@ -487,7 +461,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
       
       // Movement event should include firstVisit flag
       expectEvent(events, 'if.event.actor_moved', {
@@ -533,7 +507,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
       
       expectEvent(events, 'if.event.actor_moved', {
         direction: Direction.WEST,
@@ -577,7 +551,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
       
       // Should succeed since player has light
       expectEvent(events, 'if.event.actor_moved', {
@@ -615,7 +589,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
       
       expectEvent(events, 'if.event.actor_moved', {
         direction: 'outside',
@@ -650,7 +624,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(goingAction, world, command);
       
-      const events = executeAction(goingAction, context);
+      const events = executeWithValidation(goingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -701,7 +675,7 @@ describe('goingAction (Golden Pattern)', () => {
         
         const context = createRealTestContext(goingAction, world, command);
         
-        const events = executeAction(goingAction, context);
+        const events = executeWithValidation(goingAction, context);
         
         expectEvent(events, 'if.event.actor_moved', {
           oppositeDirection: opposite

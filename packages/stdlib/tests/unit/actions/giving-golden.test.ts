@@ -8,35 +8,19 @@
  * - Support different acceptance types
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { givingAction } from '../../../src/actions/standard/giving';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import { TraitType } from '@sharpee/world-model';
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('givingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -75,7 +59,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(givingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.give_blocked', {
         messageId: expect.stringContaining('no_item'),
         reason: 'no_item'
       });
@@ -95,7 +79,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(givingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.give_blocked', {
         messageId: expect.stringContaining('no_recipient'),
         reason: 'no_recipient'
       });
@@ -119,7 +103,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(givingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.give_blocked', {
         messageId: expect.stringContaining('not_actor'),
         reason: 'not_actor'
       });
@@ -137,9 +121,9 @@ describe('givingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(givingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.give_blocked', {
         messageId: expect.stringContaining('self'),
-        params: { item: 'gift' }
+        reason: 'self'
       });
     });
   });
@@ -171,7 +155,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(givingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.give_blocked', {
         messageId: expect.stringContaining('inventory_full'),
         reason: 'inventory_full'
       });
@@ -204,7 +188,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(givingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.give_blocked', {
         messageId: expect.stringContaining('too_heavy'),
         reason: 'too_heavy'
       });
@@ -237,7 +221,7 @@ describe('givingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(givingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.give_blocked', {
         messageId: expect.stringContaining('not_interested'),
         reason: 'not_interested'
       });
@@ -273,15 +257,8 @@ describe('givingAction (Golden Pattern)', () => {
         itemName: 'beautiful flower',
         recipient: maiden.id,
         recipientName: 'young maiden',
-        accepted: true
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('gratefully_accepts'),
-        params: { 
-          item: 'beautiful flower',
-          recipient: 'young maiden'
-        }
+        accepted: true,
+        messageId: expect.stringContaining('gratefully_accepts')
       });
     });
 
@@ -311,10 +288,7 @@ describe('givingAction (Golden Pattern)', () => {
       const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'if.event.given', {
-        accepted: true
-      });
-      
-      expectEvent(events, 'action.success', {
+        accepted: true,
         messageId: expect.stringContaining('reluctantly_accepts')
       });
     });
@@ -345,15 +319,8 @@ describe('givingAction (Golden Pattern)', () => {
         itemName: 'gold coin',
         recipient: merchant.id,
         recipientName: 'merchant',
-        accepted: true
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('given'),
-        params: { 
-          item: 'gold coin',
-          recipient: 'merchant'
-        }
+        accepted: true,
+        messageId: expect.stringContaining('given')
       });
     });
 
@@ -378,10 +345,7 @@ describe('givingAction (Golden Pattern)', () => {
       const events = executeWithValidation(givingAction, context);
       
       expectEvent(events, 'if.event.given', {
-        accepted: true
-      });
-      
-      expectEvent(events, 'action.success', {
+        accepted: true,
         messageId: expect.stringContaining('given')
       });
     });
@@ -446,7 +410,7 @@ describe('Giving Action Edge Cases', () => {
     const events = executeWithValidation(givingAction, context);
     
     // Should gratefully accept (contains 'gold')
-    expectEvent(events, 'action.success', {
+    expectEvent(events, 'if.event.given', {
       messageId: expect.stringContaining('gratefully_accepts')
     });
   });

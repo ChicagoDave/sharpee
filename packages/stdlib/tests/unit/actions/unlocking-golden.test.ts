@@ -8,40 +8,19 @@
  * - Support multiple valid keys
  */
 
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { unlockingAction } from '../../../src/actions/standard/unlocking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
-  createRealTestContext, 
+import { TraitType } from '@sharpee/world-model';
+import {
+  createRealTestContext,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand,
   setupBasicWorld,
   findEntityByName
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    // Use blocked() for validation failures
-    if (action.blocked) {
-      return action.blocked(context, validation);
-    }
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('unlockingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -75,8 +54,8 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(unlockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_target'
+      expectEvent(events, 'if.event.unlock_blocked', {
+        messageId: 'if.action.unlocking.no_target'
       });
     });
 
@@ -96,8 +75,8 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(unlockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_lockable',
+      expectEvent(events, 'if.event.unlock_blocked', {
+        messageId: 'if.action.unlocking.not_lockable',
         params: { item: 'wooden box' }
       });
     });
@@ -118,8 +97,8 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(unlockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'already_unlocked',
+      expectEvent(events, 'if.event.unlock_blocked', {
+        messageId: 'if.action.unlocking.already_unlocked',
         params: { item: 'treasure chest' }
       });
     });
@@ -145,8 +124,8 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(unlockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_key'
+      expectEvent(events, 'if.event.unlock_blocked', {
+        messageId: 'if.action.unlocking.no_key'
       });
     });
 
@@ -173,8 +152,8 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(unlockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'key_not_held',
+      expectEvent(events, 'if.event.unlock_blocked', {
+        messageId: 'if.action.unlocking.key_not_held',
         params: { key: 'safe key' }
       });
     });
@@ -202,8 +181,8 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(unlockingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'wrong_key',
+      expectEvent(events, 'if.event.unlock_blocked', {
+        messageId: 'if.action.unlocking.wrong_key',
         params: {
           key: 'desk key',
           item: 'cabinet'
@@ -235,8 +214,8 @@ describe('unlockingAction (Golden Pattern)', () => {
         targetId: latch.id
       });
       
-      expectEvent(events, 'action.success', {
-        messageId: 'unlocked',
+      expectEvent(events, 'if.event.unlocked', {
+        messageId: 'if.action.unlocking.unlocked',
         params: { item: 'simple latch' }
       });
     });
@@ -280,8 +259,8 @@ describe('unlockingAction (Golden Pattern)', () => {
         keyId: key.id
       });
 
-      expectEvent(events, 'action.success', {
-        messageId: 'unlocked_with',
+      expectEvent(events, 'if.event.unlocked', {
+        messageId: 'if.action.unlocking.unlocked_with',
         params: {
           item: 'iron chest',
           key: 'iron key',
@@ -334,7 +313,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         keyId: key.id
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.unlocked', {
         params: { 
           item: 'heavy door',
           key: 'dungeon key',
@@ -419,7 +398,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         sound: 'mechanical whirring'
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.unlocked', {
         params: { 
           sound: 'mechanical whirring'
         }
@@ -451,7 +430,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(unlockingAction, context);
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.unlocked', {
         params: { 
           isContainer: true,
           hasContents: true
@@ -488,7 +467,7 @@ describe('unlockingAction (Golden Pattern)', () => {
         willAutoOpen: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.unlocked', {
         params: { 
           willAutoOpen: true
         }
@@ -658,7 +637,7 @@ describe('Unlocking Action Edge Cases', () => {
 
     const events = unlockingAction.execute(context);
 
-    expectEvent(events, 'action.success', {
+    expectEvent(events, 'if.event.unlocked', {
       params: {
         isContainer: true,
         hasContents: false

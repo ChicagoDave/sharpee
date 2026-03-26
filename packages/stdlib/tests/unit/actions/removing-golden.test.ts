@@ -12,32 +12,14 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { removingAction } from '../../../src/actions/standard/removing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the four-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validationResult = action.validate(context);
-
-  if (!validationResult.valid) {
-    // Use blocked() for validation failures
-    return action.blocked(context, validationResult);
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates success events
-  return action.report(context);
-}
 
 describe('removingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -59,7 +41,7 @@ describe('removingAction (Golden Pattern)', () => {
       const context = createRealTestContext(removingAction, world, command);
       
       // The executeAction helper properly tests the three-phase pattern
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
       // All events should be generated via report()
       expect(events).toBeDefined();
@@ -94,9 +76,9 @@ describe('removingAction (Golden Pattern)', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(removingAction, world, createCommand(IFActions.REMOVING));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('no_target')
       });
     });
@@ -111,9 +93,9 @@ describe('removingAction (Golden Pattern)', () => {
         // No indirect object
       ));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('no_source'),
         params: { item: 'ball' }
       });
@@ -135,9 +117,9 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('not_in_container'),
         params: { 
           item: 'gold coin',
@@ -162,9 +144,9 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('not_on_surface'),
         params: { 
           item: 'old book',
@@ -187,9 +169,9 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('already_have'),
         params: { item: 'brass key' }
       });
@@ -219,9 +201,9 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('container_closed'),
         params: { container: 'treasure chest' }
       });
@@ -249,7 +231,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
       // Should emit TAKEN event (same as taking)
       expectEvent(events, 'if.event.taken', {
@@ -260,7 +242,7 @@ describe('removingAction (Golden Pattern)', () => {
         fromSupporter: false
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.taken', {
         messageId: expect.stringContaining('removed_from'),
         params: { 
           item: 'silver coin',
@@ -286,7 +268,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'red apple',
@@ -312,7 +294,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
       expectEvent(events, 'if.event.taken', {
         item: 'desk lamp',
@@ -322,7 +304,7 @@ describe('removingAction (Golden Pattern)', () => {
         fromSupporter: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.taken', {
         messageId: expect.stringContaining('removed_from_surface'),
         params: { 
           item: 'desk lamp',
@@ -348,10 +330,10 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
       // Should default to container error message
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('not_in_container'),
         params: { 
           item: 'crumpled note',
@@ -377,7 +359,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
       // Should treat as container (container takes precedence)
       expectEvent(events, 'if.event.taken', {
@@ -385,7 +367,7 @@ describe('removingAction (Golden Pattern)', () => {
         fromSupporter: false
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.taken', {
         messageId: expect.stringContaining('removed_from'),
         params: { 
           item: 'fountain pen',
@@ -412,7 +394,7 @@ describe('removingAction (Golden Pattern)', () => {
         preposition: 'from'
       }));
       
-      const events = executeAction(removingAction, context);
+      const events = executeWithValidation(removingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -444,7 +426,7 @@ describe('Removing Action Edge Cases', () => {
       preposition: 'from'
     }));
     
-    const events = executeAction(removingAction, context);
+    const events = executeWithValidation(removingAction, context);
     
     expectEvent(events, 'if.event.taken', {
       item: 'glass marble',
@@ -473,7 +455,7 @@ describe('Removing Action Edge Cases', () => {
       preposition: 'from'
     }));
     
-    const events = executeAction(removingAction, context);
+    const events = executeWithValidation(removingAction, context);
     
     // Should remove from immediate container (pouch)
     expectEvent(events, 'if.event.taken', {
@@ -483,7 +465,7 @@ describe('Removing Action Edge Cases', () => {
       fromContainer: true
     });
     
-    expectEvent(events, 'action.success', {
+    expectEvent(events, 'if.event.taken', {
       params: { 
         item: 'silver coin',
         container: 'leather pouch'
@@ -510,9 +492,9 @@ describe('Removing Action Edge Cases', () => {
       preposition: 'from'  // Trying to remove from blue box
     }));
 
-    const events = executeAction(removingAction, context);
+    const events = executeWithValidation(removingAction, context);
 
-    expectEvent(events, 'action.blocked', {
+    expectEvent(events, 'if.event.remove_blocked', {
       messageId: expect.stringContaining('not_in_container'),
       params: {
         item: 'playing card',

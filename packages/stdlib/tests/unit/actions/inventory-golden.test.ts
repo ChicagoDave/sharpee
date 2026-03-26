@@ -10,41 +10,18 @@
  * not by the action itself.
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { inventoryAction } from '../../../src/actions/standard/inventory';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
+  executeWithValidation,
   expectEvent,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext, Action } from '../../../src/actions/enhanced-types';
-
-/**
- * Helper to execute action with proper three-phase pattern support
- */
-const executeWithValidation = (action: Action, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      error: validation.error,
-      messageId: validation.error
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('inventoryAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -74,7 +51,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event
-      expectEvent(events, 'if.action.inventory', {
+      expectEvent(events, 'if.event.inventory', {
         actorId: player.id,
         locationId: room.id,
         isEmpty: true,
@@ -100,14 +77,14 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event with items
-      expectEvent(events, 'if.action.inventory', {
+      expectEvent(events, 'if.event.inventory', {
         actorId: player.id,
         locationId: room.id,
         isEmpty: false
       });
       
       // Event should contain item data
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data.items).toHaveLength(2);
       expect(invEvent?.data.items).toEqual(
         expect.arrayContaining([
@@ -145,7 +122,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent).toBeDefined();
       
       // Items should be marked as worn
@@ -201,7 +178,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should emit inventory event with all items
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data.items).toHaveLength(4);
       
       // Should differentiate worn vs held
@@ -237,7 +214,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should include weight data in event
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data.totalWeight).toBeDefined();
       expect(invEvent?.data.maxWeight).toBe(100);
     });
@@ -255,7 +232,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should not include weight data
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data.totalWeight).toBeUndefined();
       expect(invEvent?.data.maxWeight).toBeUndefined();
     });
@@ -280,7 +257,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should mark as brief in event
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data.brief).toBe(true);
     });
 
@@ -299,7 +276,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should mark as brief
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data.brief).toBe(true);
     });
 
@@ -318,7 +295,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should not mark as brief
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data.brief).toBeFalsy();
     });
   });
@@ -337,7 +314,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       const events = executeWithValidation(inventoryAction, context);
       
       // Should emit observable event
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent).toBeDefined();
       expect(invEvent?.observable).not.toBe(false); // Default is observable
     });
@@ -381,7 +358,7 @@ describe('inventoryAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(inventoryAction, context);
       
-      const invEvent = events.find(e => e.type === 'if.action.inventory');
+      const invEvent = events.find(e => e.type === 'if.event.inventory');
       expect(invEvent?.data).toMatchObject({
         actorId: player.id,
         locationId: room.id,
@@ -421,7 +398,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     const context = createRealTestContext(inventoryAction, world, command);
     const events = executeWithValidation(inventoryAction, context);
     
-    const invEvent = events.find(e => e.type === 'if.action.inventory');
+    const invEvent = events.find(e => e.type === 'if.event.inventory');
     expect(invEvent?.data.items).toHaveLength(4);
   });
 
@@ -452,7 +429,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     const context = createRealTestContext(inventoryAction, world, command);
     const events = executeWithValidation(inventoryAction, context);
     
-    const invEvent = events.find(e => e.type === 'if.action.inventory');
+    const invEvent = events.find(e => e.type === 'if.event.inventory');
     // Total weight should be 41 (1 + 10 + 30)
     expect(invEvent?.data.totalWeight).toBe(41);
     expect(invEvent?.data.maxWeight).toBe(50);
@@ -465,7 +442,7 @@ describe('Testing Pattern Examples for Inventory', () => {
     const context = createRealTestContext(inventoryAction, world, command);
     const events = executeWithValidation(inventoryAction, context);
     
-    const invEvent = events.find(e => e.type === 'if.action.inventory');
+    const invEvent = events.find(e => e.type === 'if.event.inventory');
     expect(invEvent?.data.isEmpty).toBe(true);
     expect(invEvent?.data.items).toHaveLength(0);
   });

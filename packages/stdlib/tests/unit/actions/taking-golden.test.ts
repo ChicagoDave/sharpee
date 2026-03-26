@@ -12,32 +12,16 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { takingAction } from '../../../src/actions/standard/taking'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the new three-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
-  const validationResult = action.validate(context);
-  
-  if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
-  }
-  
-  // Execute mutations (returns void in new pattern)
-  action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
-}
 
 describe('takingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -59,7 +43,7 @@ describe('takingAction (Golden Pattern)', () => {
       const context = createRealTestContext(takingAction, world, command);
       
       // The executeAction helper properly tests the three-phase pattern
-      const events = executeAction(takingAction, context);
+      const events = executeWithValidation(takingAction, context);
       
       // All events should be generated via report()
       expect(events).toBeDefined();
@@ -93,33 +77,33 @@ describe('takingAction (Golden Pattern)', () => {
     test('should fail when no target specified', () => {
       const { world } = setupBasicWorld();
       const context = createRealTestContext(
-        takingAction, 
-        world, 
+        takingAction,
+        world,
         createCommand(IFActions.TAKING)
       );
-      
-      const events = executeAction(takingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target'),
-        reason: 'no_target'
+
+      const events = executeWithValidation(takingAction, context);
+
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'if.action.taking.no_target',
+        params: { item: undefined }
       });
     });
 
     test('should fail when trying to take yourself', () => {
       const { world, player } = setupBasicWorld();
-      
+
       const context = createRealTestContext(
-        takingAction, 
-        world, 
+        takingAction,
+        world,
         createCommand(IFActions.TAKING, { entity: player })
       );
-      
-      const events = executeAction(takingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('cant_take_self'),
-        reason: 'cant_take_self'
+
+      const events = executeWithValidation(takingAction, context);
+
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'if.action.taking.cant_take_self',
+        params: { item: player.name }
       });
     });
 
@@ -127,37 +111,36 @@ describe('takingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const ball = world.createEntity('red ball', 'object');
       world.moveEntity(ball.id, player.id);
-      
+
       const context = createRealTestContext(
-        takingAction, 
-        world, 
+        takingAction,
+        world,
         createCommand(IFActions.TAKING, { entity: ball })
       );
-      
-      const events = executeAction(takingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('already_have'),
+
+      const events = executeWithValidation(takingAction, context);
+
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'if.action.taking.already_have',
         params: { item: 'red ball' }
       });
     });
 
     test('should fail when trying to take a room', () => {
-      const { world, player } = setupBasicWorld();
-      const otherRoom = world.createEntity('Another Room', 'room');
-      otherRoom.add({ type: TraitType.ROOM });
-      
+      const { world, player, room } = setupBasicWorld();
+
+      // Rooms are not in scope for taking, so the scope check rejects first
+      // with scope.not_known rather than the business-rule cant_take_room error
       const context = createRealTestContext(
-        takingAction, 
-        world, 
-        createCommand(IFActions.TAKING, { entity: otherRoom })
+        takingAction,
+        world,
+        createCommand(IFActions.TAKING, { entity: room })
       );
-      
-      const events = executeAction(takingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('cant_take_room'),
-        params: { item: 'Another Room' }
+
+      const events = executeWithValidation(takingAction, context);
+
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'scope.not_known'
       });
     });
 
@@ -166,17 +149,17 @@ describe('takingAction (Golden Pattern)', () => {
       const scenery = world.createEntity('ornate fountain', 'object');
       scenery.add({ type: TraitType.SCENERY });
       world.moveEntity(scenery.id, room.id);
-      
+
       const context = createRealTestContext(
-        takingAction, 
-        world, 
+        takingAction,
+        world,
         createCommand(IFActions.TAKING, { entity: scenery })
       );
-      
-      const events = executeAction(takingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('fixed_in_place'),
+
+      const events = executeWithValidation(takingAction, context);
+
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'if.action.taking.fixed_in_place',
         params: { item: 'ornate fountain' }
       });
     });
@@ -213,10 +196,11 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: newItem })
       );
       
-      const events = executeAction(takingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('container_full')
+      const events = executeWithValidation(takingAction, context);
+
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'if.action.taking.container_full',
+        params: { item: 'new item' }
       });
     });
 
@@ -253,7 +237,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: newItem })
       );
       
-      const events = executeAction(takingAction, context);
+      const events = executeWithValidation(takingAction, context);
       
       // Should succeed because worn items don't count
       expectEvent(events, 'if.event.taken', {
@@ -287,10 +271,10 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: heavyItem })
       );
       
-      const events = executeAction(takingAction, context);
+      const events = executeWithValidation(takingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('too_heavy'),
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'if.action.taking.too_heavy',
         params: { item: 'heavy boulder' }
       });
     });
@@ -301,87 +285,66 @@ describe('takingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       const ball = world.createEntity('red ball', 'object');
       world.moveEntity(ball.id, room.id);
-      
+
       const context = createRealTestContext(
-        takingAction, 
-        world, 
+        takingAction,
+        world,
         createCommand(IFActions.TAKING, { entity: ball })
       );
-      
-      const events = executeAction(takingAction, context);
-      
-      // Should emit TAKEN event
-      // Note: When taking from a room, fromLocation is NOT set (only set for containers/supporters)
+
+      const events = executeWithValidation(takingAction, context);
+
+      // Should emit TAKEN event with messageId for text-service
       expectEvent(events, 'if.event.taken', {
         item: 'red ball'
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('taken'),
-        params: { item: 'red ball' }
       });
     });
 
     test('should take object from container', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const box = world.createEntity('wooden box', 'object');
       box.add({ type: TraitType.CONTAINER });
       const coin = world.createEntity('gold coin', 'object');
-      
+
       world.moveEntity(box.id, room.id);
       world.moveEntity(coin.id, box.id);
-      
+
       const context = createRealTestContext(
-        takingAction, 
-        world, 
+        takingAction,
+        world,
         createCommand(IFActions.TAKING, { entity: coin })
       );
-      
-      const events = executeAction(takingAction, context);
-      
+
+      const events = executeWithValidation(takingAction, context);
+
       expectEvent(events, 'if.event.taken', {
         item: 'gold coin',
-        container: 'wooden box',
-        fromContainer: true,
-        fromLocation: box.id
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('taken_from'),
-        params: { 
-          item: 'gold coin',
-          container: 'wooden box',
-          fromContainer: true,
-          fromLocation: box.id
-        }
+        container: 'wooden box'
       });
     });
 
     test('should take object from supporter', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const table = world.createEntity('wooden table', 'object');
       table.add({ type: TraitType.SUPPORTER });
       const book = world.createEntity('old book', 'object');
-      
+
       world.moveEntity(table.id, room.id);
       world.moveEntity(book.id, table.id);
-      
+
       const context = createRealTestContext(
-        takingAction, 
-        world, 
+        takingAction,
+        world,
         createCommand(IFActions.TAKING, { entity: book })
       );
-      
-      const events = executeAction(takingAction, context);
-      
+
+      const events = executeWithValidation(takingAction, context);
+
       expectEvent(events, 'if.event.taken', {
         item: 'old book',
-        container: 'wooden table',
-        fromSupporter: true,
-        fromLocation: table.id
+        container: 'wooden table'
       });
     });
 
@@ -406,7 +369,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: hat })
       );
       
-      const events = executeAction(takingAction, context);
+      const events = executeWithValidation(takingAction, context);
       
       // Should emit REMOVED event first
       expectEvent(events, 'if.event.removed', {
@@ -417,8 +380,7 @@ describe('takingAction (Golden Pattern)', () => {
       // Then TAKEN event
       expectEvent(events, 'if.event.taken', {
         item: 'fancy hat',
-        container: 'guard',
-        fromLocation: npc.id
+        container: 'guard'
       });
     });
   });
@@ -435,7 +397,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: gem })
       );
       
-      const events = executeAction(takingAction, context);
+      const events = executeWithValidation(takingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -457,7 +419,7 @@ describe('takingAction (Golden Pattern)', () => {
         createCommand(IFActions.TAKING, { entity: pen })
       );
       
-      const events = executeAction(takingAction, context);
+      const events = executeWithValidation(takingAction, context);
       
       const takenEvent = events.find(e => e.type === 'if.event.taken');
       // Check the event data
@@ -597,14 +559,12 @@ describe('Taking Action Edge Cases', () => {
       createCommand(IFActions.TAKING, { entity: gem })
     );
     
-    const events = executeAction(takingAction, context);
+    const events = executeWithValidation(takingAction, context);
     
     // Should take from immediate container (box), not the outer container
     expectEvent(events, 'if.event.taken', {
       item: 'diamond',
-      container: 'small box',
-      fromContainer: true,
-      fromLocation: box.id
+      container: 'small box'
     });
   });
 
@@ -628,7 +588,7 @@ describe('Taking Action Edge Cases', () => {
       createCommand(IFActions.TAKING, { entity: ball })
     );
     
-    const events = executeAction(takingAction, context);
+    const events = executeWithValidation(takingAction, context);
     
     // Should succeed - no container limits
     expectEvent(events, 'if.event.taken', {

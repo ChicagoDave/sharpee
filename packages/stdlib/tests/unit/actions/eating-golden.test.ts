@@ -13,31 +13,14 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { eatingAction } from '../../../src/actions/standard/eating';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   expectEvent,
   TestData,
   createCommand,
-  setupBasicWorld
+  setupBasicWorld,
+  executeWithValidation
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('eatingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -75,7 +58,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(eatingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('no_item'),
         reason: 'no_item'
       });
@@ -93,7 +76,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(eatingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('not_edible'),
         params: { item: 'small rock' }
       });
@@ -115,7 +98,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(eatingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('is_drink'),
         params: { item: 'orange juice' }
       });
@@ -136,7 +119,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(eatingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('already_consumed'),
         params: { item: 'chocolate cookie' }
       });
@@ -166,7 +149,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       
       // Should emit success message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten'),
         params: { item: 'ham sandwich' }
       });
@@ -196,7 +179,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
 
       // Should emit "eaten_some" message for partial consumption
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten_some'),
         params: { item: 'pepperoni pizza' }
       });
@@ -224,7 +207,7 @@ describe('eatingAction (Golden Pattern)', () => {
         servings: 3,
         servingsRemaining: 2
       });
-      expectEvent(events1, 'action.success', {
+      expectEvent(events1, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten_some'),
         params: { item: 'apple pie' }
       });
@@ -238,7 +221,7 @@ describe('eatingAction (Golden Pattern)', () => {
         servings: 2,
         servingsRemaining: 1
       });
-      expectEvent(events2, 'action.success', {
+      expectEvent(events2, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten_some'),
         params: { item: 'apple pie' }
       });
@@ -249,7 +232,7 @@ describe('eatingAction (Golden Pattern)', () => {
 
       // Note: When servings=1, we can't distinguish from single-serving food
       // so message is 'eaten' not 'eaten_all'. This is a known limitation.
-      expectEvent(events3, 'action.success', {
+      expectEvent(events3, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten'),
         params: { item: 'apple pie' }
       });
@@ -272,7 +255,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const events = executeWithValidation(eatingAction, context);
       
       // Should use delicious message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('delicious'),
         params: { item: 'dark chocolate' }
       });
@@ -295,7 +278,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const events = executeWithValidation(eatingAction, context);
       
       // Should use tasty message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('tasty'),
         params: { item: 'fresh bread' }
       });
@@ -318,7 +301,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const events = executeWithValidation(eatingAction, context);
       
       // Should use bland message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('bland'),
         params: { item: 'plain cracker' }
       });
@@ -341,7 +324,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const events = executeWithValidation(eatingAction, context);
       
       // Should use awful message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('awful'),
         params: { item: 'stale rations' }
       });
@@ -370,7 +353,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       
       // Should use poisonous message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('poisonous'),
         params: { item: 'suspicious mushroom' }
       });
@@ -399,7 +382,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       
       // Should use filling message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('filling'),
         params: { item: 'grilled steak' }
       });
@@ -428,7 +411,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       
       // Should use still_hungry message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('still_hungry'),
         params: { item: 'breath mint' }
       });

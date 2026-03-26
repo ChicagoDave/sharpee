@@ -15,6 +15,7 @@ import { waitingAction } from '../../../src/actions/standard/waiting';
 import { IFActions } from '../../../src/actions/constants';
 import {
   createRealTestContext,
+  executeWithValidation,
   expectEvent,
   createCommand,
   setupBasicWorld
@@ -121,7 +122,7 @@ describe('waitingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should emit action.success with time_passes message', () => {
+    test('should include messageId in waited event for text rendering', () => {
       const { world } = setupBasicWorld();
       const command = createCommand(IFActions.WAITING);
       const context = createRealTestContext(waitingAction, world, command);
@@ -129,9 +130,8 @@ describe('waitingAction (Golden Pattern)', () => {
       waitingAction.execute(context);
       const events = waitingAction.report!(context);
 
-      expectEvent(events, 'action.success', {
-        actionId: IFActions.WAITING,
-        messageId: 'time_passes'
+      expectEvent(events, 'if.event.waited', {
+        messageId: `${IFActions.WAITING}.time_passes`
       });
     });
   });
@@ -177,7 +177,7 @@ describe('waitingAction (Golden Pattern)', () => {
       // Waiting is intentionally simple:
       // - No preconditions (always valid)
       // - No world mutations
-      // - Single deterministic message
+      // - Single event with messageId for text rendering
       // - Stories customize via event handlers
 
       const { world } = setupBasicWorld();
@@ -190,13 +190,12 @@ describe('waitingAction (Golden Pattern)', () => {
       // Execute has no side effects
       waitingAction.execute(context);
 
-      // Report emits exactly 2 events
+      // Report emits exactly 1 event (waited signal with messageId)
       const events = waitingAction.report!(context);
-      expect(events.length).toBe(2);
+      expect(events.length).toBe(1);
 
-      // One world event, one success message
+      // Single event carries both the signal and the messageId for rendering
       expect(events[0].type).toBe('if.event.waited');
-      expect(events[1].type).toBe('action.success');
     });
   });
 });

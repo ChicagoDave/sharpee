@@ -14,27 +14,10 @@ import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('pullingAction (Golden Pattern - Simplified)', () => {
   describe('Action Metadata', () => {
@@ -157,18 +140,14 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       expect(result.valid).toBe(true);
 
       const events = executeWithValidation(pullingAction, context);
-      expect(events).toHaveLength(2);
+      expect(events).toHaveLength(1);
 
-      // Check pulled event
+      // Check pulled event (includes messageId and params for text rendering)
       expectEvent(events, 'if.event.pulled', {
         target: rope.id,
         targetName: 'rope',
-        pullCount: 0
-      });
-
-      // Check success message
-      expectEvent(events, 'action.success', {
-        messageId: 'pulled',
+        pullCount: 0,
+        messageId: `${pullingAction.id}.pulled`,
         params: { target: 'rope' }
       });
 

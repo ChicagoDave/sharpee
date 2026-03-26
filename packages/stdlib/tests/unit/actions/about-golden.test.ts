@@ -7,7 +7,7 @@ import { aboutAction } from '../../../src/actions/standard/about/about';
 import { IFActions } from '../../../src/actions/constants';
 import { ActionContext } from '../../../src/actions/enhanced-types';
 import { WorldModel, AuthorModel } from '@sharpee/world-model';
-import { createRealTestContext, setupBasicWorld, createCommand } from '../../test-utils';
+import { createRealTestContext, setupBasicWorld, createCommand, executeWithValidation, expectEvent } from '../../test-utils';
 
 describe('about action', () => {
   let world: WorldModel;
@@ -78,43 +78,45 @@ describe('about action', () => {
   });
 
   describe('report phase', () => {
-    it('should emit about event', () => {
+    it('should emit about_displayed event', () => {
       const events = aboutAction.report(context);
-      
+
       expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('if.action.about');
+      expect(events[0].type).toBe('if.event.about_displayed');
     });
 
-    it('should emit event with empty data', () => {
+    it('should emit event with messageId and params', () => {
       const events = aboutAction.report(context);
-      
-      expect(events[0].data).toEqual({});
+
+      expectEvent(events, 'if.event.about_displayed', {
+        messageId: 'if.action.about.success',
+        params: {
+          title: expect.any(String),
+          author: expect.any(String),
+          version: expect.any(String)
+        }
+      });
     });
 
     it('should create well-formed semantic event', () => {
       const events = aboutAction.report(context);
       const event = events[0];
-      
+
       expect(event).toHaveProperty('type');
       expect(event).toHaveProperty('data');
-      expect(event.type).toBe('if.action.about');
+      expect(event.type).toBe('if.event.about_displayed');
       expect(typeof event.data).toBe('object');
     });
   });
 
   describe('full action flow', () => {
     it('should validate, execute, and report successfully', () => {
-      // Validate
-      const validationResult = aboutAction.validate(context);
-      expect(validationResult.valid).toBe(true);
-      
-      // Execute
-      expect(() => aboutAction.execute(context)).not.toThrow();
-      
-      // Report
-      const events = aboutAction.report(context);
+      const events = executeWithValidation(aboutAction, context);
+
       expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('if.action.about');
+      expectEvent(events, 'if.event.about_displayed', {
+        messageId: 'if.action.about.success'
+      });
     });
   });
 });

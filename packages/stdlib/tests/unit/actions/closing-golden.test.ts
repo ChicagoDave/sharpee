@@ -11,8 +11,9 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { closingAction } from '../../../src/actions/standard/closing/closing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
+  executeWithValidation,
   expectEvent,
   TestData,
   createCommand,
@@ -20,23 +21,6 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the four-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validationResult = action.validate(context);
-
-  if (!validationResult.valid) {
-    // Use blocked() for validation failures
-    return action.blocked(context, validationResult);
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates success events
-  return action.report(context);
-}
 
 describe('closingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -58,7 +42,7 @@ describe('closingAction (Golden Pattern)', () => {
       const context = createRealTestContext(closingAction, world, command);
       
       // The executeAction helper properly tests the three-phase pattern
-      const events = executeAction(closingAction, context);
+      const events = executeWithValidation(closingAction, context);
       
       // All events should be generated via report()
       expect(events).toBeDefined();
@@ -88,10 +72,10 @@ describe('closingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const command = createCommand(IFActions.CLOSING);
       const context = createRealTestContext(closingAction, world, command);
-      
-      const events = executeAction(closingAction, context);
-      
-      expectEvent(events, 'action.blocked', {
+
+      const events = executeWithValidation(closingAction, context);
+
+      expectEvent(events, 'if.event.close_blocked', {
         messageId: expect.stringContaining('no_target')
       });
     });
@@ -105,11 +89,11 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = executeAction(closingAction, context);
-      
-      expectEvent(events, 'action.blocked', {
+      const events = executeWithValidation(closingAction, context);
+
+      expectEvent(events, 'if.event.close_blocked', {
         messageId: expect.stringContaining('not_closable'),
-        params: { item: 'red ball' }
+        params: expect.objectContaining({ item: 'red ball' })
       });
     });
 
@@ -126,11 +110,11 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = executeAction(closingAction, context);
-      
-      expectEvent(events, 'action.blocked', {
+      const events = executeWithValidation(closingAction, context);
+
+      expectEvent(events, 'if.event.close_blocked', {
         messageId: expect.stringContaining('already_closed'),
-        params: { item: 'wooden box' }
+        params: expect.objectContaining({ item: 'wooden box' })
       });
     });
   });
@@ -154,24 +138,20 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = executeAction(closingAction, context);
+      const events = executeWithValidation(closingAction, context);
       
-      // Should emit CLOSED event with our data
+      // Should emit CLOSED domain event with our data
       expectEvent(events, 'if.event.closed', {
         targetId: object.id,
         targetName: 'wooden box',
+        messageId: expect.stringContaining('closed'),
+        params: { item: 'wooden box' },
         isContainer: true,
         isDoor: false,
         isSupporter: false,
         hasContents: false,
         contentsCount: 0,
         contentsIds: []
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('closed'),
-        params: { item: 'wooden box' }
       });
     });
 
@@ -200,7 +180,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = executeAction(closingAction, context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'if.event.closed', {
         targetId: box.id,
@@ -232,7 +212,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = executeAction(closingAction, context);
+      const events = executeWithValidation(closingAction, context);
       
       expectEvent(events, 'if.event.closed', {
         targetId: object.id,
@@ -265,14 +245,14 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = executeAction(closingAction, context);
+      const events = executeWithValidation(closingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.close_blocked', {
         messageId: expect.stringContaining('prevents_closing'),
-        params: {
+        params: expect.objectContaining({
           item: 'treasure chest',
           obstacle: 'sword handle sticking out'
-        }
+        })
       });
     });
   });
@@ -292,7 +272,7 @@ describe('closingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(closingAction, world, command);
       
-      const events = executeAction(closingAction, context);
+      const events = executeWithValidation(closingAction, context);
       
       events.forEach(event => {
         if (event.entities) {

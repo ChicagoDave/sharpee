@@ -326,7 +326,7 @@ describe('report-helpers', () => {
   });
 
   describe('Integration with three-phase pattern', () => {
-    test('should integrate correctly with actual action report phase', () => {
+    test('should integrate correctly with actual action blocked phase', () => {
       const { world, room } = setupBasicWorld();
       const item = world.createEntity('test item', 'object');
       world.moveEntity(item.id, room.id);
@@ -341,12 +341,12 @@ describe('report-helpers', () => {
         params: { item: 'test item' }
       };
 
-      // Call report with validation error (as the engine would)
-      const events = takingAction.report(context, validationResult);
+      // Call blocked with validation error (as the engine would for failed validation)
+      const events = takingAction.blocked(context, validationResult);
 
       expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('action.error');
-      expect((events[0].data as any).messageId).toBe('fixed_in_place');
+      expect(events[0].type).toBe('if.event.take_blocked');
+      expect((events[0].data as any).messageId).toBe('if.action.taking.fixed_in_place');
     });
 
     test('should generate success events when no errors', () => {
@@ -357,18 +357,18 @@ describe('report-helpers', () => {
       const command = createCommand(IFActions.TAKING, { entity: item });
       const context = createRealTestContext(takingAction, world, command);
 
-      // Full three-phase execution
+      // Full four-phase execution
       const validationResult = takingAction.validate(context);
       expect(validationResult.valid).toBe(true);
 
       takingAction.execute(context);
 
-      const events = takingAction.report(context, validationResult);
+      const events = takingAction.report(context);
 
-      // Should have both domain event and success message
-      expect(events.length).toBeGreaterThanOrEqual(2);
-      expect(events.some(e => e.type === 'if.event.taken')).toBe(true);
-      expect(events.some(e => e.type === 'action.success')).toBe(true);
+      // ADR-097 simplified pattern: domain event carries messageId directly,
+      // no separate action.success event needed
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('if.event.taken');
     });
   });
 });

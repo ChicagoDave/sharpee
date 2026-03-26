@@ -13,31 +13,15 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { drinkingAction } from '../../../src/actions/standard/drinking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: action.id,
-      messageId: validation.error || 'validation_failed',
-      reason: validation.error || 'validation_failed',
-      params: validation.params || {}
-    })];
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('drinkingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -73,7 +57,8 @@ describe('drinkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(drinkingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.drunk', {
+        blocked: true,
         messageId: expect.stringContaining('no_item'),
         reason: 'no_item'
       });
@@ -95,7 +80,8 @@ describe('drinkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(drinkingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.drunk', {
+        blocked: true,
         messageId: expect.stringContaining('not_drinkable'),
         params: { item: 'loaf of bread' }
       });
@@ -117,7 +103,8 @@ describe('drinkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(drinkingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.drunk', {
+        blocked: true,
         messageId: expect.stringContaining('already_consumed'),
         params: { item: 'empty potion' }
       });
@@ -143,7 +130,8 @@ describe('drinkingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(drinkingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.drunk', {
+        blocked: true,
         messageId: expect.stringContaining('container_closed'),
         params: { item: 'water bottle' }
       });
@@ -174,7 +162,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should emit success message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk'),
         params: { item: 'cup of coffee' }
       });
@@ -210,7 +198,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should emit success message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk'),
         params: { item: 'can of soda' }
       });
@@ -241,7 +229,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should emit "drunk_some" message for partial consumption
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk_some'),
         params: { item: 'pot of tea' }
       });
@@ -272,7 +260,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should emit "drunk_all" message for final portion
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk_all'),
         params: { item: 'glass of wine' }
       });
@@ -296,7 +284,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use refreshing message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('refreshing'),
         params: { item: 'cold lemonade' }
       });
@@ -320,7 +308,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use bitter message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('bitter'),
         params: { item: 'bitter medicine' }
       });
@@ -344,7 +332,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use sweet message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('sweet'),
         params: { item: 'hot cocoa' }
       });
@@ -368,7 +356,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use strong message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('strong'),
         params: { item: 'glass of whiskey' }
       });
@@ -398,7 +386,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should use magical_effects message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('magical_effects'),
         params: { item: 'glowing potion' }
       });
@@ -422,7 +410,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use healing message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('healing'),
         params: { item: 'healing elixir' }
       });
@@ -452,7 +440,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should use thirst_quenched message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('thirst_quenched'),
         params: { item: 'fresh water' }
       });
@@ -476,7 +464,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use still_thirsty message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('still_thirsty'),
         params: { item: 'strong alcohol' }
       });
@@ -513,7 +501,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should use from_container message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('from_container'),
         params: { 
           item: 'metal flask',
@@ -548,7 +536,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
       
       // Should use empty_now message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('empty_now'),
         params: { item: 'small cup' }
       });
@@ -572,7 +560,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use drunk_from message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk_from'),
         params: { item: 'water fountain' }
       });
@@ -628,7 +616,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use sipped message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('sipped'),
         params: { item: 'hot tea' }
       });
@@ -657,7 +645,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use quaffed message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('quaffed'),
         params: { item: 'mug of ale' }
       });
@@ -686,7 +674,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const events = executeWithValidation(drinkingAction, context);
       
       // Should use gulped message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('gulped'),
         params: { item: 'small potion' }
       });

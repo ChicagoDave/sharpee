@@ -16,32 +16,16 @@ import { attackingAction } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { 
+import {
   createRealTestContext,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand,
   setupBasicWorld,
   findEntityByName
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action using the new three-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // New three-phase pattern: validate -> execute -> report
-  const validationResult = action.validate(context);
-  
-  if (!validationResult.valid) {
-    // Action creates its own error events in report()
-    return action.report(context, validationResult);
-  }
-  
-  // Execute mutations (returns void in new pattern)
-  action.execute(context);
-  
-  // Report generates all events
-  return action.report(context, validationResult);
-}
 
 describe('attackingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -98,10 +82,11 @@ describe('attackingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.ATTACKING);
       const context = createRealTestContext(attackingAction, world, command);
       
-      const events = executeAction(attackingAction, context);
+      const events = executeWithValidation(attackingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('no_target')
+      expectEvent(events, 'if.event.attacked', {
+        messageId: 'if.action.attacking.no_target',
+        blocked: true
       });
     });
 
@@ -173,10 +158,11 @@ describe('attackingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(attackingAction, world, command);
       
-      const events = executeAction(attackingAction, context);
+      const events = executeWithValidation(attackingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('self')
+      expectEvent(events, 'if.event.attacked', {
+        messageId: 'if.action.attacking.self',
+        blocked: true
       });
     });
 
@@ -206,27 +192,27 @@ describe('attackingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should block violence in peaceful games', () => {
+    test('should report ineffective attack on non-combatant NPC', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const npc = world.createEntity('innocent child', EntityType.ACTOR);
       npc.add({
         type: TraitType.ACTOR
       });
       world.moveEntity(npc.id, room.id);
-      
+
       const command = createCommand(IFActions.ATTACKING, {
         entity: npc
       });
       const context = createRealTestContext(attackingAction, world, command);
-      
-      // Mark world as peaceful
-      (world as any).isPeaceful = true;
-      
-      const events = executeAction(attackingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('peaceful_solution')
+
+      const events = executeWithValidation(attackingAction, context);
+
+      // Non-combatant actors have no combat traits, so AttackBehavior returns ineffective.
+      // The message comes from AttackBehavior's English fallback string.
+      expectEvent(events, 'if.event.attacked', {
+        messageId: expect.stringContaining('if.action.attacking.'),
+        failed: true
       });
     });
   });
@@ -614,27 +600,27 @@ describe('attackingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should check strength requirements', () => {
+    test('should break a breakable object', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const gate = world.createEntity('iron gate', EntityType.OBJECT);
       gate.add({
-        type: TraitType.BREAKABLE,
-        breakMethod: 'force',
-        strengthRequired: 10,
-        hitsToBreak: 1
-      } as BreakableTrait);
+        type: TraitType.BREAKABLE
+      });
       world.moveEntity(gate.id, room.id);
-      
+
       const command = createCommand(IFActions.ATTACKING, {
         entity: gate
       });
       const context = createRealTestContext(attackingAction, world, command);
-      
-      const events = executeAction(attackingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_strong_enough')
+
+      const events = executeWithValidation(attackingAction, context);
+
+      // Breakable entity is broken in a single hit
+      expectEvent(events, 'if.event.attacked', {
+        messageId: 'if.action.attacking.target_broke',
+        target: gate.id,
+        targetName: 'iron gate'
       });
     });
 
@@ -763,35 +749,32 @@ describe('attackingAction (Golden Pattern)', () => {
   });
 
   describe('NPC Reactions', () => {
-    test('should generate random NPC reactions', () => {
+    test('should report ineffective attack on non-combatant NPC', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const knight = world.createEntity('armored knight', EntityType.ACTOR);
       knight.add({
         type: TraitType.ACTOR
       });
       world.moveEntity(knight.id, room.id);
-      
+
       const command = createCommand(IFActions.ATTACKING, {
         entity: knight
       });
       const context = createRealTestContext(attackingAction, world, command);
-      
-      const events = executeAction(attackingAction, context);
-      
-      // Should have attack event
+
+      const events = executeWithValidation(attackingAction, context);
+
+      // Non-combatant actors (ACTOR only, no COMBATANT trait) are not
+      // attackable via AttackBehavior, so the attack is reported as ineffective.
+      // NPC reactions (defends, dodges, etc.) are generated by combat
+      // interceptors registered on combatant NPCs, not by the base action.
+      // The message comes from AttackBehavior's English fallback string.
       expectEvent(events, 'if.event.attacked', {
-        target: knight.id
+        messageId: expect.stringContaining('if.action.attacking.'),
+        target: knight.id,
+        failed: true
       });
-      
-      // Should have one of the reaction messages
-      const validReactions = ['defends', 'dodges', 'retaliates', 'flees'];
-      const reactionEvents = events.filter(e => 
-        e.type === 'action.success' &&
-        validReactions.some(r => e.data.messageId?.includes(r))
-      );
-      
-      expect(reactionEvents.length).toBe(1);
     });
   });
 

@@ -8,36 +8,19 @@
  * - Deal with various drop locations
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { droppingAction } from '../../../src/actions/standard/dropping'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, EntityType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the four-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validationResult = action.validate(context);
-
-  if (!validationResult.valid) {
-    // Use blocked() for validation failures
-    return action.blocked(context, validationResult);
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates success events
-  return action.report(context);
-}
 
 describe('droppingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -59,7 +42,7 @@ describe('droppingAction (Golden Pattern)', () => {
       const context = createRealTestContext(droppingAction, world, command);
       
       // The executeAction helper properly tests the three-phase pattern
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
       // All events should be generated via report()
       expect(events).toBeDefined();
@@ -97,9 +80,9 @@ describe('droppingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.DROPPING);
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.drop_blocked', {
         messageId: expect.stringContaining('no_target')
       });
     });
@@ -112,9 +95,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.drop_blocked', {
         messageId: expect.stringContaining('not_held')
       });
     });
@@ -135,9 +118,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.drop_blocked', {
         messageId: expect.stringContaining('still_worn')
       });
     });
@@ -183,19 +166,19 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
       // Should succeed - dropping inside a closed container is allowed
       // The closed state prevents things moving IN/OUT from outside, not inside actions
       expectEvent(events, 'if.event.dropped', {
-        item: ball.id,
+        itemId: ball.id,
         itemName: 'ball',
         toLocation: box.id,
         toLocationName: 'wooden box',
         toContainer: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_in'),
         params: { 
           item: 'ball',
@@ -228,9 +211,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.drop_blocked', {
         messageId: expect.stringContaining('container_full')
       });
     });
@@ -245,12 +228,12 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
       // Should emit DROPPED event
       const room = world.getContainingRoom(player.id);
       expectEvent(events, 'if.event.dropped', {
-        item: item.id,
+        itemId: item.id,
         itemName: 'red ball',
         toLocation: room.id,
         toLocationName: 'Test Room',
@@ -258,7 +241,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       
       // Should emit success message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped'),
         params: { 
           item: 'red ball',
@@ -289,17 +272,17 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'if.event.dropped', {
-        item: gem.id,
+        itemId: gem.id,
         itemName: 'ruby',
         toLocation: box.id,
         toLocationName: 'wooden box',
         toContainer: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_in'),
         params: { 
           item: 'ruby',
@@ -327,17 +310,17 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
       expectEvent(events, 'if.event.dropped', {
-        item: book.id,
+        itemId: book.id,
         itemName: 'old book',
         toLocation: table.id,
         toLocationName: 'oak table',
         toSupporter: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_on'),
         params: { 
           item: 'old book',
@@ -366,9 +349,9 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_quietly')
       });
     });
@@ -383,9 +366,9 @@ describe('droppingAction (Golden Pattern)', () => {
       
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_carelessly')
       });
     });
@@ -400,7 +383,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
       
-      const events = executeAction(droppingAction, context);
+      const events = executeWithValidation(droppingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -433,11 +416,11 @@ describe('Dropping Action Edge Cases', () => {
     });
     const context = createRealTestContext(droppingAction, world, command);
     
-    const events = executeAction(droppingAction, context);
+    const events = executeWithValidation(droppingAction, context);
     
     // Should succeed - no capacity limits
     expectEvent(events, 'if.event.dropped', {
-      item: apple.id,
+      itemId: apple.id,
       itemName: 'red apple',
       toLocation: basket.id,
       toLocationName: 'wicker basket',
@@ -462,11 +445,11 @@ describe('Dropping Action Edge Cases', () => {
     });
     const context = createRealTestContext(droppingAction, world, command);
     
-    const events = executeAction(droppingAction, context);
+    const events = executeWithValidation(droppingAction, context);
     
     // Should succeed - item is not worn
     expectEvent(events, 'if.event.dropped', {
-      item: coat.id,
+      itemId: coat.id,
       itemName: 'winter coat',
       toLocation: room.id,
       toLocationName: 'Test Room',
@@ -492,17 +475,17 @@ describe('Dropping Action Edge Cases', () => {
     });
     const context = createRealTestContext(droppingAction, world, command);
     
-    const events = executeAction(droppingAction, context);
+    const events = executeWithValidation(droppingAction, context);
     
     // Should succeed with basic dropped message
     expectEvent(events, 'if.event.dropped', {
-      item: keys.id,
+      itemId: keys.id,
       itemName: 'car keys',
       toLocation: car.id,
       toLocationName: 'red car'
     });
     
-    expectEvent(events, 'action.success', {
+    expectEvent(events, 'if.event.dropped', {
       messageId: expect.stringContaining('dropped'),
       params: { 
         item: 'car keys',

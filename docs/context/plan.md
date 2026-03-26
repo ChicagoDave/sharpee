@@ -1,6 +1,6 @@
 # Plan: Fix Stdlib Golden Tests
 
-**Status**: CURRENT
+**Status**: DONE
 **Created**: 2026-03-25
 **Scope**: packages/stdlib/tests/ — 352 failing tests across 42 files
 

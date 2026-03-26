@@ -8,32 +8,19 @@
  * - Support implicit taking when item is in room
  */
 
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { wearingAction } from '../../../src/actions/standard/wearing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
 createRealTestContext,
 expectEvent,
+executeWithValidation,
 TestData,
 createCommand,
 setupBasicWorld,
   findEntityByName
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with four-phase pattern (mimics CommandExecutor flow)
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    // Use blocked() method for validation failures
-    return action.blocked(context, validation);
-  }
-  // Execute mutations (returns void)
-  action.execute(context);
-  // Report generates events
-  return action.report(context);
-};
 
 describe('wearingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -64,8 +51,8 @@ describe('wearingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(wearingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'no_target'
+      expectEvent(events, 'if.event.wear_blocked', {
+        messageId: 'if.action.wearing.no_target'
       });
     });
 
@@ -82,8 +69,8 @@ describe('wearingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(wearingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'not_wearable'
+      expectEvent(events, 'if.event.wear_blocked', {
+        messageId: 'if.action.wearing.not_wearable'
       });
     });
 
@@ -105,8 +92,8 @@ describe('wearingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(wearingAction, context);
 
-      expectEvent(events, 'action.blocked', {
-        messageId: 'already_wearing'
+      expectEvent(events, 'if.event.wear_blocked', {
+        messageId: 'if.action.wearing.already_wearing'
       });
     });
 
@@ -131,9 +118,8 @@ describe('wearingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(wearingAction, context);
       
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('not_held'),
-        params: { item: 'blue shirt' }
+      expectEvent(events, 'if.event.wear_blocked', {
+        messageId: expect.stringContaining('not_held')
       });
     });
 
@@ -167,7 +153,7 @@ describe('wearingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(wearingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.wear_blocked', {
         messageId: expect.stringContaining('already_wearing'),
         params: { item: 'old hat' }
       });
@@ -205,7 +191,7 @@ describe('wearingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(wearingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.wear_blocked', {
         messageId: expect.stringContaining('hands_full') // Used as proxy for layer conflicts
       });
     });
@@ -230,19 +216,11 @@ describe('wearingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(wearingAction, context);
       
-      // Should emit WORN event
+      // Should emit WORN event with messageId and domain data
       expectEvent(events, 'if.event.worn', {
+        messageId: 'if.action.wearing.worn',
         itemId: gloves.id,
         bodyPart: 'hands'
-      });
-      
-      // Should emit success message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('worn'),
-        params: { 
-          item: 'leather gloves',
-          bodyPart: 'hands'
-        }
       });
     });
 
@@ -270,20 +248,10 @@ describe('wearingAction (Golden Pattern)', () => {
         itemName: 'silk scarf'
       });
 
-      // Should emit WORN event
+      // Should emit WORN event with messageId and domain data
       expectEvent(events, 'if.event.worn', {
+        messageId: 'if.action.wearing.worn',
         itemId: scarf.id,
-        bodyPart: 'neck'
-      });
-
-      // Should emit success message for wearing (not the implicit take success)
-      // Find the wearing success event specifically (after the implicit take success)
-      const wearingSuccess = events.filter(e => e.type === 'action.success')
-        .find(e => (e.data as any).messageId === 'worn' ||
-                   ((e.data as any).messageId && (e.data as any).messageId.includes('worn')));
-      expect(wearingSuccess).toBeDefined();
-      expect((wearingSuccess!.data as any).params).toMatchObject({
-        item: 'silk scarf',
         bodyPart: 'neck'
       });
     });
@@ -308,8 +276,8 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Should emit WORN event without bodyPart
       expectEvent(events, 'if.event.worn', {
-        itemId: ring.id,
-        bodyPart: undefined
+        messageId: 'if.action.wearing.worn',
+        itemId: ring.id
       });
     });
 
@@ -347,6 +315,7 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Should succeed - wearing over lower layer
       expectEvent(events, 'if.event.worn', {
+        messageId: 'if.action.wearing.worn',
         itemId: shirt.id,
         layer: 1
       });
@@ -384,6 +353,7 @@ describe('wearingAction (Golden Pattern)', () => {
       
       // Should succeed - different body parts
       expectEvent(events, 'if.event.worn', {
+        messageId: 'if.action.wearing.worn',
         itemId: gloves.id,
         bodyPart: 'hands'
       });

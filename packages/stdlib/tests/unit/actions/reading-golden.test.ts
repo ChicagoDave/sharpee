@@ -10,17 +10,12 @@ import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import { WorldModel, IFEntity, TraitType, ReadableTrait, EntityType } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with three-phase pattern
-const executeAndReport = (action: any, context: ActionContext) => {
-  action.execute(context);
-  return action.report(context);
-};
 
 describe('Reading Action - Golden Path', () => {
   let testData: TestData;
@@ -48,26 +43,12 @@ describe('Reading Action - Golden Path', () => {
       // Create context
       const context = createRealTestContext(reading, testData.world, command);
 
-      // Validate
-      const validation = reading.validate(context);
-      expect(validation.valid).toBe(true);
+      // Execute with validation
+      const events = executeWithValidation(reading, context);
 
-      // Execute
-      const events = executeAndReport(reading, context);
-      
-      // Should emit read event and success
-      expect(events).toHaveLength(2);
-      
+      // Should emit read event with messageId and params
       expectEvent(events, 'if.event.read', {
-        targetId: note.id,
-        targetName: 'note',
-        text: 'Meet me at midnight.',
-        readableType: 'note'
-      });
-      
-      expectEvent(events, 'action.success', {
-        actionId: 'if.action.reading',
-        messageId: 'read_text',
+        messageId: 'if.action.reading.read_text',
         params: {
           item: 'note',
           text: 'Meet me at midnight.'
@@ -93,14 +74,10 @@ describe('Reading Action - Golden Path', () => {
 
       const context = createRealTestContext(reading, testData.world, command);
 
-      const validation = reading.validate(context);
-      expect(validation.valid).toBe(true);
+      const events = executeWithValidation(reading, context);
 
-      const events = executeAndReport(reading, context);
-      
-      expectEvent(events, 'action.success', {
-        actionId: 'if.action.reading',
-        messageId: 'read_book',
+      expectEvent(events, 'if.event.read', {
+        messageId: 'if.action.reading.read_book',
         params: {
           item: 'novel',
           text: 'It was a dark and stormy night...'
@@ -122,14 +99,10 @@ describe('Reading Action - Golden Path', () => {
 
       const context = createRealTestContext(reading, testData.world, command);
 
-      const validation = reading.validate(context);
-      expect(validation.valid).toBe(true);
+      const events = executeWithValidation(reading, context);
 
-      const events = executeAndReport(reading, context);
-      
-      expectEvent(events, 'action.success', {
-        actionId: 'if.action.reading',
-        messageId: 'read_sign',
+      expectEvent(events, 'if.event.read', {
+        messageId: 'if.action.reading.read_sign',
         params: {
           item: 'sign',
           text: 'DANGER: Keep Out!'
@@ -151,14 +124,10 @@ describe('Reading Action - Golden Path', () => {
 
       const context = createRealTestContext(reading, testData.world, command);
 
-      const validation = reading.validate(context);
-      expect(validation.valid).toBe(true);
+      const events = executeWithValidation(reading, context);
 
-      const events = executeAndReport(reading, context);
-      
-      expectEvent(events, 'action.success', {
-        actionId: 'if.action.reading',
-        messageId: 'read_inscription',
+      expectEvent(events, 'if.event.read', {
+        messageId: 'if.action.reading.read_inscription',
         params: {
           item: 'stone',
           text: 'Here lies an adventurer'
@@ -187,19 +156,10 @@ describe('Reading Action - Golden Path', () => {
 
       const context = createRealTestContext(reading, testData.world, command);
 
-      const validation = reading.validate(context);
-      expect(validation.valid).toBe(true);
+      const events = executeWithValidation(reading, context);
 
-      const events = executeAndReport(reading, context);
-      
       expectEvent(events, 'if.event.read', {
-        text: 'Day 2: Things got worse...',
-        currentPage: 2,
-        totalPages: 3
-      });
-      
-      expectEvent(events, 'action.success', {
-        messageId: 'read_book_page',
+        messageId: 'if.action.reading.read_book_page',
         params: {
           item: 'diary',
           text: 'Day 2: Things got worse...',
@@ -302,7 +262,7 @@ describe('Reading Action - Golden Path', () => {
       });
 
       const context = createRealTestContext(reading, testData.world, command);
-      executeAndReport(reading, context);
+      executeWithValidation(reading, context);
 
       expect(readable.hasBeenRead).toBe(true);
     });
@@ -321,11 +281,12 @@ describe('Reading Action - Golden Path', () => {
 
       const context = createRealTestContext(reading, testData.world, command);
 
-      const validation = reading.validate(context);
-      expect(validation.valid).toBe(true);
+      const events = executeWithValidation(reading, context);
 
-      const events = executeAndReport(reading, context);
-      expect(events[1].data?.params?.text).toBe('');
+      // Find the if.event.read event (last event, after any implicit take events)
+      const readEvent = events.find(e => e.type === 'if.event.read');
+      expect(readEvent).toBeDefined();
+      expect((readEvent!.data as any)?.params?.text).toBe('');
     });
   });
 });

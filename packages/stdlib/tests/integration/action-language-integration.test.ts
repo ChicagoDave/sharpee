@@ -132,10 +132,12 @@ describe('Action Integration Test Pattern', () => {
         const action = registry.get(validated.value.actionId);
         expect(action).toBe(waitingAction);
         
-        // Execute action
+        // Execute action using four-phase pattern: validate -> execute -> report
         const context = createRealTestContext(action!, world, validated.value);
-        const events = action!.execute(context);
-        
+        action!.validate(context);
+        action!.execute(context);
+        const events = action!.report!(context);
+
         expect(events.length).toBeGreaterThan(0);
         expect(events.some(e => e.type === 'if.event.waited')).toBe(true);
       }
@@ -153,23 +155,25 @@ describe('Action Integration Test Pattern', () => {
         indirectObject: null
       };
       const context = createRealTestContext(waitingAction, world, command);
-      const events = waitingAction.execute(context);
-      
-      // Find success message event
-      const successEvent = events.find(e => e.type === 'action.success');
-      expect(successEvent).toBeDefined();
-      
-      if (successEvent) {
+      waitingAction.validate(context);
+      waitingAction.execute(context);
+      const events = waitingAction.report!(context);
+
+      // Find waited event (report phase emits if.event.waited, not action.success)
+      const waitedEvent = events.find(e => e.type === 'if.event.waited');
+      expect(waitedEvent).toBeDefined();
+
+      if (waitedEvent) {
         // Resolve message through language provider
         const message = languageProvider.getMessage(
-          successEvent.data.messageId,
-          successEvent.data.params
+          waitedEvent.data.messageId,
+          waitedEvent.data.params
         );
-        
+
         // Message might not be in test language provider
         if (message.includes('[Missing:')) {
           // That's ok for simplified implementation
-          expect(message).toBe('[Missing: time_passes]');
+          expect(message).toBe('[Missing: if.action.waiting.time_passes]');
         } else {
           expect(message).toMatch(/Time passes|You wait|Nothing happens|nothing happens/);
         }

@@ -17,33 +17,11 @@ import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Supports both old two-phase and new three-phase actions
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      reason: validation.error,
-      params: validation.params || {}
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('listeningAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -91,15 +69,11 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit LISTENED event with sound info
+      // Should emit LISTENED event with sound info and device_running message
       expectEvent(events, 'if.event.listened', {
         target: fan.id,
         hasSound: true,
-        soundType: 'device'
-      });
-      
-      // Should emit device_running message
-      expectEvent(events, 'action.success', {
+        soundType: 'device',
         messageId: expect.stringContaining('device_running'),
         params: { target: 'electric fan' }
       });
@@ -124,8 +98,9 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit device_off message
-      expectEvent(events, 'action.success', {
+      // Should emit LISTENED event with device_off message
+      expectEvent(events, 'if.event.listened', {
+        target: radio.id,
         messageId: expect.stringContaining('device_off'),
         params: { target: 'portable radio' }
       });
@@ -154,15 +129,11 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit LISTENED event with contents info
+      // Should emit LISTENED event with contents info and container_sounds message
       expectEvent(events, 'if.event.listened', {
         target: box.id,
         hasContents: true,
-        contentCount: 1
-      });
-      
-      // Should emit container_sounds message
-      expectEvent(events, 'action.success', {
+        contentCount: 1,
         messageId: expect.stringContaining('container_sounds'),
         params: { target: 'metal box' }
       });
@@ -195,8 +166,9 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit liquid_sounds message
-      expectEvent(events, 'action.success', {
+      // Should emit LISTENED event with liquid_sounds message
+      expectEvent(events, 'if.event.listened', {
+        target: bottle.id,
         messageId: expect.stringContaining('liquid_sounds'),
         params: { target: 'glass bottle' }
       });
@@ -221,8 +193,9 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit no_sound message
-      expectEvent(events, 'action.success', {
+      // Should emit LISTENED event with no_sound message
+      expectEvent(events, 'if.event.listened', {
+        target: box.id,
         messageId: expect.stringContaining('no_sound'),
         params: { target: 'empty box' }
       });
@@ -243,13 +216,9 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit LISTENED event
+      // Should emit LISTENED event with no_sound message
       expectEvent(events, 'if.event.listened', {
-        target: stone.id
-      });
-      
-      // Should emit no_sound message
-      expectEvent(events, 'action.success', {
+        target: stone.id,
         messageId: expect.stringContaining('no_sound'),
         params: { target: 'smooth stone' }
       });
@@ -267,14 +236,10 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit LISTENED event for environment
+      // Should emit LISTENED event for environment with silence message
       expectEvent(events, 'if.event.listened', {
         listeningToEnvironment: true,
-        roomId: room.id
-      });
-      
-      // Should emit silence message
-      expectEvent(events, 'action.success', {
+        roomId: room.id,
         messageId: expect.stringContaining('silence')
       });
     });
@@ -303,15 +268,11 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit LISTENED event with sound sources
+      // Should emit LISTENED event with sound sources and active_devices message
       expectEvent(events, 'if.event.listened', {
         listeningToEnvironment: true,
         roomId: room.id,
-        soundSources: [radio.id, fan.id]
-      });
-      
-      // Should emit active_devices message
-      expectEvent(events, 'action.success', {
+        soundSources: [radio.id, fan.id],
         messageId: expect.stringContaining('active_devices'),
         params: { devices: 'old radio, ceiling fan' }
       });
@@ -341,8 +302,10 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should emit silence message (no active devices)
-      expectEvent(events, 'action.success', {
+      // Should emit LISTENED event with silence message (no active devices)
+      expectEvent(events, 'if.event.listened', {
+        listeningToEnvironment: true,
+        roomId: room.id,
         messageId: expect.stringContaining('silence')
       });
     });
@@ -371,15 +334,11 @@ describe('listeningAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(listeningAction, context);
       
-      // Should only detect the active radio
+      // Should only detect the active radio with active_devices message
       expectEvent(events, 'if.event.listened', {
         listeningToEnvironment: true,
         roomId: room.id,
-        soundSources: [activeRadio.id]
-      });
-      
-      // Should emit active_devices message with only active device
-      expectEvent(events, 'action.success', {
+        soundSources: [activeRadio.id],
         messageId: expect.stringContaining('active_devices'),
         params: { devices: 'portable radio' }
       });
@@ -417,7 +376,8 @@ describe('listeningAction (Golden Pattern)', () => {
       const events = executeWithValidation(listeningAction, context);
       
       // Should detect liquid sounds (because of potion)
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.listened', {
+        target: bag.id,
         messageId: expect.stringContaining('liquid_sounds'),
         params: { target: 'leather bag' }
       });
@@ -449,7 +409,8 @@ describe('listeningAction (Golden Pattern)', () => {
       const events = executeWithValidation(listeningAction, context);
       
       // Should prioritize device_running over container sounds
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.listened', {
+        target: musicBox.id,
         messageId: expect.stringContaining('device_running'),
         params: { target: 'music box' }
       });

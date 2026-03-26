@@ -15,35 +15,12 @@ import { TraitType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
+  executeWithValidation,
   expectEvent,
   TestData,
   createCommand,
   findEntityByName
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Supports both old two-phase and new three-phase actions
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      reason: validation.error,
-      params: validation.params || {}
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('showingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -79,8 +56,8 @@ describe('showingAction (Golden Pattern)', () => {
       const context = createRealTestContext(showingAction, world, createCommand(IFActions.SHOWING));
       
       const events = executeWithValidation(showingAction, context);
-      
-      expectEvent(events, 'action.error', {
+
+      expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('no_item'),
         reason: 'no_item'
       });
@@ -90,16 +67,16 @@ describe('showingAction (Golden Pattern)', () => {
       const { world, player } = setupBasicWorld();
       const badge = world.createEntity('police badge', 'object');
       world.moveEntity(badge.id, player.id);
-      
+
       const context = createRealTestContext(showingAction, world, createCommand(
         IFActions.SHOWING,
         { entity: badge }
         // No indirect object
       ));
-      
+
       const events = executeWithValidation(showingAction, context);
-      
-      expectEvent(events, 'action.error', {
+
+      expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('no_viewer'),
         reason: 'no_viewer'
       });
@@ -121,7 +98,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('not_carrying'),
         params: { item: 'old photo' }
       });
@@ -156,7 +133,7 @@ describe('showingAction (Golden Pattern)', () => {
         isWorn: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('wearing_shown')
       });
     });
@@ -181,7 +158,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('viewer_not_visible'),
         params: { viewer: 'old pirate' }
       });
@@ -207,7 +184,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('viewer_too_far'),
         params: { viewer: 'wise scholar' }
       });
@@ -229,7 +206,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('not_actor'),
         reason: 'not_actor'
       });
@@ -253,7 +230,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.error', {
+      expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('self'),
         params: { item: 'silver locket' }
       });
@@ -288,7 +265,7 @@ describe('showingAction (Golden Pattern)', () => {
         recognized: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('viewer_recognizes')
       });
     });
@@ -320,7 +297,7 @@ describe('showingAction (Golden Pattern)', () => {
         impressed: true
       });
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('viewer_impressed')
       });
     });
@@ -348,7 +325,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('viewer_unimpressed')
       });
     });
@@ -376,7 +353,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('viewer_examines')
       });
     });
@@ -406,7 +383,7 @@ describe('showingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(showingAction, context);
       
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('viewer_nods')
       });
     });
@@ -441,7 +418,7 @@ describe('showingAction (Golden Pattern)', () => {
       });
       
       // Should emit basic shown message (no reactions)
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('shown'),
         params: {
           item: 'business card',
@@ -470,7 +447,7 @@ describe('showingAction (Golden Pattern)', () => {
       const events = executeWithValidation(showingAction, context);
       
       // Should default to 'shown' message
-      expectEvent(events, 'action.success', {
+      expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('shown')
       });
     });
@@ -542,7 +519,7 @@ describe('Showing Action Edge Cases', () => {
       recognized: true
     });
     
-    expectEvent(events, 'action.success', {
+    expectEvent(events, 'if.event.shown', {
       messageId: expect.stringContaining('viewer_recognizes')
     });
   });
@@ -575,7 +552,7 @@ describe('Showing Action Edge Cases', () => {
     
     const events1 = executeWithValidation(showingAction, context1);
     
-    expectEvent(events1, 'action.success', {
+    expectEvent(events1, 'if.event.shown', {
       messageId: expect.stringContaining('shown')
     });
     
@@ -588,7 +565,7 @@ describe('Showing Action Edge Cases', () => {
     
     const events2 = executeWithValidation(showingAction, context2);
     
-    expectEvent(events2, 'action.success', {
+    expectEvent(events2, 'if.event.shown', {
       messageId: expect.stringContaining('viewer_examines')
     });
   });
@@ -678,7 +655,7 @@ describe('Testing Pattern Examples for Showing', () => {
     const events = executeWithValidation(showingAction, context);
     
     // Should use recognizes (highest priority)
-    expectEvent(events, 'action.success', {
+    expectEvent(events, 'if.event.shown', {
       messageId: expect.stringContaining('viewer_recognizes')
     });
   });

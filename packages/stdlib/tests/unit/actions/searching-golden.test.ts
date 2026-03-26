@@ -14,37 +14,15 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-
-// Helper to execute action with validation (mimics CommandExecutor flow)
-// Supports both old two-phase and new three-phase actions
-const executeWithValidation = (action: any, context: ActionContext) => {
-  const validation = action.validate(context);
-  if (!validation.valid) {
-    return [context.event('action.error', {
-      actionId: context.action.id,
-      messageId: validation.error,
-      reason: validation.error,
-      params: validation.params || {}
-    })];
-  }
-
-  // Three-phase pattern: execute returns void, report returns events
-  if (action.report) {
-    action.execute(context);
-    return action.report(context);
-  }
-
-  // Old two-phase pattern: execute returns events
-  return action.execute(context);
-};
 
 describe('searchingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -92,10 +70,11 @@ describe('searchingAction (Golden Pattern)', () => {
       }));
       
       const events = executeWithValidation(searchingAction, context);
-      
-      expectEvent(events, 'action.error', {
-        messageId: expect.stringContaining('container_closed'),
-        params: { target: 'treasure chest' }
+
+      expectEvent(events, 'if.event.searched', {
+        blocked: true,
+        messageId: 'if.action.searching.container_closed',
+        params: expect.objectContaining({ target: 'treasure chest' })
       });
     });
   });
@@ -127,9 +106,9 @@ describe('searchingAction (Golden Pattern)', () => {
       });
       
       // Should emit empty_container message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('empty_container'),
-        params: { target: 'cardboard box' }
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.empty_container',
+        params: expect.objectContaining({ target: 'cardboard box' })
       });
     });
 
@@ -157,12 +136,12 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
       
       // Should emit container_contents message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('container_contents'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.container_contents',
+        params: expect.objectContaining({
           target: 'jewelry box',
           items: 'gold ring, pearl necklace'
-        }
+        })
       });
     });
 
@@ -202,13 +181,13 @@ describe('searchingAction (Golden Pattern)', () => {
       });
       
       // Should emit found_concealed message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('found_concealed'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.found_concealed',
+        params: expect.objectContaining({
           target: 'oak desk',
           items: 'secret key',
           where: 'inside'
-        }
+        })
       });
     });
   });
@@ -238,12 +217,12 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
       
       // Should emit supporter_contents message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('supporter_contents'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.supporter_contents',
+        params: expect.objectContaining({
           target: 'dining table',
           items: 'dinner plate, lit candle'
-        }
+        })
       });
     });
 
@@ -276,13 +255,13 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
       
       // Should emit found_concealed message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('found_concealed'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.found_concealed',
+        params: expect.objectContaining({
           target: 'stone altar',
           items: 'hidden gem',
           where: 'on'
-        }
+        })
       });
     });
 
@@ -304,9 +283,9 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
       
       // Should emit nothing_special message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('nothing_special'),
-        params: { target: 'marble pedestal' }
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.nothing_special',
+        params: expect.objectContaining({ target: 'marble pedestal' })
       });
     });
   });
@@ -334,9 +313,9 @@ describe('searchingAction (Golden Pattern)', () => {
       });
       
       // Should emit nothing_special message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('nothing_special'),
-        params: { target: 'bronze statue' }
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.nothing_special',
+        params: expect.objectContaining({ target: 'bronze statue' })
       });
     });
 
@@ -363,11 +342,11 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
       
       // Should emit nothing_special message (concealed items no longer auto-found)
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('nothing_special'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.nothing_special',
+        params: expect.objectContaining({
           target: 'old painting'
-        }
+        })
       });
     });
   });
@@ -401,13 +380,13 @@ describe('searchingAction (Golden Pattern)', () => {
       });
       
       // Should emit found_concealed message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('found_concealed'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.found_concealed',
+        params: expect.objectContaining({
           target: 'Test Room',
           items: 'silver coin',
           where: 'here'
-        }
+        })
       });
     });
 
@@ -421,9 +400,9 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
       
       // Should emit searched_location message
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('searched_location'),
-        params: { target: 'Test Room' }
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.searched_location',
+        params: expect.objectContaining({ target: 'Test Room' })
       });
     });
   });
@@ -452,12 +431,12 @@ describe('searchingAction (Golden Pattern)', () => {
       const events = executeWithValidation(searchingAction, context);
       
       // Should succeed and list contents
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('container_contents'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.container_contents',
+        params: expect.objectContaining({
           target: 'wall safe',
           items: 'secret document'
-        }
+        })
       });
     });
 
@@ -505,13 +484,13 @@ describe('searchingAction (Golden Pattern)', () => {
       });
       
       // Should list all concealed items
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('found_concealed'),
-        params: { 
+      expectEvent(events, 'if.event.searched', {
+        messageId: 'if.action.searching.found_concealed',
+        params: expect.objectContaining({
           target: 'dusty bookshelf',
           items: 'hidden lever, secret compartment',
           where: 'on'
-        }
+        })
       });
     });
   });

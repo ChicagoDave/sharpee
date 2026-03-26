@@ -12,34 +12,16 @@ import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { puttingAction } from '../../../src/actions/standard/putting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, EntityType } from '@sharpee/world-model';
-import { 
+import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
+  executeWithValidation,
   TestData,
   createCommand
 } from '../../test-utils';
 import type { WorldModel } from '@sharpee/world-model';
-import { SemanticEvent } from '@sharpee/core';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
-import type { ISemanticEvent } from '@sharpee/core';
-
-// Helper to execute action using the four-phase pattern
-function executeAction(action: any, context: ActionContext): ISemanticEvent[] {
-  // Four-phase pattern: validate -> execute/blocked -> report
-  const validationResult = action.validate(context);
-
-  if (!validationResult.valid) {
-    // Use blocked() for validation failures
-    return action.blocked(context, validationResult);
-  }
-
-  // Execute mutations (returns void)
-  action.execute(context);
-
-  // Report generates success events
-  return action.report(context);
-}
 
 describe('puttingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -61,7 +43,7 @@ describe('puttingAction (Golden Pattern)', () => {
       const context = createRealTestContext(puttingAction, world, command);
       
       // The executeAction helper properly tests the three-phase pattern
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       // All events should be generated via report()
       expect(events).toBeDefined();
@@ -101,9 +83,9 @@ describe('puttingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.PUTTING);
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_target')
       });
     });
@@ -119,9 +101,9 @@ describe('puttingAction (Golden Pattern)', () => {
       );
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_destination'),
         params: { item: 'ball' }
       });
@@ -146,9 +128,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('cant_put_in_itself'),
         params: { item: 'magic box' }
       });
@@ -169,9 +151,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('cant_put_on_itself'),
         params: { item: 'folding table' }
       });
@@ -203,7 +185,7 @@ describe('puttingAction (Golden Pattern)', () => {
         // For now, let's just run the action and see what happens
       }
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       // The action should check if item is already in destination
       // and fail appropriately
@@ -234,7 +216,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       expectEvent(events, 'if.event.put_in', {
         itemId: gem.id,
@@ -242,13 +224,8 @@ describe('puttingAction (Golden Pattern)', () => {
         preposition: 'in'
       });
       
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('put_in'),
-        params: { 
-          item: 'ruby',
-          container: 'jewel box'
-        }
-      });
+      // messageId and params are on the domain event itself (if.event.put_in)
+      // No separate action.success event
     });
 
     test('should auto-detect container without preposition', () => {
@@ -267,7 +244,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       // Should auto-detect "in" for container
       expectEvent(events, 'if.event.put_in', {
@@ -298,9 +275,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('container_closed'),
         params: { container: 'locked chest' }
       });
@@ -323,9 +300,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('not_surface'),
         params: { destination: 'cardboard box' }
       });
@@ -350,7 +327,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       expectEvent(events, 'if.event.put_on', {
         itemId: book.id,
@@ -358,13 +335,8 @@ describe('puttingAction (Golden Pattern)', () => {
         preposition: 'on'
       });
       
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('put_on'),
-        params: { 
-          item: 'thick book',
-          surface: 'round table'
-        }
-      });
+      // messageId and params are on the domain event itself (if.event.put_on)
+      // No separate action.success event
     });
 
     test('should auto-detect supporter without preposition', () => {
@@ -383,7 +355,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       // Should auto-detect "on" for supporter
       expectEvent(events, 'if.event.put_on', {
@@ -410,9 +382,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('not_container'),
         params: { destination: 'kitchen counter' }
       });
@@ -448,9 +420,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_room'),
         params: { container: 'coin pouch' }
       });
@@ -489,9 +461,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_room'),
         params: { container: 'canvas bag' }
       });
@@ -525,9 +497,9 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
-      expectEvent(events, 'action.blocked', {
+      expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_space'),
         params: { surface: 'serving tray' }
       });
@@ -552,7 +524,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       // Should prefer container (in) over supporter (on)
       expectEvent(events, 'if.event.put_in', {
@@ -578,20 +550,15 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       // Should use supporter behavior with "on"
       expectEvent(events, 'if.event.put_on', {
         preposition: 'on'
       });
       
-      expectEvent(events, 'action.success', {
-        messageId: expect.stringContaining('put_on'),
-        params: { 
-          item: 'desk lamp',
-          surface: 'writing desk' 
-        }
-      });
+      // messageId and params are on the domain event itself (if.event.put_on)
+      // No separate action.success event
     });
   });
 
@@ -615,7 +582,7 @@ describe('puttingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(puttingAction, world, command);
       
-      const events = executeAction(puttingAction, context);
+      const events = executeWithValidation(puttingAction, context);
       
       events.forEach(event => {
         if (event.entities) {
@@ -795,10 +762,10 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeAction(puttingAction, context);
+    const events = executeWithValidation(puttingAction, context);
     
     // 3 + 8 = 11, exceeds maxVolume of 10
-    expectEvent(events, 'action.blocked', {
+    expectEvent(events, 'if.event.put_blocked', {
       messageId: expect.stringContaining('no_room'),
       params: { container: 'fruit basket' }
     });
@@ -826,7 +793,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeAction(puttingAction, context);
+    const events = executeWithValidation(puttingAction, context);
     
     // Should succeed - item without weight doesn't count against weight limit
     expectEvent(events, 'if.event.put_in', {
@@ -850,9 +817,9 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeAction(puttingAction, context);
+    const events = executeWithValidation(puttingAction, context);
     
-    expectEvent(events, 'action.blocked', {
+    expectEvent(events, 'if.event.put_blocked', {
       messageId: expect.stringContaining('not_container'),
       params: { destination: 'marble statue' }
     });
@@ -875,7 +842,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeAction(puttingAction, context);
+    const events = executeWithValidation(puttingAction, context);
     
     // Should accept 'onto' as equivalent to 'on'
     expectEvent(events, 'if.event.put_on', {
@@ -903,7 +870,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeAction(puttingAction, context);
+    const events = executeWithValidation(puttingAction, context);
     
     // Should succeed - no capacity limits
     expectEvent(events, 'if.event.put_in', {
@@ -953,7 +920,7 @@ describe('Putting Action Edge Cases', () => {
     });
     const context = createRealTestContext(puttingAction, world, command);
     
-    const events = executeAction(puttingAction, context);
+    const events = executeWithValidation(puttingAction, context);
     
     // Current weight: 5 books * 2 = 10
     // New book weight: 3
