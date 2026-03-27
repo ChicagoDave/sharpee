@@ -8,8 +8,8 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { TraitType, IdentityTrait } from '@sharpee/world-model';
-import { TreasureTrait } from '../../../traits';
+import { TraitType, IdentityTrait, OpenableTrait, LockableTrait, SwitchableTrait } from '@sharpee/world-model';
+import { TreasureTrait, InflatableTrait } from '../../../traits';
 
 export const deHandler: GDTCommandHandler = {
   code: 'DE',
@@ -77,13 +77,13 @@ export const deHandler: GDTCommandHandler = {
     output.push('┌─ COMPUTED PROPERTIES ─────────────────────────────────────────┐');
     const treasure = entity.get(TreasureTrait);
     const computedProps = [
-      ['enterable', (entity as any).enterable],
-      ['portable', (entity as any).portable],
-      ['isOpen', (entity as any).isOpen],
-      ['isLocked', (entity as any).isLocked],
-      ['isOn', (entity as any).isOn],
-      ['isSwitchable', (entity as any).isSwitchable],
-      ['isInflated', (entity as any).isInflated],
+      ['enterable', entity.hasTrait(TraitType.ENTERABLE)],
+      ['portable', !entity.hasTrait(TraitType.SCENERY)],
+      ['isOpen', entity.get(OpenableTrait)?.isOpen],
+      ['isLocked', entity.get(LockableTrait)?.isLocked],
+      ['isOn', entity.get(SwitchableTrait)?.isOn],
+      ['isSwitchable', entity.hasTrait(TraitType.SWITCHABLE)],
+      ['isInflated', entity.get(InflatableTrait)?.isInflated],
       ['isTreasure', treasure !== undefined],
     ];
 
