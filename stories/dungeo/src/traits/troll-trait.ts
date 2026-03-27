@@ -1,16 +1,17 @@
 /**
  * Troll Trait
  *
- * Marker trait for the troll NPC. Custom action handling uses interceptors
- * (ADR-118) registered on this trait type, not capability dispatch.
+ * Trait for the troll NPC. Declares capabilities for giving and throwing
+ * (ADR-090) and has interceptors (ADR-118) for taking, attacking, talking.
+ *
+ * Capability behaviors (in troll-receiving-behavior.ts):
+ * - if.action.giving: Catch/eat items, throw knife back
+ * - if.action.throwing: Same behavior as giving
  *
  * Interceptors (in troll-capability-behaviors.ts):
  * - TrollTakingInterceptor: Block TAKE TROLL ("spits in your face")
  * - TrollAttackingInterceptor: Block unarmed ATTACK ("laughs at puny gesture")
  * - TrollTalkingInterceptor: Block TALK when incapacitated ("can't hear you")
- *
- * Event handlers (in underground.ts):
- * - GIVE/THROW: Catch/eat items, throw knife back
  *
  * From MDL source (act1.254, dung.355)
  */
@@ -35,6 +36,7 @@ export interface TrollTraitConfig {
  */
 export class TrollTrait implements ITrait {
   static readonly type = 'dungeo.trait.troll' as const;
+  static readonly capabilities = ['if.action.giving', 'if.action.throwing'] as const;
 
   readonly type = TrollTrait.type;
 

@@ -342,17 +342,8 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   // Get troll room reference for event handlers
   const trollRoom = world.getEntity(roomId);
 
-  // Helper: Check if item is a knife
-  function isKnife(entity: IFEntity | undefined): boolean {
-    if (!entity) return false;
-    const identity = entity.get?.(IdentityTrait);
-    if (!identity) return false;
-    const name = identity.name?.toLowerCase() || '';
-    const aliases = (identity.aliases || []).map((a: string) => a.toLowerCase());
-    return [name, ...aliases].some(n => n.includes('knife') || n.includes('stiletto'));
-  }
-
-  // Event handlers for troll state changes and interactions
+  // Event handlers for troll state changes (knocked_out, death)
+  // NOTE: GIVE/THROW now handled by TrollReceivingBehavior (ADR-090, ISSUE-068)
   troll.on = {
     // Knocked out handler (OUT!) - MDL act1.254
     // Fires when troll is knocked unconscious via combat
@@ -419,110 +410,10 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
       world.removeEntity(troll.id);
 
       return events;
-    },
-
-    // GIVE item TO TROLL - MDL act1.254
-    // Troll catches items: eats non-knife, throws knife back
-    'if.event.given': (event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-      const data = event.data as { item: string; recipient: string };
-
-      // Only handle items given to this troll
-      if (data.recipient !== troll.id) return events;
-
-      const item = w.getEntity(data.item);
-      if (!item) return events;
-
-      if (isKnife(item)) {
-        // Knife: troll throws it back to the floor
-        world.moveEntity(item.id, roomId);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.THROWS_KNIFE_BACK,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      } else {
-        // Non-knife: troll eats it (destroy the item)
-        world.removeEntity(item.id);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.EATS_ITEM,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      }
-
-      return events;
-    },
-
-    // THROW item AT TROLL - MDL act1.254
-    // Same behavior as giving - troll catches items
-    'if.event.thrown': (event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-      const data = event.data as { item: string; target?: string; throwType: string };
-
-      // Only handle items thrown at this troll
-      if (data.target !== troll.id || data.throwType !== 'at_target') return events;
-
-      const item = w.getEntity(data.item);
-      if (!item) return events;
-
-      // Troll catches it first
-      events.push({
-        id: generateEventId(),
-        type: 'game.message',
-        entities: { target: troll.id, instrument: item.id },
-        data: {
-          messageId: TrollMessages.CATCHES_ITEM,
-          itemName: item.name
-        },
-        timestamp: Date.now(),
-        narrate: true
-      });
-
-      if (isKnife(item)) {
-        // Knife: troll throws it back to the floor
-        world.moveEntity(item.id, roomId);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.THROWS_KNIFE_BACK,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      } else {
-        // Non-knife: troll eats it
-        world.removeEntity(item.id);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.EATS_ITEM,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      }
-
-      return events;
     }
+
+    // NOTE: GIVE/THROW handlers removed — now handled by TrollReceivingBehavior
+    // via capability dispatch on TrollTrait (ADR-090, ISSUE-068)
   };
 }
 

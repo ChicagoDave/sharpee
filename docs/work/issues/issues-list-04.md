@@ -29,8 +29,9 @@ original numbers.
 | ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-067 | Trace commands defined as 10 individual literal patterns | Low | parser-en-us | 2026-03-26 | - |
-| ISSUE-068 | `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types | Medium | world-model, event-processor | 2026-03-27 | - |
+| ISSUE-068 | Entity `on` handlers are vestigial — migrate to actions/capabilities, simplify type infrastructure | Medium | world-model, event-processor, stories | 2026-03-27 | - |
 | ISSUE-069 | `world.getStateValue`/`setStateValue` is a code smell — puzzle state belongs on entities/traits | Medium | world-model, stories | 2026-03-27 | - |
+| ISSUE-070 | Entity descriptions should be computed from trait state, not mutated by event handlers | Medium | world-model | 2026-03-27 | - |
 
 ---
 
@@ -330,6 +331,44 @@ export interface IEventHandlers {
 ---
 
 ## Open Issues — Platform Refactoring
+
+### ISSUE-070: Entity descriptions should be computed from trait state, not mutated by event handlers
+
+**Reported**: 2026-03-27
+**Severity**: Medium
+**Component**: Platform (world-model)
+**Type**: Architecture
+
+**Description**:
+Entity descriptions are stored as a mutable string on `IdentityTrait.description`. When entity state changes (opened/closed, inflated/deflated, lit/unlit), event handlers or action code manually overwrites the description. This is fragile and requires an event-driven callback system (entity `on` handlers) to keep descriptions in sync with state.
+
+**Correct pattern**: The entity's `description` getter should compute from trait state. Traits that affect description (OpenableTrait, InflatableTrait, SwitchableTrait, etc.) provide state-specific descriptions. The entity returns the appropriate one based on current state.
+
+**Example**:
+```typescript
+// OpenableTrait adds:
+openDescription?: string;   // "The trap door is open, revealing a rickety staircase."
+closedDescription?: string; // "The dusty cover of a closed trap door."
+
+// Entity description getter checks trait state:
+get description(): string {
+  const openable = this.get(OpenableTrait);
+  if (openable) {
+    return openable.isOpen
+      ? (openable.openDescription ?? this.identity.description)
+      : (openable.closedDescription ?? this.identity.description);
+  }
+  return this.identity.description;
+}
+```
+
+**Applies to**: Any trait that changes how an entity is described — openable, inflatable, switchable, lit/unlit light sources, broken/intact objects.
+
+**Discovered during**: ISSUE-068 entity `on` handler audit. Window and trapdoor `opened`/`closed` handlers exist solely to mutate `IdentityTrait.description`. With computed descriptions, these handlers become unnecessary.
+
+**Dungeo blast radius**: At least 4 entities use description-switching `on` handlers (2 windows, trapdoor). The inflate/deflate actions also manually switch `attributes.displayName`. A computed description pattern would replace all of these.
+
+---
 
 ### ISSUE-058: Entity creation is excessively repetitive — needs builder/helper API
 

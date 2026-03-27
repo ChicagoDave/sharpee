@@ -7,6 +7,7 @@ import { trollBehavior } from './troll-behavior';
 
 export { trollBehavior } from './troll-behavior';
 export { TrollMessages } from './troll-messages';
+export { TrollReceivingBehavior } from './troll-receiving-behavior';
 
 /**
  * Register the troll NPC behavior with the game

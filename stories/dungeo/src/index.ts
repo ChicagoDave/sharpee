@@ -82,7 +82,7 @@ import { registerThief, ThiefMessages } from './npcs/thief';
 import { registerCyclops, CyclopsMessages } from './npcs/cyclops';
 import { RobotMessages } from './npcs/robot';
 import { registerDungeonMaster, DungeonMasterMessages } from './npcs/dungeon-master';
-import { registerTrollBehavior, TrollMessages } from './npcs/troll';
+import { registerTrollBehavior, TrollMessages, TrollReceivingBehavior } from './npcs/troll';
 
 // Import traits (ADR-090 capability dispatch)
 import {
@@ -273,6 +273,22 @@ export class DungeoStory implements Story {
         TrollTrait.type,
         'if.action.talking',
         TrollTalkingInterceptor
+      );
+    }
+
+    // Troll capability behaviors for GIVE/THROW (ADR-090)
+    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.giving')) {
+      registerCapabilityBehavior(
+        TrollTrait.type,
+        'if.action.giving',
+        TrollReceivingBehavior
+      );
+    }
+    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.throwing')) {
+      registerCapabilityBehavior(
+        TrollTrait.type,
+        'if.action.throwing',
+        TrollReceivingBehavior
       );
     }
 
