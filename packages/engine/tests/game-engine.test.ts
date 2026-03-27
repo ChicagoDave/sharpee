@@ -215,48 +215,64 @@ describe('GameEngine', () => {
 
     it('should save current state', async () => {
       await engine.executeTurn('look');
-      
-      const state = engine.saveState();
-      
+
+      // Save/load are now private, accessed via saveRestoreService
+      const state = (engine as any).createSaveData();
+
       expect(state.version).toBe('1.0.0');
-      expect(state.turn).toBe(2);
-      expect(state.world).toBeDefined();
-      expect(state.context).toBeDefined();
-      expect(state.saved).toBeInstanceOf(Date);
+      expect(state.metadata.turnCount).toBe(1); // 1 turn executed
+      expect(state.engineState).toBeDefined();
+      expect(state.timestamp).toBeDefined();
     });
 
     it('should load saved state', async () => {
       // Execute some turns
       await engine.executeTurn('look');
       await engine.executeTurn('inventory');
-      
-      const savedState = engine.saveState();
+
+      const savedState = (engine as any).createSaveData();
       engine.stop();
-      
+
       // Create new engine and load state
       const { engine: newEngine } = setupTestEngine();
       newEngine.setStory(story);
-      
-      newEngine.loadState(savedState);
+
+      (newEngine as any).loadSaveData(savedState);
       newEngine.start();
-      
+
       const loadedContext = newEngine.getContext();
-      expect(loadedContext.currentTurn).toBe(savedState.turn);
+      expect(loadedContext.currentTurn).toBe(savedState.metadata.turnCount + 1);
       expect(loadedContext.history).toHaveLength(2);
-      
+
       newEngine.stop();
     });
 
     it('should reject incompatible save versions', () => {
       const incompatibleState = {
         version: '2.0.0',
-        turn: 1,
-        world: {},
-        context: engine.getContext(),
-        saved: new Date()
+        timestamp: Date.now(),
+        metadata: {
+          storyId: 'test',
+          storyVersion: '1.0.0',
+          turnCount: 1,
+          playTime: 0,
+          description: 'test'
+        },
+        engineState: {
+          eventSource: [],
+          spatialIndex: { entities: {}, locations: {}, relationships: {} },
+          turnHistory: [],
+          pluginStates: {}
+        },
+        storyConfig: {
+          id: 'test',
+          version: '1.0.0',
+          title: 'Test',
+          author: 'Test'
+        }
       };
-      
-      expect(() => engine.loadState(incompatibleState)).toThrow('Unsupported save version');
+
+      expect(() => (engine as any).loadSaveData(incompatibleState)).toThrow('Unsupported save version');
     });
   });
 

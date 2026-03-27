@@ -36,12 +36,19 @@ describe('Event Chaining (ADR-094)', () => {
     };
   }
 
-  // Helper to invoke all handlers for an event type and collect results
+  // Helper to invoke all handlers for an event type and collect results.
+  // wireChainToProcessor wraps each chained event as an EmitEffect
+  // ({ type: 'emit', event: ISemanticEvent }), so we unwrap here.
   function invokeHandlers(eventType: string, event: ISemanticEvent): ISemanticEvent[] {
     const handlers = registeredHandlers.get(eventType) || [];
     const results: ISemanticEvent[] = [];
     for (const handler of handlers) {
-      results.push(...(handler(event) as ISemanticEvent[]));
+      const effects = handler(event) as Array<{ type: string; event?: ISemanticEvent }>;
+      for (const effect of effects) {
+        if (effect.type === 'emit' && effect.event) {
+          results.push(effect.event);
+        }
+      }
     }
     return results;
   }

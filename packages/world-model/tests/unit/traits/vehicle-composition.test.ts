@@ -21,7 +21,7 @@ import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { VehicleTrait } from '../../../src/traits/vehicle/vehicleTrait';
 import { TraitType } from '../../../src/traits/trait-types';
-import { isVehicle, isActorInVehicle, canActorWalk } from '../../../src/traits/vehicle/vehicleBehavior';
+import { isVehicle, isActorInVehicle, canActorWalkInVehicle } from '../../../src/traits/vehicle/vehicleBehavior';
 
 describe('Vehicle Composition', () => {
   let world: WorldModel;
@@ -312,12 +312,12 @@ describe('Vehicle Composition', () => {
       expect(isActorInVehicle(world, player.id)).toBe(true);
     });
 
-    it('canActorWalk should return false when in blocking vehicle', () => {
-      const resultOutside = canActorWalk(world, player.id);
+    it('canActorWalkInVehicle should return false when in blocking vehicle', () => {
+      const resultOutside = canActorWalkInVehicle(world, player.id);
       expect(resultOutside.canWalk).toBe(true);
 
       world.moveEntity(player.id, vehicle.id);
-      const resultInside = canActorWalk(world, player.id);
+      const resultInside = canActorWalkInVehicle(world, player.id);
       expect(resultInside.canWalk).toBe(false);
       expect(resultInside.vehicle).toBe(vehicle);
     });

@@ -461,8 +461,10 @@ describe('VisibilityBehavior', () => {
   describe('edge cases', () => {
     it('should handle missing entities gracefully', () => {
       // Create a mock entity that has required methods
+      // Must include traits Map since findTraitWithCapability iterates entity.traits.values()
       const missingEntity = {
         id: 'missing',
+        traits: new Map(),
         getTrait: () => undefined,
         hasTrait: () => false
       } as any as IFEntity;
