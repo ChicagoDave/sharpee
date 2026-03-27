@@ -1,5 +1,9 @@
 /**
- * Unit tests for ADR-052 Entity Handler Invocation
+ * Unit tests for event handler invocation
+ *
+ * Entity `on` handlers were removed in ISSUE-068 — these tests verify
+ * that the EventProcessor correctly handles events with/without targets
+ * and delegates to story-level handlers (ADR-075).
  */
 
 import { describe, it, beforeEach, expect, vi } from 'vitest';
@@ -8,7 +12,7 @@ import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import { IFEvents } from '@sharpee/if-domain';
 import { SemanticEvent } from '@sharpee/core';
 
-describe('Entity Handler Invocation (ADR-052)', () => {
+describe('Event Handler Invocation', () => {
   let mockWorld: MockWorldModel;
   let processor: EventProcessor;
 
@@ -18,10 +22,10 @@ describe('Entity Handler Invocation (ADR-052)', () => {
   });
 
   describe('invokeEntityHandlers', () => {
-    it('should invoke entity handler when event has target with handler', () => {
+    it('should not invoke entity on handler (removed in ISSUE-068)', () => {
       const handlerFn = vi.fn();
 
-      // Create entity with handler
+      // Entity has an on handler, but dispatch is removed
       mockWorld.addMockEntity('book', {
         id: 'book',
         on: {
@@ -29,7 +33,6 @@ describe('Entity Handler Invocation (ADR-052)', () => {
         }
       });
 
-      // Create push event targeting the book
       const pushEvent: SemanticEvent = {
         id: 'test-push-1',
         type: IFEvents.PUSHED,
@@ -43,13 +46,8 @@ describe('Entity Handler Invocation (ADR-052)', () => {
 
       processor.processEvents([pushEvent]);
 
-      expect(handlerFn).toHaveBeenCalledTimes(1);
-      expect(handlerFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: IFEvents.PUSHED,
-          entities: expect.objectContaining({ target: 'book' })
-        })
-      );
+      // Entity on handlers are no longer invoked
+      expect(handlerFn).not.toHaveBeenCalled();
     });
 
     it('should not invoke handler when event has no target', () => {
@@ -105,44 +103,6 @@ describe('Entity Handler Invocation (ADR-052)', () => {
       processor.processEvents([pullEvent]);
 
       expect(handlerFn).not.toHaveBeenCalled();
-    });
-
-    it('should collect reaction events returned by handler', () => {
-      const reactionEvent: SemanticEvent = {
-        id: 'reaction-1',
-        type: 'secret_door.revealed',
-        entities: {
-          target: 'secret-door'
-        },
-        data: { message: 'The bookshelf swings open!' },
-        timestamp: Date.now()
-      };
-
-      // Handler returns a reaction event
-      const handlerFn = vi.fn().mockReturnValue([reactionEvent]);
-
-      mockWorld.addMockEntity('book', {
-        id: 'book',
-        on: {
-          [IFEvents.PUSHED]: handlerFn
-        }
-      });
-
-      const pushEvent: SemanticEvent = {
-        id: 'test-push-1',
-        type: IFEvents.PUSHED,
-        entities: {
-          actor: 'player',
-          target: 'book'
-        },
-        data: {},
-        timestamp: Date.now()
-      };
-
-      const result = processor.processEvents([pushEvent]);
-
-      // Reaction should be in the results
-      expect(result.reactions).toContainEqual(reactionEvent);
     });
 
     it('should handle handler returning void', () => {
@@ -222,40 +182,5 @@ describe('Entity Handler Invocation (ADR-052)', () => {
       expect(result.applied).toHaveLength(1);
     });
 
-    it('should pass event data to handler', () => {
-      const handlerFn = vi.fn();
-
-      mockWorld.addMockEntity('rug', {
-        id: 'rug',
-        on: {
-          [IFEvents.PUSHED]: handlerFn
-        }
-      });
-
-      const pushEvent: SemanticEvent = {
-        id: 'test-push-1',
-        type: IFEvents.PUSHED,
-        entities: {
-          actor: 'player',
-          target: 'rug'
-        },
-        data: {
-          direction: 'north',
-          force: 'gentle'
-        },
-        timestamp: Date.now()
-      };
-
-      processor.processEvents([pushEvent]);
-
-      expect(handlerFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: {
-            direction: 'north',
-            force: 'gentle'
-          }
-        })
-      );
-    });
   });
 });

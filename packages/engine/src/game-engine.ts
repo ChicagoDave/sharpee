@@ -14,7 +14,6 @@ import {
   ITrait,
   TraitType,
   EntityType,
-  IGameEvent,
   StoryInfoTrait
 } from '@sharpee/world-model';
 import { EventProcessor, Effect } from '@sharpee/event-processor';
@@ -656,9 +655,8 @@ export class GameEngine {
       for (const event of result.events) {
         this.emit('event', event);
 
-        // NOTE: Entity handlers (entity.on) are already dispatched by the
-        // event-processor in the command executor, so we don't call
-        // dispatchEntityHandlers here to avoid duplicate handler invocations.
+        // NOTE: Entity `on` handlers removed (ISSUE-068). Story-level handlers
+        // are dispatched by the event-processor in the command executor.
 
         // Check for story victory event but don't stop immediately
         // (we're still processing the turn)
@@ -1412,7 +1410,6 @@ export class GameEngine {
     }
     for (const event of processed) {
       this.emit('event', event);
-      this.dispatchEntityHandlers(event);
     }
   }
 
@@ -1873,45 +1870,6 @@ export class GameEngine {
           listener(...args);
         } catch (error) {
           console.error(`Error in event listener for ${event}:`, error);
-        }
-      }
-    }
-  }
-
-  /**
-   * Dispatch an event to entity handlers (entity.on)
-   * Entities can define handlers for specific event types
-   */
-  private dispatchEntityHandlers(event: ISemanticEvent): void {
-    // Get all entities that might have handlers
-    const entities = this.world.getAllEntities();
-
-    for (const entity of entities) {
-      // Check if entity has event handlers defined
-      const handlers = entity.on;
-      if (!handlers || typeof handlers !== 'object') {
-        continue;
-      }
-
-      // Check if there's a handler for this event type
-      const handler = handlers[event.type];
-      if (typeof handler === 'function') {
-        try {
-          // Call the handler with the event and world
-          // Cast is safe: engine events always satisfy IGameEvent's data constraint
-          const result = handler(event as IGameEvent, this.world);
-
-          // If handler returns events, add them to the current turn
-          if (Array.isArray(result)) {
-            const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
-            for (const reactionEvent of result) {
-              turnEvents.push(reactionEvent);
-              this.emit('event', reactionEvent);
-            }
-            this.turnEvents.set(this.context.currentTurn, turnEvents);
-          }
-        } catch (error) {
-          console.error(`Error in entity handler for ${entity.id} on ${event.type}:`, error);
         }
       }
     }

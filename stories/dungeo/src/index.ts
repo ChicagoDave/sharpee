@@ -45,7 +45,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, Bal
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages, registerOpenableDescriptionHandler } from './handlers';
 import { GhostRitualMessages } from './traits';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/temple';
@@ -124,7 +124,10 @@ import {
   // Safe opening/closing interceptor (brick explosion puzzle)
   SafeTrait,
   SafeOpeningInterceptor,
-  SafeClosingInterceptor
+  SafeClosingInterceptor,
+  // Rug push interceptor (trapdoor reveal, ISSUE-068 Phase 4)
+  RugTrait,
+  RugPushInterceptor
 } from './traits';
 
 // Melee combat interceptor (Phase 3) + NPC resolver
@@ -512,6 +515,15 @@ export class DungeoStory implements Story {
       );
     }
 
+    // Rug push interceptor (reveals trapdoor, ISSUE-068 Phase 4)
+    if (!hasActionInterceptor(RugTrait.type, 'if.action.pushing')) {
+      registerActionInterceptor(
+        RugTrait.type,
+        'if.action.pushing',
+        RugPushInterceptor
+      );
+    }
+
     // Melee combat interceptor (Phase 3: canonical MDL melee engine)
     // Replaces CombatService with score-scaled, table-based combat for all villains
     if (!hasActionInterceptor(TraitType.COMBATANT, 'if.action.attacking')) {
@@ -524,6 +536,9 @@ export class DungeoStory implements Story {
 
     // Melee NPC resolver — handles villain→hero attacks via canonical melee engine
     registerNpcCombatResolver(meleeNpcResolver);
+
+    // Openable description auto-switching (ISSUE-068: replaces entity on handlers)
+    registerOpenableDescriptionHandler(world);
 
     // Store room IDs for ghost ritual interceptor
     world.setStateValue('dungeo.ghost_ritual.basin_room_id', this.templeIds.basinRoom);

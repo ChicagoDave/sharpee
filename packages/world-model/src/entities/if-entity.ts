@@ -9,7 +9,6 @@ import { ActorTrait } from '../traits/actor/actorTrait';
 import { IdentityTrait } from '../traits/identity/identityTrait';
 import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
 import { SwitchableTrait } from '../traits/switchable/switchableTrait';
-import { IEventHandlers } from '../events/types';
 import { Annotation, AnnotationCondition } from '../annotations/types';
 
 /**
@@ -51,13 +50,6 @@ export class IFEntity implements IEntity {
    */
   private annotations: Map<string, Annotation[]> = new Map();
 
-  /**
-   * Event handlers for this entity
-   * Key is the event type (e.g., 'if.event.pushed')
-   * Value is the handler function
-   */
-  on?: IEventHandlers;
-  
   constructor(id: string, type: string, params?: Partial<IEntityCreationParams>) {
     this.id = id;
     this.type = type;

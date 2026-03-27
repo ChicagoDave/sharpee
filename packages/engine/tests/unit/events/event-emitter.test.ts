@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EventEmitter } from '../../../src/events/event-emitter';
-import { GameEvent, EntityEntityEventHandler } from '@sharpee/world-model';
+import { IIGameEvent, SimpleEventHandler } from '@sharpee/world-model';
 
 describe('EventEmitter', () => {
   let emitter: EventEmitter;
@@ -15,15 +15,15 @@ describe('EventEmitter', () => {
   
   describe('on()', () => {
     it('should register a handler for an event type', () => {
-      const handler: EntityEventHandler = () => {};
+      const handler: SimpleEventHandler = () => {};
       emitter.on('test.event', handler);
       
       expect(emitter.listenerCount('test.event')).toBe(1);
     });
     
     it('should allow multiple handlers for the same event', () => {
-      const handler1: EntityEventHandler = () => {};
-      const handler2: EntityEventHandler = () => {};
+      const handler1: SimpleEventHandler = () => {};
+      const handler2: SimpleEventHandler = () => {};
       
       emitter.on('test.event', handler1);
       emitter.on('test.event', handler2);
@@ -34,8 +34,8 @@ describe('EventEmitter', () => {
   
   describe('off()', () => {
     it('should remove a specific handler', () => {
-      const handler1: EntityEventHandler = () => {};
-      const handler2: EntityEventHandler = () => {};
+      const handler1: SimpleEventHandler = () => {};
+      const handler2: SimpleEventHandler = () => {};
       
       emitter.on('test.event', handler1);
       emitter.on('test.event', handler2);
@@ -45,7 +45,7 @@ describe('EventEmitter', () => {
     });
     
     it('should handle removing non-existent handler gracefully', () => {
-      const handler: EntityEventHandler = () => {};
+      const handler: SimpleEventHandler = () => {};
       
       expect(() => emitter.off('test.event', handler)).not.toThrow();
       expect(emitter.listenerCount('test.event')).toBe(0);
@@ -57,13 +57,13 @@ describe('EventEmitter', () => {
       let called1 = false;
       let called2 = false;
       
-      const handler1: EntityEventHandler = () => { called1 = true; };
-      const handler2: EntityEventHandler = () => { called2 = true; };
+      const handler1: SimpleEventHandler = () => { called1 = true; };
+      const handler2: SimpleEventHandler = () => { called2 = true; };
       
       emitter.on('test.event', handler1);
       emitter.on('test.event', handler2);
       
-      const event: GameEvent = {
+      const event: IGameEvent = {
         type: 'test.event',
         data: {}
       };
@@ -75,7 +75,7 @@ describe('EventEmitter', () => {
     });
     
     it('should collect semantic events from handlers', () => {
-      const handler1: EntityEventHandler = () => [{
+      const handler1: SimpleEventHandler = () => [{
         id: '1',
         type: 'response.1',
         timestamp: Date.now(),
@@ -83,7 +83,7 @@ describe('EventEmitter', () => {
         entities: {}
       }];
       
-      const handler2: EntityEventHandler = () => [{
+      const handler2: SimpleEventHandler = () => [{
         id: '2',
         type: 'response.2',
         timestamp: Date.now(),
@@ -94,7 +94,7 @@ describe('EventEmitter', () => {
       emitter.on('test.event', handler1);
       emitter.on('test.event', handler2);
       
-      const event: GameEvent = {
+      const event: IGameEvent = {
         type: 'test.event',
         data: {}
       };
@@ -107,11 +107,11 @@ describe('EventEmitter', () => {
     });
     
     it('should handle handlers that return void', () => {
-      const handler: EntityEventHandler = () => {};
+      const handler: SimpleEventHandler = () => {};
       
       emitter.on('test.event', handler);
       
-      const event: GameEvent = {
+      const event: IGameEvent = {
         type: 'test.event',
         data: {}
       };
@@ -124,7 +124,7 @@ describe('EventEmitter', () => {
   
   describe('clear()', () => {
     it('should clear all handlers for a specific event type', () => {
-      const handler: EntityEventHandler = () => {};
+      const handler: SimpleEventHandler = () => {};
       
       emitter.on('test.event', handler);
       emitter.on('other.event', handler);
@@ -136,7 +136,7 @@ describe('EventEmitter', () => {
     });
     
     it('should clear all handlers when no event type specified', () => {
-      const handler: EntityEventHandler = () => {};
+      const handler: SimpleEventHandler = () => {};
       
       emitter.on('test.event', handler);
       emitter.on('other.event', handler);
@@ -154,7 +154,7 @@ describe('EventEmitter', () => {
     });
     
     it('should return correct count for registered events', () => {
-      const handler: EntityEventHandler = () => {};
+      const handler: SimpleEventHandler = () => {};
       
       emitter.on('test.event', handler);
       emitter.on('test.event', handler);

@@ -9,8 +9,8 @@
  * From MDL source (act1.254):
  * - IN!: Show axe, message if player present, restore description, clear flag (exits blocked)
  *
- * Note: The knockout transition (OUT!) is handled by the troll's entity event handler
- * for 'if.event.knocked_out' in underground.ts
+ * Note: The knockout transition (OUT!) is handled by the MeleeInterceptor's
+ * UNCONSCIOUS path + handleVillainKnockout() (ISSUE-068 Phase 3)
  */
 
 import { ISemanticEvent } from '@sharpee/core';
