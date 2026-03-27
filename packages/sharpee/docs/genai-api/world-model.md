@@ -1913,6 +1913,7 @@ export declare const TraitType: {
     readonly COMBATANT: "combatant";
     readonly EQUIPPED: "equipped";
     readonly NPC: "npc";
+    readonly OPEN_INVENTORY: "openInventory";
     readonly VEHICLE: "vehicle";
     readonly ENTERABLE: "enterable";
     readonly STORY_INFO: "storyInfo";
@@ -1997,6 +1998,7 @@ import { DestructibleTrait } from './destructible/destructibleTrait';
 import { CombatantTrait } from './combatant/combatantTrait';
 import { EquippedTrait } from './equipped/equippedTrait';
 import { NpcTrait } from './npc/npcTrait';
+import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
 import { VehicleTrait } from './vehicle/vehicleTrait';
 import { EnterableTrait } from './enterable/enterableTrait';
 import { StoryInfoTrait } from './story-info/storyInfoTrait';
@@ -2012,7 +2014,7 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### traits/identity/identityTrait

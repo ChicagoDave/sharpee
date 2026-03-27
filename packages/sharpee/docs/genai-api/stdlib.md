@@ -1667,6 +1667,11 @@ export declare class CommandValidator implements CommandValidator {
      */
     private resolveEntity;
     /**
+     * Find candidate entities by name, type, or synonym for a given search term.
+     * Returns deduplicated results.
+     */
+    private findCandidatesByTerm;
+    /**
      * Get entities by exact name match
      */
     private getEntitiesByName;
@@ -2491,11 +2496,7 @@ export declare class PerceptionService implements IPerceptionService {
  * Types for NPC behaviors and actions.
  */
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel } from '@sharpee/world-model';
-/**
- * Direction for NPC movement
- */
-export type Direction = 'north' | 'south' | 'east' | 'west' | 'northeast' | 'northwest' | 'southeast' | 'southwest' | 'up' | 'down' | 'in' | 'out';
+import { IFEntity, WorldModel, DirectionType } from '@sharpee/world-model';
 /**
  * Context passed to NPC behavior hooks
  */
@@ -2520,7 +2521,7 @@ export interface NpcContext {
     getEntitiesInRoom(): IFEntity[];
     /** Get exits from the NPC's current room */
     getAvailableExits(): {
-        direction: Direction;
+        direction: DirectionType;
         destination: EntityId;
     }[];
 }
@@ -2531,7 +2532,7 @@ export interface NpcContext {
  */
 export type NpcAction = {
     type: 'move';
-    direction: Direction;
+    direction: DirectionType;
 } | {
     type: 'moveTo';
     roomId: EntityId;
@@ -2616,7 +2617,7 @@ export interface NpcMovedData {
     npc: EntityId;
     from: EntityId;
     to: EntityId;
-    direction?: Direction;
+    direction?: DirectionType;
 }
 /**
  * Data for NPC speech events

@@ -60,7 +60,7 @@ const openable = entity.getTrait(OpenableTrait);
 - **Exit state**: `as any` count in `packages/` source files (excluding tests) materially reduced; baseline documented for future CI enforcement
 - **Status**: IN PROGRESS
 
-#### Phase 2A: Remove Legacy Event Sequencing Layer (~25 `as any` casts)
+#### Phase 2A: Remove Legacy Event Sequencing Layer (~25 `as any` casts) — DONE
 
 The engine has a vestigial event-driven architecture layer that wraps `ISemanticEvent` into `SequencedEvent` shells (adding `sequence`, `turn`, `scope` fields). No consumer uses these fields. Platform listeners immediately reverse-engineer `SequencedEvent` back to `ISemanticEvent` with `as any` casts. The fix is to emit `ISemanticEvent` directly and delete the sequencing infrastructure.
 

@@ -17,24 +17,6 @@ import { IParsedCommand, IValidatedCommand, IFEntity } from '@sharpee/world-mode
 import { ITextBlock } from '@sharpee/text-blocks';
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
 /**
- * Basic game event (before sequencing)
- * Note: data is optional to support ISemanticEvent compatibility
- */
-export interface GameEvent<T = unknown> {
-    type: string;
-    data?: T;
-}
-/**
- * Sequenced event with turn and ordering information
- */
-export interface SequencedEvent extends GameEvent {
-    sequence: number;
-    timestamp: Date;
-    turn: number;
-    scope: 'turn' | 'global' | 'system';
-    source?: string;
-}
-/**
  * Timing data for performance tracking
  */
 export interface TimingData {
@@ -97,7 +79,7 @@ export interface TurnResult {
     /**
      * All events generated this turn (in sequence)
      */
-    events: SequencedEvent[];
+    events: ISemanticEvent[];
     /**
      * Structured text blocks from TextService (ADR-133).
      * Clients render these according to their capabilities.
@@ -216,7 +198,7 @@ export interface EngineConfig {
     /**
      * Event interceptor for debugging
      */
-    onEvent?: (event: SequencedEvent) => void;
+    onEvent?: (event: ISemanticEvent) => void;
     /**
      * Debug mode - shows more detailed output
      */
@@ -524,83 +506,6 @@ export declare class StoryWithEvents implements Story {
  * Validate story configuration
  */
 export declare function validateStoryConfig(config: StoryConfig): void;
-```
-
-### event-sequencer
-
-```typescript
-/**
- * Event Sequencer - Manages event ordering within turns
- *
- * Ensures all events have proper sequence numbers for ordering
- * and grouping within a turn.
- */
-import { GameEvent, SequencedEvent } from './types';
-/**
- * Event sequencer class
- */
-declare class EventSequencer {
-    private counter;
-    /**
-     * Get next sequence number
-     */
-    next(): number;
-    /**
-     * Reset turn counter (optional, for testing)
-     */
-    resetTurn(turn: number): void;
-    /**
-     * Sequence a single event
-     */
-    sequence(event: GameEvent, turn: number): SequencedEvent;
-    /**
-     * Sequence multiple events
-     */
-    sequenceAll(events: GameEvent[], turn: number): SequencedEvent[];
-}
-/**
- * Event sequence utilities
- */
-export declare class EventSequenceUtils {
-    /**
-     * Sort events by sequence number
-     */
-    static sort(events: SequencedEvent[]): SequencedEvent[];
-    /**
-     * Filter events by type
-     */
-    static filterByType(events: SequencedEvent[], type: string): SequencedEvent[];
-    /**
-     * Filter events by turn
-     */
-    static filterByTurn(events: SequencedEvent[], turn: number): SequencedEvent[];
-    /**
-     * Filter events by scope
-     */
-    static filterByScope(events: SequencedEvent[], scope: SequencedEvent['scope']): SequencedEvent[];
-    /**
-     * Group events by type
-     */
-    static groupByType(events: SequencedEvent[]): Record<string, SequencedEvent[]>;
-    /**
-     * Group events by turn
-     */
-    static groupByTurn(events: SequencedEvent[]): Record<number, SequencedEvent[]>;
-    /**
-     * Get latest event by type
-     */
-    static getLatestByType(events: SequencedEvent[], type: string): SequencedEvent | undefined;
-    /**
-     * Count events by type
-     */
-    static countByType(events: SequencedEvent[]): Record<string, number>;
-    /**
-     * Get events in sequence range
-     */
-    static getInRange(events: SequencedEvent[], start: number, end: number, inclusive?: boolean): SequencedEvent[];
-}
-export declare const eventSequencer: EventSequencer;
-export {};
 ```
 
 ### command-executor
@@ -924,7 +829,7 @@ import { ITextService } from '@sharpee/text-service';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { GameContext, TurnResult, EngineConfig, SequencedEvent } from './types';
+import { GameContext, TurnResult, EngineConfig } from './types';
 import { Story } from './story';
 import { NarrativeSettings } from './narrative';
 import { ParsedCommandTransformer } from './command-executor';
@@ -935,7 +840,7 @@ export interface GameEngineEvents {
     'turn:start': (turn: number, input: string) => void;
     'turn:complete': (result: TurnResult) => void;
     'turn:failed': (error: Error, turn: number) => void;
-    'event': (event: SequencedEvent) => void;
+    'event': (event: ISemanticEvent) => void;
     'state:changed': (context: GameContext) => void;
     'game:over': (context: GameContext) => void;
     'text:output': (blocks: ITextBlock[], turn: number) => void;
@@ -1182,7 +1087,7 @@ export declare class GameEngine {
     /**
      * Get recent events
      */
-    getRecentEvents(count?: number): SequencedEvent[];
+    getRecentEvents(count?: number): ISemanticEvent[];
     /**
      * Update vocabulary for an entity
      */
@@ -1418,7 +1323,19 @@ export declare function createSaveRestoreService(config?: UndoConfig): SaveResto
 import { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { IPerceptionService } from '@sharpee/stdlib';
-import { SequencedEvent, EngineConfig } from './types';
+import { EngineConfig } from './types';
+/**
+ * Context for event processing pipeline
+ */
+export interface EventProcessingContext {
+    turn?: number;
+    playerId?: string;
+    locationId?: string;
+}
+/**
+ * Process an event through normalization and enrichment
+ */
+export declare function processEvent(event: ISemanticEvent, context?: EventProcessingContext): ISemanticEvent;
 /**
  * Context for event enrichment - matches EventProcessingContext
  */
@@ -1439,11 +1356,11 @@ export interface ProcessedEventsResult {
 /**
  * Callback type for emitting events
  */
-export type EventEmitCallback = (event: SequencedEvent) => void;
+export type EventEmitCallback = (event: ISemanticEvent) => void;
 /**
  * Callback type for dispatching to entity handlers
  */
-export type EntityHandlerDispatcher = (event: SequencedEvent) => void;
+export type EntityHandlerDispatcher = (event: ISemanticEvent) => void;
 /**
  * Service for processing turn events
  */
@@ -1459,7 +1376,7 @@ export declare class TurnEventProcessor {
      * @param world - World model for perception filtering
      * @returns Processed events and platform events
      */
-    processActionEvents(events: SequencedEvent[], enrichmentContext: EnrichmentContext, player: IFEntity, world: WorldModel): ProcessedEventsResult;
+    processActionEvents(events: ISemanticEvent[], enrichmentContext: EnrichmentContext, player: IFEntity, world: WorldModel): ProcessedEventsResult;
     /**
      * Process semantic events (e.g., from NPC or scheduler ticks)
      *
@@ -1488,7 +1405,7 @@ export declare class TurnEventProcessor {
      * @param events - Events to check
      * @returns Victory details if found, null otherwise
      */
-    checkForVictory(events: SequencedEvent[]): {
+    checkForVictory(events: ISemanticEvent[]): {
         reason: string;
         score: number;
     } | null;
