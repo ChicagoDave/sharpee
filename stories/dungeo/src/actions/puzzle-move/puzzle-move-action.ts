@@ -40,23 +40,23 @@ export const puzzleMoveAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Store direction for execute phase
-    (context.sharedData as any).direction = direction;
+    context.sharedData.direction = direction;
 
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
-    const direction = (context.sharedData as any).direction as string;
+    const direction = context.sharedData.direction as string;
 
     // Handle the puzzle movement - this mutates puzzle state
     const events = handlePuzzleMovement(context.world, direction);
 
     // Store events for report phase
-    (context.sharedData as any).puzzleEvents = events;
+    context.sharedData.puzzleEvents = events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const events = (context.sharedData as any).puzzleEvents as ISemanticEvent[] | null;
+    const events = context.sharedData.puzzleEvents as ISemanticEvent[] | null;
 
     if (events && events.length > 0) {
       return events;
@@ -70,7 +70,7 @@ export const puzzleMoveAction: Action & { metadata: ActionMetadata } = {
       entities: {},
       data: {
         messageId: PuzzleHandlerMessages.MOVE_BLOCKED,
-        direction: (context.sharedData as any).direction || 'unknown'
+        direction: context.sharedData.direction || 'unknown'
       },
       narrate: true
     }];

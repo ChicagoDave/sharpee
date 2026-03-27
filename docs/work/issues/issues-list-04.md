@@ -1,7 +1,10 @@
-# Known Issues (List 04)
+# Platform Known Issues (List 04)
 
-Catalog of known bugs and issues to be addressed.
+Catalog of known platform bugs and issues to be addressed.
 Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
+
+**Dungeo-specific issues** are tracked separately in
+[docs/work/dungeo/issues/issues-list-01.md](../dungeo/issues/issues-list-01.md).
 
 **Numbering note**: Issues 031-056 were assigned in lists 01-03. This list
 starts new issues at 057. Carried-over issues from list-03 keep their
@@ -11,24 +14,23 @@ original numbers.
 
 | Issue | Description | Severity | Component | Identified | Fixed |
 |-------|-------------|----------|-----------|------------|-------|
-| ISSUE-032 | Version transcript needs update for DUNGEON name | Low | test | 2026-01-22 | - |
 | ISSUE-047 | Zifmia client needs console output panel without full Dev Tools | Medium | client-zifmia | 2026-02-01 | 2026-03-26 |
 | ISSUE-048 | Zifmia not updated to latest platform | Medium | client-zifmia | 2026-02-04 | 2026-03-26 (closed — ongoing release workflow, not a tracked issue) |
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | 2026-03-26 (deferred — logic gates in transcript-tester cover this) |
-| ISSUE-050 | Consolidate all Dungeo text into dungeo-en-us.ts for i18n | Low | dungeo | 2026-02-07 | - |
 | ISSUE-052 | Capability registry module-level Map not shared across require() | High | world-model | 2026-02-08 | 2026-02-13 |
-| ISSUE-053 | Grating/skeleton key wiring broken | High | dungeo | 2026-03-23 | 2026-03-23 |
 | ISSUE-057 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us, stdlib | 2026-03-23 | 2026-03-26 |
 | ISSUE-058 | Entity creation is excessively repetitive — needs builder/helper API | Low | world-model | 2026-03-23 | - |
 | ISSUE-059 | Transcript tester `story:` header field is metadata-only | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
 | ISSUE-062 | Fuse `skipNextTick` behavior undocumented at API level | Low | plugin-scheduler | 2026-03-24 | - |
-| ISSUE-063 | `as any` regression — 1,035 occurrences across 203 files | High | platform-wide | 2026-03-26 | - |
+| ISSUE-063 | `as any` regression — 200 remaining in source (was 319), Phases 1+2A+2B complete | High | platform-wide | 2026-03-26 | In progress |
 | ISSUE-064 | VisibilityBehavior has 3 duplicate container-walk traversals | Medium | world-model | 2026-03-26 | - |
 | ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-067 | Trace commands defined as 10 individual literal patterns | Low | parser-en-us | 2026-03-26 | - |
+| ISSUE-068 | `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types | Medium | world-model, event-processor | 2026-03-27 | - |
+| ISSUE-069 | `world.getStateValue`/`setStateValue` is a code smell — puzzle state belongs on entities/traits | Medium | world-model, stories | 2026-03-27 | - |
 
 ---
 
@@ -44,17 +46,6 @@ original numbers.
 `capability-registry.ts` now uses `globalThis` storage via `__sharpee_capability_behaviors__` key, matching the pattern in `interceptor-registry.ts`.
 
 ---
-
-### ISSUE-053: Grating/skeleton key wiring broken
-
-**Reported**: 2026-03-23
-**Severity**: High
-**Component**: dungeo (story)
-**Status**: Fixed 2026-03-23
-
-Four problems made the grating puzzle non-functional: duplicate grating entities (forest.ts and maze.ts), `key.attributes.unlocksId` is a no-op, `LockableTrait` has no `keyId`, and exits don't use `via` to check the grating's open/locked state.
-
-**Details**: See [issue-053-grating-key-wiring.md](issue-053-grating-key-wiring.md)
 
 ### ISSUE-057: Multi-word aliases don't resolve in the parser
 
@@ -114,43 +105,6 @@ Closed — this is an ongoing release workflow concern, not a tracked issue. Zif
 **Status**: Deferred 2026-03-26
 
 Deferred — the transcript-tester's logic gates (DO-UNTIL, WHILE, ENSURES) handle randomness and alternate paths as live tests, which is a better approach than seeding a PRNG. Revisit only if logic gates prove insufficient.
-
----
-
-## Open Issues — Carried Over
-
-### ISSUE-032: Version transcript needs update for DUNGEON name
-
-**Reported**: 2026-01-22
-**Severity**: Low
-**Component**: Test
-
-**Description**:
-The version.transcript test expects "DUNGEO v" but the story was renamed to "DUNGEON" (full spelling). The "DUNGEO" spelling was a nostalgia reference to the PDP-11 era filename limit, but the game title should use the full spelling.
-
-**Resolution**: Update test to expect "DUNGEON" instead of "DUNGEO v".
-
----
-
-### ISSUE-050: Consolidate all Dungeo text into dungeo-en-us.ts for i18n
-
-**Reported**: 2026-02-07
-**Severity**: Low
-**Component**: dungeo (story)
-
-**Description**:
-All English text strings in the Dungeo story are currently spread across multiple files (melee-messages.ts, npc-messages.ts, object-messages.ts, action-messages.ts, puzzle-messages.ts, etc.). To enable future translation to other languages, all story text should be consolidated into a single `dungeo-en-us.ts` file (or a `dungeo-en-us/` directory) that serves as the single source of truth for all player-facing strings.
-
-**Scope**:
-- Melee combat messages (sword, knife, troll, thief, cyclops tables)
-- NPC messages (thief, troll, cyclops, robot, dungeon master)
-- Action messages (say, ring, break, burn, pray, diagnose, etc.)
-- Puzzle messages (royal puzzle, mirror, laser, exorcism, etc.)
-- Object messages (cakes, boat, dam, etc.)
-- Scheduler messages (lantern, candles, dam, balloon)
-- Room descriptions and entity descriptions
-
-**Priority**: Low — the language layer architecture already supports this via message IDs. This is a refactoring task to group all text in one place, not a functional change.
 
 ---
 
@@ -257,31 +211,42 @@ This reduces 10 rules to 1, and new subsystems require only a vocabulary entry r
 
 ## Open Issues — Platform Type Safety
 
-### ISSUE-063: `as any` regression — 1,035 occurrences across 203 files
+### ISSUE-063: `as any` regression — Phases 1+2A+2B complete, 200 remaining in source files
 
 **Reported**: 2026-03-26
 **Severity**: High
 **Component**: Platform-wide (all packages)
 **Type**: Tech debt / type safety regression
+**Status**: In progress (branch `issue-063-as-any-cleanup`)
 
 **Description**:
-A previous refactor removed all `as any` casts from the codebase. They have regressed significantly — there are now **1,035 occurrences across 203 files** in `packages/`. This undermines TypeScript's type safety guarantees and has been a source of bugs (the "dropping bug" was caused by actions that appeared to work because types weren't enforced).
+A previous refactor removed all `as any` casts from the codebase. They have regressed significantly. This undermines TypeScript's type safety guarantees and has been a source of bugs (the "dropping bug" was caused by actions that appeared to work because types weren't enforced).
 
-**Worst offenders (source files)**:
+**Key discovery**: `getTrait` is already generic — passing a trait constructor (e.g., `getTrait(OpenableTrait)`) infers the return type automatically. No platform redesign needed; the fix is updating callers to use the constructor pattern instead of `getTrait(TraitType.X) as any`.
+
+**Phase 1 complete (2026-03-26)**: Cleaned 8 worst-offender source files (61 casts removed, 319 → 258). Also fixed `requiredKey` → `keyId` bug in `AuthorModel.setupContainer()` and removed duplicate `Direction` type from NPC system.
+
+**Phase 2A complete (2026-03-26)**: Removed legacy event sequencing layer — deleted 4 files, modified 32 files, net -861 lines. Eliminated ~25 `as any` casts related to `SequencedEvent` wrapping/unwrapping (258 → ~211).
+
+**Phase 2B complete (2026-03-27)**: Eliminated all 11 remaining `as any` casts in `game-engine.ts` (now 0). Fixes: removed unnecessary casts where types already existed (`entity.on`, `parser.setWorldContext`), fixed `Set<Function>` → typed callbacks, created `IEngineAwareLanguageProvider` with type guard, added public `validateCommand()` on `CommandExecutor`, used `StoryInfoTrait` constructor pattern, removed dead `versionInfo` fallback, narrowed `as any[]` → `as Effect[]`. Count: 211 → 200.
+
+**Remaining phases**: Phase 3 (story files), Phase 4 (test files), Phase 5 (CI enforcement).
+
+**Worst offenders (source files, updated 2026-03-27)**:
 
 | File | Count | Notes |
 |------|-------|-------|
-| `engine/src/game-engine.ts` | 32 | Core engine |
 | `stdlib/src/actions/standard/drinking/drinking.ts` | 22 | Action implementation |
-| `world-model/src/world/VisibilityBehavior.ts` | 21 | Visibility system |
-| `transcript-tester/src/runner.ts` | 16 | Test runner |
 | `stdlib/src/actions/base/snapshot-utils.ts` | 15 | Action utilities |
 | `world-model/src/traits/edible/edibleBehavior.ts` | 13 | Trait behavior |
-| `world-model/src/entities/if-entity.ts` | 12 | Entity core |
-| `world-model/src/world/WorldModel.ts` | 12 | World model core |
-| `stdlib/src/scope/scope-resolver.ts` | 12 | Scope resolution |
 | `parser-en-us/src/english-parser.ts` | 11 | Parser core |
-| `world-model/src/world/AuthorModel.ts` | 8 | Author model |
+| `parser-en-us/src/scope-evaluator.ts` | 7 | Scope evaluation |
+| `stdlib/src/actions/standard/taking/taking.ts` | 7 | Action implementation |
+| `stdlib/src/actions/standard/examining/examining-data.ts` | 7 | Action data |
+| `stdlib/src/scope/scope-resolver.ts` | 6 | Scope resolution |
+| `stdlib/src/actions/standard/looking/looking-data.ts` | 6 | Action data |
+| `stdlib/src/actions/standard/version/version.ts` | 5 | Version action |
+| `engine/src/game-engine.ts` | 0 | **Cleared** (was 32) |
 
 **Worst offenders (test files)** — tests are lower priority but should still be typed:
 
@@ -318,6 +283,49 @@ A previous refactor removed all `as any` casts from the codebase. They have regr
 | `world as any` | ~3 | press-button, commanding | Passing world to untyped functions |
 
 The story-side `as any` casts fall into two groups: (1) casts that exist because the platform's `getTrait()` isn't generic (same root cause as platform), and (2) casts that set ad-hoc properties on entities — most of these were already refactored into proper traits (the `as any` references in trait files are in doc comments showing the old anti-pattern). The GDT debug commands (`de.ts`) are the worst offender with 10 casts for entity property inspection.
+
+---
+
+### ISSUE-068: `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types
+
+**Reported**: 2026-03-27
+**Severity**: Medium
+**Component**: Platform (world-model/events/types.ts, event-processor/handler-types.ts)
+**Type**: Tech debt / dead architecture
+**Discovered during**: ISSUE-063 Phase 3 — removing `as any` from GDT `kl.ts` exposed type errors because `IEventHandlers` values are `LegacyEntityEventHandler | LegacyEntityEventHandler[]`, which isn't directly callable.
+
+**Description**:
+The entity event handler type system has migration scaffolding for an ADR-075 Effect-returning architecture that was never adopted:
+
+1. **`LegacyEntityEventHandler`** — has `world?: any` in its signature (an `as any` hiding in the platform). Every real handler passes `WorldModel`, not `any`.
+2. **`EntityEventHandler`** (ADR-075) — returns `Effect[]` via read-only `WorldQuery`. No entity `on` handler uses this pattern.
+3. **`AnyEventHandler`** — union of both, "for migration period." The migration never happened.
+4. **Array form** — `IEventHandlers` allows `AnyEventHandler[]` (multiple handlers per event type). No entity registers an array — every usage is a single function.
+
+**Actual usage in Dungeo** (all entity `on` handlers):
+- Pattern A: `(event: IGameEvent) => { ... }` — no world param, no return (house-interior, white-house)
+- Pattern B: `(_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => { ... }` — with world, returns events (underground/troll)
+
+**Proposed fix**:
+Simplify to match actual usage:
+
+```typescript
+// world-model/src/events/types.ts
+export type EntityOnHandler = (event: IGameEvent, world?: WorldModel) => void | ISemanticEvent[];
+
+export interface IEventHandlers {
+  [eventType: string]: EntityOnHandler;
+}
+```
+
+- Drop `LegacyEntityEventHandler` (rename to `EntityOnHandler`, fix `any` → `WorldModel`)
+- Drop `EntityEventHandler`, `AnyEventHandler`, `StoryEventHandler` from `IEventHandlers` (they can stay in event-processor for its own use)
+- Drop the array form `| EntityOnHandler[]`
+- Update `event-processor/handler-types.ts` to match
+
+**Blast radius**: Entity `on` assignments in stories compile without change (the handler signatures already match). The `event-processor` may need its `AnyEventHandler` union adjusted if it dispatches both legacy and Effect-returning handlers internally. GDT `kl.ts` would compile clean after this fix (the call `entityOn['if.event.death'](deathEvent, world)` becomes directly callable).
+
+**Priority**: Medium — blocks clean completion of ISSUE-063 Phase 3 Group 2 (kl.ts). Can be done as a quick focused PR.
 
 ---
 

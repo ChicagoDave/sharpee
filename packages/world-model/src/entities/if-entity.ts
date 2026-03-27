@@ -3,6 +3,12 @@
 import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
 import { ITrait, ITraitConstructor, isTrait } from '../traits/trait';
 import { TraitType } from '../traits/trait-types';
+import { OpenableTrait } from '../traits/openable/openableTrait';
+import { LockableTrait } from '../traits/lockable/lockableTrait';
+import { ActorTrait } from '../traits/actor/actorTrait';
+import { IdentityTrait } from '../traits/identity/identityTrait';
+import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
+import { SwitchableTrait } from '../traits/switchable/switchableTrait';
 import { IEventHandlers } from '../events/types';
 import { Annotation, AnnotationCondition } from '../annotations/types';
 
@@ -568,8 +574,8 @@ export class IFEntity implements IEntity {
    * Check if this is currently open
    */
   get isOpen(): boolean {
-    const openable = this.get(TraitType.OPENABLE);
-    return openable ? (openable as any).isOpen : false;
+    const openable = this.get(OpenableTrait);
+    return openable ? openable.isOpen : false;
   }
   
   /**
@@ -583,8 +589,8 @@ export class IFEntity implements IEntity {
    * Check if this is currently locked
    */
   get isLocked(): boolean {
-    const lockable = this.get(TraitType.LOCKABLE);
-    return lockable ? (lockable as any).isLocked : false;
+    const lockable = this.get(LockableTrait);
+    return lockable ? lockable.isLocked : false;
   }
   
   /**
@@ -619,16 +625,16 @@ export class IFEntity implements IEntity {
    * Check if this is the player
    */
   get isPlayer(): boolean {
-    const actor = this.get(TraitType.ACTOR);
-    return actor ? (actor as any).isPlayer : false;
+    const actor = this.get(ActorTrait);
+    return actor ? actor.isPlayer : false;
   }
   
   /**
    * Check if this provides light
    */
   get providesLight(): boolean {
-    const lightSource = this.get(TraitType.LIGHT_SOURCE);
-    return lightSource ? (lightSource as any).isLit : false;
+    const lightSource = this.get(LightSourceTrait);
+    return lightSource ? lightSource.isLit === true : false;
   }
   
   /**
@@ -650,8 +656,8 @@ export class IFEntity implements IEntity {
    * Check if this is switched on
    */
   get isOn(): boolean {
-    const switchable = this.get(TraitType.SWITCHABLE);
-    return switchable ? (switchable as any).isOn : false;
+    const switchable = this.get(SwitchableTrait);
+    return switchable ? switchable.isOn : false;
   }
   
   /**
@@ -659,9 +665,9 @@ export class IFEntity implements IEntity {
    */
   get name(): string {
     // First check identity trait (authoritative player-facing name)
-    const identity = this.get(TraitType.IDENTITY);
-    if (identity && (identity as any).name) {
-      return (identity as any).name;
+    const identity = this.get(IdentityTrait);
+    if (identity && identity.name) {
+      return identity.name;
     }
 
     // Fall back to displayName attribute
@@ -682,8 +688,8 @@ export class IFEntity implements IEntity {
    * Get the description of this entity
    */
   get description(): string | undefined {
-    const identity = this.get(TraitType.IDENTITY);
-    return identity ? (identity as any).description : undefined;
+    const identity = this.get(IdentityTrait);
+    return identity ? identity.description : undefined;
   }
   
   /**

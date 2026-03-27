@@ -19,7 +19,8 @@ import {
   IFEntity,
   WorldModel,
   ActorTrait,
-  TraitType
+  TraitType,
+  OpenableTrait
 } from '@sharpee/world-model';
 
 import { EggTrait } from './egg-trait';
@@ -83,9 +84,9 @@ export const EggOpeningBehavior: CapabilityBehavior = {
   ): void {
     // Open the egg - the OpenableTrait handles the actual state change
     // through the standard opening action's execute phase
-    const openable = entity.get(TraitType.OPENABLE);
+    const openable = entity.get(OpenableTrait);
     if (openable) {
-      (openable as any).isOpen = true;
+      openable.isOpen = true;
     }
 
     // Mark that the egg has been opened

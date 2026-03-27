@@ -5,7 +5,8 @@
  * This file only contains story-specific code.
  */
 
-import { GameEngine, SequencedEvent } from '@sharpee/engine';
+import { GameEngine } from '@sharpee/engine';
+import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
@@ -109,7 +110,7 @@ function formatObjects(data: Record<string, unknown>): string {
 /**
  * Handle story-specific events
  */
-function handleStoryEvent(event: SequencedEvent, client: BrowserClientInterface): boolean {
+function handleStoryEvent(event: ISemanticEvent, client: BrowserClientInterface): boolean {
   // Handle RNAME command (room name only)
   if (event.type === 'dungeo.event.rname') {
     const roomName = (event.data as Record<string, unknown>)?.roomName as string | undefined;

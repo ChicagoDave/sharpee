@@ -14,9 +14,6 @@ export * from './contracts';
 // World state changes
 export * from './changes';
 
-// Event sequencing
-export * from './sequencing';
-
 // Language provider interfaces
 export * from './language-provider';
 export * from './parser-language-provider';

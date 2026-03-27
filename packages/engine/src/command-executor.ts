@@ -10,8 +10,8 @@
  * All event creation is owned by the action components themselves.
  */
 
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType } from '@sharpee/core';
-import { IParser, IValidatedCommand, IParsedCommand } from '@sharpee/world-model';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType, Result } from '@sharpee/core';
+import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
 import { hasWorldContext } from './parser-interface';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
 import { WorldModel } from '@sharpee/world-model';
@@ -26,7 +26,6 @@ import {
 } from '@sharpee/stdlib';
 
 import { GameContext, TurnResult, EngineConfig } from './types';
-import { eventSequencer } from './event-sequencer';
 import { createActionContext } from './action-context-factory';
 import {
   checkCapabilityDispatch,
@@ -81,6 +80,16 @@ export class CommandExecutor {
   }
 
   /**
+   * Validate a parsed command against the world model.
+   *
+   * @param command - The parsed command to validate
+   * @returns Result with validated command or validation error
+   */
+  validateCommand(command: IParsedCommand): Result<IValidatedCommand, IValidationError> {
+    return this.validator.validate(command);
+  }
+
+  /**
    * Register a transformer that can modify parsed commands before validation.
    * Transformers are called in order of registration.
    *
@@ -112,7 +121,6 @@ export class CommandExecutor {
     config?: EngineConfig
   ): Promise<TurnResult> {
     const turn = context.currentTurn;
-    eventSequencer.resetTurn(turn);
 
     // Timing tracking
     const startTime = config?.collectTiming ? Date.now() : 0;
@@ -154,8 +162,11 @@ export class CommandExecutor {
           const candidates = details.ambiguousEntities || [];
 
           // Emit client.query event for disambiguation
-          const queryEvent = eventSequencer.sequence({
+          const queryEvent: ISemanticEvent = {
+            id: `query_disambig_${turn}_${Date.now()}`,
             type: 'client.query',
+            timestamp: Date.now(),
+            entities: {},
             data: {
               source: QuerySource.DISAMBIGUATION,
               type: QueryType.DISAMBIGUATION,
@@ -164,7 +175,7 @@ export class CommandExecutor {
               searchText: details.searchText,
               originalCommand: parsedCommand
             }
-          }, turn);
+          };
 
           // Return early with query pending
           return {
@@ -361,14 +372,11 @@ export class CommandExecutor {
         }
       }
 
-      // Preserve all event properties (including requiresClientAction for platform events)
-      const sequenced = eventSequencer.sequenceAll(allEvents, turn);
-
       const result: TurnResult = {
         turn,
         input,
         success: !events.some(e => e.type === 'action.error'),
-        events: sequenced,
+        events: allEvents,
         actionId: command.actionId,
         parsedCommand: command.parsed,
         validatedCommand: command
@@ -391,10 +399,13 @@ export class CommandExecutor {
         turn,
         input,
         success: false,
-        events: [eventSequencer.sequence({
+        events: [{
+          id: `cmd_failed_${turn}_${Date.now()}`,
           type: 'command.failed',
+          timestamp: Date.now(),
+          entities: {},
           data: { reason: (error as Error).message, input }
-        }, turn)],
+        }],
         error: (error as Error).message
       };
 

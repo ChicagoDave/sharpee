@@ -5,7 +5,8 @@
  */
 
 import * as path from 'path';
-import { GameEngine, TurnResult, SequencedEvent } from '@sharpee/engine';
+import { GameEngine, TurnResult } from '@sharpee/engine';
+import { ISemanticEvent } from '@sharpee/core';
 import { renderToString } from '@sharpee/text-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
@@ -28,7 +29,7 @@ export interface TestableGame {
   engine: GameEngine;
   world: WorldModel;
   lastOutput: string;
-  lastEvents: SequencedEvent[];
+  lastEvents: ISemanticEvent[];
   lastTurnResult: TurnResult | null;
   executeCommand(input: string): Promise<string>;
 }
@@ -107,7 +108,7 @@ export function createTestableGame(story: any): TestableGame {
   // Capture text output and events
   let lastOutput = '';
   let outputBuffer: string[] = [];
-  let lastEvents: SequencedEvent[] = [];
+  let lastEvents: ISemanticEvent[] = [];
   let lastTurnResult: TurnResult | null = null;
 
   engine.on('text:output', (blocks) => {
@@ -115,8 +116,8 @@ export function createTestableGame(story: any): TestableGame {
   });
 
   // Capture ALL events through the event emitter (includes scheduler/NPC events)
-  let eventBuffer: SequencedEvent[] = [];
-  engine.on('event', (event: SequencedEvent) => {
+  let eventBuffer: ISemanticEvent[] = [];
+  engine.on('event', (event: ISemanticEvent) => {
     eventBuffer.push(event);
   });
 

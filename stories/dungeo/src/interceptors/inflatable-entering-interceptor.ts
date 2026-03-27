@@ -127,8 +127,8 @@ export const InflatableEnteringInterceptor: ActionInterceptor = {
     }
 
     // Update displayName if it exists
-    if ((entity as any).attributes?.displayName) {
-      (entity as any).attributes.displayName = 'pile of plastic';
+    if (entity.attributes.displayName) {
+      entity.attributes.displayName = 'pile of plastic';
     }
 
     // Remove enterable/vehicle traits

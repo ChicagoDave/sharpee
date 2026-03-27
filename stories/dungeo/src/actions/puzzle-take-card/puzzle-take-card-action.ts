@@ -41,11 +41,11 @@ export const puzzleTakeCardAction: Action & { metadata: ActionMetadata } = {
     const events = handleTakeCard(context.world);
 
     // Store events for report phase
-    (context.sharedData as any).takeCardEvents = events;
+    context.sharedData.takeCardEvents = events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const events = (context.sharedData as any).takeCardEvents as ISemanticEvent[] | null;
+    const events = context.sharedData.takeCardEvents as ISemanticEvent[] | null;
 
     if (events && events.length > 0) {
       return events;

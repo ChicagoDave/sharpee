@@ -1,10 +1,9 @@
 /**
  * @sharpee/engine - Runtime engine for Sharpee IF Platform
- * 
+ *
  * This package provides:
  * - Game engine with turn management
  * - Command executor for orchestrating flow
- * - Event sequencing for proper ordering
  * - Game state management
  */
 
@@ -16,9 +15,6 @@ export * from './narrative';
 
 // Story interface
 export * from './story';
-
-// Event sequencing
-export * from './event-sequencer';
 
 // Command execution
 export * from './command-executor';
@@ -38,13 +34,11 @@ export * from './game-engine';
 // Plugin system (ADR-120)
 export { PluginRegistry, TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 
-// Extracted services (Phase 4 remediation)
+// Extracted services
 export * from './vocabulary-manager';
 export * from './save-restore-service';
 export * from './turn-event-processor';
 export * from './platform-operations';
-
-// Note: Text service has been moved to @sharpee/text-service package
 
 // Re-export commonly used items
 export {
@@ -55,8 +49,3 @@ export {
   CommandExecutor,
   createCommandExecutor
 } from './command-executor';
-
-export {
-  eventSequencer,
-  EventSequenceUtils
-} from './event-sequencer';

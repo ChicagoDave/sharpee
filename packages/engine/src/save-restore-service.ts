@@ -28,7 +28,6 @@ import {
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types';
 import { Story } from './story';
-import { toSequencedEvent } from './event-adapter';
 
 /**
  * Interface for accessing engine state needed for save/restore
@@ -401,8 +400,8 @@ export class SaveRestoreService {
     for (const [index, result] of history.entries()) {
       turns.push({
         turnNumber: index + 1,
-        eventIds: result.events.map((e) => e.source || `${e.turn}-${e.sequence}`),
-        timestamp: result.events[0]?.timestamp.getTime() || Date.now(),
+        eventIds: result.events.map((e) => e.id),
+        timestamp: result.events[0]?.timestamp || Date.now(),
         command: result.input
       });
     }
@@ -425,16 +424,11 @@ export class SaveRestoreService {
         turn.eventIds.includes(e.id)
       );
 
-      // Convert SemanticEvents to SequencedEvents
-      const sequencedEvents = events.map((event, index) =>
-        toSequencedEvent(event, turn.turnNumber, index)
-      );
-
       history.push({
         turn: turn.turnNumber,
         input: turn.command || '',
         success: true,
-        events: sequencedEvents
+        events
       });
     }
 

@@ -146,7 +146,7 @@ function extractAnswer(context: ActionContext): string {
   }
 
   // Fallback: extract from raw input if available
-  const rawInput = (command as any).rawInput || '';
+  const rawInput = command.parsed.rawInput || '';
   const match = rawInput.match(/^answer\s+(.+)$/i);
   if (match) {
     return match[1].trim();

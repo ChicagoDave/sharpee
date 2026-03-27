@@ -7,7 +7,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { GDT_COMMAND_ACTION_ID, GDTCommandCode } from './types';
+import { GDT_COMMAND_ACTION_ID, GDTCommandCode, GDTCommandResult } from './types';
 import { isGDTActive, createGDTContext } from './gdt-context';
 import { parseGDTCommand } from './gdt-parser';
 import { executeCommand } from './commands';
@@ -19,6 +19,7 @@ interface GDTCommandSharedData {
   code?: GDTCommandCode;
   args?: string[];
   rawInput?: string;
+  result?: GDTCommandResult;
 }
 
 function getSharedData(context: ActionContext): GDTCommandSharedData {
@@ -70,7 +71,7 @@ export const gdtCommandAction: Action = {
     const result = executeCommand(code, gdtContext, args);
 
     // Store result for report phase
-    (sharedData as any).result = result;
+    sharedData.result = result;
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -95,7 +96,7 @@ export const gdtCommandAction: Action = {
 
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getSharedData(context);
-    const result = (sharedData as any).result;
+    const result = sharedData.result!;
     const code = sharedData.code!;
 
     // Emit action.success with pre-rendered message for text service

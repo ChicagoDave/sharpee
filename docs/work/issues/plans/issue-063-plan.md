@@ -1,7 +1,25 @@
 # Plan: ISSUE-063 — `as any` regression (1,035 occurrences across 203 files)
 
 ## Problem
-`as any` casts have regressed to 1,035 occurrences across 203 package files, undermining TypeScript type safety. Most are caused by `getTrait()` returning base `ITrait` instead of the specific trait type.
+`as any` casts have regressed to 1,035 occurrences across 203 package files, undermining TypeScript type safety. Most are caused by trait access using `getTrait(TraitType.X) as any`.
+
+## Discovery (2026-03-26)
+
+**`getTrait` is already generic.** The signature:
+```typescript
+getTrait<T extends ITrait>(type: TraitType | string | ITraitConstructor<T>): T | undefined
+```
+
+When passed a trait constructor (e.g., `OpenableTrait`), TypeScript infers `T` and returns `OpenableTrait | undefined`. No platform change needed — the root cause is that callers pass `TraitType` constants instead of constructors, then cast with `as any`.
+
+**Fix pattern:**
+```typescript
+// Before — untyped, requires cast
+const openable = entity.getTrait(TraitType.OPENABLE) as any;
+
+// After — pass the class, T is inferred automatically
+const openable = entity.getTrait(OpenableTrait);
+```
 
 ## Scope
 - Severity: High
@@ -10,72 +28,58 @@
 
 ## Phases
 
-### Phase 1: Fix `getTrait` typing (structural fix, biggest impact)
+### Phase 1: Clean up worst offender source files
 
-1. **Read the current `getTrait` signature**
-   - `packages/world-model/src/entities/if-entity.ts`
-   - Understand how `getTrait(type)` currently returns `ITrait | undefined`
+Replace trait-access `as any` casts with constructor pattern in the highest-count files:
 
-2. **Design the generic signature**
-   - `getTrait<T extends ITrait>(type: TraitType): T | undefined`
-   - Or use a trait type registry pattern: `getTrait(TraitType.CONTAINER)` returns `ContainerTrait`
-   - Consider: a type map `TraitTypeMap` that maps `TraitType.CONTAINER -> ContainerTrait`, etc.
+| File | Count | Package |
+|------|-------|---------|
+| `engine/src/game-engine.ts` | 32 | engine |
+| `stdlib/src/actions/standard/drinking/drinking.ts` | 22 | stdlib |
+| `world-model/src/world/VisibilityBehavior.ts` | 21 | world-model |
+| `transcript-tester/src/runner.ts` | 16 | transcript-tester |
+| `stdlib/src/actions/base/snapshot-utils.ts` | 15 | stdlib |
+| `world-model/src/traits/edible/edibleBehavior.ts` | 13 | world-model |
+| `world-model/src/entities/if-entity.ts` | 12 | world-model |
+| `world-model/src/world/WorldModel.ts` | 12 | world-model |
+| `stdlib/src/scope/scope-resolver.ts` | 12 | stdlib |
+| `parser-en-us/src/english-parser.ts` | 11 | parser-en-us |
+| `world-model/src/world/AuthorModel.ts` | 8 | world-model |
 
-3. **Implement the generic `getTrait`**
-   - Update the interface and implementation
-   - Ensure backward compatibility (callers without type params still work)
+Build and test after each file or batch.
 
-4. **Remove `as any` casts for trait access**
-   - Start with the worst offenders: game-engine.ts (32), VisibilityBehavior.ts (21), drinking.ts (22)
-   - Replace `entity.getTrait(TraitType.X) as any` with `entity.getTrait<XTrait>(TraitType.X)`
-   - Or if using type map: `entity.getTrait(TraitType.X)` automatically returns `XTrait`
+### Phase 2: Clean up remaining platform source files
 
-5. **Build and fix type errors**
-   - `./build.sh` to catch any type errors introduced
-   - Fix iteratively
+Sweep all remaining `as any` casts in `packages/` source files (excluding tests):
+- Trait-access casts → constructor pattern
+- `sharedData as any` → typed SharedData interfaces per action
+- `world as any` → proper type imports
+- Other patterns case-by-case
 
-### Phase 2: Clean up source files by count
+### Phase 3: Clean up story files
 
-6. **Address remaining `as any` in source files**
-   - Work through the worst offenders table from the issue
-   - Categories: `sharedData as any`, `world as any`, direct attribute mutation
-   - For each, determine the correct type and apply it
+Replace trait-access `as any` casts in `stories/dungeo/` source files (73 occurrences across 42 files).
 
-7. **Fix `sharedData` typing in actions**
-   - Actions pass data between phases via `sharedData`
-   - Design a typed `SharedData` interface per action (or a generic pattern)
+### Phase 4: Clean up test files (future session)
 
-### Phase 3: Clean up test files
+Address test file `as any` casts — lower priority but prevents regression. Focus on integration tests with 40-50+ casts each.
 
-8. **Address test file `as any` casts**
-   - Lower priority but prevents regression
-   - Focus on integration tests that have 40-50+ casts each
-   - Many will be fixed automatically by Phase 1 (getTrait typing)
+### Phase 5: CI enforcement (future session)
 
-### Phase 4: CI enforcement
-
-9. **Add a lint rule**
-   - ESLint rule: `@typescript-eslint/no-explicit-any` or custom rule
-   - Start with warning, promote to error after cleanup
-   - Allow exceptions via `// eslint-disable-next-line` with justification
-
-10. **Add a CI check**
-    - Count `as any` occurrences in CI
-    - Fail if count exceeds a threshold (ratchet down over time)
+- ESLint rule: `@typescript-eslint/no-explicit-any` (warning → error)
+- CI check: count `as any`, fail if above threshold, ratchet down
 
 ## Effort Estimate
-Large — 4-6 sessions total across all phases.
-- Phase 1: 1-2 sessions (highest impact, do first)
-- Phase 2: 1-2 sessions
-- Phase 3: 1 session
-- Phase 4: < 1 session
+- Phase 1: 1 session
+- Phase 2: 1 session
+- Phase 3: < 1 session
+- Phase 4-5: future sessions
 
 ## Dependencies
-- Phase 1 should be done before Phase 2 (fixes the root cause, many Phase 2 casts disappear)
-- ISSUE-064 (VisibilityBehavior) could be done alongside Phase 1 for that file
+- ISSUE-064 (VisibilityBehavior) overlaps with Phase 1 for that file
+- No blocking dependencies
 
 ## Risks
-- Changing `getTrait` signature could cause cascading type errors
-- Some `as any` casts may hide genuine type mismatches that need design fixes, not just casts
-- Large blast radius means careful incremental approach is needed
+- Some `as any` casts may hide genuine type mismatches needing design fixes
+- Cross-package imports of trait classes may cause circular dependency issues (monitor with `madge`)
 - Test suite must pass after each phase

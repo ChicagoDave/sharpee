@@ -59,21 +59,21 @@ describe('Engine Integration Tests', () => {
       await engine.executeTurn('look');
       await engine.executeTurn('test');
       
-      // Save state
-      const savedState = engine.saveState();
-      expect(savedState.turn).toBe(3);
-      
+      // Save state (save/load are now private, accessed via saveRestoreService)
+      const savedState = (engine as any).createSaveData();
+      expect(savedState.metadata.turnCount).toBe(2);
+
       engine.stop();
-      
+
       // Create new engine and restore
       const newSetup = setupTestEngine();
       const newEngine = newSetup.engine;
       newEngine.setStory(story);
-      
-      newEngine.loadState(savedState);
+
+      (newEngine as any).loadSaveData(savedState);
       newEngine.start();
-      
-      expect(newEngine.getContext().currentTurn).toBe(3);
+
+      expect(newEngine.getContext().currentTurn).toBe(savedState.metadata.turnCount + 1);
       expect(newEngine.getContext().history).toHaveLength(2);
       
       newEngine.stop();
@@ -172,18 +172,12 @@ describe('Engine Integration Tests', () => {
       
       await engine.executeTurn('look');
       
-      // Check that events have proper sequence numbers
+      // Check that events have proper ISemanticEvent structure
       expect(events.length).toBeGreaterThan(0);
-      
-      // All events should have sequence numbers
+
       for (const event of events) {
-        expect(event.sequence).toBeDefined();
-        expect(typeof event.sequence).toBe('number');
-      }
-      
-      // Sequence numbers should be in order
-      for (let i = 1; i < events.length; i++) {
-        expect(events[i].sequence).toBeGreaterThan(events[i - 1].sequence);
+        expect(event.type).toBeDefined();
+        expect(typeof event.type).toBe('string');
       }
       
       engine.stop();

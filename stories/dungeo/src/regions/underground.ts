@@ -353,7 +353,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   }
 
   // Event handlers for troll state changes and interactions
-  (troll as any).on = {
+  troll.on = {
     // Knocked out handler (OUT!) - MDL act1.254
     // Fires when troll is knocked unconscious via combat
     'if.event.knocked_out': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {

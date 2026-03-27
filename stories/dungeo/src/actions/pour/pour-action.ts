@@ -109,7 +109,7 @@ export const pourAction: Action = {
       console.log('[POUR] water:', water?.id);
       console.log('[POUR] bucket:', bucket?.id);
       if (bucket) {
-        console.log('[POUR] bucket traits:', Array.from((bucket as any)._traits?.keys?.() || []));
+        console.log('[POUR] bucket traits:', Array.from(bucket.traits.keys()));
       }
     }
 

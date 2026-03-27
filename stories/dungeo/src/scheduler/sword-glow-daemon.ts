@@ -17,7 +17,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, CombatantTrait, RoomTrait, ActorTrait } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, CombatantTrait, RoomTrait, ActorTrait, IExitInfo } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Daemon ID
@@ -117,7 +117,7 @@ function getAdjacentRooms(roomId: string, world: WorldModel): string[] {
     if (typeof exit === 'string') {
       adjacent.push(exit);
     } else if (exit && typeof exit === 'object' && 'destination' in exit) {
-      adjacent.push((exit as any).destination);
+      adjacent.push((exit as IExitInfo).destination);
     }
   }
 

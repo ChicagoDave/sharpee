@@ -8,8 +8,8 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { TraitType } from '@sharpee/world-model';
-import { TreasureTrait } from '../../../traits';
+import { TraitType, IdentityTrait, OpenableTrait, LockableTrait, SwitchableTrait } from '@sharpee/world-model';
+import { TreasureTrait, InflatableTrait } from '../../../traits';
 
 export const deHandler: GDTCommandHandler = {
   code: 'DE',
@@ -47,7 +47,7 @@ export const deHandler: GDTCommandHandler = {
     output.push(`│ ID:   ${entity.id}`);
     output.push(`│ Type: ${entity.type}`);
 
-    const identity = entity.get('identity') as any;
+    const identity = entity.get(IdentityTrait);
     if (identity) {
       output.push(`│ Name: ${identity.name ?? '<unnamed>'}`);
       if (identity.aliases?.length > 0) {
@@ -65,7 +65,7 @@ export const deHandler: GDTCommandHandler = {
     const locationId = context.world.getLocation(entity.id);
     if (locationId) {
       const locationEntity = context.findEntity(locationId);
-      const locIdentity = locationEntity?.get('identity') as any;
+      const locIdentity = locationEntity?.get(IdentityTrait);
       output.push(`│ In: ${locIdentity?.name ?? locationId} (${locationId})`);
     } else {
       output.push('│ In: <nowhere>');
@@ -77,13 +77,13 @@ export const deHandler: GDTCommandHandler = {
     output.push('┌─ COMPUTED PROPERTIES ─────────────────────────────────────────┐');
     const treasure = entity.get(TreasureTrait);
     const computedProps = [
-      ['enterable', (entity as any).enterable],
-      ['portable', (entity as any).portable],
-      ['isOpen', (entity as any).isOpen],
-      ['isLocked', (entity as any).isLocked],
-      ['isOn', (entity as any).isOn],
-      ['isSwitchable', (entity as any).isSwitchable],
-      ['isInflated', (entity as any).isInflated],
+      ['enterable', entity.hasTrait(TraitType.ENTERABLE)],
+      ['portable', !entity.hasTrait(TraitType.SCENERY)],
+      ['isOpen', entity.get(OpenableTrait)?.isOpen],
+      ['isLocked', entity.get(LockableTrait)?.isLocked],
+      ['isOn', entity.get(SwitchableTrait)?.isOn],
+      ['isSwitchable', entity.hasTrait(TraitType.SWITCHABLE)],
+      ['isInflated', entity.get(InflatableTrait)?.isInflated],
       ['isTreasure', treasure !== undefined],
     ];
 
@@ -164,7 +164,7 @@ export const deHandler: GDTCommandHandler = {
         output.push('│ <empty>');
       } else {
         for (const item of contents) {
-          const itemIdentity = item.get('identity') as any;
+          const itemIdentity = item.get(IdentityTrait);
           output.push(`│ • ${itemIdentity?.name ?? item.id} (${item.id})`);
         }
       }

@@ -11,25 +11,6 @@ import { ITextBlock } from '@sharpee/text-blocks';
 // Re-export perception types from stdlib for convenience
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
 
-/**
- * Basic game event (before sequencing)
- * Note: data is optional to support ISemanticEvent compatibility
- */
-export interface GameEvent<T = unknown> {
-  type: string;
-  data?: T;
-}
-
-/**
- * Sequenced event with turn and ordering information
- */
-export interface SequencedEvent extends GameEvent {
-  sequence: number;
-  timestamp: Date;
-  turn: number;
-  scope: 'turn' | 'global' | 'system';
-  source?: string;
-}
 
 /**
  * Timing data for performance tracking
@@ -104,7 +85,7 @@ export interface TurnResult {
   /**
    * All events generated this turn (in sequence)
    */
-  events: SequencedEvent[];
+  events: ISemanticEvent[];
 
   /**
    * Structured text blocks from TextService (ADR-133).
@@ -243,7 +224,7 @@ export interface EngineConfig {
   /**
    * Event interceptor for debugging
    */
-  onEvent?: (event: SequencedEvent) => void;
+  onEvent?: (event: ISemanticEvent) => void;
   
   /**
    * Debug mode - shows more detailed output

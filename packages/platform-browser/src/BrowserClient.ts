@@ -5,7 +5,8 @@
  * and provides a simple API for story entry points.
  */
 
-import type { GameEngine, SequencedEvent } from '@sharpee/engine';
+import type { GameEngine } from '@sharpee/engine';
+import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import type { ISaveRestoreHooks, ISaveData, IRestartContext } from '@sharpee/core';
 import { renderToString } from '@sharpee/text-service';
@@ -186,7 +187,7 @@ export class BrowserClient implements BrowserClientInterface {
     });
 
     // Handle game events
-    this.engine.on('event', (event: SequencedEvent) => {
+    this.engine.on('event', (event: ISemanticEvent) => {
       console.log('[event]', event.type, event.data);
 
       // Let story handle custom events first

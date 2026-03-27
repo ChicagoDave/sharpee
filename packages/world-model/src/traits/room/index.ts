@@ -5,5 +5,5 @@
  * Rooms are special entities that represent locations in the game world.
  */
 
-export { RoomTrait } from './roomTrait';
+export { RoomTrait, IExitInfo } from './roomTrait';
 export { RoomBehavior } from './roomBehavior';

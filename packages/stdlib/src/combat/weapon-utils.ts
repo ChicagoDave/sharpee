@@ -10,6 +10,7 @@ import {
   WorldModel,
   TraitType,
   WeaponTrait,
+  EquippedTrait,
 } from '@sharpee/world-model';
 
 /**
@@ -32,7 +33,7 @@ export function findWieldedWeapon(
   // Prefer equipped weapons
   const equipped = weapons.filter((w) => {
     if (!w.has(TraitType.EQUIPPED)) return false;
-    const equippedTrait = w.get(TraitType.EQUIPPED) as any;
+    const equippedTrait = w.get(EquippedTrait);
     return equippedTrait?.isEquipped;
   });
 
