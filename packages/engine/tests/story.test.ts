@@ -46,8 +46,8 @@ describe('Story', () => {
     });
 
     it('should reject invalid versions', () => {
-      const invalidVersions = ['1.0', '1', 'v1.0.0', '1.0.0-beta'];
-      
+      const invalidVersions = ['1.0', '1', 'v1.0.0', 'abc', '1.0.0.0'];
+
       invalidVersions.forEach(version => {
         const config: StoryConfig = {
           id: 'test',
@@ -56,6 +56,20 @@ describe('Story', () => {
           version
         };
         expect(() => validateStoryConfig(config)).toThrow('Invalid version format');
+      });
+    });
+
+    it('should accept prerelease versions', () => {
+      const prereleaseVersions = ['1.0.0-beta', '1.0.0-alpha.1', '2.3.4-rc.2'];
+
+      prereleaseVersions.forEach(version => {
+        const config: StoryConfig = {
+          id: 'test',
+          title: 'Test',
+          author: 'Test',
+          version
+        };
+        expect(() => validateStoryConfig(config)).not.toThrow();
       });
     });
 

@@ -21,7 +21,7 @@ describe('LightSourceTrait', () => {
       
       expect(trait.type).toBe(TraitType.LIGHT_SOURCE);
       expect(trait.brightness).toBe(5);
-      expect(trait.isLit).toBe(false);
+      expect(trait.isLit).toBeUndefined();
       expect(trait.fuelRemaining).toBeUndefined();
       expect(trait.maxFuel).toBeUndefined();
       expect(trait.fuelConsumptionRate).toBeUndefined();
@@ -64,7 +64,7 @@ describe('LightSourceTrait', () => {
       });
       
       expect(trait.brightness).toBe(5); // Default
-      expect(trait.isLit).toBe(false); // Default
+      expect(trait.isLit).toBeUndefined(); // Default (undefined = use switchable state or default to lit)
       expect(trait.fuelRemaining).toBe(50);
       expect(trait.maxFuel).toBe(100);
       expect(trait.fuelConsumptionRate).toBe(1);
@@ -104,8 +104,8 @@ describe('LightSourceTrait', () => {
   describe('lit state', () => {
     it('should track lit status', () => {
       const trait = new LightSourceTrait();
-      
-      expect(trait.isLit).toBe(false);
+
+      expect(trait.isLit).toBeUndefined();
       
       trait.isLit = true;
       expect(trait.isLit).toBe(true);
@@ -340,9 +340,9 @@ describe('LightSourceTrait', () => {
   describe('edge cases', () => {
     it('should handle empty options object', () => {
       const trait = new LightSourceTrait({});
-      
+
       expect(trait.brightness).toBe(5);
-      expect(trait.isLit).toBe(false);
+      expect(trait.isLit).toBeUndefined();
       expect(trait.fuelRemaining).toBeUndefined();
       expect(trait.maxFuel).toBeUndefined();
       expect(trait.fuelConsumptionRate).toBeUndefined();
@@ -350,9 +350,9 @@ describe('LightSourceTrait', () => {
 
     it('should handle undefined options', () => {
       const trait = new LightSourceTrait(undefined);
-      
+
       expect(trait.brightness).toBe(5);
-      expect(trait.isLit).toBe(false);
+      expect(trait.isLit).toBeUndefined();
     });
 
     it('should maintain type constant', () => {

@@ -161,25 +161,25 @@ describe('IFEntity', () => {
       expect(room.isTakeable).toBe(false);
     });
 
-    it('should get name from displayName attribute first', () => {
-      expect(entity.name).toBe('i01'); // Falls back to ID when no displayName
-      
-      // Test displayName attribute (highest priority)
+    it('should get name from identity trait first', () => {
+      expect(entity.name).toBe('i01'); // Falls back to ID when no name source
+
+      // Test displayName attribute (used when no identity trait)
       entity.attributes.displayName = 'Display Name';
       expect(entity.name).toBe('Display Name');
-      
-      // Test identity trait name (second priority)
+
+      // Test identity trait name (highest priority)
       const identity = new IdentityTrait();
       identity.name = 'Identity Name';
       entity.add(identity);
-      expect(entity.name).toBe('Display Name'); // displayName still takes priority
-      
-      // Remove displayName to test fallback
-      delete entity.attributes.displayName;
-      expect(entity.name).toBe('Identity Name');
-      
-      // Test name attribute fallback
+      expect(entity.name).toBe('Identity Name'); // identity trait takes priority
+
+      // Remove identity trait to test fallback to displayName
       entity.remove(TraitType.IDENTITY);
+      expect(entity.name).toBe('Display Name');
+
+      // Test name attribute fallback
+      delete entity.attributes.displayName;
       entity.attributes.name = 'Name Attribute';
       expect(entity.name).toBe('Name Attribute');
     });

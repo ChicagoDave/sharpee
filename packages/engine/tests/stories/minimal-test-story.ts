@@ -74,6 +74,12 @@ export class MinimalTestStory implements Story {
     // Connect the rooms using RoomBehavior
     RoomBehavior.setExit(this._room, 'north', this._northRoom.id);
     RoomBehavior.setExit(this._northRoom, 'south', this._room.id);
+
+    // Place player in the room (must happen here because createPlayer()
+    // is called BEFORE initializeWorld() by the engine)
+    if (this._player) {
+      world.moveEntity(this._player.id, this._room.id);
+    }
   }
 
   createPlayer(world: WorldModel): IFEntity {
@@ -92,14 +98,13 @@ export class MinimalTestStory implements Story {
       capacity: { maxItems: 10 }
     }));
     
-    // Place player in the room
-    if (this._room) {
-      world.moveEntity(this._player.id, this._room.id);
-    }
-    
+    // Note: Player is NOT placed here because createPlayer() is called
+    // BEFORE initializeWorld() by the engine's setStory(). The room doesn't
+    // exist yet. Player placement happens in initializeWorld() instead.
+
     // Mark that player was created AFTER successful creation
     this._playerCreated = true;
-    
+
     return this._player;
   }
 

@@ -9,7 +9,7 @@ import {
   Daemon,
   Fuse,
   SchedulerContext,
-} from '../../../src/scheduler';
+} from '@sharpee/plugin-scheduler';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 
 // Mock WorldModel

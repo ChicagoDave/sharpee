@@ -35,6 +35,7 @@
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
+    "@sharpee/plugin-scheduler": "workspace:*",
     "@types/node": "^20.11.19",
     "cross-env": "^7.0.3",
     "rimraf": "^5.0.5",

@@ -34,7 +34,7 @@ describe('Entity System with ID Refactor', () => {
       const room = world.createEntity('Living Room', 'room');
       const json = room.toJSON();
       
-      expect(json.version).toBe(2);
+      expect(json.version).toBe(3);
       expect(json.id).toBe('r01');
       expect(json.type).toBe('room');
       expect(json.attributes.displayName).toBe('Living Room');
