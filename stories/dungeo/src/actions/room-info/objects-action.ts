@@ -7,7 +7,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, NpcTrait } from '@sharpee/world-model';
 import { OBJECTS_ACTION_ID, RoomInfoMessages } from './types';
 
 interface ObjectInfo {
@@ -65,11 +65,9 @@ export const objectsAction: Action = {
       // Skip scenery
       if (entity.hasTrait(TraitType.SCENERY)) continue;
 
-      // Skip NPCs marked as not visible for listing
-      if (entity.hasTrait('npc')) {
-        const npcTrait = entity.get('npc') as any;
-        if (npcTrait && npcTrait.state === 'DISABLED') continue;
-      }
+      // Skip dead NPCs from room object listing (unconscious NPCs remain visible)
+      const npcTrait = entity.get(NpcTrait);
+      if (npcTrait && !npcTrait.isAlive) continue;
 
       visibleItems.push({
         id: entity.id,
