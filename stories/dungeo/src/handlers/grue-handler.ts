@@ -20,6 +20,7 @@ import {
   IParsedCommand,
   TraitType,
   RoomTrait,
+  OpenableTrait,
   DirectionType,
   VisibilityBehavior
 } from '@sharpee/world-model';
@@ -110,8 +111,8 @@ function getExitInfo(world: WorldModel, direction: string): {
     const viaEntity = world.getEntity(exit.via);
     if (viaEntity) {
       // Check if it's openable and closed
-      const openable = viaEntity.getTrait(TraitType.OPENABLE);
-      if (openable && !(openable as any).isOpen) {
+      const openable = viaEntity.getTrait(OpenableTrait);
+      if (openable && !openable.isOpen) {
         return {
           destination: exit.destination,
           exitType: 'door',

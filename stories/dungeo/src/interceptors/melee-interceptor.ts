@@ -23,6 +23,7 @@ import {
   WorldModel,
   IdentityTrait,
   TraitType,
+  NpcTrait,
   CombatantTrait,
   RoomBehavior,
   RoomTrait,
@@ -170,10 +171,11 @@ function handleVillainDeath(
 
       // 3. Spawn empty frame in the Treasure Room (thief's lair)
       // The lair ID is stored in the thief's NPC custom properties
-      const npcTrait = villain.get(TraitType.NPC) as any;
-      const lairRoomId = npcTrait?.customProperties?.lairRoomId ?? villainRoomId;
+      const npcTrait = villain.get(NpcTrait);
+      const storedLairId = npcTrait?.customProperties?.lairRoomId;
+      const lairRoomId = typeof storedLairId === 'string' ? storedLairId : villainRoomId;
       const frame = createEmptyFrame(world);
-      world.moveEntity(frame.id, lairRoomId);
+      world.moveEntity(frame.id, lairRoomId ?? null);
 
       // 4. Reveal all concealed treasures in the lair (MDL: OVISON restored on death)
       if (lairRoomId) {

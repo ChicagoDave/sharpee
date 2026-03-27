@@ -8,7 +8,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, IdentityTrait } from '@sharpee/world-model';
 import { TreasureTrait } from '../../../traits';
 
 export const deHandler: GDTCommandHandler = {
@@ -47,7 +47,7 @@ export const deHandler: GDTCommandHandler = {
     output.push(`│ ID:   ${entity.id}`);
     output.push(`│ Type: ${entity.type}`);
 
-    const identity = entity.get('identity') as any;
+    const identity = entity.get(IdentityTrait);
     if (identity) {
       output.push(`│ Name: ${identity.name ?? '<unnamed>'}`);
       if (identity.aliases?.length > 0) {
@@ -65,7 +65,7 @@ export const deHandler: GDTCommandHandler = {
     const locationId = context.world.getLocation(entity.id);
     if (locationId) {
       const locationEntity = context.findEntity(locationId);
-      const locIdentity = locationEntity?.get('identity') as any;
+      const locIdentity = locationEntity?.get(IdentityTrait);
       output.push(`│ In: ${locIdentity?.name ?? locationId} (${locationId})`);
     } else {
       output.push('│ In: <nowhere>');
@@ -164,7 +164,7 @@ export const deHandler: GDTCommandHandler = {
         output.push('│ <empty>');
       } else {
         for (const item of contents) {
-          const itemIdentity = item.get('identity') as any;
+          const itemIdentity = item.get(IdentityTrait);
           output.push(`│ • ${itemIdentity?.name ?? item.id} (${item.id})`);
         }
       }
