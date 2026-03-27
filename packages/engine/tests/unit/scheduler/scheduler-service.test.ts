@@ -190,18 +190,23 @@ describe('SchedulerService', () => {
         trigger: triggerFn,
       });
 
-      // Turn 1: 3 -> 2
+      // Turn 1: skipped (skipNextTick — fuse doesn't count the turn it was set)
       let result = scheduler.tick(mockWorld, 1, 'player');
+      expect(scheduler.getFuseRemaining('countdown')).toBe(3);
+      expect(triggerFn).not.toHaveBeenCalled();
+
+      // Turn 2: 3 -> 2
+      result = scheduler.tick(mockWorld, 2, 'player');
       expect(scheduler.getFuseRemaining('countdown')).toBe(2);
       expect(triggerFn).not.toHaveBeenCalled();
 
-      // Turn 2: 2 -> 1
-      result = scheduler.tick(mockWorld, 2, 'player');
+      // Turn 3: 2 -> 1
+      result = scheduler.tick(mockWorld, 3, 'player');
       expect(scheduler.getFuseRemaining('countdown')).toBe(1);
       expect(triggerFn).not.toHaveBeenCalled();
 
-      // Turn 3: 1 -> 0 (triggers)
-      result = scheduler.tick(mockWorld, 3, 'player');
+      // Turn 4: 1 -> 0 (triggers)
+      result = scheduler.tick(mockWorld, 4, 'player');
       expect(triggerFn).toHaveBeenCalledTimes(1);
       expect(result.fusesTriggered).toContain('countdown');
       expect(scheduler.hasFuse('countdown')).toBe(false); // Removed after trigger
@@ -253,18 +258,22 @@ describe('SchedulerService', () => {
         trigger: triggerFn,
       });
 
-      // Tick once
+      // Tick 1: skipped (skipNextTick)
       scheduler.tick(mockWorld, 1, 'player');
+      expect(scheduler.getFuseRemaining('pausable')).toBe(2);
+
+      // Tick 2: 2 -> 1
+      scheduler.tick(mockWorld, 2, 'player');
       expect(scheduler.getFuseRemaining('pausable')).toBe(1);
 
       // Pause and tick
       scheduler.pauseFuse('pausable');
-      scheduler.tick(mockWorld, 2, 'player');
+      scheduler.tick(mockWorld, 3, 'player');
       expect(scheduler.getFuseRemaining('pausable')).toBe(1); // Didn't decrement
 
-      // Resume and tick
+      // Resume and tick — 1 -> 0 (triggers)
       scheduler.resumeFuse('pausable');
-      scheduler.tick(mockWorld, 3, 'player');
+      scheduler.tick(mockWorld, 4, 'player');
       expect(triggerFn).toHaveBeenCalled();
     });
 
@@ -301,16 +310,18 @@ describe('SchedulerService', () => {
         trigger: triggerFn,
       });
 
-      // First cycle
+      // Tick 1: skipped (skipNextTick)
       scheduler.tick(mockWorld, 1, 'player');
+      // Ticks 2-3: countdown 2 -> 1 -> 0 (triggers)
       scheduler.tick(mockWorld, 2, 'player');
+      scheduler.tick(mockWorld, 3, 'player');
       expect(triggerFn).toHaveBeenCalledTimes(1);
       expect(scheduler.hasFuse('repeating')).toBe(true);
       expect(scheduler.getFuseRemaining('repeating')).toBe(2); // Reset
 
-      // Second cycle
-      scheduler.tick(mockWorld, 3, 'player');
+      // Second cycle (no skipNextTick on repeat reset)
       scheduler.tick(mockWorld, 4, 'player');
+      scheduler.tick(mockWorld, 5, 'player');
       expect(triggerFn).toHaveBeenCalledTimes(2);
     });
   });
@@ -367,7 +378,7 @@ describe('SchedulerService', () => {
 
       expect(state.turn).toBe(2);
       expect(state.fuses).toHaveLength(1);
-      expect(state.fuses[0].turnsRemaining).toBe(3);
+      expect(state.fuses[0].turnsRemaining).toBe(4); // turns=5, tick 1 skipped, tick 2 decremented once
       expect(state.daemons).toHaveLength(1);
 
       // Create new scheduler and restore
@@ -389,7 +400,7 @@ describe('SchedulerService', () => {
 
       newScheduler.setState(state);
 
-      expect(newScheduler.getFuseRemaining('test-fuse')).toBe(3);
+      expect(newScheduler.getFuseRemaining('test-fuse')).toBe(4); // matches saved state
     });
   });
 
@@ -498,9 +509,9 @@ describe('SchedulerService', () => {
 
       expect(infos).toHaveLength(2);
       expect(infos[0].id).toBe('fuse-2'); // Higher priority first
-      expect(infos[0].turnsRemaining).toBe(2);
+      expect(infos[0].turnsRemaining).toBe(3); // tick 1 skipped (skipNextTick)
       expect(infos[0].repeat).toBe(true);
-      expect(infos[1].turnsRemaining).toBe(4);
+      expect(infos[1].turnsRemaining).toBe(5); // tick 1 skipped (skipNextTick)
     });
   });
 });

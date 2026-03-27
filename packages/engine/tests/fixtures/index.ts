@@ -4,7 +4,7 @@
 
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 import { Action, ActionContext, ActionResult } from '@sharpee/stdlib';
-import { SequencedEvent } from '../../src/types';
+import { ISemanticEvent } from '@sharpee/core';
 
 // Export mock parser
 export { MockParser, createMockParser } from './mock-parser';
@@ -54,17 +54,17 @@ export function createTestWorld(): { world: WorldModel; player: IFEntity; room: 
 export function createMockAction(
   id: string,
   patterns: string[],
-  executeCallback: (context: ActionContext) => ActionResult | Promise<ActionResult>
+  executeCallback: (context: ActionContext) => ActionResult | void
 ): Action {
   return {
     id,
     patterns,
     // Add validate method - always returns valid
     validate: () => ({ valid: true }),
-    // Execute delegates to the callback but doesn't return anything
-    execute: async (context: ActionContext) => {
+    // Execute delegates to the callback (four-phase pattern: returns void)
+    execute: (context: ActionContext) => {
       try {
-        await executeCallback(context);
+        executeCallback(context);
       } catch (error) {
         // Store error for report phase
         (context as any)._executionError = error;
@@ -89,16 +89,13 @@ export function createMockAction(
 export function createTestEvent(
   type: string,
   data: any = {},
-  sequence: number = Date.now()
-): SequencedEvent {
+): ISemanticEvent {
   return {
+    id: `test_${type}_${Date.now()}`,
     type,
-    data,
-    timestamp: new Date(),
-    sequence,
-    turn: 1,
-    scope: 'turn',
-    source: 'test'
+    timestamp: Date.now(),
+    entities: {},
+    data
   };
 }
 

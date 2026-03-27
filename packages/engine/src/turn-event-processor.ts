@@ -13,8 +13,85 @@ import {
 } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { IPerceptionService } from '@sharpee/stdlib';
-import { SequencedEvent, EngineConfig } from './types';
-import { toSemanticEvent, processEvent, EventProcessingContext } from './event-adapter';
+import { EngineConfig } from './types';
+
+/**
+ * Context for event processing pipeline
+ */
+export interface EventProcessingContext {
+  turn?: number;
+  playerId?: string;
+  locationId?: string;
+}
+
+/**
+ * Generate a unique event ID
+ */
+function generateEventId(): string {
+  return `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Event normalization - ensures consistent event structure
+ */
+function normalizeEvent(event: ISemanticEvent): ISemanticEvent {
+  return {
+    ...event,
+    id: event.id || generateEventId(),
+    type: event.type.toLowerCase(),
+    timestamp: event.timestamp || Date.now(),
+    entities: event.entities || {},
+    data: event.data,
+    tags: event.tags,
+    priority: event.priority,
+    narrate: event.narrate
+  };
+}
+
+/**
+ * Event enrichment - adds turn, actor, and location context
+ */
+function enrichEvent(
+  event: ISemanticEvent,
+  context?: EventProcessingContext
+): ISemanticEvent {
+  const enriched = { ...event };
+
+  if (context) {
+    if (context.turn !== undefined && enriched.data && typeof enriched.data === 'object') {
+      enriched.data = { ...enriched.data, turn: context.turn };
+    }
+    if (context.playerId && !enriched.entities.actor) {
+      enriched.entities = { ...enriched.entities, actor: context.playerId };
+    }
+    if (context.locationId && !enriched.entities.location) {
+      enriched.entities = { ...enriched.entities, location: context.locationId };
+    }
+  }
+
+  if (!enriched.tags) {
+    enriched.tags = [];
+  }
+  if (enriched.type.startsWith('action.') && !enriched.tags.includes('action')) {
+    enriched.tags = [...enriched.tags, 'action'];
+  } else if (enriched.type.startsWith('system.') && !enriched.tags.includes('system')) {
+    enriched.tags = [...enriched.tags, 'system'];
+  } else if (enriched.type.startsWith('game.') && !enriched.tags.includes('game')) {
+    enriched.tags = [...enriched.tags, 'game'];
+  }
+
+  return enriched;
+}
+
+/**
+ * Process an event through normalization and enrichment
+ */
+export function processEvent(
+  event: ISemanticEvent,
+  context?: EventProcessingContext
+): ISemanticEvent {
+  return enrichEvent(normalizeEvent(event), context);
+}
 
 /**
  * Context for event enrichment - matches EventProcessingContext
@@ -38,12 +115,12 @@ export interface ProcessedEventsResult {
 /**
  * Callback type for emitting events
  */
-export type EventEmitCallback = (event: SequencedEvent) => void;
+export type EventEmitCallback = (event: ISemanticEvent) => void;
 
 /**
  * Callback type for dispatching to entity handlers
  */
-export type EntityHandlerDispatcher = (event: SequencedEvent) => void;
+export type EntityHandlerDispatcher = (event: ISemanticEvent) => void;
 
 /**
  * Service for processing turn events
@@ -63,22 +140,18 @@ export class TurnEventProcessor {
    * @returns Processed events and platform events
    */
   processActionEvents(
-    events: SequencedEvent[],
+    events: ISemanticEvent[],
     enrichmentContext: EnrichmentContext,
     player: IFEntity,
     world: WorldModel
   ): ProcessedEventsResult {
-    // Convert to semantic events and process through pipeline
     const context: EventProcessingContext = {
       turn: enrichmentContext.turn,
       playerId: enrichmentContext.playerId,
       locationId: enrichmentContext.locationId
     };
 
-    let semanticEvents = events.map((e) => {
-      const semantic = toSemanticEvent(e);
-      return processEvent(semantic, context);
-    });
+    let semanticEvents = events.map((e) => processEvent(e, context));
 
     // Apply perception filtering if service is configured
     if (this.perceptionService) {
@@ -176,17 +249,17 @@ export class TurnEventProcessor {
     // Emit events if configured
     if (config.onEvent) {
       for (const event of semanticEvents) {
-        config.onEvent(event as unknown as SequencedEvent);
+        config.onEvent(event);
       }
     }
 
     // Emit through engine's event system
     for (const event of semanticEvents) {
-      eventEmitter(event as unknown as SequencedEvent);
+      eventEmitter(event);
 
       // Dispatch to entity handlers if provided
       if (entityDispatcher) {
-        entityDispatcher(event as unknown as SequencedEvent);
+        entityDispatcher(event);
       }
     }
   }
@@ -198,7 +271,7 @@ export class TurnEventProcessor {
    * @returns Victory details if found, null otherwise
    */
   checkForVictory(
-    events: SequencedEvent[]
+    events: ISemanticEvent[]
   ): { reason: string; score: number } | null {
     for (const event of events) {
       if (event.type === 'story.victory') {

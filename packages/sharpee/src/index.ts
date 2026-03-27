@@ -5,11 +5,10 @@
  */
 
 // Re-export main types and classes that platforms need
-export { 
+export {
   GameEngine,
   type Story,
-  type SequencedEvent,
-  type StoryConfig 
+  type StoryConfig
 } from '@sharpee/engine';
 
 export {

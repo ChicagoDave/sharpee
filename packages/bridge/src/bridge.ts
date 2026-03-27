@@ -19,7 +19,7 @@ import { EnglishParser } from '@sharpee/parser-en-us';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { Story } from '@sharpee/engine';
-import type { SequencedEvent } from '@sharpee/engine';
+import type { ISemanticEvent } from '@sharpee/core';
 import type { ISaveData } from '@sharpee/core';
 import { unzipSync } from 'fflate';
 
@@ -209,7 +209,7 @@ export class NativeEngineBridge {
       });
 
       // Wire event accumulation (filter to bridge-worthy events)
-      this.engine.on('event', (event: SequencedEvent) => {
+      this.engine.on('event', (event: ISemanticEvent) => {
         if (shouldForwardEvent(event.type)) {
           this.pendingEvents.push({
             type: event.type,

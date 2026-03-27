@@ -45,17 +45,14 @@ import {
   TurnResult,
   MetaCommandResult,
   CommandResult,
-  EngineConfig,
-  SequencedEvent,
-  GameEvent
+  EngineConfig
 } from './types';
 import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
 import { createActionContext } from './action-context-factory';
-import { EventSequenceUtils, eventSequencer } from './event-sequencer';
-import { toSequencedEvent, toSemanticEvent, processEvent } from './event-adapter';
+import { processEvent } from './turn-event-processor';
 import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
@@ -69,7 +66,7 @@ export interface GameEngineEvents {
   'turn:start': (turn: number, input: string) => void;
   'turn:complete': (result: TurnResult) => void;
   'turn:failed': (error: Error, turn: number) => void;
-  'event': (event: SequencedEvent) => void;
+  'event': (event: ISemanticEvent) => void;
   'state:changed': (context: GameContext) => void;
   'game:over': (context: GameContext) => void;
   'text:output': (blocks: ITextBlock[], turn: number) => void;
@@ -187,13 +184,11 @@ export class GameEngine {
     this.systemEventSource.subscribe((event: ISystemEvent) => {
       this.emit('event', {
         id: event.id,
-        timestamp: new Date(event.timestamp),
         type: `system.${event.type}`,
-        data: event.data,
-        sequence: 0,
-        turn: this.context.currentTurn,
-        scope: 'global'
-      } as SequencedEvent);
+        timestamp: event.timestamp,
+        entities: {},
+        data: event.data
+      });
     });
 
     this.pluginRegistry = new PluginRegistry();
@@ -528,13 +523,16 @@ export class GameEngine {
 
     // Validate input
     if (input === null || input === undefined) {
-      const errorEvent = eventSequencer.sequence({
+      const errorEvent: ISemanticEvent = {
+        id: `cmd_failed_${turn}_${Date.now()}`,
         type: 'command.failed',
+        timestamp: Date.now(),
+        entities: {},
         data: {
           reason: 'Input cannot be null or undefined',
           input: input
         }
-      }, turn);
+      };
       
       return {
         turn,
@@ -577,7 +575,7 @@ export class GameEngine {
               turn,
               input: metaResult.input,
               success: metaResult.success,
-              events: metaResult.events.map(e => eventSequencer.sequence(e as any, turn)),
+              events: metaResult.events,
               error: metaResult.error,
               actionId: metaResult.actionId
             };
@@ -603,11 +601,8 @@ export class GameEngine {
         locationId: playerLocation
       };
       
-      // Store events for this turn (convert to SemanticEvent and process through pipeline)
-      let semanticEvents = result.events.map(e => {
-        const semantic = toSemanticEvent(e);
-        return processEvent(semantic, enrichmentContext);
-      });
+      // Store events for this turn (process through enrichment pipeline)
+      let semanticEvents = result.events.map(e => processEvent(e, enrichmentContext));
 
       // Apply perception filtering if service is configured
       // This transforms events based on what the player can perceive
@@ -718,7 +713,7 @@ export class GameEngine {
 
         // Update result.events with any platform completion events
         const allTurnEvents = this.turnEvents.get(turn) || [];
-        result.events = allTurnEvents as any; // Platform ops may have added completion events
+        result.events = allTurnEvents;
       }
 
       // Process text output (ADR-096, ADR-133)
@@ -937,7 +932,7 @@ export class GameEngine {
 
     // Emit individual events through engine's event system (for tests/listeners)
     for (const event of events) {
-      this.emit('event', event as any);
+      this.emit('event', event);
     }
 
     // Process events through text service (ADR-133: emit structured blocks)
@@ -1408,12 +1403,12 @@ export class GameEngine {
     // Emit through callbacks and event system
     if (this.config.onEvent) {
       for (const event of processed) {
-        this.config.onEvent(event as any);
+        this.config.onEvent(event);
       }
     }
     for (const event of processed) {
-      this.emit('event', event as any);
-      this.dispatchEntityHandlers(event as any);
+      this.emit('event', event);
+      this.dispatchEntityHandlers(event);
     }
   }
 
@@ -1462,17 +1457,17 @@ export class GameEngine {
   /**
    * Get recent events
    */
-  getRecentEvents(count = 10): SequencedEvent[] {
-    const allEvents: SequencedEvent[] = [];
-    
+  getRecentEvents(count = 10): ISemanticEvent[] {
+    const allEvents: ISemanticEvent[] = [];
+
     // Collect events from recent turns
     const recentTurns = this.context.history.slice(-Math.ceil(count / 5));
     for (const turn of recentTurns) {
       allEvents.push(...turn.events);
     }
 
-    // Sort and return most recent
-    return EventSequenceUtils.sort(allEvents).slice(-count);
+    // Return most recent
+    return allEvents.slice(-count);
   }
 
   /**
@@ -1649,14 +1644,14 @@ export class GameEngine {
               this.eventSource.emit(completionEvent);
               this.turnEvents.get(currentTurn)?.push(completionEvent);
               // Also emit through engine's event emitter for tests
-              this.emit('event', completionEvent as any);
+              this.emit('event', completionEvent);
             } else {
               // No save hook registered
               const errorEvent = createSaveCompletedEvent(false, 'No save handler registered');
               this.eventSource.emit(errorEvent);
               this.turnEvents.get(currentTurn)?.push(errorEvent);
               // Also emit through engine's event emitter for tests
-              this.emit('event', errorEvent as any);
+              this.emit('event', errorEvent);
             }
             break;
           }
@@ -1673,14 +1668,14 @@ export class GameEngine {
                 this.eventSource.emit(completionEvent);
                 this.turnEvents.get(currentTurn)?.push(completionEvent);
                 // Also emit through engine's event emitter for tests
-                this.emit('event', completionEvent as any);
+                this.emit('event', completionEvent);
               } else {
                 // User cancelled or no save available
                 const errorEvent = createRestoreCompletedEvent(false, 'No save data available or restore cancelled');
                 this.eventSource.emit(errorEvent);
                 this.turnEvents.get(currentTurn)?.push(errorEvent);
                 // Also emit through engine's event emitter for tests
-                this.emit('event', errorEvent as any);
+                this.emit('event', errorEvent);
               }
             } else {
               // No restore hook registered
@@ -1688,7 +1683,7 @@ export class GameEngine {
               this.eventSource.emit(errorEvent);
               this.turnEvents.get(currentTurn)?.push(errorEvent);
               // Also emit through engine's event emitter for tests
-              this.emit('event', errorEvent as any);
+              this.emit('event', errorEvent);
             }
             break;
           }
@@ -1710,7 +1705,7 @@ export class GameEngine {
                   turnEvents.push(confirmEvent);
                 }
                 // Also emit through engine's event emitter for tests
-                this.emit('event', confirmEvent as any);
+                this.emit('event', confirmEvent);
               } else {
                 // User cancelled quit
                 const cancelEvent = createQuitCancelledEvent();
@@ -1720,7 +1715,7 @@ export class GameEngine {
                   turnEvents.push(cancelEvent);
                 }
                 // Also emit through engine's event emitter for tests
-                this.emit('event', cancelEvent as any);
+                this.emit('event', cancelEvent);
               }
             } else {
               // No quit hook registered, auto-confirm
@@ -1731,7 +1726,7 @@ export class GameEngine {
                 turnEvents.push(confirmEvent);
               }
               // Also emit through engine's event emitter for tests
-              this.emit('event', confirmEvent as any);
+              this.emit('event', confirmEvent);
             }
             
             break;
@@ -1748,12 +1743,12 @@ export class GameEngine {
             if (shouldRestart) {
               const completionEvent = createRestartCompletedEvent(true);
               this.eventSource.emit(completionEvent);
-              this.emit('event', completionEvent as any);
+              this.emit('event', completionEvent);
               await this.restartGame();
             } else {
               const cancelEvent = createRestartCompletedEvent(false);
               this.eventSource.emit(cancelEvent);
-              this.emit('event', cancelEvent as any);
+              this.emit('event', cancelEvent);
             }
             break;
           }
@@ -1766,12 +1761,12 @@ export class GameEngine {
               const completionEvent = createUndoCompletedEvent(true, this.context.currentTurn);
               this.eventSource.emit(completionEvent);
               this.turnEvents.get(currentTurn)?.push(completionEvent);
-              this.emit('event', completionEvent as any);
+              this.emit('event', completionEvent);
             } else {
               const errorEvent = createUndoCompletedEvent(false, undefined, 'Nothing to undo');
               this.eventSource.emit(errorEvent);
               this.turnEvents.get(currentTurn)?.push(errorEvent);
-              this.emit('event', errorEvent as any);
+              this.emit('event', errorEvent);
             }
             break;
           }
@@ -1783,7 +1778,7 @@ export class GameEngine {
               const errorEvent = createAgainFailedEvent('No command to repeat');
               this.eventSource.emit(errorEvent);
               this.turnEvents.get(currentTurn)?.push(errorEvent);
-              this.emit('event', errorEvent as any);
+              this.emit('event', errorEvent);
               break;
             }
 
@@ -1802,7 +1797,7 @@ export class GameEngine {
               );
               this.eventSource.emit(errorEvent);
               this.turnEvents.get(currentTurn)?.push(errorEvent);
-              this.emit('event', errorEvent as any);
+              this.emit('event', errorEvent);
             }
             break;
           }
@@ -1838,7 +1833,7 @@ export class GameEngine {
         this.eventSource.emit(errorEvent);
         this.turnEvents.get(currentTurn)?.push(errorEvent);
         // Also emit through engine's event emitter for tests
-        this.emit('event', errorEvent as any);
+        this.emit('event', errorEvent);
       }
     }
     // Note: pendingPlatformOps was cleared at the start of this function
@@ -1850,20 +1845,7 @@ export class GameEngine {
    * (IGameEvent with `payload` is deprecated - see ADR-097)
    */
   private emitGameEvent(event: ISemanticEvent): void {
-    // Create a GameEvent for the sequencer (internal type)
-    const gameEvent: GameEvent = {
-      type: event.type,
-      data: {
-        ...(typeof event.data === 'object' && event.data !== null ? event.data : {}),
-        id: event.id,
-        timestamp: event.timestamp,
-        entities: event.entities || {}
-      }
-    };
-
-    // Sequence and emit
-    const sequencedEvent = eventSequencer.sequence(gameEvent, this.context.currentTurn);
-    this.emit('event', sequencedEvent);
+    this.emit('event', event);
 
     // Store in turn events for text-service processing
     if (this.context.currentTurn > 0) {
@@ -1896,7 +1878,7 @@ export class GameEngine {
    * Dispatch an event to entity handlers (entity.on)
    * Entities can define handlers for specific event types
    */
-  private dispatchEntityHandlers(event: SequencedEvent): void {
+  private dispatchEntityHandlers(event: ISemanticEvent): void {
     // Get all entities that might have handlers
     const entities = this.world.getAllEntities();
 

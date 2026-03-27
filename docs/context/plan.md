@@ -58,7 +58,40 @@ const openable = entity.getTrait(OpenableTrait);
 - **Entry state**: Phase 1 complete; worst offenders cleaned
 - **Deliverable**: All remaining `as any` trait-access casts in non-test platform source files eliminated; other `as any` patterns (`sharedData as any`, `world as any`) addressed where straightforward; build passes
 - **Exit state**: `as any` count in `packages/` source files (excluding tests) materially reduced; baseline documented for future CI enforcement
-- **Status**: PENDING
+- **Status**: IN PROGRESS
+
+#### Phase 2A: Remove Legacy Event Sequencing Layer (~25 `as any` casts)
+
+The engine has a vestigial event-driven architecture layer that wraps `ISemanticEvent` into `SequencedEvent` shells (adding `sequence`, `turn`, `scope` fields). No consumer uses these fields. Platform listeners immediately reverse-engineer `SequencedEvent` back to `ISemanticEvent` with `as any` casts. The fix is to emit `ISemanticEvent` directly and delete the sequencing infrastructure.
+
+**Step 1: Update type definitions**
+- `types.ts` — Remove `GameEvent<T>` and `SequencedEvent` interfaces; change `TurnResult.events` and `EngineConfig.onEvent` to use `ISemanticEvent`
+- `game-engine.ts` — Change `GameEngineEvents['event']` to `(event: ISemanticEvent) => void`
+
+**Step 2: Preserve event enrichment logic**
+- `turn-event-processor.ts` — Inline `processEvent`/`normalizeEvent`/`enrichEvent` from `event-adapter.ts`; change all `SequencedEvent` refs to `ISemanticEvent`
+
+**Step 3: Remove sequencer from command-executor.ts**
+- Remove `eventSequencer` import and all `.sequence()` / `.resetTurn()` calls; construct `ISemanticEvent` directly
+
+**Step 4: Remove sequencer from game-engine.ts**
+- Remove sequencer/adapter imports; emit `ISemanticEvent` directly everywhere; simplify `emitGameEvent()`; remove ~20 `as any` casts
+
+**Step 5: Remove sequencer from save-restore-service.ts**
+- Remove `toSequencedEvent` import; use `event.id` instead of `turn-sequence` composite
+
+**Step 6: Delete legacy files**
+- Delete `event-sequencer.ts`, `event-adapter.ts`, `event-sequencer.test.ts`
+
+**Step 7: Update engine barrel export (index.ts)**
+- Remove `event-sequencer` and `event-adapter` re-exports
+
+**Step 8: Update external consumer type annotations**
+- All platform files, bridge, transcript-tester, runtime, sharpee barrel: `SequencedEvent` → `ISemanticEvent`
+- Remove SequencedEvent-to-SemanticEvent reverse-engineering code in cli-platform and browser-platform
+
+**Step 9: Update test files**
+- Remove SequencedEvent tests from `types.test.ts`; update test fixtures
 
 ### Phase 3: Clean Up Story Files
 - **Tier**: Small

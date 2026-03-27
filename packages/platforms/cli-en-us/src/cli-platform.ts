@@ -1,4 +1,5 @@
-import type { GameEngine, SequencedEvent, PlatformEvent, SaveContext, RestoreContext, QuitContext, RestartContext } from '@sharpee/sharpee';
+import type { GameEngine, PlatformEvent, SaveContext, RestoreContext, QuitContext, RestartContext } from '@sharpee/sharpee';
+import type { ISemanticEvent } from '@sharpee/core';
 import {
   QueryManager,
   createQueryManager,
@@ -74,22 +75,10 @@ export class CLIPlatform {
 
   private setupEventHandlers(): void {
     // Listen for semantic events through the event source
-    this.engine.on('event', (event: SequencedEvent) => {
-      // Convert SequencedEvent to SemanticEvent for platform event checking
-      // Spread original event to preserve extra properties like requiresClientAction
-      const semanticEvent: SemanticEvent = {
-        ...(event as any),
-        id: event.source || `evt_${event.turn}_${event.sequence}`,
-        type: event.type,
-        timestamp: event.timestamp.getTime(),
-        entities: (event as any).entities || {},
-        data: event.data,
-        payload: (event as any).payload || event.data
-      };
-
+    this.engine.on('event', (event: ISemanticEvent) => {
       // Check if this is a platform request event that we need to handle
-      if (isPlatformRequestEvent(semanticEvent)) {
-        this.pendingPlatformOps.push(semanticEvent as PlatformEvent);
+      if (isPlatformRequestEvent(event)) {
+        this.pendingPlatformOps.push(event as PlatformEvent);
         // Process it immediately (we could also batch these)
         this.processPlatformOperations();
       }

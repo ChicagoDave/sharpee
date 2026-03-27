@@ -155,7 +155,7 @@ describe('CommandExecutor', () => {
       const errorAction = createMockAction(
         'if.action.waiting',  // Use the waiting action ID
         ['wait'],  // 'wait' is in the language provider
-        async () => {
+        () => {
           throw new Error('Test error');
         }
       );
@@ -229,23 +229,24 @@ describe('CommandExecutor', () => {
       expect(true).toBe(true);
     });
 
-    it('should sequence events properly', async () => {
+    it('should return events with valid structure', async () => {
       // Use a simple command that works
       const result = await executor.execute('look', world, gameContext);
-      
-      // Check that events have proper sequence numbers
-      const sequences = result.events.map(e => e.sequence);
-      const sortedSequences = [...sequences].sort((a, b) => a - b);
-      expect(sequences).toEqual(sortedSequences);
+
+      // Check that events have proper ISemanticEvent structure
+      for (const event of result.events) {
+        expect(event.type).toBeDefined();
+        expect(typeof event.timestamp).toBe('number');
+      }
     });
 
-    it('should add turn metadata to events', async () => {
+    it('should add timestamp to events', async () => {
       // Use a simple command that works
       const result = await executor.execute('look', world, gameContext);
-      
+
       result.events.forEach(event => {
-        expect(event.turn).toBe(gameContext.currentTurn);
-        expect(event.timestamp).toBeInstanceOf(Date);
+        expect(typeof event.timestamp).toBe('number');
+        expect(event.timestamp).toBeGreaterThan(0);
       });
     });
   });

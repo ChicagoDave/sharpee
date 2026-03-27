@@ -2,7 +2,7 @@
  * Types and interfaces for @sharpee/platform-browser
  */
 
-import type { SequencedEvent } from '@sharpee/engine';
+import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 
 /**
@@ -43,7 +43,7 @@ export interface BrowserClientCallbacks {
    * Event handler for story-specific events.
    * Return true if handled, false to use default handling.
    */
-  handleStoryEvent?: (event: SequencedEvent, client: BrowserClientInterface) => boolean;
+  handleStoryEvent?: (event: ISemanticEvent, client: BrowserClientInterface) => boolean;
 }
 
 /**

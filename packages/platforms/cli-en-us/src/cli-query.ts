@@ -1,4 +1,5 @@
-import type { GameEngine, SequencedEvent } from '@sharpee/sharpee';
+import type { GameEngine } from '@sharpee/sharpee';
+import type { ISemanticEvent } from '@sharpee/core';
 import * as readline from 'readline';
 
 export class CLIQuery {
@@ -9,7 +10,7 @@ export class CLIQuery {
     this.engine = engine;
     
     // Listen for query events through the event system
-    this.engine.on('event', async (event: SequencedEvent) => {
+    this.engine.on('event', async (event: ISemanticEvent) => {
       if (event.type === 'client.query') {
         const response = await this.handleQuery(event.data);
         // TODO: Need to emit response back through the engine

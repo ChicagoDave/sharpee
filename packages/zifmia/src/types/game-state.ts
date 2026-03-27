@@ -79,7 +79,7 @@ export interface CurrentRoom {
 }
 
 /**
- * Generic event interface (matches @sharpee/engine SequencedEvent)
+ * Generic event interface (matches @sharpee/core ISemanticEvent shape)
  */
 export interface GameEvent {
   type: string;
