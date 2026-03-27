@@ -129,7 +129,7 @@ export const inflateAction: Action = {
     }
 
     // Also update displayName attribute (used by entity.name getter)
-    (boat as any).attributes.displayName = 'magic boat';
+    boat.attributes.displayName = 'magic boat';
 
     // Add EnterableTrait so player can BOARD/ENTER the boat
     if (!boat.has(TraitType.ENTERABLE)) {

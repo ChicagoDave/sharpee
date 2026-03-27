@@ -113,7 +113,7 @@ export const deflateAction: Action = {
     }
 
     // Also update displayName attribute (used by entity.name getter)
-    (boat as any).attributes.displayName = 'pile of plastic';
+    boat.attributes.displayName = 'pile of plastic';
 
     // Remove traits when deflating - boat is no longer enterable/vehicle
     if (boat.has(TraitType.ENTERABLE)) {
