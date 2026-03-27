@@ -11,7 +11,7 @@
  */
 
 import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
-import { IFEntity, IdentityTrait, RoomTrait, Direction } from '@sharpee/world-model';
+import { IFEntity, IdentityTrait, NpcTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 
 import { RobotMessages } from './robot-messages';
@@ -144,9 +144,9 @@ export const robotBehavior: NpcBehavior = {
    * Restore state after load
    */
   setState(npc: IFEntity, state: Record<string, unknown>): void {
-    const npcTrait = npc.get('npc');
+    const npcTrait = npc.get(NpcTrait);
     if (npcTrait) {
-      (npcTrait as any).customProperties = state;
+      npcTrait.customProperties = state;
     }
   }
 };

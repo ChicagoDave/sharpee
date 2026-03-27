@@ -108,10 +108,10 @@ function hasPlatinumBar(context: ActionContext): boolean {
  */
 function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
-  const room = context.currentLocation as any;
+  const room = context.currentLocation;
 
   // Check if already solved
-  if (room.echoSolved) {
+  if (room.attributes.echoSolved) {
     events.push(context.event('action.success', {
       actionId: SAY_ACTION_ID,
       messageId: SayMessages.LOUD_ROOM_ACOUSTICS,
@@ -129,7 +129,7 @@ function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
     }));
   } else {
     // Safe! Without the bar, the echo dissipates harmlessly
-    room.echoSolved = true;
+    room.attributes.echoSolved = true;
     events.push(context.event('action.success', {
       actionId: SAY_ACTION_ID,
       messageId: SayMessages.LOUD_ROOM_ECHO_SAFE,
@@ -363,7 +363,7 @@ export const sayAction: Action = {
       return handleRiddleAnswer(context, words);
     }
 
-    const npcs = context.sharedData.npcsInRoom as any[];
+    const npcs = context.sharedData.npcsInRoom;
 
     // Handle Cyclops specifically
     if (context.sharedData.hasCyclops && context.sharedData.cyclops) {

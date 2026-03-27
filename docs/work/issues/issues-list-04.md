@@ -30,6 +30,7 @@ original numbers.
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-067 | Trace commands defined as 10 individual literal patterns | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-068 | `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types | Medium | world-model, event-processor | 2026-03-27 | - |
+| ISSUE-069 | `world.getStateValue`/`setStateValue` is a code smell — puzzle state belongs on entities/traits | Medium | world-model, stories | 2026-03-27 | - |
 
 ---
 

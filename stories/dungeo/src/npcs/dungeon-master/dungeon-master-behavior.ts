@@ -185,7 +185,7 @@ export const dungeonMasterBehavior: NpcBehavior = {
   setState(npc: IFEntity, state: Record<string, unknown>): void {
     const npcTrait = npc.get(NpcTrait);
     if (npcTrait) {
-      (npcTrait as any).customProperties = state;
+      npcTrait.customProperties = state;
     }
   }
 };

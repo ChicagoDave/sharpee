@@ -90,13 +90,13 @@ export const pressButtonAction: Action = {
     switch (buttonColor) {
       case 'yellow':
         // Enable bolt (GATEF=TRUE)
-        setYellowButtonPressed(world as any, true);
+        setYellowButtonPressed(world, true);
         sharedData.resultMessage = PressButtonMessages.CLICK;
         break;
 
       case 'brown':
         // Disable bolt (GATEF=FALSE)
-        setYellowButtonPressed(world as any, false);
+        setYellowButtonPressed(world, false);
         sharedData.resultMessage = PressButtonMessages.CLICK;
         break;
 
@@ -123,7 +123,7 @@ export const pressButtonAction: Action = {
         if (schedulerRef && maintenanceRoomIdRef) {
           const floodingEvents = startFlooding(
             schedulerRef,
-            world as any,
+            world,
             maintenanceRoomIdRef,
             leakIdRef
           );

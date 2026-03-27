@@ -290,7 +290,7 @@ function createSafeCollapseFuse(config: ExplosionConfig): Fuse {
       if (wideLedgeTrait?.exits?.[Direction.SOUTH]) {
         delete wideLedgeTrait.exits[Direction.SOUTH];
         if (!wideLedgeTrait.blockedExits) wideLedgeTrait.blockedExits = {} as Partial<Record<DirectionType, string>>;
-        (wideLedgeTrait.blockedExits as any)[Direction.SOUTH] = 'The way is blocked by debris from the recent explosion.';
+        wideLedgeTrait.blockedExits[Direction.SOUTH] = 'The way is blocked by debris from the recent explosion.';
       }
 
       if (ctx.playerLocation === config.dustyRoomId) {

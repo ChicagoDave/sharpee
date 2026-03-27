@@ -58,7 +58,7 @@ Debug tool reads entity properties via `(entity as any).isOpen` etc. Should use 
 |------|-------|------------|
 | `actions/gdt/commands/de.ts` | 80-86 | `enterable`, `portable`, `isOpen`, `isLocked`, `isOn`, `isSwitchable`, `isInflated` |
 
-**Status**: TODO
+**Status**: DONE
 
 ## Group 6: Remaining Misc (13 casts) — MIXED RISK
 
@@ -75,7 +75,7 @@ Debug tool reads entity properties via `(entity as any).isOpen` etc. Should use 
 | `scheduler/sword-glow-daemon.ts` | 120 | `(exit as any).destination` | Low — need to check exit type |
 | `scheduler/explosion-fuse.ts` | 293 | `(wideLedgeTrait.blockedExits as any)[Direction.SOUTH]` | Low |
 
-**Status**: TODO
+**Status**: DONE
 
 ## Completed
 
@@ -97,6 +97,28 @@ Debug tool reads entity properties via `(entity as any).isOpen` etc. Should use 
 - 2 remaining `as any` in kl.ts tagged `// ISSUE-068` — blocked by platform `IEventHandlers` type mismatch
 - Filed ISSUE-068 for `LegacyEntityEventHandler` cleanup
 - Verified: 838 passing (run 1), 816 passing (run 2), 0 failures
+
+### Group 5: GDT DE Property Inspection (7 casts) — DONE
+- 1 file: de.ts
+- Replaced `(entity as any).isOpen` etc. with trait lookups (OpenableTrait, LockableTrait, SwitchableTrait, InflatableTrait) and hasTrait checks
+- Semantic improvement: debug tool now shows actual trait state instead of always-undefined
+- Verified: 828 passing (run 2), 0 failures
+
+### Group 6: Remaining Misc (10 casts) — DONE
+- 8 files: set-dial-action, answer-action, say-action, press-button-action, pour-action, robot-behavior, dungeon-master-behavior, sword-glow-daemon, explosion-fuse
+- Bug fixes: `(command as any).rawInput` → `command.parsed.rawInput` (set-dial, answer — was accessing wrong property path, always undefined)
+- `context.currentLocation as any` → `room.attributes.echoSolved` (say-action)
+- `world as any` → `world` (press-button — functions already accept WorldModel)
+- `(bucket as any)._traits?.keys?.()` → `bucket.traits.keys()` (pour-action — public property)
+- `(npcTrait as any).customProperties` → `npcTrait.customProperties` (robot, dungeon-master — NpcTrait constructor)
+- `(exit as any).destination` → `(exit as IExitInfo).destination` (sword-glow-daemon)
+- `(blockedExits as any)[Direction.SOUTH]` → direct index (explosion-fuse — Partial<Record> allows it)
+- Filed ISSUE-069 for `world.setStateValue` code smell
+- Verified: 818 passing (run 1), 786 passing (run 2), 0 failures
+
+### Final count
+- **0 code-level `as any` casts remaining** (excluding comments and 2 ISSUE-068-tagged)
+- All remaining `as any` matches are in doc comments documenting old anti-patterns, or false positives ("has any weapon")
 
 ## Verification Protocol
 
