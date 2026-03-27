@@ -29,6 +29,7 @@ original numbers.
 | ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-067 | Trace commands defined as 10 individual literal patterns | Low | parser-en-us | 2026-03-26 | - |
+| ISSUE-068 | `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types | Medium | world-model, event-processor | 2026-03-27 | - |
 
 ---
 
@@ -281,6 +282,49 @@ A previous refactor removed all `as any` casts from the codebase. They have regr
 | `world as any` | ~3 | press-button, commanding | Passing world to untyped functions |
 
 The story-side `as any` casts fall into two groups: (1) casts that exist because the platform's `getTrait()` isn't generic (same root cause as platform), and (2) casts that set ad-hoc properties on entities — most of these were already refactored into proper traits (the `as any` references in trait files are in doc comments showing the old anti-pattern). The GDT debug commands (`de.ts`) are the worst offender with 10 casts for entity property inspection.
+
+---
+
+### ISSUE-068: `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types
+
+**Reported**: 2026-03-27
+**Severity**: Medium
+**Component**: Platform (world-model/events/types.ts, event-processor/handler-types.ts)
+**Type**: Tech debt / dead architecture
+**Discovered during**: ISSUE-063 Phase 3 — removing `as any` from GDT `kl.ts` exposed type errors because `IEventHandlers` values are `LegacyEntityEventHandler | LegacyEntityEventHandler[]`, which isn't directly callable.
+
+**Description**:
+The entity event handler type system has migration scaffolding for an ADR-075 Effect-returning architecture that was never adopted:
+
+1. **`LegacyEntityEventHandler`** — has `world?: any` in its signature (an `as any` hiding in the platform). Every real handler passes `WorldModel`, not `any`.
+2. **`EntityEventHandler`** (ADR-075) — returns `Effect[]` via read-only `WorldQuery`. No entity `on` handler uses this pattern.
+3. **`AnyEventHandler`** — union of both, "for migration period." The migration never happened.
+4. **Array form** — `IEventHandlers` allows `AnyEventHandler[]` (multiple handlers per event type). No entity registers an array — every usage is a single function.
+
+**Actual usage in Dungeo** (all entity `on` handlers):
+- Pattern A: `(event: IGameEvent) => { ... }` — no world param, no return (house-interior, white-house)
+- Pattern B: `(_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => { ... }` — with world, returns events (underground/troll)
+
+**Proposed fix**:
+Simplify to match actual usage:
+
+```typescript
+// world-model/src/events/types.ts
+export type EntityOnHandler = (event: IGameEvent, world?: WorldModel) => void | ISemanticEvent[];
+
+export interface IEventHandlers {
+  [eventType: string]: EntityOnHandler;
+}
+```
+
+- Drop `LegacyEntityEventHandler` (rename to `EntityOnHandler`, fix `any` → `WorldModel`)
+- Drop `EntityEventHandler`, `AnyEventHandler`, `StoryEventHandler` from `IEventHandlers` (they can stay in event-processor for its own use)
+- Drop the array form `| EntityOnHandler[]`
+- Update `event-processor/handler-types.ts` to match
+
+**Blast radius**: Entity `on` assignments in stories compile without change (the handler signatures already match). The `event-processor` may need its `AnyEventHandler` union adjusted if it dispatches both legacy and Effect-returning handlers internally. GDT `kl.ts` would compile clean after this fix (the call `entityOn['if.event.death'](deathEvent, world)` becomes directly callable).
+
+**Priority**: Medium — blocks clean completion of ISSUE-063 Phase 3 Group 2 (kl.ts). Can be done as a quick focused PR.
 
 ---
 

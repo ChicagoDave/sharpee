@@ -130,4 +130,4 @@ Eleven `as any` casts remain in `game-engine.ts` after Phase 2A. They fall into 
 - **Deliverable**: Trait-access `as any` casts in `stories/dungeo/` source files replaced with constructor pattern; build passes
 - **Exit state**: Story-side trait access is fully typed; baseline count documented
 - **Status**: CURRENT — incremental plan at `docs/work/dungeo/plans/issue-063-phase-3-as-any-cleanup.md`
-- **Progress**: 1/42 casts done (objects-action.ts NPC filter fix, commit `ed349aea`)
+- **Progress**: 10/42 casts removed, 2 tagged ISSUE-068 (Groups 1-2 done)

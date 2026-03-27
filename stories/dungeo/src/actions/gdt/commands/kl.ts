@@ -6,7 +6,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { IdentityTrait, CombatantTrait, TraitType } from '@sharpee/world-model';
+import { IdentityTrait, NpcTrait, CombatantTrait, TraitType } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 
 // Store engine reference for event processing
@@ -86,9 +86,9 @@ export const klHandler: GDTCommandHandler = {
     const identity = targetEntity.get(IdentityTrait);
     const entityName = identity?.name || targetEntity.id;
 
-    // Check if entity has a death handler
-    const entityOn = (targetEntity as any).on;
-    const hasDeathHandler = entityOn && typeof entityOn['if.event.death'] === 'function';
+    // Extract death handler with typeof guard (ISSUE-068: IEventHandlers union isn't directly callable)
+    const deathHandlerRaw = targetEntity.on?.['if.event.death'];
+    const deathHandler = typeof deathHandlerRaw === 'function' ? deathHandlerRaw : undefined;
 
     // Create death event
     const deathEvent: ISemanticEvent = {
@@ -104,9 +104,11 @@ export const klHandler: GDTCommandHandler = {
       }
     };
 
-    // Mark entity as dead
-    (targetEntity as any).isDead = true;
-    (targetEntity as any).isAlive = false;
+    // Mark entity as dead via NpcTrait
+    const npcTrait = targetEntity.get(NpcTrait);
+    if (npcTrait) {
+      npcTrait.kill();
+    }
 
     // Also update CombatantTrait if present
     const combatant = targetEntity.get<CombatantTrait>(TraitType.COMBATANT);
@@ -127,25 +129,25 @@ export const klHandler: GDTCommandHandler = {
         }
       } catch (e) {
         // Fallback: directly call the death handler
-        if (hasDeathHandler) {
+        if (deathHandler) {
           try {
-            entityOn['if.event.death'](deathEvent, world);
+            deathHandler(deathEvent as any, world); // ISSUE-068: IEventHandlers type mismatch
           } catch (handlerError) {
             // Ignore handler errors
           }
         }
       }
-    } else if (hasDeathHandler) {
+    } else if (deathHandler) {
       // Fallback: directly call the death handler
       try {
-        entityOn['if.event.death'](deathEvent, world);
+        deathHandler(deathEvent as any, world); // ISSUE-068: IEventHandlers type mismatch
       } catch (handlerError) {
         // Ignore handler errors
       }
     }
 
     output.push(`Killed: ${entityName} (${targetEntity.id})`);
-    if (hasDeathHandler) {
+    if (deathHandler) {
       output.push('Death handler triggered.');
     }
 
