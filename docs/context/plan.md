@@ -58,7 +58,7 @@ const openable = entity.getTrait(OpenableTrait);
 - **Entry state**: Phase 1 complete; worst offenders cleaned
 - **Deliverable**: All remaining `as any` trait-access casts in non-test platform source files eliminated; other `as any` patterns (`sharedData as any`, `world as any`) addressed where straightforward; build passes
 - **Exit state**: `as any` count in `packages/` source files (excluding tests) materially reduced; baseline documented for future CI enforcement
-- **Status**: IN PROGRESS
+- **Status**: DONE
 
 #### Phase 2A: Remove Legacy Event Sequencing Layer (~25 `as any` casts) — DONE
 
@@ -93,6 +93,35 @@ The engine has a vestigial event-driven architecture layer that wraps `ISemantic
 **Step 9: Update test files**
 - Remove SequencedEvent tests from `types.test.ts`; update test fixtures
 
+#### Phase 2B: Resolve Remaining `as any` Casts in game-engine.ts (11 casts) — DONE
+
+Eleven `as any` casts remain in `game-engine.ts` after Phase 2A. They fall into 5 categories.
+
+**Step 1: Remove unnecessary casts (types already exist)**
+- Line 1887: `(entity as any).on` → `entity.on` — `IFEntity` already declares `on?: IEventHandlers`
+- Lines 557, 1215: `(this.parser as any).setWorldContext(...)` → use narrowed type after `hasWorldContext()` guard — `IEngineAwareParser` already declares the method
+
+**Step 2: Fix event listener typing**
+- Line 98: Change `eventListeners` Map from `Set<Function>` to properly typed callbacks
+- Line 1869: `(listener as any)(...args)` — remove cast once Map is typed
+
+**Step 3: Add `setNarrativeSettings` to `LanguageProvider` interface**
+- `if-domain/src/language-provider.ts`: Add optional `setNarrativeSettings?(settings: NarrativeContext): void`
+- Line 1195: Remove `(this.languageProvider as any)` cast, add guard check
+
+**Step 4: Expose validation on CommandExecutor**
+- `command-executor.ts`: Add a public `validateCommand()` method (or make `validator` accessible)
+- Line 782: Replace `(this.commandExecutor as any).validator.validate(...)` with new public method
+
+**Step 5: Fix StoryInfoTrait access + remove dead legacy fallback**
+- Lines 376-377: Use `StoryInfoTrait` class + `getTrait(StoryInfoTrait)` pattern from Phase 1
+- Lines 378-379: Verify `(this.world as any).versionInfo` is dead code, remove if so
+
+**Step 6: Fix event handler return type**
+- Line 168: `handler(event) as any[]` — align return types between `IEventProcessorWiring` handler and `EventProcessor.registerHandler`
+
+**Verification**: Engine tests 184/184 passing, build passes
+
 ### Phase 3: Clean Up Story Files
 - **Tier**: Small
 - **Budget**: 100
@@ -100,4 +129,4 @@ The engine has a vestigial event-driven architecture layer that wraps `ISemantic
 - **Entry state**: Phase 2 complete; platform files cleaned
 - **Deliverable**: Trait-access `as any` casts in `stories/dungeo/` source files replaced with constructor pattern; build passes
 - **Exit state**: Story-side trait access is fully typed; baseline count documented
-- **Status**: PENDING
+- **Status**: CURRENT

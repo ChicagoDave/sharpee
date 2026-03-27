@@ -10,8 +10,8 @@
  * All event creation is owned by the action components themselves.
  */
 
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType } from '@sharpee/core';
-import { IParser, IValidatedCommand, IParsedCommand } from '@sharpee/world-model';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType, Result } from '@sharpee/core';
+import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
 import { hasWorldContext } from './parser-interface';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
 import { WorldModel } from '@sharpee/world-model';
@@ -77,6 +77,16 @@ export class CommandExecutor {
     }
     this.actionRegistry = actionRegistry;
     this.eventProcessor = eventProcessor;
+  }
+
+  /**
+   * Validate a parsed command against the world model.
+   *
+   * @param command - The parsed command to validate
+   * @returns Result with validated command or validation error
+   */
+  validateCommand(command: IParsedCommand): Result<IValidatedCommand, IValidationError> {
+    return this.validator.validate(command);
   }
 
   /**

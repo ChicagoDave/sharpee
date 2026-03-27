@@ -24,7 +24,7 @@ original numbers.
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
 | ISSUE-062 | Fuse `skipNextTick` behavior undocumented at API level | Low | plugin-scheduler | 2026-03-24 | - |
-| ISSUE-063 | `as any` regression — 258 remaining in source (was 319), Phase 1 complete | High | platform-wide | 2026-03-26 | In progress |
+| ISSUE-063 | `as any` regression — 200 remaining in source (was 319), Phases 1+2A+2B complete | High | platform-wide | 2026-03-26 | In progress |
 | ISSUE-064 | VisibilityBehavior has 3 duplicate container-walk traversals | Medium | world-model | 2026-03-26 | - |
 | ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
@@ -209,7 +209,7 @@ This reduces 10 rules to 1, and new subsystems require only a vocabulary entry r
 
 ## Open Issues — Platform Type Safety
 
-### ISSUE-063: `as any` regression — Phase 1 complete, 258 remaining in source files
+### ISSUE-063: `as any` regression — Phases 1+2A+2B complete, 200 remaining in source files
 
 **Reported**: 2026-03-26
 **Severity**: High
@@ -222,25 +222,29 @@ A previous refactor removed all `as any` casts from the codebase. They have regr
 
 **Key discovery**: `getTrait` is already generic — passing a trait constructor (e.g., `getTrait(OpenableTrait)`) infers the return type automatically. No platform redesign needed; the fix is updating callers to use the constructor pattern instead of `getTrait(TraitType.X) as any`.
 
-**Phase 1 complete (2026-03-26)**: Cleaned 8 worst-offender source files (61 casts removed, 319 → 258). Also fixed `requiredKey` → `keyId` bug in `AuthorModel.setupContainer()` and removed duplicate `Direction` type from NPC system. See `docs/context/plan.md` for full results.
+**Phase 1 complete (2026-03-26)**: Cleaned 8 worst-offender source files (61 casts removed, 319 → 258). Also fixed `requiredKey` → `keyId` bug in `AuthorModel.setupContainer()` and removed duplicate `Direction` type from NPC system.
 
-**Remaining phases**: Phase 2 (remaining source files), Phase 3 (story files), Phase 4 (test files), Phase 5 (CI enforcement).
+**Phase 2A complete (2026-03-26)**: Removed legacy event sequencing layer — deleted 4 files, modified 32 files, net -861 lines. Eliminated ~25 `as any` casts related to `SequencedEvent` wrapping/unwrapping (258 → ~211).
 
-**Worst offenders (source files)**:
+**Phase 2B complete (2026-03-27)**: Eliminated all 11 remaining `as any` casts in `game-engine.ts` (now 0). Fixes: removed unnecessary casts where types already existed (`entity.on`, `parser.setWorldContext`), fixed `Set<Function>` → typed callbacks, created `IEngineAwareLanguageProvider` with type guard, added public `validateCommand()` on `CommandExecutor`, used `StoryInfoTrait` constructor pattern, removed dead `versionInfo` fallback, narrowed `as any[]` → `as Effect[]`. Count: 211 → 200.
+
+**Remaining phases**: Phase 3 (story files), Phase 4 (test files), Phase 5 (CI enforcement).
+
+**Worst offenders (source files, updated 2026-03-27)**:
 
 | File | Count | Notes |
 |------|-------|-------|
-| `engine/src/game-engine.ts` | 32 | Core engine |
 | `stdlib/src/actions/standard/drinking/drinking.ts` | 22 | Action implementation |
-| `world-model/src/world/VisibilityBehavior.ts` | 21 | Visibility system |
-| `transcript-tester/src/runner.ts` | 16 | Test runner |
 | `stdlib/src/actions/base/snapshot-utils.ts` | 15 | Action utilities |
 | `world-model/src/traits/edible/edibleBehavior.ts` | 13 | Trait behavior |
-| `world-model/src/entities/if-entity.ts` | 12 | Entity core |
-| `world-model/src/world/WorldModel.ts` | 12 | World model core |
-| `stdlib/src/scope/scope-resolver.ts` | 12 | Scope resolution |
 | `parser-en-us/src/english-parser.ts` | 11 | Parser core |
-| `world-model/src/world/AuthorModel.ts` | 8 | Author model |
+| `parser-en-us/src/scope-evaluator.ts` | 7 | Scope evaluation |
+| `stdlib/src/actions/standard/taking/taking.ts` | 7 | Action implementation |
+| `stdlib/src/actions/standard/examining/examining-data.ts` | 7 | Action data |
+| `stdlib/src/scope/scope-resolver.ts` | 6 | Scope resolution |
+| `stdlib/src/actions/standard/looking/looking-data.ts` | 6 | Action data |
+| `stdlib/src/actions/standard/version/version.ts` | 5 | Version action |
+| `engine/src/game-engine.ts` | 0 | **Cleared** (was 32) |
 
 **Worst offenders (test files)** — tests are lower priority but should still be typed:
 

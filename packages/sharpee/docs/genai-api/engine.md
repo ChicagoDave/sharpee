@@ -522,8 +522,8 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  *
  * All event creation is owned by the action components themselves.
  */
-import { ISystemEvent, IGenericEventSource } from '@sharpee/core';
-import { IParser, IParsedCommand } from '@sharpee/world-model';
+import { ISystemEvent, IGenericEventSource, Result } from '@sharpee/core';
+import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { ActionRegistry } from '@sharpee/stdlib';
@@ -546,6 +546,13 @@ export declare class CommandExecutor {
     private scopeResolver?;
     private parsedCommandTransformers;
     constructor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>);
+    /**
+     * Validate a parsed command against the world model.
+     *
+     * @param command - The parsed command to validate
+     * @returns Result with validated command or validation error
+     */
+    validateCommand(command: IParsedCommand): Result<IValidatedCommand, IValidationError>;
     /**
      * Register a transformer that can modify parsed commands before validation.
      * Transformers are called in order of registration.

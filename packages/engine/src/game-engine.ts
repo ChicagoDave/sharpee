@@ -13,9 +13,11 @@ import {
   StandardCapabilities,
   ITrait,
   TraitType,
-  EntityType
+  EntityType,
+  IGameEvent,
+  StoryInfoTrait
 } from '@sharpee/world-model';
-import { EventProcessor } from '@sharpee/event-processor';
+import { EventProcessor, Effect } from '@sharpee/event-processor';
 import {
   ActionRegistry,
   StandardActionRegistry,
@@ -54,6 +56,7 @@ import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from
 import { createActionContext } from './action-context-factory';
 import { processEvent } from './turn-event-processor';
 import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
+import { hasNarrativeSettings } from './language-provider-interface';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
 import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor';
@@ -95,7 +98,7 @@ export class GameEngine {
   private story?: Story;
   private languageProvider?: LanguageProvider;
   private parser?: Parser;
-  private eventListeners = new Map<GameEngineEventName, Set<Function>>();
+  private eventListeners = new Map<GameEngineEventName, Set<(...args: any[]) => void>>();
   private saveRestoreHooks?: ISaveRestoreHooks;
   private eventSource = createSemanticEventSource();
   private systemEventSource: IGenericEventSource<ISystemEvent>;
@@ -164,8 +167,8 @@ export class GameEngine {
       registerHandler: (eventType, handler) => {
         this.eventProcessor.registerHandler(eventType, (event, _query) => {
           // The adapted handler doesn't need WorldQuery, it captures world in closure
-          // Cast to Effect[] since handler returns unknown[] (to avoid circular deps)
-          return handler(event) as any[];
+          // Cast to Effect[] since wiring handler returns unknown[] (to avoid circular deps)
+          return handler(event) as Effect[];
         });
       }
     };
@@ -372,11 +375,11 @@ export class GameEngine {
     this.sessionMoves = 0;
     // Keep currentTurn as is (already 1 from constructor)
     
-    // Get version info from StoryInfoTrait (or fall back to legacy (world as any) for backward compat)
-    const storyInfoEntities = this.world.findByTrait('storyInfo' as any);
-    const storyInfoTrait = storyInfoEntities[0]?.get<any>('storyInfo');
-    const engineVersion = storyInfoTrait?.engineVersion || (this.world as any).versionInfo?.engineVersion;
-    const clientVersion = storyInfoTrait?.clientVersion || (this.world as any).versionInfo?.clientVersion || (this.world as any).clientVersion;
+    // Get version info from StoryInfoTrait
+    const storyInfoEntities = this.world.findByTrait(TraitType.STORY_INFO);
+    const storyInfoTrait = storyInfoEntities[0]?.get(StoryInfoTrait);
+    const engineVersion = storyInfoTrait?.engineVersion;
+    const clientVersion = storyInfoTrait?.clientVersion;
 
     // Emit game started event
     const startedEvent = createGameStartedEvent({
@@ -554,7 +557,7 @@ export class GameEngine {
         const player = this.world.getPlayer();
         if (player && hasWorldContext(this.parser)) {
           const playerLocation = this.world.getLocation(player.id) || '';
-          (this.parser as any).setWorldContext(this.world, player.id, playerLocation);
+          this.parser.setWorldContext(this.world, player.id, playerLocation);
         }
 
         // Parse to get action ID
@@ -779,7 +782,7 @@ export class GameEngine {
 
     try {
       // Validate the command
-      const validationResult = (this.commandExecutor as any).validator.validate(parsedCommand);
+      const validationResult = this.commandExecutor.validateCommand(parsedCommand);
 
       if (!validationResult.success) {
         // Validation failed - emit error event using domain event pattern
@@ -1165,12 +1168,12 @@ export class GameEngine {
    */
   private configureLanguageProviderNarrative(player: IFEntity): void {
     // Check if language provider supports narrative settings
-    if (!this.languageProvider || !('setNarrativeSettings' in this.languageProvider)) {
+    if (!this.languageProvider || !hasNarrativeSettings(this.languageProvider)) {
       return;
     }
 
     // Build narrative context for language provider
-    const narrativeContext: { perspective: '1st' | '2nd' | '3rd'; playerPronouns?: any } = {
+    const narrativeContext: NarrativeSettings = {
       perspective: this.narrativeSettings.perspective,
     };
 
@@ -1181,18 +1184,19 @@ export class GameEngine {
         narrativeContext.playerPronouns = this.narrativeSettings.playerPronouns;
       } else {
         // Fall back to player entity's ActorTrait
-        const actorTrait = player.get<any>('actor');
+        const actorTrait = player.get(ActorTrait);
         if (actorTrait?.pronouns) {
           // Handle both single PronounSet and array of PronounSets
-          narrativeContext.playerPronouns = Array.isArray(actorTrait.pronouns)
+          const pronounSet = Array.isArray(actorTrait.pronouns)
             ? actorTrait.pronouns[0]
             : actorTrait.pronouns;
+          narrativeContext.playerPronouns = pronounSet;
         }
       }
     }
 
-    // Configure language provider
-    (this.languageProvider as any).setNarrativeSettings(narrativeContext);
+    // Configure language provider (type narrowed by hasNarrativeSettings guard)
+    this.languageProvider.setNarrativeSettings(narrativeContext);
   }
 
   /**
@@ -1212,7 +1216,7 @@ export class GameEngine {
 
     if (this.parser && hasWorldContext(this.parser)) {
       const playerLocation = this.world.getLocation(newPlayerId) || '';
-      (this.parser as any).setWorldContext(this.world, newPlayerId, playerLocation);
+      this.parser.setWorldContext(this.world, newPlayerId, playerLocation);
     }
 
     if (this.parser && hasPronounContext(this.parser)) {
@@ -1866,7 +1870,7 @@ export class GameEngine {
     if (listeners) {
       for (const listener of listeners) {
         try {
-          (listener as any)(...args);
+          listener(...args);
         } catch (error) {
           console.error(`Error in event listener for ${event}:`, error);
         }
@@ -1884,7 +1888,7 @@ export class GameEngine {
 
     for (const entity of entities) {
       // Check if entity has event handlers defined
-      const handlers = (entity as any).on;
+      const handlers = entity.on;
       if (!handlers || typeof handlers !== 'object') {
         continue;
       }
@@ -1894,7 +1898,8 @@ export class GameEngine {
       if (typeof handler === 'function') {
         try {
           // Call the handler with the event and world
-          const result = handler(event, this.world);
+          // Cast is safe: engine events always satisfy IGameEvent's data constraint
+          const result = handler(event as IGameEvent, this.world);
 
           // If handler returns events, add them to the current turn
           if (Array.isArray(result)) {
