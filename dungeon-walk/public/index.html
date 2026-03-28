@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dungeon Walkthrough Viewer</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --surface: #16213e;
+      --surface2: #0f3460;
+      --accent: #e94560;
+      --accent2: #533483;
+      --text: #eee;
+      --text-dim: #aaa;
+      --pass: #4ecca3;
+      --fail: #e94560;
+      --border: #2a2a4a;
+      --json-key: #82aaff;
+      --json-string: #c3e88d;
+      --json-number: #f78c6c;
+      --json-bool: #c792ea;
+      --json-null: #ff5370;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .stats span { color: var(--text); font-weight: 600; }
+
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* --- Sidebar --- */
+    .sidebar {
+      width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar h2 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      padding: 12px 16px 8px;
+    }
+
+    .transcript-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+    }
+
+    .transcript-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .transcript-item:hover { background: var(--surface2); }
+    .transcript-item.active { background: var(--surface2); border-left: 3px solid var(--accent); }
+
+    .transcript-item .name {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .transcript-item .meta {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    /* --- Filter bar --- */
+    .filter-bar {
+      padding: 8px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .filter-bar select, .filter-bar input {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      font-size: 12px;
+      font-family: inherit;
+      border-radius: 4px;
+    }
+
+    .filter-bar label {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* --- Main content --- */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .turns-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px;
+    }
+
+    .turn-card {
+      background: var(--surface);
+      border-left: 3px solid var(--border);
+      margin-bottom: 2px;
+      padding: 0;
+    }
+
+    .turn-command {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .turn-number {
+      font-size: 10px;
+      color: var(--text-dim);
+      min-width: 24px;
+    }
+
+    .command {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      flex: 1;
+    }
+
+    .command::before {
+      content: '> ';
+      color: var(--accent);
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-pass { background: var(--pass); color: #111; }
+    .badge-fail { background: var(--fail); color: #fff; }
+
+    .game-turn-badge {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .output-block {
+      padding: 4px 14px 8px 48px;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #ccc;
+    }
+
+    /* --- Events toggle --- */
+    .events-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px 4px 48px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 10px;
+      color: var(--text-dim);
+      transition: color 0.15s;
+    }
+
+    .events-toggle:hover { color: var(--text); }
+
+    .events-toggle .arrow {
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+
+    .events-toggle.open .arrow { transform: rotate(90deg); }
+
+    .event-badges-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
+
+    .event-badge-small {
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 2px;
+      background: var(--border);
+      color: var(--text-dim);
+    }
+
+    /* --- Events section --- */
+    .events-section {
+      display: none;
+      padding: 6px 14px 8px 48px;
+      border-top: 1px solid var(--border);
+    }
+
+    .events-section.open { display: block; }
+
+    .events-section h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .event-item {
+      margin-bottom: 4px;
+    }
+
+    .event-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.1s;
+    }
+
+    .event-header:hover { background: rgba(255,255,255,0.05); }
+
+    .event-type-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      background: var(--accent2);
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .event-type-badge.type-action { background: #1b5e20; }
+    .event-type-badge.type-movement { background: #0d47a1; }
+    .event-type-badge.type-message { background: #4a148c; }
+    .event-type-badge.type-death { background: #b71c1c; }
+    .event-type-badge.type-game { background: #e65100; }
+    .event-type-badge.type-npc { background: #006064; }
+    .event-type-badge.type-state { background: #33691e; }
+    .event-type-badge.type-score { background: #f9a825; color: #111; }
+
+    .event-summary {
+      font-size: 11px;
+      color: var(--text-dim);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-expand {
+      font-size: 10px;
+      color: var(--text-dim);
+      transition: transform 0.2s;
+    }
+
+    .event-json {
+      display: none;
+      margin: 4px 8px 8px 8px;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .event-json.open { display: block; }
+
+    /* JSON syntax highlighting */
+    .json-key { color: var(--json-key); }
+    .json-string { color: var(--json-string); }
+    .json-number { color: var(--json-number); }
+    .json-bool { color: var(--json-bool); }
+    .json-null { color: var(--json-null); }
+    .json-brace { color: var(--text-dim); }
+
+    /* --- Scrollbar --- */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+
+    .empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>DUNGEON</h1>
+  <div class="stats" id="stats">Loading...</div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar">
+    <h2>Transcripts</h2>
+    <ul class="transcript-list" id="transcript-list"></ul>
+  </nav>
+
+  <div class="main">
+    <div class="filter-bar">
+      <label>Event type:</label>
+      <select id="filter-event-type">
+        <option value="">All</option>
+      </select>
+      <label>Result:</label>
+      <select id="filter-result">
+        <option value="">All</option>
+        <option value="PASS">Pass</option>
+        <option value="FAIL">Fail</option>
+      </select>
+    </div>
+    <div class="turns-container" id="turns-container">
+      <div class="empty-state">Select a transcript to view turns</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const state = {
+    transcriptId: null,
+    turns: [],
+    eventFilter: '',
+    resultFilter: ''
+  };
+
+  // --- Fetch helpers ---
+
+  async function fetchJson(url) {
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  // --- Event type classification ---
+
+  function classifyEvent(type) {
+    if (type.includes('death') || type.includes('killed')) return 'death';
+    if (type.includes('moved') || type.includes('exited') || type.includes('entered')) return 'movement';
+    if (type === 'game.message') return 'message';
+    if (type.startsWith('game.')) return 'game';
+    if (type.startsWith('npc.')) return 'npc';
+    if (type.includes('score') || type.includes('victory')) return 'score';
+    if (type.includes('sm.transition') || type.includes('state')) return 'state';
+    return 'action';
+  }
+
+  // --- Summarize an event for the one-line preview ---
+
+  function summarizeEvent(ev) {
+    const d = ev.data;
+    switch (ev.event_type) {
+      case 'game.message':
+        return d.text ? d.text.substring(0, 80) + (d.text.length > 80 ? '...' : '') : d.messageId || '';
+      case 'if.event.actor_moved':
+        return `${d.sourceRoom?.name || d.fromRoom} → ${d.destinationRoom?.name || d.toRoom}`;
+      case 'if.event.actor_exited':
+        return `${d.direction} → ${d.toRoom}`;
+      case 'if.event.actor_entered':
+        return `from ${d.fromRoom} (${d.direction})`;
+      case 'if.event.attacked':
+        return `${d.targetName} with ${d.weaponName || 'fists'}`;
+      case 'if.event.death':
+        return `${d.targetName} killed by ${d.killedBy}`;
+      case 'if.event.taken':
+        return d.itemName || d.item || '';
+      case 'if.event.dropped':
+        return d.itemName || d.item || '';
+      case 'if.event.opened':
+      case 'if.event.closed':
+        return d.targetName || d.target || '';
+      case 'if.event.room.description':
+        return d.roomName || '';
+      case 'game.victory':
+        return `Score: ${d.totalScore}`;
+      case 'sm.transition':
+        return `${d.machineId}: ${d.from} → ${d.to}`;
+      case 'npc.emoted':
+        return d.messageId || '';
+      default:
+        return d.messageId || d.targetName || '';
+    }
+  }
+
+  // --- JSON syntax highlighting ---
+
+  function highlightJson(obj, indent = 0) {
+    return syntaxHighlight(JSON.stringify(obj, null, 2));
+  }
+
+  function syntaxHighlight(json) {
+    return json.replace(
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],])/g,
+      (match) => {
+        let cls = 'json-number';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'json-key';
+            // Remove quotes from keys for cleaner look
+            match = match.replace(/"/g, '').replace(/:$/, ':');
+            return `<span class="${cls}">${escHtml(match)}</span>`;
+          } else {
+            cls = 'json-string';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'json-bool';
+        } else if (/null/.test(match)) {
+          cls = 'json-null';
+        } else if (/[{}\[\],]/.test(match)) {
+          cls = 'json-brace';
+        }
+        return `<span class="${cls}">${escHtml(match)}</span>`;
+      }
+    );
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // --- Render ---
+
+  async function loadStats() {
+    const s = await fetchJson('/api/stats');
+    document.getElementById('stats').innerHTML =
+      `<span>${s.transcripts}</span> transcripts &middot; <span>${s.turns}</span> turns &middot; <span>${s.events}</span> events &middot; <span class="badge badge-pass">${s.passed} pass</span> ${s.failed ? `<span class="badge badge-fail">${s.failed} fail</span>` : ''}`;
+  }
+
+  async function loadEventTypes() {
+    const types = await fetchJson('/api/event-types');
+    const select = document.getElementById('filter-event-type');
+    for (const t of types) {
+      const opt = document.createElement('option');
+      opt.value = t.event_type;
+      opt.textContent = `${t.event_type} (${t.count})`;
+      select.appendChild(opt);
+    }
+  }
+
+  async function loadTranscripts() {
+    const transcripts = await fetchJson('/api/transcripts');
+    const list = document.getElementById('transcript-list');
+    list.innerHTML = '';
+    for (const t of transcripts) {
+      const li = document.createElement('li');
+      li.className = 'transcript-item';
+      li.dataset.id = t.id;
+      li.innerHTML = `
+        <div class="name">${escHtml(t.title || t.filename)}</div>
+        <div class="meta">${t.filename} &middot; ${t.test_count || '?'} tests &middot; ${t.duration_ms || '?'}ms</div>
+      `;
+      li.addEventListener('click', () => selectTranscript(t.id, li));
+      list.appendChild(li);
+    }
+  }
+
+  async function selectTranscript(id, el) {
+    state.transcriptId = id;
+
+    // Update active state
+    document.querySelectorAll('.transcript-item').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+
+    // Load turns
+    state.turns = await fetchJson(`/api/transcripts/${id}/turns`);
+    renderTurns();
+  }
+
+  function renderTurns() {
+    const container = document.getElementById('turns-container');
+    const filtered = state.turns.filter(t => {
+      if (state.resultFilter && t.result !== state.resultFilter) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="empty-state">No turns match filters</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    for (const turn of filtered) {
+      const card = document.createElement('div');
+      card.className = 'turn-card';
+      card.dataset.turnId = turn.id;
+      card.innerHTML = `
+        <div class="turn-command">
+          <span class="turn-number">#${turn.sequence}</span>
+          <span class="command">${escHtml(turn.command)}</span>
+          ${turn.game_turn != null ? `<span class="game-turn-badge">T${turn.game_turn}</span>` : ''}
+          <span class="badge badge-${turn.result.toLowerCase()}">${turn.result}</span>
+        </div>
+        ${turn.output_text ? `<div class="output-block">${escHtml(turn.output_text)}</div>` : ''}
+        <div class="events-toggle" data-turn-id="${turn.id}">
+          <span class="arrow">&#9654;</span>
+          <span>Events</span>
+          <div class="event-badges-inline"></div>
+        </div>
+        <div class="events-section" data-turn-id="${turn.id}">
+          <div class="events-list">Loading...</div>
+        </div>
+      `;
+
+      const toggle = card.querySelector('.events-toggle');
+      const section = card.querySelector('.events-section');
+      toggle.addEventListener('click', () => {
+        const isOpen = section.classList.toggle('open');
+        toggle.classList.toggle('open', isOpen);
+        if (isOpen && !section.dataset.loaded) {
+          loadTurnEvents(turn.id, card.querySelector('.events-list'));
+          section.dataset.loaded = 'true';
+        }
+      });
+
+      // Load event type badges inline (lightweight)
+      loadEventBadges(turn.id, card.querySelector('.event-badges-inline'));
+
+      container.appendChild(card);
+    }
+  }
+
+  async function loadEventBadges(turnId, container) {
+    const events = await fetchJson(`/api/turns/${turnId}/events`);
+    const types = [...new Set(events.map(e => e.event_type))];
+    container.innerHTML = types.map(t =>
+      `<span class="event-badge-small">${escHtml(t.replace('if.event.', '').replace('game.', 'g:'))}</span>`
+    ).join('');
+  }
+
+  async function loadTurnEvents(turnId, container) {
+    const events = await fetchJson(`/api/turns/${turnId}/events`);
+
+    if (events.length === 0) {
+      container.innerHTML = '<span style="font-size:11px;color:var(--text-dim)">No events</span>';
+      return;
+    }
+
+    // Apply event type filter
+    const filtered = state.eventFilter
+      ? events.filter(e => e.event_type === state.eventFilter)
+      : events;
+
+    container.innerHTML = '';
+    for (const ev of filtered) {
+      const cls = classifyEvent(ev.event_type);
+      const summary = summarizeEvent(ev);
+      const item = document.createElement('div');
+      item.className = 'event-item';
+      item.innerHTML = `
+        <div class="event-header">
+          <span class="event-type-badge type-${cls}">${escHtml(ev.event_type)}</span>
+          <span class="event-summary">${escHtml(summary)}</span>
+          <span class="event-expand">&#9654;</span>
+        </div>
+        <div class="event-json"><pre>${highlightJson(ev.data)}</pre></div>
+      `;
+
+      const hdr = item.querySelector('.event-header');
+      const json = item.querySelector('.event-json');
+      const arrow = item.querySelector('.event-expand');
+      hdr.addEventListener('click', () => {
+        const open = json.classList.toggle('open');
+        arrow.style.transform = open ? 'rotate(90deg)' : '';
+      });
+
+      container.appendChild(item);
+    }
+  }
+
+  // --- Filter handlers ---
+
+  document.getElementById('filter-event-type').addEventListener('change', (e) => {
+    state.eventFilter = e.target.value;
+    // Re-render loaded event sections
+    document.querySelectorAll('.events-section[data-loaded]').forEach(section => {
+      section.removeAttribute('data-loaded');
+      const evList = section.querySelector('.events-list');
+      if (evList) evList.innerHTML = 'Loading...';
+      if (section.classList.contains('open')) {
+        const turnId = section.dataset.turnId;
+        loadTurnEvents(turnId, evList);
+        section.dataset.loaded = 'true';
+      }
+    });
+  });
+
+  document.getElementById('filter-result').addEventListener('change', (e) => {
+    state.resultFilter = e.target.value;
+    renderTurns();
+  });
+
+  // --- Init ---
+  loadStats();
+  loadTranscripts();
+  loadEventTypes();
+</script>
+
+</body>
+</html>

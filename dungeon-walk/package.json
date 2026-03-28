@@ -1,0 +1,16 @@
+{
+  "name": "dungeon-walk",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Interactive viewer for Dungeon walkthrough trace data",
+  "scripts": {
+    "parse": "node parse-walkthrough.mjs dungeon-walkthrough.txt",
+    "start": "node server.mjs",
+    "dev": "node parse-walkthrough.mjs dungeon-walkthrough.txt && node server.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0"
+  }
+}
