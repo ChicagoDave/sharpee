@@ -15,7 +15,7 @@ Every section names the CS concept first, then shows how Sharpee uses it.
 2. [The SpatialIndex: A Bidirectional Hash Map](#2-the-spatialindex-a-bidirectional-hash-map)
 3. [Room Connections: Directed Graph as Adjacency List](#3-room-connections-directed-graph-as-adjacency-list)
 4. [Visibility: Filtered Tree Traversal](#4-visibility-filtered-tree-traversal)
-5. [Scope: A Rule Engine with Indexed Lookup](#5-scope-a-rule-engine-with-indexed-lookup)
+5. [Scope: A Three-Phase Pipeline](#5-scope-a-three-phase-pipeline)
 6. [The Parser Pipeline: Data Structure Transformations](#6-the-parser-pipeline-data-structure-transformations)
 7. [The Grammar System: A Production Rule Engine](#7-the-grammar-system-a-production-rule-engine)
 8. [Grammar Catalog](#8-grammar-catalog)
@@ -74,6 +74,34 @@ This is a **hash map** (TypeScript `Map`). Looking up any entity by its string
 ID is O(1) regardless of how many entities exist. The tradeoff: it tells you
 nothing about relationships between entities. That is what the SpatialIndex
 and room connections handle.
+
+### Computed Properties: The Description Getter
+
+**CS Concept: Priority Chain (Chain of Responsibility)**
+
+`IFEntity.description` is not a simple field read — it is a computed getter
+that walks a priority chain of traits:
+
+```
+get description():
+  1. OpenableTrait present? → return openDescription or closedDescription based on isOpen
+  2. SwitchableTrait present? → return onDescription or offDescription based on isOn
+  3. LightSourceTrait present? → return litDescription or unlitDescription based on isLit
+  4. Fallback → IdentityTrait.description
+```
+
+**Source**: `packages/world-model/src/entities/if-entity.ts`
+
+Each trait in the chain is checked only if the entity has it, and only if the
+trait's state-specific description field is populated. If not, the chain falls
+through to the next trait. This eliminates the need for event handlers to
+mutate `IdentityTrait.description` when state changes — the description is
+always derived from current state.
+
+**Tradeoff**: A getter runs on every access (no caching). For IF games where
+descriptions are read a few times per turn, this is negligible. The benefit
+is that state and description can never diverge — a classic "make illegal
+states unrepresentable" pattern applied to derived data.
 
 ---
 
@@ -351,6 +379,13 @@ This is a **linked list traversal with predicates** — follow parent pointers
 via `SpatialIndex.getParent()`, check a condition at each hop. Each hop is
 O(1). The number of hops is bounded by nesting depth (capped at 10).
 
+All three visibility checks (`isAccessible`, `hasLineOfSight`, `isVisible`)
+delegate to a single shared algorithm — `isContainmentPathClear` — which
+walks from an entity up to its room, returning false if any closed opaque
+container blocks the path. The three public-facing methods are thin wrappers
+that add their own pre-checks (actor containers, scenery traits, capability
+dispatch) before calling the shared walker.
+
 ### The Recursive Descent: getVisible
 
 When the game needs to describe a room (LOOK command), `getVisible` walks
@@ -384,9 +419,9 @@ The darkness system does not change the containment tree. It changes the
   2. Lit light sources in the room (they glow).
 
 `hasLightSource` does a full recursive search of the room, then for each
-light source found, walks back up with `isAccessible` to check if the light
-can "escape" its containers. A flashlight inside a closed opaque box does not
-light the room.
+light source found, walks back up with `isContainmentPathClear` to check if
+the light can "escape" its containers. A flashlight inside a closed opaque
+box does not light the room.
 
 **CS Concept: Nested Traversals** — a downward traversal (find lights) with
 an upward traversal (check accessibility) at each candidate. For an IF game
@@ -395,20 +430,40 @@ room, you would want a dedicated index.
 
 ---
 
-## 5. Scope: A Rule Engine with Indexed Lookup
+## 5. Scope: A Three-Phase Pipeline
+
+**CS Concept: Pipeline Architecture with Specialized Resolvers**
+
+Scope determines what the player can refer to in a command. It overlaps with
+visibility but is not identical — you can see a painting across the room, but
+can you take it?
+
+Three specialized resolvers handle scope at different phases of the turn
+cycle. They share no code and serve different callers:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. RuleScopeEvaluator          (world-model, pre-parse)    │
+│     Rule engine with indexed registry. Populates vocabulary.│
+│                                                             │
+│  2. GrammarScopeResolver        (parser, parse phase)       │
+│     Delegates to WorldModel.getVisibleEntities() etc.       │
+│     Filters candidates for grammar slot constraints.        │
+│                                                             │
+│  3. StandardScopeResolver       (stdlib, validation phase)  │
+│     Entity resolution with scoring and disambiguation.      │
+│     Delegates canSee() to world.canSee().                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Sources**: `packages/world-model/src/scope/`, `packages/parser-en-us/src/grammar-scope-resolver.ts`, `packages/stdlib/src/scope/scope-resolver.ts`
+
+### Phase 1: RuleScopeEvaluator — Triple-Indexed Rule Store
 
 **CS Concept: Production Rule System with Multi-Key Indexing**
 
-Scope determines what the parser should consider as valid targets for a
-command. It overlaps with visibility but is not identical — you can see a
-painting across the room, but can you take it?
-
-**Source**: `packages/world-model/src/scope/`
-
-### The ScopeRegistry: Triple-Indexed Rule Store
-
 ```typescript
-class ScopeRegistry {
+class RuleScopeEvaluator {
   private rules: Map<string, IScopeRule>;           // primary store
   private rulesByLocation: Map<string, Set<string>>; // location index
   private rulesByAction: Map<string, Set<string>>;   // action index
@@ -436,7 +491,7 @@ globalRules (index)
 { "core.room-contents", "core.inventory" }
 ```
 
-When the parser asks "what can the player take right now?", the evaluator:
+When evaluating scope, the evaluator:
 
 1. Grabs all global rules (always apply) — Set lookup: O(1)
 2. Grabs rules for the current room (location-indexed) — Map lookup: O(1)
@@ -449,9 +504,39 @@ This is a **mini query engine**. The indexes make steps 1-3 fast. Without
 them, you would scan all rules every time — acceptable for 10 rules, slow
 for 100.
 
+The evaluator caches results:
+
+```typescript
+private cache: Map<string, IScopeEvaluationResult>;
+// Key: "actorId:locationId:actionId"
+```
+
+**CS Concept: Memoization** — if scope has been computed for this
+actor+location+action combination, return the cached result. The cache is
+invalidated after any world state mutation (move, open, close).
+
+### Phase 2: GrammarScopeResolver — Parse-Time Filtering
+
+**CS Concept: Delegation / Facade**
+
+During grammar matching, the `EntitySlotConsumer` needs to know which
+entities are valid for a slot constraint like `.touchable()`. The
+`GrammarScopeResolver` delegates to WorldModel methods
+(`getVisibleEntities`, `getTouchableEntities`, etc.), which internally use
+VisibilityBehavior. It does not call the RuleScopeEvaluator — it accesses
+the visibility layer directly.
+
+### Phase 3: StandardScopeResolver — Validation-Time Disambiguation
+
+The command validator resolves noun phrases to specific entity IDs. The
+`StandardScopeResolver` builds candidate lists, scores them, and handles
+disambiguation. It delegates visibility checks to `world.canSee()`, which
+calls through to `VisibilityBehavior.canSee()` — the single canonical
+implementation.
+
 ### Scope Levels
 
-The validator uses scope levels to filter candidates:
+All three resolvers use the same scope level enumeration:
 
 ```
 CARRIED   = 4   // in inventory — can manipulate freely
@@ -464,20 +549,6 @@ UNAWARE   = 0   // doesn't exist to the player
 These form an **ordered enumeration** — each level includes all levels above
 it. If something is REACHABLE (3), it is also VISIBLE (2) and AWARE (1). The
 filter check is a simple comparison: `entityScope >= requiredScope`.
-
-### The ScopeEvaluator Cache
-
-```typescript
-private cache: Map<string, IScopeEvaluationResult>;
-// Key: "actorId:locationId:actionId"
-```
-
-**CS Concept: Memoization**
-
-If scope has already been computed for this actor+location+action combination,
-return the cached result. The cache is invalidated after any world state
-mutation (move, open, close). The key is cheap to construct and unique per
-context.
 
 ---
 
@@ -607,7 +678,7 @@ move entities. The cycle continues on the next turn.
     │
     ▼  PatternMatch
 [Slot Consumer] ─── Token span → Entity candidates
-    │               ScopeEvaluator → SpatialIndex → VisibilityBehavior
+    │               GrammarScopeResolver → SpatialIndex → VisibilityBehavior
     │
     ▼  IParsedCommand
 [Validator] ─── Noun phrases → Resolved entity IDs

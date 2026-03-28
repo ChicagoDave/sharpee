@@ -315,7 +315,7 @@ Route from Gallery: `south` (Studio) → `north` (N/S Crawlway) → `east` (Trol
   - `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript ... wt-09-egg-tree.transcript` passes
 - **Exit state**: wt-09 passes in the walkthrough chain using only real navigation; no `$teleport` directives remain in the file
 - **Risk**: Kitchen window state — the window was opened in wt-01, verify it persists through the chain. If the window is closed in a later transcript, the navigation will fail and the implementer must add `open window` before entering.
-- **Status**: CURRENT
+- **Status**: DONE
 
 ### Phase 8: Replace wt-10 teleports (Engravings Cave and return)
 - **Tier**: Small
@@ -333,7 +333,7 @@ Route from Gallery: `south` (Studio) → `north` (N/S Crawlway) → `east` (Trol
 - **Open questions to resolve during implementation**:
   1. Is the Round Room carousel actually active at wt-10 start? (Check `carousel-handler.ts` default — `return active ?? false` suggests it starts inactive.) If inactive, normal navigation works. Run `--play` to confirm.
   2. What is the viable return path from Tea Room/Dingy Closet to Living Room? Verify in `--play` mode before writing commands.
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 9: Replace wt-13 teleports (Forest canary and Treasure Room recovery)
 - **Tier**: Small
@@ -351,7 +351,7 @@ Route from Gallery: `south` (Studio) → `north` (N/S Crawlway) → `east` (Trol
   - Thief combat RNG behavior verified (run chain twice per project rule for flakey RNG tests)
 - **Exit state**: wt-13 passes in chain (run twice to confirm RNG stability); no `$teleport` directives remain
 - **Risk**: Maze navigation to Treasure Room (teleport 3 replacement) is ~10 steps; any wrong turn will fail the test. Verify direction sequence matches the path taken in lines 117-155 of the same transcript.
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 10: Replace wt-16 teleports (Gallery and return)
 - **Tier**: Small
@@ -366,4 +366,4 @@ Route from Gallery: `south` (Studio) → `north` (N/S Crawlway) → `east` (Trol
   - Full chain through wt-16 passes
 - **Exit state**: wt-16 passes in chain; no `$teleport` directives remain in any walkthrough transcript
 - **Risk**: The 10-step path from Basin Room to Gallery is derived from static source analysis. It should be verified in `--play` mode before writing into the transcript, as external connector functions may add connections not captured in the static analysis.
-- **Status**: PENDING
+- **Status**: DONE
