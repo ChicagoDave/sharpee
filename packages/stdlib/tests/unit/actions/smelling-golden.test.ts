@@ -56,8 +56,8 @@ describe('smellingAction (Golden Pattern)', () => {
       const bread = world.createEntity('fresh bread', 'object');
       bread.add({
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: false
+
+        liquid: false
       });
       world.moveEntity(bread.id, room.id);
       
@@ -82,8 +82,8 @@ describe('smellingAction (Golden Pattern)', () => {
       const coffee = world.createEntity('hot coffee', 'object');
       coffee.add({
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true
+
+        liquid: true
       });
       world.moveEntity(coffee.id, player.id);
       
@@ -369,8 +369,8 @@ describe('smellingAction (Golden Pattern)', () => {
       const perfume = world.createEntity('bottle of perfume', 'object');
       perfume.add({
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true  // Liquid perfume
+
+        liquid: true  // Liquid perfume
       });
       world.moveEntity(perfume.id, player.id);
       
@@ -444,8 +444,8 @@ describe('Testing Pattern Examples for Smelling', () => {
     // Test various scent categories
     const world = new WorldModel();
     const scentObjects = [
-      { name: 'steak', scent: 'edible', trait: { type: TraitType.EDIBLE, isDrink: false } },
-      { name: 'wine', scent: 'drinkable', trait: { type: TraitType.EDIBLE, isDrink: true } },
+      { name: 'steak', scent: 'edible', trait: { type: TraitType.EDIBLE, liquid: false } },
+      { name: 'wine', scent: 'drinkable', trait: { type: TraitType.EDIBLE, liquid: true } },
       { name: 'campfire', scent: 'burning', trait: { type: TraitType.LIGHT_SOURCE, isLit: true } }
     ];
     
@@ -483,9 +483,9 @@ describe('Testing Pattern Examples for Smelling', () => {
     ];
     
     // Add edible traits to contents
-    contents[0].add({ type: TraitType.EDIBLE, isDrink: false });
-    contents[1].add({ type: TraitType.EDIBLE, isDrink: true });
-    contents[2].add({ type: TraitType.EDIBLE, isDrink: false });
+    contents[0].add({ type: TraitType.EDIBLE, liquid: false });
+    contents[1].add({ type: TraitType.EDIBLE, liquid: true });
+    contents[2].add({ type: TraitType.EDIBLE, liquid: false });
     
     // All contents should be edible
     contents.forEach(item => {
@@ -499,7 +499,7 @@ describe('Testing Pattern Examples for Smelling', () => {
     const kitchenScents = [
       { item: 'oven', trait: { type: TraitType.LIGHT_SOURCE, isLit: true }, produces: 'smoke' },
       { item: 'bread', trait: { type: TraitType.EDIBLE }, produces: 'food' },
-      { item: 'coffee_maker', trait: { type: TraitType.EDIBLE, isDrink: true }, produces: 'food' }
+      { item: 'coffee_maker', trait: { type: TraitType.EDIBLE, liquid: true }, produces: 'food' }
     ];
     
     kitchenScents.forEach(({ item, trait, produces }) => {

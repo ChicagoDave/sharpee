@@ -151,7 +151,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const water = world.createEntity('water', 'object');
       water.add({
         type: TraitType.EDIBLE,
-        isDrink: true
+        liquid: true
       });
       
       // Put bottle in player's hands and water in bottle
@@ -359,7 +359,7 @@ describe('listeningAction (Golden Pattern)', () => {
       const potion = world.createEntity('magic potion', 'object');
       potion.add({
         type: TraitType.EDIBLE,
-        isDrink: true
+        liquid: true
       });
       
       // Put bag in player's hands and items in bag
@@ -498,12 +498,12 @@ describe('Testing Pattern Examples for Listening', () => {
     const containerScenarios = [
       {
         container: 'bottle',
-        contents: [{ name: 'water', isDrink: true }],
+        contents: [{ name: 'water', liquid: true }],
         expectedSound: 'liquid'
       },
       {
         container: 'box',
-        contents: [{ name: 'coins', isDrink: false }],
+        contents: [{ name: 'coins', liquid: false }],
         expectedSound: 'rattling'
       },
       {
@@ -522,12 +522,12 @@ describe('Testing Pattern Examples for Listening', () => {
         capacity: 5
       });
       
-      const contentEntities = contents.map(({ name, isDrink }) => {
+      const contentEntities = contents.map(({ name, liquid }) => {
         const item = world.createEntity(name, 'object');
-        if (isDrink) {
+        if (liquid) {
           item.add({
             type: TraitType.EDIBLE,
-            isDrink
+            liquid
           });
         }
         return item;
@@ -541,7 +541,7 @@ describe('Testing Pattern Examples for Listening', () => {
         const hasLiquid = contentEntities.some(item => {
           if (item.has(TraitType.EDIBLE)) {
             const edible = item.get(TraitType.EDIBLE) as any;
-            return edible.isDrink;
+            return edible.liquid;
           }
           return false;
         });

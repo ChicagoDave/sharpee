@@ -55,7 +55,7 @@ function analyzeSmellAction(context: ActionContext): SmellAnalysis {
       hasScent = true;
       eventData.hasScent = true;
       const edibleTrait = target.get(TraitType.EDIBLE) as EdibleTrait;
-      if ((edibleTrait as any).isDrink) {
+      if (edibleTrait.liquid) {
         eventData.scentType = 'drinkable';
         messageId = 'drink_scent';
       } else {

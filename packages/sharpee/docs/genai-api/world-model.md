@@ -2193,6 +2193,12 @@ export declare class ContainerTrait implements ITrait {
     allowedTypes?: string[];
     /** These entity types cannot be placed in the container */
     excludedTypes?: string[];
+    /** Whether this container holds a liquid */
+    containsLiquid?: boolean;
+    /** Type of liquid in the container (e.g., 'water', 'ale') */
+    liquidType?: string;
+    /** Amount of liquid remaining (arbitrary units) */
+    liquidAmount?: number;
     constructor(data?: Partial<ContainerTrait>);
 }
 ```
@@ -3062,7 +3068,7 @@ export type TasteQuality = 'delicious' | 'tasty' | 'good' | 'plain' | 'bland' | 
 export interface IEdibleData {
     /** Nutrition value (arbitrary units) */
     nutrition?: number;
-    /** Number of bites/servings remaining (alias: portions) */
+    /** Number of bites/servings remaining */
     servings?: number;
     /** Whether this is a liquid (drunk vs eaten) */
     liquid?: boolean;
@@ -3084,6 +3090,8 @@ export interface IEdibleData {
     effects?: string[];
     /** Whether eating this satisfies hunger */
     satisfiesHunger?: boolean;
+    /** Whether drinking this satisfies thirst */
+    satisfiesThirst?: boolean;
 }
 /**
  * Edible trait indicates an entity can be eaten or drunk.
@@ -3106,11 +3114,8 @@ export declare class EdibleTrait implements ITrait, IEdibleData {
     taste?: TasteQuality;
     effects?: string[];
     satisfiesHunger?: boolean;
-    constructor(data?: IEdibleData & {
-        portions?: number;
-        isDrink?: boolean;
-        consumed?: boolean;
-    });
+    satisfiesThirst?: boolean;
+    constructor(data?: IEdibleData);
 }
 ```
 
@@ -3130,23 +3135,19 @@ export declare class EdibleBehavior extends Behavior {
     static requiredTraits: "edible"[];
     /**
      * Check if an item can be consumed
-     * Supports both 'servings' (canonical) and 'consumed' (legacy) property names
      */
     static canConsume(item: IFEntity): boolean;
     /**
      * Consume the item
      * @returns Events describing what happened
-     * Supports both 'servings' (canonical) and 'portions' (legacy) property names
      */
     static consume(item: IFEntity, actor: IFEntity): ISemanticEvent[];
     /**
      * Check if item is fully consumed
-     * Supports both 'servings' (canonical) and 'consumed' (legacy) property names
      */
     static isEmpty(item: IFEntity): boolean;
     /**
      * Check if this is a liquid
-     * Supports both 'liquid' (canonical) and 'isDrink' (legacy) property names
      */
     static isLiquid(item: IFEntity): boolean;
     /**
@@ -3155,7 +3156,6 @@ export declare class EdibleBehavior extends Behavior {
     static getNutrition(item: IFEntity): number;
     /**
      * Get remaining servings
-     * Supports both 'servings' (canonical) and 'portions' (legacy) property names
      */
     static getServings(item: IFEntity): number;
     /**

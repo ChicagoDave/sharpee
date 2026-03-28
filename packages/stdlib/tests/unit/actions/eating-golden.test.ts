@@ -86,8 +86,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('orange juice', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true  // This is a drink, not food
+          liquid: true  // This is a drink, not food
         }
       });
       
@@ -108,7 +107,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('chocolate cookie', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: true  // Already eaten
+          servings: 0  // Already eaten
         }
       });
       
@@ -130,8 +129,7 @@ describe('eatingAction (Golden Pattern)', () => {
     test('should eat item from inventory', () => {
       const { world, player, item } = TestData.withInventoryItem('ham sandwich', {
         [TraitType.EDIBLE]: {
-          type: TraitType.EDIBLE,
-          consumed: false
+          type: TraitType.EDIBLE
         }
       });
       
@@ -159,8 +157,8 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('pepperoni pizza', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          portions: 8  // Legacy name, mapped to servings
+
+          servings: 8  // Legacy name, mapped to servings
         }
       });
 
@@ -189,8 +187,8 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('apple pie', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          portions: 3  // Three servings
+
+          servings: 3  // Three servings
         }
       });
 
@@ -242,7 +240,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('dark chocolate', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           taste: 'delicious'
         }
       });
@@ -265,7 +263,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('fresh bread', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           taste: 'good'
         }
       });
@@ -288,7 +286,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('plain cracker', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           taste: 'bland'
         }
       });
@@ -311,7 +309,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('stale rations', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           taste: 'terrible'
         }
       });
@@ -334,7 +332,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('suspicious mushroom', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           effects: ['poison']
         }
       });
@@ -363,7 +361,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('grilled steak', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           satisfiesHunger: true
         }
       });
@@ -392,7 +390,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('breath mint', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           satisfiesHunger: false
         }
       });
@@ -421,7 +419,7 @@ describe('eatingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('energy bar', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
+
           nutrition: 250  // calories or arbitrary nutrition units
         }
       });
@@ -445,8 +443,7 @@ describe('eatingAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room, item } = TestData.withInventoryItem('chocolate cookie', {
         [TraitType.EDIBLE]: {
-          type: TraitType.EDIBLE,
-          consumed: false
+          type: TraitType.EDIBLE
         }
       });
       
@@ -477,8 +474,7 @@ describe('Testing Pattern Examples for Eating', () => {
     const gourmetMeal = world.createEntity('gourmet meal', 'object');
     gourmetMeal.add({
       type: TraitType.EDIBLE,
-      consumed: false,
-      portions: 3,
+      servings: 3,
       taste: 'delicious',
       nutrition: 800,
       satisfiesHunger: true,
@@ -486,7 +482,7 @@ describe('Testing Pattern Examples for Eating', () => {
     });
     
     const edible = gourmetMeal.getTrait(TraitType.EDIBLE) as any;
-    expect(edible.portions).toBe(3);
+    expect(edible.servings).toBe(3);
     expect(edible.taste).toBe('delicious');
     expect(edible.nutrition).toBe(800);
     expect(edible.satisfiesHunger).toBe(true);
@@ -508,7 +504,7 @@ describe('Testing Pattern Examples for Eating', () => {
       const food = world.createEntity(name, 'object');
       food.add({
         type: TraitType.EDIBLE,
-        consumed: false,
+
         effects
       });
       
@@ -532,7 +528,7 @@ describe('Testing Pattern Examples for Eating', () => {
       const food = world.createEntity(item, 'object');
       food.add({
         type: TraitType.EDIBLE,
-        consumed: false,
+
         taste
       });
       
@@ -544,24 +540,24 @@ describe('Testing Pattern Examples for Eating', () => {
   test('pattern: multi-portion foods', () => {
     // Test foods that can be eaten in multiple portions
     const world = new WorldModel();
-    const portionedFoods = [
-      { item: 'whole_pizza', portions: 8 },
-      { item: 'birthday_cake', portions: 12 },
-      { item: 'loaf_of_bread', portions: 10 },
-      { item: 'bag_of_chips', portions: 20 },
-      { item: 'half_sandwich', portions: 2 }
+    const multiServingFoods = [
+      { item: 'whole_pizza', servings: 8 },
+      { item: 'birthday_cake', servings: 12 },
+      { item: 'loaf_of_bread', servings: 10 },
+      { item: 'bag_of_chips', servings: 20 },
+      { item: 'half_sandwich', servings: 2 }
     ];
     
-    portionedFoods.forEach(({ item, portions }) => {
+    multiServingFoods.forEach(({ item, portions }) => {
       const food = world.createEntity(item, 'object');
       food.add({
         type: TraitType.EDIBLE,
-        consumed: false,
+
         portions
       });
       
       const edible = food.getTrait(TraitType.EDIBLE) as any;
-      expect(edible.portions).toBe(portions);
+      expect(edible.servings).toBe(portions);
     });
   });
 });
