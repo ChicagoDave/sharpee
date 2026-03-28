@@ -1,8 +1,16 @@
 /**
- * Core scope resolver implementation
- * 
- * Determines what entities are physically perceivable by actors
- * based on IF conventions and physical laws.
+ * @file Standard Scope Resolver
+ * @description Determines what entities are physically perceivable by actors
+ * based on IF conventions and physical laws (sight, hearing, smell, touch).
+ *
+ * Pipeline role: VALIDATION PHASE — used by CommandValidator to resolve entity
+ * references from parsed noun phrases, filter by scope level, score candidates
+ * for disambiguation, and attribute sensory perception. Also used by
+ * ActionContext (canSee/canReach) during action execution.
+ *
+ * NOT the same as the world-model's RuleScopeEvaluator (rule-based pre-parse
+ * vocabulary) or the parser's GrammarScopeResolver (grammar constraint
+ * evaluation during parsing).
  */
 
 import { IFEntity, WorldModel, TraitType, IdentityBehavior, IdentityTrait, OpenableTrait, DoorTrait, SwitchableTrait } from '@sharpee/world-model';

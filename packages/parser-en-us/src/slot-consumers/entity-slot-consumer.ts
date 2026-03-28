@@ -13,7 +13,7 @@ import {
   ScopeConstraintBuilder
 } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer';
-import { ScopeEvaluator } from '../scope-evaluator';
+import { GrammarScopeResolver } from '../grammar-scope-resolver';
 import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context';
 
 /**
@@ -438,7 +438,7 @@ export class EntitySlotConsumer implements SlotConsumer {
           const scopeConstraint = scope.build();
 
           // Find entities matching the text within the scope
-          const matchingEntities = ScopeEvaluator.findEntitiesByName(
+          const matchingEntities = GrammarScopeResolver.findEntitiesByName(
             slotText,
             scopeConstraint,
             context
@@ -449,7 +449,7 @@ export class EntitySlotConsumer implements SlotConsumer {
             // Show scope details
             console.log(`  Scope base: ${scopeConstraint.base}, filters: ${scopeConstraint.filters.length}`);
             // Show what entities are in scope before filtering
-            const allInScope = ScopeEvaluator.getEntitiesInScope(
+            const allInScope = GrammarScopeResolver.getEntitiesInScope(
               { ...scopeConstraint, filters: [] }, // Without filters
               context
             );

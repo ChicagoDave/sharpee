@@ -1,6 +1,15 @@
 /**
- * @file Scope Evaluator
- * @description Evaluates scope constraints against the world model
+ * @file Grammar Scope Resolver
+ * @description Evaluates grammar slot scope constraints against the world model
+ * during parsing to find entities matching `.where()` definitions.
+ *
+ * Pipeline role: PARSE PHASE — called by EntitySlotConsumer during grammar
+ * matching. Delegates to WorldModel methods (getVisibleEntities,
+ * getTouchableEntities, etc.) which internally use VisibilityBehavior.
+ *
+ * NOT the same as the world-model's RuleScopeEvaluator (rule-based pre-parse
+ * vocabulary) or the stdlib's StandardScopeResolver (validation-phase entity
+ * resolution with disambiguation).
  */
 
 import { 
@@ -24,7 +33,7 @@ interface ITraitAwareEntity extends IEntity {
 /**
  * Evaluates scope constraints to find matching entities
  */
-export class ScopeEvaluator {
+export class GrammarScopeResolver {
   /**
    * Get entities that match a scope constraint
    */

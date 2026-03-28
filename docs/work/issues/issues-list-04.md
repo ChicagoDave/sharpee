@@ -25,8 +25,8 @@ original numbers.
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
 | ISSUE-062 | Fuse `skipNextTick` behavior undocumented at API level | Low | plugin-scheduler | 2026-03-24 | - |
 | ISSUE-063 | ~~`as any` elimination — all source + test files clean, ESLint guard added~~ | High | platform-wide | 2026-03-26 | **DONE** 2026-03-27 (PR #64, #66) |
-| ISSUE-064 | VisibilityBehavior has 3 duplicate container-walk traversals | Medium | world-model | 2026-03-26 | - |
-| ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
+| ISSUE-064 | ~~VisibilityBehavior has 3 duplicate container-walk traversals~~ | Medium | world-model | 2026-03-26 | **DONE** 2026-03-27 |
+| ISSUE-065 | ~~Two disconnected scope evaluation systems (world-model vs parser)~~ | Medium | world-model, parser-en-us | 2026-03-26 | **DONE** 2026-03-27 |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-067 | Trace commands defined as 10 individual literal patterns | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-068 | ~~Entity `on` handlers are vestigial — migrate to actions/capabilities, simplify type infrastructure~~ | Medium | world-model, event-processor, stories | 2026-03-27 | **DONE** 2026-03-27 |
@@ -132,6 +132,40 @@ All `as any` casts eliminated from both source and test files across all package
 The entire entity `on` handler system was removed. All 19 entity handlers were replaced by existing patterns (capability behaviors, action interceptors, story-level event handlers). Type infrastructure (`LegacyEntityEventHandler`, `AnyEventHandler`, `IEventHandlers`, `on?` on IFEntity) removed.
 
 **Branch**: issue-068-event-handler-types
+
+---
+
+### ISSUE-064: VisibilityBehavior duplicate container-walk traversals
+
+**Reported**: 2026-03-26
+**Severity**: Medium
+**Component**: Platform (world-model / VisibilityBehavior.ts)
+**Status**: Fixed 2026-03-27
+
+Extracted `isContainmentPathClear()` — a single canonical container-walk traversal that replaces three near-identical implementations in `isAccessible`, `hasLineOfSight`, and `isVisible`. Deleted dead `getContainmentPath()` helper. -72 lines (571 → 499). No public API changes.
+
+**Branch**: issue-064-visibility-dedup
+
+---
+
+### ISSUE-065: Two disconnected scope evaluation systems
+
+**Reported**: 2026-03-26
+**Severity**: Medium
+**Component**: Platform (world-model, parser-en-us, stdlib)
+**Status**: Fixed 2026-03-27
+
+Audit found the three systems are a **pipeline** (pre-parse → parse → validation), not duplicates. Resolution: renamed to eliminate naming collision, added pipeline role headers, deleted dead code.
+
+- Renamed `ScopeEvaluator` (world-model) → `RuleScopeEvaluator`
+- Renamed `ScopeEvaluator` (parser) → `GrammarScopeResolver`, moved to `grammar-scope-resolver.ts`
+- Deleted dead `ScopeService` stub (world-model/services)
+- Added pipeline-role header comments to all three scope files
+- Audit document: `docs/work/dungeo/scope-audit.md`
+
+**Follow-up noted**: `StandardScopeResolver.canSee()` duplicates logic from `VisibilityBehavior.canSee()` — recommend future issue to have stdlib delegate to world-model's visibility behavior.
+
+**Branch**: issue-064-visibility-dedup
 
 ---
 

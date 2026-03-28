@@ -51,9 +51,6 @@ export * from './extensions';
 // World model
 export * from './world';
 
-// Services
-export * from './services';
-
 // Scope system
 export * from './scope';
 
