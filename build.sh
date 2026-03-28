@@ -289,9 +289,7 @@ update_versions() {
     else
         local SHARPEE_PKG="packages/sharpee/package.json"
         if [ -f "$SHARPEE_PKG" ]; then
-            local CURRENT=$(node -p "require('./$SHARPEE_PKG').version")
-            local BASE=$(echo "$CURRENT" | sed 's/-.*//')
-            SHARPEE_VERSION="${BASE}-beta"
+            SHARPEE_VERSION=$(node -p "require('./$SHARPEE_PKG').version")
         fi
     fi
 
