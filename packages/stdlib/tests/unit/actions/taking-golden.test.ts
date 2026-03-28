@@ -129,8 +129,8 @@ describe('takingAction (Golden Pattern)', () => {
     test('should fail when trying to take a room', () => {
       const { world, player, room } = setupBasicWorld();
 
-      // Rooms are not in scope for taking, so the scope check rejects first
-      // with scope.not_known rather than the business-rule cant_take_room error
+      // Rooms are visible (you always know what room you're in) but not
+      // portable, so the taking action's business rule rejects the attempt.
       const context = createRealTestContext(
         takingAction,
         world,
@@ -140,7 +140,7 @@ describe('takingAction (Golden Pattern)', () => {
       const events = executeWithValidation(takingAction, context);
 
       expectEvent(events, 'if.event.take_blocked', {
-        messageId: 'scope.not_known'
+        messageId: 'if.action.taking.cant_take_room'
       });
     });
 

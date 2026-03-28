@@ -80,3 +80,23 @@ Three systems exist:
   - In all cases: build passes, full walkthrough chain passes
 - **Exit state**: ISSUE-065 is closed; scope system boundary is clearly documented and either simplified or explicitly justified
 - **Status**: DONE — Renamed classes, deleted dead ScopeService, added pipeline header comments.
+
+### Phase 4: Delegate StandardScopeResolver.canSee() to world.canSee() (ISSUE-064 follow-on)
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: N/A — platform structural cleanup
+- **Entry state**: Branch `issue-064-visibility-dedup`; `WorldModel.canSee()` exists as a thin wrapper around `VisibilityBehavior.canSee()` (the authoritative implementation); `StandardScopeResolver.canSee()` reimplements a stale subset of the same logic with four private helpers (`getContainingRoom`, `isInDarkness`, `hasLightSource`, `isVisibleInContainer`)
+- **Deliverable**:
+  - `StandardScopeResolver.canSee(actor, target)` body replaced with `return this.world.canSee(actor.id, target.id)`
+  - Four private helpers removed if they have no other callers after the delegation:
+    - `getContainingRoom` — also used by `canHear`, `canSmell`, `getVisible`, `getReachable`, `getAudible`; keep it
+    - `isInDarkness` — only called from `canSee`; remove
+    - `hasLightSource` — only called from `canSee`; remove
+    - `isVisibleInContainer` — only called from `canSee`; remove
+  - `isLightSource` private helper (depends on `hasLightSource`) — remove if `hasLightSource` is removed
+  - All existing stdlib scope tests pass unchanged (behavioral parity confirmed)
+  - `pnpm --filter '@sharpee/world-model' test` and `pnpm --filter '@sharpee/stdlib' test` both green
+  - Full walkthrough chain green
+  - No public API signatures change
+- **Exit state**: Single canonical visibility implementation (`VisibilityBehavior.canSee`) is the only path; stale reimplementation is gone; dead private helpers removed
+- **Status**: DONE — Delegated `StandardScopeResolver.canSee()` to `world.canSee()`; removed 4 dead private helpers and 2 unused imports; 3 test files updated to match correct visibility behavior.
