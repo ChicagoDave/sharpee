@@ -62,13 +62,13 @@ function updateClothBagState(world: IWorldModel, isInflated: boolean): void {
     const inflatableTrait = clothBag.get(InflatableTrait);
     if (inflatableTrait) {
       inflatableTrait.isInflated = isInflated;
-    }
-    const identity = clothBag.get(IdentityTrait);
-    if (identity) {
-      if (isInflated) {
-        identity.description = 'The silk bag billows overhead, filled with hot air.';
-      } else {
-        identity.description = 'The cloth bag is draped over the basket.';
+      // Description sourced from InflatableTrait fields (ISSUE-070)
+      const identity = clothBag.get(IdentityTrait);
+      if (identity) {
+        const desc = isInflated ? inflatableTrait.inflatedDescription : inflatableTrait.deflatedDescription;
+        if (desc) {
+          identity.description = desc;
+        }
       }
     }
   }

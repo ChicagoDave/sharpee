@@ -2251,7 +2251,9 @@ export declare class StandardScopeResolver implements ScopeResolver {
      */
     private calculatePhysicalScope;
     /**
-     * Check if actor can see the target
+     * Check if actor can see the target.
+     * Delegates to VisibilityBehavior via WorldModel for canonical visibility
+     * logic (darkness, transparent containers, SceneryTrait, capabilities).
      */
     canSee(actor: IFEntity, target: IFEntity): boolean;
     /**
@@ -2290,10 +2292,6 @@ export declare class StandardScopeResolver implements ScopeResolver {
      */
     private getContainingRoom;
     /**
-     * Check if entity is visible considering container hierarchy
-     */
-    private isVisibleInContainer;
-    /**
      * Check if two rooms are connected by a door
      */
     private getRoomConnection;
@@ -2301,18 +2299,6 @@ export declare class StandardScopeResolver implements ScopeResolver {
      * Check if an entity has a scent
      */
     private hasScent;
-    /**
-     * Check if a room is in darkness
-     */
-    private isInDarkness;
-    /**
-     * Check if an actor has a light source
-     */
-    private hasLightSource;
-    /**
-     * Check if an entity is a light source
-     */
-    private isLightSource;
     /**
      * Check if entity is inside any closed container
      */

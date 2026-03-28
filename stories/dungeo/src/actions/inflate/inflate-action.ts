@@ -120,12 +120,15 @@ export const inflateAction: Action = {
       inflatableTrait.isInflated = true;
     }
 
-    // Update name and description to reflect inflated state
+    // Update name to reflect inflated state (name mutation stays — ISSUE-070 scope)
     const identity = boat.get(IdentityTrait);
     if (identity) {
       identity.name = 'magic boat';
       identity.article = 'a';
-      identity.description = 'The boat is a seaworthy craft approximately eight feet long. A pair of oars is affixed to the side.';
+      // Description sourced from InflatableTrait field (ISSUE-070)
+      if (inflatableTrait?.inflatedDescription) {
+        identity.description = inflatableTrait.inflatedDescription;
+      }
     }
 
     // Also update displayName attribute (used by entity.name getter)

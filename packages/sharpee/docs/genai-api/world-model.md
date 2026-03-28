@@ -301,7 +301,12 @@ export declare class IFEntity implements IEntity {
      */
     get name(): string;
     /**
-     * Get the description of this entity
+     * Get the description of this entity, computed from trait state.
+     *
+     * Priority: OpenableTrait (open/closed) > SwitchableTrait (on/off)
+     * > LightSourceTrait (lit/unlit) > IdentityTrait.description.
+     * Each trait is consulted only if the entity has it and the relevant
+     * state-specific description field is populated; otherwise falls through.
      */
     get description(): string | undefined;
     /**
@@ -2467,6 +2472,10 @@ export interface IOpenableData {
     openSound?: string;
     /** Sound made when closing */
     closeSound?: string;
+    /** Description when open (used by computed description getter on IFEntity) */
+    openDescription?: string;
+    /** Description when closed (used by computed description getter on IFEntity) */
+    closedDescription?: string;
 }
 /**
  * Openable trait for entities that can be opened and closed.
@@ -2488,6 +2497,8 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
     canClose: boolean;
     openSound?: string;
     closeSound?: string;
+    openDescription?: string;
+    closedDescription?: string;
     constructor(data?: IOpenableData);
 }
 ```
@@ -2624,6 +2635,10 @@ export declare class LightSourceTrait implements ITrait {
     maxFuel?: number;
     /** Fuel consumption rate per turn (when lit) */
     fuelConsumptionRate?: number;
+    /** Description when lit (used by computed description getter on IFEntity) */
+    litDescription?: string;
+    /** Description when unlit (used by computed description getter on IFEntity) */
+    unlitDescription?: string;
     constructor(data?: Partial<LightSourceTrait>);
 }
 ```
@@ -2894,6 +2909,10 @@ export interface ISwitchableData {
     autoOffTime?: number;
     /** Turns remaining before auto-off */
     autoOffCounter?: number;
+    /** Description when switched on (used by computed description getter on IFEntity) */
+    onDescription?: string;
+    /** Description when switched off (used by computed description getter on IFEntity) */
+    offDescription?: string;
 }
 /**
  * Switchable trait for entities that can be turned on and off.
@@ -2920,6 +2939,8 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
     runningSound?: string;
     autoOffTime: number;
     autoOffCounter: number;
+    onDescription?: string;
+    offDescription?: string;
     constructor(data?: ISwitchableData);
 }
 ```

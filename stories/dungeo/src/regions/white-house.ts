@@ -300,11 +300,10 @@ function createWindow(world: WorldModel): IFEntity {
   window.add(new SceneryTrait());
 
   window.add(new OpenableTrait({
-    isOpen: false  // Starts "slightly ajar" but not fully open
+    isOpen: false,  // Starts "slightly ajar" but not fully open
+    openDescription: 'The window is open.',
+    closedDescription: 'The window is slightly ajar, but not enough to allow entry.'
   }));
-  // Description auto-switching via openable-description-handler (ISSUE-068)
-  window.attributes.openDescription = 'The window is open.';
-  window.attributes.closedDescription = 'The window is slightly ajar, but not enough to allow entry.';
 
   return window;
 }

@@ -502,7 +502,11 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     article: 'a'
   }));
   clothBag.add(new SceneryTrait());
-  clothBag.add(new InflatableTrait({ isInflated: false }));
+  clothBag.add(new InflatableTrait({
+    isInflated: false,
+    inflatedDescription: 'The silk bag billows overhead, filled with hot air.',
+    deflatedDescription: 'The cloth bag is draped over the basket.'
+  }));
   world.moveEntity(clothBag.id, balloon.id);
 
   // Hook 1 - on Narrow Ledge rock face (MDL: HOOK1 in LEDG2)

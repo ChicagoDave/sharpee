@@ -248,11 +248,12 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     properName: false,
     article: 'a'
   }));
-  trapdoor.add(new OpenableTrait({ isOpen: false }));
+  trapdoor.add(new OpenableTrait({
+    isOpen: false,
+    openDescription: 'The trap door is open, revealing a rickety staircase descending into darkness.',
+    closedDescription: 'The dusty cover of a closed trap door.'
+  }));
   trapdoor.add(new SceneryTrait());
-  // Description auto-switching via openable-description-handler (ISSUE-068)
-  trapdoor.attributes.openDescription = 'The trap door is open, revealing a rickety staircase descending into darkness.';
-  trapdoor.attributes.closedDescription = 'The dusty cover of a closed trap door.';
 
   const rug = world.createEntity('oriental rug', EntityType.SCENERY);
   rug.add(new IdentityTrait({

@@ -48,19 +48,25 @@ export interface ISwitchableData {
   
   /** Turns remaining before auto-off */
   autoOffCounter?: number;
+
+  /** Description when switched on (used by computed description getter on IFEntity) */
+  onDescription?: string;
+
+  /** Description when switched off (used by computed description getter on IFEntity) */
+  offDescription?: string;
 }
 
 /**
  * Switchable trait for entities that can be turned on and off.
  * Used for lights, machines, devices, etc.
- * 
+ *
  * This trait contains only data - all switching logic
  * is in SwitchableBehavior.
  */
 export class SwitchableTrait implements ITrait, ISwitchableData {
   static readonly type = TraitType.SWITCHABLE;
   readonly type = TraitType.SWITCHABLE;
-  
+
   // SwitchableData properties
   isOn: boolean;
   startsOn: boolean;
@@ -77,7 +83,9 @@ export class SwitchableTrait implements ITrait, ISwitchableData {
   runningSound?: string;
   autoOffTime: number;
   autoOffCounter: number;
-  
+  onDescription?: string;
+  offDescription?: string;
+
   constructor(data: ISwitchableData = {}) {
     // Set defaults and merge with provided data
     this.startsOn = data.startsOn ?? false;
@@ -95,5 +103,7 @@ export class SwitchableTrait implements ITrait, ISwitchableData {
     this.runningSound = data.runningSound;
     this.autoOffTime = data.autoOffTime ?? 0;
     this.autoOffCounter = data.autoOffCounter ?? (this.isOn && this.autoOffTime > 0 ? this.autoOffTime : 0);
+    this.onDescription = data.onDescription;
+    this.offDescription = data.offDescription;
   }
 }
