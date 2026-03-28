@@ -900,7 +900,7 @@ describe('Testing Pattern Examples for Attacking', () => {
     ];
     
     breakableConfigs.forEach(({ method }) => {
-      // const trait = new BreakableTrait({ breakMethod: method as any });
+      // const trait = new BreakableTrait({ breakMethod: method });
       // expect(trait.breakMethod).toBe(method);
     });
   });

@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { drinkingAction } from '../../../src/actions/standard/drinking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, EdibleTrait, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -759,7 +759,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: item is not consumed
-    const edibleBefore = item.getTrait(TraitType.EDIBLE) as any;
+    const edibleBefore = item.getTrait(EdibleTrait)!;
     expect(edibleBefore.servings).toBe(1);
     expect(EdibleBehavior.canConsume(item)).toBe(true);
 
@@ -773,7 +773,7 @@ describe('World State Mutations', () => {
     drinkingAction.execute(context);
 
     // VERIFY POSTCONDITION: item is now consumed
-    const edibleAfter = item.getTrait(TraitType.EDIBLE) as any;
+    const edibleAfter = item.getTrait(EdibleTrait)!;
     expect(edibleAfter.servings).toBe(0);
     expect(EdibleBehavior.canConsume(item)).toBe(false);
   });
@@ -819,7 +819,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: 5 units of liquid
-    const containerBefore = item.getTrait(TraitType.CONTAINER) as any;
+    const containerBefore = item.getTrait(ContainerTrait)!;
     expect(containerBefore.liquidAmount).toBe(5);
 
     const command = createCommand(IFActions.DRINKING, {
@@ -832,7 +832,7 @@ describe('World State Mutations', () => {
     drinkingAction.execute(context);
 
     // VERIFY POSTCONDITION: 4 units of liquid remaining
-    const containerAfter = item.getTrait(TraitType.CONTAINER) as any;
+    const containerAfter = item.getTrait(ContainerTrait)!;
     expect(containerAfter.liquidAmount).toBe(4);
   });
 
@@ -847,7 +847,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: 1 unit remaining
-    const containerBefore = item.getTrait(TraitType.CONTAINER) as any;
+    const containerBefore = item.getTrait(ContainerTrait)!;
     expect(containerBefore.liquidAmount).toBe(1);
 
     const command = createCommand(IFActions.DRINKING, {
@@ -860,7 +860,7 @@ describe('World State Mutations', () => {
     drinkingAction.execute(context);
 
     // VERIFY POSTCONDITION: container is now empty
-    const containerAfter = item.getTrait(TraitType.CONTAINER) as any;
+    const containerAfter = item.getTrait(ContainerTrait)!;
     expect(containerAfter.liquidAmount).toBe(0);
   });
 });
@@ -880,7 +880,7 @@ describe('Testing Pattern Examples for Drinking', () => {
       effects: ['magic', 'strength_boost', 'glowing']
     });
     
-    const edible = complexDrink.getTrait(TraitType.EDIBLE) as any;
+    const edible = complexDrink.getTrait(EdibleTrait)!;
     expect(edible.liquid).toBe(true);
     expect(edible.servings).toBe(3);
     expect(edible.taste).toBe('sweet');
@@ -909,7 +909,7 @@ describe('Testing Pattern Examples for Drinking', () => {
         liquidAmount
       });
       
-      const trait = container.getTrait(TraitType.CONTAINER) as any;
+      const trait = container.getTrait(ContainerTrait)!;
       expect(trait.containsLiquid).toBe(true);
       expect(trait.liquidType).toBe(liquidType);
       if (liquidAmount !== undefined) {
@@ -937,7 +937,7 @@ describe('Testing Pattern Examples for Drinking', () => {
         effects
       });
       
-      const edible = drink.getTrait(TraitType.EDIBLE) as any;
+      const edible = drink.getTrait(EdibleTrait)!;
       expect(edible.effects).toEqual(effects);
     });
   });
@@ -961,7 +961,7 @@ describe('Testing Pattern Examples for Drinking', () => {
         taste
       });
       
-      const edible = drink.getTrait(TraitType.EDIBLE) as any;
+      const edible = drink.getTrait(EdibleTrait)!;
       expect(edible.taste).toBe(taste);
     });
   });

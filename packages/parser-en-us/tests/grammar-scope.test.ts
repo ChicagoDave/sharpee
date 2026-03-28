@@ -10,25 +10,34 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider } from '@sharpee/if-domain';
-import { Entity } from '@sharpee/core';
+/** Minimal entity shape used by mock world model in these tests */
+interface MockEntity {
+  id: string;
+  name: string;
+  attributes: Record<string, unknown>;
+  visible: boolean;
+  portable: boolean;
+  animate?: boolean;
+  has?: (traitType: string) => boolean;
+}
 
 // Mock world model
 class MockWorldModel {
-  private entities: Map<string, Entity> = new Map();
+  private entities: Map<string, MockEntity> = new Map();
   private locations: Map<string, Set<string>> = new Map();
   private inventories: Map<string, Set<string>> = new Map();
 
   constructor() {
     // Set up test world
-    const sword: Entity = {
+    const sword: MockEntity = {
       id: 'sword',
       name: 'sword',
       attributes: { name: 'sword' },
       visible: true,
       portable: true
-    } as any;
-    
-    const guard: Entity = {
+    };
+
+    const guard: MockEntity = {
       id: 'guard',
       name: 'guard',
       attributes: { name: 'guard' },
@@ -37,31 +46,31 @@ class MockWorldModel {
       animate: true,
       // Support trait checking for hasTrait() in grammar
       has: (traitType: string) => traitType === 'actor'
-    } as any;
-    
-    const ball: Entity = {
+    };
+
+    const ball: MockEntity = {
       id: 'ball',
       name: 'ball',
       attributes: { name: 'ball' },
       visible: true,
       portable: true
-    } as any;
-    
-    const window: Entity = {
+    };
+
+    const window: MockEntity = {
       id: 'window',
       name: 'window',
       attributes: { name: 'window' },
       visible: true,
       portable: false
-    } as any;
-    
-    const hiddenKey: Entity = {
+    };
+
+    const hiddenKey: MockEntity = {
       id: 'hidden_key',
       name: 'key',
       attributes: { name: 'key' },
       visible: false,
       portable: true
-    } as any;
+    };
 
     // Add entities
     this.entities.set('sword', sword);
@@ -77,44 +86,44 @@ class MockWorldModel {
     this.inventories.set('player', new Set());
   }
 
-  getEntity(id: string): Entity | undefined {
+  getEntity(id: string): MockEntity | undefined {
     return this.entities.get(id);
   }
 
-  getAllEntities(): Entity[] {
+  getAllEntities(): MockEntity[] {
     return Array.from(this.entities.values());
   }
 
-  getVisibleEntities(actorId: string, location: string): Entity[] {
+  getVisibleEntities(actorId: string, location: string): MockEntity[] {
     const locationEntities = this.locations.get(location) || new Set();
-    const visibleEntities: Entity[] = [];
-    
+    const visibleEntities: MockEntity[] = [];
+
     for (const entityId of locationEntities) {
       const entity = this.entities.get(entityId);
       if (entity && entity.visible) {
         visibleEntities.push(entity);
       }
     }
-    
+
     return visibleEntities;
   }
 
-  getTouchableEntities(actorId: string, location: string): Entity[] {
+  getTouchableEntities(actorId: string, location: string): MockEntity[] {
     // For this mock, touchable = visible
     return this.getVisibleEntities(actorId, location);
   }
 
-  getCarriedEntities(actorId: string): Entity[] {
+  getCarriedEntities(actorId: string): MockEntity[] {
     const inventory = this.inventories.get(actorId) || new Set();
-    const carried: Entity[] = [];
-    
+    const carried: MockEntity[] = [];
+
     for (const entityId of inventory) {
       const entity = this.entities.get(entityId);
       if (entity) {
         carried.push(entity);
       }
     }
-    
+
     return carried;
   }
 

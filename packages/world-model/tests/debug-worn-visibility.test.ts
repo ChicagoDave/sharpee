@@ -12,9 +12,10 @@ describe('Debug Worn Visibility', () => {
     const npc = createTestActor(world, 'Noble');
     const crown = world.createEntity('Golden Crown', 'item');
     
-    const crownWearable = new WearableTrait();
-    (crownWearable as any).isWorn = true;
-    (crownWearable as any).wornBy = npc.id;
+    const crownWearable = new WearableTrait({
+      isWorn: true,
+      wornBy: npc.id
+    });
     crown.add(crownWearable);
 
     world.moveEntity(player.id, room.id);

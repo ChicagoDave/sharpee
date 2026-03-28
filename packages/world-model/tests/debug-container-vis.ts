@@ -39,7 +39,7 @@ console.log('Medicine in cabinet:', world.getLocation(medicine.id) === cabinet.i
 
 // Check initial visibility
 console.log('\n=== Closed Cabinet ===');
-const openableTrait = cabinet.getTrait(TraitType.OPENABLE) as any;
+const openableTrait = cabinet.getTrait(OpenableTrait)!;
 console.log('Cabinet isOpen:', openableTrait.isOpen);
 
 let visible = world.getVisible(player.id);

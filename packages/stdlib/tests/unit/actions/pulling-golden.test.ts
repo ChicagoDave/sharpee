@@ -9,7 +9,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { pullingAction } from '../../../src/actions/standard/pulling';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, WorldModel, IFEntity, PullableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -42,9 +42,9 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
   });
 
   describe('Basic Validation', () => {
-    let world: any;
-    let player: any;
-    let room: any;
+    let world: WorldModel;
+    let player: IFEntity;
+    let room: IFEntity;
 
     beforeEach(() => {
       const setup = setupBasicWorld();
@@ -115,9 +115,9 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
   });
 
   describe('Basic Execution', () => {
-    let world: any;
-    let player: any;
-    let room: any;
+    let world: WorldModel;
+    let player: IFEntity;
+    let room: IFEntity;
 
     beforeEach(() => {
       const setup = setupBasicWorld();
@@ -152,7 +152,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       });
 
       // Verify state was updated
-      const pullable = rope.get(TraitType.PULLABLE) as any;
+      const pullable = rope.get(PullableTrait)!;
       expect(pullable.state).toBe('pulled');
       expect(pullable.pullCount).toBe(1);
     });
@@ -184,7 +184,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
       });
 
       // Verify count incremented
-      const pullable = cord.get(TraitType.PULLABLE) as any;
+      const pullable = cord.get(PullableTrait)!;
       expect(pullable.pullCount).toBe(6);
     });
   });

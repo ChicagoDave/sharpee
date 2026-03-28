@@ -10,7 +10,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { closingAction } from '../../../src/actions/standard/closing/closing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   executeWithValidation,
@@ -303,7 +303,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: box is open
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(true);
 
     const command = createCommand(IFActions.CLOSING, {
@@ -316,7 +316,7 @@ describe('World State Mutations', () => {
     closingAction.execute(context);
 
     // VERIFY POSTCONDITION: box is now closed
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(false);
   });
 
@@ -339,7 +339,7 @@ describe('World State Mutations', () => {
     world.moveEntity(coin.id, box.id);
 
     // VERIFY PRECONDITION: chest is open with contents
-    const openableBefore = box.get(TraitType.OPENABLE) as any;
+    const openableBefore = box.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(true);
     expect(world.getContents(box.id)).toHaveLength(1);
 
@@ -353,7 +353,7 @@ describe('World State Mutations', () => {
     closingAction.execute(context);
 
     // VERIFY POSTCONDITION: chest is now closed
-    const openableAfter = box.get(TraitType.OPENABLE) as any;
+    const openableAfter = box.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(false);
 
     // Contents should still be there
@@ -370,7 +370,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: box is closed
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(false);
 
     const command = createCommand(IFActions.CLOSING, {
@@ -384,7 +384,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('already_closed');
 
     // VERIFY POSTCONDITION: box is still closed (no change)
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(false);
   });
 
@@ -398,7 +398,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: box is open
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(true);
 
     const command = createCommand(IFActions.CLOSING, {
@@ -412,7 +412,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('prevents_closing');
 
     // VERIFY POSTCONDITION: box is still open (no change)
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(true);
   });
 
@@ -448,7 +448,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: door is open
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(true);
 
     const command = createCommand(IFActions.CLOSING, {
@@ -461,7 +461,7 @@ describe('World State Mutations', () => {
     closingAction.execute(context);
 
     // VERIFY POSTCONDITION: door is now closed
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(false);
   });
 });
@@ -533,7 +533,7 @@ describe('Testing Pattern Examples', () => {
         closeRequirements
       });
       
-      const openable = obj.getTrait(TraitType.OPENABLE) as any;
+      const openable = obj.getTrait(OpenableTrait)!;
       expect(openable.closeRequirements.preventedBy).toBeDefined();
     });
   });

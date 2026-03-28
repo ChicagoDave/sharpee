@@ -203,14 +203,14 @@ describe('AuthorModel', () => {
       const key = author.createEntity('Key', 'item');
       author.setupContainer(box.id, false, true, key.id);
       
-      const openable = box.getTrait(TraitType.OPENABLE) as any;
-      const lockable = box.getTrait(TraitType.LOCKABLE) as any;
-      
+      const openable = box.getTrait(OpenableTrait);
+      const lockable = box.getTrait(LockableTrait);
+
       expect(openable).toBeDefined();
-      expect(openable.isOpen).toBe(false);
+      expect(openable!.isOpen).toBe(false);
       expect(lockable).toBeDefined();
-      expect(lockable.isLocked).toBe(true);
-      expect(lockable.keyId).toBe(key.id);
+      expect(lockable!.isLocked).toBe(true);
+      expect(lockable!.keyId).toBe(key.id);
     });
   });
 

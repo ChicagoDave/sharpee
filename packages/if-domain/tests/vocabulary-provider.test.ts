@@ -151,7 +151,7 @@ describe('GrammarVocabularyProvider', () => {
     it('should evaluate context predicate', () => {
       vocab.define('combat-words', {
         words: ['attack', 'defend'],
-        when: (ctx) => (ctx.world as any).inCombat === true
+        when: (ctx) => (ctx.world as Record<string, unknown>).inCombat === true
       });
 
       // Not in combat

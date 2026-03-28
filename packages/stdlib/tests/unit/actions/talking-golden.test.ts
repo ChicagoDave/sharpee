@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { talkingAction } from '../../../src/actions/standard/talking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -435,7 +435,7 @@ describe('Testing Pattern Examples for Talking', () => {
         conversation
       });
       
-      const actorTrait = npc.get(TraitType.ACTOR) as any;
+      const actorTrait = npc.get(ActorTrait)! as ActorTrait & { conversation?: Record<string, unknown> };
       expect(actorTrait.conversation).toEqual(conversation);
     });
   });
@@ -459,7 +459,7 @@ describe('Testing Pattern Examples for Talking', () => {
         }
       });
       
-      const actorTrait = npc.get(TraitType.ACTOR) as any;
+      const actorTrait = npc.get(ActorTrait)! as ActorTrait & { conversation?: Record<string, unknown> };
       if (expectWarm) {
         expect(['friendly', 'romantic']).toContain(actorTrait.conversation.relationship);
       } else {
@@ -482,7 +482,7 @@ describe('Testing Pattern Examples for Talking', () => {
         }
       });
       
-      const actorTrait = npc.get(TraitType.ACTOR) as any;
+      const actorTrait = npc.get(ActorTrait)! as ActorTrait & { conversation?: Record<string, unknown> };
       expect(actorTrait.conversation.personality).toBe(personality);
     });
   });

@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { listeningAction } from '../../../src/actions/standard/listening';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, SwitchableTrait, EdibleTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -488,7 +488,7 @@ describe('Testing Pattern Examples for Listening', () => {
       });
       
       expect(device.has(TraitType.SWITCHABLE)).toBe(true);
-      const switchable = device.get(TraitType.SWITCHABLE) as any;
+      const switchable = device.get(SwitchableTrait)!;
       expect(switchable.isOn).toBe(true);
     });
   });
@@ -540,7 +540,7 @@ describe('Testing Pattern Examples for Listening', () => {
       if (expectedSound === 'liquid') {
         const hasLiquid = contentEntities.some(item => {
           if (item.has(TraitType.EDIBLE)) {
-            const edible = item.get(TraitType.EDIBLE) as any;
+            const edible = item.get(EdibleTrait)!;
             return edible.liquid;
           }
           return false;
@@ -586,7 +586,7 @@ describe('Testing Pattern Examples for Listening', () => {
       
       // Count active devices
       const activeCount = deviceEntities.filter(d => {
-        const switchable = d.get(TraitType.SWITCHABLE) as any;
+        const switchable = d.get(SwitchableTrait)!;
         return switchable.isOn;
       }).length;
       

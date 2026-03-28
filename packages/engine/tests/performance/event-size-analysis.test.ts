@@ -25,7 +25,7 @@ describe('Event Size Analysis', () => {
     
     // Capture all events
     engine.on('event', (event) => {
-      events.push(event as any);
+      events.push(event as ISemanticEvent);
     });
     
     events = [];

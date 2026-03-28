@@ -2,10 +2,16 @@
 // Tests for the core IFEntity class
 
 import { IFEntity } from '../../../src/entities/if-entity';
+import { ITrait } from '../../../src/traits/trait';
 import { TraitType } from '../../../src/traits/trait-types';
 import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
+import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
+import { LockableTrait } from '../../../src/traits/lockable/lockableTrait';
+import { LightSourceTrait } from '../../../src/traits/light-source/lightSourceTrait';
+import { SwitchableTrait } from '../../../src/traits/switchable/switchableTrait';
+import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 
 describe('IFEntity', () => {
   let entity: IFEntity;
@@ -262,10 +268,9 @@ describe('IFEntity', () => {
     it('should detect openable trait', () => {
       expect(entity.isOpenable).toBe(false);
       expect(entity.isOpen).toBe(false);
-      
-      const openable = { type: TraitType.OPENABLE, isOpen: true };
-      entity.traits.set(TraitType.OPENABLE, openable as any);
-      
+
+      entity.add(new OpenableTrait({ isOpen: true }));
+
       expect(entity.isOpenable).toBe(true);
       expect(entity.isOpen).toBe(true);
     });
@@ -273,10 +278,9 @@ describe('IFEntity', () => {
     it('should detect lockable trait', () => {
       expect(entity.isLockable).toBe(false);
       expect(entity.isLocked).toBe(false);
-      
-      const lockable = { type: TraitType.LOCKABLE, isLocked: true };
-      entity.traits.set(TraitType.LOCKABLE, lockable as any);
-      
+
+      entity.add(new LockableTrait({ isLocked: true }));
+
       expect(entity.isLockable).toBe(true);
       expect(entity.isLocked).toBe(true);
     });
@@ -285,10 +289,9 @@ describe('IFEntity', () => {
   describe('light source properties', () => {
     it('should detect light provision', () => {
       expect(entity.providesLight).toBe(false);
-      
-      const lightSource = { type: TraitType.LIGHT_SOURCE, isLit: true };
-      entity.traits.set(TraitType.LIGHT_SOURCE, lightSource as any);
-      
+
+      entity.add(new LightSourceTrait({ isLit: true }));
+
       expect(entity.providesLight).toBe(true);
     });
   });
@@ -297,10 +300,9 @@ describe('IFEntity', () => {
     it('should detect switchable state', () => {
       expect(entity.isSwitchable).toBe(false);
       expect(entity.isOn).toBe(false);
-      
-      const switchable = { type: TraitType.SWITCHABLE, isOn: true };
-      entity.traits.set(TraitType.SWITCHABLE, switchable as any);
-      
+
+      entity.add(new SwitchableTrait({ isOn: true }));
+
       expect(entity.isSwitchable).toBe(true);
       expect(entity.isOn).toBe(true);
     });
@@ -310,10 +312,9 @@ describe('IFEntity', () => {
     it('should detect actors and players', () => {
       expect(entity.isActor).toBe(false);
       expect(entity.isPlayer).toBe(false);
-      
-      const actor = { type: TraitType.ACTOR, isPlayer: true };
-      entity.traits.set(TraitType.ACTOR, actor as any);
-      
+
+      entity.add(new ActorTrait({ isPlayer: true }));
+
       expect(entity.isActor).toBe(true);
       expect(entity.isPlayer).toBe(true);
     });
@@ -322,8 +323,8 @@ describe('IFEntity', () => {
   describe('error handling', () => {
     it('should throw error for invalid traits', () => {
       const invalidTrait = { notType: 'invalid' };
-      
-      expect(() => entity.add(invalidTrait as any)).toThrow('Invalid trait');
+
+      expect(() => entity.add(invalidTrait as unknown as ITrait)).toThrow('Invalid trait');
     });
   });
 });

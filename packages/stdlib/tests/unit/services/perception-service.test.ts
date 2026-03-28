@@ -108,9 +108,9 @@ describe('PerceptionService', () => {
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].type).toBe('if.event.perception.blocked');
-      expect((filtered[0].data as any).originalType).toBe('if.event.room.description');
-      expect((filtered[0].data as any).reason).toBe('darkness');
-      expect((filtered[0].data as any).sense).toBe('sight');
+      expect((filtered[0].data as Record<string, unknown>).originalType).toBe('if.event.room.description');
+      expect((filtered[0].data as Record<string, unknown>).reason).toBe('darkness');
+      expect((filtered[0].data as Record<string, unknown>).sense).toBe('sight');
     });
 
     test('should transform contents list to perception blocked', () => {
@@ -122,7 +122,7 @@ describe('PerceptionService', () => {
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].type).toBe('if.event.perception.blocked');
-      expect((filtered[0].data as any).originalType).toBe('if.event.contents.listed');
+      expect((filtered[0].data as Record<string, unknown>).originalType).toBe('if.event.contents.listed');
     });
 
     test('should transform action.success with contents_list to perception blocked', () => {
@@ -134,7 +134,7 @@ describe('PerceptionService', () => {
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].type).toBe('if.event.perception.blocked');
-      expect((filtered[0].data as any).originalType).toBe('action.success');
+      expect((filtered[0].data as Record<string, unknown>).originalType).toBe('action.success');
     });
 
     test('should NOT transform non-visual action.success events', () => {
@@ -146,7 +146,7 @@ describe('PerceptionService', () => {
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0].type).toBe('action.success');
-      expect((filtered[0].data as any).messageId).toBe('item_taken');
+      expect((filtered[0].data as Record<string, unknown>).messageId).toBe('item_taken');
     });
 
     test('should NOT transform action.failure events', () => {
@@ -198,7 +198,7 @@ describe('PerceptionService', () => {
 
       const filtered = service.filterEvents(events, player, world);
 
-      expect((filtered[0].data as any).originalData).toEqual(originalData);
+      expect((filtered[0].data as Record<string, unknown>).originalData).toEqual(originalData);
     });
 
     test('should handle empty events array', () => {
@@ -228,7 +228,7 @@ describe('PerceptionService', () => {
 });
 
 // Helper to create test events
-function createEvent(type: string, data: any): ISemanticEvent {
+function createEvent(type: string, data: Record<string, unknown>): ISemanticEvent {
   return {
     id: `test-${Date.now()}-${Math.random()}`,
     type,

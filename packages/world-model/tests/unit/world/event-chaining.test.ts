@@ -255,7 +255,7 @@ describe('Event Chaining (ADR-094)', () => {
       const triggerEvent = createTestEvent('if.event.opened', {});
       const chainedEvents = invokeHandlers('if.event.opened', triggerEvent);
 
-      expect((chainedEvents[0].data as any)._chainedFrom).toBe('if.event.opened');
+      expect((chainedEvents[0].data as Record<string, unknown>)._chainedFrom).toBe('if.event.opened');
     });
 
     it('should add _chainSourceId to data', () => {
@@ -270,7 +270,7 @@ describe('Event Chaining (ADR-094)', () => {
       triggerEvent.id = 'source-event-123';
       const chainedEvents = invokeHandlers('if.event.opened', triggerEvent);
 
-      expect((chainedEvents[0].data as any)._chainSourceId).toBe('source-event-123');
+      expect((chainedEvents[0].data as Record<string, unknown>)._chainSourceId).toBe('source-event-123');
     });
 
     it('should track _chainDepth', () => {
@@ -284,7 +284,7 @@ describe('Event Chaining (ADR-094)', () => {
       const triggerEvent = createTestEvent('if.event.first', {});
       const chainedEvents = invokeHandlers('if.event.first', triggerEvent);
 
-      expect((chainedEvents[0].data as any)._chainDepth).toBe(1);
+      expect((chainedEvents[0].data as Record<string, unknown>)._chainDepth).toBe(1);
     });
 
     it('should increment _chainDepth for nested chains', () => {
@@ -299,7 +299,7 @@ describe('Event Chaining (ADR-094)', () => {
       const triggerEvent = createTestEvent('if.event.opened', { _chainDepth: 3 });
       const chainedEvents = invokeHandlers('if.event.opened', triggerEvent);
 
-      expect((chainedEvents[0].data as any)._chainDepth).toBe(4);
+      expect((chainedEvents[0].data as Record<string, unknown>)._chainDepth).toBe(4);
     });
 
     it('should pass through _transactionId from trigger event (ADR-094)', () => {
@@ -314,7 +314,7 @@ describe('Event Chaining (ADR-094)', () => {
       const triggerEvent = createTestEvent('if.event.opened', { _transactionId: 'txn-abc-123' });
       const chainedEvents = invokeHandlers('if.event.opened', triggerEvent);
 
-      expect((chainedEvents[0].data as any)._transactionId).toBe('txn-abc-123');
+      expect((chainedEvents[0].data as Record<string, unknown>)._transactionId).toBe('txn-abc-123');
     });
 
     it('should not add _transactionId if trigger event lacks it', () => {
@@ -329,7 +329,7 @@ describe('Event Chaining (ADR-094)', () => {
       const triggerEvent = createTestEvent('if.event.opened', {});
       const chainedEvents = invokeHandlers('if.event.opened', triggerEvent);
 
-      expect((chainedEvents[0].data as any)._transactionId).toBeUndefined();
+      expect((chainedEvents[0].data as Record<string, unknown>)._transactionId).toBeUndefined();
     });
   });
 
@@ -362,7 +362,7 @@ describe('Event Chaining (ADR-094)', () => {
       const chainedEvents = invokeHandlers('if.event.deep', triggerEvent);
 
       expect(chainedEvents).toHaveLength(1);
-      expect((chainedEvents[0].data as any)._chainDepth).toBe(10);
+      expect((chainedEvents[0].data as Record<string, unknown>)._chainDepth).toBe(10);
     });
   });
 

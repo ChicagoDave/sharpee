@@ -24,9 +24,9 @@ describe('ExitTrait', () => {
     });
 
     it('should throw error if required fields are missing', () => {
-      expect(() => new ExitTrait({} as any)).toThrow();
-      expect(() => new ExitTrait({ from: 'room1' } as any)).toThrow();
-      expect(() => new ExitTrait({ from: 'room1', to: 'room2' } as any)).toThrow();
+      expect(() => new ExitTrait({} as Partial<ExitTrait>)).toThrow();
+      expect(() => new ExitTrait({ from: 'room1' } as Partial<ExitTrait>)).toThrow();
+      expect(() => new ExitTrait({ from: 'room1', to: 'room2' } as Partial<ExitTrait>)).toThrow();
     });
 
     it('should create trait with all optional values', () => {

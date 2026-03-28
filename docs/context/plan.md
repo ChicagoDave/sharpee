@@ -234,4 +234,4 @@ Eleven `as any` casts remain in `game-engine.ts` after Phase 2A. They fall into 
 - **Entry state**: Phase 8 complete; source files clean; test files contain 573 `as any` casts
 - **Deliverable**: Test files in `packages/*/src/**/*.test.ts` updated to use typed accessors; test helper utilities (`test-utils/index.ts`) extended with typed helpers that replace `as any` access patterns; full test suite passes
 - **Exit state**: `as any` count across all package files (source + test) is near-zero; issue closed
-- **Status**: PENDING
+- **Status**: DONE — 527 test-file casts eliminated; CI guard installed; dead rules/ subsystem removed; all test suites passing

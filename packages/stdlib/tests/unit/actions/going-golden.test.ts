@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { goingAction } from '../../../src/actions/standard/going'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, DirectionType } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, DirectionType, RoomTrait, IFEntity } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -36,7 +36,7 @@ describe('goingAction (Golden Pattern)', () => {
       const room2 = world.createEntity('Room 2', 'object');
       room2.add({ type: TraitType.ROOM });
       
-      const roomTrait = room.getTrait(TraitType.ROOM) as any;
+      const roomTrait = room.getTrait(RoomTrait)!;
       roomTrait.exits = {
         [Direction.NORTH]: { destination: room2.id }
       };
@@ -583,7 +583,7 @@ describe('goingAction (Golden Pattern)', () => {
       
       // Direction can come from directObject instead of extras
       const command = createCommand(IFActions.GOING, {
-        entity: { id: 'direction', name: 'outside' } as any,
+        entity: { id: 'direction', name: 'outside' } as unknown as IFEntity,
         text: 'outside'
       });
       
@@ -836,7 +836,7 @@ describe('World State Mutations', () => {
     world.moveEntity(player.id, room1.id);
 
     // VERIFY PRECONDITION: room2 is not visited
-    const room2TraitBefore = room2.getTrait(TraitType.ROOM) as any;
+    const room2TraitBefore = room2.getTrait(RoomTrait)!;
     expect(room2TraitBefore.visited).toBe(false);
 
     const command = createCommand(IFActions.GOING);
@@ -849,7 +849,7 @@ describe('World State Mutations', () => {
     goingAction.execute(context);
 
     // VERIFY POSTCONDITION: room2 is now marked as visited
-    const room2TraitAfter = room2.getTrait(TraitType.ROOM) as any;
+    const room2TraitAfter = room2.getTrait(RoomTrait)!;
     expect(room2TraitAfter.visited).toBe(true);
   });
 });
@@ -904,8 +904,8 @@ describe('Testing Pattern Examples for Going', () => {
     world.moveEntity(player.id, lobby.id);
     
     // Navigate through multiple rooms
-    const lobbyTrait = lobby.get(TraitType.ROOM) as any;
-    const hallwayTrait = hallway.get(TraitType.ROOM) as any;
+    const lobbyTrait = lobby.get(RoomTrait)!;
+    const hallwayTrait = hallway.get(RoomTrait)!;
     expect(lobbyTrait.exits).toHaveProperty(Direction.NORTH);
     expect(hallwayTrait.exits).toHaveProperty(Direction.SOUTH);
   });

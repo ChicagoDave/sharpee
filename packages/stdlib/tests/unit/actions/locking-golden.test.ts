@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { lockingAction } from '../../../src/actions/standard/locking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, LockableTrait, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -589,7 +589,7 @@ describe('World State Mutations', () => {
     world.moveEntity(box.id, room.id);
 
     // VERIFY PRECONDITION: box is unlocked
-    const lockableBefore = box.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = box.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(false);
 
     const command = createCommand(IFActions.LOCKING, {
@@ -602,7 +602,7 @@ describe('World State Mutations', () => {
     lockingAction.execute(context);
 
     // VERIFY POSTCONDITION: box is now locked
-    const lockableAfter = box.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = box.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(true);
   });
 
@@ -623,7 +623,7 @@ describe('World State Mutations', () => {
     world.moveEntity(key.id, player.id);
 
     // VERIFY PRECONDITION: chest is unlocked
-    const lockableBefore = chest.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = chest.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(false);
 
     const command = createCommand(IFActions.LOCKING, {
@@ -638,7 +638,7 @@ describe('World State Mutations', () => {
     lockingAction.execute(context);
 
     // VERIFY POSTCONDITION: chest is now locked
-    const lockableAfter = chest.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = chest.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(true);
   });
 
@@ -656,7 +656,7 @@ describe('World State Mutations', () => {
     world.moveEntity(safe.id, room.id);
 
     // VERIFY PRECONDITION: safe is locked
-    const lockableBefore = safe.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = safe.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(true);
 
     const command = createCommand(IFActions.LOCKING, {
@@ -670,7 +670,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('already_locked');
 
     // VERIFY POSTCONDITION: safe is still locked (no change)
-    const lockableAfter = safe.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = safe.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(true);
   });
 
@@ -688,8 +688,8 @@ describe('World State Mutations', () => {
     world.moveEntity(cabinet.id, room.id);
 
     // VERIFY PRECONDITION: cabinet is unlocked and open
-    const lockableBefore = cabinet.get(TraitType.LOCKABLE) as any;
-    const openableBefore = cabinet.get(TraitType.OPENABLE) as any;
+    const lockableBefore = cabinet.get(LockableTrait)!;
+    const openableBefore = cabinet.get(OpenableTrait)!;
     expect(lockableBefore.isLocked).toBe(false);
     expect(openableBefore.isOpen).toBe(true);
 
@@ -704,7 +704,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('not_closed');
 
     // VERIFY POSTCONDITION: cabinet is still unlocked (no change)
-    const lockableAfter = cabinet.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = cabinet.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(false);
   });
 
@@ -749,7 +749,7 @@ describe('World State Mutations', () => {
     world.moveEntity(key.id, player.id);
 
     // VERIFY PRECONDITION: door is unlocked
-    const lockableBefore = door.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = door.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(false);
 
     const command = createCommand(IFActions.LOCKING, {
@@ -764,7 +764,7 @@ describe('World State Mutations', () => {
     lockingAction.execute(context);
 
     // VERIFY POSTCONDITION: door is now locked
-    const lockableAfter = door.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = door.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(true);
   });
 });

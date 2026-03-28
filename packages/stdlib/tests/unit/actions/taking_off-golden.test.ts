@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { takingOffAction } from '../../../src/actions/standard/taking_off';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, WearableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -440,7 +440,7 @@ describe('Testing Pattern Examples for Taking Off', () => {
         ...restriction
       });
 
-      const wearable = item.get(TraitType.WEARABLE) as any;
+      const wearable = item.get(WearableTrait)! as WearableTrait & { cursed?: boolean; locked?: boolean; magicallyBound?: boolean };
       expect(wearable.cursed || wearable.locked || wearable.magicallyBound).toBeTruthy();
     });
   });
@@ -466,7 +466,7 @@ describe('World State Mutations', () => {
     world.moveEntity(hat.id, player.id);
 
     // VERIFY PRECONDITION: hat is worn
-    const wearableBefore = hat.get(TraitType.WEARABLE) as any;
+    const wearableBefore = hat.get(WearableTrait)!;
     expect(wearableBefore.worn).toBe(true);
     expect(wearableBefore.wornBy).toBe(player.id);
 
@@ -480,7 +480,7 @@ describe('World State Mutations', () => {
     takingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: hat is no longer worn
-    const wearableAfter = hat.get(TraitType.WEARABLE) as any;
+    const wearableAfter = hat.get(WearableTrait)!;
     expect(wearableAfter.worn).toBe(false);
     expect(wearableAfter.wornBy).toBeUndefined();
   });
@@ -498,7 +498,7 @@ describe('World State Mutations', () => {
     world.moveEntity(gloves.id, player.id);
 
     // VERIFY PRECONDITION: gloves are worn
-    const wearableBefore = gloves.get(TraitType.WEARABLE) as any;
+    const wearableBefore = gloves.get(WearableTrait)!;
     expect(wearableBefore.worn).toBe(true);
     expect(wearableBefore.bodyPart).toBe('hands');
     expect(wearableBefore.layer).toBe(1);
@@ -513,7 +513,7 @@ describe('World State Mutations', () => {
     takingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: gloves are no longer worn, body part and layer preserved
-    const wearableAfter = gloves.get(TraitType.WEARABLE) as any;
+    const wearableAfter = gloves.get(WearableTrait)!;
     expect(wearableAfter.worn).toBe(false);
     expect(wearableAfter.wornBy).toBeUndefined();
     expect(wearableAfter.bodyPart).toBe('hands');
@@ -531,7 +531,7 @@ describe('World State Mutations', () => {
     world.moveEntity(scarf.id, player.id);
 
     // VERIFY PRECONDITION: scarf is not worn
-    const wearableBefore = scarf.get(TraitType.WEARABLE) as any;
+    const wearableBefore = scarf.get(WearableTrait)!;
     expect(wearableBefore.worn).toBe(false);
 
     const command = createCommand(IFActions.TAKING_OFF, {
@@ -545,7 +545,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('not_wearing');
 
     // VERIFY POSTCONDITION: scarf is still not worn (no change)
-    const wearableAfter = scarf.get(TraitType.WEARABLE) as any;
+    const wearableAfter = scarf.get(WearableTrait)!;
     expect(wearableAfter.worn).toBe(false);
   });
 
@@ -594,8 +594,8 @@ describe('World State Mutations', () => {
     world.moveEntity(jacket.id, player.id);
 
     // VERIFY PRECONDITION: both are worn
-    expect((shirt.get(TraitType.WEARABLE) as any).worn).toBe(true);
-    expect((jacket.get(TraitType.WEARABLE) as any).worn).toBe(true);
+    expect((shirt.get(WearableTrait)!).worn).toBe(true);
+    expect((jacket.get(WearableTrait)!).worn).toBe(true);
 
     // Take off the jacket (outermost layer)
     const command = createCommand(IFActions.TAKING_OFF, {
@@ -608,8 +608,8 @@ describe('World State Mutations', () => {
     takingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: jacket is no longer worn, shirt still is
-    const jacketAfter = jacket.get(TraitType.WEARABLE) as any;
-    const shirtAfter = shirt.get(TraitType.WEARABLE) as any;
+    const jacketAfter = jacket.get(WearableTrait)!;
+    const shirtAfter = shirt.get(WearableTrait)!;
     expect(jacketAfter.worn).toBe(false);
     expect(jacketAfter.wornBy).toBeUndefined();
     expect(shirtAfter.worn).toBe(true);
@@ -628,7 +628,7 @@ describe('World State Mutations', () => {
     world.moveEntity(ring.id, player.id);
 
     // VERIFY PRECONDITION: ring is worn
-    const wearableBefore = ring.get(TraitType.WEARABLE) as any;
+    const wearableBefore = ring.get(WearableTrait)!;
     expect(wearableBefore.worn).toBe(true);
 
     const command = createCommand(IFActions.TAKING_OFF, {
@@ -641,7 +641,7 @@ describe('World State Mutations', () => {
     takingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: ring is no longer worn
-    const wearableAfter = ring.get(TraitType.WEARABLE) as any;
+    const wearableAfter = ring.get(WearableTrait)!;
     expect(wearableAfter.worn).toBe(false);
     expect(wearableAfter.wornBy).toBeUndefined();
   });

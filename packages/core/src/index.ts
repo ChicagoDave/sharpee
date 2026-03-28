@@ -25,9 +25,6 @@ export {
   ICommandExecutionOptions
 } from './execution/types';
 
-// Rules system
-export * from './rules';
-
 // Debug infrastructure
 export * from './debug';
 

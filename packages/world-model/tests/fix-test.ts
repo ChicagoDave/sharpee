@@ -40,8 +40,8 @@ console.log('=== Initial State (Cabinet Closed) ===');
 console.log('Cabinet traits:', {
   hasContainer: cabinet.hasTrait(TraitType.CONTAINER),
   hasOpenable: cabinet.hasTrait(TraitType.OPENABLE),
-  isTransparent: (cabinet.getTrait(TraitType.CONTAINER) as any)?.isTransparent,
-  isOpen: (cabinet.getTrait(TraitType.OPENABLE) as any)?.isOpen
+  isTransparent: cabinet.getTrait(ContainerTrait)?.isTransparent,
+  isOpen: cabinet.getTrait(OpenableTrait)?.isOpen
 });
 
 let visible = world.getVisible(player.id);
@@ -50,9 +50,9 @@ console.log('Medicine visible?', visible.some(e => e.id === medicine.id));
 
 // Open the cabinet
 console.log('\n=== Opening Cabinet ===');
-const openable = cabinet.getTrait(TraitType.OPENABLE);
+const openable = cabinet.getTrait(OpenableTrait);
 if (openable) {
-  (openable as any).isOpen = true;
+  openable.isOpen = true;
   console.log('Set isOpen to true');
 }
 
@@ -60,8 +60,8 @@ if (openable) {
 console.log('Cabinet traits after opening:', {
   hasContainer: cabinet.hasTrait(TraitType.CONTAINER),
   hasOpenable: cabinet.hasTrait(TraitType.OPENABLE),
-  isTransparent: (cabinet.getTrait(TraitType.CONTAINER) as any)?.isTransparent,
-  isOpen: (cabinet.getTrait(TraitType.OPENABLE) as any)?.isOpen
+  isTransparent: cabinet.getTrait(ContainerTrait)?.isTransparent,
+  isOpen: cabinet.getTrait(OpenableTrait)?.isOpen
 });
 
 visible = world.getVisible(player.id);

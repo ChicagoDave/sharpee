@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { smellingAction } from '../../../src/actions/standard/smelling';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, LightSourceTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -457,7 +457,7 @@ describe('Testing Pattern Examples for Smelling', () => {
         expect(obj.has(TraitType.EDIBLE)).toBe(true);
       } else if (scent === 'burning') {
         expect(obj.has(TraitType.LIGHT_SOURCE)).toBe(true);
-        const light = obj.get(TraitType.LIGHT_SOURCE) as any;
+        const light = obj.get(LightSourceTrait)!;
         expect(light.isLit).toBe(true);
       }
     });

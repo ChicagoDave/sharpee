@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -415,10 +415,10 @@ describe('Testing Pattern Examples for Entering', () => {
       
       // Verify enterable configuration
       if (obj.hasTrait(TraitType.CONTAINER)) {
-        const container = obj.getTrait(TraitType.CONTAINER) as any;
+        const container = obj.getTrait(ContainerTrait)!;
         expect(container.enterable).toBe(true);
       } else if (obj.hasTrait(TraitType.SUPPORTER)) {
-        const supporter = obj.getTrait(TraitType.SUPPORTER) as any;
+        const supporter = obj.getTrait(SupporterTrait)!;
         expect(supporter.enterable).toBe(true);
       }
     });

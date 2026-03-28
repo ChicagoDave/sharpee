@@ -257,10 +257,14 @@ describe('Wearable and Clothing Integration Tests', () => {
       // Wear everything
       [shirt, pants, watch, necklace].forEach(item => {
         world.moveEntity(item.id, player.id);
-        const trait = item.getTrait(TraitType.WEARABLE) || item.getTrait(TraitType.CLOTHING);
-        if (trait) {
-          (trait as any).isWorn = true;
-          (trait as any).wornBy = player.id;
+        const wearable = item.getTrait(WearableTrait);
+        const clothing = item.getTrait(ClothingTrait);
+        if (wearable) {
+          wearable.isWorn = true;
+          wearable.wornBy = player.id;
+        } else if (clothing) {
+          clothing.isWorn = true;
+          clothing.wornBy = player.id;
         }
       });
       

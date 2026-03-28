@@ -161,14 +161,14 @@ describe('AuthorModel', () => {
       
       author.setupContainer(cabinet.id, false, true, 'key123');
       
-      const openable = cabinet.getTrait(TraitType.OPENABLE) as any;
-      const lockable = cabinet.getTrait(TraitType.LOCKABLE) as any;
-      
+      const openable = cabinet.getTrait(OpenableTrait);
+      const lockable = cabinet.getTrait(LockableTrait);
+
       expect(openable).toBeDefined();
-      expect(openable.isOpen).toBe(false);
+      expect(openable!.isOpen).toBe(false);
       expect(lockable).toBeDefined();
-      expect(lockable.isLocked).toBe(true);
-      expect(lockable.keyId).toBe('key123');
+      expect(lockable!.isLocked).toBe(true);
+      expect(lockable!.keyId).toBe('key123');
     });
 
     it('should fill containers with item specs', () => {

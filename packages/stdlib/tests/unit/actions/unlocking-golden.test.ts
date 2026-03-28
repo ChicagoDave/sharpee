@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { unlockingAction } from '../../../src/actions/standard/unlocking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, LockableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -339,7 +339,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       
       // Update the gate's lockable trait to use actual key IDs
       // Get the existing trait and modify it
-      const lockableTrait = gate.get(TraitType.LOCKABLE) as any;
+      const lockableTrait = gate.get(LockableTrait)!;
       lockableTrait.keyIds = [key1.id, key2.id, key3.id];  // Use actual entity IDs
       
       world.moveEntity(key2.id, player.id);  // Player has master key
@@ -664,7 +664,7 @@ describe('World State Mutations', () => {
     world.moveEntity(box.id, room.id);
 
     // VERIFY PRECONDITION: box is locked
-    const lockableBefore = box.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = box.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(true);
 
     const command = createCommand(IFActions.UNLOCKING, {
@@ -677,7 +677,7 @@ describe('World State Mutations', () => {
     unlockingAction.execute(context);
 
     // VERIFY POSTCONDITION: box is now unlocked
-    const lockableAfter = box.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = box.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(false);
   });
 
@@ -698,7 +698,7 @@ describe('World State Mutations', () => {
     world.moveEntity(key.id, player.id);
 
     // VERIFY PRECONDITION: chest is locked
-    const lockableBefore = chest.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = chest.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(true);
 
     const command = createCommand(IFActions.UNLOCKING, {
@@ -713,7 +713,7 @@ describe('World State Mutations', () => {
     unlockingAction.execute(context);
 
     // VERIFY POSTCONDITION: chest is now unlocked
-    const lockableAfter = chest.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = chest.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(false);
   });
 
@@ -727,7 +727,7 @@ describe('World State Mutations', () => {
     world.moveEntity(safe.id, room.id);
 
     // VERIFY PRECONDITION: safe is unlocked
-    const lockableBefore = safe.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = safe.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(false);
 
     const command = createCommand(IFActions.UNLOCKING, {
@@ -741,7 +741,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('already_unlocked');
 
     // VERIFY POSTCONDITION: safe is still unlocked (no change)
-    const lockableAfter = safe.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = safe.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(false);
   });
 
@@ -759,7 +759,7 @@ describe('World State Mutations', () => {
     world.moveEntity(wrongKey.id, player.id); // Player has wrong key
 
     // VERIFY PRECONDITION: cabinet is locked
-    const lockableBefore = cabinet.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = cabinet.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(true);
 
     const command = createCommand(IFActions.UNLOCKING, {
@@ -775,7 +775,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('wrong_key');
 
     // VERIFY POSTCONDITION: cabinet is still locked (no change)
-    const lockableAfter = cabinet.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = cabinet.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(true);
   });
 
@@ -820,7 +820,7 @@ describe('World State Mutations', () => {
     world.moveEntity(key.id, player.id);
 
     // VERIFY PRECONDITION: door is locked
-    const lockableBefore = door.get(TraitType.LOCKABLE) as any;
+    const lockableBefore = door.get(LockableTrait)!;
     expect(lockableBefore.isLocked).toBe(true);
 
     const command = createCommand(IFActions.UNLOCKING, {
@@ -835,7 +835,7 @@ describe('World State Mutations', () => {
     unlockingAction.execute(context);
 
     // VERIFY POSTCONDITION: door is now unlocked
-    const lockableAfter = door.get(TraitType.LOCKABLE) as any;
+    const lockableAfter = door.get(LockableTrait)!;
     expect(lockableAfter.isLocked).toBe(false);
   });
 });

@@ -97,7 +97,7 @@ describe('NpcService', () => {
       });
 
       const world = createMockWorld([npc]);
-      (world.getAllEntities as any).mockReturnValue([npc]);
+      (world.getAllEntities as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
       service.tick({
         world,
@@ -123,7 +123,7 @@ describe('NpcService', () => {
       });
 
       const world = createMockWorld([npc]);
-      (world.getAllEntities as any).mockReturnValue([npc]);
+      (world.getAllEntities as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
       service.tick({
         world,
@@ -149,7 +149,7 @@ describe('NpcService', () => {
       });
 
       const world = createMockWorld([npc]);
-      (world.getAllEntities as any).mockReturnValue([npc]);
+      (world.getAllEntities as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
       service.tick({
         world,
@@ -178,7 +178,7 @@ describe('NpcService', () => {
       });
 
       const world = createMockWorld([npc]);
-      (world.getContents as any).mockReturnValue([npc]);
+      (world.getContents as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
       service.onPlayerEnters(world, 'room-1', random, 1);
 
@@ -201,7 +201,7 @@ describe('NpcService', () => {
       });
 
       const world = createMockWorld([npc]);
-      (world.getContents as any).mockReturnValue([npc]);
+      (world.getContents as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
       service.onPlayerLeaves(world, 'room-1', random, 1);
 
@@ -248,7 +248,7 @@ describe('NpcService', () => {
 
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('npc.spoke');
-      expect((events[0].data as any).messageId).toBe(NpcMessages.NPC_NO_RESPONSE);
+      expect((events[0].data as Record<string, unknown>).messageId).toBe(NpcMessages.NPC_NO_RESPONSE);
     });
   });
 
@@ -314,7 +314,7 @@ describe('standard behaviors', () => {
       const actions = guardBehavior.onPlayerEnters!(context);
       expect(actions).toHaveLength(1);
       expect(actions[0].type).toBe('emote');
-      expect((actions[0] as any).messageId).toBe(NpcMessages.GUARD_BLOCKS);
+      expect((actions[0] as Record<string, unknown>).messageId).toBe(NpcMessages.GUARD_BLOCKS);
     });
 
     it('should counterattack when attacked', () => {
@@ -335,7 +335,7 @@ describe('standard behaviors', () => {
       const actions = guardBehavior.onAttacked!(context, attacker);
       expect(actions).toHaveLength(1);
       expect(actions[0].type).toBe('attack');
-      expect((actions[0] as any).target).toBe('player');
+      expect((actions[0] as Record<string, unknown>).target).toBe('player');
     });
   });
 

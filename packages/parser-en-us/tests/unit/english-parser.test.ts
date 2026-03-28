@@ -5,7 +5,7 @@
 import { EnglishParser } from '../../src/english-parser';
 import { ParserLanguageProvider, vocabularyRegistry, ParserFactory, PartOfSpeech } from '@sharpee/if-domain';
 import { ParsedCommand, CommandResult, ParseError, Direction } from '@sharpee/world-model';
-import { SystemEvent } from '@sharpee/core';
+import { ISystemEvent } from '@sharpee/core';
 
 // Mock Language Provider
 class MockLanguageProvider implements ParserLanguageProvider {
@@ -182,7 +182,7 @@ class MockLanguageProvider implements ParserLanguageProvider {
 describe('EnglishParser', () => {
   let parser: EnglishParser;
   let language: ParserLanguageProvider;
-  let debugEvents: SystemEvent[];
+  let debugEvents: ISystemEvent[];
 
   beforeEach(() => {
     language = new MockLanguageProvider();
@@ -390,9 +390,9 @@ describe('EnglishParser', () => {
 
       const tokenizeEvents = debugEvents.filter(e => e.type === 'tokenize');
       expect(tokenizeEvents).toHaveLength(1);
-      
+
       const event = tokenizeEvents[0];
-      const data = event.data as any;
+      const data = event.data as Record<string, unknown>;
       expect(data.input).toBe('take ball');
       expect(data.tokens).toHaveLength(2);
       expect(data.unknownWords).toEqual([]);
@@ -403,9 +403,9 @@ describe('EnglishParser', () => {
 
       const patternEvents = debugEvents.filter(e => e.type === 'pattern_match');
       expect(patternEvents).toHaveLength(1);
-      
+
       const event = patternEvents[0];
-      const data = event.data as any;
+      const data = event.data as Record<string, unknown>;
       expect(data.patternsAttempted).toBeDefined();
       expect(data.totalCandidates).toBeGreaterThan(0);
     });
@@ -415,11 +415,11 @@ describe('EnglishParser', () => {
 
       const selectionEvents = debugEvents.filter(e => e.type === 'candidate_selection');
       expect(selectionEvents).toHaveLength(1);
-      
+
       const event = selectionEvents[0];
-      const data = event.data as any;
+      const data = event.data as Record<string, unknown>;
       expect(data.candidates).toBeDefined();
-      expect(data.candidates[0].selected).toBe(true);
+      expect((data.candidates as Array<Record<string, unknown>>)[0].selected).toBe(true);
     });
 
     test('should emit parse error debug event on failure', () => {
@@ -427,9 +427,9 @@ describe('EnglishParser', () => {
 
       const errorEvents = debugEvents.filter(e => e.type === 'parse_error');
       expect(errorEvents).toHaveLength(1);
-      
+
       const event = errorEvents[0];
-      const data = event.data as any;
+      const data = event.data as Record<string, unknown>;
       expect(data.errorType).toBeDefined();
       expect(data.errorDetails).toBeDefined();
     });

@@ -3,7 +3,8 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, IFEntity, TraitType } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, IFEntity, TraitType, OpenableTrait } from '@sharpee/world-model';
+import { LanguageProvider } from '@sharpee/if-domain';
 import { StandardScopeResolver } from '../../src/scope/scope-resolver';
 import { CommandValidator } from '../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../src/actions/registry';
@@ -94,7 +95,7 @@ describe('Container visibility and knowledge', () => {
       getSupportedActions: () => ['if.action.taking', 'if.action.examining', 'if.action.opening']
     };
     
-    registry.setLanguageProvider(mockLanguageProvider as any);
+    registry.setLanguageProvider(mockLanguageProvider as unknown as LanguageProvider);
     registry.register(takingAction);
     registry.register(examiningAction);
     registry.register(openingAction);
@@ -156,7 +157,7 @@ describe('Container visibility and knowledge', () => {
     author.moveEntity(actor.id, room1.id);
 
     // Open the box
-    const openable = box.get(TraitType.OPENABLE) as any;
+    const openable = box.get(OpenableTrait)!;
     openable.isOpen = true;
 
     // Now actor should see ball
@@ -193,7 +194,7 @@ describe('Container visibility and knowledge', () => {
     expect(validated.success).toBe(false);
 
     // 3. Open the box
-    const openable = box.get(TraitType.OPENABLE) as any;
+    const openable = box.get(OpenableTrait)!;
     openable.isOpen = true;
 
     // 4. Take the ball - should now work

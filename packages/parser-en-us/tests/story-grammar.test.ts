@@ -9,7 +9,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
-import { Entity } from '@sharpee/core';
+/** Minimal entity shape used by mock world model in these tests */
+interface MockEntity {
+  id: string;
+  name: string;
+  attributes: Record<string, unknown>;
+  visible: boolean;
+  magical?: boolean;
+  portable?: boolean;
+  weapon?: boolean;
+  creature?: boolean;
+}
 
 // Mock language provider
 const mockLanguageProvider: ParserLanguageProvider = {
@@ -39,7 +49,7 @@ const mockLanguageProvider: ParserLanguageProvider = {
 
 // Mock world model
 class MockWorldModel {
-  private entities: Map<string, Entity> = new Map();
+  private entities: Map<string, MockEntity> = new Map();
 
   constructor() {
     this.entities.set('crystal', {
@@ -48,7 +58,7 @@ class MockWorldModel {
       attributes: { name: 'crystal' },
       visible: true,
       magical: true
-    } as any);
+    });
 
     this.entities.set('sword', {
       id: 'sword',
@@ -57,7 +67,7 @@ class MockWorldModel {
       visible: true,
       portable: true,
       weapon: true
-    } as any);
+    });
 
     this.entities.set('dragon', {
       id: 'dragon',
@@ -65,18 +75,18 @@ class MockWorldModel {
       attributes: { name: 'dragon' },
       visible: true,
       creature: true
-    } as any);
+    });
   }
 
-  getEntity(id: string): Entity | undefined {
+  getEntity(id: string): MockEntity | undefined {
     return this.entities.get(id);
   }
 
-  getVisibleEntities(): Entity[] {
+  getVisibleEntities(): MockEntity[] {
     return Array.from(this.entities.values()).filter(e => e.visible);
   }
 
-  getCarriedEntities(): Entity[] {
+  getCarriedEntities(): MockEntity[] {
     return [];
   }
 }
@@ -187,7 +197,7 @@ describe('Story Grammar API', () => {
         expect(result.value.action).toBe('story.action.attacking');
         expect(result.value.structure.directObject?.text).toBe('dragon');
         // 'with' patterns store the tool in extras
-        expect((result.value as any).extras?.weapon?.text).toBe('sword');
+        expect(result.value.extras?.weapon?.text).toBe('sword');
       }
     });
   });

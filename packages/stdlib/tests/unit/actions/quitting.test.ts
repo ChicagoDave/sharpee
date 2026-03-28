@@ -18,6 +18,20 @@ import {
 import type { WorldModel } from '@sharpee/world-model';
 import type { ActionContext, Action } from '../../../src/actions/enhanced-types';
 
+/** Shape of the quit context payload for type-safe test assertions */
+interface QuitContext {
+  score: number;
+  moves: number;
+  hasUnsavedChanges: boolean;
+  force: boolean;
+  stats: {
+    maxScore: number;
+    nearComplete: boolean;
+    playTime: number;
+    achievements: string[];
+  };
+}
+
 /**
  * Helper to execute action with proper three-phase pattern support
  */
@@ -153,7 +167,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.hasUnsavedChanges).toBe(true);
       expect(quitContext.force).toBe(false);
       
@@ -213,7 +227,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.hasUnsavedChanges).toBe(true);
       expect(quitContext.force).toBe(true); // Force quit despite unsaved changes
       
@@ -233,7 +247,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.force).toBe(true);
     });
 
@@ -248,7 +262,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.force).toBe(true);
     });
   });
@@ -275,7 +289,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.stats.maxScore).toBe(100);
       expect(quitContext.stats.nearComplete).toBe(true);
     });
@@ -300,7 +314,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.stats.maxScore).toBe(100);
       expect(quitContext.stats.nearComplete).toBe(false);
     });
@@ -325,7 +339,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.stats.maxScore).toBe(0);
       expect(quitContext.stats.nearComplete).toBe(false);
     });
@@ -343,7 +357,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.score).toBe(0);
       expect(quitContext.moves).toBe(0);
       expect(quitContext.hasUnsavedChanges).toBe(false);
@@ -373,7 +387,7 @@ describe('quittingAction', () => {
       
       const platformEvent = events.find(e => e.type === 'platform.quit_requested');
       expect(platformEvent).toBeDefined();
-      const quitContext = platformEvent!.payload.context as any;
+      const quitContext = platformEvent!.payload.context as QuitContext;
       expect(quitContext.score).toBe(0);
       expect(quitContext.moves).toBe(0);
       expect(quitContext.hasUnsavedChanges).toBe(false);

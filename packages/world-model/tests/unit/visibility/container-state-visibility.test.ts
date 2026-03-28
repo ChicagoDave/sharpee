@@ -43,8 +43,8 @@ describe('Container State Change Visibility', () => {
     world.moveEntity(medicine.id, cabinet.id); // This will work now
     
     // NOW close the cabinet for the tests
-    const openableTrait = cabinet.getTrait(TraitType.OPENABLE) as OpenableTrait;
-    (openableTrait as any).isOpen = false;
+    const openableTrait = cabinet.getTrait(OpenableTrait)!;
+    openableTrait.isOpen = false;
   });
 
   it('should not see medicine when cabinet is closed', () => {
@@ -57,8 +57,8 @@ describe('Container State Change Visibility', () => {
 
   it('should see medicine when cabinet is open', () => {
     // Open the cabinet
-    const openableTrait = cabinet.getTrait(TraitType.OPENABLE) as OpenableTrait;
-    (openableTrait as any).isOpen = true;
+    const openableTrait = cabinet.getTrait(OpenableTrait)!;
+    openableTrait.isOpen = true;
     
     const visible = world.getVisible(player.id);
     
@@ -68,36 +68,36 @@ describe('Container State Change Visibility', () => {
   });
 
   it('should handle multiple state changes', () => {
-    const openableTrait = cabinet.getTrait(TraitType.OPENABLE) as OpenableTrait;
+    const openableTrait = cabinet.getTrait(OpenableTrait)!;
     
     // Initially closed
     let visible = world.getVisible(player.id);
     expect(visible).not.toContainEqual(medicine);
     
     // Open
-    (openableTrait as any).isOpen = true;
+    openableTrait.isOpen = true;
     visible = world.getVisible(player.id);
     expect(visible).toContainEqual(medicine);
     
     // Close again
-    (openableTrait as any).isOpen = false;
+    openableTrait.isOpen = false;
     visible = world.getVisible(player.id);
     expect(visible).not.toContainEqual(medicine);
   });
 
   it('should verify canSee works correctly', () => {
-    const openableTrait = cabinet.getTrait(TraitType.OPENABLE) as OpenableTrait;
+    const openableTrait = cabinet.getTrait(OpenableTrait)!;
     
     // Closed
     expect(VisibilityBehavior.canSee(player, medicine, world)).toBe(false);
     
     // Open
-    (openableTrait as any).isOpen = true;
+    openableTrait.isOpen = true;
     expect(VisibilityBehavior.canSee(player, medicine, world)).toBe(true);
   });
 
   it('should verify medicine is in scope regardless of cabinet state', () => {
-    const openableTrait = cabinet.getTrait(TraitType.OPENABLE) as OpenableTrait;
+    const openableTrait = cabinet.getTrait(OpenableTrait)!;
     
     // Check scope when closed
     let inScope = world.getInScope(player.id);
@@ -106,7 +106,7 @@ describe('Container State Change Visibility', () => {
     expect(inScope).toContainEqual(medicine); // Should be in scope even when cabinet is closed
     
     // Open and check again
-    (openableTrait as any).isOpen = true;
+    openableTrait.isOpen = true;
     inScope = world.getInScope(player.id);
     expect(inScope).toContainEqual(medicine);
   });

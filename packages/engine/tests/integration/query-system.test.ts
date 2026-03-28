@@ -36,7 +36,7 @@ describe.skip('Query System Integration - MOVED TO PLATFORM LAYER', () => {
     quitHandler.getEventSource().subscribe((evt) => {
       engine['eventSource'].emit(evt);
       // Also emit through engine's event emitter for tests
-      engine.emit('event', evt as any);
+      engine.emit('event', evt as unknown as Record<string, unknown>);
     });
   });
 

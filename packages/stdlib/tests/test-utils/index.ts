@@ -12,7 +12,8 @@ import {
   WorldModel,
   IFEntity,
   TraitType,
-  ValidatedCommand
+  ValidatedCommand,
+  IdentityTrait
 } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '../../src/capabilities';
 import { createActionContext } from '../../src/actions/enhanced-context';
@@ -97,11 +98,11 @@ export function createRealTestContext(
       }
       
       // Check position-based reachability
-      const entityIdentity = entity.get(TraitType.IDENTITY);
-      if (entityIdentity && (entityIdentity as any).position) {
-        const pos = (entityIdentity as any).position;
+      const entityIdentity = entity.get(IdentityTrait);
+      if (entityIdentity) {
+        const pos = (entityIdentity as IdentityTrait & { position?: { y?: number } }).position;
         // Items with y > 3 are considered out of reach
-        if (pos.y && pos.y > 3) {
+        if (pos?.y && pos.y > 3) {
           return false;
         }
       }
@@ -124,7 +125,7 @@ export function createRealTestContext(
         achievements: []
       }
     })
-  } as ActionContext & { getSharedData?: () => any };
+  } as ActionContext & { getSharedData?: () => Record<string, unknown> };
   
   return createActionContext(world, player, action, command);
 }
@@ -158,12 +159,12 @@ export function createCommand(
   const verb = options.verb || actionId.split('.').pop() || 'unknown';
   const rawInput = options.rawInput || verb;
   
-  const structure: any = { 
-    verb: { 
-      tokens: [0], 
-      text: verb, 
-      head: verb 
-    } 
+  const structure: Record<string, unknown> = {
+    verb: {
+      tokens: [0],
+      text: verb,
+      head: verb
+    }
   };
   
   // If we have an entity, add direct object structure
@@ -265,13 +266,16 @@ export function expectEvent(
   
   if (expectedData) {
     // Handle our new structure where event data is in data.data (for platform events with payload, use payload.data)
-    const eventData = (event as any).payload?.data || (event.data as any)?.data || event.data || {};
-    
+    const eventRecord = event as unknown as Record<string, unknown>;
+    const dataRecord = event.data as Record<string, unknown> | undefined;
+    const payloadRecord = eventRecord.payload as Record<string, unknown> | undefined;
+    const eventData = payloadRecord?.data || dataRecord?.data || event.data || {};
+
     Object.entries(expectedData).forEach(([key, value]) => {
       // Special handling for old test format
       if (key === 'messageId' || key === 'params' || key === 'reason') {
         // These are at the data level (or payload for platform events), not nested
-        const topLevelData = (event as any).payload || event.data || {};
+        const topLevelData = (payloadRecord || event.data || {}) as Record<string, unknown>;
         if (typeof value === 'object' && value && value.asymmetricMatch) {
           expect(topLevelData[key]).toEqual(value);
         } else if (key === 'params' && typeof value === 'object' && value !== null) {

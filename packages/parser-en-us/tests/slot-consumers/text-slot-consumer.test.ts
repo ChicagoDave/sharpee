@@ -29,7 +29,7 @@ describe('TextSlotConsumer', () => {
 
     // Add next pattern token if provided (for greedy/topic tests)
     if (nextPatternValue) {
-      patternTokens.push({ type: 'literal' as const, value: nextPatternValue, slotType: undefined as any });
+      patternTokens.push({ type: 'literal' as const, value: nextPatternValue, slotType: undefined as unknown as SlotType });
     }
 
     return {
@@ -39,7 +39,7 @@ describe('TextSlotConsumer', () => {
       pattern: { tokens: patternTokens, minTokens: 1, slots: ['target'] },
       slotTokenIndex: 0,
       rule: { slots: new Map() },
-      context: { world: undefined as any },
+      context: { world: undefined as unknown },
       slotType
     };
   }

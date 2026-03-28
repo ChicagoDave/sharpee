@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, TraitType, EntityType, IFEntity } from '@sharpee/world-model';
+import { WorldModel, TraitType, EntityType, IFEntity, IdentityTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
@@ -687,7 +687,7 @@ describe('StandardScopeResolver', () => {
       // Step 2: Also try synonym search (getEntitiesBySynonym)
       const hookBySynonym = world2.findWhere(entity => {
         if (entity.type === 'room' || entity.id === player2.id) return false;
-        const identity = entity.get('identity') as any;
+        const identity = entity.get(IdentityTrait);
         const aliases = identity?.aliases || [];
         return aliases.map((a: string) => a.toLowerCase()).includes('hook');
       });
@@ -727,7 +727,7 @@ describe('StandardScopeResolver', () => {
       // Also check by synonym "wire"
       const wireBySynonym = world2.findWhere(entity => {
         if (entity.type === 'room' || entity.id === player2.id) return false;
-        const identity = entity.get('identity') as any;
+        const identity = entity.get(IdentityTrait);
         const aliases = identity?.aliases || [];
         return aliases.map((a: string) => a.toLowerCase()).includes('wire');
       });
@@ -789,7 +789,7 @@ describe('StandardScopeResolver', () => {
       // Step 2: getEntitiesBySynonym("wire")
       const bySynonym = world.findWhere(entity => {
         if (entity.type === 'room' || entity.id === player.id) return false;
-        const identity = entity.get('identity') as any;
+        const identity = entity.get(IdentityTrait);
         const aliases = identity?.aliases || [];
         return aliases.map((a: string) => a.toLowerCase()).includes(searchTerm.toLowerCase());
       });
@@ -823,13 +823,13 @@ describe('StandardScopeResolver', () => {
 
       // Check if ANY entity has the modifier as an adjective
       for (const entity of inScope) {
-        const identity = entity.get('identity') as any;
+        const identity = entity.get(IdentityTrait);
         const adjectives = identity?.adjectives || [];
         console.log(`  Entity "${entity.name}": adjectives=${JSON.stringify(adjectives)}`);
       }
 
       const anyModifierMatch = inScope.some(entity => {
-        const identity = entity.get('identity') as any;
+        const identity = entity.get(IdentityTrait);
         const adjectives = (identity?.adjectives || []).map((a: string) => a.toLowerCase());
         return modifiers.every(mod => adjectives.includes(mod.toLowerCase()));
       });
@@ -841,13 +841,13 @@ describe('StandardScopeResolver', () => {
       expect(anyModifierMatch).toBe(false); // Confirms the bug exists
 
       // VERIFY FIX: If braided wire had adjectives: ['braided'], it would match
-      const braidedWireIdentity = braidedWire.get('identity') as any;
+      const braidedWireIdentity = braidedWire.get(IdentityTrait);
       if (braidedWireIdentity) {
         braidedWireIdentity.adjectives = ['braided'];
       }
 
       const fixedModifierMatch = inScope.some(entity => {
-        const identity = entity.get('identity') as any;
+        const identity = entity.get(IdentityTrait);
         const adjectives = (identity?.adjectives || []).map((a: string) => a.toLowerCase());
         return modifiers.every(mod => adjectives.includes(mod.toLowerCase()));
       });

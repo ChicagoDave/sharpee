@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { openingAction } from '../../../src/actions/standard/opening';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, AuthorModel, EntityType } from '@sharpee/world-model';
+import { TraitType, AuthorModel, EntityType, OpenableTrait, LockableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -242,13 +242,13 @@ describe('openingAction (Golden Pattern)', () => {
       expect(revealedEvents).toHaveLength(2);
       
       // Check that we have a revealed event for each item
-      const revealedItemIds = revealedEvents.map(e => (e.data as any).itemId);
+      const revealedItemIds = revealedEvents.map(e => (e.data as Record<string, unknown>).itemId);
       expect(revealedItemIds).toContain(coin.id);
       expect(revealedItemIds).toContain(ruby.id);
       
       // Check the structure of revealed events
       revealedEvents.forEach(event => {
-        const data = event.data as any;
+        const data = event.data as Record<string, unknown>;
         expect(data).toHaveProperty('itemId');
         expect(data).toHaveProperty('itemName');
         expect(data).toHaveProperty('containerId', box.id);
@@ -490,7 +490,7 @@ describe('Opening Action Edge Cases', () => {
     });
     
     // Verify each item has a revealed event by checking IDs are present
-    const revealedItemIds = revealedEvents.map(e => (e.data as any).itemId);
+    const revealedItemIds = revealedEvents.map(e => (e.data as Record<string, unknown>).itemId);
     items.forEach(item => {
       expect(revealedItemIds).toContain(item.id);
     });
@@ -514,7 +514,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: box is closed
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(false);
 
     const command = createCommand(IFActions.OPENING, {
@@ -527,7 +527,7 @@ describe('World State Mutations', () => {
     openingAction.execute(context);
 
     // VERIFY POSTCONDITION: box is now open
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(true);
   });
 
@@ -543,7 +543,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: chest is closed
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(false);
 
     const command = createCommand(IFActions.OPENING, {
@@ -556,7 +556,7 @@ describe('World State Mutations', () => {
     openingAction.execute(context);
 
     // VERIFY POSTCONDITION: chest is now open
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(true);
   });
 
@@ -569,7 +569,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: box is open
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(true);
 
     const command = createCommand(IFActions.OPENING, {
@@ -583,7 +583,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('already_open');
 
     // VERIFY POSTCONDITION: box is still open (no change)
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(true);
   });
 
@@ -601,7 +601,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: chest is closed
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
     expect(openableBefore.isOpen).toBe(false);
 
     const command = createCommand(IFActions.OPENING, {
@@ -615,7 +615,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('locked');
 
     // VERIFY POSTCONDITION: chest is still closed (no change)
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(false);
   });
 
@@ -654,8 +654,8 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: safe is closed but unlocked
-    const openableBefore = object.get(TraitType.OPENABLE) as any;
-    const lockableBefore = object.get(TraitType.LOCKABLE) as any;
+    const openableBefore = object.get(OpenableTrait)!;
+    const lockableBefore = object.get(LockableTrait)!;
     expect(openableBefore.isOpen).toBe(false);
     expect(lockableBefore.isLocked).toBe(false);
 
@@ -669,7 +669,7 @@ describe('World State Mutations', () => {
     openingAction.execute(context);
 
     // VERIFY POSTCONDITION: safe is now open
-    const openableAfter = object.get(TraitType.OPENABLE) as any;
+    const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(true);
   });
 });

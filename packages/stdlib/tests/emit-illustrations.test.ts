@@ -1,18 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { IFEntity, SwitchableTrait } from '@sharpee/world-model';
 import { emitIllustrations } from '../src/actions/helpers/emit-illustrations';
+import { ActionContext } from '../src/actions/enhanced-types';
 
 /**
  * Minimal mock for ActionContext — only the parts emitIllustrations uses.
  */
-function mockContext(world: any) {
+function mockContext(world: ReturnType<typeof mockWorld>) {
   let eventCounter = 0;
   return {
     world,
-    event(type: string, data: any) {
+    event(type: string, data: Record<string, unknown>) {
       return { id: `evt-${++eventCounter}`, type, data };
     },
-  } as any;
+  } as unknown as ActionContext;
 }
 
 function mockWorld(entities: Map<string, IFEntity> = new Map(), playerId?: string) {

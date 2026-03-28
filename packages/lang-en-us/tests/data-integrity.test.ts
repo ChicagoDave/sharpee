@@ -299,8 +299,8 @@ describe('Data Integrity', () => {
       ];
       
       requiredMessages.forEach(msgKey => {
-        expect((systemMessages as any)[msgKey]).toBeDefined();
-        expect((systemMessages as any)[msgKey]).toBeTruthy();
+        expect((systemMessages as Record<string, string>)[msgKey]).toBeDefined();
+        expect((systemMessages as Record<string, string>)[msgKey]).toBeTruthy();
       });
     });
 

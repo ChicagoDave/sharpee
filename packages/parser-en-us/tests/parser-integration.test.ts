@@ -193,8 +193,8 @@ describe('Parser Grammar Engine Integration', () => {
         const result = parser.parse(`look ${prep} table`);
         // Even if the command doesn't match a pattern, 
         // the preposition should be recognized in tokenization
-        const richTokens = (parser as any).tokenizeRich(`look ${prep} table`);
-        const prepToken = richTokens.find((t: any) => t.normalized === prep);
+        const richTokens = parser['tokenizeRich'](`look ${prep} table`);
+        const prepToken = richTokens.find((t: { normalized: string; partOfSpeech?: string[] }) => t.normalized === prep);
         expect(prepToken?.partOfSpeech).toContain('PREPOSITION');
       }
     });

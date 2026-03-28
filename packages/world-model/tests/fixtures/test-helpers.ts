@@ -1,6 +1,7 @@
 // Test helpers for working with the new ID system
 import { WorldModel } from '../../src/world/WorldModel';
 import { IFEntity } from '../../src/entities/if-entity';
+import { RoomTrait } from '../../src/traits/room/roomTrait';
 
 /**
  * Gets an entity by name for test assertions
@@ -147,8 +148,8 @@ export function connectRooms(
   }
   
   // Add exits
-  const room1Trait = room1.getTrait('room') as any;
-  const room2Trait = room2.getTrait('room') as any;
+  const room1Trait = room1.getTrait(RoomTrait)!;
+  const room2Trait = room2.getTrait(RoomTrait)!;
   
   room1Trait.exits = room1Trait.exits || {};
   room1Trait.exits[direction] = { destination: room2.id };

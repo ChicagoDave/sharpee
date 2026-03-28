@@ -21,6 +21,14 @@ import {
 import { IFActions } from '../../../src/actions/constants';
 import { takingAction } from '../../../src/actions/standard/taking';
 
+/** Error event data shape used in report-helpers output */
+interface ErrorEventData {
+  error?: string;
+  messageId?: string;
+  actionId?: string;
+  params?: Record<string, unknown>;
+}
+
 describe('report-helpers', () => {
   describe('handleValidationError', () => {
     test('should return null when validationResult is undefined', () => {
@@ -59,8 +67,8 @@ describe('report-helpers', () => {
       expect(result).not.toBeNull();
       expect(result).toHaveLength(1);
       expect(result![0].type).toBe('action.error');
-      expect((result![0].data as any).error).toBe('no_target');
-      expect((result![0].data as any).messageId).toBe('no_target');
+      expect((result![0].data as ErrorEventData).error).toBe('no_target');
+      expect((result![0].data as ErrorEventData).messageId).toBe('no_target');
     });
 
     test('should include validation params in error event', () => {
@@ -76,7 +84,7 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).params.item).toBe('golden key');
+      expect((result![0].data as ErrorEventData).params.item).toBe('golden key');
     });
 
     test('should use messageId from validationResult if provided', () => {
@@ -93,7 +101,7 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).messageId).toBe('custom_message_id');
+      expect((result![0].data as ErrorEventData).messageId).toBe('custom_message_id');
     });
 
     test('should include target snapshot by default when directObject exists', () => {
@@ -112,9 +120,9 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).params.targetSnapshot).toBeDefined();
+      expect((result![0].data as ErrorEventData).params.targetSnapshot).toBeDefined();
       // Snapshot captures id and name - id is always available
-      expect((result![0].data as any).params.targetSnapshot.id).toBe(item.id);
+      expect((result![0].data as ErrorEventData).params.targetSnapshot.id).toBe(item.id);
     });
 
     test('should exclude target snapshot when includeTargetSnapshot is false', () => {
@@ -134,7 +142,7 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult, options);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).params.targetSnapshot).toBeUndefined();
+      expect((result![0].data as ErrorEventData).params.targetSnapshot).toBeUndefined();
     });
 
     test('should include indirect target snapshot by default when indirectObject exists', () => {
@@ -159,9 +167,9 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).params.indirectTargetSnapshot).toBeDefined();
+      expect((result![0].data as ErrorEventData).params.indirectTargetSnapshot).toBeDefined();
       // Snapshot captures id and name - id is always available
-      expect((result![0].data as any).params.indirectTargetSnapshot.id).toBe(container.id);
+      expect((result![0].data as ErrorEventData).params.indirectTargetSnapshot.id).toBe(container.id);
     });
 
     test('should exclude indirect target snapshot when includeIndirectSnapshot is false', () => {
@@ -187,7 +195,7 @@ describe('report-helpers', () => {
       const result = handleValidationError(context, validationResult, options);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).params.indirectTargetSnapshot).toBeUndefined();
+      expect((result![0].data as ErrorEventData).params.indirectTargetSnapshot).toBeUndefined();
     });
   });
 
@@ -213,9 +221,9 @@ describe('report-helpers', () => {
       expect(result).not.toBeNull();
       expect(result).toHaveLength(1);
       expect(result![0].type).toBe('action.error');
-      expect((result![0].data as any).error).toBe('execution_failed');
-      expect((result![0].data as any).messageId).toBe('action_failed');
-      expect((result![0].data as any).params.error).toBe('Something went wrong');
+      expect((result![0].data as ErrorEventData).error).toBe('execution_failed');
+      expect((result![0].data as ErrorEventData).messageId).toBe('action_failed');
+      expect((result![0].data as ErrorEventData).params.error).toBe('Something went wrong');
     });
 
     test('should include action ID in error event', () => {
@@ -227,7 +235,7 @@ describe('report-helpers', () => {
       const result = handleExecutionError(context, error);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).actionId).toBe(IFActions.TAKING);
+      expect((result![0].data as ErrorEventData).actionId).toBe(IFActions.TAKING);
     });
   });
 
@@ -266,7 +274,7 @@ describe('report-helpers', () => {
       const result = handleReportErrors(context, validationResult, undefined);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).error).toBe('no_target');
+      expect((result![0].data as ErrorEventData).error).toBe('no_target');
     });
 
     test('should return validation error even when both validation failed and execution error occurred', () => {
@@ -285,8 +293,8 @@ describe('report-helpers', () => {
 
       // Should return validation error, not execution error
       expect(result).not.toBeNull();
-      expect((result![0].data as any).error).toBe('validation_error');
-      expect((result![0].data as any).messageId).toBe('validation_error');
+      expect((result![0].data as ErrorEventData).error).toBe('validation_error');
+      expect((result![0].data as ErrorEventData).messageId).toBe('validation_error');
     });
 
     test('should return execution error when validation passed but execution failed', () => {
@@ -300,8 +308,8 @@ describe('report-helpers', () => {
       const result = handleReportErrors(context, validationResult, executionError);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).error).toBe('execution_failed');
-      expect((result![0].data as any).params.error).toBe('Execution failed');
+      expect((result![0].data as ErrorEventData).error).toBe('execution_failed');
+      expect((result![0].data as ErrorEventData).params.error).toBe('Execution failed');
     });
 
     test('should pass options through to handleValidationError', () => {
@@ -321,7 +329,7 @@ describe('report-helpers', () => {
       const result = handleReportErrors(context, validationResult, undefined, options);
 
       expect(result).not.toBeNull();
-      expect((result![0].data as any).params.targetSnapshot).toBeUndefined();
+      expect((result![0].data as ErrorEventData).params.targetSnapshot).toBeUndefined();
     });
   });
 
@@ -346,7 +354,7 @@ describe('report-helpers', () => {
 
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('if.event.take_blocked');
-      expect((events[0].data as any).messageId).toBe('if.action.taking.fixed_in_place');
+      expect((events[0].data as ErrorEventData).messageId).toBe('if.action.taking.fixed_in_place');
     });
 
     test('should generate success events when no errors', () => {

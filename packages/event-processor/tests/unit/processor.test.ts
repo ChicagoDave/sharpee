@@ -4,6 +4,7 @@
 
 import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { EventProcessor } from '../../src/processor';
+import { WorldModel } from '@sharpee/world-model';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import {
   moveEvent,
@@ -21,7 +22,7 @@ describe('EventProcessor', () => {
   
   beforeEach(() => {
     mockWorld = createMockWorld();
-    processor = new EventProcessor(mockWorld as any);
+    processor = new EventProcessor(mockWorld as unknown as WorldModel);
   });
   
   describe('constructor', () => {
@@ -31,7 +32,7 @@ describe('EventProcessor', () => {
     });
     
     it('should create processor with custom options', () => {
-      const customProcessor = new EventProcessor(mockWorld as any, {
+      const customProcessor = new EventProcessor(mockWorld as unknown as WorldModel, {
         validate: false,
         preview: true,
         maxReactionDepth: 5
@@ -81,7 +82,7 @@ describe('EventProcessor', () => {
     });
     
     it('should skip validation when validate option is false', () => {
-      const noValidateProcessor = new EventProcessor(mockWorld as any, {
+      const noValidateProcessor = new EventProcessor(mockWorld as unknown as WorldModel, {
         validate: false
       });
       
@@ -96,7 +97,7 @@ describe('EventProcessor', () => {
     });
     
     it('should capture preview changes when preview option is true', () => {
-      const previewProcessor = new EventProcessor(mockWorld as any, {
+      const previewProcessor = new EventProcessor(mockWorld as unknown as WorldModel, {
         preview: true
       });
       

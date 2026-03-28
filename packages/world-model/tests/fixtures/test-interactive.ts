@@ -76,8 +76,8 @@ export function createConnectedRoomsWithDoor(
   const door = createTestDoor(world, doorName, room1.id, room2.id, doorOptions);
   
   // Set up exits in rooms
-  const room1Trait = room1.getTrait('room') as any;
-  const room2Trait = room2.getTrait('room') as any;
+  const room1Trait = room1.getTrait(RoomTrait)!;
+  const room2Trait = room2.getTrait(RoomTrait)!;
   
   room1Trait.exits = {
     east: { destination: room2.id, via: door.id }

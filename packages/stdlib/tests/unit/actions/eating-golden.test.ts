@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { eatingAction } from '../../../src/actions/standard/eating';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -481,7 +481,7 @@ describe('Testing Pattern Examples for Eating', () => {
       effects: ['well-fed', 'happy']
     });
     
-    const edible = gourmetMeal.getTrait(TraitType.EDIBLE) as any;
+    const edible = gourmetMeal.getTrait(EdibleTrait)!;
     expect(edible.servings).toBe(3);
     expect(edible.taste).toBe('delicious');
     expect(edible.nutrition).toBe(800);
@@ -508,7 +508,7 @@ describe('Testing Pattern Examples for Eating', () => {
         effects
       });
       
-      const edible = food.getTrait(TraitType.EDIBLE) as any;
+      const edible = food.getTrait(EdibleTrait)!;
       expect(edible.effects).toEqual(effects);
     });
   });
@@ -532,7 +532,7 @@ describe('Testing Pattern Examples for Eating', () => {
         taste
       });
       
-      const edible = food.getTrait(TraitType.EDIBLE) as any;
+      const edible = food.getTrait(EdibleTrait)!;
       expect(edible.taste).toBe(taste);
     });
   });
@@ -556,7 +556,7 @@ describe('Testing Pattern Examples for Eating', () => {
         portions
       });
       
-      const edible = food.getTrait(TraitType.EDIBLE) as any;
+      const edible = food.getTrait(EdibleTrait)!;
       expect(edible.servings).toBe(portions);
     });
   });

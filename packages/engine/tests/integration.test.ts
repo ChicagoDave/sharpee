@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameEngine } from '../src/game-engine';
 import { MinimalTestStory, ActionTestStory, CompletionTestStory, ComplexWorldTestStory } from './stories';
 import { TurnResult } from '../src/types';
+import { ISaveData } from '@sharpee/core';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 
 describe('Engine Integration Tests', () => {
@@ -60,7 +61,8 @@ describe('Engine Integration Tests', () => {
       await engine.executeTurn('test');
       
       // Save state (save/load are now private, accessed via saveRestoreService)
-      const savedState = (engine as any).createSaveData();
+      type EnginePrivate = { createSaveData(): ISaveData; loadSaveData(data: ISaveData): void };
+      const savedState = (engine as unknown as EnginePrivate).createSaveData();
       expect(savedState.metadata.turnCount).toBe(2);
 
       engine.stop();
@@ -70,7 +72,7 @@ describe('Engine Integration Tests', () => {
       const newEngine = newSetup.engine;
       newEngine.setStory(story);
 
-      (newEngine as any).loadSaveData(savedState);
+      (newEngine as unknown as EnginePrivate).loadSaveData(savedState);
       newEngine.start();
 
       expect(newEngine.getContext().currentTurn).toBe(savedState.metadata.turnCount + 1);

@@ -166,8 +166,8 @@ describe('ADR-080: Grammar Enhancements', () => {
       const match = matches[0];
       expect(match.slots.get('a')?.text).toBe('mhoram');
       expect(match.slots.get('b')?.text).toBe('dfnobo');
-      expect((match.slots.get('a') as any)?.slotType).toBe(SlotType.TEXT);
-      expect((match.slots.get('b') as any)?.slotType).toBe(SlotType.TEXT);
+      expect(match.slots.get('a')?.slotType).toBe(SlotType.TEXT);
+      expect(match.slots.get('b')?.slotType).toBe(SlotType.TEXT);
     });
   });
 
@@ -197,7 +197,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const match = matches[0];
       expect(match.slots.get('message')?.text).toBe('hello there friend');
-      expect((match.slots.get('message') as any)?.slotType).toBe(SlotType.TEXT_GREEDY);
+      expect(match.slots.get('message')?.slotType).toBe(SlotType.TEXT_GREEDY);
     });
 
     it('should stop greedy consumption at delimiter', () => {
@@ -227,10 +227,10 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const match = matches[0];
       expect(match.slots.get('content')?.text).toBe('hello world');
-      expect((match.slots.get('content') as any)?.slotType).toBe(SlotType.TEXT_GREEDY);
+      expect(match.slots.get('content')?.slotType).toBe(SlotType.TEXT_GREEDY);
       expect(match.slots.get('surface')?.text).toBe('paper');
       // surface is entity slot (default)
-      expect((match.slots.get('surface') as any)?.slotType).toBe(SlotType.ENTITY);
+      expect(match.slots.get('surface')?.slotType).toBe(SlotType.ENTITY);
     });
   });
 
@@ -262,7 +262,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       const match = matches[0];
       expect(match.slots.get('target')?.text).toBe('troll');
       expect(match.slots.get('weapon')?.text).toBe('sword');
-      expect((match.slots.get('weapon') as any)?.slotType).toBe(SlotType.INSTRUMENT);
+      expect(match.slots.get('weapon')?.slotType).toBe(SlotType.INSTRUMENT);
     });
   });
 
@@ -291,7 +291,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const match = matches[0];
       expect(match.slots.get('item')?.text).toBe('all');
-      expect((match.slots.get('item') as any)?.isAll).toBe(true);
+      expect(match.slots.get('item')?.isAll).toBe(true);
     });
 
     it('should parse "all but X" with exclusion', () => {
@@ -318,7 +318,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(matches).toHaveLength(1);
 
       const match = matches[0];
-      const slot = match.slots.get('item') as any;
+      const slot = match.slots.get('item')!;
       expect(slot.text).toBe('all');
       expect(slot.isAll).toBe(true);
       expect(slot.excluded).toBeDefined();
@@ -352,7 +352,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(matches).toHaveLength(1);
 
       const match = matches[0];
-      const slot = match.slots.get('item') as any;
+      const slot = match.slots.get('item')!;
       expect(slot.isAll).toBe(true);
       expect(slot.excluded).toHaveLength(2);
       expect(slot.excluded[0].text).toBe('sword');
@@ -385,7 +385,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(matches).toHaveLength(1);
 
       const match = matches[0];
-      const slot = match.slots.get('item') as any;
+      const slot = match.slots.get('item')!;
       expect(slot.text).toBe('knife and lamp');
       expect(slot.isList).toBe(true);
       expect(slot.items).toHaveLength(2);
@@ -419,7 +419,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(matches).toHaveLength(1);
 
       const match = matches[0];
-      const slot = match.slots.get('item') as any;
+      const slot = match.slots.get('item')!;
       expect(slot.isList).toBe(true);
       expect(slot.items).toHaveLength(3);
       expect(slot.items[0].text).toBe('knife');
@@ -454,7 +454,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(matches).toHaveLength(1);
 
       const match = matches[0];
-      const slot = match.slots.get('item') as any;
+      const slot = match.slots.get('item')!;
       expect(slot.isList).toBe(true);
       expect(slot.items).toHaveLength(2);
       expect(slot.items[0].text).toBe('brass lantern');
@@ -488,7 +488,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       expect(matches).toHaveLength(1);
 
       const match = matches[0];
-      const itemSlot = match.slots.get('item') as any;
+      const itemSlot = match.slots.get('item')!;
       expect(itemSlot.isList).toBe(true);
       expect(itemSlot.items).toHaveLength(2);
       expect(itemSlot.items[0].text).toBe('knife');
@@ -644,7 +644,7 @@ describe('ADR-080: Grammar Enhancements', () => {
       const matches = engine.findMatches(tokens, mirrorContext);
       expect(matches).toHaveLength(1);
       expect(matches[0].slots.get('color')?.text).toBe('red');
-      expect((matches[0].slots.get('color') as any).category).toBe('panel-colors');
+      expect(matches[0].slots.get('color')?.category).toBe('panel-colors');
     });
 
     it('should not match vocabulary slot when category is inactive', () => {
@@ -726,7 +726,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const mannerSlot = matches[0].slots.get('manner');
       expect(mannerSlot?.text).toBe('carefully');
-      expect((mannerSlot as any).manner).toBe('carefully');
+      expect(mannerSlot?.manner).toBe('carefully');
     });
 
     it('should match multiple built-in manner adverbs', () => {
@@ -756,7 +756,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
         const matches = testEngine.findMatches(tokens, context);
         expect(matches.length).toBeGreaterThan(0);
-        expect((matches[0].slots.get('manner') as any).manner).toBe(adverb);
+        expect(matches[0].slots.get('manner')?.manner).toBe(adverb);
       }
     });
 
@@ -795,7 +795,7 @@ describe('ADR-080: Grammar Enhancements', () => {
 
       const matches = engine.findMatches(tokens, context);
       expect(matches).toHaveLength(1);
-      expect((matches[0].slots.get('manner') as any).manner).toBe('recklessly');
+      expect(matches[0].slots.get('manner')?.manner).toBe('recklessly');
     });
 
     it('should not match non-manner words', () => {

@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOffAction } from '../../../src/actions/standard/switching_off';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, SwitchableTrait, LightSourceTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -657,7 +657,7 @@ describe('World State Mutations', () => {
     world.moveEntity(lamp.id, room.id);
 
     // VERIFY PRECONDITION: lamp is on
-    const switchableBefore = lamp.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = lamp.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(true);
 
     const command = createCommand(IFActions.SWITCHING_OFF, {
@@ -670,7 +670,7 @@ describe('World State Mutations', () => {
     switchingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: lamp is now off
-    const switchableAfter = lamp.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = lamp.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(false);
   });
 
@@ -685,7 +685,7 @@ describe('World State Mutations', () => {
     world.moveEntity(timer.id, room.id);
 
     // VERIFY PRECONDITION: timer is on with counter
-    const switchableBefore = timer.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = timer.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(true);
     expect(switchableBefore.autoOffCounter).toBe(60);
 
@@ -699,7 +699,7 @@ describe('World State Mutations', () => {
     switchingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: timer is now off and counter is cleared
-    const switchableAfter = timer.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = timer.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(false);
     expect(switchableAfter.autoOffCounter).toBe(0);
   });
@@ -714,7 +714,7 @@ describe('World State Mutations', () => {
     world.moveEntity(radio.id, room.id);
 
     // VERIFY PRECONDITION: radio is off
-    const switchableBefore = radio.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = radio.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(false);
 
     const command = createCommand(IFActions.SWITCHING_OFF, {
@@ -728,7 +728,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('already_off');
 
     // VERIFY POSTCONDITION: radio is still off (no change)
-    const switchableAfter = radio.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = radio.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(false);
   });
 
@@ -767,8 +767,8 @@ describe('World State Mutations', () => {
     world.moveEntity(flashlight.id, player.id);
 
     // VERIFY PRECONDITION: flashlight is on and lit
-    const switchableBefore = flashlight.get(TraitType.SWITCHABLE) as any;
-    const lightSourceBefore = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    const switchableBefore = flashlight.get(SwitchableTrait)!;
+    const lightSourceBefore = flashlight.get(LightSourceTrait)!;
     expect(switchableBefore.isOn).toBe(true);
     expect(lightSourceBefore.isLit).toBe(true);
 
@@ -782,8 +782,8 @@ describe('World State Mutations', () => {
     switchingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: flashlight is now off AND not lit
-    const switchableAfter = flashlight.get(TraitType.SWITCHABLE) as any;
-    const lightSourceAfter = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    const switchableAfter = flashlight.get(SwitchableTrait)!;
+    const lightSourceAfter = flashlight.get(LightSourceTrait)!;
     expect(switchableAfter.isOn).toBe(false);
     expect(lightSourceAfter.isLit).toBe(false);
   });
@@ -801,7 +801,7 @@ describe('World State Mutations', () => {
     world.moveEntity(computer.id, room.id);
 
     // VERIFY PRECONDITION: computer is on
-    const switchableBefore = computer.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = computer.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(true);
 
     const command = createCommand(IFActions.SWITCHING_OFF, {
@@ -814,7 +814,7 @@ describe('World State Mutations', () => {
     switchingOffAction.execute(context);
 
     // VERIFY POSTCONDITION: computer is now off
-    const switchableAfter = computer.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = computer.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(false);
   });
 });

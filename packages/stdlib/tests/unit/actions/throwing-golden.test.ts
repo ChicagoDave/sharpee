@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, ITrait, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -288,7 +288,7 @@ describe('throwingAction (Golden Pattern)', () => {
       npc.add({
         type: TraitType.ACTOR,
         agility: 8
-      } as any);
+      } as unknown as ITrait);
       world.moveEntity(npc.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -321,7 +321,7 @@ describe('throwingAction (Golden Pattern)', () => {
       child.add({
         type: TraitType.ACTOR,
         canCatch: true
-      } as any);
+      } as unknown as ITrait);
       world.moveEntity(child.id, room.id);
       
       const context = createRealTestContext(throwingAction, world,
@@ -618,7 +618,7 @@ describe('throwingAction (Golden Pattern)', () => {
         });
         
         // Extract fragility check logic from action (matches implementation)
-        const identity = entity.get(TraitType.IDENTITY) as any;
+        const identity = entity.get(IdentityTrait)!;
         const name = identity.name?.toLowerCase() || '';
         const desc = identity.description?.toLowerCase() || '';
         const isFragile = name.includes('glass') || name.includes('fragile') || 

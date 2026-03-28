@@ -1,6 +1,6 @@
 // tests/unit/traits/wearable.test.ts
 
-import { WearableTrait } from '../../../src/traits/wearable/wearableTrait';
+import { WearableTrait, IWearableData } from '../../../src/traits/wearable/wearableTrait';
 import { IFEntity } from '../../../src/entities/if-entity';
 import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
@@ -394,7 +394,7 @@ describe('WearableTrait', () => {
     });
 
     it('should handle undefined as parameter', () => {
-      const trait = new WearableTrait(undefined as any);
+      const trait = new WearableTrait(undefined as unknown as IWearableData);
       
       expect(trait.worn).toBe(false);
       expect(trait.slot).toBe('clothing');

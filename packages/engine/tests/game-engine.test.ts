@@ -7,8 +7,17 @@ import { GameEngine } from '../src/game-engine';
 import { MinimalTestStory } from './stories/minimal-test-story';
 import { createMockAction } from './fixtures/index';
 import { createMockTextService } from '../src/test-helpers/mock-text-service';
-import { EntityType, WorldModel } from '@sharpee/world-model';
+import { EntityType, WorldModel, IFEntity } from '@sharpee/world-model';
+import { ISaveData } from '@sharpee/core';
+import { EngineConfig } from '../src/types';
 import { setupTestEngine, createMinimalStory } from './test-helpers/setup-test-engine';
+
+/** Type alias for accessing private GameEngine methods in tests */
+type EnginePrivate = {
+  createSaveData(): ISaveData;
+  loadSaveData(data: ISaveData): void;
+  config: EngineConfig;
+};
 
 describe('GameEngine', () => {
   let engine: GameEngine;
@@ -178,7 +187,7 @@ describe('GameEngine', () => {
       
       // Override the default max history
       const maxHistory = 3;
-      (limitedEngine as any).config = { maxHistory };
+      (limitedEngine as unknown as EnginePrivate).config = { maxHistory };
       
       // Execute more turns than the limit
       for (let i = 0; i < 5; i++) {
@@ -217,7 +226,7 @@ describe('GameEngine', () => {
       await engine.executeTurn('look');
 
       // Save/load are now private, accessed via saveRestoreService
-      const state = (engine as any).createSaveData();
+      const state = (engine as unknown as EnginePrivate).createSaveData();
 
       expect(state.version).toBe('1.0.0');
       expect(state.metadata.turnCount).toBe(1); // 1 turn executed
@@ -230,14 +239,14 @@ describe('GameEngine', () => {
       await engine.executeTurn('look');
       await engine.executeTurn('inventory');
 
-      const savedState = (engine as any).createSaveData();
+      const savedState = (engine as unknown as EnginePrivate).createSaveData();
       engine.stop();
 
       // Create new engine and load state
       const { engine: newEngine } = setupTestEngine();
       newEngine.setStory(story);
 
-      (newEngine as any).loadSaveData(savedState);
+      (newEngine as unknown as EnginePrivate).loadSaveData(savedState);
       newEngine.start();
 
       const loadedContext = newEngine.getContext();
@@ -272,7 +281,7 @@ describe('GameEngine', () => {
         }
       };
 
-      expect(() => (engine as any).loadSaveData(incompatibleState)).toThrow('Unsupported save version');
+      expect(() => (engine as unknown as EnginePrivate).loadSaveData(incompatibleState as ISaveData)).toThrow('Unsupported save version');
     });
   });
 
@@ -341,7 +350,7 @@ describe('GameEngine', () => {
       
       // Create engine with onEvent callback
       const { engine: configuredEngine } = setupTestEngine();
-      (configuredEngine as any).config = { onEvent: onEventSpy };
+      (configuredEngine as unknown as EnginePrivate).config = { onEvent: onEventSpy };
       configuredEngine.setStory(story);
       configuredEngine.start();
       

@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, IdentityTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -565,7 +565,7 @@ describe('Testing Pattern Examples for Searching', () => {
         concealed: true
       });
       
-      const identity = entity.get(TraitType.IDENTITY) as any;
+      const identity = entity.get(IdentityTrait)!;
       expect(identity.concealed).toBe(true);
     });
   });

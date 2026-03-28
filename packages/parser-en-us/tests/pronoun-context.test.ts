@@ -6,12 +6,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   PronounContextManager,
+  PronounContext,
   isRecognizedPronoun,
   RECOGNIZED_PRONOUNS,
   INANIMATE_IT,
   INANIMATE_THEM
 } from '../src/pronoun-context';
-import { PRONOUNS } from '@sharpee/world-model';
+import { IValidatedCommand, PRONOUNS } from '@sharpee/world-model';
 
 describe('PronounContext', () => {
   describe('isRecognizedPronoun', () => {
@@ -91,7 +92,7 @@ describe('PronounContext', () => {
         };
 
         // Manually set context for testing
-        const context = manager.getContext() as any;
+        const context = manager.getContext() as PronounContext;
         context.it = { entityId: 'lamp', text: 'the lamp', turnNumber: 1 };
 
         const result = manager.resolve('it');
@@ -102,7 +103,7 @@ describe('PronounContext', () => {
       });
 
       it('should resolve "him" to he/him actor', () => {
-        const context = manager.getContext() as any;
+        const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('him', {
           entityId: 'bob',
           text: 'Bob',
@@ -116,7 +117,7 @@ describe('PronounContext', () => {
       });
 
       it('should resolve "her" to she/her actor', () => {
-        const context = manager.getContext() as any;
+        const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('her', {
           entityId: 'alice',
           text: 'Alice',
@@ -130,7 +131,7 @@ describe('PronounContext', () => {
       });
 
       it('should resolve "them" to plural inanimate first', () => {
-        const context = manager.getContext() as any;
+        const context = manager.getContext() as PronounContext;
         context.them = [
           { entityId: 'coin1', text: 'gold coin', turnNumber: 1 },
           { entityId: 'coin2', text: 'silver coin', turnNumber: 1 }
@@ -142,7 +143,7 @@ describe('PronounContext', () => {
       });
 
       it('should resolve "them" to they/them actor when no plural', () => {
-        const context = manager.getContext() as any;
+        const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('them', {
           entityId: 'sam',
           text: 'Sam',
@@ -156,7 +157,7 @@ describe('PronounContext', () => {
       });
 
       it('should resolve neopronouns', () => {
-        const context = manager.getContext() as any;
+        const context = manager.getContext() as PronounContext;
         context.animateByPronoun.set('xem', {
           entityId: 'alex',
           text: 'Alex',
@@ -172,7 +173,7 @@ describe('PronounContext', () => {
 
     describe('reset', () => {
       it('should clear all pronoun references', () => {
-        const context = manager.getContext() as any;
+        const context = manager.getContext() as PronounContext;
         context.it = { entityId: 'lamp', text: 'lamp', turnNumber: 1 };
         context.animateByPronoun.set('him', { entityId: 'bob', text: 'Bob', turnNumber: 1 });
 
@@ -272,16 +273,19 @@ describe('PronounContext', () => {
     describe('lastCommand', () => {
       it('should store last command for "again" support', () => {
         const mockCommand = {
-          rawInput: 'take lamp',
-          action: 'if.action.taking',
-          structure: {}
-        } as any;
+          parsed: {
+            rawInput: 'take lamp',
+            action: 'if.action.taking',
+            structure: {}
+          },
+          actionId: 'if.action.taking'
+        } as unknown as IValidatedCommand;
 
         const mockWorld = { getEntity: () => null };
 
         manager.updateFromCommand(mockCommand, mockWorld, 1);
 
-        expect(manager.getLastCommand()).toBe(mockCommand);
+        expect(manager.getLastCommand()).toBe(mockCommand.parsed);
       });
     });
   });

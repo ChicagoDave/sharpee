@@ -24,7 +24,7 @@ describe('Verify moveEntity issue', () => {
     const moved = world.moveEntity(medicine.id, cabinet.id);
 
     // Now open the cabinet and try again
-    const openable = cabinet.getTrait('openable') as any;
+    const openable = cabinet.getTrait(OpenableTrait)!;
     openable.isOpen = true;
 
     const moved2 = world.moveEntity(medicine.id, cabinet.id);

@@ -570,8 +570,8 @@ describe('WorldModel', () => {
       roomC.add(new RoomTrait());
 
       // Set up exits
-      const roomATrait = roomA.getTrait(TraitType.ROOM) as any;
-      const roomBTrait = roomB.getTrait(TraitType.ROOM) as any;
+      const roomATrait = roomA.getTrait(RoomTrait)!;
+      const roomBTrait = roomB.getTrait(RoomTrait)!;
 
       roomATrait.exits = { east: { destination: roomB.id } };
       roomBTrait.exits = {
