@@ -24,7 +24,7 @@ original numbers.
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
 | ISSUE-062 | Fuse `skipNextTick` behavior undocumented at API level | Low | plugin-scheduler | 2026-03-24 | - |
-| ISSUE-063 | ~~`as any` regression — stories/ cleanup complete (40/42 removed), 2 remaining were ISSUE-068 tags~~ | High | platform-wide | 2026-03-26 | **DONE** 2026-03-27 (PR #64 + ISSUE-068) |
+| ISSUE-063 | ~~`as any` elimination — all source + test files clean, ESLint guard added~~ | High | platform-wide | 2026-03-26 | **DONE** 2026-03-27 (PR #64, #66) |
 | ISSUE-064 | VisibilityBehavior has 3 duplicate container-walk traversals | Medium | world-model | 2026-03-26 | - |
 | ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
@@ -106,6 +106,32 @@ Closed — this is an ongoing release workflow concern, not a tracked issue. Zif
 **Status**: Deferred 2026-03-26
 
 Deferred — the transcript-tester's logic gates (DO-UNTIL, WHILE, ENSURES) handle randomness and alternate paths as live tests, which is a better approach than seeding a PRNG. Revisit only if logic gates prove insufficient.
+
+---
+
+### ISSUE-063: Eliminate all `as any` casts
+
+**Reported**: 2026-03-26
+**Severity**: High
+**Component**: Platform-wide (all packages)
+**Status**: Fixed 2026-03-27 (PRs #64, #66)
+
+All `as any` casts eliminated from both source and test files across all packages. Completed in 9 phases. Source files: 0 unjustified casts (3 documented justified exceptions). Test files: 0 casts (527 eliminated in Phase 9). Dead `packages/core/src/rules/` subsystem removed. ESLint `no-explicit-any: "warn"` override added for regression prevention.
+
+**Key fix**: `getTrait(TraitType.X) as any` → `getTrait(XTrait)!` (typed constructor pattern).
+
+---
+
+### ISSUE-068: Entity `on` handler system
+
+**Reported**: 2026-03-27
+**Severity**: Medium
+**Component**: Platform (world-model, event-processor, engine) + stories
+**Status**: Fixed 2026-03-27
+
+The entire entity `on` handler system was removed. All 19 entity handlers were replaced by existing patterns (capability behaviors, action interceptors, story-level event handlers). Type infrastructure (`LegacyEntityEventHandler`, `AnyEventHandler`, `IEventHandlers`, `on?` on IFEntity) removed.
+
+**Branch**: issue-068-event-handler-types
 
 ---
 
@@ -207,107 +233,6 @@ This reduces 10 rules to 1, and new subsystems require only a vocabulary entry r
 **Priority**: Low — the current rules work fine. This is a maintainability improvement. The trace system is rarely modified.
 
 **Dungeo blast radius**: None. No Dungeo transcripts use trace commands. The trace system is author/debug-only and not exercised by walkthroughs or unit transcripts. Safe to refactor without story-side testing.
-
----
-
-## Open Issues — Platform Type Safety
-
-### ISSUE-063: `as any` regression — Phases 1+2A+2B complete, 200 remaining in source files
-
-**Reported**: 2026-03-26
-**Severity**: High
-**Component**: Platform-wide (all packages)
-**Type**: Tech debt / type safety regression
-**Status**: In progress (branch `issue-063-as-any-cleanup`)
-
-**Description**:
-A previous refactor removed all `as any` casts from the codebase. They have regressed significantly. This undermines TypeScript's type safety guarantees and has been a source of bugs (the "dropping bug" was caused by actions that appeared to work because types weren't enforced).
-
-**Key discovery**: `getTrait` is already generic — passing a trait constructor (e.g., `getTrait(OpenableTrait)`) infers the return type automatically. No platform redesign needed; the fix is updating callers to use the constructor pattern instead of `getTrait(TraitType.X) as any`.
-
-**Phase 1 complete (2026-03-26)**: Cleaned 8 worst-offender source files (61 casts removed, 319 → 258). Also fixed `requiredKey` → `keyId` bug in `AuthorModel.setupContainer()` and removed duplicate `Direction` type from NPC system.
-
-**Phase 2A complete (2026-03-26)**: Removed legacy event sequencing layer — deleted 4 files, modified 32 files, net -861 lines. Eliminated ~25 `as any` casts related to `SequencedEvent` wrapping/unwrapping (258 → ~211).
-
-**Phase 2B complete (2026-03-27)**: Eliminated all 11 remaining `as any` casts in `game-engine.ts` (now 0). Fixes: removed unnecessary casts where types already existed (`entity.on`, `parser.setWorldContext`), fixed `Set<Function>` → typed callbacks, created `IEngineAwareLanguageProvider` with type guard, added public `validateCommand()` on `CommandExecutor`, used `StoryInfoTrait` constructor pattern, removed dead `versionInfo` fallback, narrowed `as any[]` → `as Effect[]`. Count: 211 → 200.
-
-**Remaining phases**: Phase 3 (story files), Phase 4 (test files), Phase 5 (CI enforcement).
-
-**Worst offenders (source files, updated 2026-03-27)**:
-
-| File | Count | Notes |
-|------|-------|-------|
-| `stdlib/src/actions/standard/drinking/drinking.ts` | 22 | Action implementation |
-| `stdlib/src/actions/base/snapshot-utils.ts` | 15 | Action utilities |
-| `world-model/src/traits/edible/edibleBehavior.ts` | 13 | Trait behavior |
-| `parser-en-us/src/english-parser.ts` | 11 | Parser core |
-| `parser-en-us/src/scope-evaluator.ts` | 7 | Scope evaluation |
-| `stdlib/src/actions/standard/taking/taking.ts` | 7 | Action implementation |
-| `stdlib/src/actions/standard/examining/examining-data.ts` | 7 | Action data |
-| `stdlib/src/scope/scope-resolver.ts` | 6 | Scope resolution |
-| `stdlib/src/actions/standard/looking/looking-data.ts` | 6 | Action data |
-| `stdlib/src/actions/standard/version/version.ts` | 5 | Version action |
-| `engine/src/game-engine.ts` | 0 | **Cleared** (was 32) |
-
-**Worst offenders (test files)** — tests are lower priority but should still be typed:
-
-| File | Count |
-|------|-------|
-| `world-model/tests/integration/room-navigation.test.ts` | 53 |
-| `world-model/tests/integration/door-mechanics.test.ts` | 50 |
-| `world-model/tests/integration/trait-combinations.test.ts` | 46 |
-| `world-model/tests/integration/visibility-chains.test.ts` | 23 |
-| `stdlib/tests/unit/actions/taking-golden.test.ts.template` | 21 |
-| `stdlib/tests/unit/actions/report-helpers.test.ts` | 21 |
-| `parser-en-us/tests/adr-080-grammar-enhancements.test.ts` | 17 |
-| `world-model/tests/unit/world/visibility-behavior.test.ts` | 17 |
-
-**Root cause**: Most `as any` casts are for trait property access — `getTrait()` returns a base `ITrait` and callers cast to access typed properties. A generic `getTrait<T extends ITrait>(type): T | undefined` would eliminate most of these structurally.
-
-**Approach**: This should be tackled in phases:
-1. **Phase 1**: Fix `getTrait` typing so trait access doesn't require casts (structural fix, biggest impact)
-2. **Phase 2**: Clean up source files by count — game-engine.ts, VisibilityBehavior.ts, drinking.ts, WorldModel.ts
-3. **Phase 3**: Clean up test files (lower priority, but prevents regression)
-4. **Phase 4**: Add a CI lint rule to prevent new `as any` introductions
-
-**CLAUDE.md note**: The project already prohibits `as any`. This issue tracks the enforcement gap.
-
-**Dungeo blast radius**: **73 occurrences across 42 story files**. Categories:
-
-| Pattern | Count | Files | Examples |
-|---------|-------|-------|----------|
-| Trait property access via cast | ~20 | behaviors, handlers, interceptors | `(openable as any).isOpen`, `(npcTrait as any).customProperties` |
-| `sharedData as any` in actions | ~10 | puzzle-move, puzzle-take-card, gdt, say | Passing data between action phases |
-| Direct attribute mutation | ~8 | inflate, deflate, interceptors | `(boat as any).attributes.displayName` |
-| GDT debug entity inspection | ~10 | gdt/commands/de.ts, kl.ts | `(entity as any).isOpen`, `(entity as any).portable` |
-| Ad-hoc state via `as any` | ~15 | traits (comment-only, replaced by proper traits) | Comments documenting old anti-patterns |
-| `world as any` | ~3 | press-button, commanding | Passing world to untyped functions |
-
-The story-side `as any` casts fall into two groups: (1) casts that exist because the platform's `getTrait()` isn't generic (same root cause as platform), and (2) casts that set ad-hoc properties on entities — most of these were already refactored into proper traits (the `as any` references in trait files are in doc comments showing the old anti-pattern). The GDT debug commands (`de.ts`) are the worst offender with 10 casts for entity property inspection.
-
----
-
-### ISSUE-068: Entity `on` handler system — RESOLVED
-
-**Reported**: 2026-03-27
-**Resolved**: 2026-03-27
-**Severity**: Medium
-**Component**: Platform (world-model, event-processor, engine) + stories
-**Type**: Tech debt / dead architecture
-
-**Resolution**: The entire entity `on` handler system was removed rather than fixed. A deep audit revealed the system was vestigial — all 19 entity handlers could be replaced by existing patterns (capability behaviors, action interceptors, story-level event handlers). Completed across 9 phases:
-
-- Phases 2-4: Migrated troll give/throw (capability behaviors), troll knocked_out (melee interceptor), rug pushed (RugPushInterceptor)
-- Phase 1 (unblocked): Window/trapdoor descriptions → story-level event handlers with attribute-based opt-in
-- Phases 5-6: Removed remaining troll handlers (including dead death handler)
-- Phase 7: Removed entity `on` dispatch from EventProcessor + GameEngine
-- Phase 8: Removed type infrastructure (`LegacyEntityEventHandler`, `AnyEventHandler`, `IEventHandlers`, `on?` on IFEntity, stdlib helpers.ts)
-- Phase 9: Cleaned up kl.ts, removed event-handler-demo story
-
-**Branch**: issue-068-event-handler-types
-**Plan**: docs/work/issues/plans/issue-068-plan.md
-
-**Priority**: Medium — blocks clean completion of ISSUE-063 Phase 3 Group 2 (kl.ts). Can be done as a quick focused PR.
 
 ---
 

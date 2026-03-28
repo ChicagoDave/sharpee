@@ -13,10 +13,10 @@
 
 ## Completed
 
-### CI Lint Rule to Prevent Regression
+### ESLint Guard to Prevent Regression
 - Added `@typescript-eslint/no-explicit-any: "warn"` override in root `.eslintrc.js` scoped to `packages/*/src/**/*.ts` (excluding test files)
 - Removed `"@typescript-eslint/no-explicit-any": "off"` from `packages/core/.eslintrc.json` so core inherits the root warning
-- Added CI check step in `.github/workflows/build-platforms.yml` that fails on unjustified `as any` casts in source files (excludes test files, transcript-tester, comments, and lines marked "as any: justified")
+- Core lint: 43 warnings → 19 warnings after dead code removal
 
 ### Dead `rules/` Subsystem Removal from `packages/core`
 - Deleted 8 source files in `packages/core/src/rules/` (compatibility.ts, condition-builder.ts, helpers.ts, index.ts, rule-system.ts, rule-world-adapter.ts, simple-rule-system.ts, types.ts)
@@ -46,8 +46,8 @@ Work parallelized across 4 agent sub-tasks by package group:
 
 ## Key Decisions
 
-### 1. CI Guard Scoped to Source Files Only
-Test files excluded from the CI `as any` check — the patterns in test files are often legitimately pragmatic (mock objects, `as unknown as Interface`). Keeping the guard on source files only gives enforcement where it matters most and avoids false positives in test infrastructure.
+### 1. ESLint Guard Scoped to Source Files Only
+The `no-explicit-any: "warn"` override targets only `packages/*/src/**/*.ts` (non-test). Test files are excluded — the patterns in test files are often legitimately pragmatic (mock objects, `as unknown as Interface`). A CI workflow step was initially added but reverted due to GitHub PAT token scope requirements.
 
 ### 2. Dead `rules/` Subsystem Deleted Outright
 The rules system had zero callers outside its own files. Rather than refactoring it to remove casts, it was deleted entirely — removing ~30 casts in one step and reducing package size. This was safe because no production or test path referenced it.
@@ -61,6 +61,9 @@ Six fix patterns were standardized and applied uniformly:
 5. `event.data as any` → `event.data as Record<string, unknown>`
 6. `(engine as any).privateField` → `(engine as unknown as { field: Type }).field`
 
+### Issues List Updated
+- `docs/work/issues/issues-list-04.md` — ISSUE-063 and ISSUE-068 moved from "Open" to "Fixed" sections with resolution summaries
+
 ## Next Phase
 Plan complete — all phases done. ISSUE-063 is closed.
 
@@ -72,14 +75,13 @@ Plan complete — all phases done. ISSUE-063 is closed.
 
 ### Long Term
 - Periodically run `npx eslint --quiet packages/*/src/**/*.ts` to verify no new unjustified casts accumulate
-- The CI check on `build-platforms.yml` is the primary guard going forward
+- Consider re-adding CI workflow check when GitHub PAT has `workflow` scope
 
 ## Files Modified
 
-**CI/ESLint configuration** (3 files):
+**ESLint configuration** (2 files):
 - `.eslintrc.js` — added `no-explicit-any: "warn"` override for package source files
 - `packages/core/.eslintrc.json` — removed `"@typescript-eslint/no-explicit-any": "off"` override
-- `.github/workflows/build-platforms.yml` — added lint check step
 
 **packages/core — dead code removed** (1 source file + ~11 deleted files):
 - `packages/core/src/index.ts` — removed rules re-export
