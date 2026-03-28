@@ -823,12 +823,12 @@ build_browser_client() {
     mkdir -p "$OUTDIR"
 
     # Bundle
-    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\""
+    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --conditions=require --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\""
 
     # Copy HTML template
     if [ -f "templates/browser/index.html" ]; then
         cp templates/browser/index.html "$OUTDIR/"
-        sed -i '' "s/{{TITLE}}/${STORY_NAME}/g" "$OUTDIR/index.html"
+        sed -i "s/{{TITLE}}/${STORY_NAME}/g" "$OUTDIR/index.html"
         log_ok "html"
     fi
 
