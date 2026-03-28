@@ -1130,11 +1130,6 @@ export declare class GameEngine {
      */
     private emit;
     /**
-     * Dispatch an event to entity handlers (entity.on)
-     * Entities can define handlers for specific event types
-     */
-    private dispatchEntityHandlers;
-    /**
      * Check if game is over
      */
     private isGameOver;

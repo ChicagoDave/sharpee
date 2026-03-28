@@ -15,7 +15,15 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, IdentityBehavior } from '@sharpee/world-model';
+import {
+  TraitType,
+  IdentityBehavior,
+  findTraitWithCapability,
+  getBehaviorForCapability,
+  CapabilityBehavior,
+  CapabilityEffect,
+  ITrait
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
 
@@ -30,10 +38,17 @@ interface GivingSharedData {
   acceptanceType: 'normal' | 'grateful' | 'reluctant';
   messageId: string;
   params: Record<string, any>;
+  /** ADR-090: capability behavior that handled this give (if any) */
+  capabilityBehavior?: CapabilityBehavior;
+  capabilityTrait?: ITrait;
 }
 
 function getGivingSharedData(context: ActionContext): GivingSharedData {
   return context.sharedData as GivingSharedData;
+}
+
+function effectsToEvents(effects: CapabilityEffect[], context: ActionContext): ISemanticEvent[] {
+  return effects.map(effect => context.event(effect.type, effect.payload));
 }
 
 export const givingAction: Action & { metadata: ActionMetadata } = {
@@ -184,7 +199,19 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     sharedData.recipientId = recipient.id;
     sharedData.recipientName = recipient.name;
 
-    // Actually transfer the item from actor to recipient
+    // Check if recipient has a capability behavior for giving (ADR-090)
+    const capTrait = findTraitWithCapability(recipient, IFActions.GIVING);
+    if (capTrait) {
+      const behavior = getBehaviorForCapability(capTrait, IFActions.GIVING);
+      if (behavior) {
+        sharedData.capabilityBehavior = behavior;
+        sharedData.capabilityTrait = capTrait;
+        behavior.execute(recipient, context.world, context.player.id, context.sharedData);
+        return;
+      }
+    }
+
+    // Standard: transfer item from actor to recipient
     context.world.moveEntity(item.id, recipient.id);
 
     // Determine acceptance type based on preferences
@@ -262,7 +289,19 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Emit given event with messageId for text rendering
+    // If capability behavior handled the give, delegate report to it
+    if (sharedData.capabilityBehavior) {
+      const recipient = context.command.indirectObject?.entity;
+      if (recipient) {
+        const effects = sharedData.capabilityBehavior.report(
+          recipient, context.world, context.player.id, context.sharedData
+        );
+        events.push(...effectsToEvents(effects, context));
+      }
+      return events;
+    }
+
+    // Standard: emit given event with messageId for text rendering
     events.push(context.event('if.event.given', {
       messageId: `${context.action.id}.${sharedData.messageId}`,
       params: sharedData.params,

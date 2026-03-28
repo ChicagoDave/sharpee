@@ -26,9 +26,7 @@ import {
   LockableTrait,
   WeaponTrait
 } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
 import { TrollAxeTrait, TrollTrait, TreasureTrait, TinyRoomDoorTrait, TinyRoomKeyTrait, RopeStateTrait } from '../traits';
-import { TrollMessages } from '../npcs/troll';
 
 export interface UndergroundRoomIds {
   cellar: string;
@@ -227,12 +225,6 @@ export function connectStudioToKitchen(world: WorldModel, ids: UndergroundRoomId
 // OBJECTS - Created near their default room locations
 // ============================================================================
 
-// Simple ID generator for events
-let eventCounter = 0;
-function generateEventId(): string {
-  return `evt-${Date.now()}-${++eventCounter}`;
-}
-
 /**
  * Create all objects in the Underground region
  */
@@ -279,12 +271,8 @@ function createCellarObjects(world: WorldModel, roomId: string): void {
 
 // ============= Troll Room Objects =============
 
-// Troll descriptions from MDL source (dung.355)
+// Troll description from MDL source (dung.355)
 const TROLLDESC = 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the northern passage.';
-const TROLLOUT = 'An unconscious troll is sprawled on the floor. All passages out of the room are open.';
-
-// Recovery time: 4 turns (MDL original was ~5; 4 accounts for GDT command turns consuming daemon ticks)
-const TROLL_RECOVERY_TURNS = 4;
 
 function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   // Bloody axe - create first so we have the ID for troll trait
@@ -339,191 +327,10 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
   axe.add(new TrollAxeTrait({ guardianId: troll.id }));
   world.moveEntity(axe.id, troll.id);
 
-  // Get troll room reference for event handlers
-  const trollRoom = world.getEntity(roomId);
-
-  // Helper: Check if item is a knife
-  function isKnife(entity: IFEntity | undefined): boolean {
-    if (!entity) return false;
-    const identity = entity.get?.(IdentityTrait);
-    if (!identity) return false;
-    const name = identity.name?.toLowerCase() || '';
-    const aliases = (identity.aliases || []).map((a: string) => a.toLowerCase());
-    return [name, ...aliases].some(n => n.includes('knife') || n.includes('stiletto'));
-  }
-
-  // Event handlers for troll state changes and interactions
-  troll.on = {
-    // Knocked out handler (OUT!) - MDL act1.254
-    // Fires when troll is knocked unconscious via combat
-    'if.event.knocked_out': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-
-      // Update description to TROLLOUT
-      const identity = troll.get(IdentityTrait);
-      if (identity) {
-        identity.description = TROLLOUT;
-      }
-
-      // Unblock north exit
-      if (trollRoom) {
-        RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
-      }
-
-      // Set recovery turns
-      const combatant = troll.get(CombatantTrait);
-      if (combatant) {
-        combatant.recoveryTurns = TROLL_RECOVERY_TURNS;
-      }
-
-      // Sync NpcTrait consciousness (NPC service checks NpcTrait.canAct separately)
-      const npcTrait = troll.get(NpcTrait);
-      if (npcTrait) {
-        npcTrait.isConscious = false;
-      }
-
-      // Note: Axe visibility is handled by TrollAxeVisibilityBehavior
-      // which checks combatant.isAlive && !combatant.isConscious
-
-      return events;
-    },
-
-    // Death handler - troll disappears in smoke (Zork I commercial behavior)
-    'if.event.death': (_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-
-      // Only handle troll's death, not other entities
-      if ((_event.data as Record<string, unknown>)?.target !== troll.id) return events;
-
-      // Unblock passage
-      if (trollRoom) {
-        RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
-      }
-
-      // Add score (NOTE: .on handlers are dead code — scoring handled by melee interceptor)
-      w.awardScore('troll-killed', 10, 'Defeated the troll');
-
-      // Show smoke disappear message
-      events.push({
-        id: generateEventId(),
-        type: 'game.message',
-        entities: {},
-        data: { messageId: TrollMessages.SMOKE_DISAPPEAR },
-        timestamp: Date.now(),
-        narrate: true
-      });
-
-      // Remove troll and axe from the game
-      // (Zork I commercial: "the carcass has disappeared")
-      world.removeEntity(axe.id);
-      world.removeEntity(troll.id);
-
-      return events;
-    },
-
-    // GIVE item TO TROLL - MDL act1.254
-    // Troll catches items: eats non-knife, throws knife back
-    'if.event.given': (event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-      const data = event.data as { item: string; recipient: string };
-
-      // Only handle items given to this troll
-      if (data.recipient !== troll.id) return events;
-
-      const item = w.getEntity(data.item);
-      if (!item) return events;
-
-      if (isKnife(item)) {
-        // Knife: troll throws it back to the floor
-        world.moveEntity(item.id, roomId);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.THROWS_KNIFE_BACK,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      } else {
-        // Non-knife: troll eats it (destroy the item)
-        world.removeEntity(item.id);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.EATS_ITEM,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      }
-
-      return events;
-    },
-
-    // THROW item AT TROLL - MDL act1.254
-    // Same behavior as giving - troll catches items
-    'if.event.thrown': (event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => {
-      const events: ISemanticEvent[] = [];
-      const data = event.data as { item: string; target?: string; throwType: string };
-
-      // Only handle items thrown at this troll
-      if (data.target !== troll.id || data.throwType !== 'at_target') return events;
-
-      const item = w.getEntity(data.item);
-      if (!item) return events;
-
-      // Troll catches it first
-      events.push({
-        id: generateEventId(),
-        type: 'game.message',
-        entities: { target: troll.id, instrument: item.id },
-        data: {
-          messageId: TrollMessages.CATCHES_ITEM,
-          itemName: item.name
-        },
-        timestamp: Date.now(),
-        narrate: true
-      });
-
-      if (isKnife(item)) {
-        // Knife: troll throws it back to the floor
-        world.moveEntity(item.id, roomId);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.THROWS_KNIFE_BACK,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      } else {
-        // Non-knife: troll eats it
-        world.removeEntity(item.id);
-        events.push({
-          id: generateEventId(),
-          type: 'game.message',
-          entities: { target: troll.id, instrument: item.id },
-          data: {
-            messageId: TrollMessages.EATS_ITEM,
-            itemName: item.name
-          },
-          timestamp: Date.now(),
-          narrate: true
-        });
-      }
-
-      return events;
-    }
-  };
+  // All troll entity `on` handlers removed (ISSUE-068):
+  // - knocked_out → MeleeInterceptor (Phase 3)
+  // - give/throw → TrollReceivingBehavior (Phase 2)
+  // - death → dead code, removed (Phase 5/6) — scoring/removal handled by MeleeInterceptor.handleVillainDeath
 }
 
 // ============= Gallery Objects =============

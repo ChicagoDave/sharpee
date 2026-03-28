@@ -15,7 +15,7 @@ import {
   createWorldQuery,
   WorldQuery
 } from './effects';
-import type { IGameEvent, StoryEventHandler, AnyEventHandler } from './handler-types';
+import type { IGameEvent, StoryEventHandler } from './handler-types';
 
 // Re-export for convenience
 export type { StoryEventHandler, IGameEvent } from './handler-types';
@@ -221,23 +221,10 @@ export class EventProcessor {
   }
 
   /**
-   * Check if a result is an array of Effects (ADR-075 pattern)
-   */
-  private isEffectArray(result: unknown): result is Effect[] {
-    if (!Array.isArray(result) || result.length === 0) return false;
-    // Check first element for Effect signature (has 'type' that's one of our effect types)
-    const first = result[0];
-    if (typeof first !== 'object' || first === null) return false;
-    const effectTypes = ['score', 'flag', 'message', 'emit', 'schedule', 'unblock', 'block', 'move_entity', 'update_entity', 'set_state', 'update_exits'];
-    return 'type' in first && effectTypes.includes((first as { type: string }).type);
-  }
-
-  /**
-   * Invoke entity and story handlers for an event (ADR-075)
+   * Invoke story handlers for an event (ADR-075)
    *
-   * Collects effects from all handlers and processes them through EffectProcessor.
-   * Supports multiple handlers per event type.
-   * Also supports legacy handlers that return ISemanticEvent[] during migration.
+   * Collects effects from all story-level handlers and processes them
+   * through EffectProcessor. Entity `on` handlers were removed in ISSUE-068.
    */
   private invokeEntityHandlers(event: ISemanticEvent): ISemanticEvent[] {
     const allEffects: Effect[] = [];
@@ -249,40 +236,7 @@ export class EventProcessor {
       data: (event.data as Record<string, unknown>) || {}
     };
 
-    // 1. Invoke entity handlers on the target entity
-    if (event.entities?.target) {
-      const target = this.world.getEntity(event.entities.target);
-      if (target?.on?.[event.type]) {
-        const handlerOrHandlers = target.on[event.type];
-        const handlers = Array.isArray(handlerOrHandlers)
-          ? handlerOrHandlers
-          : [handlerOrHandlers];
-
-        for (const handler of handlers) {
-          try {
-            // Try calling with WorldQuery first (ADR-075 pattern)
-            const result = handler(gameEvent, this.worldQuery);
-
-            if (result && Array.isArray(result)) {
-              if (this.isEffectArray(result)) {
-                // ADR-075 Effect-returning handler
-                allEffects.push(...result);
-              } else {
-                // Legacy handler returning ISemanticEvent[]
-                legacyReactions.push(...(result as ISemanticEvent[]));
-              }
-            }
-          } catch (error) {
-            console.error(
-              `Entity handler error for ${event.type} on ${target.id}:`,
-              error instanceof Error ? error.message : error
-            );
-          }
-        }
-      }
-    }
-
-    // 2. Invoke story-level handlers (ADR-075 only - use registerHandler)
+    // Invoke story-level handlers (ADR-075 — use registerHandler)
     const storyHandlers = this.storyHandlers.get(event.type);
     if (storyHandlers) {
       for (const handler of storyHandlers) {

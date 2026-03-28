@@ -18,16 +18,9 @@ import {
   ContainerTrait,
   OpenableTrait,
   ReadableTrait,
-  SceneryTrait,
-  IGameEvent
+  SceneryTrait
 } from '@sharpee/world-model';
 import { UnderDoorTrait } from '../traits';
-
-// Simple ID generator for events
-let eventCounter = 0;
-function generateEventId(): string {
-  return `evt-${Date.now()}-${++eventCounter}`;
-}
 
 export interface WhiteHouseRoomIds {
   westOfHouse: string;
@@ -309,31 +302,9 @@ function createWindow(world: WorldModel): IFEntity {
   window.add(new OpenableTrait({
     isOpen: false  // Starts "slightly ajar" but not fully open
   }));
-
-  // Update description when opened/closed
-  window.on = {
-    'if.event.opened': (event: IGameEvent) => {
-      const identity = window.get(IdentityTrait);
-      if (identity) {
-        identity.description = 'The window is open.';
-      }
-      return [{
-        id: generateEventId(),
-        type: 'game.message',
-        entities: { actor: event.entities.actor, target: window.id },
-        data: { messageId: 'dungeo.window.opened' },
-        timestamp: Date.now(),
-        narrate: true
-      }];
-    },
-    'if.event.closed': (event: IGameEvent) => {
-      const identity = window.get(IdentityTrait);
-      if (identity) {
-        identity.description = 'The window is slightly ajar, but not enough to allow entry.';
-      }
-      return [];
-    }
-  };
+  // Description auto-switching via openable-description-handler (ISSUE-068)
+  window.attributes.openDescription = 'The window is open.';
+  window.attributes.closedDescription = 'The window is slightly ajar, but not enough to allow entry.';
 
   return window;
 }

@@ -20,21 +20,14 @@ import {
   SwitchableTrait,
   PushableTrait,
   RoomBehavior,
-  WeaponTrait,
-  IGameEvent
+  WeaponTrait
 } from '@sharpee/world-model';
-import { TrophyCaseTrait, BurnableTrait } from '../traits';
+import { TrophyCaseTrait, BurnableTrait, RugTrait } from '../traits';
 
 export interface HouseInteriorRoomIds {
   kitchen: string;
   livingRoom: string;
   attic: string;
-}
-
-// Simple ID generator for events
-let eventCounter = 0;
-function generateEventId(): string {
-  return `evt-${Date.now()}-${++eventCounter}`;
 }
 
 function createRoom(world: WorldModel, name: string, description: string, isDark = false): IFEntity {
@@ -257,34 +250,9 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
   }));
   trapdoor.add(new OpenableTrait({ isOpen: false }));
   trapdoor.add(new SceneryTrait());
-
-  // Handle trap door opening - update description and provide custom message
-  trapdoor.on = {
-    'if.event.opened': (event: IGameEvent) => {
-      // Update description to reflect open state
-      const identity = trapdoor.get(IdentityTrait);
-      if (identity) {
-        identity.description = 'The trap door is open, revealing a rickety staircase descending into darkness.';
-      }
-      // Return custom message for opening
-      return [{
-        id: generateEventId(),
-        type: 'game.message',
-        entities: { actor: event.entities.actor, target: trapdoor.id },
-        data: { messageId: 'dungeo.trapdoor.opened' },
-        timestamp: Date.now(),
-        narrate: true
-      }];
-    },
-    'if.event.closed': (event: IGameEvent) => {
-      // Update description back to closed state
-      const identity = trapdoor.get(IdentityTrait);
-      if (identity) {
-        identity.description = 'The dusty cover of a closed trap door.';
-      }
-      return [];
-    }
-  };
+  // Description auto-switching via openable-description-handler (ISSUE-068)
+  trapdoor.attributes.openDescription = 'The trap door is open, revealing a rickety staircase descending into darkness.';
+  trapdoor.attributes.closedDescription = 'The dusty cover of a closed trap door.';
 
   const rug = world.createEntity('oriental rug', EntityType.SCENERY);
   rug.add(new IdentityTrait({
@@ -296,38 +264,10 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
   }));
   rug.add(new SceneryTrait());
   rug.add(new PushableTrait({ pushType: 'moveable', repeatable: false, state: 'default' }));
-
-  rug.on = {
-    'if.event.pushed': (event: IGameEvent) => {
-      const pushable = rug.get(PushableTrait);
-      if (pushable && pushable.state === 'pushed') {
-        return [];
-      }
-      world.moveEntity(trapdoor.id, livingRoomId);
-      if (cellarId) {
-        const livingRoom = world.getEntity(livingRoomId);
-        if (livingRoom) {
-          RoomBehavior.setExit(livingRoom, Direction.DOWN, cellarId, trapdoor.id);
-        }
-        // Also set the UP exit from Cellar to Living Room via trapdoor
-        const cellar = world.getEntity(cellarId);
-        if (cellar) {
-          RoomBehavior.setExit(cellar, Direction.UP, livingRoomId, trapdoor.id);
-        }
-      }
-      if (pushable) {
-        pushable.state = 'pushed';
-      }
-      return [{
-        id: generateEventId(),
-        type: 'game.message',
-        entities: { actor: event.entities.actor, target: trapdoor.id, location: livingRoomId },
-        data: { messageId: 'dungeo.rug.moved.reveal_trapdoor' },
-        timestamp: Date.now(),
-        narrate: true
-      }];
-    }
-  };
+  // RugTrait stores entity references for the RugPushInterceptor (ISSUE-068 Phase 4)
+  if (cellarId) {
+    rug.add(new RugTrait({ trapdoorId: trapdoor.id, cellarId }));
+  }
 
   world.moveEntity(rug.id, livingRoomId);
 

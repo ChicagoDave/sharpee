@@ -26,7 +26,12 @@ import {
   DirectionType,
   getInterceptorForAction,
   ActionInterceptor,
-  InterceptorSharedData
+  InterceptorSharedData,
+  findTraitWithCapability,
+  getBehaviorForCapability,
+  CapabilityBehavior,
+  CapabilityEffect,
+  ITrait
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
@@ -95,10 +100,17 @@ interface ThrowingSharedData {
   interceptor?: ActionInterceptor;
   /** Shared data for interceptor phases */
   interceptorData?: InterceptorSharedData;
+  /** ADR-090: capability behavior that handled this throw (if any) */
+  capabilityBehavior?: CapabilityBehavior;
+  capabilityTrait?: ITrait;
 }
 
 function getThrowingSharedData(context: ActionContext): ThrowingSharedData {
   return context.sharedData as ThrowingSharedData;
+}
+
+function effectsToEvents(effects: CapabilityEffect[], context: ActionContext): ISemanticEvent[] {
+  return effects.map(effect => context.event(effect.type, effect.payload));
 }
 
 export const throwingAction: Action & { metadata: ActionMetadata } = {
@@ -300,6 +312,18 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     if (sharedData.throwType === 'at_target' && target) {
       sharedData.params.target = target.name;
 
+      // Check if target has a capability behavior for throwing (ADR-090)
+      const capTrait = findTraitWithCapability(target, IFActions.THROWING);
+      if (capTrait) {
+        const behavior = getBehaviorForCapability(capTrait, IFActions.THROWING);
+        if (behavior) {
+          sharedData.capabilityBehavior = behavior;
+          sharedData.capabilityTrait = capTrait;
+          behavior.execute(target, context.world, context.player.id, context.sharedData);
+          return;
+        }
+      }
+
       // Calculate hit/miss
       let hitTarget = false;
       if (target.has(TraitType.ACTOR)) {
@@ -453,6 +477,18 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Prepend any implicit take events (from requireCarriedOrImplicitTake)
     if (context.sharedData.implicitTakeEvents) {
       events.push(...context.sharedData.implicitTakeEvents);
+    }
+
+    // If capability behavior handled the throw, delegate report to it
+    if (sharedData.capabilityBehavior) {
+      const target = context.command.indirectObject?.entity;
+      if (target) {
+        const effects = sharedData.capabilityBehavior.report(
+          target, context.world, context.player.id, context.sharedData
+        );
+        events.push(...effectsToEvents(effects, context));
+      }
+      return events;
     }
 
     // Build event data with messageId for text rendering

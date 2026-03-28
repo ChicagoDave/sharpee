@@ -6,7 +6,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { IdentityTrait, CombatantTrait, TraitType } from '@sharpee/world-model';
+import { IdentityTrait, CombatantTrait, NpcTrait, RoomBehavior, Direction, TraitType } from '@sharpee/world-model';
 
 export const koHandler: GDTCommandHandler = {
   code: 'KO',
@@ -99,19 +99,26 @@ export const koHandler: GDTCommandHandler = {
     output.push(`Knocked out: ${entityName} (${targetEntity.id})`);
     output.push(`isAlive: ${combatant.isAlive}, isConscious: ${combatant.isConscious}`);
 
-    // Trigger the entity's knocked_out event handler if it exists
-    // This handles entity-specific knockout logic (e.g., troll description change, exit unblocking)
-    const entityHandlers = targetEntity.on;
-    if (entityHandlers && typeof entityHandlers['if.event.knocked_out'] === 'function') {
-      const knockedOutEvent = {
-        id: `gdt-knockout-${Date.now()}`,
-        type: 'if.event.knocked_out',
-        timestamp: Date.now(),
-        entities: { target: targetEntity.id },
-        data: { source: 'gdt' }
-      };
-      entityHandlers['if.event.knocked_out'](knockedOutEvent, world);
-      output.push('(triggered entity knocked_out handler)');
+    // Apply knockout side effects inline (ISSUE-068: entity `on` handlers removed)
+    // Sync NpcTrait consciousness
+    const npcTrait = targetEntity.get(NpcTrait);
+    if (npcTrait) {
+      npcTrait.isConscious = false;
+    }
+
+    // Troll-specific: update description, unblock exit, set recovery turns
+    if (entityName.toLowerCase().includes('troll')) {
+      const trollIdentity = targetEntity.get(IdentityTrait);
+      if (trollIdentity) {
+        trollIdentity.description = 'An unconscious troll is sprawled on the floor. All passages out of the room are open.';
+      }
+      const trollRoomId = world.getLocation(targetEntity.id);
+      const trollRoom = trollRoomId ? world.getEntity(trollRoomId) : undefined;
+      if (trollRoom) {
+        RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
+      }
+      combatant.recoveryTurns = 4;
+      output.push('(applied troll knockout effects: description, exit, recovery)');
     }
 
     return {

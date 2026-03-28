@@ -24,3 +24,4 @@ export * from './chimney-handler';
 export * from './grue-handler';
 export * from './cake-handler';
 export * from './carousel-handler';
+export * from './openable-description-handler';

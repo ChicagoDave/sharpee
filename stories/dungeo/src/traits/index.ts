@@ -231,3 +231,9 @@ export { SafeTrait, SafeTraitConstructor } from './safe-trait';
 
 // Safe Opening/Closing Interceptors
 export { SafeOpeningInterceptor, SafeClosingInterceptor, SafeOpeningMessages } from '../interceptors/safe-opening-interceptor';
+
+// Rug (trapdoor reveal on push)
+export { RugTrait, RugTraitConfig, RugTraitConstructor } from './rug-trait';
+
+// Rug Push Interceptor (ADR-118)
+export { RugPushInterceptor, RugPushMessages } from '../interceptors/rug-push-interceptor';

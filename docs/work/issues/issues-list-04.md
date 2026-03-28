@@ -24,13 +24,14 @@ original numbers.
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
 | ISSUE-062 | Fuse `skipNextTick` behavior undocumented at API level | Low | plugin-scheduler | 2026-03-24 | - |
-| ISSUE-063 | `as any` regression — 200 remaining in source (was 319), Phases 1+2A+2B complete | High | platform-wide | 2026-03-26 | In progress |
+| ISSUE-063 | ~~`as any` regression — stories/ cleanup complete (40/42 removed), 2 remaining were ISSUE-068 tags~~ | High | platform-wide | 2026-03-26 | **DONE** 2026-03-27 (PR #64 + ISSUE-068) |
 | ISSUE-064 | VisibilityBehavior has 3 duplicate container-walk traversals | Medium | world-model | 2026-03-26 | - |
 | ISSUE-065 | Two disconnected scope evaluation systems (world-model vs parser) | Medium | world-model, parser-en-us | 2026-03-26 | - |
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-067 | Trace commands defined as 10 individual literal patterns | Low | parser-en-us | 2026-03-26 | - |
-| ISSUE-068 | `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types | Medium | world-model, event-processor | 2026-03-27 | - |
+| ISSUE-068 | ~~Entity `on` handlers are vestigial — migrate to actions/capabilities, simplify type infrastructure~~ | Medium | world-model, event-processor, stories | 2026-03-27 | **DONE** 2026-03-27 |
 | ISSUE-069 | `world.getStateValue`/`setStateValue` is a code smell — puzzle state belongs on entities/traits | Medium | world-model, stories | 2026-03-27 | - |
+| ISSUE-070 | Entity descriptions should be computed from trait state, not mutated by event handlers | Medium | world-model | 2026-03-27 | - |
 
 ---
 
@@ -286,50 +287,71 @@ The story-side `as any` casts fall into two groups: (1) casts that exist because
 
 ---
 
-### ISSUE-068: `LegacyEntityEventHandler` and unused ADR-075 migration scaffolding in event types
+### ISSUE-068: Entity `on` handler system — RESOLVED
 
 **Reported**: 2026-03-27
+**Resolved**: 2026-03-27
 **Severity**: Medium
-**Component**: Platform (world-model/events/types.ts, event-processor/handler-types.ts)
+**Component**: Platform (world-model, event-processor, engine) + stories
 **Type**: Tech debt / dead architecture
-**Discovered during**: ISSUE-063 Phase 3 — removing `as any` from GDT `kl.ts` exposed type errors because `IEventHandlers` values are `LegacyEntityEventHandler | LegacyEntityEventHandler[]`, which isn't directly callable.
 
-**Description**:
-The entity event handler type system has migration scaffolding for an ADR-075 Effect-returning architecture that was never adopted:
+**Resolution**: The entire entity `on` handler system was removed rather than fixed. A deep audit revealed the system was vestigial — all 19 entity handlers could be replaced by existing patterns (capability behaviors, action interceptors, story-level event handlers). Completed across 9 phases:
 
-1. **`LegacyEntityEventHandler`** — has `world?: any` in its signature (an `as any` hiding in the platform). Every real handler passes `WorldModel`, not `any`.
-2. **`EntityEventHandler`** (ADR-075) — returns `Effect[]` via read-only `WorldQuery`. No entity `on` handler uses this pattern.
-3. **`AnyEventHandler`** — union of both, "for migration period." The migration never happened.
-4. **Array form** — `IEventHandlers` allows `AnyEventHandler[]` (multiple handlers per event type). No entity registers an array — every usage is a single function.
+- Phases 2-4: Migrated troll give/throw (capability behaviors), troll knocked_out (melee interceptor), rug pushed (RugPushInterceptor)
+- Phase 1 (unblocked): Window/trapdoor descriptions → story-level event handlers with attribute-based opt-in
+- Phases 5-6: Removed remaining troll handlers (including dead death handler)
+- Phase 7: Removed entity `on` dispatch from EventProcessor + GameEngine
+- Phase 8: Removed type infrastructure (`LegacyEntityEventHandler`, `AnyEventHandler`, `IEventHandlers`, `on?` on IFEntity, stdlib helpers.ts)
+- Phase 9: Cleaned up kl.ts, removed event-handler-demo story
 
-**Actual usage in Dungeo** (all entity `on` handlers):
-- Pattern A: `(event: IGameEvent) => { ... }` — no world param, no return (house-interior, white-house)
-- Pattern B: `(_event: ISemanticEvent, w: WorldModel): ISemanticEvent[] => { ... }` — with world, returns events (underground/troll)
-
-**Proposed fix**:
-Simplify to match actual usage:
-
-```typescript
-// world-model/src/events/types.ts
-export type EntityOnHandler = (event: IGameEvent, world?: WorldModel) => void | ISemanticEvent[];
-
-export interface IEventHandlers {
-  [eventType: string]: EntityOnHandler;
-}
-```
-
-- Drop `LegacyEntityEventHandler` (rename to `EntityOnHandler`, fix `any` → `WorldModel`)
-- Drop `EntityEventHandler`, `AnyEventHandler`, `StoryEventHandler` from `IEventHandlers` (they can stay in event-processor for its own use)
-- Drop the array form `| EntityOnHandler[]`
-- Update `event-processor/handler-types.ts` to match
-
-**Blast radius**: Entity `on` assignments in stories compile without change (the handler signatures already match). The `event-processor` may need its `AnyEventHandler` union adjusted if it dispatches both legacy and Effect-returning handlers internally. GDT `kl.ts` would compile clean after this fix (the call `entityOn['if.event.death'](deathEvent, world)` becomes directly callable).
+**Branch**: issue-068-event-handler-types
+**Plan**: docs/work/issues/plans/issue-068-plan.md
 
 **Priority**: Medium — blocks clean completion of ISSUE-063 Phase 3 Group 2 (kl.ts). Can be done as a quick focused PR.
 
 ---
 
 ## Open Issues — Platform Refactoring
+
+### ISSUE-070: Entity descriptions should be computed from trait state, not mutated by event handlers
+
+**Reported**: 2026-03-27
+**Severity**: Medium
+**Component**: Platform (world-model)
+**Type**: Architecture
+
+**Description**:
+Entity descriptions are stored as a mutable string on `IdentityTrait.description`. When entity state changes (opened/closed, inflated/deflated, lit/unlit), event handlers or action code manually overwrites the description. This is fragile and requires an event-driven callback system (entity `on` handlers) to keep descriptions in sync with state.
+
+**Correct pattern**: The entity's `description` getter should compute from trait state. Traits that affect description (OpenableTrait, InflatableTrait, SwitchableTrait, etc.) provide state-specific descriptions. The entity returns the appropriate one based on current state.
+
+**Example**:
+```typescript
+// OpenableTrait adds:
+openDescription?: string;   // "The trap door is open, revealing a rickety staircase."
+closedDescription?: string; // "The dusty cover of a closed trap door."
+
+// Entity description getter checks trait state:
+get description(): string {
+  const openable = this.get(OpenableTrait);
+  if (openable) {
+    return openable.isOpen
+      ? (openable.openDescription ?? this.identity.description)
+      : (openable.closedDescription ?? this.identity.description);
+  }
+  return this.identity.description;
+}
+```
+
+**Applies to**: Any trait that changes how an entity is described — openable, inflatable, switchable, lit/unlit light sources, broken/intact objects.
+
+**Discovered during**: ISSUE-068 entity `on` handler audit. Window and trapdoor `opened`/`closed` handlers existed solely to mutate `IdentityTrait.description`.
+
+**Current workaround** (ISSUE-068): Entity `on` handlers were removed. Description switching is now handled by story-level event handlers that read `openDescription`/`closedDescription` from entity attributes. This works but is still mutation-based — computed descriptions would be architecturally cleaner.
+
+**Dungeo blast radius**: The inflate/deflate actions also manually switch `attributes.displayName`. A computed description pattern would replace all mutation-based description switching.
+
+---
 
 ### ISSUE-058: Entity creation is excessively repetitive — needs builder/helper API
 

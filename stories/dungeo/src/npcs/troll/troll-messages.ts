@@ -15,8 +15,10 @@ export const TrollMessages = {
   COWERS: 'dungeo.troll.cowers',
 
   // === Player action interceptions ===
-  /** GIVE/THROW item: Troll catches it */
+  /** THROW item: Troll catches it ("remarkably coordinated") */
   CATCHES_ITEM: 'dungeo.troll.catches_item',
+  /** GIVE item: Troll accepts it ("not overly proud, graciously accepts") */
+  ACCEPTS_GIFT: 'dungeo.troll.accepts_gift',
   /** GIVE/THROW item (not knife): Troll eats it */
   EATS_ITEM: 'dungeo.troll.eats_item',
   /** GIVE/THROW knife: Troll throws it back */
