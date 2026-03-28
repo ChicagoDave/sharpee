@@ -5,7 +5,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { IWearableData, IFEntity } from '@sharpee/world-model';
+import { IWearableData, IFEntity, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 
 /**
  * Type guard for wearable trait data
@@ -109,6 +109,12 @@ export interface TakingSharedData {
    * When set, indicates this is a multi-object command
    */
   multiObjectResults?: TakingItemResult[];
+
+  /** Interceptor that claimed this taking action (ADR-118) */
+  _interceptor?: ActionInterceptor;
+
+  /** Shared data passed between interceptor phases */
+  _interceptorData?: InterceptorSharedData;
 }
 
 /**

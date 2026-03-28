@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType, VisibilityBehavior } from '@sharpee/world-model';
+import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 
 /**
@@ -48,7 +48,7 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
 
   // Get identity trait for ID fields (ADR-107 dual-mode)
-  const identity = location.get?.('identity') as any;
+  const identity = location.getTrait(IdentityTrait);
 
   return {
     actorId: player.id,
@@ -97,12 +97,13 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
   const visibleSnapshots = captureEntitySnapshots(visible, context.world);
 
   // Determine if verbose mode
-  const verboseMode = (context as any).verboseMode ?? true;
-  const firstVisit = !(context as any).visitedLocations?.includes(location.id);
+  // TODO: Wire verbose mode from game-meta state when brief/verbose commands are implemented
+  const verboseMode = true;
+  const firstVisit = true;
   const isVerbose = verboseMode || firstVisit;
 
   // Get identity trait for ID fields (ADR-107 dual-mode)
-  const identity = location.get?.('identity') as any;
+  const identity = location.getTrait(IdentityTrait);
 
   return {
     // New atomic structure
@@ -291,8 +292,9 @@ export function determineLookingMessage(
   }
 
   // Check for brief/verbose mode
-  const verboseMode = (context as any).verboseMode ?? true;
-  const firstVisit = !(context as any).visitedLocations?.includes(location.id);
+  // TODO: Wire verbose mode from game-meta state when brief/verbose commands are implemented
+  const verboseMode = true;
+  const firstVisit = true;
 
   let messageId = (!verboseMode && !firstVisit) ? 'room_description_brief' : 'room_description';
 

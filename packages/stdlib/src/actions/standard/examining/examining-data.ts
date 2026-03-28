@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType, IFEntity } from '@sharpee/world-model';
+import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait } from '@sharpee/world-model';
 import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior } from '@sharpee/world-model';
 import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { ExaminedEventData } from './examining-events';
@@ -57,10 +57,10 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   
   // Identity trait (description/brief)
   if (noun.has(TraitType.IDENTITY)) {
-    const identityTrait = noun.get(TraitType.IDENTITY);
+    const identityTrait = noun.getTrait(IdentityTrait);
     if (identityTrait) {
-      eventData.hasDescription = !!(identityTrait as any).description;
-      eventData.hasBrief = !!(identityTrait as any).brief;
+      eventData.hasDescription = !!identityTrait.description;
+      eventData.hasBrief = !!identityTrait.brief;
     }
   }
   
@@ -108,9 +108,9 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   
   // Readable trait
   if (noun.has(TraitType.READABLE)) {
-    const readableTrait = noun.get(TraitType.READABLE);
+    const readableTrait = noun.getTrait(ReadableTrait);
     eventData.isReadable = true;
-    eventData.hasText = readableTrait ? !!(readableTrait as any).text : false;
+    eventData.hasText = readableTrait ? !!readableTrait.text : false;
   }
   
   // Wearable trait
@@ -169,9 +169,9 @@ export function buildExaminingMessageParams(
 
     // Add description text if available
     if (eventData.hasDescription && noun.has(TraitType.IDENTITY)) {
-      const identityTrait = noun.get(TraitType.IDENTITY);
-      if ((identityTrait as any)?.description) {
-        params.description = (identityTrait as any).description;
+      const identityTrait = noun.getTrait(IdentityTrait);
+      if (identityTrait?.description) {
+        params.description = identityTrait.description;
       }
     }
 
@@ -220,9 +220,9 @@ export function buildExaminingMessageParams(
 
     // Readable-specific message
     else if (eventData.isReadable && eventData.hasText && noun.has(TraitType.READABLE)) {
-      const readableTrait = noun.get(TraitType.READABLE);
-      if ((readableTrait as any)?.text) {
-        params.text = (readableTrait as any).text;
+      const readableTrait = noun.getTrait(ReadableTrait);
+      if (readableTrait?.text) {
+        params.text = readableTrait.text;
         messageId = 'examined_readable';
       }
     }

@@ -5,7 +5,11 @@
  * for atomic events during the report phase.
  */
 
-import { IFEntity, WorldModel } from '@sharpee/world-model';
+import {
+  IFEntity, WorldModel, IdentityTrait, OpenableTrait, LockableTrait,
+  ContainerTrait, SupporterTrait, WearableTrait, EdibleTrait,
+  PushableTrait, SceneryTrait, RoomTrait, TraitType
+} from '@sharpee/world-model';
 
 /**
  * Entity snapshot containing all relevant state
@@ -67,31 +71,30 @@ export function captureEntitySnapshot(
   world: WorldModel,
   includeContents = true
 ): EntitySnapshot {
-  const identity = entity.get?.('identity') as any;
-  const physical = entity.get?.('physical') as any;
-  const openable = entity.get?.('openable') as any;
-  const lockable = entity.get?.('lockable') as any;
-  const container = entity.get?.('container') as any;
-  const supporter = entity.get?.('supporter') as any;
-  const wearable = entity.get?.('wearable') as any;
-  const edible = entity.get?.('edible') as any;
-  const pushable = entity.get?.('pushable') as any;
-  const scenery = entity.get?.('scenery') as any;
-  
+  const identity = entity.getTrait(IdentityTrait);
+  const openable = entity.getTrait(OpenableTrait);
+  const lockable = entity.getTrait(LockableTrait);
+  const container = entity.getTrait(ContainerTrait);
+  const supporter = entity.getTrait(SupporterTrait);
+  const wearable = entity.getTrait(WearableTrait);
+  const edible = entity.getTrait(EdibleTrait);
+  const pushable = entity.getTrait(PushableTrait);
+  const scenery = entity.getTrait(SceneryTrait);
+
   const snapshot: EntitySnapshot = {
     id: entity.id,
     name: identity?.name || entity.id,
     description: identity?.description,
-    shortDescription: identity?.shortDescription,
+    shortDescription: identity?.brief,
     // Include message IDs if present (ADR-107 dual-mode)
     nameId: identity?.nameId,
     descriptionId: identity?.descriptionId,
     location: world.getLocation(entity.id)
   };
-  
-  // Add physical properties
-  if (physical) {
-    snapshot.isPortable = physical.portable !== false;
+
+  // Portability: entities are portable unless they have SceneryTrait
+  if (!scenery) {
+    snapshot.isPortable = true;
   }
   
   // Add openable properties
@@ -179,40 +182,35 @@ export function captureRoomSnapshot(
   world: WorldModel,
   includeContents = true
 ): RoomSnapshot {
-  const identity = room.get?.('identity') as any;
-  const roomTrait = room.get?.('room') as any;
-  const darknessTrait = room.get?.('darkness') as any;
-  
+  const identity = room.getTrait(IdentityTrait);
+  const roomTrait = room.getTrait(RoomTrait);
+
   const snapshot: RoomSnapshot = {
     id: room.id,
-    name: identity?.name || room.attributes?.name || room.id,
-    description: identity?.description || room.attributes?.description,
+    name: identity?.name || String(room.attributes?.name || room.id),
+    description: identity?.description || (room.attributes?.description as string | undefined),
     // Include message IDs if present (ADR-107 dual-mode)
     nameId: identity?.nameId,
     descriptionId: identity?.descriptionId
   };
-  
-  // Add darkness state (can be on dedicated darkness trait OR on room trait)
-  if (darknessTrait !== undefined) {
-    snapshot.isDark = darknessTrait.isDark === true;
-  } else if (roomTrait?.isDark !== undefined) {
+
+  // Add darkness state from room trait
+  if (roomTrait?.isDark !== undefined) {
     snapshot.isDark = roomTrait.isDark === true;
   }
-  
+
   // Add visited state
   if (roomTrait?.visited !== undefined) {
     snapshot.isVisited = roomTrait.visited === true;
   }
-  
-  // Capture exits
+
+  // Capture exits from room trait
   const exits: Record<string, string> = {};
-  const exitDirs = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 
-                     'southeast', 'southwest', 'up', 'down', 'in', 'out'];
-  
-  for (const dir of exitDirs) {
-    const exitId = (room as any)[dir];
-    if (exitId && typeof exitId === 'string') {
-      exits[dir] = exitId;
+  if (roomTrait?.exits) {
+    for (const [dir, exitInfo] of Object.entries(roomTrait.exits)) {
+      if (exitInfo?.destination) {
+        exits[dir] = exitInfo.destination;
+      }
     }
   }
   
@@ -231,12 +229,11 @@ export function captureRoomSnapshot(
   }
   
   // Add any custom traits
-  const standardTraits = ['identity', 'room', 'darkness'];
+  const standardRoomTraits = ['identity', 'room', 'darkness'];
   const customTraits: Record<string, unknown> = {};
-  
+
   for (const [key, value] of Object.entries(room)) {
-    if (!standardTraits.includes(key) && !exitDirs.includes(key) && 
-        key !== 'id' && key !== 'type') {
+    if (!standardRoomTraits.includes(key) && key !== 'id' && key !== 'type') {
       customTraits[key] = value;
     }
   }
@@ -269,7 +266,7 @@ export function captureEntitySnapshots(
  * @returns Minimal entity reference
  */
 export function createEntityReference(entity: IFEntity): { id: string; name: string } {
-  const identity = entity.get?.('identity') as any;
+  const identity = entity.getTrait(IdentityTrait);
   return {
     id: entity.id,
     name: identity?.name || entity.id
