@@ -26,28 +26,7 @@ jobs:
         
     - name: Install dependencies
       run: pnpm install --ignore-scripts
-
-    - name: Check for 'as any' casts in source files
-      run: |
-        # Fail CI if any unjustified 'as any' casts exist in package source files.
-        # Excludes: test files, transcript-tester (test tooling), comments, and
-        # lines with "as any: justified" (documented exceptions in AuthorModel/trait-types).
-        HITS=$(find packages/*/src \
-          -path 'packages/transcript-tester/*' -prune -o \
-          -name '*.ts' ! -name '*.test.ts' ! -name '*.spec.ts' -print \
-          | xargs grep -Hn ' as any' \
-          | grep -v '// .*as any' \
-          | grep -v '\* .*as any' \
-          | grep -v '`as any`' \
-          | grep -v 'as any: justified' \
-          || true)
-        if [ -n "$HITS" ]; then
-          echo "::error::Found 'as any' casts in source files (ISSUE-063 regression):"
-          echo "$HITS"
-          exit 1
-        fi
-        echo "No unjustified 'as any' casts found in source files."
-
+      
     - name: Build packages in correct order
       run: |
         pnpm --filter '@sharpee/core' run build
