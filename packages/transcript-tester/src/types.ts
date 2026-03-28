@@ -164,11 +164,22 @@ export interface Transcript {
 }
 
 /**
+ * Snapshot of an entity's traits at the time of event capture.
+ * Used by --emit-traits to show trait state for entities referenced in events.
+ */
+export interface EntityTraitSnapshot {
+  entityId: string;
+  traits: Record<string, Record<string, any>>;
+}
+
+/**
  * Simplified event info for test results
  */
 export interface TestEventInfo {
   type: string;
   data: Record<string, any>;
+  /** Trait snapshots for entities referenced in event data. Only populated with --emit-traits. */
+  entityTraits?: EntityTraitSnapshot[];
 }
 
 /**
@@ -235,6 +246,7 @@ export interface TestingExtensionInterface {
 
 export interface RunnerOptions {
   verbose?: boolean;
+  emitTraits?: boolean;  // Include trait snapshots for entities referenced in events
   stopOnFailure?: boolean;
   updateExpected?: boolean;
   filter?: string;  // Only run commands matching this pattern

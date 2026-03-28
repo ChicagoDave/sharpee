@@ -21,6 +21,9 @@ export { runTranscript } from './runner';
 // Reporter
 export { reportTranscript, reportTestRun, getExitCode } from './reporter';
 
+// Trait Formatter
+export { formatEntityTraitLines, formatTraitProse } from './trait-formatter';
+
 // Story Loader
 export { loadStory, createTestableGame, findTranscripts } from './story-loader';
 export type { TestableGame } from './story-loader';

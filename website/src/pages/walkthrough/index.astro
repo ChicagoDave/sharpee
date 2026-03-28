@@ -406,6 +406,92 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     display: block;
   }
 
+  /* --- Traits display --- */
+  :global(.traits-indicator) {
+    font-size: 0.7rem;
+    cursor: default;
+  }
+
+  :global(.traits-toggle) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.68rem;
+    color: #7c3aed;
+    font-weight: 600;
+    transition: color 0.12s;
+  }
+
+  :global(.traits-toggle:hover) {
+    color: #5b21b6;
+  }
+
+  :global(.traits-toggle .arrow) {
+    transition: transform 0.15s;
+    display: inline-block;
+    font-size: 0.6rem;
+  }
+
+  :global(.traits-toggle.open .arrow) {
+    transform: rotate(90deg);
+  }
+
+  :global(.traits-panel) {
+    display: none;
+    margin: 0.2rem 0.5rem 0.5rem;
+    padding: 0.5rem;
+    background: #faf5ff;
+    border: 1px solid #e9d5ff;
+    border-radius: 4px;
+  }
+
+  :global(.traits-panel.open) {
+    display: block;
+  }
+
+  :global(.entity-block) {
+    margin-bottom: 0.5rem;
+  }
+
+  :global(.entity-block:last-child) {
+    margin-bottom: 0;
+  }
+
+  :global(.entity-id) {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7c3aed;
+    padding: 0.15rem 0;
+    border-bottom: 1px solid #e9d5ff;
+    margin-bottom: 0.25rem;
+  }
+
+  :global(.trait-row) {
+    padding: 0.1rem 0 0.1rem 0.75rem;
+  }
+
+  :global(.entity-id-tag) {
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: #9333ea;
+    opacity: 0.7;
+  }
+
+  :global(.trait-type) {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #6b21a8;
+  }
+
+  :global(.trait-prose) {
+    font-size: 0.68rem;
+    color: #374151;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
   /* JSON syntax highlighting (light theme) */
   :global(.json-key)    { color: #1e40af; }
   :global(.json-string) { color: #166534; }
@@ -446,7 +532,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     stats: { transcripts: number; turns: number; events: number; passed: number; failed: number };
     transcripts: { id: number; filename: string; title: string | null; test_count: number | null; duration_ms: number | null; sequence: number }[];
     turnsByTranscript: Record<string, { id: number; transcript_id: number; sequence: number; command: string; result: string; assertion: string | null; output_text: string | null; game_turn: number | null }[]>;
-    eventsByTurn: Record<string, { id: number; sequence: number; event_type: string; action_id: string | null; game_turn: number | null; data: Record<string, unknown> }[]>;
+    eventsByTurn: Record<string, { id: number; sequence: number; event_type: string; action_id: string | null; game_turn: number | null; data: Record<string, unknown>; entityTraits?: { entityId: string; name?: string; traits: Record<string, Record<string, unknown>> }[] }[]>;
     eventTypes: { event_type: string; count: number }[];
   }
 
@@ -657,15 +743,18 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     for (const ev of filtered) {
       const cls = classifyEvent(ev.event_type);
       const summary = summarizeEvent(ev);
+      const hasTraits = ev.entityTraits && ev.entityTraits.length > 0;
       const item = document.createElement('div');
       item.className = 'event-item';
       item.innerHTML = `
         <div class="event-header">
           <span class="event-type-badge etype-${cls}">${escHtml(ev.event_type)}</span>
           <span class="event-summary">${escHtml(summary)}</span>
+          ${hasTraits ? `<span class="traits-indicator" title="Entity traits available">\u{1F9EC}</span>` : ''}
           <span class="event-expand">&#9654;</span>
         </div>
         <div class="event-json"><pre>${highlightJson(ev.data)}</pre></div>
+        ${hasTraits ? renderEntityTraits(ev.entityTraits!) : ''}
       `;
 
       const hdr = item.querySelector('.event-header')!;
@@ -676,8 +765,43 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         arrow.style.transform = open ? 'rotate(90deg)' : '';
       });
 
+      // Traits toggle
+      const traitsToggle = item.querySelector('.traits-toggle');
+      const traitsPanel = item.querySelector('.traits-panel');
+      if (traitsToggle && traitsPanel) {
+        traitsToggle.addEventListener('click', () => {
+          traitsPanel.classList.toggle('open');
+          traitsToggle.classList.toggle('open');
+        });
+      }
+
       container.appendChild(item);
     }
+  }
+
+  function renderEntityTraits(entityTraits: { entityId: string; name?: string; traits: Record<string, Record<string, unknown>> }[]): string {
+    const rows = entityTraits.map(et => {
+      const displayName = et.name ? `${escHtml(et.name)} <span class="entity-id-tag">${escHtml(et.entityId)}</span>` : escHtml(et.entityId);
+      const traitRows = Object.entries(et.traits).map(([traitType, props]) => {
+        const prose = (props as any)?._prose;
+        if (prose) {
+          // Prose format: show as readable text
+          return `<div class="trait-row"><span class="trait-type">${escHtml(traitType)}:</span> <span class="trait-prose">${escHtml(String(prose))}</span></div>`;
+        }
+        if (Object.keys(props).length === 0) {
+          // Bare keyword (e.g., "scenery", "player")
+          return `<div class="trait-row"><span class="trait-type">${escHtml(traitType)}</span></div>`;
+        }
+        // Raw JSON fallback
+        return `<div class="trait-row"><span class="trait-type">${escHtml(traitType)}:</span> <span class="trait-prose">${escHtml(JSON.stringify(props))}</span></div>`;
+      }).join('');
+      return `<div class="entity-block"><div class="entity-id">${displayName}</div>${traitRows}</div>`;
+    }).join('');
+
+    return `
+      <div class="traits-toggle"><span class="arrow">&#9654;</span> Traits (${entityTraits.length} entities)</div>
+      <div class="traits-panel">${rows}</div>
+    `;
   }
 
   // --- Filter handlers ---

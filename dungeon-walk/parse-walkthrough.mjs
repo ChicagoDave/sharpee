@@ -59,6 +59,7 @@ db.exec(`
     action_id TEXT,
     game_turn INTEGER,
     data_json TEXT NOT NULL,
+    traits_json TEXT,
     FOREIGN KEY (turn_id) REFERENCES events(id)
   );
 
@@ -77,7 +78,7 @@ const insertTurn = db.prepare(
   'INSERT INTO turns (transcript_id, sequence, command, result, assertion, output_text, game_turn) VALUES (?, ?, ?, ?, ?, ?, ?)'
 );
 const insertEvent = db.prepare(
-  'INSERT INTO events (turn_id, sequence, event_type, action_id, game_turn, data_json) VALUES (?, ?, ?, ?, ?, ?)'
+  'INSERT INTO events (turn_id, sequence, event_type, action_id, game_turn, data_json, traits_json) VALUES (?, ?, ?, ?, ?, ?, ?)'
 );
 
 // --- Parse ---
@@ -112,6 +113,11 @@ const OUTPUT_START_RE = /^\s+─── Output ───$/;
 const EVENTS_START_RE = /^\s+─── Events \((\d+)\) ───$/;
 const BLOCK_END_RE = /^\s+─────────────$/;
 const EVENT_LINE_RE = /^\s+•\s+(\S+)\s+(\{.+\})$/;
+const EVENT_LINE_NO_DATA_RE = /^\s+•\s+(\S+)\s*$/;
+const TRAIT_ENTITY_START_RE = /^\s+┌\s+(.+)$/;
+const TRAIT_ENTITY_START_PROSE_RE = /^\s+┌\s+(.+?)\s+\(([^)]+)\)/;  // ┌ Name (id) — ...
+const TRAIT_LINE_RE = /^\s+│\s+(.+)$/;
+const TRAIT_ENTITY_END_RE = /^\s+└$/;
 const PASSED_RE = /^\s+(\d+) passed \((\d+(?:\.\d+)?)ms\)$/;
 
 function parse() {
@@ -179,11 +185,11 @@ function parse() {
           let eventSeq = 0;
           while (peekLine() !== undefined && !peekLine().match(BLOCK_END_RE)) {
             const evLine = nextLine();
-            const evMatch = evLine.match(EVENT_LINE_RE);
+            const evMatch = evLine.match(EVENT_LINE_RE) || evLine.match(EVENT_LINE_NO_DATA_RE);
             if (evMatch) {
               eventSeq++;
               const eventType = evMatch[1];
-              const dataStr = evMatch[2];
+              const dataStr = evMatch[2] || '{}';
               let actionId = null;
               let evTurn = null;
               try {
@@ -192,7 +198,60 @@ function parse() {
                 evTurn = parsed.turn ?? null;
                 if (gameTurn === null && evTurn !== null) gameTurn = evTurn;
               } catch { /* keep raw */ }
-              events.push({ seq: eventSeq, eventType, actionId, gameTurn: evTurn, dataJson: dataStr });
+
+              // Parse trait blocks that follow this event line (prose or JSON format)
+              const entityTraits = [];
+              while (peekLine() !== undefined && peekLine().match(TRAIT_ENTITY_START_RE)) {
+                const startLine = nextLine();
+
+                // Extract entity ID: try prose "┌ Name (id) — ..." first, fall back to raw "┌ id"
+                const proseMatch = startLine.match(TRAIT_ENTITY_START_PROSE_RE);
+                const rawMatch = startLine.match(TRAIT_ENTITY_START_RE);
+                let entityId, entityName;
+                if (proseMatch) {
+                  entityName = proseMatch[1].trim();
+                  entityId = proseMatch[2].trim();
+                } else {
+                  entityId = rawMatch[1].trim();
+                  entityName = null;
+                }
+
+                const traits = {};
+                const traitLines = [];
+                while (peekLine() !== undefined && peekLine().match(TRAIT_LINE_RE)) {
+                  const traitMatch = nextLine().match(TRAIT_LINE_RE);
+                  const content = traitMatch[1];
+
+                  // Try JSON format: "traitType {json}" or "traitType: {json}"
+                  const jsonMatch = content.match(/^(\S+)\s+(\{.+\})$/);
+                  if (jsonMatch) {
+                    try {
+                      traits[jsonMatch[1]] = JSON.parse(jsonMatch[2]);
+                    } catch {
+                      traits[jsonMatch[1]] = { _prose: jsonMatch[2] };
+                    }
+                  } else {
+                    // Prose format: "traitType: prose text" or just "keyword"
+                    const colonMatch = content.match(/^([^:]+):\s+(.+)$/);
+                    if (colonMatch) {
+                      traits[colonMatch[1].trim()] = { _prose: colonMatch[2].trim() };
+                    } else {
+                      // Simple keyword like "player", "scenery", "open", "closed", "off", "on"
+                      traits[content.trim()] = {};
+                    }
+                  }
+                }
+                // Consume the └ line
+                if (peekLine() !== undefined && peekLine().match(TRAIT_ENTITY_END_RE)) {
+                  nextLine();
+                }
+                const entry = { entityId, traits };
+                if (entityName) entry.name = entityName;
+                entityTraits.push(entry);
+              }
+
+              const traitsJson = entityTraits.length > 0 ? JSON.stringify(entityTraits) : null;
+              events.push({ seq: eventSeq, eventType, actionId, gameTurn: evTurn, dataJson: dataStr, traitsJson });
             }
           }
           if (peekLine() !== undefined) nextLine(); // consume end marker
@@ -206,7 +265,7 @@ function parse() {
 
         // Insert events
         for (const ev of events) {
-          insertEvent.run(turnId, ev.seq, ev.eventType, ev.actionId, ev.gameTurn, ev.dataJson);
+          insertEvent.run(turnId, ev.seq, ev.eventType, ev.actionId, ev.gameTurn, ev.dataJson, ev.traitsJson);
         }
         continue;
       }

@@ -101,6 +101,7 @@ if (require.main === module) {
     const options = {
       transcriptPaths: [],
       verbose: false,
+      emitTraits: false,
       stopOnFailure: false,
       chain: false,
       play: false,
@@ -117,6 +118,9 @@ if (require.main === module) {
       const arg = args[i];
 
       if (arg === '--verbose' || arg === '-v') {
+        options.verbose = true;
+      } else if (arg === '--emit-traits') {
+        options.emitTraits = true;
         options.verbose = true;
       } else if (arg === '--stop-on-failure' || arg === '-s') {
         options.stopOnFailure = true;
@@ -174,6 +178,7 @@ Options:
   --restore <name>     Restore from save file
   --chain, -c          Chain transcripts (don't reset game state between them)
   --verbose, -v        Show detailed output for each command
+  --emit-traits        Show entity traits for objects referenced in events (implies --verbose)
   --stop-on-failure, -s Stop on first failure
   --story <path>       Story path (default: stories/dungeo)
   --help, -h           Show this help message
@@ -547,13 +552,14 @@ Examples:
         const savesDirectory = path.join(options.storyPath, 'saves');
         const result = await transcriptTester.runTranscript(transcript, game, {
           verbose: options.verbose,
+          emitTraits: options.emitTraits,
           stopOnFailure: options.stopOnFailure,
           savesDirectory,
           testingExtension: game.testingExtension
         });
 
         results.push(result);
-        transcriptTester.reportTranscript(result, { verbose: options.verbose });
+        transcriptTester.reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
 
         if (options.stopOnFailure && result.failed > 0) {
           break;

@@ -20,7 +20,8 @@ import {
   AssertionResult,
   TranscriptResult,
   RunnerOptions,
-  TestEventInfo
+  TestEventInfo,
+  EntityTraitSnapshot
 } from './types';
 import { evaluateCondition } from './condition-evaluator';
 import { executeNavigate } from './navigator';
@@ -948,6 +949,57 @@ function createDirectiveFailResult(directive: Directive, error: string): Command
 }
 
 /**
+ * Recursively collect all string values from a data structure.
+ */
+function collectStrings(value: unknown, out: string[]): void {
+  if (typeof value === 'string') {
+    out.push(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectStrings(item, out);
+  } else if (value && typeof value === 'object') {
+    for (const v of Object.values(value)) collectStrings(v, out);
+  }
+}
+
+/**
+ * Extract entity IDs from event data values and capture their trait snapshots.
+ * Recursively searches all strings in the data (including arrays and nested objects).
+ */
+function captureEntityTraits(data: Record<string, any>, world: WorldModel): EntityTraitSnapshot[] {
+  const candidates: string[] = [];
+  collectStrings(data, candidates);
+
+  const seen = new Set<string>();
+  const snapshots: EntityTraitSnapshot[] = [];
+
+  for (const value of candidates) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+
+    const entity = world.getEntity?.(value) ?? world.getEntityById?.(value);
+    if (!entity) continue;
+
+    const traits: Record<string, Record<string, any>> = {};
+
+    const entityTraits = entity.getTraits?.() ?? (entity.traits instanceof Map ? Array.from(entity.traits.values()) : []);
+    for (const trait of entityTraits) {
+      const traitData: Record<string, any> = {};
+      for (const [key, val] of Object.entries(trait)) {
+        if (key === 'type') continue;
+        traitData[key] = val;
+      }
+      traits[trait.type] = traitData;
+    }
+
+    if (Object.keys(traits).length > 0) {
+      snapshots.push({ entityId: value, traits });
+    }
+  }
+
+  return snapshots;
+}
+
+/**
  * Run a single command and check assertions
  */
 async function runCommand(
@@ -986,10 +1038,22 @@ async function runCommand(
     if (engine.lastEvents) {
       actualEvents = engine.lastEvents
         .filter(e => !e.type.startsWith('system.'))
-        .map(e => ({
-          type: e.type,
-          data: e.data || {}
-        }));
+        .map(e => {
+          const eventInfo: TestEventInfo = {
+            type: e.type,
+            data: e.data || {}
+          };
+
+          // Capture trait snapshots for entities referenced in event data
+          if (options.emitTraits && engine.world) {
+            const snapshots = captureEntityTraits(e.data || {}, engine.world);
+            if (snapshots.length > 0) {
+              eventInfo.entityTraits = snapshots;
+            }
+          }
+
+          return eventInfo;
+        });
     }
   } catch (e) {
     actualOutput = '';

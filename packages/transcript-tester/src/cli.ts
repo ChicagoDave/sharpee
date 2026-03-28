@@ -29,6 +29,7 @@ interface CliOptions {
   storyPath: string;
   transcriptPaths: string[];
   verbose: boolean;
+  emitTraits: boolean;
   stopOnFailure: boolean;
   all: boolean;
   chain: boolean;
@@ -44,6 +45,7 @@ function parseArgs(args: string[]): CliOptions {
     storyPath: '',
     transcriptPaths: [],
     verbose: false,
+    emitTraits: false,
     stopOnFailure: false,
     all: false,
     chain: false,
@@ -56,6 +58,9 @@ function parseArgs(args: string[]): CliOptions {
     const arg = args[i];
 
     if (arg === '--verbose' || arg === '-v') {
+      options.verbose = true;
+    } else if (arg === '--emit-traits') {
+      options.emitTraits = true;
       options.verbose = true;
     } else if (arg === '--stop-on-failure' || arg === '-s') {
       options.stopOnFailure = true;
@@ -107,6 +112,7 @@ Options:
   -a, --all              Run all transcripts in the story's tests/ directory
   -c, --chain            Chain transcripts (don't reset game state between them)
   -v, --verbose          Show detailed output for each command
+  --emit-traits          Show entity traits for objects referenced in events (implies --verbose)
   -s, --stop-on-failure  Stop on first failure
   -o, --output-dir <dir> Write timestamped results to directory (JSON + text report)
   -h, --help             Show this help message
@@ -334,13 +340,14 @@ async function main(): Promise<void> {
     // Run the transcript
     const result = await runTranscript(transcript, game, {
       verbose: options.verbose,
+      emitTraits: options.emitTraits,
       stopOnFailure: options.stopOnFailure
     });
 
     results.push(result);
 
     // Report individual transcript results
-    reportTranscript(result, { verbose: options.verbose });
+    reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
 
     // Stop if requested and there was a failure
     if (options.stopOnFailure && result.failed > 0) {

@@ -38,14 +38,18 @@ for (const t of turns) {
 
 const eventsByTurn = {};
 for (const e of events) {
-  (eventsByTurn[e.turn_id] ??= []).push({
+  const ev = {
     id: e.id,
     sequence: e.sequence,
     event_type: e.event_type,
     action_id: e.action_id,
     game_turn: e.game_turn,
     data: JSON.parse(e.data_json),
-  });
+  };
+  if (e.traits_json) {
+    ev.entityTraits = JSON.parse(e.traits_json);
+  }
+  (eventsByTurn[e.turn_id] ??= []).push(ev);
 }
 
 const data = { stats, transcripts, turnsByTranscript, eventsByTurn, eventTypes };

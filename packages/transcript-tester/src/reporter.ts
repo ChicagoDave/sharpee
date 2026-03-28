@@ -15,12 +15,14 @@ import {
 
 // Use chalk for colors (chalk@4 for CommonJS compatibility)
 import chalk from 'chalk';
+import { formatEntityTraitLines } from './trait-formatter';
 
 /**
  * Report options
  */
 export interface ReporterOptions {
   verbose?: boolean;
+  emitTraits?: boolean;
   showDiff?: boolean;
   color?: boolean;
 }
@@ -32,7 +34,7 @@ export function reportTranscript(
   result: TranscriptResult,
   options: ReporterOptions = {}
 ): void {
-  const { verbose = false } = options;
+  const { verbose = false, emitTraits = false } = options;
 
   console.log();
   console.log(chalk.bold(`Running: ${result.transcript.filePath}`));
@@ -44,7 +46,7 @@ export function reportTranscript(
   console.log();
 
   for (const cmd of result.commands) {
-    reportCommand(cmd, verbose);
+    reportCommand(cmd, verbose, emitTraits);
   }
 
   // Summary line
@@ -55,7 +57,7 @@ export function reportTranscript(
 /**
  * Report a single command result
  */
-function reportCommand(result: CommandResult, verbose: boolean): void {
+function reportCommand(result: CommandResult, verbose: boolean, emitTraits: boolean = false): void {
   const { command, passed, expectedFailure, skipped, actualOutput, error } = result;
 
   // Command input
@@ -109,6 +111,14 @@ function reportCommand(result: CommandResult, verbose: boolean): void {
             ? ` ${chalk.gray(JSON.stringify(event.data))}`
             : '';
           console.log(chalk.blue(`    • ${event.type}`) + dataStr);
+
+          // Show trait snapshots for referenced entities (prose format)
+          if (emitTraits && event.entityTraits) {
+            const proseLines = formatEntityTraitLines(event.entityTraits);
+            for (const line of proseLines) {
+              console.log(chalk.yellow(`      ${line}`));
+            }
+          }
         }
         console.log(chalk.gray('    ─────────────'));
       }

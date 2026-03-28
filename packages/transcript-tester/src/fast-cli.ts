@@ -34,6 +34,7 @@ const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, Perception
 interface CliOptions {
   transcriptPaths: string[];
   verbose: boolean;
+  emitTraits: boolean;
   stopOnFailure: boolean;
   chain: boolean;
   play: boolean;
@@ -58,6 +59,7 @@ function parseArgs(args: string[]): CliOptions {
   const options: CliOptions = {
     transcriptPaths: [],
     verbose: false,
+    emitTraits: false,
     stopOnFailure: false,
     chain: false,
     play: false,
@@ -71,6 +73,9 @@ function parseArgs(args: string[]): CliOptions {
 
     if (arg === '--verbose' || arg === '-v') {
       options.verbose = true;
+    } else if (arg === '--emit-traits') {
+      options.emitTraits = true;
+      options.verbose = true;  // --emit-traits implies --verbose
     } else if (arg === '--stop-on-failure' || arg === '-s') {
       options.stopOnFailure = true;
     } else if (arg === '--chain' || arg === '-c') {
@@ -120,6 +125,7 @@ Arguments:
 Options:
   -c, --chain            Chain transcripts (don't reset game state between them)
   -v, --verbose          Show detailed output for each command
+  --emit-traits          Show entity traits for objects referenced in events (implies --verbose)
   -s, --stop-on-failure  Stop on first failure
   -p, --play             Interactive play mode (REPL)
   --restore <name>       Restore from save file and enter play mode
@@ -465,6 +471,7 @@ async function main(): Promise<void> {
     const savesDirectory = path.join(options.storyPath, 'saves');
     const result = await runTranscript(transcript, game, {
       verbose: options.verbose,
+      emitTraits: options.emitTraits,
       stopOnFailure: options.stopOnFailure,
       savesDirectory,
       testingExtension: game.testingExtension
@@ -473,7 +480,7 @@ async function main(): Promise<void> {
     results.push(result);
 
     // Report individual transcript results
-    reportTranscript(result, { verbose: options.verbose });
+    reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
 
     // Stop if requested and there was a failure
     if (options.stopOnFailure && result.failed > 0) {
