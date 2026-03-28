@@ -51,20 +51,16 @@ function getValidExits(world: WorldModel, roundRoomId: string): string[] {
 /**
  * Pick a random exit destination from the Round Room
  */
-function getRandomExit(world: WorldModel, roundRoomId: string, excludeId?: string): string | null {
+function getRandomExit(world: WorldModel, roundRoomId: string): string | null {
   const exits = getValidExits(world, roundRoomId);
 
-  // Filter out the excluded destination (so we don't send them where they were trying to go)
-  const validExits = excludeId
-    ? exits.filter(id => id !== excludeId)
-    : exits;
+  if (exits.length === 0) return null;
 
-  if (validExits.length === 0) {
-    return exits.length > 0 ? exits[0] : null;
-  }
-
-  const randomIndex = Math.floor(Math.random() * validExits.length);
-  return validExits[randomIndex];
+  // MDL CAROUSEL-OUT picks any of the 8 compass exits at random, without
+  // excluding the intended destination. With NORTH and SOUTH both pointing
+  // to Engravings Cave, there is a 2/8 chance of reaching it per attempt.
+  const randomIndex = Math.floor(Math.random() * exits.length);
+  return exits[randomIndex];
 }
 
 /**
@@ -110,12 +106,10 @@ export function registerRoundRoomHandler(
       }
 
       // Room is spinning! Randomize the destination
-      const intendedDestination = playerLocation;
-      const randomDestination = getRandomExit(world, roundRoomId, intendedDestination);
+      const randomDestination = getRandomExit(world, roundRoomId);
 
-      if (!randomDestination || randomDestination === intendedDestination) {
-        // No valid alternative destination, or randomly picked the same one
-        // Just emit the spinning message but let them stay
+      if (!randomDestination || randomDestination === playerLocation) {
+        // No valid destination, or randomly picked the same room we're already in
         events.push({
           id: generateEventId(),
           type: 'game.message',

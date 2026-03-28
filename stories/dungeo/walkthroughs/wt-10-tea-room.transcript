@@ -29,8 +29,30 @@ $restore wt-09
 
 [GOAL: Solve riddle and get pearl necklace]
 
-# Teleport to Engravings Cave (Round Room carousel makes navigation unreliable)
-$teleport Engravings Cave
+# Navigate to Round Room (carousel is spinning — exits are randomized)
+> open trap door
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> north
+[OK: contains "East-West Passage"]
+
+> east
+[OK: contains "Round Room"]
+
+# Carousel randomizes exits — 2/8 chance of Engravings Cave per attempt
+[WHILE: not location = "Engravings Cave"]
+> south
+[SKIP]
+[IF: not location = "Engravings Cave"]
+[NAVIGATE TO: "Round Room"]
+[END IF]
+[END WHILE]
 
 > look
 [OK: contains "Engravings Cave"]
@@ -190,9 +212,52 @@ $teleport Engravings Cave
 
 [GOAL: Store treasures in trophy case]
 
-$teleport Living Room
+# Return to Living Room via well bucket and Round Room (carousel now fixed)
+# Dingy Closet → Machine Room → Low Room → Tea Room → Top of Well → bucket down →
+# Well Bottom → Pearl Room → Riddle Room → Engravings Cave → Round Room → Living Room
+> north
+[OK: contains "Machine Room"]
 
-> look
+> west
+[OK: contains "Low Room"]
+
+> southeast
+[OK: contains "Tea Room"]
+
+> west
+[OK: contains "Top of Well"]
+
+> enter bucket
+[OK: contains "bucket"]
+
+> fill bottle
+[OK: contains "descend"]
+
+> exit bucket
+[OK: contains "bucket"]
+
+> west
+[OK: contains "Broom Closet"]
+
+> west
+[OK: contains "Riddle Room"]
+
+> up
+[OK: contains "Engravings Cave"]
+
+> north
+[OK: contains "Round Room"]
+
+> west
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
 [OK: contains "Living Room"]
 
 > open trophy case

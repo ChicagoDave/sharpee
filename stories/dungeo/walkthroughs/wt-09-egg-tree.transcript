@@ -12,10 +12,20 @@ $restore wt-08
 
 [GOAL: Get the egg from Up a Tree]
 
-# Navigate to the forest tree
-$teleport Up a Tree
+# Navigate to the forest tree (Living Room → Kitchen → Behind House → North of House → Forest Path → Up a Tree)
+> east
+[OK: contains "Kitchen"]
 
-> look
+> east
+[OK: contains "Behind House"]
+
+> north
+[OK: contains "North of House"]
+
+> north
+[OK: contains "Forest"]
+
+> up
 [OK: contains "Up a Tree"]
 [OK: contains "nest"]
 
@@ -37,9 +47,20 @@ $teleport Up a Tree
 
 [GOAL: Store egg in trophy case]
 
-$teleport Living Room
+# Navigate back to Living Room (Up a Tree → Forest Path → North of House → Behind House → Kitchen → Living Room)
+> down
+[OK: contains "Forest"]
 
-> look
+> south
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
 [OK: contains "Living Room"]
 
 > open trophy case

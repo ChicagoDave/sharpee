@@ -124,7 +124,10 @@ and all the king's horses can't draw it up?'
     [Direction.EAST]: wellBottom.id,
   });
 
-  setExits(wellBottom, { [Direction.UP]: topOfWell.id });
+  setExits(wellBottom, {
+    [Direction.WEST]: pearlRoom.id,
+    [Direction.UP]: topOfWell.id,
+  });
 
   setExits(topOfWell, {
     [Direction.DOWN]: wellBottom.id,

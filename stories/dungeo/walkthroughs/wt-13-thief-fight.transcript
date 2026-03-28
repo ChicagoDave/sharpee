@@ -246,10 +246,17 @@ $restore wt-12
 > east
 [OK: contains "Living Room"]
 
-# Navigate to forest
-$teleport Forest Path
+# Navigate to forest (Living Room → Kitchen → Behind House → North of House → Forest Path)
+> east
+[OK: contains "Kitchen"]
 
-> look
+> east
+[OK: contains "Behind House"]
+
+> north
+[OK: contains "North of House"]
+
+> north
 [OK: contains "Forest"]
 
 # Wind the canary to summon songbird and get bauble
@@ -267,7 +274,18 @@ $teleport Forest Path
 
 [GOAL: Store treasures in trophy case]
 
-$teleport Living Room
+# Return to Living Room (Forest Path → North of House → Behind House → Kitchen → Living Room)
+> south
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
 
 > open trophy case
 [OK: contains "open"]
@@ -292,8 +310,42 @@ $teleport Living Room
 
 [GOAL: Recover stolen treasures]
 
-# After thief death, stolen items are visible on Treasure Room floor
-$teleport Treasure Room
+# Navigate to Treasure Room (Living Room → Cellar → Troll Room → maze → Cyclops Room → up)
+> open trap door
+[OK: contains "open"]
+
+> down
+[OK: contains "Cellar"]
+
+> east
+[OK: contains "Troll Room"]
+
+> south
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Maze"]
+
+> west
+[OK: contains "Maze"]
+
+> up
+[OK: contains "Maze"]
+
+> southwest
+[OK: contains "Maze"]
+
+> east
+[OK: contains "Maze"]
+
+> south
+[OK: contains "Maze"]
+
+> northeast
+[OK: contains "Cyclops Room"]
+
+> up
+[OK: contains "Treasure Room"]
 
 [IF: room contains "grail"]
 > take grail
@@ -315,8 +367,15 @@ $teleport Treasure Room
 [OK: contains "Taken"]
 [END IF]
 
-# Store recovered items in trophy case
-$teleport Living Room
+# Return to Living Room (Treasure Room → Cyclops Room → Strange Passage → Living Room)
+> down
+[OK: contains "Cyclops"]
+
+> north
+[OK: contains "Strange Passage"]
+
+> east
+[OK: contains "Living Room"]
 
 > open trophy case
 [OK: contains "open"]
