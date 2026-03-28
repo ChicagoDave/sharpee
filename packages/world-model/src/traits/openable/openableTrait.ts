@@ -33,19 +33,25 @@ export interface IOpenableData {
   
   /** Sound made when closing */
   closeSound?: string;
+
+  /** Description when open (used by computed description getter on IFEntity) */
+  openDescription?: string;
+
+  /** Description when closed (used by computed description getter on IFEntity) */
+  closedDescription?: string;
 }
 
 /**
  * Openable trait for entities that can be opened and closed.
  * Used for doors, containers, books, etc.
- * 
+ *
  * This trait contains only data - all logic for opening/closing
  * is in OpenableBehavior.
  */
 export class OpenableTrait implements ITrait, IOpenableData {
   static readonly type = TraitType.OPENABLE;
   readonly type = TraitType.OPENABLE;
-  
+
   // OpenableData properties
   isOpen: boolean;
   startsOpen: boolean;
@@ -57,7 +63,9 @@ export class OpenableTrait implements ITrait, IOpenableData {
   canClose: boolean;
   openSound?: string;
   closeSound?: string;
-  
+  openDescription?: string;
+  closedDescription?: string;
+
   constructor(data: IOpenableData = {}) {
     // Set defaults and merge with provided data
     this.startsOpen = data.startsOpen ?? false;
@@ -70,5 +78,7 @@ export class OpenableTrait implements ITrait, IOpenableData {
     this.canClose = data.canClose ?? true;
     this.openSound = data.openSound;
     this.closeSound = data.closeSound;
+    this.openDescription = data.openDescription;
+    this.closedDescription = data.closedDescription;
   }
 }

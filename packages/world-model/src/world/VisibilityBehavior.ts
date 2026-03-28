@@ -329,115 +329,79 @@ export class VisibilityBehavior extends Behavior {
   }
 
   /**
-   * Checks if an entity is accessible from a room (not blocked by closed containers)
+   * Walks the containment chain from an entity upward, checking whether any
+   * closed opaque container blocks the path.
+   *
+   * This is the single implementation of the container-walk algorithm used by
+   * `isAccessible`, `hasLineOfSight`, and `isVisible`.
+   *
+   * At each hop:
+   * - Actors are transparent (carried/worn items are always reachable)
+   * - Opaque closed containers block
+   * - Transparent containers, open containers, and non-openable opaque containers pass
+   *
+   * @param entityId - Starting entity to walk upward from
+   * @param world - The world model
+   * @param stopAtId - Stop when this ancestor is reached (e.g., the room).
+   *                   If omitted, walks until reaching a room or the top of the tree.
+   * @returns true if no closed opaque container blocks the path
    */
-  private static isAccessible(entityId: string, roomId: string, world: WorldModel): boolean {
+  private static isContainmentPathClear(
+    entityId: string,
+    world: WorldModel,
+    stopAtId?: string
+  ): boolean {
     let current = entityId;
-    
-    while (current !== roomId) {
-      const parent = world.getLocation(current);
-      if (!parent) return false;
-      
-      const container = world.getEntity(parent);
-      if (!container) return false;
-      
-      // Actors don't block access to their contents
+
+    while (true) {
+      if (stopAtId !== undefined && current === stopAtId) return true;
+
+      const parentId = world.getLocation(current);
+      if (!parentId) return true;
+
+      const container = world.getEntity(parentId);
+      if (!container) return true;
+
+      // Actors don't block access/visibility of their contents
       if (container.hasTrait(TraitType.ACTOR)) {
-        // Items carried by actors are accessible
-        current = parent;
+        current = parentId;
         continue;
       }
-      
-      // If it's in an opaque, closed container, it's not accessible
+
+      // Opaque + closed containers block the path
       if (container.hasTrait(TraitType.CONTAINER)) {
         const containerTrait = container.getTrait(ContainerTrait);
         const isTransparent = containerTrait?.isTransparent ?? false;
-        if (!isTransparent) {
-          if (container.hasTrait(TraitType.OPENABLE)) {
-            const openable = container.getTrait(OpenableTrait);
-            const isOpen = openable?.isOpen ?? false;
-            if (!isOpen) {
-              return false; // Closed opaque container blocks access
-            }
+        if (!isTransparent && container.hasTrait(TraitType.OPENABLE)) {
+          const openable = container.getTrait(OpenableTrait);
+          const isOpen = openable?.isOpen ?? false;
+          if (!isOpen) {
+            return false;
           }
         }
       }
-      
-      current = parent;
+
+      // Stop at rooms (natural top of containment)
+      if (container.hasTrait(TraitType.ROOM)) return true;
+
+      current = parentId;
     }
-    
-    return true;
   }
 
   /**
-   * Checks if there's a line of sight between observer and target
+   * Checks if an entity is accessible from a room (not blocked by closed containers)
+   */
+  private static isAccessible(entityId: string, roomId: string, world: WorldModel): boolean {
+    return this.isContainmentPathClear(entityId, world, roomId);
+  }
+
+  /**
+   * Checks if there's a line of sight between observer and target.
+   * Walks the target's containment chain to verify no closed opaque container
+   * blocks visibility.
    */
   private static hasLineOfSight(observerId: string, targetId: string, world: WorldModel): boolean {
-    // Get the containment path from target to room
-    const targetPath = this.getContainmentPath(targetId, world);
-    
-    // Check each container in the path
-    for (let i = 0; i < targetPath.length - 1; i++) {
-      const contained = targetPath[i];
-      const container = targetPath[i + 1];
-      
-      const containerEntity = world.getEntity(container);
-      if (!containerEntity) return false;
-
-      // Actors are always visible-through (can see their inventory/worn items)
-      if (containerEntity.hasTrait(TraitType.ACTOR)) {
-        // Can always see what actors are carrying/wearing
-        continue;
-      }
-      
-      // If it's in a container, check if we can see inside
-      if (containerEntity.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = containerEntity.getTrait(ContainerTrait);
-
-        // Opaque containers block sight when closed
-        // Default isTransparent to false if not specified
-        const isTransparent = containerTrait?.isTransparent ?? false;
-        if (!isTransparent) {
-          // If it's opaque, check if it's openable and closed
-          if (containerEntity.hasTrait(TraitType.OPENABLE)) {
-            const openable = containerEntity.getTrait(OpenableTrait);
-            // Default isOpen to false if not specified
-            const isOpen = openable?.isOpen ?? false;
-            if (!isOpen) {
-              return false; // Closed opaque container blocks sight
-            }
-          }
-          // If opaque but not openable, we can see through (it can't be closed)
-        }
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Gets the containment path from an entity to its room
-   */
-  private static getContainmentPath(entityId: string, world: WorldModel): string[] {
-    const path: string[] = [entityId];
-    let current = entityId;
-    let depth = 0;
-    const maxDepth = 10;
-
-    while (depth < maxDepth) {
-      const parent = world.getLocation(current);
-      if (!parent) break;
-      
-      path.push(parent);
-      
-      const parentEntity = world.getEntity(parent);
-      if (parentEntity?.hasTrait(TraitType.ROOM)) break;
-      
-      current = parent;
-      depth++;
-    }
-
-    return path;
+    return this.isContainmentPathClear(targetId, world);
   }
 
   /**
@@ -465,43 +429,7 @@ export class VisibilityBehavior extends Behavior {
     }
 
     // Check containment path for closed opaque containers
-    let current = entity.id;
-
-    while (true) {
-      const location = world.getLocation(current);
-      if (!location) break; // Reached top level
-
-      const container = world.getEntity(location);
-      if (!container) break;
-
-      // Actors don't block visibility of their contents
-      if (container.hasTrait(TraitType.ACTOR)) {
-        current = location;
-        continue;
-      }
-
-      // Check if this container blocks visibility
-      if (container.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = container.getTrait(ContainerTrait);
-
-        // If container is opaque and closed, entity is not visible
-        const isTransparent = containerTrait?.isTransparent ?? false;
-        if (!isTransparent) {
-          if (container.hasTrait(TraitType.OPENABLE)) {
-            const openable = container.getTrait(OpenableTrait);
-            const isOpen = openable?.isOpen ?? false;
-            if (!isOpen) {
-              return false; // In closed opaque container
-            }
-          }
-          // Opaque but not openable - can see through
-        }
-      }
-
-      current = location;
-    }
-
-    return true;
+    return this.isContainmentPathClear(entity.id, world);
   }
 
   /**

@@ -677,9 +677,33 @@ export class IFEntity implements IEntity {
   }
   
   /**
-   * Get the description of this entity
+   * Get the description of this entity, computed from trait state.
+   *
+   * Priority: OpenableTrait (open/closed) > SwitchableTrait (on/off)
+   * > LightSourceTrait (lit/unlit) > IdentityTrait.description.
+   * Each trait is consulted only if the entity has it and the relevant
+   * state-specific description field is populated; otherwise falls through.
    */
   get description(): string | undefined {
+    const openable = this.get(OpenableTrait);
+    if (openable) {
+      const desc = openable.isOpen ? openable.openDescription : openable.closedDescription;
+      if (desc) return desc;
+    }
+
+    const switchable = this.get(SwitchableTrait);
+    if (switchable) {
+      const desc = switchable.isOn ? switchable.onDescription : switchable.offDescription;
+      if (desc) return desc;
+    }
+
+    const lightSource = this.get(LightSourceTrait);
+    if (lightSource) {
+      const isLit = lightSource.isLit ?? this.get(SwitchableTrait)?.isOn ?? true;
+      const desc = isLit ? lightSource.litDescription : lightSource.unlitDescription;
+      if (desc) return desc;
+    }
+
     const identity = this.get(IdentityTrait);
     return identity ? identity.description : undefined;
   }

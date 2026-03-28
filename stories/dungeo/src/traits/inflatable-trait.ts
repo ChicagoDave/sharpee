@@ -19,6 +19,12 @@ import { ITrait, ITraitConstructor } from '@sharpee/world-model';
 export interface InflatableTraitConfig {
   /** Whether the entity is currently inflated */
   isInflated: boolean;
+
+  /** Description when inflated (ISSUE-070: sourced by inflate/deflate actions) */
+  inflatedDescription?: string;
+
+  /** Description when deflated (ISSUE-070: sourced by inflate/deflate actions) */
+  deflatedDescription?: string;
 }
 
 /**
@@ -30,6 +36,10 @@ export interface InflatableTraitConfig {
  *
  * The inflate/deflate actions check for this trait to determine
  * if an entity can be inflated/deflated.
+ *
+ * Description fields are sourced by inflate/deflate actions when mutating
+ * IdentityTrait.description. Full elimination of these mutations requires
+ * promoting InflatableTrait to a platform trait (out of scope for ISSUE-070).
  *
  * Interceptors:
  * - if.action.entering: Checks for sharp objects when entering inflated boat
@@ -45,8 +55,16 @@ export class InflatableTrait implements ITrait {
   /** Whether the entity is currently inflated */
   isInflated: boolean;
 
+  /** Description when inflated */
+  inflatedDescription?: string;
+
+  /** Description when deflated */
+  deflatedDescription?: string;
+
   constructor(config: InflatableTraitConfig) {
     this.isInflated = config.isInflated;
+    this.inflatedDescription = config.inflatedDescription;
+    this.deflatedDescription = config.deflatedDescription;
   }
 }
 

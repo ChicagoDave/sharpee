@@ -45,7 +45,7 @@ import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, Bal
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
 
 // Import handlers
-import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages, registerOpenableDescriptionHandler } from './handlers';
+import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages } from './handlers';
 import { GhostRitualMessages } from './traits';
 import { initializeMirrorRoom, createMirrorTouchHandler, MirrorRoomConfig, MirrorRoomMessages } from './handlers/mirror-room-handler';
 import { MIRROR_ID } from './regions/temple';
@@ -537,8 +537,7 @@ export class DungeoStory implements Story {
     // Melee NPC resolver — handles villain→hero attacks via canonical melee engine
     registerNpcCombatResolver(meleeNpcResolver);
 
-    // Openable description auto-switching (ISSUE-068: replaces entity on handlers)
-    registerOpenableDescriptionHandler(world);
+    // Openable descriptions now computed from OpenableTrait fields (ISSUE-070)
 
     // Store room IDs for ghost ritual interceptor
     world.setStateValue('dungeo.ghost_ritual.basin_room_id', this.templeIds.basinRoom);

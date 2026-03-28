@@ -1,6 +1,16 @@
 /**
- * @file Scope Evaluator
- * @description Evaluates scope rules to determine visible entities
+ * @file Rule-Based Scope Evaluator
+ * @description Evaluates scope rules to determine which entities are "in scope"
+ * for a given actor at a given location.
+ *
+ * Pipeline role: PRE-PARSE — called via WorldModel.evaluateScope() →
+ * VocabularyManager.updateScopeVocabulary() to populate the parser's entity
+ * vocabulary before each turn. Stories can add/remove rules via
+ * world.addScopeRule() / world.removeScopeRule().
+ *
+ * NOT the same as the parser's GrammarScopeResolver (grammar constraint
+ * evaluation) or the stdlib's StandardScopeResolver (validation-phase entity
+ * resolution with disambiguation).
  */
 
 import { IEntity } from '@sharpee/core';
@@ -16,7 +26,7 @@ import { ScopeRegistry } from './scope-registry';
 /**
  * Evaluates scope rules to determine what entities are in scope
  */
-export class ScopeEvaluator {
+export class RuleScopeEvaluator {
   private registry: ScopeRegistry;
   private cache: Map<string, IScopeEvaluationResult> = new Map();
 

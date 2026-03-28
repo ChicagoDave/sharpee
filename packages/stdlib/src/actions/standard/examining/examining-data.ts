@@ -55,11 +55,11 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   
   // Add trait-specific information
   
-  // Identity trait (description/brief)
+  // Description and brief (description uses computed getter for trait-aware text)
+  eventData.hasDescription = !!noun.description;
   if (noun.has(TraitType.IDENTITY)) {
     const identityTrait = noun.getTrait(IdentityTrait);
     if (identityTrait) {
-      eventData.hasDescription = !!identityTrait.description;
       eventData.hasBrief = !!identityTrait.brief;
     }
   }
@@ -167,12 +167,9 @@ export function buildExaminingMessageParams(
   if (!eventData.self && noun) {
     // Add trait-specific parameters
 
-    // Add description text if available
-    if (eventData.hasDescription && noun.has(TraitType.IDENTITY)) {
-      const identityTrait = noun.getTrait(IdentityTrait);
-      if (identityTrait?.description) {
-        params.description = identityTrait.description;
-      }
+    // Add description text if available (uses computed getter for trait-aware text)
+    if (eventData.hasDescription && noun.description) {
+      params.description = noun.description;
     }
 
     // Container-specific message

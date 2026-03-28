@@ -32,7 +32,13 @@ export class LightSourceTrait implements ITrait {
   
   /** Fuel consumption rate per turn (when lit) */
   fuelConsumptionRate?: number;
-  
+
+  /** Description when lit (used by computed description getter on IFEntity) */
+  litDescription?: string;
+
+  /** Description when unlit (used by computed description getter on IFEntity) */
+  unlitDescription?: string;
+
   constructor(data?: Partial<LightSourceTrait>) {
     if (data) {
       Object.assign(this, data);

@@ -210,8 +210,9 @@ describe('StandardScopeResolver', () => {
       world.moveEntity(coin.id, player.id); // Carried
 
       const visible = resolver.getVisible(player);
-      
-      expect(visible).toHaveLength(3); // ball, box, coin
+
+      expect(visible).toHaveLength(4); // room, ball, box, coin
+      expect(visible.map(e => e.id)).toContain(room.id);
       expect(visible.map(e => e.name)).toContain('ball');
       expect(visible.map(e => e.name)).toContain('box');
       expect(visible.map(e => e.name)).toContain('coin');
@@ -230,8 +231,9 @@ describe('StandardScopeResolver', () => {
       world.moveEntity(vase.id, closedBox.id);
 
       const reachable = resolver.getReachable(player);
-      
-      expect(reachable).toHaveLength(2);
+
+      expect(reachable).toHaveLength(3); // room, ball, locked box
+      expect(reachable.map(e => e.id)).toContain(room.id);
       expect(reachable.map(e => e.name)).toContain('ball');
       expect(reachable.map(e => e.name)).toContain('locked box');
       // vase is not reachable because it's in a closed container

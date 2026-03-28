@@ -301,7 +301,12 @@ export declare class IFEntity implements IEntity {
      */
     get name(): string;
     /**
-     * Get the description of this entity
+     * Get the description of this entity, computed from trait state.
+     *
+     * Priority: OpenableTrait (open/closed) > SwitchableTrait (on/off)
+     * > LightSourceTrait (lit/unlit) > IdentityTrait.description.
+     * Each trait is consulted only if the entity has it and the relevant
+     * state-specific description field is populated; otherwise falls through.
      */
     get description(): string | undefined;
     /**
@@ -2467,6 +2472,10 @@ export interface IOpenableData {
     openSound?: string;
     /** Sound made when closing */
     closeSound?: string;
+    /** Description when open (used by computed description getter on IFEntity) */
+    openDescription?: string;
+    /** Description when closed (used by computed description getter on IFEntity) */
+    closedDescription?: string;
 }
 /**
  * Openable trait for entities that can be opened and closed.
@@ -2488,6 +2497,8 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
     canClose: boolean;
     openSound?: string;
     closeSound?: string;
+    openDescription?: string;
+    closedDescription?: string;
     constructor(data?: IOpenableData);
 }
 ```
@@ -2624,6 +2635,10 @@ export declare class LightSourceTrait implements ITrait {
     maxFuel?: number;
     /** Fuel consumption rate per turn (when lit) */
     fuelConsumptionRate?: number;
+    /** Description when lit (used by computed description getter on IFEntity) */
+    litDescription?: string;
+    /** Description when unlit (used by computed description getter on IFEntity) */
+    unlitDescription?: string;
     constructor(data?: Partial<LightSourceTrait>);
 }
 ```
@@ -2894,6 +2909,10 @@ export interface ISwitchableData {
     autoOffTime?: number;
     /** Turns remaining before auto-off */
     autoOffCounter?: number;
+    /** Description when switched on (used by computed description getter on IFEntity) */
+    onDescription?: string;
+    /** Description when switched off (used by computed description getter on IFEntity) */
+    offDescription?: string;
 }
 /**
  * Switchable trait for entities that can be turned on and off.
@@ -2920,6 +2939,8 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
     runningSound?: string;
     autoOffTime: number;
     autoOffCounter: number;
+    onDescription?: string;
+    offDescription?: string;
     constructor(data?: ISwitchableData);
 }
 ```
@@ -5059,17 +5080,34 @@ export declare class VisibilityBehavior extends Behavior {
      */
     private static hasLightSource;
     /**
+     * Walks the containment chain from an entity upward, checking whether any
+     * closed opaque container blocks the path.
+     *
+     * This is the single implementation of the container-walk algorithm used by
+     * `isAccessible`, `hasLineOfSight`, and `isVisible`.
+     *
+     * At each hop:
+     * - Actors are transparent (carried/worn items are always reachable)
+     * - Opaque closed containers block
+     * - Transparent containers, open containers, and non-openable opaque containers pass
+     *
+     * @param entityId - Starting entity to walk upward from
+     * @param world - The world model
+     * @param stopAtId - Stop when this ancestor is reached (e.g., the room).
+     *                   If omitted, walks until reaching a room or the top of the tree.
+     * @returns true if no closed opaque container blocks the path
+     */
+    private static isContainmentPathClear;
+    /**
      * Checks if an entity is accessible from a room (not blocked by closed containers)
      */
     private static isAccessible;
     /**
-     * Checks if there's a line of sight between observer and target
+     * Checks if there's a line of sight between observer and target.
+     * Walks the target's containment chain to verify no closed opaque container
+     * blocks visibility.
      */
     private static hasLineOfSight;
-    /**
-     * Gets the containment path from an entity to its room
-     */
-    private static getContainmentPath;
     /**
      * Checks if an entity is visible in its current context
      * (used for filtering queries)
@@ -5287,18 +5325,6 @@ export declare const StandardCapabilities: {
 export type StandardCapabilityName = typeof StandardCapabilities[keyof typeof StandardCapabilities];
 ```
 
-### services/ScopeService
-
-```typescript
-import { IFEntity } from '../entities/if-entity';
-export declare class ScopeService {
-    private world;
-    constructor(world: any);
-    canSee(viewer: IFEntity, target: IFEntity): boolean;
-    canReach(actor: IFEntity, target: IFEntity): boolean;
-}
-```
-
 ### scope/scope-rule
 
 ```typescript
@@ -5456,15 +5482,25 @@ export declare class ScopeRegistry {
 
 ```typescript
 /**
- * @file Scope Evaluator
- * @description Evaluates scope rules to determine visible entities
+ * @file Rule-Based Scope Evaluator
+ * @description Evaluates scope rules to determine which entities are "in scope"
+ * for a given actor at a given location.
+ *
+ * Pipeline role: PRE-PARSE — called via WorldModel.evaluateScope() →
+ * VocabularyManager.updateScopeVocabulary() to populate the parser's entity
+ * vocabulary before each turn. Stories can add/remove rules via
+ * world.addScopeRule() / world.removeScopeRule().
+ *
+ * NOT the same as the parser's GrammarScopeResolver (grammar constraint
+ * evaluation) or the stdlib's StandardScopeResolver (validation-phase entity
+ * resolution with disambiguation).
  */
 import { IScopeRule, IScopeContext, IScopeEvaluationOptions, IScopeEvaluationResult } from './scope-rule';
 import { ScopeRegistry } from './scope-registry';
 /**
  * Evaluates scope rules to determine what entities are in scope
  */
-export declare class ScopeEvaluator {
+export declare class RuleScopeEvaluator {
     private registry;
     private cache;
     constructor(registry: ScopeRegistry);

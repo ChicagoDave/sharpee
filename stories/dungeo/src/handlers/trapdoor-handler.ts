@@ -8,7 +8,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, OpenableTrait, IdentityTrait, RoomTrait, Direction } from '@sharpee/world-model';
+import { WorldModel, OpenableTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const TrapdoorMessages = {
@@ -30,8 +30,7 @@ function generateEventId(): string {
  */
 function findTrapdoor(world: WorldModel): string | null {
   for (const entity of world.getAllEntities()) {
-    const identity = entity.get(IdentityTrait);
-    if (identity?.name === 'trap door') {
+    if (entity.name === 'trap door') {
       return entity.id;
     }
   }
@@ -76,11 +75,7 @@ export function registerTrapdoorHandler(
           if (openable) {
             openable.isOpen = false;
           }
-          // Update description
-          const identity = trapdoor.get(IdentityTrait);
-          if (identity) {
-            identity.description = 'The dusty cover of a closed trap door.';
-          }
+          // Description now computed from OpenableTrait.closedDescription (ISSUE-070)
         }
       }
 

@@ -448,7 +448,11 @@ function createDamBaseObjects(world: WorldModel, roomId: string): void {
     weight: 2
   }));
   boat.add(new ContainerTrait({ capacity: { maxItems: 10, maxWeight: 100 } }));
-  boat.add(new InflatableTrait({ isInflated: false }));
+  boat.add(new InflatableTrait({
+    isInflated: false,
+    inflatedDescription: 'The boat is a seaworthy craft approximately eight feet long. A pair of oars is affixed to the side.',
+    deflatedDescription: 'There is a folded pile of plastic here which has a small valve attached.'
+  }));
   world.moveEntity(boat.id, roomId);
 
   // Tan label - instructions for the boat (inside boat when inflated)

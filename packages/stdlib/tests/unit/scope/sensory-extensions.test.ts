@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait, RoomTrait, LightSourceTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
@@ -231,11 +231,10 @@ describe('Sensory Extensions', () => {
 
   describe('Darkness', () => {
     test('should not see in dark rooms without light', () => {
-      // Make room dark using custom properties
-      // Get the existing identity trait and add customProperties
-      const identity = room.get(IdentityTrait)! as IdentityTrait & { customProperties?: Record<string, unknown> };
-      identity.customProperties = { isDark: true };
-      
+      // Make room dark via RoomTrait (the canonical mechanism)
+      const roomTrait = room.getTrait(RoomTrait)!;
+      roomTrait.isDark = true;
+
       const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });
       author.moveEntity(ball.id, room.id);
@@ -246,17 +245,14 @@ describe('Sensory Extensions', () => {
     });
 
     test('should see in dark rooms with carried light source', () => {
-      // Make room dark
-      const identity = room.get(IdentityTrait)! as IdentityTrait & { customProperties?: Record<string, unknown> };
-      identity.customProperties = { isDark: true };
-      
-      // Give player a lit torch
+      // Make room dark via RoomTrait
+      const roomTrait = room.getTrait(RoomTrait)!;
+      roomTrait.isDark = true;
+
+      // Give player a lit torch (proper LightSourceTrait)
       const torch = author.createEntity('torch', EntityType.OBJECT);
-      torch.add({ 
-        type: TraitType.IDENTITY,
-        name: 'torch',
-        customProperties: { isLit: true }
-      });
+      torch.add({ type: TraitType.IDENTITY, name: 'torch' });
+      torch.add({ type: TraitType.LIGHT_SOURCE, isLit: true });
       author.moveEntity(torch.id, player.id);
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
@@ -268,16 +264,12 @@ describe('Sensory Extensions', () => {
     });
 
     test('should see if actor itself provides light', () => {
-      // Make room dark
-      room.add({
-        type: TraitType.IDENTITY,
-        name: 'Living Room',
-        customProperties: { isDark: true }
-      });
-      
-      // Make player glow
-      const playerIdentity = player.get(IdentityTrait)! as IdentityTrait & { customProperties?: Record<string, unknown> };
-      playerIdentity.customProperties = { providesLight: true };
+      // Make room dark via RoomTrait
+      const roomTrait = room.getTrait(RoomTrait)!;
+      roomTrait.isDark = true;
+
+      // Give the player a lit light source (acts as "player glows")
+      player.add({ type: TraitType.LIGHT_SOURCE, isLit: true });
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });

@@ -38,7 +38,7 @@ import {
   IEventProcessorWiring
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
-import { ScopeEvaluator } from '../scope/scope-evaluator';
+import { RuleScopeEvaluator } from '../scope/scope-evaluator';
 import { IScopeRule, IScopeContext } from '../scope/scope-rule';
 
 // Event handler types - these are tightly coupled to WorldModel
@@ -275,7 +275,7 @@ export class WorldModel implements IWorldModel {
 
   // Scope system
   private scopeRegistry: ScopeRegistry;
-  private scopeEvaluator: ScopeEvaluator;
+  private scopeEvaluator: RuleScopeEvaluator;
 
   // Vocabulary system (ADR-082)
   private grammarVocabularyProvider: IGrammarVocabularyProvider;
@@ -292,7 +292,7 @@ export class WorldModel implements IWorldModel {
 
     // Initialize scope system
     this.scopeRegistry = new ScopeRegistry();
-    this.scopeEvaluator = new ScopeEvaluator(this.scopeRegistry);
+    this.scopeEvaluator = new RuleScopeEvaluator(this.scopeRegistry);
 
     // Initialize vocabulary system (ADR-082)
     this.grammarVocabularyProvider = new GrammarVocabularyProvider();
