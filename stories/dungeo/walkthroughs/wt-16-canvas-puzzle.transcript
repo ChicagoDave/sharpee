@@ -109,10 +109,39 @@ $restore wt-15
 [GOAL: Get canvas from Gallery]
 [ENSURES: inventory contains "canvas"]
 
-$teleport Gallery
+# Navigate to Gallery (Basin Room → Ancient Chasm → Loud Room → N/S Passage →
+# Chasm → Deep Ravine → E/W Passage → Troll Room → N/S Crawlway → Studio → Gallery)
+> north
+[OK: contains "Ancient Chasm"]
+
+> west
+[OK: contains "Loud Room"]
+
+> west
+[OK: contains "North/South Passage"]
+
+> north
+[OK: contains "Chasm"]
+
+> south
+[OK: contains "Deep Ravine"]
+
+> south
+[OK: contains "East-West Passage"]
+
+> west
+[OK: contains "Troll Room"]
+
+> east
+[OK: contains "North/South Crawlway"]
+
+> south
+[OK: contains "Studio"]
+
+> northwest
+[OK: contains "Gallery"]
 
 > look
-[OK: contains "Gallery"]
 [OK: contains "canvas"]
 
 > take canvas
@@ -126,7 +155,21 @@ $teleport Gallery
 
 [GOAL: Store canvas in trophy case]
 
-$teleport Living Room
+# Return to Living Room (Gallery → Studio → N/S Crawlway → Troll Room → Cellar → Living Room)
+> south
+[OK: contains "Studio"]
+
+> north
+[OK: contains "North/South Crawlway"]
+
+> east
+[OK: contains "Troll Room"]
+
+> west
+[OK: contains "Cellar"]
+
+> up
+[OK: contains "Living Room"]
 
 > open trophy case
 [OK: contains "open"]
