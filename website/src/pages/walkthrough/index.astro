@@ -1,0 +1,716 @@
+---
+/**
+ * Dungeon Walkthrough Viewer page.
+ *
+ * Loads pre-exported walkthrough data (JSON) and renders an interactive
+ * transcript/event browser. All data is static — no backend required.
+ *
+ * Public interface: Astro page at /walkthrough/
+ * Owner context: sharpee.net website
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Dungeon Walkthrough">
+  <div class="viewer-wrapper">
+    <div class="viewer-header">
+      <h1>Dungeon Walkthrough Viewer</h1>
+      <p class="viewer-subtitle">Browse every command, game output, and domain event from a full Dungeon playthrough.</p>
+      <div class="stats-bar" id="stats">Loading walkthrough data...</div>
+    </div>
+
+    <div class="viewer-layout">
+      <nav class="sidebar">
+        <h2 class="sidebar-heading">Transcripts</h2>
+        <ul class="transcript-list" id="transcript-list"></ul>
+      </nav>
+
+      <div class="viewer-main">
+        <div class="filter-bar">
+          <label for="filter-event-type">Event type:</label>
+          <select id="filter-event-type">
+            <option value="">All</option>
+          </select>
+          <label for="filter-result">Result:</label>
+          <select id="filter-result">
+            <option value="">All</option>
+            <option value="PASS">Pass</option>
+            <option value="FAIL">Fail</option>
+          </select>
+        </div>
+        <div class="turns-container" id="turns-container">
+          <div class="empty-state">Select a transcript to view turns</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  /* --- Viewer wrapper: full-width inside BaseLayout main --- */
+  .viewer-wrapper {
+    margin: -2rem -1.5rem;
+    padding: 0;
+    min-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .viewer-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .viewer-header h1 {
+    font-size: 1.4rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .viewer-subtitle {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+  }
+
+  .stats-bar :global(.stat-value) {
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .stats-bar :global(.badge) {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .stats-bar :global(.badge-pass) {
+    background: #059669;
+    color: #fff;
+  }
+
+  .stats-bar :global(.badge-fail) {
+    background: #dc2626;
+    color: #fff;
+  }
+
+  /* --- Layout --- */
+  .viewer-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    height: calc(100vh - 240px);
+  }
+
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-heading {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-muted);
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .transcript-list {
+    list-style: none;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  :global(.transcript-item) {
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border);
+    transition: background 0.12s;
+  }
+
+  :global(.transcript-item:hover) {
+    background: #f1f5f9;
+  }
+
+  :global(.transcript-item.active) {
+    background: #ecfdf5;
+    border-left: 3px solid var(--color-accent);
+  }
+
+  :global(.transcript-item .name) {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.1rem;
+    color: var(--color-text);
+  }
+
+  :global(.transcript-item .meta) {
+    font-size: 0.7rem;
+    color: var(--color-muted);
+  }
+
+  /* --- Filter bar --- */
+  .filter-bar {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .filter-bar label {
+    color: var(--color-muted);
+    font-size: 0.75rem;
+  }
+
+  .filter-bar select {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+
+  /* --- Main content --- */
+  .viewer-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .turns-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 1rem;
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+  }
+
+  /* --- Turn cards --- */
+  :global(.turn-card) {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-border);
+    margin-bottom: 2px;
+    border-radius: 4px;
+  }
+
+  :global(.turn-card.fail) {
+    border-left-color: #dc2626;
+  }
+
+  :global(.turn-command) {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.75rem;
+  }
+
+  :global(.turn-number) {
+    font-size: 0.65rem;
+    color: var(--color-muted);
+    min-width: 24px;
+  }
+
+  :global(.command) {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+    flex: 1;
+  }
+
+  :global(.command::before) {
+    content: '> ';
+    color: var(--color-accent);
+  }
+
+  :global(.result-badge) {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  :global(.result-pass) {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  :global(.result-fail) {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  :global(.game-turn-num) {
+    font-size: 0.65rem;
+    color: var(--color-muted);
+  }
+
+  :global(.output-block) {
+    padding: 0.25rem 0.75rem 0.5rem 3rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--color-muted);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  /* --- Events toggle --- */
+  :global(.events-toggle) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem 0.25rem 3rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    transition: color 0.12s;
+  }
+
+  :global(.events-toggle:hover) {
+    color: var(--color-text);
+  }
+
+  :global(.events-toggle .arrow) {
+    transition: transform 0.15s;
+    display: inline-block;
+    font-size: 0.6rem;
+  }
+
+  :global(.events-toggle.open .arrow) {
+    transform: rotate(90deg);
+  }
+
+  :global(.event-badges-inline) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+
+  :global(.event-badge-small) {
+    font-size: 0.6rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 2px;
+    background: #e2e8f0;
+    color: var(--color-muted);
+  }
+
+  /* --- Events section --- */
+  :global(.events-section) {
+    display: none;
+    padding: 0.4rem 0.75rem 0.5rem 3rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  :global(.events-section.open) {
+    display: block;
+  }
+
+  :global(.event-item) {
+    margin-bottom: 2px;
+  }
+
+  :global(.event-header) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.1s;
+  }
+
+  :global(.event-header:hover) {
+    background: #f1f5f9;
+  }
+
+  :global(.event-type-badge) {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #fff;
+  }
+
+  :global(.etype-action)   { background: #166534; }
+  :global(.etype-movement) { background: #1e40af; }
+  :global(.etype-message)  { background: #6b21a8; }
+  :global(.etype-death)    { background: #991b1b; }
+  :global(.etype-game)     { background: #c2410c; }
+  :global(.etype-npc)      { background: #0e7490; }
+  :global(.etype-state)    { background: #3f6212; }
+  :global(.etype-score)    { background: #ca8a04; color: #111; }
+
+  :global(.event-summary) {
+    font-size: 0.72rem;
+    color: var(--color-muted);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.event-expand) {
+    font-size: 0.6rem;
+    color: var(--color-muted);
+    transition: transform 0.15s;
+  }
+
+  :global(.event-json) {
+    display: none;
+    margin: 0.25rem 0.5rem 0.5rem;
+    padding: 0.6rem;
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    line-height: 1.5;
+    overflow-x: auto;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  :global(.event-json.open) {
+    display: block;
+  }
+
+  /* JSON syntax highlighting (light theme) */
+  :global(.json-key)    { color: #1e40af; }
+  :global(.json-string) { color: #166534; }
+  :global(.json-number) { color: #c2410c; }
+  :global(.json-bool)   { color: #7c3aed; }
+  :global(.json-null)   { color: #dc2626; }
+  :global(.json-brace)  { color: #94a3b8; }
+
+  /* --- Responsive --- */
+  @media (max-width: 768px) {
+    .viewer-wrapper {
+      margin: -1.5rem -1rem;
+    }
+
+    .viewer-layout {
+      flex-direction: column;
+      height: auto;
+    }
+
+    .sidebar {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+      max-height: 200px;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Client-side walkthrough viewer logic.
+   *
+   * Loads /data/walkthrough.json once on init, then renders transcripts,
+   * turns, and events interactively from the in-memory data.
+   */
+
+  interface WalkthroughData {
+    stats: { transcripts: number; turns: number; events: number; passed: number; failed: number };
+    transcripts: { id: number; filename: string; title: string | null; test_count: number | null; duration_ms: number | null; sequence: number }[];
+    turnsByTranscript: Record<string, { id: number; transcript_id: number; sequence: number; command: string; result: string; assertion: string | null; output_text: string | null; game_turn: number | null }[]>;
+    eventsByTurn: Record<string, { id: number; sequence: number; event_type: string; action_id: string | null; game_turn: number | null; data: Record<string, unknown> }[]>;
+    eventTypes: { event_type: string; count: number }[];
+  }
+
+  let walkthroughData: WalkthroughData | null = null;
+
+  const state = {
+    transcriptId: null as number | null,
+    eventFilter: '',
+    resultFilter: '',
+  };
+
+  function escHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function classifyEvent(type: string): string {
+    if (type.includes('death') || type.includes('killed')) return 'death';
+    if (type.includes('moved') || type.includes('exited') || type.includes('entered')) return 'movement';
+    if (type === 'game.message') return 'message';
+    if (type.startsWith('game.')) return 'game';
+    if (type.startsWith('npc.')) return 'npc';
+    if (type.includes('score') || type.includes('victory')) return 'score';
+    if (type.includes('sm.transition') || type.includes('state')) return 'state';
+    return 'action';
+  }
+
+  function summarizeEvent(ev: { event_type: string; data: Record<string, any> }): string {
+    const d = ev.data;
+    switch (ev.event_type) {
+      case 'game.message':
+        return d.text ? String(d.text).substring(0, 80) + (String(d.text).length > 80 ? '...' : '') : d.messageId || '';
+      case 'if.event.actor_moved':
+        return `${d.sourceRoom?.name || d.fromRoom} \u2192 ${d.destinationRoom?.name || d.toRoom}`;
+      case 'if.event.actor_exited':
+        return `${d.direction} \u2192 ${d.toRoom}`;
+      case 'if.event.actor_entered':
+        return `from ${d.fromRoom} (${d.direction})`;
+      case 'if.event.attacked':
+        return `${d.targetName} with ${d.weaponName || 'fists'}`;
+      case 'if.event.death':
+        return `${d.targetName} killed by ${d.killedBy}`;
+      case 'if.event.taken':
+        return d.itemName || d.item || '';
+      case 'if.event.dropped':
+        return d.itemName || d.item || '';
+      case 'if.event.opened':
+      case 'if.event.closed':
+        return d.targetName || d.target || '';
+      case 'if.event.room.description':
+        return d.roomName || '';
+      case 'game.victory':
+        return `Score: ${d.totalScore}`;
+      case 'sm.transition':
+        return `${d.machineId}: ${d.from} \u2192 ${d.to}`;
+      case 'npc.emoted':
+        return d.messageId || '';
+      default:
+        return d.messageId || d.targetName || '';
+    }
+  }
+
+  function syntaxHighlight(json: string): string {
+    return json.replace(
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|[{}\[\],])/g,
+      (match) => {
+        let cls = 'json-number';
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = 'json-key';
+            match = match.replace(/"/g, '').replace(/:$/, ':');
+            return `<span class="${cls}">${escHtml(match)}</span>`;
+          } else {
+            cls = 'json-string';
+          }
+        } else if (/true|false/.test(match)) {
+          cls = 'json-bool';
+        } else if (/null/.test(match)) {
+          cls = 'json-null';
+        } else if (/[{}\[\],]/.test(match)) {
+          cls = 'json-brace';
+        }
+        return `<span class="${cls}">${escHtml(match)}</span>`;
+      }
+    );
+  }
+
+  function highlightJson(obj: unknown): string {
+    return syntaxHighlight(JSON.stringify(obj, null, 2));
+  }
+
+  function renderStats(): void {
+    if (!walkthroughData) return;
+    const s = walkthroughData.stats;
+    const el = document.getElementById('stats')!;
+    el.innerHTML = `
+      <span><span class="stat-value">${s.transcripts}</span> transcripts</span>
+      <span><span class="stat-value">${s.turns}</span> turns</span>
+      <span><span class="stat-value">${s.events}</span> events</span>
+      <span class="badge badge-pass">${s.passed} pass</span>
+      ${s.failed ? `<span class="badge badge-fail">${s.failed} fail</span>` : ''}
+    `;
+  }
+
+  function renderEventTypes(): void {
+    if (!walkthroughData) return;
+    const select = document.getElementById('filter-event-type') as HTMLSelectElement;
+    for (const t of walkthroughData.eventTypes) {
+      const opt = document.createElement('option');
+      opt.value = t.event_type;
+      opt.textContent = `${t.event_type} (${t.count})`;
+      select.appendChild(opt);
+    }
+  }
+
+  function renderTranscripts(): void {
+    if (!walkthroughData) return;
+    const list = document.getElementById('transcript-list')!;
+    list.innerHTML = '';
+    for (const t of walkthroughData.transcripts) {
+      const li = document.createElement('li');
+      li.className = 'transcript-item';
+      li.dataset.id = String(t.id);
+      li.innerHTML = `
+        <div class="name">${escHtml(t.title || t.filename)}</div>
+        <div class="meta">${escHtml(t.filename)} &middot; ${t.test_count ?? '?'} tests &middot; ${t.duration_ms ?? '?'}ms</div>
+      `;
+      li.addEventListener('click', () => selectTranscript(t.id, li));
+      list.appendChild(li);
+    }
+  }
+
+  function selectTranscript(id: number, el: HTMLElement): void {
+    state.transcriptId = id;
+    document.querySelectorAll('.transcript-item').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    renderTurns();
+  }
+
+  function renderTurns(): void {
+    if (!walkthroughData || state.transcriptId === null) return;
+    const container = document.getElementById('turns-container')!;
+    const turns = walkthroughData.turnsByTranscript[state.transcriptId] || [];
+    const filtered = turns.filter(t => {
+      if (state.resultFilter && t.result !== state.resultFilter) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="empty-state">No turns match filters</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    for (const turn of filtered) {
+      const events = walkthroughData.eventsByTurn[turn.id] || [];
+      const eventTypes = [...new Set(events.map(e => e.event_type))];
+
+      const card = document.createElement('div');
+      card.className = `turn-card${turn.result === 'FAIL' ? ' fail' : ''}`;
+      card.innerHTML = `
+        <div class="turn-command">
+          <span class="turn-number">#${turn.sequence}</span>
+          <span class="command">${escHtml(turn.command)}</span>
+          ${turn.game_turn != null ? `<span class="game-turn-num">T${turn.game_turn}</span>` : ''}
+          <span class="result-badge result-${turn.result.toLowerCase()}">${turn.result}</span>
+        </div>
+        ${turn.output_text ? `<div class="output-block">${escHtml(turn.output_text)}</div>` : ''}
+        <div class="events-toggle">
+          <span class="arrow">&#9654;</span>
+          <span>Events (${events.length})</span>
+          <div class="event-badges-inline">
+            ${eventTypes.map(t => `<span class="event-badge-small">${escHtml(t.replace('if.event.', '').replace('game.', 'g:'))}</span>`).join('')}
+          </div>
+        </div>
+        <div class="events-section">
+          <div class="events-list"></div>
+        </div>
+      `;
+
+      const toggle = card.querySelector('.events-toggle')!;
+      const section = card.querySelector('.events-section')!;
+      toggle.addEventListener('click', () => {
+        const isOpen = section.classList.toggle('open');
+        toggle.classList.toggle('open', isOpen);
+        if (isOpen && !section.getAttribute('data-loaded')) {
+          renderTurnEvents(turn.id, card.querySelector('.events-list')!);
+          section.setAttribute('data-loaded', 'true');
+        }
+      });
+
+      container.appendChild(card);
+    }
+  }
+
+  function renderTurnEvents(turnId: number, container: Element): void {
+    if (!walkthroughData) return;
+    const events = walkthroughData.eventsByTurn[turnId] || [];
+    const filtered = state.eventFilter
+      ? events.filter(e => e.event_type === state.eventFilter)
+      : events;
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<span style="font-size:0.72rem;color:var(--color-muted)">No events</span>';
+      return;
+    }
+
+    container.innerHTML = '';
+    for (const ev of filtered) {
+      const cls = classifyEvent(ev.event_type);
+      const summary = summarizeEvent(ev);
+      const item = document.createElement('div');
+      item.className = 'event-item';
+      item.innerHTML = `
+        <div class="event-header">
+          <span class="event-type-badge etype-${cls}">${escHtml(ev.event_type)}</span>
+          <span class="event-summary">${escHtml(summary)}</span>
+          <span class="event-expand">&#9654;</span>
+        </div>
+        <div class="event-json"><pre>${highlightJson(ev.data)}</pre></div>
+      `;
+
+      const hdr = item.querySelector('.event-header')!;
+      const json = item.querySelector('.event-json')!;
+      const arrow = item.querySelector('.event-expand')! as HTMLElement;
+      hdr.addEventListener('click', () => {
+        const open = json.classList.toggle('open');
+        arrow.style.transform = open ? 'rotate(90deg)' : '';
+      });
+
+      container.appendChild(item);
+    }
+  }
+
+  // --- Filter handlers ---
+  document.getElementById('filter-event-type')!.addEventListener('change', (e) => {
+    state.eventFilter = (e.target as HTMLSelectElement).value;
+    // Re-render open event sections
+    document.querySelectorAll('.events-section[data-loaded]').forEach(section => {
+      section.removeAttribute('data-loaded');
+      const evList = section.querySelector('.events-list');
+      if (evList) evList.innerHTML = '';
+      if (section.classList.contains('open')) {
+        const card = section.closest('.turn-card')!;
+        const turnId = parseInt(card.querySelector('.events-toggle')?.getAttribute('data-turn-id') || '0');
+        // Re-render by triggering the turn render
+      }
+    });
+    // Simplest: just re-render all turns
+    renderTurns();
+  });
+
+  document.getElementById('filter-result')!.addEventListener('change', (e) => {
+    state.resultFilter = (e.target as HTMLSelectElement).value;
+    renderTurns();
+  });
+
+  // --- Init ---
+  async function init(): Promise<void> {
+    const resp = await fetch('/data/walkthrough.json');
+    walkthroughData = await resp.json();
+    renderStats();
+    renderTranscripts();
+    renderEventTypes();
+  }
+
+  init();
+</script>
