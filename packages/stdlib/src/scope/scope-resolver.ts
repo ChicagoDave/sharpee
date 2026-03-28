@@ -210,7 +210,7 @@ export class StandardScopeResolver implements ScopeResolver {
         const isLoud = identity && 
           typeof identity === 'object' && 
           'customProperties' in identity &&
-          (identity.customProperties as any)?.loud === true;
+          (identity.customProperties as Record<string, unknown>)?.['loud'] === true;
         
         return isLoud === true;
       }
@@ -262,7 +262,7 @@ export class StandardScopeResolver implements ScopeResolver {
         const isVerySmelly = identity && 
           typeof identity === 'object' && 
           'customProperties' in identity &&
-          (identity.customProperties as any)?.verySmelly === true;
+          (identity.customProperties as Record<string, unknown>)?.['verySmelly'] === true;
         
         return (isVerySmelly === true) && this.hasScent(target);
       }
@@ -494,8 +494,8 @@ export class StandardScopeResolver implements ScopeResolver {
     // Check for explicit smelly property
     const identity = entity.get(TraitType.IDENTITY);
     if (identity && typeof identity === 'object' && 'customProperties' in identity) {
-      const props = (identity.customProperties as any);
-      if (props?.smelly || props?.verySmelly) {
+      const props = identity.customProperties as Record<string, unknown> | undefined;
+      if (props?.['smelly'] || props?.['verySmelly']) {
         return true;
       }
     }
@@ -524,8 +524,8 @@ export class StandardScopeResolver implements ScopeResolver {
     // In a real implementation, this would be a proper DARK trait
     const identity = room.get(TraitType.IDENTITY);
     if (identity && typeof identity === 'object' && 'customProperties' in identity) {
-      const props = (identity.customProperties as any);
-      return props?.isDark === true;
+      const props = identity.customProperties as Record<string, unknown> | undefined;
+      return props?.['isDark'] === true;
     }
     
     // Default: rooms are lit
@@ -550,8 +550,8 @@ export class StandardScopeResolver implements ScopeResolver {
     // Check if actor itself provides light (via custom property)
     const identity = actor.get(TraitType.IDENTITY);
     if (identity && typeof identity === 'object' && 'customProperties' in identity) {
-      const props = (identity.customProperties as any);
-      if (props?.providesLight) {
+      const props = identity.customProperties as Record<string, unknown> | undefined;
+      if (props?.['providesLight']) {
         return true;
       }
     }
@@ -577,8 +577,8 @@ export class StandardScopeResolver implements ScopeResolver {
     // Check for custom light property
     const identity = entity.get(TraitType.IDENTITY);
     if (identity && typeof identity === 'object' && 'customProperties' in identity) {
-      const props = (identity.customProperties as any);
-      if (props?.isLit) {
+      const props = identity.customProperties as Record<string, unknown> | undefined;
+      if (props?.['isLit']) {
         return true;
       }
     }

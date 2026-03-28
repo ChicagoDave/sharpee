@@ -71,7 +71,7 @@ export function buildEventData<T extends Record<string, unknown>>(
     if (config.protectedFields) {
       for (const field of config.protectedFields) {
         if (field in data) {
-          (extended as any)[field] = (data as any)[field];
+          (extended as Record<string, unknown>)[field] = (data as Record<string, unknown>)[field];
         }
       }
     }

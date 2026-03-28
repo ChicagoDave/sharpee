@@ -146,17 +146,17 @@ class ActionAdapter implements IAction {
     // Convert IActionContext back to ActionContext for the stdlib action
     // This is a bit circular but necessary for the adapter pattern
     // In practice, we'd pass through the original context
-    return this.action.validate(context as any);
+    return this.action.validate(context as unknown as ActionContext);
   }
   
   execute(context: IActionContext): ISemanticEvent[] {
     // Similar conversion for execute
-    const result = this.action.execute(context as any);
+    const result = this.action.execute(context as unknown as ActionContext);
     // Handle both old pattern (returns events) and new pattern (returns void)
     if (result === undefined || result === null) {
       // New pattern: execute returned void, call report if available
       if ('report' in this.action && typeof this.action.report === 'function') {
-        return this.action.report(context as any);
+        return this.action.report(context as unknown as ActionContext);
       }
       // If no report method, return empty array
       return [];

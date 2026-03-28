@@ -143,7 +143,7 @@ export class CommandExecutor {
       }
       
       if (!parseResult.success) {
-        throw new Error(`Parse failed: ${(parseResult.error as any).code}`);
+        throw new Error(`Parse failed: ${(parseResult.error as { code?: string })?.code || 'UNKNOWN'}`);
       }
 
       // Phase 1.5: Apply parsed command transformers

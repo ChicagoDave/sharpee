@@ -9,7 +9,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, IWorldModel, VisibilityBehavior } from '@sharpee/world-model';
+import { IFEntity, IWorldModel, VisibilityBehavior, WorldModel } from '@sharpee/world-model';
 
 // Re-export interface types from if-services for convenience
 export type {
@@ -117,7 +117,7 @@ export class PerceptionService implements IPerceptionService {
     // Check environmental darkness
     // Note: VisibilityBehavior.isDark expects a concrete WorldModel
     // We cast here since IWorldModel is compatible
-    if (VisibilityBehavior.isDark(location, world as any)) {
+    if (VisibilityBehavior.isDark(location, world as WorldModel)) {
       return false;
     }
 
@@ -180,11 +180,7 @@ export class PerceptionService implements IPerceptionService {
    * Get the room an actor is currently in.
    */
   private getActorRoom(actor: IFEntity, world: IWorldModel): IFEntity | null {
-    // IWorldModel should have getContainingRoom, but let's be safe
-    if ('getContainingRoom' in world) {
-      return (world as any).getContainingRoom(actor.id) || null;
-    }
-    return null;
+    return world.getContainingRoom(actor.id) || null;
   }
 
   /**
@@ -253,7 +249,7 @@ export class PerceptionService implements IPerceptionService {
       return 'blindfolded';
     }
 
-    if (VisibilityBehavior.isDark(location, world as any)) {
+    if (VisibilityBehavior.isDark(location, world as WorldModel)) {
       return 'darkness';
     }
 

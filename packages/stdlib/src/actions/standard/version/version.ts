@@ -14,6 +14,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { VersionDisplayedEventData } from './version-events';
@@ -46,19 +47,16 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Get version info from StoryInfoTrait (or fall back to legacy (world as any))
     const world = context.world;
-    const storyInfoEntities = world.findByTrait('storyInfo' as any);
-    const trait = storyInfoEntities[0]?.get<any>('storyInfo');
-    const storyConfig = trait || (world as any).storyConfig || {};
-    const versionInfo = trait || (world as any).versionInfo || {};
+    const storyInfoEntities = world.findByTrait(TraitType.STORY_INFO);
+    const trait = storyInfoEntities[0]?.getTrait(StoryInfoTrait);
 
-    const storyTitle = storyConfig.title || 'Unknown';
-    const storyVersion = versionInfo.version || storyConfig.version || '0.0.0';
-    const engineVersion = versionInfo.engineVersion || ENGINE_VERSION;
-    const clientVersion = versionInfo.clientVersion || (world as any).clientVersion || 'N/A';
-    const buildDate = versionInfo.buildDate;
-    const author = storyConfig.author || 'Unknown';
+    const storyTitle = trait?.title || 'Unknown';
+    const storyVersion = trait?.version || '0.0.0';
+    const engineVersion = trait?.engineVersion || ENGINE_VERSION;
+    const clientVersion = trait?.clientVersion || 'N/A';
+    const buildDate = trait?.buildDate;
+    const author = trait?.author || 'Unknown';
 
     // Determine messageId based on available data
     // Use existing lang-en-us keys: version_full, version_no_date

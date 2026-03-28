@@ -14,6 +14,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
+import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { AboutDisplayedEventData } from './about-events';
@@ -44,11 +45,9 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Get story info from StoryInfoTrait (or fall back to legacy (world as any))
     const world = context.world;
-    const storyInfoEntities = world.findByTrait('storyInfo' as any);
-    const trait = storyInfoEntities[0]?.get<any>('storyInfo');
-    const storyConfig = trait || (world as any).storyConfig || {};
+    const storyInfoEntities = world.findByTrait(TraitType.STORY_INFO);
+    const storyConfig = storyInfoEntities[0]?.getTrait(StoryInfoTrait) || {} as Partial<StoryInfoTrait>;
 
     const eventData: AboutDisplayedEventData = {
       messageId: 'if.action.about.success',

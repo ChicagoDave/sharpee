@@ -240,7 +240,7 @@ export class VocabularyRegistry {
           word: verb.toLowerCase(),
           partOfSpeech: PartOfSpeech.VERB,
           mapsTo: verbDef.actionId,
-          source: source as any,
+          source: source as VocabularyEntry['source'],
           priority: 80, // Lower than standard verbs
           metadata: {
             pattern: verbDef.pattern,

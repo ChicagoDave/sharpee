@@ -184,10 +184,10 @@ export function determineGoingMessage(
 ): { messageId: string; params: Record<string, any> } {
   const messageId = movedData.firstVisit ? 'first_visit' : 'moved_to';
   
-  const destinationRoom = movedData.destinationRoom as any;
-  const destinationName = destinationRoom?.name || 
-                          destinationRoom?.attributes?.name || 
-                          destinationRoom?.id || 
+  const destinationRoom = movedData.destinationRoom as Record<string, unknown> | undefined;
+  const destinationName = destinationRoom?.name ||
+                          (destinationRoom?.attributes as Record<string, unknown>)?.name ||
+                          destinationRoom?.id ||
                           'unknown';
   
   return {

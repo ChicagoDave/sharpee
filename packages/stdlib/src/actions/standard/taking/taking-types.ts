@@ -16,7 +16,7 @@ export function isWearableTrait(trait: unknown): trait is IWearableData & { worn
     return false;
   }
   
-  const t = trait as any;
+  const t = trait as Record<string, unknown>;
   // Check for either worn (internal) or isWorn (public accessor)
   return (
     ('isWorn' in t && typeof t.isWorn === 'boolean') ||

@@ -96,16 +96,15 @@ export class EntitySlotConsumer implements SlotConsumer {
       const ref = resolved[0];
       // Use resolved entity's original text for entity resolution
       // Store pronoun metadata as extended properties
-      const result: SlotMatch & { entityId?: string; resolvedText?: string; isPronoun?: boolean } = {
+      const result: SlotMatch = {
         tokens: [startIndex],
         text: ref.text, // Use resolved entity text for entity resolution
         confidence: 1.0,
-        slotType
+        slotType,
+        entityId: ref.entityId,
+        resolvedText: ref.text,
+        isPronoun: true
       };
-      // Extended properties for pronoun tracking
-      result.entityId = ref.entityId;
-      result.resolvedText = ref.text;
-      result.isPronoun = true;
       return result;
     }
 
@@ -117,14 +116,13 @@ export class EntitySlotConsumer implements SlotConsumer {
       confidence: 1.0,
       slotType,
       isList: true,
+      isPronoun: true,
       items: resolved.map(ref => ({
         tokens: [startIndex],
         text: ref.text,
         entityId: ref.entityId
-      } as SlotMatch & { entityId?: string }))
+      }))
     };
-    // Mark as pronoun resolution
-    (result as any).isPronoun = true;
     return result;
   }
 
@@ -457,9 +455,11 @@ export class EntitySlotConsumer implements SlotConsumer {
             );
             console.log(`  Entities in ${scopeConstraint.base} scope: ${allInScope.length}`);
             for (const e of allInScope.slice(0, 5)) {
-              const identity = (e as any).get?.('identity') as any;
+              const eAny = e as unknown as Record<string, unknown>;
+              const getFn = eAny.get as ((type: string) => Record<string, unknown> | undefined) | undefined;
+              const identity = getFn?.('identity');
               const name = identity?.name || e.id;
-              const enterable = (e as any).enterable;
+              const enterable = eAny.enterable;
               console.log(`    - ${name} (enterable=${enterable})`);
             }
             if (allInScope.length > 5) {

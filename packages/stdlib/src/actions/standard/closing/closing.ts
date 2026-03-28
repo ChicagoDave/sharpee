@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableBehavior, ICloseResult, getInterceptorForAction, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, getInterceptorForAction, InterceptorSharedData } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { closedDataConfig } from './closing-data';
@@ -135,9 +135,10 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check if closable has special requirements
-    const openableTrait = noun.get(TraitType.OPENABLE);
-    if ((openableTrait as any).closeRequirements) {
-      const requirement = (openableTrait as any).closeRequirements;
+    const openableTrait = noun.getTrait(OpenableTrait);
+    const openableRecord = openableTrait as Record<string, unknown> | undefined;
+    if (openableRecord?.closeRequirements) {
+      const requirement = openableRecord.closeRequirements as Record<string, unknown>;
       if (requirement.preventedBy) {
         return {
           valid: false,

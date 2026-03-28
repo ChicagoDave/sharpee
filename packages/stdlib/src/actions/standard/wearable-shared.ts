@@ -188,5 +188,5 @@ export function hasRemovalRestrictions(
   wearableTrait: WearableTrait
 ): boolean {
   // Check for cursed or otherwise unremovable items
-  return !!(wearableTrait as any).cursed;
+  return !!(wearableTrait as unknown as Record<string, unknown>).cursed;
 }

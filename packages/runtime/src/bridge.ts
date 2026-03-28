@@ -107,13 +107,13 @@ export class SharpeeRuntimeBridge {
 
       // Eval the story code — it must set window.SharpeeStory
       // The code runs in the same context where window.Sharpee has the full API
-      (window as any).SharpeeStory = undefined;
+      window.SharpeeStory = undefined;
 
       // Use Function constructor instead of eval for slightly better CSP compat
       const fn = new Function(code);
       fn();
 
-      const story = (window as any).SharpeeStory as Story | undefined;
+      const story = window.SharpeeStory;
       if (!story) {
         this.sendError('load', new Error(
           'Story code did not set window.SharpeeStory. ' +
@@ -260,7 +260,7 @@ export class SharpeeRuntimeBridge {
       // Use the engine's internal loadSaveData via restore flow
       // Since we can't call private loadSaveData directly,
       // we register a temporary hook that returns our data
-      const originalHooks = (this.engine as any).saveRestoreHooks;
+      const originalHooks = this.engine.getSaveRestoreHooks();
       this.engine.registerSaveRestoreHooks({
         onSaveRequested: originalHooks?.onSaveRequested || (async () => {}),
         onRestoreRequested: async () => saveData,
@@ -300,7 +300,7 @@ export class SharpeeRuntimeBridge {
       }
     }
 
-    const context = (this.engine as any).context;
+    const context = this.engine.getContext();
     const playerIdentity = player.get<IdentityTrait>(IdentityTrait.type);
     this.send({
       type: 'sharpee:status',

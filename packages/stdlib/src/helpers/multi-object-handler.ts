@@ -5,7 +5,7 @@
  * Actions use this helper to expand multi-object commands into entity lists.
  */
 
-import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
 import { ActionContext } from '../actions/enhanced-types';
 import { StandardScopeResolver } from '../scope/scope-resolver';
 import { INounPhrase } from '@sharpee/world-model';
@@ -227,12 +227,9 @@ function isPortable(entity: IFEntity): boolean {
  * Get entity aliases from identity trait
  */
 function getEntityAliases(entity: IFEntity): string[] {
-  const identity = entity.get(TraitType.IDENTITY);
-  if (identity && typeof identity === 'object' && 'aliases' in identity) {
-    const aliases = (identity as any).aliases;
-    if (Array.isArray(aliases)) {
-      return aliases.map(String);
-    }
+  const identity = entity.getTrait(IdentityTrait);
+  if (identity && Array.isArray(identity.aliases)) {
+    return identity.aliases.map(String);
   }
   return [];
 }

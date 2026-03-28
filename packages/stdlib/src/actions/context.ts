@@ -4,7 +4,7 @@
  * Provides query methods for actions without allowing state mutations
  */
 
-import { IFEntity, WorldModel, ICapabilityData, IValidatedCommand } from '@sharpee/world-model';
+import { IFEntity, WorldModel, ICapabilityData, IValidatedCommand, OpenableTrait } from '@sharpee/world-model';
 import { ActionContext, Action, ScopeCheckResult, ImplicitTakeResult } from './enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { ScopeResolver, ScopeLevel } from '../scope/types';
@@ -74,8 +74,8 @@ export class ReadOnlyActionContext implements ActionContext {
         if (containerLocation === this.currentLocation.id) {
           // Check if it's an open container
           if (container.has('container')) {
-            const openableTrait = container.get('openable');
-            if (!openableTrait || (openableTrait as any).isOpen) {
+            const openableTrait = container.getTrait(OpenableTrait);
+            if (!openableTrait || openableTrait.isOpen) {
               return true;
             }
           }
@@ -90,8 +90,8 @@ export class ReadOnlyActionContext implements ActionContext {
         if (containerLocation === this.player.id) {
           // Check if it's an open container
           if (container.has('container')) {
-            const openableTrait = container.get('openable');
-            if (!openableTrait || (openableTrait as any).isOpen) {
+            const openableTrait = container.getTrait(OpenableTrait);
+            if (!openableTrait || openableTrait.isOpen) {
               return true;
             }
           }

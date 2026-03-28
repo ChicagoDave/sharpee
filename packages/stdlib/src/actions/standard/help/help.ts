@@ -58,24 +58,25 @@ function analyzeHelpRequest(context: ActionContext): HelpState {
     eventData.helpType = 'general';
     
     // Check if this is the first time help was requested
-    const sharedData = (context.world as any).getSharedData?.() || {};
-    const helpRequested = sharedData.helpRequested || false;
-    
+    const worldAny = context.world as unknown as Record<string, unknown> & { getSharedData?: () => Record<string, unknown> };
+    const sharedData = worldAny.getSharedData?.() || {};
+    const helpRequested = sharedData['helpRequested'] || false;
+
     if (!helpRequested) {
       eventData.firstTime = true;
     }
-    
+
     // Include game-specific help sections
-    const helpSections = sharedData.helpSections || [
+    const helpSections = sharedData['helpSections'] as string[] | undefined || [
       'basic_commands',
       'movement',
       'objects',
       'special_commands'
     ];
     eventData.sections = helpSections;
-    
+
     // Include hints availability
-    const hintsEnabled = sharedData.hintsEnabled ?? true;
+    const hintsEnabled = (sharedData['hintsEnabled'] as boolean | undefined) ?? true;
     eventData.hintsAvailable = hintsEnabled;
   }
   

@@ -1783,6 +1783,7 @@ export interface GrammarRule {
     priority: number;
     semantics?: SemanticMapping;
     defaultSemantics?: Partial<SemanticProperties>;
+    experimentalConfidence?: number;
 }
 /**
  * Semantic properties that can be derived from grammar
@@ -1863,6 +1864,9 @@ export interface SlotMatch {
     category?: string;
     matchedWord?: string;
     manner?: string;
+    isPronoun?: boolean;
+    entityId?: string;
+    resolvedText?: string;
 }
 /**
  * Result of pattern matching

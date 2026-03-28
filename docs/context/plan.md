@@ -166,7 +166,7 @@ Eleven `as any` casts remain in `game-engine.ts` after Phase 2A. They fall into 
 - **Tier**: Medium
 - **Budget**: 250
 - **Domain focus**: N/A — platform type system
-- **Status**: CURRENT
+- **Status**: DONE — 45 casts eliminated; 138 source casts remain; all stdlib actions use typed constructor pattern; dead code removed (PhysicalTrait, inventoryLimit); TakingSharedData extended
 - **Entry state**: Phase 4 complete; trait interfaces extended; snapshot-utils and several action files still use string-keyed `get()` with `as any` casts
 - **Deliverable**:
   - `snapshot-utils.ts` (15 casts): all `entity.get?.('identity') as any` etc. replaced with `entity.getTrait(IdentityTrait)` constructor pattern
@@ -178,41 +178,37 @@ Eleven `as any` casts remain in `game-engine.ts` after Phase 2A. They fall into 
   - `command-validator.ts` (2 casts): `(identity as any).adjectives` and `.aliases` replaced with typed access (both fields exist on IdentityTrait)
   - Build passes; stdlib tests pass
 - **Exit state**: ~45 casts eliminated; all entity trait access in stdlib actions uses the typed constructor pattern from Phase 1; `entity.get('string') as any` pattern is gone
-- **Status**: PENDING
 
 ### Phase 6: Type Parser Internal Result Objects (Pattern F)
 - **Tier**: Small
 - **Budget**: 100
 - **Domain focus**: N/A — platform type system
+- **Status**: DONE — 23 casts eliminated; 81 source casts remain
 - **Entry state**: Phase 5 complete; parser files still use `as any` to access informal fields on parse result objects
 - **Deliverable**:
-  - `english-parser.ts` (11 casts): `(best as any).direction`, `(best as any).extras`, `(candidate as any).extras`, `} as any` object literal — add `direction?`, `extras?` fields to the parse candidate type; remove object literal escape
-  - `english-grammar-engine.ts` (4 casts): `(rule as any).experimentalConfidence` — add optional `experimentalConfidence?: number` to grammar rule type
-  - `scope-evaluator.ts` (7 casts): `(entity as any)[key]`, `(entity as any).has()`, `(entity as any).get()` — `IFEntity` already exposes `has()` and `get()`; replace with typed interface; dynamic property lookup `[key]` justified as structural, document with comment
-  - `slot-consumers/entity-slot-consumer.ts` (3 casts): assess and fix
-  - `pronoun-context.ts` (2 casts): assess and fix
-  - `if-domain/grammar-engine.ts` (1 cast) and `vocabulary-registry.ts` (1 cast): assess and fix
-  - Build passes; parser tests pass
-- **Exit state**: ~29 casts eliminated; parser result types have explicit optional fields; remaining parser `as any` are documented runtime escapes
-- **Status**: PENDING
+  - `grammar-builder.ts`: Added `experimentalConfidence?` to `GrammarRule`; added `isPronoun?`, `entityId?`, `resolvedText?` to `SlotMatch`
+  - `english-parser.ts` (12 → 0): Added `direction?`, `extras?` to `RichCandidate`; removed unnecessary `slotData as any` casts
+  - `english-grammar-engine.ts` (4 → 0): Removed `experimentalConfidence` casts
+  - `scope-evaluator.ts` (7 → 0): Added `ITraitAwareEntity` interface; typed dynamic property lookup
+  - `entity-slot-consumer.ts` (3 → 0): `isPronoun`/`entityId` via `SlotMatch`; debug logging typed
+  - `pronoun-context.ts` (2 → 0): Imported `ActorTrait`/`IdentityTrait`, uses `getTrait()` pattern
+  - `grammar-engine.ts` (1 → 0): `canonical as SemanticProperties['direction']`
+  - Build passes; stdlib 1111 passing; walkthroughs 855 passing
+- **Exit state**: 0 `as any` casts in parser source files; parser result types have explicit optional fields
 
 ### Phase 7: Runtime and Integration Boundary Casts (Pattern G)
 - **Tier**: Small
 - **Budget**: 100
 - **Domain focus**: N/A — platform type system
-- **Entry state**: Phase 6 complete; runtime/bridge/transcript-tester files contain integration casts
+- **Status**: DONE — 11 casts eliminated (9 `as any` + 2 `<any>` generic params); 82 total source casts remain
+- **Entry state**: Phase 6 complete; runtime/bridge/platform-browser had integration boundary casts; transcript-tester was already clean
 - **Deliverable**:
-  - `transcript-tester/runner.ts` (16 casts): `(world as any).loadJSON`, `(world as any).toJSON`, `world as any` passed to `evaluateCondition` — add `toJSON()`/`loadJSON()` to `IWorldModel` interface or a `ISerializableWorld` sub-interface; update `evaluateCondition` signature
-  - `transcript-tester/navigator.ts` (3 casts): `(exitInfo as any).destination` — `IExitInfo` already exports `destination` from Phase 1; update import
-  - `transcript-tester/condition-evaluator.ts` (1 cast): `(entity as any).isDead` — check if `isDead` should be on a trait interface
-  - `transcript-tester/fast-cli.ts` (1 cast): `(game.world as any).loadJSON` — same fix as runner.ts
-  - `runtime/bridge.ts` (4 casts): `window as any`, `(this.engine as any).saveRestoreHooks`, `(this.engine as any).context` — add typed accessors or narrow with guards; `window as any` may be legitimate
-  - `runtime/runtime-entry.ts` (2 casts): assess and fix
-  - `bridge/bridge.ts` (2 casts): assess and fix
-  - `platform-browser/BrowserClient.ts` (1 cast): assess and fix
-  - Build passes; no regressions in transcript tests
-- **Exit state**: ~30 casts eliminated; integration boundary casts are either fixed with proper interfaces or documented with `// justified: runtime escape` comments
-- **Status**: PENDING
+  - `game-engine.ts`: Added `getSaveRestoreHooks()` public getter
+  - `runtime-entry.ts` (2 → 0): Removed `window as any` — `declare global` augments Window
+  - `runtime/bridge.ts` (4 → 0): `window.SharpeeStory` typed via Window augmentation; `engine.getContext()` replaces private access; `engine.getSaveRestoreHooks()` replaces private access
+  - `bridge/bridge.ts` (2 → 0): Same engine accessor fixes
+  - `platform-browser/BrowserClient.ts` (3 → 0): `TraitType.STORY_INFO` + `StoryInfoTrait` typed access; removed dead else branch
+  - Build passes; engine 181 passing; stdlib 1111 passing; walkthroughs 789 passing
 
 ### Phase 8: Sweep Remaining Scattered Casts (Patterns C, D, E, H)
 - **Tier**: Medium
@@ -227,8 +223,9 @@ Eleven `as any` casts remain in `game-engine.ts` after Phase 2A. They fall into 
   - `if-domain`: already addressed in Phase 6 or swept here
   - `plugin-scheduler`: scheduler-service
   - Final build and full stdlib test suite run
-- **Exit state**: `packages/*/src/` source cast count is zero or near-zero (only documented legitimate runtime escapes remain); a one-line comment `// as any: justified — <reason>` marks any intentional survivors; baseline ready for CI enforcement
-- **Status**: PENDING
+- **Exit state**: `packages/*/src/` source cast count is **zero** — no `as any` casts in any source file; all comments-only references remain; CI enforcement ready
+- **Status**: DONE — 82 casts eliminated across 48 files; stdlib 1111 passing; walkthroughs all passing
+- **Patterns used**: `getTrait(TraitClass)` for typed access; `Record<string, unknown>` for dynamic property access; `customProperties?.['key']` with direct-property fallback for raw test objects; `unknown` intermediate for incompatible type casts
 
 ### Phase 9: Test File Cleanup (573 casts)
 - **Tier**: Large

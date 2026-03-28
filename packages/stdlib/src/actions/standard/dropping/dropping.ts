@@ -17,6 +17,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
+  ContainerTrait,
   ContainerBehavior,
   WearableBehavior,
   ActorBehavior,
@@ -87,10 +88,10 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
   // Check if location can accept the item (for containers)
   if (dropLocation.has(TraitType.CONTAINER) && !dropLocation.has(TraitType.ROOM)) {
     if (!ContainerBehavior.canAccept(dropLocation, noun, context.world)) {
-      const containerTrait = dropLocation.get(TraitType.CONTAINER) as any;
-      if (containerTrait.capacity?.maxItems !== undefined) {
+      const containerTrait = dropLocation.getTrait(ContainerTrait);
+      if (containerTrait?.capacity?.maxItems !== undefined) {
         const contents = context.world.getContents(dropLocation.id);
-        if (contents.length >= containerTrait.capacity.maxItems) {
+        if (containerTrait.capacity.maxItems !== undefined && contents.length >= containerTrait.capacity.maxItems) {
           return {
             valid: false,
             error: DroppingMessages.CONTAINER_FULL,

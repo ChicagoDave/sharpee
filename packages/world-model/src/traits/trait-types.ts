@@ -175,8 +175,8 @@ export function getAllTraitTypes(): TraitType[] {
  * Add a new trait type at runtime (for extensions)
  */
 export function registerTraitType(name: string, value: string, category: TraitCategory = TraitCategory.STANDARD): void {
-  // Add to TraitType object (note: this modifies the const object)
-  (TraitType as any)[name] = value;
+  // as any: justified — runtime extension of const enum object
+  (TraitType as Record<string, string>)[name] = value;
 
   // Add to categories
   TRAIT_CATEGORIES[value as TraitType] = category;

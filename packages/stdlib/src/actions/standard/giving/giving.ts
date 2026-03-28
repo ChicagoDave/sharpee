@@ -17,6 +17,7 @@ import { ScopeLevel } from '../../../scope/types';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
+  ActorTrait,
   IdentityBehavior,
   findTraitWithCapability,
   getBehaviorForCapability,
@@ -133,9 +134,9 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check inventory capacity
-    const recipientActor = recipient.get(TraitType.ACTOR) as any;
+    const recipientActor = recipient.getTrait(ActorTrait);
     if (recipientActor) {
-      const limit = recipientActor.capacity || recipientActor.inventoryLimit;
+      const limit = recipientActor.capacity ?? (recipientActor as unknown as Record<string, unknown>)['inventoryLimit'] as typeof recipientActor.capacity;
 
       if (limit) {
         const recipientInventory = context.world.getContents(recipient.id);
@@ -167,13 +168,13 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Check for preferences (stored directly on actor trait)
-    const preferences = (recipientActor as any)?.preferences;
+    // Check for preferences (stored in actor's customProperties)
+    const preferences = (recipientActor?.customProperties?.['preferences'] ?? (recipientActor as unknown as Record<string, unknown>)?.['preferences']) as Record<string, unknown> | undefined;
     if (preferences) {
       const itemName = item.name.toLowerCase();
 
       if (preferences.refuses && Array.isArray(preferences.refuses)) {
-        for (const refuse of preferences.refuses) {
+        for (const refuse of preferences.refuses as string[]) {
           if (itemName.includes(refuse.toLowerCase())) {
             return {
               valid: false,
@@ -216,14 +217,14 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
 
     // Determine acceptance type based on preferences
     let acceptanceType: 'normal' | 'grateful' | 'reluctant' = 'normal';
-    const recipientActor = recipient.get(TraitType.ACTOR) as any;
-    const preferences = recipientActor?.preferences;
+    const recipientActor = recipient.getTrait(ActorTrait);
+    const preferences = (recipientActor?.customProperties?.['preferences'] ?? (recipientActor as unknown as Record<string, unknown>)?.['preferences']) as Record<string, unknown> | undefined;
 
     if (preferences) {
       const itemName = item.name.toLowerCase();
 
       if (preferences.likes && Array.isArray(preferences.likes)) {
-        for (const like of preferences.likes) {
+        for (const like of preferences.likes as string[]) {
           if (itemName.includes(like.toLowerCase())) {
             acceptanceType = 'grateful';
             break;
@@ -232,7 +233,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       }
 
       if (acceptanceType === 'normal' && preferences.dislikes && Array.isArray(preferences.dislikes)) {
-        for (const dislike of preferences.dislikes) {
+        for (const dislike of preferences.dislikes as string[]) {
           if (itemName.includes(dislike.toLowerCase())) {
             acceptanceType = 'reluctant';
             break;

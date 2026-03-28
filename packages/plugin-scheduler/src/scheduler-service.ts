@@ -152,7 +152,8 @@ export class SchedulerService implements ISchedulerService {
     // Call onCancel if defined
     let events: ISemanticEvent[] = [];
     if (fuse.onCancel) {
-      const context = this.createContext(undefined as any, this.currentTurn, '');
+      // Fuse cancellation may not have a world context available
+      const context = this.createContext(undefined as unknown as WorldModel, this.currentTurn, '');
       try {
         events = fuse.onCancel(context);
       } catch (error) {

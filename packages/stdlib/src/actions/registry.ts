@@ -40,8 +40,9 @@ export class StandardActionRegistry implements IActionRegistry {
     }
     
     // Handle direct aliases (backward compatibility)
-    if ('aliases' in action && Array.isArray((action as any).aliases)) {
-      const aliases = (action as any).aliases as string[];
+    const actionRecord = action as unknown as Record<string, unknown>;
+    if ('aliases' in action && Array.isArray(actionRecord.aliases)) {
+      const aliases = actionRecord.aliases as string[];
       for (const alias of aliases) {
         const normalizedAlias = alias.toLowerCase();
         // For direct aliases, only keep the latest action (override previous)

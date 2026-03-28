@@ -305,7 +305,7 @@ export class NativeEngineBridge {
       const saveData = JSON.parse(data) as ISaveData;
 
       // Install a temporary restore hook that returns our data
-      const originalHooks = (this.engine as any).saveRestoreHooks;
+      const originalHooks = this.engine.getSaveRestoreHooks();
       this.engine.registerSaveRestoreHooks({
         onSaveRequested: originalHooks?.onSaveRequested || (async () => {}),
         onRestoreRequested: async () => saveData,
@@ -484,7 +484,7 @@ export class NativeEngineBridge {
       }
     }
 
-    const context = (this.engine as any).context;
+    const context = this.engine.getContext();
     this.send({
       type: 'status',
       location: locationName,
