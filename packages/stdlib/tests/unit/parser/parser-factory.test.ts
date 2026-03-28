@@ -94,7 +94,7 @@ describe('ParserFactory', () => {
       const parser = ParserFactory.createParser('mock', langProvider);
       
       expect(parser).toBeInstanceOf(MockParser);
-      expect((parser as any).languageProvider).toBe(langProvider);
+      expect((parser as unknown as { languageProvider: unknown }).languageProvider).toBe(langProvider);
     });
 
     test('should find parser by language code without region', () => {

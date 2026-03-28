@@ -12,7 +12,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { touchingAction } from '../../../src/actions/standard/touching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -546,10 +546,10 @@ describe('Testing Pattern Examples for Touching', () => {
       }
       
       if (temperature === 'hot' && obj.has(TraitType.LIGHT_SOURCE)) {
-        const light = obj.get(TraitType.LIGHT_SOURCE) as any;
+        const light = obj.get(LightSourceTrait)!;
         expect(light.isLit).toBe(true);
       } else if (temperature === 'warm' && obj.has(TraitType.SWITCHABLE)) {
-        const device = obj.get(TraitType.SWITCHABLE) as any;
+        const device = obj.get(SwitchableTrait)!;
         expect(device.isOn).toBe(true);
       }
     });

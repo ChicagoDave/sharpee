@@ -4,7 +4,7 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType } from '@sharpee/world-model';
+import { WorldModel, AuthorModel, TraitType, IFEntity, EntityType, IdentityTrait } from '@sharpee/world-model';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import { ScopeLevel } from '../../../src/scope/types';
 
@@ -233,7 +233,7 @@ describe('Sensory Extensions', () => {
     test('should not see in dark rooms without light', () => {
       // Make room dark using custom properties
       // Get the existing identity trait and add customProperties
-      const identity = room.get(TraitType.IDENTITY) as any;
+      const identity = room.get(IdentityTrait)! as IdentityTrait & { customProperties?: Record<string, unknown> };
       identity.customProperties = { isDark: true };
       
       const ball = author.createEntity('ball', EntityType.OBJECT);
@@ -247,7 +247,7 @@ describe('Sensory Extensions', () => {
 
     test('should see in dark rooms with carried light source', () => {
       // Make room dark
-      const identity = room.get(TraitType.IDENTITY) as any;
+      const identity = room.get(IdentityTrait)! as IdentityTrait & { customProperties?: Record<string, unknown> };
       identity.customProperties = { isDark: true };
       
       // Give player a lit torch
@@ -276,7 +276,7 @@ describe('Sensory Extensions', () => {
       });
       
       // Make player glow
-      const playerIdentity = player.get(TraitType.IDENTITY) as any;
+      const playerIdentity = player.get(IdentityTrait)! as IdentityTrait & { customProperties?: Record<string, unknown> };
       playerIdentity.customProperties = { providesLight: true };
 
       const ball = author.createEntity('ball', EntityType.OBJECT);

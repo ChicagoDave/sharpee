@@ -42,7 +42,7 @@ describe('SlotConsumerRegistry', () => {
         pattern: { tokens: [], minTokens: 0, slots: [] },
         slotTokenIndex: 0,
         rule: { slots: new Map() },
-        context: { world: undefined as any },
+        context: { world: undefined as unknown },
         slotType: SlotType.NUMBER
       };
 
@@ -72,7 +72,7 @@ describe('SlotConsumerRegistry', () => {
         pattern: { tokens: [], minTokens: 0, slots: [] },
         slotTokenIndex: 0,
         rule: { slots: new Map() },
-        context: { world: undefined as any },
+        context: { world: undefined as unknown },
         slotType: SlotType.TEXT
       };
 

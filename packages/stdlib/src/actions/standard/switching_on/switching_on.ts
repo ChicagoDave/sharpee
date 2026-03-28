@@ -16,6 +16,8 @@ import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
+  SwitchableTrait,
+  OpenableTrait,
   SwitchableBehavior,
   LightSourceBehavior,
   VisibilityBehavior,
@@ -129,11 +131,11 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!SwitchableBehavior.canSwitchOn(noun)) {
-      const switchable = noun.get(TraitType.SWITCHABLE) as any;
-      if (switchable.isOn) {
+      const switchable = noun.getTrait(SwitchableTrait);
+      if (switchable?.isOn) {
         return { valid: false, error: MESSAGES.ALREADY_ON, params: { target: noun.name } };
       }
-      if (switchable.requiresPower && !switchable.hasPower) {
+      if (switchable?.requiresPower && !switchable.hasPower) {
         return { valid: false, error: MESSAGES.NO_POWER, params: { target: noun.name } };
       }
     }
@@ -239,8 +241,8 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     // Check for side effects
     let willOpen = false;
     if (noun.has(TraitType.CONTAINER) && noun.has(TraitType.OPENABLE)) {
-      const openableTrait = noun.get(TraitType.OPENABLE) as any;
-      if (!openableTrait.isOpen) {
+      const openableTrait = noun.getTrait(OpenableTrait);
+      if (openableTrait && !openableTrait.isOpen) {
         sharedData.willOpen = true;
         willOpen = true;
       }

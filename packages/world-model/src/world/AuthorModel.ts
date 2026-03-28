@@ -372,7 +372,8 @@ export class AuthorModel {
     
     // If we have a reference to the WorldModel, use its setPlayer method
     if (this.worldModel) {
-      (this.worldModel as any).playerId = entityId;
+      // as any: justified — AuthorModel bypasses WorldModel.setPlayer() validation
+      (this.worldModel as unknown as { playerId: string }).playerId = entityId;
     } else {
       this.dataStore.playerId = entityId;
     }
@@ -397,7 +398,8 @@ export class AuthorModel {
       delete this.dataStore.state[key];
     }
     if (this.worldModel) {
-      (this.worldModel as any).playerId = undefined;
+      // as any: justified — AuthorModel bypasses WorldModel.setPlayer() validation
+      (this.worldModel as unknown as { playerId: string | undefined }).playerId = undefined;
     } else {
       this.dataStore.playerId = undefined;
     }

@@ -261,10 +261,10 @@ export class EnglishGrammarEngine extends GrammarEngine {
     confidence *= Math.pow(0.9, skippedOptionals);
     
     // Apply experimental confidence if set
-    if ((rule as any).experimentalConfidence) {
-      confidence *= (rule as any).experimentalConfidence;
+    if (rule.experimentalConfidence) {
+      confidence *= rule.experimentalConfidence;
     }
-    
+
     if (DEBUG) {
       console.log(`Pattern matched successfully! Skipped ${skippedOptionals} optional elements`);
     }
@@ -473,8 +473,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     confidence *= Math.pow(0.9, skippedOptionals);
 
     // Apply experimental confidence if set
-    if ((rule as any).experimentalConfidence) {
-      confidence *= (rule as any).experimentalConfidence;
+    if (rule.experimentalConfidence) {
+      confidence *= rule.experimentalConfidence;
     }
 
     // Build semantics from the rule and matched tokens

@@ -137,7 +137,7 @@ function getTraitProperties(traitName: string, trait: any): string | null {
     case 'container':
       return `capacity=${trait.capacity ?? 'unlimited'}, transparent=${trait.isTransparent}`;
     case 'edible':
-      return `portions=${trait.portions ?? 1}`;
+      return `servings=${trait.servings ?? 1}`;
     case 'readable':
       return `text="${(trait.text ?? '').substring(0, 30)}${(trait.text?.length ?? 0) > 30 ? '...' : ''}"`;
     case 'wearable':

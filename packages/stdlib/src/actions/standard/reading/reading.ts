@@ -15,7 +15,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ReadableTrait } from '@sharpee/world-model';
 import {
   ReadingEventData,
   createReadingEvent
@@ -84,7 +84,7 @@ export const reading: Action = {
     }
 
     // Check if entity has readable trait
-    const readable = target.get(TraitType.READABLE);
+    const readable = target.getTrait(ReadableTrait);
     if (!readable) {
       return {
         valid: false,
@@ -94,13 +94,13 @@ export const reading: Action = {
     }
 
     // Check if currently readable
-    if ((readable as any).isReadable === false) {
+    if (readable.isReadable === false) {
       return {
         valid: false,
         error: 'cannot_read_now',
         params: {
           item: String(target.attributes.name || 'that'),
-          reason: (readable as any).cannotReadMessage || 'cannot_read_now'
+          reason: readable.cannotReadMessage || 'cannot_read_now'
         }
       };
     }
@@ -115,7 +115,7 @@ export const reading: Action = {
     }
 
     // Check ability requirements
-    if ((readable as any).requiresAbility && !(readable as any).requiredAbility) {
+    if (readable.requiresAbility) {
       // If ability is required but player doesn't have it
       // TODO: Check if player has the required ability
       // For now, we'll assume they do if requiredAbility is set
@@ -127,7 +127,7 @@ export const reading: Action = {
   execute(context: ActionContext): void {
     const { directObject } = context.command;
     const target = directObject!.entity;
-    const readable = target.get(TraitType.READABLE) as any;
+    const readable = target.getTrait(ReadableTrait)!;
     const sharedData = getReadingSharedData(context);
 
     // Mark as read (world mutation)

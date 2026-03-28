@@ -8,6 +8,7 @@
 
 import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { EventProcessor } from '../../src/processor';
+import { WorldModel } from '@sharpee/world-model';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import { IFEvents } from '@sharpee/if-domain';
 import { SemanticEvent } from '@sharpee/core';
@@ -18,7 +19,7 @@ describe('Event Handler Invocation', () => {
 
   beforeEach(() => {
     mockWorld = createMockWorld();
-    processor = new EventProcessor(mockWorld as any);
+    processor = new EventProcessor(mockWorld as unknown as WorldModel);
   });
 
   describe('invokeEntityHandlers', () => {

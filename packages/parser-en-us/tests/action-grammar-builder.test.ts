@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishGrammarEngine } from '../src/english-grammar-engine';
-import { Token, ScopeBuilder } from '@sharpee/if-domain';
+import { Token, ScopeBuilder, PartOfSpeech, GrammarContext } from '@sharpee/if-domain';
 
 describe('ADR-087: Action Grammar Builder', () => {
   let engine: EnglishGrammarEngine;
@@ -220,13 +220,13 @@ describe('ADR-087: Action Grammar Builder', () => {
       const tokens = createTokens(['press', 'button']);
       // Add a candidate for the entity
       tokens[1].candidates = [{
-        partOfSpeech: 'noun' as any,
+        partOfSpeech: PartOfSpeech.NOUN,
         mapsTo: 'button-1',
         priority: 1
       }];
 
-      const context = {
-        world: undefined as any,
+      const context: GrammarContext = {
+        world: undefined,
         actorId: 'player',
         currentLocation: 'room-1',
         slots: new Map()
@@ -246,8 +246,8 @@ describe('ADR-087: Action Grammar Builder', () => {
         .build();
 
       const tokens = createTokens(['n']);
-      const context = {
-        world: undefined as any,
+      const context: GrammarContext = {
+        world: undefined,
         actorId: 'player',
         currentLocation: 'room-1',
         slots: new Map()

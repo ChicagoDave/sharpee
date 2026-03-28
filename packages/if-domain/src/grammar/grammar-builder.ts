@@ -448,6 +448,7 @@ export interface GrammarRule {
   priority: number;
   semantics?: SemanticMapping; // Semantic mappings for this rule
   defaultSemantics?: Partial<SemanticProperties>; // Default semantics
+  experimentalConfidence?: number; // Multiplier applied to match confidence
 }
 
 /**
@@ -547,6 +548,10 @@ export interface SlotMatch {
   matchedWord?: string;   // For VOCABULARY: normalized word that matched
   // ADR-082: Manner slots
   manner?: string;        // For MANNER: the manner adverb matched
+  // ADR-089: Pronoun resolution
+  isPronoun?: boolean;    // True if resolved via pronoun context
+  entityId?: string;      // Pre-resolved entity ID from pronoun/scope resolution
+  resolvedText?: string;  // Display text after resolution
 }
 
 /**

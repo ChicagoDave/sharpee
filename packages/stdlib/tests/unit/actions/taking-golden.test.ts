@@ -424,11 +424,12 @@ describe('takingAction (Golden Pattern)', () => {
       
       const takenEvent = events.find(e => e.type === 'if.event.taken');
       // Check the event data
-      const eventData = takenEvent?.data as any;
-      expect(eventData?.data?.container).toBeUndefined();
-      expect(eventData?.data?.fromContainer).toBeUndefined();
-      expect(eventData?.data?.fromSupporter).toBeUndefined();
-      expect(eventData?.data?.fromLocation).toBeUndefined();
+      const eventData = takenEvent?.data as Record<string, unknown> | undefined;
+      const innerData = eventData?.data as Record<string, unknown> | undefined;
+      expect(innerData?.container).toBeUndefined();
+      expect(innerData?.fromContainer).toBeUndefined();
+      expect(innerData?.fromSupporter).toBeUndefined();
+      expect(innerData?.fromLocation).toBeUndefined();
     });
   });
 });

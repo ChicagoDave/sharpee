@@ -46,7 +46,7 @@ class SingleTraitBehavior extends Behavior {
   
   static checkLocked(entity: IFEntity): boolean {
     const lockable = this.require<LockableTrait>(entity, TraitType.LOCKABLE);
-    return (lockable as any).isLocked || false;
+    return lockable.isLocked || false;
   }
 }
 
@@ -133,13 +133,12 @@ describe('Behavior', () => {
 
   describe('behavior patterns', () => {
     it('should support behaviors that check state', () => {
-      const lockable = new LockableTrait();
-      (lockable as any).isLocked = true;
+      const lockable = new LockableTrait({ isLocked: true });
       entity.add(lockable);
-      
+
       expect(SingleTraitBehavior.checkLocked(entity)).toBe(true);
-      
-      (lockable as any).isLocked = false;
+
+      lockable.isLocked = false;
       expect(SingleTraitBehavior.checkLocked(entity)).toBe(false);
     });
 
@@ -196,7 +195,7 @@ describe('Behavior', () => {
       expect(typeof TestBehavior.performAction).toBe('function');
       
       // No need to create instances
-      expect(() => new (TestBehavior as any)()).not.toThrow();
+      expect(() => new (TestBehavior as unknown as new () => object)()).not.toThrow();
     });
   });
 });

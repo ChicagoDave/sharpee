@@ -18,32 +18,23 @@ export class EdibleBehavior extends Behavior {
   
   /**
    * Check if an item can be consumed
-   * Supports both 'servings' (canonical) and 'consumed' (legacy) property names
    */
   static canConsume(item: IFEntity): boolean {
     const edible = EdibleBehavior.require<EdibleTrait>(item, TraitType.EDIBLE);
-    // Check legacy 'consumed' flag first
-    if ((edible as any).consumed === true) {
-      return false;
-    }
-    // Then check servings (default to 1 if undefined)
-    const servings = edible.servings ?? (edible as any).portions ?? 1;
-    return servings > 0;
+    return (edible.servings ?? 1) > 0;
   }
   
   /**
    * Consume the item
    * @returns Events describing what happened
-   * Supports both 'servings' (canonical) and 'portions' (legacy) property names
    */
   static consume(item: IFEntity, actor: IFEntity): ISemanticEvent[] {
     const edible = EdibleBehavior.require<EdibleTrait>(item, TraitType.EDIBLE);
 
-    // Get current servings (supporting legacy properties)
-    let currentServings = edible.servings ?? (edible as any).portions ?? 1;
-    const isLiquid = edible.liquid || (edible as any).isDrink || false;
+    let currentServings = edible.servings ?? 1;
+    const isLiquid = edible.liquid ?? false;
 
-    if (currentServings <= 0 || (edible as any).consumed === true) {
+    if (currentServings <= 0) {
       return [
         createEvent(
           IFEvents.ACTION_FAILED,
@@ -57,16 +48,8 @@ export class EdibleBehavior extends Behavior {
       ];
     }
 
-    // Consume one serving - update both properties for compatibility
     currentServings--;
     edible.servings = currentServings;
-    if ((edible as any).portions !== undefined) {
-      (edible as any).portions = currentServings;
-    }
-    // Mark as consumed if no servings left
-    if (currentServings <= 0) {
-      (edible as any).consumed = true;
-    }
     
     const events: ISemanticEvent[] = [
       createEvent(
@@ -101,27 +84,18 @@ export class EdibleBehavior extends Behavior {
   
   /**
    * Check if item is fully consumed
-   * Supports both 'servings' (canonical) and 'consumed' (legacy) property names
    */
   static isEmpty(item: IFEntity): boolean {
     const edible = EdibleBehavior.require<EdibleTrait>(item, TraitType.EDIBLE);
-    // Check legacy 'consumed' flag first
-    if ((edible as any).consumed === true) {
-      return true;
-    }
-    // Then check servings
-    const servings = edible.servings ?? (edible as any).portions ?? 1;
-    return servings <= 0;
+    return (edible.servings ?? 1) <= 0;
   }
   
   /**
    * Check if this is a liquid
-   * Supports both 'liquid' (canonical) and 'isDrink' (legacy) property names
    */
   static isLiquid(item: IFEntity): boolean {
     const edible = EdibleBehavior.require<EdibleTrait>(item, TraitType.EDIBLE);
-    // Support both property names for backward compatibility
-    return edible.liquid || (edible as any).isDrink || false;
+    return edible.liquid ?? false;
   }
   
   /**
@@ -134,15 +108,10 @@ export class EdibleBehavior extends Behavior {
   
   /**
    * Get remaining servings
-   * Supports both 'servings' (canonical) and 'portions' (legacy) property names
    */
   static getServings(item: IFEntity): number {
     const edible = EdibleBehavior.require<EdibleTrait>(item, TraitType.EDIBLE);
-    // Check legacy 'consumed' flag - if consumed, return 0
-    if ((edible as any).consumed === true) {
-      return 0;
-    }
-    return edible.servings ?? (edible as any).portions ?? 1;
+    return edible.servings ?? 1;
   }
   
   /**

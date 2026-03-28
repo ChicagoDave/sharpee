@@ -12,6 +12,7 @@ import { SceneryTrait } from '../../../src/traits/scenery/sceneryTrait';
 import { SwitchableTrait } from '../../../src/traits/switchable/switchableTrait';
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 import { WearableTrait } from '../../../src/traits/wearable/wearableTrait';
+import { SupporterTrait } from '../../../src/traits/supporter/supporterTrait';
 // Test helpers are not needed - we create entities directly
 
 describe('VisibilityBehavior', () => {
@@ -62,10 +63,8 @@ describe('VisibilityBehavior', () => {
 
     it('should not see invisible entities', () => {
       const target = world.createEntity('Target', 'scenery');
-      const scenery = new SceneryTrait();
+      const scenery = new SceneryTrait({ visible: false });
       target.add(scenery);
-      // Mock the visible property on the scenery trait
-      (scenery as any).visible = false;
       world.moveEntity(target.id, room.id);
       
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(false);
@@ -178,8 +177,8 @@ describe('VisibilityBehavior', () => {
       expect(VisibilityBehavior.canSee(observer, lamp, world)).toBe(false);
       
       // Turn on lamp
-      (lamp.getTrait(TraitType.LIGHT_SOURCE) as any).isLit = true;
-      
+      lamp.getTrait(LightSourceTrait)!.isLit = true;
+
       // Now can see the lamp itself
       expect(VisibilityBehavior.canSee(observer, lamp, world)).toBe(true);
       // And the room is lit, so can see the room
@@ -194,8 +193,8 @@ describe('VisibilityBehavior', () => {
       world.moveEntity(target.id, darkRoom.id);
       
       // Turn on lamp
-      (lamp.getTrait(TraitType.LIGHT_SOURCE) as any).isLit = true;
-      
+      lamp.getTrait(LightSourceTrait)!.isLit = true;
+
       // Can see everything
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(true);
       expect(VisibilityBehavior.canSee(observer, darkRoom, world)).toBe(true);
@@ -211,10 +210,10 @@ describe('VisibilityBehavior', () => {
       world.moveEntity(lamp.id, box.id);
       
       // Now close the box
-      (box.getTrait(TraitType.OPENABLE) as any).isOpen = false;
-      
+      box.getTrait(OpenableTrait)!.isOpen = false;
+
       // Turn on lamp (but it's in closed box)
-      (lamp.getTrait(TraitType.LIGHT_SOURCE) as any).isLit = true;
+      lamp.getTrait(LightSourceTrait)!.isLit = true;
       
       // Still can't see box in the dark (light is inside closed container)
       expect(VisibilityBehavior.canSee(observer, box, world)).toBe(false);
@@ -222,8 +221,8 @@ describe('VisibilityBehavior', () => {
       expect(VisibilityBehavior.canSee(observer, darkRoom, world)).toBe(true);
       
       // Open box
-      (box.getTrait(TraitType.OPENABLE) as any).isOpen = true;
-      
+      box.getTrait(OpenableTrait)!.isOpen = true;
+
       // Now room is lit and can see
       expect(VisibilityBehavior.canSee(observer, box, world)).toBe(true);
       expect(VisibilityBehavior.canSee(observer, darkRoom, world)).toBe(true);
@@ -239,7 +238,7 @@ describe('VisibilityBehavior', () => {
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(false);
       
       // Turn on room lights (e.g., found light switch)
-      (darkRoom.getTrait(TraitType.ROOM) as any).isDark = false;
+      darkRoom.getTrait(RoomTrait)!.isDark = false;
       
       // Now can see
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(true);
@@ -251,9 +250,8 @@ describe('VisibilityBehavior', () => {
       const item1 = world.createEntity('Item 1', 'item');
       const item2 = world.createEntity('Item 2', 'item');
       const hiddenItem = world.createEntity('Hidden', 'scenery');
-      const hiddenScenery = new SceneryTrait();
+      const hiddenScenery = new SceneryTrait({ visible: false });
       hiddenItem.add(hiddenScenery);
-      (hiddenScenery as any).visible = false;
       
       world.moveEntity(item1.id, room.id);
       world.moveEntity(item2.id, room.id);
@@ -304,9 +302,9 @@ describe('VisibilityBehavior', () => {
     it('should return false for invisible scenery', () => {
       const entity = world.createEntity('Entity', 'scenery');
       const scenery = new SceneryTrait();
+      scenery.visible = false;
       entity.add(scenery);
-      (scenery as any).visible = false;
-      
+
       expect(VisibilityBehavior.isVisible(entity, world)).toBe(false);
     });
 
@@ -340,7 +338,7 @@ describe('VisibilityBehavior', () => {
       world.moveEntity(entity.id, container.id);
       
       // Now close the container
-      const openable = container.getTrait(TraitType.OPENABLE) as any;
+      const openable = container.getTrait(OpenableTrait)!;
       openable.isOpen = false;
       
       expect(VisibilityBehavior.isVisible(entity, world)).toBe(false);
@@ -380,15 +378,15 @@ describe('VisibilityBehavior', () => {
       world.moveEntity(target.id, inner.id);
       
       // Now close the outer box
-      (outer.getTrait(TraitType.OPENABLE) as any).isOpen = false;
+      outer.getTrait(OpenableTrait)!.isOpen = false;
       
       // Can't see through closed outer box
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(false);
       
       // Open outer box
-      const outerOpenable = outer.getTrait(TraitType.OPENABLE);
+      const outerOpenable = outer.getTrait(OpenableTrait);
       if (outerOpenable) {
-        (outerOpenable as any).isOpen = true;
+        outerOpenable.isOpen = true;
       }
       
       // Now can see target
@@ -397,7 +395,7 @@ describe('VisibilityBehavior', () => {
 
     it('should handle supporter visibility', () => {
       const table = world.createEntity('Table', 'supporter');
-      table.add({ type: TraitType.SUPPORTER } as any); // Simplified supporter
+      table.add(new SupporterTrait());
       
       const item = world.createEntity('Item', 'item');
       
@@ -420,8 +418,8 @@ describe('VisibilityBehavior', () => {
       world.moveEntity(item.id, box.id);
       
       // Now close the box
-      (box.getTrait(TraitType.OPENABLE) as any).isOpen = false;
-      
+      box.getTrait(OpenableTrait)!.isOpen = false;
+
       // Item is in closed box, not visible
       const visible = VisibilityBehavior.getVisible(observer, world);
       expect(visible.map(e => e.id)).toContain(room.id);
@@ -429,9 +427,9 @@ describe('VisibilityBehavior', () => {
       expect(visible.map(e => e.id)).not.toContain(item.id);
       
       // Open box
-      const boxOpenable = box.getTrait(TraitType.OPENABLE);
+      const boxOpenable = box.getTrait(OpenableTrait);
       if (boxOpenable) {
-        (boxOpenable as any).isOpen = true;
+        boxOpenable.isOpen = true;
       }
       
       // Now item is visible
@@ -467,7 +465,7 @@ describe('VisibilityBehavior', () => {
         traits: new Map(),
         getTrait: () => undefined,
         hasTrait: () => false
-      } as any as IFEntity;
+      } as unknown as IFEntity;
       
       expect(VisibilityBehavior.canSee(observer, missingEntity, world)).toBe(false);
       expect(VisibilityBehavior.isVisible(missingEntity, world)).toBe(true); // Not contained
@@ -694,7 +692,7 @@ describe('VisibilityBehavior', () => {
       world.moveEntity(candle.id, glassBox.id);
 
       // Now close the container
-      (glassBox.getTrait(TraitType.OPENABLE) as any).isOpen = false;
+      glassBox.getTrait(OpenableTrait)!.isOpen = false;
 
       // Light should still work through transparent container
       expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);

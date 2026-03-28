@@ -10,7 +10,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, RoomTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { captureRoomSnapshot } from '../../base/snapshot-utils';
@@ -51,7 +51,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     const room = context.world.getContainingRoom(context.player.id);
     
     if (room && room.hasTrait(TraitType.ROOM)) {
-      const roomTrait = room.getTrait(TraitType.ROOM) as any;
+      const roomTrait = room.getTrait(RoomTrait);
       if (roomTrait && !roomTrait.visited) {
         roomTrait.visited = true;
       }

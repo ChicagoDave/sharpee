@@ -7,6 +7,7 @@ import { TraitType } from '../../src/traits/trait-types';
 import { createTestRoom, createTestContainer, createTestActor } from '../fixtures/test-entities';
 import { createTestDoor } from '../fixtures/test-interactive';
 import { OpenableTrait } from '../../src/traits/openable/openableTrait';
+import { RoomTrait } from '../../src/traits/room/roomTrait';
 import { SupporterTrait } from '../../src/traits/supporter/supporterTrait';
 import { LightSourceTrait } from '../../src/traits/light-source/lightSourceTrait';
 import { WearableTrait } from '../../src/traits/wearable/wearableTrait';
@@ -46,9 +47,7 @@ describe('Visibility Chains Integration Tests', () => {
       const room = createTestRoom(world, 'Room');
       const player = createTestActor(world, 'Player');
       const chest = createTestContainer(world, 'Chest');
-      const openableTrait = new OpenableTrait();
-      (openableTrait as any).isOpen = false;
-      chest.add(openableTrait);
+      chest.add(new OpenableTrait({ isOpen: false }));
       const treasure = world.createEntity('Treasure', 'item');
 
       world.moveEntity(player.id, room.id);
@@ -67,9 +66,7 @@ describe('Visibility Chains Integration Tests', () => {
       
       const openBox = createTestContainer(world, 'Open Box');
       const closedBox = createTestContainer(world, 'Closed Box');
-      const closedBoxOpenable = new OpenableTrait();
-      (closedBoxOpenable as any).isOpen = false;
-      closedBox.add(closedBoxOpenable);
+      closedBox.add(new OpenableTrait({ isOpen: false }));
       const item = world.createEntity('Item', 'item');
 
       world.moveEntity(player.id, room.id);
@@ -125,7 +122,7 @@ describe('Visibility Chains Integration Tests', () => {
   describe('Room and Light Visibility', () => {
     it('should not see in dark rooms', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      (darkRoom.getTrait(TraitType.ROOM) as any).isDark = true;
+      darkRoom.getTrait(RoomTrait)!.isDark = true;
       
       const player = createTestActor(world, 'Player');
       const chair = world.createEntity('Chair', 'item');
@@ -138,13 +135,11 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should see with carried light source', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      (darkRoom.getTrait(TraitType.ROOM) as any).isDark = true;
+      darkRoom.getTrait(RoomTrait)!.isDark = true;
       
       const player = createTestActor(world, 'Player');
       const torch = world.createEntity('Torch', 'item');
-      const torchLight = new LightSourceTrait();
-      (torchLight as any).isLit = true;
-      torch.add(torchLight);
+      torch.add(new LightSourceTrait({ isLit: true }));
       const statue = world.createEntity('Statue', 'scenery');
 
       world.moveEntity(player.id, darkRoom.id);
@@ -156,13 +151,11 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should see with light source in room', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      (darkRoom.getTrait(TraitType.ROOM) as any).isDark = true;
+      darkRoom.getTrait(RoomTrait)!.isDark = true;
       
       const player = createTestActor(world, 'Player');
       const lamp = world.createEntity('Standing Lamp', 'item');
-      const lampLight = new LightSourceTrait();
-      (lampLight as any).isLit = true;
-      lamp.add(lampLight);
+      lamp.add(new LightSourceTrait({ isLit: true }));
       const painting = world.createEntity('Painting', 'scenery');
 
       world.moveEntity(player.id, darkRoom.id);
@@ -174,14 +167,12 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should handle light in containers', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      (darkRoom.getTrait(TraitType.ROOM) as any).isDark = true;
+      darkRoom.getTrait(RoomTrait)!.isDark = true;
       
       const player = createTestActor(world, 'Player');
       const lanternBox = createTestContainer(world, 'Box');
       const lantern = world.createEntity('Lantern', 'item');
-      const lanternLight = new LightSourceTrait();
-      (lanternLight as any).isLit = true;
-      lantern.add(lanternLight);
+      lantern.add(new LightSourceTrait({ isLit: true }));
       const book = world.createEntity('Book', 'item');
 
       world.moveEntity(player.id, darkRoom.id);
@@ -193,9 +184,7 @@ describe('Visibility Chains Integration Tests', () => {
       expect(world.canSee(player.id, book.id)).toBe(true);
 
       // Close the box
-      const boxOpenable = new OpenableTrait();
-      (boxOpenable as any).isOpen = false;
-      lanternBox.add(boxOpenable);
+      lanternBox.add(new OpenableTrait({ isOpen: false }));
       
       // Light is now contained
       expect(world.canSee(player.id, book.id)).toBe(false);
@@ -223,12 +212,12 @@ describe('Visibility Chains Integration Tests', () => {
       const player = createTestActor(world, 'Player');
       const npc = createTestActor(world, 'Noble');
       const crown = world.createEntity('Golden Crown', 'item');
-      const crownWearable = new WearableTrait();
-      (crownWearable as any).isWorn = true;
-      (crownWearable as any).wornBy = npc.id;
-      (crownWearable as any).canRemove = true;
-      (crownWearable as any).bodyPart = 'head';
-      crown.add(crownWearable);
+      crown.add(new WearableTrait({
+        isWorn: true,
+        wornBy: npc.id,
+        canRemove: true,
+        bodyPart: 'head'
+      }));
 
       world.moveEntity(player.id, room.id);
       world.moveEntity(npc.id, room.id);
@@ -244,9 +233,7 @@ describe('Visibility Chains Integration Tests', () => {
       const player = createTestActor(world, 'Player');
       const merchant = createTestActor(world, 'Merchant');
       const pouch = createTestContainer(world, 'Leather Pouch');
-      const pouchOpenable = new OpenableTrait();
-      (pouchOpenable as any).isOpen = false;
-      pouch.add(pouchOpenable);
+      pouch.add(new OpenableTrait({ isOpen: false }));
       const gems = world.createEntity('Precious Gems', 'item');
 
       world.moveEntity(player.id, room.id);
@@ -267,9 +254,7 @@ describe('Visibility Chains Integration Tests', () => {
       const room = createTestRoom(world, 'Room');
       const player = createTestActor(world, 'Player');
       const window = world.createEntity('Large Window', 'scenery');
-      const windowScenery = new SceneryTrait();
-      (windowScenery as any).visible = true;
-      window.add(windowScenery);
+      window.add(new SceneryTrait({ visible: true }));
 
       world.moveEntity(player.id, room.id);
       world.moveEntity(window.id, room.id);
@@ -282,9 +267,7 @@ describe('Visibility Chains Integration Tests', () => {
       const room = createTestRoom(world, 'Room');
       const player = createTestActor(world, 'Player');
       const hiddenPanel = world.createEntity('Hidden Panel', 'scenery');
-      const panelScenery = new SceneryTrait();
-      (panelScenery as any).visible = false;
-      hiddenPanel.add(panelScenery);
+      hiddenPanel.add(new SceneryTrait({ visible: false }));
 
       world.moveEntity(player.id, room.id);
       world.moveEntity(hiddenPanel.id, room.id);
@@ -297,9 +280,7 @@ describe('Visibility Chains Integration Tests', () => {
       const room = createTestRoom(world, 'Room');
       const player = createTestActor(world, 'Player');
       const alcove = createTestContainer(world, 'Alcove');
-      const alcoveScenery = new SceneryTrait();
-      (alcoveScenery as any).visible = true;
-      alcove.add(alcoveScenery);
+      alcove.add(new SceneryTrait({ visible: true }));
       const vase = world.createEntity('Ancient Vase', 'item');
 
       world.moveEntity(player.id, room.id);
@@ -343,14 +324,10 @@ describe('Visibility Chains Integration Tests', () => {
       
       // Multiple closed containers
       const trunk = createTestContainer(world, 'Trunk');
-      const trunkOpenable = new OpenableTrait();
-      (trunkOpenable as any).isOpen = false;
-      trunk.add(trunkOpenable);
+      trunk.add(new OpenableTrait({ isOpen: false }));
       
       const chest = createTestContainer(world, 'Chest');
-      const chestOpenable = new OpenableTrait();
-      (chestOpenable as any).isOpen = false;
-      chest.add(chestOpenable);
+      chest.add(new OpenableTrait({ isOpen: false }));
       
       const box = createTestContainer(world, 'Box');
       const jewel = world.createEntity('Jewel', 'item');
@@ -369,7 +346,7 @@ describe('Visibility Chains Integration Tests', () => {
       expect(visible).not.toContain(jewel);
 
       // Open trunk
-      (trunk.getTrait(TraitType.OPENABLE) as any).isOpen = true;
+      trunk.getTrait(OpenableTrait)!.isOpen = true;
       
       const visibleAfterOpen = world.getVisible(player.id);
       expect(visibleAfterOpen).toContain(chest); // Now visible
@@ -436,13 +413,11 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should handle scope in dark rooms with light', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      (darkRoom.getTrait(TraitType.ROOM) as any).isDark = true;
+      darkRoom.getTrait(RoomTrait)!.isDark = true;
       
       const player = createTestActor(world, 'Player');
       const candle = world.createEntity('Candle', 'item');
-      const candleLight = new LightSourceTrait();
-      (candleLight as any).isLit = true;
-      candle.add(candleLight);
+      candle.add(new LightSourceTrait({ isLit: true }));
       const mirror = world.createEntity('Mirror', 'item');
 
       world.moveEntity(player.id, darkRoom.id);

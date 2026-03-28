@@ -16,7 +16,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, getInterceptorForAction, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait, getInterceptorForAction, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { TakingMessages } from './taking-messages';
@@ -52,8 +52,8 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 
     // Store interceptor in sharedData for later phases
     const sharedData = getTakingSharedData(context);
-    (sharedData as any)._interceptor = interceptor;
-    (sharedData as any)._interceptorData = interceptorData;
+    sharedData._interceptor = interceptor;
+    sharedData._interceptorData = interceptorData;
 
     // === PRE-VALIDATE HOOK ===
     if (interceptor.preValidate) {
@@ -110,8 +110,8 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 
   // === POST-VALIDATE HOOK ===
   if (interceptorResult) {
-    const interceptor = (getTakingSharedData(context) as any)._interceptor as ActionInterceptor;
-    const interceptorData = (getTakingSharedData(context) as any)._interceptorData as InterceptorSharedData;
+    const interceptor = getTakingSharedData(context)._interceptor;
+    const interceptorData = getTakingSharedData(context)._interceptorData ?? {};
     if (interceptor?.postValidate) {
       const result = interceptor.postValidate(noun, context.world, actor.id, interceptorData);
       if (result !== null && !result.valid) {
@@ -138,7 +138,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
               return true;
             }
             const wearableTrait = item.get(TraitType.WEARABLE);
-            return !isWearableTrait(wearableTrait) || (!wearableTrait.isWorn && !(wearableTrait as any).worn);
+            return !isWearableTrait(wearableTrait) || !(wearableTrait.isWorn ?? wearableTrait.worn);
           }).length;
           if (currentCount >= containerTrait.capacity.maxItems) {
             return { valid: false, error: TakingMessages.CONTAINER_FULL };
@@ -223,7 +223,7 @@ function executeSingleEntity(
   // Check if item is worn and needs to be removed first
   if (noun.has(TraitType.WEARABLE)) {
     const wearableTrait = noun.get(TraitType.WEARABLE);
-    if (isWearableTrait(wearableTrait) && (wearableTrait.isWorn || (wearableTrait as any).worn)) {
+    if (isWearableTrait(wearableTrait) && (wearableTrait.isWorn ?? wearableTrait.worn)) {
       // Mark that we implicitly removed a worn item
       result.implicitlyRemoved = true;
       result.wasWorn = true;
@@ -241,7 +241,7 @@ function executeSingleEntity(
   context.world.moveEntity(noun.id, actor.id);
 
   // Score points for taking items with points value (ADR-129)
-  const identity = noun.getTrait(TraitType.IDENTITY) as any;
+  const identity = noun.getTrait(IdentityTrait);
   if (identity?.points) {
     context.world.awardScore(
       noun.id,

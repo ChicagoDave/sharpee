@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { showingAction } from '../../../src/actions/standard/showing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, ITrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -250,7 +250,7 @@ describe('showingAction (Golden Pattern)', () => {
         reactions: {
           recognizes: ['crown', 'scepter', 'throne']
         }
-      } as any);
+      } as unknown as ITrait);
       world.moveEntity(noble.id, room.id);
       
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -282,7 +282,7 @@ describe('showingAction (Golden Pattern)', () => {
         reactions: {
           impressed: ['diamond', 'gold', 'jewel']
         }
-      } as any);
+      } as unknown as ITrait);
       world.moveEntity(merchant.id, room.id);
       
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -314,7 +314,7 @@ describe('showingAction (Golden Pattern)', () => {
         reactions: {
           unimpressed: ['stick', 'rock', 'dirt']
         }
-      } as any);
+      } as unknown as ITrait);
       world.moveEntity(king.id, room.id);
       
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -342,7 +342,7 @@ describe('showingAction (Golden Pattern)', () => {
         reactions: {
           examines: ['document', 'letter', 'scroll']
         }
-      } as any);
+      } as unknown as ITrait);
       world.moveEntity(clerk.id, room.id);
       
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -372,7 +372,7 @@ describe('showingAction (Golden Pattern)', () => {
           impressed: ['crops', 'seeds'],
           examines: ['soil', 'water']
         }
-      } as any);
+      } as unknown as ITrait);
       world.moveEntity(farmer.id, room.id);
       
       const context = createRealTestContext(showingAction, world, createCommand(
@@ -502,7 +502,7 @@ describe('Showing Action Edge Cases', () => {
       reactions: {
         recognizes: ['uniform', 'medal', 'insignia']
       }
-    } as any);
+    } as unknown as ITrait);
     world.moveEntity(general.id, room.id);
     
     const context = createRealTestContext(showingAction, world, createCommand(
@@ -537,7 +537,7 @@ describe('Showing Action Edge Cases', () => {
       reactions: {
         examines: ['evidence', 'clue', 'weapon']
       }
-    } as any);
+    } as unknown as ITrait);
     
     world.moveEntity(evidence.id, player.id);
     world.moveEntity(detective1.id, room.id);
@@ -643,7 +643,7 @@ describe('Testing Pattern Examples for Showing', () => {
         impressed: ['crown', 'ancient'],
         examines: ['artifact', 'crown']
       }
-    } as any);
+    } as unknown as ITrait);
     world.moveEntity(curator.id, room.id);
     
     const context = createRealTestContext(showingAction, world, createCommand(

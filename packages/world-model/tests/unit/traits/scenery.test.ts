@@ -313,10 +313,10 @@ describe('SceneryTrait', () => {
 
     it('should handle null values', () => {
       const trait = new SceneryTrait({
-        cantTakeMessage: null as any,
-        mentioned: null as any
+        cantTakeMessage: null as unknown as string,
+        mentioned: null as unknown as boolean
       });
-      
+
       expect(trait.cantTakeMessage).toBeNull();
       expect(trait.mentioned).toBeNull();
     });

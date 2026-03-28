@@ -33,15 +33,24 @@ export class ContainerTrait implements ITrait {
   
   /** Only these entity types can be placed in the container */
   allowedTypes?: string[];
-  
+
   /** These entity types cannot be placed in the container */
   excludedTypes?: string[];
-  
+
+  /** Whether this container holds a liquid */
+  containsLiquid?: boolean;
+
+  /** Type of liquid in the container (e.g., 'water', 'ale') */
+  liquidType?: string;
+
+  /** Amount of liquid remaining (arbitrary units) */
+  liquidAmount?: number;
+
   constructor(data?: Partial<ContainerTrait>) {
     // Set defaults
     this.isTransparent = false;
     this.enterable = false;
-    
+
     // Override with provided data
     if (data) {
       if (data.capacity !== undefined) this.capacity = data.capacity;
@@ -49,6 +58,9 @@ export class ContainerTrait implements ITrait {
       if (data.enterable !== undefined) this.enterable = data.enterable;
       if (data.allowedTypes !== undefined) this.allowedTypes = data.allowedTypes;
       if (data.excludedTypes !== undefined) this.excludedTypes = data.excludedTypes;
+      if (data.containsLiquid !== undefined) this.containsLiquid = data.containsLiquid;
+      if (data.liquidType !== undefined) this.liquidType = data.liquidType;
+      if (data.liquidAmount !== undefined) this.liquidAmount = data.liquidAmount;
     }
   }
 }

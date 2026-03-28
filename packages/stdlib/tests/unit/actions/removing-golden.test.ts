@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { removingAction } from '../../../src/actions/standard/removing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -192,8 +192,8 @@ describe('removingAction (Golden Pattern)', () => {
       world.moveEntity(gem.id, chest.id);  // Gem in chest
       
       // Now close the container
-      const openableTrait = chest.get(TraitType.OPENABLE);
-      (openableTrait as any).isOpen = false;
+      const openableTrait = chest.get(OpenableTrait)!;
+      openableTrait.isOpen = false;
       
       const context = createRealTestContext(removingAction, world, createCommand(IFActions.REMOVING, {
         entity: gem,
@@ -609,8 +609,8 @@ describe('World State Mutations', () => {
     world.moveEntity(ring.id, casket.id);
 
     // Close the casket
-    const openableTrait = casket.get(TraitType.OPENABLE);
-    (openableTrait as any).isOpen = false;
+    const openableTrait = casket.get(OpenableTrait)!;
+    openableTrait.isOpen = false;
 
     // VERIFY PRECONDITION: ring is in the casket
     expect(world.getLocation(ring.id)).toBe(casket.id);

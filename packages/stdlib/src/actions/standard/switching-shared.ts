@@ -3,7 +3,7 @@
  */
 
 import { ActionContext } from '../enhanced-types';
-import { IFEntity, TraitType } from '@sharpee/world-model';
+import { IFEntity, TraitType, LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
 
 export interface SwitchingAnalysis {
   target: IFEntity;
@@ -33,9 +33,10 @@ export function analyzeSwitchingContext(
 
   // Add light source details if applicable
   if (analysis.isLightSource) {
-    const lightTrait = target.get(TraitType.LIGHT_SOURCE) as any;
-    analysis.lightRadius = lightTrait.radius || 1;
-    analysis.lightIntensity = lightTrait.intensity || 'normal';
+    const lightTrait = target.getTrait(LightSourceTrait);
+    const lightRecord = lightTrait as unknown as Record<string, unknown> | undefined;
+    analysis.lightRadius = (lightRecord?.radius ?? lightTrait?.brightness ?? 1) as number;
+    analysis.lightIntensity = (lightTrait as unknown as Record<string, unknown>)?.intensity as string || 'normal';
   }
 
   // Check room conditions
@@ -48,11 +49,11 @@ export function analyzeSwitchingContext(
     if (analysis.isLightSource) {
       // Check for other active light sources
       const roomContents = context.world.getContents(actorRoom.id);
-      const otherLights = roomContents.filter(item => 
-        item.id !== target.id && 
-        item.has(TraitType.LIGHT_SOURCE) && 
+      const otherLights = roomContents.filter(item =>
+        item.id !== target.id &&
+        item.has(TraitType.LIGHT_SOURCE) &&
         item.has(TraitType.SWITCHABLE) &&
-        (item.get(TraitType.SWITCHABLE) as any).isOn
+        item.getTrait(SwitchableTrait)?.isOn
       );
       
       // Also check carried lights
@@ -61,7 +62,7 @@ export function analyzeSwitchingContext(
         item.id !== target.id &&
         item.has(TraitType.LIGHT_SOURCE) &&
         item.has(TraitType.SWITCHABLE) &&
-        (item.get(TraitType.SWITCHABLE) as any).isOn
+        item.getTrait(SwitchableTrait)?.isOn
       );
       
       analysis.otherLightsPresent = otherLights.length > 0 || carriedLights.length > 0;

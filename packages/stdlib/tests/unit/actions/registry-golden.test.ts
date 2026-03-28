@@ -258,7 +258,7 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
       
       // Should not throw
       expect(() => {
-        registry.setLanguageProvider(null as any);
+        registry.setLanguageProvider(null as unknown as typeof EnglishLanguageProvider);
       }).not.toThrow();
       
       // Pattern lookup should return empty
@@ -274,7 +274,7 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
         execute: () => [],
         requiredMessages: [],
         aliases: ['foo', 'bar'] // Direct aliases, not patterns
-      } as any;
+      } as Action & { aliases: string[] };
       
       registry.register(actionWithAliases);
       

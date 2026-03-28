@@ -18,7 +18,7 @@ describe('TypedSlotConsumer', () => {
       pattern: { tokens: [], minTokens: 1, slots: ['value'] },
       slotTokenIndex: 0,
       rule: { slots: new Map() },
-      context: { world: undefined as any },
+      context: { world: undefined as unknown },
       slotType
     };
   }

@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, PullableTrait } from '@sharpee/world-model';
+import { TraitType, PullableTrait, WearableTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { PulledEventData } from './pulling-events';
 import { ActionMetadata } from '../../../validation';
@@ -81,7 +81,7 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
 
     // Can't pull worn items
     if (target.has(TraitType.WEARABLE)) {
-      const wearable = target.get(TraitType.WEARABLE) as any;
+      const wearable = target.getTrait(WearableTrait);
       if (wearable?.isWorn) {
         return { valid: false, error: 'worn', params: { target: target.name } };
       }

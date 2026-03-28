@@ -73,7 +73,7 @@ export class IFEntity implements IEntity {
    */
   get<T extends ITrait>(type: TraitType | string | ITraitConstructor<T>): T | undefined {
     const traitType = typeof type === 'string' ? type as TraitType : 
-                     typeof type === 'function' ? (type as any).type : type;
+                     typeof type === 'function' ? (type as unknown as { type: TraitType }).type : type;
     return this.traits.get(traitType) as T | undefined;
   }
   
@@ -387,7 +387,7 @@ export class IFEntity implements IEntity {
     const trait = target.get(condition.trait);
     if (!trait) return false;
 
-    return (trait as any)[condition.property] === condition.value;
+    return (trait as unknown as Record<string, unknown>)[condition.property] === condition.value;
   }
 
   /**

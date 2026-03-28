@@ -267,8 +267,7 @@ export declare function analyzeBestFailure(failures: PartialMatchFailure[], inpu
  * - "talk to Alice. give her the key" → "her" = Alice
  * - "take all. drop them" → "them" = all items taken
  */
-import type { IParsedCommand, IValidatedCommand } from '@sharpee/world-model';
-import type { PronounSet } from '@sharpee/world-model';
+import type { IParsedCommand, IValidatedCommand, PronounSet } from '@sharpee/world-model';
 /**
  * Reference to an entity mentioned in a command
  */

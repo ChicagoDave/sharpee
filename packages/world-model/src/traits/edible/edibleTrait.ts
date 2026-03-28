@@ -10,7 +10,7 @@ export interface IEdibleData {
   /** Nutrition value (arbitrary units) */
   nutrition?: number;
 
-  /** Number of bites/servings remaining (alias: portions) */
+  /** Number of bites/servings remaining */
   servings?: number;
 
   /** Whether this is a liquid (drunk vs eaten) */
@@ -44,6 +44,9 @@ export interface IEdibleData {
 
   /** Whether eating this satisfies hunger */
   satisfiesHunger?: boolean;
+
+  /** Whether drinking this satisfies thirst */
+  satisfiesThirst?: boolean;
 }
 
 /**
@@ -71,17 +74,12 @@ export class EdibleTrait implements ITrait, IEdibleData {
   taste?: TasteQuality;
   effects?: string[];
   satisfiesHunger?: boolean;
+  satisfiesThirst?: boolean;
 
-  constructor(data: IEdibleData & { portions?: number; isDrink?: boolean; consumed?: boolean } = {}) {
-    // Set defaults and merge with provided data
-    // Support both 'servings' and legacy 'portions' naming
-    // If consumed is true, set servings to 0
-    const baseServings = data.servings ?? data.portions ?? 1;
-    this.servings = data.consumed ? 0 : baseServings;
-
+  constructor(data: IEdibleData = {}) {
+    this.servings = data.servings ?? 1;
     this.nutrition = data.nutrition ?? 1;
-    // Support both 'liquid' and legacy 'isDrink' naming
-    this.liquid = data.liquid ?? data.isDrink ?? false;
+    this.liquid = data.liquid ?? false;
     this.consumeMessage = data.consumeMessage;
     this.remainsType = data.remainsType;
     this.hasEffect = data.hasEffect ?? (data.effects && data.effects.length > 0) ?? false;
@@ -93,5 +91,6 @@ export class EdibleTrait implements ITrait, IEdibleData {
     this.taste = data.taste;
     this.effects = data.effects;
     this.satisfiesHunger = data.satisfiesHunger;
+    this.satisfiesThirst = data.satisfiesThirst;
   }
 }

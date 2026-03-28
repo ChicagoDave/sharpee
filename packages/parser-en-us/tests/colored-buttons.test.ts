@@ -9,18 +9,26 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider } from '@sharpee/if-domain';
-import { Entity } from '@sharpee/core';
+/** Minimal entity shape used by the button world model in these tests */
+interface MockEntity {
+  id: string;
+  name: string;
+  attributes: Record<string, unknown>;
+  visible: boolean;
+  portable: boolean;
+  get: (trait: string) => { name: string; aliases: string[] } | undefined;
+}
 
 /**
  * Mock world model with colored buttons
  */
 class ButtonWorldModel {
-  private entities: Map<string, Entity> = new Map();
+  private entities: Map<string, MockEntity> = new Map();
   private locations: Map<string, Set<string>> = new Map();
 
   constructor() {
     // Blue button - name is "blue button", alias is "blue"
-    const blueButton: Entity = {
+    const blueButton: MockEntity = {
       id: 'blue-button',
       name: 'blue button',
       attributes: { name: 'blue button' },
@@ -35,10 +43,10 @@ class ButtonWorldModel {
         }
         return undefined;
       }
-    } as any;
+    };
 
     // Yellow button - name is "yellow button", alias is "yellow"
-    const yellowButton: Entity = {
+    const yellowButton: MockEntity = {
       id: 'yellow-button',
       name: 'yellow button',
       attributes: { name: 'yellow button' },
@@ -53,10 +61,10 @@ class ButtonWorldModel {
         }
         return undefined;
       }
-    } as any;
+    };
 
     // Red button
-    const redButton: Entity = {
+    const redButton: MockEntity = {
       id: 'red-button',
       name: 'red button',
       attributes: { name: 'red button' },
@@ -71,10 +79,10 @@ class ButtonWorldModel {
         }
         return undefined;
       }
-    } as any;
+    };
 
     // Control panel - has "button" as alias
-    const panel: Entity = {
+    const panel: MockEntity = {
       id: 'control-panel',
       name: 'control panel',
       attributes: { name: 'control panel' },
@@ -89,7 +97,7 @@ class ButtonWorldModel {
         }
         return undefined;
       }
-    } as any;
+    };
 
     this.entities.set('blue-button', blueButton);
     this.entities.set('yellow-button', yellowButton);
@@ -102,17 +110,17 @@ class ButtonWorldModel {
     ]));
   }
 
-  getEntity(id: string): Entity | undefined {
+  getEntity(id: string): MockEntity | undefined {
     return this.entities.get(id);
   }
 
-  getAllEntities(): Entity[] {
+  getAllEntities(): MockEntity[] {
     return Array.from(this.entities.values());
   }
 
-  getVisibleEntities(actorId: string, location: string): Entity[] {
+  getVisibleEntities(actorId: string, location: string): MockEntity[] {
     const locationEntities = this.locations.get(location) || new Set();
-    const visibleEntities: Entity[] = [];
+    const visibleEntities: MockEntity[] = [];
 
     for (const entityId of locationEntities) {
       const entity = this.entities.get(entityId);
@@ -124,11 +132,11 @@ class ButtonWorldModel {
     return visibleEntities;
   }
 
-  getTouchableEntities(actorId: string, location: string): Entity[] {
+  getTouchableEntities(actorId: string, location: string): MockEntity[] {
     return this.getVisibleEntities(actorId, location);
   }
 
-  getCarriedEntities(actorId: string): Entity[] {
+  getCarriedEntities(actorId: string): MockEntity[] {
     return [];
   }
 }

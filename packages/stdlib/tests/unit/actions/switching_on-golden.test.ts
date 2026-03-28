@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { switchingOnAction } from '../../../src/actions/standard/switching_on';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, SwitchableTrait, LightSourceTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -670,7 +670,7 @@ describe('World State Mutations', () => {
     world.moveEntity(lamp.id, room.id);
 
     // VERIFY PRECONDITION: lamp is off
-    const switchableBefore = lamp.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = lamp.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(false);
 
     const command = createCommand(IFActions.SWITCHING_ON, {
@@ -683,7 +683,7 @@ describe('World State Mutations', () => {
     switchingOnAction.execute(context);
 
     // VERIFY POSTCONDITION: lamp is now on
-    const switchableAfter = lamp.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = lamp.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(true);
   });
 
@@ -699,7 +699,7 @@ describe('World State Mutations', () => {
     world.moveEntity(computer.id, room.id);
 
     // VERIFY PRECONDITION: computer is off
-    const switchableBefore = computer.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = computer.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(false);
     expect(switchableBefore.requiresPower).toBe(true);
     expect(switchableBefore.hasPower).toBe(true);
@@ -714,7 +714,7 @@ describe('World State Mutations', () => {
     switchingOnAction.execute(context);
 
     // VERIFY POSTCONDITION: computer is now on
-    const switchableAfter = computer.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = computer.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(true);
   });
 
@@ -728,7 +728,7 @@ describe('World State Mutations', () => {
     world.moveEntity(radio.id, room.id);
 
     // VERIFY PRECONDITION: radio is on
-    const switchableBefore = radio.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = radio.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(true);
 
     const command = createCommand(IFActions.SWITCHING_ON, {
@@ -742,7 +742,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('already_on');
 
     // VERIFY POSTCONDITION: radio is still on (no change)
-    const switchableAfter = radio.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = radio.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(true);
   });
 
@@ -758,7 +758,7 @@ describe('World State Mutations', () => {
     world.moveEntity(tv.id, room.id);
 
     // VERIFY PRECONDITION: tv is off
-    const switchableBefore = tv.get(TraitType.SWITCHABLE) as any;
+    const switchableBefore = tv.get(SwitchableTrait)!;
     expect(switchableBefore.isOn).toBe(false);
 
     const command = createCommand(IFActions.SWITCHING_ON, {
@@ -772,7 +772,7 @@ describe('World State Mutations', () => {
     expect(validation.error).toContain('no_power');
 
     // VERIFY POSTCONDITION: tv is still off (no change)
-    const switchableAfter = tv.get(TraitType.SWITCHABLE) as any;
+    const switchableAfter = tv.get(SwitchableTrait)!;
     expect(switchableAfter.isOn).toBe(false);
   });
 
@@ -811,8 +811,8 @@ describe('World State Mutations', () => {
     world.moveEntity(flashlight.id, player.id);
 
     // VERIFY PRECONDITION: flashlight is off and not lit
-    const switchableBefore = flashlight.get(TraitType.SWITCHABLE) as any;
-    const lightSourceBefore = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    const switchableBefore = flashlight.get(SwitchableTrait)!;
+    const lightSourceBefore = flashlight.get(LightSourceTrait)!;
     expect(switchableBefore.isOn).toBe(false);
     expect(lightSourceBefore.isLit).toBe(false);
 
@@ -826,8 +826,8 @@ describe('World State Mutations', () => {
     switchingOnAction.execute(context);
 
     // VERIFY POSTCONDITION: flashlight is now on AND lit
-    const switchableAfter = flashlight.get(TraitType.SWITCHABLE) as any;
-    const lightSourceAfter = flashlight.get(TraitType.LIGHT_SOURCE) as any;
+    const switchableAfter = flashlight.get(SwitchableTrait)!;
+    const lightSourceAfter = flashlight.get(LightSourceTrait)!;
     expect(switchableAfter.isOn).toBe(true);
     expect(lightSourceAfter.isLit).toBe(true);
   });

@@ -8,8 +8,30 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setupTestEngine, createMinimalStory } from './test-helpers/setup-test-engine';
 import { GameEngine } from '../src/game-engine';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, ISaveData } from '@sharpee/core';
+import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { MinimalTestStory } from './stories/minimal-test-story';
+
+/** Type alias for accessing private GameEngine members in tests */
+type EnginePrivate = {
+  world: WorldModel;
+  createSaveData(): ISaveData;
+  loadSaveData(data: ISaveData): void;
+  eventSource: { emit(event: ISemanticEvent): void; getAllEvents(): ISemanticEvent[] };
+};
+
+/** Type for event data containing entity snapshots */
+interface EventDataWithSnapshots {
+  turn?: number;
+  item?: { id: string; name: string; description?: string; traits?: Record<string, unknown> };
+  itemSnapshot?: { id: string; name: string; description?: string; traits?: Record<string, unknown> };
+  actorSnapshot?: { id: string; name: string };
+  sourceRoom?: { id: string; name: string };
+  destinationRoom?: { id: string; name: string; description?: string };
+  target?: { id: string; name: string; traits?: { container?: unknown }; };
+  contents?: unknown[];
+  [key: string]: unknown;
+}
 
 describe('Historical Accuracy - Atomic Events', () => {
   let engine: GameEngine;
@@ -25,7 +47,7 @@ describe('Historical Accuracy - Atomic Events', () => {
     
     // Capture all events
     engine.on('event', (event) => {
-      events.push(event as any);
+      events.push(event as ISemanticEvent);
     });
     
     events = [];
@@ -35,12 +57,12 @@ describe('Historical Accuracy - Atomic Events', () => {
   describe('Event Data Completeness', () => {
     it('should include complete entity snapshots in action events', async () => {
       // Debug: Check what's in the world
-      const world = (engine as any).world;
+      const world = (engine as unknown as EnginePrivate).world;
       const player = world.getPlayer();
       const playerLocation = world.getLocation(player.id);
       const roomContents = world.getContents(playerLocation);
       console.log('Player location:', playerLocation);
-      console.log('Room contents:', roomContents.map((e: any) => ({ id: e.id, name: e.get('identity')?.name })));
+      console.log('Room contents:', roomContents.map((e: IFEntity) => ({ id: e.id, name: e.get('identity')?.name })));
       
       // Take an item
       await engine.executeTurn('take lamp');
@@ -59,10 +81,10 @@ describe('Historical Accuracy - Atomic Events', () => {
       expect(takeEvent).toBeDefined();
       expect(takeEvent?.data).toBeDefined();
       
-      const eventData = takeEvent?.data as any;
-      
+      const eventData = takeEvent?.data as EventDataWithSnapshots | undefined;
+
       // Should have complete item snapshot
-      if (eventData.itemSnapshot) {
+      if (eventData?.itemSnapshot) {
         expect(eventData.itemSnapshot).toHaveProperty('id');
         expect(eventData.itemSnapshot).toHaveProperty('name');
         expect(eventData.itemSnapshot).toHaveProperty('description');
@@ -70,7 +92,7 @@ describe('Historical Accuracy - Atomic Events', () => {
       }
       
       // Should have actor snapshot
-      if (eventData.actorSnapshot) {
+      if (eventData?.actorSnapshot) {
         expect(eventData.actorSnapshot).toHaveProperty('id');
         expect(eventData.actorSnapshot).toHaveProperty('name');
       }
@@ -107,15 +129,15 @@ describe('Historical Accuracy - Atomic Events', () => {
       }
       
       expect(moveEvent).toBeDefined();
-      const eventData = moveEvent?.data as any;
-      
+      const eventData = moveEvent?.data as EventDataWithSnapshots | undefined;
+
       // Should have source and destination room data
-      if (eventData.sourceRoom) {
+      if (eventData?.sourceRoom) {
         expect(eventData.sourceRoom).toHaveProperty('id');
         expect(eventData.sourceRoom).toHaveProperty('name');
       }
       
-      if (eventData.destinationRoom) {
+      if (eventData?.destinationRoom) {
         expect(eventData.destinationRoom).toHaveProperty('id');
         expect(eventData.destinationRoom).toHaveProperty('name');
         expect(eventData.destinationRoom).toHaveProperty('description');
@@ -132,7 +154,7 @@ describe('Historical Accuracy - Atomic Events', () => {
       );
       
       if (openEvent) {
-        const eventData = openEvent.data as any;
+        const eventData = openEvent.data as EventDataWithSnapshots;
         
         // Should have target snapshot
         if (eventData.target) {
@@ -179,7 +201,7 @@ describe('Historical Accuracy - Atomic Events', () => {
       // Take lamp
       await engine.executeTurn('take lamp');
       const takeEvent = events.find(e => e.type === 'if.event.taken');
-      const lampAtTake = (takeEvent?.data as any)?.item;
+      const lampAtTake = (takeEvent?.data as EventDataWithSnapshots | undefined)?.item;
       
       // Modify lamp somehow (if there was a way to change its state)
       // For now, just move with it
@@ -188,7 +210,7 @@ describe('Historical Accuracy - Atomic Events', () => {
       // Drop lamp
       await engine.executeTurn('drop lamp');
       const dropEvent = events.find(e => e.type === 'if.event.dropped');
-      const lampAtDrop = (dropEvent?.data as any)?.item;
+      const lampAtDrop = (dropEvent?.data as EventDataWithSnapshots | undefined)?.item;
       
       // Both snapshots should exist and be complete
       expect(lampAtTake).toBeDefined();
@@ -211,9 +233,9 @@ describe('Historical Accuracy - Atomic Events', () => {
       expect(lookEvent).toBeDefined();
 
       // After enrichment, turn info is added to data
-      const eventData = lookEvent?.data as any;
-      expect(eventData.turn).toBeDefined();
-      expect(typeof eventData.turn).toBe('number');
+      const eventData = lookEvent?.data as EventDataWithSnapshots | undefined;
+      expect(eventData?.turn).toBeDefined();
+      expect(typeof eventData?.turn).toBe('number');
     });
 
     it.skip('should include actor and location in enriched events', async () => {
@@ -260,10 +282,10 @@ describe('Historical Accuracy - Atomic Events', () => {
       };
       
       // Emit the event
-      (engine as any).eventSource.emit(eventWithFunction);
-      
+      (engine as unknown as EnginePrivate).eventSource.emit(eventWithFunction);
+
       // Get save data
-      const saveData = (engine as any).createSaveData();
+      const saveData = (engine as unknown as EnginePrivate).createSaveData();
       
       // Debug: log save data structure
       console.log('Save data keys:', Object.keys(saveData));
@@ -274,7 +296,7 @@ describe('Historical Accuracy - Atomic Events', () => {
       if (!serializedEvents) {
         console.log('No serialized events found in save data');
       }
-      const serializedEvent = serializedEvents?.find((e: any) => e.id === 'test-event');
+      const serializedEvent = serializedEvents?.find((e: ISemanticEvent) => e.id === 'test-event');
       
       expect(serializedEvent).toBeDefined();
       expect(serializedEvent?.data.dynamicValue).toEqual({
@@ -283,11 +305,11 @@ describe('Historical Accuracy - Atomic Events', () => {
       });
       
       // Load the save data
-      (engine as any).loadSaveData(saveData);
-      
+      (engine as unknown as EnginePrivate).loadSaveData(saveData);
+
       // After loading, functions should be placeholder functions
-      const loadedEvents = (engine as any).eventSource.getAllEvents();
-      const loadedEvent = loadedEvents.find((e: any) => e.id === 'test-event');
+      const loadedEvents = (engine as unknown as EnginePrivate).eventSource.getAllEvents();
+      const loadedEvent = loadedEvents.find((e: ISemanticEvent) => e.id === 'test-event');
       
       expect(loadedEvent).toBeDefined();
       expect(typeof loadedEvent?.data.dynamicValue).toBe('function');

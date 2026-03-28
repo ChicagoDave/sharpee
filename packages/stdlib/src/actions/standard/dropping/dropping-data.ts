@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType } from '@sharpee/world-model';
+import { WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 
 /**
@@ -115,8 +115,8 @@ export function determineDroppingMessage(
       messageId = 'dropped_carelessly';
     } else if (noun.has(TraitType.IDENTITY)) {
       // Check if item name suggests it's fragile
-      const identity = noun.get(TraitType.IDENTITY);
-      if (identity && (identity as any).name?.toLowerCase().includes('glass')) {
+      const identity = noun.getTrait(IdentityTrait);
+      if (identity && identity.name?.toLowerCase().includes('glass')) {
         messageId = 'dropped_quietly';
       }
     }

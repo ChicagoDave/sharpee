@@ -12,6 +12,16 @@ import {
 import { IEntity } from '@sharpee/core';
 
 /**
+ * Entity with optional trait methods (duck-typed for IFEntity compatibility).
+ * The parser operates on IEntity from core, but at runtime these are IFEntity
+ * instances with has()/get() trait methods.
+ */
+interface ITraitAwareEntity extends IEntity {
+  has?(type: string): boolean;
+  get?(type: string): Record<string, unknown> | undefined;
+}
+
+/**
  * Evaluates scope constraints to find matching entities
  */
 export class ScopeEvaluator {
@@ -154,9 +164,10 @@ export class ScopeEvaluator {
       // Function constraint
       return filter(entity, context);
     } else {
-      // Property constraint
+      // Property constraint — dynamic lookup across entity fields (id, type, attributes, etc.)
+      const entityRecord = entity as unknown as Record<string, unknown>;
       for (const [key, value] of Object.entries(filter)) {
-        const entityValue = (entity as any)[key];
+        const entityValue = entityRecord[key];
         if (entityValue !== value) {
           return false;
         }
@@ -170,14 +181,16 @@ export class ScopeEvaluator {
    * Supports both entity.has() method and entity.get() method patterns
    */
   private static entityHasTrait(entity: IEntity, traitType: string): boolean {
+    const traitEntity = entity as ITraitAwareEntity;
+
     // Check for .has() method (trait system standard)
-    if (typeof (entity as any).has === 'function') {
-      return (entity as any).has(traitType);
+    if (typeof traitEntity.has === 'function') {
+      return traitEntity.has(traitType);
     }
 
     // Check for .get() method returning truthy value (alternate pattern)
-    if (typeof (entity as any).get === 'function') {
-      const trait = (entity as any).get(traitType);
+    if (typeof traitEntity.get === 'function') {
+      const trait = traitEntity.get(traitType);
       return trait !== undefined && trait !== null;
     }
 
@@ -202,8 +215,9 @@ export class ScopeEvaluator {
     }
 
     // Check IdentityTrait (via .get() method)
-    if (typeof (entity as any).get === 'function') {
-      const identity = (entity as any).get('identity');
+    const traitEntity = entity as ITraitAwareEntity;
+    if (typeof traitEntity.get === 'function') {
+      const identity = traitEntity.get('identity');
       if (identity && typeof identity === 'object') {
         if (identity.name) {
           names.push(String(identity.name));

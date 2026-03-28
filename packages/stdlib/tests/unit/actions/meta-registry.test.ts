@@ -52,8 +52,8 @@ describe('MetaCommandRegistry', () => {
       MetaCommandRegistry.register('');
       expect(MetaCommandRegistry.isMeta('')).toBe(false);
       
-      MetaCommandRegistry.register(null as any);
-      expect(MetaCommandRegistry.isMeta(null as any)).toBe(false);
+      MetaCommandRegistry.register(null as unknown as string);
+      expect(MetaCommandRegistry.isMeta(null as unknown as string)).toBe(false);
     });
     
     it('should allow unregistering commands', () => {

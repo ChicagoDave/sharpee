@@ -482,7 +482,7 @@ describe('examiningAction (Golden Pattern)', () => {
       // Spy on the action methods to ensure correct pattern
       const validateSpy = vi.spyOn(examiningAction, 'validate');
       const executeSpy = vi.spyOn(examiningAction, 'execute');
-      const reportSpy = vi.spyOn(examiningAction as any, 'report');
+      const reportSpy = vi.spyOn(examiningAction, 'report');
 
       const events = executeWithValidation(examiningAction, context);
 

@@ -286,7 +286,7 @@ describe('Reading Action - Golden Path', () => {
       // Find the if.event.read event (last event, after any implicit take events)
       const readEvent = events.find(e => e.type === 'if.event.read');
       expect(readEvent).toBeDefined();
-      expect((readEvent!.data as any)?.params?.text).toBe('');
+      expect((readEvent!.data as Record<string, unknown>)?.params).toHaveProperty('text', '');
     });
   });
 });

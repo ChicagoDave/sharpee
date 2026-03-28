@@ -169,9 +169,10 @@ describe('Command History Integration', () => {
       const { EnglishParser } = await import('@sharpee/parser-en-us');
       const langProvider = new EnglishLanguageProvider();
       const parser = new EnglishParser(bareWorld, langProvider);
-      (bareEngine as any).languageProvider = langProvider;
-      (bareEngine as any).parser = parser;
-      (bareEngine as any).initialized = true;
+      type EngineInternals = { languageProvider: unknown; parser: unknown; initialized: boolean };
+      (bareEngine as unknown as EngineInternals).languageProvider = langProvider;
+      (bareEngine as unknown as EngineInternals).parser = parser;
+      (bareEngine as unknown as EngineInternals).initialized = true;
       
       bareEngine.start();
       

@@ -23,7 +23,8 @@ import {
   CapabilityBehavior,
   CapabilitySharedData
 } from '@sharpee/world-model';
-import { ActionContext } from '@sharpee/stdlib';
+import { ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { CapabilityDispatchData } from '../src/capability-dispatch-helper';
 
 // Test trait that claims 'if.action.taking' capability
 class GuardedItemTrait implements ITrait {
@@ -206,7 +207,7 @@ describe('Universal Capability Dispatch', () => {
 
       expect(result.valid).toBe(true);
       expect(result.data).toBeDefined();
-      expect((result.data as any).sharedData.validated).toBe(true);
+      expect((result.data as CapabilityDispatchData).sharedData.validated).toBe(true);
     });
 
     it('should delegate validation to behavior and return valid=false when blocked', () => {
@@ -239,12 +240,12 @@ describe('Universal Capability Dispatch', () => {
 
       // First validate to populate data
       const validation = executeCapabilityValidate(check, mockContext);
-      (mockContext as any).validationResult = validation;
+      mockContext.validationResult = validation;
 
       // Then execute
       executeCapabilityExecute(mockContext);
 
-      expect((validation.data as any).sharedData.executed).toBe(true);
+      expect((validation.data as CapabilityDispatchData).sharedData.executed).toBe(true);
     });
   });
 
@@ -262,7 +263,7 @@ describe('Universal Capability Dispatch', () => {
 
       // Validate to populate data
       const validation = executeCapabilityValidate(check, mockContext);
-      (mockContext as any).validationResult = validation;
+      mockContext.validationResult = validation;
 
       // Execute
       executeCapabilityExecute(mockContext);
@@ -290,7 +291,7 @@ describe('Universal Capability Dispatch', () => {
 
       // Validate (will fail)
       const validation = executeCapabilityValidate(check, mockContext);
-      (mockContext as any).validationResult = validation;
+      mockContext.validationResult = validation;
 
       // Get blocked events
       const events = executeCapabilityBlocked(mockContext, validation, 'if.action.taking');

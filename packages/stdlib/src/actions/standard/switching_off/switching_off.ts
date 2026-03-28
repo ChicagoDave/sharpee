@@ -13,7 +13,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SwitchableBehavior, LightSourceBehavior } from '@sharpee/world-model';
+import { TraitType, SwitchableTrait, OpenableTrait, SwitchableBehavior, LightSourceBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { SwitchedOffEventData } from './switching_off-events';
@@ -107,12 +107,11 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     sharedData.targetName = noun.name;
 
     // Get the switchable data before turning off for checking state
-    const switchableTrait = noun.get(TraitType.SWITCHABLE);
-    const switchableData = switchableTrait as any;
-    const hadAutoOff = switchableData.autoOffCounter > 0;
-    const remainingTime = switchableData.autoOffCounter;
-    const hadRunningSound = switchableData.runningSound;
-    const powerConsumption = switchableData.powerConsumption;
+    const switchableData = noun.getTrait(SwitchableTrait);
+    const hadAutoOff = (switchableData?.autoOffCounter ?? 0) > 0;
+    const remainingTime = switchableData?.autoOffCounter ?? 0;
+    const hadRunningSound = switchableData?.runningSound;
+    const powerConsumption = switchableData?.powerConsumption;
 
     // Delegate state change to behavior
     const result = SwitchableBehavior.switchOff(noun);
@@ -172,8 +171,8 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     // Check for side effects
     let willClose = false;
     if (noun.has(TraitType.CONTAINER) && noun.has(TraitType.OPENABLE)) {
-      const openableTrait = noun.get(TraitType.OPENABLE) as any;
-      if (openableTrait.isOpen && openableTrait.autoCloseOnOff) {
+      const openableTrait = noun.getTrait(OpenableTrait);
+      if (openableTrait?.isOpen && (openableTrait as unknown as Record<string, unknown>).autoCloseOnOff) {
         sharedData.willClose = true;
         willClose = true;
       }

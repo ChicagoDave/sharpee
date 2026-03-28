@@ -71,6 +71,11 @@ export interface ISemanticEvent {
    * Whether this event should be narrated
    */
   narrate?: boolean;
+
+  /**
+   * Additional metadata for event processing
+   */
+  metadata?: Record<string, unknown>;
 }
 
 // EventSource interface moved to semantic-event-source.ts

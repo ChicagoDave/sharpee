@@ -60,7 +60,7 @@ export function meetsActionRequirements(
 
     // Check condition if specified
     if (requirements.condition) {
-      const trait = entity.get(requirements.trait as TraitType) as any;
+      const trait = entity.get(requirements.trait as TraitType) as Record<string, unknown> | undefined;
       if (!trait) return false;
 
       switch (requirements.condition) {

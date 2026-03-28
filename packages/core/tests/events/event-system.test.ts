@@ -190,7 +190,7 @@ describe('Event System Helpers', () => {
       );
 
       expect(event.type).toBe('narrative');
-      expect((event.data as any)?.message).toBe('The door creaks open.');
+      expect((event.data as Record<string, unknown>)?.message).toBe('The door creaks open.');
     });
 
     it('should create standard error events', async () => {
@@ -206,7 +206,7 @@ describe('Event System Helpers', () => {
       );
 
       expect(event.type).toBe('error');
-      expect((event.data as any)?.code).toBe('INVALID_TARGET');
+      expect((event.data as Record<string, unknown>)?.code).toBe('INVALID_TARGET');
     });
   });
 });

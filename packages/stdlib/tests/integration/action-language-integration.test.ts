@@ -76,7 +76,7 @@ class MockLanguageProvider implements Partial<LanguageProvider> {
       },
       pattern: 'VERB_ONLY',
       confidence: actionId ? 1.0 : 0.5
-    } as any as ParsedCommand;
+    } as unknown as ParsedCommand;
   }
 }
 
@@ -93,7 +93,7 @@ describe('Action Integration Test Pattern', () => {
     
     // Setup action registry with language provider
     registry = new StandardActionRegistry();
-    registry.setLanguageProvider(languageProvider as any);
+    registry.setLanguageProvider(languageProvider as unknown as LanguageProvider);
     registry.register(waitingAction);
     
     // Setup world model
@@ -263,7 +263,7 @@ describe('Testing Complex Actions with Dependencies', () => {
       indirectObject: null
     };
     
-    const context = createRealTestContext(mockTakeAction as any, world, command);
+    const context = createRealTestContext(mockTakeAction as unknown as import('../../src/actions/enhanced-types').Action, world, command as import('@sharpee/world-model').ValidatedCommand);
     
     // Override canTake for testing
     context.canTake = () => true;

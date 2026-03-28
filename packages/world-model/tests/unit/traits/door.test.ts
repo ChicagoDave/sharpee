@@ -181,8 +181,8 @@ describe('DoorTrait', () => {
       expect(doorTrait.room2).toBe(room2.id);
       
       // Check room exits are set up
-      const room1Trait = room1.getTrait(TraitType.ROOM) as any;
-      const room2Trait = room2.getTrait(TraitType.ROOM) as any;
+      const room1Trait = room1.getTrait(RoomTrait)!;
+      const room2Trait = room2.getTrait(RoomTrait)!;
       
       expect(room1Trait.exits.east).toEqual({
         destination: room2.id,
@@ -244,7 +244,7 @@ describe('DoorTrait', () => {
       expect(trait.room1).toBe(startRoom.id);
       expect(trait.room2).toBe(endRoom.id);
       expect(trait.bidirectional).toBe(false);
-      expect((trait as any).customProperty).toBe('test');
+      expect((trait as DoorTrait & { customProperty: string }).customProperty).toBe('test');
     });
 
     it('should maintain type constant', () => {

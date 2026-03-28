@@ -445,7 +445,7 @@ export abstract class GrammarEngine {
                 builder = builder.mapsTo(actionId);
                 // Lower priority for abbreviations (single character)
                 builder = builder.withPriority(alias.length === 1 ? 90 : priority);
-                builder = builder.withDefaultSemantics({ direction: canonical as any });
+                builder = builder.withDefaultSemantics({ direction: canonical as SemanticProperties['direction'] });
                 builder.build();
               }
             }

@@ -51,9 +51,9 @@ export class GameStateTestStory implements Story {
     }));
     door.add(new ContainerTrait({ portable: false }));
     
-    // Add custom state
-    (door as any).isOpen = false;
-    (door as any).isLocked = true;
+    // Add custom state for save/load testing
+    (door as unknown as { isOpen: boolean }).isOpen = false;
+    (door as unknown as { isLocked: boolean }).isLocked = true;
     
     const lamp = world.createEntity('Lamp', EntityType.OBJECT);
     lamp.add(new IdentityTrait({
@@ -64,9 +64,9 @@ export class GameStateTestStory implements Story {
     }));
     lamp.add(new ContainerTrait({ portable: true }));
     
-    // Add custom state
-    (lamp as any).isLit = false;
-    (lamp as any).fuelLevel = 100;
+    // Add custom state for save/load testing
+    (lamp as unknown as { isLit: boolean }).isLit = false;
+    (lamp as unknown as { fuelLevel: number }).fuelLevel = 100;
     
     // Place objects
     world.moveEntity(door.id, this._room.id);
@@ -92,9 +92,9 @@ export class GameStateTestStory implements Story {
       capacity: { maxItems: 10 }
     }));
     
-    // Add player state
-    (this._player as any).score = 0;
-    (this._player as any).moves = 0;
+    // Add player state for save/load testing
+    (this._player as unknown as { score: number }).score = 0;
+    (this._player as unknown as { moves: number }).moves = 0;
     
     // Place player in room
     if (this._room) {

@@ -135,7 +135,7 @@ describe('Container Hierarchies Integration Tests', () => {
       const smallBox = createTestContainer(world, 'Small Box');
 
       // Add capacity trait
-      const containerTrait = smallBox.getTrait(TraitType.CONTAINER) as any;
+      const containerTrait = smallBox.getTrait(ContainerTrait)! as ContainerTrait & { maxItems: number; maxWeight: number };
       containerTrait.maxItems = 3;
       containerTrait.maxWeight = 10;
 
@@ -210,13 +210,8 @@ describe('Container Hierarchies Integration Tests', () => {
       const bottomDrawer = createTestContainer(world, 'Bottom Drawer');
 
       // Make drawers openable
-      const topOpenable = new OpenableTrait();
-      (topOpenable as any).isOpen = false;
-      topDrawer.add(topOpenable);
-
-      const bottomOpenable = new OpenableTrait();
-      (bottomOpenable as any).isOpen = true;
-      bottomDrawer.add(bottomOpenable);
+      topDrawer.add(new OpenableTrait({ isOpen: false }));
+      bottomDrawer.add(new OpenableTrait({ isOpen: true }));
 
       // Items for the desk
       const lamp = world.createEntity('Desk Lamp', 'item');
@@ -313,14 +308,14 @@ describe('Container Hierarchies Integration Tests', () => {
       expect(visible).not.toContain(medicine);
 
       // Open cabinet
-      (cabinet.getTrait(TraitType.OPENABLE) as any).isOpen = true;
+      cabinet.getTrait(OpenableTrait)!.isOpen = true;
 
       // Medicine now visible
       visible = world.getVisible(player.id);
       expect(visible).toContain(medicine);
 
       // Close cabinet again
-      (cabinet.getTrait(TraitType.OPENABLE) as any).isOpen = false;
+      cabinet.getTrait(OpenableTrait)!.isOpen = false;
 
       // Medicine hidden again
       visible = world.getVisible(player.id);
@@ -366,15 +361,13 @@ describe('Container Hierarchies Integration Tests', () => {
       const containers: IFEntity[] = [];
       for (let i = 0; i < 5; i++) {
         const container = createTestContainer(world, `Container ${i}`);
-        const openableTrait = new OpenableTrait();
-        (openableTrait as any).isOpen = i % 2 === 0;
-        container.add(openableTrait);
+        container.add(new OpenableTrait({ isOpen: i % 2 === 0 }));
 
         if (i > 2) {
-          const lockableTrait = new LockableTrait();
-          (lockableTrait as any).isLocked = true;
-          (lockableTrait as any).requiredKey = world.createEntity('Key', 'item').id;
-          container.add(lockableTrait);
+          container.add(new LockableTrait({
+            isLocked: true,
+            keyId: world.createEntity('Key', 'item').id
+          }));
         }
         containers.push(container);
         world.moveEntity(container.id, room.id);
@@ -384,7 +377,7 @@ describe('Container Hierarchies Integration Tests', () => {
       const openContainers = world.findWhere(entity => {
         if (!entity.hasTrait(TraitType.CONTAINER)) return false;
         if (!entity.hasTrait(TraitType.OPENABLE)) return true; // No openable trait = always open
-        return (entity.getTrait(TraitType.OPENABLE) as any).isOpen;
+        return entity.getTrait(OpenableTrait)!.isOpen;
       });
 
       expect(openContainers.length).toBeGreaterThanOrEqual(3); // 0, 2, 4
@@ -393,7 +386,7 @@ describe('Container Hierarchies Integration Tests', () => {
       const lockedContainers = world.findWhere(entity => {
         return entity.hasTrait(TraitType.CONTAINER) &&
           entity.hasTrait(TraitType.LOCKABLE) &&
-          (entity.getTrait(TraitType.LOCKABLE) as any).isLocked;
+          entity.getTrait(LockableTrait)!.isLocked;
       });
 
       expect(lockedContainers).toHaveLength(2); // 3, 4

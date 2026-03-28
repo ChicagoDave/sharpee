@@ -8,6 +8,8 @@ import { createTestRoom, createTestContainer, createTestActor, createTestClothin
 import { createTestDoor } from '../fixtures/test-interactive';
 import { IdentityTrait } from '../../src/traits/identity/identityTrait';
 import { OpenableTrait } from '../../src/traits/openable/openableTrait';
+import { RoomTrait } from '../../src/traits/room/roomTrait';
+import { DoorTrait } from '../../src/traits/door/doorTrait';
 import { LockableTrait } from '../../src/traits/lockable/lockableTrait';
 import { SupporterTrait } from '../../src/traits/supporter/supporterTrait';
 import { SceneryTrait } from '../../src/traits/scenery/sceneryTrait';
@@ -44,14 +46,8 @@ describe('Trait Combinations Integration Tests', () => {
       treasure = world.createEntity('Treasure', 'item');
 
       // Make box openable and lockable
-      const openableTrait = new OpenableTrait();
-      (openableTrait as any).isOpen = false;
-      secureBox.add(openableTrait);
-      
-      const lockableTrait = new LockableTrait();
-      (lockableTrait as any).isLocked = true;
-      (lockableTrait as any).requiredKey = key.id;
-      secureBox.add(lockableTrait);
+      secureBox.add(new OpenableTrait({ isOpen: false }));
+      secureBox.add(new LockableTrait({ isLocked: true, keyId: key.id }));
 
       world.moveEntity(player.id, room.id);
       world.moveEntity(secureBox.id, room.id);
@@ -68,8 +64,8 @@ describe('Trait Combinations Integration Tests', () => {
     });
 
     it('should not open locked container', () => {
-      const openable = secureBox.getTrait(TraitType.OPENABLE) as any;
-      const lockable = secureBox.getTrait(TraitType.LOCKABLE) as any;
+      const openable = secureBox.getTrait(OpenableTrait)!;
+      const lockable = secureBox.getTrait(LockableTrait)!;
 
       // Try to open - should fail
       openable.isOpen = true;
@@ -80,8 +76,8 @@ describe('Trait Combinations Integration Tests', () => {
     });
 
     it('should see contents after unlocking and opening', () => {
-      const openable = secureBox.getTrait(TraitType.OPENABLE) as any;
-      const lockable = secureBox.getTrait(TraitType.LOCKABLE) as any;
+      const openable = secureBox.getTrait(OpenableTrait)!;
+      const lockable = secureBox.getTrait(LockableTrait)!;
 
       // Unlock with key
       lockable.isLocked = false;
@@ -95,14 +91,11 @@ describe('Trait Combinations Integration Tests', () => {
 
     it('should handle nested locked containers', () => {
       const innerBox = createTestContainer(world, 'Inner Box');
-      const innerOpenable = new OpenableTrait();
-      (innerOpenable as any).isOpen = false;
-      innerBox.add(innerOpenable);
-      
-      const innerLockable = new LockableTrait();
-      (innerLockable as any).isLocked = true;
-      (innerLockable as any).requiredKey = world.createEntity('Inner Key', 'item').id;
-      innerBox.add(innerLockable);
+      innerBox.add(new OpenableTrait({ isOpen: false }));
+      innerBox.add(new LockableTrait({
+        isLocked: true,
+        keyId: world.createEntity('Inner Key', 'item').id
+      }));
 
       const gem = world.createEntity('Gem', 'item');
       
@@ -111,8 +104,8 @@ describe('Trait Combinations Integration Tests', () => {
       author.moveEntity(gem.id, innerBox.id);
 
       // Unlock and open outer box
-      (secureBox.getTrait(TraitType.LOCKABLE) as any).isLocked = false;
-      (secureBox.getTrait(TraitType.OPENABLE) as any).isOpen = true;
+      secureBox.getTrait(LockableTrait)!.isLocked = false;
+      secureBox.getTrait(OpenableTrait)!.isOpen = true;
 
       const visible = world.getVisible(player.id);
       expect(visible).toContain(innerBox);
@@ -138,9 +131,7 @@ describe('Trait Combinations Integration Tests', () => {
       desk.add(new SceneryTrait());
       
       drawer = createTestContainer(world, 'Desk Drawer');
-      const drawerOpenable = new OpenableTrait();
-      (drawerOpenable as any).isOpen = false;
-      drawer.add(drawerOpenable);
+      drawer.add(new OpenableTrait({ isOpen: false }));
       drawer.add(new SceneryTrait());
       
       lamp = world.createEntity('Desk Lamp', 'item');
@@ -165,7 +156,7 @@ describe('Trait Combinations Integration Tests', () => {
 
     it('should handle complex containment hierarchy', () => {
       // Open drawer
-      (drawer.getTrait(TraitType.OPENABLE) as any).isOpen = true;
+      drawer.getTrait(OpenableTrait)!.isOpen = true;
 
       const visible = world.getVisible(player.id);
       expect(visible).toContain(paper);
@@ -179,7 +170,7 @@ describe('Trait Combinations Integration Tests', () => {
 
     it('should include all scenery regardless of visibility', () => {
       // Make drawer invisible
-      (drawer.getTrait(TraitType.SCENERY) as any).visible = false;
+      drawer.getTrait(SceneryTrait)!.visible = false;
 
       // findByTrait now returns all matching entities, including invisible scenery
       const allContainers = world.findByTrait(TraitType.CONTAINER);
@@ -313,7 +304,7 @@ describe('Trait Combinations Integration Tests', () => {
       darkBasement = createTestRoom(world, 'Dark Basement');
       
       // Make basement dark
-      (darkBasement.getTrait(TraitType.ROOM) as any).isDark = true;
+      darkBasement.getTrait(RoomTrait)!.isDark = true;
 
       player = createTestActor(world, 'Player');
       torch = world.createEntity('Torch', 'item');
@@ -325,20 +316,20 @@ describe('Trait Combinations Integration Tests', () => {
       door2 = createTestDoor(world, 'Basement Door', hallway.id, darkBasement.id);
       
       // Lock basement door
-      const door2Lockable = new LockableTrait();
-      (door2Lockable as any).isLocked = true;
-      (door2Lockable as any).requiredKey = world.createEntity('Basement Key', 'item').id;
-      door2.add(door2Lockable);
+      door2.add(new LockableTrait({
+        isLocked: true,
+        keyId: world.createEntity('Basement Key', 'item').id
+      }));
 
       // Set up room exits
-      (kitchen.getTrait(TraitType.ROOM) as any).exits = {
+      kitchen.getTrait(RoomTrait)!.exits = {
         east: { via: door1.id, destination: hallway.id }
       };
-      (hallway.getTrait(TraitType.ROOM) as any).exits = {
+      hallway.getTrait(RoomTrait)!.exits = {
         west: { via: door1.id, destination: kitchen.id },
         down: { via: door2.id, destination: darkBasement.id }
       };
-      (darkBasement.getTrait(TraitType.ROOM) as any).exits = {
+      darkBasement.getTrait(RoomTrait)!.exits = {
         up: { via: door2.id, destination: hallway.id }
       };
 
@@ -354,7 +345,7 @@ describe('Trait Combinations Integration Tests', () => {
 
     it('should see in lit rooms but not dark rooms', () => {
       // Move to dark basement (assume door is unlocked for this test)
-      (door2.getTrait(TraitType.LOCKABLE) as any).isLocked = false;
+      door2.getTrait(LockableTrait)!.isLocked = false;
       world.moveEntity(player.id, darkBasement.id);
 
       // Create an object in basement
@@ -366,16 +357,16 @@ describe('Trait Combinations Integration Tests', () => {
 
       // Light torch
       world.moveEntity(torch.id, player.id);
-      (torch.getTrait(TraitType.LIGHT_SOURCE) as any).isLit = true;
-      (torch.getTrait(TraitType.SWITCHABLE) as any).isOn = true;
+      torch.getTrait(LightSourceTrait)!.isLit = true;
+      torch.getTrait(SwitchableTrait)!.isOn = true;
 
       // Now can see
       expect(world.canSee(player.id, box.id)).toBe(true);
     });
 
     it('should handle door state synchronization', () => {
-      const doorTrait = door1.getTrait(TraitType.DOOR) as any;
-      const openableTrait = door1.getTrait(TraitType.OPENABLE) as any;
+      const doorTrait = door1.getTrait(DoorTrait)!;
+      const openableTrait = door1.getTrait(OpenableTrait)!;
 
       // Door connects kitchen and hallway
       expect(doorTrait.room1).toBe(kitchen.id);
@@ -404,23 +395,13 @@ describe('Trait Combinations Integration Tests', () => {
       player = createTestActor(world, 'Player');
       
       lunchbox = createTestContainer(world, 'Lunchbox');
-      const lunchboxOpenable = new OpenableTrait();
-      (lunchboxOpenable as any).isOpen = false;
-      lunchbox.add(lunchboxOpenable);
+      lunchbox.add(new OpenableTrait({ isOpen: false }));
       
       sandwich = world.createEntity('Sandwich', 'item');
-      const sandwichEdible = new EdibleTrait();
-      (sandwichEdible as any).nutrition = 20;
-      (sandwichEdible as any).tasteTurn = 0;
-      (sandwichEdible as any).isConsumed = false;
-      sandwich.add(sandwichEdible);
-      
+      sandwich.add(new EdibleTrait({ nutrition: 20 }));
+
       apple = world.createEntity('Apple', 'item');
-      const appleEdible = new EdibleTrait();
-      (appleEdible as any).nutrition = 10;
-      (appleEdible as any).tasteTurn = 0;
-      (appleEdible as any).isConsumed = false;
-      apple.add(appleEdible);
+      apple.add(new EdibleTrait({ nutrition: 10 }));
 
       world.moveEntity(player.id, room.id);
       world.moveEntity(lunchbox.id, room.id);
@@ -431,7 +412,7 @@ describe('Trait Combinations Integration Tests', () => {
 
     it('should track edible items in containers', () => {
       // Open lunchbox
-      (lunchbox.getTrait(TraitType.OPENABLE) as any).isOpen = true;
+      lunchbox.getTrait(OpenableTrait)!.isOpen = true;
 
       const edibles = world.findByTrait(TraitType.EDIBLE);
       expect(edibles).toContain(sandwich);
@@ -439,19 +420,19 @@ describe('Trait Combinations Integration Tests', () => {
 
       // Total nutrition available
       const totalNutrition = edibles.reduce((sum, item) => {
-        const edible = item.getTrait(TraitType.EDIBLE) as any;
-        return sum + (edible.nutrition || 0);
+        const edible = item.getTrait(EdibleTrait);
+        return sum + (edible?.nutrition || 0);
       }, 0);
       expect(totalNutrition).toBe(30);
     });
 
     it('should handle consuming items from container', () => {
       // Take sandwich from lunchbox
-      (lunchbox.getTrait(TraitType.OPENABLE) as any).isOpen = true;
+      lunchbox.getTrait(OpenableTrait)!.isOpen = true;
       world.moveEntity(sandwich.id, player.id);
 
-      // Consume sandwich
-      const edible = sandwich.getTrait(TraitType.EDIBLE) as any;
+      // Consume sandwich - isConsumed is a custom test property
+      const edible = sandwich.getTrait(EdibleTrait)! as EdibleTrait & { isConsumed: boolean };
       edible.isConsumed = true;
 
       // In a real system, consumed items would be removed
@@ -473,21 +454,18 @@ describe('Trait Combinations Integration Tests', () => {
       pedestal.add(new SupporterTrait());
       
       const glassCase = createTestContainer(world, 'Glass Case');
-      const glassCaseOpenable = new OpenableTrait();
-      (glassCaseOpenable as any).isOpen = false;
-      glassCase.add(glassCaseOpenable);
-      
-      const glassCaseLockable = new LockableTrait();
-      (glassCaseLockable as any).isLocked = true;
-      (glassCaseLockable as any).requiredKey = world.createEntity('Curator Key', 'item').id;
-      glassCase.add(glassCaseLockable);
+      glassCase.add(new OpenableTrait({ isOpen: false }));
+      glassCase.add(new LockableTrait({
+        isLocked: true,
+        keyId: world.createEntity('Curator Key', 'item').id
+      }));
       // In future: glassCase.add(new TransparentTrait());
       
       const ancientBook = world.createEntity('Ancient Book', 'item');
-      const readableTrait = new ReadableTrait();
-      (readableTrait as any).text = 'The secrets of the universe...';
-      (readableTrait as any).hasBeenRead = false;
-      ancientBook.add(readableTrait);
+      ancientBook.add(new ReadableTrait({
+        text: 'The secrets of the universe...',
+        hasBeenRead: false
+      }));
 
       world.moveEntity(player.id, room.id);
       world.moveEntity(pedestal.id, room.id);
@@ -536,15 +514,15 @@ describe('Trait Combinations Integration Tests', () => {
       world.moveEntity(book.id, table.id);
 
       // Make room dark
-      (room.getTrait(TraitType.ROOM) as any).isDark = true;
+      room.getTrait(RoomTrait)!.isDark = true;
 
       // Can't see in dark room
       expect(world.canSee(player.id, book.id)).toBe(false);
 
       // Turn on switch (which would turn on lamp in a real system)
-      (lightSwitch.getTrait(TraitType.SWITCHABLE) as any).isOn = true;
-      (ceilingLamp.getTrait(TraitType.SWITCHABLE) as any).isOn = true;
-      (ceilingLamp.getTrait(TraitType.LIGHT_SOURCE) as any).isLit = true;
+      lightSwitch.getTrait(SwitchableTrait)!.isOn = true;
+      ceilingLamp.getTrait(SwitchableTrait)!.isOn = true;
+      ceilingLamp.getTrait(LightSourceTrait)!.isLit = true;
 
       // Now room is lit
       expect(world.canSee(player.id, book.id)).toBe(true);

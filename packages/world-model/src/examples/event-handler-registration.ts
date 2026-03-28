@@ -4,6 +4,8 @@
 import { WorldModel, EventHandler } from '../world';
 import { IFEvents } from '../constants';
 import { TraitType } from '../traits/trait-types';
+import { OpenableTrait } from '../traits/openable/openableTrait';
+import { LockableTrait } from '../traits/lockable/lockableTrait';
 import { ISemanticEvent } from '@sharpee/core';
 
 /**
@@ -36,9 +38,9 @@ export function registerStandardEventHandlers(world: WorldModel): void {
     if (target) {
       const entity = world.getEntity(target);
       if (entity && entity.has(TraitType.OPENABLE)) {
-        const openable = entity.get(TraitType.OPENABLE);
+        const openable = entity.getTrait(OpenableTrait);
         if (openable) {
-          (openable as any).isOpen = true;
+          openable.isOpen = true;
         }
       }
     }
@@ -50,9 +52,9 @@ export function registerStandardEventHandlers(world: WorldModel): void {
     if (target) {
       const entity = world.getEntity(target);
       if (entity && entity.has(TraitType.OPENABLE)) {
-        const openable = entity.get(TraitType.OPENABLE);
+        const openable = entity.getTrait(OpenableTrait);
         if (openable) {
-          (openable as any).isOpen = false;
+          openable.isOpen = false;
         }
       }
     }
@@ -64,9 +66,9 @@ export function registerStandardEventHandlers(world: WorldModel): void {
     if (target) {
       const entity = world.getEntity(target);
       if (entity && entity.has(TraitType.LOCKABLE)) {
-        const lockable = entity.get(TraitType.LOCKABLE);
+        const lockable = entity.getTrait(LockableTrait);
         if (lockable) {
-          (lockable as any).isLocked = true;
+          lockable.isLocked = true;
         }
       }
     }
@@ -78,9 +80,9 @@ export function registerStandardEventHandlers(world: WorldModel): void {
     if (target) {
       const entity = world.getEntity(target);
       if (entity && entity.has(TraitType.LOCKABLE)) {
-        const lockable = entity.get(TraitType.LOCKABLE);
+        const lockable = entity.getTrait(LockableTrait);
         if (lockable) {
-          (lockable as any).isLocked = false;
+          lockable.isLocked = false;
         }
       }
     }

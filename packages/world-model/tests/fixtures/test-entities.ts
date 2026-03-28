@@ -70,8 +70,7 @@ export function createTestOpenableContainer(
 ): IFEntity {
   const container = createTestContainer(world, displayName);
   
-  const openableTrait = new OpenableTrait();
-  (openableTrait as any).isOpen = isOpen;
+  const openableTrait = new OpenableTrait({ isOpen });
   container.add(openableTrait);
   
   container.attributes.open = isOpen;
@@ -88,11 +87,7 @@ export function createTestLockableContainer(
 ): IFEntity {
   const container = createTestOpenableContainer(world, displayName, false);
   
-  const lockableTrait = new LockableTrait();
-  (lockableTrait as any).isLocked = isLocked;
-  if (keyId) {
-    (lockableTrait as any).keyId = keyId;
-  }
+  const lockableTrait = new LockableTrait({ isLocked, keyId });
   container.add(lockableTrait);
   
   container.attributes.locked = isLocked;
@@ -111,8 +106,7 @@ export function createTestActor(
 ): IFEntity {
   const actor = world.createEntity(displayName, 'actor');
   
-  const actorTrait = new ActorTrait();
-  (actorTrait as any).isPlayer = isPlayer || displayName === 'Player';
+  const actorTrait = new ActorTrait({ isPlayer: isPlayer || displayName === 'Player' });
   
   const containerTrait = new ContainerTrait();
   const identity = new IdentityTrait();

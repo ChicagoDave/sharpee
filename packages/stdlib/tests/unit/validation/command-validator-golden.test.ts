@@ -8,7 +8,8 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { CommandValidator } from '../../../src/validation/command-validator';
 import { StandardActionRegistry } from '../../../src/actions/registry';
-import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType } from '@sharpee/world-model';
+import { AuthorModel, WorldModel, IFEntity, TraitType, EntityType, IParsedCommand } from '@sharpee/world-model';
+import { LanguageProvider } from '@sharpee/if-domain';
 import { createCommand, createParserWithWorld, parseCommand } from '../../test-utils';
 import { StandardScopeResolver } from '../../../src/scope/scope-resolver';
 import type { 
@@ -87,7 +88,7 @@ describe('CommandValidator (Golden Pattern)', () => {
       getSupportedActions: () => ['if.action.taking', 'if.action.examining', 'if.action.putting', 'if.action.pushing']
     };
 
-    registry.setLanguageProvider(mockLanguageProvider as any);
+    registry.setLanguageProvider(mockLanguageProvider as unknown as LanguageProvider);
 
     // Register real actions
     registry.register(takingAction);
@@ -124,7 +125,7 @@ describe('CommandValidator (Golden Pattern)', () => {
           pattern: 'VERB_NOUN',
           confidence: 1.0
         };
-        const result = validator.validate(manualParsed as any);
+        const result = validator.validate(manualParsed as unknown as IParsedCommand);
         expect(result.success).toBe(false);
         if (!result.success) {
           expect(result.error.code).toBe('ACTION_NOT_AVAILABLE');

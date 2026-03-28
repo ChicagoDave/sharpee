@@ -10,11 +10,20 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider } from '@sharpee/if-domain';
-import { Entity } from '@sharpee/core';
+/** Minimal entity shape used by mock world model in these tests */
+interface MockEntity {
+  id: string;
+  name: string;
+  attributes: Record<string, unknown>;
+  visible: boolean;
+  portable: boolean;
+  supporter?: boolean;
+  noisy?: boolean;
+}
 
 // Mock world model with multiple locations
 class MockWorldModelWithLocations {
-  private entities: Map<string, Entity> = new Map();
+  private entities: Map<string, MockEntity> = new Map();
   private locations: Map<string, Set<string>> = new Map();
   private inventories: Map<string, Set<string>> = new Map();
   private adjacentLocations: Map<string, Set<string>> = new Map();
@@ -22,57 +31,57 @@ class MockWorldModelWithLocations {
   constructor() {
     // Set up test world
     // Living room entities
-    const couch: Entity = {
+    const couch: MockEntity = {
       id: 'couch',
       name: 'couch',
       attributes: { name: 'couch' },
       visible: true,
       portable: false,
       supporter: true
-    } as any;
-    
-    const tv: Entity = {
+    };
+
+    const tv: MockEntity = {
       id: 'tv',
       name: 'television',
       attributes: { name: 'television' },
       visible: true,
       portable: false
-    } as any;
-    
+    };
+
     // Kitchen entities
-    const stove: Entity = {
+    const stove: MockEntity = {
       id: 'stove',
       name: 'stove',
       attributes: { name: 'stove' },
       visible: true,
       portable: false
-    } as any;
-    
-    const pot: Entity = {
+    };
+
+    const pot: MockEntity = {
       id: 'pot',
       name: 'pot',
       attributes: { name: 'pot' },
       visible: true,
       portable: true,
       noisy: true // For testing sound-based scope
-    } as any;
-    
+    };
+
     // Garden entities (visible through window)
-    const tree: Entity = {
+    const tree: MockEntity = {
       id: 'tree',
       name: 'tree',
       attributes: { name: 'tree' },
       visible: true,
       portable: false
-    } as any;
-    
-    const bird: Entity = {
+    };
+
+    const bird: MockEntity = {
       id: 'bird',
       name: 'bird',
       attributes: { name: 'bird' },
       visible: true,
       portable: false
-    } as any;
+    };
 
     // Add entities
     this.entities.set('couch', couch);
@@ -95,18 +104,18 @@ class MockWorldModelWithLocations {
     this.inventories.set('player', new Set());
   }
 
-  getEntity(id: string): Entity | undefined {
+  getEntity(id: string): MockEntity | undefined {
     return this.entities.get(id);
   }
 
-  getAllEntities(): Entity[] {
+  getAllEntities(): MockEntity[] {
     return Array.from(this.entities.values());
   }
 
-  getVisibleEntities(actorId: string, location: string): Entity[] {
+  getVisibleEntities(actorId: string, location: string): MockEntity[] {
     const locationEntities = this.locations.get(location) || new Set();
-    const visibleEntities: Entity[] = [];
-    
+    const visibleEntities: MockEntity[] = [];
+
     // Get entities from current location
     for (const entityId of locationEntities) {
       const entity = this.entities.get(entityId);
@@ -114,38 +123,38 @@ class MockWorldModelWithLocations {
         visibleEntities.push(entity);
       }
     }
-    
+
     // Add carried entities
     const carried = this.getCarriedEntities(actorId);
     visibleEntities.push(...carried);
-    
+
     return visibleEntities;
   }
 
-  getTouchableEntities(actorId: string, location: string): Entity[] {
+  getTouchableEntities(actorId: string, location: string): MockEntity[] {
     // Can only touch things in current location or carried
     return this.getVisibleEntities(actorId, location);
   }
 
-  getCarriedEntities(actorId: string): Entity[] {
+  getCarriedEntities(actorId: string): MockEntity[] {
     const inventory = this.inventories.get(actorId) || new Set();
-    const carried: Entity[] = [];
-    
+    const carried: MockEntity[] = [];
+
     for (const entityId of inventory) {
       const entity = this.entities.get(entityId);
       if (entity) {
         carried.push(entity);
       }
     }
-    
+
     return carried;
   }
 
-  getNearbyEntities(actorId: string, location: string): Entity[] {
+  getNearbyEntities(actorId: string, location: string): MockEntity[] {
     // Get entities from current location
     const visible = this.getVisibleEntities(actorId, location);
     const nearbyEntities = [...visible];
-    
+
     // Add entities from adjacent locations
     const adjacent = this.adjacentLocations.get(location) || new Set();
     for (const adjacentLoc of adjacent) {
@@ -157,7 +166,7 @@ class MockWorldModelWithLocations {
         }
       }
     }
-    
+
     return nearbyEntities;
   }
 }

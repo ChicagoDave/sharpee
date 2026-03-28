@@ -27,7 +27,7 @@ describe('Entity alias resolution', () => {
     
     // Set up debug event capture
     const systemEvents = createSemanticEventSource();
-    (validator as any).systemEvents = systemEvents;
+    (validator as unknown as { systemEvents: ReturnType<typeof createSemanticEventSource> }).systemEvents = systemEvents;
 
     // Create room
     room = world.createEntity('Test Room', EntityType.ROOM);
@@ -167,7 +167,7 @@ describe('Entity alias resolution', () => {
 
     // Listen for debug events
     const debugEvents: SystemEvent[] = [];
-    const systemEvents = (validator as any).systemEvents;
+    const systemEvents = (validator as unknown as { systemEvents: ReturnType<typeof createSemanticEventSource> }).systemEvents;
     if (systemEvents) {
       systemEvents.subscribe((event: SystemEvent) => {
         debugEvents.push(event);

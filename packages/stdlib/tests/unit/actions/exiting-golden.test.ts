@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -377,8 +377,8 @@ describe('Testing Pattern Examples for Exiting', () => {
     world.moveEntity(player.id, pod.id);
     
     // After exit, occupants list would need to be updated by event handler
-    const entry = pod.getTrait(TraitType.ENTRY) as any;
-    expect(entry.occupants).toContain(player.id);
+    const entry = pod.getTrait(TraitType.ENTRY) as { occupants?: string[] } | undefined;
+    expect(entry?.occupants).toContain(player.id);
     
     // Note: The action doesn't modify traits, only emits events
     // World model event handlers would update occupants list
@@ -531,8 +531,8 @@ describe('World State Mutations', () => {
     world.moveEntity(player.id, crate.id);
 
     // Now close the crate
-    const openableTrait = crate.get(TraitType.OPENABLE);
-    (openableTrait as any).isOpen = false;
+    const openableTrait = crate.get(OpenableTrait)!;
+    openableTrait.isOpen = false;
 
     // VERIFY PRECONDITION: player is in the crate
     expect(world.getLocation(player.id)).toBe(crate.id);

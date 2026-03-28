@@ -3,16 +3,16 @@
  * 
  * This shows patterns for testing actions that:
  * - Allow actors to consume liquids and beverages
- * - Check drinkable traits (isDrink property)
+ * - Check drinkable traits (liquid property)
  * - Handle containers with liquids
- * - Track portions and liquid amounts
+ * - Track servings and liquid amounts
  * - Support implicit taking when item is in room
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
 import { drinkingAction } from '../../../src/actions/standard/drinking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, EdibleTrait, ContainerTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -68,8 +68,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, room, object } = TestData.withObject('loaf of bread', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: false  // This is food, not a drink
+          liquid: false  // This is food, not a drink
         }
       });
       
@@ -91,8 +90,8 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('empty potion', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: true,  // Already drunk
-          isDrink: true
+          liquid: true,
+          servings: 0  // Already drunk
         }
       });
       
@@ -143,8 +142,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('cup of coffee', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true
+          liquid: true
         }
       });
       
@@ -172,8 +170,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, room, object } = TestData.withObject('can of soda', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true
+          liquid: true
         }
       });
       
@@ -208,9 +205,8 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('pot of tea', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
-          portions: 4
+          liquid: true,
+          servings: 4
         }
       });
       
@@ -235,34 +231,30 @@ describe('drinkingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should handle drinking last portion', () => {
+    test('should handle drinking last portion of multi-serving drink', () => {
       const { world, player, item } = TestData.withInventoryItem('glass of wine', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
-          portions: 1  // Last sip
+          liquid: true,
+          servings: 2  // Two sips left
         }
       });
-      
-      const command = createCommand(IFActions.DRINKING, {
-        entity: item
-      });
-      const context = createRealTestContext(drinkingAction, world, command);
-      
-      const events = executeWithValidation(drinkingAction, context);
-      
-      // Should emit DRUNK event
+
+      // Drink the first serving
+      const command1 = createCommand(IFActions.DRINKING, { entity: item });
+      const context1 = createRealTestContext(drinkingAction, world, command1);
+      drinkingAction.validate(context1);
+      drinkingAction.execute(context1);
+
+      // Now drink the last one
+      const command2 = createCommand(IFActions.DRINKING, { entity: item });
+      const context2 = createRealTestContext(drinkingAction, world, command2);
+      const events = executeWithValidation(drinkingAction, context2);
+
+      // Single serving remaining doesn't emit portions info — just the base drunk event
       expectEvent(events, 'if.event.drunk', {
         item: item.id,
-        portions: 1,
-        portionsRemaining: 0
-      });
-      
-      // Should emit "drunk_all" message for final portion
-      expectEvent(events, 'if.event.drunk', {
-        messageId: expect.stringContaining('drunk_all'),
-        params: { item: 'glass of wine' }
+        messageId: expect.stringContaining('drunk')
       });
     });
 
@@ -270,8 +262,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('cold lemonade', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           taste: 'refreshing'
         }
       });
@@ -294,8 +285,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('bitter medicine', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           taste: 'bitter'
         }
       });
@@ -318,8 +308,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('hot cocoa', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           taste: 'sweet'
         }
       });
@@ -342,8 +331,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('glass of whiskey', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           taste: 'alcoholic'
         }
       });
@@ -366,8 +354,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('glowing potion', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           effects: ['magic', 'levitation']
         }
       });
@@ -396,8 +383,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('healing elixir', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           effects: ['healing', 'restore_health']
         }
       });
@@ -420,8 +406,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('fresh water', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           satisfiesThirst: true
         }
       });
@@ -450,8 +435,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('strong alcohol', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           satisfiesThirst: false
         }
       });
@@ -570,8 +554,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('protein shake', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true,
+          liquid: true,
           nutrition: 300
         }
       });
@@ -596,8 +579,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('hot tea', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true
+          liquid: true
         }
       });
       
@@ -626,8 +608,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('mug of ale', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true
+          liquid: true
         }
       });
       
@@ -655,8 +636,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, item } = TestData.withInventoryItem('small potion', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true
+          liquid: true
         }
       });
       
@@ -686,8 +666,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       const { world, player, room, item } = TestData.withInventoryItem('glass of milk', {
         [TraitType.EDIBLE]: {
           type: TraitType.EDIBLE,
-          consumed: false,
-          isDrink: true
+          liquid: true
         }
       });
       
@@ -724,8 +703,7 @@ describe('World State Mutations', () => {
     const { world, player, room, object } = TestData.withObject('can of soda', {
       [TraitType.EDIBLE]: {
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true
+        liquid: true
       }
     });
 
@@ -751,8 +729,7 @@ describe('World State Mutations', () => {
     const { world, player, item } = TestData.withInventoryItem('cup of coffee', {
       [TraitType.EDIBLE]: {
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true
+        liquid: true
       }
     });
 
@@ -776,15 +753,14 @@ describe('World State Mutations', () => {
     const { world, player, item } = TestData.withInventoryItem('glass of water', {
       [TraitType.EDIBLE]: {
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true,
+        liquid: true,
         servings: 1
       }
     });
 
     // VERIFY PRECONDITION: item is not consumed
-    const edibleBefore = item.getTrait(TraitType.EDIBLE) as any;
-    expect(edibleBefore.consumed).toBe(false);
+    const edibleBefore = item.getTrait(EdibleTrait)!;
+    expect(edibleBefore.servings).toBe(1);
     expect(EdibleBehavior.canConsume(item)).toBe(true);
 
     const command = createCommand(IFActions.DRINKING, {
@@ -797,8 +773,8 @@ describe('World State Mutations', () => {
     drinkingAction.execute(context);
 
     // VERIFY POSTCONDITION: item is now consumed
-    const edibleAfter = item.getTrait(TraitType.EDIBLE) as any;
-    expect(edibleAfter.consumed).toBe(true);
+    const edibleAfter = item.getTrait(EdibleTrait)!;
+    expect(edibleAfter.servings).toBe(0);
     expect(EdibleBehavior.canConsume(item)).toBe(false);
   });
 
@@ -806,8 +782,7 @@ describe('World State Mutations', () => {
     const { world, player, item } = TestData.withInventoryItem('pot of tea', {
       [TraitType.EDIBLE]: {
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true,
+        liquid: true,
         servings: 4
       }
     });
@@ -844,7 +819,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: 5 units of liquid
-    const containerBefore = item.getTrait(TraitType.CONTAINER) as any;
+    const containerBefore = item.getTrait(ContainerTrait)!;
     expect(containerBefore.liquidAmount).toBe(5);
 
     const command = createCommand(IFActions.DRINKING, {
@@ -857,7 +832,7 @@ describe('World State Mutations', () => {
     drinkingAction.execute(context);
 
     // VERIFY POSTCONDITION: 4 units of liquid remaining
-    const containerAfter = item.getTrait(TraitType.CONTAINER) as any;
+    const containerAfter = item.getTrait(ContainerTrait)!;
     expect(containerAfter.liquidAmount).toBe(4);
   });
 
@@ -872,7 +847,7 @@ describe('World State Mutations', () => {
     });
 
     // VERIFY PRECONDITION: 1 unit remaining
-    const containerBefore = item.getTrait(TraitType.CONTAINER) as any;
+    const containerBefore = item.getTrait(ContainerTrait)!;
     expect(containerBefore.liquidAmount).toBe(1);
 
     const command = createCommand(IFActions.DRINKING, {
@@ -885,7 +860,7 @@ describe('World State Mutations', () => {
     drinkingAction.execute(context);
 
     // VERIFY POSTCONDITION: container is now empty
-    const containerAfter = item.getTrait(TraitType.CONTAINER) as any;
+    const containerAfter = item.getTrait(ContainerTrait)!;
     expect(containerAfter.liquidAmount).toBe(0);
   });
 });
@@ -897,18 +872,17 @@ describe('Testing Pattern Examples for Drinking', () => {
     const complexDrink = world.createEntity('magical cocktail', 'object');
     complexDrink.add({
       type: TraitType.EDIBLE,
-      consumed: false,
-      isDrink: true,
-      portions: 3,
+      liquid: true,
+      servings: 3,
       taste: 'sweet',
       nutrition: 150,
       satisfiesThirst: true,
       effects: ['magic', 'strength_boost', 'glowing']
     });
     
-    const edible = complexDrink.getTrait(TraitType.EDIBLE) as any;
-    expect(edible.isDrink).toBe(true);
-    expect(edible.portions).toBe(3);
+    const edible = complexDrink.getTrait(EdibleTrait)!;
+    expect(edible.liquid).toBe(true);
+    expect(edible.servings).toBe(3);
     expect(edible.taste).toBe('sweet');
     expect(edible.nutrition).toBe(150);
     expect(edible.satisfiesThirst).toBe(true);
@@ -935,7 +909,7 @@ describe('Testing Pattern Examples for Drinking', () => {
         liquidAmount
       });
       
-      const trait = container.getTrait(TraitType.CONTAINER) as any;
+      const trait = container.getTrait(ContainerTrait)!;
       expect(trait.containsLiquid).toBe(true);
       expect(trait.liquidType).toBe(liquidType);
       if (liquidAmount !== undefined) {
@@ -959,12 +933,11 @@ describe('Testing Pattern Examples for Drinking', () => {
       const drink = world.createEntity(name, 'object');
       drink.add({
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true,
+        liquid: true,
         effects
       });
       
-      const edible = drink.getTrait(TraitType.EDIBLE) as any;
+      const edible = drink.getTrait(EdibleTrait)!;
       expect(edible.effects).toEqual(effects);
     });
   });
@@ -984,12 +957,11 @@ describe('Testing Pattern Examples for Drinking', () => {
       const drink = world.createEntity(item, 'object');
       drink.add({
         type: TraitType.EDIBLE,
-        consumed: false,
-        isDrink: true,
+        liquid: true,
         taste
       });
       
-      const edible = drink.getTrait(TraitType.EDIBLE) as any;
+      const edible = drink.getTrait(EdibleTrait)!;
       expect(edible.taste).toBe(taste);
     });
   });

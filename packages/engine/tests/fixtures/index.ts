@@ -67,12 +67,12 @@ export function createMockAction(
         executeCallback(context);
       } catch (error) {
         // Store error for report phase
-        (context as any)._executionError = error;
+        (context as unknown as { _executionError: unknown })._executionError = error;
       }
     },
     // Report generates events based on the execution
     report: (context: ActionContext) => {
-      const error = (context as any)._executionError;
+      const error = (context as unknown as { _executionError: unknown })._executionError;
       if (error) {
         throw error;
       }

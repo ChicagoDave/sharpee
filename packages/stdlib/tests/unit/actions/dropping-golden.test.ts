@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { droppingAction } from '../../../src/actions/standard/dropping'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType } from '@sharpee/world-model';
+import { TraitType, EntityType, IParsedCommand } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -345,12 +345,12 @@ describe('droppingAction (Golden Pattern)', () => {
       const command = createCommand(IFActions.DROPPING, {
         entity: glass
       });
-      command.parsed.structure = { verb: { text: 'drop' } } as any;
-      
+      command.parsed.structure = { verb: { text: 'drop' } } as unknown as IParsedCommand['structure'];
+
       const context = createRealTestContext(droppingAction, world, command);
-      
+
       const events = executeWithValidation(droppingAction, context);
-      
+
       expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_quietly')
       });
@@ -358,11 +358,11 @@ describe('droppingAction (Golden Pattern)', () => {
 
     test('should use careless message for discard verb', () => {
       const { world, player, item } = TestData.withInventoryItem('crumpled paper');
-      
+
       const command = createCommand(IFActions.DROPPING, {
         entity: item
       });
-      command.parsed.structure = { verb: { text: 'discard' } } as any;
+      command.parsed.structure = { verb: { text: 'discard' } } as unknown as IParsedCommand['structure'];
       
       const context = createRealTestContext(droppingAction, world, command);
       

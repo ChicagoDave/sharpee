@@ -18,6 +18,7 @@ import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
+  IdentityTrait,
   IdentityBehavior,
   ActorBehavior,
   RoomBehavior,
@@ -294,7 +295,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
 
     // Check if item is fragile
     const itemName = item.name.toLowerCase();
-    const identity = item.get(TraitType.IDENTITY) as any;
+    const identity = item.getTrait(IdentityTrait);
     const description = (identity?.description || '').toLowerCase();
     const fragileKeywords = ['glass', 'crystal', 'delicate', 'fragile', 'bottle', 'vase', 'china', 'porcelain'];
     sharedData.isFragile = fragileKeywords.some(keyword =>

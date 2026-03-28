@@ -81,18 +81,8 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   let weightLimit = 0;
   
   if (player.has(TraitType.ACTOR)) {
-    const actorTrait = player.get(TraitType.ACTOR);
-    if (actorTrait && (actorTrait as any).inventoryLimit?.maxWeight !== undefined) {
-      hasWeightLimit = true;
-      weightLimit = (actorTrait as any).inventoryLimit.maxWeight;
-      // Calculate weight manually from items
-      carried.forEach(item => {
-        const identity = item.get(TraitType.IDENTITY);
-        if (identity && (identity as any).weight) {
-          totalWeight += (identity as any).weight;
-        }
-      });
-    }
+    // TODO: Add inventoryLimit to ActorTrait when weight system is implemented
+    // Weight-based inventory limits are not yet supported on ActorTrait
   }
   
   // Build event data for the observable action

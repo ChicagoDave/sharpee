@@ -1035,6 +1035,10 @@ export declare class GameEngine {
      */
     registerSaveRestoreHooks(hooks: ISaveRestoreHooks): void;
     /**
+     * Get currently registered save/restore hooks
+     */
+    getSaveRestoreHooks(): ISaveRestoreHooks | undefined;
+    /**
      * Register a transformer for parsed commands.
      * Transformers are called after parsing but before validation,
      * allowing stories to modify commands (e.g., for debug tools).

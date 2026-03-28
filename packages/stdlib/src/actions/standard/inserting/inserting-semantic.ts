@@ -66,7 +66,8 @@ export const insertingActionSemantic: IAction = {
     
     // Check if container is actually a container
     // Note: IEntity doesn't have getCapability - need to check attributes
-    const containerData = container.attributes?.['container'] || (container as any).capabilities?.['container'];
+    const capabilities = (container as unknown as Record<string, unknown>).capabilities as Record<string, unknown> | undefined;
+    const containerData = (container.attributes?.['container'] || capabilities?.['container']) as Record<string, unknown> | undefined;
     if (!containerData) {
       return {
         valid: false,
@@ -74,7 +75,7 @@ export const insertingActionSemantic: IAction = {
         params: { container: container.attributes.name || container.id }
       };
     }
-    
+
     // Check if container is closed
     if (containerData.closed) {
       return {
@@ -99,7 +100,7 @@ export const insertingActionSemantic: IAction = {
     // Check capacity if applicable
     if (containerData.maxCapacity !== undefined) {
       const contents = context.getEntityContents(container.id);
-      if (contents.length >= containerData.maxCapacity) {
+      if (contents.length >= (containerData.maxCapacity as number)) {
         return {
           valid: false,
           error: 'wont_fit',

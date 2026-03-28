@@ -255,7 +255,7 @@ describe('CommandExecutor', () => {
     it('should handle missing action registry', () => {
       expect(() => new CommandExecutor(
         world,
-        null as any,
+        null as unknown as StandardActionRegistry,
         eventProcessor,
         parser
       )).toThrow();
@@ -266,7 +266,7 @@ describe('CommandExecutor', () => {
         world,
         actionRegistry,
         eventProcessor,
-        null as any
+        null as unknown as EnglishParser
       )).toThrow();
     });
 

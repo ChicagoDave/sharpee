@@ -6,7 +6,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider, GrammarBuilder, ScopeBuilder } from '@sharpee/if-domain';
-import { Entity } from '@sharpee/core';
+/** Minimal entity shape used by mock world model in these tests */
+interface MockEntity {
+  id: string;
+  name: string;
+  attributes: Record<string, unknown>;
+  visible: boolean;
+  isPanel?: boolean;
+  panelType?: string;
+}
 
 // Mock language provider with push action
 const mockLanguageProvider: ParserLanguageProvider = {
@@ -30,7 +38,7 @@ const mockLanguageProvider: ParserLanguageProvider = {
 
 // Mock world model with panel entities
 class MockWorldModel {
-  private entities: Map<string, Entity> = new Map();
+  private entities: Map<string, MockEntity> = new Map();
 
   constructor() {
     this.entities.set('red-panel', {
@@ -40,7 +48,7 @@ class MockWorldModel {
       visible: true,
       isPanel: true,
       panelType: 'red'
-    } as any);
+    });
 
     this.entities.set('yellow-panel', {
       id: 'yellow-panel',
@@ -49,18 +57,18 @@ class MockWorldModel {
       visible: true,
       isPanel: true,
       panelType: 'yellow'
-    } as any);
+    });
   }
 
-  getEntity(id: string): Entity | undefined {
+  getEntity(id: string): MockEntity | undefined {
     return this.entities.get(id);
   }
 
-  getVisibleEntities(): Entity[] {
+  getVisibleEntities(): MockEntity[] {
     return Array.from(this.entities.values()).filter(e => e.visible);
   }
 
-  getCarriedEntities(): Entity[] {
+  getCarriedEntities(): MockEntity[] {
     return [];
   }
 }

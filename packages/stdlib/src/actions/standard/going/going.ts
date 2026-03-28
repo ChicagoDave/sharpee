@@ -16,6 +16,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   IFEntity,
+  IdentityTrait,
   RoomBehavior,
   OpenableBehavior,
   LockableBehavior,
@@ -422,8 +423,8 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const destinationContents = context.world.getContents(destinationRoom.id)
       .filter(e => e.id !== context.player.id)
       .filter(e => {
-        const identity = e.getTrait(TraitType.IDENTITY);
-        return !(identity && (identity as any).concealed === true);
+        const identity = e.getTrait(IdentityTrait);
+        return !(identity && identity.concealed === true);
       });
     const visibleSnapshots = captureEntitySnapshots(destinationContents, context.world);
 

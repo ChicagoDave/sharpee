@@ -108,6 +108,9 @@ interface RichCandidate {
   // ADR-082 additions
   vocabularySlots?: Map<string, { word: string; category: string }>;
   manner?: string;
+  // Direction and extras for grammar matches
+  direction?: string;
+  extras?: Record<string, unknown>;
 }
 
 /**
@@ -435,15 +438,15 @@ export class EnglishParser implements Parser {
     };
 
     // Add extras if present
-    if ((best as any).direction) {
+    if (best.direction) {
       // Convert direction string to Direction constant
-      const directionConstant = parseDirection((best as any).direction);
+      const directionConstant = parseDirection(best.direction);
       parsed.extras = {
-        direction: directionConstant || (best as any).direction
+        direction: directionConstant || best.direction
       };
-    } else if ((best as any).extras) {
+    } else if (best.extras) {
       // Check if extras contains a direction and convert it
-      const extras = { ...(best as any).extras };
+      const extras = { ...best.extras };
       if (extras.direction && typeof extras.direction === 'string') {
         const directionConstant = parseDirection(extras.direction);
         if (directionConstant) {
@@ -814,7 +817,7 @@ export class EnglishParser implements Parser {
       const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
 
       // Check slot type from the match data (set by grammar engine)
-      const slotType = (slotData as any).slotType as SlotType | undefined;
+      const slotType = slotData.slotType;
 
       // Handle text slots (TEXT or TEXT_GREEDY)
       if (slotType === SlotType.TEXT || slotType === SlotType.TEXT_GREEDY) {
@@ -827,21 +830,19 @@ export class EnglishParser implements Parser {
 
       // ADR-082: Handle vocabulary slots
       if (slotType === SlotType.VOCABULARY) {
-        const slotDataAny = slotData as any;
         if (!vocabularySlots) {
           vocabularySlots = new Map();
         }
         vocabularySlots.set(slotName, {
-          word: slotDataAny.matchedWord || slotData.text.toLowerCase(),
-          category: slotDataAny.category || ''
+          word: slotData.matchedWord || slotData.text.toLowerCase(),
+          category: slotData.category || ''
         });
         continue; // Don't also add to direct/indirect objects
       }
 
       // ADR-082: Handle manner slots
       if (slotType === SlotType.MANNER) {
-        const slotDataAny = slotData as any;
-        manner = slotDataAny.manner || slotData.text.toLowerCase();
+        manner = slotData.manner || slotData.text.toLowerCase();
         continue; // Don't also add to direct/indirect objects
       }
 
@@ -865,12 +866,11 @@ export class EnglishParser implements Parser {
       };
 
       // ADR-080 Phase 2: Add multi-object support
-      const slotDataAny = slotData as any;
-      if (slotDataAny.isAll) {
+      if (slotData.isAll) {
         phrase.isAll = true;
         // Extract excluded items for "all but X" patterns
-        if (slotDataAny.excluded && slotDataAny.excluded.length > 0) {
-          excluded = slotDataAny.excluded.map((item: any) => ({
+        if (slotData.excluded && slotData.excluded.length > 0) {
+          excluded = slotData.excluded.map((item) => ({
             tokens: item.tokens,
             text: item.text,
             head: item.text.split(' ').pop() || item.text,
@@ -881,9 +881,9 @@ export class EnglishParser implements Parser {
           }));
         }
       }
-      if (slotDataAny.isList && slotDataAny.items) {
+      if (slotData.isList && slotData.items) {
         phrase.isList = true;
-        phrase.items = slotDataAny.items.map((item: any) => ({
+        phrase.items = slotData.items.map((item) => ({
           tokens: item.tokens,
           text: item.text,
           head: item.text.split(' ').pop() || item.text,
@@ -896,12 +896,12 @@ export class EnglishParser implements Parser {
       }
 
       // ADR-089: Copy pre-resolved entity ID from pronoun resolution
-      if (slotDataAny.entityId) {
-        phrase.entityId = slotDataAny.entityId;
+      if (slotData.entityId) {
+        phrase.entityId = slotData.entityId;
       }
 
       // ADR-104: Mark if this was a pronoun (for implicit inference)
-      if (slotDataAny.isPronoun) {
+      if (slotData.isPronoun) {
         phrase.wasPronoun = true;
       }
 
@@ -998,7 +998,7 @@ export class EnglishParser implements Parser {
           confidence: match.confidence,
           action: rule.action,
           direction: directionToken.normalized
-        } as any;
+        };
       }
     }
     
@@ -1034,7 +1034,7 @@ export class EnglishParser implements Parser {
 
     // Add extras if present
     if (Object.keys(extras).length > 0) {
-      (candidate as any).extras = extras;
+      candidate.extras = extras;
     }
 
     return candidate;

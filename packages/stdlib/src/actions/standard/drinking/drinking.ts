@@ -49,20 +49,19 @@ function determineMessage(
 
   // Add drink-specific information
   if (edibleTrait) {
-    // Add nutritional or effect information
-    if ((edibleTrait as any).nutrition) {
-      eventData.nutrition = (edibleTrait as any).nutrition;
+    if (edibleTrait.nutrition) {
+      eventData.nutrition = edibleTrait.nutrition;
     }
 
-    if ((edibleTrait as any).portions) {
-      eventData.portions = (edibleTrait as any).portions;
-      eventData.portionsRemaining = ((edibleTrait as any).portions || 1) - 1;
+    const servings = edibleTrait.servings ?? 1;
+    if (servings > 1) {
+      eventData.portions = servings;
+      eventData.portionsRemaining = servings - 1;
       messageId = eventData.portionsRemaining > 0 ? 'drunk_some' : 'drunk_all';
     }
 
     // Check taste/quality
-    const taste = (edibleTrait as any).taste;
-    if (taste) {
+    if (edibleTrait.taste) {
       const tasteMessages: Record<string, string> = {
         'refreshing': 'refreshing',
         'satisfying': 'satisfying',
@@ -71,53 +70,50 @@ function determineMessage(
         'strong': 'strong',
         'alcoholic': 'strong'
       };
-      if (tasteMessages[taste]) {
-        messageId = tasteMessages[taste];
+      if (tasteMessages[edibleTrait.taste]) {
+        messageId = tasteMessages[edibleTrait.taste];
       }
     }
 
     // Check for effects
-    if ((edibleTrait as any).effects) {
-      eventData.effects = (edibleTrait as any).effects;
-      const effects = (edibleTrait as any).effects;
-      if (effects.includes('magic')) {
+    if (edibleTrait.effects) {
+      eventData.effects = edibleTrait.effects;
+      if (edibleTrait.effects.includes('magic')) {
         messageId = 'magical_effects';
-      } else if (effects.includes('healing')) {
+      } else if (edibleTrait.effects.includes('healing')) {
         messageId = 'healing';
       }
     }
 
     // Check thirst satisfaction
-    const satisfiesThirst = (edibleTrait as any).satisfiesThirst;
-    if (satisfiesThirst !== undefined) {
-      eventData.satisfiesThirst = satisfiesThirst;
-      if (satisfiesThirst === true && messageId === 'drunk') {
+    if (edibleTrait.satisfiesThirst !== undefined) {
+      eventData.satisfiesThirst = edibleTrait.satisfiesThirst;
+      if (edibleTrait.satisfiesThirst === true && messageId === 'drunk') {
         messageId = 'thirst_quenched';
-      } else if (satisfiesThirst === false) {
+      } else if (edibleTrait.satisfiesThirst === false) {
         messageId = 'still_thirsty';
       }
     }
   }
 
   // If drinking from a container
-  if (containerTrait && (containerTrait as any).containsLiquid) {
+  if (containerTrait && containerTrait.containsLiquid) {
     eventData.fromContainer = true;
 
-    if ((containerTrait as any).liquidType) {
-      eventData.liquidType = (containerTrait as any).liquidType;
+    if (containerTrait.liquidType) {
+      eventData.liquidType = containerTrait.liquidType;
     }
 
-    const liquidAmount = (containerTrait as any).liquidAmount;
-    if (liquidAmount !== undefined) {
-      eventData.liquidAmount = liquidAmount;
-      eventData.liquidRemaining = Math.max(0, liquidAmount - 1);
+    if (containerTrait.liquidAmount !== undefined) {
+      eventData.liquidAmount = containerTrait.liquidAmount;
+      eventData.liquidRemaining = Math.max(0, containerTrait.liquidAmount - 1);
 
       if (eventData.liquidRemaining === 0) {
         messageId = 'empty_now';
       } else if (messageId === 'drunk') {
         messageId = 'from_container';
-        if ((containerTrait as any).liquidType) {
-          params.liquidType = (containerTrait as any).liquidType;
+        if (containerTrait.liquidType) {
+          params.liquidType = containerTrait.liquidType;
         }
       }
     } else {
@@ -205,12 +201,12 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
 
     if (item.has(TraitType.EDIBLE)) {
       edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
-      isDrinkable = (edibleTrait as any).isDrink === true;
+      isDrinkable = (edibleTrait.liquid ?? false) === true;
     }
 
     if (item.has(TraitType.CONTAINER)) {
       containerTrait = item.get(TraitType.CONTAINER) as ContainerTrait;
-      if (!isDrinkable && (containerTrait as any).containsLiquid) {
+      if (!isDrinkable && containerTrait.containsLiquid) {
         isDrinkable = true;
       }
     }
@@ -220,7 +216,7 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check if already consumed
-    if (edibleTrait && (edibleTrait as any).consumed) {
+    if (edibleTrait && (edibleTrait.servings ?? 1) <= 0) {
       return { valid: false, error: 'already_consumed', params: { item: item.name } };
     }
 
@@ -291,10 +287,10 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // MUTATION 3: Decrement liquid amount for containers
-    if (containerTrait && (containerTrait as any).liquidAmount !== undefined) {
-      const currentAmount = (containerTrait as any).liquidAmount as number;
+    if (containerTrait && containerTrait.liquidAmount !== undefined) {
+      const currentAmount = containerTrait.liquidAmount;
       const newAmount = Math.max(0, currentAmount - 1);
-      (containerTrait as any).liquidAmount = newAmount;
+      containerTrait.liquidAmount = newAmount;
 
       // Update event data to reflect actual mutated values
       eventData.liquidAmount = currentAmount;

@@ -80,9 +80,9 @@ function analyzeShowAction(context: ActionContext): ShowAnalysis | null {
   }
   
   // Check if viewer has any special reactions to items
-  const viewerActor = viewer.get(TraitType.ACTOR) as ActorTrait;
-  if (viewerActor && (viewerActor as any).reactions) {
-    const reactions = (viewerActor as any).reactions;
+  const viewerActor = viewer.getTrait(ActorTrait);
+  const reactions = viewerActor?.customProperties?.['reactions'] as Record<string, string[]> | undefined;
+  if (viewerActor && reactions) {
     const itemName = item.name.toLowerCase();
     
     // Check for specific item reactions

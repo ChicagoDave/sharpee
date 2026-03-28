@@ -8,8 +8,9 @@
  * - "take all. drop them" → "them" = all items taken
  */
 
-import type { IParsedCommand, INounPhrase, IValidatedCommand, IValidatedObjectReference } from '@sharpee/world-model';
-import type { PronounSet } from '@sharpee/world-model';
+import type { IParsedCommand, INounPhrase, IValidatedCommand, IValidatedObjectReference, PronounSet } from '@sharpee/world-model';
+import { ActorTrait } from '@sharpee/world-model';
+import { IdentityTrait } from '@sharpee/world-model';
 
 /**
  * Reference to an entity mentioned in a command
@@ -249,8 +250,7 @@ export class PronounContextManager {
     };
 
     // Check if this is an actor (animate)
-    // Use 'any' cast since parser-en-us doesn't have trait type definitions
-    const actorTrait = entity.get('actor') as any;
+    const actorTrait = entity.getTrait(ActorTrait);
     if (actorTrait?.pronouns) {
       // Animate entity - store by object pronoun
       const pronounSet = Array.isArray(actorTrait.pronouns)
@@ -267,7 +267,7 @@ export class PronounContextManager {
       }
     } else {
       // Inanimate entity - check grammatical number
-      const identityTrait = entity.get('identity') as any;
+      const identityTrait = entity.getTrait(IdentityTrait);
       if (identityTrait?.grammaticalNumber === 'plural') {
         this.context.them = [entityRef];
       } else {

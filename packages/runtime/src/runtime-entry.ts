@@ -26,10 +26,10 @@ declare global {
   }
 }
 
-(window as any).Sharpee = SharpeeAPI;
+window.Sharpee = SharpeeAPI;
 
 // ─── Start the bridge ──────────────────────────────────────────
 
 const bridge = new SharpeeRuntimeBridge();
-(window as any).SharpeeBridge = bridge;
+window.SharpeeBridge = bridge;
 bridge.listen();

@@ -13,7 +13,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, LockableBehavior, IUnlockResult } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, LockableBehavior, IUnlockResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { UnlockedEventData } from './unlocking-events';
@@ -183,8 +183,8 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
 
     // Check for auto-open behavior
     if (noun.has(TraitType.OPENABLE)) {
-      const openableTrait = noun.get(TraitType.OPENABLE) as any;
-      if (openableTrait.autoOpenOnUnlock) {
+      const openableTrait = noun.getTrait(OpenableTrait);
+      if ((openableTrait as unknown as Record<string, unknown>)?.autoOpenOnUnlock) {
         sharedData.willAutoOpen = true;
       }
     }

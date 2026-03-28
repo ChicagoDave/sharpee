@@ -16,8 +16,7 @@ const room = createTestRoom(world, 'Room');
 const player = createTestActor(world, 'Player');
 
 const cabinet = createTestContainer(world, 'Cabinet');
-const openableTrait = new OpenableTrait();
-(openableTrait as any).isOpen = false;
+const openableTrait = new OpenableTrait({ isOpen: false });
 cabinet.add(openableTrait);
 
 const medicine = world.createEntity('Medicine', 'item');
@@ -27,11 +26,11 @@ world.moveEntity(cabinet.id, room.id);
 world.moveEntity(medicine.id, cabinet.id);
 
 console.log('=== Container Traits ===');
-const containerTrait = cabinet.getTrait(TraitType.CONTAINER) as any;
+const containerTrait = cabinet.getTrait(ContainerTrait);
 console.log('Cabinet has container trait:', !!containerTrait);
 console.log('Container isTransparent:', containerTrait?.isTransparent);
 console.log('Cabinet has openable trait:', cabinet.hasTrait(TraitType.OPENABLE));
-const cabOpenable = cabinet.getTrait(TraitType.OPENABLE) as any;
+const cabOpenable = cabinet.getTrait(OpenableTrait);
 console.log('Openable isOpen:', cabOpenable?.isOpen);
 
 console.log('\n=== Initial Visibility (closed) ===');
@@ -41,10 +40,10 @@ console.log('Medicine visible?', visible.includes(medicine));
 
 // Open the cabinet
 console.log('\n=== Opening Cabinet ===');
-(cabinet.getTrait(TraitType.OPENABLE) as any).isOpen = true;
+cabinet.getTrait(OpenableTrait)!.isOpen = true;
 
 // Check the trait after modification
-const openableAfter = cabinet.getTrait(TraitType.OPENABLE) as any;
+const openableAfter = cabinet.getTrait(OpenableTrait);
 console.log('Openable isOpen after change:', openableAfter?.isOpen);
 
 console.log('\n=== Visibility after opening ===');

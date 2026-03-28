@@ -20,6 +20,7 @@ import type {
   WorldModel,
   IFEntity
 } from '@sharpee/world-model';
+import { IdentityTrait } from '@sharpee/world-model';
 
 import type { ValidatedCommand, ScopeInfo } from './types';
 import type { SenseType } from '../scope/types';
@@ -1398,12 +1399,9 @@ export class CommandValidator implements CommandValidator {
     const adjectives: string[] = [];
 
     // Get identity trait
-    const identity = entity.get('identity');
-    if (identity && typeof identity === 'object' && 'adjectives' in identity) {
-      const adj = (identity as any).adjectives;
-      if (Array.isArray(adj)) {
-        adjectives.push(...adj.map(String));
-      }
+    const identity = entity.getTrait(IdentityTrait);
+    if (identity?.adjectives) {
+      adjectives.push(...identity.adjectives);
     }
 
     return adjectives;
@@ -1417,12 +1415,9 @@ export class CommandValidator implements CommandValidator {
 
     // Get identity trait  
     // Note: Entities use 'aliases' not 'synonyms' (synonyms are for verbs)
-    const identity = entity.get('identity');
-    if (identity && typeof identity === 'object' && 'aliases' in identity) {
-      const aliases = (identity as any).aliases;
-      if (Array.isArray(aliases)) {
-        synonyms.push(...aliases.map(String));
-      }
+    const identity = entity.getTrait(IdentityTrait);
+    if (identity?.aliases) {
+      synonyms.push(...identity.aliases);
     }
 
     // Add type as synonym

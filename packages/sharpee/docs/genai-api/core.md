@@ -666,6 +666,10 @@ export interface ISemanticEvent {
      * Whether this event should be narrated
      */
     narrate?: boolean;
+    /**
+     * Additional metadata for event processing
+     */
+    metadata?: Record<string, unknown>;
 }
 export { ISemanticEventSource as EventSource } from './semantic-event-source';
 /**

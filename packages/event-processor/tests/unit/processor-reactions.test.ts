@@ -4,9 +4,19 @@
 
 import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { EventProcessor } from '../../src/processor';
+import { WorldModel, WorldChange } from '@sharpee/world-model';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import { createTestEvent } from '../fixtures/test-events';
 import { SemanticEvent } from '@sharpee/core';
+
+/** Type for accessing private processSingleEvent in tests */
+type ProcessorPrivate = {
+  processSingleEvent: (event: SemanticEvent) => {
+    success: boolean;
+    changes: WorldChange[];
+    reactions: SemanticEvent[];
+  };
+};
 
 describe('EventProcessor - Reaction System', () => {
   let mockWorld: MockWorldModel;
@@ -14,7 +24,7 @@ describe('EventProcessor - Reaction System', () => {
   
   beforeEach(() => {
     mockWorld = createMockWorld();
-    processor = new EventProcessor(mockWorld as any);
+    processor = new EventProcessor(mockWorld as unknown as WorldModel);
   });
   
   describe('reaction processing', () => {
@@ -23,8 +33,8 @@ describe('EventProcessor - Reaction System', () => {
       const reactionEvent = createTestEvent('state_change', 'door', { open: true });
       
       // Mock the processor to return reactions
-      const originalProcessSingle = (processor as any).processSingleEvent;
-      (processor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
+      const originalProcessSingle = (processor as unknown as ProcessorPrivate).processSingleEvent;
+      (processor as unknown as ProcessorPrivate).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         if (event.type === 'trigger') {
           return {
             success: true,
@@ -48,8 +58,8 @@ describe('EventProcessor - Reaction System', () => {
       const event3 = createTestEvent('action3', 'world', {});
       
       // Set up chain: event1 -> event2 -> event3
-      const originalProcessSingle = (processor as any).processSingleEvent;
-      (processor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
+      const originalProcessSingle = (processor as unknown as ProcessorPrivate).processSingleEvent;
+      (processor as unknown as ProcessorPrivate).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         if (event.type === 'action1') {
           return { success: true, changes: [], reactions: [event2] };
         } else if (event.type === 'action2') {
@@ -66,7 +76,7 @@ describe('EventProcessor - Reaction System', () => {
     });
     
     it('should respect maxReactionDepth', () => {
-      const depthProcessor = new EventProcessor(mockWorld as any, {
+      const depthProcessor = new EventProcessor(mockWorld as unknown as WorldModel, {
         maxReactionDepth: 2
       });
       
@@ -77,8 +87,8 @@ describe('EventProcessor - Reaction System', () => {
       }
       
       // Mock to create infinite reaction chain
-      const originalProcessSingle = (depthProcessor as any).processSingleEvent;
-      (depthProcessor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
+      const originalProcessSingle = (depthProcessor as unknown as ProcessorPrivate).processSingleEvent;
+      (depthProcessor as unknown as ProcessorPrivate).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         const match = event.type.match(/action(\d+)/);
         if (match) {
           const level = parseInt(match[1]);
@@ -114,8 +124,8 @@ describe('EventProcessor - Reaction System', () => {
       mockWorld.setCanApplyResult(failReaction, false);
       
       // Mock reactions
-      const originalProcessSingle = (processor as any).processSingleEvent;
-      (processor as any).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
+      const originalProcessSingle = (processor as unknown as ProcessorPrivate).processSingleEvent;
+      (processor as unknown as ProcessorPrivate).processSingleEvent = vi.fn().mockImplementation((event: SemanticEvent) => {
         if (event.type === 'trigger') {
           return {
             success: true,

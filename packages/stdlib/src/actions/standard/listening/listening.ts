@@ -14,7 +14,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { ListenedEventData } from './listening-events';
@@ -72,11 +72,11 @@ function analyzeListening(context: ActionContext): ListeningAnalysis {
         eventData.hasContents = true;
         eventData.contentCount = contents.length;
         
-        // Check if any contents are liquid (edible with isDrink)
+        // Check if any contents are liquid
         const hasLiquid = contents.some(item => {
           if (item.has(TraitType.EDIBLE)) {
-            const edibleTrait = item.get(TraitType.EDIBLE) as { isDrink?: boolean };
-            return edibleTrait.isDrink;
+            const edibleTrait = item.get(TraitType.EDIBLE) as EdibleTrait;
+            return edibleTrait.liquid;
           }
           return false;
         });

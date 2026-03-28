@@ -52,7 +52,7 @@ export function createEvent(
   
   // Add metadata if provided (excluding extracted properties)
   if (cleanMetadata && Object.keys(cleanMetadata).length > 0) {
-    (event as any).metadata = cleanMetadata;
+    event.metadata = cleanMetadata;
   }
   
   return event;

@@ -36,8 +36,8 @@ world.moveEntity(medicine.id, cabinet.id);
 
 console.log('=== Setup Complete ===');
 console.log('Cabinet traits:');
-console.log('- isTransparent:', (cabinet.getTrait(TraitType.CONTAINER) as any).isTransparent);
-console.log('- isOpen:', (cabinet.getTrait(TraitType.OPENABLE) as any).isOpen);
+console.log('- isTransparent:', cabinet.getTrait(ContainerTrait)!.isTransparent);
+console.log('- isOpen:', cabinet.getTrait(OpenableTrait)!.isOpen);
 
 // Test 1: Closed cabinet
 console.log('\n=== Test 1: Closed Cabinet ===');
@@ -48,7 +48,7 @@ console.log('Expected: false');
 
 // Test 2: Open cabinet (direct modification like failing tests)
 console.log('\n=== Test 2: Open Cabinet (direct modification) ===');
-const openable = cabinet.getTrait(TraitType.OPENABLE) as any;
+const openable = cabinet.getTrait(OpenableTrait)!;
 openable.isOpen = true;
 console.log('Set cabinet.isOpen to true');
 
@@ -69,15 +69,14 @@ console.log('Expected: false');
 console.log('\n=== Test 4: Using OpenableBehavior API ===');
 const events = OpenableBehavior.open(cabinet, player);
 console.log('OpenableBehavior.open() returned events:', events.map(e => e.type));
-console.log('Cabinet isOpen after API call:', (cabinet.getTrait(TraitType.OPENABLE) as any).isOpen);
+console.log('Cabinet isOpen after API call:', cabinet.getTrait(OpenableTrait)!.isOpen);
 
 visible = world.getVisible(player.id);
 console.log('Visible entities:', visible.map(e => e.name));
 console.log('Can see medicine?', visible.some(e => e.id === medicine.id));
 console.log('Expected: true');
 
-// Import TraitType for the tests
-import { TraitType } from '../src/traits/trait-types';
+// Import types used above (hoisted by bundler)
 
 console.log('\n=== Summary ===');
 console.log('The visibility system is working correctly!');

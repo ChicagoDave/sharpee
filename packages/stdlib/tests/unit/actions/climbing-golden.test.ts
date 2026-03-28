@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait, SupporterTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -190,7 +190,7 @@ describe('climbingAction (Golden Pattern)', () => {
       });
       
       // Update ground floor exit to use actual ID
-      const roomTrait = groundFloor.getTrait(TraitType.ROOM) as any;
+      const roomTrait = groundFloor.getTrait(RoomTrait)!;
       roomTrait.exits.up.to = attic.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -334,7 +334,7 @@ describe('climbingAction (Golden Pattern)', () => {
       room2.add({ type: TraitType.ROOM });
       
       // Update exit to use actual ID
-      const roomTrait = room1.getTrait(TraitType.ROOM) as any;
+      const roomTrait = room1.getTrait(RoomTrait)!;
       roomTrait.exits.up.to = room2.id;
       
       const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -406,7 +406,7 @@ describe('Testing Pattern Examples for Climbing', () => {
     });
     
     // Verify climbing paths
-    const groundRoom = rooms[1].room.getTrait(TraitType.ROOM) as any;
+    const groundRoom = rooms[1].room.getTrait(RoomTrait)!;
     expect(groundRoom.exits).toHaveProperty('up');
     expect(groundRoom.exits).toHaveProperty('down');
   });
@@ -447,7 +447,7 @@ describe('Testing Pattern Examples for Climbing', () => {
       
       // Verify climbable
       const isClimbable = obj.hasTrait(TraitType.CLIMBABLE) || 
-                         (obj.hasTrait(TraitType.SUPPORTER) && (obj.getTrait(TraitType.SUPPORTER) as any).enterable);
+                         (obj.hasTrait(TraitType.SUPPORTER) && obj.getTrait(SupporterTrait)!.enterable);
       expect(isClimbable).toBe(true);
     });
   });

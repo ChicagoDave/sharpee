@@ -1,6 +1,6 @@
 // tests/unit/traits/edible.test.ts
 
-import { EdibleTrait } from '../../../src/traits/edible/edibleTrait';
+import { EdibleTrait, IEdibleData } from '../../../src/traits/edible/edibleTrait';
 import { IFEntity } from '../../../src/entities/if-entity';
 import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
@@ -383,7 +383,7 @@ describe('EdibleTrait', () => {
     });
 
     it('should handle undefined options', () => {
-      const trait = new EdibleTrait(undefined as any);
+      const trait = new EdibleTrait(undefined as unknown as IEdibleData);
       
       expect(trait.nutrition).toBe(1);
       expect(trait.servings).toBe(1);
