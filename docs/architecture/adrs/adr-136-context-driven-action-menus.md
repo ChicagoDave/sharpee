@@ -2,7 +2,12 @@
 
 ## Status
 
-Proposed
+Deferred
+
+Implementation exists on branch `adr-136-context-actions` (all 7 phases complete and working).
+Deferred because the feature needs a concrete game and UX vision to drive it — the
+technology works but there is no active use case. Available for anyone who brings a
+game project that wants context-driven action menus.
 
 ## Date
 
