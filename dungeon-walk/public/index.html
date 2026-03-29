@@ -333,6 +333,77 @@
     .json-null { color: var(--json-null); }
     .json-brace { color: var(--text-dim); }
 
+    /* --- Traits display --- */
+    .traits-indicator {
+      font-size: 11px;
+      cursor: default;
+    }
+
+    .traits-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 10px;
+      color: #c792ea;
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+
+    .traits-toggle:hover { color: #e0b0ff; }
+
+    .traits-toggle .arrow {
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+
+    .traits-toggle.open .arrow { transform: rotate(90deg); }
+
+    .traits-panel {
+      display: none;
+      margin: 4px 8px 8px;
+      padding: 8px;
+      background: rgba(199,146,234,0.08);
+      border: 1px solid rgba(199,146,234,0.2);
+      border-radius: 4px;
+    }
+
+    .traits-panel.open { display: block; }
+
+    .entity-block { margin-bottom: 6px; }
+    .entity-block:last-child { margin-bottom: 0; }
+
+    .entity-id {
+      font-size: 11px;
+      font-weight: 700;
+      color: #c792ea;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(199,146,234,0.2);
+      margin-bottom: 3px;
+    }
+
+    .entity-id-tag {
+      font-size: 9px;
+      font-weight: 400;
+      color: #c792ea;
+      opacity: 0.6;
+    }
+
+    .trait-row { padding: 1px 0 1px 12px; }
+
+    .trait-type {
+      font-size: 10px;
+      font-weight: 600;
+      color: #c792ea;
+    }
+
+    .trait-prose {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
     /* --- Scrollbar --- */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
@@ -591,6 +662,28 @@
     ).join('');
   }
 
+  function renderEntityTraits(entityTraits) {
+    const rows = entityTraits.map(et => {
+      const displayName = et.name
+        ? escHtml(et.name) + ' <span class="entity-id-tag">' + escHtml(et.entityId) + '</span>'
+        : escHtml(et.entityId);
+      const traitRows = Object.entries(et.traits).map(([traitType, props]) => {
+        const prose = props?._prose;
+        if (prose) {
+          return '<div class="trait-row"><span class="trait-type">' + escHtml(traitType) + ':</span> <span class="trait-prose">' + escHtml(String(prose)) + '</span></div>';
+        }
+        if (Object.keys(props).length === 0) {
+          return '<div class="trait-row"><span class="trait-type">' + escHtml(traitType) + '</span></div>';
+        }
+        return '<div class="trait-row"><span class="trait-type">' + escHtml(traitType) + ':</span> <span class="trait-prose">' + escHtml(JSON.stringify(props)) + '</span></div>';
+      }).join('');
+      return '<div class="entity-block"><div class="entity-id">' + displayName + '</div>' + traitRows + '</div>';
+    }).join('');
+
+    return '<div class="traits-toggle"><span class="arrow">&#9654;</span> Traits (' + entityTraits.length + ' entities)</div>' +
+           '<div class="traits-panel">' + rows + '</div>';
+  }
+
   async function loadTurnEvents(turnId, container) {
     const events = await fetchJson(`/api/turns/${turnId}/events`);
 
@@ -608,15 +701,18 @@
     for (const ev of filtered) {
       const cls = classifyEvent(ev.event_type);
       const summary = summarizeEvent(ev);
+      const hasTraits = ev.entityTraits && ev.entityTraits.length > 0;
       const item = document.createElement('div');
       item.className = 'event-item';
       item.innerHTML = `
         <div class="event-header">
           <span class="event-type-badge type-${cls}">${escHtml(ev.event_type)}</span>
           <span class="event-summary">${escHtml(summary)}</span>
+          ${hasTraits ? '<span class="traits-indicator" title="Entity traits available">\u{1F9EC}</span>' : ''}
           <span class="event-expand">&#9654;</span>
         </div>
         <div class="event-json"><pre>${highlightJson(ev.data)}</pre></div>
+        ${hasTraits ? renderEntityTraits(ev.entityTraits) : ''}
       `;
 
       const hdr = item.querySelector('.event-header');
@@ -626,6 +722,15 @@
         const open = json.classList.toggle('open');
         arrow.style.transform = open ? 'rotate(90deg)' : '';
       });
+
+      const traitsToggle = item.querySelector('.traits-toggle');
+      const traitsPanel = item.querySelector('.traits-panel');
+      if (traitsToggle && traitsPanel) {
+        traitsToggle.addEventListener('click', () => {
+          traitsPanel.classList.toggle('open');
+          traitsToggle.classList.toggle('open');
+        });
+      }
 
       container.appendChild(item);
     }

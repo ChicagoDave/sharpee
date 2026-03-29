@@ -479,7 +479,7 @@ export class NativeEngineBridge {
     if (locationId) {
       const room = this.world.getEntity(locationId);
       if (room) {
-        const identity = room.get<IdentityTrait>(IdentityTrait.type);
+        const identity = room.get(IdentityTrait);
         locationName = identity?.name || room.name || 'Unknown';
       }
     }

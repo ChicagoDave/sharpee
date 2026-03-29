@@ -1,7 +1,7 @@
 {
-  "phase": 1,
-  "phaseName": "Design and Implement Generic getTrait Signature",
-  "tier": "Medium",
-  "budget": 250,
-  "toolCalls": 609
+  "phase": 7,
+  "phaseName": "Replace wt-09 teleports (Up a Tree route)",
+  "tier": "Small",
+  "budget": 100,
+  "toolCalls": 378
 }
