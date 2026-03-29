@@ -28,6 +28,10 @@ export * from './parser-interface';
 // Shared data keys for typed action communication
 export * from './shared-data-keys';
 
+// Context-driven action menus (ADR-136)
+export * from './action-menu-computer';
+export * from './actions-yaml-compiler';
+
 // Main engine
 export * from './game-engine';
 

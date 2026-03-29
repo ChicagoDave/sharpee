@@ -26,3 +26,6 @@ export * from './vocabulary-contracts';
 
 // Grammar system
 export * from './grammar';
+
+// Context-driven action menus (ADR-136)
+export * from './context-actions';

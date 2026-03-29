@@ -1,7 +1,9 @@
 {
-  "phase": 11,
-  "phaseName": "Build Flag + Core Types",
-  "tier": "Small",
-  "budget": 100,
-  "toolCalls": 35
+  "phase": 7,
+  "phaseName": "Browser Action Editor",
+  "tier": "Medium",
+  "budget": 250,
+  "toolCalls": 665,
+  "status": "COMPLETE",
+  "allPhasesComplete": true
 }

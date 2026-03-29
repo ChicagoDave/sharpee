@@ -7,6 +7,7 @@
 import { ISemanticEvent } from '@sharpee/core';
 import { IParsedCommand, IValidatedCommand, IFEntity } from '@sharpee/world-model';
 import { ITextBlock } from '@sharpee/text-blocks';
+import type { ContextAction } from '@sharpee/if-domain';
 
 // Re-export perception types from stdlib for convenience
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
@@ -93,6 +94,13 @@ export interface TurnResult {
    * Empty array or undefined when no text output was produced.
    */
   blocks?: ITextBlock[];
+
+  /**
+   * Context-driven action menu for this turn (ADR-136).
+   * Present when INCLUDE_CONTEXT_ACTIONS is true and a scope resolver
+   * is available. Clients render these as clickable action buttons.
+   */
+  actions?: ContextAction[];
 
   /**
    * Whether the turn succeeded

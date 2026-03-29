@@ -23,10 +23,12 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { ISaveData } from '@sharpee/core';
 import { unzipSync } from 'fflate';
 
+import type { ContextAction } from '@sharpee/if-domain';
 import type {
   InboundMessage,
   OutboundMessage,
   DomainEvent,
+  ClientCapabilities,
 } from './protocol';
 import {
   BRIDGE_PROTOCOL_VERSION,
@@ -52,9 +54,13 @@ export class NativeEngineBridge {
   private rl: readline.Interface | null = null;
 
   // Turn accumulation: collect blocks and events during executeTurn(),
-  // then flush blocks → events → status atomically after it resolves.
+  // then flush blocks → events → status → actions atomically after it resolves.
   private pendingBlocks: ITextBlock[] = [];
   private pendingEvents: DomainEvent[] = [];
+  private pendingActions: ContextAction[] = [];
+
+  // Client capabilities declared at start (ADR-136)
+  private capabilities: ClientCapabilities = {};
 
   // Command queue: enforces sequential processing.
   // Next command is dequeued only after the current one completes.
@@ -147,6 +153,9 @@ export class NativeEngineBridge {
   private async dispatch(msg: InboundMessage): Promise<void> {
     switch (msg.method) {
       case 'start':
+        if (msg.capabilities) {
+          this.capabilities = msg.capabilities;
+        }
         await this.handleStart(msg.bundle, msg.storyPath);
         break;
       case 'command':
@@ -217,6 +226,13 @@ export class NativeEngineBridge {
           });
         }
       });
+
+      // ADR-136: Wire action menu accumulation when client requests it
+      if (this.capabilities.actionMenu) {
+        this.engine.on('actions:computed', (actions: ContextAction[]) => {
+          this.pendingActions = actions;
+        });
+      }
 
       // Wire save/restore hooks
       this.engine.registerSaveRestoreHooks({
@@ -443,11 +459,12 @@ export class NativeEngineBridge {
   private clearAccumulators(): void {
     this.pendingBlocks = [];
     this.pendingEvents = [];
+    this.pendingActions = [];
   }
 
   /**
-   * Flush accumulated blocks, events, and status in the correct order.
-   * Per ADR-135: blocks → events → status.
+   * Flush accumulated blocks, events, status, and actions in the correct order.
+   * Per ADR-135/136: blocks → events → status → actions.
    */
   private flushTurn(): void {
     // 1. Blocks
@@ -460,8 +477,13 @@ export class NativeEngineBridge {
       this.send({ type: 'events', events: this.pendingEvents });
     }
 
-    // 3. Status (marks end of turn)
+    // 3. Status (marks end of turn for text-only clients)
     this.sendStatus();
+
+    // 4. Actions (ADR-136 — sent after status for GUI clients)
+    if (this.pendingActions.length > 0) {
+      this.send({ type: 'actions', actions: this.pendingActions });
+    }
 
     this.clearAccumulators();
   }

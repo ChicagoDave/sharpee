@@ -30,7 +30,7 @@
   - `./build.sh -s dungeo` passes (no regression)
   - `./build.sh -s dungeo --include-context-actions` passes (flag accepted)
 - **Exit state**: Types exist and are importable; build flag gates compilation; YAML schema documented; no runtime behavior changed yet
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 2: ActionMenuComputer Module
 - **Tier**: Medium
@@ -57,7 +57,7 @@
     - Config-driven caps respected
   - Package tests pass
 - **Exit state**: `ActionMenuComputer` is standalone and tested; not yet wired into turn cycle
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 3: Engine Integration + Bridge Flush
 - **Tier**: Small
@@ -72,7 +72,7 @@
   - `./build.sh -s dungeo --include-context-actions` passes
   - Unit transcripts and walkthrough chain unaffected
 - **Exit state**: Engine produces `ActionsMessage` each turn through the bridge; text-only clients unaffected
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 4: `--show-actions` CLI Preview Mode
 - **Tier**: Small
@@ -85,7 +85,7 @@
   - Format designed for quick scanning: category headers, indented actions, suppressed actions shown as struck-through or marked
   - Works with `--test` mode too: after each transcript turn, appends the action list (useful for reviewing a walkthrough's action coverage)
 - **Exit state**: Author can preview action menus during play and transcript testing
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 5: `actions.yaml` Compiler
 - **Tier**: Medium
@@ -101,7 +101,7 @@
   - Seed generator: `--generate-actions-yaml` flag runs the game through a set of rooms (or a transcript) and outputs a starter `actions.yaml` with all auto-computed actions as comments, ready for the author to uncomment and edit
   - Tests: YAML with suppressions/hints produces correct annotation data; malformed YAML produces clear error messages
 - **Exit state**: Author edits a single YAML file; build compiles it; engine applies it at runtime
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 6: Reference Client — Action Sidebar
 - **Tier**: Medium
@@ -116,7 +116,7 @@
   - Author `label` used when present; auto-generated verb + target otherwise
   - `./build.sh -s dungeo -c browser --include-context-actions` produces working browser client with sidebar
 - **Exit state**: Browser client has functional action sidebar
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 7: Browser Action Editor
 - **Tier**: Medium
@@ -130,4 +130,4 @@
   - Import: loads existing `actions.yaml` and shows its overrides applied to the current computed actions
   - Author workflow: play game → see actions → click to refine → export YAML → paste into story directory → rebuild
 - **Exit state**: Full authoring loop — compute, preview, edit visually, export config, rebuild with config applied
-- **Status**: PENDING
+- **Status**: DONE

@@ -25,6 +25,7 @@ import { SaveManager } from './managers/SaveManager';
 import { DialogManager } from './managers/DialogManager';
 import { MenuManager } from './managers/MenuManager';
 import { InputManager } from './managers/InputManager';
+import { ActionSidebarManager } from './managers/ActionSidebarManager';
 import { TextDisplay } from './display/TextDisplay';
 import { StatusLine } from './display/StatusLine';
 import { AudioManager } from './audio/AudioManager';
@@ -42,6 +43,7 @@ export class BrowserClient implements BrowserClientInterface {
   private textDisplay!: TextDisplay;
   private statusLine!: StatusLine;
   private audioManager: AudioManager;
+  private actionSidebar?: ActionSidebarManager;
 
   // Engine integration
   private engine!: GameEngine;
@@ -151,6 +153,14 @@ export class BrowserClient implements BrowserClientInterface {
       isDialogOpen: () => this.dialogManager.isDialogOpen(),
     });
 
+    // ADR-136: Create action sidebar if the element exists
+    if (this.elements.actionSidebar) {
+      this.actionSidebar = new ActionSidebarManager({
+        sidebarEl: this.elements.actionSidebar,
+        onCommand: (cmd) => this.executeCommand(cmd),
+      });
+    }
+
     // Set up event handlers on engine
     this.setupEngineHandlers();
 
@@ -233,6 +243,17 @@ export class BrowserClient implements BrowserClientInterface {
       }
 
     });
+
+    // ADR-136: Listen for action menu updates
+    // Play mode shows baseline + hints; editor shows the full palette.
+    if (this.actionSidebar) {
+      (this.engine as any).on('actions:computed', (actions: any[]) => {
+        this.actionSidebar!.updateMenu(actions);
+      });
+      (this.engine as any).on('actions:palette', (actions: any[]) => {
+        this.actionSidebar!.updatePalette(actions);
+      });
+    }
   }
 
   /**

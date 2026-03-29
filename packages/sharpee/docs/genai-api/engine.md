@@ -15,6 +15,7 @@ GameEngine, Story interface, turn cycle, command executor, save/restore, vocabul
 import { ISemanticEvent } from '@sharpee/core';
 import { IParsedCommand, IValidatedCommand, IFEntity } from '@sharpee/world-model';
 import { ITextBlock } from '@sharpee/text-blocks';
+import type { ContextAction } from '@sharpee/if-domain';
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
 /**
  * Timing data for performance tracking
@@ -86,6 +87,12 @@ export interface TurnResult {
      * Empty array or undefined when no text output was produced.
      */
     blocks?: ITextBlock[];
+    /**
+     * Context-driven action menu for this turn (ADR-136).
+     * Present when INCLUDE_CONTEXT_ACTIONS is true and a scope resolver
+     * is available. Clients render these as clickable action buttons.
+     */
+    actions?: ContextAction[];
     /**
      * Whether the turn succeeded
      */
@@ -820,6 +827,159 @@ export interface EngineSharedData {
 }
 ```
 
+### action-menu-computer
+
+```typescript
+/**
+ * ActionMenuComputer — computes available context actions each turn (ADR-136)
+ *
+ * The action menu has two layers:
+ * 1. **Baseline** (auto): directions from room exits + intransitive commands
+ *    (look, inventory, wait, etc.) — always shown, zero author effort.
+ * 2. **Author picks** (hints in actions.yaml): entity-targeted actions the
+ *    author has explicitly chosen to surface. Nothing entity-targeted appears
+ *    unless the author adds it.
+ *
+ * The `computeAll()` method returns the full grammar palette — every verb x
+ * entity combination that could theoretically work. The editor and
+ * `--show-actions` CLI use this to let the author browse and pick.
+ *
+ * @public ActionMenuComputer
+ * @context engine
+ */
+import type { GrammarRule } from '@sharpee/if-domain';
+import type { ContextAction, ContextActionCategory, ActionMenuConfig } from '@sharpee/if-domain';
+import type { WorldModel } from '@sharpee/world-model';
+import type { ScopeResolver } from '@sharpee/stdlib';
+/**
+ * Suppression entry: removes a baseline action from the menu.
+ */
+export interface ActionSuppression {
+    /** The action ID to suppress (e.g. "if.action.waiting") */
+    readonly actionId: string;
+    /** Optional target entity ID — suppress only for this entity */
+    readonly targetId?: string;
+}
+/**
+ * Hint entry: adds an action to the menu (author's pick from the palette).
+ */
+export interface ActionHint {
+    /** Full command text */
+    readonly command: string;
+    /** Action ID */
+    readonly actionId: string;
+    /** Custom label */
+    readonly label?: string;
+    /** Target entity ID */
+    readonly targetId?: string;
+    /** Category override */
+    readonly category?: ContextActionCategory;
+    /** Priority override */
+    readonly priority?: number;
+}
+/**
+ * Compiled author overrides, produced from actions.yaml.
+ */
+export interface CompiledActionOverrides {
+    readonly suppressions: ReadonlyArray<ActionSuppression>;
+    readonly hints: ReadonlyArray<ActionHint>;
+}
+/**
+ * Computes the action menu for client rendering.
+ *
+ * `compute()` returns the player-facing menu: baseline + author picks.
+ * `computeAll()` returns the full grammar palette for the editor.
+ */
+export declare class ActionMenuComputer {
+    /**
+     * Compute the player-facing action menu.
+     *
+     * Returns: baseline (directions + intransitives) + author hints.
+     * Entity-targeted actions only appear if the author added them as hints.
+     */
+    compute(world: WorldModel, actorId: string, rules: GrammarRule[], scopeResolver: ScopeResolver, config?: ActionMenuConfig, overrides?: CompiledActionOverrides): ContextAction[];
+    /**
+     * Compute the full grammar palette for the editor / --show-actions.
+     *
+     * Returns ALL verb x entity combinations from grammar rules, scope,
+     * and traits — the complete set the author can pick from.
+     */
+    computeAll(world: WorldModel, actorId: string, rules: GrammarRule[], scopeResolver: ScopeResolver, config?: ActionMenuConfig): ContextAction[];
+    /** Compute direction actions from room exits. */
+    private computeDirectionActions;
+    /** Compute intransitive (no-target) actions. */
+    private computeIntransitiveActions;
+    /** Compute ALL entity-targeted actions from grammar rules. */
+    private computeEntityActions;
+    /** Convert author hints to ContextAction entries. */
+    private applyHints;
+    /** Deduplicate, sort, and cap. */
+    private finalize;
+    private deduplicate;
+    private sort;
+    private findTargetSlot;
+    private matchesTraitFilters;
+    private matchesScopeRequirement;
+    private extractVerb;
+    private getEntityName;
+    private scopeLevelToString;
+    private categorize;
+    private capitalize;
+    private extractVerbFromCommand;
+}
+```
+
+### actions-yaml-compiler
+
+```typescript
+/**
+ * actions.yaml Compiler (ADR-136, Phase 5)
+ *
+ * Parses a story's actions.yaml file into ActionMenuConfig and
+ * CompiledActionOverrides for the engine's action menu system.
+ *
+ * The YAML file is the single source of truth for author editorial
+ * overrides: suppressions, hints, caps, category order, and
+ * intransitive action lists.
+ *
+ * @public compileActionsYaml, ActionsYamlError
+ * @context engine, build
+ */
+import type { ActionMenuConfig } from '@sharpee/if-domain';
+import type { CompiledActionOverrides } from './action-menu-computer';
+/** Error from actions.yaml parsing or validation. */
+export declare class ActionsYamlError extends Error {
+    readonly path: string;
+    readonly line?: number | undefined;
+    constructor(message: string, path: string, line?: number | undefined);
+}
+/**
+ * Result of compiling an actions.yaml file.
+ */
+export interface CompiledActionsYaml {
+    /** Story-level config (caps, intransitives, category order). */
+    config: ActionMenuConfig;
+    /** Per-entity overrides (suppressions and hints). */
+    overrides: CompiledActionOverrides;
+}
+/**
+ * Compile a parsed YAML object into ActionMenuConfig and CompiledActionOverrides.
+ *
+ * @param yaml - Parsed YAML object (from js-yaml or similar)
+ * @returns Compiled config and overrides
+ * @throws ActionsYamlError on schema violations
+ */
+export declare function compileActionsYaml(yaml: unknown): CompiledActionsYaml;
+/**
+ * Parse a YAML string and compile it.
+ *
+ * @param yamlText - Raw YAML text
+ * @returns Compiled config and overrides
+ * @throws ActionsYamlError on parse or validation errors
+ */
+export declare function parseAndCompileActionsYaml(yamlText: string): CompiledActionsYaml;
+```
+
 ### game-engine
 
 ```typescript
@@ -828,10 +988,15 @@ export interface EngineSharedData {
  *
  * Manages game state, turn execution, and coordinates all subsystems
  */
+declare global {
+    var INCLUDE_CONTEXT_ACTIONS: boolean | undefined;
+}
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider } from '@sharpee/if-domain';
+import type { ContextAction, ActionMenuConfig } from '@sharpee/if-domain';
+import type { CompiledActionOverrides } from './action-menu-computer';
 import { ITextService } from '@sharpee/text-service';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
@@ -851,6 +1016,8 @@ export interface GameEngineEvents {
     'state:changed': (context: GameContext) => void;
     'game:over': (context: GameContext) => void;
     'text:output': (blocks: ITextBlock[], turn: number) => void;
+    'actions:computed': (actions: ContextAction[], turn: number) => void;
+    'actions:palette': (actions: ContextAction[], turn: number) => void;
 }
 type GameEngineEventName = keyof GameEngineEvents;
 type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K];
@@ -887,6 +1054,9 @@ export declare class GameEngine {
     private saveRestoreService;
     private turnEventProcessor;
     private platformOpHandler?;
+    private actionMenuComputer?;
+    private actionMenuConfig?;
+    private actionOverrides?;
     private hasEmittedInitialized;
     constructor(options: {
         world: WorldModel;
@@ -904,6 +1074,16 @@ export declare class GameEngine {
      * Get the current parser
      */
     getParser(): Parser | undefined;
+    /**
+     * Set the action menu configuration (ADR-136).
+     * Called by the actions.yaml loader at engine init time.
+     */
+    setActionMenuConfig(config: ActionMenuConfig): void;
+    /**
+     * Set compiled action overrides (ADR-136).
+     * Suppressions and hints from actions.yaml.
+     */
+    setActionOverrides(overrides: CompiledActionOverrides): void;
     /**
      * Get the current language provider
      */

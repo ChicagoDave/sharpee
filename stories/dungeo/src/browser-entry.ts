@@ -176,6 +176,7 @@ async function start(): Promise<void> {
     noSavesMessage: document.getElementById('no-saves-message'),
     startupSaveInfo: document.getElementById('startup-save-info'),
     menuBar: document.getElementById('menu-bar'),
+    actionSidebar: document.getElementById('action-sidebar'),
   });
 
   // Create world and player

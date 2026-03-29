@@ -16,3 +16,6 @@ export type { MenuManagerConfig } from './MenuManager';
 
 export { InputManager } from './InputManager';
 export type { InputManagerConfig } from './InputManager';
+
+export { ActionSidebarManager } from './ActionSidebarManager';
+export type { ActionSidebarConfig } from './ActionSidebarManager';

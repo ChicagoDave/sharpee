@@ -1,8 +1,13 @@
 /**
  * Game Engine - Main runtime for Sharpee IF games
- * 
+ *
  * Manages game state, turn execution, and coordinates all subsystems
  */
+
+// ADR-136: Build flag injected by esbuild --define:globalThis.INCLUDE_CONTEXT_ACTIONS
+declare global {
+  var INCLUDE_CONTEXT_ACTIONS: boolean | undefined;
+}
 
 import { 
   WorldModel, 
@@ -34,6 +39,9 @@ import {
   createScopeResolver
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
+import type { ContextAction, ActionMenuConfig, GrammarRule } from '@sharpee/if-domain';
+import { ActionMenuComputer } from './action-menu-computer';
+import type { CompiledActionOverrides } from './action-menu-computer';
 import { ITextService, createTextService } from '@sharpee/text-service';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
@@ -72,6 +80,8 @@ export interface GameEngineEvents {
   'state:changed': (context: GameContext) => void;
   'game:over': (context: GameContext) => void;
   'text:output': (blocks: ITextBlock[], turn: number) => void;
+  'actions:computed': (actions: ContextAction[], turn: number) => void;
+  'actions:palette': (actions: ContextAction[], turn: number) => void;
 }
 
 type GameEngineEventName = keyof GameEngineEvents;
@@ -112,6 +122,11 @@ export class GameEngine {
   private saveRestoreService: SaveRestoreService;
   private turnEventProcessor: TurnEventProcessor;
   private platformOpHandler?: PlatformOperationHandler;
+
+  // ADR-136: Context-driven action menus
+  private actionMenuComputer?: ActionMenuComputer;
+  private actionMenuConfig?: ActionMenuConfig;
+  private actionOverrides?: CompiledActionOverrides;
 
   // Phase 5: Track if initialized event has been emitted
   private hasEmittedInitialized = false;
@@ -196,6 +211,11 @@ export class GameEngine {
     this.pluginRegistry = new PluginRegistry();
     this.random = createSeededRandom();
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
+
+    // ADR-136: Initialize action menu computer when feature is compiled in
+    if (globalThis.INCLUDE_CONTEXT_ACTIONS) {
+      this.actionMenuComputer = new ActionMenuComputer();
+    }
 
     // Initialize extracted services (Phase 4 remediation)
     this.vocabularyManager = createVocabularyManager();
@@ -319,6 +339,22 @@ export class GameEngine {
    */
   getParser(): Parser | undefined {
     return this.parser;
+  }
+
+  /**
+   * Set the action menu configuration (ADR-136).
+   * Called by the actions.yaml loader at engine init time.
+   */
+  setActionMenuConfig(config: ActionMenuConfig): void {
+    this.actionMenuConfig = config;
+  }
+
+  /**
+   * Set compiled action overrides (ADR-136).
+   * Suppressions and hints from actions.yaml.
+   */
+  setActionOverrides(overrides: CompiledActionOverrides): void {
+    this.actionOverrides = overrides;
   }
 
   /**
@@ -724,6 +760,40 @@ export class GameEngine {
         result.blocks = blocks;
         if (blocks.length > 0) {
           this.emit('text:output', blocks, turn);
+        }
+      }
+
+      // ADR-136: Compute context actions after text processing
+      if (this.actionMenuComputer && this.parser) {
+        const parserAny = this.parser as any;
+        if (typeof parserAny.getStoryGrammar === 'function') {
+          const grammarRules: GrammarRule[] = parserAny.getStoryGrammar().getRules();
+          const scopeResolver = createScopeResolver(this.world);
+          // Player menu: baseline + author hints
+          const actions = this.actionMenuComputer.compute(
+            this.world,
+            this.context.player.id,
+            grammarRules,
+            scopeResolver,
+            this.actionMenuConfig,
+            this.actionOverrides,
+          );
+          if (actions.length > 0) {
+            result.actions = actions;
+            this.emit('actions:computed', actions, turn);
+          }
+
+          // Full palette: all grammar x entity combos (for editor/preview)
+          const palette = this.actionMenuComputer.computeAll(
+            this.world,
+            this.context.player.id,
+            grammarRules,
+            scopeResolver,
+            this.actionMenuConfig,
+          );
+          if (palette.length > 0) {
+            this.emit('actions:palette', palette, turn);
+          }
         }
       }
 

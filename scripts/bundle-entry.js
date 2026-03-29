@@ -132,6 +132,10 @@ if (require.main === module) {
         options.test = true;
       } else if (arg === '--debug') {
         options.debug = true;
+      } else if (arg === '--show-actions') {
+        options.showActions = true;
+      } else if (arg === '--generate-actions-yaml') {
+        options.generateActionsYaml = true;
       } else if (arg === '--exec') {
         i++;
         if (i < args.length) {
@@ -179,6 +183,8 @@ Options:
   --chain, -c          Chain transcripts (don't reset game state between them)
   --verbose, -v        Show detailed output for each command
   --emit-traits        Show entity traits for objects referenced in events (implies --verbose)
+  --show-actions       Show context action menu after each turn (ADR-136)
+  --generate-actions-yaml  Generate starter actions.yaml from current room (ADR-136)
   --stop-on-failure, -s Stop on first failure
   --story <path>       Story path (default: stories/dungeo)
   --help, -h           Show this help message
@@ -193,7 +199,7 @@ Examples:
 `);
   }
 
-  function loadStoryAndCreateGame(storyPath) {
+  function loadStoryAndCreateGame(storyPath, options = {}) {
     const resolvedPath = path.isAbsolute(storyPath)
       ? storyPath
       : path.resolve(process.cwd(), storyPath);
@@ -204,6 +210,11 @@ Examples:
 
     if (!story) {
       throw new Error(`Story module at ${storyPath} does not export 'story' or 'default'`);
+    }
+
+    // ADR-136: Enable action menu computation at runtime when --show-actions
+    if (options.showActions) {
+      globalThis.INCLUDE_CONTEXT_ACTIONS = true;
     }
 
     const world = new WorldModel();
@@ -231,6 +242,23 @@ Examples:
     });
 
     engine.setStory(story);
+
+    // ADR-136: Load actions.yaml if it exists in the story directory
+    if (options.showActions) {
+      const actionsYamlPath = path.join(resolvedPath, 'actions.yaml');
+      if (fs.existsSync(actionsYamlPath)) {
+        try {
+          const yamlText = fs.readFileSync(actionsYamlPath, 'utf-8');
+          const { parseAndCompileActionsYaml } = exports;
+          const compiled = parseAndCompileActionsYaml(yamlText);
+          engine.setActionMenuConfig(compiled.config);
+          engine.setActionOverrides(compiled.overrides);
+        } catch (err) {
+          console.error(`Warning: Failed to load actions.yaml: ${err.message}`);
+        }
+      }
+    }
+
     engine.start();
 
     // Create testing extension for $commands in transcripts
@@ -254,12 +282,25 @@ Examples:
     const testableGame = {
       engine,
       world,
+      parser,
       testingExtension,
       lastOutput: '',
       lastEvents: [],
       lastTurnResult: null,
       // Proxy for runner save/restore plugin state
       getPluginRegistry() { return engine.getPluginRegistry(); },
+
+      /** Compute the full grammar palette for --show-actions / editor. */
+      computeActionPalette() {
+        if (!options.showActions) return null;
+        const { ActionMenuComputer, createScopeResolver } = exports;
+        const computer = new ActionMenuComputer();
+        const scopeResolver = createScopeResolver(world);
+        const player = world.getPlayer();
+        if (!player) return null;
+        const rules = parser.getStoryGrammar().getRules();
+        return computer.computeAll(world, player.id, rules, scopeResolver);
+      },
 
       async executeCommand(input) {
         outputBuffer = [];
@@ -285,7 +326,35 @@ Examples:
     return testableGame;
   }
 
-  async function runInteractiveMode(game) {
+  /**
+   * Format context actions for CLI display (ADR-136).
+   * Groups by category with headers, shows command, scope, and priority.
+   */
+  function formatActions(actions) {
+    if (!actions || actions.length === 0) return '';
+
+    const lines = ['\n\x1b[36m--- Actions ---\x1b[0m'];
+    let currentCategory = null;
+
+    for (const action of actions) {
+      if (action.category !== currentCategory) {
+        currentCategory = action.category;
+        lines.push(`  \x1b[33m${currentCategory.toUpperCase()}\x1b[0m`);
+      }
+
+      const label = action.label || `${action.verb}${action.targetName ? ' ' + action.targetName : ''}`;
+      const scope = action.scope ? ` [${action.scope}]` : '';
+      const priority = action.priority !== 100 ? ` (p:${action.priority})` : '';
+      const source = action.auto ? '' : ' \x1b[35m[author]\x1b[0m';
+
+      lines.push(`    \x1b[32m${action.command}\x1b[0m  ${label}${scope}${priority}${source}`);
+    }
+
+    lines.push('\x1b[36m---------------\x1b[0m');
+    return lines.join('\n');
+  }
+
+  async function runInteractiveMode(game, options) {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
@@ -308,6 +377,10 @@ Examples:
 
     const initialOutput = await game.executeCommand('look');
     console.log(initialOutput);
+    if (options.showActions) {
+      const palette = game.computeActionPalette();
+      if (palette && palette.length > 0) console.log(formatActions(palette));
+    }
 
     const prompt = () => {
       rl.question('\n> ', async (input) => {
@@ -410,6 +483,12 @@ Examples:
               }
             }
           }
+
+          // ADR-136: Show action menu after each turn
+          if (options.showActions) {
+            const palette = game.computeActionPalette();
+            if (palette && palette.length > 0) console.log(formatActions(palette));
+          }
         } catch (error) {
           console.error(`Error: ${error.message || error}`);
         }
@@ -429,8 +508,74 @@ Examples:
       process.exit(0);
     }
 
+    // ADR-136: Generate starter actions.yaml
+    if (options.generateActionsYaml) {
+      options.showActions = true; // Enable action computation
+      const game = loadStoryAndCreateGame(options.storyPath, options);
+
+      // Run look to compute actions for the starting room
+      await game.executeCommand('look');
+
+      const actions = game.lastTurnResult && game.lastTurnResult.actions;
+      if (!actions || actions.length === 0) {
+        console.error('No actions computed. Is the story loaded correctly?');
+        process.exit(1);
+      }
+
+      // Generate YAML output
+      const lines = [
+        '# actions.yaml - Context-driven action menu configuration (ADR-136)',
+        '# Generated from starting room. Edit to customize the action menu.',
+        '#',
+        '# Story-level defaults',
+        'defaults:',
+        '  maxActions: 40',
+        '  maxPerEntity: 8',
+        '  intransitives:',
+        '    - look',
+        '    - inventory',
+        '    - wait',
+        '  categoryOrder:',
+        '    - movement',
+        '    - interaction',
+        '    - inventory',
+        '    - communication',
+        '    - combat',
+        '    - meta',
+        '    - story',
+        '',
+        '# Per-entity overrides',
+        '# Uncomment and edit entries to customize the action menu.',
+        '# Entity keys match entity names or IDs.',
+        'entities: {}',
+        '',
+        '# --- Auto-computed actions from starting room ---',
+        '# These show what the engine produces by default.',
+        '# Copy entries into the entities section above to suppress or hint them.',
+        '#',
+      ];
+
+      // Group actions by target
+      const byTarget = new Map();
+      for (const action of actions) {
+        const key = action.targetName || action.targetId || '_global';
+        if (!byTarget.has(key)) byTarget.set(key, []);
+        byTarget.get(key).push(action);
+      }
+
+      for (const [target, targetActions] of byTarget) {
+        lines.push(`# ${target}:`);
+        for (const action of targetActions) {
+          lines.push(`#   - ${action.command}  (${action.actionId}, ${action.category}, p:${action.priority})`);
+        }
+      }
+
+      console.log(lines.join('\n'));
+      process.exit(0);
+    }
+
     if (options.exec) {
-      const game = loadStoryAndCreateGame(options.storyPath);
+      const game = loadStoryAndCreateGame(options.storyPath, options);
 
       if (options.restore) {
         const savesDir = path.join(options.storyPath, 'saves');
@@ -476,6 +621,12 @@ Examples:
               }
             }
           }
+
+          // ADR-136: Show action menu
+          if (options.showActions) {
+            const palette = game.computeActionPalette();
+            if (palette && palette.length > 0) console.log(formatActions(palette));
+          }
         } catch (error) {
           console.error(`Error: ${error.message || error}`);
         }
@@ -486,7 +637,7 @@ Examples:
 
     if (options.play) {
       console.log(`Loading story from: ${options.storyPath}`);
-      const game = loadStoryAndCreateGame(options.storyPath);
+      const game = loadStoryAndCreateGame(options.storyPath, options);
 
       if (options.restore) {
         const savesDir = path.join(options.storyPath, 'saves');
@@ -513,7 +664,7 @@ Examples:
         console.log(`Restored: ${options.restore}`);
       }
 
-      await runInteractiveMode(game);
+      await runInteractiveMode(game, options);
       return;
     }
 
@@ -530,7 +681,7 @@ Examples:
         console.log(`Chain mode: Game state will persist between transcripts`);
       }
 
-      let game = loadStoryAndCreateGame(options.storyPath);
+      let game = loadStoryAndCreateGame(options.storyPath, options);
       const results = [];
 
       for (const transcriptPath of options.transcriptPaths) {
@@ -546,7 +697,7 @@ Examples:
         }
 
         if (!options.chain) {
-          game = loadStoryAndCreateGame(options.storyPath);
+          game = loadStoryAndCreateGame(options.storyPath, options);
         }
 
         const savesDirectory = path.join(options.storyPath, 'saves');

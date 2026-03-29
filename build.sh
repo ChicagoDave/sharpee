@@ -31,6 +31,7 @@ BUILD_RUNNER=false
 BUILD_RUNTIME=false
 BUILD_TEST=false
 BUILD_BRIDGE=false
+INCLUDE_CONTEXT_ACTIONS=false
 VERSION_OVERRIDE=""
 
 # ============================================================================
@@ -85,6 +86,7 @@ Options:
       --runner         Build Zifmia runner (loads .sharpee bundles in browser)
       --runtime        Build headless runtime for Lantern (postMessage bridge)
       --bridge         Build native engine bridge (Node.js subprocess, ADR-135)
+      --include-context-actions  Include context-driven action menu module (ADR-136)
   -v, --verbose        Show build details
   -h, --help           Show this help
 
@@ -167,6 +169,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --bridge)
             BUILD_BRIDGE=true
+            shift
+            ;;
+        --include-context-actions)
+            INCLUDE_CONTEXT_ACTIONS=true
             shift
             ;;
         --version)
@@ -550,7 +556,8 @@ build_bundle() {
       --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
       --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
       --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js \
-      --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js"
+      --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js \
+      --define:globalThis.INCLUDE_CONTEXT_ACTIONS=$INCLUDE_CONTEXT_ACTIONS"
 
     # Generate type declarations
     cat > dist/cli/sharpee.d.ts << 'EOF'
@@ -621,7 +628,8 @@ build_test_bundle() {
       --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
       --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
       --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js \
-      --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js"
+      --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js \
+      --define:globalThis.INCLUDE_CONTEXT_ACTIONS=$INCLUDE_CONTEXT_ACTIONS"
 
     rm -f "$TEST_ENTRY"
 
@@ -821,7 +829,7 @@ build_browser_client() {
     mkdir -p "$OUTDIR"
 
     # Bundle
-    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --conditions=require --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\""
+    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --conditions=require --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\" --define:globalThis.INCLUDE_CONTEXT_ACTIONS=$INCLUDE_CONTEXT_ACTIONS"
 
     # Copy HTML template
     if [ -f "templates/browser/index.html" ]; then

@@ -13,6 +13,7 @@
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ContextAction } from '@sharpee/if-domain';
 
 /** Protocol version — bumped per ADR-135 versioning rules. */
 export const BRIDGE_PROTOCOL_VERSION = '1.0.0';
@@ -31,6 +32,20 @@ export interface DomainEvent {
   readonly data: Record<string, unknown>;
 }
 
+// ─── Client Capabilities (ADR-136) ──────────────────────────────
+
+/**
+ * Capabilities the host client declares when starting the engine.
+ * The engine uses these to decide which optional output to produce.
+ */
+export interface ClientCapabilities {
+  /** Client wants context-driven action menus (ADR-136) */
+  readonly actionMenu?: boolean;
+
+  /** Maximum actions the client can display per turn */
+  readonly maxActions?: number;
+}
+
 // ─── Inbound Messages (host → engine via stdin) ─────────────────
 
 /**
@@ -44,6 +59,8 @@ export interface StartMessage {
   readonly bundle?: string;
   /** Path to a .ts story file (authoring mode) */
   readonly storyPath?: string;
+  /** Client capabilities for optional features */
+  readonly capabilities?: ClientCapabilities;
 }
 
 /** Execute a player command. */
@@ -132,6 +149,17 @@ export interface ErrorMessage {
   readonly message: string;
 }
 
+/**
+ * Available context actions this turn (ADR-136).
+ * Sent after status when the client has declared actionMenu capability.
+ * Clients that don't understand this message type ignore it.
+ */
+export interface ActionsMessage {
+  readonly type: 'actions';
+  /** Available actions, sorted by category then priority */
+  readonly actions: ReadonlyArray<ContextAction>;
+}
+
 /** Engine shutting down. */
 export interface ByeMessage {
   readonly type: 'bye';
@@ -143,6 +171,7 @@ export type OutboundMessage =
   | BlocksMessage
   | EventsMessage
   | StatusMessage
+  | ActionsMessage
   | ErrorMessage
   | ByeMessage;
 

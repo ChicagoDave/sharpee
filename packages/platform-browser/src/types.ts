@@ -108,6 +108,9 @@ export interface DOMElements {
 
   // Menu bar (discovered by ID pattern)
   menuBar: HTMLElement | null;
+
+  // Action sidebar (ADR-136)
+  actionSidebar: HTMLElement | null;
 }
 
 /**
