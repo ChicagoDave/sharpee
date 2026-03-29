@@ -1,7 +1,7 @@
 {
-  "phase": 7,
-  "phaseName": "Replace wt-09 teleports (Up a Tree route)",
+  "phase": 11,
+  "phaseName": "Build Flag + Core Types",
   "tier": "Small",
   "budget": 100,
-  "toolCalls": 378
+  "toolCalls": 35
 }

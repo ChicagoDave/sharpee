@@ -27,7 +27,7 @@ description: Test opening mailbox and reading the leaflet
 
 # Read it
 > read leaflet
-[OK: contains "DUNGEO"]
+[OK: contains "DUNGEON"]
 [EVENT: true, type="if.event.read"]
 
 # Check inventory

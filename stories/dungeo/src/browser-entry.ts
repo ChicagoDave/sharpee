@@ -35,7 +35,7 @@ const PORTED_BY = config.custom?.portedBy || '';
  * Get the HELP text (1981 Fortran-style)
  */
 function getHelpText(): string {
-  return `Commands to DUNGEO are simple sentences: <verb>, <verb> <object>,
+  return `Commands to DUNGEON are simple sentences: <verb>, <verb> <object>,
 and <verb> <object> <indirect object> are examples.
 
 Some useful commands are:

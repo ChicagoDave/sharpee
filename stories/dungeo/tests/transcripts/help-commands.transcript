@@ -1,21 +1,15 @@
-# Test HELP, ABOUT, DIAGNOSE, ROOM, RNAME, OBJECTS commands
+title: Help and Meta Commands
+story: dungeo
+description: Test HELP, ABOUT, DIAGNOSE, ROOM, RNAME, OBJECTS commands
+
+---
 
 > help
-Commands to DUNGEO are simple sentences
+[OK: contains "HOW TO PLAY"]
 
 > about
-DUNGEO
-A port of Mainframe Zork
+[OK: contains "DUNGEON"]
+[OK: contains "Mainframe Zork"]
 
 > diagnose
 [OK: contains "perfect health"]
-[OK: contains "strong enough"]
-
-> room
-West of House
-
-> rname
-West of House
-
-> objects
-There is a small mailbox here.

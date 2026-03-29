@@ -19,7 +19,7 @@ original numbers.
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | 2026-03-26 (deferred — logic gates in transcript-tester cover this) |
 | ISSUE-052 | Capability registry module-level Map not shared across require() | High | world-model | 2026-02-08 | 2026-02-13 |
 | ISSUE-057 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us, stdlib | 2026-03-23 | 2026-03-26 |
-| ISSUE-058 | Entity creation is excessively repetitive — needs builder/helper API | Low | world-model | 2026-03-23 | - |
+| ISSUE-058 | Entity creation is excessively repetitive — needs builder/helper API | Low | world-model | 2026-03-23 | 2026-03-28 (closed — documented as author patterns, not a platform change) |
 | ISSUE-059 | Transcript tester `story:` header field is metadata-only | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
@@ -30,8 +30,8 @@ original numbers.
 | ISSUE-066 | Entering/exiting grammar explosion — 14+ patterns for 2 actions | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-067 | Trace commands defined as 10 individual literal patterns | Low | parser-en-us | 2026-03-26 | - |
 | ISSUE-068 | ~~Entity `on` handlers are vestigial — migrate to actions/capabilities, simplify type infrastructure~~ | Medium | world-model, event-processor, stories | 2026-03-27 | **DONE** 2026-03-27 |
-| ISSUE-069 | `world.getStateValue`/`setStateValue` is a code smell — puzzle state belongs on entities/traits | Medium | world-model, stories | 2026-03-27 | - |
-| ISSUE-070 | Entity descriptions should be computed from trait state, not mutated by event handlers | Medium | world-model | 2026-03-27 | - |
+| ISSUE-069 | `world.getStateValue`/`setStateValue` is a code smell — puzzle state belongs on entities/traits | Medium | world-model, stories | 2026-03-27 | 2026-03-28 (closed — won't fix, story-only usage) |
+| ISSUE-070 | ~~Entity descriptions should be computed from trait state, not mutated by event handlers~~ | Medium | world-model | 2026-03-27 | **DONE** 2026-03-28 (PR #67) |
 
 ---
 
@@ -145,6 +145,26 @@ The entire entity `on` handler system was removed. All 19 entity handlers were r
 Extracted `isContainmentPathClear()` — a single canonical container-walk traversal that replaces three near-identical implementations in `isAccessible`, `hasLineOfSight`, and `isVisible`. Deleted dead `getContainmentPath()` helper. -72 lines (571 → 499). No public API changes.
 
 **Branch**: issue-064-visibility-dedup
+
+---
+
+### ISSUE-058: Entity creation is excessively repetitive
+
+**Reported**: 2026-03-23
+**Severity**: Low
+**Component**: Platform (world-model)
+**Status**: Closed 2026-03-28 — not a platform change. Documented recommended author patterns in [`docs/guides/common-helper-patterns.md`](../../guides/common-helper-patterns.md). Story authors write their own `createRoom()`, `createItem()`, `createScenery()` helpers as needed.
+
+---
+
+### ISSUE-070: Entity descriptions computed from trait state
+
+**Reported**: 2026-03-27
+**Severity**: Medium
+**Component**: Platform (world-model)
+**Status**: Fixed 2026-03-28 (PR #67)
+
+Entity description getter now computes from trait state (priority chain: trait-state-specific field → trait default → entity base). Replaces mutation-based description switching via event handlers. Covers OpenableTrait, InflatableTrait, SwitchableTrait, and light sources.
 
 ---
 
@@ -271,109 +291,6 @@ This reduces 10 rules to 1, and new subsystems require only a vocabulary entry r
 ---
 
 ## Open Issues — Platform Refactoring
-
-### ISSUE-070: Entity descriptions should be computed from trait state, not mutated by event handlers
-
-**Reported**: 2026-03-27
-**Severity**: Medium
-**Component**: Platform (world-model)
-**Type**: Architecture
-
-**Description**:
-Entity descriptions are stored as a mutable string on `IdentityTrait.description`. When entity state changes (opened/closed, inflated/deflated, lit/unlit), event handlers or action code manually overwrites the description. This is fragile and requires an event-driven callback system (entity `on` handlers) to keep descriptions in sync with state.
-
-**Correct pattern**: The entity's `description` getter should compute from trait state. Traits that affect description (OpenableTrait, InflatableTrait, SwitchableTrait, etc.) provide state-specific descriptions. The entity returns the appropriate one based on current state.
-
-**Example**:
-```typescript
-// OpenableTrait adds:
-openDescription?: string;   // "The trap door is open, revealing a rickety staircase."
-closedDescription?: string; // "The dusty cover of a closed trap door."
-
-// Entity description getter checks trait state:
-get description(): string {
-  const openable = this.get(OpenableTrait);
-  if (openable) {
-    return openable.isOpen
-      ? (openable.openDescription ?? this.identity.description)
-      : (openable.closedDescription ?? this.identity.description);
-  }
-  return this.identity.description;
-}
-```
-
-**Applies to**: Any trait that changes how an entity is described — openable, inflatable, switchable, lit/unlit light sources, broken/intact objects.
-
-**Discovered during**: ISSUE-068 entity `on` handler audit. Window and trapdoor `opened`/`closed` handlers existed solely to mutate `IdentityTrait.description`.
-
-**Current workaround** (ISSUE-068): Entity `on` handlers were removed. Description switching is now handled by story-level event handlers that read `openDescription`/`closedDescription` from entity attributes. This works but is still mutation-based — computed descriptions would be architecturally cleaner.
-
-**Dungeo blast radius**: The inflate/deflate actions also manually switch `attributes.displayName`. A computed description pattern would replace all mutation-based description switching.
-
----
-
-### ISSUE-058: Entity creation is excessively repetitive — needs builder/helper API
-
-**Reported**: 2026-03-23
-**Severity**: Low (DX improvement, not a bug)
-**Component**: Platform (world-model)
-**Type**: Enhancement
-
-**Description**:
-Creating entities requires 3-4 separate calls every time, which becomes extremely repetitive in story code:
-
-```typescript
-// Current: 4 calls per entity
-const fence = world.createEntity('iron fence', EntityType.SCENERY);
-fence.add(new IdentityTrait({ name: 'iron fence', description: '...', aliases: ['fence'], properName: false, article: 'an' }));
-fence.add(new SceneryTrait());
-world.moveEntity(fence.id, entrance.id);
-```
-
-The Family Zoo tutorial V8 has ~30 entities, each requiring this pattern. The repetition is:
-- `createEntity` + `IdentityTrait` (every entity)
-- `SceneryTrait` (most environmental objects)
-- `moveEntity` (every entity)
-- Name appears in both `createEntity()` and `IdentityTrait.name` (always duplicated)
-
-**Possible approaches** (needs discussion):
-
-**A. Factory helpers on WorldModel:**
-```typescript
-const fence = world.createScenery('iron fence', entrance.id, {
-  description: '...',
-  aliases: ['fence'],
-  article: 'an',
-});
-```
-
-**B. Builder/fluent API:**
-```typescript
-const fence = world.build('iron fence', EntityType.SCENERY)
-  .description('A tall wrought-iron fence.')
-  .aliases('fence', 'railing')
-  .article('an')
-  .scenery()
-  .placeIn(entrance)
-  .done();
-```
-
-**C. Story-level helpers (no platform change):**
-```typescript
-function scenery(world, name, room, opts) { ... }
-function item(world, name, room, opts) { ... }
-```
-
-**Trade-offs**:
-- (A) is the most ergonomic but adds API surface to WorldModel
-- (B) is flexible but may be over-engineered for what's essentially sugar
-- (C) requires no platform changes and can ship in the tutorial itself
-
-**Priority**: Low — the verbose pattern works, is explicit, and teaches well. But it's a paper cut for experienced authors writing real stories.
-
-**Discovered during**: Family Zoo tutorial development — the pattern repeats 30+ times in a single file.
-
----
 
 ### ISSUE-064: VisibilityBehavior has 3 duplicate container-walk traversals
 
