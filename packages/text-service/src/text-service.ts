@@ -51,29 +51,6 @@ export interface ITextService {
 }
 
 /**
- * State change events that don't produce text output (LEGACY pattern).
- * The corresponding action.success event provides the message.
- *
- * NOTE: With the simplified event pattern (ADR-097), domain events can carry
- * messageId directly. When they do, we process them and skip action.success.
- * This set is only checked when events DON'T have messageId (backward compat).
- *
- * @deprecated Will be removed once all actions migrate to simplified pattern
- */
-const STATE_CHANGE_EVENTS = new Set([
-  'if.event.opened',
-  'if.event.closed',
-  'if.event.locked',
-  'if.event.unlocked',
-  'if.event.switched_on',
-  'if.event.switched_off',
-  'if.event.taken',       // State change - action.success provides message
-  'if.event.dropped',     // State change - action.success provides message
-  'if.event.read',        // State change - action.success provides message
-  // Note: if.event.room.description removed - specialized handler handles it
-]);
-
-/**
  * TextService implementation
  *
  * Orchestrates the pipeline: filter → sort → process → assemble
@@ -108,16 +85,10 @@ export class TextService implements ITextService {
    * Route event to appropriate handler
    */
   private routeToHandler(event: ISemanticEvent, context: HandlerContext): ITextBlock[] {
-    // NEW PATTERN (ADR-097): Domain events can carry messageId directly.
-    // If present, look up message and return block - no action.success needed.
+    // Domain events with messageId (ADR-097): resolve via language provider directly.
     const result = this.tryProcessDomainEventMessage(event, context);
     if (result) {
       return result;
-    }
-
-    // LEGACY PATTERN: Skip state change events (action.success provides message)
-    if (STATE_CHANGE_EVENTS.has(event.type)) {
-      return [];
     }
 
     switch (event.type) {
@@ -162,13 +133,12 @@ export class TextService implements ITextService {
   }
 
   /**
-   * NEW PATTERN (ADR-097): Process domain events that carry messageId directly.
+   * Process domain events that carry messageId directly (ADR-097).
    *
-   * Returns text blocks if event has messageId and message was found.
-   * Returns null to fall through to legacy handling.
+   * All stdlib actions use this pattern. Story actions that emit action.success
+   * or action.blocked events fall through to the switch-case handlers below.
    *
-   * This allows gradual migration: actions can be updated one at a time
-   * to emit domain events with messageId instead of separate action.success.
+   * @returns Text blocks if event has messageId and message was found, null otherwise.
    */
   private tryProcessDomainEventMessage(
     event: ISemanticEvent,
@@ -176,13 +146,13 @@ export class TextService implements ITextService {
   ): ITextBlock[] | null {
     const data = event.data as { messageId?: string; params?: Record<string, unknown> } | undefined;
 
-    // No messageId = fall through to legacy handling
+    // No messageId = fall through to switch-case handlers
     if (!data?.messageId) {
       return null;
     }
 
-    // Skip action.success/failure/blocked - they use legacy handler
-    // (prevents double processing during migration)
+    // Skip action.success/failure/blocked — story actions emit these directly
+    // and they're handled by dedicated switch-case handlers
     if (event.type.startsWith('action.')) {
       return null;
     }
@@ -199,7 +169,7 @@ export class TextService implements ITextService {
 
     const message = context.languageProvider.getMessage(data.messageId, data.params);
 
-    // If message wasn't found (returns the messageId), fall through to legacy
+    // If message wasn't found (returns the messageId), fall through
     if (message === data.messageId) {
       return null;
     }

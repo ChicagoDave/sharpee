@@ -91,6 +91,6 @@ export function handleGenericEvent(
     }
   }
 
-  // No template found - skip this event (it's probably a state change)
+  // No template found - skip this event
   return [];
 }

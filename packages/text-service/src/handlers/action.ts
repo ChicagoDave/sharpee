@@ -1,7 +1,9 @@
 /**
  * Action event handlers
  *
- * Handles: action.success, action.failure, action.blocked
+ * Handles action.success, action.failure, and action.blocked events.
+ * Story-specific actions (Dungeo, Cloak of Darkness) emit these event types directly.
+ * Stdlib actions use domain events with embedded messageId instead (ADR-097).
  *
  * @see ADR-096 Text Service Architecture
  */

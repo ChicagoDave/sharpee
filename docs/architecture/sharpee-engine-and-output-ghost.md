@@ -426,11 +426,9 @@ Semantic Events
 ITextBlock[]
 ```
 
-### Event Routing: Two Patterns
+### Event Routing
 
-The text service supports both a new and legacy event pattern, enabling gradual migration:
-
-**New Pattern (ADR-097)**: Domain events carry `messageId` directly.
+Domain events carry `messageId` directly (ADR-097):
 
 ```
 Event: { type: "if.event.taken", data: { messageId: "if.action.taking.taken", params: { item: "sword" } } }
@@ -442,20 +440,9 @@ Language provider resolves: "Taken."
 Block: { key: "action.result", content: ["Taken."] }
 ```
 
-**Legacy Pattern**: Separate `action.success` event provides the message.
+All 43 stdlib actions were refactored to this pattern — the action's report phase emits a domain event with `messageId` and `params` embedded directly. The text service resolves the message through the language provider in a single step.
 
-```
-Event: { type: "if.event.taken", data: { ... } }  ← state change, skipped
-Event: { type: "action.success", data: { actionId: "if.action.taking", messageId: "taken" } }
-  ↓
-Text service routes to handleActionSuccess()
-  ↓
-Composes full ID: "if.action.taking" + "." + "taken" = "if.action.taking.taken"
-  ↓
-Language provider resolves: "Taken."
-```
-
-Both patterns produce the same output. The new pattern is simpler — one event instead of two — and new actions use it exclusively.
+The text service still contains a legacy `action.success` handler and a `STATE_CHANGE_EVENTS` skip-set from the old two-event pattern (where a state-change event and a separate `action.success` event were emitted as a pair). This dead code exists as a safety net for any story-specific actions that might still emit the old pattern, but no stdlib actions use it. It is marked `@deprecated` and can be removed.
 
 ### Text Blocks: Semantic Structure, Not Raw Strings
 

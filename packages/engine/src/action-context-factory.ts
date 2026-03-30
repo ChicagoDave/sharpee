@@ -278,9 +278,7 @@ export function createActionContext(
       // Get the report events from the taking action
       const takeEvents = takingAction.report ? takingAction.report(takeContext) : [];
 
-      // Filter out action.success events - the implicit_take message replaces them
-      // Keep if.event.taken for state tracking
-      const filteredTakeEvents = takeEvents.filter(e => e.type !== 'action.success');
+      const filteredTakeEvents = takeEvents;
 
       // Create the implicit take event (for "(first taking the X)" message)
       const implicitTakeEvent = coreCreateEvent('if.event.implicit_take', {
