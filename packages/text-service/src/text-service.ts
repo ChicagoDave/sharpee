@@ -130,7 +130,8 @@ export class TextService implements ITextService {
    * All stdlib actions use this pattern. Story actions that emit action.success
    * or action.blocked events fall through to the switch-case handlers below.
    *
-   * @returns Text blocks if event has messageId and message was found, null otherwise.
+   * @returns Text blocks if event has messageId. If the messageId doesn't resolve,
+   *   emits a visible error block rather than silently producing nothing.
    */
   private tryProcessDomainEventMessage(
     event: ISemanticEvent,
@@ -155,9 +156,9 @@ export class TextService implements ITextService {
 
     const message = context.languageProvider.getMessage(data.messageId, data.params);
 
-    // If message wasn't found (returns the messageId), fall through
+    // If message wasn't found (returns the messageId), warn visibly
     if (message === data.messageId) {
-      return null;
+      return [createBlock(BLOCK_KEYS.ERROR, `[Missing message: ${data.messageId}]`)];
     }
 
     // Determine block key based on event type
