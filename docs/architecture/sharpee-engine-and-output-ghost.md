@@ -1,6 +1,8 @@
-This is the companion post to [Sharpee's Computer Science Engine Rundown](https://www.intfiction.org/t/the-computer-science-behind-sharpee-a-data-structures-walkthrough/73523). That post covered the data structures and algorithms underneath — the world model, spatial index, visibility, scope, parser, and grammar system. It ended where the parser produces a resolved command.
+# Sharpee Engine and Output Architecture
 
-This post picks up there. It traces a player's command from the moment the parser finishes all the way to text appearing on screen. Along the way it covers the engine's turn cycle, the four-phase action pattern, capability dispatch, the event system, the text service pipeline, perspective-aware language rendering, the bridge protocol, and client rendering.
+This is the companion document to [Sharpee's Computer Science Engine Rundown](sharpee-computer-science-ghost.md) (also posted on [intfiction.org](https://www.intfiction.org/t/the-computer-science-behind-sharpee-a-data-structures-walkthrough/73523)). That document covered the data structures and algorithms underneath — the world model, spatial index, visibility, scope, parser, and grammar system. It ended where the parser produces a resolved command.
+
+This document picks up there. It traces a player's command from the moment the parser finishes all the way to text appearing on screen. Along the way it covers the engine's turn cycle, the four-phase action pattern, capability dispatch, the event system, the text service pipeline, perspective-aware language rendering, the bridge protocol, and client rendering.
 
 Same format as before: CS concept first, then how Sharpee uses it.
 
@@ -414,8 +416,8 @@ Semantic Events
 │  Dispatch each event to a handler:         │
 │    game.started → handleGameStarted()      │
 │    if.event.room.description → handleRoom()│
-│    action.success → handleActionSuccess()  │
-│    (domain event with messageId → resolve) │
+│    domain event with messageId → resolve   │
+│    game.message → handleGameMessage()      │
 ├────────────────────────────────────────────┤
 │  Stage 4: ASSEMBLE                         │
 │  Create ITextBlock with semantic key       │
@@ -440,9 +442,7 @@ Language provider resolves: "Taken."
 Block: { key: "action.result", content: ["Taken."] }
 ```
 
-All 43 stdlib actions were refactored to this pattern — the action's report phase emits a domain event with `messageId` and `params` embedded directly. The text service resolves the message through the language provider in a single step.
-
-The text service still contains a legacy `action.success` handler and a `STATE_CHANGE_EVENTS` skip-set from the old two-event pattern (where a state-change event and a separate `action.success` event were emitted as a pair). This dead code exists as a safety net for any story-specific actions that might still emit the old pattern, but no stdlib actions use it. It is marked `@deprecated` and can be removed.
+Every action and behavior in the codebase uses this pattern — the report phase emits a domain event with a semantically meaningful type (like `if.event.taken` or `dungeo.event.poured`) carrying `messageId` and `params` embedded directly. The text service resolves the message through the language provider in a single step. There is one routing path, no legacy fallbacks.
 
 ### Text Blocks: Semantic Structure, Not Raw Strings
 
@@ -728,7 +728,7 @@ This prevents race conditions where two turns might try to mutate the world simu
 
 ### Event Filtering: Not Everything Crosses the Bridge
 
-The bridge only forwards events that start with `if.event.` or `platform.`. Internal events (`system.*`, `action.success`, `action.failure`) stay inside the engine — they are implementation details, not domain events the host needs.
+The bridge only forwards events that start with `if.event.` or `platform.`. Story-specific events (`dungeo.event.*`, `zoo.event.*`) and internal events (`system.*`, `action.error`) stay inside the engine — they are implementation details or story internals, not protocol messages the host needs.
 
 ---
 
@@ -917,6 +917,48 @@ Player sees: "Taken."
 From keystroke to rendered text: tokenize → grammar match → slot consumption → entity resolution → capability check → validate → execute → report → event processing → enrichment → perception filter → plugin ticks → text service → language resolution → block assembly → client rendering.
 
 Sixteen stages. Each one a clean data transformation with defined inputs and outputs. No stage knows about the stages above or below it. The parser does not know how text is rendered. The language layer does not know how entities are resolved. The bridge does not know how the world model stores containment.
+
+---
+
+## Design Philosophy: IF-Specific, By Choice
+
+The patterns in this document — and in the first post — are shaped by the constraints of parser-based interactive fiction. They are deliberate choices for this domain, not universal architectural recommendations.
+
+### What IF demands
+
+Interactive fiction is **turn-based**, **single-player**, **text-primary**, and **parser-driven**. These constraints make certain patterns natural:
+
+- **Sequential pipeline over concurrent processing.** A turn is atomic — the player acts, the world reacts, text is rendered. There is no parallelism to exploit and no race conditions to prevent (beyond the bridge's command queue, which enforces sequentiality for external hosts). A DAG scheduler or middleware composition system would add flexibility the domain does not need.
+
+- **Four-phase actions over transaction logs.** Validate-execute-report-blocked is a simplified CQRS pattern. A full event-sourced system with replay and projection would be architecturally purer, but IF games do not need audit trails or temporal queries — they need undo (which Sharpee handles with state snapshots, not event replay).
+
+- **Stateless text service over incremental rendering.** Each turn produces a complete text output from scratch. There is no diffing, no partial updates, no retained state between turns. This is correct for IF — every turn's output is self-contained prose, not a delta against previous state.
+
+- **Regex-based template resolution over compiled templates.** The language layer resolves `{You} {take} {the:item}` via string replacement on every call. An AST-based template compiler (like ICU MessageFormat) would eliminate runtime regex overhead, but IF messages are short (under 100 characters typically) and produced a few times per turn. The regex cost is unmeasurable.
+
+### What IF does not demand (yet)
+
+Some capabilities exist in the architecture but are not yet exercised by any shipping story:
+
+- **Text decorations.** The `ITextBlock` content tree supports semantic decorations (`[item:the brass key]`, `[npc:the guard]`) that clients can render with styling, hover states, or interactivity. The CLI renderer maps these to ANSI color codes. The browser client currently flattens blocks to plain text — the decoration data is produced but not consumed on the web. This gap exists because the only production story (Dungeo) is a port of a 1981 terminal game that has no need for styled inline content. The first story written from scratch for the platform will be the natural driver for browser-side decoration rendering.
+
+- **Multi-perspective output.** The language layer supports first, second, and third person narrative from the same message templates. Dungeo uses second person exclusively. The perspective system is tested but not battle-tested across a full game in first or third person.
+
+- **Custom formatters.** The formatter registry is extensible — stories can register domain-specific formatters. No story has needed this yet.
+
+### Tradeoffs acknowledged
+
+- **SharedData is untyped.** Inter-phase communication uses `Record<string, any>` — the weakest type in the system. A discriminated union or typed result object would catch bugs at compile time. In practice, each action's sharedData is written and consumed in the same file, so the blast radius of a type error is small. The cost of typing it properly is high (every action would need a unique SharedData type parameter), and the benefit is low given the typical scope.
+
+- **The engine pipeline is hardcoded.** Ten phases in a fixed order, not a composable middleware chain. This means adding a new phase requires editing the engine's `executeTurn()` method. For a system where the pipeline has been stable since early 2025, this is the right tradeoff — the cost of a plugin architecture for a pipeline that changes once or twice a year would not pay for itself.
+
+- **Capability dispatch has four resolution modes, but only two are used.** `first-wins` and `any-blocks` are exercised by Dungeo's puzzles. `highest-priority` (an alias for `first-wins`) and `all-must-pass` exist for completeness but have no production consumers. They are small enough to carry without maintenance burden, but they are speculative.
+
+### The bottom line
+
+These patterns are right-sized for interactive fiction. A real-time multiplayer game would need concurrent event processing, incremental rendering, and delta-based state synchronization. A CRPG with complex combat would need a richer action model with interrupts and reactions. Sharpee does not need those things, and it does not pay for them.
+
+The architecture is stable, the patterns are well-understood, and the codebase has been validated by porting a 191-room game with 38 puzzles. Where gaps exist (decoration rendering, multi-perspective, custom formatters), they are waiting for their first real consumer, not blocked by architectural limitations.
 
 ---
 
