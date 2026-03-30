@@ -52,7 +52,7 @@ export type CapabilitySharedData = Record<string, any>;
  *   },
  *
  *   blocked(entity, world, actorId, error, sharedData) {
- *     return [createEffect('action.blocked', { messageId: error })];
+ *     return [createEffect('if.event.lower_blocked', { messageId: error })];
  *   }
  * };
  * ```

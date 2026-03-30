@@ -141,8 +141,7 @@ export function handleExecutionError(
  *   // All clear - generate success events
  *   const noun = context.command.directObject!.entity!;
  *   return [
- *     context.event('if.event.taken', { item: noun.name }),
- *     context.event('action.success', { actionId: this.id, messageId: 'taken' })
+ *     context.event('if.event.taken', { item: noun.name, messageId: 'taken' })
  *   ];
  * }
  */

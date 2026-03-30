@@ -147,10 +147,8 @@ export const pressButtonAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: PRESS_BUTTON_ACTION_ID,
-      messageId: result.error || PressButtonMessages.NOT_A_BUTTON,
-      reason: result.error
+    return [context.event('dungeo.event.press_button_blocked', {
+      messageId: result.error || PressButtonMessages.NOT_A_BUTTON
     })];
   },
 

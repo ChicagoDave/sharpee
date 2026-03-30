@@ -187,8 +187,7 @@ function pushingActionExecute(context: ActionContext): SemanticEvent[] {
       entity: target.id,
       pushCount: pushable.pushCount
     }),
-    context.event('action.success', {
-      actionId: 'pushing',
+    context.event('if.event.pushed', {
       messageId: 'pushed_default',
       params: { object: target.attributes.name }
     })

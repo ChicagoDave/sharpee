@@ -166,10 +166,8 @@ export const windAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: WIND_ACTION_ID,
-      messageId: result.error || WindMessages.NO_TARGET,
-      reason: result.error
+    return [context.event('dungeo.event.wind_blocked', {
+      messageId: result.error || WindMessages.NO_TARGET
     })];
   },
 

@@ -306,13 +306,9 @@ export const answerAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    const events: ISemanticEvent[] = [];
-
-    events.push(context.event('game.message', {
+    return [context.event('dungeo.event.answer_blocked', {
       messageId: result.error || AnswerMessages.NO_QUESTION
-    }));
-
-    return events;
+    })];
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -323,8 +319,7 @@ export const answerAction: Action = {
 
     // Handle Riddle Room results
     if (sharedData.inRiddleRoom) {
-      events.push(context.event('action.success', {
-        actionId: ANSWER_ACTION_ID,
+      events.push(context.event('dungeo.event.answered', {
         messageId,
       }));
       return events;

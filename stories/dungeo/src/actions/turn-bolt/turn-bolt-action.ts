@@ -263,10 +263,8 @@ export const turnBoltAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: TURN_BOLT_ACTION_ID,
-      messageId: result.error || TurnBoltMessages.NO_BOLT,
-      reason: result.error
+    return [context.event('dungeo.event.turn_bolt_blocked', {
+      messageId: result.error || TurnBoltMessages.NO_BOLT
     })];
   },
 

@@ -83,16 +83,14 @@ export const talkToTrollAction: Action = {
       ? TalkToTrollMessages.CANT_HEAR_YOU
       : TalkToTrollMessages.GROWLS;
 
-    return [context.event('action.success', {
-      actionId: TALK_TO_TROLL_ACTION_ID,
+    return [context.event('dungeo.event.talked_to_troll', {
       messageId
     })];
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     if (result.error === 'troll_not_here' || result.error === 'no_troll') {
-      return [context.event('action.blocked', {
-        actionId: TALK_TO_TROLL_ACTION_ID,
+      return [context.event('dungeo.event.talk_to_troll_blocked', {
         messageId: 'core.entity_not_found'
       })];
     }

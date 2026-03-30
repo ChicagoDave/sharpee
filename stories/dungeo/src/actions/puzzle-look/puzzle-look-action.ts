@@ -76,12 +76,11 @@ export const puzzleLookAction: Action & { metadata: ActionMetadata } = {
 
     return [{
       id: generateEventId(),
-      type: 'action.success',
+      type: 'dungeo.event.puzzle_looked',
       timestamp: Date.now(),
       entities: {},
       data: {
-        actionId: PUZZLE_LOOK_ACTION_ID,
-        messageId: 'puzzle_look_description',
+        messageId: `${PUZZLE_LOOK_ACTION_ID}.puzzle_look_description`,
         message: `Room in a Puzzle\n${description}`
       },
       narrate: true
@@ -91,11 +90,10 @@ export const puzzleLookAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, validation: ValidationResult): ISemanticEvent[] {
     return [{
       id: generateEventId(),
-      type: 'action.error',
+      type: 'dungeo.event.puzzle_look_blocked',
       timestamp: Date.now(),
       entities: {},
       data: {
-        actionId: PUZZLE_LOOK_ACTION_ID,
         messageId: 'puzzle_look_error'
       }
     }];

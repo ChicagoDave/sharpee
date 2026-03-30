@@ -130,10 +130,8 @@ export const pushWallAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: PUSH_WALL_ACTION_ID,
-      messageId: result.error,
-      reason: result.error
+    return [context.event('dungeo.event.push_wall_blocked', {
+      messageId: result.error
     })];
   },
 
@@ -145,8 +143,7 @@ export const pushWallAction: Action = {
       ? PushWallMessages.SUCCESS_FIRST
       : PushWallMessages.SUCCESS;
 
-    events.push(context.event('action.success', {
-      actionId: PUSH_WALL_ACTION_ID,
+    events.push(context.event('dungeo.event.pushed_wall', {
       messageId,
       direction: context.sharedData.direction
     }));

@@ -226,15 +226,14 @@ export function handlePuzzleMovement(
     // Execute the move
     executeMove(state, puzzleDir);
 
-    // Emit room description with direct message (uses message fallback)
+    // Emit room description with direct message
     events.push({
       id: generateEventId(),
-      type: 'action.success',
+      type: 'game.message',
       timestamp: Date.now(),
       entities: {},
       data: {
-        actionId: 'dungeo.puzzle.move',
-        messageId: 'puzzle_move_description',  // Not registered, so message field is used
+        messageId: 'puzzle_move_description',
         message: getPuzzleDescription(state)
       },
       narrate: true
@@ -508,16 +507,15 @@ export function registerRoyalPuzzleHandler(
         narrate: true
       });
 
-      // Emit room description with direct message (uses message fallback)
+      // Emit room description with direct message
       const state = getPuzzleState(controller);
       events.push({
         id: generateEventId(),
-        type: 'action.success',
+        type: 'game.message',
         timestamp: Date.now(),
         entities: {},
         data: {
-          actionId: 'dungeo.puzzle.entry',
-          messageId: 'puzzle_entry_description',  // Not registered, so message field is used
+          messageId: 'puzzle_entry_description',
           message: getPuzzleDescription(state)
         },
         narrate: true

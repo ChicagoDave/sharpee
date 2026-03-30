@@ -141,10 +141,8 @@ export const breakAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: BREAK_ACTION_ID,
+    return [context.event('dungeo.event.break_blocked', {
       messageId: result.error || BreakMessages.NO_TARGET,
-      reason: result.error,
       params: result.params
     })];
   },

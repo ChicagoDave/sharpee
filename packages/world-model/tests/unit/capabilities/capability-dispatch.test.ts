@@ -68,7 +68,7 @@ const testBehavior: CapabilityBehavior = {
   },
 
   blocked(entity: IFEntity, world: any, actorId: string, error: string, sharedData: any): CapabilityEffect[] {
-    return [createEffect('action.blocked', { messageId: error })];
+    return [createEffect('test.event.blocked', { messageId: error })];
   }
 };
 
@@ -307,7 +307,7 @@ describe('CapabilityBehavior', () => {
     const effects = testBehavior.blocked(entity, null, 'player', 'already_down', sharedData);
 
     expect(effects).toHaveLength(1);
-    expect(effects[0].type).toBe('action.blocked');
+    expect(effects[0].type).toBe('test.event.blocked');
     expect(effects[0].payload.messageId).toBe('already_down');
   });
 });

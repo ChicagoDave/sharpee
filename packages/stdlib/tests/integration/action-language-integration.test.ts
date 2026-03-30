@@ -243,11 +243,9 @@ describe('Testing Complex Actions with Dependencies', () => {
         }
         
         return [
-          context.event('if.event.taken', { item: item.name }),
-          context.event('action.success', { 
-            actionId: 'if.action.taking',
+          context.event('if.event.taken', {
             messageId: 'taken',
-            params: { item: item.name }
+            item: item.name
           })
         ];
       }

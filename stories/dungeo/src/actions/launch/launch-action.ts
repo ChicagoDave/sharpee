@@ -148,10 +148,8 @@ export const launchAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: LAUNCH_ACTION_ID,
-      messageId: result.error || LaunchMessages.NOT_IN_BOAT,
-      reason: result.error
+    return [context.event('dungeo.event.launch_blocked', {
+      messageId: result.error || LaunchMessages.NOT_IN_BOAT
     })];
   },
 

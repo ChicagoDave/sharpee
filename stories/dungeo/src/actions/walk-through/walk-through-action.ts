@@ -208,10 +208,8 @@ export const walkThroughAction: Action = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const direction = result.params?.direction || 'that';
-    return [context.event('action.blocked', {
-      actionId: WALK_THROUGH_ACTION_ID,
+    return [context.event('dungeo.event.walk_through_blocked', {
       messageId: result.error,
-      reason: result.error,
       params: { direction }
     })];
   },
@@ -224,8 +222,7 @@ export const walkThroughAction: Action = {
 
     // Return the disoriented message and room description
     return [
-      context.event('action.success', {
-        actionId: WALK_THROUGH_ACTION_ID,
+      context.event('dungeo.event.walked_through', {
         messageId: BankPuzzleMessages.WALK_THROUGH,
         message: 'You feel somewhat disoriented as you pass through...'
       }),

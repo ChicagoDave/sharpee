@@ -153,10 +153,8 @@ export const turnSwitchAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: TURN_SWITCH_ACTION_ID,
-      messageId: result.error || TurnSwitchMessages.NO_SWITCH,
-      reason: result.error
+    return [context.event('dungeo.event.turn_switch_blocked', {
+      messageId: result.error || TurnSwitchMessages.NO_SWITCH
     })];
   },
 

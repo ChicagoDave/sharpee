@@ -44,8 +44,7 @@ export const inspectBehavior: CapabilityBehavior = {
     const inspectable = entity.get(InspectableTrait);
     const detail = inspectable?.detail ?? 'Nothing notable.';
     return [
-      createEffect('action.success', {
-        actionId: INSPECT_ACTION_ID,
+      createEffect('regression.event.inspected', {
         messageId: 'regression.inspect.result',
         params: { target: entity.attributes.name || 'it', detail },
       }),
@@ -59,8 +58,7 @@ export const inspectBehavior: CapabilityBehavior = {
     _sharedData: CapabilitySharedData,
   ): CapabilityEffect[] {
     return [
-      createEffect('action.blocked', {
-        actionId: INSPECT_ACTION_ID,
+      createEffect('regression.event.inspect_blocked', {
         messageId: 'regression.inspect.blocked',
         params: { target: entity.attributes.name || 'it' },
       }),

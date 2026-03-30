@@ -320,13 +320,12 @@ export declare class TextService implements ITextService {
      */
     private routeToHandler;
     /**
-     * NEW PATTERN (ADR-097): Process domain events that carry messageId directly.
+     * Process domain events that carry messageId directly (ADR-097).
      *
-     * Returns text blocks if event has messageId and message was found.
-     * Returns null to fall through to legacy handling.
+     * All stdlib actions use this pattern. Story actions that emit action.success
+     * or action.blocked events fall through to the switch-case handlers below.
      *
-     * This allows gradual migration: actions can be updated one at a time
-     * to emit domain events with messageId instead of separate action.success.
+     * @returns Text blocks if event has messageId and message was found, null otherwise.
      */
     private tryProcessDomainEventMessage;
     /**
@@ -507,29 +506,6 @@ import type { HandlerContext } from './types.js';
  * when present, otherwise uses literal text directly.
  */
 export declare function handleRoomDescription(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
-```
-
-### handlers/action
-
-```typescript
-/**
- * Action event handlers
- *
- * Handles: action.success, action.failure, action.blocked
- *
- * @see ADR-096 Text Service Architecture
- */
-import type { ITextBlock } from '@sharpee/text-blocks';
-import type { ISemanticEvent } from '@sharpee/core';
-import type { HandlerContext } from './types.js';
-/**
- * Handle action.success events
- */
-export declare function handleActionSuccess(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
-/**
- * Handle action.failure and action.blocked events
- */
-export declare function handleActionFailure(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
 ```
 
 ### handlers/revealed

@@ -363,8 +363,7 @@ function handleRobotCommand(
   const events: ISemanticEvent[] = [];
   const props = getRobotProps(robot);
   if (!props) {
-    return [context.event('action.blocked', {
-      actionId: COMMANDING_ACTION_ID,
+    return [context.event('dungeo.event.commanding_blocked', {
       messageId: CommandingMessages.CANT_COMMAND
     })];
   }
@@ -516,8 +515,7 @@ export const commandingAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('game.message', {
-      actionId: COMMANDING_ACTION_ID,
+    return [context.event('dungeo.event.commanding_blocked', {
       messageId: result.error || CommandingMessages.CANT_COMMAND
     })];
   },

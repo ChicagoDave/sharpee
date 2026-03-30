@@ -99,7 +99,7 @@ export const setDialAction: Action = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [
-      context.event('action.blocked', {
+      context.event('dungeo.event.set_dial_blocked', {
         messageId: result.error || SetDialMessages.NOT_AT_PARAPET
       })
     ];

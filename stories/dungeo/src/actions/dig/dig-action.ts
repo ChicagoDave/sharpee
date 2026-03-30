@@ -144,10 +144,8 @@ export const digAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: DIG_ACTION_ID,
-      messageId: result.error || DigMessages.CANT_DIG_HERE,
-      reason: result.error
+    return [context.event('dungeo.event.dig_blocked', {
+      messageId: result.error || DigMessages.CANT_DIG_HERE
     })];
   },
 

@@ -112,8 +112,7 @@ function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
 
   // Check if already solved
   if (room.attributes.echoSolved) {
-    events.push(context.event('action.success', {
-      actionId: SAY_ACTION_ID,
+    events.push(context.event('dungeo.event.said', {
       messageId: SayMessages.LOUD_ROOM_ACOUSTICS,
     }));
     return events;
@@ -130,8 +129,7 @@ function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
   } else {
     // Safe! Without the bar, the echo dissipates harmlessly
     room.attributes.echoSolved = true;
-    events.push(context.event('action.success', {
-      actionId: SAY_ACTION_ID,
+    events.push(context.event('dungeo.event.said', {
       messageId: SayMessages.LOUD_ROOM_ECHO_SAFE,
     }));
   }
@@ -149,8 +147,7 @@ function handleRiddleAnswer(context: ActionContext, words: string): ISemanticEve
 
   // Check if already solved
   if (riddleTrait?.riddleSolved) {
-    events.push(context.event('action.success', {
-      actionId: SAY_ACTION_ID,
+    events.push(context.event('dungeo.event.said', {
       messageId: SayMessages.RIDDLE_ALREADY_SOLVED,
     }));
     return events;
@@ -187,14 +184,12 @@ function handleRiddleAnswer(context: ActionContext, words: string): ISemanticEve
       }
     }
 
-    events.push(context.event('action.success', {
-      actionId: SAY_ACTION_ID,
+    events.push(context.event('dungeo.event.said', {
       messageId: SayMessages.RIDDLE_CORRECT,
     }));
   } else {
     // Wrong answer
-    events.push(context.event('action.success', {
-      actionId: SAY_ACTION_ID,
+    events.push(context.event('dungeo.event.said', {
       messageId: SayMessages.RIDDLE_WRONG,
     }));
   }
@@ -342,10 +337,8 @@ export const sayAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: SAY_ACTION_ID,
-      messageId: result.error || SayMessages.NOTHING_TO_SAY,
-      reason: result.error
+    return [context.event('dungeo.event.say_blocked', {
+      messageId: result.error || SayMessages.NOTHING_TO_SAY
     })];
   },
 
@@ -374,8 +367,7 @@ export const sayAction: Action = {
 
     // No NPCs in room - speaking to the air
     if (!npcs || npcs.length === 0) {
-      events.push(context.event('action.success', {
-        actionId: SAY_ACTION_ID,
+      events.push(context.event('dungeo.event.said', {
         messageId: SayMessages.SAY_TO_AIR,
         message: `You say "${words}" but nobody is here to listen.`
       }));
@@ -383,8 +375,7 @@ export const sayAction: Action = {
     }
 
     // Default NPC response - no reaction
-    events.push(context.event('action.success', {
-      actionId: SAY_ACTION_ID,
+    events.push(context.event('dungeo.event.said', {
       messageId: 'npc.no_response',
       message: `You say "${words}".`
     }));

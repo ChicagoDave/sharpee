@@ -154,10 +154,8 @@ export const liftAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: LIFT_ACTION_ID,
+    return [context.event('dungeo.event.lift_blocked', {
       messageId: result.error || LiftMessages.NO_TARGET,
-      reason: result.error,
       params: result.params
     })];
   },

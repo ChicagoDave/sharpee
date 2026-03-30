@@ -124,10 +124,8 @@ export const waveAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: WAVE_ACTION_ID,
-      messageId: result.error || WaveMessages.NO_TARGET,
-      reason: result.error
+    return [context.event('dungeo.event.wave_blocked', {
+      messageId: result.error || WaveMessages.NO_TARGET
     })];
   },
 

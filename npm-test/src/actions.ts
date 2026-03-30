@@ -69,7 +69,7 @@ export const inspectAction: Action = {
   },
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [
-      context.event('action.blocked', {
+      context.event('regression.event.inspect_blocked', {
         messageId: result.error || 'regression.inspect.not_inspectable',
       }),
     ];
@@ -95,14 +95,14 @@ export const pingAction: Action = {
   },
   report(context: ActionContext): ISemanticEvent[] {
     return [
-      context.event('action.success', {
+      context.event('regression.event.pinged', {
         messageId: 'regression.ping.success',
       }),
     ];
   },
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [
-      context.event('action.blocked', {
+      context.event('regression.event.ping_blocked', {
         messageId: result.error || 'regression.ping.wrong_room',
       }),
     ];
@@ -126,14 +126,14 @@ export const statusAction: Action = {
     const facilityStatus = context.world.getStateValue('facility.status') || 'unknown';
     const alertLevel = context.world.getStateValue('facility.alert') || 'none';
     return [
-      context.event('action.success', {
+      context.event('regression.event.status', {
         messageId: 'regression.status.report',
         params: { facilityStatus, alertLevel },
       }),
     ];
   },
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', { messageId: 'regression.status.error' })];
+    return [context.event('regression.event.status_blocked', { messageId: 'regression.status.error' })];
   },
 };
 
@@ -156,13 +156,13 @@ export const checkAction: Action = {
     const annotations = room?.getAnnotations('illustration') || [];
     const count = annotations.length;
     return [
-      context.event('action.success', {
+      context.event('regression.event.checked', {
         messageId: 'regression.check.report',
         params: { count: String(count) },
       }),
     ];
   },
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', { messageId: 'regression.check.error' })];
+    return [context.event('regression.event.check_blocked', { messageId: 'regression.check.error' })];
   },
 };

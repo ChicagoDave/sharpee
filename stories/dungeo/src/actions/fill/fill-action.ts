@@ -184,10 +184,8 @@ export const fillAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: FILL_ACTION_ID,
-      messageId: result.error || FillMessages.NO_BOTTLE,
-      reason: result.error
+    return [context.event('dungeo.event.fill_blocked', {
+      messageId: result.error || FillMessages.NO_BOTTLE
     })];
   },
 
@@ -196,8 +194,7 @@ export const fillAction: Action = {
     const events: ISemanticEvent[] = [];
 
     if (sharedData.bucketDescended && sharedData.playerDescended) {
-      events.push(context.event('action.success', {
-        actionId: FILL_ACTION_ID,
+      events.push(context.event('dungeo.event.filled', {
         messageId: FillMessages.BUCKET_DESCENDS
       }));
 
@@ -213,28 +210,23 @@ export const fillAction: Action = {
         }));
       }
     } else if (sharedData.bucketDescended) {
-      events.push(context.event('action.success', {
-        actionId: FILL_ACTION_ID,
+      events.push(context.event('dungeo.event.filled', {
         messageId: FillMessages.BUCKET_DESCENDS
       }));
     } else if (sharedData.bucketAlreadyAtBottom && sharedData.filledFromBucket) {
-      events.push(context.event('action.success', {
-        actionId: FILL_ACTION_ID,
+      events.push(context.event('dungeo.event.filled', {
         messageId: FillMessages.BUCKET_AT_BOTTOM
       }));
     } else if (sharedData.filledFromBucket) {
-      events.push(context.event('action.success', {
-        actionId: FILL_ACTION_ID,
+      events.push(context.event('dungeo.event.filled', {
         messageId: FillMessages.FROM_BUCKET
       }));
     } else if (sharedData.noSource) {
-      events.push(context.event('action.success', {
-        actionId: FILL_ACTION_ID,
+      events.push(context.event('dungeo.event.filled', {
         messageId: FillMessages.NO_SOURCE
       }));
     } else {
-      events.push(context.event('action.success', {
-        actionId: FILL_ACTION_ID,
+      events.push(context.event('dungeo.event.filled', {
         messageId: FillMessages.NOTHING_HAPPENS
       }));
     }

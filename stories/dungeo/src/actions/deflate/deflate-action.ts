@@ -128,10 +128,8 @@ export const deflateAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: DEFLATE_ACTION_ID,
-      messageId: result.error || DeflateMessages.NOT_DEFLATABLE,
-      reason: result.error
+    return [context.event('dungeo.event.deflate_blocked', {
+      messageId: result.error || DeflateMessages.NOT_DEFLATABLE
     })];
   },
 

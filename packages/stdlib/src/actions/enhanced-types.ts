@@ -328,14 +328,9 @@ export interface ActionContext {
    * 
    * @example  
    * // Success with typed data
-   * const eventData: TakenEventData = { item: noun.name }
+   * const eventData: TakenEventData = { item: noun.name, messageId: 'taken' }
    * return [
-   *   context.event('if.event.taken', eventData),
-   *   context.event('action.success', { 
-   *     actionId: context.action.id, 
-   *     messageId: 'taken',
-   *     params: eventData
-   *   })
+   *   context.event('if.event.taken', eventData)
    * ]
    */
   event(type: string, data: any): ISemanticEvent;

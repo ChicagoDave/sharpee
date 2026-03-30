@@ -381,14 +381,14 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         break;
     }
     
-    // Create the PUSHED event for world model
-    events.push(context.event('if.event.pushed', eventData));
-    
-    // Add success message
-    events.push(context.event('action.success', {
-      actionId: context.action.id,
-      messageId: messageId,
-      params: finalMessageParams
+    // Emit domain event with embedded messageId (ADR-097)
+    // Text-service will look up message directly from this event
+    events.push(context.event('if.event.pushed', {
+      // Rendering data (messageId + params for text-service)
+      messageId: `${context.action.id}.${messageId}`,
+      params: finalMessageParams,
+      // Domain data (for event sourcing / handlers)
+      ...eventData
     }));
     
     return events;

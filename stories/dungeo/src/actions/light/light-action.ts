@@ -177,10 +177,8 @@ export const lightAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: LIGHT_ACTION_ID,
-      messageId: result.error || LightMessages.NOT_FLAMMABLE,
-      reason: result.error
+    return [context.event('dungeo.event.light_blocked', {
+      messageId: result.error || LightMessages.NOT_FLAMMABLE
     })];
   },
 

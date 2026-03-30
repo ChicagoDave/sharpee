@@ -18,10 +18,10 @@ export class MockTextService implements ITextService {
           key: 'error',
           content: [String(data?.message || 'Error occurred')],
         });
-      } else if (event.type === 'action.success') {
+      } else if (data?.messageId) {
         blocks.push({
           key: 'action.result',
-          content: [`Action completed: ${String(data?.action || 'unknown')}`],
+          content: [String(data.messageId)],
         });
       } else if (event.type === 'room.described') {
         blocks.push({

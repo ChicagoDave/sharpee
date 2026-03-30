@@ -137,33 +137,41 @@ export function buildWearableEventParams(
 }
 
 /**
- * Creates an error event for wearable actions
+ * Creates a blocked event for wearable actions
+ *
+ * Uses domain event pattern (ADR-097): event carries messageId directly.
  */
-export function createWearableErrorEvent(
+export function createWearableBlockedEvent(
   context: ActionContext,
   messageId: string,
   reason: string,
   params?: Record<string, unknown>
 ): ISemanticEvent {
-  return context.event('action.error', {
-    actionId: context.action.id,
-    messageId,
-    reason,
-    params: params || {}
+  const eventType = context.action.id === 'if.action.wearing'
+    ? 'if.event.wear_blocked'
+    : 'if.event.take_off_blocked';
+  return context.event(eventType, {
+    messageId: `${context.action.id}.${messageId}`,
+    params: params || {},
+    reason
   });
 }
 
 /**
  * Creates a success event for wearable actions
+ *
+ * Uses domain event pattern (ADR-097): event carries messageId directly.
  */
 export function createWearableSuccessEvent(
   context: ActionContext,
   messageId: string,
   params: Record<string, unknown>
 ): ISemanticEvent {
-  return context.event('action.success', {
-    actionId: context.action.id,
-    messageId,
+  const eventType = context.action.id === 'if.action.wearing'
+    ? 'if.event.worn'
+    : 'if.event.removed';
+  return context.event(eventType, {
+    messageId: `${context.action.id}.${messageId}`,
     params
   });
 }

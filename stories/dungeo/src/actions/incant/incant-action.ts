@@ -157,10 +157,8 @@ export const incantAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: INCANT_ACTION_ID,
-      messageId: result.error || IncantMessages.failure,
-      reason: result.error
+    return [context.event('dungeo.event.incant_blocked', {
+      messageId: result.error || IncantMessages.failure
     })];
   },
 

@@ -203,10 +203,8 @@ export const burnAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: BURN_ACTION_ID,
+    return [context.event('dungeo.event.burn_blocked', {
       messageId: result.error || BurnMessages.NO_TARGET,
-      reason: result.error,
       params: result.params
     })];
   },

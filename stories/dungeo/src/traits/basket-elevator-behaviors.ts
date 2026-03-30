@@ -126,15 +126,6 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
       })
     );
 
-    // Emit action.success for language rendering
-    effects.push(
-      createEffect('action.success', {
-        actionId: 'if.action.lowering',
-        messageId: BasketElevatorMessages.LOWERED,
-        params: { target: entity.name }
-      })
-    );
-
     // If player was transported, emit additional event
     if (playerTransported) {
       effects.push(
@@ -163,8 +154,7 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
     sharedData: CapabilitySharedData
   ): CapabilityEffect[] {
     return [
-      createEffect('action.blocked', {
-        actionId: 'if.action.lowering',
+      createEffect('dungeo.event.basket_lower_blocked', {
         messageId: error,
         params: { target: entity.name }
       })
@@ -238,15 +228,6 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
       })
     );
 
-    // Emit action.success for language rendering
-    effects.push(
-      createEffect('action.success', {
-        actionId: 'if.action.raising',
-        messageId: BasketElevatorMessages.RAISED,
-        params: { target: entity.name }
-      })
-    );
-
     // If player was transported, emit additional event
     if (playerTransported) {
       effects.push(
@@ -275,8 +256,7 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
     sharedData: CapabilitySharedData
   ): CapabilityEffect[] {
     return [
-      createEffect('action.blocked', {
-        actionId: 'if.action.raising',
+      createEffect('dungeo.event.basket_raise_blocked', {
         messageId: error,
         params: { target: entity.name }
       })

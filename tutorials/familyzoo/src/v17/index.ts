@@ -126,10 +126,10 @@ const pettingBehavior: CapabilityBehavior = {
       case 'rabbits': messageId = PetMessages.PET_RABBITS; break;
       case 'parrot':  messageId = PetMessages.PET_PARROT; break;
     }
-    return [createEffect('action.success', { actionId: PETTING_ACTION_ID, messageId, params: { target: entity.name } })];
+    return [createEffect('zoo.event.petted', { messageId, params: { target: entity.name } })];
   },
   blocked(entity: IFEntity, _world: WorldModel, _actorId: string, error: string, _sharedData: CapabilitySharedData): CapabilityEffect[] {
-    return [createEffect('action.blocked', { actionId: PETTING_ACTION_ID, messageId: error, params: { target: entity.name } })];
+    return [createEffect('zoo.event.petting_blocked', { messageId: error, params: { target: entity.name } })];
   },
 };
 
@@ -169,7 +169,7 @@ const pettingAction: Action = {
     return effects.map(effect => context.event(effect.type, effect.payload));
   },
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', { messageId: result.error || PetMessages.CANT_PET })];
+    return [context.event('zoo.event.petting_blocked', { messageId: result.error || PetMessages.CANT_PET })];
   },
 };
 
@@ -215,10 +215,10 @@ const feedAction: Action = {
     let messageId: string = FeedMessages.FED_GENERIC;
     if (name.includes('goats')) messageId = FeedMessages.FED_GOATS;
     else if (name.includes('rabbits')) messageId = FeedMessages.FED_RABBITS;
-    return [context.event('action.success', { messageId, params: { animal: target?.get(IdentityTrait)?.name } })];
+    return [context.event('zoo.event.fed', { messageId, params: { animal: target?.get(IdentityTrait)?.name } })];
   },
   blocked(_context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [_context.event('action.blocked', { messageId: result.error || FeedMessages.NOT_AN_ANIMAL })];
+    return [_context.event('zoo.event.feeding_blocked', { messageId: result.error || FeedMessages.NOT_AN_ANIMAL })];
   },
 };
 
@@ -246,10 +246,10 @@ const photographAction: Action = {
   report(context: ActionContext): ISemanticEvent[] {
     const target = context.sharedData.photoTarget as IFEntity | undefined;
     const name = target?.get(IdentityTrait)?.name || 'the scenery';
-    return [context.event('action.success', { messageId: PhotoMessages.TOOK_PHOTO, params: { target: name } })];
+    return [context.event('zoo.event.photographed', { messageId: PhotoMessages.TOOK_PHOTO, params: { target: name } })];
   },
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', { messageId: result.error || PhotoMessages.NO_CAMERA })];
+    return [context.event('zoo.event.photographing_blocked', { messageId: result.error || PhotoMessages.NO_CAMERA })];
   },
 };
 

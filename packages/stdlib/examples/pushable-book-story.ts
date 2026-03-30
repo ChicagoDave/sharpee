@@ -192,8 +192,7 @@ function pushingActionExecute(context: ActionContext) {
   }
   
   // Default push behavior
-  return [context.event('action.success', {
-    actionId: 'pushing',
+  return [context.event('if.event.pushed', {
     messageId: 'pushed',
     params: { object: target.name }
   })];

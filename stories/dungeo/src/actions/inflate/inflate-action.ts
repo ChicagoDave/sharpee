@@ -153,10 +153,8 @@ export const inflateAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: INFLATE_ACTION_ID,
-      messageId: result.error || InflateMessages.NOT_INFLATABLE,
-      reason: result.error
+    return [context.event('dungeo.event.inflate_blocked', {
+      messageId: result.error || InflateMessages.NOT_INFLATABLE
     })];
   },
 

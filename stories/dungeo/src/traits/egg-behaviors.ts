@@ -113,15 +113,6 @@ export const EggOpeningBehavior: CapabilityBehavior = {
       })
     );
 
-    // Emit action.success for language rendering
-    effects.push(
-      createEffect('action.success', {
-        actionId: 'if.action.opening',
-        messageId: EggMessages.OPENED,
-        params: { item: entity.name }
-      })
-    );
-
     return effects;
   },
 
@@ -133,8 +124,7 @@ export const EggOpeningBehavior: CapabilityBehavior = {
     sharedData: CapabilitySharedData
   ): CapabilityEffect[] {
     return [
-      createEffect('action.blocked', {
-        actionId: 'if.action.opening',
+      createEffect('dungeo.event.egg_open_blocked', {
         messageId: error,
         params: { target: entity.name }
       })

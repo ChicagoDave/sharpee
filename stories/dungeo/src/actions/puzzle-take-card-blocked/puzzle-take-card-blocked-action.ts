@@ -41,11 +41,10 @@ export const puzzleTakeCardBlockedAction: Action & { metadata: ActionMetadata } 
   report(context: ActionContext): ISemanticEvent[] {
     return [{
       id: generateEventId(),
-      type: 'action.success',
+      type: 'dungeo.event.puzzle_card_blocked',
       timestamp: Date.now(),
       entities: {},
       data: {
-        actionId: PUZZLE_TAKE_CARD_BLOCKED_ACTION_ID,
         messageId: PuzzleTakeCardBlockedMessages.CANT_REACH,
         message: "You can see the gold card set in a depression in one of the sandstone walls, but you can't reach it from here."
       },
@@ -56,11 +55,10 @@ export const puzzleTakeCardBlockedAction: Action & { metadata: ActionMetadata } 
   blocked(context: ActionContext, validation: ValidationResult): ISemanticEvent[] {
     return [{
       id: generateEventId(),
-      type: 'action.error',
+      type: 'dungeo.event.puzzle_card_error',
       timestamp: Date.now(),
       entities: {},
       data: {
-        actionId: PUZZLE_TAKE_CARD_BLOCKED_ACTION_ID,
         messageId: PuzzleTakeCardBlockedMessages.CANT_REACH
       }
     }];

@@ -54,10 +54,8 @@ export const raiseBasketAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: RAISE_BASKET_ACTION_ID,
-      messageId: result.error || BasketActionMessages.CANT_REACH,
-      reason: result.error
+    return [context.event('dungeo.event.raise_basket_blocked', {
+      messageId: result.error || BasketActionMessages.CANT_REACH
     })];
   },
 

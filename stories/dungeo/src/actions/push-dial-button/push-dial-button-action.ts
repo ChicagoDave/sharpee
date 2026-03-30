@@ -141,7 +141,7 @@ export const pushDialButtonAction: Action = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [
-      context.event('action.blocked', {
+      context.event('dungeo.event.push_dial_button_blocked', {
         messageId: result.error || PushDialButtonMessages.NOT_AT_PARAPET
       })
     ];

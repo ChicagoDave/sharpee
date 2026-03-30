@@ -26,7 +26,6 @@ export { createBlock, extractValue } from './stages/assemble.js';
 // Event handlers
 export type { EventHandler, HandlerContext, ChainableEventData, GenericEventData } from './handlers/types.js';
 export { handleRoomDescription } from './handlers/room.js';
-export { handleActionSuccess, handleActionFailure } from './handlers/action.js';
 export { handleRevealed } from './handlers/revealed.js';
 export { handleGameMessage, handleGenericEvent } from './handlers/generic.js';
 

@@ -26,7 +26,6 @@ import { createBlock } from './stages/assemble.js';
 // Event handlers
 import type { HandlerContext } from './handlers/types.js';
 import { handleRoomDescription } from './handlers/room.js';
-import { handleActionSuccess, handleActionFailure } from './handlers/action.js';
 import { handleRevealed } from './handlers/revealed.js';
 import { handleGameMessage, handleGenericEvent } from './handlers/generic.js';
 import { handleGameStarted } from './handlers/game.js';
@@ -99,13 +98,6 @@ export class TextService implements ITextService {
       case 'if.event.room.description':
         return handleRoomDescription(event, context);
 
-      case 'action.success':
-        return handleActionSuccess(event, context);
-
-      case 'action.failure':
-      case 'action.blocked':
-        return handleActionFailure(event, context);
-
       case 'game.message':
         return handleGameMessage(event, context);
 
@@ -148,12 +140,6 @@ export class TextService implements ITextService {
 
     // No messageId = fall through to switch-case handlers
     if (!data?.messageId) {
-      return null;
-    }
-
-    // Skip action.success/failure/blocked — story actions emit these directly
-    // and they're handled by dedicated switch-case handlers
-    if (event.type.startsWith('action.')) {
       return null;
     }
 

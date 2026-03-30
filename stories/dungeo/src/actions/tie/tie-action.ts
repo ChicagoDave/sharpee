@@ -292,10 +292,8 @@ export const tieAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: TIE_ACTION_ID,
-      messageId: result.error || TieMessages.NO_RAILING,
-      reason: result.error
+    return [context.event('dungeo.event.tie_blocked', {
+      messageId: result.error || TieMessages.NO_RAILING
     })];
   },
 

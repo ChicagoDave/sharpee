@@ -199,7 +199,7 @@ const feedAction: Action = {
     else if (name.includes('rabbits')) messageId = FeedMessages.FED_RABBITS;
 
     return [
-      context.event('action.success', {
+      context.event('zoo.event.fed', {
         messageId,
         params: { animal: identity?.name || 'animal' },
       }),
@@ -208,7 +208,7 @@ const feedAction: Action = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [
-      context.event('action.blocked', {
+      context.event('zoo.event.feeding_blocked', {
         messageId: result.error || FeedMessages.NOT_AN_ANIMAL,
       }),
     ];
@@ -267,7 +267,7 @@ const photographAction: Action = {
     const name = target?.get(IdentityTrait)?.name || 'the scenery';
 
     return [
-      context.event('action.success', {
+      context.event('zoo.event.photographed', {
         messageId: PhotoMessages.TOOK_PHOTO,
         params: { target: name },
       }),
@@ -276,7 +276,7 @@ const photographAction: Action = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [
-      context.event('action.blocked', {
+      context.event('zoo.event.photographing_blocked', {
         messageId: result.error || PhotoMessages.NO_CAMERA,
       }),
     ];
@@ -717,7 +717,7 @@ class FamilyZooStory implements Story {
   // ==========================================================================
   //
   // Register the text for your custom message IDs.
-  // When an action returns context.event('action.success', { messageId: '...' }),
+  // When an action returns context.event('zoo.event.fed', { messageId: '...' }),
   // the text service looks up the messageId in the language provider.
   //
   // language.addMessage(messageId, text) registers the text.

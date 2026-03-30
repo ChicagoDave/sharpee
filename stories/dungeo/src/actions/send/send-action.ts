@@ -61,10 +61,8 @@ export const sendAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: SEND_ACTION_ID,
-      messageId: result.error || SendMessages.NO_TARGET,
-      reason: result.error
+    return [context.event('dungeo.event.send_blocked', {
+      messageId: result.error || SendMessages.NO_TARGET
     })];
   },
 

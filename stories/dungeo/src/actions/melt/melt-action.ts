@@ -107,10 +107,8 @@ export const meltAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: MELT_ACTION_ID,
-      messageId: result.error || MeltMessages.NOTHING,
-      reason: result.error
+    return [context.event('dungeo.event.melt_blocked', {
+      messageId: result.error || MeltMessages.NOTHING
     })];
   },
 

@@ -581,8 +581,7 @@ export class CloakOfDarknessStory implements Story {
           const { directObject } = context.command;
           
           if (!directObject) {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
+            return [context.event('cloak.event.read_failed', {
               messageId: 'what_to_read',
               reason: 'missing_object'
             })];
@@ -590,8 +589,7 @@ export class CloakOfDarknessStory implements Story {
           
           const item = directObject.entity;
           if (!item) {
-            return [context.event('action.failure', {
-              actionId: context.action.id,
+            return [context.event('cloak.event.read_failed', {
               messageId: 'not_found',
               reason: 'entity_not_found'
             })];
@@ -606,8 +604,7 @@ export class CloakOfDarknessStory implements Story {
             if (!readable || !readable.isReadable) {
               const reasonText = readable?.text || "You can't read that.";
               const events: any[] = [
-                context.event('action.failure', {
-                  actionId: context.action.id,
+                context.event('cloak.event.read_failed', {
                   messageId: 'cant_read_message',
                   reason: reasonText,
                   params: { item: item.name, reason: reasonText }
@@ -639,8 +636,7 @@ export class CloakOfDarknessStory implements Story {
                 target: item.id,
                 actorId: context.player.id
               }),
-              context.event('action.success', {
-                actionId: context.action.id,
+              context.event('cloak.event.read_message', {
                 messageId: 'read_message',
                 params: {
                   text: readable.text,
@@ -651,8 +647,7 @@ export class CloakOfDarknessStory implements Story {
           }
           
           // Not the message
-          return [context.event('action.failure', {
-            actionId: context.action.id,
+          return [context.event('cloak.event.read_failed', {
             messageId: 'nothing_to_read',
             reason: 'not_readable',
             params: { item: item.name }

@@ -404,8 +404,7 @@ export function executeCapabilityBlocked(
 
   // Default blocked event (shouldn't normally reach here)
   return [
-    context.event('action.blocked', {
-      actionId,
+    context.event('if.event.capability_blocked', {
       messageId: result.error || 'action_blocked',
       params: result.params || {}
     })

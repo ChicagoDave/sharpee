@@ -21,10 +21,8 @@ export const rnameAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: this.id,
+    return [context.event('dungeo.event.rname_blocked', {
       messageId: result.error,
-      reason: result.error,
       params: result.params || {}
     })];
   },

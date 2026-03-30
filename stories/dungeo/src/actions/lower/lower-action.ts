@@ -154,10 +154,8 @@ export const lowerAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: LOWER_ACTION_ID,
+    return [context.event('dungeo.event.lower_blocked', {
       messageId: result.error || LowerMessages.NO_TARGET,
-      reason: result.error,
       params: result.params
     })];
   },

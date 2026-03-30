@@ -169,10 +169,8 @@ export const pourAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: POUR_ACTION_ID,
-      messageId: result.error || PourMessages.NO_WATER,
-      reason: result.error
+    return [context.event('dungeo.event.poured_blocked', {
+      messageId: result.error || PourMessages.NO_WATER
     })];
   },
 
@@ -181,8 +179,7 @@ export const pourAction: Action = {
     const events: ISemanticEvent[] = [];
 
     if (sharedData.bucketRose && sharedData.playerRose) {
-      events.push(context.event('action.success', {
-        actionId: POUR_ACTION_ID,
+      events.push(context.event('dungeo.event.poured', {
         messageId: PourMessages.BUCKET_RISES
       }));
 
@@ -210,28 +207,23 @@ export const pourAction: Action = {
         }));
       }
     } else if (sharedData.bucketRose) {
-      events.push(context.event('action.success', {
-        actionId: POUR_ACTION_ID,
+      events.push(context.event('dungeo.event.poured', {
         messageId: PourMessages.BUCKET_RISES
       }));
     } else if (sharedData.bucketAlreadyAtTop && sharedData.pouredIntoBucket) {
-      events.push(context.event('action.success', {
-        actionId: POUR_ACTION_ID,
+      events.push(context.event('dungeo.event.poured', {
         messageId: PourMessages.BUCKET_AT_TOP
       }));
     } else if (sharedData.pouredIntoBucket) {
-      events.push(context.event('action.success', {
-        actionId: POUR_ACTION_ID,
+      events.push(context.event('dungeo.event.poured', {
         messageId: PourMessages.INTO_BUCKET
       }));
     } else if (sharedData.pouredOnGround) {
-      events.push(context.event('action.success', {
-        actionId: POUR_ACTION_ID,
+      events.push(context.event('dungeo.event.poured', {
         messageId: PourMessages.SUCCESS
       }));
     } else {
-      events.push(context.event('action.success', {
-        actionId: POUR_ACTION_ID,
+      events.push(context.event('dungeo.event.poured', {
         messageId: PourMessages.NOTHING_HAPPENS
       }));
     }

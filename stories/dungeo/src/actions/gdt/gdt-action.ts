@@ -31,10 +31,8 @@ export const gdtAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: GDT_ACTION_ID,
-      messageId: result.error,
-      reason: result.error,
+    return [context.event('dungeo.event.gdt_blocked', {
+      messageId: `${GDT_ACTION_ID}.${result.error}`,
       params: result.params || {}
     })];
   },
@@ -46,10 +44,9 @@ export const gdtAction: Action = {
       'GDT ready. Type HE for help, EX to exit.'
     ].join('\n');
 
-    // Emit action.success with pre-rendered message for text service
-    return [context.event('action.success', {
-      actionId: GDT_ACTION_ID,
-      messageId: 'gdt_entered',
+    // Emit domain event with pre-rendered message for text service
+    return [context.event('dungeo.event.gdt', {
+      messageId: `${GDT_ACTION_ID}.gdt_entered`,
       message
     })];
   }

@@ -316,8 +316,16 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       const contents = context.world.getContents(room.id)
         .filter(e => e.id !== context.player.id);
 
-      // Emit room description event (for event listeners)
+      // Emit room description domain event with messageId (ADR-097)
+      // Uses looking action's message IDs since this is an auto-LOOK
       events.push(context.event('if.event.room.description', {
+        // Rendering data (messageId + params for text-service)
+        messageId: 'if.action.looking.room_description',
+        params: {
+          name: room.name,
+          description: room.description
+        },
+        // Domain data (for event listeners / handlers)
         room: room,
         visibleItems: sharedData.visibleSnapshots || [],
         roomId: room.id,
@@ -327,23 +335,11 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         verbose: true
       }));
 
-      // Emit action.success for room description (for text rendering)
-      // Keep using looking action's messages since this is auto-LOOK
-      events.push(context.event('action.success', {
-        actionId: 'if.action.looking',
-        messageId: 'room_description',
-        params: {
-          name: room.name,
-          description: room.description
-        }
-      }));
-
       // Emit contents list if there are visible items
       if (contents.length > 0) {
         const itemList = contents.map(e => e.name).join(', ');
-        events.push(context.event('action.success', {
-          actionId: 'if.action.looking',
-          messageId: 'contents_list',
+        events.push(context.event('if.event.list.contents', {
+          messageId: 'if.action.looking.contents_list',
           params: {
             items: itemList,
             count: contents.length

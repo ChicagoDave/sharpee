@@ -107,10 +107,8 @@ export const untieAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: UNTIE_ACTION_ID,
-      messageId: result.error || UntieMessages.NO_ROPE,
-      reason: result.error
+    return [context.event('dungeo.event.untie_blocked', {
+      messageId: result.error || UntieMessages.NO_ROPE
     })];
   },
 

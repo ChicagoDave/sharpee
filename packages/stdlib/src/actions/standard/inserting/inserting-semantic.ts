@@ -131,10 +131,10 @@ export const insertingActionSemantic: IAction = {
     // Revalidate
     const validation = this.validate(context);
     if (!validation.valid) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: validation.error,
-        params: validation.params || {}
+      return [context.event('if.event.insert_blocked', {
+        messageId: `${this.id}.${validation.error}`,
+        params: validation.params || {},
+        reason: validation.error
       })];
     }
     
@@ -146,13 +146,13 @@ export const insertingActionSemantic: IAction = {
     const success = context.moveEntity(item.id, container.id);
     
     if (!success) {
-      return [context.event('action.error', {
-        actionId: this.id,
-        messageId: 'insertion_failed',
+      return [context.event('if.event.insert_blocked', {
+        messageId: `${this.id}.insertion_failed`,
         params: {
           item: item.attributes.name || item.id,
           container: container.attributes.name || container.id
-        }
+        },
+        reason: 'insertion_failed'
       })];
     }
     
@@ -173,17 +173,27 @@ export const insertingActionSemantic: IAction = {
       messageId = 'inserted_into'; // "You insert the coin into the slot."
     }
     
+    const itemName = item.attributes.name || item.id;
+    const containerName = container.attributes.name || container.id;
+
     return [
-      context.event('action.success', {
-        actionId: this.id,
-        messageId: messageId,
+      // Domain event with embedded messageId (ADR-097)
+      context.event('if.event.inserted', {
+        // Rendering data (messageId + params for text-service)
+        messageId: `${this.id}.${messageId}`,
         params: {
-          item: item.attributes.name || item.id,
-          container: container.attributes.name || container.id,
+          item: itemName,
+          container: containerName,
           manner: semantics.manner || 'normal'
-        }
+        },
+        // Domain data (for event sourcing / handlers)
+        itemId: item.id,
+        itemName: itemName,
+        containerId: container.id,
+        containerName: containerName,
+        manner: semantics.manner || 'normal'
       }),
-      
+
       // Additional semantic events based on manner
       ...(semantics.manner === 'forceful' ? [
         context.event('sound.loud', {
@@ -191,7 +201,7 @@ export const insertingActionSemantic: IAction = {
           description: 'clunk'
         })
       ] : []),
-      
+
       ...(semantics.manner === 'stealthy' ? [
         context.event('sound.quiet', {
           source: container.id,

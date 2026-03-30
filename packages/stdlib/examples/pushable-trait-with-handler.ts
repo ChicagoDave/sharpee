@@ -91,9 +91,8 @@ function pushingActionExecute(context: ActionContext): SemanticEvent[] {
       
       // Add the action result event
       events.push(context.event(
-        result.success ? 'action.success' : 'action.error',
+        result.success ? 'if.event.pushed' : 'if.event.push_failed',
         {
-          actionId: 'pushing',
           messageId: result.messageId,
           params: result.params || {}
         }
@@ -122,8 +121,7 @@ function pushingActionExecute(context: ActionContext): SemanticEvent[] {
       entity: target.id,
       pushCount: pushable.pushCount
     }),
-    context.event('action.success', {
-      actionId: 'pushing',
+    context.event('if.event.pushed', {
       messageId: 'pushed_default',
       params: { object: target.attributes.name }
     })

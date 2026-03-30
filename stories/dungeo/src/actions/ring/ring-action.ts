@@ -147,10 +147,8 @@ export const ringAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: RING_ACTION_ID,
-      messageId: result.error || RingMessages.NO_TARGET,
-      reason: result.error
+    return [context.event('dungeo.event.ring_blocked', {
+      messageId: result.error || RingMessages.NO_TARGET
     })];
   },
 

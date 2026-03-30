@@ -199,10 +199,8 @@ export const pushPanelAction: Action = {
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('action.blocked', {
-      actionId: PUSH_PANEL_ACTION_ID,
+    return [context.event('dungeo.event.push_panel_blocked', {
       messageId: result.error || PushPanelMessages.NO_TARGET,
-      reason: result.error,
       params: result.params
     })];
   },
@@ -228,10 +226,8 @@ export const pushPanelAction: Action = {
       }));
     } else {
       // Emit blocked event with reason
-      events.push(context.event('action.blocked', {
-        actionId: PUSH_PANEL_ACTION_ID,
+      events.push(context.event('dungeo.event.push_panel_blocked', {
         messageId: result.message,
-        reason: result.message,
         params: { target: target?.name }
       }));
     }
