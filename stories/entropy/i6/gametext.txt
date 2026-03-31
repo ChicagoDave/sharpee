@@ -1,0 +1,1406 @@
+Transcript of the text of "entropy"
+[From PC/Win32 Inform 6.21 (30th April 1999)]
+
+Entropy
+^An Interactive Fiction Endeavor in Time and Space^Author: David A. Cornelson (dcornelson@@64placet.com)              Rel: 1.001208^Type 'about' for more information.^^
+991113
+6/10
+a
+---
+the
+CompassDirection
+compass
+north wall
+south wall
+east wall
+west wall
+northeast wall
+northwest wall
+southeast wall
+southwest wall
+ceiling
+floor
+outside
+inside
+The 
+the 
+a 
+The 
+the 
+an 
+The 
+the 
+some 
+The 
+the 
+some 
+north
+south
+east
+west
+northeast
+northwest
+southeast
+southwest
+up
+down
+in
+out
+zero
+minus 
+ thousand
+, 
+ hundred
+ and 
+one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+ten
+eleven
+twelve
+thirteen
+fourteen
+fifteen
+sixteen
+seventeen
+eighteen
+nineteen
+twenty
+thirty
+forty
+fifty
+sixty
+seventy
+eighty
+ninety
+-
+ 
+:
+ pm
+ am
+look
+wait
+examine
+inventory
+N = next subject
+P = previous
+  Q = resume game
+Q = previous menu
+RETURN = read subject
+Score: 
+Moves: 
+Time: 
+You can't go that way.
+your former self
+yourself
+Darkness
+those things
+that
+ or 
+nothing
+ is
+ are
+is 
+are 
+ and 
+whom 
+which 
+you
+those
+her
+him
+that
+yourself
+them
+her
+him
+it
+are
+is
+You
+Those
+She
+He
+That
+You're
+They're
+She's
+He's
+That's
+^>
+(considering the first sixteen objects only)^
+Nothing to do!
+ You have died 
+ You have won 
+^Would you like to RESTART, RESTORE a saved game
+, give the FULL score for that game
+, see some suggestions for AMUSING things to do
+ or QUIT?
+[Your interpreter does not provide ~undo~.  Sorry!]
+~Undo~ failed.  [Not all interpreters provide it.]
+Please give one of the answers above.
+^It is now pitch dark in here!
+I beg your pardon?
+[You can't ~undo~ what hasn't been done!]
+[Can't ~undo~ twice in succession. Sorry!]
+[Previous turn undone.]
+Sorry, that can't be corrected.
+Think nothing of it.
+~Oops~ can only correct a single word.
+It is pitch dark, and you can't see a thing.
+yourself
+As good-looking as ever.
+To repeat a command like ~frog, jump~, just say ~again~, not ~frog, again~.
+You can hardly repeat that.
+You can't begin with a comma.
+You seem to want to talk to someone, but I can't see whom.
+You can't talk to 
+.
+To talk to someone, try ~someone, hello~ or some such.
+(first taking 
+)
+I didn't understand that sentence.
+I only understood you as far as wanting to 
+I didn't understand that number.
+You can't see any such thing.
+You seem to have said too little!
+You aren't holding that!
+You can't use multiple objects with that verb.
+You can only use multiple objects once on a line.
+I'm not sure what ~
+~ refers to.
+You excepted something not included anyway!
+You can only do that to something animate.
+That's not a verb I recognise.
+That's not something you need to refer to in the course of this game.
+You can't see ~
+~ (
+) at the moment.
+I didn't understand the way that finished.
+None
+Only 
+ of those 
+is
+are
+ available.
+Nothing to do!
+There are none at all available!
+Who do you mean, 
+Which do you mean, 
+Sorry, you can only have one item here. Which exactly?
+Whom do you want
+ 
+ to 
+?^
+What do you want
+ 
+ to 
+?^
+Your score has just gone 
+up
+down
+ by 
+ point
+s
+(Since something dramatic has happened, your list of commands has been cut short.)
+^Type a number from 1 to 
+, 0 to redisplay or press ENTER.
+^[Please press SPACE.]
+ (providing light)
+ (which 
+ closed)
+ (closed and providing light)
+ (which 
+ empty)
+ (empty and providing light)
+ (which 
+ closed and empty)
+ (closed, empty and providing light)
+ (providing light and being worn
+ (providing light
+ (being worn
+ (which 
+ 
+open
+open but empty
+closed
+closed and locked
+ and empty
+ (which 
+ empty)
+ containing 
+ (on 
+, on top of 
+ (in 
+, inside 
+At the moment, 
+means 
+is unset
+no pronouns are known to the game.
+ have
+ has
+ better things to do.
+Please answer yes or no.
+Are you sure you want to quit? 
+Are you sure you want to restart? 
+Failed.
+Restore failed.
+Ok.
+Save failed.
+Ok.
+The game file has verified as intact.
+The game file did not verify as intact, and may be corrupt.
+Transcripting is already on.
+Start of a transcript of
+Attempt to begin transcript failed.
+Transcripting is already off.
+^End of transcript.
+Attempt to end transcript failed.
+Score notification on.
+Score notification off.
+You have visited: 
+Objects you have handled:^
+None.
+   (worn)
+   (held)
+   (given away)
+   (in 
+)
+   (in 
+)
+   (inside 
+)
+   (on 
+)
+   (lost)
+In that game you scored 
+You have so far scored 
+ out of a possible 
+, in 
+ turn
+s
+The score was 
+The score is 
+made up as follows:^
+finding sundry items
+visiting various places
+total (out of 
+)
+You are carrying nothing.
+You are carrying
+Taken.
+You are always self-possessed.
+I don't suppose 
+ would care for that.
+You'd have to get 
+off 
+out of 
+ first.
+You already have 
+.
+Those seem 
+That seems 
+to belong to 
+.
+Those seem 
+That seems 
+to be a part of 
+.
+ 
+n't available.
+ 
+n't open.
+They're 
+That's 
+hardly portable.
+They're 
+That's 
+fixed in place.
+You're carrying too many things already.
+(putting 
+ into 
+ to make room)
+ are 
+ is 
+already here.
+You haven't got 
+.
+(first taking 
+ off)
+Dropped.
+They are
+It is
+ unfortunately closed.
+But they aren't
+But it isn't
+ there now.
+Removed.
+You need to be holding 
+ before you can put 
+ on top of something else.
+You can't put something on top of itself.
+Putting things on 
+ would achieve nothing.
+You lack the dexterity.
+(first taking 
+ off)^
+There is no more room on 
+.
+Done.
+You put 
+ on 
+.
+You need to be holding 
+ before you can put 
+ into something else.
+ can't contain things.
+ 
+ closed.
+You'll need to take 
+ off first.
+You can't put something inside itself.
+(first taking 
+ off)^
+There is no more room in 
+.
+Done.
+You put 
+ into 
+.
+ can't contain things.
+ 
+ closed.
+ 
+ empty already.
+That would scarcely empty anything.
+You aren't holding 
+.
+You juggle 
+ for a while, but don't achieve much.
+ don't
+ doesn't
+ seem interested.
+You aren't holding 
+.
+ 
+ unimpressed.
+But you're already 
+on 
+in 
+.
+They're
+That's
+ not something you can 
+stand on.
+sit down on.
+lie down on.
+enter.
+You can't get into the closed 
+.
+You can only get into something free-standing.
+You get 
+onto 
+into 
+.
+(getting 
+off 
+out of 
+)
+(getting onto 
+)^
+(getting into 
+)^
+(entering 
+)^
+But you aren't on 
+ at the moment.
+But you aren't in anything at the moment.
+You can't get out of the closed 
+.
+You get 
+off 
+out of 
+.
+You'll have to say which compass direction to go in.
+You'll have to get 
+off 
+out of 
+ first.
+You can't go that way.
+You are unable to climb 
+.
+You are unable to descend by 
+.
+You can't, since 
+ 
+ in the way.
+You can't, since 
+ lead nowhere.
+ leads nowhere.
+ is now in its normal ~brief~ printing mode, which gives long descriptions of places never before visited and short descriptions otherwise.
+ is now in its ~verbose~ mode, which always gives long descriptions of locations (even if you've been there before).
+ is now in its ~superbrief~ mode, which always gives short descriptions of locations (even if you haven't been there before).
+ (on 
+)
+ (in 
+)
+ (as 
+)
+^On 
+.
+^On 
+^In 
+ you
+^You
+ can 
+also 
+see 
+.
+ here.
+Darkness, noun.  An absence of light to see by.
+You see nothing special about 
+.
+ 
+ currently switched 
+on.
+off.
+But it's dark.
+You find nothing of interest.
+But it's dark.
+There is nothing on 
+.
+On 
+.
+You find nothing of interest.
+You can't see inside, since 
+ 
+ closed.
+ 
+ empty.
+In 
+.
+They don't 
+That doesn't 
+seem to be something you can unlock.
+ unlocked at the moment.
+Those don't 
+That doesn't 
+seem to fit the lock.
+You unlock 
+.
+They don't 
+That doesn't 
+seem to be something you can lock.
+ locked at the moment.
+First you'll have to close 
+.
+Those don't 
+That doesn't 
+seem to fit the lock.
+You lock 
+.
+ not something you can switch.
+ already on.
+You switch 
+ on.
+ not something you can switch.
+ already off.
+You switch 
+ off.
+ not something you can open.
+They seem 
+It seems 
+to be locked.
+ already open.
+You open 
+, revealing 
+nothing.
+.
+You open 
+.
+ not something you can close.
+ already closed.
+You close 
+.
+You're not wearing 
+.
+You take off 
+.
+You can't wear 
+!
+You're not holding 
+!
+You're already wearing 
+!
+You put on 
+.
+ plainly inedible.
+You eat 
+. Not bad.
+That was a rhetorical question.
+This dangerous act would achieve little.
+Nothing practical results from your prayer.
+The dreadful truth is, this is not a dream.
+That seems unnecessary.
+Keep your mind on the game.
+What a good idea.
+You smell nothing unexpected.
+You hear nothing unexpected.
+You taste nothing unexpected.
+Keep your hands to yourself!
+You feel nothing unexpected.
+If you think that'll help.
+Digging would achieve nothing here.
+Cutting 
+ up would achieve little.
+You jump on the spot, fruitlessly.
+You would achieve nothing by this.
+There's nothing suitable to drink here.
+But there's no water here to carry.
+Oh, don't apologise.
+Real adventurers do not use such language.
+Quite.
+Violence isn't the answer to this one.
+There's not enough water to swim in.
+There's nothing sensible to swing here.
+You can't usefully blow 
+.
+You achieve nothing by this.
+No, you can't set 
+.
+No, you can't set 
+ to anything.
+You wave, feeling foolish.
+But you aren't holding 
+.
+You look ridiculous waving 
+.
+Those are 
+It is 
+fixed in place.
+You are unable to.
+Nothing obvious happens.
+That would be less than courteous.
+Is that the best you can think of?
+That's not a direction.
+Not that way you can't.
+Keep your hands to yourself.
+You achieve nothing by this.
+Futile.
+You lack the nerve when it comes to the crucial moment.
+You talk to yourself a while.
+This provokes no reaction.
+There is no reply.
+Nothing is on sale.
+Your singing is abominable.
+I don't think much is to be achieved by that.
+Time passes.
+You aren't feeling especially drowsy.
+You discover nothing of interest in 
+.
+(darkness object)
+(self object)
+(Inform Parser)
+^
+[ 
+~
+~ 
+?
+ / 
+ ]^
+ [Grammar property returned 
+]^
+[Actor is 
+ in 
+]^
+[Parsing for the verb '
+' (
+ lines)]^
+[line 
+]^
+ [Trying look-ahead]^
+ [Advanced to ~noun~ token: 
+re-parse request]^
+but multiple found]^
+error 
+]^
+]^
+ [line 
+ token 
+ word 
+ : 
+]^
+  [token resulted in 
+re-parse request]^
+failure with error type 
+]^
+success]^
+[Line successfully parsed]^
+(
+)^
+.^
+  [Read special as the number 
+]^
+  [Read special word at word number 
+]^
+  [Read number as 
+]^
+  [Outside parsing routine returned 
+]^
+  [Scope routine returned multiple-flag of 
+]^
+  [Object list from word 
+]^
+  [Calling NounDomain on location and actor]^
+  [ND returned 
+]^
+  [ND appended to the multiple object list:^
+  Entry 
+: 
+ (
+)^
+  List now has size 
+]^
+  [Merging 
+ new objects to the 
+ old ones]^
+  [Combining 
+ with list]^
+  [Allowing object 
+ for now]^
+  [Read connective '
+']^
+  [Making new list from 
+]^
+   [NounDomain called at word 
+^
+   
+seeking indefinite object: 
+other 
+my 
+that 
+plural 
+lit 
+unlit 
+owner:
+   number wanted: 
+all
+   most likely GNAs of names: 
+^
+seeking definite object^
+   [ND made 
+ matches]^
+, 
+?^
+[Gluing in inference with pattern code 
+]^
+[Using pronoun '
+']^
+[Using preposition '
+']^
+   [Adjudicating match list of size 
+ in context 
+^
+   
+indefinite type: 
+other 
+my 
+that 
+plural 
+lit 
+unlit 
+owner:
+   number wanted: 
+all
+   most likely GNAs of names: 
+^
+definite object^
+   Single best-scoring object returned.]^
+   Accepting it^
+   Rejecting it^
+   Made multiple object of size 
+]^
+   Grouped into 
+ possibilities by name:^
+   
+ (
+)  ---  group 
+^
+   Unable to choose best group, so ask player.]^
+   Best choices are all from the same group.^
+   Revising multiple object list of size 
+ with 2nd 
+^
+   Token 2 plural case: number with actor 
+^
+   Done: new size 
+^
+   Scoring match list: indef mode 
+ type 
+, satisfying 
+ requirements:^
+   
+ (
+) in 
+ is rejected (doesn't match descriptors)^
+     
+ (
+) in 
+ : 
+ points^
+   Best guess ran out of choices^
+   Best guess 
+ (
+)^
+[DSA on 
+ with reason = 
+ p1 = 
+ p2 = 
+]^
+[Considering react_before for 
+]^
+[Considering react_after for 
+]^
+[Considering each_turn for 
+]^
+    Match with quality 
+^
+    Match filtered out: token filter 
+^
+    Match added to list^
+    Trying 
+ (
+) at word 
+^
+    Matched (0)^
+    Matched (
+)^
+    ParseNoun returned 
+^
+~
+~ 
+, 
+~
+~ 
+.
+: 
+^^    
+***
+ 
+ 
+***
+^^^
+: 
+daemon
+timer with 
+ turns to go
+(Inform Library)
+> 
+^[
+.]^
+ (
+)
+ ('
+')
+<fake action 
+>
+<invalid attribute 
+>
+[ Action 
+[ Order to 
+: 
+[ Life rule 
+ with noun 
+ and second 
+ 
+ (from < > statement) 
+]^
+<illegal token number 
+>
+noun
+held
+multi
+multiheld
+multiexcept
+multiinside
+creature
+special
+number
+topic
+END
+'
+'
+noun=Routine(
+)
+scope=Routine(
+)
+Routine(
+)
+ * 
+/ 
+ 
+-> 
+ reverse
+Try typing ~showverb~ and then the name of a verb.
+Verb 
+meta 
+'
+' 
+has no grammar lines.
+    
+ ~
+Object ~
+~ (
+)
+ in ~
+~
+  class 
+ 
+  has 
+ 
+  with 
+ 
+'
+'
+NULL
+0
+1
+~
+~
+[...]
+ (
+)
+,^       
+ 
+<routine 
+>
+<string ~
+~>
+<illegal object number 
+>
+ 
+(LibraryMessages)
+Release 
+ / Serial number 
+ / Inform v
+ Library 
+ 
+S
+D
+Standard interpreter 
+.
+ (
+) / 
+Interpreter 
+ Version 
+ / 
+Library serial number 
+^
+** Library error 
+ (
+,
+) **^** 
+preposition not found (this should not occur)
+Property value not routine or string: ~
+~ of ~
+~ (
+)
+Entry in property list not routine or string: ~
+~ list of ~
+~ (
+)
+Too many timers/daemons are active simultaneously.  The limit is the library constant MAX_TIMERS (currently 
+) and should be increased
+Object ~
+~ has no ~time_left~ property
+The object ~
+~ can only be used as a player object if it has the ~number~ property
+Attempt to take random entry from an empty table array
+ is not a valid direction property number
+The player-object is outside the object tree
+The room ~
+~ has no ~description~ property
+Tried to set a non-existent pronoun using SetPronoun
+A 'topic' token can only be followed by a preposition
+(unexplained)
+ **
+:^
+ 
+ (
+:^
+)
+ 
+, 
+ 
+ (
+:^
+)
+, 
+, 
+)
+)
+--- 
+ ---^^
+> 
+ 
+>
+> 
+.
+, 
+  
+   
+  
+ 
+ 
+:^
+ 
+.^
+: 
+ 
+[Trace on.]
+[Parser tracing set to level 
+.]^
+Trace off.
+[Message listing on.]
+[Message listing off.]
+[Action listing on.]
+[Action listing off.]
+[Timers listing on.]
+[Timers listing off.]
+[Changes listing on.]
+[Changes listing off.]
+[Command recording on.]
+[Command recording off.]
+[Replaying commands.]
+[Random number generator now predictable.]
+[Can't move 
+: it's a system object.]
+[Can't move 
+: it would contain itself.]
+[Purloined.]
+[Abstracted.]
+ (
+) 
+(in 
+ 
+)
+[Not a safe place.]
+: 
+ (
+)
+Nothing is in scope.
+  [FLIGHT SKIN]
+  [SLOW TIME]
+  [FAST TIME]
+^Smoke pillars rise from the landscape like ghostly skyscrapers while debris-filled craters mark every visible portion of land. Fires pollute the air and ashes drift like schools of dead fish. Bones, still holding flesh as if they might yet be resurrected, lie about in numbers beyond comprehension.^^The disaster was swift and the destruction wholesale.^^You stand alone, face disfigured, hips bent to the left, innards exposed on your arms, legs, and abdomen. The enemy has moved on to other areas, but you know that no one else will fare better and will likely die more quickly than these people.^^You stare through blue, mechanical eyes, methodically traversing your surroundings, hoping to find some sign that you did not completely fail.^^
+PC
+OL_Room
+.
+100%
+%
+
+RECHARGING 
+%
+REPAIRING
+READY
+You can't drop an internal sub-system
+System
+INV_Tool
+SC_Object
+Reacting to your internal suggestion, the flight skin tightens slightly and aligns itself with the magnetic field surrounding the planet. Then, suddenly, you feel the power of flight as your body leaps into the air....^
+You must activate your flight skin before attempting flight.^
+Auto-Repair says, ~Flight-Skin is currently being repaired.~^
+LB_Room
+NPC
+^Auto-Repair says, ~Partial systems failure.~^
+^*** Complete Systems Failure ***
+^Auto Repair says, ~Complete system failure imminent.~^
+(NeedResources)
+^[DIAGNOSIS]^
+^[SYSTEMS]^
+Your meter and a half frame is currently completely encased by the flight skin organism.
+Standing about a meter and a half in height, your external feminine coverings are nearly unrecognizable beyond the damage done in battle. You examine yourself and once again shrug at the human engineer that decided to make you in her own image. Outside of the normal humaniform features is a wide utility belt built into your waist
+ with a safety cable attached
+.^
+you
+your
+It's a built-in utility belt that comes standard on all androids
+ and currently has two ends of a safety cable attached
+ and currently has one end of a safety cable attached
+.^
+You can't remove the utility belt because it is a part of you.^
+belt
+In all directions the land is a waste. Craters, bones, flesh, smoke, and the remnants of war litter the entire landscape. The sky, an angry red, is filled with ashen clouds. The earth trembles from dislocated tectonic plates and the atmosphere is quickly becoming unbreathable and unlivable. A smoking forest can be seen to the west, a large city in the north, and an extraordinarily large crater encompasses the entire eastern view.^
+In all directions you behold an eerie site. Everything is frozen, from the cotton like smoke, to the reddish orange flames of burning embers. A forest below what seems to be a tremendous cloud of frozen smoke can be seen to the west, a large city to the north, and a tremendous crater to the east.^
+The destruction is complete there, you turn around almost immediately.^
+Lost Battlefield
+Standing on the southern edge of the largest city on the planet, you survey the results of thermonuclear war. Although some structures remain standing, there is nothing left but the plasteel infrastructures of once proud and magnificent towers and buildings. A dense fog of death parades around the city in dust-devil frenzy. The stench of burnt flesh and fused materials is overwhelming and guards the city far better than its previous occupants ever could.^
+Standing on the southern edge of the largest city on the planet, you survey the results of thermonuclear war. Although some structures remain standing, there is nothing left but the plasteel infrastructures of once proud and magnificent towers and buildings. Thick frozen fog hovers above the entire landscape and a noticable absence of smell is present.^
+The smell of burning flesh forces you to turn off your extenral sensors for a moment. It's simply overwhelming, even to an android.^
+Your external sensors indicate a distinct lack of smell.^
+Edge Of City
+Once a beautiful and lush ecosystem of vibrant foliage and plant life, the large forest west of the city is now a large field of burning stumps and smoking brush. The battlefield can be seen to the east and a burning field opens to the west.^
+Smoking Forest
+The vast farming land west of the city and battlefield is completely blackened by plasma-fire and thermonuclear explosions. The radiation is so bad here that no human, animal, or plant life could have survived. The remains of a forest can be seen to the east and the remains of some man-made construction can be seen to the northwest.^
+Scorched Fields
+Once an active space port, the surrounding area is now a cemetery of twisted ships, buildings, and hangars. A large hole, presumably once the control tower, marks the center of a wide circle of destruction. Smoking fields can be seen to the southeast.^
+Space Port
+Your Main System replies, ~Ambiguous query. Please restate your intentions.~^
+ship
+There are literally hundreds of twisted ships, mainly light non-spacefaring aircraft that operated off the magnetic field of the planet, although a few of them are of the larger, 'warp' variety.^
+twisted ships
+The light planet-bound spacecraft are completely destroyed.^
+light spacecraft
+Clearly, the warp ships received extra attention in the recent battle. All of them are melted slags of metal. Amazingly, one such ship survived complete destruction, so much so that the name 'Caledonia' is still visible on it's hull.^
+warp ships
+The Caledonia looks to have been a reconnaissance warp vehicle. The nose of the ship is twisted into a single mass of plasteel, while much of the main cabin seems to have survived. A hole, probably where the air-lock once was, has been blasted through to the inside.^
+You climb inside the Caledonia...^
+Caledonia
+Inside the Caledonia's main cabin the destruction is more personal. Four distinct blasts incinerated the crew, their charred remains fused with the port-side hull. The air-lock was breached with a large plasma rifle or some directed explosive, the control portion of the ship is a ball of melted plasteel, and the rear compartments seem to be in a similar state.^
+Since the safety cable is attached to your belt and to the control panel, leaving the ship is impossible.^
+Main Cabin of Caledonia
+The blast created a hole just large enough to remove the air-lock itself, but the control panel is still visible.^
+air-lock
+the
+The control panel is in ruins except for a safety cable which is attached at both ends to the control panel.^
+The control panel is in ruins except for a safety cable which is attached at one end to the control panel.^
+ except for two small sockets where a safety cable can be attached.^
+control panel
+the
+The safety cable is a short (one meter) length of sofsteel cabling used to protect against emergency depressurization while in space. Anyone secured to the control panel via the safety cable would be anchored against such a consequence and hopefully have time to secure at least one of the hatches of the air-lock
+. Currently,
+ both ends of the safety cable are attached to 
+ 
+ one end of the safety cable is attached to 
+ 
+ and the other end is attached to 
+ 
+ one end of the safety cable is attached to 
+ 
+ 
+.^
+You can't carry the safety cable while it's attached to 
+ 
+ 
+.^
+You detach an end of the safety cable from 
+You detach the other end of the safety cable from 
+ 
+ and pick it up.^
+.^
+You detach an end of the safety cable from 
+You detach the other end of the safety cable from 
+ 
+ and pick it up.^
+.^
+You can't attach anything to your belt while the flight skin is activated.^
+You must detach an end of the safety cable before you can attach it to something else.^
+You can't attach the safety cable to 
+ 
+.^
+You attach an end of the safety cable to 
+You attach the other end of the safety cable to 
+ 
+.^
+You attach an end of the safety cable to 
+You attach the other end of the safety cable to 
+ 
+.^
+The AEFG System says, ~Inventory manipulation in FAST TIME is extremely dangerous. For your protection, this command will be ignored.^
+The Main System says, ~Both the AEFG and FlightSkin Systems report drastic consequences for this action. For your protection, it will be ignored.^
+You can't drop the safety cable while it is attached to your belt.^
+safety cable
+The landscape here has been shaped by an unusually large explosion, probably thermonuclear. The crater is at least a klick wide and a about two hundred meters deep. The battlefield is west and the only other climbable direction seems to be northeast.^
+The crater is too steep here, you can't seem to get more than a dozen meters before sliding back down to the center.^
+Deep Crater
+In the bottom of the riverbed, you find the boiled and battered remains of both animal and plant life. Although the river once flowed from north to south, only the north seems passable. On either side, one to the southwest and one to the east, you see small ledges to carry you up and out of the river bottom.^
+The southern portion of the riverbed is filled with dangerous pitfalls.^
+The western bank of the riverbed is too steep, but a slight adjustment to the southwest allows you an escape.^
+The northwest portion of the bank is far too high to even consider climbing.^
+Between the open riverbed to the north and the ledge leading up to the east, a tower of rock blocks any movement.^
+The gradually higher southeast bank is beyond your reach.^
+Riverbed
+Adjusting to low light, you make out the muddy remains of a once thriving underground river. Fossils and roots adorn the floors, walls, and ceiling while the echoes of splashing water emanate from all around. Mud still glistens with sweat throughout most of the tunnel.^
+Underground River
+As you closely examine the walls, it becomes clear that the western wall is drier compared to the rest of the tunnel. In fact, a distinct rectangular shape can be seen within the drier mud.^
+walls
+It seems to be a door of some kind.^
+Taking a chance, you press inward on the door-like shape and after a brief hissing noise, the wall opens.^
+You're not sure how to open it, even if it is a door.^
+There doesn't seem to be anyway to close it.^
+western wall
+You've just entered what seems to be a hidden enemy bunker. It's clear that the Tra 'Jan Gore were entrenched long before they began the war. The bunker is empty except for a plasma rifle rack on the far wall.^
+Enemy Bunker
+The rack once contained hundreds of weapons. Unfortunately, it is empty now.^
+plasma rifle rack
+In all directions the land is a waste. Craters, bones, flesh, smoke, and the remnants of war litter the entire landscape. The sky, an angry red, is filled with ashen clouds. The earth trembles from dislocated tectonic plates and the atmosphere is quickly becoming unbreathable and unlivable. A plume of gas shoots out of the ground nearby
+ and an unopened rusty hatch has been uncovered in the ground.^
+ and a rusty hatch opens to a dark chamber below the ground.^
+.^
+A plume of gas shoots out of the ground nearby, forcing you to stumble sideways.^
+There is nowhere to climb downward from here.^
+Geyser
+The land is blackened from battle, leaving nothing behind.
+You scrabble down onto all fours and dig your fingers into the ground near the geyser. After an hour of hard labor, you finally locate and clear dirt off of a square rusty hatch.^
+You've been digging around here already. The rusty hatch is proof enough of that.^
+You kick the dirt around for awhile, hoping to find something, but this time, luck is not with you.^
+land
+The skeletal remains of all life on this planet can be seen everywhere. Whatever damage the enemy had done, leaving the remains was likely a reminder to whomever may think of challenging them again.^
+bones
+From the burning land rises foul-colored gases and smoke. Where flesh and bone will eventually turn into soil, most of the living have been vaporized and are now apart of a death-filled fog.^
+ashen smoke
+(nowhere)
+The gas plume is shooting pure hydrogen out of a manmade hole in the ground.^
+The gas plume is currently frozen, as if a tree of cotton stood in front of you.^
+gas plume
+The hole is about twenty centimeters wide, obviously the broken portion of a cooling system buried beneath the ground.^
+gas vent
+The hatch is about a meter square, rusted, with a handle inset into the metal.^
+The hatch refuses to budge.^
+The hatch is already open.^
+The hatch swings open, revealing darkness below.^
+You push the hatch up and it bangs onto the surface above.^
+The hatch refuses to budge.^
+rusty hatch
+Your blue mechanical eyes immediately adjust to the lack of light in this dark chamber. This seems to be the 'forward' cabin of an MDB (mechanically deployed bunker). The interior hatch in the floor is closed and the
+re are rations strewn about in an otherwise empty room.^
+ bunker is otherwise completely empty.^
+The hatch is currently closed.^
+Dark Chamber
+a
+rations
+They're the typical edible liquids and solids used during wartime for centuries.^
+You can't eat while the AEFG is activated.^
+You can't eat while the flight skin is activated.^
+That is the last of the rations. Hopefully, you won't need to find anymore.^
+You carefully eat a portion of your rations and immediately feel better.^^Auto-Repair says, ~Thank you.~^
+^Auto-Repair says, ~Main systems are now at full power.~^
+supply of rations
+The interior hatch is about a meter round and locked from the inside (not the chamber).^
+You bang on the interior hatch but there is no response. Internal sensors are unable to penetrate the floor. There is no way to know if anyone is down there.^
+interior hatch
+Hovering about three hundred meters above the ground you survey the battlefield below. The destruction is even more daunting from up here.^
+With only a minor communication, the flight-skin gently carries you to the ground....^
+You close your eyes and communicate to the flight skin that you wish to travel to the planet's orbital plane.^^With a sudden hardening, the skin turns you into a speeding bullet, streaking though clouds, thin air, and then into space....^^Spectral lights and noise attack your senses as you fly through the different layers of atmosphere. Suddenly, you're swimming in the dead silence of the void.^
+In all directions, the pocked-mark devistation smokes and billows from below. You fly around in circles, afraid of losing the landmarks below.^
+Above the Lost Battlefield
+^The immensity of space overwhelms the senses and humbles even the most callous soul. For an android, it is a baptism of power, because your human creator gave you the ability to be here, and weakness, because one rather small android in the middle of space is hardly anything that matters....^
+Floating in a low orbital plane, you peer down at an ash covered world. All around you are the lights of distant stars and the loneliness of the void.^
+Planetary Orbit
+Normally this view would be breath-taking, and concentrating on the large bodies of water, it is. But when you look at the land based areas of the planet, all hope fades, for the planet is blackened and burning. Even from this height you can see massive destruction. It doesn't appear that a single area of habitation has survived the war with the Tra 'Jan Gore.^
+planet
+a
+Simple, white, with no special markings, the ship rotates evenly and continues on its path toward the horizon.^
+Simple, white, with no special markings, the ship seems frozen in place.^
+Unfortunately, the ship is spinning too fast and already moving away from you. No matter how hard you try, you can't seem to grab onto the sides.^
+The AEFG does the job, allowing you to grapple onto the spaceship. You quickly locate the hatch, searching for some way to gain entry.^
+^The 
+the
+^A 
+small ship floats into view...^
+small ship floats away and out of sight...^
+small spaceship is floating nearby...^
+small spaceship
+You're holding onto the outer hull door of
+ a seemingly frozen spaceship.
+ a spinning spaceship that is traveling around the planet 'below'.
+ There is a small button next to the door.^
+After spinning with the ship for awhile, you get slightly disoriented and slip away...^
+Outside Ship
+As you press the small button, the inner room depressurizes and the door swings inward. The outer hatch closes behind you and the air-lock pressurizes and fills with oxygen.^
+Nothing Happens.^
+small button
+This is the air-lock, a mainstay in all space bound vehicles. 
+Both hatches are open.
+Both hatches are closed.
+The inner hatch opens to the ship proper, while the outer hatch close.
+The inner hatch is closed, while the outer hatch opens to the void of space.
+ A panel on one of the two remaining walls controls them.^
+You can't leave the air-lock while attached to the safety cable (which is attached to the control panel).^
+The inner hatch is closed.^
+You can't leave the air-lock while attached to the safety cable (which is attached to the control panel).^
+The outer hatch is closed.^
+Air-Lock
+The control panel consists of a green button, a white button, and a red button. Below the three buttons is a safety cable which is attached at both ends to the control panel,^
+The control panel consists of a green button, a white button, and a red button. Below the three buttons is a safety cable which is attached at one end to the control panel.^
+The control panel consists of a green button, a white button, and a red button. Below the three buttons are two small sockets where a safety cable can be attached.^
+control panel
+
+At the same time that the Tra 'Jan Gore soldier presses a button for the outer hatch, you press buttons to open the inner hatch and to depressurize the air-lock. The initial depressurization jolt knocks the plasma rifle out of the Tra 'Jan Gore soldiers hands and the larger depressurization from space begins to pull both of you out of the ship. The enemy grabs onto you, realizing that you have a safety cable attached to the control panel. Flapping wildly, you both try to withstand the effects of depressurization.^
+At the same time that the Tra 'Jan Gore soldier presses a button for the outer hatch, you press buttons to open the inner hatch and to depressurize the air-lock. The initial depressurization jolt knocks the plasma rifle out of the Tra 'Jan Gore soldiers hands and the larger depressurization from space throws you both from the ship. As your body begins to collapse from the pressure of space, you see the Tra 'Jan Gore soldier's battle armour activate, saving him from the same fate.^
+At the same time that the Tra 'Jan Gore soldier presses a button for the outer hatch, you press buttons to open the inner hatch and to pressurize the air-lock. The initial pressurization jolt knocks the plasma rifle out of the Tra 'Jan Gore soldiers hands but the depressurization from space begins to pull both of you out of the ship. The enemy grabs onto you, realizing that you have a safety cable attached to the control panel. Flapping wildly, you both try to withstand the effects of depressurization.^
+At the same time that the Tra 'Jan Gore soldier presses a button for the outer hatch, you press buttons to open the inner hatch and to pressurize the air-lock. The initial pressurization jolt knocks the plasma rifle out of the Tra 'Jan Gore soldiers hands but the depressurization from space throws you both from the ship. As your body begins to collapse from the pressure of space, you see the Tra 'Jan Gore soldier's battle armour activate, saving him from the same fate.^
+As the door opens, the blast from depressurizing the air-lock strains your safety cable, but knocks the Tra 'Jan Gore soldier accross the inside of the ship and seemingly knocks him unconscious.^
+As the door opens, the blast from depressurizing the air-lock knocks you into the Tra 'Jan Gore soldier which in turn knocks him down and unconscious.^
+As the door opens, the blast from pressurizing the air-lock quickly equalizes with the inside of the ship. Standing in front of you with a blaster is a Tra 'Jan Gore soldier^^PHRISH! PHRISH! PHRISH! three quick bursts from his plasma rifle turn your body into a heap of wires and plasteel.^
+As the door opens, the blast from depressurizing the air-lock strains your safety cable. A Tra 'Jan Soldier cries out from sudden blast...^^...and then your sworn enemy recovers, quickly brandishing its plasma rifle and pointing it at your chest...^^PHRISH! PHRISH! PHRISH!, three bolts of plasma-fire exit the rifle and milliseconds later turn your body into a pile of melted android parts...^
+As the door opens, the blast from depressurizing the air-lock knocks you across the interior of the ship, shutting down all of your systems momentarily...^^Unfortunately, this more than enough time for your enemy to dispatch you. Your systems never come back online long enough to record your demise....
+As the door opens, the blast from pressurizing the air-lock quickly equalizes with the inside of the ship. A Tra 'Jan Gore soldier leaps into view and raising its plasma rifle...^^PHRISH! PHRISH! PHRISH! three quick plasma-fire bursts turn your body into a heap of wires and plasteel.^
+(bwbutton)
+It's red, shaped like an arrow, and points to the outer hull door.^
+Your self-protection routines reject the command.^
+The outer hull door opens and you're catapulted away from the ship.^
+The outer hull door opens.^
+red button
+It's green, shaped like an arrow, and points to the inner hull door.^
+Quickly, you open the inner hull door...^^~KRISH NU KAI!!!!!!~ yells a surprised Tra 'Jan Gore soldier...^^...and then your sworn enemy recovers, quickly brandishing its plasma rifle and pointing it at your chest...^^PHRISH! PHRISH! PHRISH!, three bolts of plasma-fire exit the rifle and milliseconds later turn your body into a pile of melted android parts...^
+Unwisely, you open the inner hull door despite the fact that one of your sworn enemies, a tall, fierce, Tra 'Jan Gore soldier is directly on the other side. This proves quickly fatal, because by the time the inner hull door is cleared, a large bolt of plasma-fire is headed into your torso...^
+The outer hull door opens and you're catapulted away from the ship
+ where the lack of protection against the void kills you...^
+ and immediately after, the Tra 'Jan Gore soldier is ejected from the ship. The soldier does not seem to be dead though, since some sort of protective gear has automatically activated.^
+green button
+It's a small white button without any indication to its use.^
+The Tra 'Jan Gore soldier presses a button and the outer hatch begins to release.
+You push the white button and the air is suddenly sucked out of the chamber. 
+The flight skin protects you from the airless room though.^
+Unfortunately, your self-protection system did not know what the white button was for and despite being an android, it's too much pressure...^^You've managed to implode inside a space ship (good job!)...^
+You push the white button and the air is restored inside the chamber.^
+small white button
+It's a small round window that shows a portion of the inside of the spaceship.^
+As you look through the window, a Tra 'Jan Gore soldier leaps into view.^
+The Tra 'Jan Gore soldier stares at you with a wide grin and a large battle rifle in its arms.^
+The Tra 'Jan Gore soldier reaches for the control panel...^
+The Tra 'Jan Gore soldier presses the red button...^
+...and without any protection from the void, your body implodes...^
+...and luckily you had the foresight to leave your flight skin on...^
+The inside of the spaceship looks empty.^
+The Tra 'Jan Gore soldier stares at you with a frozen grin and a large battle rifle in its arms.^
+The Tra 'Jan Gore soldier is frozen, reaching for the red button on the control panel.^
+The Tra 'Jan Gore soldier is frozen, pressing the red button on the control panel.^
+^
+window
+The inside of the ship is a utilitarian's utopia. Inset lockers line both sides, a hatch leads to the pressure chamber and an open doorway leads to the control room.^
+You can't go anywhere while the safety cable is attached to you and the control panel.^
+Inside Ship
+the
+The control panel consists of a green button, a white button, and a red button. Below the three buttons 
+is a safety cable which is attached at both ends to the control panel
+is a safety cable which is attached at one end to the control panel
+are two small sockets where a safety cable can be attached
+.^
+control panel
+The enemy is at least two and half meters tall, wearing heavy body armor and a fierce grin.^
+Tra 'Jan Gore Soldier
+Main Systems
+Your main systems include all functions that provide information and health to your android body.^
+(Systems)
+Memory
+Your memory systems include all of your past experiences recorded in artificial synaptic loops.^
+^~Chrysilya!~ cries a little girl nearby. You try to look for the wimpering child, suddenly seeing her dirty face...^^PHRISH! PHRISH! PHRISH! the distinct sound of a plasma rifle suddenly obliterates the little girl and silences her cries.^^Your deeply encoded human protection systems are reeling from the attack. Other children cry out, followed by more plasma bolts, and then longer moments of silence. On your knees, with your empty plasma rifle, you bite down an urge to wail when suddenly a roving Tra 'Jan Gore landbiter hits you square in the chest, dragging you until your systems begin to fail...^
+^~INCOMING!!!~, yells Dal MKor, and everyone in the bunker ducks down to shield their heads.^^BOOOM!!! BOOOM!!! BOOOM!!!^^The bombs explode one after another and immediately afterwards Dal yells at you, ~Get the time devices!!! It's our only hope now!!!~^^He pushes you up through the hatch and immediately pulls it shut.^^People are fighting and dying everywhere. Bombs are exploding, plasma bursts are streaking through the sky, and smoke fills the air. You can barely see a meter in any direction when suddenly a Tra 'Jan Gore troop marches by, and you dive for cover...^
+^~Chrysilya, welcome to Earthangelos!~ says a tall dark man. ~I am Dal Mkor, your sponsor.~ Pointing to a group of small children he says, ~Your charge is here to greet you.~ Then speaking to the children he says, ~Alright kids, say hello to Chrysilya.~ and the children obediantly sing, ~Hellooo Chrysilya!!!~ and give you a short round of applause.^^Your internship has begun at last. You will be the sole teacher for these children for the next twelve years, guiding them through adolesence and into adulthood. Your synaptic nervous system is unusually fluid today. You feel almost emotional...^
+^....and the flashback fades...^
+(Memory)
+Anti-Entropic Field Generator
+The anti-entropic field generator operates internally within one of your subs-systems using the commands, [SLOW TIME] and [FAST TIME]. In a confined area (your body space), the AEFG will speed up time so that your surroundings seem to be frozen.^
+The AEFG system responds, ~System recharging. Check [SYSTEMS] for more details.~^
+The AEFG system responds, ~Slow time already achieved.~^
+Your immediate surroundings begin to flow normally again.^^The AEFG system confirms, ~Slow time achieved.~^
+The AEFG system responds, ~System recharging. Check [SYSTEMS] for more details.~^
+Everything begins to blur for a moment and then all of your surroundings seem to stop. There is neither sound nor movement.^
+The AEFG system responds, ~Fast time already achieved.~^
+The AEFG System says, ~System recharged.~^
+(AEField)
+Flight Skin
+Your field skin is a living organism that resides in a small portion of your plasteel skull. When activated with the command [SKIN], the organism will 'pour' itself over your entire body, giving you nearly perfect atmospheric safety, including all oxygen required by your andriod body. Once the skin is in place, you can use normal vertical and compass rose directions to fly. A second [SKIN] command will send the organism back into its protective home. The skin does not provide protection against most weapons.^
+You cannot activate the flight skin while the safety cable is attached to your belt.^
+Activating the flight skin is simply a matter of twitching a specific nerve deep within your skeletal structure....^^Through an opening the size of a nail, the organism flows out and begins the process of enveloping your external structure. It does this within a matter of seconds, eventually closing over your face and providing oxygen.^
+Your self-protection is built far too deeply into your brain to accomodate this request.^
+The organism slowly returns through the aperature in your skull, leaving you in your normal state.^
+(FlightSkin)
+[Your face is marred by burns, but functional. Auto-repair will not waste power to repair it. Your arms and legs are lacerated with burns and large wounds. Auto-repair has already begun working on these. Your hip is seriously dislocated. Auto-repair cannot handle the damage. You're seriously dehydrated and low on energy. Auto-repair currently cannot locate any resources for replenishment. Auto-repair reports that resources are required within 
+ point 
+ standard hours of this diagnosis before partial system failure, 
+ point 
+ standard hours before complete system failure.]^
+^This brings a smile to your damaged face. Auto-repair always makes you feel human, especially when reporting upon your eventual demise.^
+You're still damaged in places, but for the most part, back to full strength.^
+Auto-Repair says, ~The [SKIN] command is currently unavailable.~^
+You can't board that!^
+That doesn't seem to help.^
+Auto-Repair says, ~The Anti-Entropic Field Generator is currently offline.~^
+Auto-Repair says, ~The Anti-Entropic Field Generator is currently offline.~^
+You can't do that.^
+You can't do that.^
+This work was inspired by Dan Simmons's Hyperion books, as well as all of the other great science fiction authors that I have enjoyed reading over the years.^^Beta Testing by:^- Alexander Deubelbeiss^- David C. Young^- Steve Finney
+.
+
+.            ,            a            about        above        abstract     
+actions      adjust       aefg         again        against      air          
+air-lock     all          amusing      an           and          another      
+answer       anti         ask          at           attach       attack       
+awake        awaken       bang         battlefie    belt         blow         
+board        bones        both         bother       break        brief        
+bunker       burn         but          button       buttons      buy          
+cabin        cable        caledonia    carry        ceiling      chamber      
+changes      check        chop         city         clean        clear        
+climb        close        comma,       connect      consult      control      
+cover        crack        craft        crater       cross        curses       
+cut          d            daemons      damn         dark         darn         
+deep         describe     destroy      detach       di           diagnosis    
+die          dig          dirt         discard      disconnec    display      
+disrobe      dive         doff         don          door         down         
+drag         drat         drink        drop         dust         e            
+each         earth        earthange    east         eat          edge         
+eight        eighteen     eleven       embrace      empty        enemy        
+enter        entropic     every        everythin    examine      except       
+exit         fast         feed         feel         field        fifteen      
+fight        fill         five         flesh        flight       floor        
+fondle       food         for          forest       four         fourteen     
+from         fuck         full         fullscore    g            gas          
+generator    get          geyser       give         go           gonear       
+gore         goto         green        grope        ground       hatch        
+hear         her          him          his          hit          hold         
+hole         hop          hug          i            in           insert       
+inside       interior     into         inv          inventory    it           
+its          jan          jump         kill         kiss         knock        
+l            land         leave        lie          light        lighted      
+listen       lit          lock         long         look         lost         
+main         me           memory       messages     move         mud          
+murder       my           myself       n            nap          ne           
+nine         nineteen     no           normal       north        northeast    
+northwest    noscript     notify       nouns        nw           o            
+objects      of           off          offer        on           one          
+onto         oops         open         orbit        other        out          
+outside      over         panel        pay          peel         pick         
+pillars      pipe         places       planet       planetary    plasma       
+plume        polish       pollution    port         pray         present      
+press        pronouns     prune        pull         punch        purchase     
+purloin      push         put          q            quit         rack         
+random       rations      read         recording    red          remove       
+replay       restart      restore      rifle        river        riverbed     
+rocket       rotate       routines     rub          run          rusty        
+s            safety       save         say          scale        scope        
+scorched     score        screw        script       scrub        se           
+search       self         set          seven        seventeen    shape        
+shed         shift        shine        ship         ships        shit         
+short        shout        show         showobj      showverb     shut         
+sing         sip          sit          six          sixteen      skin         
+skip         sleep        slice        slow         small        smash        
+smell        smoke        smoking      sniff        socket       sockets      
+sod          soldier      some         sorry        south        southeast    
+southwest    space        spacecraf    spaceship    speak        squash       
+squeeze      stand        superbrie    supplies     sw           swallow      
+sweep        swim         swing        switch       sy           systems      
+take         tall         taste        tell         ten          that         
+the          their        them         then         these        think        
+thirteen     this         those        three        through      throw        
+thump        time         timers       to           top          torture      
+touch        tra          trace        transcrip    transfer     tree         
+tunnel       turn         twelve       twenty       twist        twisted      
+two          u            uncover      under        undergrou    undo         
+unlit        unlock       unscrew      unscript     unwrap       up           
+vapor        vent         verbose      verify       version      w            
+wait         wake         walk         wall         walls        warp         
+watch        wave         wear         west         western      white        
+wide         window       wipe         with         wreck        x            
+y            yes          z            
+
+[End of transcript: release 1.001208]
+

@@ -1,0 +1,64 @@
+<NotepadPlus>
+    <UserLang name="Inform 6" ext="" udlVersion="2.1">
+        <Settings>
+            <Global caseIgnored="no" allowFoldOfComments="yes" foldCompact="no" forcePureLC="0" decimalSeparator="0" />
+            <Prefix Keywords1="no" Keywords2="no" Keywords3="no" Keywords4="no" Keywords5="no" Keywords6="no" Keywords7="no" Keywords8="no" />
+        </Settings>
+        <KeywordLists>
+            <Keywords name="Comments">00/* 01 02*/ 03 04</Keywords>
+            <Keywords name="Numbers, prefix1"></Keywords>
+            <Keywords name="Numbers, prefix2"></Keywords>
+            <Keywords name="Numbers, extras1"></Keywords>
+            <Keywords name="Numbers, extras2"></Keywords>
+            <Keywords name="Numbers, suffix1"></Keywords>
+            <Keywords name="Numbers, suffix2"></Keywords>
+            <Keywords name="Numbers, range"></Keywords>
+            <Keywords name="Operators1">~&#x000D;&#x000A;.&#x000D;&#x000A;:&#x000D;&#x000A;;&#x000D;&#x000A;,&#x000D;&#x000A;-&#x000D;&#x000A;=&#x000D;&#x000A;&gt;&#x000D;&#x000A;&lt;&#x000D;&#x000A;&amp;&#x000D;&#x000A;|&#x000D;&#x000A;(&#x000D;&#x000A;)&#x000D;&#x000A;[&#x000D;&#x000A;]&#x000D;&#x000A;{&#x000D;&#x000A;}&#x000D;&#x000A;+&#x000D;&#x000A;*</Keywords>
+            <Keywords name="Operators2"></Keywords>
+            <Keywords name="Folders in code1, open"></Keywords>
+            <Keywords name="Folders in code1, middle"></Keywords>
+            <Keywords name="Folders in code1, close"></Keywords>
+            <Keywords name="Folders in code2, open"></Keywords>
+            <Keywords name="Folders in code2, middle"></Keywords>
+            <Keywords name="Folders in code2, close"></Keywords>
+            <Keywords name="Folders in comment, open"></Keywords>
+            <Keywords name="Folders in comment, middle"></Keywords>
+            <Keywords name="Folders in comment, close"></Keywords>
+            <Keywords name="Keywords1">AfterLife AfterPrompt Amusing Achieved AddToScope AllowPushDir AfterRoutines&#x000D;&#x000A;box break bold&#x000D;&#x000A;BeforeParsing&#x000D;&#x000A;class continue child children&#x000D;&#x000A;ChangePlayer ChangeDefault ChooseObjects CDefArt&#x000D;&#x000A;do&#x000D;&#x000A;DeathMessage DarkToDark DoMenu DefArt&#x000D;&#x000A;else&#x000D;&#x000A;EnglishNumber&#x000D;&#x000A;font for fixed&#x000D;&#x000A;give&#x000D;&#x000A;GamePostRoutine GamePreRoutine&#x000D;&#x000A;has hasnt&#x000D;&#x000A;HasLightSource&#x000D;&#x000A;if in indirect inversion&#x000D;&#x000A;InScope InDefArt Initialise&#x000D;&#x000A;jump&#x000D;&#x000A;LookRoutine Locale LoopOverScope&#x000D;&#x000A;metaclass move&#x000D;&#x000A;new_line near notin nothing&#x000D;&#x000A;NextWord NextWordStopped NounDomain NewRoom&#x000D;&#x000A;objectloop ofclass or&#x000D;&#x000A;ObjectIsUntouchable OffersLight&#x000D;&#x000A;print print_ret print_to_array parent provides&#x000D;&#x000A;PlayerTo PrintRank PrintTaskName ParseNoun ParseNumber PlaceInScope PrononValue&#x000D;&#x000A;PronounNotice ParserError PrintShortName PrintVerb&#x000D;&#x000A;quit&#x000D;&#x000A;random read remove restore return rfalse rtrue roman reverse&#x000D;&#x000A;RunRoutines&#x000D;&#x000A;save spaces string style switch sibling sender&#x000D;&#x000A;StartDaemon StopDaemon StartTimer StopTimer Statusline SetTime ScopeWithin&#x000D;&#x000A;SetPronoun&#x000D;&#x000A;to the&#x000D;&#x000A;The TestScope TryNumber TimePasses&#x000D;&#x000A;until underline&#x000D;&#x000A;UnknownVerb UnsignedCompare&#x000D;&#x000A;ValueOrRun&#x000D;&#x000A;while with&#x000D;&#x000A;WriteListFrom WordAddress WordLength&#x000D;&#x000A;YesOrNo&#x000D;&#x000A;ZRegion</Keywords>
+            <Keywords name="Keywords2">** #&#x000D;&#x000A;Abbreviate Array Attribute&#x000D;&#x000A;Class Constant&#x000D;&#x000A;Default Dictionary&#x000D;&#x000A;End Endif Extend&#x000D;&#x000A;endif&#x000D;&#x000A;Fake_action&#x000D;&#x000A;Global&#x000D;&#x000A;Ifdef Ifndef Ifnot Iftrue Iffalse Import Include Ifv3 Ifv5&#x000D;&#x000A;ifdef ifndef ifnot iftrue iffalse ifv3 ifv5&#x000D;&#x000A;Link Lowstring&#x000D;&#x000A;Message&#x000D;&#x000A;Nearby&#x000D;&#x000A;Object&#x000D;&#x000A;Property&#x000D;&#x000A;Release Replace Routine&#x000D;&#x000A;Serial Switches System_file Stub String&#x000D;&#x000A;Trace&#x000D;&#x000A;Verb Version&#x000D;&#x000A;</Keywords>
+            <Keywords name="Keywords3">absent animate&#x000D;&#x000A;creature clothing concealed container&#x000D;&#x000A;edible enterable&#x000D;&#x000A;female&#x000D;&#x000A;general&#x000D;&#x000A;held&#x000D;&#x000A;light lockable locked&#x000D;&#x000A;male moved&#x000D;&#x000A;neuter&#x000D;&#x000A;on open openable&#x000D;&#x000A;pluralname proper&#x000D;&#x000A;scenery scored static supporter switchable&#x000D;&#x000A;talkable transparent&#x000D;&#x000A;visited&#x000D;&#x000A;workflag worn</Keywords>
+            <Keywords name="Keywords4">~&#x000D;&#x000A;.&#x000D;&#x000A;:&#x000D;&#x000A;;&#x000D;&#x000A;,&#x000D;&#x000A;-&#x000D;&#x000A;=&#x000D;&#x000A;&gt;&#x000D;&#x000A;&lt;&#x000D;&#x000A;&amp;&#x000D;&#x000A;|&#x000D;&#x000A;(&#x000D;&#x000A;)&#x000D;&#x000A;[&#x000D;&#x000A;]&#x000D;&#x000A;{&#x000D;&#x000A;}&#x000D;&#x000A;+&#x000D;&#x000A;*&#x000D;&#x000A;// /&#x000D;&#x000A;add_to_scope after article articles&#x000D;&#x000A;before&#x000D;&#x000A;cant_go capacity create copy call&#x000D;&#x000A;door daemon describe description door_dir door_to d_to destroy&#x000D;&#x000A;each_turn e_to&#x000D;&#x000A;found_in&#x000D;&#x000A;initial inside_description invent in_to&#x000D;&#x000A;grammar&#x000D;&#x000A;life list_together&#x000D;&#x000A;name number n_to nw_to ne_to&#x000D;&#x000A;orders out_to&#x000D;&#x000A;parse_name plural private&#x000D;&#x000A;react_after react_before recreate remaining&#x000D;&#x000A;short_name short_name_indef s_to se_to sw_to&#x000D;&#x000A;time_left time_out&#x000D;&#x000A;u_to&#x000D;&#x000A;when_closed when_open when_off when_on with_key w_to&#x000D;&#x000A;</Keywords>
+            <Keywords name="Keywords5">** ##&#x000D;&#x000A;ActionsOn ActionsOff Attack Answer Ask AskFor&#x000D;&#x000A;Burn Blow Buy&#x000D;&#x000A;CommandsOn CommandsOff CommandsRead Close Consult Cut Climb&#x000D;&#x000A;Drop Disrobe Dig Drink&#x000D;&#x000A;default&#x000D;&#x000A;Empty Enter Exit Examine Eat&#x000D;&#x000A;Fullscore Fill&#x000D;&#x000A;Goto Gonear GetOff Go GoIn Give&#x000D;&#x000A;Inv InvTall InvWide Insert&#x000D;&#x000A;Jump JumpOver&#x000D;&#x000A;Kiss&#x000D;&#x000A;LMode1 LMode2 LMode3 Look Lock Listen LookUnder LetGo&#x000D;&#x000A;Mild Miscellany&#x000D;&#x000A;NotifyOn NotifyOff No NotUnderstood&#x000D;&#x000A;Objects Open Order&#x000D;&#x000A;Pronouns Places Predictable PutOn Pray Pull Push PushDir PluralFound Prompt&#x000D;&#x000A;Quit&#x000D;&#x000A;Restart Restore RoutinesOn RoutinesOff Read Remove Rub Receive&#x000D;&#x000A;Save SciptOn ScriptOff Score Scope Search Show SwitchOn SwitchOff Smell Sorry&#x000D;&#x000A;Strong Swim Swing Set SetTo Squeeze Sing Sleep&#x000D;&#x000A;TraceOn TraceOff TraceLevel TimersOn TimersOff Transfer Think Taste Touch Tie&#x000D;&#x000A;Turn ThrowAt ThrownAt TheSame Take Tell&#x000D;&#x000A;Unlock&#x000D;&#x000A;VagueGo VagueSay Verify&#x000D;&#x000A;Wear Wake WakeOther Wave WaveHands Wait&#x000D;&#x000A;Xpurloin Xabstract Xtree&#x000D;&#x000A;Yes</Keywords>
+            <Keywords name="Keywords6">first&#x000D;&#x000A;last&#x000D;&#x000A;multi multiheld multiexcept multiinside meta&#x000D;&#x000A;noun&#x000D;&#x000A;only&#x000D;&#x000A;replace&#x000D;&#x000A;scope special second&#x000D;&#x000A;topic the</Keywords>
+            <Keywords name="Keywords7">** @</Keywords>
+            <Keywords name="Keywords8">action&#x000D;&#x000A;AMUSING_PROVIDED ALWAYS_BIT ANIMA_PE ASKSCOPE_PE&#x000D;&#x000A;compass&#x000D;&#x000A;CONCEAL_BIT CANTSEE_PE&#x000D;&#x000A;d_obj deadflag&#x000D;&#x000A;DEFART_BIT DEBUG&#x000D;&#x000A;e_obj&#x000D;&#x000A;ENGLISH_BIT EACHTURN_REASON EXCEPT_PE&#x000D;&#x000A;FULLINV_BIT&#x000D;&#x000A;Headline&#x000D;&#x000A;in_obj inventory_stage item_name item_width&#x000D;&#x000A;INDENT_BIT ISARE_BIT ITGONE_PE InformLibrary InformParser&#x000D;&#x000A;JUNKAFTER_PE&#x000D;&#x000A;LibraryMessages LOOPOVERSCOPE_REASON&#x000D;&#x000A;moves menu_item&#x000D;&#x000A;MAX_CARRIED MAX_SCORE MAX_TIMERS MANUAL_PRONOUNS MULTI_PE MMULTI_PE&#x000D;&#x000A;n_obj ne_obj nw_obj&#x000D;&#x000A;NULL NUMBER_TASKS NO_PLACES NEWLINE_BIT NUMBER_PE NOTHELD_PE NOTHING_PE&#x000D;&#x000A;out_obj&#x000D;&#x000A;OBJECT_SCORE&#x000D;&#x000A;player parser_action parser_one parser_two parsed_number&#x000D;&#x000A;PARTINV_BIT PARSING_REASON&#x000D;&#x000A;real_location&#x000D;&#x000A;ROOM_SCORE RECURSE_BIT REACT_BEFORE_REASON REACT_AFTER_REASON&#x000D;&#x000A;s_obj sw_obj se_obj score self selfobj&#x000D;&#x000A;SACK_OBJECT STUCK_PE SCENERY_PE Story&#x000D;&#x000A;time thedark&#x000D;&#x000A;TASKS_PROVIDED TERSE_BIT TALKING_REASON TESTSCOPE_REASON TOOLIT_PE TOOFEW_PE&#x000D;&#x000A;u_obj&#x000D;&#x000A;UPTO_PE&#x000D;&#x000A;VAGUE_PE VERB_PE&#x000D;&#x000A;w_obj&#x000D;&#x000A;WORKFLAG_BIT WITHOUT_DIRECTIONS</Keywords>
+            <Keywords name="Delimiters"></Keywords>
+        </KeywordLists>
+        <Styles>
+            <WordsStyle name="DEFAULT" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="COMMENTS" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="LINE COMMENTS" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="NUMBERS" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS1" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS2" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS3" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS4" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS5" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS6" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS7" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="KEYWORDS8" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="OPERATORS" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="FOLDER IN CODE1" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="FOLDER IN CODE2" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="FOLDER IN COMMENT" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS1" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS2" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS3" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS4" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS5" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS6" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS7" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+            <WordsStyle name="DELIMITERS8" fgColor="000000" bgColor="FFFFFF" fontStyle="0" nesting="0" />
+        </Styles>
+    </UserLang>
+</NotepadPlus>
