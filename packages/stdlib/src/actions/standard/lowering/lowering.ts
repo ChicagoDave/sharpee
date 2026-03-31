@@ -47,6 +47,6 @@ import { IFActions } from '../../constants';
 export const loweringAction = createCapabilityDispatchAction({
   actionId: IFActions.LOWERING,
   group: 'manipulation',
-  noTargetError: 'if.lower.no_target',
-  cantDoThatError: 'if.lower.cant_lower_that'
+  noTargetError: 'no_target',
+  cantDoThatError: 'cant_lower_that'
 });

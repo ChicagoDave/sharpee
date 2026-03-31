@@ -20,18 +20,21 @@ import { BasketElevatorTrait } from './basket-elevator-trait';
 
 /**
  * Message IDs for basket elevator
- * Uses standard if.lower/if.raise messages from lang-en-us
+ *
+ * Short keys are auto-prefixed with the actionId by the capability
+ * dispatch factory (e.g., 'lowered' → 'if.action.lowering.lowered').
+ * Fully-qualified keys (with dots) pass through unchanged.
  */
 export const BasketElevatorMessages = {
-  // Lowering messages (standard)
-  LOWERED: 'if.lower.lowered',
-  ALREADY_DOWN: 'if.lower.already_down',
+  // Lowering messages (short keys, auto-prefixed)
+  LOWERED: 'lowered',
+  ALREADY_DOWN: 'already_down',
 
-  // Raising messages (standard)
-  RAISED: 'if.raise.raised',
-  ALREADY_UP: 'if.raise.already_up',
+  // Raising messages (short keys, auto-prefixed)
+  RAISED: 'raised',
+  ALREADY_UP: 'already_up',
 
-  // Common messages
+  // Story-specific message (fully-qualified, passes through unchanged)
   PLAYER_TRANSPORTED: 'dungeo.basket.player_transported'
 } as const;
 
@@ -74,7 +77,7 @@ export const BasketLoweringBehavior: CapabilityBehavior = {
     if (!trait) {
       return {
         valid: false,
-        error: 'if.lower.cant_lower_that'
+        error: 'cant_lower_that'
       };
     }
 
@@ -176,7 +179,7 @@ export const BasketRaisingBehavior: CapabilityBehavior = {
     if (!trait) {
       return {
         valid: false,
-        error: 'if.raise.cant_raise_that'
+        error: 'cant_raise_that'
       };
     }
 

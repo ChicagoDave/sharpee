@@ -47,12 +47,24 @@ interface CapabilityDispatchData {
 
 /**
  * Convert capability effects to semantic events.
+ *
+ * Short messageIds (no dots) are auto-prefixed with the actionId,
+ * matching the convention used by standard actions. Fully-qualified
+ * messageIds (containing dots) pass through unchanged, allowing
+ * story-specific messages to bypass the prefix.
  */
 function effectsToEvents(
   effects: CapabilityEffect[],
-  context: ActionContext
+  context: ActionContext,
+  actionId: string
 ): ISemanticEvent[] {
-  return effects.map(effect => context.event(effect.type, effect.payload));
+  return effects.map(effect => {
+    const payload = { ...effect.payload };
+    if (payload.messageId && !payload.messageId.includes('.')) {
+      payload.messageId = `${actionId}.${payload.messageId}`;
+    }
+    return context.event(effect.type, payload);
+  });
 }
 
 /**
@@ -179,21 +191,24 @@ export function createCapabilityDispatchAction(
           result.error || config.cantDoThatError,
           data.sharedData
         );
-        return effectsToEvents(effects, context);
+        return effectsToEvents(effects, context, config.actionId);
       }
 
       // Default blocked event - use domain event pattern
-      return [
-        context.event('if.event.capability_blocked', {
+      // Short error keys get prefixed by effectsToEvents
+      const error = result.error || config.cantDoThatError;
+      return effectsToEvents([{
+        type: 'if.event.capability_blocked',
+        payload: {
           blocked: true,
-          messageId: result.error || config.cantDoThatError,
+          messageId: error,
           actionId: config.actionId,
-          reason: result.error || config.cantDoThatError,
+          reason: error,
           targetId: entity?.id,
           targetName: entity?.name,
           ...result.params
-        })
-      ];
+        }
+      }], context, config.actionId);
     },
 
     report(context: ActionContext): ISemanticEvent[] {
@@ -211,7 +226,7 @@ export function createCapabilityDispatchAction(
         context.player.id,
         data.sharedData
       );
-      return effectsToEvents(effects, context);
+      return effectsToEvents(effects, context, config.actionId);
     }
   };
 }

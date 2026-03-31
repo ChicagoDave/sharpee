@@ -23,6 +23,6 @@ import { IFActions } from '../../constants';
 export const raisingAction = createCapabilityDispatchAction({
   actionId: IFActions.RAISING,
   group: 'manipulation',
-  noTargetError: 'if.raise.no_target',
-  cantDoThatError: 'if.raise.cant_raise_that'
+  noTargetError: 'no_target',
+  cantDoThatError: 'cant_raise_that'
 });
