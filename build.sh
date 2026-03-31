@@ -309,15 +309,10 @@ update_versions() {
     if [ -n "$STORY" ]; then
         local STORY_PKG="stories/${STORY}/package.json"
         local VERSION_FILE="stories/${STORY}/src/version.ts"
-        local STORY_VER="$SHARPEE_VERSION"
 
         if [ -f "$STORY_PKG" ]; then
-            node -e "
-              const fs = require('fs');
-              const pkg = require('./$STORY_PKG');
-              pkg.version = '$STORY_VER';
-              fs.writeFileSync('$STORY_PKG', JSON.stringify(pkg, null, 2) + '\n');
-            "
+            # Read story version from its own package.json (story versions are independent)
+            local STORY_VER=$(node -p "require('./$STORY_PKG').version")
 
             mkdir -p "$(dirname "$VERSION_FILE")"
             cat > "$VERSION_FILE" << EOF
@@ -837,7 +832,7 @@ build_browser_client() {
     fi
 
     # Copy to website
-    local WEBSITE_DIR="website/public/games/${STORY_NAME}"
+    local WEBSITE_DIR="website/public/web/${STORY_NAME}"
     if [ -d "website/public" ]; then
         mkdir -p "$WEBSITE_DIR"
         cp "$OUTDIR/${STORY_NAME}.js" "$WEBSITE_DIR/"

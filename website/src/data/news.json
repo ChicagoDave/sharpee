@@ -1,0 +1,22 @@
+[
+  {
+    "date": "2026-03-31",
+    "title": "Dungeon 1.0.0 Released",
+    "body": "The Sharpee port of Mainframe Zork reaches 1.0.0. Weeks of bug fixes, puzzle refinements, and play testing have brought the game to a stable release. Play it now at sharpee.net/play/dungeo."
+  },
+  {
+    "date": "2026-03-31",
+    "title": "Sharpee Platform Updates",
+    "body": "A round of cleanup and bug fixes across the platform: capability dispatch fixes, browser build improvements, and build system refinements for independent story versioning."
+  },
+  {
+    "date": "2026-03-31",
+    "title": "Dungeon Walkthrough Viewer",
+    "body": "A new interactive walkthrough viewer lets you browse every command, game output, and domain event from a full Dungeon playthrough. Check it out at sharpee.net/walkthrough."
+  },
+  {
+    "date": "2026-02-18",
+    "title": "Dungeon Port to Sharpee Complete",
+    "body": "It took about 7 weeks, but Claude and I (and Sharpee) were able to port the 1981 version of Mainframe Zork (aka Dungeon). There may still be bugs, but the golden path works and all unit tests pass."
+  }
+]
