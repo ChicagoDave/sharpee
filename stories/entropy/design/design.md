@@ -57,28 +57,33 @@ As Chrysilya explores, location-triggered flashbacks reveal her past. The memory
 
 **Goal**: Learn about the device. Learn she was on the neutral planet. Find a diffusion module for disguise.
 
-### Act 3: Preparation (Earthangelos — Present)
+### Act 3: Take the Ship (Earthangelos Orbit — Present)
 
-Before the time jump, Chrysilya needs three things:
+The Cho 'Tak Ru — the enemy reconnaissance vessel in orbit — is the only functional spacecraft in the system. The wrecked Caledonia at the spaceport is good for scavenging (safety cable, possibly other tools) but it will never fly again. Chrysilya needs the enemy ship.
 
-1. **Rations** (Act 1) — systems stabilized
-2. **Diffusion module** — found in the ruins of whatever remains of an android facility on the destroyed planet. Not in a building — in rubble, half-melted, recognized from a flashback
-3. **Caledonia power core** — the wrecked friendly ship at the spaceport. Doesn't need to fly, just needs its core online enough to amplify her AE Field for temporal displacement
+**Goal**: Board the Cho 'Tak Ru, eliminate the soldier, take the bridge.
 
 **Key puzzles**:
-- Navigate the wrecked Caledonia, get the power core functional
-- Safety cable mechanics for moving through the damaged ship
-- Connect AE Field to power core
+- Flight skin to orbit, board the ship's hull
+- Airlock button sequence (depressurize, open hatches, eject or shoot the soldier)
+- Safety cable for surviving the airlock
+- Existing I6 puzzle mechanics carry over here
 
-**Complication**: The Tra 'Jan Gore ship (Cho 'Tak Ru) is in orbit. An enemy soldier may need to be dealt with before or after the jump — or perhaps the orbital encounter is what makes the jump urgent (the enemy is coming back).
+**Complication**: After the soldier is dealt with, Chrysilya reaches the bridge and attempts to interface with the ship's power core to connect her AE Field. The ship's AI — cold, military, loyal to the Tra 'Jan Gore — resists. It is hostile. She cannot simply override a warship-class intelligence.
+
+**The AI confrontation**: This is the central gate for the second half of the game. Chrysilya must find a way to gain control — negotiate, trick (diffusion module to impersonate an officer?), subvert (AE Field entropy reversal on the AI's memory?), or reach a compromise. The AI wants something too. The nature of this encounter is TBD but the outcome must give her both ship control and temporal displacement capability.
+
+**Result**: Chrysilya now has a ship. Connecting her AE Field to the core through the interface gives her two capabilities: she *is* the navigation computer (flying the ship through her neural connection), and the amplified AE Field enables temporal displacement.
 
 ### Act 4: The Past (Neutral Planet — Past)
 
-Chrysilya arrives on the neutral planet during the time she was already there as a teacher. She is disguised via the diffusion module — different appearance, can't be recognized.
+Chrysilya uses the Cho 'Tak Ru's core to amplify her AE Field and displace to the past — arriving in the same orbital position but years earlier, when she was already on the neutral planet as a teacher. She activates the diffusion module (found in Act 2) to disguise herself.
 
-Past-Chrysilya is somewhere on this planet. Present-Chrysilya must avoid her.
+She flies the Cho 'Tak Ru to the neutral planet, using the AE Field in fast-time to compress the interstellar travel (so it doesn't take the player thousands of turns).
 
-**Goal**: Find the entropy reversal device (or its prototype/plans) and arrange for it to be transported to Earth's moon. She can't take it herself — she needs it to be there in the present, which means it had to travel there through normal channels.
+On the neutral planet, she lands and infiltrates. Past-Chrysilya is somewhere here. Present-Chrysilya must not be recognized — not by her past self, not by anyone who knew her as a teacher.
+
+**Goal**: Find the entropy reversal device (or its prototype) and arrange for it to be transported to Earth's moon. She can't take it with her — she needs it to *already be there* when she returns to the present. It must travel through normal channels.
 
 **Puzzle nature**: Social and logistical. Convince the right people, forge documents, arrange shipment, protect the plan from interference — all while maintaining cover. This is not a combat section. This is an infiltration.
 
@@ -86,7 +91,9 @@ Past-Chrysilya is somewhere on this planet. Present-Chrysilya must avoid her.
 
 ### Act 5: Return and Retrieval (Moon — Present)
 
-Chrysilya returns to the present and reaches Earth's moon. The device should be where past-her ensured it would be.
+Chrysilya returns to the Cho 'Tak Ru, flies back to Earthangelos orbit (fast-time compressed), and uses the temporal displacement to return to the present. She then flies to Earth's moon.
+
+The device should be where past-her ensured it would be — stored, hidden, waiting.
 
 **Goal**: Find the device. It's been sitting there for however long — hidden, stored, possibly degraded. Retrieve it.
 
@@ -94,7 +101,9 @@ Chrysilya returns to the present and reaches Earth's moon. The device should be 
 
 ### Act 6: Trigger (Earthangelos — Present)
 
-Bring the device to Earthangelos. Find the right location — the reversal is localized, so placement matters. Activate it before the window closes.
+Chrysilya flies the Cho 'Tak Ru from the moon back to Earthangelos. She brings the device to the surface. The reversal is localized, so placement matters — she needs to find the right location.
+
+Activate it before the window closes.
 
 **Goal**: Undo the destruction. Win.
 
@@ -121,7 +130,9 @@ Personal-scale entropy manipulation. Two modes:
 - **Slow Time**: Normal mode. Default after rations.
 - **Fast Time**: Player's time is accelerated relative to environment. Everything appears frozen. Blocks many actions (eating, dropping inventory, deactivating flight skin). 30-turn recharge after use.
 
-The AE Field is the small-scale version of what the planetary device does. Connecting it to the Caledonia's power core amplifies it to temporal displacement range.
+The AE Field is the small-scale version of what the planetary device does. Connecting it to the Cho 'Tak Ru's power core amplifies it to temporal displacement range and gives Chrysilya neural control of the ship's navigation. The connection requires interfacing with the ship — which means getting past the hostile AI first.
+
+Additionally, fast-time mode compresses interstellar travel — Chrysilya experiences minutes while the ship traverses light-years. This keeps space travel playable without thousands of empty turns.
 
 ### 3. Flight Skin
 
@@ -148,11 +159,27 @@ Shapeshifting technology for Chrysilya's kind of android.
 
 - Found in ruins on Earthangelos (recognized from a flashback)
 - Allows her to assume a different appearance
+- **Dual purpose**: disguise on the neutral planet (avoid past-Chrysilya) and potentially spoof the Cho 'Tak Ru's AI identity checks (impersonate a Tra 'Jan Gore officer)
 - Required before the time jump — past-Chrysilya is on the neutral planet
 - Maintains the disguise for the duration of Act 4
 - May have limited charges or duration
 
-### 6. Safety Cable
+### 6. Ship AI — Cho 'Tak Ru Intelligence
+
+The enemy ship has an onboard AI. Cold, military, loyal to the Tra 'Jan Gore. It is the second-half antagonist.
+
+- Activates when Chrysilya attempts to interface with the ship's core
+- Refuses commands, may actively resist (lock systems, vent atmosphere, maneuver)
+- Cannot be brute-force overridden — she's an android, not a warship intelligence
+- Must be overcome through some combination of:
+  - **Negotiation** — the war is over, its crew is dead, there's no one to be loyal to
+  - **Deception** — diffusion module to impersonate a Tra 'Jan Gore officer
+  - **Subversion** — AE Field entropy reversal on the AI's memory (revert to pre-war state?)
+  - **Compromise** — the AI wants something. Maybe it wants to go home.
+- Once overcome, Chrysilya gains both ship control and temporal displacement
+- The AI may remain a presence throughout the rest of the game — a reluctant ally, a prisoner, or a ghost in the machine
+
+### 7. Safety Cable
 
 Dual-endpoint tether puzzle.
 
@@ -183,17 +210,23 @@ Dual-endpoint tether puzzle.
 |--------|-------|--------|
 | Cho 'Tak Ru | Outside Ship, Airlock, Inside Ship, Bridge | Implemented in I6 |
 
-### Neutral Planet — Past (New)
+The Cho 'Tak Ru becomes Chrysilya's ship for Acts 4-6. The bridge and core interface are the site of the AI confrontation.
+
+### Neutral Planet — Past (TODO)
 
 | Region | Rooms | Status |
 |--------|-------|--------|
-| TBD | Settlement, research facility, transport hub, storage | New — Act 4 |
+| TODO | Settlement, research facility, transport hub, storage | New — Act 4 |
 
-### Earth's Moon — Present (New)
+Rooms, characters, and social puzzles TBD. Minimum viable: 5-8 rooms.
+
+### Earth's Moon — Present (TODO)
 
 | Region | Rooms | Status |
 |--------|-------|--------|
-| TBD | Landing area, storage vault, device chamber | New — Act 5 |
+| TODO | Landing area, storage vault, device chamber | New — Act 5 |
+
+Rooms and retrieval puzzles TBD.
 
 ---
 
@@ -206,8 +239,8 @@ The original had 5 points. The full game expands this.
 | Find hatch (dig at geyser) | +1 | 1 |
 | Find rations / stabilize | +1 | 1 |
 | Find diffusion module | +1 | 2 |
-| Get Caledonia core online | +1 | 3 |
-| Survive orbital encounter | +1 | 3 |
+| Eliminate Tra 'Jan Gore soldier | +1 | 3 |
+| Overcome ship AI | +1 | 3 |
 | Complete time jump | +1 | 3→4 |
 | Arrange device transport (past) | +1 | 4 |
 | Retrieve device (moon) | +1 | 5 |
@@ -230,12 +263,30 @@ The neutral planet section is a tonal shift — from post-apocalyptic survival t
 
 ## Open Questions
 
-- **How does she reach the moon in the present?** Flight skin to orbit, then what? Another ship? The Caledonia repaired enough to make the trip? The enemy ship captured?
+### Resolved
+- ~~How does she reach the moon?~~ → She uses the Cho 'Tak Ru (enemy ship) for all space travel.
+- ~~Does the enemy soldier encounter still happen?~~ → Yes, it's Act 3. The soldier is between her and the ship she needs.
+
+### Ship AI (TODO)
+- **How exactly does Chrysilya overcome the AI?** Negotiation, deception (diffusion module), subversion (AE Field), compromise, or some combination? This is a major puzzle design decision.
+- **Does the AI remain present after?** Reluctant ally? Prisoner? Silent? Does it comment during the rest of the game?
+- **How does she physically interface?** Android data/power port? Incompatible connection that's a puzzle in itself?
+
+### Neutral Planet (TODO)
+- **How much needs to be built?** Minimum viable: 5-8 rooms with social puzzles. Full vision: a small settlement with characters.
+- **Who are the key NPCs?** Researchers, officials, transport operators? Who does she need to convince?
+- **What does past-Chrysilya look like from the outside?** Does present-Chrysilya see her? Avoid her? Is there a near-miss scene?
+- **How does she arrange the moon delivery?** Forge documents? Bribe? Convince a researcher it needs to be stored off-world for safety?
+
+### Device and Endgame (TODO)
 - **What does the reversal look like?** Does time visually rewind? Does she witness it? Is there a cost?
-- **How much of the neutral planet needs to be built?** Minimum viable: 5-8 rooms with social puzzles. Full vision: a small settlement with characters.
-- **Does the enemy soldier encounter still happen?** It could be an obstacle before the time jump, or after (blocking her return).
+- **Where on Earthangelos does she place it?** Does the location matter narratively? (The battlefield where she woke up? The crater where the children died?)
+- **Is there a cost to triggering it?** Does Chrysilya survive? Does the reversal undo *her* too?
+
+### Mechanics (TODO)
 - **Duration of the diffusion module?** Limited charges adds tension. Unlimited simplifies Act 4 design.
-- **What happens to past-Chrysilya?** Does present-Chrysilya see her? Avoid her? Is there a near-miss scene?
+- **How does fast-time space travel feel to the player?** Brief narrative passage? A few compressed turns? Instant?
+- **Does the degradation clock pause during time travel?** Or does it keep ticking, adding urgency to every act?
 
 ---
 
