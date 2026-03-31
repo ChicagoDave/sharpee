@@ -369,6 +369,320 @@ extendParser(parser: Parser): void {
 }
 ```
 
+## Docking Sequence: The Interstellar Scenario
+
+A ship attempts to dock with a misaligned port. The player can wait for abort, or try to force the override — which blows the hatch and vents everything into space.
+
+### Docking State (Scheduler Daemon)
+
+```typescript
+// scheduler/docking-daemon.ts
+export const DOCKING_DAEMON_ID = 'station.daemon.docking';
+
+export interface DockingState {
+  phase: 'idle' | 'approach' | 'misaligned' | 'abort' | 'docked' | 'catastrophe';
+  turnsInPhase: number;
+  alignmentDrift: number; // degrees off-center, increases each turn
+}
+
+export function createDockingDaemon(world: WorldModel): ScheduledEvent {
+  return {
+    id: DOCKING_DAEMON_ID,
+    interval: 1, // ticks every turn
+    callback(context: DaemonContext): ISemanticEvent[] {
+      const state = getDockingState(world);
+      state.turnsInPhase++;
+
+      switch (state.phase) {
+        case 'approach':
+          return handleApproach(state, context);
+        case 'misaligned':
+          return handleMisaligned(state, context);
+        case 'catastrophe':
+          return handleCatastrophe(state, context);
+        default:
+          return [];
+      }
+    },
+  };
+}
+```
+
+### Approach Phase (Ambient Tension)
+
+The ship approaches over several turns. The player hears it through the hull.
+
+```typescript
+function handleApproach(state: DockingState, context: DaemonContext): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+
+  if (state.turnsInPhase === 1) {
+    events.push(createEvent('station.event.docking_ambient', {
+      messageId: DockingMessages.APPROACH_VIBRATION,
+    }));
+  } else if (state.turnsInPhase === 3) {
+    events.push(createEvent('station.event.docking_ambient', {
+      messageId: DockingMessages.APPROACH_THRUSTERS,
+    }));
+  } else if (state.turnsInPhase === 5) {
+    // Contact — but misaligned
+    state.phase = 'misaligned';
+    state.turnsInPhase = 0;
+    state.alignmentDrift = 2.3;
+    events.push(createEvent('station.event.docking_contact', {
+      messageId: DockingMessages.CONTACT_MISALIGNED,
+    }));
+  }
+  return events;
+}
+```
+
+### Misaligned Phase (Escalating Urgency)
+
+Each turn the alignment worsens. The panel warns. After 4 turns, auto-abort.
+
+```typescript
+function handleMisaligned(state: DockingState, context: DaemonContext): ISemanticEvent[] {
+  state.alignmentDrift += 0.8;
+  const events: ISemanticEvent[] = [];
+
+  if (state.turnsInPhase === 1) {
+    events.push(createEvent('station.event.docking_warning', {
+      messageId: DockingMessages.SEAL_FAILING,
+      params: { drift: state.alignmentDrift.toFixed(1) },
+    }));
+  } else if (state.turnsInPhase === 2) {
+    events.push(createEvent('station.event.docking_warning', {
+      messageId: DockingMessages.DRIFT_INCREASING,
+      params: { drift: state.alignmentDrift.toFixed(1) },
+    }));
+  } else if (state.turnsInPhase === 3) {
+    events.push(createEvent('station.event.docking_warning', {
+      messageId: DockingMessages.ABORT_RECOMMENDED,
+    }));
+  } else if (state.turnsInPhase >= 4) {
+    // Auto-abort — ship pulls away safely
+    state.phase = 'abort';
+    state.turnsInPhase = 0;
+    events.push(createEvent('station.event.docking_abort', {
+      messageId: DockingMessages.AUTO_ABORT,
+    }));
+  }
+  return events;
+}
+```
+
+### Override Action: Force the Dock
+
+The player can try to override the safety lockout and force the docking clamps. This is the Interstellar moment — Dr. Mann overriding an imperfect seal.
+
+```typescript
+// actions/override-dock/override-dock-action.ts
+export const OVERRIDE_DOCK_ACTION_ID = 'station.action.override_dock';
+
+export const overrideDockAction: Action = {
+  id: OVERRIDE_DOCK_ACTION_ID,
+  group: 'interaction',
+
+  validate(context: ActionContext): ValidationResult {
+    const state = getDockingState(context.world);
+
+    // Can only override during misalignment
+    if (state.phase !== 'misaligned') {
+      return { valid: false, error: DockingMessages.NOTHING_TO_OVERRIDE };
+    }
+
+    // Must be at the docking panel
+    if (context.currentLocation.id !== 'airlock-chamber') {
+      return { valid: false, error: DockingMessages.NOT_AT_CONTROLS };
+    }
+
+    return { valid: true };
+  },
+
+  execute(context: ActionContext): void {
+    const state = getDockingState(context.world);
+
+    // The override "works" — clamps engage on a bad seal
+    state.phase = 'catastrophe';
+    state.turnsInPhase = 0;
+
+    // Open the outer hatch by force (bypasses normal interlock)
+    const hatch = context.world.getEntity('outer-hatch');
+    const openable = hatch.get(OpenableTrait);
+    if (openable) openable.isOpen = true;
+
+    // Depressurize violently
+    const chamber = context.world.getEntity('airlock-chamber');
+    (chamber as any).pressurized = false;
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
+    return [context.event('station.event.override_catastrophe', {
+      messageId: DockingMessages.CATASTROPHE,
+    })];
+  },
+
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('station.event.override_blocked', {
+      messageId: result.error,
+    })];
+  },
+};
+```
+
+### Catastrophe Phase (Aftermath)
+
+The turn after the override, the daemon delivers consequences.
+
+```typescript
+function handleCatastrophe(state: DockingState, context: DaemonContext): ISemanticEvent[] {
+  if (state.turnsInPhase === 1) {
+    // Player is still alive for one turn — blown against the inner door
+    return [createEvent('station.event.docking_catastrophe', {
+      messageId: DockingMessages.DECOMPRESSION,
+    })];
+  } else if (state.turnsInPhase === 2) {
+    // Check if player grabbed something or is wearing EVA suit
+    const player = context.world.getPlayer();
+    const hassuit = /* check if EVA suit is worn */;
+
+    if (hassuit) {
+      return [createEvent('station.event.docking_survived', {
+        messageId: DockingMessages.SURVIVED_IN_SUIT,
+      })];
+    }
+
+    // Death
+    return [createEvent('player.died', {
+      messageId: DockingMessages.BLOWN_INTO_SPACE,
+      cause: 'explosive_decompression',
+    })];
+  }
+  return [];
+}
+```
+
+### Docking Messages
+
+```typescript
+export const DockingMessages = {
+  // Approach
+  APPROACH_VIBRATION: 'station.docking.approach_vibration',
+  APPROACH_THRUSTERS: 'station.docking.approach_thrusters',
+  CONTACT_MISALIGNED: 'station.docking.contact_misaligned',
+
+  // Misalignment warnings
+  SEAL_FAILING: 'station.docking.seal_failing',
+  DRIFT_INCREASING: 'station.docking.drift_increasing',
+  ABORT_RECOMMENDED: 'station.docking.abort_recommended',
+  AUTO_ABORT: 'station.docking.auto_abort',
+
+  // Override
+  NOTHING_TO_OVERRIDE: 'station.docking.nothing_to_override',
+  NOT_AT_CONTROLS: 'station.docking.not_at_controls',
+  CATASTROPHE: 'station.docking.catastrophe',
+
+  // Aftermath
+  DECOMPRESSION: 'station.docking.decompression',
+  SURVIVED_IN_SUIT: 'station.docking.survived_in_suit',
+  BLOWN_INTO_SPACE: 'station.docking.blown_into_space',
+};
+```
+
+```typescript
+// lang-en-us registration
+{
+  'station.docking.approach_vibration':
+    'A low vibration hums through the deck plates beneath your feet.',
+
+  'station.docking.approach_thrusters':
+    'Through the outer hatch you hear the staccato firing of attitude thrusters. '
+    + 'Something is approaching the docking port.',
+
+  'station.docking.contact_misaligned':
+    'A heavy CLANG reverberates through the hull. The docking panel flashes amber. '
+    + 'ALIGNMENT FAULT — SEAL INTEGRITY 74%. The ship has made contact, but the '
+    + 'docking ring is off-center.',
+
+  'station.docking.seal_failing':
+    'The panel reads DRIFT {drift} DEGREES. You can hear a thin whistle — '
+    + 'atmosphere leaking through the imperfect seal.',
+
+  'station.docking.drift_increasing':
+    'DRIFT {drift} DEGREES. The whistling is louder now. '
+    + 'The docking ring groans under lateral stress.',
+
+  'station.docking.abort_recommended':
+    'The panel flashes red: ABORT RECOMMENDED. SEAL INTEGRITY 31%. '
+    + 'AUTOMATIC ABORT IN 30 SECONDS. The entire airlock shudders.',
+
+  'station.docking.auto_abort':
+    'The docking clamps release with a bang. Through the hatch you hear '
+    + 'thrusters fire as the ship pulls away. The whistling stops. '
+    + 'The panel reads DOCK SEQUENCE ABORTED. Silence returns.',
+
+  'station.docking.nothing_to_override':
+    'There is nothing to override right now.',
+
+  'station.docking.not_at_controls':
+    'You need to be at the airlock controls to override the docking sequence.',
+
+  'station.docking.catastrophe':
+    'You punch the override. The clamps re-engage, grinding against the misaligned ring. '
+    + 'For a moment the seal holds.\n\n'
+    + 'Then it doesn\'t.\n\n'
+    + 'The docking ring shears. The outer hatch blows outward with a sound like '
+    + 'a cannon shot. Everything not bolted down — tools, papers, the cycling panel\'s '
+    + 'safety cover — whips past you toward the breach.',
+
+  'station.docking.decompression':
+    'The wind is a wall. You are pinned against the inner door frame, '
+    + 'fingers white on the grab rail. The air tears at your clothes, your lungs. '
+    + 'Beyond the shattered hatch: tumbling hull fragments, venting gas, and black.',
+
+  'station.docking.survived_in_suit':
+    'The suit holds. The wind dies as the last atmosphere vents. '
+    + 'You hang in silence, gripping the rail, looking out through the breach '
+    + 'at the ship spinning slowly away. Your radio crackles with nothing.',
+
+  'station.docking.blown_into_space':
+    'Your grip fails. The decompression throws you through the breach '
+    + 'like a leaf in a hurricane. The station rotates slowly away from you. '
+    + 'The stars do not move. Nothing moves. You are the only thing out here '
+    + 'and you are not going to stop.',
+}
+```
+
+### Grammar Extension (Docking)
+
+```typescript
+// Add to extendParser()
+grammar
+  .define('override dock|docking|sequence|lockout|safety')
+  .mapsTo(OVERRIDE_DOCK_ACTION_ID)
+  .withPriority(150)
+  .build();
+
+grammar
+  .define('force dock|docking|seal|clamps')
+  .mapsTo(OVERRIDE_DOCK_ACTION_ID)
+  .withPriority(150)
+  .build();
+```
+
+### Design Notes (Docking)
+
+**Scheduler-driven tension.** The docking sequence runs as a daemon that ticks every turn regardless of what the player does. The player can ignore it (auto-abort is safe), investigate it (examine panel), or make the fatal choice (override). The tension comes from ambient messages interrupting whatever else the player is doing.
+
+**The override is always wrong.** There is no alignment where forcing the dock succeeds. The player is Dr. Mann — convinced they can make it work, wrong about the physics. The EVA suit is the only out, and the player had to have put it on before the crisis. Preparation, not reaction.
+
+**Deferred death with a grace turn.** The catastrophe doesn't kill instantly. Turn 1 is the decompression — the player is pinned, alive, experiencing it. Turn 2 checks for the suit. This gives the prose room to breathe (ironic) and makes the death feel earned rather than arbitrary.
+
+**The safe path is inaction.** If the player does nothing, the auto-abort fires and the ship pulls away. This is the correct IF design — the dangerous choice requires deliberate action, not failure to act.
+
+---
+
 ## Design Notes
 
 **Mutual exclusion without coupling.** The two doors never reference each other. Each checks the chamber's pressurization state independently. The inner door requires pressurized = true. The outer hatch requires pressurized = false. This makes them mutually exclusive by construction — no explicit "if other door is open" checks.
