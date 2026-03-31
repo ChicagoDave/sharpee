@@ -8,6 +8,7 @@ packages:
   - '!packages/dev-tools'
   - '!packages/forge'
   - stories/dungeo
+  - stories/entropy
   - tutorials/familyzoo
 
 ignoredBuiltDependencies:

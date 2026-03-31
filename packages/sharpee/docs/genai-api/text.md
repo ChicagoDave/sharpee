@@ -325,7 +325,8 @@ export declare class TextService implements ITextService {
      * All stdlib actions use this pattern. Story actions that emit action.success
      * or action.blocked events fall through to the switch-case handlers below.
      *
-     * @returns Text blocks if event has messageId and message was found, null otherwise.
+     * @returns Text blocks if event has messageId. If the messageId doesn't resolve,
+     *   emits a visible error block rather than silently producing nothing.
      */
     private tryProcessDomainEventMessage;
     /**

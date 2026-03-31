@@ -500,6 +500,20 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        cant_lower_that: string;
+        already_down: string;
+        lowered: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         cant_take_self: string;
         already_have: string;
         cant_take_room: string;
@@ -1124,24 +1138,10 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        'if.lower.no_target': string;
-        'if.lower.cant_lower_that': string;
-        'if.lower.already_down': string;
-        'if.lower.lowered': string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        'if.raise.no_target': string;
-        'if.raise.cant_raise_that': string;
-        'if.raise.already_up': string;
-        'if.raise.raised': string;
+        no_target: string;
+        cant_raise_that: string;
+        already_up: string;
+        raised: string;
     };
     help: {
         description: string;

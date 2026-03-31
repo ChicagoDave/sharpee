@@ -1,7 +1,7 @@
 {
-  "phase": 7,
-  "phaseName": "Replace wt-09 teleports (Up a Tree route)",
-  "tier": "Small",
-  "budget": 100,
-  "toolCalls": 378
+  "phase": 11,
+  "phaseName": "Migrate 38 Blocked-Only Story Actions (Category 1 — Mechanical)",
+  "tier": "Medium",
+  "budget": 250,
+  "toolCalls": 794
 }
