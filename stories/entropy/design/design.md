@@ -53,7 +53,7 @@ As Chrysilya explores, location-triggered flashbacks reveal her past. The memory
 - **Deep Crater**: Children being killed by Tra 'Jan Gore soldiers
 - **Chamber**: Dal MKor explaining the time displacement concept — reversal of entropy in a limited space, within a limited window
 - **Spaceport**: Arriving on Earthangelos as a teacher — she was on the neutral planet before
-- **Android facility ruins** (new): Remembers where diffusion modules were stored — her "kind" could change shape
+- **Chrysilya's home** (new): Remembers her home — using the diffusion module to change appearance for everyday life. When the flashback ends, she knows where home *was*
 
 **Goal**: Learn about the device. Learn she was on the neutral planet. Find a diffusion module for disguise.
 
@@ -157,7 +157,7 @@ Location-triggered flashbacks that reveal backstory and provide puzzle hints.
 
 Shapeshifting technology for Chrysilya's kind of android.
 
-- Found in ruins on Earthangelos (recognized from a flashback)
+- Found in the ruins of Chrysilya's home (recognized from a flashback of everyday life)
 - Allows her to assume a different appearance
 - **Dual purpose**: disguise on the neutral planet (avoid past-Chrysilya) and potentially spoof the Cho 'Tak Ru's AI identity checks (impersonate a Tra 'Jan Gore officer)
 - Required before the time jump — past-Chrysilya is on the neutral planet
@@ -201,7 +201,7 @@ Dual-endpoint tether puzzle.
 | Underground | Deep Crater, Riverbed, Underground River, Enemy Bunker | Implemented in I6 |
 | Geyser/Chamber | Geyser, Dark Chamber | Implemented in I6 |
 | Spaceport | Spaceport, Main Cabin (Caledonia) | Implemented in I6 |
-| City Ruins | Android facility ruins, collapsed structures | New — diffusion module location |
+| Chrysilya's Home | Ruins of her home, rubble, personal belongings | New — diffusion module location |
 | Above/Orbit | Above Lost Battlefield, Planetary Orbit | Implemented in I6 |
 
 ### Earthangelos Orbit (from I6 prototype)
