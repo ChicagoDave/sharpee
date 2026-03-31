@@ -131,37 +131,6 @@ export function createCycleButton(world: WorldModel): IFEntity {
 }
 ```
 
-### EVA Suit
-
-```typescript
-export function createEvaSuit(world: WorldModel): IFEntity {
-  const suit = world.createEntity('eva-suit', 'object');
-  suit.add(new IdentityTrait({
-    name: 'EVA suit',
-    aliases: ['suit', 'spacesuit', 'space suit'],
-    description: 'A bulky extravehicular activity suit with magnetic boots '
-      + 'and a four-hour oxygen supply.',
-  }));
-  suit.add(new WearableTrait());
-  return suit;
-}
-```
-
-### Safety Tether
-
-```typescript
-export function createTether(world: WorldModel): IFEntity {
-  const tether = world.createEntity('tether', 'object');
-  tether.add(new IdentityTrait({
-    name: 'safety tether',
-    aliases: ['tether', 'cable', 'line'],
-    description: 'A retractable steel cable clipped to a rail beside the hatch.',
-  }));
-  tether.add(new SceneryTrait());
-  return tether;
-}
-```
-
 ## Custom Trait: Airlock Door
 
 The airlock door trait intercepts the stdlib `opening` action via capability dispatch. Each door checks the chamber's pressurization state independently — the two doors never reference each other.
@@ -286,25 +255,6 @@ export const cycleAirlockAction: Action = {
 };
 ```
 
-## Death Handler: Vacuum Exposure
-
-```typescript
-// handlers/vacuum-handler.ts
-export function registerVacuumHandler(world: WorldModel): void {
-  world.registerEventHandler('if.event.moved', (event, world) => {
-    if (event.data.destinationId !== 'outer-space') return;
-
-    const player = world.getEntity(event.data.entityId);
-    const hassuit = /* check if EVA suit is worn */;
-
-    if (!hassuit) {
-      // Deferred death — give the player one turn of gasping
-      (player as any).vacuumExposure = true;
-    }
-  });
-}
-```
-
 ## Messages
 
 ```typescript
@@ -369,9 +319,11 @@ extendParser(parser: Parser): void {
 }
 ```
 
-## Docking Sequence: The Interstellar Scenario
+## Docking Catastrophe: The Interstellar Scenario
 
-A ship attempts to dock with a misaligned port. The player can wait for abort, or try to force the override — which blows the hatch and vents everything into space.
+The player is aboard their ship. Another ship — with broken docking locks — attempts to connect. The incoming ship forces a partial connection, then opens their own airlock, breaking the seal. The incoming ship blows away, its airlock open to space, killing the occupant. The player witnesses this from their side.
+
+The player is not in danger. They watch someone else make the fatal mistake.
 
 ### Docking State (Scheduler Daemon)
 
@@ -380,15 +332,16 @@ A ship attempts to dock with a misaligned port. The player can wait for abort, o
 export const DOCKING_DAEMON_ID = 'station.daemon.docking';
 
 export interface DockingState {
-  phase: 'idle' | 'approach' | 'misaligned' | 'abort' | 'docked' | 'catastrophe';
+  phase: 'idle' | 'approach' | 'contact' | 'partial_seal' | 'catastrophe' | 'aftermath';
   turnsInPhase: number;
-  alignmentDrift: number; // degrees off-center, increases each turn
+  incomingShipName: string;
+  occupantName: string;
 }
 
 export function createDockingDaemon(world: WorldModel): ScheduledEvent {
   return {
     id: DOCKING_DAEMON_ID,
-    interval: 1, // ticks every turn
+    interval: 1,
     callback(context: DaemonContext): ISemanticEvent[] {
       const state = getDockingState(world);
       state.turnsInPhase++;
@@ -396,10 +349,14 @@ export function createDockingDaemon(world: WorldModel): ScheduledEvent {
       switch (state.phase) {
         case 'approach':
           return handleApproach(state, context);
-        case 'misaligned':
-          return handleMisaligned(state, context);
+        case 'contact':
+          return handleContact(state, context);
+        case 'partial_seal':
+          return handlePartialSeal(state, context);
         case 'catastrophe':
           return handleCatastrophe(state, context);
+        case 'aftermath':
+          return handleAftermath(state, context);
         default:
           return [];
       }
@@ -408,9 +365,9 @@ export function createDockingDaemon(world: WorldModel): ScheduledEvent {
 }
 ```
 
-### Approach Phase (Ambient Tension)
+### Approach Phase
 
-The ship approaches over several turns. The player hears it through the hull.
+The player hears the incoming ship through the hull. Radio contact establishes the situation.
 
 ```typescript
 function handleApproach(state: DockingState, context: DaemonContext): ISemanticEvent[] {
@@ -418,149 +375,145 @@ function handleApproach(state: DockingState, context: DaemonContext): ISemanticE
 
   if (state.turnsInPhase === 1) {
     events.push(createEvent('station.event.docking_ambient', {
-      messageId: DockingMessages.APPROACH_VIBRATION,
+      messageId: DockingMessages.RADIO_CONTACT,
+      params: { ship: state.incomingShipName, occupant: state.occupantName },
     }));
   } else if (state.turnsInPhase === 3) {
     events.push(createEvent('station.event.docking_ambient', {
       messageId: DockingMessages.APPROACH_THRUSTERS,
     }));
+  } else if (state.turnsInPhase === 4) {
+    events.push(createEvent('station.event.docking_ambient', {
+      messageId: DockingMessages.LOCKS_BROKEN_WARNING,
+      params: { occupant: state.occupantName },
+    }));
   } else if (state.turnsInPhase === 5) {
-    // Contact — but misaligned
-    state.phase = 'misaligned';
+    state.phase = 'contact';
     state.turnsInPhase = 0;
-    state.alignmentDrift = 2.3;
     events.push(createEvent('station.event.docking_contact', {
-      messageId: DockingMessages.CONTACT_MISALIGNED,
+      messageId: DockingMessages.HARD_CONTACT,
     }));
   }
   return events;
 }
 ```
 
-### Misaligned Phase (Escalating Urgency)
+### Contact Phase
 
-Each turn the alignment worsens. The panel warns. After 4 turns, auto-abort.
+The ships touch. The player's panel shows the incoming ship's locks aren't engaging.
 
 ```typescript
-function handleMisaligned(state: DockingState, context: DaemonContext): ISemanticEvent[] {
-  state.alignmentDrift += 0.8;
+function handleContact(state: DockingState, context: DaemonContext): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
 
   if (state.turnsInPhase === 1) {
     events.push(createEvent('station.event.docking_warning', {
-      messageId: DockingMessages.SEAL_FAILING,
-      params: { drift: state.alignmentDrift.toFixed(1) },
+      messageId: DockingMessages.LOCKS_NOT_ENGAGING,
     }));
   } else if (state.turnsInPhase === 2) {
-    events.push(createEvent('station.event.docking_warning', {
-      messageId: DockingMessages.DRIFT_INCREASING,
-      params: { drift: state.alignmentDrift.toFixed(1) },
-    }));
-  } else if (state.turnsInPhase === 3) {
-    events.push(createEvent('station.event.docking_warning', {
-      messageId: DockingMessages.ABORT_RECOMMENDED,
-    }));
-  } else if (state.turnsInPhase >= 4) {
-    // Auto-abort — ship pulls away safely
-    state.phase = 'abort';
+    // The other pilot forces it
+    state.phase = 'partial_seal';
     state.turnsInPhase = 0;
-    events.push(createEvent('station.event.docking_abort', {
-      messageId: DockingMessages.AUTO_ABORT,
+    events.push(createEvent('station.event.docking_warning', {
+      messageId: DockingMessages.FORCING_CONNECTION,
+      params: { occupant: state.occupantName },
     }));
   }
   return events;
 }
 ```
 
-### Override Action: Force the Dock
+### Partial Seal Phase
 
-The player can try to override the safety lockout and force the docking clamps. This is the Interstellar moment — Dr. Mann overriding an imperfect seal.
+The connection is half-made. The player's panel shows warnings. The other pilot radios that they're going to open their side.
 
 ```typescript
-// actions/override-dock/override-dock-action.ts
-export const OVERRIDE_DOCK_ACTION_ID = 'station.action.override_dock';
+function handlePartialSeal(state: DockingState, context: DaemonContext): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
 
-export const overrideDockAction: Action = {
-  id: OVERRIDE_DOCK_ACTION_ID,
-  group: 'interaction',
-
-  validate(context: ActionContext): ValidationResult {
-    const state = getDockingState(context.world);
-
-    // Can only override during misalignment
-    if (state.phase !== 'misaligned') {
-      return { valid: false, error: DockingMessages.NOTHING_TO_OVERRIDE };
-    }
-
-    // Must be at the docking panel
-    if (context.currentLocation.id !== 'airlock-chamber') {
-      return { valid: false, error: DockingMessages.NOT_AT_CONTROLS };
-    }
-
-    return { valid: true };
-  },
-
-  execute(context: ActionContext): void {
-    const state = getDockingState(context.world);
-
-    // The override "works" — clamps engage on a bad seal
+  if (state.turnsInPhase === 1) {
+    events.push(createEvent('station.event.docking_warning', {
+      messageId: DockingMessages.PARTIAL_SEAL,
+    }));
+  } else if (state.turnsInPhase === 2) {
+    events.push(createEvent('station.event.docking_radio', {
+      messageId: DockingMessages.GOING_TO_OPEN,
+      params: { occupant: state.occupantName },
+    }));
+  } else if (state.turnsInPhase === 3) {
+    // The player can try to warn them (SAY action) — but it won't matter
+    // The other pilot opens their airlock
     state.phase = 'catastrophe';
     state.turnsInPhase = 0;
-
-    // Open the outer hatch by force (bypasses normal interlock)
-    const hatch = context.world.getEntity('outer-hatch');
-    const openable = hatch.get(OpenableTrait);
-    if (openable) openable.isOpen = true;
-
-    // Depressurize violently
-    const chamber = context.world.getEntity('airlock-chamber');
-    (chamber as any).pressurized = false;
-  },
-
-  report(context: ActionContext): ISemanticEvent[] {
-    return [context.event('station.event.override_catastrophe', {
-      messageId: DockingMessages.CATASTROPHE,
-    })];
-  },
-
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('station.event.override_blocked', {
-      messageId: result.error,
-    })];
-  },
-};
+    events.push(createEvent('station.event.docking_catastrophe', {
+      messageId: DockingMessages.THEY_OPEN_THEIR_SIDE,
+    }));
+  }
+  return events;
+}
 ```
 
-### Catastrophe Phase (Aftermath)
+### Catastrophe Phase
 
-The turn after the override, the daemon delivers consequences.
+The partial seal breaks. The incoming ship's open airlock vents to space. The ship blows away from the player's hull.
 
 ```typescript
 function handleCatastrophe(state: DockingState, context: DaemonContext): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+
   if (state.turnsInPhase === 1) {
-    // Player is still alive for one turn — blown against the inner door
-    return [createEvent('station.event.docking_catastrophe', {
-      messageId: DockingMessages.DECOMPRESSION,
-    })];
+    events.push(createEvent('station.event.docking_catastrophe', {
+      messageId: DockingMessages.SEAL_BREAKS,
+      params: { ship: state.incomingShipName },
+    }));
   } else if (state.turnsInPhase === 2) {
-    // Check if player grabbed something or is wearing EVA suit
-    const player = context.world.getPlayer();
-    const hassuit = /* check if EVA suit is worn */;
+    state.phase = 'aftermath';
+    state.turnsInPhase = 0;
+    events.push(createEvent('station.event.docking_catastrophe', {
+      messageId: DockingMessages.SHIP_GONE,
+      params: { ship: state.incomingShipName, occupant: state.occupantName },
+    }));
+  }
+  return events;
+}
+```
 
-    if (hassuit) {
-      return [createEvent('station.event.docking_survived', {
-        messageId: DockingMessages.SURVIVED_IN_SUIT,
-      })];
-    }
+### Aftermath Phase
 
-    // Death
-    return [createEvent('player.died', {
-      messageId: DockingMessages.BLOWN_INTO_SPACE,
-      cause: 'explosive_decompression',
+Silence. The player's airlock is intact. The outer hatch shows vacuum.
+
+```typescript
+function handleAftermath(state: DockingState, context: DaemonContext): ISemanticEvent[] {
+  if (state.turnsInPhase === 1) {
+    // One final message, then the daemon goes idle
+    state.phase = 'idle';
+    return [createEvent('station.event.docking_aftermath', {
+      messageId: DockingMessages.RADIO_SILENCE,
+      params: { occupant: state.occupantName },
     })];
   }
   return [];
 }
+```
+
+### The Player's Choice: Warn or Watch
+
+The player can try to intervene by talking over the radio. It doesn't change the outcome — the other pilot is committed — but it changes the player's relationship to what happens.
+
+```typescript
+// Event handler: react to SAY during partial_seal phase
+world.registerEventHandler('if.event.said', (event, world) => {
+  const state = getDockingState(world);
+  if (state.phase !== 'partial_seal') return;
+
+  // The player tried to warn them
+  (state as any).playerWarned = true;
+
+  return [createEvent('station.event.docking_radio', {
+    messageId: DockingMessages.THEY_IGNORE_WARNING,
+    params: { occupant: state.occupantName },
+  })];
+});
 ```
 
 ### Docking Messages
@@ -568,118 +521,107 @@ function handleCatastrophe(state: DockingState, context: DaemonContext): ISemant
 ```typescript
 export const DockingMessages = {
   // Approach
-  APPROACH_VIBRATION: 'station.docking.approach_vibration',
+  RADIO_CONTACT: 'station.docking.radio_contact',
   APPROACH_THRUSTERS: 'station.docking.approach_thrusters',
-  CONTACT_MISALIGNED: 'station.docking.contact_misaligned',
+  LOCKS_BROKEN_WARNING: 'station.docking.locks_broken_warning',
+  HARD_CONTACT: 'station.docking.hard_contact',
 
-  // Misalignment warnings
-  SEAL_FAILING: 'station.docking.seal_failing',
-  DRIFT_INCREASING: 'station.docking.drift_increasing',
-  ABORT_RECOMMENDED: 'station.docking.abort_recommended',
-  AUTO_ABORT: 'station.docking.auto_abort',
+  // Contact
+  LOCKS_NOT_ENGAGING: 'station.docking.locks_not_engaging',
+  FORCING_CONNECTION: 'station.docking.forcing_connection',
 
-  // Override
-  NOTHING_TO_OVERRIDE: 'station.docking.nothing_to_override',
-  NOT_AT_CONTROLS: 'station.docking.not_at_controls',
-  CATASTROPHE: 'station.docking.catastrophe',
+  // Partial seal
+  PARTIAL_SEAL: 'station.docking.partial_seal',
+  GOING_TO_OPEN: 'station.docking.going_to_open',
+  THEY_OPEN_THEIR_SIDE: 'station.docking.they_open_their_side',
+
+  // Catastrophe
+  SEAL_BREAKS: 'station.docking.seal_breaks',
+  SHIP_GONE: 'station.docking.ship_gone',
 
   // Aftermath
-  DECOMPRESSION: 'station.docking.decompression',
-  SURVIVED_IN_SUIT: 'station.docking.survived_in_suit',
-  BLOWN_INTO_SPACE: 'station.docking.blown_into_space',
+  RADIO_SILENCE: 'station.docking.radio_silence',
+
+  // Player intervention
+  THEY_IGNORE_WARNING: 'station.docking.they_ignore_warning',
 };
 ```
 
 ```typescript
 // lang-en-us registration
 {
-  'station.docking.approach_vibration':
-    'A low vibration hums through the deck plates beneath your feet.',
+  'station.docking.radio_contact':
+    'The radio crackles. "{occupant} to docking control. Requesting emergency '
+    + 'dock. My port-side locks are damaged. Repeat — locks are non-functional. '
+    + 'Requesting manual approach."',
 
   'station.docking.approach_thrusters':
-    'Through the outer hatch you hear the staccato firing of attitude thrusters. '
-    + 'Something is approaching the docking port.',
+    'Through the outer hatch you hear the staccato firing of attitude thrusters, '
+    + 'close now. The docking panel lights up.',
 
-  'station.docking.contact_misaligned':
-    'A heavy CLANG reverberates through the hull. The docking panel flashes amber. '
-    + 'ALIGNMENT FAULT — SEAL INTEGRITY 74%. The ship has made contact, but the '
-    + 'docking ring is off-center.',
+  'station.docking.locks_broken_warning':
+    '"{occupant} on approach. I know the locks are gone. I can hold position '
+    + 'with thrusters while I cycle through. Done it before."',
 
-  'station.docking.seal_failing':
-    'The panel reads DRIFT {drift} DEGREES. You can hear a thin whistle — '
-    + 'atmosphere leaking through the imperfect seal.',
+  'station.docking.hard_contact':
+    'A heavy CLANG shakes the airlock. The docking ring has made contact. '
+    + 'Your panel reads CONTACT — EXTERNAL LOCKS: NO SIGNAL.',
 
-  'station.docking.drift_increasing':
-    'DRIFT {drift} DEGREES. The whistling is louder now. '
-    + 'The docking ring groans under lateral stress.',
+  'station.docking.locks_not_engaging':
+    'The panel flashes: LOCK ENGAGEMENT FAILED. SEAL INCOMPLETE. '
+    + 'The docking ring is seated but nothing is holding it there '
+    + 'except the other ship\'s thrusters.',
 
-  'station.docking.abort_recommended':
-    'The panel flashes red: ABORT RECOMMENDED. SEAL INTEGRITY 31%. '
-    + 'AUTOMATIC ABORT IN 30 SECONDS. The entire airlock shudders.',
+  'station.docking.forcing_connection':
+    'You hear {occupant}\'s thrusters fire in short bursts, pressing the ship '
+    + 'harder against the ring. The panel reads SEAL INTEGRITY 41% — '
+    + 'DOCK NOT SECURE. The ring groans.',
 
-  'station.docking.auto_abort':
-    'The docking clamps release with a bang. Through the hatch you hear '
-    + 'thrusters fire as the ship pulls away. The whistling stops. '
-    + 'The panel reads DOCK SEQUENCE ABORTED. Silence returns.',
+  'station.docking.partial_seal':
+    'The panel holds at 41%. A thin whistle — atmosphere seeping through the '
+    + 'imperfect seal. Not a complete breach, but not airtight either.',
 
-  'station.docking.nothing_to_override':
-    'There is nothing to override right now.',
+  'station.docking.going_to_open':
+    '"{occupant} to control. Seal\'s good enough. I\'m cycling my airlock now."',
 
-  'station.docking.not_at_controls':
-    'You need to be at the airlock controls to override the docking sequence.',
+  'station.docking.they_open_their_side':
+    'Through the hatch you hear the muffled clunk of the other ship\'s airlock '
+    + 'cycling. Then a different sound — a pressurized hiss that rises in pitch.',
 
-  'station.docking.catastrophe':
-    'You punch the override. The clamps re-engage, grinding against the misaligned ring. '
-    + 'For a moment the seal holds.\n\n'
-    + 'Then it doesn\'t.\n\n'
-    + 'The docking ring shears. The outer hatch blows outward with a sound like '
-    + 'a cannon shot. Everything not bolted down — tools, papers, the cycling panel\'s '
-    + 'safety cover — whips past you toward the breach.',
+  'station.docking.seal_breaks':
+    'The partial seal fails instantly. The pressure differential rips {ship} '
+    + 'away from your docking ring with a sound like tearing metal. Through '
+    + 'the viewport beside the hatch you see the ship tumbling backward, '
+    + 'its airlock door open, atmosphere venting from the breach in a white '
+    + 'plume that freezes and scatters into crystals.',
 
-  'station.docking.decompression':
-    'The wind is a wall. You are pinned against the inner door frame, '
-    + 'fingers white on the grab rail. The air tears at your clothes, your lungs. '
-    + 'Beyond the shattered hatch: tumbling hull fragments, venting gas, and black.',
+  'station.docking.ship_gone':
+    '{ship} spins away, trailing frozen vapor. The open airlock is a dark '
+    + 'rectangle against the hull. {occupant} does not appear in the doorway. '
+    + '{occupant} does not appear anywhere.\n\n'
+    + 'Your own airlock is intact. Your outer hatch held. '
+    + 'You are fine.',
 
-  'station.docking.survived_in_suit':
-    'The suit holds. The wind dies as the last atmosphere vents. '
-    + 'You hang in silence, gripping the rail, looking out through the breach '
-    + 'at the ship spinning slowly away. Your radio crackles with nothing.',
+  'station.docking.radio_silence':
+    'The radio is silent. Your panel reads DOCK SEQUENCE TERMINATED — '
+    + 'EXTERNAL CONTACT LOST.',
 
-  'station.docking.blown_into_space':
-    'Your grip fails. The decompression throws you through the breach '
-    + 'like a leaf in a hurricane. The station rotates slowly away from you. '
-    + 'The stars do not move. Nothing moves. You are the only thing out here '
-    + 'and you are not going to stop.',
+  'station.docking.they_ignore_warning':
+    '"{occupant} here. Copy your concern. Seal reads 41% my side too but '
+    + 'I\'ve worked worse. Opening now."\n\n'
+    + 'The radio clicks off before you can reply.',
 }
-```
-
-### Grammar Extension (Docking)
-
-```typescript
-// Add to extendParser()
-grammar
-  .define('override dock|docking|sequence|lockout|safety')
-  .mapsTo(OVERRIDE_DOCK_ACTION_ID)
-  .withPriority(150)
-  .build();
-
-grammar
-  .define('force dock|docking|seal|clamps')
-  .mapsTo(OVERRIDE_DOCK_ACTION_ID)
-  .withPriority(150)
-  .build();
 ```
 
 ### Design Notes (Docking)
 
-**Scheduler-driven tension.** The docking sequence runs as a daemon that ticks every turn regardless of what the player does. The player can ignore it (auto-abort is safe), investigate it (examine panel), or make the fatal choice (override). The tension comes from ambient messages interrupting whatever else the player is doing.
+**The player is a witness, not a victim.** The catastrophe happens to someone else. The player's airlock holds. Their hatch never opens. They are safe the entire time — and that safety is the point. The horror is watching someone die on the other side of a door you cannot open fast enough, from a decision you could not prevent.
 
-**The override is always wrong.** There is no alignment where forcing the dock succeeds. The player is Dr. Mann — convinced they can make it work, wrong about the physics. The EVA suit is the only out, and the player had to have put it on before the crisis. Preparation, not reaction.
+**The warning changes nothing.** The player can try to say something during the partial seal phase. The other pilot acknowledges and proceeds anyway. The player's intervention is recorded (`playerWarned`) — a story could use this later for guilt, dialogue, or a journal entry — but it does not alter the outcome. Some things cannot be fixed by typing the right command.
 
-**Deferred death with a grace turn.** The catastrophe doesn't kill instantly. Turn 1 is the decompression — the player is pinned, alive, experiencing it. Turn 2 checks for the suit. This gives the prose room to breathe (ironic) and makes the death feel earned rather than arbitrary.
+**Scheduler as drama engine.** The entire sequence is driven by a daemon ticking every turn. The player can do whatever they want — examine the panel, pace the corridor, look out the viewport — and the drama unfolds around them. The scheduler is not waiting for player input. It is relentless. This is the key difference from an action-driven puzzle: the player has agency over their own actions but no agency over the incoming pilot's decisions.
 
-**The safe path is inaction.** If the player does nothing, the auto-abort fires and the ship pulls away. This is the correct IF design — the dangerous choice requires deliberate action, not failure to act.
+**No death for the player.** This scene has no player death state. No EVA suit check, no grab-the-rail moment. The player is never in physical danger. The design choice is that watching is worse.
 
 ---
 
@@ -690,5 +632,3 @@ grammar
 **Capability dispatch for door behavior.** The player types "open hatch" and the stdlib opening action runs, but the airlock door behavior's validate phase intercepts it. The player doesn't need to learn a new verb — standard IF commands work, with domain-specific validation layered on top.
 
 **Sound design in prose.** The depressurization message uses the transition from "roar" to "silence" to convey vacuum through text alone. The hatch opening message ends with "Stars." — a one-word sentence that hits harder than a paragraph of description.
-
-**Deferred death.** Vacuum exposure doesn't kill instantly. It sets a flag that a scheduler daemon checks on the next turn, giving the player one turn of "you can't breathe" before death. This follows the Infocom pattern of giving the player a chance to react.
