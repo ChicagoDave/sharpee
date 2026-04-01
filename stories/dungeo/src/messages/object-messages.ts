@@ -66,12 +66,14 @@ export function registerObjectMessages(language: LanguageProvider): void {
   // GDT Messages (Game Debugging Tool)
   // ==========================================================================
 
-  // The actual formatting is done by the event data
-  // These templates will be enhanced by a custom event handler
+  // GDT event templates — pre-rendered text passes through via {message}/{output}
   language.addMessage(GDTEventTypes.ENTERED, '{message}');
   language.addMessage(GDTEventTypes.EXITED, '{message}');
   language.addMessage(GDTEventTypes.OUTPUT, '{output}');
   language.addMessage(GDTEventTypes.UNKNOWN_COMMAND, '{message}');
+
+  // GDT prompt (ADR-137)
+  language.addMessage('dungeo.gdt.prompt', 'GDT>');
 
   // ==========================================================================
   // Glacier Puzzle (throw torch at glacier)

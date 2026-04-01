@@ -8,7 +8,7 @@ description: Test GDT (Game Debugging Tool) Phase 1 commands
 > gdt
 [OK: contains "BOOMING VOICE"]
 [OK: contains "GAME DEBUGGING TOOL"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.entered"]
 
 # Get help in GDT mode
 > he
@@ -17,12 +17,12 @@ description: Test GDT (Game Debugging Tool) Phase 1 commands
 [OK: contains "ALTER"]
 [OK: contains "TOGGLE"]
 [OK: contains "UTILITY"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # Exit GDT mode
 > ex
 [OK: contains "Returning to game"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # Normal command should work after exit
 > look

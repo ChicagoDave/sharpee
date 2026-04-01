@@ -33,6 +33,9 @@ export { executeCommand, getHandler, registerHandler, getAllHandlers } from './c
 export { gdtAction } from './gdt-action';
 export { gdtCommandAction } from './gdt-command-action';
 
+// Input mode handler (ADR-137)
+export { gdtInputModeHandler } from './gdt-input-handler';
+
 // All actions for registration
 import { gdtAction } from './gdt-action';
 import { gdtCommandAction } from './gdt-command-action';

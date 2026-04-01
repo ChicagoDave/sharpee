@@ -156,9 +156,18 @@ export class TextService implements ITextService {
 
     const message = context.languageProvider.getMessage(data.messageId, data.params);
 
-    // If message wasn't found (returns the messageId), warn visibly
-    if (message === data.messageId) {
-      return [createBlock(BLOCK_KEYS.ERROR, `[Missing message: ${data.messageId}]`)];
+    // If message wasn't found (returns the messageId) or resolved to empty
+    // (placeholder registration), fall back to inline text.
+    // Many events carry both messageId and pre-rendered text (melee combat, GDT, etc.)
+    if (message === data.messageId || !message) {
+      const fallback = (data as Record<string, unknown>).message ?? (data as Record<string, unknown>).text;
+      if (typeof fallback === 'string' && fallback) {
+        return [createBlock(BLOCK_KEYS.ACTION_RESULT, fallback)];
+      }
+      // No inline text — skip silently rather than showing an error.
+      // Domain events (if.event.*) carry messageId for semantic association,
+      // not for text rendering. The actual text comes from game.message events.
+      return null;
     }
 
     // Determine block key based on event type

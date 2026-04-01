@@ -10,9 +10,9 @@ export class CLIInput {
     });
   }
   
-  async getCommand(): Promise<string | null> {
+  async getCommand(prompt?: string): Promise<string | null> {
     return new Promise((resolve) => {
-      this.rl.question('> ', (answer: string) => {
+      this.rl.question(prompt ?? '> ', (answer: string) => {
         resolve(answer.trim() || null);
       });
     });

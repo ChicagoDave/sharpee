@@ -35,7 +35,7 @@ import {
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
 import { ITextService, createTextService } from '@sharpee/text-service';
-import { ITextBlock } from '@sharpee/text-blocks';
+import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedEntity, ISerializedLocation, ISerializedRelationship, ISerializedSpatialIndex, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
@@ -46,7 +46,9 @@ import {
   TurnResult,
   MetaCommandResult,
   CommandResult,
-  EngineConfig
+  EngineConfig,
+  InputModeHandler,
+  INPUT_MODE_STATE_KEY
 } from './types';
 import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
@@ -106,6 +108,9 @@ export class GameEngine {
   private pluginRegistry: PluginRegistry;
   private random: SeededRandom;
   private narrativeSettings: NarrativeSettings;
+
+  // Alternate input mode handlers (ADR-137)
+  private inputModeHandlers = new Map<string, InputModeHandler>();
 
   // Extracted services (Phase 4 remediation)
   private vocabularyManager: VocabularyManager;
@@ -547,6 +552,16 @@ export class GameEngine {
 
     this.emit('turn:start', turn, input);
 
+    // Check for alternate input mode (ADR-137)
+    const activeModeId = this.world.getStateValue(INPUT_MODE_STATE_KEY) as string | undefined;
+    if (activeModeId) {
+      const handler = this.inputModeHandlers.get(activeModeId);
+      if (handler) {
+        return this.executeInputMode(input, handler, turn);
+      }
+      // Handler not registered — fall through to standard pipeline
+    }
+
     try {
       // Early detection: Parse first to check if this is a meta-command
       // Meta-commands (VERSION, SCORE, HELP, etc.) take a completely separate path
@@ -721,6 +736,10 @@ export class GameEngine {
       if (this.textService) {
         const turnEvents = this.turnEvents.get(turn) || [];
         const blocks = this.textService.processTurn(turnEvents);
+
+        // Append prompt block (ADR-137)
+        this.appendPromptBlock(blocks);
+
         result.blocks = blocks;
         if (blocks.length > 0) {
           this.emit('text:output', blocks, turn);
@@ -938,6 +957,9 @@ export class GameEngine {
 
     // Process events through text service (ADR-133: emit structured blocks)
     const blocks = this.textService.processTurn(events);
+
+    // Append prompt block (ADR-137)
+    this.appendPromptBlock(blocks);
 
     if (blocks.length > 0) {
       this.emit('text:output', blocks, this.context.currentTurn);
@@ -1237,6 +1259,81 @@ export class GameEngine {
    */
   getEventProcessor(): EventProcessor {
     return this.eventProcessor;
+  }
+
+  /**
+   * Register an alternate input mode handler (ADR-137).
+   *
+   * Stories call this at init time. The handler is invoked when the
+   * world state key `if.inputMode` matches the registered ID.
+   *
+   * @param id Mode identifier (e.g., 'dungeo.mode.gdt')
+   * @param handler The input mode handler
+   */
+  registerInputMode(id: string, handler: InputModeHandler): void {
+    this.inputModeHandlers.set(id, handler);
+  }
+
+  /**
+   * Execute input through an alternate input mode handler (ADR-137).
+   *
+   * Bypasses the standard parser pipeline. Events go through the text
+   * service for rendering. Turn counter advances only if the handler says so.
+   */
+  private executeInputMode(
+    input: string,
+    handler: InputModeHandler,
+    turn: number
+  ): TurnResult {
+    const events = handler.handleInput(input, this.world);
+
+    // Emit events through engine event system
+    for (const event of events) {
+      this.emit('event', event);
+    }
+
+    // Process through text service
+    if (this.textService) {
+      const blocks = this.textService.processTurn(events);
+      this.appendPromptBlock(blocks);
+      if (blocks.length > 0) {
+        this.emit('text:output', blocks, turn);
+      }
+    }
+
+    // Advance turn only if the mode says to
+    if (handler.advancesTurn) {
+      this.context.currentTurn++;
+    }
+
+    return {
+      type: 'turn',
+      turn,
+      input,
+      success: true,
+      events,
+    };
+  }
+
+  /**
+   * Append a PROMPT block to the output (ADR-137).
+   *
+   * Reads the current prompt from world state, resolves through the
+   * language provider, and appends as the last block.
+   */
+  private appendPromptBlock(blocks: ITextBlock[]): void {
+    if (!this.languageProvider || !this.world) return;
+
+    const prompt = this.world.getPrompt();
+    const resolved = this.languageProvider.getMessage(
+      prompt.messageId,
+      prompt.params as Record<string, any>
+    );
+
+    // Only append if the message resolved (not echoed back as the ID)
+    if (resolved && resolved !== prompt.messageId) {
+      blocks.push({ key: BLOCK_KEYS.PROMPT, content: [resolved] });
+    }
   }
 
   /**

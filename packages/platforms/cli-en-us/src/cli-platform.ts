@@ -17,6 +17,7 @@ import {
   SemanticEvent,
   renderToString
 } from '@sharpee/sharpee';
+import type { ITextBlock } from '@sharpee/text-blocks';
 import { CLIInput } from './cli-input';
 import { CLIOutput } from './cli-output';
 import { CLIQuery } from './cli-query';
@@ -27,6 +28,7 @@ export class CLIPlatform {
   private query: CLIQuery;
   private queryManager: QueryManager;
   private pendingPlatformOps: PlatformEvent[] = [];
+  private currentPrompt: string = '> ';
   
   constructor(private engine: GameEngine) {
     this.input = new CLIInput();
@@ -98,9 +100,18 @@ export class CLIPlatform {
       }
     });
     
-    // Listen for text output
-    this.engine.on('text:output', (blocks, turn) => {
-      this.output.write(renderToString(blocks));
+    // Listen for text output (ADR-137: extract prompt block)
+    this.engine.on('text:output', (blocks: ITextBlock[], turn) => {
+      const promptBlock = blocks.find(b => b.key === 'prompt');
+      if (promptBlock && promptBlock.content.length > 0) {
+        const text = promptBlock.content[0];
+        if (typeof text === 'string') {
+          this.currentPrompt = text;
+        }
+      }
+      // Render non-prompt blocks
+      const displayBlocks = blocks.filter(b => b.key !== 'prompt');
+      this.output.write(renderToString(displayBlocks));
     });
   }
   
@@ -125,7 +136,7 @@ export class CLIPlatform {
     this.output.write('Welcome to the game!\n');
     
     while (true) {
-      const command = await this.input.getCommand();
+      const command = await this.input.getCommand(this.currentPrompt);
       if (!command) break;
       
       // Check if query manager should handle this input

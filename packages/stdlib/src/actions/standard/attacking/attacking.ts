@@ -341,9 +341,13 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // Check if attack failed (for non-combat attacks)
     if (!result.success && !usedCombatService) {
+      const failMessageId = customMessage || 'attack_ineffective';
+      const fullFailMessageId = failMessageId.includes('.')
+        ? failMessageId
+        : `${context.action.id}.${failMessageId}`;
       return [
         context.event('if.event.attacked', {
-          messageId: `${context.action.id}.${customMessage || 'attack_ineffective'}`,
+          messageId: fullFailMessageId,
           params: { target: target.name },
           target: target.id,
           targetName: target.name,
@@ -431,8 +435,14 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // Update the main attacked event with messageId for text rendering
     // The first event in the array is the attacked event - update it
+    // Keys with dots are fully-qualified story keys (e.g., dungeo.melee.hero_attack)
+    // and should not be prefixed with the action ID
+    const resolvedMessageId = customMessage || messageId;
+    const fullMessageId = resolvedMessageId.includes('.')
+      ? resolvedMessageId
+      : `${context.action.id}.${resolvedMessageId}`;
     events[0] = context.event('if.event.attacked', {
-      messageId: `${context.action.id}.${customMessage || messageId}`,
+      messageId: fullMessageId,
       params,
       ...eventData
     });

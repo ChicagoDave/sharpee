@@ -6,6 +6,7 @@
  */
 
 import { WorldModel, IFEntity } from '@sharpee/world-model';
+import type { GamePrompt } from '@sharpee/if-domain';
 
 /**
  * GDT command codes - two-letter commands from original Zork
@@ -164,3 +165,13 @@ export const GDT_ACTION_ID = 'dungeo.action.gdt';
  * Action ID for GDT commands
  */
 export const GDT_COMMAND_ACTION_ID = 'dungeo.action.gdt_command';
+
+/**
+ * GDT prompt (ADR-137)
+ */
+export const GDTPrompt: GamePrompt = { messageId: 'dungeo.gdt.prompt' };
+
+/**
+ * GDT input mode ID (ADR-137)
+ */
+export const GDT_INPUT_MODE_ID = 'dungeo.mode.gdt';

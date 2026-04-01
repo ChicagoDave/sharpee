@@ -13,7 +13,7 @@ GameEngine, Story interface, turn cycle, command executor, save/restore, vocabul
  * The engine manages game state, turn execution, and event sequencing
  */
 import { ISemanticEvent } from '@sharpee/core';
-import { IParsedCommand, IValidatedCommand, IFEntity } from '@sharpee/world-model';
+import { IParsedCommand, IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
 import { ITextBlock } from '@sharpee/text-blocks';
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
 /**
@@ -136,6 +136,26 @@ export interface TurnResult {
  * ```
  */
 export type CommandResult = TurnResult | MetaCommandResult;
+/**
+ * Alternate input mode handler (ADR-137).
+ *
+ * Registered by stories at init time. When active, the engine routes all
+ * input to the handler instead of the standard parser pipeline.
+ */
+export interface InputModeHandler {
+    /**
+     * Process raw input and return semantic events.
+     * The handler owns parsing, validation, and execution for this mode.
+     */
+    handleInput(input: string, world: WorldModel): ISemanticEvent[];
+    /** Whether commands in this mode advance the game clock */
+    advancesTurn: boolean;
+}
+/**
+ * World state key for the active input mode ID.
+ * When set, the engine routes input to the registered handler.
+ */
+export declare const INPUT_MODE_STATE_KEY = "if.inputMode";
 /**
  * Game context for execution
  */
@@ -836,7 +856,7 @@ import { ITextService } from '@sharpee/text-service';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { GameContext, TurnResult, EngineConfig } from './types';
+import { GameContext, TurnResult, EngineConfig, InputModeHandler } from './types';
 import { Story } from './story';
 import { NarrativeSettings } from './narrative';
 import { ParsedCommandTransformer } from './command-executor';
@@ -883,6 +903,7 @@ export declare class GameEngine {
     private pluginRegistry;
     private random;
     private narrativeSettings;
+    private inputModeHandlers;
     private vocabularyManager;
     private saveRestoreService;
     private turnEventProcessor;
@@ -1022,6 +1043,30 @@ export declare class GameEngine {
      * Get event processor for handler registration (ADR-075)
      */
     getEventProcessor(): EventProcessor;
+    /**
+     * Register an alternate input mode handler (ADR-137).
+     *
+     * Stories call this at init time. The handler is invoked when the
+     * world state key `if.inputMode` matches the registered ID.
+     *
+     * @param id Mode identifier (e.g., 'dungeo.mode.gdt')
+     * @param handler The input mode handler
+     */
+    registerInputMode(id: string, handler: InputModeHandler): void;
+    /**
+     * Execute input through an alternate input mode handler (ADR-137).
+     *
+     * Bypasses the standard parser pipeline. Events go through the text
+     * service for rendering. Turn counter advances only if the handler says so.
+     */
+    private executeInputMode;
+    /**
+     * Append a PROMPT block to the output (ADR-137).
+     *
+     * Reads the current prompt from world state, resolves through the
+     * language provider, and appends as the last block.
+     */
+    private appendPromptBlock;
     /**
      * Get the text service
      */

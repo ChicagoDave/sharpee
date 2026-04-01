@@ -89,10 +89,20 @@ export class BrowserPlatform {
       }
     });
     
-    // Listen for text output from the text service
+    // Listen for text output from the text service (ADR-137: extract prompt block)
     this.engine.on('text:output', (blocks, turn) => {
-      // Display the narrative text
-      this.client.displayText(renderToString(blocks));
+      // Extract prompt block for input field
+      const promptBlock = blocks.find((b: any) => b.key === 'prompt');
+      if (promptBlock && promptBlock.content.length > 0) {
+        const text = promptBlock.content[0];
+        if (typeof text === 'string') {
+          this.client.setPrompt(text);
+        }
+      }
+
+      // Display non-prompt blocks as narrative text
+      const displayBlocks = blocks.filter((b: any) => b.key !== 'prompt');
+      this.client.displayText(renderToString(displayBlocks));
 
       // Update turn counter
       this.currentTurn = turn;

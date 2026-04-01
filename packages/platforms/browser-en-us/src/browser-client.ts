@@ -20,6 +20,7 @@ export class BrowserClient {
     private commandHistory: string[] = [];
     private historyIndex: number = -1;
     private onCommandCallback?: (command: string) => void;
+    private currentPrompt: string = '> ';
     
     constructor() {
         this.initialize();
@@ -97,7 +98,7 @@ export class BrowserClient {
         
         const element = document.createElement('div');
         element.className = 'command-echo';
-        element.textContent = `> ${command}`;
+        element.textContent = `${this.currentPrompt}${command}`;
         this.textContent.appendChild(element);
         
         this.scrollToBottom();
@@ -129,6 +130,17 @@ export class BrowserClient {
         }
     }
     
+    /**
+     * Set the command prompt text (ADR-137)
+     */
+    setPrompt(prompt: string): void {
+        this.currentPrompt = prompt;
+        // Update placeholder to reflect current prompt
+        if (this.commandInput) {
+            this.commandInput.placeholder = prompt;
+        }
+    }
+
     /**
      * Enable/disable command input
      */

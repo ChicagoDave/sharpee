@@ -70,6 +70,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.command_failed': "I don't understand that.",
       // Game lifecycle messages
       'game.started.banner': "{title}\nBy {author}\n\nType HELP for instructions.",
+      // Platform prompt (ADR-137)
+      'if.platform.prompt': '> ',
     };
 
     for (const [key, value] of Object.entries(coreMessages)) {

@@ -35,7 +35,10 @@ import {
   WorldChange,
   IGrammarVocabularyProvider,
   GrammarVocabularyProvider,
-  IEventProcessorWiring
+  IEventProcessorWiring,
+  GamePrompt,
+  DefaultPrompt,
+  PROMPT_STATE_KEY
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { RuleScopeEvaluator } from '../scope/scope-evaluator';
@@ -137,6 +140,10 @@ export interface IWorldModel {
   setState(state: WorldState): void;
   getStateValue(key: string): any;
   setStateValue(key: string, value: any): void;
+
+  // Prompt (ADR-137)
+  getPrompt(): GamePrompt;
+  setPrompt(prompt: GamePrompt): void;
 
   // Query Operations
   findByTrait(traitType: TraitType): IFEntity[];
@@ -677,6 +684,15 @@ export class WorldModel implements IWorldModel {
 
   setStateValue(key: string, value: any): void {
     this.state[key] = value;
+  }
+
+  // Prompt (ADR-137)
+  getPrompt(): GamePrompt {
+    return this.state[PROMPT_STATE_KEY] ?? DefaultPrompt;
+  }
+
+  setPrompt(prompt: GamePrompt): void {
+    this.state[PROMPT_STATE_KEY] = prompt;
   }
 
   // Query Operations

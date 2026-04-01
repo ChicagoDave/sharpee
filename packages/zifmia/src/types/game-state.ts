@@ -112,6 +112,9 @@ export interface GameState {
 
   // Input disabled (e.g., player died, awaiting prompt)
   inputDisabled: boolean;
+
+  // Command prompt text (ADR-137)
+  prompt: string;
 }
 
 /**
@@ -129,6 +132,7 @@ export type GameAction =
   | { type: 'SYSTEM_MESSAGE'; text: string }
   | { type: 'PLAYER_DIED' }
   | { type: 'INPUT_ENABLED' }
+  | { type: 'PROMPT_CHANGED'; prompt: string }
   | { type: 'ENGINE_STOPPED' };
 
 /**
@@ -145,6 +149,7 @@ export const initialGameState: GameState = {
   transcript: [],
   lastTurnEvents: [],
   inputDisabled: false,
+  prompt: '> ',
 };
 
 /**
@@ -262,6 +267,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         inputDisabled: false,
+      };
+
+    case 'PROMPT_CHANGED':
+      return {
+        ...state,
+        prompt: action.prompt,
       };
 
     case 'ENGINE_STOPPED':

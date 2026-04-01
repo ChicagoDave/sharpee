@@ -7,7 +7,7 @@ description: Test GDT Phase 2 - Display and Toggle commands
 # Enter GDT mode
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.entered"]
 
 # DA - Display Adventurer
 > da
@@ -16,14 +16,14 @@ description: Test GDT Phase 2 - Display and Toggle commands
 [OK: contains "West of House"]
 [OK: contains "Score"]
 [OK: contains "Inventory"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # DR - Display Room (current room)
 > dr
 [OK: contains "ROOM"]
 [OK: contains "r01"]
 [OK: contains "Exits"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # DS - Display State
 > ds
@@ -31,77 +31,77 @@ description: Test GDT Phase 2 - Display and Toggle commands
 [OK: contains "Turn"]
 [OK: contains "Score"]
 [OK: contains "Entity Counts"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # DX - Display Exits
 > dx
 [OK: contains "EXITS"]
 [OK: contains "NORTH"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # DO - Display Object (requires arg)
 > do
 [OK: contains "Usage"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # DO - Display specific object using entity name (visible in current room)
 > do mailbox
 [OK: contains "OBJECT"]
 [OK: contains "mailbox"]
 [OK: contains "Traits"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # TK - Take (needs arg)
 > tk
 [OK: contains "Usage"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # AO - Alter Object (needs args)
 > ao
 [OK: contains "Usage"]
 [OK: contains "Special locations"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # AH - Alter Here (no args shows list)
 > ah
 [OK: contains "Usage"]
 [OK: contains "Available rooms"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # ND - Enable immortality
 > nd
 [OK: contains "Immortality ENABLED"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # ND again - already enabled
 > nd
 [OK: contains "already enabled"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # Verify immortality flag in DA
 > da
 [OK: contains "Immortal: YES"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # RD - Disable immortality
 > rd
 [OK: contains "Immortality DISABLED"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # RD again - already disabled
 > rd
 [OK: contains "already disabled"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # Verify immortality flag cleared
 > da
 [OK: contains "Immortal: no"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # Exit GDT mode
 > ex
 [OK: contains "Returning to game"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 # Verify normal commands work after exit
 > look

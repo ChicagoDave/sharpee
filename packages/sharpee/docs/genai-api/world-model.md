@@ -4690,7 +4690,7 @@ import { DirectionType } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { IDataStore } from './AuthorModel';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities';
-import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring } from '@sharpee/if-domain';
+import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { IScopeRule } from '../scope/scope-rule';
 export type EventHandler = (event: ISemanticEvent, world: IWorldModel) => void;
@@ -4751,6 +4751,8 @@ export interface IWorldModel {
     setState(state: WorldState): void;
     getStateValue(key: string): any;
     setStateValue(key: string, value: any): void;
+    getPrompt(): GamePrompt;
+    setPrompt(prompt: GamePrompt): void;
     findByTrait(traitType: TraitType): IFEntity[];
     findByType(entityType: string): IFEntity[];
     findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[];
@@ -4868,6 +4870,8 @@ export declare class WorldModel implements IWorldModel {
     setState(state: WorldState): void;
     getStateValue(key: string): any;
     setStateValue(key: string, value: any): void;
+    getPrompt(): GamePrompt;
+    setPrompt(prompt: GamePrompt): void;
     findByTrait(traitType: TraitType): IFEntity[];
     findByType(entityType: string): IFEntity[];
     findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[];

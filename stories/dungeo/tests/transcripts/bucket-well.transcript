@@ -7,15 +7,15 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 # Setup - enter GDT, get lantern, turn it on
 > gdt
 [OK: contains "GDT ready"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.entered"]
 
 > tk brass lantern
 [OK: contains "Taken"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 > ex
 [OK: contains "Returning to game"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 > turn on lantern
 [OK: contains "switches on"]
@@ -24,15 +24,15 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 # Get the bottle with water from kitchen
 > gdt
 [OK: contains "GDT ready"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.entered"]
 
 > ah Kitchen
 [OK: contains "Teleported to: Kitchen"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 > ex
 [OK: contains "Returning to game"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 > look
 [OK: contains "Kitchen"]
@@ -45,15 +45,15 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 # Go to Well Bottom where bucket starts
 > gdt
 [OK: contains "GDT ready"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.entered"]
 
 > ah Well Bottom
 [OK: contains "Teleported to: Well Bottom"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 > ex
 [OK: contains "Returning to game"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.gdt.output"]
 
 > look
 [OK: contains "Well Bottom"]

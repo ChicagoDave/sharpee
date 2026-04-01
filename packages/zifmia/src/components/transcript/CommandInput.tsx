@@ -49,7 +49,7 @@ export function CommandInput({
 
   return (
     <form className={`command-input-form ${className}`} onSubmit={handleSubmit}>
-      <span className="command-prompt">&gt;</span>
+      <span className="command-prompt">{state.prompt.replace(/\s+$/, '')}</span>
       <input
         ref={inputRef}
         type="text"

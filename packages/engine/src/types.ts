@@ -5,7 +5,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { IParsedCommand, IValidatedCommand, IFEntity } from '@sharpee/world-model';
+import { IParsedCommand, IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
 import { ITextBlock } from '@sharpee/text-blocks';
 
 // Re-export perception types from stdlib for convenience
@@ -151,6 +151,29 @@ export interface TurnResult {
  * ```
  */
 export type CommandResult = TurnResult | MetaCommandResult;
+
+/**
+ * Alternate input mode handler (ADR-137).
+ *
+ * Registered by stories at init time. When active, the engine routes all
+ * input to the handler instead of the standard parser pipeline.
+ */
+export interface InputModeHandler {
+  /**
+   * Process raw input and return semantic events.
+   * The handler owns parsing, validation, and execution for this mode.
+   */
+  handleInput(input: string, world: WorldModel): ISemanticEvent[];
+
+  /** Whether commands in this mode advance the game clock */
+  advancesTurn: boolean;
+}
+
+/**
+ * World state key for the active input mode ID.
+ * When set, the engine routes input to the registered handler.
+ */
+export const INPUT_MODE_STATE_KEY = 'if.inputMode';
 
 /**
  * Game context for execution

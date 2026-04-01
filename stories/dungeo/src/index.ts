@@ -43,6 +43,8 @@ import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isG
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, BalloonHandlerMessages, registerTrollRecoveryDaemon, SwordGlowMessages } from './scheduler';
 import { setSchedulerForGDT, setEngineForKL } from './actions/gdt/commands';
+import { GDT_INPUT_MODE_ID } from './actions/gdt/types';
+import { gdtInputModeHandler } from './actions/gdt/gdt-input-handler';
 
 // Import handlers
 import { registerBatHandler, BatMessages, registerExorcismHandler, ExorcismMessages, registerRoundRoomHandler, RoundRoomMessages, registerRealityAlteredHandler, registerRealityAlteredDaemon, RealityAlteredMessages, registerEndgameTriggerHandler, EndgameTriggerMessages, registerLaserPuzzleHandler, LaserPuzzleMessages, registerInsideMirrorHandler, InsideMirrorMessages, registerVictoryHandler, VictoryMessages, createDeathPenaltyHandler, DeathPenaltyMessages, registerTrapdoorHandler, TrapdoorMessages } from './handlers';
@@ -752,6 +754,9 @@ export class DungeoStory implements Story {
    * Delegates to orchestration module for all engine registrations.
    */
   onEngineReady(engine: GameEngine): void {
+    // Register GDT input mode handler (ADR-137)
+    engine.registerInputMode(GDT_INPUT_MODE_ID, gdtInputModeHandler);
+
     initializeOrchestration(
       engine,
       this.world,

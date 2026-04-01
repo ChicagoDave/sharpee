@@ -26,3 +26,6 @@ export * from './vocabulary-contracts';
 
 // Grammar system
 export * from './grammar';
+
+// Prompt types (ADR-137)
+export * from './prompt';

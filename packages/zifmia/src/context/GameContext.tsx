@@ -202,7 +202,20 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
 
     // Text output handler - fires at end of turn with collected events (ADR-133: blocks)
     const handleTextOutput = (blocks: unknown, turn: unknown) => {
-      const text = renderToString(blocks as ITextBlock[]);
+      const allBlocks = blocks as ITextBlock[];
+
+      // Extract prompt block (ADR-137)
+      const promptBlock = allBlocks.find(b => b.key === 'prompt');
+      if (promptBlock && promptBlock.content.length > 0) {
+        const promptText = promptBlock.content[0];
+        if (typeof promptText === 'string') {
+          dispatch({ type: 'PROMPT_CHANGED', prompt: promptText });
+        }
+      }
+
+      // Render non-prompt blocks
+      const displayBlocks = allBlocks.filter(b => b.key !== 'prompt');
+      const text = renderToString(displayBlocks);
       // Log text output to console (matching thin web client behavior)
       console.log('[text:output]', { text, turn });
 
@@ -233,7 +246,7 @@ export function GameProvider({ engine, children, handleRef, onTurnCompleted, onS
           type: 'TURN_COMPLETED',
           turn: turn as number,
           text: suppressText ? '' : text,
-          blocks: suppressText ? undefined : (blocks as ITextBlock[]),
+          blocks: suppressText ? undefined : displayBlocks,
           command: pendingCommand.current,
           events: turnEvents,
         });
