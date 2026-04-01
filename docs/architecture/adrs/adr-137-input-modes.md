@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted (partial implementation — GamePrompt and platform consumption complete; full InputMode interface deferred)
 
 ## Date
 
@@ -125,6 +125,23 @@ The prompt is a property of the active input mode, delivered as a text block:
 4. Platforms extract the PROMPT block and use it for the next input cycle
 5. Default registration in lang-en-us: `if.platform.prompt` → `'> '`
 
+#### Platform Consumption Pattern
+
+Platforms must intercept the PROMPT block in their `text:output` handler **before** passing blocks to the narrative renderer. The pattern:
+
+1. **Extract** the prompt block from the output blocks array
+2. **Route** the prompt text to the input UI element (e.g., update the `.prompt` span's `textContent`)
+3. **Filter** the prompt block out before passing the remaining blocks to `renderToString()` for narrative display
+
+This prevents the prompt text from appearing inline as narrative and ensures the command-line prompt element reflects the current mode.
+
+**Browser platform implementation** (`platform-browser`):
+
+- `InputManager.setPrompt(text: string)` — finds the `.prompt` span sibling of the command input and updates its `textContent`
+- `BrowserClient` `text:output` handler — extracts the prompt block, calls `inputManager.setPrompt()`, then passes the filtered blocks to `renderToString()`
+
+Both `platform-browser` and `platforms/browser-en-us` implement this pattern. Any new platform must follow the same extract→route→filter sequence to correctly handle GamePrompt blocks.
+
 ### 6. Immediate Implementation Scope (GDT Only)
 
 This ADR describes the full input mode architecture. The immediate implementation covers only what GDT needs:
@@ -132,10 +149,17 @@ This ADR describes the full input mode architecture. The immediate implementatio
 - `GamePrompt` type in `if-domain`
 - `world.getPrompt()` / `world.setPrompt()` on WorldModel
 - Engine emits `PROMPT` text block after each turn
-- Platforms consume the PROMPT block
+- Platforms consume the PROMPT block (implemented in both `platform-browser` and `browser-en-us`)
 - GDT sets its prompt on enter, resets on exit
 - Engine routes input to GDT when GDT mode is active (simple flag check, not the full mode stack)
 
+**Implemented:**
+- GamePrompt emission from the engine ✓
+- GDT input mode routing via engine flag ✓
+- `platform-browser` prompt block extraction and `.prompt` span update ✓
+- `browser-en-us` prompt block extraction ✓
+
+**Deferred:**
 The `InputMode` interface, mode stack, and `handleInput()` contract are deferred until a second use case (e.g., conversation plugin) motivates the full abstraction. GDT's current implementation (story action with custom parser) is adequate as an interim approach — the mode flag and prompt are the immediate gaps.
 
 ## Consequences
