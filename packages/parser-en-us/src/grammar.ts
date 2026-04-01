@@ -477,36 +477,36 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   // Taking from container with tool
   grammar
-    .define('take :item from :container with :tool')
+    .define('take :item from :container with|using :tool')
     .instrument('tool')
     .mapsTo('if.action.taking_with')
     .withPriority(110)
-    .build(); // Higher priority than simple take
+    .build();
 
   // Unlocking with key
   grammar
-    .define('unlock :door with :key')
+    .define('unlock :door with|using :key')
     .instrument('key')
     .mapsTo('if.action.unlocking')
     .withPriority(110)
-    .build(); // Higher priority than simple unlock
+    .build();
 
   // Opening with tool
   grammar
-    .define('open :container with :tool')
+    .define('open :container with|using :tool')
     .instrument('tool')
     .hasTrait('container', TraitType.OPENABLE)
     .mapsTo('if.action.opening_with')
     .withPriority(110)
-    .build(); // Higher priority than simple open
+    .build();
 
   // Cutting with tool
   grammar
-    .define('cut :object with :tool')
+    .define('cut :object with|using :tool')
     .instrument('tool')
     .mapsTo('if.action.cutting')
     .withPriority(110)
-    .build(); // Higher priority than simple cut
+    .build();
 
   // Attacking - simple patterns (ADR-087: using forAction)
   grammar
@@ -517,28 +517,28 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   // Attacking with weapon (higher priority than simple attack)
   grammar
-    .define('attack :target with :weapon')
+    .define('attack :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build();
 
   grammar
-    .define('kill :target with :weapon')
+    .define('kill :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build();
 
   grammar
-    .define('hit :target with :weapon')
+    .define('hit :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
     .build();
 
   grammar
-    .define('strike :target with :weapon')
+    .define('strike :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
     .withPriority(110)
@@ -546,11 +546,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   // Digging with tool
   grammar
-    .define('dig :location with :tool')
+    .define('dig :location with|using :tool')
     .instrument('tool')
     .mapsTo('if.action.digging')
     .withPriority(110)
-    .build(); // Higher priority than simple dig
+    .build();
 
   // Communication patterns with quoted strings
   // Scope handled by action validation; traits declare semantic constraints only
