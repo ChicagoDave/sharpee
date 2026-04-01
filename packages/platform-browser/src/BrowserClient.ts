@@ -171,9 +171,20 @@ export class BrowserClient implements BrowserClientInterface {
    * Set up event handlers on the game engine
    */
   private setupEngineHandlers(): void {
-    // Handle text output
+    // Handle text output (ADR-137: extract prompt block for input field)
     this.engine.on('text:output', (blocks, turn) => {
-      const text = renderToString(blocks);
+      // Extract prompt block and set on input field
+      const promptBlock = blocks.find((b: any) => b.key === 'prompt');
+      if (promptBlock && promptBlock.content.length > 0) {
+        const promptText = promptBlock.content[0];
+        if (typeof promptText === 'string') {
+          this.inputManager.setPrompt(promptText);
+        }
+      }
+
+      // Display non-prompt blocks as narrative text
+      const displayBlocks = blocks.filter((b: any) => b.key !== 'prompt');
+      const text = renderToString(displayBlocks);
       console.log('[text:output]', { text, turn, turnOffset: this.turnOffset });
       this.textDisplay.displayText(text);
 

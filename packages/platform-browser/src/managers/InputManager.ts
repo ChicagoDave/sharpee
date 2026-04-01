@@ -138,6 +138,17 @@ export class InputManager {
   }
 
   /**
+   * Set the command prompt text displayed before the input field
+   */
+  setPrompt(text: string): void {
+    if (!this.commandInput) return;
+    const promptSpan = this.commandInput.parentElement?.querySelector('.prompt');
+    if (promptSpan) {
+      promptSpan.textContent = text;
+    }
+  }
+
+  /**
    * Get the command history
    */
   getHistory(): string[] {
