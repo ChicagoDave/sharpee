@@ -434,6 +434,7 @@ build_platform() {
     local PACKAGES=(
         "@sharpee/core:core"
         "@sharpee/if-domain:if-domain"
+        "@sharpee/media:media"
         "@sharpee/world-model:world-model"
         "@sharpee/event-processor:event-processor"
         "@sharpee/lang-en-us:lang-en-us"
