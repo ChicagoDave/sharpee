@@ -13,7 +13,7 @@ Chrysilya is a female-modeled android — the sole survivor of a thermonuclear w
 
 Through exploration and memory recovery, she learns that a device exists that can reverse entropy in a localized area — undo the destruction. But the device was invented on a neutral planet she once visited as a teacher, and the reversal must happen within an unknown short window (hours or days, not weeks). The window is closing.
 
-She cannot reach the neutral planet in the present — there isn't time. But she can connect her personal Anti-Entropic Field to the wrecked Caledonia's power core and displace herself back to when she was already on that planet. In the past, disguised (because past-Chrysilya is already there), she must ensure the device is transported to Earth's moon. Then she returns to the present, retrieves it from the moon, and triggers it on Earthangelos before the window closes.
+She cannot reach the neutral planet in the present — there isn't time. But she can connect her personal Anti-Entropic Field to the Cho 'Tak Ru's power core and project herself back to when she was on that planet. In the past, she has only moments — enough to update her own memory, recording the present situation and the need for the device. When she returns, the memory exchange works both ways: she now remembers her past self burying the device on Earth's moon, preparing for exactly this moment. A closed time loop. She then flies the Cho 'Tak Ru to the moon, retrieves it, and triggers it on Earthangelos before the window closes.
 
 Almost nothing survived the war. Every useful object is a miracle find in planetary rubble.
 
@@ -55,7 +55,7 @@ As Chrysilya explores, location-triggered flashbacks reveal her past. The memory
 - **Spaceport**: Arriving on Earthangelos as a teacher — she was on the neutral planet before
 - **Chrysilya's home** (new): Remembers her home — using the diffusion module to change appearance for everyday life. When the flashback ends, she knows where home *was*
 
-**Goal**: Learn about the device. Learn she was on the neutral planet. Find a diffusion module for disguise.
+**Goal**: Learn about the device. Learn she was on the neutral planet. Find the diffusion module (needed to deceive the ship AI).
 
 ### Act 3: Take the Ship (Earthangelos Orbit — Present)
 
@@ -75,29 +75,29 @@ The Cho 'Tak Ru — the enemy reconnaissance vessel in orbit — is the only fun
 
 **Result**: Chrysilya now has a ship. Connecting her AE Field to the core through the interface gives her two capabilities: she *is* the navigation computer (flying the ship through her neural connection), and the amplified AE Field enables temporal displacement.
 
-### Act 4: The Past (Neutral Planet — Past)
+### Act 4: The Projection (Cho 'Tak Ru Bridge — Present → Past)
 
-Chrysilya uses the Cho 'Tak Ru's core to amplify her AE Field and displace to the past — arriving in the same orbital position but years earlier, when she was already on the neutral planet as a teacher. She activates the diffusion module (found in Act 2) to disguise herself.
+Chrysilya uses the Cho 'Tak Ru's power core to amplify her AE Field and project herself back in time — not physically traveling, but connecting to her past self on the neutral planet. The projection is brief: roughly two turns before the connection collapses.
 
-She flies the Cho 'Tak Ru to the neutral planet, using the AE Field in fast-time to compress the interstellar travel (so it doesn't take the player thousands of turns).
+In those two turns, she must `UPDATE MEMORY` — recording the current devastation of Earthangelos and the urgent need for the entropic field time displacement device. When she does, the response is immediate: *"You record the current situation on Earthangelos, including the need for the entropic field time displacement machine."*
 
-On the neutral planet, she lands and infiltrates. Past-Chrysilya is somewhere here. Present-Chrysilya must not be recognized — not by her past self, not by anyone who knew her as a teacher.
+When the projection ends and she returns to the present, the memory exchange completes in both directions. *"Returning to the present, the memory of a device hidden on the moon's surface unfolds..."* A flashback plays: *"You are standing at an unused portion of the moon, preparing the burial of the entropic time device, hoping it survives until needed."*
 
-**Goal**: Find the entropy reversal device (or its prototype) and arrange for it to be transported to Earth's moon. She can't take it with her — she needs it to *already be there* when she returns to the present. It must travel through normal channels.
+A closed time loop. Past-Chrysilya received the message, understood the need, and buried the device on the moon — because future-Chrysilya told her to.
 
-**Puzzle nature**: Social and logistical. Convince the right people, forge documents, arrange shipment, protect the plan from interference — all while maintaining cover. This is not a combat section. This is an infiltration.
+**Goal**: Update her past self's memory before the projection collapses.
 
-**Constraint**: She can't change too much. Causality is fragile. The device needs to arrive at the moon through a chain of events that doesn't create paradoxes.
+**Key verb**: `UPDATE MEMORY` — the single critical action. Miss the 2-turn window and the projection fails.
 
-### Act 5: Return and Retrieval (Moon — Present)
+**Result**: Chrysilya now knows the device is buried on the moon. She needs fuel from the Cho 'Tak Ru to fly there — and must recharge the AE Field first.
 
-Chrysilya returns to the Cho 'Tak Ru, flies back to Earthangelos orbit (fast-time compressed), and uses the temporal displacement to return to the present. She then flies to Earth's moon.
+### Act 5: Retrieval (Moon — Present)
 
-The device should be where past-her ensured it would be — stored, hidden, waiting.
+After recharging the AE Field using the Cho 'Tak Ru's core, Chrysilya flies to the moon. The device is where her past self buried it — an unused portion of the lunar surface, hidden and waiting.
 
-**Goal**: Find the device. It's been sitting there for however long — hidden, stored, possibly degraded. Retrieve it.
+**Goal**: Find the device, dig it up, retrieve it.
 
-**Puzzle nature**: Mechanical. Locate the storage, deal with whatever state the device is in after years of neglect.
+**Puzzle nature**: Mechanical. Locate the burial site, deal with whatever state the device is in after years of neglect.
 
 ### Act 6: Trigger (Earthangelos — Present)
 
@@ -130,9 +130,13 @@ Personal-scale entropy manipulation. Two modes:
 - **Slow Time**: Normal mode. Default after rations.
 - **Fast Time**: Player's time is accelerated relative to environment. Everything appears frozen. Blocks many actions (eating, dropping inventory, deactivating flight skin). 30-turn recharge after use.
 
-The AE Field is the small-scale version of what the planetary device does. Connecting it to the Cho 'Tak Ru's power core amplifies it to temporal displacement range and gives Chrysilya neural control of the ship's navigation. The connection requires interfacing with the ship — which means getting past the hostile AI first.
+The AE Field is the small-scale version of what the planetary device does. Connecting it to the Cho 'Tak Ru's power core amplifies it for two purposes: temporal projection (connecting to her past self across time) and neural control of the ship's navigation. The connection requires interfacing with the ship — which means getting past the hostile AI first.
+
+The temporal projection is extremely brief (~2 turns) even with the ship's power amplifying it. She cannot physically travel — only connect to her past self's consciousness long enough to exchange memories.
 
 Additionally, fast-time mode compresses interstellar travel — Chrysilya experiences minutes while the ship traverses light-years. This keeps space travel playable without thousands of empty turns.
+
+The Cho 'Tak Ru serves three purposes: power the AE projection, fuel the flight to the moon, and serve as her ship. She must recharge the AE Field between the projection and the moon flight.
 
 ### 3. Flight Skin
 
@@ -159,10 +163,9 @@ Shapeshifting technology for Chrysilya's kind of android.
 
 - Found in the ruins of Chrysilya's home (recognized from a flashback of everyday life)
 - Allows her to assume a different appearance
-- **Dual purpose**: disguise on the neutral planet (avoid past-Chrysilya) and potentially spoof the Cho 'Tak Ru's AI identity checks (impersonate a Tra 'Jan Gore officer)
-- Required before the time jump — past-Chrysilya is on the neutral planet
-- Maintains the disguise for the duration of Act 4
+- **Primary purpose**: spoof the Cho 'Tak Ru's AI identity checks (impersonate a Tra 'Jan Gore officer)
 - May have limited charges or duration
+- No longer needed for neutral planet infiltration (the projection replaces physical travel)
 
 ### 6. Ship AI — Cho 'Tak Ru Intelligence
 
@@ -212,13 +215,9 @@ Dual-endpoint tether puzzle.
 
 The Cho 'Tak Ru becomes Chrysilya's ship for Acts 4-6. The bridge and core interface are the site of the AI confrontation.
 
-### Neutral Planet — Past (TODO)
+### Neutral Planet — Past (CUT)
 
-| Region | Rooms | Status |
-|--------|-------|--------|
-| TODO | Settlement, research facility, transport hub, storage | New — Act 4 |
-
-Rooms, characters, and social puzzles TBD. Minimum viable: 5-8 rooms.
+No longer a playable region. The temporal projection replaces physical travel to the neutral planet. The player experiences the past only through a brief 2-turn projection and a flashback of burying the device on the moon.
 
 ### Earth's Moon — Present (TODO)
 
@@ -241,8 +240,8 @@ The original had 5 points. The full game expands this.
 | Find diffusion module | +1 | 2 |
 | Eliminate Tra 'Jan Gore soldier | +1 | 3 |
 | Overcome ship AI | +1 | 3 |
-| Complete time jump | +1 | 3→4 |
-| Arrange device transport (past) | +1 | 4 |
+| Update memory (projection) | +1 | 4 |
+| Recharge AE Field | +1 | 4→5 |
 | Retrieve device (moon) | +1 | 5 |
 | Trigger reversal | +1 | 6 |
 | **Total** | **9** | |
@@ -257,7 +256,7 @@ The game is bleak but not nihilistic. Chrysilya is damaged, alone, and racing ag
 
 The destruction is total. Almost nothing survived. Every discovery is a small miracle. The prose should reflect this: sparse, precise, occasionally devastating.
 
-The neutral planet section is a tonal shift — from post-apocalyptic survival to social infiltration. Chrysilya is pretending to be someone she's not, in a place she remembers being happy. The tension is different: not "will I die" but "will I be discovered."
+The projection sequence is a tonal shift — a brief, desperate moment of connection to her past self, followed by the flashback of burying the device. The tension is compressed: she has two turns to do the one thing that matters.
 
 ---
 
@@ -272,11 +271,9 @@ The neutral planet section is a tonal shift — from post-apocalyptic survival t
 - **Does the AI remain present after?** Reluctant ally? Prisoner? Silent? Does it comment during the rest of the game?
 - **How does she physically interface?** Android data/power port? Incompatible connection that's a puzzle in itself?
 
-### Neutral Planet (TODO)
-- **How much needs to be built?** Minimum viable: 5-8 rooms with social puzzles. Full vision: a small settlement with characters.
-- **Who are the key NPCs?** Researchers, officials, transport operators? Who does she need to convince?
-- **What does past-Chrysilya look like from the outside?** Does present-Chrysilya see her? Avoid her? Is there a near-miss scene?
-- **How does she arrange the moon delivery?** Forge documents? Bribe? Convince a researcher it needs to be stored off-world for safety?
+### Projection Sequence (TODO)
+- **What happens if she misses the 2-turn window?** Game over? Can she recharge and try again?
+- **Is the projection a special room/mode?** Or does it happen on the bridge with different available commands?
 
 ### Device and Endgame (TODO)
 - **What does the reversal look like?** Does time visually rewind? Does she witness it? Is there a cost?
@@ -284,9 +281,10 @@ The neutral planet section is a tonal shift — from post-apocalyptic survival t
 - **Is there a cost to triggering it?** Does Chrysilya survive? Does the reversal undo *her* too?
 
 ### Mechanics (TODO)
-- **Duration of the diffusion module?** Limited charges adds tension. Unlimited simplifies Act 4 design.
+- **Duration of the diffusion module?** Limited charges adds tension. Unlimited simplifies AI deception.
 - **How does fast-time space travel feel to the player?** Brief narrative passage? A few compressed turns? Instant?
-- **Does the degradation clock pause during time travel?** Or does it keep ticking, adding urgency to every act?
+- **Does the degradation clock pause during the projection?** Or does it keep ticking?
+- **How does AE Field recharge work mechanically?** A RECHARGE verb? Automatic after N turns? A puzzle involving the ship's core?
 
 ---
 
