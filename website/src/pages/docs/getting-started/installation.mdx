@@ -50,17 +50,28 @@ pnpm add @sharpee/sharpee
 
 | Package | What it provides |
 |---------|-----------------|
-| `@sharpee/engine` | Game engine, turn cycle, command execution |
-| `@sharpee/world-model` | Entities, traits, behaviors |
-| `@sharpee/stdlib` | 43 standard actions (take, drop, open, etc.) |
-| `@sharpee/parser-en-us` | English command parser |
-| `@sharpee/lang-en-us` | English language output |
 | `@sharpee/core` | Events, queries, platform types |
-| `@sharpee/plugins` | Plugin system (NPC, scheduler, state machine) |
-| `@sharpee/text-service` | Text rendering and status line |
-| `@sharpee/helpers` | Fluent entity builders |
+| `@sharpee/engine` | Game engine, turn cycle, command execution |
+| `@sharpee/event-processor` | Applies semantic events to the world model |
+| `@sharpee/ext-basic-combat` | Generic skill-based combat extension |
 | `@sharpee/ext-testing` | Debug and testing tools |
+| `@sharpee/helpers` | Fluent entity builders (`world.helpers()`) |
+| `@sharpee/if-domain` | Core domain model and contracts |
+| `@sharpee/if-services` | Runtime service interfaces |
+| `@sharpee/lang-en-us` | English language output |
+| `@sharpee/media` | Audio and media type definitions |
+| `@sharpee/parser-en-us` | English command parser |
 | `@sharpee/platform-browser` | Browser client infrastructure |
+| `@sharpee/plugin-npc` | NPC behaviors and turn processing |
+| `@sharpee/plugin-scheduler` | Daemons and fuses (timed events) |
+| `@sharpee/plugin-state-machine` | Declarative puzzle and narrative orchestration |
+| `@sharpee/plugins` | Plugin contracts for engine extensibility |
+| `@sharpee/sharpee` | Umbrella package (re-exports everything) |
+| `@sharpee/stdlib` | 43 standard actions (take, drop, open, etc.) |
+| `@sharpee/text-blocks` | Structured text output interfaces |
+| `@sharpee/text-service` | Text rendering and status line |
+| `@sharpee/transcript-tester` | Transcript-based testing tool |
+| `@sharpee/world-model` | Entities, traits, behaviors |
 
 You import everything from `@sharpee/sharpee` — no need to install individual packages.
 
