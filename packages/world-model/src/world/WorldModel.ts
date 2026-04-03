@@ -17,6 +17,7 @@ import { DirectionType, getOppositeDirection } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
+import { WorldSerializer } from './WorldSerializer';
 import { IDataStore } from './AuthorModel';
 import { canContain } from '../traits/container/container-utils';
 import {
@@ -41,53 +42,16 @@ import { ScopeRegistry } from '../scope/scope-registry';
 import { RuleScopeEvaluator } from '../scope/scope-evaluator';
 import { IScopeRule, IScopeContext } from '../scope/scope-rule';
 
-// Event handler types - these are tightly coupled to WorldModel
-export type EventHandler = (event: ISemanticEvent, world: IWorldModel) => void;
-export type EventValidator = (event: ISemanticEvent, world: IWorldModel) => boolean;
-export type EventPreviewer = (event: ISemanticEvent, world: IWorldModel) => WorldChange[];
-
-// Event chaining types (ADR-094)
-/**
- * Chain handler - returns events to emit (or null/empty to skip).
- * Unlike regular event handlers, chain handlers produce new events.
- */
-export type EventChainHandler = (
-  event: ISemanticEvent,
-  world: IWorldModel
-) => ISemanticEvent | ISemanticEvent[] | null | undefined | void;
-
-/**
- * Options for chain registration
- */
-export interface ChainEventOptions {
-  /**
-   * How to handle existing chains for this trigger:
-   * - 'cascade' (default): Add to existing chains, all fire
-   * - 'override': Replace ALL existing chains for this trigger
-   */
-  mode?: 'cascade' | 'override';
-
-  /**
-   * Unique key for this chain. Chains with same key replace each other.
-   * Useful for stdlib to define replaceable defaults.
-   */
-  key?: string;
-
-  /**
-   * Priority for ordering when multiple chains fire (lower = earlier)
-   * Default: 100
-   */
-  priority?: number;
-}
-
-/**
- * Internal chain registration record
- */
-interface ChainRegistration {
-  handler: EventChainHandler;
-  key?: string;
-  priority: number;
-}
+// Event system — extracted to WorldEventSystem.ts, re-exported for backward compat
+import {
+  WorldEventSystem,
+  EventHandler,
+  EventValidator,
+  EventPreviewer,
+  EventChainHandler,
+  ChainEventOptions,
+} from './WorldEventSystem';
+export type { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions };
 
 // Re-export domain types for backward compatibility
 export {
@@ -98,11 +62,8 @@ export {
 } from '@sharpee/if-domain';
 
 // Score Ledger (ADR-129)
-export interface ScoreEntry {
-  id: string;
-  points: number;
-  description: string;
-}
+import { ScoreLedger, ScoreEntry } from './ScoreLedger';
+export { ScoreEntry } from './ScoreLedger';
 
 // Interface and class with same name in same file - TypeScript standard pattern
 export interface IWorldModel {
@@ -257,22 +218,16 @@ export class WorldModel implements IWorldModel {
   private capabilities: ICapabilityStore = {};
 
   // Score Ledger (ADR-129)
-  private scoreLedger: ScoreEntry[] = [];
-  private scoreMaxScore: number = 0;
+  private scoreLedger = new ScoreLedger();
 
   // ID generation
   private idCounters: Map<string, number> = new Map();
 
-  // Event sourcing support
-  private eventHandlers = new Map<string, EventHandler>();
-  private eventValidators = new Map<string, EventValidator>();
-  private eventPreviewers = new Map<string, EventPreviewer>();
-  private appliedEvents: ISemanticEvent[] = [];
-  private eventProcessorWiring: IEventProcessorWiring | null = null;
-  private maxEventHistory = 1000; // Configurable limit
+  // Event system (ADR-086, ADR-094) — delegates to WorldEventSystem
+  private eventSystem = new WorldEventSystem();
 
-  // Event chaining support (ADR-094)
-  private eventChains = new Map<string, ChainRegistration[]>();
+  // Persistence — delegates to WorldSerializer
+  private serializer = new WorldSerializer();
 
   private platformEvents?: ISemanticEventSource;
 
@@ -292,6 +247,7 @@ export class WorldModel implements IWorldModel {
     };
     this.spatialIndex = new SpatialIndex();
     this.platformEvents = platformEvents;
+    this.eventSystem.setWorldRef(this);
 
     // Initialize scope system
     this.scopeRegistry = new ScopeRegistry();
@@ -848,145 +804,70 @@ export class WorldModel implements IWorldModel {
     this.playerId = entityId;
   }
 
-  // Score Ledger (ADR-129)
+  // Score Ledger (ADR-129) — delegates to ScoreLedger
   awardScore(id: string, points: number, description: string): boolean {
-    if (this.scoreLedger.some(e => e.id === id)) {
-      return false;
-    }
-    this.scoreLedger.push({ id, points, description });
-    return true;
+    return this.scoreLedger.award(id, points, description);
   }
 
   revokeScore(id: string): boolean {
-    const idx = this.scoreLedger.findIndex(e => e.id === id);
-    if (idx < 0) return false;
-    this.scoreLedger.splice(idx, 1);
-    return true;
+    return this.scoreLedger.revoke(id);
   }
 
   hasScore(id: string): boolean {
-    return this.scoreLedger.some(e => e.id === id);
+    return this.scoreLedger.has(id);
   }
 
   getScore(): number {
-    let total = 0;
-    for (const entry of this.scoreLedger) {
-      total += entry.points;
-    }
-    return total;
+    return this.scoreLedger.getTotal();
   }
 
   getScoreEntries(): ScoreEntry[] {
-    return [...this.scoreLedger];
+    return this.scoreLedger.getEntries();
   }
 
   setMaxScore(max: number): void {
-    this.scoreMaxScore = max;
+    this.scoreLedger.setMax(max);
   }
 
   getMaxScore(): number {
-    return this.scoreMaxScore;
+    return this.scoreLedger.getMax();
   }
 
-  // Persistence
+  // Persistence — delegates to WorldSerializer
   toJSON(): string {
-    const data = {
-      entities: Array.from(this.entities.entries()).map(([id, entity]) => ({
-        id,
-        entity: entity.toJSON()
-      })),
-      state: this.state,
-      playerId: this.playerId,
-      spatialIndex: this.spatialIndex.toJSON(),
-      relationships: Array.from(this.relationships.entries()).map(([entityId, rels]) => ({
-        entityId,
-        relationships: Array.from(rels.entries()).map(([type, related]) => ({
-          type,
-          related: Array.from(related)
-        }))
-      })),
-      // Add ID system data
-      idCounters: Array.from(this.idCounters.entries()),
-      // Score Ledger (ADR-129)
-      scoreLedger: this.scoreLedger,
-      scoreMaxScore: this.scoreMaxScore,
-      // Add capabilities
-      capabilities: Object.entries(this.capabilities).map(([name, cap]) => ({
-        name,
-        data: cap.data,
-        schema: cap.schema
-      }))
-    };
-    return JSON.stringify(data, null, 2);
+    return this.serializer.serialize(this.getSerializableState(), this.scoreLedger);
   }
 
   loadJSON(json: string): void {
-    const data = JSON.parse(json);
-
     // Preserve code registrations that aren't part of serialized state
-    const savedEventChains = new Map(this.eventChains);
+    const savedEventChains = this.eventSystem.preserveChains();
     const savedCapabilities = { ...this.capabilities };
 
     // Clear current state
     this.clear();
 
     // Restore code registrations
-    for (const [key, value] of savedEventChains) {
-      this.eventChains.set(key, value);
-    }
+    this.eventSystem.restoreChains(savedEventChains);
     this.capabilities = savedCapabilities;
 
-    // Restore entities
-    for (const { id, entity } of data.entities) {
-      const newEntity = IFEntity.fromJSON(entity);
-      this.entities.set(id, newEntity);
-    }
+    // Delegate deserialization
+    const serializableState = this.getSerializableState();
+    this.serializer.deserialize(json, serializableState, this.scoreLedger);
 
-    // Restore state
-    this.state = data.state || {};
-    this.playerId = data.playerId;
+    // Sync primitives back (objects are shared by reference)
+    this.playerId = serializableState.playerId;
+  }
 
-    // Restore spatial index
-    if (data.spatialIndex) {
-      this.spatialIndex.loadJSON(data.spatialIndex);
-    }
-
-    // Restore relationships
-    if (data.relationships) {
-      for (const { entityId, relationships } of data.relationships) {
-        const entityRels = new Map<string, Set<string>>();
-        for (const { type, related } of relationships) {
-          entityRels.set(type, new Set(related));
-        }
-        this.relationships.set(entityId, entityRels);
-      }
-    }
-
-    // Restore ID system data
-    if (data.idCounters) {
-      this.idCounters = new Map(data.idCounters);
-    } else {
-      // Rebuild ID counters from existing entities for backward compatibility
-      this.rebuildIdCounters();
-    }
-
-    // Restore capabilities
-    if (data.capabilities) {
-      for (const { name, data: capData, schema } of data.capabilities) {
-        this.capabilities[name] = {
-          data: capData,
-          schema
-        };
-      }
-    }
-
-    // Restore score ledger (ADR-129)
-    if (data.scoreLedger) {
-      this.scoreLedger = data.scoreLedger;
-    }
-    if (data.scoreMaxScore !== undefined) {
-      this.scoreMaxScore = data.scoreMaxScore;
-    }
+  private getSerializableState() {
+    return {
+      entities: this.entities,
+      spatialIndex: this.spatialIndex,
+      state: this.state,
+      playerId: this.playerId,
+      relationships: this.relationships,
+      idCounters: this.idCounters,
+      capabilities: this.capabilities,
+    };
   }
 
   clear(): void {
@@ -995,271 +876,64 @@ export class WorldModel implements IWorldModel {
     this.playerId = undefined;
     this.spatialIndex.clear();
     this.relationships.clear();
-    this.appliedEvents = [];
     this.idCounters.clear();
     this.capabilities = {};
-    this.scoreLedger = [];
-    this.scoreMaxScore = 0;
+    this.scoreLedger.clear();
     this.grammarVocabularyProvider.clear();
-    this.eventChains.clear();
+    this.eventSystem.clear();
   }
 
-  // Event Sourcing Implementation
+  // Event system — delegates to WorldEventSystem
   registerEventHandler(eventType: string, handler: EventHandler): void {
-    this.eventHandlers.set(eventType, handler);
-
-    // If already connected to EventProcessor, wire this handler immediately (ADR-086)
-    if (this.eventProcessorWiring) {
-      this.wireHandlerToProcessor(eventType, handler);
-    }
+    this.eventSystem.registerEventHandler(eventType, handler);
   }
 
   unregisterEventHandler(eventType: string): void {
-    this.eventHandlers.delete(eventType);
-    // Note: We don't unregister from EventProcessor as it doesn't support removal by type
-    // Handlers will still be called but won't find the handler in eventHandlers
+    this.eventSystem.unregisterEventHandler(eventType);
   }
 
   registerEventValidator(eventType: string, validator: EventValidator): void {
-    this.eventValidators.set(eventType, validator);
+    this.eventSystem.registerEventValidator(eventType, validator);
   }
 
   registerEventPreviewer(eventType: string, previewer: EventPreviewer): void {
-    this.eventPreviewers.set(eventType, previewer);
+    this.eventSystem.registerEventPreviewer(eventType, previewer);
   }
 
-  /**
-   * Connect this WorldModel to the engine's EventProcessor (ADR-086).
-   * Wires all existing handlers and chains, and enables automatic wiring for future ones.
-   */
   connectEventProcessor(wiring: IEventProcessorWiring): void {
-    this.eventProcessorWiring = wiring;
-
-    // Wire all existing handlers
-    for (const [eventType, handler] of this.eventHandlers) {
-      this.wireHandlerToProcessor(eventType, handler);
-    }
-
-    // Wire all existing chains (ADR-094)
-    for (const triggerType of this.eventChains.keys()) {
-      this.wireChainToProcessor(triggerType);
-    }
+    this.eventSystem.connectEventProcessor(wiring);
   }
 
-  /**
-   * Adapt a WorldModel handler to EventProcessor signature and register it.
-   */
-  private wireHandlerToProcessor(eventType: string, handler: EventHandler): void {
-    if (!this.eventProcessorWiring) return;
-
-    // Adapt the handler: WorldModel handlers return void, EventProcessor expects Effect[]
-    const adaptedHandler = (event: ISemanticEvent): unknown[] => {
-      handler(event, this);
-      return [];
-    };
-
-    this.eventProcessorWiring.registerHandler(eventType, adaptedHandler);
-  }
-
-  /**
-   * Register an event chain handler (ADR-094).
-   * Chain handlers produce new events when a trigger event occurs.
-   */
   chainEvent(
     triggerType: string,
     handler: EventChainHandler,
     options: ChainEventOptions = {}
   ): void {
-    const { mode = 'cascade', key, priority = 100 } = options;
-
-    const registration: ChainRegistration = { handler, key, priority };
-
-    if (!this.eventChains.has(triggerType)) {
-      this.eventChains.set(triggerType, []);
-    }
-
-    const chains = this.eventChains.get(triggerType)!;
-
-    if (mode === 'override') {
-      // Replace all existing chains
-      this.eventChains.set(triggerType, [registration]);
-    } else if (key) {
-      // Replace chain with same key, or add
-      const existingIndex = chains.findIndex(c => c.key === key);
-      if (existingIndex >= 0) {
-        chains[existingIndex] = registration;
-      } else {
-        chains.push(registration);
-      }
-    } else {
-      // Cascade - just add
-      chains.push(registration);
-    }
-
-    // Sort by priority (lower = earlier)
-    chains.sort((a, b) => a.priority - b.priority);
-
-    // Wire to EventProcessor if connected
-    if (this.eventProcessorWiring) {
-      this.wireChainToProcessor(triggerType);
-    }
-  }
-
-  /**
-   * Wire chains for a trigger type to the EventProcessor.
-   * Chain handlers return events to be emitted.
-   */
-  private wireChainToProcessor(triggerType: string): void {
-    if (!this.eventProcessorWiring) return;
-
-    // Register a handler that invokes all chains and returns EmitEffect objects
-    // The event processor expects Effect[] not ISemanticEvent[]
-    this.eventProcessorWiring.registerHandler(triggerType, (event) => {
-      const chainedEvents = this.executeChains(triggerType, event);
-      // Wrap each event as an EmitEffect
-      return chainedEvents.map(e => ({ type: 'emit' as const, event: e }));
-    });
-  }
-
-  /**
-   * Execute all chains for a trigger type and collect their events.
-   */
-  private executeChains(triggerType: string, event: ISemanticEvent): ISemanticEvent[] {
-    const chains = this.eventChains.get(triggerType) || [];
-    const results: ISemanticEvent[] = [];
-
-    // Get chain metadata from trigger event's data (ADR-094)
-    const triggerData = (event.data || {}) as Record<string, unknown>;
-    const currentDepth = (triggerData._chainDepth as number) || 0;
-    const transactionId = triggerData._transactionId as string | undefined;
-
-    for (const chain of chains) {
-      const chainedEvents = chain.handler(event, this);
-
-      if (chainedEvents) {
-        const eventsArray = Array.isArray(chainedEvents) ? chainedEvents : [chainedEvents];
-
-        // Add chain metadata to each event
-        for (const chainedEvent of eventsArray) {
-          const newDepth = currentDepth + 1;
-
-          // Safety: prevent infinite loops (max depth 10)
-          if (newDepth > 10) {
-            console.warn(`Chain depth exceeded for ${chainedEvent.type}, skipping`);
-            continue;
-          }
-
-          // Ensure the event has required fields and add chain metadata to data
-          const existingData = (chainedEvent.data || {}) as Record<string, unknown>;
-          const enrichedEvent: ISemanticEvent = {
-            id: chainedEvent.id || `chain-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            type: chainedEvent.type,
-            timestamp: chainedEvent.timestamp || Date.now(),
-            entities: chainedEvent.entities || {},
-            data: {
-              ...existingData,
-              _chainedFrom: event.type,
-              _chainSourceId: event.id,
-              _chainDepth: newDepth,
-              // Pass through transactionId from trigger event (ADR-094)
-              // Engine assigns this at action start; chained events inherit it
-              ...(transactionId ? { _transactionId: transactionId } : {})
-            }
-          };
-
-          results.push(enrichedEvent);
-        }
-      }
-    }
-
-    return results;
+    this.eventSystem.chainEvent(triggerType, handler, options);
   }
 
   applyEvent(event: ISemanticEvent): void {
-    // First validate if we can apply this event
-    if (!this.canApplyEvent(event)) {
-      throw new Error(`Cannot apply event of type '${event.type}': validation failed`);
-    }
-
-    // Look up handler for this event type
-    const handler = this.eventHandlers.get(event.type);
-    if (!handler) {
-      // No handler registered - event is recorded but has no effect
-      // Silent when no handler - this is a valid use case
-    } else {
-      // Apply the event through the handler
-      handler(event, this);
-    }
-
-    // Record the event in history
-    this.appliedEvents.push(event);
-
-    // Trim history if it exceeds the limit
-    if (this.appliedEvents.length > this.maxEventHistory) {
-      this.appliedEvents = this.appliedEvents.slice(-this.maxEventHistory);
-    }
+    this.eventSystem.applyEvent(event);
   }
 
   canApplyEvent(event: ISemanticEvent): boolean {
-    // Check if there's a validator for this event type
-    const validator = this.eventValidators.get(event.type);
-
-    // If no validator registered, assume event is valid
-    if (!validator) {
-      return true;
-    }
-
-    // Run the validator
-    return validator(event, this);
+    return this.eventSystem.canApplyEvent(event);
   }
 
   previewEvent(event: ISemanticEvent): WorldChange[] {
-    // Check if there's a previewer for this event type
-    const previewer = this.eventPreviewers.get(event.type);
-
-    // If no previewer registered, return empty array
-    if (!previewer) {
-      return [];
-    }
-
-    // Run the previewer
-    return previewer(event, this);
+    return this.eventSystem.previewEvent(event);
   }
 
   getAppliedEvents(): ISemanticEvent[] {
-    return [...this.appliedEvents];
+    return this.eventSystem.getAppliedEvents();
   }
 
   getEventsSince(timestamp: number): ISemanticEvent[] {
-    return this.appliedEvents.filter(event => event.timestamp > timestamp);
+    return this.eventSystem.getEventsSince(timestamp);
   }
 
   clearEventHistory(): void {
-    this.appliedEvents = [];
-  }
-
-  // Rebuild ID counters by analyzing existing entities
-  private rebuildIdCounters(): void {
-    // Clear counters
-    this.idCounters.clear();
-
-    // Find the highest ID for each prefix
-    for (const entity of this.entities.values()) {
-      const id = entity.id;
-      if (id.length >= 3) {
-        const prefix = id[0];
-        const numPart = id.substring(1);
-
-        // Parse the numeric part (base36)
-        const num = parseInt(numPart, 36);
-        if (!isNaN(num)) {
-          const currentMax = this.idCounters.get(prefix) || 0;
-          if (num > currentMax) {
-            this.idCounters.set(prefix, num);
-          }
-        }
-      }
-    }
+    this.eventSystem.clearEventHistory();
   }
 
   // Get the data store for sharing with AuthorModel
