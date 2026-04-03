@@ -42,7 +42,13 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "publishConfig": {
-    "access": "public"
+  "module": "./dist-esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js",
+      "esm": "./dist-esm/index.js"
+    }
   }
 }
