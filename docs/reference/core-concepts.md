@@ -9,11 +9,8 @@ Sharpee is an interactive fiction (IF) engine that uses a trait-based entity sys
 Entities are the fundamental building blocks representing everything in the game world.
 
 ```typescript
-// Basic entity creation
+// Entity creation
 const entity = world.createEntity(displayName: string, type?: string)
-
-// Creation with traits
-const room = world.createEntityWithTraits(EntityType.ROOM)
 ```
 
 **Key Properties:**

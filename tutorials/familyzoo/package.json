@@ -1,9 +1,9 @@
 {
   "name": "@sharpee/tutorial-familyzoo",
-  "version": "0.1.0-beta",
+  "version": "0.9.101",
   "description": "Family Zoo — A progressive Sharpee tutorial in 16 versions",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist"
@@ -31,5 +31,14 @@
     "family-zoo"
   ],
   "author": "Sharpee Team",
-  "license": "MIT"
+  "license": "MIT",
+  "module": "./dist-esm/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js",
+      "esm": "./dist-esm/index.js"
+    }
+  }
 }

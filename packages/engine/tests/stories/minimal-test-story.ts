@@ -3,7 +3,7 @@
  */
 
 import { Story, StoryConfig } from '../../src/story';
-import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType, RoomBehavior, OpenableTrait, RoomTrait } from '@sharpee/world-model';
+import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, RoomBehavior, OpenableTrait, RoomTrait } from '@sharpee/world-model';
 
 /**
  * Minimal test story with one room and basic player
@@ -17,7 +17,7 @@ export class MinimalTestStory implements Story {
     version: '1.0.0',
     description: 'A minimal story for testing basic engine functionality'
   };
-  
+
   forceInitError: boolean = false;
 
   private _initCalled = false;
@@ -32,17 +32,16 @@ export class MinimalTestStory implements Story {
       throw new Error('Forced initialization error');
     }
     this._worldInitCalled = true;
-    
-    // Create a simple test room (createEntityWithTraits automatically adds RoomTrait)
-    this._room = world.createEntityWithTraits(EntityType.ROOM);
+
+    this._room = world.createEntity('Test Room', 'room');
+    this._room.add(new RoomTrait({}));
     this._room.add(new IdentityTrait({
       name: 'Test Room',
       description: 'A simple room for testing.',
       article: 'the'
     }));
-    
-    // Add a lamp for testing purposes (objects are portable by default)
-    const lamp = world.createEntityWithTraits(EntityType.ITEM);
+
+    const lamp = world.createEntity('lamp', 'object');
     lamp.add(new IdentityTrait({
       name: 'lamp',
       aliases: ['brass lamp'],
@@ -50,41 +49,37 @@ export class MinimalTestStory implements Story {
       article: 'a'
     }));
     world.moveEntity(lamp.id, this._room.id);
-    
-    // Add a box for testing purposes (createEntityWithTraits automatically adds ContainerTrait)
-    const box = world.createEntityWithTraits(EntityType.CONTAINER);
+
+    const box = world.createEntity('box', 'object');
+    box.add(new ContainerTrait());
     box.add(new IdentityTrait({
       name: 'box',
       aliases: ['wooden box'],
       description: 'A wooden box.',
       article: 'a'
     }));
-    // Make the box openable
     box.add(new OpenableTrait({ isOpen: false }));
     world.moveEntity(box.id, this._room.id);
-    
-    // Create a north room for movement testing (createEntityWithTraits automatically adds RoomTrait)
-    this._northRoom = world.createEntityWithTraits(EntityType.ROOM);
+
+    this._northRoom = world.createEntity('North Room', 'room');
+    this._northRoom.add(new RoomTrait({}));
     this._northRoom.add(new IdentityTrait({
       name: 'North Room',
       description: 'A room to the north.',
       article: 'the'
     }));
-    
-    // Connect the rooms using RoomBehavior
+
     RoomBehavior.setExit(this._room, 'north', this._northRoom.id);
     RoomBehavior.setExit(this._northRoom, 'south', this._room.id);
 
-    // Place player in the room (must happen here because createPlayer()
-    // is called BEFORE initializeWorld() by the engine)
     if (this._player) {
       world.moveEntity(this._player.id, this._room.id);
     }
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    // Create player entity (createEntityWithTraits automatically adds ActorTrait)
-    this._player = world.createEntityWithTraits(EntityType.ACTOR);
+    this._player = world.createEntity('yourself', 'actor');
+    this._player.add(new ActorTrait());
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],
@@ -92,17 +87,14 @@ export class MinimalTestStory implements Story {
       properName: true,
       article: ''
     }));
-    // ActorTrait is already added by createEntityWithTraits
-    // Just add ContainerTrait to allow the player to carry items
     this._player.add(new ContainerTrait({
       capacity: { maxItems: 10 }
     }));
-    
+
     // Note: Player is NOT placed here because createPlayer() is called
     // BEFORE initializeWorld() by the engine's setStory(). The room doesn't
     // exist yet. Player placement happens in initializeWorld() instead.
 
-    // Mark that player was created AFTER successful creation
     this._playerCreated = true;
 
     return this._player;

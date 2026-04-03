@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/bridge",
-  "version": "0.9.92-beta",
+  "version": "0.9.101",
   "description": "Native engine bridge for Sharpee — Node.js subprocess with newline-delimited JSON over stdin/stdout",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

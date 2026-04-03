@@ -84,21 +84,6 @@ torch.add(new IdentityTrait({ name: 'brass lantern', aliases: ['lamp', 'lantern'
 world.moveEntity(torch.id, startRoom.id);</code></pre>
       </article>
 
-      <article id="createEntityWithTraits">
-        <h3><code>createEntityWithTraits(type)</code></h3>
-        <p>Create an entity with automatic default traits for its type. A <code>room</code> gets <code>RoomTrait</code>, a <code>container</code> gets <code>ContainerTrait</code>, an <code>actor</code> gets <code>ActorTrait</code>, and so on. Useful when you want the standard trait wiring without manual <code>.add()</code> calls.</p>
-        <details>
-          <summary>Parameters &amp; return</summary>
-          <table>
-            <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
-            <tbody>
-              <tr><td><code>type</code></td><td><code>EntityType</code></td><td>The entity type constant (e.g., <code>EntityType.ROOM</code>)</td></tr>
-            </tbody>
-          </table>
-          <p><strong>Returns</strong> <code>IFEntity</code> with appropriate default trait already attached.</p>
-        </details>
-      </article>
-
       <article id="getEntity">
         <h3><code>getEntity(id)</code></h3>
         <p>Look up an entity by its string ID. Returns <code>undefined</code> if the entity does not exist.</p>

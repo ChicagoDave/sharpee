@@ -5,9 +5,6 @@ import { EntityType, isEntityType } from '../entities/entity-types';
 import { TraitType } from '../traits/trait-types';
 import { RoomTrait } from '../traits/room';
 import { RoomBehavior } from '../traits/room/roomBehavior';
-import { ContainerTrait } from '../traits/container';
-import { SupporterTrait } from '../traits/supporter';
-import { ActorTrait } from '../traits/actor';
 import { DoorTrait } from '../traits/door';
 import { SceneryTrait } from '../traits/scenery';
 import { IdentityTrait } from '../traits/identity/identityTrait';
@@ -120,7 +117,6 @@ export interface IWorldModel {
 
   // Entity Management
   createEntity(displayName: string, type?: string): IFEntity;
-  createEntityWithTraits(type: EntityType): IFEntity;
   getEntity(id: string): IFEntity | undefined;
   hasEntity(id: string): boolean;
   removeEntity(id: string): boolean;
@@ -433,45 +429,6 @@ export class WorldModel implements IWorldModel {
         entityType: type
       }
     });
-
-    // Add to entity map
-    this.entities.set(id, entity);
-
-    return entity;
-  }
-
-  /**
-   * Create an entity with type safety and automatic trait assignment
-   * @param type The entity type (from EntityType constants)
-   * @returns The created entity with appropriate default traits
-   */
-  createEntityWithTraits(type: EntityType): IFEntity {
-    const id = this.generateId(type);
-    const entity = new IFEntity(id, type);
-
-    // Auto-add appropriate default trait based on type
-    switch (type) {
-      case EntityType.ROOM:
-        entity.add(new RoomTrait({}));
-        break;
-      case EntityType.CONTAINER:
-        entity.add(new ContainerTrait());
-        break;
-      case EntityType.SUPPORTER:
-        entity.add(new SupporterTrait());
-        break;
-      case EntityType.ACTOR:
-        entity.add(new ActorTrait());
-        break;
-      case EntityType.DOOR:
-        // Door trait requires room1 and room2 to be set
-        // These must be configured after creation when room IDs are known
-        break;
-      case EntityType.SCENERY:
-        entity.add(new SceneryTrait());
-        break;
-      // ITEM, OBJECT, and EXIT don't need special traits by default
-    }
 
     // Add to entity map
     this.entities.set(id, entity);

@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/platform-browser",
-  "version": "0.9.97",
+  "version": "0.9.101",
   "description": "Browser client infrastructure for Sharpee interactive fiction",
   "type": "module",
   "main": "./dist/index.js",
@@ -8,7 +8,9 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js",
+      "esm": "./dist-esm/index.js"
     }
   },
   "scripts": {
@@ -31,5 +33,6 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "module": "./dist-esm/index.js"
 }

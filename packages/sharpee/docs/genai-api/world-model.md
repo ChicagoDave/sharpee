@@ -4735,7 +4735,6 @@ export interface IWorldModel {
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
     createEntity(displayName: string, type?: string): IFEntity;
-    createEntityWithTraits(type: EntityType): IFEntity;
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
     removeEntity(id: string): boolean;
@@ -4849,12 +4848,6 @@ export declare class WorldModel implements IWorldModel {
     hasCapability(name: string): boolean;
     private generateId;
     createEntity(displayName: string, type?: string): IFEntity;
-    /**
-     * Create an entity with type safety and automatic trait assignment
-     * @param type The entity type (from EntityType constants)
-     * @returns The created entity with appropriate default traits
-     */
-    createEntityWithTraits(type: EntityType): IFEntity;
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
     removeEntity(id: string): boolean;

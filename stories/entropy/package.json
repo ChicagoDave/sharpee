@@ -1,45 +1,37 @@
 {
-  "name": "@sharpee/story-dungeo",
+  "name": "@sharpee/story-entropy",
   "version": "0.9.101",
-  "description": "Dungeo - A Sharpee implementation of Mainframe Zork",
+  "description": "Entropy - An Interactive Fiction Endeavor in Time and Space",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "sharpee": {
-    "ifid": "621168D1-6D5C-449F-83D5-841D03A1BF78",
-    "title": "DUNGEON",
-    "author": "Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
-    "firstPublished": "2025",
-    "headline": "A Recreation of Mainframe Zork",
-    "genre": "Fantasy",
+    "ifid": "A3F7B2C1-9E4D-4A8F-B6C3-2D1E0F8A7B5C",
+    "title": "Entropy",
+    "author": "David A. Cornelson",
+    "firstPublished": "2026",
+    "headline": "An Interactive Fiction Endeavor in Time and Space",
+    "genre": "Science Fiction",
     "language": "en",
-    "forgiveness": "Nasty"
+    "forgiveness": "Tough"
   },
   "scripts": {
     "build": "tsc",
-    "build:dev": "tsc -p tsconfig.dev.json",
-    "dev": "tsc -p tsconfig.dev.json --watch",
     "clean": "rimraf dist",
-    "test": "vitest",
-    "play": "node dist/run.js"
+    "test": "vitest"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
-    "@sharpee/plugin-npc": "workspace:*",
-    "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/platform-browser": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-service": "workspace:*",
-    "@sharpee/world-model": "workspace:*",
-    "lz-string": "^1.5.0"
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
-    "@types/lz-string": "^1.5.0",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
@@ -50,10 +42,10 @@
     "interactive-fiction",
     "if",
     "story",
-    "zork",
-    "dungeo"
+    "entropy",
+    "science-fiction"
   ],
-  "author": "Sharpee Team",
+  "author": "David A. Cornelson",
   "license": "MIT",
   "exports": {
     ".": {
