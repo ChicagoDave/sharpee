@@ -65,6 +65,17 @@ Making `rebuildIdCounters` a static method on `WorldSerializer` lets WorldModel 
 ### 4. Scope: IWorldModel Untouched
 The public interface was deliberately kept frozen. All new classes are internal implementation details. The extraction is purely structural — no behavioral change.
 
+### Merged @sharpee/media package to main
+
+Merged the `feature/media-package` branch (from previous session) into main. Resolved version conflicts in `packages/bridge/package.json` and `packages/runtime/package.json` (kept 0.9.101 from main). This brought in:
+
+- `packages/media/` — types-only audio package (ADR-138 Phase 0)
+- `build.sh` — `@sharpee/media:media` entry in PACKAGES array
+- `docs/guides/audio-enablement.md` and `audio-enablement-ghost.html`
+- `docs/work/media/plan-20260401-media-package.md`
+
+Commits: `044ec661` (merge), `35aea0f9` (sync genai-api docs).
+
 ## Next Phase
 - **No active plan for this work stream.** Issue #70 is complete. Future WorldModel cleanup (if any) would require a new issue and plan.
 - Remaining plan.md phases (ISSUE-064/065/070/teleport work) were completed in prior sessions; plan.md does not require updates from this session.
