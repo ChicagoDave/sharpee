@@ -131,11 +131,12 @@ Objects live in `zoo-items.ts`. The helpers support containers, supporters, ligh
 export function createZooItems(world: WorldModel, rooms: RoomIds) {
   const { object, container } = world.helpers();
 
-  // Portable light source
+  // Portable light source with custom trait
   const flashlight = object('flashlight')
     .description('A heavy-duty yellow flashlight.')
     .aliases('flashlight', 'torch', 'light')
     .lightSource({ isLit: false })
+    .addTrait(new SwitchableTrait({ isOn: false }))
     .in(supplyRoomEntity)
     .build();
 
@@ -169,12 +170,12 @@ export function createCharacters(world: WorldModel, rooms: RoomIds) {
   const zookeeper = actor('zookeeper')
     .description('A friendly zookeeper in khaki overalls. A name tag reads "Sam."')
     .aliases('keeper', 'zookeeper', 'sam')
+    .addTrait(new NpcTrait({
+      behaviorId: KEEPER_PATROL_ID,
+      canMove: true, isAlive: true, isConscious: true,
+    }))
     .in(mainPathEntity)
     .build();
-  zookeeper.add(new NpcTrait({
-    behaviorId: KEEPER_PATROL_ID,
-    canMove: true, isAlive: true, isConscious: true,
-  }));
 ```
 
 The patrol route is set up in `onEngineReady()`:
@@ -406,7 +407,7 @@ CHOMP! It nips your finger with its beak. "NO TOUCHING!" it squawks.
 
 ## What You Learned
 
-- **Entity helpers**: Fluent builder API via `world.helpers()` for rooms, objects, containers, doors, actors
+- **Entity helpers**: Fluent builder API via `world.helpers()` for rooms, objects, containers, doors, actors — with `.addTrait()` for custom traits in the chain
 - **Multi-file organization**: Split by concern (map, items, characters, events, scoring, language)
 - **Custom actions**: Four-phase pattern (validate/execute/report/blocked) with grammar extension
 - **Capability dispatch**: `PettableTrait` declares capabilities, `CapabilityBehavior` implements per-entity logic

@@ -139,29 +139,29 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
     .in(supplyRoom)
     .build();
 
-  const pettingPlaque = object('info plaque')
+  object('info plaque')
     .description('A brass plaque mounted on a wooden post near the petting zoo gate.')
     .aliases('plaque', 'info plaque', 'brass plaque')
     .scenery()
+    .addTrait(new ReadableTrait({ text: 'PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always hungry.\n\nHOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marmalade, were born here in 2023.' }))
     .in(pettingZoo)
     .build();
-  pettingPlaque.add(new ReadableTrait({ text: 'PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always hungry.\n\nHOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marmalade, were born here in 2023.' }));
 
-  const aviaryPlaque = object('aviary plaque')
+  object('aviary plaque')
     .description('A colorful information board near the aviary entrance.')
     .aliases('plaque', 'aviary plaque', 'information board')
     .scenery()
+    .addTrait(new ReadableTrait({ text: 'WELCOME TO THE AVIARY — Home to over 30 species!\n\nTOCO TOUCAN — Its bill weighs less than a smartphone.\n\nSCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.' }))
     .in(aviary)
     .build();
-  aviaryPlaque.add(new ReadableTrait({ text: 'WELCOME TO THE AVIARY — Home to over 30 species!\n\nTOCO TOUCAN — Its bill weighs less than a smartphone.\n\nSCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.' }));
 
-  const warningSign = object('warning sign')
+  object('warning sign')
     .description('A yellow warning sign near the nocturnal exhibit entrance.')
     .aliases('warning', 'warning sign', 'yellow sign')
     .scenery()
+    .addTrait(new ReadableTrait({ text: 'CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a flashlight. Do NOT use camera flash. (We don\'t talk about the Great Owl Incident of 2022.)' }))
     .in(supplyRoom)
     .build();
-  warningSign.add(new ReadableTrait({ text: 'CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a flashlight. Do NOT use camera flash. (We don\'t talk about the Great Owl Incident of 2022.)' }));
 
   return {
     rooms: {

@@ -15,7 +15,7 @@ import {
   LockableTrait,
   AuthorModel,
 } from '@sharpee/world-model';
-import type { IWorldModel } from '@sharpee/world-model';
+import type { IWorldModel, ITrait } from '@sharpee/world-model';
 
 /**
  * Fluent builder for creating container entities.
@@ -37,6 +37,7 @@ export class ContainerBuilder {
   private _openable?: { isOpen?: boolean };
   private _lockable?: { isLocked?: boolean; keyId?: string };
   private _skipValidation = false;
+  private _traits: ITrait[] = [];
 
   constructor(
     private world: IWorldModel,
@@ -99,6 +100,17 @@ export class ContainerBuilder {
   }
 
   /**
+   * Add a custom trait to the entity.
+   *
+   * @param trait - Any ITrait instance
+   * @returns this (for chaining)
+   */
+  addTrait(trait: ITrait): this {
+    this._traits.push(trait);
+    return this;
+  }
+
+  /**
    * Bypass validation for placement.
    *
    * @returns this (for chaining)
@@ -131,6 +143,10 @@ export class ContainerBuilder {
         isLocked: this._lockable.isLocked ?? false,
         ...(this._lockable.keyId ? { requiredKey: this._lockable.keyId } : {}),
       }));
+    }
+
+    for (const trait of this._traits) {
+      entity.add(trait);
     }
 
     if (this._location) {

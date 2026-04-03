@@ -18,79 +18,52 @@ The scaffolded project gives you a single starting room. Let's expand it into a 
 
 ## Build a Region
 
-Create `src/regions/house.ts` with a few connected rooms and objects:
+Create `src/regions/house.ts` with a few connected rooms and objects. The **entity helpers** API lets you build rooms and objects with a fluent builder:
 
 ```typescript
-import {
-  WorldModel,
-  IFEntity,
-  EntityType,
-  IdentityTrait,
-  RoomTrait,
-  Direction,
-} from '@sharpee/world-model';
+import { WorldModel, Direction } from '@sharpee/world-model';
+import '@sharpee/helpers';
 
 export function createHouse(world: WorldModel) {
+  const { room, object } = world.helpers();
+
   // Rooms
-  const foyer = world.createEntity('foyer', EntityType.ROOM);
-  foyer.add(new IdentityTrait({
-    name: 'Foyer',
-    description: 'A grand entrance hall with marble floors. A doorway leads north to the library. The front door is to the south.',
-  }));
-  foyer.add(new RoomTrait());
+  const foyer = room('Foyer')
+    .description('A grand entrance hall with marble floors. A doorway leads north to the library.')
+    .build();
 
-  const library = world.createEntity('library', EntityType.ROOM);
-  library.add(new IdentityTrait({
-    name: 'Library',
-    description: 'Dusty bookshelves line every wall. A reading desk sits beneath a window. The foyer is south.',
-  }));
-  library.add(new RoomTrait());
+  const library = room('Library')
+    .description('Dusty bookshelves line every wall. A reading desk sits beneath a window.')
+    .build();
 
-  // Connect rooms via RoomTrait exits
-  const foyerTrait = foyer.get(RoomTrait);
-  if (foyerTrait) {
-    foyerTrait.exits[Direction.NORTH] = { destination: library.id };
-  }
-  const libraryTrait = library.get(RoomTrait);
-  if (libraryTrait) {
-    libraryTrait.exits[Direction.SOUTH] = { destination: foyer.id };
-  }
+  // Connect rooms
+  world.connectRooms(foyer.id, library.id, Direction.NORTH);
 
-  // Objects in this region
-  const book = world.createEntity('dusty-book', EntityType.OBJECT);
-  book.add(new IdentityTrait({
-    name: 'dusty book',
-    description: 'An ancient tome with faded gold lettering. The title reads "A History of the Valley".',
-  }));
-  world.moveEntity(book.id, library.id);
+  // Objects
+  const book = object('dusty book')
+    .description('An ancient tome with faded gold lettering.')
+    .in(library)
+    .build();
 
-  const key = world.createEntity('brass-key', EntityType.OBJECT);
-  key.add(new IdentityTrait({
-    name: 'brass key',
-    description: 'A small brass key with an ornate handle.',
-  }));
-  world.moveEntity(key.id, foyer.id);
+  const key = object('brass key')
+    .description('A small brass key with an ornate handle.')
+    .in(foyer)
+    .build();
 
   return { foyer, library };
 }
 ```
 
-Everything for the house — rooms, connections, objects — lives in one file.
+Each builder handles entity creation, `IdentityTrait`, and `RoomTrait` automatically. The `.in()` method accepts an entity directly for compile-time safety.
 
 ## Wire It Into Your Story
 
 Update `src/index.ts` to use the region:
 
 ```typescript
-import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
-import {
-  WorldModel,
-  IFEntity,
-  EntityType,
-  IdentityTrait,
-  ActorTrait,
-  ContainerTrait,
-} from '@sharpee/world-model';
+import { Story, StoryConfig } from '@sharpee/engine';
+import { WorldModel, IFEntity } from '@sharpee/world-model';
+import '@sharpee/helpers';
 import { createHouse } from './regions/house';
 
 export const config: StoryConfig = {
@@ -115,16 +88,14 @@ export class MyAdventure implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    const player = world.createEntity('yourself', EntityType.ACTOR);
-    player.add(new IdentityTrait({
-      name: 'yourself',
-      aliases: ['self', 'me'],
-      description: 'As good-looking as ever.',
-      properName: false,
-    }));
-    player.add(new ActorTrait({ isPlayer: true }));
-    player.add(new ContainerTrait({ capacity: 100 }));
-    return player;
+    const { actor } = world.helpers();
+
+    return actor('yourself')
+      .description('As good-looking as ever.')
+      .aliases('self', 'me')
+      .properName()
+      .inventory({ maxItems: 10 })
+      .build();
   }
 }
 
@@ -132,43 +103,70 @@ export const story = new MyAdventure();
 export default story;
 ```
 
-## Using AuthorModel for Setup
+## Containers and Locked Doors
 
-When placing items inside closed containers during world setup, normal game rules block the action ("the chest is closed"). Use `AuthorModel` to bypass validation:
+The helpers support containers, doors, and placing items in closed containers during setup:
 
 ```typescript
-import {
-  WorldModel,
-  EntityType,
-  IdentityTrait,
-  ContainerTrait,
-  OpenableTrait,
-  AuthorModel,
-} from '@sharpee/world-model';
+import { WorldModel, Direction } from '@sharpee/world-model';
+import '@sharpee/helpers';
 
 export function createHouse(world: WorldModel) {
-  // ... rooms ...
+  const { room, object, container, door } = world.helpers();
 
-  const chest = world.createEntity('chest', EntityType.OBJECT);
-  chest.add(new IdentityTrait({
-    name: 'wooden chest',
-    description: 'A sturdy wooden chest with iron bands.',
-  }));
-  chest.add(new ContainerTrait({ capacity: 10 }));
-  chest.add(new OpenableTrait({ isOpen: false }));
-  world.moveEntity(chest.id, library.id);
+  const foyer = room('Foyer')
+    .description('A grand entrance hall. A locked door leads east.')
+    .build();
 
-  const gem = world.createEntity('gem', EntityType.OBJECT);
-  gem.add(new IdentityTrait({
-    name: 'sparkling gem',
-    description: 'A gem that catches the light.',
-  }));
-  // AuthorModel skips "container is closed" validation
-  const author = new AuthorModel(world.getDataStore(), world);
-  author.moveEntity(gem.id, chest.id);
+  const study = room('Study')
+    .description('A private study with a mahogany desk.')
+    .build();
 
-  // ...
+  // Locked door between rooms
+  const key = object('brass key')
+    .description('A small brass key.')
+    .in(foyer)
+    .build();
+
+  door('oak door')
+    .description('A heavy oak door with a brass lock.')
+    .between(foyer, study, Direction.EAST)
+    .openable({ isOpen: false })
+    .lockable({ isLocked: true, keyId: key.id })
+    .build();
+
+  // Closed chest with a gem inside
+  const chest = container('wooden chest')
+    .description('A sturdy wooden chest with iron bands.')
+    .openable({ isOpen: false })
+    .in(study)
+    .build();
+
+  // .skipValidation() bypasses the "container is closed" rule
+  object('sparkling gem')
+    .description('A gem that catches the light.')
+    .skipValidation()
+    .in(chest)
+    .build();
+
+  return { foyer, study };
 }
+```
+
+## Custom Traits
+
+For traits the builders don't have explicit methods for, use `.addTrait()`:
+
+```typescript
+import { ReadableTrait } from '@sharpee/world-model';
+
+const note = object('crumpled note')
+  .description('A crumpled piece of paper.')
+  .addTrait(new ReadableTrait({
+    text: 'The combination is 4-7-2.'
+  }))
+  .in(study)
+  .build();
 ```
 
 ## Build Your Story
@@ -193,9 +191,12 @@ Try these commands in the game:
 - `examine book` — look at something
 - `take key` — pick up an item
 - `inventory` — see what you're carrying
+- `unlock door with key` — unlock a locked door
+- `open chest` — open a container
 
 ## Next Steps
 
+- Try the [Family Zoo Tutorial](/docs/tutorials/family-zoo/) for NPCs, scoring, timed events, and custom actions
 - Learn about [Rooms and Regions](/docs/author-guide/rooms/) in the Author Guide
 - Add [Objects and Traits](/docs/author-guide/objects/) for interactive items
 - Create [NPCs](/docs/author-guide/npcs/) with conversations

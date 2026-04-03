@@ -11,7 +11,7 @@ import {
   IdentityTrait,
   RoomTrait,
 } from '@sharpee/world-model';
-import type { IWorldModel } from '@sharpee/world-model';
+import type { IWorldModel, ITrait } from '@sharpee/world-model';
 
 /**
  * Fluent builder for creating room entities.
@@ -27,6 +27,7 @@ export class RoomBuilder {
   private _description?: string;
   private _aliases?: string[];
   private _isDark = false;
+  private _traits: ITrait[] = [];
 
   constructor(
     private world: IWorldModel,
@@ -56,6 +57,17 @@ export class RoomBuilder {
   }
 
   /**
+   * Add a custom trait to the entity.
+   *
+   * @param trait - Any ITrait instance
+   * @returns this (for chaining)
+   */
+  addTrait(trait: ITrait): this {
+    this._traits.push(trait);
+    return this;
+  }
+
+  /**
    * Mark the room as dark (requires a light source to see).
    *
    * @returns this (for chaining)
@@ -78,6 +90,9 @@ export class RoomBuilder {
       description: this._description,
       aliases: this._aliases,
     }));
+    for (const trait of this._traits) {
+      entity.add(trait);
+    }
     return entity;
   }
 }

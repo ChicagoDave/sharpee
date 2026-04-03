@@ -14,7 +14,7 @@ import {
   LightSourceTrait,
   AuthorModel,
 } from '@sharpee/world-model';
-import type { IWorldModel } from '@sharpee/world-model';
+import type { IWorldModel, ITrait } from '@sharpee/world-model';
 
 /**
  * Fluent builder for creating object entities.
@@ -35,6 +35,7 @@ export class ObjectBuilder {
   private _scenery = false;
   private _lightSource?: { isLit?: boolean; fuelTurns?: number };
   private _skipValidation = false;
+  private _traits: ITrait[] = [];
 
   constructor(
     private world: IWorldModel,
@@ -96,6 +97,17 @@ export class ObjectBuilder {
   }
 
   /**
+   * Add a custom trait to the entity.
+   *
+   * @param trait - Any ITrait instance
+   * @returns this (for chaining)
+   */
+  addTrait(trait: ITrait): this {
+    this._traits.push(trait);
+    return this;
+  }
+
+  /**
    * Bypass validation for placement (e.g., placing in closed containers).
    * Internally wraps the world in an AuthorModel.
    *
@@ -125,6 +137,10 @@ export class ObjectBuilder {
 
     if (this._lightSource) {
       entity.add(new LightSourceTrait(this._lightSource));
+    }
+
+    for (const trait of this._traits) {
+      entity.add(trait);
     }
 
     if (this._location) {

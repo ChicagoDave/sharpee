@@ -58,6 +58,7 @@ pnpm add @sharpee/sharpee
 | `@sharpee/core` | Events, queries, platform types |
 | `@sharpee/plugins` | Plugin system (NPC, scheduler, state machine) |
 | `@sharpee/text-service` | Text rendering and status line |
+| `@sharpee/helpers` | Fluent entity builders |
 | `@sharpee/ext-testing` | Debug and testing tools |
 | `@sharpee/platform-browser` | Browser client infrastructure |
 
@@ -86,52 +87,30 @@ my-adventure/
         └── walkthrough.transcript
 ```
 
-Each region file exports a setup function that creates entities with traits:
+Each region file exports a setup function that creates entities using the **entity helpers** API:
 
 ```typescript
 // src/regions/village.ts
-import {
-  WorldModel,
-  IFEntity,
-  EntityType,
-  IdentityTrait,
-  RoomTrait,
-  Direction,
-} from '@sharpee/world-model';
+import { WorldModel, Direction } from '@sharpee/world-model';
+import '@sharpee/helpers';
 
 export function createVillage(world: WorldModel) {
-  // Create rooms as entities with traits
-  const square = world.createEntity('village-square', EntityType.ROOM);
-  square.add(new IdentityTrait({
-    name: 'Village Square',
-    description: 'A bustling square with a fountain at its center.',
-  }));
-  square.add(new RoomTrait());
+  const { room, object } = world.helpers();
 
-  const tavern = world.createEntity('tavern', EntityType.ROOM);
-  tavern.add(new IdentityTrait({
-    name: 'The Rusty Mug',
-    description: 'A warm tavern smelling of ale and roasted meat.',
-  }));
-  tavern.add(new RoomTrait());
+  const square = room('Village Square')
+    .description('A bustling square with a fountain at its center.')
+    .build();
 
-  // Connect rooms via RoomTrait exits
-  const squareTrait = square.get(RoomTrait);
-  if (squareTrait) {
-    squareTrait.exits[Direction.EAST] = { destination: tavern.id };
-  }
-  const tavernTrait = tavern.get(RoomTrait);
-  if (tavernTrait) {
-    tavernTrait.exits[Direction.WEST] = { destination: square.id };
-  }
+  const tavern = room('The Rusty Mug')
+    .description('A warm tavern smelling of ale and roasted meat.')
+    .build();
 
-  // Objects in this region
-  const coin = world.createEntity('coin', EntityType.OBJECT);
-  coin.add(new IdentityTrait({
-    name: 'silver coin',
-    description: 'A tarnished silver coin.',
-  }));
-  world.moveEntity(coin.id, square.id);
+  world.connectRooms(square.id, tavern.id, Direction.EAST);
+
+  object('silver coin')
+    .description('A tarnished silver coin.')
+    .in(square)
+    .build();
 
   return { square, tavern };
 }

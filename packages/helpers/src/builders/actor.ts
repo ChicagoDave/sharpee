@@ -14,7 +14,7 @@ import {
   ContainerTrait,
   AuthorModel,
 } from '@sharpee/world-model';
-import type { IWorldModel } from '@sharpee/world-model';
+import type { IWorldModel, ITrait } from '@sharpee/world-model';
 
 /**
  * Fluent builder for creating actor entities (players and NPCs).
@@ -36,6 +36,7 @@ export class ActorBuilder {
   private _inventory?: { maxItems?: number };
   private _location?: IFEntity;
   private _skipValidation = false;
+  private _traits: ITrait[] = [];
 
   constructor(
     private world: IWorldModel,
@@ -97,6 +98,17 @@ export class ActorBuilder {
   }
 
   /**
+   * Add a custom trait to the entity.
+   *
+   * @param trait - Any ITrait instance
+   * @returns this (for chaining)
+   */
+  addTrait(trait: ITrait): this {
+    this._traits.push(trait);
+    return this;
+  }
+
+  /**
    * Bypass validation for placement.
    *
    * @returns this (for chaining)
@@ -126,6 +138,10 @@ export class ActorBuilder {
       entity.add(new ContainerTrait({
         capacity: this._inventory.maxItems ? { maxItems: this._inventory.maxItems } : undefined,
       }));
+    }
+
+    for (const trait of this._traits) {
+      entity.add(trait);
     }
 
     if (this._location) {

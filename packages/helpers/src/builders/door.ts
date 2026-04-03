@@ -15,7 +15,7 @@ import {
   LockableTrait,
   RoomBehavior,
 } from '@sharpee/world-model';
-import type { IWorldModel } from '@sharpee/world-model';
+import type { IWorldModel, ITrait } from '@sharpee/world-model';
 import { getOppositeDirection } from '@sharpee/world-model';
 import type { DirectionType } from '@sharpee/world-model';
 
@@ -40,6 +40,7 @@ export class DoorBuilder {
   private _direction?: DirectionType;
   private _openable?: { isOpen?: boolean };
   private _lockable?: { isLocked?: boolean; keyId?: string };
+  private _traits: ITrait[] = [];
 
   constructor(
     private world: IWorldModel,
@@ -80,6 +81,17 @@ export class DoorBuilder {
     this._room1 = room1;
     this._room2 = room2;
     this._direction = direction;
+    return this;
+  }
+
+  /**
+   * Add a custom trait to the entity.
+   *
+   * @param trait - Any ITrait instance
+   * @returns this (for chaining)
+   */
+  addTrait(trait: ITrait): this {
+    this._traits.push(trait);
     return this;
   }
 
@@ -134,6 +146,10 @@ export class DoorBuilder {
         isLocked: this._lockable.isLocked ?? true,
         ...(this._lockable.keyId ? { requiredKey: this._lockable.keyId } : {}),
       }));
+    }
+
+    for (const trait of this._traits) {
+      entity.add(trait);
     }
 
     // Wire exits through the door

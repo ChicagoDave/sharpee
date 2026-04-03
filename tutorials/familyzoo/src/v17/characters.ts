@@ -140,19 +140,19 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
   const zookeeper = actor('zookeeper')
     .description('A friendly zookeeper in khaki overalls. A name tag reads "Sam."')
     .aliases('keeper', 'zookeeper', 'sam')
+    .addTrait(new NpcTrait({ behaviorId: KEEPER_PATROL_ID, canMove: true, isAlive: true, isConscious: true }))
     .in(mainPathEntity)
     .build();
-  zookeeper.add(new NpcTrait({ behaviorId: KEEPER_PATROL_ID, canMove: true, isAlive: true, isConscious: true }));
 
   // --- Parrot (NPC with swappable behavior) ---
 
   const parrot = actor('parrot')
     .description('A magnificent scarlet macaw perched on a rope. It tilts its head and watches you with one bright eye.')
     .aliases('parrot', 'macaw', 'scarlet macaw')
+    .addTrait(new NpcTrait({ behaviorId: 'zoo-parrot', canMove: false, isAlive: true, isConscious: true }))
+    .addTrait(new PettableTrait('parrot'))
     .in(aviaryEntity)
     .build();
-  parrot.add(new NpcTrait({ behaviorId: 'zoo-parrot', canMove: false, isAlive: true, isConscious: true }));
-  parrot.add(new PettableTrait('parrot'));
 
   // --- Pettable animals (scenery with PettableTrait) ---
 
@@ -160,17 +160,17 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
     .description('Three pygmy goats hoping you have food.')
     .aliases('goats', 'pygmy goats', 'goat')
     .scenery()
+    .addTrait(new PettableTrait('goats'))
     .in(pettingZooEntity)
     .build();
-  goats.add(new PettableTrait('goats'));
 
   const rabbits = object('rabbits')
     .description('A pair of Holland Lop rabbits with floppy ears.')
     .aliases('rabbits', 'rabbit', 'bunnies')
     .scenery()
+    .addTrait(new PettableTrait('rabbits'))
     .in(pettingZooEntity)
     .build();
-  rabbits.add(new PettableTrait('rabbits'));
 
   const parrotsScenery = object('parrots')
     .description('A raucous flock of scarlet macaws and grey African parrots.')

@@ -56,9 +56,9 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
   const brochure = object('zoo brochure')
     .description('A glossy tri-fold brochure with "WILLOWBROOK FAMILY ZOO" on the cover.')
     .aliases('brochure', 'zoo brochure', 'pamphlet', 'leaflet')
+    .addTrait(new ReadableTrait({ text: 'WILLOWBROOK FAMILY ZOO — Your Guide\n\nEXHIBITS:\n  Petting Zoo — East from Main Path\n  Aviary — West from Main Path\n  Gift Shop — West from Aviary\n  Nocturnal Animals — Staff Area\n\n"Where every visit is a wild adventure!"' }))
     .in(entranceEntity)
     .build();
-  brochure.add(new ReadableTrait({ text: 'WILLOWBROOK FAMILY ZOO — Your Guide\n\nEXHIBITS:\n  Petting Zoo — East from Main Path\n  Aviary — West from Main Path\n  Gift Shop — West from Aviary\n  Nocturnal Animals — Staff Area\n\n"Where every visit is a wild adventure!"' }));
 
   const zooMap = object('zoo map')
     .description('A colorful folding map of the Willowbrook Family Zoo.')
@@ -82,9 +82,9 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .description('A heavy-duty yellow flashlight.')
     .aliases('flashlight', 'torch', 'light', 'lamp')
     .lightSource({ isLit: false })
+    .addTrait(new SwitchableTrait({ isOn: false }))
     .in(supplyRoomEntity)
     .build();
-  flashlight.add(new SwitchableTrait({ isOn: false }));
 
   const camera = object('disposable camera')
     .description('A cheap yellow disposable camera with "ZOO MEMORIES" printed on the side.')
@@ -96,9 +96,9 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .description('A battered portable radio held together with duct tape. The antenna is bent at a jaunty angle. A faded sticker on the side reads "ZOO FM — All Animals, All The Time."')
     .aliases('radio', 'portable radio')
     .scenery()
+    .addTrait(new SwitchableTrait({ isOn: false }))
     .in(supplyRoomEntity)
     .build();
-  radio.add(new SwitchableTrait({ isOn: false }));
 
   // --- Containers and supporters ---
 
@@ -112,9 +112,9 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .description('A sturdy park bench painted forest green.')
     .aliases('bench', 'park bench', 'benches', 'seat')
     .scenery()
+    .addTrait(new SupporterTrait({ capacity: { maxItems: 3 } }))
     .in(mainPathEntity)
     .build();
-  parkBench.add(new SupporterTrait({ capacity: { maxItems: 3 } }));
 
   const lunchbox = container('lunchbox')
     .description('A dented metal lunchbox decorated with cartoon zoo animals.')
@@ -135,16 +135,16 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .description('A coin-operated feed dispenser mounted on a wooden post. Sign: "FREE — Just Turn!"')
     .aliases('dispenser', 'feed dispenser')
     .openable({ isOpen: false })
+    .addTrait(new SceneryTrait())
     .in(pettingZooEntity)
     .build();
-  dispenser.add(new SceneryTrait());
 
   const souvenirPress = container('souvenir press')
     .description('A heavy cast-iron machine with a big crank handle. A slot on top accepts pennies, and the mechanism stamps them with a zoo animal design. A sign reads: "INSERT PENNY, TURN HANDLE, KEEP FOREVER!"')
     .aliases('press', 'souvenir press', 'penny press', 'machine')
+    .addTrait(new SceneryTrait())
     .in(giftShopEntity)
     .build();
-  souvenirPress.add(new SceneryTrait());
 
   return {
     animalFeed: animalFeed.id,
