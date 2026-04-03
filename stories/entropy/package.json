@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-entropy",
-  "version": "0.9.102",
+  "version": "0.9.103",
   "description": "Entropy - An Interactive Fiction Endeavor in Time and Space",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

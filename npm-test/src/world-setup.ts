@@ -248,7 +248,7 @@ export function setupWorld(world: WorldModel): void {
       article: 'a',
     }),
   );
-  const authorModel = new AuthorModel(world.getDataStore());
+  const authorModel = new AuthorModel(world.getDataStore(), world);
   authorModel.moveEntity(wrench.id, toolbox.id);
 
   // Key for the toolbox

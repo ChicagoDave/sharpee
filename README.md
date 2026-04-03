@@ -43,7 +43,7 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 
 ## What's Included
 
-`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 21 packages are published individually on npm under the `@sharpee` scope.
+`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 22 packages are published individually on npm under the `@sharpee` scope.
 
 ### Foundation
 
@@ -61,6 +61,7 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 |---------|-------------|
 | `@sharpee/engine` | Game loop, turn cycle, command processor |
 | `@sharpee/world-model` | Entity system with traits and behaviors |
+| `@sharpee/helpers` | Fluent entity builders (`room`, `object`, `actor`, `container`, `door`) |
 | `@sharpee/stdlib` | 48 standard IF actions (take, drop, open, lock, etc.) |
 | `@sharpee/event-processor` | Applies semantic events to the world model |
 

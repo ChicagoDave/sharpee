@@ -192,7 +192,7 @@ describe('openingAction (Golden Pattern)', () => {
       const { world, player, room } = setupBasicWorld();
       console.log('Basic world setup complete');
       console.log('Creating AuthorModel...');
-      const author = new AuthorModel(world.getDataStore());
+      const author = new AuthorModel(world.getDataStore(), world);
       console.log('AuthorModel created');
       
       // Create a proper container using AuthorModel
@@ -346,7 +346,7 @@ describe('openingAction (Golden Pattern)', () => {
       });
       
       // Add an item using AuthorModel (can add to closed containers)
-      const author = new AuthorModel(world.getDataStore());
+      const author = new AuthorModel(world.getDataStore(), world);
       const pen = author.createEntity('pen', 'object');
       author.moveEntity(pen.id, object.id);
       
@@ -442,7 +442,7 @@ describe('Opening Action Edge Cases', () => {
   test.skip('should emit multiple revealed events for multiple items', () => {
     const { world, player, room } = setupBasicWorld();
     const { AuthorModel, EntityType } = require('@sharpee/world-model');
-    const author = new AuthorModel(world.getDataStore());
+    const author = new AuthorModel(world.getDataStore(), world);
     
     // Create a proper container using AuthorModel
     const chest = author.createEntity('treasure chest', EntityType.CONTAINER);

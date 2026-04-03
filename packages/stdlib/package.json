@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/stdlib",
-  "version": "0.9.102",
+  "version": "0.9.103",
   "description": "Standard library for Sharpee IF Platform - actions, commands, and game mechanics",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",

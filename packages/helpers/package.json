@@ -1,16 +1,13 @@
 {
-  "name": "@sharpee/plugins",
+  "name": "@sharpee/helpers",
   "version": "0.9.103",
-  "description": "Plugin contracts for Sharpee engine turn-cycle extensibility",
+  "description": "Fluent entity builder helpers for Sharpee Interactive Fiction Platform",
   "main": "./dist/index.js",
-  "module": "./dist-esm/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist-esm/index.js",
-      "require": "./dist/index.js",
-      "esm": "./dist-esm/index.js"
+      "require": "./dist/index.js"
     }
   },
   "scripts": {
@@ -19,7 +16,6 @@
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
-    "@sharpee/core": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
@@ -32,25 +28,23 @@
   ],
   "keywords": [
     "interactive-fiction",
+    "if",
+    "text-adventure",
     "sharpee",
-    "plugins",
-    "turn-cycle"
+    "helpers",
+    "builders"
   ],
   "author": "Sharpee Team",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ChicagoDave/sharpee.git",
-    "directory": "packages/plugins"
-  },
-  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
-  "bugs": {
-    "url": "https://github.com/ChicagoDave/sharpee/issues"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "directory": "packages/helpers"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

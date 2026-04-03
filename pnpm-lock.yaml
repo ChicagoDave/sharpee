@@ -246,6 +246,22 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(lightningcss@1.30.2)(terser@5.44.1)
 
+  packages/helpers:
+    dependencies:
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   packages/if-domain:
     dependencies:
       '@sharpee/core':
@@ -933,6 +949,9 @@ importers:
       '@sharpee/engine':
         specifier: file:../../packages/engine
         version: file:packages/engine
+      '@sharpee/helpers':
+        specifier: file:../../packages/helpers
+        version: file:packages/helpers
       '@sharpee/lang-en-us':
         specifier: file:../../packages/lang-en-us
         version: file:packages/lang-en-us
@@ -1691,6 +1710,10 @@ packages:
 
   '@sharpee/engine@file:packages/engine':
     resolution: {directory: packages/engine, type: directory}
+    engines: {node: '>=18.0.0'}
+
+  '@sharpee/helpers@file:packages/helpers':
+    resolution: {directory: packages/helpers, type: directory}
     engines: {node: '>=18.0.0'}
 
   '@sharpee/lang-en-us@file:packages/lang-en-us':
@@ -5233,6 +5256,10 @@ snapshots:
       '@sharpee/stdlib': link:packages/stdlib
       '@sharpee/text-blocks': link:packages/text-blocks
       '@sharpee/text-service': link:packages/text-service
+      '@sharpee/world-model': link:packages/world-model
+
+  '@sharpee/helpers@file:packages/helpers':
+    dependencies:
       '@sharpee/world-model': link:packages/world-model
 
   '@sharpee/lang-en-us@file:packages/lang-en-us':

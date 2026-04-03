@@ -14,6 +14,7 @@ sharpee/
 │   ├── core/                 # Core types and events
 │   ├── engine/               # Game engine runtime
 │   ├── world-model/          # Entity system, traits, behaviors
+│   ├── helpers/              # Fluent entity builders
 │   ├── stdlib/               # Standard actions (43 actions)
 │   ├── parser-en-us/         # English parser and grammar
 │   ├── lang-en-us/           # English language messages

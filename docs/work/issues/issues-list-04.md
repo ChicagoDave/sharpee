@@ -19,7 +19,8 @@ original numbers.
 | ISSUE-049 | `$seed` directive for deterministic randomization testing | Low | transcript-tester | 2026-02-07 | 2026-03-26 (deferred — logic gates in transcript-tester cover this) |
 | ISSUE-052 | Capability registry module-level Map not shared across require() | High | world-model | 2026-02-08 | 2026-02-13 |
 | ISSUE-057 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us, stdlib | 2026-03-23 | 2026-03-26 |
-| ISSUE-058 | Entity creation is excessively repetitive — needs builder/helper API | Low | world-model | 2026-03-23 | - |
+| ISSUE-058 | ~~Entity creation is excessively repetitive — needs builder/helper API~~ | Low | world-model | 2026-03-23 | **DONE** 2026-04-03 (ADR-140, @sharpee/helpers) |
+| ISSUE-071 | Family Zoo tutorial has no transcript tests | High | tutorials | 2026-04-03 | - |
 | ISSUE-059 | Transcript tester `story:` header field is metadata-only | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
@@ -32,6 +33,38 @@ original numbers.
 | ISSUE-068 | ~~Entity `on` handlers are vestigial — migrate to actions/capabilities, simplify type infrastructure~~ | Medium | world-model, event-processor, stories | 2026-03-27 | **DONE** 2026-03-27 |
 | ISSUE-069 | `world.getStateValue`/`setStateValue` is a code smell — puzzle state belongs on entities/traits | Medium | world-model, stories | 2026-03-27 | - |
 | ISSUE-070 | Entity descriptions should be computed from trait state, not mutated by event handlers | Medium | world-model | 2026-03-27 | - |
+
+---
+
+## Open Issues — Testing
+
+### ISSUE-071: Family Zoo tutorial has no transcript tests
+
+**Reported**: 2026-04-03
+**Severity**: High
+**Component**: tutorials/familyzoo
+
+The Family Zoo tutorial (17 versions, the primary onboarding material for story authors) has zero transcript tests. The only validation is that it compiles. Behavioral regressions in any version would go undetected.
+
+Each tutorial version introduces specific features that should be testable:
+- V1: single room, examine scenery, can't take scenery
+- V2: multiple rooms, navigation
+- V3: portable objects, inventory
+- V4: containers (open/close, put in)
+- V5: locked containers, keys
+- V6: dark rooms, light sources
+- V7: scoring
+- V8: NPCs, petting action
+- V9: readable objects
+- V10: switchable objects
+- V11: daemons/fuses
+- V12: event handlers (penny press, feed drop)
+- V13-V16: progressive additions
+- V17: multi-file organization (should have same behavior as V16)
+
+**Recommended approach**: One transcript per version covering the key commands introduced in that version. Each transcript should be runnable standalone (`node dist/cli/sharpee.js --test`). V17 should have a comprehensive walkthrough covering all features.
+
+**Location**: `tutorials/familyzoo/tests/transcripts/`
 
 ---
 

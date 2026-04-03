@@ -22,7 +22,8 @@
       "@sharpee/lang-en-us": ["./node_modules/@sharpee/lang-en-us"],
       "@sharpee/engine": ["./node_modules/@sharpee/engine"],
       "@sharpee/plugin-npc": ["./node_modules/@sharpee/plugin-npc"],
-      "@sharpee/plugin-scheduler": ["./node_modules/@sharpee/plugin-scheduler"]
+      "@sharpee/plugin-scheduler": ["./node_modules/@sharpee/plugin-scheduler"],
+      "@sharpee/helpers": ["./node_modules/@sharpee/helpers"]
     }
   },
   "include": ["src/**/*"],

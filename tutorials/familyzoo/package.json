@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/tutorial-familyzoo",
-  "version": "0.9.102",
+  "version": "0.9.103",
   "description": "Family Zoo — A progressive Sharpee tutorial in 16 versions",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,6 +13,7 @@
     "@sharpee/engine": "file:../../packages/engine",
     "@sharpee/stdlib": "file:../../packages/stdlib",
     "@sharpee/world-model": "file:../../packages/world-model",
+    "@sharpee/helpers": "file:../../packages/helpers",
     "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
     "@sharpee/parser-en-us": "file:../../packages/parser-en-us",
     "@sharpee/text-service": "workspace:*",

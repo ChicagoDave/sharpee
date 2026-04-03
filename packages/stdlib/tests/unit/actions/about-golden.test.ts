@@ -18,7 +18,7 @@ describe('about action', () => {
     // Setup basic world with player and room
     const setup = setupBasicWorld();
     world = setup.world;
-    authorModel = new AuthorModel(world);
+    authorModel = new AuthorModel(world.getDataStore(), world);
     
     // Create command for about action
     const command = createCommand(IFActions.ABOUT, {

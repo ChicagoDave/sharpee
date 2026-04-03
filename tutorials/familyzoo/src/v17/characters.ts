@@ -16,15 +16,13 @@
 
 import {
   WorldModel,
-  EntityType,
   ITrait,
 } from '@sharpee/world-model';
 import {
-  IdentityTrait,
-  ActorTrait,
   NpcTrait,
   SceneryTrait,
 } from '@sharpee/world-model';
+import '@sharpee/helpers';
 import type { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
 import type { RoomIds } from './zoo-map';
 
@@ -131,42 +129,55 @@ export const KEEPER_PATROL_ID = 'zoo-keeper-patrol';
 // ============================================================================
 
 export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterIds {
+  const { actor, object } = world.helpers();
+
+  const mainPathEntity = world.getEntity(rooms.mainPath)!;
+  const aviaryEntity = world.getEntity(rooms.aviary)!;
+  const pettingZooEntity = world.getEntity(rooms.pettingZoo)!;
 
   // --- Zookeeper (NPC with patrol behavior) ---
 
-  const zookeeper = world.createEntity('zookeeper', EntityType.ACTOR);
-  zookeeper.add(new IdentityTrait({ name: 'zookeeper', description: 'A friendly zookeeper in khaki overalls. A name tag reads "Sam."', aliases: ['keeper', 'zookeeper', 'sam'], properName: false, article: 'a' }));
-  zookeeper.add(new ActorTrait({ isPlayer: false }));
+  const zookeeper = actor('zookeeper')
+    .description('A friendly zookeeper in khaki overalls. A name tag reads "Sam."')
+    .aliases('keeper', 'zookeeper', 'sam')
+    .in(mainPathEntity)
+    .build();
   zookeeper.add(new NpcTrait({ behaviorId: KEEPER_PATROL_ID, canMove: true, isAlive: true, isConscious: true }));
-  world.moveEntity(zookeeper.id, rooms.mainPath);
 
   // --- Parrot (NPC with swappable behavior) ---
 
-  const parrot = world.createEntity('parrot', EntityType.ACTOR);
-  parrot.add(new IdentityTrait({ name: 'parrot', description: 'A magnificent scarlet macaw perched on a rope. It tilts its head and watches you with one bright eye.', aliases: ['parrot', 'macaw', 'scarlet macaw'], properName: false, article: 'a' }));
-  parrot.add(new ActorTrait({ isPlayer: false }));
+  const parrot = actor('parrot')
+    .description('A magnificent scarlet macaw perched on a rope. It tilts its head and watches you with one bright eye.')
+    .aliases('parrot', 'macaw', 'scarlet macaw')
+    .in(aviaryEntity)
+    .build();
   parrot.add(new NpcTrait({ behaviorId: 'zoo-parrot', canMove: false, isAlive: true, isConscious: true }));
   parrot.add(new PettableTrait('parrot'));
-  world.moveEntity(parrot.id, rooms.aviary);
 
   // --- Pettable animals (scenery with PettableTrait) ---
 
-  const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
-  goats.add(new IdentityTrait({ name: 'pygmy goats', description: 'Three pygmy goats hoping you have food.', aliases: ['goats', 'pygmy goats', 'goat'], properName: false, article: 'some' }));
-  goats.add(new SceneryTrait());
+  const goats = object('pygmy goats')
+    .description('Three pygmy goats hoping you have food.')
+    .aliases('goats', 'pygmy goats', 'goat')
+    .scenery()
+    .in(pettingZooEntity)
+    .build();
   goats.add(new PettableTrait('goats'));
-  world.moveEntity(goats.id, rooms.pettingZoo);
 
-  const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
-  rabbits.add(new IdentityTrait({ name: 'rabbits', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
-  rabbits.add(new SceneryTrait());
+  const rabbits = object('rabbits')
+    .description('A pair of Holland Lop rabbits with floppy ears.')
+    .aliases('rabbits', 'rabbit', 'bunnies')
+    .scenery()
+    .in(pettingZooEntity)
+    .build();
   rabbits.add(new PettableTrait('rabbits'));
-  world.moveEntity(rabbits.id, rooms.pettingZoo);
 
-  const parrots = world.createEntity('parrots', EntityType.SCENERY);
-  parrots.add(new IdentityTrait({ name: 'parrots', description: 'A raucous flock of scarlet macaws and grey African parrots.', aliases: ['parrots', 'macaws', 'birds'], properName: false, article: 'some' }));
-  parrots.add(new SceneryTrait());
-  world.moveEntity(parrots.id, rooms.aviary);
+  const parrotsScenery = object('parrots')
+    .description('A raucous flock of scarlet macaws and grey African parrots.')
+    .aliases('parrots', 'macaws', 'birds')
+    .scenery()
+    .in(aviaryEntity)
+    .build();
 
   return {
     zookeeper: zookeeper.id,
