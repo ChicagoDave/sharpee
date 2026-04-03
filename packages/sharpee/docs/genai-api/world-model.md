@@ -4684,7 +4684,6 @@ export declare const extensionLoader: ExtensionLoader;
 
 ```typescript
 import { IFEntity } from '../entities/if-entity';
-import { EntityType } from '../entities/entity-types';
 import { TraitType } from '../traits/trait-types';
 import { DirectionType } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
@@ -4693,41 +4692,11 @@ import { ICapabilityData, ICapabilityRegistration } from './capabilities';
 import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { IScopeRule } from '../scope/scope-rule';
-export type EventHandler = (event: ISemanticEvent, world: IWorldModel) => void;
-export type EventValidator = (event: ISemanticEvent, world: IWorldModel) => boolean;
-export type EventPreviewer = (event: ISemanticEvent, world: IWorldModel) => WorldChange[];
-/**
- * Chain handler - returns events to emit (or null/empty to skip).
- * Unlike regular event handlers, chain handlers produce new events.
- */
-export type EventChainHandler = (event: ISemanticEvent, world: IWorldModel) => ISemanticEvent | ISemanticEvent[] | null | undefined | void;
-/**
- * Options for chain registration
- */
-export interface ChainEventOptions {
-    /**
-     * How to handle existing chains for this trigger:
-     * - 'cascade' (default): Add to existing chains, all fire
-     * - 'override': Replace ALL existing chains for this trigger
-     */
-    mode?: 'cascade' | 'override';
-    /**
-     * Unique key for this chain. Chains with same key replace each other.
-     * Useful for stdlib to define replaceable defaults.
-     */
-    key?: string;
-    /**
-     * Priority for ordering when multiple chains fire (lower = earlier)
-     * Default: 100
-     */
-    priority?: number;
-}
+import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem';
+export type { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions };
 export { WorldState, WorldConfig, ContentsOptions, WorldChange } from '@sharpee/if-domain';
-export interface ScoreEntry {
-    id: string;
-    points: number;
-    description: string;
-}
+import { ScoreEntry } from './ScoreLedger';
+export { ScoreEntry } from './ScoreLedger';
 export interface IWorldModel {
     getDataStore(): IDataStore;
     registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
@@ -4827,15 +4796,9 @@ export declare class WorldModel implements IWorldModel {
     private config;
     private capabilities;
     private scoreLedger;
-    private scoreMaxScore;
     private idCounters;
-    private eventHandlers;
-    private eventValidators;
-    private eventPreviewers;
-    private appliedEvents;
-    private eventProcessorWiring;
-    private maxEventHistory;
-    private eventChains;
+    private eventSystem;
+    private serializer;
     private platformEvents?;
     private scopeRegistry;
     private scopeEvaluator;
@@ -4887,41 +4850,20 @@ export declare class WorldModel implements IWorldModel {
     getMaxScore(): number;
     toJSON(): string;
     loadJSON(json: string): void;
+    private getSerializableState;
     clear(): void;
     registerEventHandler(eventType: string, handler: EventHandler): void;
     unregisterEventHandler(eventType: string): void;
     registerEventValidator(eventType: string, validator: EventValidator): void;
     registerEventPreviewer(eventType: string, previewer: EventPreviewer): void;
-    /**
-     * Connect this WorldModel to the engine's EventProcessor (ADR-086).
-     * Wires all existing handlers and chains, and enables automatic wiring for future ones.
-     */
     connectEventProcessor(wiring: IEventProcessorWiring): void;
-    /**
-     * Adapt a WorldModel handler to EventProcessor signature and register it.
-     */
-    private wireHandlerToProcessor;
-    /**
-     * Register an event chain handler (ADR-094).
-     * Chain handlers produce new events when a trigger event occurs.
-     */
     chainEvent(triggerType: string, handler: EventChainHandler, options?: ChainEventOptions): void;
-    /**
-     * Wire chains for a trigger type to the EventProcessor.
-     * Chain handlers return events to be emitted.
-     */
-    private wireChainToProcessor;
-    /**
-     * Execute all chains for a trigger type and collect their events.
-     */
-    private executeChains;
     applyEvent(event: ISemanticEvent): void;
     canApplyEvent(event: ISemanticEvent): boolean;
     previewEvent(event: ISemanticEvent): WorldChange[];
     getAppliedEvents(): ISemanticEvent[];
     getEventsSince(timestamp: number): ISemanticEvent[];
     clearEventHistory(): void;
-    private rebuildIdCounters;
     getDataStore(): IDataStore;
     getScopeRegistry(): ScopeRegistry;
     getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
