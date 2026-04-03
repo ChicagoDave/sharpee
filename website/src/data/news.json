@@ -1,6 +1,11 @@
 [
   {
     "date": "2026-04-03",
+    "title": "New Tutorial: Family Zoo",
+    "body": "The Family Zoo tutorial is now in the docs. It walks through building a complete scoring zoo adventure — entity helpers, multi-file organization, custom actions (feed, photograph, pet), NPC patrol and behavior swapping, daemons and fuses, event-chain scoring, and an after-hours phase where the animals drop the act."
+  },
+  {
+    "date": "2026-04-03",
     "title": "npm 0.9.103 — Entity Helpers & AuthorModel Alignment",
     "body": "Version 0.9.103 adds @sharpee/helpers — fluent builders for rooms, objects, actors, containers, and doors. Import the package and call world.helpers() to get started. Also: AuthorModel now implements IWorldModel, and .skipValidation() on any builder handles closed-container placement automatically. 22 packages now on npm."
   },
