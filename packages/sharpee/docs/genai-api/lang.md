@@ -500,6 +500,20 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        cant_lower_that: string;
+        already_down: string;
+        lowered: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         cant_take_self: string;
         already_have: string;
         cant_take_room: string;
@@ -1114,20 +1128,6 @@ export declare const standardActionLanguage: ({
         rotated: string;
         spun: string;
         nothing_happens: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        cant_lower_that: string;
-        already_down: string;
-        lowered: string;
     };
     help: {
         description: string;

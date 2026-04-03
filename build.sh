@@ -817,7 +817,7 @@ build_browser_client() {
     mkdir -p "$OUTDIR"
 
     # Bundle
-    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --conditions=require --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\""
+    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --conditions=require --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\" --alias:@sharpee/platform-browser=$REPO_ROOT/packages/platform-browser/dist/index.js"
 
     # Copy HTML template
     if [ -f "templates/browser/index.html" ]; then
