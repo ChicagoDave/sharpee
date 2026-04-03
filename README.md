@@ -43,7 +43,7 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 
 ## What's Included
 
-`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 20 packages are published individually on npm under the `@sharpee` scope.
+`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 21 packages are published individually on npm under the `@sharpee` scope.
 
 ### Foundation
 
@@ -52,6 +52,7 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 | `@sharpee/sharpee` | Umbrella package — installs all dependencies |
 | `@sharpee/core` | Event system, types, utilities |
 | `@sharpee/if-domain` | Core domain model and contracts |
+| `@sharpee/media` | Audio event types, AudioRegistry, and capability negotiation |
 | `@sharpee/if-services` | Runtime service interfaces |
 
 ### Runtime

@@ -18,6 +18,7 @@ sharpee/
 │   ├── parser-en-us/         # English parser and grammar
 │   ├── lang-en-us/           # English language messages
 │   ├── if-domain/            # Grammar builder interfaces
+│   ├── media/                # Audio types and AudioRegistry
 │   ├── if-services/          # Service interfaces
 │   ├── event-processor/      # Event handling pipeline
 │   ├── text-blocks/          # Text block types
@@ -304,6 +305,7 @@ node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcr
 - **[Core Concepts](../reference/core-concepts.md)** - Entities, traits, actions, events
 - **[Creating Stories](./creating-stories.md)** - Detailed story authoring guide
 - **[Event Handlers](./event-handlers.md)** - Custom logic and puzzles
+- **[Audio Enablement](./audio-enablement.md)** - Sound effects, music, and ambient audio
 - **[Build System](./build-system.md)** - Build options and workflows
 - **ADR-051** - Four-phase action pattern
 - **ADR-070** - NPC system architecture

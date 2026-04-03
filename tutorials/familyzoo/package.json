@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/tutorial-familyzoo",
-  "version": "0.9.101",
+  "version": "0.9.102",
   "description": "Family Zoo — A progressive Sharpee tutorial in 16 versions",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

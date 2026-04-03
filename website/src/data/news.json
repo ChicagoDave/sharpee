@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-04-03",
+    "title": "npm 0.9.102 — New @sharpee/media Package",
+    "body": "Version 0.9.102 is live on npm with 21 packages. The new @sharpee/media package adds typed audio events (SFX, music, ambient), an AudioRegistry for centralizing sound design, variation pools with jitter, ducking, procedural audio recipes, and a fluent AtmosphereBuilder for room soundscapes. See the audio enablement guide for details."
+  },
+  {
+    "date": "2026-04-03",
+    "title": "WorldModel Refactored",
+    "body": "WorldModel has been decomposed from 1520 to 1194 lines by extracting three focused subsystems: ScoreLedger, WorldEventSystem, and WorldSerializer. The public interface is unchanged — all 181 engine tests pass without modification."
+  },
+  {
     "date": "2026-03-31",
     "title": "Dungeon 1.0.0 Released",
     "body": "The Sharpee port of Mainframe Zork reaches 1.0.0. Weeks of bug fixes, puzzle refinements, and play testing have brought the game to a stable release. Play it now at sharpee.net/play/dungeo."
