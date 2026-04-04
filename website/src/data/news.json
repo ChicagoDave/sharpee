@@ -1,5 +1,10 @@
 [
   {
+    "date": "2026-04-04",
+    "title": "Direction Vocabularies (ADR-143)",
+    "body": "Stories can now replace compass directions with alternative vocabularies in one line: world.directions().useVocabulary('naval'). Ships get fore/aft/port/starboard, caves get in/out/up/down, and custom vocabularies support any fiction. Room connections stay abstract — the vocabulary only affects what the player types and what the game displays. Three built-in sets ship with the platform: compass, naval, and minimal."
+  },
+  {
     "date": "2026-04-03",
     "title": "New Tutorial: Family Zoo",
     "body": "The Family Zoo tutorial is now in the docs. It walks through building a complete scoring zoo adventure — entity helpers, multi-file organization, custom actions (feed, photograph, pet), NPC patrol and behavior swapping, daemons and fuses, event-chain scoring, and an after-hours phase where the animals drop the act."

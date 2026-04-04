@@ -1411,7 +1411,10 @@ export type ActionFailureReasonType = typeof ActionFailureReason[keyof typeof Ac
 ```typescript
 /**
  * Language-agnostic direction constants for Interactive Fiction
- * These constants represent spatial relationships, not English words
+ *
+ * These constants represent spatial relationships, not English words.
+ * Direction vocabularies (ADR-143) control how these constants are
+ * presented to and accepted from the player.
  */
 export declare const Direction: {
     readonly NORTH: "NORTH";
@@ -1440,6 +1443,93 @@ export declare function getOppositeDirection(direction: DirectionType): Directio
  * Check if a value is a valid Direction constant
  */
 export declare function isDirection(value: unknown): value is DirectionType;
+/**
+ * A single entry in a direction vocabulary.
+ *
+ * @property display  - The word shown to the player (e.g., "fore")
+ * @property words    - All words the parser accepts for this direction (e.g., ["fore", "f", "forward"])
+ */
+export interface DirectionEntry {
+    display: string;
+    words: string[];
+}
+/**
+ * A named set of direction-word mappings.
+ *
+ * Only directions present in the entries map are available to the player.
+ * A vocabulary that omits NORTHEAST means diagonal movement is not recognized.
+ */
+export interface DirectionVocabulary {
+    id: string;
+    entries: Partial<Record<DirectionType, DirectionEntry>>;
+}
+/**
+ * Pre-defined compass vocabulary (the default).
+ */
+export declare const CompassVocabulary: DirectionVocabulary;
+/**
+ * Naval vocabulary — relative to the vessel.
+ *
+ * Maps cardinal directions to shipboard equivalents.
+ * Diagonals are omitted (ships don't have northeast).
+ */
+export declare const NavalVocabulary: DirectionVocabulary;
+/**
+ * Minimal vocabulary — for caves, abstract spaces, interiors.
+ *
+ * Only vertical and threshold directions. No compass.
+ */
+export declare const MinimalVocabulary: DirectionVocabulary;
+/**
+ * Registry of named direction vocabularies.
+ *
+ * Stories retrieve the registry from the world model and call
+ * `useVocabulary()` or `rename()` to configure direction words
+ * from a single point.
+ */
+export declare class DirectionVocabularyRegistry {
+    private vocabularies;
+    private active;
+    private listeners;
+    constructor();
+    /**
+     * Register a custom vocabulary.
+     */
+    define(vocab: DirectionVocabulary): void;
+    /**
+     * Get a vocabulary by name.
+     */
+    get(id: string): DirectionVocabulary | undefined;
+    /**
+     * Switch the active vocabulary by name.
+     * Notifies all listeners (parser, grammar) to rebuild their mappings.
+     */
+    useVocabulary(id: string): void;
+    /**
+     * Rename a single direction in the active vocabulary.
+     * Creates a modified copy so the original named vocabulary is not mutated.
+     */
+    rename(direction: DirectionType, entry: DirectionEntry): void;
+    /**
+     * Add alias words to a direction without replacing the existing ones.
+     */
+    alias(direction: DirectionType, entry: DirectionEntry): void;
+    /**
+     * Get the currently active vocabulary.
+     */
+    getActive(): DirectionVocabulary;
+    /**
+     * Get the display name for a direction in the active vocabulary.
+     * Falls back to lowercase direction constant if not in vocabulary.
+     */
+    getDisplayName(direction: DirectionType): string;
+    /**
+     * Register a listener that is called when the active vocabulary changes.
+     * Used by the parser to rebuild direction mappings.
+     */
+    onVocabularyChange(listener: (vocab: DirectionVocabulary) => void): void;
+    private notifyListeners;
+}
 ```
 
 ### commands/parsed-command
@@ -4685,7 +4775,7 @@ export declare const extensionLoader: ExtensionLoader;
 ```typescript
 import { IFEntity } from '../entities/if-entity';
 import { TraitType } from '../traits/trait-types';
-import { DirectionType } from '../constants/directions';
+import { DirectionType, DirectionVocabularyRegistry } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { IDataStore } from './AuthorModel';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities';
@@ -4787,6 +4877,7 @@ export interface IWorldModel {
     removeScopeRule(ruleId: string): boolean;
     evaluateScope(actorId: string, actionId?: string): string[];
     getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
+    directions(): DirectionVocabularyRegistry;
 }
 export declare class WorldModel implements IWorldModel {
     private entities;
@@ -4803,6 +4894,7 @@ export declare class WorldModel implements IWorldModel {
     private scopeRegistry;
     private scopeEvaluator;
     private grammarVocabularyProvider;
+    private directionVocabularyRegistry;
     constructor(config?: WorldConfig, platformEvents?: ISemanticEventSource);
     private emitPlatformEvent;
     registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): void;
@@ -4867,6 +4959,15 @@ export declare class WorldModel implements IWorldModel {
     getDataStore(): IDataStore;
     getScopeRegistry(): ScopeRegistry;
     getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
+    /**
+     * Access the direction vocabulary registry.
+     *
+     * Stories call this to override direction words from a single point:
+     * ```
+     * world.directions().useVocabulary('naval');
+     * ```
+     */
+    directions(): DirectionVocabularyRegistry;
     addScopeRule(rule: IScopeRule): void;
     removeScopeRule(ruleId: string): boolean;
     evaluateScope(actorId: string, actionId?: string): string[];
@@ -5072,14 +5173,32 @@ export declare class VisibilityBehavior extends Behavior {
 ### world/AuthorModel
 
 ```typescript
+/**
+ * AuthorModel — unrestricted world model access for authoring and setup.
+ *
+ * Public interface: Implements IWorldModel. Entity creation and movement
+ * bypass validation. All other methods delegate to the backing WorldModel.
+ *
+ * Owner context: packages/world-model. Used during initializeWorld() for
+ * setup that requires bypassing game rules (placing items in closed
+ * containers, etc.).
+ */
 import { IFEntity } from '../entities/if-entity';
 import { TraitType } from '../traits/trait-types';
 import { SpatialIndex } from './SpatialIndex';
 import { ITrait } from '../traits/trait';
 import { ICapabilityStore } from './capabilities';
-import type { IWorldModel } from './WorldModel';
+import type { IWorldModel, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldModel';
+import type { ScoreEntry } from './ScoreLedger';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
+import type { DirectionType } from '../constants/directions';
+import { DirectionVocabularyRegistry } from '../constants/directions';
+import type { ScopeRegistry } from '../scope/scope-registry';
+import type { IScopeRule } from '../scope/scope-rule';
+import type { ICapabilityData, ICapabilityRegistration } from './capabilities';
 /**
- * Data store shared between WorldModel and AuthorModel
+ * Data store shared between WorldModel and AuthorModel.
  */
 export interface IDataStore {
     entities: Map<string, IFEntity>;
@@ -5091,7 +5210,7 @@ export interface IDataStore {
     capabilities: ICapabilityStore;
 }
 /**
- * Item specification for bulk creation
+ * Item specification for bulk creation.
  */
 export interface IItemSpec {
     name: string;
@@ -5101,126 +5220,127 @@ export interface IItemSpec {
 }
 /**
  * AuthorModel provides unrestricted access to the world state for authoring,
- * testing, and world setup. It bypasses all validation rules and does not
- * emit events (unless explicitly requested).
- *
- * Use AuthorModel when:
- * - Setting up initial world state
- * - Populating containers (even closed ones)
- * - Loading saved games
- * - Writing tests
- * - Implementing special mechanics (magic, teleportation, etc.)
+ * testing, and world setup. It bypasses validation rules for entity creation
+ * and movement. All other IWorldModel methods delegate to the backing WorldModel.
  *
  * @example
  * ```typescript
- * const author = new AuthorModel(world.getDataStore());
- * const cabinet = author.createEntity('Medicine Cabinet', 'container');
- * cabinet.add(new OpenableTrait({ isOpen: false }));
- *
- * // Can place items in closed container!
+ * const author = new AuthorModel(world.getDataStore(), world);
  * const medicine = author.createEntity('Aspirin', 'item');
- * author.moveEntity(medicine.id, cabinet.id); // Works even though closed
+ * author.moveEntity(medicine.id, closedCabinet.id); // Works even though closed
  * ```
  */
-export declare class AuthorModel {
+export declare class AuthorModel implements IWorldModel {
     private dataStore;
-    private worldModel?;
-    private eventHandlers;
-    constructor(dataStore: IDataStore, worldModel?: IWorldModel);
+    private worldModel;
+    constructor(dataStore: IDataStore, worldModel: IWorldModel);
     /**
-     * Get the shared data store. This allows creating a WorldModel
-     * that shares the same state.
+     * Get the shared data store.
      */
     getDataStore(): IDataStore;
     /**
-     * Create a new entity without any validation.
-     * @param name Display name for the entity
-     * @param type Entity type (room, item, actor, etc.)
-     * @param recordEvent If true, emits an 'author:entity:created' event
+     * Create a new entity without validation.
+     *
+     * @param name - Display name for the entity
+     * @param type - Entity type (room, item, actor, etc.)
+     * @returns The created entity
      */
-    createEntity(name: string, type?: string, recordEvent?: boolean): IFEntity;
+    createEntity(name: string, type?: string): IFEntity;
     /**
-     * Remove an entity without validation.
-     * @param entityId ID of entity to remove
-     * @param recordEvent If true, emits an 'author:entity:removed' event
+     * Move an entity without validation. Can move into closed/locked containers.
+     *
+     * @param entityId - ID of entity to move
+     * @param targetId - ID of target location (null to remove from world)
+     * @returns Always true (no validation to fail)
      */
-    removeEntity(entityId: string, recordEvent?: boolean): void;
-    /**
-     * Move an entity to a new location without any validation.
-     * Can move entities into closed containers, locked containers, or any location.
-     * @param entityId ID of entity to move
-     * @param targetId ID of target location (null to remove from world)
-     * @param recordEvent If true, emits an 'author:entity:moved' event
-     */
-    moveEntity(entityId: string, targetId: string | null, recordEvent?: boolean): void;
-    /**
-     * Get an entity by ID
-     */
-    getEntity(entityId: string): IFEntity | undefined;
-    /**
-     * Set an entity property directly without validation
-     */
-    setEntityProperty(entityId: string, property: string, value: any, recordEvent?: boolean): void;
-    /**
-     * Add a trait to an entity without validation
-     */
-    addTrait(entityId: string, trait: ITrait, recordEvent?: boolean): void;
-    /**
-     * Remove a trait from an entity without validation
-     */
-    removeTrait(entityId: string, traitType: TraitType, recordEvent?: boolean): void;
-    /**
-     * Move multiple entities to a container in one operation
-     */
-    populate(containerId: string, entityIds: string[], recordEvent?: boolean): void;
-    /**
-     * Create a bidirectional connection between two rooms
-     */
-    connect(room1Id: string, room2Id: string, direction: string, recordEvent?: boolean): void;
-    /**
-     * Fill a container with items based on specifications
-     */
-    fillContainer(containerId: string, itemSpecs: IItemSpec[], recordEvent?: boolean): void;
-    /**
-     * Place an actor at a location (convenience method)
-     */
-    placeActor(actorId: string, locationId: string, recordEvent?: boolean): void;
-    /**
-     * Set up a container with common properties
-     */
-    setupContainer(containerId: string, isOpen?: boolean, isLocked?: boolean, keyId?: string, recordEvent?: boolean): void;
-    /**
-     * Set a world state value directly
-     */
-    setStateValue(key: string, value: any, recordEvent?: boolean): void;
-    /**
-     * Set the player entity
-     */
-    setPlayer(entityId: string, recordEvent?: boolean): void;
-    /**
-     * Clear all world data
-     */
-    clear(recordEvent?: boolean): void;
-    /**
-     * Import world data from a serialized format
-     */
-    import(data: any, recordEvent?: boolean): void;
-    /**
-     * Generate an ID for a new entity
-     */
-    private generateId;
-    /**
-     * Emit an author event if event recording is enabled
-     */
-    private emitEvent;
-    /**
-     * Register an event handler for author events
-     */
-    registerEventHandler(eventType: string, handler: (event: any) => void): void;
-    /**
-     * Unregister an event handler
-     */
+    moveEntity(entityId: string, targetId: string | null): boolean;
+    getEntity(id: string): IFEntity | undefined;
+    hasEntity(id: string): boolean;
+    removeEntity(id: string): boolean;
+    getAllEntities(): IFEntity[];
+    updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
+    getLocation(entityId: string): string | undefined;
+    getContents(containerId: string, options?: ContentsOptions): IFEntity[];
+    canMoveEntity(entityId: string, targetId: string | null): boolean;
+    getContainingRoom(entityId: string): IFEntity | undefined;
+    getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
+    getState(): WorldState;
+    setState(state: WorldState): void;
+    getStateValue(key: string): any;
+    setStateValue(key: string, value: any): void;
+    getPrompt(): GamePrompt;
+    setPrompt(prompt: GamePrompt): void;
+    findByTrait(traitType: TraitType): IFEntity[];
+    findByType(entityType: string): IFEntity[];
+    findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[];
+    getVisible(observerId: string): IFEntity[];
+    getInScope(observerId: string): IFEntity[];
+    canSee(observerId: string, targetId: string): boolean;
+    getRelated(entityId: string, relationshipType: string): string[];
+    areRelated(entity1Id: string, entity2Id: string, relationshipType: string): boolean;
+    addRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void;
+    removeRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void;
+    getTotalWeight(entityId: string): number;
+    wouldCreateLoop(entityId: string, targetId: string): boolean;
+    findPath(fromRoomId: string, toRoomId: string): string[] | null;
+    getPlayer(): IFEntity | undefined;
+    setPlayer(entityId: string): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+    createDoor(displayName: string, opts: {
+        room1Id: string;
+        room2Id: string;
+        direction: DirectionType;
+        description?: string;
+        aliases?: string[];
+        isOpen?: boolean;
+        isLocked?: boolean;
+        keyId?: string;
+    }): IFEntity;
+    registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
+    updateCapability(name: string, data: Partial<ICapabilityData>): void;
+    getCapability(name: string): ICapabilityData | undefined;
+    hasCapability(name: string): boolean;
+    awardScore(id: string, points: number, description: string): boolean;
+    revokeScore(id: string): boolean;
+    hasScore(id: string): boolean;
+    getScore(): number;
+    getScoreEntries(): ScoreEntry[];
+    setMaxScore(max: number): void;
+    getMaxScore(): number;
+    toJSON(): string;
+    loadJSON(json: string): void;
+    clear(): void;
+    registerEventHandler(eventType: string, handler: EventHandler): void;
     unregisterEventHandler(eventType: string): void;
+    registerEventValidator(eventType: string, validator: EventValidator): void;
+    registerEventPreviewer(eventType: string, previewer: EventPreviewer): void;
+    connectEventProcessor(wiring: IEventProcessorWiring): void;
+    chainEvent(triggerType: string, handler: EventChainHandler, options?: ChainEventOptions): void;
+    applyEvent(event: ISemanticEvent): void;
+    canApplyEvent(event: ISemanticEvent): boolean;
+    previewEvent(event: ISemanticEvent): WorldChange[];
+    getAppliedEvents(): ISemanticEvent[];
+    getEventsSince(timestamp: number): ISemanticEvent[];
+    clearEventHistory(): void;
+    getScopeRegistry(): ScopeRegistry;
+    addScopeRule(rule: IScopeRule): void;
+    removeScopeRule(ruleId: string): boolean;
+    evaluateScope(actorId: string, actionId?: string): string[];
+    getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
+    directions(): DirectionVocabularyRegistry;
+    /**
+     * Move multiple entities to a container in one operation.
+     */
+    populate(containerId: string, entityIds: string[]): void;
+    /**
+     * Add a trait to an entity.
+     */
+    addTrait(entityId: string, trait: ITrait): void;
+    /**
+     * Remove a trait from an entity.
+     */
+    removeTrait(entityId: string, traitType: TraitType): void;
+    private generateId;
 }
 ```
 

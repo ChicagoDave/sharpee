@@ -337,6 +337,18 @@ export interface GrammarBuilder {
    * Clear all rules
    */
   clear(): void;
+
+  /**
+   * Replace direction patterns for an action (ADR-143).
+   *
+   * Removes existing direction rules and registers new ones from the map.
+   * Used when the active direction vocabulary changes.
+   *
+   * @param actionId The action whose direction rules to replace
+   * @param map Direction map: canonical name → alias words
+   * @param priority Pattern priority (default: 100)
+   */
+  replaceDirections(actionId: string, map: Record<string, string[]>, priority?: number): void;
 }
 
 /**
