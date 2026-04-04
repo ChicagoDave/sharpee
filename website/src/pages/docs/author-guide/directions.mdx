@@ -1,0 +1,177 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: "Direction Vocabularies"
+---
+
+# Direction Vocabularies
+
+Sharpee's direction system separates **what the player types** from **how rooms are connected**. Room exits always use abstract direction constants (`Direction.NORTH`, `Direction.UP`, etc.). The direction vocabulary controls which words the parser accepts and which words the game displays.
+
+## The Problem
+
+In standard IF, every location uses compass directions: NORTH, SOUTH, EAST, WEST. But a ship needs FORE, AFT, PORT, STARBOARD. A cave system might only have IN, OUT, UP, DOWN. A fantasy world might use HUBWARD, RIMWARD, TURNWISE, WIDDERSHINS.
+
+Without direction vocabularies, changing these words requires editing three places: the parser word mappings, the grammar patterns, and the language display names. Direction vocabularies let you do it in one line.
+
+## Quick Start
+
+```typescript
+initializeWorld(world: WorldModel): void {
+  // One line — parser, grammar, and display all update
+  world.directions().useVocabulary('naval');
+
+  // Room connections use abstract constants as always
+  const deck = helpers.room('Main Deck')
+    .connectsTo('Forecastle', 'north')   // player types FORE
+    .connectsTo('Cargo Hold', 'down')    // player types BELOW DECKS
+    .connectsTo('Gun Deck', 'west')      // player types PORT
+    .build();
+}
+```
+
+## Built-In Vocabularies
+
+### `'compass'` (default)
+
+The standard IF direction set. Active unless you change it.
+
+| Direction | Display | Player Types |
+|---|---|---|
+| NORTH | north | north, n |
+| SOUTH | south | south, s |
+| EAST | east | east, e |
+| WEST | west | west, w |
+| NORTHEAST | northeast | northeast, ne |
+| NORTHWEST | northwest | northwest, nw |
+| SOUTHEAST | southeast | southeast, se |
+| SOUTHWEST | southwest | southwest, sw |
+| UP | up | up, u |
+| DOWN | down | down, d |
+| IN | in | in, inside |
+| OUT | out | out, outside |
+
+### `'naval'`
+
+For ships and maritime settings. Diagonals are omitted — ships don't have northeast.
+
+| Direction | Display | Player Types |
+|---|---|---|
+| NORTH | fore | fore, f, forward, bow |
+| SOUTH | aft | aft, a, back, stern |
+| EAST | starboard | starboard, sb, right |
+| WEST | port | port, p, left |
+| UP | topside | topside, ts, up, u |
+| DOWN | below decks | below, below decks, bd, down, d |
+| IN | in | in, inside |
+| OUT | out | out, outside |
+
+### `'minimal'`
+
+For caves, abstract spaces, and interiors where compass directions don't make sense.
+
+| Direction | Display | Player Types |
+|---|---|---|
+| UP | up | up, u, climb |
+| DOWN | down | down, d, descend |
+| IN | in | in, inside, enter, deeper |
+| OUT | out | out, outside, exit, back |
+
+Only these four directions are recognized. Typing NORTH in a minimal-vocabulary area is treated as an unknown command.
+
+## Custom Vocabularies
+
+### Renaming Individual Directions
+
+Override specific directions without changing the rest:
+
+```typescript
+world.directions()
+  .rename(Direction.NORTH, { display: 'hubward', words: ['hubward', 'hub'] })
+  .rename(Direction.SOUTH, { display: 'rimward', words: ['rimward', 'rim'] })
+  .rename(Direction.EAST, { display: 'turnwise', words: ['turnwise', 'turn'] })
+  .rename(Direction.WEST, { display: 'widdershins', words: ['widdershins', 'widder'] });
+```
+
+`.rename()` replaces the original words. After renaming NORTH to hubward, the player types HUBWARD — NORTH no longer works.
+
+### Adding Aliases
+
+Add new words without removing the originals:
+
+```typescript
+world.directions()
+  .alias(Direction.UP, { display: 'topside', words: ['topside', 'ts'] });
+// 'up', 'u', 'topside', and 'ts' all work
+// Displays as 'topside' in exit listings and messages
+```
+
+`.alias()` keeps existing words and adds new ones. The display name changes to the new value.
+
+### Defining a Complete Vocabulary
+
+For full control, define a vocabulary and register it:
+
+```typescript
+world.directions().define({
+  id: 'space-station',
+  entries: {
+    [Direction.NORTH]: { display: 'spinward', words: ['spinward', 'spin'] },
+    [Direction.SOUTH]: { display: 'anti-spinward', words: ['anti-spinward', 'anti'] },
+    [Direction.EAST]: { display: 'coreward', words: ['coreward', 'core'] },
+    [Direction.WEST]: { display: 'rimward', words: ['rimward', 'rim'] },
+    [Direction.UP]: { display: 'up-ring', words: ['up-ring', 'up', 'u'] },
+    [Direction.DOWN]: { display: 'down-ring', words: ['down-ring', 'down', 'd'] },
+    [Direction.IN]: { display: 'inboard', words: ['inboard', 'in'] },
+    [Direction.OUT]: { display: 'outboard', words: ['outboard', 'out'] },
+  }
+});
+
+world.directions().useVocabulary('space-station');
+```
+
+Only directions listed in the vocabulary are available. If you omit diagonals, they don't exist.
+
+## How It Works
+
+The direction system has three layers:
+
+1. **Direction constants** — abstract IDs like `Direction.NORTH`. Language-agnostic. Used in room exits, event data, and save files. Never change.
+2. **Parser input** — the words the player types. Controlled by the vocabulary.
+3. **Display output** — the words the game shows. Controlled by the vocabulary.
+
+When you call `useVocabulary('naval')`:
+- The parser rebuilds its word-to-constant mappings (FORE maps to Direction.NORTH)
+- The grammar replaces bare-direction patterns (typing `fore` triggers the going action)
+- Exit listings and messages use the vocabulary's display names
+
+Room connections are unaffected. They always use direction constants. You can switch vocabularies without touching a single room definition.
+
+## API Reference
+
+### `world.directions()`
+
+Returns the `DirectionVocabularyRegistry` for this world.
+
+### `.useVocabulary(id: string)`
+
+Switch to a named vocabulary. Built-in: `'compass'`, `'naval'`, `'minimal'`.
+
+### `.rename(direction: DirectionType, entry: { display: string, words: string[] })`
+
+Replace the words for a direction. Removes the original words.
+
+### `.alias(direction: DirectionType, entry: { display: string, words: string[] })`
+
+Add words for a direction. Keeps the original words. Updates display name.
+
+### `.define(vocab: DirectionVocabulary)`
+
+Register a custom vocabulary. Use with `.useVocabulary()` to activate.
+
+### `.getDisplayName(direction: DirectionType): string`
+
+Get the display name for a direction in the active vocabulary.
+
+### `.getActive(): DirectionVocabulary`
+
+Get the currently active vocabulary.

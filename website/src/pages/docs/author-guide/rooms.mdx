@@ -215,6 +215,51 @@ initializeWorld(world: WorldModel): void {
 }
 ```
 
+## Direction Vocabularies
+
+By default, players navigate with compass directions (NORTH, SOUTH, EAST, WEST). Stories can replace these words with alternative vocabularies — for example, a ship uses FORE, AFT, PORT, and STARBOARD.
+
+### Quick Setup
+
+One line in `initializeWorld`:
+
+```typescript
+initializeWorld(world: WorldModel): void {
+  world.directions().useVocabulary('naval');
+  // ... create rooms as usual
+}
+```
+
+After this call, the parser accepts `fore`, `f`, `forward` instead of `north`, `n`. Exit listings and messages display `fore` instead of `north`. Room connections still use `Direction.NORTH` internally — the vocabulary only affects what the player types and what the game displays.
+
+### Built-In Vocabularies
+
+| Vocabulary | Directions Available |
+|---|---|
+| `'compass'` (default) | north, south, east, west, ne, nw, se, sw, up, down, in, out |
+| `'naval'` | fore, aft, port, starboard, topside, below decks, in, out |
+| `'minimal'` | up, down, in, out |
+
+### Custom Overrides
+
+Rename individual directions:
+
+```typescript
+world.directions()
+  .rename(Direction.NORTH, { display: 'hubward', words: ['hubward', 'hub'] })
+  .rename(Direction.SOUTH, { display: 'rimward', words: ['rimward', 'rim'] });
+```
+
+Or add aliases without replacing the originals:
+
+```typescript
+world.directions()
+  .alias(Direction.UP, { display: 'topside', words: ['topside', 'ts'] });
+// Both 'up' and 'topside' work; displays as 'topside'
+```
+
+See the [Direction Vocabularies guide](/docs/author-guide/directions/) for full details.
+
 ## Best Practices
 
 1. **Use meaningful IDs**: `'forest-clearing'` not `'room1'`
@@ -222,3 +267,4 @@ initializeWorld(world: WorldModel): void {
 3. **Return typed interfaces**: `ForestRooms` makes cross-region wiring type-safe
 4. **Test navigation**: Create transcript tests for critical paths
 5. **Consider light**: Dark rooms add puzzle opportunities
+6. **Choose the right vocabulary**: Naval for ships, minimal for caves, custom for fantasy worlds
