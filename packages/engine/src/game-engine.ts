@@ -258,6 +258,15 @@ export class GameEngine {
     this.context.player = newPlayer;
     this.world.setPlayer(newPlayer.id);
 
+    // Wire direction vocabulary listener (ADR-143)
+    // When the story calls world.directions().useVocabulary(), the parser
+    // rebuilds its direction mappings and grammar patterns automatically.
+    if (this.parser && 'setDirectionVocabulary' in this.parser) {
+      this.world.directions().onVocabularyChange((vocab) => {
+        (this.parser as any).setDirectionVocabulary(vocab);
+      });
+    }
+
     // Initialize story-specific world content (player must exist first)
     story.initializeWorld(this.world);
 

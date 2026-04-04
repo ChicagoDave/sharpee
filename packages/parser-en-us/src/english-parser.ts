@@ -46,7 +46,7 @@ import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine } from './english-grammar-engine';
 import { defineGrammar } from './grammar';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
-import { parseDirection } from './direction-mappings';
+import { parseDirection, setActiveVocabulary, getGrammarDirectionMap } from './direction-mappings';
 import { analyzeBestFailure } from './parse-failure';
 import { PronounContextManager, setPronounContextManager } from './pronoun-context';
 
@@ -222,6 +222,21 @@ export class EnglishParser implements Parser {
         narrate: false
       });
     }
+  }
+
+  /**
+   * Replace direction word mappings and grammar patterns (ADR-143).
+   *
+   * Called when the direction vocabulary changes. Updates both
+   * the parseDirection() maps and the grammar's bare-direction patterns.
+   */
+  setDirectionVocabulary(vocab: import('@sharpee/world-model').DirectionVocabulary): void {
+    // 1. Update parser word → constant mappings
+    setActiveVocabulary(vocab);
+
+    // 2. Rebuild grammar direction patterns
+    const grammar = this.grammarEngine.createBuilder();
+    grammar.replaceDirections('if.action.going', getGrammarDirectionMap());
   }
 
   /**
