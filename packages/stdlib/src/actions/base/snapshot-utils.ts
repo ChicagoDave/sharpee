@@ -8,7 +8,7 @@
 import {
   IFEntity, WorldModel, IdentityTrait, OpenableTrait, LockableTrait,
   ContainerTrait, SupporterTrait, WearableTrait, EdibleTrait,
-  PushableTrait, SceneryTrait, RoomTrait, TraitType
+  PushableTrait, SceneryTrait, RoomTrait, TraitType, DirectionType
 } from '@sharpee/world-model';
 
 /**
@@ -54,6 +54,8 @@ export interface RoomSnapshot {
   isDark?: boolean;
   isVisited?: boolean;
   exits?: Record<string, string>;
+  /** Direction constant → display name from the active vocabulary (ADR-143) */
+  exitDisplayNames?: Record<string, string>;
   contents?: EntitySnapshot[];
   traits?: Record<string, unknown>;
 }
@@ -206,16 +208,20 @@ export function captureRoomSnapshot(
 
   // Capture exits from room trait
   const exits: Record<string, string> = {};
+  const exitDisplayNames: Record<string, string> = {};
   if (roomTrait?.exits) {
+    const vocab = world.directions();
     for (const [dir, exitInfo] of Object.entries(roomTrait.exits)) {
       if (exitInfo?.destination) {
         exits[dir] = exitInfo.destination;
+        exitDisplayNames[dir] = vocab.getDisplayName(dir as DirectionType);
       }
     }
   }
-  
+
   if (Object.keys(exits).length > 0) {
     snapshot.exits = exits;
+    snapshot.exitDisplayNames = exitDisplayNames;
   }
   
   // Capture contents if requested
