@@ -69,6 +69,16 @@ export type { ITextBlock, IDecoration, TextContent } from '@sharpee/text-blocks'
 // Testing extension (ADR-109/110)
 export { TestingExtension, createDebugContext } from '@sharpee/ext-testing';
 
+// Character model (ADR-141)
+export {
+  CharacterBuilder,
+  applyCharacter,
+  COGNITIVE_PRESETS,
+  VocabularyExtension,
+  type CompiledCharacter,
+  type CognitivePresetName,
+} from '@sharpee/character';
+
 // Plugin system (ADR-120)
 export { TurnPlugin, TurnPluginContext, TurnPluginActionResult, PluginRegistry } from '@sharpee/plugins';
 export { NpcPlugin } from '@sharpee/plugin-npc';

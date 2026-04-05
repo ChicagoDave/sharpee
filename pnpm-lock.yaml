@@ -570,6 +570,9 @@ importers:
 
   packages/sharpee:
     dependencies:
+      '@sharpee/character':
+        specifier: workspace:*
+        version: link:../character
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
