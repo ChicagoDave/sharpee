@@ -444,6 +444,7 @@ build_platform() {
         "@sharpee/text-blocks:text-blocks"
         "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
+        "@sharpee/character:character"
         "@sharpee/ext-basic-combat:extensions/basic-combat"
         "@sharpee/plugins:plugins"
         "@sharpee/plugin-npc:plugin-npc"

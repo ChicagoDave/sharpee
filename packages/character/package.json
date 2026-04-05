@@ -1,0 +1,54 @@
+{
+  "name": "@sharpee/character",
+  "version": "0.9.105",
+  "description": "Character model builder for Sharpee Interactive Fiction Platform (ADR-141)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "test": "vitest",
+    "build:npm": "tsc --outDir dist"
+  },
+  "dependencies": {
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/stdlib": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5",
+    "vitest": "^3.2.4"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
+    "character",
+    "npc",
+    "builder"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/character"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

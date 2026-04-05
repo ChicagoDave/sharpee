@@ -44,6 +44,7 @@ export * from './traits/pushable';
 export * from './traits/npc';
 export * from './traits/vehicle';
 export * from './traits/story-info';
+export * from './traits/character-model';
 
 // Extension system
 export * from './extensions';

@@ -36,6 +36,7 @@ import { DestructibleTrait } from './destructible/destructibleTrait';
 import { CombatantTrait } from './combatant/combatantTrait';
 import { EquippedTrait } from './equipped/equippedTrait';
 import { EnterableTrait } from './enterable/enterableTrait';
+import { CharacterModelTrait } from './character-model/characterModelTrait';
 
 // Export as namespace for easy access
 export const Traits = {
@@ -67,6 +68,7 @@ export const Traits = {
   CombatantTrait,
   EquippedTrait,
   EnterableTrait,
+  CharacterModelTrait,
 } as const;
 
 // Also export types for convenience
@@ -99,6 +101,7 @@ export type {
   CombatantTrait,
   EquippedTrait,
   EnterableTrait,
+  CharacterModelTrait,
 };
 
 // Export a union type of all traits
@@ -130,7 +133,8 @@ export type AnyTrait =
   | DestructibleTrait
   | CombatantTrait
   | EquippedTrait
-  | EnterableTrait;
+  | EnterableTrait
+  | CharacterModelTrait;
 
 // Type guards for each trait
 export function isActorTrait(trait: any): trait is ActorTrait {
@@ -235,6 +239,10 @@ export function isCombatantTrait(trait: any): trait is CombatantTrait {
 
 export function isEquippedTrait(trait: any): trait is EquippedTrait {
   return trait?.type === 'equipped';
+}
+
+export function isCharacterModelTrait(trait: any): trait is CharacterModelTrait {
+  return trait?.type === 'characterModel';
 }
 
 // Note: isEnterableTrait is exported from ./enterable/enterableTrait.ts

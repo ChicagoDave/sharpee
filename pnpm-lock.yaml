@@ -91,6 +91,28 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  packages/character:
+    dependencies:
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(lightningcss@1.30.2)(terser@5.44.1)
+
   packages/core:
     dependencies:
       eventemitter3:
