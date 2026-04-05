@@ -9,6 +9,7 @@
     "packages/world-model",
     "packages/if-domain",
     "packages/stdlib",
+    "packages/character",
     "packages/engine",
     "packages/event-processor",
     "packages/sharpee",
