@@ -47,6 +47,9 @@ export * from './enterable';
 export * from './npc';
 export * from './open-inventory';
 
+// Character model (ADR-141)
+export * from './character-model';
+
 // System traits
 export * from './story-info';
 

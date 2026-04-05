@@ -51,6 +51,9 @@ import { EquippedTrait } from './equipped/equippedTrait';
 import { NpcTrait } from './npc/npcTrait';
 import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
 
+// Character model (ADR-141)
+import { CharacterModelTrait } from './character-model/characterModelTrait';
+
 // Transport traits
 import { VehicleTrait } from './vehicle/vehicleTrait';
 import { EnterableTrait } from './enterable/enterableTrait';
@@ -106,6 +109,9 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // NPC traits (ADR-070)
   [TraitType.NPC]: NpcTrait,
   [TraitType.OPEN_INVENTORY]: OpenInventoryTrait,
+
+  // Character model (ADR-141)
+  [TraitType.CHARACTER_MODEL]: CharacterModelTrait,
 
   // Transport traits
   [TraitType.VEHICLE]: VehicleTrait,
@@ -188,6 +194,9 @@ export {
   // NPC traits (ADR-070)
   NpcTrait,
   OpenInventoryTrait,
+
+  // Character model (ADR-141)
+  CharacterModelTrait,
 
   // Transport traits
   VehicleTrait,

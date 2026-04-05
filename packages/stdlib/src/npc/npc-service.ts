@@ -5,13 +5,14 @@
  */
 
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, IExitInfo, DirectionType } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, IExitInfo, DirectionType, CharacterModelTrait } from '@sharpee/world-model';
 import {
   NpcBehavior,
   NpcContext,
   NpcAction,
 } from './types';
 import { NpcMessages } from './npc-messages';
+import { processLucidityDecay } from './lucidity-decay';
 
 /**
  * NPC Combat Resolver function type.
@@ -193,6 +194,12 @@ export class NpcService implements INpcService {
       const actions = behavior.onTurn(npcContext);
       const actionEvents = this.executeActions(npc, actions, world, random);
       events.push(...actionEvents);
+
+      // Process lucidity decay for NPCs with character model (ADR-141)
+      if (npc.has(TraitType.CHARACTER_MODEL)) {
+        const decayEvents = processLucidityDecay(npc, world, turn);
+        events.push(...decayEvents);
+      }
     }
 
     return events;
