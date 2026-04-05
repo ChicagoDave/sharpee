@@ -6,6 +6,7 @@
     "packages/text-service/tsconfig.json",
     "packages/text-blocks/tsconfig.json",
     "packages/stdlib/tsconfig.json",
+    "packages/character/tsconfig.json",
     "packages/sharpee/tsconfig.json",
     "packages/runtime/tsconfig.json",
     "packages/plugins/tsconfig.json",
