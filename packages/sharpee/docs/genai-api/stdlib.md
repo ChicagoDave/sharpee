@@ -2692,6 +2692,40 @@ export declare const NpcMessages: {
 export type NpcMessageId = (typeof NpcMessages)[keyof typeof NpcMessages];
 ```
 
+### npc/character-messages
+
+```typescript
+/**
+ * Character model message IDs (ADR-141)
+ *
+ * Semantic message IDs for character state change events.
+ * Actual text is provided by the language layer.
+ *
+ * Public interface: CharacterMessages const, CharacterMessageId type.
+ * Owner context: stdlib / npc
+ */
+/**
+ * Message IDs for character model state change events.
+ *
+ * These are emitted as observable behavior events when an NPC's
+ * cognitive or emotional state changes. Silent by default — authors
+ * opt in per NPC to surface them to the player.
+ */
+export declare const CharacterMessages: {
+    readonly LUCIDITY_SHIFT: "npc.character.lucidity_shift";
+    readonly LUCIDITY_BASELINE_RESTORED: "npc.character.lucidity_baseline_restored";
+    readonly HALLUCINATION_ONSET: "npc.character.hallucination_onset";
+    readonly MOOD_CHANGED: "npc.character.mood_changed";
+    readonly THREAT_CHANGED: "npc.character.threat_changed";
+    readonly DISPOSITION_CHANGED: "npc.character.disposition_changed";
+    readonly FACT_LEARNED: "npc.character.fact_learned";
+};
+/**
+ * Type for character model message IDs.
+ */
+export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof CharacterMessages];
+```
+
 ### npc/npc-service
 
 ```typescript
@@ -2799,6 +2833,135 @@ export declare class NpcService implements INpcService {
  * Create a new NPC Service instance
  */
 export declare function createNpcService(): INpcService;
+```
+
+### npc/character-observer
+
+```typescript
+/**
+ * Character observation handler (ADR-141)
+ *
+ * Processes events witnessed by NPCs through the cognitive profile filter
+ * and updates character model state accordingly.
+ *
+ * Public interface: observeEvent(), DefaultStateTransitions.
+ * Owner context: stdlib / npc
+ */
+import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { IFEntity, WorldModel, CharacterModelTrait } from '@sharpee/world-model';
+/** A default state transition triggered by an event type. */
+export interface StateTransitionRule {
+    /** Event type pattern to match (exact string match). */
+    eventType: string;
+    /** Threat delta when this event is observed. */
+    threatDelta?: number;
+    /** Mood valence delta. */
+    moodValenceDelta?: number;
+    /** Mood arousal delta. */
+    moodArousalDelta?: number;
+    /**
+     * Disposition delta toward the event's actor.
+     * Only applied when the event has an actor entity.
+     */
+    dispositionDelta?: number;
+}
+/**
+ * Default state transition rules.
+ *
+ * Stories can override by providing their own rules array
+ * to observeEvent(). These are sensible defaults per ADR-141:
+ * violence increases threat, gifts improve disposition, etc.
+ */
+export declare const DefaultStateTransitions: StateTransitionRule[];
+/**
+ * Filter an event through the NPC's cognitive profile.
+ *
+ * @param trait - The NPC's CharacterModelTrait
+ * @param event - The incoming event
+ * @returns 'pass' if the event should be processed, 'miss' if filtered out,
+ *          'amplify' if the event should be processed with heightened impact
+ */
+export declare function filterPerception(trait: CharacterModelTrait, event: ISemanticEvent): 'pass' | 'miss' | 'amplify';
+/**
+ * Inject hallucinated facts for an NPC with augmented perception.
+ *
+ * Only injects when the NPC's current lucidity state matches
+ * the perceived event's `when` condition.
+ *
+ * @param trait - The NPC's CharacterModelTrait
+ * @param npcId - The NPC entity ID
+ * @param turn - Current turn number
+ * @returns Array of hallucination events (may be empty)
+ */
+export declare function injectHallucinations(trait: CharacterModelTrait, npcId: EntityId, turn: number): ISemanticEvent[];
+/**
+ * Process an event observed by an NPC through the character model.
+ *
+ * 1. Checks for CharacterModelTrait (returns early if absent — opt-in).
+ * 2. Filters event through cognitive profile perception mode.
+ * 3. Adds witnessed fact to knowledge.
+ * 4. Applies default state transition rules.
+ * 5. Checks lucidity triggers.
+ * 6. Injects hallucinated facts (augmented perception).
+ * 7. Emits observable behavior events for state changes.
+ *
+ * @param npc - The NPC entity
+ * @param event - The observed event
+ * @param world - The world model
+ * @param turn - Current turn number
+ * @param rules - State transition rules (defaults to DefaultStateTransitions)
+ * @returns Array of observable behavior events emitted by state changes
+ */
+export declare function observeEvent(npc: IFEntity, event: ISemanticEvent, world: WorldModel, turn: number, rules?: StateTransitionRule[]): ISemanticEvent[];
+```
+
+### npc/lucidity-decay
+
+```typescript
+/**
+ * Lucidity decay processing (ADR-141)
+ *
+ * End-of-turn processing for NPC lucidity windows.
+ * When an NPC is in a lucid window with no sustaining trigger active,
+ * lucidity decays and eventually returns to baseline.
+ *
+ * Public interface: processLucidityDecay(), DECAY_RATE_TURNS.
+ * Owner context: stdlib / npc
+ */
+import { ISemanticEvent } from '@sharpee/core';
+import { IFEntity, WorldModel, CharacterModelTrait, DecayRate } from '@sharpee/world-model';
+/**
+ * Maps decay rate words to number of turns before baseline is restored.
+ * These are the window durations when no sustaining trigger is active.
+ */
+export declare const DECAY_RATE_TURNS: Record<DecayRate, number>;
+/**
+ * Process end-of-turn lucidity decay for a single NPC.
+ *
+ * If the NPC has a CharacterModelTrait with an active lucidity window,
+ * decrements the window counter. When it reaches zero, the cognitive
+ * profile returns to baseline and a LUCIDITY_BASELINE_RESTORED event
+ * is emitted.
+ *
+ * If no lucidity config or no active window, returns empty array.
+ *
+ * @param npc - The NPC entity
+ * @param world - The world model (unused in current impl, reserved for future)
+ * @param turn - Current turn number (unused in current impl, reserved for future)
+ * @returns Array of events emitted (baseline restored, or empty)
+ */
+export declare function processLucidityDecay(npc: IFEntity, world: WorldModel, turn: number): ISemanticEvent[];
+/**
+ * Initialize a lucidity window with the appropriate turn count
+ * based on the NPC's configured decay rate.
+ *
+ * Call this when entering a lucidity state via a trigger, so the
+ * window has the correct duration based on decayRate.
+ *
+ * @param trait - The NPC's CharacterModelTrait
+ * @param targetState - The lucidity state to enter
+ */
+export declare function enterLucidityWindow(trait: CharacterModelTrait, targetState: string): void;
 ```
 
 ### npc/behaviors

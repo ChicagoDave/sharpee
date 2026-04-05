@@ -2002,6 +2002,7 @@ export declare const TraitType: {
     readonly EQUIPPED: "equipped";
     readonly NPC: "npc";
     readonly OPEN_INVENTORY: "openInventory";
+    readonly CHARACTER_MODEL: "characterModel";
     readonly VEHICLE: "vehicle";
     readonly ENTERABLE: "enterable";
     readonly STORY_INFO: "storyInfo";
@@ -2087,6 +2088,7 @@ import { CombatantTrait } from './combatant/combatantTrait';
 import { EquippedTrait } from './equipped/equippedTrait';
 import { NpcTrait } from './npc/npcTrait';
 import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
+import { CharacterModelTrait } from './character-model/characterModelTrait';
 import { VehicleTrait } from './vehicle/vehicleTrait';
 import { EnterableTrait } from './enterable/enterableTrait';
 import { StoryInfoTrait } from './story-info/storyInfoTrait';
@@ -2102,7 +2104,7 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### traits/identity/identityTrait
@@ -4377,6 +4379,443 @@ export declare class StoryInfoTrait implements ITrait {
     clientVersion?: string;
     portedBy?: string;
     constructor(data?: Partial<StoryInfoTrait>);
+}
+```
+
+### traits/character-model/characterModelTrait
+
+```typescript
+/**
+ * Character model trait (ADR-141)
+ *
+ * Rich internal state for NPCs: personality, disposition, mood, threat,
+ * cognitive profile, knowledge, beliefs, and goals. Opt-in — only NPCs
+ * that need behavioral depth carry this trait alongside NpcTrait.
+ *
+ * Public interface: ICharacterModelData, CharacterModelTrait, CharacterPredicate.
+ * Owner context: world-model / character-model trait
+ */
+import { ITrait } from '../trait';
+import { PersonalityTrait, PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, Fact, FactSource, Belief, ResistanceMode, Goal, LucidityConfig, PerceptionFilterConfig, PerceivedEvent } from './character-vocabulary';
+/** Serializable data for constructing a CharacterModelTrait. */
+export interface ICharacterModelData {
+    /** Personality traits with intensity values (0-1). */
+    personality?: Record<PersonalityTrait, number>;
+    /** Disposition toward specific entities (numeric, -100 to 100). */
+    dispositions?: Record<string, number>;
+    /** Current mood (valence-arousal stored internally). */
+    mood?: Mood;
+    moodValence?: number;
+    moodArousal?: number;
+    /** Current threat level (numeric, 0-100). */
+    threat?: ThreatLevel;
+    threatValue?: number;
+    /** Five-dimensional cognitive profile. */
+    cognitiveProfile?: Partial<CognitiveProfile>;
+    /** Knowledge base: topic -> fact. */
+    knowledge?: Record<string, Fact>;
+    /** Beliefs: topic -> belief. */
+    beliefs?: Record<string, Belief>;
+    /** Goals ordered by priority. */
+    goals?: Goal[];
+    /** Lucidity window configuration. */
+    lucidityConfig?: LucidityConfig;
+    /** Current lucidity state name (e.g., 'lucid', 'hallucinating', baseline). */
+    currentLucidityState?: string;
+    /** Turns remaining in current lucidity window. -1 = no active window. */
+    lucidityWindowTurns?: number;
+    /** Perception filter configuration. */
+    perceptionFilters?: PerceptionFilterConfig;
+    /** Hallucinated perceived events. */
+    perceivedEvents?: Record<string, PerceivedEvent>;
+}
+/** A predicate function that evaluates character state. */
+export type CharacterPredicate = (trait: CharacterModelTrait) => boolean;
+/**
+ * CharacterModelTrait — rich internal state for NPCs.
+ *
+ * All state is stored as plain properties so JSON serialization survives.
+ * Predicate functions are registered at runtime and live in a transient map
+ * that is rebuilt after deserialization by the builder or story setup code.
+ */
+export declare class CharacterModelTrait implements ITrait {
+    static readonly type: "characterModel";
+    readonly type: "characterModel";
+    personality: Record<string, number>;
+    dispositions: Record<string, number>;
+    moodValence: number;
+    moodArousal: number;
+    threatValue: number;
+    cognitiveProfile: CognitiveProfile;
+    knowledge: Record<string, Fact>;
+    beliefs: Record<string, Belief>;
+    goals: Goal[];
+    lucidityConfig?: LucidityConfig;
+    currentLucidityState: string;
+    lucidityWindowTurns: number;
+    perceptionFilters?: PerceptionFilterConfig;
+    perceivedEvents: Record<string, PerceivedEvent>;
+    private predicates;
+    constructor(data?: ICharacterModelData);
+    /**
+     * Set personality from expression array. Typically called once at creation.
+     *
+     * @param exprs - Personality expressions like 'very honest', 'cowardly'
+     */
+    setPersonality(...exprs: PersonalityExpr[]): void;
+    /**
+     * Get the intensity value for a personality trait.
+     *
+     * @param trait - The personality trait to query
+     * @returns The intensity value (0-1), or 0 if the trait is not set
+     */
+    getPersonality(trait: PersonalityTrait): number;
+    /**
+     * Set disposition toward an entity using a word.
+     *
+     * @param entityId - The entity this disposition is directed at
+     * @param word - A disposition word like 'trusts' or 'wary of'
+     */
+    setDisposition(entityId: string, word: DispositionWord): void;
+    /**
+     * Adjust disposition toward an entity by a numeric delta.
+     * Clamps to -100..100.
+     *
+     * @param entityId - The entity to adjust disposition for
+     * @param delta - Amount to add (positive = warmer, negative = colder)
+     */
+    adjustDisposition(entityId: string, delta: number): void;
+    /**
+     * Get the numeric disposition value toward an entity.
+     *
+     * @param entityId - The entity to query
+     * @returns Numeric disposition (-100 to 100), defaults to 0 (neutral)
+     */
+    getDispositionValue(entityId: string): number;
+    /**
+     * Get the disposition word toward an entity.
+     *
+     * @param entityId - The entity to query
+     * @returns The disposition word
+     */
+    getDispositionWord(entityId: string): DispositionWord;
+    /**
+     * Set mood by word. Translates to internal valence-arousal axes.
+     *
+     * @param word - A mood word like 'nervous' or 'cheerful'
+     */
+    setMood(word: Mood): void;
+    /**
+     * Adjust mood axes by deltas. Clamps valence to -1..1 and arousal to 0..1.
+     *
+     * @param valenceDelta - Change in valence
+     * @param arousalDelta - Change in arousal
+     */
+    adjustMood(valenceDelta: number, arousalDelta: number): void;
+    /**
+     * Get the current mood as a word (nearest match to valence-arousal position).
+     *
+     * @returns The mood word
+     */
+    getMood(): Mood;
+    /**
+     * Set threat level by word.
+     *
+     * @param level - A threat level word
+     */
+    setThreat(level: ThreatLevel): void;
+    /**
+     * Adjust threat level by a numeric delta. Clamps to 0..100.
+     *
+     * @param delta - Amount to add (positive = more threatened)
+     */
+    adjustThreat(delta: number): void;
+    /**
+     * Get the current threat level as a word.
+     *
+     * @returns The threat level word
+     */
+    getThreat(): ThreatLevel;
+    /**
+     * Add or update a fact in the NPC's knowledge base.
+     *
+     * @param topic - The topic this fact is about
+     * @param source - How the NPC learned this fact
+     * @param confidence - How confident the NPC is
+     * @param turn - The turn number when the fact was learned
+     */
+    addFact(topic: string, source: FactSource, confidence: ConfidenceWord, turn: number): void;
+    /**
+     * Check whether the NPC knows about a topic.
+     *
+     * @param topic - The topic to check
+     * @returns True if the NPC has any fact about this topic
+     */
+    knows(topic: string): boolean;
+    /**
+     * Get a fact from the knowledge base.
+     *
+     * @param topic - The topic to query
+     * @returns The fact, or undefined if unknown
+     */
+    getFact(topic: string): Fact | undefined;
+    /**
+     * Add or update a belief.
+     *
+     * @param topic - What the belief is about
+     * @param strength - How strongly held
+     * @param resistance - How resistant to counter-evidence
+     */
+    addBelief(topic: string, strength: ConfidenceWord, resistance?: ResistanceMode): void;
+    /**
+     * Check whether the NPC holds a belief about a topic.
+     *
+     * @param topic - The topic to check
+     * @returns True if the NPC has a belief about this topic
+     */
+    hasBelief(topic: string): boolean;
+    /**
+     * Get a belief.
+     *
+     * @param topic - The topic to query
+     * @returns The belief, or undefined
+     */
+    getBelief(topic: string): Belief | undefined;
+    /**
+     * Add a goal with priority. Higher priority = more important.
+     *
+     * @param id - Goal identifier
+     * @param priority - Numeric priority (higher = more important)
+     */
+    addGoal(id: string, priority: number): void;
+    /**
+     * Remove a goal by id.
+     *
+     * @param id - Goal identifier to remove
+     */
+    removeGoal(id: string): void;
+    /**
+     * Get the highest-priority goal, or undefined if none.
+     *
+     * @returns The top goal, or undefined
+     */
+    getTopGoal(): Goal | undefined;
+    /**
+     * Check whether the NPC has a specific goal.
+     *
+     * @param id - Goal identifier to check
+     * @returns True if the goal exists
+     */
+    hasGoal(id: string): boolean;
+    /**
+     * Update the priority of an existing goal.
+     *
+     * @param id - Goal identifier
+     * @param priority - New priority value
+     */
+    updateGoalPriority(id: string, priority: number): void;
+    /**
+     * Transition to a new lucidity state.
+     *
+     * @param state - The target lucidity state name
+     * @param windowTurns - How many turns this window lasts (-1 = indefinite)
+     */
+    enterLucidityState(state: string, windowTurns?: number): void;
+    /**
+     * Decay the lucidity window by one turn. Returns to baseline when expired.
+     *
+     * @returns True if the window expired and baseline was restored
+     */
+    decayLucidity(): boolean;
+    /**
+     * Register a named predicate function.
+     *
+     * @param name - Predicate name (e.g., 'trusts player', 'threatened')
+     * @param fn - Function that evaluates against this trait's state
+     */
+    registerPredicate(name: string, fn: CharacterPredicate): void;
+    /**
+     * Evaluate a named predicate against current state.
+     * Supports 'not X' negation.
+     *
+     * @param predicate - The predicate name to evaluate
+     * @returns True if the predicate is satisfied
+     * @throws Error if the predicate is not registered
+     */
+    evaluate(predicate: string): boolean;
+    /**
+     * Check if a predicate is registered.
+     *
+     * @param name - Predicate name
+     * @returns True if registered
+     */
+    hasPredicate(name: string): boolean;
+    /** Register all built-in predicates defined by ADR-141. */
+    private registerPlatformPredicates;
+}
+```
+
+### traits/character-model/character-vocabulary
+
+```typescript
+/**
+ * Character model vocabulary types (ADR-141)
+ *
+ * String literal union types for all word-based authoring inputs.
+ * Authors interact with these words; internal numeric values are
+ * implementation details managed by CharacterModelTrait.
+ *
+ * Public interface: All exported types and maps.
+ * Owner context: world-model / character-model trait
+ */
+/** Core personality traits — fixed at character creation. */
+export type PersonalityTrait = 'honest' | 'loyal' | 'cowardly' | 'paranoid' | 'cruel' | 'cunning' | 'curious' | 'stubborn' | 'generous' | 'vain' | 'devout' | 'impulsive';
+/** Intensity modifiers for personality traits. */
+export type Intensity = 'slightly' | 'somewhat' | 'very' | 'extremely';
+/** A personality expression: bare trait or intensity-qualified. */
+export type PersonalityExpr = PersonalityTrait | `${Intensity} ${PersonalityTrait}`;
+/** Maps intensity words to internal 0-1 values. */
+export declare const INTENSITY_VALUES: Record<Intensity | 'bare', number>;
+/**
+ * Parse a PersonalityExpr into trait name and numeric value.
+ *
+ * @param expr - A personality expression like 'very honest' or 'loyal'
+ * @returns Tuple of [trait name, intensity value]
+ */
+export declare function parsePersonalityExpr(expr: PersonalityExpr): [PersonalityTrait, number];
+/**
+ * Disposition words — how the NPC feels about a specific entity.
+ * Directed and persistent. Distinct from mood (transient, undirected)
+ * and threat (situational).
+ */
+export type DispositionWord = 'despises' | 'hates' | 'dislikes' | 'wary of' | 'neutral' | 'likes' | 'trusts' | 'devoted to';
+/** Internal numeric ranges for each disposition word. */
+export declare const DISPOSITION_RANGES: Record<DispositionWord, {
+    min: number;
+    max: number;
+    midpoint: number;
+}>;
+/**
+ * Resolve a disposition word to its midpoint numeric value.
+ *
+ * @param word - A disposition word
+ * @returns The midpoint of the disposition range
+ */
+export declare function dispositionToValue(word: DispositionWord): number;
+/**
+ * Resolve a numeric disposition value back to the nearest word.
+ *
+ * @param value - A numeric disposition value (-100 to 100)
+ * @returns The disposition word whose range contains the value
+ */
+export declare function valueToDisposition(value: number): DispositionWord;
+/**
+ * Mood words — the NPC's current transient emotional state.
+ * Undirected (not about anyone in particular). Changes frequently
+ * based on events and decays toward a baseline.
+ */
+export type Mood = 'calm' | 'content' | 'cheerful' | 'nervous' | 'anxious' | 'panicked' | 'angry' | 'furious' | 'sad' | 'grieving' | 'suspicious' | 'confused' | 'resigned';
+/**
+ * Internal valence-arousal coordinates for each mood.
+ * Valence: -1 (negative) to +1 (positive).
+ * Arousal: 0 (low energy) to 1 (high energy).
+ */
+export declare const MOOD_AXES: Record<Mood, {
+    valence: number;
+    arousal: number;
+}>;
+/**
+ * Find the closest mood word to a valence-arousal coordinate.
+ *
+ * @param valence - Valence value (-1 to 1)
+ * @param arousal - Arousal value (0 to 1)
+ * @returns The mood word with the smallest Euclidean distance
+ */
+export declare function nearestMood(valence: number, arousal: number): Mood;
+/**
+ * Threat level — how endangered the NPC feels.
+ * Situational and distinct from mood and disposition.
+ */
+export type ThreatLevel = 'safe' | 'uneasy' | 'wary' | 'threatened' | 'cornered' | 'desperate';
+/** Maps threat words to internal 0-100 values. */
+export declare const THREAT_VALUES: Record<ThreatLevel, number>;
+/**
+ * Resolve a numeric threat value back to the nearest threat level.
+ *
+ * @param value - A numeric threat value (0-100)
+ * @returns The threat level word
+ */
+export declare function valueToThreat(value: number): ThreatLevel;
+/** How the NPC perceives events. */
+export type PerceptionMode = 'accurate' | 'filtered' | 'augmented';
+/** How the NPC forms and updates beliefs from evidence. */
+export type BeliefFormation = 'flexible' | 'rigid' | 'resistant';
+/** How coherently the NPC maintains topic focus. */
+export type Coherence = 'focused' | 'drifting' | 'fragmented';
+/** How stable the NPC's cognitive profile is over time. */
+export type Lucidity = 'stable' | 'fluctuating' | 'episodic';
+/** How intact the NPC's sense of identity is. */
+export type SelfModel = 'intact' | 'uncertain' | 'fractured';
+/** The five-dimensional cognitive profile. */
+export interface CognitiveProfile {
+    perception: PerceptionMode;
+    beliefFormation: BeliefFormation;
+    coherence: Coherence;
+    lucidity: Lucidity;
+    selfModel: SelfModel;
+}
+/** Default stable cognitive profile. */
+export declare const STABLE_COGNITIVE_PROFILE: Readonly<CognitiveProfile>;
+/** How the NPC acquired a piece of knowledge. */
+export type FactSource = 'witnessed' | 'told' | 'inferred' | 'assumed' | 'hallucinated';
+/** How confident the NPC is in a piece of knowledge. */
+export type ConfidenceWord = 'uncertain' | 'suspects' | 'believes' | 'certain';
+/** Maps confidence words to internal 0-1 values. */
+export declare const CONFIDENCE_VALUES: Record<ConfidenceWord, number>;
+/** A single fact in the NPC's knowledge base. */
+export interface Fact {
+    source: FactSource;
+    confidence: ConfidenceWord;
+    turnLearned: number;
+}
+/** How resistant a belief is to counter-evidence. */
+export type ResistanceMode = 'none' | 'reinterprets' | 'ignores';
+/** A belief held by the NPC, which may differ from facts. */
+export interface Belief {
+    strength: ConfidenceWord;
+    resistance: ResistanceMode;
+}
+/** A goal with author-assigned priority. Higher priority = more important. */
+export interface Goal {
+    id: string;
+    priority: number;
+}
+/** Timing for a lucidity transition. */
+export type TransitionTiming = 'immediate' | 'next turn';
+/** Rate at which lucidity decays back to baseline. */
+export type DecayRate = 'slow' | 'moderate' | 'fast';
+/** A single lucidity trigger rule. */
+export interface LucidityTrigger {
+    target: string;
+    transition: TransitionTiming;
+}
+/** Full lucidity window configuration. */
+export interface LucidityConfig {
+    baseline: string;
+    triggers: Record<string, LucidityTrigger>;
+    decay: 'gradual' | 'sudden';
+    decayRate: DecayRate;
+}
+/** Configuration for filtered/augmented perception. */
+export interface PerceptionFilterConfig {
+    misses: string[];
+    amplifies: string[];
+}
+/** A hallucinated perceived event definition. */
+export interface PerceivedEvent {
+    when: string;
+    as: FactSource;
+    content: string;
 }
 ```
 
