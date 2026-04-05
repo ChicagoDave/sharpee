@@ -95,11 +95,13 @@ conversation.topic('weapon', {
 
 **Resolution algorithm:**
 1. Extract topic text from parser (raw text after "about")
-2. Match against keyword sets (exact word match, stemming, synonyms)
+2. Match against keyword sets (exact normalized word match — no stemming, no fuzzy matching)
 3. If exact match → select that topic
 4. If no exact match but related topic match → NPC redirects: "I don't know about the knife specifically, but I can tell you what I saw"
 5. If no match at all → default "doesn't know about that" response
 6. Score-based disambiguation when multiple topics match — the topic with the most keyword hits wins
+
+Authors provide all keyword variants explicitly (same pattern as entity aliases in the parser). The `related` topic neighborhood handles near-misses without requiring stemming infrastructure.
 
 **Topic availability:**
 
@@ -112,11 +114,79 @@ conversation.topic('alibi', {
 })
 ```
 
-### 3. Conversation Flow and Momentum
+### 3. Conversation Lifecycle and Attention Management
 
-Individual exchanges (ask → respond) are insufficient. Real conversations have flow — context carries between turns.
+Individual exchanges (ask → respond) are insufficient. Real conversations have flow — context carries between turns. More importantly, a conversation is an **active state** that persists across non-conversation actions and competes for the player's attention.
 
-**Conversation context:**
+#### Conversation as Active State
+
+A conversation begins on the first ASK, TELL, or TALK TO directed at an NPC. It persists as an active state until one of:
+- The player says GOODBYE (explicit end)
+- The player leaves the room (abandonment — NPC intent may block this)
+- The NPC dismisses the player (NPC-initiated end)
+- The decay threshold is reached (N non-conversation turns without interaction)
+
+While a conversation is active, non-conversation player actions (LOOK, EXAMINE, TAKE) do not end the conversation. Instead, the NPC **observes** these actions through ADR-141's observation system and may react based on their conversation intent.
+
+#### Conversation Intent and Strength
+
+Each conversation context carries an **intent** that describes how the NPC feels about continuing the conversation, and a **strength** that determines how aggressively they hold the player's attention:
+
+**Strength levels:**
+
+| Strength | Non-conversation actions | Player talks to other NPC | Player leaves room |
+|---|---|---|---|
+| `passive` | generic/silent commentary | yields | yields |
+| `assertive` | character-specific commentary | interrupts/redirects | protests but yields |
+| `blocking` | urgent commentary | **overrides** other conversation | **prevents** until escape condition met |
+
+**Intent labels** determine the tone of between-turn commentary:
+
+| Intent | Turn 1 (non-conversation) | Turn 3+ (non-conversation) | Decay threshold |
+|---|---|---|---|
+| `eager` | "NPC watches expectantly..." | "NPC tugs your sleeve..." | 5 |
+| `reluctant` | (silence — relieved) | (conversation quietly ends) | 2 |
+| `hostile` | "NPC glares as you look around" | "NPC turns away" (ends) | 3 |
+| `confessing` | "NPC pauses, waiting..." | "NPC whispers: there's more..." | 6 |
+| `neutral` | (silence) | "NPC waits patiently" | 4 |
+
+**Blocking strength** connects to the existing action system — it works the same way as a locked door on the going action, but driven by conversation state instead of a trait property. The author must provide an escape condition (e.g., the NPC calms down, the player satisfies their demand, or another NPC intervenes).
+
+#### Setting Intent in the Builder
+
+Intent and strength are set when establishing a conversation context:
+
+```typescript
+.when('asked about murder')
+  .if('threatened', 'cowardly')
+  .confess('murder-breaks-down')
+  .setsContext('confessing', { intent: 'eager', strength: 'assertive' })
+```
+
+**Between-turn commentary** uses platform defaults keyed by intent and non-conversation action count. Authors override for character-specific moments:
+
+```typescript
+.when('asked about murder')
+  .if('threatened', 'cowardly')
+  .confess('murder-breaks-down')
+  .setsContext('confessing', { intent: 'eager', strength: 'blocking' })
+  .betweenTurns(1, 'margaret-wrings-hands')      // override default
+  .betweenTurns(3, 'margaret-grabs-your-arm')     // override default
+  .onLeaveAttempt('margaret-blocks-doorway')       // blocking behavior
+```
+
+**Platform defaults** are generic message IDs that go through lang-en-us. They work for any NPC without author configuration. Authors only override when they want character-specific flavor.
+
+#### Attention Shifts Between NPCs
+
+When the player redirects conversation to a different NPC while a conversation is active, the system evaluates the current NPC's strength:
+
+- **passive/assertive**: Current conversation yields. The previous NPC may emit a commentary message but does not interfere.
+- **blocking**: Current NPC **overrides** the redirect. The player must resolve the blocking conversation first (satisfy the escape condition, or the NPC's state changes).
+
+This enables gameplay where an NPC physically demands the player's attention — a desperate confessor, a threatening guard, a panicked witness.
+
+#### Conversation Context
 
 After an NPC responds, the system sets a **conversation context** that influences the next exchange:
 
@@ -124,14 +194,14 @@ After an NPC responds, the system sets a **conversation context** that influence
 .when('asked about murder')
   .if('threatened', 'cowardly')
   .confess('murder-breaks-down')
-  .setsContext('confessing')       // next turn is in "confessing" context
+  .setsContext('confessing', { intent: 'eager', strength: 'assertive' })
 ```
 
 **Context effects:**
 - Follow-up questions within the context get context-aware responses
 - The NPC may continue unprompted if the context has continuation content
 - Changing topics clears the context (the NPC notices the subject change)
-- Context decays after N turns of non-conversation (configurable per NPC)
+- Context decays after N non-conversation turns (threshold set by intent, overridable per NPC)
 
 **NPC continuation:**
 
@@ -368,6 +438,9 @@ npc.character('eleanor')
 - Unreliable conversation falls out naturally from the character model — no special-case code
 - Topic neighborhoods reduce guess-the-noun frustration
 - Conversation flow (context, continuation, NPC initiative) makes multi-turn exchanges feel natural
+- Attention management (intent + strength) gives NPCs agency — they can hold, yield, or fight for the player's focus
+- Blocking strength enables gameplay mechanics (desperate confessor, threatening guard) using the same pattern as locked doors
+- Between-turn NPC commentary makes the world feel alive during non-conversation actions
 - Confrontation mechanic enables mystery/investigation gameplay as a first-class pattern
 - Platform-level history tracking (contradictions, cross-NPC consistency) removes boilerplate from authors
 - ACL keeps character model and language layer independently evolvable
@@ -377,7 +450,8 @@ npc.character('eleanor')
 
 - Higher implementation cost than simpler dialogue systems
 - Topic resolution adds a layer of indirection between player input and authored responses
-- Conversation flow (context, continuation) adds state that must be saved/restored
+- Conversation flow (context, continuation, intent, strength) adds state that must be saved/restored
+- Blocking conversations add complexity to the going action and NPC-redirect paths
 - Authors must define topics and keyword sets in addition to responses
 
 ### Neutral
@@ -390,7 +464,7 @@ npc.character('eleanor')
 
 ### Layer 1: Topic Registry and Resolution (new `@sharpee/character` package)
 - Topic definition with keywords and relationships
-- Resolution algorithm (keyword matching, stemming, neighborhood fallback)
+- Resolution algorithm (exact normalized word match, neighborhood fallback)
 - Topic availability gating
 
 ### Layer 2: Constraint Evaluation (new `@sharpee/character` package)
@@ -399,11 +473,15 @@ npc.character('eleanor')
 - Response recording and contradiction detection
 - Evidence/presentation tracking
 
-### Layer 3: Conversation Flow (new `@sharpee/character` package)
-- Conversation context management
+### Layer 3: Conversation Lifecycle and Attention Management (new `@sharpee/character` package)
+- Conversation active state (start, end, decay)
+- Conversation intent and strength (passive, assertive, blocking)
+- Between-turn NPC commentary (platform defaults + author overrides)
+- Attention shift handling (player redirects to other NPC, leaves room)
+- Blocking integration with going action
 - NPC continuation scheduling
 - NPC initiative triggers
-- Context decay
+- Context decay by intent threshold
 
 ### Layer 4: Anti-Corruption Layer (new `@sharpee/character` package)
 - Response intent construction
@@ -424,17 +502,77 @@ npc.character('eleanor')
 - SAY handler (free speech routing)
 - TALK TO handler (conversation initiation)
 
+## Resolved Questions
+
+1. **How should topic stemming and synonym matching work?**
+   **Decision**: Exact normalized word match against author-provided keyword sets. No stemming, no fuzzy matching. This follows the same pattern as entity aliases in the parser. The `related` topic neighborhood handles near-misses without requiring stemming infrastructure. Authors provide all keyword variants explicitly.
+
+2. **Should conversation context be visible to the player?**
+   **Decision**: Yes — conversation is an active state, and NPC intent drives between-turn commentary. The NPC observes non-conversation player actions and reacts based on their conversation intent (eager, reluctant, hostile, confessing, neutral). Platform provides default commentary per intent; authors override for character-specific moments. See Section 3 for full design.
+
+3. **How deep should cross-NPC consistency tracking go?**
+   **Decision**: Reframed as **attention management**. The deeper design question isn't tracking contradictions between NPCs — it's that conversations **compete for the player's attention**. NPC conversation strength (passive, assertive, blocking) determines how aggressively the NPC holds the player's focus when the player tries to talk to someone else or leave. Blocking strength can physically prevent the player from leaving (same pattern as a locked door on the going action). Contradiction tracking (Section 5) remains as-is for cross-referencing accounts; the attention system handles the real-time interaction between competing conversations.
+
+4. **Should the system support NPC-to-NPC conversation?**
+   **Decision**: Yes, in two modes — **offscreen** and **eavesdropping**. NPC-to-NPC conversation is always authored (not generated from constraint evaluation between NPCs). Information propagation and goal-directed NPC behavior triggered by learned information are deferred to ADR-144 and ADR-145 respectively.
+
+   **Offscreen mode** — player absent, no dialogue performed. The system evaluates trigger conditions (both NPCs present, player absent) and applies authored state mutations. The player observes effects when they return.
+
+   ```typescript
+   npc.offscreen('margaret', 'butler')
+     .when(['player absent', 'margaret knows murder', 'butler suspects margaret'])
+     .mutates('margaret', { threat: 'threatened', mood: 'panicked' })
+     .mutates('butler', { disposition: { margaret: 'distrusts' } })
+     .unlocksTopic('margaret', 'butler-confrontation')
+     .unlocksTopic('butler', 'margaret-secret')
+     .onReturn('margaret-and-butler-fall-silent')  // player walks back in
+   ```
+
+   **Eavesdropping mode** — player present but concealed (hidden in closet, behind curtain, adjacent room with open door). Dialogue is performed as text the player reads. The player gains knowledge the NPCs don't know they have.
+
+   ```typescript
+   npc.witnessed('margaret', 'butler')
+     .when(['player concealed', 'margaret knows murder', 'butler suspects margaret'])
+     .dialogue([
+       { speaker: 'butler', says: 'butler-confronts-margaret' },
+       { speaker: 'margaret', says: 'margaret-denies-to-butler' },
+       { speaker: 'butler', says: 'butler-threatens-margaret' },
+       { speaker: 'margaret', says: 'margaret-confesses-to-butler' },
+     ])
+     .mutates('margaret', { threat: 'threatened', mood: 'panicked' })
+     .mutates('butler', { disposition: { margaret: 'distrusts' } })
+     .playerLearns('murder', { source: 'overheard' })
+     .discoveredBy('player makes noise', 'margaret-catches-player')
+   ```
+
+   **Knowledge asymmetry**: Facts learned via eavesdropping carry source `'overheard'`. The player knows, but can't directly reference overheard information in conversation without revealing they were hiding. Presenting overheard knowledge is a player choice with consequences — it feeds into the confrontation mechanic (Section 4).
+
+   **Downstream systems** (separate ADRs):
+   - **ADR-144 (Information Propagation)**: NPCs spread information based on personality traits (`'gossipy'`, `'discreet'`), disposition (shares with trusted, withholds from distrusted), and propagation pressure per fact. Creates strategic consequences — asking the wrong NPC can propagate information to the killer.
+   - **ADR-145 (NPC Goal Pursuit)**: When an NPC learns critical information (e.g., the killer learns they're suspected), their character model sets goals that drive multi-turn behavior sequences — seeking a weapon, waiting for opportunity, acting. Not an AI planner — authored behavior sequences gated by conditions, evaluated during the NPC turn phase.
+
+5. **How should the Clue tutorial handle randomized topic content?**
+   **Decision**: Author-defined parameters on response intents. The response intent carries an explicit `params` bag defined by the author; lang-en-us receives the params and resolves them at render time. This follows the existing language layer pattern where message IDs map to functions that receive data. No automatic state pulling — the author specifies exactly which values to inject and where they come from.
+
+   ```typescript
+   .when('asked about murder')
+     .if('witnessed murder')
+     .tell('saw-murder', {
+       murderer: () => world.get('murderer').name,
+       room: () => world.get('murder-room').name
+     })
+   ```
+
+   Lang-en-us receives the resolved params:
+
+   ```typescript
+   'conversation.saw-murder': (data) =>
+     `I saw ${data.murderer} near the ${data.room} around midnight.`
+   ```
+
 ## Open Questions
 
-1. **How should topic stemming and synonym matching work?** Should the platform provide basic English stemming, or delegate to the parser's existing vocabulary system? The parser already resolves synonyms for objects — can that mechanism be reused for conversation topics?
-
-2. **Should conversation context be visible to the player?** When an NPC is in a "confessing" context, should the player see cues like "Margaret seems ready to say more"? (Likely author-configurable, similar to ADR-141's resolved question 9.)
-
-3. **How deep should cross-NPC consistency tracking go?** Tracking that two NPCs gave different accounts of the same event is straightforward. Tracking that NPC A's lie is consistent with NPC B's omission is harder. Where's the line?
-
-4. **Should the system support NPC-to-NPC conversation?** Two NPCs talking to each other in the player's presence. This is distinct from ADR-141's gossip/propagation question — it's about dialogue performance, not information flow.
-
-5. **How should the Clue tutorial handle randomized topic content?** If the murderer changes each playthrough, the authored responses need to be parameterized — "I saw {murderer} near the {room}" rather than hardcoded names. How does the response intent system handle parameterized messages?
+All original open questions have been resolved. See Resolved Questions above.
 
 ## References
 
@@ -442,7 +580,10 @@ npc.character('eleanor')
 - ADR-090: Entity-Centric Action Dispatch (Capability Dispatch)
 - ADR-102: Dialogue Extension Architecture
 - ADR-141: Character Model (upstream — this system consumes it)
+- ADR-144: Information Propagation (downstream — consumes conversation events)
+- ADR-145: NPC Goal Pursuit (downstream — consumes propagated information)
 - `docs/work/forge/conversation-systems-survey.md`: Comprehensive survey of IF conversation systems
 - TADS 3: TopicEntry scoring, ConvNode threading, topic inventory
 - Emily Short's Threaded Conversation: Quip graphs, directly/indirectly-follows, availability rules
 - Heaven's Vault (Inkle): Dynamic relevance engine, topic windowing
+- Deadline (Infocom, 1982): Eavesdropping mechanic — player hides and overhears NPC-to-NPC conversation
