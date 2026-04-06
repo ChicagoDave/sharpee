@@ -69,7 +69,13 @@ export class ScopeBuilderImpl implements ScopeBuilder {
   }
 
   build(): ScopeConstraint {
-    return { ...this.constraint };
+    return {
+      ...this.constraint,
+      filters: [...this.constraint.filters],
+      traitFilters: [...this.constraint.traitFilters],
+      explicitEntities: [...this.constraint.explicitEntities],
+      includeRules: [...this.constraint.includeRules]
+    };
   }
 }
 

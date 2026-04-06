@@ -66,12 +66,6 @@ describe('WorldModel.getInScope', () => {
     world.moveEntity(innerBox.id, outerBox.id);
     world.moveEntity(item.id, innerBox.id);
     
-    // Debug what's happening
-    console.log('Item location:', world.getLocation(item.id));
-    console.log('Inner box location:', world.getLocation(innerBox.id));
-    console.log('Outer box location:', world.getLocation(outerBox.id));
-    console.log('All contents recursive:', world.getAllContents(outerBox.id, { recursive: true }).map(e => e.id));
-    
     const inScope = world.getInScope(player.id);
     expect(inScope).toContainEqual(outerBox);
     expect(inScope).toContainEqual(innerBox);

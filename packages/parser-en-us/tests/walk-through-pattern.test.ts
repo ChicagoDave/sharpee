@@ -48,11 +48,6 @@ describe('Walk Through Pattern Matching', () => {
       const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
       const matches = engine.findMatches(tokens, context);
 
-      console.log('Matches found:', matches.length);
-      for (const match of matches) {
-        console.log(`  - ${match.rule.action} (confidence: ${match.confidence}, priority: ${match.rule.priority})`);
-      }
-
       // We expect the literal pattern to match (higher priority)
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].rule.action).toBe('walk_through.south_wall');
@@ -74,12 +69,6 @@ describe('Walk Through Pattern Matching', () => {
       const tokens = createTokens(['walk', 'through', 'curtain']);
       const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
       const matches = engine.findMatches(tokens, context);
-
-      console.log('Matches found:', matches.length);
-      for (const match of matches) {
-        console.log(`  - ${match.rule.action} (confidence: ${match.confidence})`);
-        console.log('    slots:', [...match.slots.entries()]);
-      }
 
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].rule.action).toBe('walk_through.generic');
@@ -130,7 +119,6 @@ describe('Walk Through Pattern Matching', () => {
       };
 
       const matchesNoEntity = engine.findMatches(tokens, contextNoEntity);
-      console.log('Matches with NO entity:', matchesNoEntity.length);
 
       // The constrained pattern should fail without entity
       expect(matchesNoEntity.length).toBe(0);
@@ -170,7 +158,6 @@ describe('Walk Through Pattern Matching', () => {
       };
 
       const matches = engine.findMatches(tokens, contextWithEntity);
-      console.log('Matches with attributes.name entity:', matches.length);
 
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].rule.action).toBe('walk_through.constrained');
@@ -216,10 +203,6 @@ describe('Walk Through Pattern Matching', () => {
       };
 
       const matches = engine.findMatches(tokens, contextWithEntity);
-      console.log('Matches with IdentityTrait alias:', matches.length);
-      for (const match of matches) {
-        console.log(`  - ${match.rule.action} (confidence: ${match.confidence})`);
-      }
 
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].rule.action).toBe('walk_through.constrained');

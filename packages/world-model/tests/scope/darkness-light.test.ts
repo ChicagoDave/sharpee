@@ -190,15 +190,8 @@ describe('Darkness and Light Source Scope Rules', () => {
     world.moveEntity(player.id, darkCave.id);
     world.moveEntity(torch.id, player.id); // Carry unlit torch
     
-    // Debug info
-    console.log('Player location:', world.getLocation(player.id));
-    console.log('Torch location:', world.getLocation(torch.id));
-    console.log('Torch ID:', torch.id);
-    console.log('Player ID:', player.id);
-
     const visible = world.getVisible(player.id);
     const visibleIds = visible.map(e => e.id);
-    console.log('Visible IDs:', visibleIds);
 
     // Can see the torch itself
     expect(visibleIds).toContain(torch.id);

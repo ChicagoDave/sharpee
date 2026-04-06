@@ -22,11 +22,15 @@ export class SpatialIndex {
   }
 
   removeChild(parentId: string, childId: string): void {
-    const children = this.parentToChildren.get(parentId);
+    // Always clean the actual parent's children set, not just the specified one.
+    // This prevents stale data when removeChild is called with the wrong parentId.
+    const actualParent = this.childToParent.get(childId);
+    const targetParent = actualParent ?? parentId;
+    const children = this.parentToChildren.get(targetParent);
     if (children) {
       children.delete(childId);
       if (children.size === 0) {
-        this.parentToChildren.delete(parentId);
+        this.parentToChildren.delete(targetParent);
       }
     }
     this.childToParent.delete(childId);

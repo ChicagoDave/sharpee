@@ -97,8 +97,6 @@ describe('Push Panel Pattern Matching', () => {
       // Parse "push red panel"
       const result = parser.parse('push red panel');
 
-      console.log('Parse result:', JSON.stringify(result, null, 2));
-
       expect(result.success).toBe(true);
       if (result.success) {
         // Should match story action, not core push
@@ -114,8 +112,6 @@ describe('Push Panel Pattern Matching', () => {
         .build();
 
       const result = parser.parse('push red');
-
-      console.log('Parse result for "push red":', JSON.stringify(result, null, 2));
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -133,8 +129,6 @@ describe('Push Panel Pattern Matching', () => {
       // Parse "push button" - should match core push
       const result = parser.parse('push button');
 
-      console.log('Parse result for "push button":', JSON.stringify(result, null, 2));
-
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.pushing');
@@ -150,9 +144,6 @@ describe('Push Panel Pattern Matching', () => {
         .build();
 
       const result = parser.parse('push red');
-
-      // Log all matches to see what's happening
-      console.log('Result:', result);
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -178,13 +169,7 @@ describe('Push Panel Pattern Matching', () => {
 
       const result = parser.parse('push red panel');
 
-      console.log('Slot vs literal result:', JSON.stringify(result, null, 2));
-
       expect(result.success).toBe(true);
-      // The result should be one of these - which one depends on match ordering
-      if (result.success) {
-        console.log('Matched action:', result.value.action);
-      }
     });
   });
 });

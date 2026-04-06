@@ -58,16 +58,6 @@ describe('Entity alias resolution', () => {
     }));
     world.moveEntity(hook.id, room.id);
     
-    // Debug: Check entity IDs and locations
-    console.log('Test setup debug:', {
-      playerId: player.id,
-      roomId: room.id,
-      hookId: hook.id,
-      playerLocation: world.getLocation(player.id),
-      hookLocation: world.getLocation(hook.id),
-      roomContents: world.getContents(room.id).map(e => ({ id: e.id, name: e.name }))
-    });
-    
     // Add default visibility scope rules
     world.addScopeRule({
       id: 'test_room_visibility',
@@ -120,34 +110,6 @@ describe('Entity alias resolution', () => {
   });
 
   it('should find entity by alias "hook"', async () => {
-    // Debug: Dump complete world state
-    console.log('\n=== WORLD STATE BEFORE TEST ===');
-    console.log('All entities:', world.getAllEntities().map(e => ({
-      id: e.id,
-      type: e.type,
-      name: e.name,
-      location: world.getLocation(e.id),
-      identity: e.get('identity')
-    })));
-    
-    console.log('\nSpatial graph:', {
-      player: {
-        id: player.id,
-        location: world.getLocation(player.id),
-        contents: world.getContents(player.id).map(e => e.id)
-      },
-      room: {
-        id: room.id,
-        location: world.getLocation(room.id),
-        contents: world.getContents(room.id).map(e => ({ id: e.id, name: e.name }))
-      },
-      hook: {
-        id: hook.id,
-        location: world.getLocation(hook.id),
-        contents: world.getContents(hook.id).map(e => e.id)
-      }
-    });
-    console.log('=== END WORLD STATE ===\n');
     const command: ParsedCommand = {
       pattern: 'VERB_NOUN',
       confidence: 1,
@@ -165,24 +127,7 @@ describe('Entity alias resolution', () => {
       }
     };
 
-    // Listen for debug events
-    const debugEvents: SystemEvent[] = [];
-    const systemEvents = (validator as unknown as { systemEvents: ReturnType<typeof createSemanticEventSource> }).systemEvents;
-    if (systemEvents) {
-      systemEvents.subscribe((event: SystemEvent) => {
-        debugEvents.push(event);
-      });
-    }
-    
     const result = await validator.validate(command);
-    if (!result.success) {
-      // Find relevant debug events
-      const searchEvent = debugEvents.find(e => e.type === 'entity_search');
-      const scopeEvent = debugEvents.find(e => e.type === 'scope_check');
-      console.log('Entity search debug:', searchEvent?.data);
-      console.log('Scope check debug:', scopeEvent?.data);
-      console.log('Validation error:', result.error);
-    }
     expect(result.success).toBe(true);
     if (result.success && result.value.directObject) {
       expect(result.value.directObject.entity.id).toBe(hook.id);

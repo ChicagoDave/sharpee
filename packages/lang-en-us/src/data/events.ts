@@ -318,8 +318,9 @@ export const eventMessageFunctions = {
       if (items.length === 1) {
         message += `You can see ${items[0]} here.`;
       } else {
-        const lastItem = items.pop();
-        message += `You can see ${items.join(", ")} and ${lastItem} here.`;
+        const allButLast = items.slice(0, -1);
+        const lastItem = items[items.length - 1];
+        message += `You can see ${allButLast.join(", ")} and ${lastItem} here.`;
       }
     }
     

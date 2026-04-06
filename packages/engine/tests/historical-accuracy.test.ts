@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { setupTestEngine, createMinimalStory } from './test-helpers/setup-test-engine';
 import { GameEngine } from '../src/game-engine';
 import { ISemanticEvent, ISaveData } from '@sharpee/core';
-import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { MinimalTestStory } from './stories/minimal-test-story';
 
 /** Type alias for accessing private GameEngine members in tests */
@@ -56,25 +56,8 @@ describe('Historical Accuracy - Atomic Events', () => {
 
   describe('Event Data Completeness', () => {
     it('should include complete entity snapshots in action events', async () => {
-      // Debug: Check what's in the world
-      const world = (engine as unknown as EnginePrivate).world;
-      const player = world.getPlayer();
-      const playerLocation = world.getLocation(player.id);
-      const roomContents = world.getContents(playerLocation);
-      console.log('Player location:', playerLocation);
-      console.log('Room contents:', roomContents.map((e: IFEntity) => ({ id: e.id, name: e.get('identity')?.name })));
-      
       // Take an item
       await engine.executeTurn('take lamp');
-      
-      // Debug: Log all event types to see what's actually generated
-      console.log('Generated events:', events.map(e => e.type));
-      
-      // If there's an error, log it
-      const errorEvent = events.find(e => e.type === 'action.error');
-      if (errorEvent) {
-        console.log('Error event data:', errorEvent.data);
-      }
       
       // Find the success event
       const takeEvent = events.find(e => e.type === 'action.success' || e.type === 'if.event.taken');
@@ -105,9 +88,6 @@ describe('Historical Accuracy - Atomic Events', () => {
       // Move to another room
       await engine.executeTurn('go north');
       
-      // Debug: log events to see what's actually generated
-      console.log('Generated events after "go north":', events.map(e => e.type));
-      
       // Find movement event - look for any going-related event
       const moveEvent = events.find(e => 
         e.type === 'if.event.actor_moved' || 
@@ -115,18 +95,6 @@ describe('Historical Accuracy - Atomic Events', () => {
         e.type === 'action.success' ||
         e.type === 'action.error'
       );
-      
-      // If there's an error event, log it
-      const errorEvent = events.find(e => e.type === 'action.error');
-      if (errorEvent) {
-        console.log('Error event:', errorEvent.data);
-      }
-      
-      // Check command.failed for details
-      const cmdFailed = events.find(e => e.type === 'command.failed');
-      if (cmdFailed) {
-        console.log('Command failed:', cmdFailed.data);
-      }
       
       expect(moveEvent).toBeDefined();
       const eventData = moveEvent?.data as EventDataWithSnapshots | undefined;
@@ -287,15 +255,8 @@ describe('Historical Accuracy - Atomic Events', () => {
       // Get save data
       const saveData = (engine as unknown as EnginePrivate).createSaveData();
       
-      // Debug: log save data structure
-      console.log('Save data keys:', Object.keys(saveData));
-      console.log('Engine state keys:', saveData.engineState ? Object.keys(saveData.engineState) : 'undefined');
-      
       // Check serialized events
       const serializedEvents = saveData.engineState?.eventSource;
-      if (!serializedEvents) {
-        console.log('No serialized events found in save data');
-      }
       const serializedEvent = serializedEvents?.find((e: ISemanticEvent) => e.id === 'test-event');
       
       expect(serializedEvent).toBeDefined();

@@ -102,6 +102,15 @@ describe('Coverage Improvements', () => {
         );
         expect(result).toBe('A small closet.\n\nYou can see broom and bucket here.');
       });
+
+      it('should not mutate the input items array', () => {
+        const items = ['lamp', 'chair', 'table'];
+        eventMessageFunctions.formatRoomDescription('A room.', items);
+        expect(items).toEqual(['lamp', 'chair', 'table']);
+        // Call again to verify idempotent
+        const result2 = eventMessageFunctions.formatRoomDescription('A room.', items);
+        expect(result2).toBe('A room.\n\nYou can see lamp, chair and table here.');
+      });
     });
 
     describe('formatContainerContents', () => {
