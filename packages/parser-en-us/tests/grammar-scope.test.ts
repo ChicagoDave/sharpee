@@ -1,15 +1,17 @@
 /**
  * @file Grammar Scope Tests
- * @description Tests for grammar patterns and trait constraints.
+ * @description Representative tests verifying that grammar does NOT enforce scope.
  *
- * NOTE: Grammar no longer enforces scope (visible/touchable/carried).
- * Scope validation happens in action validate() phase.
- * Grammar only declares semantic constraints (traits).
+ * Scope validation (visible/touchable/carried) happens in action validate(),
+ * not in grammar. Grammar only declares semantic constraints (traits).
+ * These tests confirm that the parser successfully parses commands regardless
+ * of entity visibility, portability, or location.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EnglishParser } from '../src/english-parser';
 import { ParserLanguageProvider } from '@sharpee/if-domain';
+
 /** Minimal entity shape used by mock world model in these tests */
 interface MockEntity {
   id: string;
@@ -21,68 +23,44 @@ interface MockEntity {
   has?: (traitType: string) => boolean;
 }
 
-// Mock world model
 class MockWorldModel {
   private entities: Map<string, MockEntity> = new Map();
   private locations: Map<string, Set<string>> = new Map();
   private inventories: Map<string, Set<string>> = new Map();
 
   constructor() {
-    // Set up test world
     const sword: MockEntity = {
-      id: 'sword',
-      name: 'sword',
+      id: 'sword', name: 'sword',
       attributes: { name: 'sword' },
-      visible: true,
-      portable: true
+      visible: true, portable: true
     };
 
     const guard: MockEntity = {
-      id: 'guard',
-      name: 'guard',
+      id: 'guard', name: 'guard',
       attributes: { name: 'guard' },
-      visible: true,
-      portable: false,
-      animate: true,
-      // Support trait checking for hasTrait() in grammar
+      visible: true, portable: false, animate: true,
       has: (traitType: string) => traitType === 'actor'
     };
 
-    const ball: MockEntity = {
-      id: 'ball',
-      name: 'ball',
-      attributes: { name: 'ball' },
-      visible: true,
-      portable: true
-    };
-
-    const window: MockEntity = {
-      id: 'window',
-      name: 'window',
-      attributes: { name: 'window' },
-      visible: true,
-      portable: false
-    };
-
     const hiddenKey: MockEntity = {
-      id: 'hidden_key',
-      name: 'key',
+      id: 'hidden_key', name: 'key',
       attributes: { name: 'key' },
-      visible: false,
-      portable: true
+      visible: false, portable: true
     };
 
-    // Add entities
+    const stove: MockEntity = {
+      id: 'stove', name: 'stove',
+      attributes: { name: 'stove' },
+      visible: true, portable: false
+    };
+
     this.entities.set('sword', sword);
     this.entities.set('guard', guard);
-    this.entities.set('ball', ball);
-    this.entities.set('window', window);
     this.entities.set('hidden_key', hiddenKey);
+    this.entities.set('stove', stove);
 
-    // Place entities in locations
-    this.locations.set('room', new Set(['sword', 'guard', 'ball', 'window', 'hidden_key']));
-    
-    // Player inventory
+    this.locations.set('room', new Set(['sword', 'guard', 'hidden_key']));
+    this.locations.set('kitchen', new Set(['stove']));
     this.inventories.set('player', new Set());
   }
 
@@ -96,52 +74,37 @@ class MockWorldModel {
 
   getVisibleEntities(actorId: string, location: string): MockEntity[] {
     const locationEntities = this.locations.get(location) || new Set();
-    const visibleEntities: MockEntity[] = [];
-
+    const carried = this.getCarriedEntities(actorId);
+    const visible: MockEntity[] = [...carried];
     for (const entityId of locationEntities) {
       const entity = this.entities.get(entityId);
-      if (entity && entity.visible) {
-        visibleEntities.push(entity);
-      }
+      if (entity && entity.visible) visible.push(entity);
     }
-
-    return visibleEntities;
+    return visible;
   }
 
   getTouchableEntities(actorId: string, location: string): MockEntity[] {
-    // For this mock, touchable = visible
     return this.getVisibleEntities(actorId, location);
   }
 
   getCarriedEntities(actorId: string): MockEntity[] {
     const inventory = this.inventories.get(actorId) || new Set();
     const carried: MockEntity[] = [];
-
     for (const entityId of inventory) {
       const entity = this.entities.get(entityId);
-      if (entity) {
-        carried.push(entity);
-      }
+      if (entity) carried.push(entity);
     }
-
     return carried;
   }
 
-  // Helper to move entity to inventory
   moveToInventory(entityId: string, actorId: string): void {
-    // Remove from all locations
-    for (const [, entities] of this.locations) {
-      entities.delete(entityId);
-    }
-    
-    // Add to inventory
+    for (const [, entities] of this.locations) entities.delete(entityId);
     const inventory = this.inventories.get(actorId) || new Set();
     inventory.add(entityId);
     this.inventories.set(actorId, inventory);
   }
 }
 
-// Mock language provider
 const mockLanguageProvider: ParserLanguageProvider = {
   getVerbs: () => [
     {
@@ -177,7 +140,7 @@ const mockLanguageProvider: ParserLanguageProvider = {
   getDirections: () => []
 };
 
-describe('Grammar Scope Constraints', () => {
+describe('Grammar Scope — Parser Does Not Enforce Scope', () => {
   let parser: EnglishParser;
   let world: MockWorldModel;
 
@@ -187,105 +150,38 @@ describe('Grammar Scope Constraints', () => {
     parser.setWorldContext(world, 'player', 'room');
   });
 
-  describe('grammar parses regardless of scope', () => {
-    // NOTE: Grammar no longer enforces scope. These tests verify that
-    // grammar parses successfully - scope validation happens in action validate().
+  it('should parse take for invisible entities (scope checked in action validate)', () => {
+    // hidden_key has visible: false, but grammar should still parse
+    const result = parser.parse('take key');
 
-    it('should match visible entities in take command', () => {
-      const result = parser.parse('take sword');
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.taking');
-        expect(result.value.structure.directObject?.text).toBe('sword');
-      }
-    });
-
-    it('should parse take command even for invisible entities (scope checked in action)', () => {
-      const result = parser.parse('take key');
-
-      // Grammar parses successfully - action validate() will check visibility
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.taking');
-        expect(result.value.structure.directObject?.text).toBe('key');
-      }
-    });
-
-    it('should match give command with animate recipient (trait constraint)', () => {
-      // Move sword to inventory first
-      world.moveToInventory('sword', 'player');
-
-      const result = parser.parse('give guard sword');
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.giving');
-        expect(result.value.structure.directObject?.text).toBe('sword');
-        expect(result.value.structure.indirectObject?.text).toBe('guard');
-      }
-    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.taking');
+      expect(result.value.structure.directObject?.text).toBe('key');
+    }
   });
 
-  describe('grammar parses regardless of carried status', () => {
-    // NOTE: Grammar no longer checks .carried() - action validate() does.
+  it('should parse take for non-portable entities (portability checked in action validate)', () => {
+    // guard has portable: false, but grammar should still parse
+    const result = parser.parse('take guard');
 
-    it('should parse give command even when item not carried (scope checked in action)', () => {
-      // Don't move sword to inventory - it's just visible in the room
-
-      const result = parser.parse('give guard sword');
-
-      // Grammar parses successfully - action validate() will check carried
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.giving');
-      }
-    });
-
-    it('should parse give command when item is carried', () => {
-      // Move sword to inventory
-      world.moveToInventory('sword', 'player');
-
-      const result = parser.parse('give guard sword');
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.giving');
-      }
-    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.taking');
+    }
   });
 
-  describe('grammar parses regardless of portable status', () => {
-    // NOTE: Grammar no longer checks .matching({ portable: true }).
-    // SceneryTrait blocking is handled in action validate().
+  it('should parse complex pattern with multiple entity slots', () => {
+    world.moveToInventory('sword', 'player');
 
-    it('should parse take command for any entity (portability checked in action)', () => {
-      const result1 = parser.parse('take sword');
-      expect(result1.success).toBe(true);
+    const result = parser.parse('throw sword at guard');
 
-      const result2 = parser.parse('take guard');
-      // Grammar parses successfully - action validate() checks SceneryTrait
-      expect(result2.success).toBe(true);
-      if (result2.success) {
-        expect(result2.value.action).toBe('if.action.taking');
-      }
-    });
-  });
-
-  describe('complex patterns with multiple constraints', () => {
-    it('should match throw command with carried item at visible target', () => {
-      // Move ball to inventory first
-      world.moveToInventory('ball', 'player');
-      
-      const result = parser.parse('throw ball at window');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.throwing');
-        expect(result.value.structure.directObject?.text).toBe('ball');
-        expect(result.value.structure.preposition?.text).toBe('at');
-        expect(result.value.structure.indirectObject?.text).toBe('window');
-      }
-    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.throwing');
+      expect(result.value.structure.directObject?.text).toBe('sword');
+      expect(result.value.structure.preposition?.text).toBe('at');
+      expect(result.value.structure.indirectObject?.text).toBe('guard');
+    }
   });
 });

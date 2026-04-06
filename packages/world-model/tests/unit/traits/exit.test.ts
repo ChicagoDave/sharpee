@@ -3,6 +3,11 @@
 import { IFEntity } from '../../../src/entities/if-entity';
 import { ExitTrait } from '../../../src/traits/exit/exitTrait';
 import { TraitType } from '../../../src/traits/trait-types';
+import { WorldModel } from '../../../src/world/WorldModel';
+import { RoomTrait } from '../../../src/traits/room/roomTrait';
+import { ContainerTrait } from '../../../src/traits/container/containerTrait';
+import { ActorTrait } from '../../../src/traits/actor/actorTrait';
+import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
 
 describe('ExitTrait', () => {
   describe('initialization', () => {
@@ -394,6 +399,85 @@ describe('ExitTrait', () => {
       expect(trait.command).toBe('sail boat');
       expect(trait.conditional).toBe(true);
       expect(trait.conditionId).toBe('has-boat');
+    });
+  });
+
+  describe('World State Behaviors', () => {
+    let world: WorldModel;
+
+    beforeEach(() => {
+      world = new WorldModel();
+    });
+
+    function createRoom(name: string): IFEntity {
+      const room = world.createEntity(name, 'room');
+      room.add(new RoomTrait());
+      room.add(new ContainerTrait());
+      room.add(new IdentityTrait({ name }));
+      return room;
+    }
+
+    it('should allow player movement via room exits', () => {
+      const kitchen = createRoom('Kitchen');
+      const pantry = createRoom('Pantry');
+
+      // Set up exit: kitchen north → pantry
+      const kitchenRoom = kitchen.get<RoomTrait>(TraitType.ROOM)!;
+      kitchenRoom.exits['north'] = { destination: pantry.id };
+
+      const player = world.createEntity('Player', 'actor');
+      player.add(new ActorTrait({ isPlayer: true }));
+      player.add(new ContainerTrait());
+      world.moveEntity(player.id, kitchen.id);
+
+      // PRECONDITION
+      expect(world.getLocation(player.id)).toBe(kitchen.id);
+
+      // ACT: move player to pantry (simulating going north)
+      const destination = kitchenRoom.exits['north']?.destination;
+      expect(destination).toBe(pantry.id);
+      world.moveEntity(player.id, destination!);
+
+      // POSTCONDITION
+      expect(world.getLocation(player.id)).toBe(pantry.id);
+      expect(world.getContents(kitchen.id).map(e => e.id)).not.toContain(player.id);
+      expect(world.getContents(pantry.id).map(e => e.id)).toContain(player.id);
+    });
+
+    it('should support bidirectional room connections', () => {
+      const hall = createRoom('Hall');
+      const garden = createRoom('Garden');
+
+      const hallRoom = hall.get<RoomTrait>(TraitType.ROOM)!;
+      const gardenRoom = garden.get<RoomTrait>(TraitType.ROOM)!;
+      hallRoom.exits['east'] = { destination: garden.id };
+      gardenRoom.exits['west'] = { destination: hall.id };
+
+      // Verify both directions resolve
+      expect(hallRoom.exits['east']?.destination).toBe(garden.id);
+      expect(gardenRoom.exits['west']?.destination).toBe(hall.id);
+
+      const player = world.createEntity('Player', 'actor');
+      player.add(new ActorTrait({ isPlayer: true }));
+      player.add(new ContainerTrait());
+      world.moveEntity(player.id, hall.id);
+
+      // Move east
+      world.moveEntity(player.id, garden.id);
+      expect(world.getLocation(player.id)).toBe(garden.id);
+
+      // Move west (back)
+      world.moveEntity(player.id, hall.id);
+      expect(world.getLocation(player.id)).toBe(hall.id);
+    });
+
+    it('should not have exit for undefined direction', () => {
+      const room = createRoom('Dead End');
+      const roomTrait = room.get<RoomTrait>(TraitType.ROOM)!;
+
+      // No exits defined
+      expect(roomTrait.exits['north']).toBeUndefined();
+      expect(roomTrait.exits['south']).toBeUndefined();
     });
   });
 });

@@ -6,6 +6,8 @@ import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
+import { WearableBehavior } from '../../../src/traits/wearable/wearableBehavior';
+import { createTestWearable, createTestActor } from '../../fixtures/test-entities';
 
 describe('WearableTrait', () => {
   let world: WorldModel;
@@ -445,13 +447,87 @@ describe('WearableTrait', () => {
       const trait = new WearableTrait({
         blocksSlots: blocks
       });
-      
+
       // Modify original array
       blocks.push('hair');
-      
+
       // Trait keeps the reference (not a copy)
       expect(trait.blocksSlots).toEqual(['face', 'ears', 'hair']);
       expect(trait.blocksSlots.length).toBe(3);
+    });
+  });
+
+  describe('World State Behaviors', () => {
+    it('should mutate worn state via WearableBehavior.wear', () => {
+      const player = createTestActor(world, 'Player', true);
+      const ring = createTestWearable(world, 'Gold Ring', { slot: 'finger' });
+      world.moveEntity(ring.id, player.id);
+
+      const wearable = ring.getTrait(TraitType.WEARABLE) as WearableTrait;
+
+      // PRECONDITION
+      expect(wearable.worn).toBe(false);
+      expect(wearable.wornBy).toBeUndefined();
+
+      // ACT
+      const result = WearableBehavior.wear(ring, player);
+
+      // POSTCONDITION
+      expect(result.success).toBe(true);
+      expect(wearable.worn).toBe(true);
+      expect(wearable.wornBy).toBe(player.id);
+    });
+
+    it('should mutate worn state via WearableBehavior.remove', () => {
+      const player = createTestActor(world, 'Player', true);
+      const hat = createTestWearable(world, 'Hat', { slot: 'head' });
+      world.moveEntity(hat.id, player.id);
+      WearableBehavior.wear(hat, player);
+
+      const wearable = hat.getTrait(TraitType.WEARABLE) as WearableTrait;
+
+      // PRECONDITION
+      expect(wearable.worn).toBe(true);
+
+      // ACT
+      const result = WearableBehavior.remove(hat, player);
+
+      // POSTCONDITION
+      expect(result.success).toBe(true);
+      expect(wearable.worn).toBe(false);
+      expect(wearable.wornBy).toBeUndefined();
+    });
+
+    it('should block wearing an already-worn item', () => {
+      const player = createTestActor(world, 'Player', true);
+      const gloves = createTestWearable(world, 'Gloves', { slot: 'hands' });
+      world.moveEntity(gloves.id, player.id);
+      WearableBehavior.wear(gloves, player);
+
+      // ACT: try to wear again
+      const result = WearableBehavior.wear(gloves, player);
+
+      // POSTCONDITION
+      expect(result.success).toBe(false);
+      expect(result.alreadyWorn).toBe(true);
+    });
+
+    it('should block removal by a different actor', () => {
+      const player = createTestActor(world, 'Player', true);
+      const npc = createTestActor(world, 'Guard', false);
+      const crown = createTestWearable(world, 'Crown', { slot: 'head' });
+      world.moveEntity(crown.id, player.id);
+      WearableBehavior.wear(crown, player);
+
+      // ACT: NPC tries to remove player's crown
+      const result = WearableBehavior.remove(crown, npc);
+
+      // POSTCONDITION: blocked, crown still worn by player
+      expect(result.success).toBe(false);
+      expect(result.wornByOther).toBe(player.id);
+      const wearable = crown.getTrait(TraitType.WEARABLE) as WearableTrait;
+      expect(wearable.worn).toBe(true);
+      expect(wearable.wornBy).toBe(player.id);
     });
   });
 });

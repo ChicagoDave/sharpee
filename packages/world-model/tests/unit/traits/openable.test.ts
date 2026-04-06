@@ -223,10 +223,61 @@ describe('OpenableTrait', () => {
 
     it('should maintain type constant', () => {
       expect(OpenableTrait.type).toBe(TraitType.OPENABLE);
-      
+
       const trait = new OpenableTrait();
       expect(trait.type).toBe(TraitType.OPENABLE);
       expect(trait.type).toBe(OpenableTrait.type);
+    });
+  });
+
+  describe('World State Behaviors', () => {
+    it('should block moveEntity into closed container', () => {
+      const chest = createTestOpenableContainer(world, 'chest', false);
+      const coin = world.createEntity('coin', 'item');
+
+      // PRECONDITION: chest is closed
+      const openable = chest.getTrait(TraitType.OPENABLE) as OpenableTrait;
+      expect(openable.isOpen).toBe(false);
+
+      // ACT: try to move coin into closed chest
+      const result = world.moveEntity(coin.id, chest.id);
+
+      // POSTCONDITION: move rejected
+      expect(result).toBe(false);
+      expect(world.getLocation(coin.id)).not.toBe(chest.id);
+    });
+
+    it('should allow moveEntity into open container', () => {
+      const chest = createTestOpenableContainer(world, 'chest', true);
+      const coin = world.createEntity('coin', 'item');
+
+      // PRECONDITION: chest is open
+      const openable = chest.getTrait(TraitType.OPENABLE) as OpenableTrait;
+      expect(openable.isOpen).toBe(true);
+
+      // ACT
+      const result = world.moveEntity(coin.id, chest.id);
+
+      // POSTCONDITION
+      expect(result).toBe(true);
+      expect(world.getLocation(coin.id)).toBe(chest.id);
+    });
+
+    it('should not eject contents when container is closed after placement', () => {
+      const chest = createTestOpenableContainer(world, 'chest', true);
+      const coin = world.createEntity('coin', 'item');
+      world.moveEntity(coin.id, chest.id);
+
+      // PRECONDITION
+      expect(world.getLocation(coin.id)).toBe(chest.id);
+
+      // ACT: close the chest
+      const openable = chest.getTrait(TraitType.OPENABLE) as OpenableTrait;
+      openable.isOpen = false;
+
+      // POSTCONDITION: coin remains inside
+      expect(world.getLocation(coin.id)).toBe(chest.id);
+      expect(world.getContents(chest.id).map(e => e.id)).toContain(coin.id);
     });
   });
 });

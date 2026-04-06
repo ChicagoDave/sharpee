@@ -283,9 +283,99 @@ describe('EnglishLanguageProvider', () => {
     it('should have valid examples', () => {
       const verbOnly = patterns.find(p => p.name === 'verb_only');
       expect(verbOnly?.example).toBe('look');
-      
+
       const verbNoun = patterns.find(p => p.name === 'verb_noun');
       expect(verbNoun?.example).toBe('take ball');
+    });
+  });
+
+  describe('Pluralization - Case Preservation', () => {
+    it('should preserve all uppercase for irregular plurals', () => {
+      expect(provider.pluralize('CHILD')).toBe('CHILDREN');
+      expect(provider.pluralize('MOUSE')).toBe('MICE');
+      expect(provider.pluralize('FOOT')).toBe('FEET');
+    });
+
+    it('should preserve title case for irregular plurals', () => {
+      expect(provider.pluralize('Child')).toBe('Children');
+      expect(provider.pluralize('Mouse')).toBe('Mice');
+      expect(provider.pluralize('Foot')).toBe('Feet');
+    });
+
+    it('should handle uppercase -y to -ies conversion', () => {
+      expect(provider.pluralize('STORY')).toBe('STORIES');
+      expect(provider.pluralize('CITY')).toBe('CITIES');
+    });
+
+    it('should handle -f to -ves conversion', () => {
+      expect(provider.pluralize('leaf')).toBe('leaves');
+      expect(provider.pluralize('wolf')).toBe('wolves');
+      expect(provider.pluralize('half')).toBe('halves');
+      expect(provider.pluralize('calf')).toBe('calves');
+    });
+  });
+
+  describe('Text Processing Pipeline', () => {
+    it('should lemmatize and identify ignore words', () => {
+      const inputs = [
+        { text: 'please taking boxes', expectedLemma: 'tak', expectedIgnore: true },
+        { text: 'just dropped keys', expectedLemma: 'drop', expectedIgnore: true },
+        { text: 'really examining doors', expectedLemma: 'examin', expectedIgnore: true },
+        { text: 'looking north', expectedLemma: 'look', expectedIgnore: false }
+      ];
+
+      inputs.forEach(({ text, expectedLemma, expectedIgnore }) => {
+        const words = text.split(' ');
+        const hasIgnoreWord = words.some(word => provider.isIgnoreWord(word));
+        const lemmatized = words.map(word => provider.lemmatize(word));
+
+        expect(hasIgnoreWord).toBe(expectedIgnore);
+        expect(lemmatized).toContain(expectedLemma);
+      });
+    });
+
+    it('should handle complex text transformations', () => {
+      const singulars = ['mouse', 'child', 'box', 'story'];
+      singulars.forEach(singular => {
+        const plural = provider.pluralize(singular);
+        const lemmatized = provider.lemmatize(plural);
+        expect(lemmatized).toBe(singular);
+      });
+    });
+
+    it('should format lists with proper articles', () => {
+      const items = ['apple', 'orange', 'umbrella'];
+      const withArticles = items.map(item => {
+        const article = provider.getIndefiniteArticle(item);
+        return `${article} ${item}`;
+      });
+
+      const formatted = provider.formatList(withArticles);
+      expect(formatted).toBe('an apple, an orange, and an umbrella');
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle empty inputs gracefully', () => {
+      expect(provider.lemmatize('')).toBe('');
+      expect(provider.pluralize('')).toBe('s');
+      expect(provider.getIndefiniteArticle('')).toBe('a');
+      expect(provider.expandAbbreviation('')).toBeNull();
+      expect(provider.formatList([])).toBe('');
+      expect(provider.isIgnoreWord('')).toBe(false);
+    });
+
+    it('should handle special characters', () => {
+      expect(provider.lemmatize('test-ing')).toBe('test-ing');
+      expect(provider.pluralize('test-case')).toBe('test-cases');
+      expect(provider.isIgnoreWord('test@#$')).toBe(false);
+    });
+
+    it('should handle very long inputs', () => {
+      const longWord = 'a'.repeat(100);
+      expect(() => provider.lemmatize(longWord)).not.toThrow();
+      expect(() => provider.pluralize(longWord)).not.toThrow();
+      expect(() => provider.getIndefiniteArticle(longWord)).not.toThrow();
     });
   });
 });

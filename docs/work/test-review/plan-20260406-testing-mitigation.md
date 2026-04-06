@@ -440,17 +440,17 @@ No test verifies the defining characteristic of meta-commands:
 3. Regular command DOES increment turn counter
 4. Regular command IS added to command history
 
-### 7G. Forge world inspection
+### 7G. Forge world inspection — SKIPPED
 
-12/18 forge tests only check `toBeInstanceOf(ForgeStory)`. Add:
-1. Built story has expected rooms (count, IDs)
-2. Built story has expected exits (connectivity)
-3. Built story has expected items (properties, portability)
-4. Processing "look" produces expected room description
+~~12/18 forge tests only check `toBeInstanceOf(ForgeStory)`.~~
 
-### 7H. Engine-scheduler integration
+**Skipped**: Forge package will be superseded by the Lantern project. No vitest config exists (tests don't run). Not worth investing in a deprecated package.
 
-Both are well-tested in isolation but their interaction is untested:
+### 7H. Engine-scheduler integration — DEFERRED
+
+Both are well-tested in isolation (engine: 163 tests, scheduler: 24 tests) but their interaction is untested. Requires full game engine + scheduler plugin setup — complex integration test.
+
+Deferred to a dedicated integration testing session:
 1. Daemon runs during engine turn
 2. Fuse counts down during engine turns
 3. Fuse triggers at zero
@@ -460,7 +460,117 @@ Both are well-tested in isolation but their interaction is untested:
 
 ---
 
-## Verification
+## Phase 8: Test Grading — Mutation Verification Infrastructure
+
+**Goal**: Every test in the suite must be proven to catch real bugs, not just pass. Two tools: a fast static grader (CI) and a mutation tester (nightly).
+
+**Estimated effort**: 2 sessions
+**Risk**: Low — tooling only, no production code changes
+
+**Principle**: A test that still passes when you break the source code is worse than no test. It creates false confidence. The "dropping bug" proved this — execute phases that didn't call `world.moveEntity()` passed all event-based tests.
+
+### 8A. Static Test Grader (`grade-tests.sh`)
+
+A script that classifies every test by assertion quality. Runs in <10 seconds, fails CI if quality drops below thresholds.
+
+**Grading categories:**
+
+| Grade | Meaning | Detection |
+|-------|---------|-----------|
+| **RED** | Dead (zero assertions), tautological (`expect(true).toBe(true)`), or tests mocks instead of real code | Zero `expect()` count, tautology patterns, `vi.fn()` on primary subject |
+| **YELLOW** | Test passes but doesn't verify the important thing: property echo (set then read back, no operation), event-only (asserts on events after `execute()` but never checks world state) | Heuristic: no `getLocation\|getContents\|getTrait\|\.isOpen\|\.isLocked` after `execute(`; set-then-assert with nothing in between |
+| **GREEN** | Exercises real code path, asserts on resulting world state or meaningful output | Has operation + state/output assertion |
+
+**Output format:**
+```
+=== Test Grade Report ===
+Files scanned: 173
+Tests graded: 1170
+Grade distribution:
+  🟢 GREEN:  847  (72%)
+  🟡 YELLOW: 323  (28%)
+  🔴 RED:      0  ( 0%)
+
+YELLOW files (need world-state assertions):
+  packages/stdlib/tests/unit/actions/wearing-golden.test.ts
+    Line 45: event-only assertion after execute()
+    Line 112: property echo (no operation)
+```
+
+**CI integration:**
+- Fails if any RED test exists
+- Warns on YELLOW tests (tracked as tech debt, target: <10%)
+- Reports grade distribution for trend tracking
+
+**Implementation**: TypeScript script using a lightweight AST parser (e.g., `ts-morph`) or regex-based for speed. Lives at `scripts/grade-tests.ts`, runnable via `pnpm grade-tests`.
+
+### 8B. Targeted Stryker Mutation Testing
+
+Install and configure `@stryker-mutator/core` + `@stryker-mutator/vitest-runner` scoped to the modules where silent mutation failures are most dangerous.
+
+**Mutation scope** (where state mutations live):
+- `packages/stdlib/src/actions/standard/**/execute.ts` — action execute phases
+- `packages/world-model/src/world/WorldModel.ts` — moveEntity, canMoveEntity
+- `packages/world-model/src/behaviors/**/*.ts` — trait behaviors
+
+**Excluded from mutation** (low value, high cost):
+- `stories/` — story content, not engine logic
+- `packages/lang-en-us/` — string templates
+- `packages/parser-en-us/` — grammar patterns (tested by integration tests)
+- Test files themselves
+
+**Configuration** (`stryker.config.json` at repo root):
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-core.json",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.workspace.ts"
+  },
+  "mutate": [
+    "packages/stdlib/src/actions/standard/**/execute.ts",
+    "packages/world-model/src/world/WorldModel.ts",
+    "packages/world-model/src/behaviors/**/*.ts"
+  ],
+  "reporters": ["html", "clear-text", "progress"],
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 50
+  }
+}
+```
+
+**Run as**: `pnpm stryker run` — estimated 15-45 minutes for the scoped set.
+
+**CI integration**: Nightly GitHub Actions job. Posts mutation score to PR comments when score drops below threshold. Not blocking on every push (too slow).
+
+### 8C. Remediation Pass
+
+After both tools are running, do a single pass through flagged tests:
+
+1. Fix or delete all RED tests (should be zero after Phases 1-5, but verify)
+2. Upgrade YELLOW tests to GREEN by adding world-state assertions
+3. Investigate survived Stryker mutants — each one is a test that doesn't catch a real bug
+4. Document any intentional exceptions (e.g., signal actions like `talking` that are correctly zero-mutation)
+
+### 8D. Ongoing Enforcement
+
+Add to the project's definition of done:
+
+- **New action tests**: Must be GREEN (enforced by `grade-tests.sh`)
+- **New trait behavioral tests**: Must exercise through WorldModel operations, not just property storage
+- **Stryker score**: Must not decrease on merge to main (enforced by nightly job threshold)
+- **`grade-tests.sh`**: Runs in pre-commit hook or CI, zero RED allowed
+
+**Phase 8 exit criteria**: 
+- `grade-tests.sh` runs, produces report, integrated into CI
+- Stryker configured and producing mutation scores for scoped modules
+- Zero RED tests in the suite
+- YELLOW tests either upgraded to GREEN or documented as intentional exceptions (target: <10% of suite)
+- Mutation score ≥60% for stdlib actions, ≥70% for WorldModel
+
+---
 
 After all 7 phases are complete, run the following to verify:
 
@@ -500,6 +610,12 @@ Phase 5 (consolidation)      Phase 4 (fix skipped tests)
     +-----------> Phase 6 (trait behavioral tests)
                        |
                   Phase 7 (coverage gaps)
+                       |
+                  Phase 8 (test grading infrastructure)
+                    8A: grade-tests.sh (static grader)
+                    8B: Stryker mutation testing (nightly)
+                    8C: Remediation pass (upgrade YELLOW → GREEN)
+                    8D: Ongoing enforcement (CI + hooks)
 ```
 
-Phases 1-2 must go first. Phases 3-5 can run in parallel. Phase 6 depends on cleanup being done. Phase 7 is the long tail.
+Phases 1-2 must go first. Phases 3-5 can run in parallel. Phase 6 depends on cleanup being done. Phase 7 is the long tail. Phase 8 runs after all tests exist — it grades and enforces quality on the complete suite.

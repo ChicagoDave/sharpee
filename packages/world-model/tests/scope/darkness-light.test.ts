@@ -13,6 +13,7 @@ import { LightSourceTrait } from '../../src/traits/light-source/lightSourceTrait
 import { SwitchableTrait } from '../../src/traits/switchable/switchableTrait';
 import { ActorTrait } from '../../src/traits/actor/actorTrait';
 import { SceneryTrait } from '../../src/traits/scenery/sceneryTrait';
+import { OpenableTrait } from '../../src/traits/openable/openableTrait';
 
 describe('Darkness and Light Source Scope Rules', () => {
   let world: WorldModel;
@@ -295,6 +296,76 @@ describe('Darkness and Light Source Scope Rules', () => {
     
     // But not the inscription (too small/faint)
     expect(visibleIds).not.toContain(inscription.id);
+  });
+
+  it('should lose visibility when light source is switched off', () => {
+    world.moveEntity(player.id, darkCave.id);
+    world.moveEntity(lantern.id, player.id); // Carry lit lantern
+
+    // PRECONDITION: can see treasure
+    let visible = world.getVisible(player.id);
+    expect(visible.map(e => e.id)).toContain(treasure.id);
+
+    // ACT: switch off the lantern
+    const lanternLight = lantern.get<LightSourceTrait>('lightSource');
+    if (lanternLight) lanternLight.isLit = false;
+
+    // POSTCONDITION: can no longer see treasure
+    visible = world.getVisible(player.id);
+    expect(visible.map(e => e.id)).not.toContain(treasure.id);
+  });
+
+  it('should not illuminate room when light source is inside closed container', () => {
+    // Create a closed box
+    const box = world.createEntity('box', 'container');
+    box.add(new ContainerTrait());
+    box.add(new OpenableTrait({ isOpen: false }));
+
+    // Put lit lantern inside the closed box
+    // Use author model to bypass open check
+    world.moveEntity(box.id, darkCave.id);
+    // Manually place lantern in box via spatial index (bypassing open check)
+    world.moveEntity(lantern.id, darkCave.id); // First put in room
+    // Open box, put lantern in, close box
+    box.get('openable')!.isOpen = true;
+    world.moveEntity(lantern.id, box.id);
+    box.get('openable')!.isOpen = false;
+
+    world.moveEntity(player.id, darkCave.id);
+
+    // The scope rule checks room contents — lantern is inside box, not directly in room
+    // And checks carried items — player doesn't have it
+    const visible = world.getVisible(player.id);
+    const visibleIds = visible.map(e => e.id);
+
+    // Should NOT see treasure — light is trapped in closed box
+    expect(visibleIds).not.toContain(treasure.id);
+  });
+
+  it('should illuminate with one of multiple light sources when the other is off', () => {
+    world.moveEntity(player.id, darkCave.id);
+    world.moveEntity(torch.id, player.id);   // unlit torch
+    world.moveEntity(lantern.id, player.id);  // lit lantern
+
+    // PRECONDITION: can see treasure (lantern is lit)
+    let visible = world.getVisible(player.id);
+    expect(visible.map(e => e.id)).toContain(treasure.id);
+
+    // Turn off lantern, torch still off
+    const lanternLight = lantern.get<LightSourceTrait>('lightSource');
+    if (lanternLight) lanternLight.isLit = false;
+
+    // POSTCONDITION: can't see treasure (both off)
+    visible = world.getVisible(player.id);
+    expect(visible.map(e => e.id)).not.toContain(treasure.id);
+
+    // Turn on torch
+    const torchLight = torch.get<LightSourceTrait>('lightSource');
+    if (torchLight) torchLight.isLit = true;
+
+    // POSTCONDITION: can see treasure again (torch is lit)
+    visible = world.getVisible(player.id);
+    expect(visible.map(e => e.id)).toContain(treasure.id);
   });
 
   it('should handle underground darkness differently', () => {
