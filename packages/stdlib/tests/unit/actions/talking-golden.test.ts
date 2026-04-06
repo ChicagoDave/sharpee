@@ -374,15 +374,15 @@ describe('talkingAction (Golden Pattern)', () => {
           state: 'active'
         }
       });
-      
+
       world.moveEntity(npc.id, room.id);
-      
+
       const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING, {
         entity: npc
       }));
-      
+
       const events = executeWithValidation(talkingAction, context);
-      
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
@@ -390,6 +390,50 @@ describe('talkingAction (Golden Pattern)', () => {
           expect(event.entities.location).toBe(room.id);
         }
       });
+    });
+  });
+
+  /**
+   * World State Mutations
+   *
+   * The talking action is a signal action — it reads conversation state but
+   * performs zero world mutations. hasGreeted, topics, and other conversation
+   * state are read-only during execute. Any conversation state changes must
+   * be handled by event handlers or story-specific logic.
+   */
+  describe('World State Mutations', () => {
+    test('should NOT mutate conversation state after talking', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('town elder', 'actor');
+      const conversation = {
+        hasGreeted: false,
+        personality: 'formal',
+        topics: { quest: 'Find the sword' }
+      };
+      npc.add({
+        type: TraitType.ACTOR,
+        customProperties: { conversation }
+      });
+      world.moveEntity(npc.id, room.id);
+
+      // VERIFY PRECONDITION: conversation state before talking
+      const actorBefore = npc.get(TraitType.ACTOR);
+      const convBefore = actorBefore.customProperties?.conversation;
+      expect(convBefore?.hasGreeted).toBe(false);
+
+      const command = createCommand(IFActions.TALKING, { entity: npc });
+      const context = createRealTestContext(talkingAction, world, command);
+
+      const validation = talkingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      talkingAction.execute(context);
+
+      // VERIFY POSTCONDITION: conversation state unchanged
+      const actorAfter = npc.get(TraitType.ACTOR);
+      const convAfter = actorAfter.customProperties?.conversation;
+      expect(convAfter?.hasGreeted).toBe(false);
+      expect(convAfter?.personality).toBe('formal');
+      expect(convAfter?.topics).toEqual({ quest: 'Find the sword' });
     });
   });
 });

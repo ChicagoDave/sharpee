@@ -16,6 +16,7 @@ import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
+  expectTraitValue,
   TestData,
   createCommand,
   setupBasicWorld,
@@ -446,14 +447,14 @@ describe('eatingAction (Golden Pattern)', () => {
           type: TraitType.EDIBLE
         }
       });
-      
+
       const command = createCommand(IFActions.EATING, {
         entity: item
       });
       const context = createRealTestContext(eatingAction, world, command);
-      
+
       const events = executeWithValidation(eatingAction, context);
-      
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
@@ -461,6 +462,100 @@ describe('eatingAction (Golden Pattern)', () => {
           expect(event.entities.location).toBe(room.id);
         }
       });
+    });
+  });
+
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the eating action actually mutates world state,
+   * not just emits events. Servings must decrement and consumption must be tracked.
+   */
+  describe('World State Mutations', () => {
+    test('should decrement servings after eating single-serving item', () => {
+      const { world, item } = TestData.withInventoryItem('ham sandwich', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 1
+        }
+      });
+
+      // VERIFY PRECONDITION: 1 serving
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 1);
+
+      const command = createCommand(IFActions.EATING, { entity: item });
+      const context = createRealTestContext(eatingAction, world, command);
+
+      const validation = eatingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      eatingAction.execute(context);
+
+      // VERIFY POSTCONDITION: 0 servings
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 0);
+    });
+
+    test('should decrement servings for multi-serving food', () => {
+      const { world, item } = TestData.withInventoryItem('apple pie', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 3
+        }
+      });
+
+      // VERIFY PRECONDITION: 3 servings
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 3);
+
+      const command = createCommand(IFActions.EATING, { entity: item });
+      const context = createRealTestContext(eatingAction, world, command);
+
+      const validation = eatingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      eatingAction.execute(context);
+
+      // VERIFY POSTCONDITION: 2 servings (decremented by 1)
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 2);
+    });
+
+    test('should track servings correctly over multiple eat actions', () => {
+      const { world, item } = TestData.withInventoryItem('pizza', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 3
+        }
+      });
+
+      const command = createCommand(IFActions.EATING, { entity: item });
+
+      // First eat: 3 → 2
+      const ctx1 = createRealTestContext(eatingAction, world, command);
+      eatingAction.validate(ctx1);
+      eatingAction.execute(ctx1);
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 2);
+
+      // Second eat: 2 → 1
+      const ctx2 = createRealTestContext(eatingAction, world, command);
+      eatingAction.validate(ctx2);
+      eatingAction.execute(ctx2);
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 1);
+
+      // Third eat: 1 → 0
+      const ctx3 = createRealTestContext(eatingAction, world, command);
+      eatingAction.validate(ctx3);
+      eatingAction.execute(ctx3);
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 0);
+    });
+
+    test('should NOT change servings when item is not edible', () => {
+      const { world, object } = TestData.withObject('small rock');
+
+      const command = createCommand(IFActions.EATING, { entity: object });
+      const context = createRealTestContext(eatingAction, world, command);
+
+      const validation = eatingAction.validate(context);
+      expect(validation.valid).toBe(false);
+
+      // VERIFY POSTCONDITION: no edible trait, no mutation possible
+      expect(object.get(TraitType.EDIBLE)).toBeUndefined();
     });
   });
 });

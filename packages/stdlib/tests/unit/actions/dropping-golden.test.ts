@@ -17,6 +17,7 @@ import {
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
+  expectLocation,
   TestData,
   createCommand
 } from '../../test-utils';
@@ -377,14 +378,14 @@ describe('droppingAction (Golden Pattern)', () => {
   describe('Event Structure Validation', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room, item } = TestData.withInventoryItem('gold coin');
-      
+
       const command = createCommand(IFActions.DROPPING, {
         entity: item
       });
       const context = createRealTestContext(droppingAction, world, command);
-      
+
       const events = executeWithValidation(droppingAction, context);
-      
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
@@ -392,6 +393,133 @@ describe('droppingAction (Golden Pattern)', () => {
           expect(event.entities.location).toBe(room.id);
         }
       });
+    });
+  });
+
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the dropping action actually mutates world state,
+   * not just emits events. This catches bugs like the "dropping bug" where
+   * actions appeared to work (good messages) but didn't actually change state.
+   */
+  describe('World State Mutations', () => {
+    test('should move item from player inventory to room after drop', () => {
+      const { world, player, room, item } = TestData.withInventoryItem('red ball');
+
+      // VERIFY PRECONDITION: item is in player inventory
+      expectLocation(world, item.id, player.id);
+
+      const command = createCommand(IFActions.DROPPING, {
+        entity: item
+      });
+      const context = createRealTestContext(droppingAction, world, command);
+
+      const validation = droppingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      droppingAction.execute(context);
+
+      // VERIFY POSTCONDITION: item is now in the room
+      expectLocation(world, item.id, room.id);
+    });
+
+    test('should move item from player to container when dropping inside open container', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const box = world.createEntity('wooden box', 'object');
+      box.add({ type: TraitType.CONTAINER });
+      box.add({ type: TraitType.OPENABLE, isOpen: true });
+      world.moveEntity(box.id, room.id);
+
+      const gem = world.createEntity('ruby', 'object');
+      world.moveEntity(player.id, box.id);
+      world.moveEntity(gem.id, player.id);
+
+      // VERIFY PRECONDITION: gem is in player inventory
+      expectLocation(world, gem.id, player.id);
+
+      const command = createCommand(IFActions.DROPPING, {
+        entity: gem
+      });
+      const context = createRealTestContext(droppingAction, world, command);
+
+      const validation = droppingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      droppingAction.execute(context);
+
+      // VERIFY POSTCONDITION: gem is now in the box
+      expectLocation(world, gem.id, box.id);
+    });
+
+    test('should move item from player to supporter when dropping on supporter', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const table = world.createEntity('oak table', 'object');
+      table.add({ type: TraitType.SUPPORTER });
+      world.moveEntity(table.id, room.id);
+
+      const book = world.createEntity('old book', 'object');
+      world.moveEntity(player.id, table.id);
+      world.moveEntity(book.id, player.id);
+
+      // VERIFY PRECONDITION: book is in player inventory
+      expectLocation(world, book.id, player.id);
+
+      const command = createCommand(IFActions.DROPPING, {
+        entity: book
+      });
+      const context = createRealTestContext(droppingAction, world, command);
+
+      const validation = droppingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      droppingAction.execute(context);
+
+      // VERIFY POSTCONDITION: book is now on the table
+      expectLocation(world, book.id, table.id);
+    });
+
+    test('should NOT move item when not held by player', () => {
+      const { world, player, room, object } = TestData.withObject('red ball');
+
+      // VERIFY PRECONDITION: item is in the room, not held
+      expectLocation(world, object.id, room.id);
+
+      const command = createCommand(IFActions.DROPPING, {
+        entity: object
+      });
+      const context = createRealTestContext(droppingAction, world, command);
+
+      const validation = droppingAction.validate(context);
+      expect(validation.valid).toBe(false);
+
+      // VERIFY POSTCONDITION: item is still in the room (unchanged)
+      expectLocation(world, object.id, room.id);
+    });
+
+    test('should NOT move item when it is worn', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const hat = world.createEntity('blue hat', 'object');
+      hat.add({
+        type: TraitType.WEARABLE,
+        worn: true,
+        slot: 'head'
+      });
+      world.moveEntity(hat.id, player.id);
+
+      // VERIFY PRECONDITION: hat is in player inventory
+      expectLocation(world, hat.id, player.id);
+
+      const command = createCommand(IFActions.DROPPING, {
+        entity: hat
+      });
+      const context = createRealTestContext(droppingAction, world, command);
+
+      const validation = droppingAction.validate(context);
+      expect(validation.valid).toBe(false);
+
+      // VERIFY POSTCONDITION: hat is still in player inventory (unchanged)
+      expectLocation(world, hat.id, player.id);
     });
   });
 });

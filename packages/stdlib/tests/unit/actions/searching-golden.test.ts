@@ -19,6 +19,7 @@ import {
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
+  expectTraitValue,
   TestData,
   createCommand
 } from '../../test-utils';
@@ -518,14 +519,103 @@ describe('searchingAction (Golden Pattern)', () => {
 
     test('should include location as target when searching room', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING));
-      
+
       const events = executeWithValidation(searchingAction, context);
-      
+
       const searchEvent = events.find(e => e.type === 'if.event.searched');
       expect(searchEvent?.data.target).toBe(room.id);
       expect(searchEvent?.data.searchingLocation).toBe(true);
+    });
+  });
+
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the searching action actually reveals concealed items
+   * by setting their identity.concealed flag to false.
+   */
+  describe('World State Mutations', () => {
+    test('should set concealed to false on hidden item after searching container', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const desk = world.createEntity('oak desk', 'object');
+      desk.add({ type: TraitType.CONTAINER, capacity: 5 });
+      world.moveEntity(desk.id, room.id);
+
+      const key = world.createEntity('secret key', 'object');
+      key.add({
+        type: TraitType.IDENTITY,
+        name: 'secret key',
+        concealed: true
+      });
+      world.moveEntity(key.id, desk.id);
+
+      // VERIFY PRECONDITION: key is concealed
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', true);
+
+      const command = createCommand(IFActions.SEARCHING, { entity: desk });
+      const context = createRealTestContext(searchingAction, world, command);
+
+      const validation = searchingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      searchingAction.execute(context);
+
+      // VERIFY POSTCONDITION: key is no longer concealed
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', false);
+    });
+
+    test('should reveal multiple concealed items after searching', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const shelf = world.createEntity('dusty shelf', 'object');
+      shelf.add({ type: TraitType.SUPPORTER });
+      world.moveEntity(shelf.id, room.id);
+
+      const lever = world.createEntity('hidden lever', 'object');
+      lever.add({ type: TraitType.IDENTITY, name: 'hidden lever', concealed: true });
+      world.moveEntity(lever.id, shelf.id);
+
+      const key = world.createEntity('brass key', 'object');
+      key.add({ type: TraitType.IDENTITY, name: 'brass key', concealed: true });
+      world.moveEntity(key.id, shelf.id);
+
+      // VERIFY PRECONDITION: both items concealed
+      expectTraitValue(lever, TraitType.IDENTITY, 'concealed', true);
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', true);
+
+      const command = createCommand(IFActions.SEARCHING, { entity: shelf });
+      const context = createRealTestContext(searchingAction, world, command);
+
+      const validation = searchingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      searchingAction.execute(context);
+
+      // VERIFY POSTCONDITION: both items revealed
+      expectTraitValue(lever, TraitType.IDENTITY, 'concealed', false);
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', false);
+    });
+
+    test('should NOT change state of non-concealed items', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const box = world.createEntity('open box', 'object');
+      box.add({ type: TraitType.CONTAINER });
+      world.moveEntity(box.id, room.id);
+
+      const coin = world.createEntity('gold coin', 'object');
+      world.moveEntity(coin.id, box.id);
+
+      const command = createCommand(IFActions.SEARCHING, { entity: box });
+      const context = createRealTestContext(searchingAction, world, command);
+
+      const validation = searchingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      searchingAction.execute(context);
+
+      // No identity trait to change — coin was never concealed
+      expect(coin.get(TraitType.IDENTITY)?.concealed).toBeFalsy();
     });
   });
 });

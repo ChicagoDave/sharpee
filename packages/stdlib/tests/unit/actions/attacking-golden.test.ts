@@ -19,6 +19,7 @@ import {
   createRealTestContext,
   expectEvent,
   executeWithValidation,
+  expectTraitValue,
   createCommand,
   setupBasicWorld
 } from '../../test-utils';
@@ -148,6 +149,79 @@ describe('attackingAction (Golden Pattern)', () => {
         target: gate.id,
         targetName: 'iron gate'
       });
+    });
+  });
+
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the attacking action actually mutates world state,
+   * not just emits events.
+   */
+  describe('World State Mutations', () => {
+    test('should set broken flag to true on breakable object after attack', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const vase = world.createEntity('ceramic vase', EntityType.OBJECT);
+      vase.add({ type: TraitType.BREAKABLE, broken: false });
+      world.moveEntity(vase.id, room.id);
+
+      // VERIFY PRECONDITION: vase is not broken
+      expectTraitValue(vase, TraitType.BREAKABLE, 'broken', false);
+
+      const command = createCommand(IFActions.ATTACKING, { entity: vase });
+      const context = createRealTestContext(attackingAction, world, command);
+
+      const validation = attackingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      attackingAction.execute(context);
+
+      // VERIFY POSTCONDITION: vase is now broken
+      expectTraitValue(vase, TraitType.BREAKABLE, 'broken', true);
+    });
+
+    test('should reduce hitPoints on destructible object after attack', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const wall = world.createEntity('cracked wall', EntityType.OBJECT);
+      wall.add({
+        type: TraitType.DESTRUCTIBLE,
+        hitPoints: 3,
+        maxHitPoints: 3,
+        armor: 0,
+        invulnerable: false,
+        requiresWeapon: false
+      });
+      world.moveEntity(wall.id, room.id);
+
+      // VERIFY PRECONDITION: wall has full hit points
+      expectTraitValue(wall, TraitType.DESTRUCTIBLE, 'hitPoints', 3);
+
+      const command = createCommand(IFActions.ATTACKING, { entity: wall });
+      const context = createRealTestContext(attackingAction, world, command);
+
+      const validation = attackingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      attackingAction.execute(context);
+
+      // VERIFY POSTCONDITION: hitPoints reduced (unarmed does 1 damage by default)
+      const destructible = wall.get(TraitType.DESTRUCTIBLE);
+      expect(destructible.hitPoints).toBeLessThan(3);
+    });
+
+    test('should NOT mutate non-attackable entity', () => {
+      const { world, player } = setupBasicWorld();
+
+      // VERIFY PRECONDITION: player has no breakable/destructible traits
+      expect(player.get(TraitType.BREAKABLE)).toBeUndefined();
+      expect(player.get(TraitType.DESTRUCTIBLE)).toBeUndefined();
+
+      const command = createCommand(IFActions.ATTACKING, { entity: player });
+      const context = createRealTestContext(attackingAction, world, command);
+
+      // Self-attack should be blocked at validation
+      const validation = attackingAction.validate(context);
+      expect(validation.valid).toBe(false);
     });
   });
 });

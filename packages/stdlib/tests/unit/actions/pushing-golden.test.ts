@@ -19,6 +19,7 @@ import {
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
+  expectTraitValue,
   TestData,
   createCommand
 } from '../../test-utils';
@@ -483,15 +484,15 @@ describe('pushingAction (Golden Pattern)', () => {
         type: TraitType.SWITCHABLE,
         isOn: false
       });
-      
+
       world.moveEntity(button.id, room.id);
-      
+
       const command = createCommand(
         IFActions.PUSHING,
         { entity: button }
       );
       const context = createRealTestContext(pushingAction, world, command);
-      
+
       const events = executeWithValidation(pushingAction, context);
 
       events.forEach(event => {
@@ -501,6 +502,83 @@ describe('pushingAction (Golden Pattern)', () => {
           expect(event.entities.location).toBe(room.id);
         }
       });
+    });
+  });
+
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the pushing action actually mutates world state,
+   * not just emits events. The key mutation is SwitchableBehavior.toggle().
+   */
+  describe('World State Mutations', () => {
+    test('should toggle SwitchableTrait.isOn from false to true after pushing button', () => {
+      const { world, player, room } = setupBasicWorld();
+      const button = world.createEntity('red button', 'object');
+      button.add({
+        type: TraitType.PUSHABLE,
+        pushType: 'button'
+      });
+      button.add({
+        type: TraitType.SWITCHABLE,
+        isOn: false
+      });
+      world.moveEntity(button.id, room.id);
+
+      // VERIFY PRECONDITION: switch is off
+      expectTraitValue(button, TraitType.SWITCHABLE, 'isOn', false);
+
+      const command = createCommand(IFActions.PUSHING, { entity: button });
+      const context = createRealTestContext(pushingAction, world, command);
+
+      const validation = pushingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      pushingAction.execute(context);
+
+      // VERIFY POSTCONDITION: switch is now on
+      expectTraitValue(button, TraitType.SWITCHABLE, 'isOn', true);
+    });
+
+    test('should toggle SwitchableTrait.isOn from true to false after pushing switch', () => {
+      const { world, player, room } = setupBasicWorld();
+      const lightSwitch = world.createEntity('light switch', 'object');
+      lightSwitch.add({
+        type: TraitType.PUSHABLE,
+        pushType: 'button'
+      });
+      lightSwitch.add({
+        type: TraitType.SWITCHABLE,
+        isOn: true
+      });
+      world.moveEntity(lightSwitch.id, room.id);
+
+      // VERIFY PRECONDITION: switch is on
+      expectTraitValue(lightSwitch, TraitType.SWITCHABLE, 'isOn', true);
+
+      const command = createCommand(IFActions.PUSHING, { entity: lightSwitch });
+      const context = createRealTestContext(pushingAction, world, command);
+
+      const validation = pushingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      pushingAction.execute(context);
+
+      // VERIFY POSTCONDITION: switch is now off
+      expectTraitValue(lightSwitch, TraitType.SWITCHABLE, 'isOn', false);
+    });
+
+    test('should NOT mutate state when pushing non-pushable object', () => {
+      const { world, player, room } = setupBasicWorld();
+      const painting = world.createEntity('oil painting', 'object');
+      world.moveEntity(painting.id, room.id);
+
+      const command = createCommand(IFActions.PUSHING, { entity: painting });
+      const context = createRealTestContext(pushingAction, world, command);
+
+      const validation = pushingAction.validate(context);
+      expect(validation.valid).toBe(false);
+
+      // No traits to mutate — validation blocked it
+      expect(painting.get(TraitType.SWITCHABLE)).toBeUndefined();
     });
   });
 });

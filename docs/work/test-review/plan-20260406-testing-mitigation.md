@@ -18,7 +18,7 @@ This plan addresses the complete cleanup of Sharpee's test suite based on the re
 
 ---
 
-## Phase 1: Scorched Earth -- Remove Dead Weight
+## Phase 1: Scorched Earth -- Remove Dead Weight ✓ DONE
 
 **Goal**: Eliminate tests that provide zero value. No coverage is lost because these tests never tested anything.
 
@@ -101,7 +101,7 @@ Remove the describe blocks named "Testing Pattern Examples for X" from these fil
 
 ---
 
-## Phase 2: Fix Source Code Bugs Found During Review
+## Phase 2: Fix Source Code Bugs Found During Review ✓ DONE
 
 **Goal**: Fix the 2 bugs discovered in production code and the 3 bugs in tests.
 
@@ -149,7 +149,7 @@ Files with debugging output left in:
 
 ---
 
-## Phase 3: Critical Mutation Test Gaps
+## Phase 3: Critical Mutation Test Gaps ✓ DONE
 
 **Goal**: Add world-state mutation tests to actions that change state but only verify events. This is the "dropping bug" lesson applied systematically.
 
@@ -212,7 +212,7 @@ Add mutation test:
 
 ---
 
-## Phase 4: Rewrite Broken/Skipped Critical Tests
+## Phase 4: Rewrite Broken/Skipped Critical Tests ✓ DONE
 
 **Goal**: Fix tests that are skipped but cover important behavior. These represent known coverage holes.
 
@@ -270,7 +270,7 @@ Either add proper assertions or delete the assertion-less tests:
 
 ---
 
-## Phase 5: Consolidation
+## Phase 5: Consolidation ← CURRENT
 
 **Goal**: Reduce file count and overlap without losing coverage. The lang-en-us and parser-en-us suites have significant duplication.
 

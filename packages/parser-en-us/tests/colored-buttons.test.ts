@@ -231,51 +231,11 @@ describe('Colored Button Parsing', () => {
     });
   });
 
-  describe('Ambiguous references (disambiguation)', () => {
-    it('should handle "push button" when multiple buttons exist', () => {
-      const result = parser.parse('push button');
-
-      // This should either:
-      // 1. Fail with AMBIGUOUS/DISAMBIGUATION_NEEDED error
-      // 2. Match the control panel's "buttons" alias
-      // 3. Fail with ENTITY_NOT_FOUND if no entity has just "button" as name
-    });
-
-    it('should handle "press button" when multiple buttons exist', () => {
-      const result = parser.parse('press button');
-    });
-  });
-
   describe('Entity scope and visibility', () => {
     it('should list all visible entities for debugging', () => {
       const visibleEntities = world.getVisibleEntities('player', 'maintenance-room');
 
       expect(visibleEntities.length).toBe(4);
-    });
-  });
-
-  describe('Debug: Examine slot matching behavior', () => {
-    it('should show what text is captured for "push blue button"', () => {
-      // Enable debug output for this test
-      const originalDebug = process.env.PARSER_DEBUG;
-      process.env.PARSER_DEBUG = 'true';
-
-      try {
-        parser.parse('push blue button');
-      } finally {
-        process.env.PARSER_DEBUG = originalDebug;
-      }
-    });
-
-    it('should show what text is captured for "push blue"', () => {
-      const originalDebug = process.env.PARSER_DEBUG;
-      process.env.PARSER_DEBUG = 'true';
-
-      try {
-        parser.parse('push blue');
-      } finally {
-        process.env.PARSER_DEBUG = originalDebug;
-      }
     });
   });
 });
