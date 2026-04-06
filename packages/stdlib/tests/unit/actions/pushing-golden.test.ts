@@ -22,7 +22,6 @@ import {
   TestData,
   createCommand
 } from '../../test-utils';
-import type { WorldModel } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('pushingAction (Golden Pattern)', () => {
@@ -506,78 +505,3 @@ describe('pushingAction (Golden Pattern)', () => {
   });
 });
 
-describe('Testing Pattern Examples for Pushing with Traits', () => {
-  test('pattern: push types from traits', () => {
-    // Test different push types based on traits
-    const pushTypes = [
-      { traits: [TraitType.PUSHABLE, TraitType.BUTTON], expectedType: 'button' },
-      { traits: [TraitType.PUSHABLE, TraitType.MOVEABLE_SCENERY], expectedType: 'heavy' },
-      { traits: [TraitType.PUSHABLE], expectedType: 'moveable' },
-      { traits: [TraitType.SCENERY], expectedType: 'fixed' }
-    ];
-    
-    pushTypes.forEach(({ traits, expectedType }) => {
-      if (traits.includes(TraitType.PUSHABLE)) {
-        if (traits.includes(TraitType.BUTTON)) {
-          expect(expectedType).toBe('button');
-        } else if (traits.includes(TraitType.MOVEABLE_SCENERY)) {
-          expect(expectedType).toMatch(/heavy|moveable/);
-        } else {
-          expect(expectedType).toBe('moveable');
-        }
-      } else {
-        expect(expectedType).toBe('fixed');
-      }
-    });
-  });
-
-  test('pattern: trait combinations', () => {
-    // Test valid trait combinations
-    const combinations = [
-      { 
-        traits: [TraitType.PUSHABLE, TraitType.BUTTON, TraitType.SWITCHABLE],
-        valid: true,
-        description: 'switchable button'
-      },
-      {
-        traits: [TraitType.PUSHABLE, TraitType.MOVEABLE_SCENERY],
-        valid: true,
-        description: 'heavy moveable object'
-      },
-      {
-        traits: [TraitType.PUSHABLE],
-        valid: true,
-        description: 'simple pushable object'
-      },
-      {
-        traits: [TraitType.SCENERY],
-        valid: true,
-        description: 'fixed scenery (not pushable)'
-      }
-    ];
-    
-    combinations.forEach(({ traits, valid }) => {
-      expect(valid).toBe(true);
-    });
-  });
-
-  test('pattern: pushable properties', () => {
-    // Test pushable trait properties
-    const properties = [
-      { pushType: 'button', hasSound: true, canRevealPassage: false },
-      { pushType: 'heavy', hasStrength: true, canRevealPassage: false },
-      { pushType: 'moveable', hasSound: true, canRevealPassage: true }
-    ];
-    
-    properties.forEach(({ pushType, hasSound, canRevealPassage, hasStrength }) => {
-      if (pushType === 'button') {
-        expect(hasSound).toBe(true);
-        expect(canRevealPassage).toBe(false);
-      } else if (pushType === 'heavy') {
-        expect(hasStrength).toBe(true);
-      } else if (pushType === 'moveable') {
-        expect(canRevealPassage).toBe(true);
-      }
-    });
-  });
-});

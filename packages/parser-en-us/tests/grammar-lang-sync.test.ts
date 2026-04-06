@@ -175,35 +175,6 @@ describe('ADR-087 Phase 9: Grammar/Language Sync Verification', () => {
   });
 
   describe('Sync Detection', () => {
-    it('should report sync status (informational)', () => {
-      // This test always passes but logs sync issues for visibility
-      if (syncResults.length === 0) {
-        console.log('✓ Grammar and lang-en-us are perfectly synchronized');
-      } else {
-        console.log('\n=== Grammar/Lang-en-us Sync Report ===\n');
-
-        for (const result of syncResults) {
-          console.log(`Action: ${result.actionId}`);
-          console.log(`  Grammar verbs: ${result.grammarVerbs.join(', ')}`);
-          console.log(`  Lang verbs:    ${result.langVerbs.join(', ')}`);
-
-          if (result.onlyInGrammar.length > 0) {
-            console.log(`  ⚠ Only in grammar: ${result.onlyInGrammar.join(', ')}`);
-          }
-          if (result.onlyInLang.length > 0) {
-            console.log(`  ⚠ Only in lang-en-us: ${result.onlyInLang.join(', ')}`);
-          }
-          console.log();
-        }
-
-        console.log(`Total actions with drift: ${syncResults.length}`);
-      }
-
-      // Always pass - this is informational
-      expect(true).toBe(true);
-    });
-
-    // Specific sync checks for important actions
     it('should have matching verbs for taking action', () => {
       const gVerbs = grammarVerbs['if.action.taking'] || new Set();
       const lVerbs = langVerbs['if.action.taking'] || new Set();
@@ -239,28 +210,4 @@ describe('ADR-087 Phase 9: Grammar/Language Sync Verification', () => {
     });
   });
 
-  describe('Coverage Statistics', () => {
-    it('should report overall coverage statistics', () => {
-      const grammarActionCount = Object.keys(grammarVerbs).length;
-      const langActionCount = Object.keys(langVerbs).length;
-
-      let totalGrammarVerbs = 0;
-      let totalLangVerbs = 0;
-
-      for (const verbs of Object.values(grammarVerbs)) {
-        totalGrammarVerbs += verbs.size;
-      }
-      for (const verbs of Object.values(langVerbs)) {
-        totalLangVerbs += verbs.size;
-      }
-
-      console.log('\n=== Coverage Statistics ===');
-      console.log(`Grammar: ${grammarActionCount} actions, ${totalGrammarVerbs} verb patterns`);
-      console.log(`Lang:    ${langActionCount} actions, ${totalLangVerbs} verb patterns`);
-      console.log(`Drift:   ${syncResults.length} actions with mismatched verbs`);
-
-      // Informational - always passes
-      expect(true).toBe(true);
-    });
-  });
 });

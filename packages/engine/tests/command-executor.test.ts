@@ -182,9 +182,6 @@ describe('CommandExecutor', () => {
       expect(invResult.success).toBeDefined();
       expect(invResult.events.length).toBeGreaterThan(0);
       
-      // The test passes if both sync-style actions work
-      // We're really just testing that the executor handles both patterns
-      expect(true).toBe(true);
     });
   });
 
@@ -222,11 +219,6 @@ describe('CommandExecutor', () => {
         })
       );
       actionRegistry.register(eventAction);
-    });
-
-    it('should include action-generated events', async () => {
-      // Skip this test as it requires proper verb registration
-      expect(true).toBe(true);
     });
 
     it('should return events with valid structure', async () => {
@@ -280,54 +272,6 @@ describe('CommandExecutor', () => {
       
       const errorEvents = result.events.filter(e => e.type === 'command.failed');
       expect(errorEvents.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('integration with story actions', () => {
-    it('should execute story-defined actions', async () => {
-      // Skip this test as our story actions don't have verbs in the language provider
-      expect(true).toBe(true);
-    });
-
-    it('should handle story action with arguments', async () => {
-      // Skip this test as our story actions don't have verbs in the language provider
-      expect(true).toBe(true);
-    });
-
-    it('should handle failing story action', async () => {
-      // Skip this test as our story actions don't have verbs in the language provider
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('integration with standard actions', () => {
-    beforeEach(() => {
-      // Register some standard-like actions
-      const lookAction = createMockAction(
-        'look',
-        ['look', 'l'],
-        async () => ({ success: true, message: 'You look around.' })
-      );
-      
-      const takeAction = createMockAction(
-        'take',
-        ['take *', 'get *'],
-        async () => ({ success: true, message: 'Taken.' })
-      );
-      
-      actionRegistry.register(lookAction);
-      actionRegistry.register(takeAction);
-    });
-
-    it('should execute standard actions', async () => {
-      // The action IDs from the language provider are 'if.action.looking', not 'LOOKING'
-      // So we need to override with custom actions or skip these tests
-      expect(true).toBe(true);  // Skip for now
-    });
-
-    it('should handle action aliases', async () => {
-      // 'l' is an alias for look, but needs proper action
-      expect(true).toBe(true);  // Skip for now
     });
   });
 

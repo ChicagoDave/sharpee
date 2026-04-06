@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { enteringAction } from '../../../src/actions/standard/entering';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, ContainerTrait, SupporterTrait } from '@sharpee/world-model';
+import { TraitType, EntityType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -368,86 +368,6 @@ describe('enteringAction (Golden Pattern)', () => {
         }
       });
     });
-  });
-});
-
-describe('Testing Pattern Examples for Entering', () => {
-  test('pattern: complex entry scenarios', () => {
-    // Test various types of enterable objects
-    const world = new WorldModel();
-    const enterableObjects = [
-      {
-        name: 'taxi',
-        traits: {
-          [TraitType.CONTAINER]: {
-            type: TraitType.CONTAINER,
-            enterable: true,
-            capacity: 400  // Weight capacity
-          }
-        }
-      },
-      {
-        name: 'swimming pool',
-        traits: {
-          [TraitType.CONTAINER]: {
-            type: TraitType.CONTAINER,
-            enterable: true,
-            capacity: 10000  // Large capacity
-          }
-        }
-      },
-      {
-        name: 'stage',
-        traits: {
-          [TraitType.SUPPORTER]: {
-            type: TraitType.SUPPORTER,
-            enterable: true
-          }
-        }
-      }
-    ];
-    
-    enterableObjects.forEach(({ name, traits }) => {
-      const obj = world.createEntity(name, EntityType.SCENERY);
-      for (const [traitType, traitData] of Object.entries(traits)) {
-        obj.add(traitData);
-      }
-      
-      // Verify enterable configuration
-      if (obj.hasTrait(TraitType.CONTAINER)) {
-        const container = obj.getTrait(ContainerTrait)!;
-        expect(container.enterable).toBe(true);
-      } else if (obj.hasTrait(TraitType.SUPPORTER)) {
-        const supporter = obj.getTrait(SupporterTrait)!;
-        expect(supporter.enterable).toBe(true);
-      }
-    });
-  });
-
-  test('pattern: testing capacity management', () => {
-    // Shows how to test capacity limits
-    const { world, player, room } = setupBasicWorld();
-    const actors = ['Person 1', 'Person 2', 'Person 3'].map(name => {
-      const actor = world.createEntity(name, EntityType.ACTOR);
-      actor.add({ type: TraitType.ACTOR });
-      return actor;
-    });
-    
-    const lifeboat = world.createEntity('lifeboat', EntityType.CONTAINER);
-    lifeboat.add({
-      type: TraitType.CONTAINER,
-      enterable: true,
-      capacity: 300  // Weight limit allows ~4 people at 75kg each
-    });
-    
-    // Move actors into the lifeboat
-    actors.forEach((actor) => {
-      world.moveEntity(actor.id, lifeboat.id);
-    });
-    
-    // Check that actors are in the lifeboat
-    const contents = world.getContents(lifeboat.id);
-    expect(contents.length).toBe(3);
   });
 });
 

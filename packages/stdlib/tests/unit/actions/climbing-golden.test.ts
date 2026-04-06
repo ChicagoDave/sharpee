@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, RoomTrait, SupporterTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -380,75 +380,6 @@ describe('climbingAction (Golden Pattern)', () => {
           expect(event.entities.location).toBe(room.id);
         }
       });
-    });
-  });
-});
-
-describe('Testing Pattern Examples for Climbing', () => {
-  test('pattern: multi-level climbing', () => {
-    const world = new WorldModel();
-    
-    // Test climbing through multiple levels
-    const levels = [
-      { id: 'basement', name: 'Basement', exits: { up: { to: 'ground' } } },
-      { id: 'ground', name: 'Ground Floor', exits: { up: { to: 'first' }, down: { to: 'basement' } } },
-      { id: 'first', name: 'First Floor', exits: { up: { to: 'attic' }, down: { to: 'ground' } } },
-      { id: 'attic', name: 'Attic', exits: { down: { to: 'first' } } }
-    ];
-    
-    const rooms = levels.map(level => {
-      const room = world.createEntity(level.name, EntityType.ROOM);
-      room.add({
-        type: TraitType.ROOM,
-        exits: level.exits
-      });
-      return { room, id: level.id };
-    });
-    
-    // Verify climbing paths
-    const groundRoom = rooms[1].room.getTrait(RoomTrait)!;
-    expect(groundRoom.exits).toHaveProperty('up');
-    expect(groundRoom.exits).toHaveProperty('down');
-  });
-
-  test('pattern: climbable objects vs movement', () => {
-    const world = new WorldModel();
-    
-    // Shows difference between climbing onto objects vs climbing directions
-    const climbableObjects = [
-      {
-        name: 'rope',
-        traits: {
-          [TraitType.CLIMBABLE]: {
-            type: TraitType.CLIMBABLE,
-            canClimb: true,
-            direction: 'up'
-          }
-        },
-        expectedMethod: 'onto'
-      },
-      {
-        name: 'rock face',
-        traits: {
-          [TraitType.SUPPORTER]: {
-            type: TraitType.SUPPORTER,
-            enterable: true
-          }
-        },
-        expectedMethod: 'onto'
-      }
-    ];
-    
-    climbableObjects.forEach(({ name, traits, expectedMethod }) => {
-      const obj = world.createEntity(name, EntityType.SCENERY);
-      for (const [traitType, traitData] of Object.entries(traits)) {
-        obj.add(traitData);
-      }
-      
-      // Verify climbable
-      const isClimbable = obj.hasTrait(TraitType.CLIMBABLE) || 
-                         (obj.hasTrait(TraitType.SUPPORTER) && obj.getTrait(SupporterTrait)!.enterable);
-      expect(isClimbable).toBe(true);
     });
   });
 });

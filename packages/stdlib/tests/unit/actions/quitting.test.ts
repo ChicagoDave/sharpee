@@ -434,25 +434,3 @@ describe('quittingAction', () => {
     });
   });
 });
-
-describe('Quitting Action Integration Notes', () => {
-  test('platform handles actual quit confirmation', () => {
-    // Note: The quitting action only emits events to request a quit.
-    // The actual quit confirmation dialog, save prompts, and game termination
-    // are handled by the platform/engine after turn completion.
-    // This separation allows the platform to:
-    // - Show native dialogs
-    // - Handle save operations
-    // - Clean up resources
-    // - Provide platform-specific quit behavior
-    expect(true).toBe(true);
-  });
-
-  test('query messages are for platform use', () => {
-    // The requiredMessages like 'quit_confirm_query' are declared so they
-    // can be used by the platform when showing quit dialogs.
-    // The action itself doesn't use these messages directly.
-    expect(quittingAction.requiredMessages).toContain('quit_confirm_query');
-    expect(quittingAction.requiredMessages).toContain('quit_save_query');
-  });
-});

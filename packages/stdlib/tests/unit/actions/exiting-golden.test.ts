@@ -332,59 +332,6 @@ describe('exitingAction (Golden Pattern)', () => {
   });
 });
 
-describe('Testing Pattern Examples for Exiting', () => {
-  test.skip('pattern: nested containers - EntryTrait removed', () => {
-    // Test exiting from nested containment
-    const world = new WorldModel();
-    
-    const room = world.createEntity('Room', EntityType.ROOM);
-    room.add({ type: TraitType.ROOM });
-    
-    const car = world.createEntity('car', EntityType.OBJECT);
-    car.add({
-      type: TraitType.ENTRY,
-      canEnter: true,
-      preposition: 'in'
-    });
-    
-    const suitcase = world.createEntity('suitcase', EntityType.CONTAINER);
-    suitcase.add({
-      type: TraitType.CONTAINER,
-      enterable: true
-    });
-    
-    // Setup: suitcase in car in room
-    world.moveEntity(car.id, room.id);
-    world.moveEntity(suitcase.id, car.id);
-    
-    // Player would exit suitcase -> car, then car -> room
-    expect(world.getLocation).toBeDefined();
-  });
-
-  test.skip('pattern: exit state preservation - EntryTrait removed', () => {
-    // Shows how exit doesn't modify traits, just location
-    const { world, player, room } = setupBasicWorld();
-    
-    const pod = world.createEntity('escape pod', EntityType.OBJECT);
-    pod.add({
-      type: TraitType.ENTRY,
-      canEnter: true,
-      preposition: 'in',
-      occupants: [player.id]
-    });
-    
-    world.moveEntity(pod.id, room.id);
-    world.moveEntity(player.id, pod.id);
-    
-    // After exit, occupants list would need to be updated by event handler
-    const entry = pod.getTrait(TraitType.ENTRY) as { occupants?: string[] } | undefined;
-    expect(entry?.occupants).toContain(player.id);
-    
-    // Note: The action doesn't modify traits, only emits events
-    // World model event handlers would update occupants list
-  });
-});
-
 /**
  * World State Mutation Tests
  *

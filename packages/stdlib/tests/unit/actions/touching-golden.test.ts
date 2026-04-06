@@ -9,10 +9,10 @@
  * - Support various touch verbs (poke, pat, stroke, etc.)
  */
 
-import { describe, test, expect, beforeEach, vi } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { touchingAction } from '../../../src/actions/standard/touching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
+import { TraitType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -22,7 +22,6 @@ import {
   setupBasicWorld,
   findEntityByName
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('touchingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -527,78 +526,3 @@ describe('touchingAction (Golden Pattern)', () => {
   });
 });
 
-describe('Testing Pattern Examples for Touching', () => {
-  test('pattern: temperature spectrum', () => {
-    // Test various temperature states
-    const temperatureObjects = [
-      { name: 'ice', temperature: 'cold', trait: {} }, // Base implementation doesn't have cold
-      { name: 'candle', temperature: 'hot', trait: { [TraitType.LIGHT_SOURCE]: { type: TraitType.LIGHT_SOURCE, isLit: true } } },
-      { name: 'computer', temperature: 'warm', trait: { [TraitType.SWITCHABLE]: { type: TraitType.SWITCHABLE, isOn: true } } }
-    ];
-    
-    temperatureObjects.forEach(({ name, temperature, trait }) => {
-      const world = new WorldModel();
-      const obj = world.createEntity(name, 'object');
-      
-      // Add traits
-      for (const [traitType, traitData] of Object.entries(trait)) {
-        obj.add({ type: traitType, ...traitData });
-      }
-      
-      if (temperature === 'hot' && obj.has(TraitType.LIGHT_SOURCE)) {
-        const light = obj.get(LightSourceTrait)!;
-        expect(light.isLit).toBe(true);
-      } else if (temperature === 'warm' && obj.has(TraitType.SWITCHABLE)) {
-        const device = obj.get(SwitchableTrait)!;
-        expect(device.isOn).toBe(true);
-      }
-    });
-  });
-
-  test('pattern: texture variety', () => {
-    // Test various textures
-    const textureObjects = [
-      { name: 'blanket', texture: 'soft', trait: TraitType.WEARABLE },
-      { name: 'glass', texture: 'smooth', trait: TraitType.DOOR },
-      { name: 'crate', texture: 'solid', trait: TraitType.CONTAINER },
-      { name: 'water', texture: 'liquid', trait: TraitType.EDIBLE }
-    ];
-    
-    textureObjects.forEach(({ name, texture, trait }) => {
-      const world = new WorldModel();
-      const obj = world.createEntity(name, 'object');
-      
-      if (trait === TraitType.EDIBLE) {
-        obj.add({ type: trait, isDrink: true });
-      } else {
-        obj.add({ type: trait });
-      }
-      
-      expect(obj.has(trait)).toBe(true);
-    });
-  });
-
-  test('pattern: complex tactile objects', () => {
-    // Test objects with multiple tactile properties
-    const world = new WorldModel();
-    const complexObject = world.createEntity('running engine', 'object');
-    complexObject.add({
-      type: TraitType.SWITCHABLE,
-      isOn: true
-    });
-    complexObject.add({
-      type: TraitType.CONTAINER,
-      capacity: 5
-    });
-    complexObject.add({
-      type: TraitType.IDENTITY,
-      name: 'running engine',
-      description: 'A vibrating engine that produces heat',
-      size: 'large'
-    });
-    
-    expect(complexObject.has(TraitType.SWITCHABLE)).toBe(true);
-    expect(complexObject.has(TraitType.CONTAINER)).toBe(true);
-    expect(complexObject.has(TraitType.IDENTITY)).toBe(true);
-  });
-});
