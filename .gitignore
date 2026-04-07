@@ -15,6 +15,10 @@ out/
 coverage/
 .nyc_output/
 
+# Stryker mutation testing
+.stryker-tmp/
+reports/
+
 # TypeScript cache
 *.tsbuildinfo
 
