@@ -216,16 +216,19 @@ describe('CombatService', () => {
     });
 
     it('should knock out target at 20% health', () => {
-      random.setSeed(1);
+      // Force the hit roll to a known value so the test is fully deterministic.
+      // resolveAttack calls random.int(1, 100); returning 1 guarantees a hit
+      // against any hit chance >= 1%.
+      const controlledRandom = createSeededRandom(1);
+      vi.spyOn(controlledRandom, 'int').mockReturnValue(1); // Always roll 1 → guaranteed hit
 
       const attacker = createMockEntity('attacker', 'Attacker', {
         [TraitType.COMBATANT]: new CombatantTrait({ skill: 95, baseDamage: 7 }),
       });
 
-      // Target has 10 health, 20% = 2
-      // After 7 damage: 10 - 7 = 3 (not knocked out)
-      // After another hit: 3 - 7 = -4 (killed)
-      // Need exact damage to get to 20% threshold
+      // Target: health 9, maxHealth 10, no armor
+      // Damage = baseDamage 7, newHealth = 9 - 7 = 2
+      // 2 / 10 = 20% → exactly at knockout threshold (<=20% and not killed)
       const target = createMockEntity('target', 'Target', {
         [TraitType.COMBATANT]: new CombatantTrait({ skill: 10, health: 9, maxHealth: 10 }),
       });
@@ -234,17 +237,16 @@ describe('CombatService', () => {
         attacker,
         target,
         world: createMockWorld(),
-        random,
+        random: controlledRandom,
       };
 
       const result = service.resolveAttack(context);
 
-      if (result.hit && !result.targetKilled) {
-        // Health 9 - 7 = 2, which is exactly 20%
-        expect(result.targetNewHealth).toBe(2);
-        expect(result.targetKnockedOut).toBe(true);
-        expect(result.messageId).toBe(CombatMessages.ATTACK_KNOCKED_OUT);
-      }
+      expect(result.hit).toBe(true);
+      expect(result.targetKilled).toBe(false);
+      expect(result.targetNewHealth).toBe(2);
+      expect(result.targetKnockedOut).toBe(true);
+      expect(result.messageId).toBe(CombatMessages.ATTACK_KNOCKED_OUT);
     });
   });
 

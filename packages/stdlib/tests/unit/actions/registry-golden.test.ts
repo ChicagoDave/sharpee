@@ -284,19 +284,3 @@ describe('StandardActionRegistry (Golden Pattern)', () => {
     });
   });
 });
-
-describe('Registry Message Management', () => {
-  test('registerMessages is a placeholder for future implementation', () => {
-    const registry = new StandardActionRegistry();
-    
-    // Should not throw
-    expect(() => {
-      registry.registerMessages('TAKING', {
-        'taken': 'You take the {item}.',
-        'already_have': 'You already have the {item}.'
-      });
-    }).not.toThrow();
-    
-    // Currently does nothing - messages handled by language provider
-  });
-});

@@ -688,7 +688,7 @@ describe('drinkingAction (Golden Pattern)', () => {
   });
 });
 
-import { WorldModel, EdibleBehavior } from '@sharpee/world-model';
+import { EdibleBehavior } from '@sharpee/world-model';
 
 /**
  * CRITICAL: World State Mutation Verification Tests
@@ -862,107 +862,5 @@ describe('World State Mutations', () => {
     // VERIFY POSTCONDITION: container is now empty
     const containerAfter = item.getTrait(ContainerTrait)!;
     expect(containerAfter.liquidAmount).toBe(0);
-  });
-});
-
-describe('Testing Pattern Examples for Drinking', () => {
-  test('pattern: complex beverage system with multiple properties', () => {
-    // Test a complete drink with all possible properties
-    const world = new WorldModel();
-    const complexDrink = world.createEntity('magical cocktail', 'object');
-    complexDrink.add({
-      type: TraitType.EDIBLE,
-      liquid: true,
-      servings: 3,
-      taste: 'sweet',
-      nutrition: 150,
-      satisfiesThirst: true,
-      effects: ['magic', 'strength_boost', 'glowing']
-    });
-    
-    const edible = complexDrink.getTrait(EdibleTrait)!;
-    expect(edible.liquid).toBe(true);
-    expect(edible.servings).toBe(3);
-    expect(edible.taste).toBe('sweet');
-    expect(edible.nutrition).toBe(150);
-    expect(edible.satisfiesThirst).toBe(true);
-    expect(edible.effects).toContain('magic');
-  });
-
-  test('pattern: container liquid system', () => {
-    // Test various containers with liquids
-    const world = new WorldModel();
-    const containers = [
-      { name: 'bottle', liquidType: 'wine', liquidAmount: 10 },
-      { name: 'flask', liquidType: 'water', liquidAmount: 5 },
-      { name: 'cup', liquidType: 'coffee', liquidAmount: 1 },
-      { name: 'fountain', liquidType: 'water' }, // Infinite source
-      { name: 'cauldron', liquidType: 'potion', liquidAmount: 20 }
-    ];
-    
-    containers.forEach(({ name, liquidType, liquidAmount }) => {
-      const container = world.createEntity(name, 'container');
-      container.add({
-        type: TraitType.CONTAINER,
-        containsLiquid: true,
-        liquidType,
-        liquidAmount
-      });
-      
-      const trait = container.getTrait(ContainerTrait)!;
-      expect(trait.containsLiquid).toBe(true);
-      expect(trait.liquidType).toBe(liquidType);
-      if (liquidAmount !== undefined) {
-        expect(trait.liquidAmount).toBe(liquidAmount);
-      }
-    });
-  });
-
-  test('pattern: drink effects spectrum', () => {
-    // Test various drink effects
-    const world = new WorldModel();
-    const effectDrinks = [
-      { name: 'health_potion', effects: ['healing', 'restore_health'] },
-      { name: 'poison', effects: ['poison', 'damage'] },
-      { name: 'invisibility_potion', effects: ['invisibility'] },
-      { name: 'strength_elixir', effects: ['strength_boost', 'combat_bonus'] },
-      { name: 'sleeping_draught', effects: ['sleep', 'drowsy'] }
-    ];
-    
-    effectDrinks.forEach(({ name, effects }) => {
-      const drink = world.createEntity(name, 'object');
-      drink.add({
-        type: TraitType.EDIBLE,
-        liquid: true,
-        effects
-      });
-      
-      const edible = drink.getTrait(EdibleTrait)!;
-      expect(edible.effects).toEqual(effects);
-    });
-  });
-
-  test('pattern: beverage taste spectrum', () => {
-    // Test the full range of drink tastes
-    const world = new WorldModel();
-    const tasteLevels = [
-      { item: 'spring_water', taste: 'refreshing' },
-      { item: 'fruit_juice', taste: 'sweet' },
-      { item: 'black_coffee', taste: 'bitter' },
-      { item: 'whiskey', taste: 'strong' },
-      { item: 'herbal_tea', taste: 'satisfying' }
-    ];
-    
-    tasteLevels.forEach(({ item, taste }) => {
-      const drink = world.createEntity(item, 'object');
-      drink.add({
-        type: TraitType.EDIBLE,
-        liquid: true,
-        taste
-      });
-      
-      const edible = drink.getTrait(EdibleTrait)!;
-      expect(edible.taste).toBe(taste);
-    });
   });
 });

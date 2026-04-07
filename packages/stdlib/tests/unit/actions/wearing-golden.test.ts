@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { wearingAction } from '../../../src/actions/standard/wearing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, WearableTrait } from '@sharpee/world-model';
+import { TraitType, WearableTrait } from '@sharpee/world-model';
 import {
 createRealTestContext,
 expectEvent,
@@ -387,69 +387,6 @@ describe('wearingAction (Golden Pattern)', () => {
         }
       });
     });
-  });
-});
-
-describe('Testing Pattern Examples for Wearing', () => {
-  test('pattern: complete outfit system', () => {
-    // Test a full clothing system with layers
-    const outfit = [
-      { name: 'underwear', bodyPart: 'torso', layer: 0 },
-      { name: 'undershirt', bodyPart: 'torso', layer: 1 },
-      { name: 'shirt', bodyPart: 'torso', layer: 2 },
-      { name: 'vest', bodyPart: 'torso', layer: 3 },
-      { name: 'jacket', bodyPart: 'torso', layer: 4 },
-      { name: 'coat', bodyPart: 'torso', layer: 5 }
-    ];
-    
-    const world = new WorldModel();
-    const items = outfit.map(({ name, bodyPart, layer }) => {
-      const item = world.createEntity(name, 'object');
-      item.add({
-        type: TraitType.WEARABLE,
-        worn: false,
-        bodyPart,
-        layer
-      });
-      return item;
-    });
-    
-    // Verify layers are sequential
-    items.forEach((item, index) => {
-      const wearable = item.get(WearableTrait)!;
-      expect(wearable.layer).toBe(index);
-    });
-  });
-
-  test('pattern: body part coverage', () => {
-    // Test various body parts that can be covered
-    const bodyParts = [
-      { item: 'hat', bodyPart: 'head' },
-      { item: 'glasses', bodyPart: 'eyes' },
-      { item: 'scarf', bodyPart: 'neck' },
-      { item: 'shirt', bodyPart: 'torso' },
-      { item: 'gloves', bodyPart: 'hands' },
-      { item: 'ring', bodyPart: 'finger' },
-      { item: 'belt', bodyPart: 'waist' },
-      { item: 'pants', bodyPart: 'legs' },
-      { item: 'socks', bodyPart: 'feet' },
-      { item: 'shoes', bodyPart: 'feet' }
-    ];
-
-    const world = new WorldModel();
-    bodyParts.forEach(({ item, bodyPart }) => {
-      const wearable = world.createEntity(item, 'object');
-      wearable.add({
-        type: TraitType.WEARABLE,
-        worn: false,
-        bodyPart
-      });
-
-      const trait = wearable.get(WearableTrait)!;
-      expect(trait.bodyPart).toBe(bodyPart);
-    });
-
-    // Note: Multiple items can share the same body part (e.g., socks and shoes on feet)
   });
 });
 

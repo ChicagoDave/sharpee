@@ -565,19 +565,7 @@ describe('StandardScopeResolver', () => {
       // Set minimum scope: hook is REACHABLE from vairRoom
       hook.setMinimumScope(ScopeLevel.REACHABLE, [vairRoom.id]);
 
-      // TRACE: Pre-serialization state
       const preScope = resolver.getScope(player, hook);
-      console.log('=== PRE-SERIALIZATION TRACE ===');
-      console.log('Player ID:', player.id);
-      console.log('Player location:', world.getLocation(player.id));
-      console.log('Balloon ID:', balloon.id);
-      console.log('Balloon location:', world.getLocation(balloon.id));
-      console.log('VairRoom ID:', vairRoom.id);
-      console.log('LedgeRoom ID:', ledgeRoom.id);
-      console.log('Hook ID:', hook.id);
-      console.log('Hook location:', world.getLocation(hook.id));
-      console.log('Hook minimumScopes:', hook.getMinimumScopes());
-      console.log('Hook scope (pre-serialize):', preScope);
       expect(preScope).toBe(ScopeLevel.REACHABLE);
 
       // Serialize the world
@@ -596,19 +584,6 @@ describe('StandardScopeResolver', () => {
       const balloon2 = world2.getEntity(balloon.id)!;
       const wire2 = world2.getEntity(wire.id)!;
 
-      // TRACE: Post-deserialization state
-      console.log('\n=== POST-DESERIALIZATION TRACE ===');
-      console.log('Player2 ID:', player2.id);
-      console.log('Player2 location:', world2.getLocation(player2.id));
-      console.log('Balloon2 ID:', balloon2.id);
-      console.log('Balloon2 location:', world2.getLocation(balloon2.id));
-      console.log('Hook2 ID:', hook2.id);
-      console.log('Hook2 location:', world2.getLocation(hook2.id));
-      console.log('Hook2 minimumScopes:', hook2.getMinimumScopes());
-      console.log('Hook2 has SCENERY trait:', hook2.has(TraitType.SCENERY));
-      console.log('Balloon2 has ROOM trait:', balloon2.has(TraitType.ROOM));
-      console.log('Balloon2 has VEHICLE trait:', balloon2.has(TraitType.VEHICLE));
-
       // Verify the restored entities exist
       expect(player2).toBeDefined();
       expect(hook2).toBeDefined();
@@ -625,9 +600,6 @@ describe('StandardScopeResolver', () => {
 
       // THE CRITICAL TEST: Does scope resolution work after deserialization?
       const postScope = resolver2.getScope(player2, hook2);
-      console.log('Hook2 scope (post-deserialize):', postScope);
-      console.log('Expected:', ScopeLevel.REACHABLE, '(REACHABLE)');
-
       expect(postScope).toBe(ScopeLevel.REACHABLE);
     });
 
@@ -682,8 +654,6 @@ describe('StandardScopeResolver', () => {
         const name = entity.name?.toLowerCase();
         return name === 'hook';
       });
-      console.log('\n=== COMMAND VALIDATOR SIMULATION ===');
-      console.log('Hook candidates by name:', hookCandidates.length, hookCandidates.map(e => ({ id: e.id, name: e.name, type: e.type })));
       expect(hookCandidates.length).toBeGreaterThan(0);
 
       // Step 2: Also try synonym search (getEntitiesBySynonym)
@@ -693,21 +663,15 @@ describe('StandardScopeResolver', () => {
         const aliases = identity?.aliases || [];
         return aliases.map((a: string) => a.toLowerCase()).includes('hook');
       });
-      console.log('Hook candidates by synonym:', hookBySynonym.length);
-
       // Step 3: Filter by scope (command validator uses VISIBLE as default)
       const allHookCandidates = [...hookCandidates, ...hookBySynonym].filter(
         (e, i, arr) => arr.findIndex(x => x.id === e.id) === i
       );
-      console.log('All hook candidates (deduped):', allHookCandidates.length);
-
       const inScope = allHookCandidates.filter(entity => {
         const scope = resolver2.getScope(player2, entity);
-        console.log(`  Hook candidate ${entity.id} (${entity.name}): scope=${scope}, location=${world2.getLocation(entity.id)}`);
         // VISIBLE scope check (same as command validator filterByScope)
         return scope === ScopeLevel.CARRIED || scope === ScopeLevel.REACHABLE || scope === ScopeLevel.VISIBLE;
       });
-      console.log('Hooks in scope:', inScope.length);
       expect(inScope.length).toBeGreaterThan(0);
 
       // Step 4: Find entities named "wire" (head noun from "braided wire")
@@ -716,16 +680,12 @@ describe('StandardScopeResolver', () => {
         const name = entity.name?.toLowerCase();
         return name === 'wire';
       });
-      console.log('\nWire candidates by name "wire":', wireCandidatesByName.length);
-
       // Also check "braided wire" (full text)
       const wireCandidatesByFullName = world2.findWhere(entity => {
         if (entity.type === 'room' || entity.id === player2.id) return false;
         const name = entity.name?.toLowerCase();
         return name === 'braided wire';
       });
-      console.log('Wire candidates by name "braided wire":', wireCandidatesByFullName.length);
-
       // Also check by synonym "wire"
       const wireBySynonym = world2.findWhere(entity => {
         if (entity.type === 'room' || entity.id === player2.id) return false;
@@ -733,18 +693,14 @@ describe('StandardScopeResolver', () => {
         const aliases = identity?.aliases || [];
         return aliases.map((a: string) => a.toLowerCase()).includes('wire');
       });
-      console.log('Wire candidates by synonym "wire":', wireBySynonym.length);
-
       // Filter wire candidates by scope
       const allWireCandidates = [...wireCandidatesByName, ...wireCandidatesByFullName, ...wireBySynonym].filter(
         (e, i, arr) => arr.findIndex(x => x.id === e.id) === i
       );
       const wireInScope = allWireCandidates.filter(entity => {
         const scope = resolver2.getScope(player2, entity);
-        console.log(`  Wire candidate ${entity.id} (${entity.name}): scope=${scope}, location=${world2.getLocation(entity.id)}`);
         return scope === ScopeLevel.CARRIED || scope === ScopeLevel.REACHABLE || scope === ScopeLevel.VISIBLE;
       });
-      console.log('Wire in scope:', wireInScope.length);
       expect(wireInScope.length).toBeGreaterThan(0);
     });
 
@@ -800,19 +756,11 @@ describe('StandardScopeResolver', () => {
         (e, i, arr) => arr.findIndex(x => x.id === e.id) === i
       );
 
-      console.log('\n=== DISAMBIGUATION BUG REPRO ===');
-      console.log('Search term (head noun):', searchTerm);
-      console.log('By name:', byName.length, byName.map(e => e.name));
-      console.log('By synonym:', bySynonym.length, bySynonym.map(e => e.name));
-      console.log('Total candidates:', candidates.length, candidates.map(e => e.name));
-
       // Step 3: Filter by scope
       const inScope = candidates.filter(entity => {
         const scope = resolver.getScope(player, entity);
         return scope >= ScopeLevel.VISIBLE;
       });
-      console.log('In scope:', inScope.length, inScope.map(e => e.name));
-
       // Step 4: Score entities - simulate ref with text="braided wire", head="wire"
       const ref = { text: 'braided wire', head: 'wire', modifiers: [] as string[] };
       const modifiers = (() => {
@@ -821,22 +769,12 @@ describe('StandardScopeResolver', () => {
         const nonModifiers = ['the', 'a', 'an', 'all', 'some', 'every', 'any', 'my'];
         return words.filter(w => !nonModifiers.includes(w));
       })();
-      console.log('Inferred modifiers:', modifiers); // Should be ["braided"]
-
       // Check if ANY entity has the modifier as an adjective
-      for (const entity of inScope) {
-        const identity = entity.get(IdentityTrait);
-        const adjectives = identity?.adjectives || [];
-        console.log(`  Entity "${entity.name}": adjectives=${JSON.stringify(adjectives)}`);
-      }
-
       const anyModifierMatch = inScope.some(entity => {
         const identity = entity.get(IdentityTrait);
         const adjectives = (identity?.adjectives || []).map((a: string) => a.toLowerCase());
         return modifiers.every(mod => adjectives.includes(mod.toLowerCase()));
       });
-      console.log('Any modifier match?', anyModifierMatch);
-
       // THIS IS THE BUG: anyModifierMatch is false because neither wire has adjectives: ['braided']
       // Command validator would return ENTITY_NOT_FOUND here
       // FIX: Add adjectives: ['braided'] to the braided wire entity
@@ -853,7 +791,6 @@ describe('StandardScopeResolver', () => {
         const adjectives = (identity?.adjectives || []).map((a: string) => a.toLowerCase());
         return modifiers.every(mod => adjectives.includes(mod.toLowerCase()));
       });
-      console.log('After fix - any modifier match?', fixedModifierMatch);
       expect(fixedModifierMatch).toBe(true); // Fix works
     });
 

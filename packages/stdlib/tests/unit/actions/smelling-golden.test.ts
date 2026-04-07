@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { smellingAction } from '../../../src/actions/standard/smelling';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, LightSourceTrait } from '@sharpee/world-model';
+import { TraitType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -439,78 +439,3 @@ describe('smellingAction (Golden Pattern)', () => {
   });
 });
 
-describe('Testing Pattern Examples for Smelling', () => {
-  test('pattern: scent types', () => {
-    // Test various scent categories
-    const world = new WorldModel();
-    const scentObjects = [
-      { name: 'steak', scent: 'edible', trait: { type: TraitType.EDIBLE, liquid: false } },
-      { name: 'wine', scent: 'drinkable', trait: { type: TraitType.EDIBLE, liquid: true } },
-      { name: 'campfire', scent: 'burning', trait: { type: TraitType.LIGHT_SOURCE, isLit: true } }
-    ];
-    
-    scentObjects.forEach(({ name, scent, trait }) => {
-      const obj = world.createEntity(name, 'object');
-      obj.add(trait);
-      
-      if (scent === 'edible' || scent === 'drinkable') {
-        expect(obj.has(TraitType.EDIBLE)).toBe(true);
-      } else if (scent === 'burning') {
-        expect(obj.has(TraitType.LIGHT_SOURCE)).toBe(true);
-        const light = obj.get(LightSourceTrait)!;
-        expect(light.isLit).toBe(true);
-      }
-    });
-  });
-
-  test('pattern: complex scent scenarios', () => {
-    // Test a picnic basket with multiple scent sources
-    const world = new WorldModel();
-    const picnicBasket = world.createEntity('picnic basket', 'object');
-    picnicBasket.add({
-      type: TraitType.CONTAINER,
-      capacity: 10
-    });
-    picnicBasket.add({
-      type: TraitType.OPENABLE,
-      isOpen: true
-    });
-    
-    const contents = [
-      world.createEntity('sandwich', 'object'),
-      world.createEntity('juice', 'object'),
-      world.createEntity('cookies', 'object')
-    ];
-    
-    // Add edible traits to contents
-    contents[0].add({ type: TraitType.EDIBLE, liquid: false });
-    contents[1].add({ type: TraitType.EDIBLE, liquid: true });
-    contents[2].add({ type: TraitType.EDIBLE, liquid: false });
-    
-    // All contents should be edible
-    contents.forEach(item => {
-      expect(item.has(TraitType.EDIBLE)).toBe(true);
-    });
-  });
-
-  test('pattern: environmental scent detection', () => {
-    // Test various room configurations
-    const world = new WorldModel();
-    const kitchenScents = [
-      { item: 'oven', trait: { type: TraitType.LIGHT_SOURCE, isLit: true }, produces: 'smoke' },
-      { item: 'bread', trait: { type: TraitType.EDIBLE }, produces: 'food' },
-      { item: 'coffee_maker', trait: { type: TraitType.EDIBLE, liquid: true }, produces: 'food' }
-    ];
-    
-    kitchenScents.forEach(({ item, trait, produces }) => {
-      const obj = world.createEntity(item, 'object');
-      obj.add(trait);
-      
-      if (produces === 'smoke') {
-        expect(obj.has(TraitType.LIGHT_SOURCE)).toBe(true);
-      } else if (produces === 'food') {
-        expect(obj.has(TraitType.EDIBLE)).toBe(true);
-      }
-    });
-  });
-});

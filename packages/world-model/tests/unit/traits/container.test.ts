@@ -4,6 +4,7 @@ import { IFEntity } from '../../../src/entities/if-entity';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
+import { RoomTrait } from '../../../src/traits/room/roomTrait';
 import { createTestContainer, createTestItem } from '../../fixtures/test-entities';
 
 describe('ContainerTrait', () => {
@@ -283,10 +284,93 @@ describe('ContainerTrait', () => {
         maxVolume: 0,
         maxItems: 0
       };
-      
+
       expect(trait.capacity.maxWeight).toBe(0);
       expect(trait.capacity.maxVolume).toBe(0);
       expect(trait.capacity.maxItems).toBe(0);
+    });
+  });
+
+  describe('World State Behaviors', () => {
+    it('should accept items via moveEntity and reflect in getContents', () => {
+      const room = world.createEntity('Room', 'room');
+      room.add(new RoomTrait());
+      room.add(new ContainerTrait());
+
+      const box = createTestContainer(world, 'box');
+      world.moveEntity(box.id, room.id);
+
+      const coin = createTestItem(world, 'gold coin');
+      world.moveEntity(coin.id, room.id);
+
+      // PRECONDITION: coin is in room, not in box
+      expect(world.getLocation(coin.id)).toBe(room.id);
+      expect(world.getContents(box.id).map(e => e.id)).not.toContain(coin.id);
+
+      // ACT: move coin into box
+      const result = world.moveEntity(coin.id, box.id);
+
+      // POSTCONDITION: coin is now inside box
+      expect(result).toBe(true);
+      expect(world.getLocation(coin.id)).toBe(box.id);
+      expect(world.getContents(box.id).map(e => e.id)).toContain(coin.id);
+      expect(world.getContents(room.id).map(e => e.id)).not.toContain(coin.id);
+    });
+
+    it('should remove items from container via moveEntity', () => {
+      const room = world.createEntity('Room', 'room');
+      room.add(new RoomTrait());
+      room.add(new ContainerTrait());
+
+      const box = createTestContainer(world, 'box');
+      world.moveEntity(box.id, room.id);
+
+      const key = createTestItem(world, 'key');
+      world.moveEntity(key.id, box.id);
+
+      // PRECONDITION
+      expect(world.getLocation(key.id)).toBe(box.id);
+
+      // ACT: move key out to room
+      world.moveEntity(key.id, room.id);
+
+      // POSTCONDITION
+      expect(world.getLocation(key.id)).toBe(room.id);
+      expect(world.getContents(box.id).map(e => e.id)).not.toContain(key.id);
+    });
+
+    it('should support nested containers via moveEntity', () => {
+      const room = world.createEntity('Room', 'room');
+      room.add(new RoomTrait());
+      room.add(new ContainerTrait());
+
+      const suitcase = createTestContainer(world, 'suitcase');
+      world.moveEntity(suitcase.id, room.id);
+
+      const pouch = createTestContainer(world, 'pouch');
+      world.moveEntity(pouch.id, suitcase.id);
+
+      const gem = createTestItem(world, 'gem');
+      world.moveEntity(gem.id, pouch.id);
+
+      // POSTCONDITION: gem is inside pouch, pouch is inside suitcase
+      expect(world.getLocation(gem.id)).toBe(pouch.id);
+      expect(world.getLocation(pouch.id)).toBe(suitcase.id);
+      expect(world.getContents(pouch.id).map(e => e.id)).toContain(gem.id);
+      expect(world.getContents(suitcase.id).map(e => e.id)).toContain(pouch.id);
+    });
+
+    it('should prevent circular containment', () => {
+      const box1 = createTestContainer(world, 'box1');
+      const box2 = createTestContainer(world, 'box2');
+      world.moveEntity(box2.id, box1.id);
+
+      // ACT: try to put box1 inside box2 (would create a loop)
+      const result = world.moveEntity(box1.id, box2.id);
+
+      // POSTCONDITION: move rejected, locations unchanged
+      expect(result).toBe(false);
+      expect(world.getLocation(box2.id)).toBe(box1.id);
     });
   });
 });

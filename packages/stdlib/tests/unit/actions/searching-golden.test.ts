@@ -13,12 +13,13 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { searchingAction } from '../../../src/actions/standard/searching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, IdentityTrait } from '@sharpee/world-model';
+import { TraitType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
+  expectTraitValue,
   TestData,
   createCommand
 } from '../../test-utils';
@@ -518,196 +519,104 @@ describe('searchingAction (Golden Pattern)', () => {
 
     test('should include location as target when searching room', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const context = createRealTestContext(searchingAction, world, createCommand(IFActions.SEARCHING));
-      
+
       const events = executeWithValidation(searchingAction, context);
-      
+
       const searchEvent = events.find(e => e.type === 'if.event.searched');
       expect(searchEvent?.data.target).toBe(room.id);
       expect(searchEvent?.data.searchingLocation).toBe(true);
     });
   });
-});
 
-describe('Testing Pattern Examples for Searching', () => {
-  test('pattern: concealment mechanics', () => {
-    // Test different concealment scenarios
-    const world = new WorldModel();
-    const concealmentTypes = [
-      {
-        location: 'under_rug',
-        item: 'trapdoor',
-        findChance: 'guaranteed'
-      },
-      {
-        location: 'behind_painting',
-        item: 'safe',
-        findChance: 'guaranteed'
-      },
-      {
-        location: 'inside_false_bottom',
-        item: 'documents',
-        findChance: 'guaranteed'
-      },
-      {
-        location: 'among_books',
-        item: 'special_book',
-        findChance: 'skill_based'
-      }
-    ];
-    
-    concealmentTypes.forEach(({ item }) => {
-      const entity = world.createEntity(item, 'object');
-      entity.add({
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the searching action actually reveals concealed items
+   * by setting their identity.concealed flag to false.
+   */
+  describe('World State Mutations', () => {
+    test('should set concealed to false on hidden item after searching container', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const desk = world.createEntity('oak desk', 'object');
+      desk.add({ type: TraitType.CONTAINER, capacity: 5 });
+      world.moveEntity(desk.id, room.id);
+
+      const key = world.createEntity('secret key', 'object');
+      key.add({
         type: TraitType.IDENTITY,
-        name: item,
+        name: 'secret key',
         concealed: true
       });
-      
-      const identity = entity.get(IdentityTrait)!;
-      expect(identity.concealed).toBe(true);
-    });
-  });
+      world.moveEntity(key.id, desk.id);
 
-  test('pattern: searchable object types', () => {
-    // Test different object types that can be searched
-    const world = new WorldModel();
-    const searchableTypes = [
-      {
-        type: 'container',
-        examples: ['chest', 'drawer', 'box'],
-        trait: TraitType.CONTAINER
-      },
-      {
-        type: 'supporter',
-        examples: ['table', 'shelf', 'altar'],
-        trait: TraitType.SUPPORTER
-      },
-      {
-        type: 'location',
-        examples: ['room', 'cave', 'clearing'],
-        trait: undefined // Locations don't need special trait
-      },
-      {
-        type: 'regular',
-        examples: ['statue', 'painting', 'fireplace'],
-        trait: undefined // Can hide things without special traits
-      }
-    ];
-    
-    searchableTypes.forEach(({ examples, trait }) => {
-      examples.forEach(example => {
-        const entity = world.createEntity(example, 'object');
-        if (trait) {
-          entity.add({ type: trait });
-        }
-        // All can potentially have concealed items
-        expect(entity).toBeDefined();
-      });
-    });
-  });
+      // VERIFY PRECONDITION: key is concealed
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', true);
 
-  test('pattern: search result variations', () => {
-    // Test different search outcomes
-    const searchOutcomes = [
-      {
-        scenario: 'empty_container',
-        visible: 0,
-        concealed: 0,
-        message: 'empty_container'
-      },
-      {
-        scenario: 'visible_contents_only',
-        visible: 3,
-        concealed: 0,
-        message: 'container_contents'
-      },
-      {
-        scenario: 'concealed_items_only',
-        visible: 0,
-        concealed: 2,
-        message: 'found_concealed'
-      },
-      {
-        scenario: 'mixed_contents',
-        visible: 2,
-        concealed: 1,
-        message: 'found_concealed' // Prioritizes concealed discovery
-      },
-      {
-        scenario: 'nothing_to_find',
-        visible: 0,
-        concealed: 0,
-        message: 'nothing_special'
-      }
-    ];
-    
-    searchOutcomes.forEach(({ concealed, message }) => {
-      // Verify message priority
-      if (concealed > 0) {
-        expect(message).toBe('found_concealed');
-      }
-    });
-  });
+      const command = createCommand(IFActions.SEARCHING, { entity: desk });
+      const context = createRealTestContext(searchingAction, world, command);
 
-  test('pattern: container state requirements', () => {
-    // Test container states that affect searching
-    const containerStates = [
-      {
-        state: 'open',
-        openable: { isOpen: true },
-        canSearch: true
-      },
-      {
-        state: 'closed',
-        openable: { isOpen: false },
-        canSearch: false
-      },
-      {
-        state: 'not_openable',
-        openable: undefined,
-        canSearch: true
-      },
-      {
-        state: 'transparent',
-        openable: { isOpen: false },
-        transparent: true,
-        canSearch: true // Might allow seeing but not taking
-      }
-    ];
-    
-    containerStates.forEach(({ openable, canSearch, transparent }) => {
-      if (openable) {
-        const shouldBlock = openable && !openable.isOpen && !transparent;
-        expect(shouldBlock).toBe(!canSearch);
-      }
-    });
-  });
+      const validation = searchingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      searchingAction.execute(context);
 
-  test('pattern: location searching', () => {
-    // Test searching entire locations
-    const locationTypes = [
-      {
-        type: 'room',
-        description: 'indoor space',
-        typicalFinds: ['coins_under_cushions', 'keys_in_drawers']
-      },
-      {
-        type: 'forest',
-        description: 'outdoor area',
-        typicalFinds: ['herbs', 'hidden_paths']
-      },
-      {
-        type: 'cave',
-        description: 'natural formation',
-        typicalFinds: ['gems', 'secret_passages']
-      }
-    ];
-    
-    // All locations can be searched without a target
-    locationTypes.forEach(location => {
-      expect(location.typicalFinds.length).toBeGreaterThan(0);
+      // VERIFY POSTCONDITION: key is no longer concealed
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', false);
+    });
+
+    test('should reveal multiple concealed items after searching', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const shelf = world.createEntity('dusty shelf', 'object');
+      shelf.add({ type: TraitType.SUPPORTER });
+      world.moveEntity(shelf.id, room.id);
+
+      const lever = world.createEntity('hidden lever', 'object');
+      lever.add({ type: TraitType.IDENTITY, name: 'hidden lever', concealed: true });
+      world.moveEntity(lever.id, shelf.id);
+
+      const key = world.createEntity('brass key', 'object');
+      key.add({ type: TraitType.IDENTITY, name: 'brass key', concealed: true });
+      world.moveEntity(key.id, shelf.id);
+
+      // VERIFY PRECONDITION: both items concealed
+      expectTraitValue(lever, TraitType.IDENTITY, 'concealed', true);
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', true);
+
+      const command = createCommand(IFActions.SEARCHING, { entity: shelf });
+      const context = createRealTestContext(searchingAction, world, command);
+
+      const validation = searchingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      searchingAction.execute(context);
+
+      // VERIFY POSTCONDITION: both items revealed
+      expectTraitValue(lever, TraitType.IDENTITY, 'concealed', false);
+      expectTraitValue(key, TraitType.IDENTITY, 'concealed', false);
+    });
+
+    test('should NOT change state of non-concealed items', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const box = world.createEntity('open box', 'object');
+      box.add({ type: TraitType.CONTAINER });
+      world.moveEntity(box.id, room.id);
+
+      const coin = world.createEntity('gold coin', 'object');
+      world.moveEntity(coin.id, box.id);
+
+      const command = createCommand(IFActions.SEARCHING, { entity: box });
+      const context = createRealTestContext(searchingAction, world, command);
+
+      const validation = searchingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      searchingAction.execute(context);
+
+      // No identity trait to change — coin was never concealed
+      expect(coin.get(TraitType.IDENTITY)?.concealed).toBeFalsy();
     });
   });
 });
+

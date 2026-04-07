@@ -7,6 +7,7 @@ import { OpenableTrait } from '../../src/traits/openable/openableTrait';
 import { LockableTrait } from '../../src/traits/lockable/lockableTrait';
 import { ContainerTrait } from '../../src/traits/container/containerTrait';
 import { RoomTrait } from '../../src/traits/room/roomTrait';
+import { ActorTrait } from '../../src/traits/actor/actorTrait';
 
 describe('AuthorModel', () => {
   let world: WorldModel;
@@ -327,6 +328,37 @@ describe('AuthorModel', () => {
       expect(world.getLocation(treasure.id)).toBe(chest.id);
       expect(world.getLocation(key.id)).toBe(cabinet2.id);
       expect(world.getContainingRoom(player.id)?.id).toBe(kitchen.id);
+    });
+  });
+
+  describe('Scope and Visibility Integration', () => {
+    it('should include items in closed containers in scope but not visible', () => {
+      const room = author.createEntity('Room', 'room');
+      room.add(new RoomTrait());
+      room.add(new ContainerTrait());
+
+      const player = author.createEntity('Player', 'actor');
+      player.add(new ActorTrait());
+      player.add(new ContainerTrait());
+
+      const cabinet = author.createEntity('Cabinet', 'container');
+      cabinet.add(new ContainerTrait());
+      cabinet.add(new OpenableTrait({ isOpen: false }));
+
+      const medicine = author.createEntity('Medicine', 'item');
+
+      author.moveEntity(player.id, room.id);
+      author.moveEntity(cabinet.id, room.id);
+      author.moveEntity(medicine.id, cabinet.id);
+
+      const inScope = world.getInScope(player.id);
+      expect(inScope).toContain(room);
+      expect(inScope).toContain(cabinet);
+      expect(inScope).toContain(medicine);
+
+      const visible = world.getVisible(player.id);
+      expect(visible).toContain(cabinet);
+      expect(visible).not.toContain(medicine);
     });
   });
 });

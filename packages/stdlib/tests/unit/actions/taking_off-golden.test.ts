@@ -8,19 +8,17 @@
  * - Validate that items are actually worn
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { takingOffAction } from '../../../src/actions/standard/taking_off';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, WearableTrait } from '@sharpee/world-model';
+import { TraitType, WearableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
-  TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('takingOffAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -363,85 +361,6 @@ describe('takingOffAction (Golden Pattern)', () => {
           expect(event.entities.location).toBe(room.id);
         }
       });
-    });
-  });
-});
-
-describe('Testing Pattern Examples for Taking Off', () => {
-  test('pattern: layering removal order', () => {
-    // Test that items must be removed in reverse layer order
-    const world = new WorldModel();
-    const layers = [
-      { id: 'underwear', layer: 0 },
-      { id: 'shirt', layer: 1 },
-      { id: 'sweater', layer: 2 },
-      { id: 'jacket', layer: 3 },
-      { id: 'coat', layer: 4 }
-    ];
-    
-    // Create items with increasing layers
-    const items = layers.map(({ id, layer }) => {
-      const item = world.createEntity(id, 'object');
-      item.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        bodyPart: 'torso',
-        layer
-      });
-      return item;
-    });
-    
-    // Can only remove items if no higher layer items exist
-    const canRemove = (itemIndex: number, allItems: any[]) => {
-      const item = allItems[itemIndex];
-      const itemLayer = item.get(TraitType.WEARABLE).layer;
-      
-      return !allItems.some((other, otherIndex) => {
-        if (otherIndex === itemIndex) return false;
-        const otherWearable = other.get(TraitType.WEARABLE);
-        return otherWearable.worn && 
-               otherWearable.layer > itemLayer &&
-               otherWearable.bodyPart === 'torso';
-      });
-    };
-    
-    // Only the outermost layer (coat) can be removed
-    expect(canRemove(4, items)).toBe(true);  // coat
-    expect(canRemove(3, items)).toBe(false); // jacket (blocked by coat)
-    expect(canRemove(0, items)).toBe(false); // underwear (blocked by everything)
-  });
-
-  test('pattern: special removal restrictions', () => {
-    // Test various reasons items might not be removable
-    const world = new WorldModel();
-    const restrictedItems = [
-      {
-        name: 'cursed ring',
-        restriction: { cursed: true },
-        errorType: 'cant_remove'
-      },
-      {
-        name: 'locked collar',
-        restriction: { locked: true },
-        errorType: 'cant_remove'
-      },
-      {
-        name: 'magical bond',
-        restriction: { magicallyBound: true },
-        errorType: 'cant_remove'
-      }
-    ];
-
-    restrictedItems.forEach(({ name, restriction }) => {
-      const item = world.createEntity(name, 'object');
-      item.add({
-        type: TraitType.WEARABLE,
-        worn: true,
-        ...restriction
-      });
-
-      const wearable = item.get(WearableTrait)! as WearableTrait & { cursed?: boolean; locked?: boolean; magicallyBound?: boolean };
-      expect(wearable.cursed || wearable.locked || wearable.magicallyBound).toBeTruthy();
     });
   });
 });

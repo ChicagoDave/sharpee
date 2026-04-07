@@ -16,6 +16,7 @@ import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
+  expectTraitValue,
   TestData,
   createCommand,
   setupBasicWorld,
@@ -446,14 +447,14 @@ describe('eatingAction (Golden Pattern)', () => {
           type: TraitType.EDIBLE
         }
       });
-      
+
       const command = createCommand(IFActions.EATING, {
         entity: item
       });
       const context = createRealTestContext(eatingAction, world, command);
-      
+
       const events = executeWithValidation(eatingAction, context);
-      
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
@@ -463,101 +464,99 @@ describe('eatingAction (Golden Pattern)', () => {
       });
     });
   });
-});
 
-import { WorldModel } from '@sharpee/world-model';
-
-describe('Testing Pattern Examples for Eating', () => {
-  test('pattern: complex food system with multiple properties', () => {
-    // Test a complete food with all possible properties
-    const world = new WorldModel();
-    const gourmetMeal = world.createEntity('gourmet meal', 'object');
-    gourmetMeal.add({
-      type: TraitType.EDIBLE,
-      servings: 3,
-      taste: 'delicious',
-      nutrition: 800,
-      satisfiesHunger: true,
-      effects: ['well-fed', 'happy']
-    });
-    
-    const edible = gourmetMeal.getTrait(EdibleTrait)!;
-    expect(edible.servings).toBe(3);
-    expect(edible.taste).toBe('delicious');
-    expect(edible.nutrition).toBe(800);
-    expect(edible.satisfiesHunger).toBe(true);
-    expect(edible.effects).toContain('well-fed');
-  });
-
-  test('pattern: food with special effects', () => {
-    // Test various food effects
-    const world = new WorldModel();
-    const specialFoods = [
-      { name: 'poison_apple', effects: ['poison'] },
-      { name: 'healing_potion', effects: ['heal', 'restore_health'] },
-      { name: 'magic_mushroom', effects: ['hallucination', 'confusion'] },
-      { name: 'energy_drink', effects: ['speed_boost', 'jittery'] },
-      { name: 'sleeping_pill', effects: ['drowsy', 'sleep'] }
-    ];
-    
-    specialFoods.forEach(({ name, effects }) => {
-      const food = world.createEntity(name, 'object');
-      food.add({
-        type: TraitType.EDIBLE,
-
-        effects
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the eating action actually mutates world state,
+   * not just emits events. Servings must decrement and consumption must be tracked.
+   */
+  describe('World State Mutations', () => {
+    test('should decrement servings after eating single-serving item', () => {
+      const { world, item } = TestData.withInventoryItem('ham sandwich', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 1
+        }
       });
-      
-      const edible = food.getTrait(EdibleTrait)!;
-      expect(edible.effects).toEqual(effects);
+
+      // VERIFY PRECONDITION: 1 serving
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 1);
+
+      const command = createCommand(IFActions.EATING, { entity: item });
+      const context = createRealTestContext(eatingAction, world, command);
+
+      const validation = eatingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      eatingAction.execute(context);
+
+      // VERIFY POSTCONDITION: 0 servings
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 0);
     });
-  });
 
-  test('pattern: food quality spectrum', () => {
-    // Test the full range of food qualities
-    const world = new WorldModel();
-    const qualityLevels = [
-      { item: 'gourmet_chocolate', taste: 'delicious' },
-      { item: 'homemade_cookies', taste: 'tasty' },
-      { item: 'cafeteria_food', taste: 'plain' },
-      { item: 'hardtack', taste: 'bland' },
-      { item: 'spoiled_milk', taste: 'awful' }
-    ];
-    
-    qualityLevels.forEach(({ item, taste }) => {
-      const food = world.createEntity(item, 'object');
-      food.add({
-        type: TraitType.EDIBLE,
-
-        taste
+    test('should decrement servings for multi-serving food', () => {
+      const { world, item } = TestData.withInventoryItem('apple pie', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 3
+        }
       });
-      
-      const edible = food.getTrait(EdibleTrait)!;
-      expect(edible.taste).toBe(taste);
+
+      // VERIFY PRECONDITION: 3 servings
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 3);
+
+      const command = createCommand(IFActions.EATING, { entity: item });
+      const context = createRealTestContext(eatingAction, world, command);
+
+      const validation = eatingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      eatingAction.execute(context);
+
+      // VERIFY POSTCONDITION: 2 servings (decremented by 1)
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 2);
     });
-  });
 
-  test('pattern: multi-portion foods', () => {
-    // Test foods that can be eaten in multiple portions
-    const world = new WorldModel();
-    const multiServingFoods = [
-      { item: 'whole_pizza', servings: 8 },
-      { item: 'birthday_cake', servings: 12 },
-      { item: 'loaf_of_bread', servings: 10 },
-      { item: 'bag_of_chips', servings: 20 },
-      { item: 'half_sandwich', servings: 2 }
-    ];
-    
-    multiServingFoods.forEach(({ item, portions }) => {
-      const food = world.createEntity(item, 'object');
-      food.add({
-        type: TraitType.EDIBLE,
-
-        portions
+    test('should track servings correctly over multiple eat actions', () => {
+      const { world, item } = TestData.withInventoryItem('pizza', {
+        [TraitType.EDIBLE]: {
+          type: TraitType.EDIBLE,
+          servings: 3
+        }
       });
-      
-      const edible = food.getTrait(EdibleTrait)!;
-      expect(edible.servings).toBe(portions);
+
+      const command = createCommand(IFActions.EATING, { entity: item });
+
+      // First eat: 3 → 2
+      const ctx1 = createRealTestContext(eatingAction, world, command);
+      eatingAction.validate(ctx1);
+      eatingAction.execute(ctx1);
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 2);
+
+      // Second eat: 2 → 1
+      const ctx2 = createRealTestContext(eatingAction, world, command);
+      eatingAction.validate(ctx2);
+      eatingAction.execute(ctx2);
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 1);
+
+      // Third eat: 1 → 0
+      const ctx3 = createRealTestContext(eatingAction, world, command);
+      eatingAction.validate(ctx3);
+      eatingAction.execute(ctx3);
+      expectTraitValue(item, TraitType.EDIBLE, 'servings', 0);
+    });
+
+    test('should NOT change servings when item is not edible', () => {
+      const { world, object } = TestData.withObject('small rock');
+
+      const command = createCommand(IFActions.EATING, { entity: object });
+      const context = createRealTestContext(eatingAction, world, command);
+
+      const validation = eatingAction.validate(context);
+      expect(validation.valid).toBe(false);
+
+      // VERIFY POSTCONDITION: no edible trait, no mutation possible
+      expect(object.get(TraitType.EDIBLE)).toBeUndefined();
     });
   });
 });
+

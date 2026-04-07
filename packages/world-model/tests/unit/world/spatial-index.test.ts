@@ -296,14 +296,14 @@ describe('SpatialIndex', () => {
       expect(index.getChildren('parent-1')).toEqual(['child-1']);
     });
 
-    it('should handle removing child from wrong parent', () => {
+    it('should clean actual parent when removing child with wrong parent specified', () => {
       index.addChild('parent-1', 'child-1');
-      // removeChild will remove the child regardless of parent specified
+      // removeChild with wrong parent should still clean up correctly
       index.removeChild('parent-2', 'child-1');
-      
-      // The implementation removes from childToParent map regardless
+
+      // Child should be fully removed from both maps — no stale data
       expect(index.getParent('child-1')).toBeUndefined();
-      expect(index.getChildren('parent-1')).toEqual(['child-1']); // Still in parent's children
+      expect(index.getChildren('parent-1')).toEqual([]);
     });
 
     it('should handle self-parenting', () => {

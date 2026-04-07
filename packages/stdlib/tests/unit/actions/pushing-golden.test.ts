@@ -19,10 +19,10 @@ import {
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
+  expectTraitValue,
   TestData,
   createCommand
 } from '../../test-utils';
-import type { WorldModel } from '@sharpee/world-model';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('pushingAction (Golden Pattern)', () => {
@@ -484,15 +484,15 @@ describe('pushingAction (Golden Pattern)', () => {
         type: TraitType.SWITCHABLE,
         isOn: false
       });
-      
+
       world.moveEntity(button.id, room.id);
-      
+
       const command = createCommand(
         IFActions.PUSHING,
         { entity: button }
       );
       const context = createRealTestContext(pushingAction, world, command);
-      
+
       const events = executeWithValidation(pushingAction, context);
 
       events.forEach(event => {
@@ -504,80 +504,82 @@ describe('pushingAction (Golden Pattern)', () => {
       });
     });
   });
+
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the pushing action actually mutates world state,
+   * not just emits events. The key mutation is SwitchableBehavior.toggle().
+   */
+  describe('World State Mutations', () => {
+    test('should toggle SwitchableTrait.isOn from false to true after pushing button', () => {
+      const { world, player, room } = setupBasicWorld();
+      const button = world.createEntity('red button', 'object');
+      button.add({
+        type: TraitType.PUSHABLE,
+        pushType: 'button'
+      });
+      button.add({
+        type: TraitType.SWITCHABLE,
+        isOn: false
+      });
+      world.moveEntity(button.id, room.id);
+
+      // VERIFY PRECONDITION: switch is off
+      expectTraitValue(button, TraitType.SWITCHABLE, 'isOn', false);
+
+      const command = createCommand(IFActions.PUSHING, { entity: button });
+      const context = createRealTestContext(pushingAction, world, command);
+
+      const validation = pushingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      pushingAction.execute(context);
+
+      // VERIFY POSTCONDITION: switch is now on
+      expectTraitValue(button, TraitType.SWITCHABLE, 'isOn', true);
+    });
+
+    test('should toggle SwitchableTrait.isOn from true to false after pushing switch', () => {
+      const { world, player, room } = setupBasicWorld();
+      const lightSwitch = world.createEntity('light switch', 'object');
+      lightSwitch.add({
+        type: TraitType.PUSHABLE,
+        pushType: 'button'
+      });
+      lightSwitch.add({
+        type: TraitType.SWITCHABLE,
+        isOn: true
+      });
+      world.moveEntity(lightSwitch.id, room.id);
+
+      // VERIFY PRECONDITION: switch is on
+      expectTraitValue(lightSwitch, TraitType.SWITCHABLE, 'isOn', true);
+
+      const command = createCommand(IFActions.PUSHING, { entity: lightSwitch });
+      const context = createRealTestContext(pushingAction, world, command);
+
+      const validation = pushingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      pushingAction.execute(context);
+
+      // VERIFY POSTCONDITION: switch is now off
+      expectTraitValue(lightSwitch, TraitType.SWITCHABLE, 'isOn', false);
+    });
+
+    test('should NOT mutate state when pushing non-pushable object', () => {
+      const { world, player, room } = setupBasicWorld();
+      const painting = world.createEntity('oil painting', 'object');
+      world.moveEntity(painting.id, room.id);
+
+      const command = createCommand(IFActions.PUSHING, { entity: painting });
+      const context = createRealTestContext(pushingAction, world, command);
+
+      const validation = pushingAction.validate(context);
+      expect(validation.valid).toBe(false);
+
+      // No traits to mutate — validation blocked it
+      expect(painting.get(TraitType.SWITCHABLE)).toBeUndefined();
+    });
+  });
 });
 
-describe('Testing Pattern Examples for Pushing with Traits', () => {
-  test('pattern: push types from traits', () => {
-    // Test different push types based on traits
-    const pushTypes = [
-      { traits: [TraitType.PUSHABLE, TraitType.BUTTON], expectedType: 'button' },
-      { traits: [TraitType.PUSHABLE, TraitType.MOVEABLE_SCENERY], expectedType: 'heavy' },
-      { traits: [TraitType.PUSHABLE], expectedType: 'moveable' },
-      { traits: [TraitType.SCENERY], expectedType: 'fixed' }
-    ];
-    
-    pushTypes.forEach(({ traits, expectedType }) => {
-      if (traits.includes(TraitType.PUSHABLE)) {
-        if (traits.includes(TraitType.BUTTON)) {
-          expect(expectedType).toBe('button');
-        } else if (traits.includes(TraitType.MOVEABLE_SCENERY)) {
-          expect(expectedType).toMatch(/heavy|moveable/);
-        } else {
-          expect(expectedType).toBe('moveable');
-        }
-      } else {
-        expect(expectedType).toBe('fixed');
-      }
-    });
-  });
-
-  test('pattern: trait combinations', () => {
-    // Test valid trait combinations
-    const combinations = [
-      { 
-        traits: [TraitType.PUSHABLE, TraitType.BUTTON, TraitType.SWITCHABLE],
-        valid: true,
-        description: 'switchable button'
-      },
-      {
-        traits: [TraitType.PUSHABLE, TraitType.MOVEABLE_SCENERY],
-        valid: true,
-        description: 'heavy moveable object'
-      },
-      {
-        traits: [TraitType.PUSHABLE],
-        valid: true,
-        description: 'simple pushable object'
-      },
-      {
-        traits: [TraitType.SCENERY],
-        valid: true,
-        description: 'fixed scenery (not pushable)'
-      }
-    ];
-    
-    combinations.forEach(({ traits, valid }) => {
-      expect(valid).toBe(true);
-    });
-  });
-
-  test('pattern: pushable properties', () => {
-    // Test pushable trait properties
-    const properties = [
-      { pushType: 'button', hasSound: true, canRevealPassage: false },
-      { pushType: 'heavy', hasStrength: true, canRevealPassage: false },
-      { pushType: 'moveable', hasSound: true, canRevealPassage: true }
-    ];
-    
-    properties.forEach(({ pushType, hasSound, canRevealPassage, hasStrength }) => {
-      if (pushType === 'button') {
-        expect(hasSound).toBe(true);
-        expect(canRevealPassage).toBe(false);
-      } else if (pushType === 'heavy') {
-        expect(hasStrength).toBe(true);
-      } else if (pushType === 'moveable') {
-        expect(canRevealPassage).toBe(true);
-      }
-    });
-  });
-});

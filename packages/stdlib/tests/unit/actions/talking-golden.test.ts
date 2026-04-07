@@ -9,19 +9,17 @@
  * - Detect available conversation topics
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { talkingAction } from '../../../src/actions/standard/talking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, ActorTrait } from '@sharpee/world-model';
+import { TraitType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
   expectEvent,
   executeWithValidation,
-  TestData,
   createCommand
 } from '../../test-utils';
-import type { ActionContext } from '../../../src/actions/enhanced-types';
 
 describe('talkingAction (Golden Pattern)', () => {
   describe('Action Metadata', () => {
@@ -376,15 +374,15 @@ describe('talkingAction (Golden Pattern)', () => {
           state: 'active'
         }
       });
-      
+
       world.moveEntity(npc.id, room.id);
-      
+
       const context = createRealTestContext(talkingAction, world, createCommand(IFActions.TALKING, {
         entity: npc
       }));
-      
+
       const events = executeWithValidation(talkingAction, context);
-      
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
@@ -394,96 +392,49 @@ describe('talkingAction (Golden Pattern)', () => {
       });
     });
   });
-});
 
-describe('Testing Pattern Examples for Talking', () => {
-  test('pattern: NPC conversation states', () => {
-    // Test various conversation configurations
-    const world = new WorldModel();
-    const npcTypes = [
-      {
-        name: 'quest_giver',
-        conversation: {
-          hasGreeted: false,
-          state: 'quest_available',
-          topics: { quest: 'I need your help with something important.' }
-        }
-      },
-      {
-        name: 'merchant',
-        conversation: {
-          hasGreeted: true,
-          personality: 'formal',
-          topics: { trade: 'Would you like to see my wares?', prices: 'My prices are very fair.' }
-        }
-      },
-      {
-        name: 'guard',
-        conversation: {
-          hasGreeted: true,
-          isAvailable: true,
-          relationship: 'neutral',
-          topics: {}
-        }
-      }
-    ];
-    
-    npcTypes.forEach(({ name, conversation }) => {
-      const npc = world.createEntity(name, 'actor');
+  /**
+   * World State Mutations
+   *
+   * The talking action is a signal action — it reads conversation state but
+   * performs zero world mutations. hasGreeted, topics, and other conversation
+   * state are read-only during execute. Any conversation state changes must
+   * be handled by event handlers or story-specific logic.
+   */
+  describe('World State Mutations', () => {
+    test('should NOT mutate conversation state after talking', () => {
+      const { world, player, room } = setupBasicWorld();
+      const npc = world.createEntity('town elder', 'actor');
+      const conversation = {
+        hasGreeted: false,
+        personality: 'formal',
+        topics: { quest: 'Find the sword' }
+      };
       npc.add({
         type: TraitType.ACTOR,
-        conversation
+        customProperties: { conversation }
       });
-      
-      const actorTrait = npc.get(ActorTrait)! as ActorTrait & { conversation?: Record<string, unknown> };
-      expect(actorTrait.conversation).toEqual(conversation);
-    });
-  });
+      world.moveEntity(npc.id, room.id);
 
-  test('pattern: conversation relationships', () => {
-    // Test different relationship types
-    const world = new WorldModel();
-    const relationships = [
-      { type: 'friendly', expectWarm: true },
-      { type: 'neutral', expectWarm: false },
-      { type: 'hostile', expectWarm: false },
-      { type: 'romantic', expectWarm: true }
-    ];
-    
-    relationships.forEach(({ type, expectWarm }) => {
-      const npc = world.createEntity('test npc', 'actor');
-      npc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          relationship: type
-        }
-      });
-      
-      const actorTrait = npc.get(ActorTrait)! as ActorTrait & { conversation?: Record<string, unknown> };
-      if (expectWarm) {
-        expect(['friendly', 'romantic']).toContain(actorTrait.conversation.relationship);
-      } else {
-        expect(['neutral', 'hostile']).toContain(actorTrait.conversation.relationship);
-      }
-    });
-  });
+      // VERIFY PRECONDITION: conversation state before talking
+      const actorBefore = npc.get(TraitType.ACTOR);
+      const convBefore = actorBefore.customProperties?.conversation;
+      expect(convBefore?.hasGreeted).toBe(false);
 
-  test('pattern: conversation personalities', () => {
-    // Test personality types
-    const world = new WorldModel();
-    const personalities = ['formal', 'casual', 'gruff', 'cheerful', 'mysterious'];
-    
-    personalities.forEach(personality => {
-      const npc = world.createEntity('test npc', 'actor');
-      npc.add({
-        type: TraitType.ACTOR,
-        conversation: {
-          personality
-        }
-      });
-      
-      const actorTrait = npc.get(ActorTrait)! as ActorTrait & { conversation?: Record<string, unknown> };
-      expect(actorTrait.conversation.personality).toBe(personality);
+      const command = createCommand(IFActions.TALKING, { entity: npc });
+      const context = createRealTestContext(talkingAction, world, command);
+
+      const validation = talkingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      talkingAction.execute(context);
+
+      // VERIFY POSTCONDITION: conversation state unchanged
+      const actorAfter = npc.get(TraitType.ACTOR);
+      const convAfter = actorAfter.customProperties?.conversation;
+      expect(convAfter?.hasGreeted).toBe(false);
+      expect(convAfter?.personality).toBe('formal');
+      expect(convAfter?.topics).toEqual({ quest: 'Find the sword' });
     });
   });
 });
+

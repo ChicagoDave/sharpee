@@ -11,11 +11,12 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { climbingAction } from '../../../src/actions/standard/climbing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, RoomTrait, SupporterTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType, RoomTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
   executeWithValidation,
+  expectLocation,
   TestData,
   createCommand,
   setupBasicWorld
@@ -358,21 +359,21 @@ describe('climbingAction (Golden Pattern)', () => {
   describe('Event Structure Validation', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
-      
+
       const platform = world.createEntity('platform', EntityType.SUPPORTER);
       platform.add({
         type: TraitType.SUPPORTER,
         enterable: true
       });
       world.moveEntity(platform.id, room.id);
-      
+
       const command = createCommand(IFActions.CLIMBING, {
         entity: platform
       });
       const context = createRealTestContext(climbingAction, world, command);
-      
+
       const events = executeWithValidation(climbingAction, context);
-      
+
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
@@ -382,73 +383,113 @@ describe('climbingAction (Golden Pattern)', () => {
       });
     });
   });
-});
 
-describe('Testing Pattern Examples for Climbing', () => {
-  test('pattern: multi-level climbing', () => {
-    const world = new WorldModel();
-    
-    // Test climbing through multiple levels
-    const levels = [
-      { id: 'basement', name: 'Basement', exits: { up: { to: 'ground' } } },
-      { id: 'ground', name: 'Ground Floor', exits: { up: { to: 'first' }, down: { to: 'basement' } } },
-      { id: 'first', name: 'First Floor', exits: { up: { to: 'attic' }, down: { to: 'ground' } } },
-      { id: 'attic', name: 'Attic', exits: { down: { to: 'first' } } }
-    ];
-    
-    const rooms = levels.map(level => {
-      const room = world.createEntity(level.name, EntityType.ROOM);
-      room.add({
-        type: TraitType.ROOM,
-        exits: level.exits
-      });
-      return { room, id: level.id };
+  /**
+   * World State Mutations
+   *
+   * These tests verify that the climbing action actually moves the player,
+   * not just emits events.
+   */
+  describe('World State Mutations', () => {
+    test('should move player to destination room when climbing up', () => {
+      const world = new WorldModel();
+
+      const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
+      groundFloor.add({ type: TraitType.ROOM });
+
+      const attic = world.createEntity('Attic', EntityType.ROOM);
+      attic.add({ type: TraitType.ROOM });
+
+      const roomTrait = groundFloor.get(TraitType.ROOM);
+      roomTrait.exits = { up: { to: attic.id } };
+
+      const player = world.createEntity('yourself', EntityType.ACTOR);
+      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      world.setPlayer(player.id);
+      world.moveEntity(player.id, groundFloor.id);
+
+      // VERIFY PRECONDITION: player is on ground floor
+      expectLocation(world, player.id, groundFloor.id);
+
+      const command = createCommand(IFActions.CLIMBING);
+      command.parsed.extras = { direction: 'up' };
+      const context = createRealTestContext(climbingAction, world, command);
+
+      const validation = climbingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      climbingAction.execute(context);
+
+      // VERIFY POSTCONDITION: player is now in the attic
+      expectLocation(world, player.id, attic.id);
     });
-    
-    // Verify climbing paths
-    const groundRoom = rooms[1].room.getTrait(RoomTrait)!;
-    expect(groundRoom.exits).toHaveProperty('up');
-    expect(groundRoom.exits).toHaveProperty('down');
-  });
 
-  test('pattern: climbable objects vs movement', () => {
-    const world = new WorldModel();
-    
-    // Shows difference between climbing onto objects vs climbing directions
-    const climbableObjects = [
-      {
-        name: 'rope',
-        traits: {
-          [TraitType.CLIMBABLE]: {
-            type: TraitType.CLIMBABLE,
-            canClimb: true,
-            direction: 'up'
-          }
-        },
-        expectedMethod: 'onto'
-      },
-      {
-        name: 'rock face',
-        traits: {
-          [TraitType.SUPPORTER]: {
-            type: TraitType.SUPPORTER,
-            enterable: true
-          }
-        },
-        expectedMethod: 'onto'
-      }
-    ];
-    
-    climbableObjects.forEach(({ name, traits, expectedMethod }) => {
-      const obj = world.createEntity(name, EntityType.SCENERY);
-      for (const [traitType, traitData] of Object.entries(traits)) {
-        obj.add(traitData);
-      }
-      
-      // Verify climbable
-      const isClimbable = obj.hasTrait(TraitType.CLIMBABLE) || 
-                         (obj.hasTrait(TraitType.SUPPORTER) && obj.getTrait(SupporterTrait)!.enterable);
-      expect(isClimbable).toBe(true);
+    test('should move player to destination room when climbing down', () => {
+      const world = new WorldModel();
+
+      const groundFloor = world.createEntity('Ground Floor', EntityType.ROOM);
+      groundFloor.add({ type: TraitType.ROOM });
+
+      const attic = world.createEntity('Attic', EntityType.ROOM);
+      attic.add({ type: TraitType.ROOM });
+
+      const atticRoom = attic.get(TraitType.ROOM);
+      atticRoom.exits = { down: { to: groundFloor.id } };
+
+      const player = world.createEntity('yourself', EntityType.ACTOR);
+      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      world.setPlayer(player.id);
+      world.moveEntity(player.id, attic.id);
+
+      // VERIFY PRECONDITION: player is in the attic
+      expectLocation(world, player.id, attic.id);
+
+      const command = createCommand(IFActions.CLIMBING);
+      command.parsed.extras = { direction: 'down' };
+      const context = createRealTestContext(climbingAction, world, command);
+
+      const validation = climbingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      climbingAction.execute(context);
+
+      // VERIFY POSTCONDITION: player is now on ground floor
+      expectLocation(world, player.id, groundFloor.id);
+    });
+
+    test('should move player onto supporter when climbing onto object', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const tree = world.createEntity('oak tree', EntityType.SCENERY);
+      tree.add({ type: TraitType.SUPPORTER, enterable: true });
+      world.moveEntity(tree.id, room.id);
+
+      // VERIFY PRECONDITION: player is in the room
+      expectLocation(world, player.id, room.id);
+
+      const command = createCommand(IFActions.CLIMBING, { entity: tree });
+      const context = createRealTestContext(climbingAction, world, command);
+
+      const validation = climbingAction.validate(context);
+      expect(validation.valid).toBe(true);
+      climbingAction.execute(context);
+
+      // VERIFY POSTCONDITION: player is now on the tree
+      expectLocation(world, player.id, tree.id);
+    });
+
+    test('should NOT move player when climb target is not climbable', () => {
+      const { world, player, room, object } = TestData.withObject('red ball');
+
+      // VERIFY PRECONDITION: player is in the room
+      expectLocation(world, player.id, room.id);
+
+      const command = createCommand(IFActions.CLIMBING, { entity: object });
+      const context = createRealTestContext(climbingAction, world, command);
+
+      const validation = climbingAction.validate(context);
+      expect(validation.valid).toBe(false);
+
+      // VERIFY POSTCONDITION: player is still in the room (unchanged)
+      expectLocation(world, player.id, room.id);
     });
   });
 });

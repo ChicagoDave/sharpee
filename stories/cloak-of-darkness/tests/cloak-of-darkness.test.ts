@@ -72,9 +72,7 @@ describe('Cloak of Darkness Story', () => {
       
       // Check visibility - should only see the bar itself
       const visible = world.getVisible(player.id);
-      const visibleNames = visible.map(v => v.attributes.name || v.id);
-      console.log('Visible in darkness:', visibleNames);
-      
+
       expect(visible.length).toBe(1);
       expect(visible[0].id).toBe(bar.id);
     });

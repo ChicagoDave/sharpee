@@ -6,6 +6,8 @@ import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 import { SceneryTrait } from '../../../src/traits/scenery/sceneryTrait';
+import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
+import { RoomTrait } from '../../../src/traits/room/roomTrait';
 
 describe('SupporterTrait', () => {
   let world: WorldModel;
@@ -449,6 +451,83 @@ describe('SupporterTrait', () => {
       
       expect(supporterTrait.enterable).toBe(false);
       expect(supporterTrait.capacity?.maxWeight).toBe(0);
+    });
+  });
+
+  describe('World State Behaviors', () => {
+    function createRoom(): IFEntity {
+      const room = world.createEntity('Room', 'room');
+      room.add(new RoomTrait());
+      room.add(new ContainerTrait());
+      return room;
+    }
+
+    function createItem(name: string): IFEntity {
+      const item = world.createEntity(name, 'item');
+      item.add(new IdentityTrait({ name }));
+      return item;
+    }
+
+    it('should accept items via moveEntity onto supporter', () => {
+      const room = createRoom();
+      const table = world.createEntity('table', 'supporter');
+      table.add(new SupporterTrait());
+      world.moveEntity(table.id, room.id);
+
+      const lamp = createItem('lamp');
+      world.moveEntity(lamp.id, room.id);
+
+      // PRECONDITION
+      expect(world.getLocation(lamp.id)).toBe(room.id);
+
+      // ACT
+      const result = world.moveEntity(lamp.id, table.id);
+
+      // POSTCONDITION
+      expect(result).toBe(true);
+      expect(world.getLocation(lamp.id)).toBe(table.id);
+      expect(world.getContents(table.id).map(e => e.id)).toContain(lamp.id);
+    });
+
+    it('should allow multiple items on supporter', () => {
+      const room = createRoom();
+      const table = world.createEntity('table', 'supporter');
+      table.add(new SupporterTrait());
+      world.moveEntity(table.id, room.id);
+
+      const book = createItem('book');
+      const pen = createItem('pen');
+      const cup = createItem('cup');
+
+      world.moveEntity(book.id, table.id);
+      world.moveEntity(pen.id, table.id);
+      world.moveEntity(cup.id, table.id);
+
+      const contents = world.getContents(table.id).map(e => e.id);
+      expect(contents).toContain(book.id);
+      expect(contents).toContain(pen.id);
+      expect(contents).toContain(cup.id);
+      expect(contents).toHaveLength(3);
+    });
+
+    it('should remove items from supporter via moveEntity', () => {
+      const room = createRoom();
+      const shelf = world.createEntity('shelf', 'supporter');
+      shelf.add(new SupporterTrait());
+      world.moveEntity(shelf.id, room.id);
+
+      const vase = createItem('vase');
+      world.moveEntity(vase.id, shelf.id);
+
+      // PRECONDITION
+      expect(world.getLocation(vase.id)).toBe(shelf.id);
+
+      // ACT
+      world.moveEntity(vase.id, room.id);
+
+      // POSTCONDITION
+      expect(world.getLocation(vase.id)).toBe(room.id);
+      expect(world.getContents(shelf.id).map(e => e.id)).not.toContain(vase.id);
     });
   });
 });

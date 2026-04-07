@@ -21,7 +21,13 @@ import {
   createRestoreCompletedEvent,
   createQuitConfirmedEvent,
   createQuitCancelledEvent,
-  createRestartCompletedEvent
+  createRestartCompletedEvent,
+  createUndoRequestedEvent,
+  createUndoCompletedEvent,
+  createAgainRequestedEvent,
+  createAgainFailedEvent,
+  IUndoContext,
+  IAgainContext
 } from '../../src/events/platform-events';
 
 describe('Platform Events', () => {
@@ -215,6 +221,66 @@ describe('Platform Events', () => {
       
       expect(event.type).toBe(PlatformEventType.RESTART_CANCELLED);
       expect(event.payload.success).toBe(false);
+    });
+  });
+
+  describe('Undo Events', () => {
+    it('should create undo requested event with default context', () => {
+      const event = createUndoRequestedEvent();
+
+      expect(event.type).toBe(PlatformEventType.UNDO_REQUESTED);
+      expect(event.requiresClientAction).toBe(true);
+      expect(isPlatformRequestEvent(event)).toBe(true);
+    });
+
+    it('should create undo requested event with turns context', () => {
+      const context: IUndoContext = { turns: 3 };
+      const event = createUndoRequestedEvent(context);
+
+      expect(event.type).toBe(PlatformEventType.UNDO_REQUESTED);
+      expect(event.payload.context).toEqual(context);
+    });
+
+    it('should create undo completed event on success', () => {
+      const event = createUndoCompletedEvent(true, 5);
+
+      expect(event.type).toBe(PlatformEventType.UNDO_COMPLETED);
+      expect(event.payload.success).toBe(true);
+      expect(event.payload.restoredToTurn).toBe(5);
+      expect(isPlatformCompletionEvent(event)).toBe(true);
+    });
+
+    it('should create undo failed event on failure', () => {
+      const event = createUndoCompletedEvent(false, undefined, 'No undo history');
+
+      expect(event.type).toBe(PlatformEventType.UNDO_FAILED);
+      expect(event.payload.success).toBe(false);
+      expect(event.payload.error).toBe('No undo history');
+      expect(isPlatformCompletionEvent(event)).toBe(true);
+    });
+  });
+
+  describe('Again Events', () => {
+    it('should create again requested event with command context', () => {
+      const context: IAgainContext = {
+        command: 'take sword',
+        actionId: 'if.action.taking'
+      };
+      const event = createAgainRequestedEvent(context);
+
+      expect(event.type).toBe(PlatformEventType.AGAIN_REQUESTED);
+      expect(event.requiresClientAction).toBe(true);
+      expect(event.payload.context).toEqual(context);
+      expect(isPlatformRequestEvent(event)).toBe(true);
+    });
+
+    it('should create again failed event with error', () => {
+      const event = createAgainFailedEvent('No previous command');
+
+      expect(event.type).toBe(PlatformEventType.AGAIN_FAILED);
+      expect(event.payload.success).toBe(false);
+      expect(event.payload.error).toBe('No previous command');
+      expect(isPlatformCompletionEvent(event)).toBe(true);
     });
   });
 

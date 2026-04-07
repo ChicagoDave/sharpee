@@ -10,7 +10,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { closingAction } from '../../../src/actions/standard/closing/closing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, EntityType, OpenableTrait } from '@sharpee/world-model';
+import { TraitType, EntityType, OpenableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   executeWithValidation,
@@ -463,78 +463,5 @@ describe('World State Mutations', () => {
     // VERIFY POSTCONDITION: door is now closed
     const openableAfter = object.get(OpenableTrait)!;
     expect(openableAfter.isOpen).toBe(false);
-  });
-});
-
-describe('Testing Pattern Examples', () => {
-  test('pattern: testing container with various states', () => {
-    const world = new WorldModel();
-    
-    // Create containers in different states
-    const containers = [
-      { name: 'open box', isOpen: true, hasContents: false },
-      { name: 'closed box', isOpen: false, hasContents: false },
-      { name: 'open chest with items', isOpen: true, hasContents: true },
-      { name: 'locked door', isOpen: false, isLocked: true }
-    ];
-    
-    containers.forEach(({ name, isOpen, hasContents, isLocked }) => {
-      const container = world.createEntity(name, EntityType.CONTAINER);
-      container.add({
-        type: TraitType.OPENABLE,
-        isOpen
-      });
-      
-      if (isLocked) {
-        container.add({
-          type: TraitType.LOCKABLE,
-          isLocked: true
-        });
-      }
-      
-      if (hasContents) {
-        container.add({ type: TraitType.CONTAINER });
-        const item = world.createEntity('item', EntityType.OBJECT);
-        world.moveEntity(item.id, container.id);
-      }
-    });
-  });
-
-  test('pattern: testing close requirements', () => {
-    const world = new WorldModel();
-    
-    // Different scenarios that prevent closing
-    const preventionScenarios = [
-      {
-        name: 'overfilled box',
-        closeRequirements: {
-          preventedBy: 'items are sticking out'
-        }
-      },
-      {
-        name: 'damaged door',
-        closeRequirements: {
-          preventedBy: 'the hinges are broken'
-        }
-      },
-      {
-        name: 'blocked drawer',
-        closeRequirements: {
-          preventedBy: 'something is jamming it'
-        }
-      }
-    ];
-    
-    preventionScenarios.forEach(({ name, closeRequirements }) => {
-      const obj = world.createEntity(name, EntityType.CONTAINER);
-      obj.add({
-        type: TraitType.OPENABLE,
-        isOpen: true,
-        closeRequirements
-      });
-      
-      const openable = obj.getTrait(OpenableTrait)!;
-      expect(openable.closeRequirements.preventedBy).toBeDefined();
-    });
   });
 });

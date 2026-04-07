@@ -46,6 +46,10 @@
     "test:arch": "vitest run tests/architecture",
     "test:arch:watch": "vitest tests/architecture",
     "test:debt": "vitest run tests/architecture/architectural-debt.test.ts",
+    "test:grade": "./scripts/grade-tests.sh",
+    "test:grade:ci": "./scripts/grade-tests.sh --ci",
+    "test:grade:summary": "./scripts/grade-tests.sh --summary",
+    "test:mutate": "stryker run",
     "typecheck": "tsc --noEmit",
     "lint": "pnpm -r run lint",
     "watch": "pnpm -r --parallel run watch",
@@ -54,6 +58,8 @@
     "publish:beta": "pnpm --filter @sharpee/core publish --access public --tag beta && pnpm --filter @sharpee/if-domain publish --access public --tag beta && pnpm --filter @sharpee/world-model publish --access public --tag beta && pnpm --filter @sharpee/if-services publish --access public --tag beta && pnpm --filter @sharpee/text-blocks publish --access public --tag beta && pnpm --filter @sharpee/text-service publish --access public --tag beta && pnpm --filter @sharpee/lang-en-us publish --access public --tag beta && pnpm --filter @sharpee/parser-en-us publish --access public --tag beta && pnpm --filter @sharpee/event-processor publish --access public --tag beta && pnpm --filter @sharpee/stdlib publish --access public --tag beta && pnpm --filter @sharpee/engine publish --access public --tag beta && pnpm --filter @sharpee/sharpee publish --access public --tag beta"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
     "@vitest/coverage-v8": "^3.2.4",
     "cross-env": "^7.0.3",
     "esbuild": "^0.27.2",
