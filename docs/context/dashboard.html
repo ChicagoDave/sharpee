@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sharpee — Project Dashboard</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-alt: #162032;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --accent: #f59e0b;
+    --accent-dim: #b45309;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --gray: #6b7280;
+    --blue: #3b82f6;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-alt: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --accent: #d97706;
+      --accent-dim: #f59e0b;
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --red: #dc2626;
+      --gray: #6b7280;
+      --blue: #2563eb;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-mono);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; }
+
+  h1 {
+    font-size: 1.75rem;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+    color: var(--text);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .header-left { flex: 1; min-width: 280px; }
+
+  .header-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+
+  .header-meta a {
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-cap { background: var(--accent-dim); color: #fff; }
+  .badge-ver { background: var(--border); color: var(--text-muted); }
+
+  .header-right {
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* Pulse Cards */
+  .pulse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .pulse-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .pulse-card .label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .pulse-card .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: var(--font-sans);
+  }
+
+  .pulse-card .sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .text-green { color: var(--green); }
+  .text-yellow { color: var(--yellow); }
+  .text-red { color: var(--red); }
+  .text-accent { color: var(--accent); }
+  .text-blue { color: var(--blue); }
+  .text-muted { color: var(--text-muted); }
+
+  /* Sections */
+  .section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  thead th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  tbody td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  tbody tr:hover { background: var(--bg-card-alt); }
+
+  /* Status badges */
+  .status {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-complete { background: rgba(34,197,94,0.15); color: var(--green); }
+  .status-incomplete { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .status-blocked { background: rgba(239,68,68,0.15); color: var(--red); }
+  .status-current { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .status-pending { background: rgba(107,114,128,0.15); color: var(--gray); }
+  .status-new { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+  /* Test Health Bar */
+  .grade-bar {
+    display: flex;
+    height: 32px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 1rem 0;
+  }
+
+  .grade-bar .segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: var(--font-sans);
+  }
+
+  .grade-bar .seg-green { background: var(--green); }
+  .grade-bar .seg-yellow { background: var(--yellow); color: #1e293b; }
+  .grade-bar .seg-red { background: var(--red); }
+
+  .grade-stats {
+    display: flex;
+    gap: 2rem;
+    font-size: 0.85rem;
+    justify-content: center;
+  }
+
+  .grade-stat { display: flex; align-items: center; gap: 0.4rem; }
+  .grade-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Plan items */
+  .plan-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+  }
+
+  .plan-item .step-num {
+    color: var(--text-dim);
+    min-width: 1.5rem;
+    text-align: right;
+  }
+
+  /* Archive list */
+  .archive-list {
+    list-style: none;
+    font-size: 0.8rem;
+  }
+
+  .archive-list li {
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .archive-list li:last-child { border-bottom: none; }
+
+  .archive-date {
+    color: var(--text-dim);
+    min-width: 6rem;
+  }
+
+  /* Two-column layout for smaller sections */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    body { padding: 1rem; }
+    .two-col { grid-template-columns: 1fr; }
+    .pulse-grid { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; }
+    .header-right { text-align: left; }
+  }
+
+  .goal-text {
+    max-width: 500px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .commit-line {
+    font-size: 0.8rem;
+    padding: 0.3rem 0;
+    display: flex;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .commit-line:last-child { border-bottom: none; }
+  .commit-hash { color: var(--accent); min-width: 5rem; }
+  .commit-date { color: var(--text-dim); min-width: 6.5rem; }
+
+  .blocker-clear {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--green);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Sharpee</h1>
+    <div class="header-meta">
+      Parser-based Interactive Fiction authoring tool &middot;
+      <a href="https://github.com/ChicagoDave/sharpee">ChicagoDave/sharpee</a>
+    </div>
+    <div class="badges">
+      <span class="badge badge-ver">DevArch 1.4.0</span>
+      <span class="badge badge-cap">base</span>
+    </div>
+  </div>
+  <div class="header-right">
+    Last updated: 2026-04-06 23:25 CST<br>
+    Branch: <strong>main</strong><br>
+    Last commit: <code>429078f4</code>
+  </div>
+</div>
+
+<!-- HEALTH PULSE -->
+<div class="pulse-grid">
+  <div class="pulse-card">
+    <div class="label">Last Commit</div>
+    <div class="value text-accent">Today</div>
+    <div class="sub">429078f4 — Merge PR #71</div>
+  </div>
+  <div class="pulse-card">
+    <div class="label">Commits This Week</div>
+    <div class="value text-blue">56</div>
+    <div class="sub">139 in last 30 days</div>
+  </div>
+  <div class="pulse-card">
+    <div class="label">Sessions Tracked</div>
+    <div class="value text-accent">81</div>
+    <div class="sub">6 active + 75 archived</div>
+  </div>
+  <div class="pulse-card">
+    <div class="label">Blockers</div>
+    <div class="value text-green">Clear</div>
+    <div class="sub">No open blockers</div>
+  </div>
+</div>
+
+<!-- TEST HEALTH -->
+<div class="section">
+  <h2>Test Health</h2>
+  <div class="grade-bar">
+    <div class="segment seg-green" style="flex: 177;">177 GREEN</div>
+  </div>
+  <div class="grade-stats">
+    <div class="grade-stat">
+      <span class="grade-dot" style="background: var(--green);"></span>
+      <strong>177</strong> GREEN
+    </div>
+    <div class="grade-stat">
+      <span class="grade-dot" style="background: var(--yellow);"></span>
+      <strong>0</strong> YELLOW
+    </div>
+    <div class="grade-stat">
+      <span class="grade-dot" style="background: var(--red);"></span>
+      <strong>0</strong> RED
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:0.75rem; font-size:0.75rem; color: var(--text-muted);">
+    177 test files graded via <code>scripts/grade-tests.sh</code> &middot; All tests at GREEN quality
+  </div>
+</div>
+
+<!-- CURRENT PLAN -->
+<div class="section">
+  <h2>Current Plan</h2>
+  <div style="text-align: center; padding: 1rem; color: var(--text-dim); font-size: 0.9rem;">
+    No active plan &mdash; last plan completed (VisibilityBehavior Deduplication / Scope Audit)
+  </div>
+</div>
+
+<!-- TWO COLUMN: Recent Commits + Open Blockers -->
+<div class="two-col">
+
+  <!-- RECENT COMMITS -->
+  <div class="section">
+    <h2>Recent Commits</h2>
+    <div class="commit-line">
+      <span class="commit-hash">429078f4</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Merge PR #71 — testing mitigation</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">00bc714e</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Phase 8 — test grading + Stryker</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">925cf586</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Phases 5-7 — consolidate, 60 tests</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">17f6a0b2</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Phase 3+4 — 23 mutation tests, cleanup</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">e30cddaa</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Phase 1+2 session summary</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">3b497d53</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Phase 2 — fix 2 src bugs, 2 test bugs</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">1dd23d3a</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Complete test inventory — 3,164 tests</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">cf7018be</span>
+      <span class="commit-date">Apr 06</span>
+      <span>Phase 1 — remove 167 dead tests</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">37a5a3b2</span>
+      <span class="commit-date">Apr 04</span>
+      <span>ADR-142 + ADRs 144-146 NPC chain</span>
+    </div>
+    <div class="commit-line">
+      <span class="commit-hash">34edb85c</span>
+      <span class="commit-date">Apr 04</span>
+      <span>Bump versions to 0.9.106</span>
+    </div>
+  </div>
+
+  <!-- OPEN BLOCKERS -->
+  <div class="section">
+    <h2>Open Blockers</h2>
+    <div class="blocker-clear">All clear</div>
+    <div style="font-size: 0.75rem; color: var(--text-dim); text-align: center;">
+      No INCOMPLETE or BLOCKED sessions with unresolved issues.<br>
+      DevArch gate: <code>session-init</code> (normal)
+    </div>
+  </div>
+
+</div>
+
+<!-- SESSION HISTORY -->
+<div class="section">
+  <h2>Session History <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 400;">(6 active + 75 archived = 81 total)</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Branch</th>
+        <th>Status</th>
+        <th>Goals</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2026-04-06 23:25</td>
+        <td>main</td>
+        <td><span class="status status-new">New</span></td>
+        <td class="goal-text">Current session</td>
+      </tr>
+      <tr>
+        <td>2026-04-06 15:00</td>
+        <td>testing-mitigation</td>
+        <td><span class="status status-complete">Complete</span></td>
+        <td class="goal-text">Phase 8 — test grading infra + Stryker mutation config</td>
+      </tr>
+      <tr>
+        <td>2026-04-06 11:04</td>
+        <td>testing-mitigation</td>
+        <td><span class="status status-complete">Complete</span></td>
+        <td class="goal-text">Phases 5-7 — consolidate tests, behavioral tests, coverage gaps</td>
+      </tr>
+      <tr>
+        <td>2026-04-06 03:38</td>
+        <td>testing-mitigation</td>
+        <td><span class="status status-incomplete">Incomplete</span></td>
+        <td class="goal-text">Phases 3+4 — mutation tests, fix/remove broken tests</td>
+      </tr>
+      <tr>
+        <td>2026-04-06 03:35</td>
+        <td>testing-mitigation</td>
+        <td><span class="status status-incomplete">Incomplete</span></td>
+        <td class="goal-text">Full test suite audit — 3,164 tests inventoried, Phases 1+2</td>
+      </tr>
+      <tr>
+        <td>2026-04-04 23:57</td>
+        <td>main</td>
+        <td><span class="status status-complete">Complete</span></td>
+        <td class="goal-text">ADR-142 resolved + ADR-144, 145, 146 created (NPC chain)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ARCHIVED PLANS -->
+<div class="section">
+  <h2>Archived Plans</h2>
+  <ul class="archive-list">
+    <li>
+      <span class="archive-date">2026-04-04</span>
+      <span>ADR-143 — Location-Relative Direction Vocabularies</span>
+    </li>
+    <li>
+      <span class="archive-date">2026-03-31</span>
+      <span>Fix: Capability Dispatch Message Key Double-Prefix Bug</span>
+    </li>
+    <li>
+      <span class="archive-date">2026-03-29</span>
+      <span>ISSUE-064/065 — VisibilityBehavior Dedup + Scope Audit</span>
+    </li>
+    <li>
+      <span class="archive-date">2026-03-28</span>
+      <span>ISSUE-064/065 — VisibilityBehavior Dedup + Scope Audit (v2)</span>
+    </li>
+    <li>
+      <span class="archive-date">2026-03-28</span>
+      <span>ISSUE-064/065 — VisibilityBehavior Dedup + Scope Audit (v1)</span>
+    </li>
+    <li>
+      <span class="archive-date">2026-03-26</span>
+      <span>ISSUE-063 Phase 1 — Generic getTrait, Eliminate as-any Casts</span>
+    </li>
+    <li>
+      <span class="archive-date">&mdash;</span>
+      <span>GamePrompt + GDT Input Mode</span>
+    </li>
+  </ul>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align: center; font-size: 0.7rem; color: var(--text-dim); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+  Generated by DevArch Dashboard &middot; Sharpee &middot; 2026-04-06
+</div>
+
+</body>
+</html>
