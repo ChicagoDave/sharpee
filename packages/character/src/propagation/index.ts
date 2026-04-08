@@ -41,3 +41,13 @@ export {
   getVisibilityResult,
   getVisibilityResults,
 } from './visibility';
+
+export {
+  type PropagationOptions,
+  buildPropagationProfile,
+} from './builder';
+
+export {
+  PropagationMessages,
+  type PropagationMessageId,
+} from './propagation-messages';

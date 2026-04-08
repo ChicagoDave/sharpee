@@ -31,6 +31,12 @@ import {
 } from '@sharpee/world-model';
 import { COGNITIVE_PRESETS, CognitivePresetName, isCognitivePreset } from './cognitive-presets';
 import { VocabularyExtension } from './vocabulary-extension';
+import { PropagationProfile } from './propagation/propagation-types';
+import { PropagationOptions, buildPropagationProfile } from './propagation/builder';
+import { GoalDef, MovementProfile } from './goals/goal-types';
+import { GoalBuilder } from './goals/builder';
+import { InfluenceDef, ResistanceDef } from './influence/influence-types';
+import { InfluenceBuilder } from './influence/builder';
 
 // ---------------------------------------------------------------------------
 // Trigger builder (fluent chain for .on() rules)
@@ -185,6 +191,13 @@ export class CharacterBuilder {
   private _customPredicates: Map<string, CharacterPredicate> = new Map();
   private _activeTriggerBuilder?: TriggerBuilder;
   private _vocabExtension?: VocabularyExtension;
+  private _propagationProfile?: PropagationProfile;
+  private _movementProfile?: MovementProfile;
+  private _goalDefs: GoalDef[] = [];
+  private _activeGoalBuilder?: GoalBuilder<CharacterBuilder>;
+  private _influenceDefs: InfluenceDef[] = [];
+  private _resistanceDefs: ResistanceDef[] = [];
+  private _activeInfluenceBuilder?: InfluenceBuilder<CharacterBuilder>;
 
   /**
    * Create a new character builder.
@@ -352,19 +365,44 @@ export class CharacterBuilder {
   }
 
   // =========================================================================
-  // Goals
+  // Goals (ADR-145)
   // =========================================================================
 
   /**
-   * Add a goal with priority.
+   * Define a goal with a fluent builder chain.
+   * Returns a GoalBuilder; call .done() to return to this builder.
+   *
+   * For simple goals (legacy compatibility), pass a numeric priority
+   * as the second argument.
    *
    * @param id - Goal identifier
-   * @param priority - Numeric priority (higher = more important)
-   * @returns this for chaining
+   * @param priority - Optional numeric priority (legacy shorthand)
+   * @returns GoalBuilder for fluent chaining, or this if priority provided
    */
-  goal(id: string, priority: number): CharacterBuilder {
-    this._goals.set(id, priority);
-    return this;
+  goal(id: string, priority?: number): GoalBuilder<CharacterBuilder> | CharacterBuilder {
+    if (priority !== undefined) {
+      // Legacy shorthand: .goal(id, priority)
+      this._goals.set(id, priority);
+      return this;
+    }
+
+    // Finalize any pending goal builder
+    this._finalizePendingGoalBuilder();
+
+    const gb = new GoalBuilder<CharacterBuilder>(id, this, (def) => {
+      this._goalDefs.push(def);
+      this._activeGoalBuilder = undefined;
+    });
+    this._activeGoalBuilder = gb;
+    return gb;
+  }
+
+  /** @internal Finalize any pending goal builder that wasn't explicitly done(). */
+  private _finalizePendingGoalBuilder(): void {
+    if (this._activeGoalBuilder) {
+      this._goalDefs.push(this._activeGoalBuilder._buildDef());
+      this._activeGoalBuilder = undefined;
+    }
   }
 
   // =========================================================================
@@ -478,6 +516,85 @@ export class CharacterBuilder {
   }
 
   // =========================================================================
+  // Propagation (ADR-144)
+  // =========================================================================
+
+  /**
+   * Define propagation behavior for this NPC.
+   *
+   * @param opts - Propagation profile options
+   * @returns this for chaining
+   */
+  propagation(opts: PropagationOptions): CharacterBuilder {
+    this._propagationProfile = buildPropagationProfile(opts);
+    return this;
+  }
+
+  // =========================================================================
+  // Movement (ADR-145)
+  // =========================================================================
+
+  /**
+   * Define the NPC's movement profile — which rooms they know and can access.
+   *
+   * @param opts - Movement profile (knows, access)
+   * @returns this for chaining
+   */
+  movement(opts: MovementProfile): CharacterBuilder {
+    this._movementProfile = {
+      knows: opts.knows === 'all' ? 'all' : [...opts.knows],
+      access: opts.access === 'all' ? 'all' : [...opts.access],
+    };
+    return this;
+  }
+
+  // =========================================================================
+  // Influence (ADR-146)
+  // =========================================================================
+
+  /**
+   * Define an influence this NPC exerts.
+   * Returns an InfluenceBuilder; call .done() to return to this builder.
+   *
+   * @param name - Author-defined influence name (e.g., 'seduction', 'intimidation')
+   * @returns InfluenceBuilder for fluent chaining
+   */
+  influence(name: string): InfluenceBuilder<CharacterBuilder> {
+    // Finalize any pending influence builder
+    this._finalizePendingInfluenceBuilder();
+
+    const ib = new InfluenceBuilder<CharacterBuilder>(name, this, (def) => {
+      this._influenceDefs.push(def);
+      this._activeInfluenceBuilder = undefined;
+    });
+    this._activeInfluenceBuilder = ib;
+    return ib;
+  }
+
+  /**
+   * Declare resistance to an influence.
+   *
+   * @param influenceName - The influence name to resist
+   * @param opts - Optional except conditions for conditional vulnerability
+   * @returns this for chaining
+   */
+  resistsInfluence(influenceName: string, opts?: { except: string[] }): CharacterBuilder {
+    this._resistanceDefs.push({
+      influenceName,
+      except: opts?.except ? [...opts.except] : undefined,
+    });
+    return this;
+  }
+
+  /** @internal Finalize any pending influence builder. */
+  private _finalizePendingInfluenceBuilder(): void {
+    if (this._activeInfluenceBuilder) {
+      this._influenceDefs.push(this._activeInfluenceBuilder._buildDef());
+      this._activeInfluenceBuilder = undefined;
+    }
+  }
+
+  // =========================================================================
   // Compilation
   // =========================================================================
 
@@ -488,8 +605,10 @@ export class CharacterBuilder {
    * @returns Compiled character data
    */
   compile(): CompiledCharacter {
-    // Finalize any pending trigger
+    // Finalize any pending trigger, goal, or influence builder
     this._finalizePendingTrigger();
+    this._finalizePendingGoalBuilder();
+    this._finalizePendingInfluenceBuilder();
 
     // Build personality record
     const personality: Record<string, number> = {};
@@ -566,6 +685,11 @@ export class CharacterBuilder {
       traitData,
       triggers: [...this._triggers],
       customPredicates,
+      propagationProfile: this._propagationProfile,
+      movementProfile: this._movementProfile,
+      goalDefs: this._goalDefs.length > 0 ? [...this._goalDefs] : undefined,
+      influenceDefs: this._influenceDefs.length > 0 ? [...this._influenceDefs] : undefined,
+      resistanceDefs: this._resistanceDefs.length > 0 ? [...this._resistanceDefs] : undefined,
     };
   }
 }
@@ -587,4 +711,19 @@ export interface CompiledCharacter {
 
   /** Custom predicates to register on the trait after construction. */
   customPredicates: Map<string, CharacterPredicate>;
+
+  /** Propagation profile (ADR-144). */
+  propagationProfile?: PropagationProfile;
+
+  /** Movement profile (ADR-145). */
+  movementProfile?: MovementProfile;
+
+  /** Rich goal definitions (ADR-145). */
+  goalDefs?: GoalDef[];
+
+  /** Influence definitions (ADR-146). */
+  influenceDefs?: InfluenceDef[];
+
+  /** Resistance definitions (ADR-146). */
+  resistanceDefs?: ResistanceDef[];
 }

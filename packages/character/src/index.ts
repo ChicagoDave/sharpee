@@ -30,7 +30,7 @@ export {
   type CustomPersonalityDef,
 } from './vocabulary-extension';
 
-export { applyCharacter } from './apply';
+export { applyCharacter, type AppliedCharacter } from './apply';
 
 // Conversation system (ADR-142)
 export {
@@ -83,6 +83,9 @@ export {
   ResponseChainBuilder,
   // DialogueExtension implementation
   CharacterModelDialogue,
+  // Conversation message IDs
+  ConversationMessages,
+  type ConversationMessageId,
 } from './conversation';
 
 // Information propagation (ADR-144)
@@ -108,6 +111,12 @@ export {
   PROPAGATION_WITNESSED_DEFAULTS,
   getVisibilityResult,
   getVisibilityResults,
+  // Propagation builder
+  type PropagationOptions,
+  buildPropagationProfile,
+  // Propagation message IDs
+  PropagationMessages,
+  type PropagationMessageId,
 } from './propagation';
 
 // NPC goal pursuit (ADR-145)
@@ -128,4 +137,38 @@ export {
   evaluateGoalStep,
   SimpleRoomGraph,
   findNextRoom,
+  GoalBuilder,
 } from './goals';
+
+// NPC influence (ADR-146)
+export {
+  type InfluenceMode,
+  type InfluenceRange,
+  type InfluenceDuration,
+  type InfluenceEffect,
+  type InfluenceSchedule,
+  type InfluenceDef,
+  type ResistanceDef,
+  type ActiveInfluenceEffect,
+  type InfluenceResult,
+  type InfluenceRoomEntity,
+  checkResistance,
+  evaluatePassiveInfluences,
+  evaluateActiveInfluence,
+  InfluenceTracker,
+  type PcInfluenceResult,
+  evaluatePcInfluence,
+  InfluenceBuilder,
+  // Influence message IDs
+  InfluenceMessages,
+  type InfluenceMessageId,
+} from './influence';
+
+// NPC tick phase handlers (ADR-142/144/145/146)
+export {
+  type CharacterPhaseConfig,
+  CharacterPhaseRegistry,
+  createPropagationPhase,
+  createGoalPhase,
+  createInfluencePhase,
+} from './tick-phases';

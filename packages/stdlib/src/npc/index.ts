@@ -19,6 +19,8 @@ export {
   clearNpcCombatResolver,
   type INpcService,
   type NpcCombatResolver,
+  type NpcTickContext,
+  type NpcTickPhase,
 } from './npc-service';
 
 // Character model observation and lucidity (ADR-141)

@@ -43,3 +43,5 @@ export {
   SimpleRoomGraph,
   findNextRoom,
 } from './pathfinding';
+
+export { GoalBuilder } from './builder';

@@ -285,10 +285,10 @@ Within Phase 6, the propagation builder, goal builder, and influence system are 
 
 ## Status
 
-- Phase 1: CURRENT
-- Phase 2: PENDING
-- Phase 3: PENDING
-- Phase 4: PENDING
-- Phase 5: PENDING
-- Phase 6: PENDING
-- Phase 7: PENDING
+- Phase 1: DONE
+- Phase 2: DONE
+- Phase 3: DONE
+- Phase 4: DONE
+- Phase 5: DONE
+- Phase 6: DONE
+- Phase 7: DONE

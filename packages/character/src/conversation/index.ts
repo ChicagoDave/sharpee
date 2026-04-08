@@ -74,3 +74,8 @@ export {
 export {
   CharacterModelDialogue,
 } from './dialogue-extension';
+
+export {
+  ConversationMessages,
+  type ConversationMessageId,
+} from './conversation-messages';
