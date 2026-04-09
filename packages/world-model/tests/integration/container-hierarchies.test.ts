@@ -293,7 +293,7 @@ describe('Container Hierarchies Integration Tests', () => {
       const player = createTestActor(world, 'Player');
 
       const cabinet = createTestContainer(world, 'Cabinet');
-      author.setupContainer(cabinet.id, false); // Set up as closed
+      cabinet.add(new OpenableTrait({ isOpen: false })); // Closed
 
       const medicine = world.createEntity('Medicine', 'item');
 
