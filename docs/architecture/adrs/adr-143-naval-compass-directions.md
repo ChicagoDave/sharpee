@@ -1,6 +1,6 @@
 # ADR-143: Location-Relative Direction Vocabularies
 
-## Status: DRAFT
+## Status: INCOMPLETE
 
 ## Date: 2026-04-03
 
@@ -37,62 +37,99 @@ The going action and room exits are direction-agnostic — they work with whatev
 
 ## Decision
 
-### 1. Direction Vocabulary
+### 1. Direction Vocabulary (Semantic Layer)
 
-A direction vocabulary is a named mapping between abstract direction IDs and local presentation:
+A direction vocabulary defines a named mapping between abstract direction IDs and semantic labels. The semantic labels are **not player-facing words** — they are keys that the language layer resolves to locale-specific text.
 
 ```typescript
+// world-model — language-agnostic
 interface DirectionVocabulary {
   id: string;
-  directions: Record<string, DirectionEntry>;
+  entries: Partial<Record<DirectionType, DirectionSemanticEntry>>;
 }
 
-interface DirectionEntry {
-  directionId: string;           // abstract ID (e.g., 'north')
-  display: string;               // what the game prints (e.g., 'fore')
-  words: string[];               // what the parser accepts (e.g., ['fore', 'f', 'forward'])
+interface DirectionSemanticEntry {
+  /** Semantic label — resolved to display text by the language layer */
+  labelId: string;
+  /** Fallback display (used if language layer has no override) */
+  fallbackDisplay: string;
+}
+```
+
+The language layer provides locale-specific words and display names:
+
+```typescript
+// lang-en-us (or lang-fr, lang-de, etc.)
+interface DirectionLocaleEntry {
+  /** What the game prints: "fore", "proue" */
+  display: string;
+  /** What the parser accepts: ['fore', 'f', 'forward', 'bow'] */
+  words: string[];
+}
+
+// Registered per vocabulary per locale
+interface DirectionLanguageMap {
+  vocabularyId: string;
+  directions: Partial<Record<DirectionType, DirectionLocaleEntry>>;
 }
 ```
 
 ### 2. Platform-Provided Vocabularies
 
-The platform ships standard vocabularies:
+**Semantic definitions** (world-model, language-agnostic):
 
-**`'compass'`** (default):
-| Direction ID | Display | Words |
+| Vocabulary | Direction ID | Semantic Label |
 |---|---|---|
-| north | north | north, n |
-| south | south | south, s |
-| east | east | east, e |
-| west | west | west, w |
-| northeast | northeast | northeast, ne |
-| northwest | northwest | northwest, nw |
-| southeast | southeast | southeast, se |
-| southwest | southwest | southwest, sw |
-| up | up | up, u |
-| down | down | down, d |
-| in | in | in, inside, enter |
-| out | out | out, outside, exit |
+| compass | NORTH | direction.compass.north |
+| compass | SOUTH | direction.compass.south |
+| compass | EAST | direction.compass.east |
+| compass | WEST | direction.compass.west |
+| compass | UP | direction.compass.up |
+| compass | DOWN | direction.compass.down |
+| naval | NORTH | direction.naval.forward |
+| naval | SOUTH | direction.naval.aft |
+| naval | EAST | direction.naval.starboard |
+| naval | WEST | direction.naval.port |
+| naval | UP | direction.naval.topside |
+| naval | DOWN | direction.naval.below |
+| minimal | UP | direction.minimal.up |
+| minimal | DOWN | direction.minimal.down |
+| minimal | IN | direction.minimal.in |
+| minimal | OUT | direction.minimal.out |
 
-**`'naval'`**:
-| Direction ID | Display | Words |
-|---|---|---|
-| north | fore | fore, f, forward, bow |
-| south | aft | aft, a, back, stern |
-| east | starboard | starboard, sb, right |
-| west | port | port, p, left |
-| up | topside | topside, ts, up, u |
-| down | below decks | below, below decks, bd, down, d |
-| in | in | in, inside, enter |
-| out | out | out, outside, exit |
+**English locale entries** (lang-en-us):
 
-**`'minimal'`** (caves, abstract spaces):
-| Direction ID | Display | Words |
-|---|---|---|
-| up | up | up, u, climb |
-| down | down | down, d, descend |
-| in | in | in, inside, enter, deeper |
-| out | out | out, outside, exit, back |
+| Vocabulary | Direction ID | Display | Words |
+|---|---|---|---|
+| compass | NORTH | north | north, n |
+| compass | SOUTH | south | south, s |
+| compass | EAST | east | east, e |
+| compass | WEST | west | west, w |
+| compass | UP | up | up, u |
+| compass | DOWN | down | down, d |
+| compass | IN | in | in, inside, enter |
+| compass | OUT | out | out, outside, exit |
+| naval | NORTH | fore | fore, f, forward, bow |
+| naval | SOUTH | aft | aft, a, back, stern |
+| naval | EAST | starboard | starboard, sb, right |
+| naval | WEST | port | port, p, left |
+| naval | UP | topside | topside, ts, up, u |
+| naval | DOWN | below decks | below, below decks, bd, down, d |
+| naval | IN | in | in, inside |
+| naval | OUT | out | out, outside |
+| minimal | UP | up | up, u, climb |
+| minimal | DOWN | down | down, d, descend |
+| minimal | IN | in | in, inside, enter, deeper |
+| minimal | OUT | out | out, outside, exit, back |
+
+**French locale entries** (lang-fr — example):
+
+| Vocabulary | Direction ID | Display | Words |
+|---|---|---|---|
+| naval | NORTH | proue | proue, pr, avant |
+| naval | SOUTH | poupe | poupe, pp, arriere |
+| naval | EAST | tribord | tribord, tb, droite |
+| naval | WEST | babord | babord, bb, gauche |
 
 Only the directions listed in the vocabulary are accepted by the parser in that location. A room using the `'minimal'` vocabulary won't accept NORTH — the parser treats it as an unknown command, not an invalid direction.
 
@@ -161,6 +198,13 @@ When the player moves, the parser's accepted direction words update to match the
 
 If the player types a word from the previous vocabulary (e.g., NORTH after boarding the ship), the parser doesn't recognize it. The game can optionally provide a hint: "On the ship, you navigate by fore, aft, port, and starboard."
 
+**Parser update contract** — when vocabulary changes, the parser must update three things:
+1. **Direction mappings** (`setActiveVocabulary`): word → direction constant lookup
+2. **Grammar patterns** (`replaceDirections`): bare direction commands in the grammar engine
+3. **Tokenizer vocabulary registry** (`registerDirections`): token tagging so `PartOfSpeech.DIRECTION` is assigned to the new words
+
+All three must be updated atomically. Missing any one causes silent failures — the grammar matches but the direction can't be extracted (missing #3), or the direction is resolved but the grammar doesn't match (missing #2).
+
 ### 6. Exit Listing
 
 Room descriptions list exits using the local vocabulary's display names:
@@ -176,16 +220,27 @@ Boundary exits use their boundary display name if defined, otherwise the local v
 Authors define story-specific vocabularies:
 
 ```typescript
+// Semantic layer — world-model
 world.directions().defineVocabulary({
   id: 'discworld',
-  directions: {
-    north: { display: 'hubward', words: ['hubward', 'hub'] },
-    south: { display: 'rimward', words: ['rimward', 'rim'] },
-    east: { display: 'turnwise', words: ['turnwise', 'turn'] },
-    west: { display: 'widdershins', words: ['widdershins', 'widder'] },
-    up: { display: 'up', words: ['up', 'u'] },
-    down: { display: 'down', words: ['down', 'd'] },
+  entries: {
+    [Direction.NORTH]: { labelId: 'direction.discworld.hubward', fallbackDisplay: 'hubward' },
+    [Direction.SOUTH]: { labelId: 'direction.discworld.rimward', fallbackDisplay: 'rimward' },
+    [Direction.EAST]:  { labelId: 'direction.discworld.turnwise', fallbackDisplay: 'turnwise' },
+    [Direction.WEST]:  { labelId: 'direction.discworld.widdershins', fallbackDisplay: 'widdershins' },
+    [Direction.UP]:    { labelId: 'direction.discworld.up', fallbackDisplay: 'up' },
+    [Direction.DOWN]:  { labelId: 'direction.discworld.down', fallbackDisplay: 'down' },
   }
+});
+
+// Language layer — in extendLanguage()
+language.registerDirectionWords('discworld', {
+  [Direction.NORTH]: { display: 'hubward', words: ['hubward', 'hub'] },
+  [Direction.SOUTH]: { display: 'rimward', words: ['rimward', 'rim'] },
+  [Direction.EAST]:  { display: 'turnwise', words: ['turnwise', 'turn'] },
+  [Direction.WEST]:  { display: 'widdershins', words: ['widdershins', 'widder'] },
+  [Direction.UP]:    { display: 'up', words: ['up', 'u'] },
+  [Direction.DOWN]:  { display: 'down', words: ['down', 'd'] },
 });
 
 helpers.region('ankh-morpork')
@@ -218,12 +273,14 @@ The vocabulary determines how these are presented and parsed. The connections th
 - Custom vocabularies support any fiction (naval, fantasy, abstract)
 - Boundary handling makes transitions between vocabularies explicit and navigable
 - The going action is unchanged — it only sees direction constants
+- Language layer separation is respected — world-model defines semantics, lang-{locale} provides words
 
 ### Negative
 
 - Parser direction swapping on room change adds a small processing step per move
 - Authors must think about which vocabulary each region uses (mitigated: default is `'compass'`, most stories never change it)
 - Testing must cover vocabulary boundaries — a room reachable from two different vocabulary regions needs both sets of words to work
+- Language layer must register direction words for every vocabulary it supports — more registration calls for multi-vocabulary stories
 
 ### Neutral
 
@@ -233,26 +290,55 @@ The vocabulary determines how these are presented and parsed. The connections th
 
 ## Implementation
 
-### Platform Changes
+### What's Done (Partial — Does Not Match This ADR)
 
-1. **`world-model`**: Add `DirectionVocabulary` interface and `DirectionVocabularyRegistry`. Add optional `directionVocabulary` field to `RoomTrait` and region configuration. Pre-register `'compass'`, `'naval'`, `'minimal'` vocabularies.
-2. **`stdlib`**: Going action's execute phase triggers vocabulary swap on the parser after a successful move. Exit listing in room descriptions uses the local vocabulary's display names.
-3. **`parser-en-us`**: Add `setActiveVocabulary(vocab)` method that rebuilds direction word/abbreviation maps from the given vocabulary. Called by the going action after each move.
-4. **`lang-en-us`**: Direction display names pulled from active vocabulary rather than static mapping.
+The current implementation shipped with English words baked into `DirectionVocabulary` in world-model, bypassing the language layer. This works for English-only stories but violates the language layer separation principle and cannot support non-English locales.
+
+**Implemented (working):**
+- `DirectionVocabularyRegistry` in world-model with compass/naval/minimal vocabularies
+- `useVocabulary()` and `define()` for switching and registering custom vocabularies
+- `setActiveVocabulary()` in parser-en-us for rebuilding direction word maps
+- `replaceDirections()` in grammar engine for updating bare direction patterns
+- Vocabulary change listener from world-model to parser
+
+**Implemented (fixed 2026-04-09):**
+- Tokenizer vocabulary registry update when direction vocabulary changes
+- Removed hardcoded compass word fallback in `convertGrammarMatch()`
+
+**Not yet implemented:**
+- Language layer separation (this ADR's sections 1, 2, 7)
+- `DirectionSemanticEntry` with `labelId` instead of embedded words
+- `language.registerDirectionWords()` API
+- Region-level vocabulary assignment (section 3)
+- Vocabulary boundary handling (section 4)
+- Boundary-specific words (`boundaryWords` option on exits)
+- Parser hint when player uses wrong vocabulary's words (section 5)
+- Exit listing using local vocabulary display names (section 6)
+- End-to-end tests: `parse("aft")` after `useVocabulary('naval')` → correct direction
+
+### Remaining Platform Changes
+
+1. **`world-model`**: Split `DirectionVocabulary` — replace `words: string[]` in `DirectionEntry` with `labelId: string` semantic key. Keep `fallbackDisplay` for stories that don't use a language layer.
+2. **`lang-en-us`**: Add `registerDirectionWords(vocabId, map)` API. Register English words for compass, naval, and minimal vocabularies. Parser pulls words from the language layer instead of from the vocabulary definition.
+3. **`parser-en-us`**: `setDirectionVocabulary()` resolves words from the language layer (via the language provider) instead of from the vocabulary's `words` field. The three-step update contract (mappings, grammar, registry) remains the same.
+4. **`stdlib`**: Going action's execute phase triggers vocabulary swap on the parser after a successful move. Exit listing in room descriptions uses the local vocabulary's display names.
 5. **`helpers`**: Add `.directionVocabulary()` to region and room builders. Add `.exit()` variant with `boundaryWords` option.
 
 ### Story-Level
 
 1. Define custom vocabularies if needed (most stories skip this, use platform-provided sets)
-2. Assign vocabularies to regions
-3. Define boundary words for exits that cross vocabularies
-4. Wire room exits with abstract direction IDs as usual
+2. Register locale-specific direction words in `extendLanguage()` for custom vocabularies
+3. Assign vocabularies to regions
+4. Define boundary words for exits that cross vocabularies
+5. Wire room exits with abstract direction IDs as usual
 
 ## Open Questions
 
 1. **Should the parser provide a hint when the player uses words from the wrong vocabulary?** "On the ship, you navigate by fore, aft, port, and starboard." This is helpful but potentially annoying on repeated mistakes. Likely author-configurable — on by default, suppressible per region.
 
 2. **Should vocabularies support direction IDs beyond the standard 12?** A space station might need SPINWARD/ANTISPINWARD as genuinely new directions, not remappings of existing ones. This ADR covers remapping only. New direction IDs would require opening the `DirectionType` union — a separate concern.
+
+3. **Backward compatibility with the current `words` field.** When the language layer separation ships, existing stories that define vocabularies with inline `words` should continue to work. The `words` field becomes the fallback when no language layer entry exists — same role as `fallbackDisplay` for display names.
 
 ## References
 

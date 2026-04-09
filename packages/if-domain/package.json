@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/if-domain",
-  "version": "0.9.106",
+  "version": "0.9.107",
   "description": "Core domain model and contracts for Sharpee Interactive Fiction Platform",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",

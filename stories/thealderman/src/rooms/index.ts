@@ -25,6 +25,7 @@ export const RoomIds = {
   kitchen: '',
   bar: '',
   checkIn: '',
+  elevatorHall: '',
   staircase: '',
   // Second floor
   ballroom: '',
@@ -51,10 +52,14 @@ export function createRooms(world: WorldModel): void {
   // === GROUND FLOOR ===
 
   const foyer = createRoom(world, 'Great Room', [
-    'The grand foyer of The Alderman. Marble floors gleam under gas chandeliers.',
-    'A massive stone fireplace dominates the north wall. The restaurant opens',
-    'to the west, the bar to the east. Guest check-in is to the north, and',
-    'the grand staircase curves upward to the south.',
+    'This is the grand foyer of The Alderman, locally known as the Colosseum',
+    'since many political, professional, and personal battles start (and end)',
+    'here. Italian marble gleams under gas chandeliers with oriental carpeting',
+    'beneath the dining area to the west. A massive stone fireplace dominates',
+    'the north wall. Guest check-in is in a northeast notch with casual chairs',
+    'and tables dotting the area in front of the desk. The grand staircase',
+    'curves upward to the south. The elevator hall is to the east and the bar',
+    'occupies the southeast corner.',
   ].join(' '));
   RoomIds.foyer = foyer.id;
 
@@ -75,20 +80,27 @@ export function createRooms(world: WorldModel): void {
   const bar = createRoom(world, 'Bar', [
     'A long mahogany bar stretches the length of the room. Bottles line the',
     'mirrored shelves behind it. Leather stools and a haze of cigar smoke.',
-    'The foyer is to the west.',
+    'The foyer is to the northwest.',
   ].join(' '));
   RoomIds.bar = bar.id;
 
   const checkIn = createRoom(world, 'Guest Check-In', [
     'A polished oak counter with a brass bell and a leather-bound register.',
-    'Room keys hang on a pegboard behind the desk. The foyer is to the south.',
+    'Room keys hang on a pegboard behind the desk. Casual chairs and small',
+    'tables dot the waiting area. The foyer is to the southwest.',
   ].join(' '));
   RoomIds.checkIn = checkIn.id;
+
+  const elevatorHall = createRoom(world, 'Elevator Hall', [
+    'A short corridor ending at a hydraulic Otis elevator — a brass cage',
+    'with an iron gate and a lever-operated mechanism. The foyer is to the west.',
+  ].join(' '));
+  RoomIds.elevatorHall = elevatorHall.id;
 
   const staircase = createRoom(world, 'Grand Staircase', [
     'A sweeping marble staircase with an ornate iron banister. It curves upward',
     'past the second-floor ballroom landing and continues to the guest floors.',
-    'A hydraulic Otis elevator stands nearby. The foyer is to the north.',
+    'The foyer is to the north.',
   ].join(' '));
   RoomIds.staircase = staircase.id;
 
@@ -179,9 +191,10 @@ export function createRooms(world: WorldModel): void {
 
   // Ground floor
   world.connectRooms(foyer.id, restaurant.id, Direction.WEST);
-  world.connectRooms(foyer.id, bar.id, Direction.EAST);
-  world.connectRooms(foyer.id, checkIn.id, Direction.NORTH);
+  world.connectRooms(foyer.id, checkIn.id, Direction.NORTHEAST);
+  world.connectRooms(foyer.id, elevatorHall.id, Direction.EAST);
   world.connectRooms(foyer.id, staircase.id, Direction.SOUTH);
+  world.connectRooms(foyer.id, bar.id, Direction.SOUTHEAST);
   world.connectRooms(restaurant.id, kitchen.id, Direction.SOUTH);
 
   // Staircase to upper floors

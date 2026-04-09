@@ -159,7 +159,23 @@ export class VocabularyRegistry {
   clear(): void {
     this.entries.clear();
   }
-  
+
+  /**
+   * Remove all entries for a given part of speech.
+   * Used when direction vocabulary changes — old direction words
+   * must be removed before registering the new set.
+   */
+  unregisterByPartOfSpeech(pos: PartOfSpeech): void {
+    for (const [word, entries] of this.entries) {
+      const filtered = entries.filter(e => e.partOfSpeech !== pos);
+      if (filtered.length === 0) {
+        this.entries.delete(word);
+      } else {
+        this.entries.set(word, filtered);
+      }
+    }
+  }
+
   register(entry: VocabularyEntry): void {
     const word = entry.word.toLowerCase();
     if (!this.entries.has(word)) {

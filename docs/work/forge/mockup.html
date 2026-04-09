@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge — Sharpee Authoring Tool</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --bg-surface: #16213e;
+    --bg-elevated: #0f3460;
+    --text: #e0e0e0;
+    --text-dim: #8a8a9a;
+    --text-bright: #f5f5f5;
+    --accent: #e94560;
+    --accent-soft: #e9456033;
+    --green: #4ecca3;
+    --green-soft: #4ecca333;
+    --amber: #f0a500;
+    --amber-soft: #f0a50033;
+    --border: #2a2a4a;
+    --font-prose: 'Georgia', 'Crimson Text', serif;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    height: 44px;
+    flex-shrink: 0;
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logo {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text-dim); font-weight: 400; }
+  .project-name {
+    font-size: 13px;
+    color: var(--text-dim);
+    padding-left: 16px;
+    border-left: 1px solid var(--border);
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .status-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    background: var(--green-soft);
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  .btn-play {
+    background: var(--green);
+    color: var(--bg);
+    border: none;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .btn-play:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-play svg { width: 12px; height: 12px; }
+
+  /* ── Main Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Scenes sidebar ── */
+  .scenes-panel {
+    width: 200px;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .scenes-header {
+    padding: 12px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+  .scenes-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+  }
+  .scene-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-dim);
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .scene-item:hover { background: var(--bg-elevated); color: var(--text); }
+  .scene-item.active { background: var(--bg-elevated); color: var(--text-bright); }
+  .scene-item .scene-icon {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .scene-icon.complete { background: var(--green); }
+  .scene-icon.partial { background: var(--amber); }
+  .scene-icon.empty { background: var(--border); }
+  .scene-item .scene-label { flex: 1; }
+  .scene-item .scene-badge {
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+  .scenes-footer {
+    padding: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-new-scene {
+    width: 100%;
+    padding: 6px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-new-scene:hover { border-color: var(--text-dim); color: var(--text); }
+
+  /* ── Writing area ── */
+  .writing-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .writing-surface {
+    flex: 1;
+    padding: 48px 80px;
+    overflow-y: auto;
+  }
+  .scene-title {
+    font-family: var(--font-prose);
+    font-size: 28px;
+    color: var(--text-bright);
+    border: none;
+    background: none;
+    width: 100%;
+    outline: none;
+    margin-bottom: 24px;
+    font-weight: 400;
+  }
+  .scene-title::placeholder { color: var(--border); }
+  .prose-editor {
+    font-family: var(--font-prose);
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--text);
+    border: none;
+    background: none;
+    width: 100%;
+    min-height: 400px;
+    outline: none;
+    resize: none;
+  }
+  .prose-editor::placeholder { color: #3a3a5a; }
+
+  /* ── Forge Panel (right) ── */
+  .forge-panel {
+    width: 320px;
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: width 0.2s;
+  }
+  .forge-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .forge-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+  .forge-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  /* Forge cards */
+  .forge-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    animation: fadeSlideIn 0.3s ease-out;
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .forge-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .forge-card-type {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .type-room { background: #1a3a5c; color: #5dade2; }
+  .type-object { background: #3a2a1a; color: #f0a500; }
+  .type-character { background: #2a1a3a; color: #bb86fc; }
+  .type-connection { background: #1a3a2a; color: #4ecca3; }
+  .type-question { background: var(--accent-soft); color: var(--accent); }
+  .type-atmosphere { background: #2a2a1a; color: #c9b458; }
+  .forge-card-name {
+    font-size: 13px;
+    color: var(--text-bright);
+    font-weight: 500;
+  }
+  .forge-card-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .forge-card-body ul {
+    list-style: none;
+    padding: 0;
+  }
+  .forge-card-body li {
+    padding: 2px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .forge-card-body li::before {
+    content: '·';
+    color: var(--text-dim);
+    font-weight: bold;
+  }
+  .forge-card-props {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .prop-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--bg-elevated);
+    color: var(--text-dim);
+  }
+
+  /* Forge question */
+  .forge-question {
+    border-color: var(--accent-soft);
+  }
+  .forge-question .forge-card-body {
+    color: var(--text);
+  }
+  .forge-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .forge-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .forge-btn:hover { border-color: var(--text-dim); color: var(--text); }
+  .forge-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .forge-btn.primary:hover { filter: brightness(1.1); }
+
+  /* ── Forge thinking indicator ── */
+  .forge-thinking {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .forge-thinking.visible { opacity: 1; }
+  .thinking-dots span {
+    display: inline-block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotPulse {
+    0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); }
+    30% { opacity: 1; transform: scale(1); }
+  }
+
+  /* ── Bottom bar ── */
+  .bottombar {
+    height: 28px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    font-size: 11px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .bottombar-left, .bottombar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .version-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+  }
+
+  /* ── Play modal ── */
+  .play-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .play-overlay.visible { display: flex; }
+  .play-window {
+    width: 680px;
+    height: 480px;
+    background: #0a0a0a;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .play-titlebar {
+    padding: 10px 16px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .play-close {
+    background: none; border: none;
+    color: var(--text-dim); cursor: pointer;
+    font-size: 16px;
+  }
+  .play-close:hover { color: var(--text); }
+  .play-output {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--green);
+  }
+  .play-output p { margin-bottom: 12px; }
+  .play-output .room-name { color: var(--text-bright); font-weight: 600; }
+  .play-output .prompt-line { color: var(--amber); }
+  .play-input-row {
+    display: flex;
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    gap: 8px;
+    align-items: center;
+  }
+  .play-prompt { color: var(--amber); font-family: var(--font-mono); font-size: 14px; }
+  .play-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--green);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    outline: none;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">FORGE <span>by Sharpee</span></div>
+    <div class="project-name">The Forgotten Archive</div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill"><span class="dot"></span> Forge watching</div>
+    <button class="btn-play" onclick="openPlay()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      Play Scene
+    </button>
+  </div>
+</div>
+
+<!-- ── Main Layout ── -->
+<div class="main">
+
+  <!-- Scenes Panel -->
+  <div class="scenes-panel">
+    <div class="scenes-header">Scenes</div>
+    <div class="scenes-list">
+      <div class="scene-item active">
+        <span class="scene-icon partial"></span>
+        <span class="scene-label">The Map Room</span>
+      </div>
+      <div class="scene-item">
+        <span class="scene-icon complete"></span>
+        <span class="scene-label">Grand Entrance</span>
+        <span class="scene-badge">3</span>
+      </div>
+      <div class="scene-item">
+        <span class="scene-icon empty"></span>
+        <span class="scene-label">The Vault</span>
+      </div>
+      <div class="scene-item">
+        <span class="scene-icon empty"></span>
+        <span class="scene-label">Keeper's Study</span>
+      </div>
+    </div>
+    <div class="scenes-footer">
+      <button class="btn-new-scene">+ New Scene</button>
+    </div>
+  </div>
+
+  <!-- Writing Surface -->
+  <div class="writing-area">
+    <div class="writing-surface">
+      <input class="scene-title" value="The Map Room" placeholder="Scene title..." />
+      <textarea class="prose-editor" id="editor" placeholder="Start writing your scene..."
+        spellcheck="false">The map room sits at the heart of the archive, a circular chamber whose walls are lined floor to ceiling with yellowed nautical charts and survey maps. A brass astrolabe the size of a dinner table dominates the center, its rings tarnished green with age but still turning smoothly if you give them a push.
+
+The only light comes from a cracked skylight three stories above, throwing a single dusty beam across the astrolabe's face. When the light catches the outermost ring just right, faint etchings become visible — not constellations, but what appear to be street addresses.
+
+A heavy oak door to the north stands slightly ajar. Through the gap you can hear the faint mechanical clicking of what might be a clock, or might be something counting down. To the south, the passage back to the grand entrance is clear, though the air feels noticeably warmer coming from that direction now.
+
+On the reading desk beside the door, someone has left a leather journal open to a page dense with handwritten annotations. The ink is fresh — whoever was here left recently. A brass letter opener holds the page flat, its handle shaped like a coiled serpent.</textarea>
+    </div>
+  </div>
+
+  <!-- Forge Panel -->
+  <div class="forge-panel">
+    <div class="forge-header">
+      <span class="forge-title">Forge</span>
+    </div>
+    <div class="forge-content" id="forgeContent">
+      <!-- Cards get populated here -->
+    </div>
+    <div class="forge-thinking" id="forgeThinking">
+      <span class="thinking-dots"><span></span><span></span><span></span></span>
+      <span id="thinkingText">Reading scene...</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Bottom Bar ── -->
+<div class="bottombar">
+  <div class="bottombar-left">
+    <span><span class="version-dot"></span> Auto-saved v12</span>
+    <span>4 scenes · 2 rooms mapped</span>
+  </div>
+  <div class="bottombar-right">
+    <span>847 words</span>
+  </div>
+</div>
+
+<!-- ── Play Modal ── -->
+<div class="play-overlay" id="playOverlay" onclick="if(event.target===this)closePlay()">
+  <div class="play-window">
+    <div class="play-titlebar">
+      <span>Playing: The Map Room</span>
+      <button class="play-close" onclick="closePlay()">&times;</button>
+    </div>
+    <div class="play-output" id="playOutput">
+      <p class="room-name">The Map Room</p>
+      <p>The map room sits at the heart of the archive, a circular chamber whose walls are lined floor to ceiling with yellowed nautical charts and survey maps. A brass astrolabe the size of a dinner table dominates the center, its rings tarnished green with age but still turning smoothly.</p>
+      <p>The only light comes from a cracked skylight three stories above, throwing a single dusty beam across the astrolabe's face.</p>
+      <p>A heavy oak door to the north stands slightly ajar. The passage south leads back to the grand entrance.</p>
+      <p>On the reading desk you can see a leather journal and a brass letter opener.</p>
+      <p class="prompt-line">&gt; _</p>
+    </div>
+    <div class="play-input-row">
+      <span class="play-prompt">&gt;</span>
+      <input class="play-input" id="playInput" placeholder="What do you do?"
+        onkeydown="if(event.key==='Enter')handlePlayInput()" autofocus />
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Forge simulation ──
+// Demonstrates: silent observation → seam detection → inference cards
+
+const forgeCards = [
+  {
+    type: 'room', typeName: 'Room',
+    name: 'The Map Room',
+    body: 'Circular chamber at the heart of the archive',
+    props: ['has skylight', 'central location'],
+    delay: 1500
+  },
+  {
+    type: 'object', typeName: 'Object',
+    name: 'Brass Astrolabe',
+    body: 'Dinner-table sized, tarnished green. Rings turn smoothly. Etchings appear in light — street addresses.',
+    props: ['interactive', 'central puzzle?', 'large/fixed'],
+    delay: 2500
+  },
+  {
+    type: 'connection', typeName: 'Connection',
+    name: 'North → ???',
+    body: 'Heavy oak door, slightly ajar. Mechanical clicking beyond — clock or countdown.',
+    props: ['door', 'partly open', 'ominous'],
+    delay: 3500
+  },
+  {
+    type: 'connection', typeName: 'Connection',
+    name: 'South → Grand Entrance',
+    body: 'Clear passage. Air feels warmer from that direction now.',
+    props: ['open', 'atmospheric change'],
+    delay: 4000
+  },
+  {
+    type: 'object', typeName: 'Object',
+    name: 'Leather Journal',
+    body: 'Open on reading desk, dense handwritten annotations. Fresh ink — someone was just here.',
+    props: ['readable', 'clue', 'recent presence'],
+    delay: 5000
+  },
+  {
+    type: 'object', typeName: 'Object',
+    name: 'Brass Letter Opener',
+    body: 'Holding journal page flat. Handle shaped like a coiled serpent.',
+    props: ['portable', 'serpent motif'],
+    delay: 5500
+  },
+  {
+    type: 'atmosphere', typeName: 'Atmosphere',
+    name: 'Tension Notes',
+    body: 'Dust, age, recent disturbance. Counting-down sound. Warming air. Someone was just here.',
+    props: ['time pressure?', 'unseen presence'],
+    delay: 6500
+  },
+  {
+    type: 'question', typeName: 'Question',
+    name: '',
+    body: "The astrolabe etchings show street addresses visible only in light — this feels like a puzzle. Should turning the rings to a specific address unlock or reveal something?",
+    actions: ['Yes, it\'s a puzzle', 'Not yet — just atmosphere', 'I\'ll write more first'],
+    delay: 8000
+  }
+];
+
+function createCardHTML(card) {
+  let html = `<div class="forge-card${card.type === 'question' ? ' forge-question' : ''}">`;
+  html += `<div class="forge-card-header">`;
+  html += `<span class="forge-card-type type-${card.type}">${card.typeName}</span>`;
+  if (card.name) html += `<span class="forge-card-name">${card.name}</span>`;
+  html += `</div>`;
+  html += `<div class="forge-card-body">${card.body}</div>`;
+
+  if (card.props) {
+    html += `<div class="forge-card-props">`;
+    card.props.forEach(p => html += `<span class="prop-tag">${p}</span>`);
+    html += `</div>`;
+  }
+
+  if (card.actions) {
+    html += `<div class="forge-actions">`;
+    card.actions.forEach((a, i) => {
+      html += `<button class="forge-btn${i === 0 ? ' primary' : ''}" onclick="dismissQuestion(this)">${a}</button>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function dismissQuestion(btn) {
+  const card = btn.closest('.forge-card');
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(-8px)';
+  card.style.transition = 'all 0.2s';
+  setTimeout(() => card.remove(), 200);
+}
+
+// Simulate Forge analyzing the scene
+const content = document.getElementById('forgeContent');
+const thinking = document.getElementById('forgeThinking');
+const thinkingText = document.getElementById('thinkingText');
+
+const thinkingMessages = [
+  'Reading scene...',
+  'Identifying spaces...',
+  'Mapping objects...',
+  'Tracing connections...',
+  'Noting atmosphere...',
+  'One question...'
+];
+
+let cardIndex = 0;
+
+function showNextCard() {
+  if (cardIndex >= forgeCards.length) {
+    thinking.classList.remove('visible');
+    return;
+  }
+
+  const card = forgeCards[cardIndex];
+  thinking.classList.add('visible');
+  thinkingText.textContent = thinkingMessages[Math.min(cardIndex, thinkingMessages.length - 1)];
+
+  setTimeout(() => {
+    content.insertAdjacentHTML('beforeend', createCardHTML(card));
+    content.scrollTop = content.scrollHeight;
+    cardIndex++;
+
+    if (cardIndex < forgeCards.length) {
+      showNextCard();
+    } else {
+      setTimeout(() => thinking.classList.remove('visible'), 500);
+    }
+  }, card.delay);
+}
+
+// Start the simulation after a brief pause (writer just "finished" the scene)
+setTimeout(showNextCard, 800);
+
+// ── Play modal ──
+function openPlay() {
+  document.getElementById('playOverlay').classList.add('visible');
+  document.getElementById('playInput').focus();
+}
+function closePlay() {
+  document.getElementById('playOverlay').classList.remove('visible');
+}
+
+const playResponses = {
+  'examine astrolabe': '<p>The brass astrolabe is a magnificent instrument, nearly four feet across. Its concentric rings are covered in fine engravings — mostly navigational markings, but the outermost ring bears what are unmistakably street addresses. 14 Carrow Lane. 7 Wychwood Close. 221 Pale Street. They spiral around the ring in no obvious order.</p><p>The rings turn freely. You could align them to bring specific addresses to the marker at the top.</p>',
+  'turn rings': '<p>You grasp the outermost ring and turn it. The brass is cold under your fingers but moves smoothly, the old mechanism well-oiled. Addresses slide past the alignment marker: 88 Dockers Row... 14 Carrow Lane... 3 Beggar\'s Arch...</p><p>The clicking sound from beyond the north door seems to quicken slightly. Or perhaps you\'re imagining it.</p>',
+  'read journal': '<p>The journal is filled with cramped handwriting — dates, addresses, and cryptic annotations. The open page is headed "TRIAL 31" and lists three street addresses circled in red ink, with the note: "Sequence matters. The serpent shows the way."</p><p>Below, underlined twice: "If the counting stops, leave immediately."</p>',
+  'take letter opener': '<p>You pick up the brass letter opener. It\'s heavier than expected — solid brass, not plated. The serpent coiled around the handle has tiny emerald chips for eyes. The journal page, freed from its weight, curls slightly at the corner.</p><p><em>[Taken]</em></p>',
+  'go north': '<p>You push the heavy oak door open. Its hinges groan in protest. Beyond, a narrow corridor leads into darkness. The clicking sound is louder here — definitely mechanical, definitely counting. The air smells of machine oil and old paper.</p><p class="room-name">The Clockwork Corridor</p><p><em>[Forge: New space discovered from play. Want to write this scene?]</em></p>',
+  'look': '<p class="room-name">The Map Room</p><p>A circular chamber lined with yellowed charts and maps. A brass astrolabe dominates the center, lit by a dusty beam from the cracked skylight far above.</p><p>A heavy oak door north stands ajar. The passage south leads to the grand entrance.</p><p>On the reading desk: a leather journal and a brass letter opener.</p>',
+};
+
+function handlePlayInput() {
+  const input = document.getElementById('playInput');
+  const output = document.getElementById('playOutput');
+  const cmd = input.value.trim().toLowerCase();
+  input.value = '';
+
+  if (!cmd) return;
+
+  // Echo command
+  output.innerHTML += `<p class="prompt-line">&gt; ${cmd}</p>`;
+
+  // Find response
+  const key = Object.keys(playResponses).find(k => cmd.includes(k) || k.includes(cmd));
+  if (key) {
+    output.innerHTML += playResponses[key];
+  } else {
+    output.innerHTML += `<p>You consider that for a moment, but nothing comes of it.</p>`;
+  }
+
+  output.scrollTop = output.scrollHeight;
+}
+
+// ── Live typing simulation ──
+const editor = document.getElementById('editor');
+editor.addEventListener('input', () => {
+  // Update word count
+  const words = editor.value.trim().split(/\s+/).length;
+  document.querySelector('.bottombar-right span').textContent = words + ' words';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Alderman — Author Editor</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --accent: #e94560;
+    --text: #eee;
+    --muted: #999;
+    --border: #333;
+    --input-bg: #1e2a45;
+    --high: #e94560;
+    --med: #f0a500;
+    --low: #4ecca3;
+    --ok: #4ecca3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 { font-size: 1.4rem; letter-spacing: 0.05em; }
+  header h1 span { color: var(--accent); }
+  .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+  .header-actions .stats { color: var(--muted); font-size: 0.85rem; margin-right: 1rem; }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    border-radius: 3px;
+    transition: opacity 0.2s;
+  }
+  button:hover { opacity: 0.85; }
+  button.secondary { background: var(--surface2); border: 1px solid var(--border); }
+  button.push-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  button.push-btn.active { opacity: 1; pointer-events: auto; background: var(--med); color: #111; border-color: var(--med); }
+  button.push-btn.pushed { opacity: 1; pointer-events: none; background: var(--ok); color: #111; border-color: var(--ok); }
+  button.revert-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+    color: var(--muted);
+  }
+  button.revert-btn:hover { color: var(--accent); border-color: var(--accent); }
+  main { max-width: 900px; margin: 0 auto; padding: 2rem; }
+  nav.toc {
+    background: var(--surface);
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+  nav.toc h2 { font-size: 1rem; margin-bottom: 0.5rem; color: var(--accent); }
+  nav.toc a {
+    color: var(--muted);
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 1.5rem;
+    font-size: 0.85rem;
+  }
+  nav.toc a:hover { color: var(--text); }
+  section { margin-bottom: 3rem; }
+  section h2 {
+    font-size: 1.2rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--accent);
+  }
+  .entry {
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    padding: 1rem 1.25rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--border);
+  }
+  .entry.priority-high { border-left-color: var(--high); }
+  .entry.priority-med { border-left-color: var(--med); }
+  .entry.priority-low { border-left-color: var(--low); }
+  .entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .entry-id {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .entry-context {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 0.5rem;
+  }
+  .badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-high { background: var(--high); color: white; }
+  .badge-med { background: var(--med); color: #111; }
+  .badge-low { background: var(--low); color: #111; }
+  textarea {
+    width: 100%;
+    background: var(--input-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.75rem;
+    font-family: 'Georgia', serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 60px;
+    border-radius: 3px;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  textarea.modified { border-color: var(--med); background: #2a2a1a; }
+  textarea.pushed { border-color: var(--ok); background: #1a2e2a; }
+  .help {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--ok);
+    color: #111;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    display: none;
+    z-index: 200;
+  }
+  .subsection { margin-bottom: 2rem; }
+  .subsection h3 { font-size: 1rem; color: var(--muted); margin-bottom: 1rem; }
+  .entry-status {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+    margin-left: 0.5rem;
+  }
+  .status-pushed { background: var(--ok); color: #111; }
+  .status-edited { background: var(--med); color: #111; }
+  .entry-actions { display: flex; align-items: center; margin-top: 0.5rem; justify-content: flex-end; }
+  .filter-bar { margin-bottom: 1.5rem; display: flex; gap: 0.5rem; align-items: center; }
+  .filter-bar label { font-size: 0.85rem; color: var(--muted); margin-right: 0.5rem; }
+  .filter-bar button { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+  .filter-bar button.active-filter { background: var(--accent); }
+  .entry.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The <span>Alderman</span> — Author Editor</h1>
+  <div class="header-actions">
+    <span class="stats" id="stats"></span>
+    <button class="secondary" onclick="showPending()">Copy All Pending</button>
+    <button class="secondary" onclick="resetAll()">Reset All</button>
+  </div>
+</header>
+
+<main>
+<nav class="toc">
+  <h2>Sections</h2>
+  <a href="#rooms">Rooms</a>
+  <a href="#npcs">NPC Descriptions</a>
+  <a href="#ross">Ross</a>
+  <a href="#viola">Viola</a>
+  <a href="#john">John</a>
+  <a href="#catherine">Catherine</a>
+  <a href="#jack">Jack</a>
+  <a href="#chelsea">Chelsea</a>
+  <a href="#scenes">Scenes</a>
+  <a href="#accusation">Accusation</a>
+  <a href="#gameflow">Game Flow</a>
+  <a href="#items">Items &amp; Evidence</a>
+</nav>
+
+<div id="editor"></div>
+</main>
+
+<div id="toast">Changes exported to clipboard!</div>
+
+<script>
+// All editable content, organized by section
+const DATA = {
+  rooms: {
+    title: "Room Descriptions",
+    id: "rooms",
+    help: "These need 1870s reconstruction-era atmosphere — gas light, new money, raw ambition.",
+    entries: [
+      { id: "room.foyer", priority: "high", context: "Starting area. Player enters from street to the north. Restaurant W, elevator hall E, check-in NE, staircase S, bar SE.",
+        text: `This is the grand foyer of The Alderman, locally known as the Colosseum since many political, professional, and personal battles start (and end) here. Italian marble gleams under gas chandeliers with oriental carpeting beneath the dining area to the west. A massive stone fireplace dominates the north wall. Guest check-in is in a northeast notch with casual chairs and tables dotting the area in front of the desk. The grand staircase curves upward to the south. The elevator hall is to the east and the bar occupies the southeast corner.` },
+      { id: "room.restaurant", priority: "med",  context: "Catherine's domain. Frequent investigation location. West of foyer.",
+        text: `An elegant open-floor dining room with white linen tablecloths and silver candelabras. The kitchen lies through swinging doors to the south. The foyer is back to the east.` },
+      { id: "room.kitchen", priority: "med", context: "Weapon location (knife). Needs sensory detail. South of restaurant.",
+        text: `A busy hotel kitchen — copper pots hang from iron racks, and a long preparation table runs down the center. A knife block sits on the counter. Swinging doors lead north to the restaurant.` },
+      { id: "room.bar", priority: "high", context: "Ross and John's hangout. Southeast corner. Needs smoke, noise, male business culture.",
+        text: `A long mahogany bar stretches the length of the room. Bottles line the mirrored shelves behind it. Leather stools and a haze of cigar smoke. The foyer is to the northwest.` },
+      { id: "room.checkIn", priority: "low", context: "Northeast notch off foyer. Casual waiting area in front of desk.",
+        text: `A polished oak counter with a brass bell and a leather-bound register. Room keys hang on a pegboard behind the desk. Casual chairs and small tables dot the waiting area. The foyer is to the southwest.` },
+      { id: "room.elevatorHall", priority: "low", context: "East of foyer. Hydraulic Otis elevator — connects all floors.",
+        text: `A short corridor ending at a hydraulic Otis elevator — a brass cage with an iron gate and a lever-operated mechanism. The foyer is to the west.` },
+      { id: "room.staircase", priority: "med", context: "Vertical connector. South of foyer. Staircase only — elevator is separate.",
+        text: `A sweeping marble staircase with an ornate iron banister. It curves upward past the second-floor ballroom landing and continues to the guest floors. The foyer is to the north.` },
+      { id: "room.ballroom", priority: "high", context: "Viola's rehearsal space. Weapon location (curtain cord). Needs grandeur + emptiness.",
+        text: `A cavernous ballroom with a sprung wooden floor and crystal chandeliers. A small stage occupies the far end, framed by heavy velvet curtains. The staircase landing is to the north.` },
+      { id: "room.hallway3", priority: "low", context: "Corridor connecting guest rooms.",
+        text: `A carpeted corridor lit by wall-mounted gas lamps. Numbered doors line both sides. Room 302 is to the west, 304 and 306 to the north, 308 and 310 to the south. A service closet is at the far east end. The staircase is down to the west.` },
+      { id: "room.room302", priority: "high", context: "Stephanie's room. Should feel like a dead woman's space — lingering presence.",
+        text: `Stephanie Bordeau's suite. Lavish furnishings, a vanity table covered in perfume bottles, and a writing desk by the window. Fresh flowers — now wilting. The hallway is to the east.` },
+      { id: "room.room304", priority: "med", context: "Ross's room. Should show a man falling apart.",
+        text: `Ross Bielack's room. Baseball memorabilia scattered about — a worn glove, newspaper clippings. Empty whiskey bottles on the nightstand. The hallway is to the south.` },
+      { id: "room.room306", priority: "med", context: "Viola's room. Should hint at duality — actress/sister.",
+        text: `Viola Wainright's room. Theatre scripts stacked on the desk, costumes draped over a chair. A mirror surrounded by dried roses. The hallway is to the south.` },
+      { id: "room.room308", priority: "med", context: "Jack's room. Weapon location (revolver in nightstand). Power and anxiety.",
+        text: `Jack Margolin's room. Leather briefcase, property maps pinned to the wall, a half-empty decanter of brandy. A nightstand with a drawer. The hallway is to the north.` },
+      { id: "room.room310", priority: "low", context: "Player's room. Morning wake-up location.",
+        text: `Your room. Modest but comfortable — drafting tools on the desk, your traveling case by the wardrobe. A window overlooks the street below. The hallway is to the north.` },
+      { id: "room.serviceCloset", priority: "low", context: "Staff shortcut to basement.",
+        text: `A narrow closet smelling of soap and starch. Shelves of cleaning supplies. A laundry chute drops into darkness. A ladder descends to the basement. The hallway is to the west.` },
+      { id: "room.laundry", priority: "med", context: "Weapon location (sad iron). Possible murder location. Needs industrial atmosphere.",
+        text: `The hotel laundry — large copper washtubs, pressing stations with sad irons, and racks of hanging linens. Steam drifts from the pipes. The boiler room is to the east, storage to the south. A ladder leads up to the service closet.` },
+      { id: "room.boilerRoom", priority: "low", context: "Atmosphere only.",
+        text: `A hot, loud room dominated by a massive coal-fired boiler. Pipes snake along the ceiling in every direction. The laundry is to the west.` },
+      { id: "room.storage", priority: "low", context: "Atmosphere only.",
+        text: `A dim basement room packed with old furniture, crates of supplies, and stacks of newspapers. The laundry is to the north.` },
+    ]
+  },
+  npcs: {
+    title: "NPC Descriptions",
+    id: "npcs",
+    help: "First impression when the player examines each character. Needs to hint at personality without giving away secrets.",
+    entries: [
+      { id: "npc.ross.desc", priority: "high", context: "Temperamental baseball player, Stephanie's lover. Should convey physical strength and emotional fragility.",
+        text: `A broad-shouldered man in his late twenties with calloused hands and an uneasy smile. He smells faintly of whiskey.` },
+      { id: "npc.viola.desc", priority: "high", context: "Actress and hidden half-sister. Every gesture should feel performed.",
+        text: `A striking woman in her mid-thirties with dark eyes and an actress's poise. Every gesture seems rehearsed.` },
+      { id: "npc.john.desc", priority: "high", context: "Gang enforcer. Quiet menace, not flashy violence.",
+        text: `A lean man in a perfectly tailored suit. He watches everything with flat, appraising eyes.` },
+      { id: "npc.catherine.desc", priority: "high", context: "Restaurant hostess, information hub. Warm but sharp.",
+        text: `A handsome woman in her fifties with sharp eyes behind wire-rimmed spectacles. She moves through the restaurant like she owns it.` },
+      { id: "npc.jack.desc", priority: "high", context: "Real estate mogul. Should fill the room with his presence.",
+        text: `A heavyset man with a red face and a diamond stickpin. He fills every room he enters with sheer volume.` },
+      { id: "npc.chelsea.desc", priority: "high", context: "Cigarette girl, possible daughter. Youth and anxiety.",
+        text: `A young woman in her early twenties with auburn hair and anxious green eyes. She carries a tray of cigarettes and matches.` },
+    ]
+  },
+  ross: {
+    title: "Ross Bielack — Dialogue",
+    id: "ross",
+    help: "1870s baseball player. Hot-tempered, impulsive, defensive about money. Genuinely loved Stephanie.",
+    entries: [
+      { id: "ROSS_STEPHANIE_SAD", priority: "high", context: "When asked about Stephanie, not threatened. Grieving mode.",
+        text: `"She was... she was everything to me." Ross stares into his glass. "I can't believe she's gone."` },
+      { id: "ROSS_STEPHANIE_ANGRY", priority: "high", context: "When asked about Stephanie while threatened.",
+        text: `"Don't you talk about her like that!" Ross slams his fist on the bar. "You didn't know her."` },
+      { id: "ROSS_STEPHANIE_DEFLECT", priority: "med", context: "Default response about Stephanie.",
+        text: `Ross looks away. "I don't want to talk about it."` },
+      { id: "ROSS_RELATIONSHIP_ADMITS", priority: "med", context: "Admits to the relationship when not threatened.",
+        text: `"Yeah, we were together. So what? A man's got a right to his private life."` },
+      { id: "ROSS_RELATIONSHIP_DEFLECT", priority: "low", context: "Deflects about relationship.",
+        text: `Ross shrugs uncomfortably. "We were friends. That's all you need to know."` },
+      { id: "ROSS_GAMBLING_TRUTH", priority: "high", context: "Admits gambling debts when trusted. Key revelation.",
+        text: `"Alright, fine. I owed her money. A lot of it. But I was paying it back — I swear on my mother."` },
+      { id: "ROSS_GAMBLING_DENIES", priority: "med", context: "Denies gambling when not trusted.",
+        text: `"Gambling? I play cards for fun. Nothing serious." His hand trembles slightly.` },
+      { id: "ROSS_GAMBLING_REFUSE", priority: "low", context: "Refuses to discuss gambling when threatened.",
+        text: `"That's none of your damn business."` },
+      { id: "ROSS_ALIBI_BAR", priority: "med", context: "His alibi statement.",
+        text: `"I was right here at the bar all night. Ask Catherine — she served me."` },
+      { id: "ROSS_JACK_OPINION", priority: "low", context: "Opinion about Jack.",
+        text: `"Margolin? That blowhard. He thinks he owns this town. Wouldn't surprise me if he owned the trouble, too."` },
+      { id: "ROSS_INTIMIDATES", priority: "med", context: "Influence text when Ross gets aggressive.",
+        text: `Ross stands up abruptly, fists clenched, jaw tight.` },
+      { id: "ROSS_INTIMIDATION_RESISTED", priority: "low", context: "When player resists Ross's intimidation.",
+        text: `You meet Ross's gaze steadily. He sits back down.` },
+      { id: "ROSS_MOVES_TO_BAR", priority: "low", context: "Goal pursuit — witnessed movement.",
+        text: `Ross heads to the bar, looking like he needs a drink.` },
+      { id: "ROSS_DRINKS", priority: "low", context: "Goal pursuit — waiting at bar.",
+        text: `Ross signals for another whiskey.` },
+      { id: "ROSS_PACES_FOYER", priority: "low", context: "Goal pursuit — restless pacing.",
+        text: `Ross paces through the foyer, running a hand through his hair.` },
+    ]
+  },
+  viola: {
+    title: "Viola Wainright — Dialogue",
+    id: "viola",
+    help: "Actress. Brilliant performer, practiced liar, bitter about inheritance. Every line should feel like a performance.",
+    entries: [
+      { id: "VIOLA_STEPHANIE_LIES", priority: "high", context: "Lies about not knowing Stephanie. Should sound effortlessly convincing.",
+        text: `"Such a tragedy. I barely knew her — we'd exchanged pleasantries in the lobby, nothing more." She says it perfectly.` },
+      { id: "VIOLA_STEPHANIE_DEFLECTS", priority: "med", context: "Deflects when cornered about Stephanie.",
+        text: `"Must we dwell on the morbid? The poor woman deserves to rest in peace."` },
+      { id: "VIOLA_STEPHANIE_OMITS", priority: "low", context: "Omits information gracefully.",
+        text: `Viola sighs delicately. "I'm afraid I have nothing useful to offer."` },
+      { id: "VIOLA_FAMILY_DENIES", priority: "high", context: "Denies family connection. Key lie.",
+        text: `"Family? I have no connections to Miss Bordeau. We simply stayed at the same hotel."` },
+      { id: "VIOLA_FAMILY_CONFESSES", priority: "high", context: "Confesses to being half-sister when cornered. Big emotional beat.",
+        text: `"Fine. She was my half-sister." Viola's composure cracks. "Same father, different mothers. She got everything. I got a stage name and an empty purse."` },
+      { id: "VIOLA_FAMILY_DEFLECTS", priority: "med", context: "Deflects family questions with wit.",
+        text: `"What a curious question. Are you writing a society column?"` },
+      { id: "VIOLA_ALIBI_REHEARSAL", priority: "med", context: "Her alibi — late rehearsal at McVicker's.",
+        text: `"I was at McVicker's until quite late — rehearsals for The Heiress. You can check with the stage manager."` },
+      { id: "VIOLA_THEATRE_TRUTH", priority: "high", context: "Talks about the play. Ironic self-awareness.",
+        text: `"The Heiress. A play about a woman denied her inheritance." A bitter smile crosses her lips. "I find the role... relatable."` },
+      { id: "VIOLA_INHERITANCE_REFUSES", priority: "med", context: "Refuses to discuss money.",
+        text: `"I don't see how finances are relevant to a murder investigation."` },
+      { id: "VIOLA_INHERITANCE_BITTER", priority: "high", context: "Bitter confession about the inheritance when fully cornered.",
+        text: `"She inherited everything from our father. Everything. And I was left to make my own way. Is that a motive? You tell me."` },
+      { id: "VIOLA_REHEARSING", priority: "low", context: "Goal pursuit — rehearsing in ballroom.",
+        text: `Viola stands on the stage, mouthing lines to herself with graceful gestures.` },
+      { id: "VIOLA_DINING", priority: "low", context: "Goal pursuit — eating at restaurant.",
+        text: `Viola takes a table by the window, ordering with the ease of a regular.` },
+      { id: "VIOLA_GREETS_PLAYER", priority: "med", context: "NPC initiative — greets player on entering ballroom.",
+        text: `"Ah, the architect." Viola turns with a practiced smile. "Come to see the scene of the crime, or just the scenery?"` },
+    ]
+  },
+  john: {
+    title: "John Barber — Dialogue",
+    id: "john",
+    help: "Gang enforcer. Cold, calculating, professional. Few words. Should feel dangerous with silence, not threats.",
+    entries: [
+      { id: "JOHN_STEPHANIE_TERSE", priority: "high", context: "Terse refusal when asked about Stephanie.",
+        text: `"Dead is dead." John doesn't look up from his drink.` },
+      { id: "JOHN_BUSINESS_VAGUE", priority: "high", context: "Vaguely admits to business arrangement when trusted.",
+        text: `"Miss Bordeau and I had an arrangement. Mutually beneficial. That's all I'll say."` },
+      { id: "JOHN_BUSINESS_REFUSES", priority: "med", context: "Refuses to discuss business.",
+        text: `John's eyes go flat. "Drop it."` },
+      { id: "JOHN_DINNER_DEFLECTS", priority: "med", context: "Deflects about being seen dining with Stephanie.",
+        text: `"A man can eat dinner with whoever he likes. Last I checked, that wasn't a crime."` },
+      { id: "JOHN_ALIBI_DOCKS", priority: "med", context: "Weak alibi — was at the docks.",
+        text: `"I left early. Had business at the docks." He offers nothing else.` },
+      { id: "JOHN_MENACE_NOTICED", priority: "high", context: "Passive influence — atmosphere when John is in the room.",
+        text: `John Barber is here, watching the room with quiet, predatory attention. The other guests seem to give him a wide berth.` },
+      { id: "JOHN_SEARCHES_ROOM", priority: "med", context: "Goal pursuit — searching Stephanie's room for evidence.",
+        text: `John rifles through the writing desk, pocketing something.` },
+      { id: "JOHN_CAUGHT_SEARCHING", priority: "high", context: "When player interrupts his evidence search. Should be smooth, not panicked.",
+        text: `John straightens up smoothly. "Wrong room," he says, walking past you without hurry.` },
+    ]
+  },
+  catherine: {
+    title: "Catherine Shelby — Dialogue",
+    id: "catherine",
+    help: "Restaurant hostess, Stephanie's oldest friend. Warm, observant, protective. The player's best source of information.",
+    entries: [
+      { id: "CATHERINE_STEPHANIE_FRIEND", priority: "high", context: "Opens up about Stephanie immediately. Emotional anchor.",
+        text: `"Stephanie was my dearest friend. Twenty years. I still can't..." Catherine presses a handkerchief to her eyes.` },
+      { id: "CATHERINE_STEPHANIE_DETAIL", priority: "high", context: "Between-turn follow-up. Reveals Stephanie was worried.",
+        text: `"She was worried about something these last few weeks. Wouldn't say what. But I saw her writing letters late at night."` },
+      { id: "CATHERINE_WILL_EXECUTOR", priority: "med", context: "Reveals she's executor of the will when trusted.",
+        text: `"I'm the executor of her estate, yes. She trusted me to see things done properly."` },
+      { id: "CATHERINE_WILL_VAGUE", priority: "low", context: "Vague about the will when not trusted.",
+        text: `"Her affairs are... complicated. I'm not at liberty to discuss the details."` },
+      { id: "CATHERINE_FAMILY_HINT", priority: "high", context: "Hints about Stephanie's hidden family. Key breadcrumb.",
+        text: `"Family..." Catherine hesitates. "Stephanie always said she had no family left. But I wonder sometimes if that was entirely true."` },
+      { id: "CATHERINE_FAMILY_DEFLECTS", priority: "med", context: "Protects family secrets.",
+        text: `"Some things are not my secrets to tell."` },
+      { id: "CATHERINE_ROSS_AT_BAR", priority: "med", context: "Corroborates Ross's alibi — with the critical gap.",
+        text: `"Ross was at the bar most of the night. I served him myself. Though I did step away for a bit around nine."` },
+      { id: "CATHERINE_VIOLA_OBSERVATION", priority: "med", context: "Observations about Viola. Suspicious but not accusatory.",
+        text: `"Miss Wainright. She's been staying here often lately. More often than an actress between shows would need to."` },
+      { id: "CATHERINE_VIOLA_CAREFUL", priority: "low", context: "Careful response about Viola when protective.",
+        text: `"She's a lovely woman. I'm sure she has her reasons for being here."` },
+      { id: "CATHERINE_JOHN_WARNING", priority: "med", context: "Warns player about John. Should feel genuine concern.",
+        text: `"Mr. Barber is not a man to cross. Be careful what you say around him."` },
+      { id: "CATHERINE_JACK_TROUBLE", priority: "med", context: "Observes Jack is in trouble.",
+        text: `"Margolin's been in a state lately. Louder than usual, and that's saying something. Money trouble, if I had to guess."` },
+      { id: "CATHERINE_CHELSEA_SYMPATHY", priority: "med", context: "Talks about Chelsea with maternal care. Should hint she knows more.",
+        text: `"That poor girl. She seems lost. I've tried to look after her — she reminds me of someone."` },
+      { id: "CATHERINE_ALIBI_RESTAURANT", priority: "low", context: "Catherine's own alibi.",
+        text: `"I was closing up the restaurant. Chelsea can tell you — she saw me."` },
+      { id: "CATHERINE_GUESTS_OVERVIEW", priority: "med", context: "Overview of where everyone was. Key exposition.",
+        text: `"Let me think. Ross was at the bar. Miss Wainright said she was at the theatre. Mr. Barber left early. Margolin was in his room. Chelsea was doing her rounds."` },
+      { id: "CATHERINE_CHECKS_KITCHEN", priority: "low", context: "Goal pursuit — witnessed movement.",
+        text: `Catherine slips into the kitchen to check on the morning preparations.` },
+    ]
+  },
+  scenes: {
+    title: "NPC-to-NPC Scenes",
+    id: "scenes",
+    help: "Witnessed dialogue between NPCs. These should feel like overheard conversation, not exposition.",
+    entries: [
+      { id: "SCENE_CATHERINE_CHELSEA_1", priority: "med", context: "Catherine initiates — concern for Chelsea.",
+        text: `"Are you alright, dear? You look pale."` },
+      { id: "SCENE_CATHERINE_CHELSEA_2", priority: "med", context: "Chelsea responds — hiding something.",
+        text: `"I'm fine, Mrs. Shelby. Just... tired."` },
+      { id: "SCENE_CATHERINE_CHELSEA_3", priority: "med", context: "Catherine's response — she sees through it.",
+        text: `"Hmm." Catherine studies Chelsea's face for a moment. "You come find me if you need anything."` },
+    ]
+  },
+  jack: {
+    title: "Jack Margolin — Dialogue",
+    id: "jack",
+    help: "Real estate mogul. Loud, brash, dominates the room. Terrified underneath. Should be period-authentic bombast.",
+    entries: [
+      { id: "JACK_STEPHANIE_BLUSTER", priority: "high", context: "Default bluster when asked about Stephanie.",
+        text: `"Terrible business. Terrible! But I don't see what it has to do with me." Jack's voice fills the room.` },
+      { id: "JACK_BLOCKS_EXIT", priority: "high", context: "Blocking conversation — won't let player leave. Should feel physically imposing.",
+        text: `"Now hold on — you come in here throwing accusations around, you can damn well stay and explain yourself!"` },
+      { id: "JACK_PROPERTY_DENIES", priority: "high", context: "Denies property debts. Key lie.",
+        text: `"I'm a businessman. I own property. That's what I do. No debts worth mentioning."` },
+      { id: "JACK_PROPERTY_CONFESSES", priority: "high", context: "Confesses about the hotel deed when cornered. Big moment — total deflation.",
+        text: `Jack deflates like a punctured balloon. "She held the deed to the hotel. If she called it in, I'd lose everything. But I didn't kill her — I needed her alive more than anyone!"` },
+      { id: "JACK_PROPERTY_REFUSES", priority: "med", context: "Throws player out of his room.",
+        text: `"Get out of my room before I have you thrown out."` },
+      { id: "JACK_ALIBI_ROOM_SERVICE", priority: "low", context: "Alibi statement.",
+        text: `"I was in my room. Called for room service at nine. You can ask the staff."` },
+      { id: "JACK_HOTEL_DEFLECTS", priority: "low", context: "Deflects about hotel ownership.",
+        text: `"The Alderman is a fine establishment. Best in the city. That's all that matters."` },
+      { id: "JACK_BULLIES", priority: "high", context: "Active intimidation. Should feel like genuine threat from a powerful man.",
+        text: `"You know who I am?" Jack steps closer, jabbing a finger at you. "I've ruined men bigger than you."` },
+      { id: "JACK_BULLYING_RESISTED", priority: "med", context: "When player resists Jack's bullying.",
+        text: `You stand your ground. Jack's bluster fades into an uneasy silence.` },
+      { id: "JACK_OFFERS_HUSH_MONEY", priority: "med", context: "NPC-to-NPC influence — overheard bribery.",
+        text: `You overhear Jack pressing a folded bill into someone's hand. "Keep quiet about the property business."` },
+      { id: "JACK_HUSH_RESISTED", priority: "low", context: "When NPC resists Jack's bribe.",
+        text: `"I don't need your money, Mr. Margolin."` },
+      { id: "JACK_ENTERS_BAR", priority: "low", context: "Goal pursuit — witnessed movement.",
+        text: `Jack Margolin strides into the bar like he owns it. Which, technically, he might not for much longer.` },
+      { id: "JACK_LOBBY_DEALS", priority: "low", context: "Goal pursuit — doing deals in foyer.",
+        text: `Jack is in the foyer, cornering a guest about some real estate proposition.` },
+    ]
+  },
+  chelsea: {
+    title: "Chelsea Sumner — Dialogue",
+    id: "chelsea",
+    help: "Cigarette girl, possible daughter. Young, nervous, seeking truth. Should feel vulnerable and earnest.",
+    entries: [
+      { id: "CHELSEA_STEPHANIE_HESITANT", priority: "high", context: "Opens up about Stephanie when trusted. Should feel fragile.",
+        text: `"Miss Bordeau was... she was kind to me. More than most guests." Chelsea's voice is barely above a whisper.` },
+      { id: "CHELSEA_STEPHANIE_OMITS", priority: "med", context: "Hides her feelings about Stephanie when not trusted.",
+        text: `Chelsea looks down at her cigarette tray. "I didn't know her well." Her hands shake slightly.` },
+      { id: "CHELSEA_MOTHER_CONFESSION", priority: "high", context: "Confesses she thinks Stephanie was her mother. Emotional climax for Chelsea's arc.",
+        text: `"I think she was my mother." Chelsea's eyes fill with tears. "I have a locket — the photograph inside looks just like her. I came here to find out the truth, and now..."` },
+      { id: "CHELSEA_MOTHER_ASKS", priority: "med", context: "Asks the player a question instead of answering. Shows she's searching too.",
+        text: `"Why do you ask about mothers?" Chelsea looks at you searchingly. "Do you know something?"` },
+      { id: "CHELSEA_LOCKET_SHOWS", priority: "high", context: "Shows the locket. Key evidence moment.",
+        text: `Chelsea opens a tarnished silver locket. Inside is a faded photograph of a young red-haired woman. The resemblance to Stephanie is unmistakable.` },
+      { id: "CHELSEA_LOCKET_HIDES", priority: "med", context: "Hides the locket when not trusted.",
+        text: `Chelsea's hand goes to her throat, covering something beneath her collar. "It's nothing. Just a keepsake."` },
+      { id: "CHELSEA_ALIBI_ROUNDS", priority: "med", context: "Alibi statement — includes the time gap.",
+        text: `"I was doing my rounds — the foyer, the bar, the restaurant. People saw me. Though there was a while when I was between floors..."` },
+      { id: "CHELSEA_CATHERINE_KIND", priority: "low", context: "Talks about Catherine warmly.",
+        text: `"Mrs. Shelby is very kind. She looks after me. Sometimes I think she knows more than she lets on."` },
+      { id: "CHELSEA_SEEKS_CATHERINE", priority: "low", context: "Goal pursuit — looking for Catherine.",
+        text: `Chelsea glances around the room, looking for Catherine.` },
+      { id: "CHELSEA_ASKS_CATHERINE", priority: "low", context: "Goal pursuit — approaching Catherine.",
+        text: `Chelsea approaches Catherine quietly, clutching her locket.` },
+      { id: "CHELSEA_FLEES", priority: "low", context: "Goal interruption — flees when threatened.",
+        text: `Chelsea hurries away, eyes wide with fright.` },
+      { id: "CHELSEA_ROUNDS_BAR", priority: "low", context: "Goal pursuit — cigarette rounds.",
+        text: `Chelsea moves through the bar offering cigarettes, her smile thin and forced.` },
+    ]
+  },
+  accusation: {
+    title: "Accusation System",
+    id: "accusation",
+    help: "End-game text. The correct accusation and failure states.",
+    entries: [
+      { id: "ACCUSE_NO_TARGET", priority: "low", context: "Error — no suspect specified.",
+        text: `Accuse whom? You need to specify a suspect.` },
+      { id: "ACCUSE_WRONG_HINT", priority: "med", context: "Wrong accusation (1st or 2nd). {wrongPart} is 'suspect', 'weapon', or 'location'.",
+        text: `"That doesn't seem right." You reconsider your theory. (The {wrongPart} doesn't fit the evidence.)` },
+      { id: "ACCUSE_WRONG_FINAL", priority: "high", context: "Third wrong accusation — game over. {killerName}, {weaponName}, {locationName} are filled in.",
+        text: `The police arrive before you can make another attempt. The truth comes out in the investigation: it was {killerName}, with the {weaponName}, in {locationName}.` },
+      { id: "ACCUSE_CORRECT", priority: "high", context: "Correct accusation — victory. Should feel like a dramatic reveal.",
+        text: `"My God..." The room falls silent as the truth dawns on everyone. The evidence is irrefutable. Justice will be served.` },
+      { id: "ACCUSE_TOO_MANY", priority: "low", context: "Already used all three attempts.",
+        text: `The police have arrived. Your investigation is over.` },
+    ]
+  },
+  gameflow: {
+    title: "Game Flow",
+    id: "gameflow",
+    help: "Opening sequence text. Sets the scene and tone for the entire game.",
+    entries: [
+      { id: "GAME_INTRO", priority: "high", context: "First text the player sees. Evening arrival at the hotel.",
+        text: `You arrive at The Alderman as the gas lamps are being lit along State Street. A fine hotel — one of the new "fireproof" buildings going up all over the city. You check in and retire to Room 310.` },
+      { id: "GAME_MORNING", priority: "high", context: "The morning after. Something is wrong.",
+        text: `You wake to raised voices and hurried footsteps in the hallway. Something has happened.` },
+      { id: "GAME_MANAGER_REQUEST", priority: "high", context: "Hotel manager asks player to investigate. Sets up the game premise.",
+        text: `The hotel manager appears at your door, pale-faced. "Sir — there's been a death. Miss Bordeau, in... well. The police have been sent for, but it will be hours. You're a man of education. Would you be willing to look into things? Discreetly?"` },
+    ]
+  },
+  items: {
+    title: "Items & Evidence",
+    id: "items",
+    help: "Object descriptions and readable text. Evidence items are critical for the investigation.",
+    entries: [
+      { id: "item.revolver", priority: "low", context: "Weapon — in Jack's nightstand.",
+        text: `A Colt single-action revolver. Well-oiled and recently cleaned.` },
+      { id: "item.knife", priority: "low", context: "Weapon — in kitchen knife block.",
+        text: `A heavy chef's knife with a rosewood handle.` },
+      { id: "item.champagne", priority: "low", context: "Weapon — behind bar counter.",
+        text: `A bottle of Veuve Clicquot. Full and heavy.` },
+      { id: "item.poker", priority: "low", context: "Weapon — by foyer fireplace.",
+        text: `A wrought-iron fireplace poker. Surprisingly heavy.` },
+      { id: "item.iron", priority: "low", context: "Weapon — laundry pressing station.",
+        text: `A flat iron used for pressing linens. Cast iron, blunt and weighty.` },
+      { id: "item.cord", priority: "low", context: "Weapon — ballroom stage curtain.",
+        text: `A braided silk cord used to tie back the stage curtains.` },
+      { id: "item.letter", priority: "high", context: "Key evidence — Stephanie's unfinished letter to her solicitor about Jack's debts.",
+        text: `A letter in Stephanie's hand, addressed to a solicitor. The ink trails off mid-sentence.` },
+      { id: "item.letter.readable", priority: "high", context: "The readable text of Stephanie's letter. Should feel like interrupted urgency.",
+        text: `Dear Mr. Hewitt,\n\nI write to inform you of my decision regarding the estate. The property deeds currently held by Mr. Margolin must be called in no later than—` },
+      { id: "item.locket", priority: "high", context: "Key evidence — Chelsea's locket with Stephanie's photograph.",
+        text: `A tarnished silver locket on a thin chain. It opens to reveal a faded photograph of a young red-haired woman.` },
+      { id: "item.program", priority: "med", context: "Key evidence — theatre program that disproves Viola's alibi.",
+        text: `A printed program for McVicker's Theatre. Tonight's performance of "The Heiress."` },
+      { id: "item.program.readable", priority: "med", context: "Readable text of the program. The rehearsal time contradicts Viola's claim.",
+        text: `McVicker's Theatre presents "The Heiress"\nStarring Viola Wainright\n\nEvening Performance: 7:00 PM\nRehearsal Schedule: 2:00 PM — 5:00 PM\n\n(The rehearsal ended at 5:00 PM — not at 8:00 PM as Viola claims.)` },
+    ]
+  },
+};
+
+// --- EDITOR LOGIC ---
+// States: 'unchanged' | 'edited' | 'pushed'
+// localStorage keys:
+//   alderman.draft.{id}  — current text (only if different from original)
+//   alderman.state.{id}  — 'pushed' flag
+
+const STORAGE_PREFIX = 'alderman.';
+const originals = {};
+let totalCount = 0;
+
+function lsGet(key) { try { return localStorage.getItem(STORAGE_PREFIX + key); } catch { return null; } }
+function lsSet(key, val) { try { localStorage.setItem(STORAGE_PREFIX + key, val); } catch {} }
+function lsRm(key) { try { localStorage.removeItem(STORAGE_PREFIX + key); } catch {} }
+
+function getState(id) {
+  const draft = lsGet('draft.' + id);
+  const pushed = lsGet('state.' + id) === 'pushed';
+  if (pushed) return 'pushed';
+  if (draft !== null && draft !== originals[id]) return 'edited';
+  return 'unchanged';
+}
+
+function init() {
+  const container = document.getElementById('editor');
+  let html = '';
+
+  for (const [sectionKey, section] of Object.entries(DATA)) {
+    html += `<section id="${section.id}">`;
+    html += `<h2>${section.title}</h2>`;
+    if (section.help) html += `<p class="help" style="margin-bottom:1rem;">${section.help}</p>`;
+
+    for (const entry of section.entries) {
+      const pClass = entry.priority === 'high' ? 'priority-high' : entry.priority === 'med' ? 'priority-med' : 'priority-low';
+      const bClass = entry.priority === 'high' ? 'badge-high' : entry.priority === 'med' ? 'badge-med' : 'badge-low';
+
+      originals[entry.id] = entry.text;
+      totalCount++;
+
+      // Restore draft from localStorage if present
+      const draft = lsGet('draft.' + entry.id);
+      const displayText = draft !== null ? draft : entry.text;
+      const rows = Math.max(2, Math.ceil(displayText.length / 80));
+
+      const eid = cssId(entry.id);
+
+      html += `<div class="entry ${pClass}" id="entry_${eid}">`;
+      html += `<div class="entry-header">`;
+      html += `<span class="entry-id">${entry.id}<span class="entry-status" id="status_${eid}"></span></span>`;
+      html += `<span class="badge ${bClass}">${entry.priority}</span>`;
+      html += `</div>`;
+      html += `<p class="entry-context">${entry.context}</p>`;
+      html += `<textarea id="t_${eid}" rows="${rows}" oninput="onEdit('${entry.id}')">${escHtml(displayText)}</textarea>`;
+      html += `<div class="entry-actions">`;
+      html += `<button class="revert-btn" id="revert_${eid}" onclick="revertOne('${entry.id}')" title="Revert to original">Revert</button>`;
+      html += `<button class="push-btn" id="push_${eid}" onclick="pushOne('${entry.id}')">Push</button>`;
+      html += `</div>`;
+      html += `</div>`;
+    }
+    html += `</section>`;
+  }
+
+  container.innerHTML = html;
+
+  // Apply saved states
+  for (const id of Object.keys(originals)) {
+    refreshEntryUI(id);
+  }
+  updateStats();
+}
+
+function cssId(id) { return id.replace(/\./g, '_'); }
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function onEdit(id) {
+  const eid = cssId(id);
+  const el = document.getElementById('t_' + eid);
+  const text = el.value;
+
+  // Save draft
+  if (text !== originals[id]) {
+    lsSet('draft.' + id, text);
+  } else {
+    lsRm('draft.' + id);
+  }
+
+  // If it was pushed and now edited again, reset to edited
+  if (lsGet('state.' + id) === 'pushed' && text !== lsGet('pushed_text.' + id)) {
+    lsRm('state.' + id);
+    lsRm('pushed_text.' + id);
+  }
+
+  refreshEntryUI(id);
+  updateStats();
+}
+
+function refreshEntryUI(id) {
+  const eid = cssId(id);
+  const el = document.getElementById('t_' + eid);
+  const statusEl = document.getElementById('status_' + eid);
+  const pushBtn = document.getElementById('push_' + eid);
+  const state = getState(id);
+
+  el.classList.remove('modified', 'pushed');
+  pushBtn.classList.remove('active', 'pushed');
+  statusEl.className = 'entry-status';
+  statusEl.textContent = '';
+
+  if (state === 'pushed') {
+    el.classList.add('pushed');
+    pushBtn.classList.add('pushed');
+    pushBtn.textContent = 'Pushed';
+    statusEl.classList.add('status-pushed');
+    statusEl.textContent = 'pushed';
+  } else if (state === 'edited') {
+    el.classList.add('modified');
+    pushBtn.classList.add('active');
+    pushBtn.textContent = 'Push';
+  } else {
+    pushBtn.textContent = 'Push';
+  }
+}
+
+function pushOne(id) {
+  const eid = cssId(id);
+  const el = document.getElementById('t_' + eid);
+  const text = el.value;
+
+  if (text === originals[id]) return;
+
+  // Build the change object
+  const change = {};
+  change[id] = { original: originals[id], revised: text };
+  const json = JSON.stringify(change, null, 2);
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(json).then(() => {
+    // Mark as pushed
+    lsSet('state.' + id, 'pushed');
+    lsSet('pushed_text.' + id, text);
+    refreshEntryUI(id);
+    updateStats();
+    toast(`Pushed: ${id}`);
+  }).catch(() => {
+    toast('Clipboard failed — check permissions');
+  });
+}
+
+function revertOne(id) {
+  const eid = cssId(id);
+  const el = document.getElementById('t_' + eid);
+  el.value = originals[id];
+  lsRm('draft.' + id);
+  lsRm('state.' + id);
+  lsRm('pushed_text.' + id);
+  refreshEntryUI(id);
+  updateStats();
+}
+
+function updateStats() {
+  let editedCount = 0;
+  let pushedCount = 0;
+  for (const id of Object.keys(originals)) {
+    const state = getState(id);
+    if (state === 'edited') editedCount++;
+    if (state === 'pushed') pushedCount++;
+  }
+  const parts = [];
+  if (editedCount) parts.push(`${editedCount} pending`);
+  if (pushedCount) parts.push(`${pushedCount} pushed`);
+  document.getElementById('stats').textContent = parts.length
+    ? parts.join(' | ') + ` / ${totalCount} total`
+    : `${totalCount} entries`;
+}
+
+function showPending() {
+  const changes = {};
+  let count = 0;
+  for (const id of Object.keys(originals)) {
+    if (getState(id) === 'edited') {
+      const eid = cssId(id);
+      const el = document.getElementById('t_' + eid);
+      changes[id] = { original: originals[id], revised: el.value };
+      count++;
+    }
+  }
+  if (count === 0) {
+    alert('No pending (un-pushed) changes.');
+    return;
+  }
+  const json = JSON.stringify(changes, null, 2);
+  navigator.clipboard.writeText(json).then(() => {
+    toast(`${count} pending change(s) copied to clipboard`);
+  }).catch(() => {
+    // Fallback
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'alderman-pending.json'; a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+function resetAll() {
+  if (!confirm('Reset ALL entries to original text and clear all pushed/edited state?')) return;
+  for (const id of Object.keys(originals)) {
+    const eid = cssId(id);
+    const el = document.getElementById('t_' + eid);
+    if (el) el.value = originals[id];
+    lsRm('draft.' + id);
+    lsRm('state.' + id);
+    lsRm('pushed_text.' + id);
+    refreshEntryUI(id);
+  }
+  updateStats();
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 2500);
+}
+
+init();
+</script>
+</body>
+</html>

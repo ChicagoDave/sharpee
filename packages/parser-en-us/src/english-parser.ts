@@ -46,7 +46,7 @@ import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine } from './english-grammar-engine';
 import { defineGrammar } from './grammar';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
-import { parseDirection, setActiveVocabulary, getGrammarDirectionMap } from './direction-mappings';
+import { parseDirection, setActiveVocabulary, getGrammarDirectionMap, getDirectionWords } from './direction-mappings';
 import { analyzeBestFailure } from './parse-failure';
 import { PronounContextManager, setPronounContextManager } from './pronoun-context';
 
@@ -237,6 +237,14 @@ export class EnglishParser implements Parser {
     // 2. Rebuild grammar direction patterns
     const grammar = this.grammarEngine.createBuilder();
     grammar.replaceDirections('if.action.going', getGrammarDirectionMap());
+
+    // 3. Update vocabulary registry so tokenizer tags new words as DIRECTION.
+    //    Reuse the active word→direction map computed in step 1.
+    vocabularyRegistry.unregisterByPartOfSpeech(VocabPartOfSpeech.DIRECTION);
+    const activeWords = getDirectionWords();
+    vocabularyRegistry.registerDirections(
+      Object.entries(activeWords).map(([word, dir]) => ({ word, mapsTo: dir })),
+    );
   }
 
   /**
@@ -999,10 +1007,10 @@ export class EnglishParser implements Parser {
     
     // For direction commands, handle specially
     if (rule.action === 'if.action.going' && !directObject) {
-      // Extract direction from pattern
-      const directionToken = tokens.find(t => 
-        t.candidates.some((c: any) => c.type === VocabPartOfSpeech.DIRECTION) ||
-        ['north', 'south', 'east', 'west', 'up', 'down', 'in', 'out', 'n', 's', 'e', 'w', 'u', 'd'].includes(t.normalized)
+      // Extract direction from pattern — check vocabulary registry tags
+      // (no hardcoded word list; the registry is updated when vocabulary changes)
+      const directionToken = tokens.find(t =>
+        t.candidates.some((c: any) => c.type === VocabPartOfSpeech.DIRECTION)
       );
       
       if (directionToken) {

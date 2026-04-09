@@ -2801,7 +2801,7 @@ export interface INpcService {
  */
 export declare class NpcService implements INpcService {
     private behaviors;
-    private tickPhases;
+    private readonly tickPhases;
     registerBehavior(behavior: NpcBehavior): void;
     removeBehavior(id: string): void;
     getBehavior(id: string): NpcBehavior | undefined;

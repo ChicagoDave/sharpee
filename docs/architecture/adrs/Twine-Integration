@@ -1,0 +1,41 @@
+Sharpee's engine is completely UI-agnostic — the parser, world model, and action system are all separated from rendering. The same core API powers a CLI, a browser client, and a React-based runner (Zifmia). A Twine integration would just be another consumer of that API. The basic surface looks like this:
+
+```                                                                                                                        
+  const world = new WorldModel();                                                                                       
+  const engine = new GameEngine({ world, player, parser, language });                                                   
+  engine.setStory(story);                                                                                               
+  engine.start();                                                                                                       
+                                                                                                                        
+  const result = await engine.executeTurn("take lamp");                                                                 
+  // result.blocks → structured text output
+  // result.events → semantic events (item moved, door opened, etc.)                                                    
+  // result.success → boolean                                                                                           
+```
+
+There are a few ways a Twine author could leverage this, depending on how deep they want to go.                       
+
+World Model as a State Engine (No Parser)                                                                             
+
+The most natural fit for Twine authors would be using just Sharpee's WorldModel as a state management layer behind your passages. No command line, no parser — Twine links map to Sharpee actions directly.
+
+This gives you spatial containment (items in rooms, items in containers), traits (locked/unlocked, open/closed, light sources, wearables), inventory management, and entity relationships — all without reinventing state tracking in SugarCube variables. The world model becomes a smart state machine behind the hypertext.                              
+
+Hybrid: Passages + Parser                                                                                             
+
+With SugarCube, you could have narrative passages handle story beats and choices, then drop into a parser-powered exploration mode for certain sections. Twine handles the narrative flow; Sharpee handles spatial reasoning, inventory, and object interaction. Players click links for the story, type commands when they want to explore freely.
+
+This is compelling for authors who want exploration sections — "wander the dungeon freely, then return to the narrative" — without building the entire game as parser IF.
+                                                                 
+What Sharpee's World Model Gives You for Free                                                                         
+
+The real value for a Twine author isn't necessarily the parser — it's the world model:                                
+
+- Spatial relationships — rooms, connections, containment (items in boxes, boxes on tables)                           
+- Traits — openable, lockable, switchable, wearable, edible, light-source, etc.
+- Inventory and portability — items are portable by default, with trait-based blocking                                
+- Scope and perception — what can the player see, reach, or interact with right now?                                  
+- Semantic events — the engine emits events like item.taken, door.opened, player.moved that Twine could react to for
+triggering passage transitions                                                                                        
+- Save/restore — world state serialization is built in                                                                
+
+All of this exists today but is packaged for parser-based stories. A lightweight library bundle for embedding in other tools (Twine, Ink, custom web apps) doesn't exist yet, but the architecture supports it cleanly. It's something I'm curious about, but would leave it to others to explore.
