@@ -752,6 +752,72 @@
       "name": "Multi-Party Conversation",
       "category": "Conversation",
       "intent": "Conversations involving more than two participants. Multiple NPCs may be present and react to what the player says, interrupt each other, agree or disagree, or carry on their own dialogue that the player observes or joins."
+    },
+    {
+      "id": "NPC-024",
+      "name": "Gossip Network",
+      "category": "NPCs",
+      "intent": "NPCs spread information to each other through authored propagation rules, creating an information economy the player can observe, manipulate, or exploit. Each NPC has a propagation profile (chatty, selective, mute) controlling what they share, with whom, and how quickly. Facts carry provenance — who told whom — enabling the player to trace information chains."
+    },
+    {
+      "id": "NPC-025",
+      "name": "Goal-Directed",
+      "category": "NPCs",
+      "intent": "NPC autonomously pursues multi-step plans (seek, acquire, move, wait, act) triggered by character state changes. Goals activate when conditions are met, execute one step per turn, and can be interrupted or suspended. The player witnesses NPC movement and actions, creating visible urgency and parallel agency in the world."
+    },
+    {
+      "id": "NPC-026",
+      "name": "Influencer",
+      "category": "NPCs",
+      "intent": "NPC modifies other NPCs' or the player's psychological state through proximity or deliberate action — intimidation, seduction, persuasion. Influence names are author-defined, not a fixed taxonomy. Targets can resist, with conditional exceptions that reveal character. Can be used as a step in goal pursuit."
+    },
+    {
+      "id": "NPC-027",
+      "name": "NPC Initiative",
+      "category": "NPCs",
+      "intent": "NPC starts conversation with the player based on character state conditions, rather than waiting to be addressed. The NPC approaches the player when internal state thresholds are met — trust, fear, urgency — creating the feeling of a living world where NPCs have their own agendas."
+    },
+    {
+      "id": "NPC-028",
+      "name": "Psychology / Inner State",
+      "category": "NPCs",
+      "intent": "NPC has multi-dimensional internal state — mood, disposition, threat awareness, personality traits, knowledge, beliefs — that evolves through events and interactions. All other NPC behavior (conversation, goals, propagation, influence) reads from and writes to this shared substrate. This is the foundation that makes NPC systems compose into a coherent character."
+    },
+    {
+      "id": "OBJ-016",
+      "name": "Equivalent / Stackable",
+      "category": "Objects",
+      "intent": "Multiple identical objects (coins, arrows, reagents) that the parser resolves without disambiguation, listings group by count, and commands accept numeric modifiers. Enables resource management, currency, ammunition, and bulk inventory."
+    },
+    {
+      "id": "CONV-007",
+      "name": "Constraint-Based Responses",
+      "category": "Conversation",
+      "intent": "NPC response selected by evaluating predicates against character state (mood, knowledge, trust, threat), not dialogue tree position. Same topic yields different responses as state evolves. Multiple candidate responses are authored with conditions; the system selects the best match at runtime."
+    },
+    {
+      "id": "CONV-008",
+      "name": "Confrontation / Evidence",
+      "category": "Conversation",
+      "intent": "Player presents information or evidence to NPC via TELL, forcing a reaction — confession, denial, deflection — based on what the NPC knows and has previously said. Distinct from ASK (requesting information). Enables detective and investigation gameplay where gathered evidence unlocks new conversation paths."
+    },
+    {
+      "id": "CONV-009",
+      "name": "Response Intent",
+      "category": "Conversation",
+      "intent": "NPC responses carry semantic intent (tell, lie, deflect, confess, refuse) that feeds back into character state and enables contradiction detection. When an NPC lies about a topic and is later confronted with evidence, the system knows they lied and can trigger confession or deeper deception paths."
+    },
+    {
+      "id": "CONV-010",
+      "name": "Persistent Conversation",
+      "category": "Conversation",
+      "intent": "Conversation persists as active state across multiple exchanges and non-conversation actions. NPC may continue speaking on subsequent turns without prompting. Conversation intent (eager, reluctant, hostile) and strength (passive, assertive, blocking) control NPC behavior between player utterances."
+    },
+    {
+      "id": "CONV-011",
+      "name": "Eavesdropping",
+      "category": "Conversation",
+      "intent": "Player observes NPC-to-NPC conversation, gaining information with a distinct provenance ('overheard') that may differ from what they'd learn by asking directly. NPCs may speak freely to each other about things they'd withhold from the player, creating an information asymmetry the player can exploit."
     }
   ],
   "edges": [
@@ -1646,6 +1712,138 @@
     {
       "source": "CONV-006",
       "target": "CONV-001"
+    },
+    {
+      "source": "NPC-024",
+      "target": "NPC-024"
+    },
+    {
+      "source": "NPC-024",
+      "target": "NPC-025"
+    },
+    {
+      "source": "NPC-025",
+      "target": "NPC-025"
+    },
+    {
+      "source": "NPC-025",
+      "target": "NPC-026"
+    },
+    {
+      "source": "NPC-025",
+      "target": "PUZ-009"
+    },
+    {
+      "source": "NPC-026",
+      "target": "NPC-026"
+    },
+    {
+      "source": "NPC-026",
+      "target": "CONV-004"
+    },
+    {
+      "source": "NPC-027",
+      "target": "NPC-027"
+    },
+    {
+      "source": "NPC-027",
+      "target": "CONV-010"
+    },
+    {
+      "source": "NPC-028",
+      "target": "NPC-028"
+    },
+    {
+      "source": "NPC-028",
+      "target": "NPC-024"
+    },
+    {
+      "source": "NPC-028",
+      "target": "NPC-025"
+    },
+    {
+      "source": "NPC-028",
+      "target": "NPC-026"
+    },
+    {
+      "source": "NPC-028",
+      "target": "NPC-027"
+    },
+    {
+      "source": "NPC-028",
+      "target": "CONV-007"
+    },
+    {
+      "source": "NPC-028",
+      "target": "NPC-015"
+    },
+    {
+      "source": "NPC-028",
+      "target": "NPC-016"
+    },
+    {
+      "source": "CONV-007",
+      "target": "CONV-007"
+    },
+    {
+      "source": "CONV-007",
+      "target": "CONV-005"
+    },
+    {
+      "source": "CONV-008",
+      "target": "CONV-008"
+    },
+    {
+      "source": "CONV-008",
+      "target": "CONV-009"
+    },
+    {
+      "source": "CONV-009",
+      "target": "CONV-009"
+    },
+    {
+      "source": "CONV-009",
+      "target": "NPC-028"
+    },
+    {
+      "source": "CONV-010",
+      "target": "CONV-010"
+    },
+    {
+      "source": "CONV-010",
+      "target": "CONV-005"
+    },
+    {
+      "source": "CONV-011",
+      "target": "CONV-011"
+    },
+    {
+      "source": "CONV-011",
+      "target": "NPC-024"
+    },
+    {
+      "source": "NARR-021",
+      "target": "CONV-008"
+    },
+    {
+      "source": "OBJ-016",
+      "target": "OBJ-016"
+    },
+    {
+      "source": "OBJ-016",
+      "target": "OBJ-014"
+    },
+    {
+      "source": "OBJ-016",
+      "target": "OBJ-002"
+    },
+    {
+      "source": "OBJ-016",
+      "target": "NPC-004"
+    },
+    {
+      "source": "OBJ-016",
+      "target": "OBJ-012"
     }
   ]
 }
