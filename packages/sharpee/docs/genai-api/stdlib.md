@@ -2738,6 +2738,11 @@ import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { NpcBehavior } from './types';
 /**
+ * A tick phase handler that runs during NPC turn processing.
+ * Registered by higher-level packages (e.g., @sharpee/character).
+ */
+export type NpcTickPhase = (npcs: IFEntity[], context: NpcTickContext) => ISemanticEvent[];
+/**
  * NPC Combat Resolver function type.
  *
  * Stories register a resolver to handle NPC→target combat resolution.
@@ -2778,6 +2783,8 @@ export interface INpcService {
     removeBehavior(id: string): void;
     /** Get a behavior by ID */
     getBehavior(id: string): NpcBehavior | undefined;
+    /** Register a tick phase handler (ADR-142/144/145/146) */
+    registerTickPhase(name: string, handler: NpcTickPhase): void;
     /** Execute the NPC turn phase */
     tick(context: NpcTickContext): ISemanticEvent[];
     /** Notify NPCs that player entered a room */
@@ -2794,9 +2801,18 @@ export interface INpcService {
  */
 export declare class NpcService implements INpcService {
     private behaviors;
+    private tickPhases;
     registerBehavior(behavior: NpcBehavior): void;
     removeBehavior(id: string): void;
     getBehavior(id: string): NpcBehavior | undefined;
+    /**
+     * Register a tick phase handler (ADR-142/144/145/146).
+     * Phases run in registration order after behavior onTurn processing.
+     *
+     * @param name - Phase name for debugging
+     * @param handler - Function called with active NPCs and tick context
+     */
+    registerTickPhase(name: string, handler: NpcTickPhase): void;
     /**
      * Execute the NPC turn phase
      */

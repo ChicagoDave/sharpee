@@ -124,8 +124,9 @@ website/public/games/dungeo/dungeo.js.map
 # Zifmia installer binaries (distributed separately)
 website/public/downloads/Zifmia_*
 
-# Work log (local only)
+# Work log and session state (local only)
 docs/context/.work-log.txt
+docs/context/.session-state.json
 
 # Reference source code (not ours to distribute)
 docs/dungeon-ref/

@@ -567,7 +567,7 @@ describe('applyCharacter', () => {
       add: (trait: { type: string }) => { traits.set(trait.type, trait); return entity; },
     } as any;
 
-    const trait = applyCharacter(entity, compiled);
+    const { trait } = applyCharacter(entity, compiled);
 
     expect(trait).toBeInstanceOf(CharacterModelTrait);
     expect(trait.getPersonality('honest')).toBe(0.8);
@@ -590,7 +590,7 @@ describe('applyCharacter', () => {
       add: (trait: { type: string }) => { traits.set(trait.type, trait); return entity; },
     } as any;
 
-    const trait = applyCharacter(entity, compiled);
+    const { trait } = applyCharacter(entity, compiled);
 
     expect(trait.hasPredicate('test-pred')).toBe(true);
     expect(trait.evaluate('test-pred')).toBe(false);

@@ -13,6 +13,14 @@ import {
 } from './types';
 import { NpcMessages } from './npc-messages';
 import { processLucidityDecay } from './lucidity-decay';
+/**
+ * A tick phase handler that runs during NPC turn processing.
+ * Registered by higher-level packages (e.g., @sharpee/character).
+ */
+export type NpcTickPhase = (
+  npcs: IFEntity[],
+  context: NpcTickContext,
+) => ISemanticEvent[];
 
 /**
  * NPC Combat Resolver function type.
@@ -81,6 +89,9 @@ export interface INpcService {
   /** Get a behavior by ID */
   getBehavior(id: string): NpcBehavior | undefined;
 
+  /** Register a tick phase handler (ADR-142/144/145/146) */
+  registerTickPhase(name: string, handler: NpcTickPhase): void;
+
   /** Execute the NPC turn phase */
   tick(context: NpcTickContext): ISemanticEvent[];
 
@@ -148,6 +159,7 @@ function createEvent(
  */
 export class NpcService implements INpcService {
   private behaviors: Map<string, NpcBehavior> = new Map();
+  private readonly tickPhases: { name: string; handler: NpcTickPhase }[] = [];
 
   registerBehavior(behavior: NpcBehavior): void {
     this.behaviors.set(behavior.id, behavior);
@@ -159,6 +171,17 @@ export class NpcService implements INpcService {
 
   getBehavior(id: string): NpcBehavior | undefined {
     return this.behaviors.get(id);
+  }
+
+  /**
+   * Register a tick phase handler (ADR-142/144/145/146).
+   * Phases run in registration order after behavior onTurn processing.
+   *
+   * @param name - Phase name for debugging
+   * @param handler - Function called with active NPCs and tick context
+   */
+  registerTickPhase(name: string, handler: NpcTickPhase): void {
+    this.tickPhases.push({ name, handler });
   }
 
   /**
@@ -200,6 +223,12 @@ export class NpcService implements INpcService {
         const decayEvents = processLucidityDecay(npc, world, turn);
         events.push(...decayEvents);
       }
+    }
+
+    // Registered tick phases (ADR-142/144/145/146)
+    for (const phase of this.tickPhases) {
+      const phaseEvents = phase.handler(npcs, context);
+      events.push(...phaseEvents);
     }
 
     return events;

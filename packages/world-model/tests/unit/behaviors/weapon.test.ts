@@ -54,7 +54,8 @@ describe('WeaponBehavior', () => {
         weaponType: 'blade'
       } as WeaponTrait);
       const result = WeaponBehavior.calculateDamage(fixedWeapon);
-      expect(result.damage).toBe(7);
+      // Base damage is 7; critical hit (10% chance) doubles to 14
+      expect([7, 14]).toContain(result.damage);
     });
   });
 

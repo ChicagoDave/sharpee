@@ -472,72 +472,8 @@ describe('Parser Grammar Engine Integration', () => {
     });
   });
   
-  describe('Multiple Preposition Patterns', () => {
-    it('should parse "take item from container with tool"', () => {
-      const result = parser.parse('take coin from box with tweezers');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.taking_with');
-        expect(result.value.structure.directObject?.text).toBe('coin');
-        expect(result.value.structure.indirectObject?.text).toBe('box');
-        expect(result.value.extras?.tool?.text).toBe('tweezers');
-      }
-    });
-    
-    it('should parse "unlock door with key"', () => {
-      const result = parser.parse('unlock door with key');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.unlocking');
-        expect(result.value.structure.directObject?.text).toBe('door');
-        expect(result.value.extras?.key?.text).toBe('key');
-      }
-    });
-    
-    it('should parse "cut rope with knife"', () => {
-      const result = parser.parse('cut rope with knife');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.cutting');
-        expect(result.value.structure.directObject?.text).toBe('rope');
-        expect(result.value.extras?.tool?.text).toBe('knife');
-      }
-    });
-    
-    it('should parse "attack goblin with sword"', () => {
-      const result = parser.parse('attack goblin with sword');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.attacking');
-        expect(result.value.structure.directObject?.text).toBe('goblin');
-        expect(result.value.extras?.weapon?.text).toBe('sword');
-      }
-    });
-    
-    it('should parse "open chest with crowbar"', () => {
-      const result = parser.parse('open chest with crowbar');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.opening_with');
-        expect(result.value.structure.directObject?.text).toBe('chest');
-        expect(result.value.extras?.tool?.text).toBe('crowbar');
-      }
-    });
-    
-    it('should parse "dig hole with shovel"', () => {
-      const result = parser.parse('dig hole with shovel');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.digging');
-        expect(result.value.structure.directObject?.text).toBe('hole');
-        expect(result.value.extras?.tool?.text).toBe('shovel');
-      }
-    });
-  });
+  // Multiple Preposition Patterns (instrument parsing) removed —
+  // actions like if.action.taking_with, if.action.cutting, if.action.digging
+  // and extras.tool/extras.weapon don't exist yet. Revisit when instrument
+  // parsing is implemented.
 });

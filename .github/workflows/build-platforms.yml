@@ -2,152 +2,63 @@ name: Build Platforms
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  build-core:
+  build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup pnpm
       uses: pnpm/action-setup@v3
       with:
         version: 10.13.1
-        
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
         cache: 'pnpm'
-        
+
     - name: Install dependencies
       run: pnpm install --ignore-scripts
-      
-    - name: Build packages in correct order
+
+    - name: Build platform packages
       run: |
+        # Build in dependency order (matches build.sh PACKAGES array)
         pnpm --filter '@sharpee/core' run build
         pnpm --filter '@sharpee/if-domain' run build
+        pnpm --filter '@sharpee/media' run build
         pnpm --filter '@sharpee/world-model' run build
-        pnpm --filter '@sharpee/if-services' run build
-        pnpm --filter '@sharpee/text-services' run build
+        pnpm --filter '@sharpee/helpers' run build
+        pnpm --filter '@sharpee/event-processor' run build
         pnpm --filter '@sharpee/lang-en-us' run build
         pnpm --filter '@sharpee/parser-en-us' run build
+        pnpm --filter '@sharpee/if-services' run build
+        pnpm --filter '@sharpee/text-blocks' run build
+        pnpm --filter '@sharpee/text-service' run build
         pnpm --filter '@sharpee/stdlib' run build
-        pnpm --filter '@sharpee/event-processor' run build
+        pnpm --filter '@sharpee/character' run build
+        pnpm --filter '@sharpee/ext-basic-combat' run build
+        pnpm --filter '@sharpee/plugins' run build
+        pnpm --filter '@sharpee/plugin-npc' run build
+        pnpm --filter '@sharpee/plugin-scheduler' run build
+        pnpm --filter '@sharpee/plugin-state-machine' run build
+        pnpm --filter '@sharpee/ext-testing' run build
         pnpm --filter '@sharpee/engine' run build
+        pnpm --filter '@sharpee/platform-browser' run build
         pnpm --filter '@sharpee/sharpee' run build
-        pnpm --filter '@sharpee/platform-cli-en-us' run build
-        pnpm --filter '@sharpee/platform-test' run build || true
-      
-    - name: Upload core artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: core-packages
-        path: |
-          packages/*/dist
-          !packages/platforms/*/dist
+        pnpm --filter '@sharpee/transcript-tester' run build
 
-  build-platform-cli-en:
-    needs: build-core
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 10.13.1
-        
-    - name: Download core artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: core-packages
-        path: packages
-        
-    - name: Install dependencies
-      run: pnpm install --ignore-scripts
-      
-    - name: Build CLI English platform
-      run: pnpm turbo run build --filter='@sharpee/platform-cli-en-us'
-      
-    - name: Test CLI English platform
-      run: pnpm --filter '@sharpee/platform-cli-en-us' run test || true
-      
-    - name: Upload platform artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: platform-cli-en-us
-        path: packages/platforms/cli-en-us/dist
-
-  test-integration:
-    needs: [build-core, build-platform-cli-en]
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 10.13.1
-        
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: packages
-        
-    - name: Install dependencies
-      run: pnpm install --ignore-scripts
-      
-    - name: Run integration tests
-      run: pnpm test:ci || true
-      
-  release:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: test-integration
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        registry-url: 'https://registry.npmjs.org'
-        
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 10.13.1
-        
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: packages
-        
-    - name: Install dependencies
-      run: pnpm install --ignore-scripts
-      
-    - name: Version and publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - name: Run tests
       run: |
-        echo "Ready for release - add versioning and publish logic here"
-        # pnpm changeset version
-        # pnpm changeset publish
+        pnpm --filter '@sharpee/core' test
+        pnpm --filter '@sharpee/world-model' test
+        pnpm --filter '@sharpee/parser-en-us' test
+        pnpm --filter '@sharpee/stdlib' test
+        pnpm --filter '@sharpee/character' test
+        pnpm --filter '@sharpee/engine' test

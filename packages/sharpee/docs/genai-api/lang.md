@@ -56,6 +56,10 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     private loadNpcMessages;
     /**
+     * Load character system messages (ADR-142 conversation, ADR-144 propagation, ADR-146 influence)
+     */
+    private loadCharacterMessages;
+    /**
      * Get a message by its ID with optional parameter substitution
      *
      * Supports three types of placeholders:
@@ -1808,6 +1812,89 @@ export declare const npcLanguage: {
         'npc.farewell': string;
         'npc.no_response': string;
         'npc.confused': string;
+    };
+};
+```
+
+### npc/conversation
+
+```typescript
+/**
+ * Language content for conversation system (ADR-142)
+ *
+ * Platform default messages for response action framing, cognitive
+ * speech patterns, between-turn commentary, and attention management.
+ * Authors override per-NPC; these serve as fallbacks.
+ *
+ * Owner context: @sharpee/lang-en-us / npc
+ */
+export declare const conversationLanguage: {
+    messages: {
+        'character.conversation.response.deflect': string;
+        'character.conversation.response.refuse': string;
+        'character.conversation.response.confabulate': string;
+        'character.conversation.response.omit': string;
+        'character.conversation.cognitive.fragmented': string;
+        'character.conversation.cognitive.drifting': string;
+        'character.conversation.cognitive.detached': string;
+        'character.conversation.between.eager.1': string;
+        'character.conversation.between.eager.3': string;
+        'character.conversation.between.reluctant.1': string;
+        'character.conversation.between.hostile.1': string;
+        'character.conversation.between.confessing.1': string;
+        'character.conversation.between.confessing.3': string;
+        'character.conversation.between.neutral.3': string;
+        'character.conversation.attention.yields': string;
+        'character.conversation.attention.protests': string;
+        'character.conversation.attention.blocks': string;
+        'character.conversation.ends': string;
+        'character.conversation.initiates': string;
+    };
+};
+```
+
+### npc/propagation
+
+```typescript
+/**
+ * Language content for propagation system (ADR-144)
+ *
+ * Platform default witnessed messages per propagation coloring.
+ * Authors override per-fact via FactOverride.witnessed.
+ *
+ * Owner context: @sharpee/lang-en-us / npc
+ */
+export declare const propagationLanguage: {
+    messages: {
+        'character.propagation.witnessed.neutral': string;
+        'character.propagation.witnessed.dramatic': string;
+        'character.propagation.witnessed.vague': string;
+        'character.propagation.witnessed.fearful': string;
+        'character.propagation.witnessed.conspiratorial': string;
+        'character.propagation.eavesdropped': string;
+    };
+};
+```
+
+### npc/influence
+
+```typescript
+/**
+ * Language content for influence system (ADR-146)
+ *
+ * Platform default witnessed/resisted messages for influence events.
+ * Authors override per-influence via InfluenceDef.witnessed / .resisted.
+ *
+ * Owner context: @sharpee/lang-en-us / npc
+ */
+export declare const influenceLanguage: {
+    messages: {
+        'character.influence.witnessed.default': string;
+        'character.influence.resisted.default': string;
+        'character.influence.pc.focus_clouded': string;
+        'character.influence.pc.action_intercepted': string;
+        'character.influence.effect.expired': string;
+        'character.influence.effect.departed': string;
     };
 };
 ```

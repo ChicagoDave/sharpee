@@ -99,6 +99,9 @@ importers:
 
   packages/character:
     dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib

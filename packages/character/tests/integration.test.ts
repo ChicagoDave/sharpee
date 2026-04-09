@@ -133,7 +133,7 @@ describe('ADR-141 end-to-end integration', () => {
     // ----- Layer 1: Apply to entity -----
     const margaret = createNpc(world, 'Margaret');
     world.moveEntity(margaret.id, room.id);
-    const trait = applyCharacter(margaret, compiled);
+    const { trait } = applyCharacter(margaret, compiled);
 
     // Verify both traits coexist
     expect(margaret.has(TraitType.NPC)).toBe(true);
@@ -233,7 +233,7 @@ describe('ADR-141 end-to-end integration', () => {
 
     const eleanor = createNpc(world, 'Eleanor');
     world.moveEntity(eleanor.id, room.id);
-    const trait = applyCharacter(eleanor, compiled);
+    const { trait } = applyCharacter(eleanor, compiled);
 
     // Verify schizophrenic profile
     expect(trait.cognitiveProfile).toEqual(COGNITIVE_PRESETS.schizophrenic);
@@ -271,7 +271,7 @@ describe('ADR-141 end-to-end integration', () => {
 
     const james = createNpc(world, 'James');
     world.moveEntity(james.id, room.id);
-    const trait = applyCharacter(james, compiled);
+    const { trait } = applyCharacter(james, compiled);
 
     // Quiet event should be missed entirely
     const quietEvent: ISemanticEvent = {

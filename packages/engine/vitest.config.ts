@@ -32,7 +32,16 @@ export default defineConfig({
       '@sharpee/parser-en-us': resolve(__dirname, '../parser-en-us/src'),
       '@sharpee/text-blocks': resolve(__dirname, '../text-blocks/src'),
       '@sharpee/text-service': resolve(__dirname, '../text-service/src'),
-      '@sharpee/if-services': resolve(__dirname, '../if-services/src')
+      '@sharpee/if-services': resolve(__dirname, '../if-services/src'),
+      '@sharpee/plugins': resolve(__dirname, '../plugins/src'),
+      '@sharpee/plugin-npc': resolve(__dirname, '../plugin-npc/src'),
+      '@sharpee/plugin-scheduler': resolve(__dirname, '../plugin-scheduler/src'),
+      '@sharpee/plugin-state-machine': resolve(__dirname, '../plugin-state-machine/src'),
+      '@sharpee/character': resolve(__dirname, '../character/src'),
+      '@sharpee/ext-testing': resolve(__dirname, '../extensions/testing/src'),
+      '@sharpee/ext-basic-combat': resolve(__dirname, '../extensions/basic-combat/src'),
+      '@sharpee/media': resolve(__dirname, '../media/src'),
+      '@sharpee/helpers': resolve(__dirname, '../helpers/src')
     }
   }
 })

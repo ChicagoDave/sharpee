@@ -1,6 +1,6 @@
 # @sharpee/stdlib
 
-Standard library for the Sharpee IF Platform - 43 standard IF actions with four-phase pattern (validate/execute/report/blocked).
+Standard library for the Sharpee IF Platform - 48 standard IF actions with four-phase pattern (validate/execute/report/blocked).
 
 ## Overview
 
@@ -100,9 +100,9 @@ interface Action {
 }
 ```
 
-### Available Actions (43 Total)
+### Available Actions (48 Total)
 
-**Movement**: going, entering, exiting
+**Movement**: going, entering, exiting, climbing
 **Manipulation**: taking, dropping, putting, inserting, removing, giving, throwing
 **Containers/Doors**: opening, closing, locking, unlocking
 **Examination**: looking, examining, searching, reading
@@ -111,7 +111,7 @@ interface Action {
 **Wearables**: wearing, taking off
 **Consumables**: eating, drinking
 **Senses**: touching, smelling, listening
-**Meta**: inventory, score, help, save, restore, restart, quit, undo, wait, about, sleep
+**Meta**: inventory, score, help, save, restore, restart, quit, undo, again, wait, about, version, sleep
 
 ## Language System
 

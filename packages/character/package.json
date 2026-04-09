@@ -17,6 +17,7 @@
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
+    "@sharpee/core": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "@sharpee/stdlib": "workspace:*"
   },
