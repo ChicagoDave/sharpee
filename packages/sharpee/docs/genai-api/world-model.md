@@ -1413,8 +1413,7 @@ export type ActionFailureReasonType = typeof ActionFailureReason[keyof typeof Ac
  * Language-agnostic direction constants for Interactive Fiction
  *
  * These constants represent spatial relationships, not English words.
- * Direction vocabularies (ADR-143) control how these constants are
- * presented to and accepted from the player.
+ * The parser owns the mapping from English words to these constants.
  */
 export declare const Direction: {
     readonly NORTH: "NORTH";
@@ -1443,93 +1442,6 @@ export declare function getOppositeDirection(direction: DirectionType): Directio
  * Check if a value is a valid Direction constant
  */
 export declare function isDirection(value: unknown): value is DirectionType;
-/**
- * A single entry in a direction vocabulary.
- *
- * @property display  - The word shown to the player (e.g., "fore")
- * @property words    - All words the parser accepts for this direction (e.g., ["fore", "f", "forward"])
- */
-export interface DirectionEntry {
-    display: string;
-    words: string[];
-}
-/**
- * A named set of direction-word mappings.
- *
- * Only directions present in the entries map are available to the player.
- * A vocabulary that omits NORTHEAST means diagonal movement is not recognized.
- */
-export interface DirectionVocabulary {
-    id: string;
-    entries: Partial<Record<DirectionType, DirectionEntry>>;
-}
-/**
- * Pre-defined compass vocabulary (the default).
- */
-export declare const CompassVocabulary: DirectionVocabulary;
-/**
- * Naval vocabulary — relative to the vessel.
- *
- * Maps cardinal directions to shipboard equivalents.
- * Diagonals are omitted (ships don't have northeast).
- */
-export declare const NavalVocabulary: DirectionVocabulary;
-/**
- * Minimal vocabulary — for caves, abstract spaces, interiors.
- *
- * Only vertical and threshold directions. No compass.
- */
-export declare const MinimalVocabulary: DirectionVocabulary;
-/**
- * Registry of named direction vocabularies.
- *
- * Stories retrieve the registry from the world model and call
- * `useVocabulary()` or `rename()` to configure direction words
- * from a single point.
- */
-export declare class DirectionVocabularyRegistry {
-    private vocabularies;
-    private active;
-    private listeners;
-    constructor();
-    /**
-     * Register a custom vocabulary.
-     */
-    define(vocab: DirectionVocabulary): void;
-    /**
-     * Get a vocabulary by name.
-     */
-    get(id: string): DirectionVocabulary | undefined;
-    /**
-     * Switch the active vocabulary by name.
-     * Notifies all listeners (parser, grammar) to rebuild their mappings.
-     */
-    useVocabulary(id: string): void;
-    /**
-     * Rename a single direction in the active vocabulary.
-     * Creates a modified copy so the original named vocabulary is not mutated.
-     */
-    rename(direction: DirectionType, entry: DirectionEntry): void;
-    /**
-     * Add alias words to a direction without replacing the existing ones.
-     */
-    alias(direction: DirectionType, entry: DirectionEntry): void;
-    /**
-     * Get the currently active vocabulary.
-     */
-    getActive(): DirectionVocabulary;
-    /**
-     * Get the display name for a direction in the active vocabulary.
-     * Falls back to lowercase direction constant if not in vocabulary.
-     */
-    getDisplayName(direction: DirectionType): string;
-    /**
-     * Register a listener that is called when the active vocabulary changes.
-     * Used by the parser to rebuild direction mappings.
-     */
-    onVocabularyChange(listener: (vocab: DirectionVocabulary) => void): void;
-    private notifyListeners;
-}
 ```
 
 ### commands/parsed-command
@@ -5214,7 +5126,7 @@ export declare const extensionLoader: ExtensionLoader;
 ```typescript
 import { IFEntity } from '../entities/if-entity';
 import { TraitType } from '../traits/trait-types';
-import { DirectionType, DirectionVocabularyRegistry } from '../constants/directions';
+import { DirectionType } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { IDataStore } from './AuthorModel';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities';
@@ -5316,7 +5228,6 @@ export interface IWorldModel {
     removeScopeRule(ruleId: string): boolean;
     evaluateScope(actorId: string, actionId?: string): string[];
     getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
-    directions(): DirectionVocabularyRegistry;
 }
 export declare class WorldModel implements IWorldModel {
     private entities;
@@ -5333,7 +5244,6 @@ export declare class WorldModel implements IWorldModel {
     private scopeRegistry;
     private scopeEvaluator;
     private grammarVocabularyProvider;
-    private directionVocabularyRegistry;
     constructor(config?: WorldConfig, platformEvents?: ISemanticEventSource);
     private emitPlatformEvent;
     registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): void;
@@ -5398,15 +5308,6 @@ export declare class WorldModel implements IWorldModel {
     getDataStore(): IDataStore;
     getScopeRegistry(): ScopeRegistry;
     getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
-    /**
-     * Access the direction vocabulary registry.
-     *
-     * Stories call this to override direction words from a single point:
-     * ```
-     * world.directions().useVocabulary('naval');
-     * ```
-     */
-    directions(): DirectionVocabularyRegistry;
     addScopeRule(rule: IScopeRule): void;
     removeScopeRule(ruleId: string): boolean;
     evaluateScope(actorId: string, actionId?: string): string[];
@@ -5632,7 +5533,6 @@ import type { ScoreEntry } from './ScoreLedger';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
 import type { DirectionType } from '../constants/directions';
-import { DirectionVocabularyRegistry } from '../constants/directions';
 import type { ScopeRegistry } from '../scope/scope-registry';
 import type { IScopeRule } from '../scope/scope-rule';
 import type { ICapabilityData, ICapabilityRegistration } from './capabilities';
@@ -5766,7 +5666,6 @@ export declare class AuthorModel implements IWorldModel {
     removeScopeRule(ruleId: string): boolean;
     evaluateScope(actorId: string, actionId?: string): string[];
     getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
-    directions(): DirectionVocabularyRegistry;
     /**
      * Move multiple entities to a container in one operation.
      */

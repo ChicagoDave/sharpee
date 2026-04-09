@@ -53,13 +53,6 @@ export declare class EnglishParser implements Parser {
      */
     private emitPlatformEvent;
     /**
-     * Replace direction word mappings and grammar patterns (ADR-143).
-     *
-     * Called when the direction vocabulary changes. Updates both
-     * the parseDirection() maps and the grammar's bare-direction patterns.
-     */
-    setDirectionVocabulary(vocab: import('@sharpee/world-model').DirectionVocabulary): void;
-    /**
      * Register additional verbs after parser creation
      * Used for story-specific vocabulary
      */

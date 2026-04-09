@@ -35,7 +35,6 @@ import type {
   IGrammarVocabularyProvider,
 } from '@sharpee/if-domain';
 import type { DirectionType } from '../constants/directions';
-import { DirectionVocabularyRegistry } from '../constants/directions';
 import type { ScopeRegistry } from '../scope/scope-registry';
 import type { IScopeRule } from '../scope/scope-rule';
 import type {
@@ -416,11 +415,6 @@ export class AuthorModel implements IWorldModel {
   // Vocabulary Management
   getGrammarVocabularyProvider(): IGrammarVocabularyProvider {
     return this.worldModel.getGrammarVocabularyProvider();
-  }
-
-  // Direction Vocabulary (ADR-143)
-  directions(): DirectionVocabularyRegistry {
-    return this.worldModel.directions();
   }
 
   // ========== Author-Only Convenience Methods ==========

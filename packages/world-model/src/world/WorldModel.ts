@@ -13,7 +13,7 @@ import { LockableTrait } from '../traits/lockable/lockableTrait';
 import { WearableTrait } from '../traits/wearable/wearableTrait';
 import { ClothingTrait } from '../traits/clothing/clothingTrait';
 import { ExitTrait } from '../traits/exit/exitTrait';
-import { DirectionType, getOppositeDirection, DirectionVocabularyRegistry } from '../constants/directions';
+import { DirectionType, getOppositeDirection } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex';
 import { VisibilityBehavior } from './VisibilityBehavior';
@@ -195,8 +195,6 @@ export interface IWorldModel {
   // Vocabulary Management (ADR-082)
   getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
 
-  // Direction Vocabulary (ADR-143)
-  directions(): DirectionVocabularyRegistry;
 }
 
 // Type prefixes for entity ID generation
@@ -240,9 +238,6 @@ export class WorldModel implements IWorldModel {
 
   // Vocabulary system (ADR-082)
   private grammarVocabularyProvider: IGrammarVocabularyProvider;
-
-  // Direction vocabulary (ADR-143)
-  private directionVocabularyRegistry = new DirectionVocabularyRegistry();
 
   constructor(config: WorldConfig = {}, platformEvents?: ISemanticEventSource) {
     this.config = {
@@ -965,19 +960,6 @@ export class WorldModel implements IWorldModel {
   // Vocabulary Management (ADR-082)
   getGrammarVocabularyProvider(): IGrammarVocabularyProvider {
     return this.grammarVocabularyProvider;
-  }
-
-  // Direction Vocabulary (ADR-143)
-  /**
-   * Access the direction vocabulary registry.
-   *
-   * Stories call this to override direction words from a single point:
-   * ```
-   * world.directions().useVocabulary('naval');
-   * ```
-   */
-  directions(): DirectionVocabularyRegistry {
-    return this.directionVocabularyRegistry;
   }
 
   addScopeRule(rule: IScopeRule): void {

@@ -101,30 +101,6 @@ export abstract class GrammarEngine {
   }
 
   /**
-   * Remove all direction-specific rules for an action (ADR-143).
-   *
-   * Direction rules are identified by having `defaultSemantics.direction` set.
-   * This allows vocabularies to replace direction patterns without clearing
-   * the entire grammar.
-   */
-  removeDirectionRules(actionId: string): void {
-    const isDirectionRule = (r: GrammarRule) =>
-      r.action === actionId && r.defaultSemantics?.direction != null;
-
-    this.rules = this.rules.filter(r => !isDirectionRule(r));
-
-    const actionRules = this.rulesByAction.get(actionId);
-    if (actionRules) {
-      const filtered = actionRules.filter(r => !isDirectionRule(r));
-      if (filtered.length > 0) {
-        this.rulesByAction.set(actionId, filtered);
-      } else {
-        this.rulesByAction.delete(actionId);
-      }
-    }
-  }
-  
-  /**
    * Get all rules
    */
   getRules(): GrammarRule[] {
@@ -485,25 +461,6 @@ export abstract class GrammarEngine {
 
       clear() {
         engine.clear();
-      },
-
-      /**
-       * Replace direction patterns for an action (ADR-143).
-       *
-       * Removes all existing direction rules for the given action,
-       * then registers new ones from the provided map.
-       */
-      replaceDirections(actionId: string, map: Record<string, string[]>, priority: number = 100) {
-        engine.removeDirectionRules(actionId);
-        for (const [canonical, aliases] of Object.entries(map)) {
-          for (const alias of aliases) {
-            let builder = engine.createBuilder().define(alias);
-            builder = builder.mapsTo(actionId);
-            builder = builder.withPriority(alias.length === 1 ? 90 : priority);
-            builder = builder.withDefaultSemantics({ direction: canonical as SemanticProperties['direction'] });
-            builder.build();
-          }
-        }
       }
     };
   }
