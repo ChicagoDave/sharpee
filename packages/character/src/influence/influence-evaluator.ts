@@ -125,30 +125,52 @@ export function evaluatePassiveInfluences(
       const targets = getTargets(influence, influencer, entities);
 
       for (const target of targets) {
-        // Check resistance
-        if (checkResistance(target, influence.name)) {
-          results.push({
-            status: 'resisted',
-            influenceName: influence.name,
-            influencerId: influencer.id,
-            targetId: target.id,
-            resisted: influence.resisted,
-          });
-        } else {
-          results.push({
-            status: 'applied',
-            influenceName: influence.name,
-            influencerId: influencer.id,
-            targetId: target.id,
-            effect: { ...influence.effect },
-            witnessed: influence.witnessed,
-          });
-        }
+        results.push(evaluateInfluenceOnTarget(influence, influencer, target));
       }
     }
   }
 
   return results;
+}
+
+// ---------------------------------------------------------------------------
+// Single-target evaluation helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Evaluate a single influence against a single target entity.
+ *
+ * Checks resistance and returns either an 'applied' or 'resisted' result.
+ * Used by both passive and active influence evaluation paths.
+ *
+ * @param influence - The influence being exerted
+ * @param influencer - The entity exerting the influence
+ * @param target - The target entity
+ * @returns An InfluenceResult describing the outcome
+ */
+function evaluateInfluenceOnTarget(
+  influence: InfluenceDef,
+  influencer: InfluenceRoomEntity,
+  target: InfluenceRoomEntity,
+): InfluenceResult {
+  if (checkResistance(target, influence.name)) {
+    return {
+      status: 'resisted',
+      influenceName: influence.name,
+      influencerId: influencer.id,
+      targetId: target.id,
+      resisted: influence.resisted,
+    };
+  }
+
+  return {
+    status: 'applied',
+    influenceName: influence.name,
+    influencerId: influencer.id,
+    targetId: target.id,
+    effect: { ...influence.effect },
+    witnessed: influence.witnessed,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -214,14 +236,11 @@ function getTargets(
 
   switch (influence.range) {
     case 'room':
-      // Affects all entities in the room
-      return others;
     case 'proximity':
-      // Same as room for passive — all entities in the room are in proximity
-      return others;
     case 'targeted':
-      // Targeted is only meaningful for active influences, not passive
-      // For passive evaluation, treat as room-wide
+      // All range types resolve to room-wide for passive evaluation.
+      // 'proximity' is equivalent to 'room' when entities share a room.
+      // 'targeted' is only meaningful for active influences; passive treats it as room-wide.
       return others;
   }
 }

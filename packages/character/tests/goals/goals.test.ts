@@ -10,7 +10,7 @@ import { GoalManager } from '../../src/goals/goal-activation';
 import { evaluateGoalStep, GoalStepContext } from '../../src/goals/step-evaluator';
 import { findNextRoom, SimpleRoomGraph } from '../../src/goals/pathfinding';
 import { GoalDef, ActiveGoal, MovementProfile } from '../../src/goals/goal-types';
-import { CharacterModelTrait, THREAT_VALUES } from '@sharpee/world-model';
+import { CharacterModelTrait } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Helpers

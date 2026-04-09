@@ -75,7 +75,7 @@ describe('CharacterPhaseRegistry save/restore', () => {
     // Track an effect
     registry.influenceTracker.track(
       'seduction', 'ginger', 'player',
-      { focus: 'clouded' }, 'while present', 5,
+      { focus: 'clouded' }, { duration: 'while present', turn: 5 },
     );
     expect(registry.influenceTracker.isUnderInfluence('player', 'seduction')).toBe(true);
 

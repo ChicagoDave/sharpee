@@ -34,9 +34,9 @@ import {
  * ```
  */
 export class InfluenceBuilder<TParent> {
-  private _name: string;
-  private _parent: TParent;
-  private _finalize: (def: InfluenceDef) => void;
+  private readonly _name: string;
+  private readonly _parent: TParent;
+  private readonly _finalize: (def: InfluenceDef) => void;
   private _mode: InfluenceMode = 'passive';
   private _range: InfluenceRange = 'proximity';
   private _effect: InfluenceEffect = {};

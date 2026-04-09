@@ -32,21 +32,21 @@ export class InfluenceTracker {
    * @param influencerId - The influencer entity ID
    * @param targetId - The target entity ID
    * @param effect - The applied effect mutations
-   * @param duration - Duration type
-   * @param turn - Current turn number
-   * @param lingeringTurns - Number of turns for lingering duration
-   * @param clearCondition - Predicate condition to clear lingering effect
+   * @param options - Duration, timing, and clear condition options
    */
   track(
     influenceName: string,
     influencerId: string,
     targetId: string,
     effect: InfluenceEffect,
-    duration: InfluenceDuration,
-    turn: number,
-    lingeringTurns?: number,
-    clearCondition?: string,
+    options: {
+      duration: InfluenceDuration;
+      turn: number;
+      lingeringTurns?: number;
+      clearCondition?: string;
+    },
   ): void {
+    const { duration, turn, lingeringTurns, clearCondition } = options;
     // Don't double-track the same influence on the same target from the same source
     const existing = this.effects.findIndex(
       e =>
@@ -63,7 +63,7 @@ export class InfluenceTracker {
       effect: { ...effect },
       duration,
       appliedAtTurn: turn,
-      expiresAtTurn: lingeringTurns !== undefined ? turn + lingeringTurns : undefined,
+      expiresAtTurn: lingeringTurns != null ? turn + lingeringTurns : undefined,
       clearCondition,
     });
   }
@@ -158,8 +158,7 @@ export class InfluenceTracker {
       if (
         e.duration === 'lingering' &&
         e.clearCondition &&
-        evaluatePredicate &&
-        evaluatePredicate(e.targetId, e.clearCondition)
+        evaluatePredicate?.(e.targetId, e.clearCondition)
       ) {
         expired.push(e);
         return false;

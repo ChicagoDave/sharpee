@@ -159,7 +159,7 @@ function createEvent(
  */
 export class NpcService implements INpcService {
   private behaviors: Map<string, NpcBehavior> = new Map();
-  private tickPhases: { name: string; handler: NpcTickPhase }[] = [];
+  private readonly tickPhases: { name: string; handler: NpcTickPhase }[] = [];
 
   registerBehavior(behavior: NpcBehavior): void {
     this.behaviors.set(behavior.id, behavior);

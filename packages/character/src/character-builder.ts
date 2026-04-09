@@ -193,10 +193,10 @@ export class CharacterBuilder {
   private _vocabExtension?: VocabularyExtension;
   private _propagationProfile?: PropagationProfile;
   private _movementProfile?: MovementProfile;
-  private _goalDefs: GoalDef[] = [];
+  private readonly _goalDefs: GoalDef[] = [];
   private _activeGoalBuilder?: GoalBuilder<CharacterBuilder>;
-  private _influenceDefs: InfluenceDef[] = [];
-  private _resistanceDefs: ResistanceDef[] = [];
+  private readonly _influenceDefs: InfluenceDef[] = [];
+  private readonly _resistanceDefs: ResistanceDef[] = [];
   private _activeInfluenceBuilder?: InfluenceBuilder<CharacterBuilder>;
 
   /**

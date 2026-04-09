@@ -253,7 +253,7 @@ describe('evaluateActiveInfluence', () => {
 describe('InfluenceTracker', () => {
   test('tracks and queries active effects', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, 'while present', 1);
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
 
     expect(tracker.isUnderInfluence('player', 'seduction')).toBe(true);
     expect(tracker.isUnderInfluence('james', 'seduction')).toBe(false);
@@ -262,8 +262,8 @@ describe('InfluenceTracker', () => {
 
   test('getEffectsOn returns effects for specific target', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, 'while present', 1);
-    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, 'while present', 1);
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
 
     expect(tracker.getEffectsOn('player')).toHaveLength(1);
     expect(tracker.getEffectsOn('james')).toHaveLength(1);
@@ -271,8 +271,8 @@ describe('InfluenceTracker', () => {
 
   test('getEffectsFrom returns effects from specific influencer', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, 'while present', 1);
-    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, 'while present', 1);
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
 
     expect(tracker.getEffectsFrom('ginger')).toHaveLength(2);
     expect(tracker.getEffectsFrom('colonel')).toHaveLength(0);
@@ -280,16 +280,16 @@ describe('InfluenceTracker', () => {
 
   test('does not double-track same influence/influencer/target', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, 'while present', 1);
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, 'while present', 2);
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 2 });
 
     expect(tracker.count).toBe(1);
   });
 
   test('expireOnDeparture clears "while present" effects', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, 'while present', 1);
-    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, 'while present', 1);
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+    tracker.track('seduction', 'ginger', 'james', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
 
     const expired = tracker.expireOnDeparture('ginger');
     expect(expired).toHaveLength(2);
@@ -299,8 +299,8 @@ describe('InfluenceTracker', () => {
 
   test('expireOnDeparture does not clear momentary or lingering effects', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, 'momentary', 1);
-    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, 'lingering', 1, 5);
+    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, { duration: 'momentary', turn: 1 });
+    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, { duration: 'lingering', turn: 1, lingeringTurns: 5 });
 
     const expired = tracker.expireOnDeparture('colonel');
     expect(expired).toHaveLength(0);
@@ -309,7 +309,7 @@ describe('InfluenceTracker', () => {
 
   test('expireTurn clears momentary effects after one turn', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, 'momentary', 5);
+    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, { duration: 'momentary', turn: 5 });
 
     // Same turn — not expired yet
     let expired = tracker.expireTurn(5);
@@ -323,7 +323,7 @@ describe('InfluenceTracker', () => {
 
   test('expireTurn clears lingering effects after authored turns', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, 'lingering', 10, 3);
+    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, { duration: 'lingering', turn: 10, lingeringTurns: 3 });
 
     // Turn 12 — not expired yet
     let expired = tracker.expireTurn(12);
@@ -337,7 +337,7 @@ describe('InfluenceTracker', () => {
 
   test('expireTurn clears lingering effects when clear condition met', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, 'lingering', 10, undefined, 'has holy water');
+    tracker.track('curse', 'witch', 'player', { mood: 'anxious' }, { duration: 'lingering', turn: 10, clearCondition: 'has holy water' });
 
     // Condition not met
     let expired = tracker.expireTurn(15, (_target, _pred) => false);
@@ -353,8 +353,8 @@ describe('InfluenceTracker', () => {
 
   test('serialization round-trip', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, 'while present', 1);
-    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, 'momentary', 5);
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded' }, { duration: 'while present', turn: 1 });
+    tracker.track('intimidation', 'colonel', 'gardener', { mood: 'fearful' }, { duration: 'momentary', turn: 5 });
 
     const json = tracker.toJSON();
     const restored = InfluenceTracker.fromJSON(json);
@@ -378,7 +378,7 @@ describe('evaluatePcInfluence', () => {
 
   test('intercepts when focus is clouded', () => {
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded', mood: 'distracted' }, 'while present', 1);
+    tracker.track('seduction', 'ginger', 'player', { focus: 'clouded', mood: 'distracted' }, { duration: 'while present', turn: 1 });
 
     const defs = new Map<string, InfluenceDef[]>();
     defs.set('ginger', [SEDUCTION]);
@@ -398,7 +398,7 @@ describe('evaluatePcInfluence', () => {
       onPlayerAction: 'ginger-distracts-from-{action}',
     };
     const tracker = new InfluenceTracker();
-    tracker.track('seduction', 'ginger', 'player', { mood: 'distracted' }, 'while present', 1);
+    tracker.track('seduction', 'ginger', 'player', { mood: 'distracted' }, { duration: 'while present', turn: 1 });
 
     const defs = new Map<string, InfluenceDef[]>();
     defs.set('ginger', [influenceWithAction]);
@@ -418,7 +418,7 @@ describe('evaluatePcInfluence', () => {
       onPlayerAction: undefined,
     };
     const tracker = new InfluenceTracker();
-    tracker.track('calming', 'priest', 'player', { mood: 'at ease' }, 'while present', 1);
+    tracker.track('calming', 'priest', 'player', { mood: 'at ease' }, { duration: 'while present', turn: 1 });
 
     const defs = new Map<string, InfluenceDef[]>();
     defs.set('priest', [calmInfluence]);

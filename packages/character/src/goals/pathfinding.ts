@@ -41,7 +41,7 @@ export interface RoomGraph {
  * Production code can implement the RoomGraph interface directly.
  */
 export class SimpleRoomGraph implements RoomGraph {
-  private connections: Map<string, RoomConnection[]> = new Map();
+  private readonly connections: Map<string, RoomConnection[]> = new Map();
 
   /**
    * Add a bidirectional connection between two rooms.
@@ -52,7 +52,7 @@ export class SimpleRoomGraph implements RoomGraph {
    */
   addConnection(from: string, to: string, passageId?: string): void {
     this.addDirected(from, to, passageId);
-    this.addDirected(to, from, passageId);
+    this.addDirected(to, from, passageId); // Reverse direction for bidirectional edge
   }
 
   /**
@@ -107,8 +107,7 @@ export function findNextRoom(
 
   // Seed with adjacent rooms
   for (const conn of graph.getConnections(currentRoom)) {
-    if (!canTraverse(conn, movement)) continue;
-    if (!knowsRoom(conn.to, movement)) continue;
+    if (!isAccessible(conn, movement)) continue;
 
     if (conn.to === targetRoom) return conn.to;
 
@@ -122,8 +121,7 @@ export function findNextRoom(
 
     for (const conn of graph.getConnections(room)) {
       if (visited.has(conn.to)) continue;
-      if (!canTraverse(conn, movement)) continue;
-      if (!knowsRoom(conn.to, movement)) continue;
+      if (!isAccessible(conn, movement)) continue;
 
       if (conn.to === targetRoom) return firstStep;
 
@@ -138,6 +136,21 @@ export function findNextRoom(
 // ---------------------------------------------------------------------------
 // Movement profile checks
 // ---------------------------------------------------------------------------
+
+/**
+ * Check if a connection is accessible: the NPC can traverse the passage
+ * and knows the destination room.
+ *
+ * Combines passage access and room knowledge into a single check,
+ * used by both the BFS seed loop and the main traversal loop.
+ *
+ * @param conn - The room connection to check
+ * @param movement - The NPC's movement profile
+ * @returns true if the NPC can use this connection
+ */
+function isAccessible(conn: RoomConnection, movement: MovementProfile): boolean {
+  return canTraverse(conn, movement) && knowsRoom(conn.to, movement);
+}
 
 /**
  * Check if the NPC can traverse a connection.

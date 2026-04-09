@@ -40,6 +40,7 @@ import {
   InfluenceDef,
   ResistanceDef,
   InfluenceRoomEntity,
+  InfluenceResult,
   evaluatePassiveInfluences,
   InfluenceTracker,
 } from './influence';
@@ -68,8 +69,8 @@ export interface CharacterPhaseConfig {
 
 /** Manages per-NPC configs and shared state for tick phases. */
 export class CharacterPhaseRegistry {
-  private configs: Map<string, CharacterPhaseConfig> = new Map();
-  private goalManagers: Map<string, GoalManager> = new Map();
+  private readonly configs: Map<string, CharacterPhaseConfig> = new Map();
+  private readonly goalManagers: Map<string, GoalManager> = new Map();
   readonly influenceTracker: InfluenceTracker = new InfluenceTracker();
   readonly alreadyToldRecord: AlreadyToldRecord = new AlreadyToldRecord();
 
@@ -149,16 +150,19 @@ export class CharacterPhaseRegistry {
       for (const effect of restored.toJSON()) {
         this.influenceTracker.track(
           effect.influenceName, effect.influencerId, effect.targetId,
-          effect.effect, effect.duration, effect.appliedAtTurn,
-          effect.expiresAtTurn !== undefined ? effect.expiresAtTurn - effect.appliedAtTurn : undefined,
-          effect.clearCondition,
+          effect.effect, {
+            duration: effect.duration,
+            turn: effect.appliedAtTurn,
+            lingeringTurns: effect.expiresAtTurn != null ? effect.expiresAtTurn - effect.appliedAtTurn : undefined,
+            clearCondition: effect.clearCondition,
+          },
         );
       }
     }
 
     // Restore already-told record
     if (saved.alreadyTold) {
-      const restored = AlreadyToldRecord.fromJSON(saved.alreadyTold);
+      AlreadyToldRecord.fromJSON(saved.alreadyTold);
       // The alreadyToldRecord is readonly, so we need to record each entry
       for (const [speakerId, listeners] of Object.entries(saved.alreadyTold)) {
         for (const [listenerId, topics] of Object.entries(listeners)) {
@@ -221,62 +225,109 @@ export function createPropagationPhase(
 
     for (const [roomId, roomNpcList] of roomNpcs) {
       if (roomNpcList.length < 2) continue;
-
-      for (const speaker of roomNpcList) {
-        const config = registry.getConfig(speaker.id)!;
-        const trait = speaker.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
-        if (!trait || !config.propagationProfile) continue;
-
-        const listeners: RoomOccupant[] = roomNpcList
-          .filter(n => n.id !== speaker.id)
-          .map(n => ({
-            id: n.id,
-            trait: n.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait,
-            profile: registry.getConfig(n.id)?.propagationProfile,
-          }));
-
-        const propContext: PropagationContext = {
-          speaker: { id: speaker.id, trait, profile: config.propagationProfile },
-          listeners,
-          alreadyTold: registry.alreadyToldRecord,
-          playerPresent: roomId === playerLocation,
-          turn,
-        };
-
-        const transfers = evaluatePropagation(propContext);
-
-        for (const transfer of transfers) {
-          const listenerEntity = world.getEntity(transfer.listenerId);
-          if (!listenerEntity) continue;
-          const listenerTrait = listenerEntity.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
-          if (!listenerTrait) continue;
-
-          const listenerConfig = registry.getConfig(transfer.listenerId);
-          const receivesAs = listenerConfig?.propagationProfile?.receives ?? 'as fact';
-
-          const result = transferFact(
-            transfer, listenerTrait, registry.alreadyToldRecord, turn, receivesAs,
-          );
-
-          if (roomId === playerLocation && !result.alreadyKnew) {
-            const visibility = getVisibilityResult(transfer, 'present');
-            if (visibility.messageId) {
-              events.push(createEvent('character.propagation.witnessed', {
-                speakerId: speaker.id,
-                listenerId: transfer.listenerId,
-                topic: transfer.topic,
-                messageId: visibility.messageId,
-                speakerName: speaker.name,
-                listenerName: listenerEntity.name,
-              }, speaker.id));
-            }
-          }
-        }
-      }
+      handleRoomPropagation(roomId, roomNpcList, registry, world, turn, playerLocation, events);
     }
 
     return events;
   };
+}
+
+/**
+ * Evaluate propagation for all speaker/listener pairs in a single room.
+ *
+ * @param roomId - The room entity ID
+ * @param roomNpcList - NPCs co-located in this room
+ * @param registry - Character phase registry for configs and records
+ * @param world - World model for entity lookups
+ * @param turn - Current turn number
+ * @param playerLocation - Player's current room ID
+ * @param events - Accumulator for witnessed events
+ */
+function handleRoomPropagation(
+  roomId: string,
+  roomNpcList: IFEntity[],
+  registry: CharacterPhaseRegistry,
+  world: WorldModel,
+  turn: number,
+  playerLocation: EntityId,
+  events: ISemanticEvent[],
+): void {
+  for (const speaker of roomNpcList) {
+    const config = registry.getConfig(speaker.id)!;
+    const trait = speaker.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+    if (!trait || !config.propagationProfile) continue;
+
+    const listeners: RoomOccupant[] = roomNpcList
+      .filter(n => n.id !== speaker.id)
+      .map(n => ({
+        id: n.id,
+        trait: n.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait,
+        profile: registry.getConfig(n.id)?.propagationProfile,
+      }));
+
+    const propContext: PropagationContext = {
+      speaker: { id: speaker.id, trait, profile: config.propagationProfile },
+      listeners,
+      alreadyTold: registry.alreadyToldRecord,
+      playerPresent: roomId === playerLocation,
+      turn,
+    };
+
+    const transfers = evaluatePropagation(propContext);
+
+    for (const transfer of transfers) {
+      recordTransfer(transfer, speaker, roomId, registry, world, turn, playerLocation, events);
+    }
+  }
+}
+
+/**
+ * Apply a single propagation transfer and emit a witnessed event if visible.
+ *
+ * @param transfer - The propagation transfer to apply
+ * @param speaker - The speaking NPC entity
+ * @param roomId - The room where propagation occurs
+ * @param registry - Character phase registry for configs and records
+ * @param world - World model for entity lookups
+ * @param turn - Current turn number
+ * @param playerLocation - Player's current room ID
+ * @param events - Accumulator for witnessed events
+ */
+function recordTransfer(
+  transfer: ReturnType<typeof evaluatePropagation>[number],
+  speaker: IFEntity,
+  roomId: string,
+  registry: CharacterPhaseRegistry,
+  world: WorldModel,
+  turn: number,
+  playerLocation: EntityId,
+  events: ISemanticEvent[],
+): void {
+  const listenerEntity = world.getEntity(transfer.listenerId);
+  if (!listenerEntity) return;
+  const listenerTrait = listenerEntity.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+  if (!listenerTrait) return;
+
+  const listenerConfig = registry.getConfig(transfer.listenerId);
+  const receivesAs = listenerConfig?.propagationProfile?.receives ?? 'as fact';
+
+  const result = transferFact(
+    transfer, listenerTrait, registry.alreadyToldRecord, turn, receivesAs,
+  );
+
+  if (roomId === playerLocation && !result.alreadyKnew) {
+    const visibility = getVisibilityResult(transfer, 'present');
+    if (visibility.messageId) {
+      events.push(createEvent('character.propagation.witnessed', {
+        speakerId: speaker.id,
+        listenerId: transfer.listenerId,
+        topic: transfer.topic,
+        messageId: visibility.messageId,
+        speakerName: speaker.name,
+        listenerName: listenerEntity.name,
+      }, speaker.id));
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -297,56 +348,75 @@ export function createGoalPhase(
     const { world, playerLocation } = ctx;
 
     for (const npc of npcs) {
-      const manager = registry.getGoalManager(npc.id);
-      if (!manager) continue;
-
-      const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
-      if (!trait) continue;
-
-      manager.evaluate(trait);
-
-      const activeGoals = manager.getActiveGoals();
-      const activeGoal = activeGoals.find(g => !g.paused && !g.interrupted);
-      if (!activeGoal) continue;
-
-      const config = registry.getConfig(npc.id);
-      const npcLocation = world.getLocation(npc.id) || '';
-      const movement = config?.movementProfile ?? { knows: 'all' as const, access: 'all' as const };
-
-      const stepContext: GoalStepContext = {
-        npcId: npc.id,
-        currentRoom: npcLocation,
-        trait,
-        movement,
-        roomGraph: buildRoomGraph(world),
-        playerPresent: npcLocation === playerLocation,
-        isInRoom: (entityId, roomId) => world.getLocation(entityId) === roomId,
-        getEntityRoom: (entityId) => world.getLocation(entityId) || undefined,
-      };
-
-      const stepResult = evaluateGoalStep(activeGoal, stepContext);
-
-      if (
-        (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
-        stepResult.witnessed &&
-        npcLocation === playerLocation
-      ) {
-        events.push(createEvent('character.goal.step', {
-          npcId: npc.id,
-          goalId: activeGoal.def.id,
-          step: activeGoal.currentStep,
-          messageId: stepResult.witnessed,
-          npcName: npc.name,
-        }, npc.id));
-      }
-
-      if (stepResult.status === 'completed') {
-        manager.advanceStep(activeGoal.def.id);
-      }
+      executeNpcGoals(npc, registry, world, playerLocation, events);
     }
 
     return events;
   };
+}
+
+/**
+ * Evaluate and execute the top active goal for a single NPC.
+ *
+ * @param npc - The NPC entity to evaluate
+ * @param registry - Character phase registry for configs and goal managers
+ * @param world - World model for location lookups and room graph
+ * @param playerLocation - Player's current room ID
+ * @param events - Accumulator for witnessed events
+ */
+function executeNpcGoals(
+  npc: IFEntity,
+  registry: CharacterPhaseRegistry,
+  world: WorldModel,
+  playerLocation: EntityId,
+  events: ISemanticEvent[],
+): void {
+  const manager = registry.getGoalManager(npc.id);
+  if (!manager) return;
+
+  const trait = npc.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
+  if (!trait) return;
+
+  manager.evaluate(trait);
+
+  const activeGoals = manager.getActiveGoals();
+  const activeGoal = activeGoals.find(g => !g.paused && !g.interrupted);
+  if (!activeGoal) return;
+
+  const config = registry.getConfig(npc.id);
+  const npcLocation = world.getLocation(npc.id) || '';
+  const movement = config?.movementProfile ?? { knows: 'all' as const, access: 'all' as const };
+
+  const stepContext: GoalStepContext = {
+    npcId: npc.id,
+    currentRoom: npcLocation,
+    trait,
+    movement,
+    roomGraph: buildRoomGraph(world),
+    playerPresent: npcLocation === playerLocation,
+    isInRoom: (entityId, roomId) => world.getLocation(entityId) === roomId,
+    getEntityRoom: (entityId) => world.getLocation(entityId) || undefined,
+  };
+
+  const stepResult = evaluateGoalStep(activeGoal, stepContext);
+
+  if (
+    (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
+    stepResult.witnessed &&
+    npcLocation === playerLocation
+  ) {
+    events.push(createEvent('character.goal.step', {
+      npcId: npc.id,
+      goalId: activeGoal.def.id,
+      step: activeGoal.currentStep,
+      messageId: stepResult.witnessed,
+      npcName: npc.name,
+    }, npc.id));
+  }
+
+  if (stepResult.status === 'completed') {
+    manager.advanceStep(activeGoal.def.id);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -399,41 +469,7 @@ export function createInfluencePhase(
     // Evaluate passive influences per room
     for (const [roomId, entities] of roomEntities) {
       const results = evaluatePassiveInfluences(entities);
-
-      for (const result of results) {
-        if (result.status === 'applied') {
-          const influencerConfig = registry.getConfig(result.influencerId);
-          const influenceDef = influencerConfig?.influenceDefs?.find(
-            d => d.name === result.influenceName,
-          );
-
-          registry.influenceTracker.track(
-            result.influenceName, result.influencerId, result.targetId,
-            result.effect, influenceDef?.duration ?? 'while present',
-            turn, influenceDef?.lingeringTurns, influenceDef?.lingeringClearCondition,
-          );
-
-          if (roomId === playerLocation && result.witnessed) {
-            const influencer = world.getEntity(result.influencerId);
-            const target = world.getEntity(result.targetId);
-            events.push(createEvent('character.influence.applied', {
-              influencerId: result.influencerId, targetId: result.targetId,
-              influenceName: result.influenceName, messageId: result.witnessed,
-              influencerName: influencer?.name ?? result.influencerId,
-              targetName: target?.name ?? result.targetId,
-            }, result.influencerId));
-          }
-        } else if (result.status === 'resisted' && result.resisted && roomId === playerLocation) {
-          const influencer = world.getEntity(result.influencerId);
-          const target = world.getEntity(result.targetId);
-          events.push(createEvent('character.influence.resisted', {
-            influencerId: result.influencerId, targetId: result.targetId,
-            influenceName: result.influenceName, messageId: result.resisted,
-            influencerName: influencer?.name ?? result.influencerId,
-            targetName: target?.name ?? result.targetId,
-          }, result.influencerId));
-        }
-      }
+      handleInfluenceResults(results, roomId, registry, world, turn, playerLocation, events);
     }
 
     // Expire effects
@@ -458,6 +494,66 @@ export function createInfluencePhase(
 
     return events;
   };
+}
+
+/**
+ * Process influence evaluation results: track applied effects and emit events.
+ *
+ * @param results - Influence evaluation results for one room
+ * @param roomId - The room where influences were evaluated
+ * @param registry - Character phase registry for configs and tracker
+ * @param world - World model for entity lookups
+ * @param turn - Current turn number
+ * @param playerLocation - Player's current room ID
+ * @param events - Accumulator for witnessed events
+ */
+function handleInfluenceResults(
+  results: InfluenceResult[],
+  roomId: string,
+  registry: CharacterPhaseRegistry,
+  world: WorldModel,
+  turn: number,
+  playerLocation: EntityId,
+  events: ISemanticEvent[],
+): void {
+  for (const result of results) {
+    if (result.status === 'applied') {
+      const influencerConfig = registry.getConfig(result.influencerId);
+      const influenceDef = influencerConfig?.influenceDefs?.find(
+        d => d.name === result.influenceName,
+      );
+
+      registry.influenceTracker.track(
+        result.influenceName, result.influencerId, result.targetId,
+        result.effect, {
+          duration: influenceDef?.duration ?? 'while present',
+          turn,
+          lingeringTurns: influenceDef?.lingeringTurns,
+          clearCondition: influenceDef?.lingeringClearCondition,
+        },
+      );
+
+      if (roomId === playerLocation && result.witnessed) {
+        const influencer = world.getEntity(result.influencerId);
+        const target = world.getEntity(result.targetId);
+        events.push(createEvent('character.influence.applied', {
+          influencerId: result.influencerId, targetId: result.targetId,
+          influenceName: result.influenceName, messageId: result.witnessed,
+          influencerName: influencer?.name ?? result.influencerId,
+          targetName: target?.name ?? result.targetId,
+        }, result.influencerId));
+      }
+    } else if (result.status === 'resisted' && result.resisted && roomId === playerLocation) {
+      const influencer = world.getEntity(result.influencerId);
+      const target = world.getEntity(result.targetId);
+      events.push(createEvent('character.influence.resisted', {
+        influencerId: result.influencerId, targetId: result.targetId,
+        influenceName: result.influenceName, messageId: result.resisted,
+        influencerName: influencer?.name ?? result.influencerId,
+        targetName: target?.name ?? result.targetId,
+      }, result.influencerId));
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

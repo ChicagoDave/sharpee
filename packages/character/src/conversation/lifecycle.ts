@@ -157,7 +157,7 @@ export class ConversationLifecycle {
   private context: ConversationContext | null = null;
 
   /** Registered NPC initiative triggers. Keyed by NPC entity ID. */
-  private initiativeTriggers: Map<string, InitiativeTrigger[]> = new Map();
+  private readonly initiativeTriggers: Map<string, InitiativeTrigger[]> = new Map();
 
   // =========================================================================
   // Lifecycle transitions
@@ -345,20 +345,7 @@ export class ConversationLifecycle {
    * @returns The result of the redirect attempt
    */
   attemptRedirect(_toNpcId: string): RedirectResult {
-    if (!this.context) return 'yields';
-
-    switch (this.context.strength) {
-      case 'passive':
-        this.end();
-        return 'yields';
-
-      case 'assertive':
-        this.end();
-        return 'protests';
-
-      case 'blocking':
-        return 'blocks';
-    }
+    return this.resolveStrengthCheck();
   }
 
   /**
@@ -368,6 +355,16 @@ export class ConversationLifecycle {
    * @returns The result of the leave attempt
    */
   attemptLeave(): RedirectResult {
+    return this.resolveStrengthCheck();
+  }
+
+  /**
+   * Resolve an attention challenge (redirect or leave) against conversation strength.
+   * Passive and assertive conversations end; blocking conversations persist.
+   *
+   * @returns The redirect result based on current conversation strength
+   */
+  private resolveStrengthCheck(): RedirectResult {
     if (!this.context) return 'yields';
 
     switch (this.context.strength) {

@@ -75,7 +75,7 @@ export interface PropagationContext {
  * @returns Array of transfers to execute
  */
 export function evaluatePropagation(ctx: PropagationContext): PropagationTransfer[] {
-  const { speaker, listeners } = ctx;
+  const { speaker } = ctx;
   const profile = speaker.profile;
 
   // No profile or mute → no propagation
@@ -196,48 +196,90 @@ function findEligibleFacts(
 
   const withholds = new Set(profile.withholds ?? []);
   const spreadsSet = new Set(profile.spreads ?? []);
-
   const eligible: string[] = [];
 
   for (const topic of Object.keys(knowledge)) {
-    // Already told this listener → skip
     if (alreadyTold.hasTold(speaker.id, listener.id, topic)) continue;
-
-    // Check per-fact audience override
-    const override = profile.overrides?.[topic];
-    if (override?.to) {
-      const overrideMatch = checkAudienceForListener(
-        override.to, speaker.trait, listener,
-      );
-      if (!overrideMatch) continue;
-    }
-
-    // Tendency filter
-    switch (profile.tendency) {
-      case 'chatty':
-        // Share everything unless withheld
-        if (withholds.has(topic)) continue;
-        break;
-
-      case 'selective':
-        // Only share explicitly listed topics
-        if (!spreadsSet.has(topic)) continue;
-        break;
-    }
-
-    // Player-leverage check: if the fact came from the player and
-    // playerCanLeverage is false, don't propagate it
-    if (!profile.playerCanLeverage) {
-      const fact = knowledge[topic];
-      if (fact && (fact.source === 'told' || fact.source as string === 'told by player')) {
-        continue;
-      }
-    }
+    if (!meetsAudienceRule(topic, profile, speaker.trait, listener)) continue;
+    if (!meetsTendencyFilter(topic, profile, withholds, spreadsSet)) continue;
+    if (!meetsLeverageRule(topic, profile, knowledge)) continue;
 
     eligible.push(topic);
   }
 
   return eligible;
+}
+
+/**
+ * Check whether a per-fact audience override allows sharing with this listener.
+ * Returns true if there is no override or the override audience matches.
+ *
+ * @param topic - The knowledge topic to check
+ * @param profile - Speaker's propagation profile
+ * @param speakerTrait - Speaker's character model trait
+ * @param listener - The potential listener
+ * @returns Whether the topic passes the audience rule
+ */
+function meetsAudienceRule(
+  topic: string,
+  profile: PropagationProfile,
+  speakerTrait: CharacterModelTrait,
+  listener: RoomOccupant,
+): boolean {
+  const override = profile.overrides?.[topic];
+  if (!override?.to) return true;
+  return checkAudienceForListener(override.to, speakerTrait, listener);
+}
+
+/**
+ * Check whether a topic passes the speaker's tendency filter.
+ * Chatty speakers share everything except withheld topics; selective
+ * speakers share only explicitly listed topics.
+ *
+ * @param topic - The knowledge topic to check
+ * @param profile - Speaker's propagation profile
+ * @param withholds - Pre-computed set of withheld topics
+ * @param spreadsSet - Pre-computed set of explicitly shared topics
+ * @returns Whether the topic passes the tendency filter
+ */
+function meetsTendencyFilter(
+  topic: string,
+  profile: PropagationProfile,
+  withholds: Set<string>,
+  spreadsSet: Set<string>,
+): boolean {
+  switch (profile.tendency) {
+    case 'chatty':
+      return !withholds.has(topic);
+
+    case 'selective':
+      return spreadsSet.has(topic);
+
+    default:
+      return true;
+  }
+}
+
+/**
+ * Check whether a topic passes the player-leverage filter.
+ * When playerCanLeverage is false, facts sourced from the player are blocked.
+ *
+ * @param topic - The knowledge topic to check
+ * @param profile - Speaker's propagation profile
+ * @param knowledge - Speaker's knowledge map
+ * @returns Whether the topic passes the leverage rule
+ */
+function meetsLeverageRule(
+  topic: string,
+  profile: PropagationProfile,
+  knowledge: CharacterModelTrait['knowledge'],
+): boolean {
+  if (profile.playerCanLeverage) return true;
+  const fact = knowledge[topic];
+  if (fact && (fact.source === 'told' || fact.source as string === 'told by player')) {
+    return false;
+  }
+  return true;
 }
 
 /**

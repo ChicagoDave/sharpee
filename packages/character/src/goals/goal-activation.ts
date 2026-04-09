@@ -26,7 +26,7 @@ import {
  */
 export class GoalManager {
   /** All authored goal definitions for this NPC. */
-  private defs: GoalDef[] = [];
+  private readonly defs: GoalDef[] = [];
 
   /** Currently active goals, sorted by priority (highest first). */
   private activeGoals: ActiveGoal[] = [];
@@ -79,30 +79,7 @@ export class GoalManager {
     }
 
     // Check for interruptions on active goals
-    for (const goal of this.activeGoals) {
-      if (goal.interrupted) {
-        // Check if interruption conditions cleared and goal should resume
-        if (goal.def.resumeOnClear && goal.def.interruptedBy) {
-          const stillInterrupted = goal.def.interruptedBy.some(pred =>
-            trait.evaluate(pred),
-          );
-          if (!stillInterrupted) {
-            goal.interrupted = false;
-          }
-        }
-        continue;
-      }
-
-      // Check if this goal should be interrupted
-      if (goal.def.interruptedBy) {
-        const shouldInterrupt = goal.def.interruptedBy.some(pred =>
-          trait.evaluate(pred),
-        );
-        if (shouldInterrupt) {
-          goal.interrupted = true;
-        }
-      }
-    }
+    this.evaluateInterruptions(this.activeGoals, trait);
 
     // Sort by priority (highest first), interrupted goals at the end
     this.activeGoals.sort((a, b) => {
@@ -214,6 +191,46 @@ export class GoalManager {
   // =========================================================================
   // Private helpers
   // =========================================================================
+
+  /**
+   * Evaluate interruption and resumption conditions for all active goals.
+   *
+   * For interrupted goals with resumeOnClear, checks if interruption
+   * conditions have cleared and resumes them. For non-interrupted goals,
+   * checks if any interruption conditions are now met and interrupts them.
+   *
+   * @param activeGoals - The active goal queue
+   * @param trait - The NPC's CharacterModelTrait
+   */
+  private evaluateInterruptions(
+    activeGoals: ActiveGoal[],
+    trait: CharacterModelTrait,
+  ): void {
+    for (const goal of activeGoals) {
+      if (goal.interrupted) {
+        // Check if interruption conditions cleared and goal should resume
+        if (goal.def.resumeOnClear && goal.def.interruptedBy) {
+          const stillInterrupted = goal.def.interruptedBy.some(pred =>
+            trait.evaluate(pred),
+          );
+          if (!stillInterrupted) {
+            goal.interrupted = false;
+          }
+        }
+        continue;
+      }
+
+      // Check if this goal should be interrupted
+      if (goal.def.interruptedBy) {
+        const shouldInterrupt = goal.def.interruptedBy.some(pred =>
+          trait.evaluate(pred),
+        );
+        if (shouldInterrupt) {
+          goal.interrupted = true;
+        }
+      }
+    }
+  }
 
   private activate(def: GoalDef): void {
     this.activeGoals.push({

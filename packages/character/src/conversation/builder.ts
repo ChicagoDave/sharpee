@@ -130,8 +130,8 @@ export function createConversationData(): ConversationData {
  * Each .if().action() pair becomes one ResponseCandidate.
  */
 export class ResponseChainBuilder {
-  private parentBuilder: ConversationBuilder;
-  private trigger: string;
+  private readonly parentBuilder: ConversationBuilder;
+  private readonly trigger: string;
   private candidates: AuthoredResponse[] = [];
   private currentConstraints: string[] = [];
   private pendingContextSettings?: ResponseContextSettings;
@@ -353,7 +353,7 @@ export class ResponseChainBuilder {
  * the character model data.
  */
 export class ConversationBuilder extends CharacterBuilder {
-  private _conversationData: ConversationData = createConversationData();
+  private readonly _conversationData: ConversationData = createConversationData();
   private _activeChain?: ResponseChainBuilder;
 
   // =========================================================================

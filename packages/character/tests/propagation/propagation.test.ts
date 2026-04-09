@@ -105,7 +105,7 @@ describe('Propagation — chatty tendency', () => {
     }));
 
     expect(transfers).toHaveLength(2);
-    const topics = transfers.map(t => t.topic).sort();
+    const topics = transfers.map(t => t.topic).sort((a, b) => a.localeCompare(b));
     expect(topics).toEqual(['murder', 'weapon']);
   });
 
@@ -505,7 +505,7 @@ describe('Fact transfer — provenance', () => {
 
 describe('Fact transfer — multi-hop provenance', () => {
   it('should track provenance across multiple hops', () => {
-    const maidTrait = makeTrait({
+    makeTrait({
       knowledge: {
         murder: { source: 'witnessed', confidence: 'certain', turnLearned: 0 },
       },

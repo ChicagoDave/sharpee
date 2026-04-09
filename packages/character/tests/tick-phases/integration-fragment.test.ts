@@ -194,7 +194,8 @@ describe('Integration: 3-NPC mystery fragment', () => {
     registry.alreadyToldRecord.record('maid', 'cook', 'murder');
     registry.influenceTracker.track(
       'intimidation', 'colonel', 'gardener',
-      { propagation: 'mute', mood: 'fearful' }, 'lingering', 10, 3,
+      { propagation: 'mute', mood: 'fearful' },
+      { duration: 'lingering', turn: 10, lingeringTurns: 3 },
     );
 
     // Save

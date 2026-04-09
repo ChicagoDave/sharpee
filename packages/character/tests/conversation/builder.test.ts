@@ -8,7 +8,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   ConversationBuilder,
-  ResponseChainBuilder,
 } from '../../src/conversation/builder';
 
 // ===========================================================================

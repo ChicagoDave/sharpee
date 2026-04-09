@@ -136,7 +136,7 @@ export interface PropagationTransfer {
  */
 export class AlreadyToldRecord {
   /** speakerId → listenerId → Set of topic names */
-  private records: Map<string, Map<string, Set<string>>> = new Map();
+  private readonly records: Map<string, Map<string, Set<string>>> = new Map();
 
   /**
    * Check if a speaker has already told a listener about a topic.

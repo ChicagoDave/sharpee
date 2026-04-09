@@ -38,15 +38,15 @@ import {
  * ```
  */
 export class GoalBuilder<TParent> {
-  private _id: string;
-  private _parent: TParent;
-  private _finalize: (def: GoalDef) => void;
-  private _activatesWhen: string[] = [];
-  private _interruptedBy: string[] = [];
+  private readonly _id: string;
+  private readonly _parent: TParent;
+  private readonly _finalize: (def: GoalDef) => void;
+  private readonly _activatesWhen: string[] = [];
+  private readonly _interruptedBy: string[] = [];
   private _priority: GoalPriority = 'medium';
   private _mode: PursuitMode = 'sequential';
   private _steps: GoalStep[] = [];
-  private _actsWhen: string[] = [];
+  private readonly _actsWhen: string[] = [];
   private _actMessageId?: string;
   private _onInterrupt?: string;
   private _resumeOnClear = false;

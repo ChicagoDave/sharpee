@@ -8,7 +8,6 @@
  */
 
 import { CharacterBuilder } from '../../src/character-builder';
-import { GoalDef } from '../../src/goals/goal-types';
 
 describe('CharacterBuilder.goal() — fluent API', () => {
   test('compiles a sequential goal with steps', () => {

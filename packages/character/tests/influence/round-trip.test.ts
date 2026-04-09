@@ -76,7 +76,6 @@ describe('Phase 6 round-trip: builder → compile → apply', () => {
     expect(compiled.id).toBe('ginger');
 
     // Conversation data
-    const convData = (compiled as any);
     // The ConversationBuilder stores conversation data internally
     // and it's accessible via getConversationData()
 

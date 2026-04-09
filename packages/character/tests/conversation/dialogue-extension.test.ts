@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { CharacterModelDialogue } from '../../src/conversation/dialogue-extension';
 import { ConversationBuilder } from '../../src/conversation/builder';
-import { CharacterModelTrait, THREAT_VALUES } from '@sharpee/world-model';
+import { CharacterModelTrait } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -185,8 +185,6 @@ describe('CharacterModelDialogue — handleAsk', () => {
 describe('CharacterModelDialogue — handleTell', () => {
   it('should handle confrontation and record evidence', () => {
     const { builder, trait } = buildMargaret();
-    const dialogue = createDialogue(builder, trait);
-
     // Register 'bloodstain' topic for resolution
     // It's not in the topics, so let's add it
     builder.topic('bloodstain', { keywords: ['bloodstain', 'blood'] });

@@ -9,7 +9,6 @@
 
 import { CharacterBuilder } from '../../src/character-builder';
 import { ConversationBuilder } from '../../src/conversation/builder';
-import { PropagationProfile } from '../../src/propagation/propagation-types';
 
 describe('CharacterBuilder.propagation()', () => {
   test('compiles chatty profile with defaults', () => {

@@ -11,7 +11,7 @@ import {
   ConstraintEvaluator,
 } from '../../src/conversation/constraint-evaluator';
 import { ResponseCandidate } from '../../src/conversation/response-types';
-import { CharacterModelTrait, THREAT_VALUES } from '@sharpee/world-model';
+import { CharacterModelTrait } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Helpers

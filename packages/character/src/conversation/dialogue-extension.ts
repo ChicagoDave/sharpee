@@ -14,8 +14,7 @@ import { CharacterModelTrait } from '@sharpee/world-model';
 import { DialogueExtension, DialogueResult } from './dialogue-types';
 import { TopicRegistry } from './topic-registry';
 import { ResponseCandidate } from './response-types';
-import { evaluateConstraints } from './constraint-evaluator';
-import { ConstraintEvaluator } from './constraint-evaluator';
+import { evaluateConstraints, ConstraintEvaluator } from './constraint-evaluator';
 import { ConversationLifecycle } from './lifecycle';
 import { buildResponseIntent } from './acl';
 import {
@@ -55,13 +54,13 @@ interface NpcConversationState {
  */
 export class CharacterModelDialogue implements DialogueExtension {
   /** Per-NPC conversation state. */
-  private npcs: Map<string, NpcConversationState> = new Map();
+  private readonly npcs: Map<string, NpcConversationState> = new Map();
 
   /** Shared constraint evaluator (owns conversation records and evidence). */
-  private evaluator: ConstraintEvaluator = new ConstraintEvaluator();
+  private readonly evaluator: ConstraintEvaluator = new ConstraintEvaluator();
 
   /** Shared conversation lifecycle (owns active conversation state). */
-  private lifecycle: ConversationLifecycle = new ConversationLifecycle();
+  private readonly lifecycle: ConversationLifecycle = new ConversationLifecycle();
 
   /** Get the conversation lifecycle for external access. */
   getLifecycle(): ConversationLifecycle {
@@ -137,10 +136,10 @@ export class CharacterModelDialogue implements DialogueExtension {
       };
     }
 
-    // Get the trigger key
+    // Get the trigger key — for related topics, use the redirect target
     const topicName = resolution.type === 'exact'
       ? resolution.topic.name
-      : resolution.topic.name;
+      : resolution.via.name;
     const trigger = `asked about ${topicName}`;
 
     // Get authored responses for this trigger
@@ -160,57 +159,20 @@ export class CharacterModelDialogue implements DialogueExtension {
       };
     }
 
-    // Extract candidates for constraint evaluation
-    const candidates: ResponseCandidate[] = authoredResponses.map(r => r.candidate);
-    const selected = evaluateConstraints(candidates, npc.trait);
-
-    if (!selected) {
+    // Select and record response, then apply side effects
+    const match = this.selectAndRecordResponse(npc, npcId, topicName, authoredResponses);
+    if (!match) {
       return {
         handled: true,
         messageId: 'character.conversation.no-matching-response',
       };
     }
 
-    // Find the full authored response for the selected candidate
-    const authoredResponse = authoredResponses.find(r => r.candidate === selected)!;
-    const turn = npc.getTurn();
-
-    // Record the response and check for contradictions
-    const contradiction = this.evaluator.recordResponse(
-      npcId, topicName, selected.action, turn,
-    );
-
-    // Apply state mutations if any
-    if (authoredResponse.stateMutations) {
-      this.applyStateMutations(npc.trait, authoredResponse.stateMutations);
-    }
-
-    // Update conversation context if specified
-    if (authoredResponse.contextSettings) {
-      const ctx = authoredResponse.contextSettings;
-      this.lifecycle.setContext(
-        ctx.label,
-        ctx.intent,
-        ctx.strength,
-        ctx.decayThreshold,
-      );
-
-      // Apply between-turn overrides
-      if (authoredResponse.betweenTurnOverrides) {
-        for (const override of authoredResponse.betweenTurnOverrides) {
-          this.lifecycle.setBetweenTurnOverride(override.turnNumber, override.messageId);
-        }
-      }
-
-      // Apply leave-attempt message
-      if (authoredResponse.onLeaveAttemptMessage) {
-        this.lifecycle.setOnLeaveAttemptMessage(authoredResponse.onLeaveAttemptMessage);
-      }
-    }
+    this.applyResponseSideEffects(npc.trait, match.authoredResponse);
 
     // Build response intent through ACL
     const context = this.lifecycle.getContext()?.contextLabel;
-    const intent = buildResponseIntent(selected, topicName, npc.trait, context);
+    const intent = buildResponseIntent(match.selected, topicName, npc.trait, context);
 
     // Handle related topic redirect framing
     if (resolution.type === 'related') {
@@ -258,7 +220,7 @@ export class CharacterModelDialogue implements DialogueExtension {
 
     const topicName = resolution.type === 'exact'
       ? resolution.topic.name
-      : resolution.topic.name;
+      : resolution.via.name;
     const trigger = `told about ${topicName}`;
     const turn = npc.getTurn();
 
@@ -274,37 +236,20 @@ export class CharacterModelDialogue implements DialogueExtension {
       };
     }
 
-    // Evaluate constraints
-    const candidates: ResponseCandidate[] = authoredResponses.map(r => r.candidate);
-    const selected = evaluateConstraints(candidates, npc.trait);
-
-    if (!selected) {
+    // Select and record response, then apply side effects
+    const match = this.selectAndRecordResponse(npc, npcId, topicName, authoredResponses);
+    if (!match) {
       return {
         handled: true,
         messageId: 'character.conversation.no-matching-response',
       };
     }
 
-    // Find authored response and apply effects
-    const authoredResponse = authoredResponses.find(r => r.candidate === selected)!;
-
-    // Record the response
-    this.evaluator.recordResponse(npcId, topicName, selected.action, turn);
-
-    // Apply state mutations
-    if (authoredResponse.stateMutations) {
-      this.applyStateMutations(npc.trait, authoredResponse.stateMutations);
-    }
-
-    // Update conversation context
-    if (authoredResponse.contextSettings) {
-      const ctx = authoredResponse.contextSettings;
-      this.lifecycle.setContext(ctx.label, ctx.intent, ctx.strength, ctx.decayThreshold);
-    }
+    this.applyResponseSideEffects(npc.trait, match.authoredResponse);
 
     // Build response intent
     const context = this.lifecycle.getContext()?.contextLabel;
-    const intent = buildResponseIntent(selected, topicName, npc.trait, context);
+    const intent = buildResponseIntent(match.selected, topicName, npc.trait, context);
 
     return {
       handled: true,
@@ -358,6 +303,68 @@ export class CharacterModelDialogue implements DialogueExtension {
   // =========================================================================
   // Private helpers
   // =========================================================================
+
+  /**
+   * Select the best response for a topic and record it in the evaluator.
+   *
+   * Evaluates constraints across all authored responses, picks the best
+   * match, and records the interaction.
+   *
+   * @param npc - NPC conversation state
+   * @param npcId - The NPC entity ID
+   * @param topicName - The resolved topic name
+   * @param authoredResponses - Authored responses for this trigger
+   * @returns The selected candidate and its authored response, or null
+   */
+  private selectAndRecordResponse(
+    npc: NpcConversationState,
+    npcId: string,
+    topicName: string,
+    authoredResponses: AuthoredResponse[],
+  ): { selected: ResponseCandidate; authoredResponse: AuthoredResponse } | null {
+    const candidates: ResponseCandidate[] = authoredResponses.map(r => r.candidate);
+    const selected = evaluateConstraints(candidates, npc.trait);
+
+    if (!selected) return null;
+
+    const authoredResponse = authoredResponses.find(r => r.candidate === selected)!;
+    const turn = npc.getTurn();
+
+    this.evaluator.recordResponse(npcId, topicName, selected.action, turn);
+
+    return { selected, authoredResponse };
+  }
+
+  /**
+   * Apply side effects from a selected authored response: state mutations,
+   * conversation context, between-turn overrides, and leave-attempt message.
+   *
+   * @param trait - The NPC's CharacterModelTrait
+   * @param authoredResponse - The selected authored response
+   */
+  private applyResponseSideEffects(
+    trait: CharacterModelTrait,
+    authoredResponse: AuthoredResponse,
+  ): void {
+    if (authoredResponse.stateMutations) {
+      this.applyStateMutations(trait, authoredResponse.stateMutations);
+    }
+
+    if (authoredResponse.contextSettings) {
+      const ctx = authoredResponse.contextSettings;
+      this.lifecycle.setContext(ctx.label, ctx.intent, ctx.strength, ctx.decayThreshold);
+
+      if (authoredResponse.betweenTurnOverrides) {
+        for (const override of authoredResponse.betweenTurnOverrides) {
+          this.lifecycle.setBetweenTurnOverride(override.turnNumber, override.messageId);
+        }
+      }
+
+      if (authoredResponse.onLeaveAttemptMessage) {
+        this.lifecycle.setOnLeaveAttemptMessage(authoredResponse.onLeaveAttemptMessage);
+      }
+    }
+  }
 
   /** Apply state mutations to the NPC's character model trait. */
   private applyStateMutations(

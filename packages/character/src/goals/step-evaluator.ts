@@ -114,11 +114,6 @@ function evaluateStep(step: GoalStep, ctx: GoalStepContext): StepResult {
       return evaluateWaitFor(step.conditions, ctx);
 
     case 'act':
-      return {
-        status: 'completed',
-        witnessed: ctx.playerPresent ? step.witnessed ?? step.messageId : undefined,
-      };
-
     case 'say':
       return {
         status: 'completed',
@@ -169,7 +164,16 @@ function evaluateSeek(
   };
 }
 
-function evaluateAcquire(
+/**
+ * Shared logic for steps that complete when a target entity is in the NPC's room.
+ * Used by both 'acquire' and 'give' step types.
+ *
+ * @param target - Entity ID to check for room co-location
+ * @param witnessed - Optional message ID when player observes
+ * @param ctx - The goal step evaluation context
+ * @returns Completed if target is in room, waiting otherwise
+ */
+function evaluateTargetInRoom(
   target: string,
   witnessed: string | undefined,
   ctx: GoalStepContext,
@@ -182,6 +186,14 @@ function evaluateAcquire(
   }
 
   return { status: 'waiting' };
+}
+
+function evaluateAcquire(
+  target: string,
+  witnessed: string | undefined,
+  ctx: GoalStepContext,
+): StepResult {
+  return evaluateTargetInRoom(target, witnessed, ctx);
 }
 
 function evaluateWaitFor(
@@ -198,20 +210,12 @@ function evaluateWaitFor(
 }
 
 function evaluateGive(
-  item: string,
+  _item: string,
   target: string,
   witnessed: string | undefined,
   ctx: GoalStepContext,
 ): StepResult {
-  // Check if NPC has the item and target is in the room
-  if (ctx.isInRoom(target, ctx.currentRoom)) {
-    return {
-      status: 'completed',
-      witnessed: ctx.playerPresent ? witnessed : undefined,
-    };
-  }
-
-  return { status: 'waiting' };
+  return evaluateTargetInRoom(target, witnessed, ctx);
 }
 
 function evaluateDrop(

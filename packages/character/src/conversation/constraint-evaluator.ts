@@ -94,10 +94,10 @@ export function evaluateConstraints(
  */
 export class ConstraintEvaluator {
   /** Per-NPC conversation records. Keyed by NPC entity ID. */
-  private records: Map<string, ConversationRecord> = new Map();
+  private readonly records: Map<string, ConversationRecord> = new Map();
 
   /** Evidence the player has presented. Keyed by NPC entity ID. */
-  private evidence: EvidenceRecord = createEvidenceRecord();
+  private readonly evidence: EvidenceRecord = createEvidenceRecord();
 
   // =========================================================================
   // Response evaluation and recording

@@ -64,7 +64,7 @@ export type TopicResolution =
  * topic, considering keyword matches and topic neighborhoods.
  */
 export class TopicRegistry {
-  private topics: Map<string, TopicDef> = new Map();
+  private readonly topics: Map<string, TopicDef> = new Map();
 
   /**
    * Register a topic definition.
@@ -150,8 +150,26 @@ export class TopicRegistry {
     }
 
     // Phase 2: Check related topic neighborhoods
-    // For each available topic, check if the input matches any of its
-    // related topics' keywords. If so, the NPC redirects.
+    return this.findRelatedRedirect(inputWords, inputNormalized, npcTrait);
+  }
+
+  /**
+   * Search for a related-topic redirect when no exact match was found.
+   *
+   * For each available topic with related topics, checks if the input
+   * matches any related topic's keywords. Returns the first match as
+   * a redirect resolution.
+   *
+   * @param inputWords - Input split into normalized words
+   * @param inputNormalized - Full normalized input string
+   * @param npcTrait - The NPC's CharacterModelTrait for availability checks
+   * @returns Related redirect resolution, or { type: 'none' }
+   */
+  private findRelatedRedirect(
+    inputWords: string[],
+    inputNormalized: string,
+    npcTrait: CharacterModelTrait,
+  ): TopicResolution {
     for (const topic of this.topics.values()) {
       if (!this.isAvailable(topic.name, npcTrait)) continue;
 
@@ -221,11 +239,9 @@ export class TopicRegistry {
         if (inputNormalized.includes(keyword)) {
           score++;
         }
-      } else {
+      } else if (inputWords.includes(keyword)) {
         // Single word: check exact word match
-        if (inputWords.includes(keyword)) {
-          score++;
-        }
+        score++;
       }
     }
     return score;
