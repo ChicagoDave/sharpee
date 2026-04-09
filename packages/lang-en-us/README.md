@@ -13,14 +13,10 @@ npm install @sharpee/lang-en-us
 ### In a Story
 
 ```typescript
-import { createGame } from '@sharpee/forge';
-import EnglishLanguage from '@sharpee/lang-en-us';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
-const game = createGame({
-  title: 'My Adventure',
-  language: new EnglishLanguage(),
-  // ... other configuration
-});
+// Register with the engine during story setup
+const languageProvider = new EnglishLanguageProvider();
 ```
 
 ### With Custom Configuration

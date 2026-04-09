@@ -6,7 +6,6 @@ packages:
   - '!packages/map-editor'
   - '!packages/cli'
   - '!packages/dev-tools'
-  - '!packages/forge'
   - stories/dungeo
   - stories/entropy
   - tutorials/familyzoo

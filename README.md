@@ -31,10 +31,12 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 
 ## What's Included
 
-`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 22 packages are published individually on npm under the `@sharpee` scope.
+`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 29 packages are published individually on npm under the `@sharpee` scope.
 
 | Package | Description |
 |---------|-------------|
+| `@sharpee/bridge` | PostMessage bridge for iframe embedding |
+| `@sharpee/character` | NPC behavior chain: character model, conversation, goals, influence, propagation |
 | `@sharpee/core` | Event system, types, utilities |
 | `@sharpee/engine` | Game engine, turn cycle, command execution |
 | `@sharpee/event-processor` | Applies semantic events to the world model |
@@ -51,12 +53,14 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 | `@sharpee/plugin-scheduler` | Daemons and fuses (timed events) |
 | `@sharpee/plugin-state-machine` | Declarative puzzle and narrative orchestration |
 | `@sharpee/plugins` | Plugin contracts for engine extensibility |
+| `@sharpee/runtime` | Headless engine for iframe embedding |
 | `@sharpee/sharpee` | Umbrella package (re-exports everything) |
 | `@sharpee/stdlib` | 48 standard IF actions (take, drop, open, lock, etc.) |
 | `@sharpee/text-blocks` | Structured text output interfaces |
 | `@sharpee/text-service` | Text rendering and status line |
 | `@sharpee/transcript-tester` | Transcript-based testing framework |
 | `@sharpee/world-model` | Entity system with traits and behaviors |
+| `@sharpee/zifmia` | Zifmia desktop client integration |
 
 ## Features
 
@@ -67,11 +71,13 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 - **Four-Phase Action Pattern** — Consistent validate/execute/report/blocked flow
 - **Capability Dispatch** — Entity-specific handling for generic verbs
 - **Entity Helpers** — Fluent builder API for rooms, objects, containers, doors, actors
+- **NPC Behavior Chain** — Character model with psychology, constraint-based conversation, goal pursuit, information propagation, and NPC-to-NPC influence
+- **Direction Vocabularies** — Location-relative directions (compass, naval, minimal, or custom)
 - **Audio System** — Typed audio events, AudioRegistry, procedural sound, atmosphere builder
-- **NPC System** — Autonomous characters with behaviors and schedules
 - **Daemons & Fuses** — Timed events and background processes
 - **Perception System** — Darkness, blindness, and sensory restrictions
 - **Language Layer Separation** — All text output goes through localizable message IDs
+- **Multi-Client Architecture** — Same story runs in CLI, browser, React, and Zifmia desktop
 - **Full TypeScript** — Strict typing throughout
 
 ## Creating a Story
@@ -235,12 +241,19 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 
 Sharpee is actively developed. These are the open [Architecture Decision Records](./docs/architecture/adrs/) representing planned future work.
 
+### Recently Implemented
+
+- **NPC Behavior Chain** (ADR-141, 142, 144, 145, 146) — Character psychology, conversation, goal pursuit, information propagation, NPC influence
+- **Direction Vocabularies** (ADR-143) — Location-relative directions (compass, naval, minimal, custom)
+- **Audio System** (ADR-138) — SFX, music, ambient, procedural audio, AudioRegistry
+- **Entity Helpers** (ADR-140) — Fluent builder API for story setup
+- **Action Interceptors** (ADR-118) — Story-level hooks on standard actions
+
 ### Accepted (Implementation Planned)
 
 - **Screen Reader Accessibility** (ADR-100) — ARIA support for the Zifmia client
-- **Audio System** (ADR-138) — SFX, music, ambient, procedural audio, AudioRegistry
 - **Speech Accessibility** (ADR-139) — TTS/STT for blind and motor-impaired players
-- **Entity Helpers** (ADR-140) — Fluent builder API for story setup
+- **Equivalent Objects** (ADR-147) — Identical object groups, numeric commands, trade/sell/barter
 
 ### Proposed
 
@@ -261,7 +274,7 @@ Sharpee is actively developed. These are the open [Architecture Decision Records
 | Author Tools | ADR-131 | Automated World Explorer — Regression test generator |
 | Engine | ADR-127 | Location-Scoped Interceptors — Room-tied action interceptors |
 
-See the full [ADR index](./docs/architecture/adrs/README.md) for all 140 architecture decisions.
+See the full [ADR index](./docs/architecture/adrs/README.md) for all 152 architecture decisions.
 
 ## License
 

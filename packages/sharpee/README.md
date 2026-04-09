@@ -2,7 +2,7 @@
 
 A modern TypeScript interactive fiction engine for creating text adventures and parser-based games.
 
-[![npm version](https://img.shields.io/npm/v/@sharpee/sharpee/beta.svg)](https://www.npmjs.com/package/@sharpee/sharpee)
+[![npm version](https://img.shields.io/npm/v/@sharpee/sharpee/latest.svg)](https://www.npmjs.com/package/@sharpee/sharpee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
@@ -81,7 +81,7 @@ This package re-exports the core Sharpee packages:
 
 ## Standard Actions
 
-The engine includes 40+ standard IF actions out of the box:
+The engine includes 48 standard IF actions out of the box:
 
 - **Movement**: go, enter, exit
 - **Manipulation**: take, drop, put, insert, remove
