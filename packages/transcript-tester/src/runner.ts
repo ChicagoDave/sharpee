@@ -1064,6 +1064,24 @@ async function runCommand(
   const normalizedActual = normalizeOutput(actualOutput);
   const normalizedExpected = normalizeOutput(command.expectedOutput.join('\n'));
 
+  // Blank output is always a failure — every command should produce output
+  if (!normalizedActual && !error) {
+    return {
+      command,
+      actualOutput,
+      actualEvents,
+      passed: false,
+      expectedFailure: false,
+      skipped: false,
+      assertionResults: [{
+        assertion: { type: 'ok-contains' as const, value: '(any output)' },
+        passed: false,
+        message: 'Blank output — command produced no visible text'
+      }],
+      error: 'blank output'
+    };
+  }
+
   // Check all assertions
   const assertionResults: AssertionResult[] = [];
   let allPassed = true;
