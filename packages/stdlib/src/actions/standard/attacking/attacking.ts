@@ -435,11 +435,12 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // Update the main attacked event with messageId for text rendering
     // The first event in the array is the attacked event - update it
-    // Keys with dots are fully-qualified story keys (e.g., dungeo.melee.hero_attack)
-    // and should not be prefixed with the action ID
+    // customMessage from story interceptors may be fully-qualified (e.g., dungeo.melee.hero_attack)
+    // and should not be prefixed. Standard messageId from the switch block above is always
+    // action-scoped and must be prefixed.
     const resolvedMessageId = customMessage || messageId;
-    const fullMessageId = resolvedMessageId.includes('.')
-      ? resolvedMessageId
+    const fullMessageId = customMessage && customMessage.includes('.')
+      ? customMessage
       : `${context.action.id}.${resolvedMessageId}`;
     events[0] = context.event('if.event.attacked', {
       messageId: fullMessageId,
