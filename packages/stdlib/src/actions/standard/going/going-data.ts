@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, DirectionType, getOppositeDirection as getOpposite, DirectionVocabularyRegistry } from '@sharpee/world-model';
+import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils';
 import { GoingSharedData, getGoingSharedData } from './going';
 
@@ -181,7 +181,6 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
  */
 export function determineGoingMessage(
   movedData: Record<string, unknown>,
-  directionRegistry?: DirectionVocabularyRegistry
 ): { messageId: string; params: Record<string, any> } {
   const messageId = movedData.firstVisit ? 'first_visit' : 'moved_to';
 
@@ -191,11 +190,8 @@ export function determineGoingMessage(
                           destinationRoom?.id ||
                           'unknown';
 
-  // Use vocabulary display name if registry provided, otherwise lowercase constant
   const rawDirection = movedData.direction as DirectionType;
-  const direction = directionRegistry
-    ? directionRegistry.getDisplayName(rawDirection)
-    : rawDirection.toLowerCase();
+  const direction = rawDirection.toLowerCase();
 
   return {
     messageId,

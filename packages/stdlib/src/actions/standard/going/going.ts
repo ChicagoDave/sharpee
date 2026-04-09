@@ -40,7 +40,6 @@ import {
   actorMovedDataConfig,
   actorExitedDataConfig,
   actorEnteredDataConfig,
-  determineGoingMessage
 } from './going-data';
 
 // Note: Room description is now built directly in report() using sharedData.currentLocation

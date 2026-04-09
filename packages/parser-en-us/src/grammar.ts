@@ -13,7 +13,6 @@
 
 import { GrammarBuilder } from '@sharpee/if-domain';
 import { TraitType } from '@sharpee/world-model';
-import { getGrammarDirectionMap } from './direction-mappings';
 
 /**
  * Define English grammar rules
@@ -187,11 +186,22 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .build();
 
   // Bare direction commands (ADR-087: consolidated with forAction)
-  // Direction words come from the active vocabulary (ADR-143).
-  // Default is compass; stories override via world.directions().useVocabulary().
   grammar
     .forAction('if.action.going')
-    .directions(getGrammarDirectionMap())
+    .directions({
+      'north': ['north', 'n'],
+      'south': ['south', 's'],
+      'east': ['east', 'e'],
+      'west': ['west', 'w'],
+      'northeast': ['northeast', 'ne'],
+      'northwest': ['northwest', 'nw'],
+      'southeast': ['southeast', 'se'],
+      'southwest': ['southwest', 'sw'],
+      'up': ['up', 'u'],
+      'down': ['down', 'd'],
+      'in': ['in', 'inside'],
+      'out': ['out', 'outside'],
+    })
     .build();
 
   // Opening and closing

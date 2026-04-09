@@ -1683,17 +1683,6 @@ export interface GrammarBuilder {
      * Clear all rules
      */
     clear(): void;
-    /**
-     * Replace direction patterns for an action (ADR-143).
-     *
-     * Removes existing direction rules and registers new ones from the map.
-     * Used when the active direction vocabulary changes.
-     *
-     * @param actionId The action whose direction rules to replace
-     * @param map Direction map: canonical name → alias words
-     * @param priority Pattern priority (default: 100)
-     */
-    replaceDirections(actionId: string, map: Record<string, string[]>, priority?: number): void;
 }
 /**
  * ADR-087: Action-centric grammar builder
@@ -1988,14 +1977,6 @@ export declare abstract class GrammarEngine {
      * Clear all rules
      */
     clear(): void;
-    /**
-     * Remove all direction-specific rules for an action (ADR-143).
-     *
-     * Direction rules are identified by having `defaultSemantics.direction` set.
-     * This allows vocabularies to replace direction patterns without clearing
-     * the entire grammar.
-     */
-    removeDirectionRules(actionId: string): void;
     /**
      * Get all rules
      */

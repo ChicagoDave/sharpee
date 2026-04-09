@@ -1,6 +1,8 @@
 # ADR-143: Location-Relative Direction Vocabularies
 
-## Status: INCOMPLETE
+## Status: WITHDRAWN
+
+> **Reverted 2026-04-09.** Partially implemented, then removed. The implementation violated language layer separation (English strings in world-model) and no story consumed the feature. Will re-implement from scratch with proper language layer separation when a story needs it.
 
 ## Date: 2026-04-03
 
