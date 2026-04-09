@@ -181,7 +181,7 @@ function createEvent(
   npcId?: string,
 ): ISemanticEvent {
   return {
-    id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `${type}_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`,
     type,
     timestamp: Date.now(),
     entities: npcId ? { actor: npcId } : {},
