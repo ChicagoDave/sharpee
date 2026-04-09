@@ -43,10 +43,12 @@ jobs:
         pnpm --filter '@sharpee/text-service' run build
         pnpm --filter '@sharpee/stdlib' run build
         pnpm --filter '@sharpee/character' run build
+        pnpm --filter '@sharpee/ext-basic-combat' run build
         pnpm --filter '@sharpee/plugins' run build
         pnpm --filter '@sharpee/plugin-npc' run build
         pnpm --filter '@sharpee/plugin-scheduler' run build
         pnpm --filter '@sharpee/plugin-state-machine' run build
+        pnpm --filter '@sharpee/ext-testing' run build
         pnpm --filter '@sharpee/engine' run build
         pnpm --filter '@sharpee/platform-browser' run build
         pnpm --filter '@sharpee/sharpee' run build
