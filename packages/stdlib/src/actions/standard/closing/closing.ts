@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, getInterceptorForAction, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, getInterceptorForAction, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { closedDataConfig } from './closing-data';
@@ -29,6 +29,8 @@ import { ScopeLevel } from '../../../scope/types';
  */
 interface ClosingSharedData {
   closeResult?: ICloseResult;
+  interceptor?: ActionInterceptor;
+  interceptorData?: InterceptorSharedData;
 }
 
 function getClosingSharedData(context: ActionContext): ClosingSharedData {
@@ -85,19 +87,23 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
 
     // Check for interceptor on the target entity (ADR-118)
     const interceptorResult = getInterceptorForAction(noun, IFActions.CLOSING);
-    if (interceptorResult) {
-      const { interceptor } = interceptorResult;
-      const interceptorData: InterceptorSharedData = {};
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {};
 
-      if (interceptor.preValidate) {
-        const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
-        if (result !== null && !result.valid) {
-          return {
-            valid: false,
-            error: result.error,
-            params: result.params
-          };
-        }
+    // Store for later phases (blocked needs access to onBlocked)
+    const sharedData = getClosingSharedData(context);
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return {
+          valid: false,
+          error: result.error,
+          params: result.params
+        };
       }
     }
 
@@ -241,6 +247,18 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
+
+    // === ON-BLOCKED HOOK ===
+    const sharedData = getClosingSharedData(context);
+    const interceptor = sharedData.interceptor;
+    const interceptorData = sharedData.interceptorData || {};
+    if (interceptor?.onBlocked && noun && result.error) {
+      const customEffects = interceptor.onBlocked(noun, context.world, context.player.id, result.error, interceptorData);
+      if (customEffects !== null) {
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
+
     const error = result.error || '';
     // If error already contains dots (e.g., story interceptor ID), use as-is; otherwise prefix with action ID
     const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
