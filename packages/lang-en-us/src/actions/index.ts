@@ -65,6 +65,9 @@ export * from './eating';
 export * from './drinking';
 export * from './attacking';
 
+// Concealment actions (ADR-148)
+export * from './hiding';
+
 // Meta actions
 export * from './waiting';
 export * from './sleeping';
@@ -121,6 +124,7 @@ import { usingLanguage } from './using';
 import { eatingLanguage } from './eating';
 import { drinkingLanguage } from './drinking';
 import { attackingLanguage } from './attacking';
+import { hidingLanguage, revealingLanguage } from './hiding';
 import { waitingLanguage } from './waiting';
 import { sleepingLanguage } from './sleeping';
 import { scoringLanguage } from './scoring';
@@ -209,5 +213,8 @@ export const standardActionLanguage = [
   restoringLanguage,
   quittingLanguage,
   undoingLanguage,
-  againLanguage
+  againLanguage,
+  // Concealment actions (ADR-148)
+  hidingLanguage,
+  revealingLanguage,
 ];

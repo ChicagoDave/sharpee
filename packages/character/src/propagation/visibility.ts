@@ -10,6 +10,7 @@
  */
 
 import { PropagationTransfer, PropagationColoring } from './propagation-types';
+import type { WorldModel, IFEntity } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Player state
@@ -111,4 +112,47 @@ export function getVisibilityResults(
   presence: PlayerPresence,
 ): PropagationVisibilityResult[] {
   return transfers.map(t => getVisibilityResult(t, presence));
+}
+
+// ---------------------------------------------------------------------------
+// Player presence resolution (ADR-148)
+// ---------------------------------------------------------------------------
+
+/**
+ * Determine the player's presence state relative to an NPC.
+ *
+ * Used by the propagation evaluator to decide what the player observes:
+ * - `absent`: different room — state mutation only, no message
+ * - `present`: same room, visible — witnessed summary
+ * - `concealed`: same room, hidden — full eavesdropping, player learns the fact
+ *
+ * NPC-to-player visibility (can the NPC see the player?) is handled separately
+ * by ConcealedVisibilityBehavior via the canSee() pipeline.
+ *
+ * @param world - The world model
+ * @param playerId - The player entity ID
+ * @param npcId - The NPC entity ID
+ * @returns The player's presence state
+ */
+export function resolvePlayerPresence(
+  world: WorldModel,
+  playerId: string,
+  npcId: string,
+): PlayerPresence {
+  const playerRoom = world.getContainingRoom(playerId);
+  const npcRoom = world.getContainingRoom(npcId);
+
+  // Different room → absent
+  if (!playerRoom || !npcRoom || playerRoom.id !== npcRoom.id) {
+    return 'absent';
+  }
+
+  // Same room but concealed → eavesdropping
+  const player = world.getEntity(playerId);
+  if (player?.has('if.trait.concealed_state')) {
+    return 'concealed';
+  }
+
+  // Same room and visible → witnessed
+  return 'present';
 }

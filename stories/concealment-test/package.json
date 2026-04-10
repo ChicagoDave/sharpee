@@ -1,0 +1,25 @@
+{
+  "name": "@sharpee/story-concealment-test",
+  "version": "1.0.0",
+  "description": "Minimal test story for ADR-148 concealment actions",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "file:../../packages/core",
+    "@sharpee/engine": "file:../../packages/engine",
+    "@sharpee/stdlib": "file:../../packages/stdlib",
+    "@sharpee/world-model": "file:../../packages/world-model",
+    "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
+    "@sharpee/parser-en-us": "file:../../packages/parser-en-us",
+    "@sharpee/text-service": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "author": "ADR-148 Test Suite",
+  "license": "MIT"
+}

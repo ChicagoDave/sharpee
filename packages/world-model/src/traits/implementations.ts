@@ -58,6 +58,10 @@ import { CharacterModelTrait } from './character-model/characterModelTrait';
 import { VehicleTrait } from './vehicle/vehicleTrait';
 import { EnterableTrait } from './enterable/enterableTrait';
 
+// Concealment traits (ADR-148)
+import { ConcealmentTrait } from './concealment/concealmentTrait';
+import { ConcealedStateTrait } from './concealment/concealedStateTrait';
+
 // System traits
 import { StoryInfoTrait } from './story-info/storyInfoTrait';
 
@@ -117,7 +121,9 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.VEHICLE]: VehicleTrait,
   [TraitType.ENTERABLE]: EnterableTrait,
 
-  // Scoring traits
+  // Concealment traits (ADR-148)
+  [TraitType.CONCEALMENT]: ConcealmentTrait as unknown as ITraitConstructor,
+  [TraitType.CONCEALED_STATE]: ConcealedStateTrait as unknown as ITraitConstructor,
 
   // System traits
   [TraitType.STORY_INFO]: StoryInfoTrait,

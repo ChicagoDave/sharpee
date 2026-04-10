@@ -50,6 +50,9 @@ export * from './open-inventory';
 // Character model (ADR-141)
 export * from './character-model';
 
+// Concealment traits (ADR-148)
+export * from './concealment';
+
 // System traits
 export * from './story-info';
 

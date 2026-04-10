@@ -1032,6 +1032,16 @@ export class EnglishParser implements Parser {
       manner
     };
 
+    // Merge grammar default semantics into extras (ADR-148)
+    // This propagates withDefaultSemantics({ position: 'behind' }) etc. to actions
+    if (match.semantics) {
+      for (const [key, value] of Object.entries(match.semantics)) {
+        if (value !== undefined && !(key in extras)) {
+          extras[key] = value;
+        }
+      }
+    }
+
     // Add extras if present
     if (Object.keys(extras).length > 0) {
       candidate.extras = extras;

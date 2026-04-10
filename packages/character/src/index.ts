@@ -111,6 +111,7 @@ export {
   PROPAGATION_WITNESSED_DEFAULTS,
   getVisibilityResult,
   getVisibilityResults,
+  resolvePlayerPresence,
   // Propagation builder
   type PropagationOptions,
   buildPropagationProfile,

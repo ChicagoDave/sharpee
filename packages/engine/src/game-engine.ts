@@ -53,7 +53,7 @@ import {
 import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 
-import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer } from './command-executor';
+import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
 import { createActionContext } from './action-context-factory';
 import { processEvent } from './turn-event-processor';
 import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
@@ -1383,6 +1383,19 @@ export class GameEngine {
    */
   unregisterParsedCommandTransformer(transformer: ParsedCommandTransformer): boolean {
     return this.commandExecutor.unregisterParsedCommandTransformer(transformer);
+  }
+
+  /**
+   * Register a pre-action hook listener (ADR-148).
+   *
+   * Listeners fire after command context creation but before the action's
+   * validate phase. They can modify world state (e.g., break concealment
+   * before a noisy action executes).
+   *
+   * @param listener - The hook listener
+   */
+  onBeforeAction(listener: BeforeActionHookListener): void {
+    this.commandExecutor.onBeforeAction(listener);
   }
 
   /**

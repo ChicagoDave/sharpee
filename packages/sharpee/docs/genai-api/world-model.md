@@ -1917,6 +1917,8 @@ export declare const TraitType: {
     readonly CHARACTER_MODEL: "characterModel";
     readonly VEHICLE: "vehicle";
     readonly ENTERABLE: "enterable";
+    readonly CONCEALMENT: "if.trait.concealment";
+    readonly CONCEALED_STATE: "if.trait.concealed_state";
     readonly STORY_INFO: "storyInfo";
 };
 /**
@@ -4729,6 +4731,158 @@ export interface PerceivedEvent {
     as: FactSource;
     content: string;
 }
+```
+
+### traits/concealment/concealmentTrait
+
+```typescript
+/**
+ * Concealment trait for hiding spots (ADR-148)
+ *
+ * Entities with this trait can serve as hiding spots for actors.
+ * The trait declares which positions are available (behind, under, on, inside)
+ * and the quality of concealment the spot provides.
+ *
+ * Public interface: ConcealmentTrait, ConcealmentPosition, isConcealmentTrait.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { ITrait } from '../trait';
+/** How an actor can hide relative to the entity */
+export type ConcealmentPosition = 'behind' | 'under' | 'on' | 'inside';
+/** How well the hiding spot conceals — affects NPC detection at the story level */
+export type ConcealmentQuality = 'poor' | 'fair' | 'good' | 'excellent';
+/**
+ * Trait for entities that serve as hiding spots.
+ *
+ * @example
+ * ```typescript
+ * const curtain = world.createEntity('curtain', 'object');
+ * curtain.add(new ConcealmentTrait({
+ *   positions: ['behind'],
+ *   quality: 'good',
+ * }));
+ * ```
+ */
+export declare class ConcealmentTrait implements ITrait {
+    static readonly type = "if.trait.concealment";
+    readonly type = "if.trait.concealment";
+    /** Which positions this entity supports for hiding */
+    positions: ConcealmentPosition[];
+    /** How many actors can hide here simultaneously (default: 1) */
+    capacity: number;
+    /** Quality of concealment — used by story-level NPC detection logic */
+    quality: ConcealmentQuality;
+    constructor(options: {
+        positions: ConcealmentPosition[];
+        quality: ConcealmentQuality;
+        capacity?: number;
+    });
+    /**
+     * Check if this entity supports a given hiding position.
+     *
+     * @param position - The position to check
+     * @returns True if the position is available
+     */
+    supportsPosition(position: ConcealmentPosition): boolean;
+}
+/**
+ * Type guard for ConcealmentTrait
+ */
+export declare function isConcealmentTrait(trait: ITrait): trait is ConcealmentTrait;
+```
+
+### traits/concealment/concealedStateTrait
+
+```typescript
+/**
+ * Concealed state trait — dynamic trait applied to actors when hiding (ADR-148)
+ *
+ * Added by the hiding action, removed by the revealing action or implicit reveal.
+ * Presence of this trait IS the concealed state — no boolean flag needed.
+ *
+ * Registers the if.scope.visible capability to block VisibilityBehavior.canSee().
+ * When an NPC calls canSee() on a concealed actor, the capability behavior
+ * returns { valid: false }, making the actor invisible.
+ *
+ * Public interface: ConcealedStateTrait, IConcealedStateTrait, isConcealed, getConcealmentState.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { ITrait } from '../trait';
+import { IFEntity } from '../../entities';
+import { ConcealmentPosition, ConcealmentQuality } from './concealmentTrait';
+/**
+ * Data interface for the concealed state.
+ */
+export interface IConcealedStateTrait {
+    /** The entity the actor is hiding behind/under/on/inside */
+    targetId: string;
+    /** How the actor is hiding */
+    position: ConcealmentPosition;
+    /** Snapshot of the hiding spot's quality at time of concealment */
+    quality: ConcealmentQuality;
+}
+/**
+ * Dynamic trait applied to an actor to mark them as concealed.
+ *
+ * The trait registers the `if.scope.visible` capability so that
+ * VisibilityBehavior.canSee() automatically returns false for
+ * concealed actors.
+ */
+export declare class ConcealedStateTrait implements ITrait, IConcealedStateTrait {
+    static readonly type = "if.trait.concealed_state";
+    readonly type = "if.trait.concealed_state";
+    /** Registers the visibility capability — concealed actors block canSee() */
+    static readonly capabilities: readonly ["if.scope.visible"];
+    targetId: string;
+    position: ConcealmentPosition;
+    quality: ConcealmentQuality;
+    constructor(data: IConcealedStateTrait);
+}
+/**
+ * Check if an entity is concealed.
+ *
+ * @param entity - The entity to check
+ * @returns True if the entity has ConcealedStateTrait
+ */
+export declare function isConcealed(entity: IFEntity): boolean;
+/**
+ * Get the concealment details for an entity, or undefined if not concealed.
+ *
+ * @param entity - The entity to check
+ * @returns The concealment state, or undefined
+ */
+export declare function getConcealmentState(entity: IFEntity): IConcealedStateTrait | undefined;
+```
+
+### traits/concealment/concealedVisibilityBehavior
+
+```typescript
+/**
+ * Visibility behavior for concealed actors (ADR-148)
+ *
+ * Default behavior: a concealed actor is invisible to all observers.
+ * Stories can override this for specific NPC types via capability dispatch
+ * (e.g., alert guards can see through poor/fair concealment).
+ *
+ * Public interface: ConcealedVisibilityBehavior, registerConcealedVisibilityBehavior.
+ * Owner context: @sharpee/world-model / traits / concealment
+ */
+import { CapabilityBehavior } from '../../capabilities/capability-behavior';
+/**
+ * Default visibility behavior for concealed actors.
+ *
+ * Blocks canSee() for all observers. The observerId is available in the
+ * validate call for story-level overrides that need to check who is looking.
+ */
+export declare const ConcealedVisibilityBehavior: CapabilityBehavior;
+/**
+ * Register the default visibility behavior for concealed actors.
+ *
+ * Call this during platform initialization. Stories that need NPC detection
+ * can register their own behavior for specific trait types using the same
+ * capability dispatch override pattern.
+ */
+export declare function registerConcealedVisibilityBehavior(): void;
 ```
 
 ### extensions/types

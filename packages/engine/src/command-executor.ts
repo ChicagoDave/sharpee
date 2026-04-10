@@ -37,6 +37,29 @@ import {
 } from './capability-dispatch-helper';
 
 /**
+ * Data passed to pre-action hook listeners (ADR-148).
+ *
+ * Emitted after command validation but before the action's validate phase.
+ * Listeners can modify world state (e.g., break concealment before a noisy action).
+ */
+export interface BeforeActionHookData {
+  /** The action about to execute */
+  actionId: string;
+  /** The actor performing the action */
+  actorId?: string;
+  /** Direct object entity ID, if any */
+  directObjectId?: string;
+}
+
+/**
+ * Listener for pre-action hooks.
+ *
+ * @param data - Hook data describing the action about to execute
+ * @param world - The world model (mutable — listeners can change state)
+ */
+export type BeforeActionHookListener = (data: BeforeActionHookData, world: WorldModel) => void;
+
+/**
  * Transformer function for parsed commands.
  * Called after parsing but before validation.
  * Can modify the parsed command to bypass or alter validation behavior.
@@ -57,6 +80,7 @@ export class CommandExecutor {
   private eventProcessor: EventProcessor;
   private scopeResolver?: ScopeResolver;
   private parsedCommandTransformers: ParsedCommandTransformer[] = [];
+  private beforeActionListeners: BeforeActionHookListener[] = [];
 
   constructor(
     world: WorldModel,
@@ -112,6 +136,27 @@ export class CommandExecutor {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Register a listener for the pre-action hook (ADR-148).
+   *
+   * Listeners fire after command context creation but before the action's
+   * validate phase. They can modify world state (e.g., break concealment).
+   *
+   * @param listener - The hook listener to register
+   */
+  onBeforeAction(listener: BeforeActionHookListener): void {
+    this.beforeActionListeners.push(listener);
+  }
+
+  /**
+   * Emit the pre-action hook to all registered listeners.
+   */
+  private emitBeforeAction(data: BeforeActionHookData, world: WorldModel): void {
+    for (const listener of this.beforeActionListeners) {
+      listener(data, world);
+    }
   }
 
   async execute(
@@ -205,6 +250,13 @@ export class CommandExecutor {
         this.scopeResolver = createScopeResolver(world);
       }
       const actionContext = createActionContext(world, context, command, action, this.scopeResolver);
+
+      // Pre-action hook (ADR-148): listeners can modify world state before validation
+      this.emitBeforeAction({
+        actionId: command.actionId,
+        actorId: context.player?.id,
+        directObjectId: command.directObject?.entity?.id,
+      }, world);
 
       // Universal Capability Dispatch: Check if any involved entity has a capability for this action
       // If so, the entity's behavior handles the action instead of the stdlib default

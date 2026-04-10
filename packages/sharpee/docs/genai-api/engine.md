@@ -549,6 +549,27 @@ import { EventProcessor } from '@sharpee/event-processor';
 import { ActionRegistry } from '@sharpee/stdlib';
 import { GameContext, TurnResult, EngineConfig } from './types';
 /**
+ * Data passed to pre-action hook listeners (ADR-148).
+ *
+ * Emitted after command validation but before the action's validate phase.
+ * Listeners can modify world state (e.g., break concealment before a noisy action).
+ */
+export interface BeforeActionHookData {
+    /** The action about to execute */
+    actionId: string;
+    /** The actor performing the action */
+    actorId?: string;
+    /** Direct object entity ID, if any */
+    directObjectId?: string;
+}
+/**
+ * Listener for pre-action hooks.
+ *
+ * @param data - Hook data describing the action about to execute
+ * @param world - The world model (mutable — listeners can change state)
+ */
+export type BeforeActionHookListener = (data: BeforeActionHookData, world: WorldModel) => void;
+/**
  * Transformer function for parsed commands.
  * Called after parsing but before validation.
  * Can modify the parsed command to bypass or alter validation behavior.
@@ -565,6 +586,7 @@ export declare class CommandExecutor {
     private eventProcessor;
     private scopeResolver?;
     private parsedCommandTransformers;
+    private beforeActionListeners;
     constructor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>);
     /**
      * Validate a parsed command against the world model.
@@ -587,6 +609,19 @@ export declare class CommandExecutor {
      * @returns true if the transformer was found and removed
      */
     unregisterParsedCommandTransformer(transformer: ParsedCommandTransformer): boolean;
+    /**
+     * Register a listener for the pre-action hook (ADR-148).
+     *
+     * Listeners fire after command context creation but before the action's
+     * validate phase. They can modify world state (e.g., break concealment).
+     *
+     * @param listener - The hook listener to register
+     */
+    onBeforeAction(listener: BeforeActionHookListener): void;
+    /**
+     * Emit the pre-action hook to all registered listeners.
+     */
+    private emitBeforeAction;
     execute(input: string, world: WorldModel, context: GameContext, config?: EngineConfig): Promise<TurnResult>;
 }
 export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>): CommandExecutor;
@@ -859,7 +894,7 @@ import { PluginRegistry } from '@sharpee/plugins';
 import { GameContext, TurnResult, EngineConfig, InputModeHandler } from './types';
 import { Story } from './story';
 import { NarrativeSettings } from './narrative';
-import { ParsedCommandTransformer } from './command-executor';
+import { ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
 /**
  * Game engine events
  */
@@ -1098,6 +1133,16 @@ export declare class GameEngine {
      * @returns true if the transformer was found and removed
      */
     unregisterParsedCommandTransformer(transformer: ParsedCommandTransformer): boolean;
+    /**
+     * Register a pre-action hook listener (ADR-148).
+     *
+     * Listeners fire after command context creation but before the action's
+     * validate phase. They can modify world state (e.g., break concealment
+     * before a noisy action executes).
+     *
+     * @param listener - The hook listener
+     */
+    onBeforeAction(listener: BeforeActionHookListener): void;
     /**
      * Save game state using registered hooks
      */
