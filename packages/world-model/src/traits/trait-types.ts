@@ -62,6 +62,10 @@ export const TraitType = {
   VEHICLE: 'vehicle',
   ENTERABLE: 'enterable',
 
+  // Concealment traits (ADR-148)
+  CONCEALMENT: 'if.trait.concealment',
+  CONCEALED_STATE: 'if.trait.concealed_state',
+
   // System traits
   STORY_INFO: 'storyInfo'
 } as const;
@@ -141,7 +145,9 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.VEHICLE]: TraitCategory.INTERACTIVE,
   [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE,
 
-  // Scoring traits
+  // Concealment traits (ADR-148)
+  [TraitType.CONCEALMENT]: TraitCategory.INTERACTIVE,
+  [TraitType.CONCEALED_STATE]: TraitCategory.INTERACTIVE,
 
   // System traits
   [TraitType.STORY_INFO]: TraitCategory.STANDARD
