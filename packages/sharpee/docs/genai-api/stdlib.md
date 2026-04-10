@@ -1188,6 +1188,8 @@ export declare const IFActions: {
     readonly ATTACKING: "if.action.attacking";
     readonly KISSING: "if.action.kissing";
     readonly WAVING: "if.action.waving";
+    readonly HIDING: "if.action.hiding";
+    readonly REVEALING: "if.action.revealing";
     readonly LOWERING: "if.action.lowering";
     readonly RAISING: "if.action.raising";
     readonly CONSULTING: "if.action.consulting";
@@ -1274,6 +1276,7 @@ export * from './quitting';
 export * from './restarting';
 export * from './undoing';
 export * from './again';
+export * from './hiding';
 import { TraceAction } from '../author';
 export declare const standardActions: (import("..").Action | TraceAction)[];
 ```

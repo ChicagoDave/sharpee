@@ -760,4 +760,39 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .mapsTo('if.action.again')
     .withPriority(90)
     .build();
+
+  // =========================================================================
+  // Concealment (ADR-148)
+  // =========================================================================
+
+  // Each pattern uses withDefaultSemantics({ position }) to deliver
+  // the concealment position to the hiding action via extras.
+
+  const concealmentPositions: Record<string, string[]> = {
+    behind: ['hide behind', 'duck behind', 'crouch behind'],
+    under:  ['hide under', 'duck under', 'crouch under'],
+    on:     ['hide on'],
+    inside: ['hide in', 'hide inside', 'duck inside'],
+  };
+
+  for (const [position, verbs] of Object.entries(concealmentPositions)) {
+    for (const verb of verbs) {
+      grammar
+        .define(`${verb} :target`)
+        .mapsTo('if.action.hiding')
+        .withPriority(100)
+        .withDefaultSemantics({ position })
+        .build();
+    }
+  }
+
+  // Revealing patterns — no target needed
+  const revealPatterns = ['stand up', 'come out', 'reveal myself', 'unhide', 'stop hiding'];
+  for (const pattern of revealPatterns) {
+    grammar
+      .define(pattern)
+      .mapsTo('if.action.revealing')
+      .withPriority(100)
+      .build();
+  }
 }

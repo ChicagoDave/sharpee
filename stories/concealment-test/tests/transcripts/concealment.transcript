@@ -1,0 +1,95 @@
+title: Concealment Actions (ADR-148)
+story: concealment-test
+description: Tests hide/duck/crouch behind/under/inside, reveal variants, negative cases, NPC presence
+
+---
+
+# Starting in Study with curtain, desk, armoire, lamp, and butler NPC
+
+> look
+[OK: contains "Study"]
+[OK: contains "butler"]
+
+# Verify butler is here
+> examine butler
+[OK: contains "butler"]
+
+# === Negative: target without ConcealmentTrait ===
+
+> hide behind lamp
+[OK: contains "can't"]
+
+# === Negative: wrong position ===
+
+> hide under curtain
+[OK: contains "can't"]
+
+> hide on desk
+[OK: contains "can't"]
+
+# === Success: hide behind curtain (butler in same room) ===
+
+> hide behind curtain
+[OK: contains "behind"]
+
+# Silent action preserves concealment
+> look
+[OK: contains "Study"]
+
+# Negative: already hidden
+> hide behind curtain
+[OK: contains "already"]
+
+# Explicit reveal: stand up
+> stand up
+[OK: contains "hiding"]
+
+# === Success: hide under desk ===
+
+> hide under desk
+[OK: contains "under"]
+
+# Reveal: come out
+> come out
+[OK: contains "hiding"]
+
+# === Success: hide inside armoire ===
+
+> hide inside armoire
+[OK: contains "into"]
+
+# Reveal: unhide
+> unhide
+[OK: contains "hiding"]
+
+# === Alternate verbs ===
+
+> duck behind curtain
+[OK: contains "behind"]
+
+> stop hiding
+[OK: contains "hiding"]
+
+> crouch under desk
+[OK: contains "under"]
+
+> stand up
+[OK: contains "hiding"]
+
+# === Negative: reveal when not hidden ===
+
+> stand up
+[OK: contains "not hiding"]
+
+> come out
+[OK: contains "not hiding"]
+
+# === Movement to Hall (maid NPC) and back ===
+
+> north
+[OK: contains "Hall"]
+[OK: contains "maid"]
+
+> south
+[OK: contains "Study"]
+[OK: contains "butler"]

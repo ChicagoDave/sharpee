@@ -40,6 +40,7 @@ export {
   PROPAGATION_WITNESSED_DEFAULTS,
   getVisibilityResult,
   getVisibilityResults,
+  resolvePlayerPresence,
 } from './visibility';
 
 export {

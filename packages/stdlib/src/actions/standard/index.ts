@@ -77,6 +77,9 @@ export * from './restarting';
 export * from './undoing';
 export * from './again';
 
+// Concealment actions (ADR-148)
+export * from './hiding';
+
 // Import all actions for easy registration
 import { takingAction } from './taking'; // Now from folder
 import { droppingAction } from './dropping'; // Now from folder
@@ -133,6 +136,10 @@ import { quittingAction } from './quitting'; // Now from folder
 import { restartingAction } from './restarting'; // Now from folder
 import { undoingAction } from './undoing'; // Now from folder
 import { againAction } from './again'; // Now from folder
+
+// Concealment actions (ADR-148)
+import { hidingAction } from './hiding';
+import { revealingAction } from './hiding';
 
 // Import author/debug actions
 import { TraceAction } from '../author';
@@ -193,6 +200,9 @@ export const standardActions = [
   restartingAction,
   undoingAction,
   againAction,
+  // Concealment actions (ADR-148)
+  hidingAction,
+  revealingAction,
   // Author/debug actions
   traceAction
 ];

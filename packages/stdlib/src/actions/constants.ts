@@ -89,6 +89,10 @@ export const IFActions = {
   KISSING: 'if.action.kissing',
   WAVING: 'if.action.waving',
 
+  // Concealment actions (ADR-148)
+  HIDING: 'if.action.hiding',
+  REVEALING: 'if.action.revealing',
+
   // Capability-dispatch actions (ADR-090)
   // These dispatch to trait behaviors instead of having fixed semantics
   LOWERING: 'if.action.lowering',
