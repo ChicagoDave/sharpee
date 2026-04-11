@@ -27,8 +27,8 @@ function makeEvent(
     timestamp: Date.now(),
     entities: {},
     data: {
-      ...(transactionId !== undefined ? { _transactionId: transactionId } : {}),
-      ...(chainDepth !== undefined ? { _chainDepth: chainDepth } : {}),
+      ...(transactionId === undefined ? {} : { _transactionId: transactionId }),
+      ...(chainDepth === undefined ? {} : { _chainDepth: chainDepth }),
       ...extra,
     },
   };

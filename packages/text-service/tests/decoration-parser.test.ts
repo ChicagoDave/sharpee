@@ -183,13 +183,13 @@ describe('parseDecorations', () => {
 
   describe('escape sequences', () => {
     it('should handle escaped asterisk', () => {
-      const result = parseDecorations('\\*not emphasis\\*');
+      const result = parseDecorations(String.raw`\*not emphasis\*`);
 
       expect(result).toEqual(['*not emphasis*']);
     });
 
     it('should handle escaped bracket', () => {
-      const result = parseDecorations('\\[not a decoration]');
+      const result = parseDecorations(String.raw`\[not a decoration]`);
 
       // Escaped opening bracket — treated as literal
       expect(result).toHaveLength(1);
@@ -198,9 +198,9 @@ describe('parseDecorations', () => {
     });
 
     it('should handle escaped backslash', () => {
-      const result = parseDecorations('a\\\\b');
+      const result = parseDecorations(String.raw`a\\b`);
 
-      expect(result).toEqual(['a\\b']);
+      expect(result).toEqual([String.raw`a\b`]);
     });
   });
 

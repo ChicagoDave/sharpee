@@ -35,9 +35,10 @@ export function makeProvider(
       if (!entry) return id; // echo key = "not found"
       if (typeof entry === 'function') return entry(params);
       // Naive param substitution: {key} → value
-      return entry.replace(/\{(\w+)\}/g, (_, k: string) =>
-        params?.[k] !== undefined ? String(params[k]) : '',
-      );
+      return entry.replace(/\{(\w+)\}/g, (_, k: string) => {
+        const val = params?.[k];
+        return val === undefined ? '' : String(val);
+      });
     },
   } as LanguageProvider;
 }

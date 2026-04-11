@@ -24,9 +24,10 @@ function makeProvider(
       const entry = map[id];
       if (!entry) return id;
       if (typeof entry === 'function') return entry(params);
-      return entry.replace(/\{(\w+)\}/g, (_, k: string) =>
-        params?.[k] !== undefined ? String(params[k]) : '',
-      );
+      return entry.replace(/\{(\w+)\}/g, (_, k: string) => {
+        const val = params?.[k];
+        return val === undefined ? '' : String(val);
+      });
     },
   } as LanguageProvider;
 }

@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import { resolve } from 'path'
 
 export default defineConfig({
   test: {
@@ -18,6 +19,14 @@ export default defineConfig({
         '**/__tests__/**',
         '**/*.test.ts'
       ]
+    }
+  },
+  resolve: {
+    alias: {
+      '@sharpee/core': resolve(__dirname, '../core/src'),
+      '@sharpee/if-domain': resolve(__dirname, '../if-domain/src'),
+      '@sharpee/if-services': resolve(__dirname, '../if-services/src'),
+      '@sharpee/text-blocks': resolve(__dirname, '../text-blocks/src'),
     }
   }
 })
