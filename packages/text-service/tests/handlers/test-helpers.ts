@@ -37,7 +37,9 @@ export function makeProvider(
       // Naive param substitution: {key} → value
       return entry.replace(/\{(\w+)\}/g, (_, k: string) => {
         const val = params?.[k];
-        return val === undefined ? '' : String(val);
+        if (val === undefined || val === null) return '';
+        if (typeof val === 'object') return JSON.stringify(val);
+        return String(val);
       });
     },
   } as LanguageProvider;
