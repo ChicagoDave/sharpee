@@ -11,7 +11,6 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rimraf dist",
-    "test": "vitest",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
