@@ -15,15 +15,7 @@
  */
 
 import { ConditionResult } from './types';
-
-// WorldModel interface (minimal subset needed)
-interface WorldModelLike {
-  getLocation(entityId: string): string | null;
-  getContents(containerId: string, options?: { includeWorn?: boolean }): any[];
-  getEntity(entityId: string): any | null;
-  findWhere(predicate: (entity: any) => boolean): any[];
-  getAllEntities(): any[];
-}
+import type { WorldModelLike } from './runner';
 
 /**
  * Find an entity by name (searches identity.name and aliases)
@@ -129,8 +121,6 @@ function isEntityAlive(entity: any): boolean {
   // Check for NPC trait with health/alive status
   const npcTrait = entity.get?.('npc') || entity.traits?.get?.('npc');
   if (npcTrait) {
-    // Check isDead flag
-    if ((entity as any).isDead === true) return false;
     if (npcTrait.isDead === true) return false;
     if (npcTrait.isAlive === false) return false;
     // Check health

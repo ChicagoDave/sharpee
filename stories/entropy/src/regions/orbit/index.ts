@@ -183,10 +183,8 @@ export function createOrbitRegion(world: WorldModel): void {
  * Connect orbit rooms.
  */
 export function connectOrbitRooms(world: WorldModel): void {
-  const w = world as any;
-
   // Above Battlefield → Orbit
-  w.connectRooms(OrbitRoomIds.ABOVE_BATTLEFIELD, OrbitRoomIds.ORBIT, Direction.UP);
+  world.connectRooms(OrbitRoomIds.ABOVE_BATTLEFIELD, OrbitRoomIds.ORBIT, Direction.UP);
 
   // Outside Ship → Airlock (gated by hull button)
   // TODO: Conditional — push button to open
@@ -195,5 +193,5 @@ export function connectOrbitRooms(world: WorldModel): void {
   // TODO: Conditional — inner hatch must be open
 
   // Inside Ship → Bridge
-  w.connectRooms(OrbitRoomIds.INSIDE_SHIP, OrbitRoomIds.BRIDGE, Direction.IN);
+  world.connectRooms(OrbitRoomIds.INSIDE_SHIP, OrbitRoomIds.BRIDGE, Direction.IN);
 }

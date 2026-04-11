@@ -11,14 +11,14 @@ import {
   ConstraintEvaluator,
 } from '../../src/conversation/constraint-evaluator';
 import { ResponseCandidate } from '../../src/conversation/response-types';
-import { CharacterModelTrait } from '@sharpee/world-model';
+import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeTrait(overrides?: Record<string, unknown>): CharacterModelTrait {
-  return new CharacterModelTrait(overrides as any);
+function makeTrait(overrides?: ICharacterModelData): CharacterModelTrait {
+  return new CharacterModelTrait(overrides);
 }
 
 function candidate(

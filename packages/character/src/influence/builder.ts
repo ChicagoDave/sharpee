@@ -33,7 +33,7 @@ import {
  *   .done()
  * ```
  */
-export class InfluenceBuilder<TParent> {
+export class InfluenceBuilder<TParent extends { compile(): unknown }> {
   private readonly _name: string;
   private readonly _parent: TParent;
   private readonly _finalize: (def: InfluenceDef) => void;
@@ -188,7 +188,7 @@ export class InfluenceBuilder<TParent> {
    */
   compile(): ReturnType<TParent extends { compile(): infer R } ? () => R : never> {
     const parent = this.done();
-    return (parent as any).compile();
+    return parent.compile() as ReturnType<TParent extends { compile(): infer R } ? () => R : never>;
   }
 
   /** @internal Build the InfluenceDef without finalizing. */

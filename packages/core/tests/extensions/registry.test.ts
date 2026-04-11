@@ -107,8 +107,7 @@ describe('ExtensionRegistry', () => {
 
     it('should allow same ID in different types', () => {
       registry.register(ExtensionType.COMMAND, makeExtension('shared'));
-      // Ability type also accepts ICommandExtension since it's a superset
-      registry.register(ExtensionType.ABILITY, makeExtension('shared') as any);
+      registry.register(ExtensionType.ABILITY, makeExtension('shared'));
 
       expect(registry.has(ExtensionType.COMMAND, 'shared')).toBe(true);
       expect(registry.has(ExtensionType.ABILITY, 'shared')).toBe(true);

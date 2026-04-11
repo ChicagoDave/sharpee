@@ -55,6 +55,9 @@ export interface ICombatantData {
 
   /** Experience points awarded when defeated */
   experienceValue?: number;
+
+  /** Whether this combatant is undead/spirit (affects blessed weapon bonus) */
+  isUndead?: boolean;
 }
 
 /**
@@ -85,6 +88,7 @@ export class CombatantTrait implements ITrait, ICombatantData {
   canRetaliate: boolean;
   dropsInventory: boolean;
   experienceValue: number;
+  isUndead: boolean;
 
   constructor(data: ICombatantData = {}) {
     // Set defaults and merge with provided data
@@ -105,6 +109,7 @@ export class CombatantTrait implements ITrait, ICombatantData {
     this.canRetaliate = data.canRetaliate ?? true;
     this.dropsInventory = data.dropsInventory ?? true;
     this.experienceValue = data.experienceValue ?? 0;
+    this.isUndead = data.isUndead ?? false;
   }
 
   /**

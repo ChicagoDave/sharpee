@@ -74,7 +74,7 @@ export const basicNpcResolver: NpcCombatResolver = (
   // Find NPC's weapon
   const npcInventory = world.getContents(npc.id);
   const weapon = findWieldedWeapon(npc, world) ||
-    npcInventory.find(item => (item as any).isWeapon);
+    npcInventory.find(item => item.has(TraitType.WEAPON));
 
   const combatResult = combatService.resolveAttack({
     attacker: npc,

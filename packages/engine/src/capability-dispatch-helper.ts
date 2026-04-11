@@ -258,7 +258,7 @@ export function executeCapabilityValidate(
     return { valid: true, data };
   }
 
-  // For all-must-pass: same logic as any-blocks (any failure = overall failure)
+  // For all-must-pass: same logic — one failure = overall failure
   if (resolution === 'all-must-pass') {
     for (const claim of claims) {
       const claimSharedData: CapabilitySharedData = {};

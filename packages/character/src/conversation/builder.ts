@@ -10,6 +10,7 @@
  * Owner context: @sharpee/character / conversation
  */
 
+import { Mood, DispositionWord } from '@sharpee/world-model';
 import { CharacterBuilder } from '../character-builder';
 import { TopicDef } from './topic-registry';
 import {
@@ -29,8 +30,8 @@ import {
 /** State mutations triggered by a response. */
 export interface ResponseStateMutation {
   threat?: number;
-  mood?: string;
-  disposition?: Record<string, string>;
+  mood?: Mood;
+  disposition?: Record<string, DispositionWord>;
 }
 
 /** Context settings attached to a response. */

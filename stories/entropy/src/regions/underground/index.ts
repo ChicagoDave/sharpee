@@ -180,16 +180,14 @@ export function createUndergroundRegion(world: WorldModel): void {
  * Connect underground rooms.
  */
 export function connectUndergroundRooms(world: WorldModel): void {
-  const w = world as any;
-
   // Deep Crater → Riverbed
-  w.connectRooms(UndergroundRoomIds.DEEP_CRATER, UndergroundRoomIds.RIVERBED, Direction.NORTHEAST);
+  world.connectRooms(UndergroundRoomIds.DEEP_CRATER, UndergroundRoomIds.RIVERBED, Direction.NORTHEAST);
 
   // Riverbed → Underground River
-  w.connectRooms(UndergroundRoomIds.RIVERBED, UndergroundRoomIds.UNDERGROUND_RIVER, Direction.NORTH);
+  world.connectRooms(UndergroundRoomIds.RIVERBED, UndergroundRoomIds.UNDERGROUND_RIVER, Direction.NORTH);
 
   // Riverbed → Geyser
-  w.connectRooms(UndergroundRoomIds.RIVERBED, UndergroundRoomIds.GEYSER, Direction.EAST);
+  world.connectRooms(UndergroundRoomIds.RIVERBED, UndergroundRoomIds.GEYSER, Direction.EAST);
 
   // Underground River → Enemy Bunker (gated by western wall door)
   // TODO: Conditional connection via western wall push/open

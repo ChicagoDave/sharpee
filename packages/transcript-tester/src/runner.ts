@@ -52,6 +52,21 @@ interface WorldModel {
   findByTrait?(traitType: string): any[];
   findPath?(fromRoomId: string, toRoomId: string): string[] | null;
   getPlayer?(): any;
+  toJSON?(): string;
+  loadJSON?(json: string): void;
+}
+
+/**
+ * Minimal subset of WorldModel needed by the condition evaluator and navigator.
+ */
+export interface WorldModelLike {
+  getLocation(entityId: string): string | null | undefined;
+  getContents(containerId: string, options?: { includeWorn?: boolean }): any[];
+  getEntity(entityId: string): any | null | undefined;
+  findWhere(predicate: (entity: any) => boolean): any[];
+  getAllEntities(): any[];
+  findByTrait(traitType: string): any[];
+  findPath(fromRoomId: string, toRoomId: string): string[] | null;
 }
 
 // Constants for directive execution
@@ -198,8 +213,8 @@ async function runSmartTranscript(
               console.log(`  [RETRY] Attempt ${retryBlock.retryCount}/${retryBlock.maxRetries} failed, restoring state...`);
             }
             // Restore world state
-            if (retryBlock.savedState && engine.world && (engine.world as any).loadJSON) {
-              (engine.world as any).loadJSON(retryBlock.savedState);
+            if (retryBlock.savedState && engine.world?.loadJSON) {
+              engine.world.loadJSON(retryBlock.savedState);
             }
             // Remove all results from this retry attempt
             results.splice(retryBlock.resultsStartIndex!);
@@ -234,15 +249,15 @@ async function runSmartTranscript(
       if (directive.type === 'ensures') {
         const retryBlock = findRetryBlock(blockStack);
         if (retryBlock && engine.world && directive.condition) {
-          const condResult = evaluateCondition(directive.condition, engine.world as any, playerId, lastOutput);
+          const condResult = evaluateCondition(directive.condition, engine.world as WorldModelLike, playerId, lastOutput);
           if (!condResult.met) {
             retryBlock.retryCount = (retryBlock.retryCount ?? 0) + 1;
             if (retryBlock.retryCount <= retryBlock.maxRetries!) {
               if (options.verbose) {
                 console.log(`  [RETRY] ENSURES failed (attempt ${retryBlock.retryCount}/${retryBlock.maxRetries}): ${directive.condition}`);
               }
-              if (retryBlock.savedState && (engine.world as any).loadJSON) {
-                (engine.world as any).loadJSON(retryBlock.savedState);
+              if (retryBlock.savedState && engine.world?.loadJSON) {
+                engine.world.loadJSON(retryBlock.savedState);
               }
               results.splice(retryBlock.resultsStartIndex!);
               while (blockStack.length > 0 && blockStack[blockStack.length - 1] !== retryBlock) {
@@ -394,7 +409,7 @@ async function handleDirective(
       let allRequiresMet = true;
       if (world) {
         for (const req of requires) {
-          const result = evaluateCondition(req, world as any, playerId, lastOutput);
+          const result = evaluateCondition(req, world as WorldModelLike, playerId, lastOutput);
           if (verbose) {
             console.log(`  [GOAL "${directive.goalName}"] REQUIRES: ${req} -> ${result.met ? 'OK' : 'FAILED'}`);
           }
@@ -438,7 +453,7 @@ async function handleDirective(
       // Check ENSURES postconditions
       if (world && block.ensures) {
         for (const ens of block.ensures) {
-          const result = evaluateCondition(ens, world as any, playerId, lastOutput);
+          const result = evaluateCondition(ens, world as WorldModelLike, playerId, lastOutput);
           if (verbose) {
             console.log(`  [END GOAL "${block.goalName}"] ENSURES: ${ens} -> ${result.met ? 'OK' : 'FAILED'}`);
           }
@@ -470,7 +485,7 @@ async function handleDirective(
 
       let conditionMet = true;
       if (world && directive.condition) {
-        const result = evaluateCondition(directive.condition, world as any, playerId, lastOutput);
+        const result = evaluateCondition(directive.condition, world as WorldModelLike, playerId, lastOutput);
         conditionMet = result.met;
         if (verbose) {
           console.log(`  [IF: ${directive.condition}] -> ${conditionMet ? 'TRUE' : 'FALSE'} (${result.reason})`);
@@ -503,7 +518,7 @@ async function handleDirective(
 
       let conditionMet = true;
       if (world && directive.condition) {
-        const result = evaluateCondition(directive.condition, world as any, playerId, lastOutput);
+        const result = evaluateCondition(directive.condition, world as WorldModelLike, playerId, lastOutput);
         conditionMet = result.met;
         if (verbose) {
           console.log(`  [WHILE: ${directive.condition}] -> ${conditionMet ? 'TRUE (entering loop)' : 'FALSE (skipping loop)'}`);
@@ -537,7 +552,7 @@ async function handleDirective(
       // Re-evaluate condition
       let conditionMet = false;
       if (world && block.condition) {
-        const result = evaluateCondition(block.condition, world as any, playerId, lastOutput);
+        const result = evaluateCondition(block.condition, world as WorldModelLike, playerId, lastOutput);
         conditionMet = result.met;
         if (verbose) {
           console.log(`  [END WHILE iteration ${block.iterations}] ${block.condition} -> ${conditionMet ? 'TRUE (continue)' : 'FALSE (exit loop)'}`);
@@ -563,8 +578,8 @@ async function handleDirective(
 
       // Snapshot world state in memory
       let savedState: string | undefined;
-      if (world && (world as any).toJSON) {
-        savedState = (world as any).toJSON();
+      if (world?.toJSON) {
+        savedState = world.toJSON();
       }
 
       if (verbose) {
@@ -667,7 +682,7 @@ async function handleDirective(
 
       const navResult = await executeNavigate(
         directive.target,
-        world as any,
+        world as WorldModelLike,
         engine,
         playerId,
         verbose
@@ -718,7 +733,7 @@ async function handleDirective(
         }
 
         // Serialize world state + plugin states in envelope
-        const worldState = (world as any).toJSON();
+        const worldState = world?.toJSON?.();
         const saveEnvelope: any = { worldState };
 
         // Save plugin states if engine exposes plugin registry
@@ -783,7 +798,7 @@ async function handleDirective(
         }
 
         // Restore world state
-        (world as any).loadJSON(worldState);
+        world?.loadJSON?.(worldState);
 
         // Restore plugin states if available
         if (pluginStates && engine.getPluginRegistry) {
@@ -916,7 +931,7 @@ async function handleEndDirective(
     case 'do':
       // Push inactive block to maintain proper nesting
       blockStack.push({
-        type: directive.type === 'goal' ? 'goal' : directive.type as any,
+        type: directive.type as BlockState['type'],
         startIndex: currentIndex,
         active: false,
         iterations: 0

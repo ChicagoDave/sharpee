@@ -56,7 +56,7 @@ async function runStory() {
     // Set the story and start the engine
     engine.setStory(story);
     engine.start();
-    console.log('Engine started, running:', (engine as any).running);
+    console.log('Engine started');
     
     // Listen for text output
     engine.on('text:output', (blocks, turn) => {
@@ -100,35 +100,29 @@ async function runStory() {
       'read message'     // Should show loss
     ];
 
-    // Add debug command handler
-    const originalExecuteTurn = engine.executeTurn.bind(engine);
-    (engine as any).executeTurn = async (command: string) => {
-      if (command === 'debug:location') {
-        const player = world.getPlayer();
-        const loc = player ? world.getLocation(player.id) : null;
-        const locEntity = loc ? world.getEntity(loc) : null;
-        const inventory = player ? world.getContents(player.id) : [];
-        console.log('\n=== DEBUG ===');
-        console.log('Player ID:', player?.id);
-        console.log('Location ID:', loc);
-        console.log('Location Name:', locEntity?.name);
-        console.log('Location Contents:', world.getContents(loc || '').map((e: any) => e.name));
-        console.log('Player Inventory:', inventory.map((e: any) => e.name));
-        // Check cloak location
-        const cloak = world.getAllEntities().find((e: any) => e.name === 'velvet cloak');
-        if (cloak) {
-          console.log('Cloak Location:', world.getLocation(cloak.id));
-        }
-        console.log('=============\n');
-        return { events: [], success: true, turn: 0, input: command } as TurnResult;
-      }
-      return originalExecuteTurn(command);
-    };
-    
     for (const command of commands) {
       console.log(`\n> ${command}`);
       try {
-        await engine.executeTurn(command);
+        if (command === 'debug:location') {
+          const player = world.getPlayer();
+          const loc = player ? world.getLocation(player.id) : null;
+          const locEntity = loc ? world.getEntity(loc) : null;
+          const inventory = player ? world.getContents(player.id) : [];
+          console.log('\n=== DEBUG ===');
+          console.log('Player ID:', player?.id);
+          console.log('Location ID:', loc);
+          console.log('Location Name:', locEntity?.name);
+          console.log('Location Contents:', world.getContents(loc || '').map((e: IFEntity) => e.name));
+          console.log('Player Inventory:', inventory.map((e: IFEntity) => e.name));
+          // Check cloak location
+          const cloak = world.getAllEntities().find((e: IFEntity) => e.name === 'velvet cloak');
+          if (cloak) {
+            console.log('Cloak Location:', world.getLocation(cloak.id));
+          }
+          console.log('=============\n');
+        } else {
+          await engine.executeTurn(command);
+        }
       } catch (error) {
         console.error(`Error executing command '${command}':`, error);
         // Continue with next command instead of crashing

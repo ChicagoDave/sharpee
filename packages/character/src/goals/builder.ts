@@ -37,7 +37,7 @@ import {
  *   .done()
  * ```
  */
-export class GoalBuilder<TParent> {
+export class GoalBuilder<TParent extends { compile(): unknown }> {
   private readonly _id: string;
   private readonly _parent: TParent;
   private readonly _finalize: (def: GoalDef) => void;
@@ -181,7 +181,7 @@ export class GoalBuilder<TParent> {
    */
   compile(): ReturnType<TParent extends { compile(): infer R } ? () => R : never> {
     const parent = this.done();
-    return (parent as any).compile();
+    return parent.compile() as ReturnType<TParent extends { compile(): infer R } ? () => R : never>;
   }
 
   /** @internal Build the GoalDef without finalizing. */

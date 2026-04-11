@@ -17,6 +17,8 @@ import { applyCharacter } from '../src/apply';
 import {
   CharacterModelTrait,
   ICharacterModelData,
+  IFEntity,
+  EntityType,
   MOOD_AXES,
   THREAT_VALUES,
   STABLE_COGNITIVE_PROFILE,
@@ -558,14 +560,7 @@ describe('applyCharacter', () => {
       .knows('murder', { witnessed: true })
       .compile();
 
-    const traits = new Map<string, unknown>();
-    const entity = {
-      id: 'margaret',
-      name: 'Margaret',
-      has: (type: string) => traits.has(type),
-      get: (type: string) => traits.get(type),
-      add: (trait: { type: string }) => { traits.set(trait.type, trait); return entity; },
-    } as any;
+    const entity = new IFEntity('margaret', EntityType.ACTOR);
 
     const { trait } = applyCharacter(entity, compiled);
 
@@ -573,7 +568,7 @@ describe('applyCharacter', () => {
     expect(trait.getPersonality('honest')).toBe(0.8);
     expect(trait.getMood()).toBe('nervous');
     expect(trait.knows('murder')).toBe(true);
-    expect(traits.has('characterModel')).toBe(true);
+    expect(entity.has('characterModel')).toBe(true);
   });
 
   it('should register custom predicates on the trait', () => {
@@ -581,14 +576,7 @@ describe('applyCharacter', () => {
       .definePredicate('test-pred', (t) => t.threatValue > 50)
       .compile();
 
-    const traits = new Map<string, unknown>();
-    const entity = {
-      id: 'npc',
-      name: 'NPC',
-      has: (type: string) => traits.has(type),
-      get: (type: string) => traits.get(type),
-      add: (trait: { type: string }) => { traits.set(trait.type, trait); return entity; },
-    } as any;
+    const entity = new IFEntity('npc', EntityType.ACTOR);
 
     const { trait } = applyCharacter(entity, compiled);
 

@@ -4,7 +4,7 @@
  * Trait for marking entities that can be inflated/deflated.
  * Used by the boat (dam region) and cloth bag (balloon in volcano region).
  *
- * Replaces the anti-pattern of (entity as any).isInflated = true/false.
+ * Replaces the anti-pattern of entity['isInflated'] = true/false.
  * This trait persists through checkpoint save/restore, unlike custom properties.
  *
  * ADR-118: This trait declares an interceptor for ENTERING to handle

@@ -5,7 +5,7 @@
  * The puzzle is an 8x8 grid where the player pushes sandstone walls.
  *
  * Replaces the anti-pattern of:
- * - (controller as any).puzzleState = state
+ * - controller['puzzleState'] = state
  *
  * This trait persists through checkpoint save/restore.
  */

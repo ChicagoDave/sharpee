@@ -5,7 +5,7 @@
  * Used in the Tiny Room key puzzle where the mat catches the falling key.
  *
  * Replaces the anti-pattern of:
- * - (mat as any).isUnderDoor = true
+ * - mat['isUnderDoor'] = true
  *
  * This trait persists through checkpoint save/restore.
  */

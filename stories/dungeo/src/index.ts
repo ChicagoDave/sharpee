@@ -195,7 +195,7 @@ export class DungeoStory implements Story {
   initializeWorld(world: WorldModel): void {
     this.world = world;
 
-    // Create system entity with story metadata (replaces (world as any) casts)
+    // Create system entity with story metadata (replaces ad-hoc world property casts)
     const storyInfoEntity = world.createEntity('story-info', EntityType.OBJECT);
     storyInfoEntity.add(new StoryInfoTrait({
       title: config.title,

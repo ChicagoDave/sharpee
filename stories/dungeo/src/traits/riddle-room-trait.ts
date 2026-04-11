@@ -5,7 +5,7 @@
  * Answering "well" opens the east exit to the Pearl Room.
  *
  * Replaces the anti-pattern of:
- * - (room as any).riddleSolved = true
+ * - room['riddleSolved'] = true
  *
  * This trait persists through checkpoint save/restore.
  */

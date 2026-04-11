@@ -9,19 +9,11 @@
 
 import { ConversationBuilder } from '../../src/conversation/builder';
 import { applyCharacter } from '../../src/apply';
-import { CharacterModelTrait } from '@sharpee/world-model';
+import { CharacterModelTrait, IFEntity, EntityType } from '@sharpee/world-model';
 
-/** Minimal entity stub for testing. */
-function createStubEntity(id: string) {
-  const traits = new Map<string, unknown>();
-  return {
-    id,
-    name: id,
-    has: (type: string) => traits.has(type),
-    get: (type: string) => traits.get(type),
-    add: (trait: { type: string }) => { traits.set(trait.type, trait); return this; },
-    _traits: traits,
-  } as any;
+/** Create a minimal entity for testing. */
+function createStubEntity(id: string): IFEntity {
+  return new IFEntity(id, EntityType.ACTOR);
 }
 
 describe('Phase 6 round-trip: builder → compile → apply', () => {

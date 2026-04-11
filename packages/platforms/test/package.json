@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",

@@ -16,22 +16,11 @@
 import { ConversationBuilder } from '../../src/conversation/builder';
 import { applyCharacter } from '../../src/apply';
 import { CharacterPhaseRegistry } from '../../src/tick-phases';
-import { CharacterModelTrait } from '@sharpee/world-model';
+import { CharacterModelTrait, IFEntity, EntityType } from '@sharpee/world-model';
 
-/** Minimal entity stub with traits. */
-function createStubEntity(id: string, name: string) {
-  const traits = new Map<string, unknown>();
-  return {
-    id,
-    name,
-    has: (type: string) => traits.has(type),
-    get: (type: string) => traits.get(type),
-    add: (trait: { type: string }) => {
-      traits.set(trait.type, trait);
-      return createStubEntity(id, name);
-    },
-    _traits: traits,
-  } as any;
+/** Create a minimal entity for testing. */
+function createStubEntity(id: string, _name: string): IFEntity {
+  return new IFEntity(id, EntityType.ACTOR);
 }
 
 describe('Integration: 3-NPC mystery fragment', () => {

@@ -161,12 +161,8 @@ export class CombatService implements ICombatService {
     let totalDamage = baseDamage + weaponDamage;
 
     // Blessed weapon bonus against undead (if applicable)
-    if (weaponTrait?.isBlessed) {
-      // Check if target is undead (story would define this trait)
-      const targetIdentity = target.get(TraitType.IDENTITY) as any;
-      if (targetIdentity?.isUndead) {
-        totalDamage = Math.floor(totalDamage * 1.5);
-      }
+    if (weaponTrait?.isBlessed && targetCombat?.isUndead) {
+      totalDamage = Math.floor(totalDamage * 1.5);
     }
 
     // Apply armor reduction

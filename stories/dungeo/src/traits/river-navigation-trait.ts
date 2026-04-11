@@ -5,10 +5,10 @@
  * Used by the Frigid River region for boat navigation mechanics.
  *
  * Replaces the anti-patterns:
- * - (room as any).isWaterRoom = true
- * - (room as any).canLaunchBoat = true
- * - (room as any).isRainbowRoom = true
- * - (room as any).launchDestination = id
+ * - room['isWaterRoom'] = true
+ * - room['canLaunchBoat'] = true
+ * - room['isRainbowRoom'] = true
+ * - room['launchDestination'] = id
  *
  * This trait persists through checkpoint save/restore, unlike custom properties.
  */

@@ -2,6 +2,7 @@ import type {
   GameEngine,
   PlatformEvent
 } from '@sharpee/sharpee';
+import { TraitType, StoryInfoTrait } from '@sharpee/sharpee';
 import type { ISemanticEvent } from '@sharpee/core';
 import { VERSION_INFO } from './version.js';
 import { 
@@ -208,13 +209,10 @@ export class BrowserPlatform {
     // Set client version on StoryInfoTrait for banner display
     const world = this.engine.getWorld();
     if (world) {
-      const storyInfoEntities = world.findByTrait('storyInfo' as any);
-      const trait = storyInfoEntities[0]?.get<any>('storyInfo');
+      const storyInfoEntities = world.findByTrait(TraitType.STORY_INFO);
+      const trait = storyInfoEntities[0]?.get<StoryInfoTrait>(TraitType.STORY_INFO);
       if (trait) {
         trait.clientVersion = VERSION_INFO.version;
-      } else {
-        // Fallback for stories that don't use StoryInfoTrait yet
-        (world as any).clientVersion = VERSION_INFO.version;
       }
     }
 
