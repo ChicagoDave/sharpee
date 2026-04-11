@@ -1,19 +1,21 @@
 /**
- * Shared test helpers for handler tests
+ * Shared test helpers for text-service tests
  *
  * Provides minimal event and LanguageProvider factories.
  */
 
 import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider } from '@sharpee/if-domain';
-import type { HandlerContext } from '../../src/handlers/types.js';
+import type { HandlerContext } from '../src/handlers/types.js';
+
+let eventCounter = 0;
 
 /**
- * Create a minimal event for handler testing
+ * Create a minimal event for testing
  */
 export function makeEvent(type: string, data?: unknown): ISemanticEvent {
   return {
-    id: `evt-${type}`,
+    id: `evt-${type}-${++eventCounter}`,
     type,
     timestamp: Date.now(),
     entities: {},

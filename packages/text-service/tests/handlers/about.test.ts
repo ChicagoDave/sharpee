@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { handleAboutDisplayed } from '../../src/handlers/about.js';
-import { makeEvent, makeProvider, makeContext } from './test-helpers.js';
+import { makeEvent, makeProvider, makeContext } from '../test-helpers.js';
 
 describe('handleAboutDisplayed', () => {
   it('should resolve banner template with story params', () => {

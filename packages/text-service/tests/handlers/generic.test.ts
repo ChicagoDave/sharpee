@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { handleGameMessage, handleGenericEvent } from '../../src/handlers/generic.js';
-import { makeEvent, makeProvider, makeContext } from './test-helpers.js';
+import { makeEvent, makeProvider, makeContext } from '../test-helpers.js';
 
 describe('handleGameMessage', () => {
   it('should resolve messageId through language provider', () => {

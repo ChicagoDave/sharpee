@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { handleHelpDisplayed } from '../../src/handlers/help.js';
-import { makeEvent, makeContext } from './test-helpers.js';
+import { makeEvent, makeContext } from '../test-helpers.js';
 
 describe('handleHelpDisplayed', () => {
   it('should return exactly one help.text block', () => {

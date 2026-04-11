@@ -9,44 +9,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { TextService, createTextService } from '../src/text-service.js';
-import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider } from '@sharpee/if-domain';
-
-/**
- * Create a stub LanguageProvider for integration tests
- */
-function makeProvider(
-  map: Record<string, string | ((params?: Record<string, unknown>) => string)>,
-): LanguageProvider {
-  return {
-    languageCode: 'en-us',
-    getMessage(id: string, params?: Record<string, unknown>): string {
-      const entry = map[id];
-      if (!entry) return id;
-      if (typeof entry === 'function') return entry(params);
-      return entry.replace(/\{(\w+)\}/g, (_, k: string) => {
-        const val = params?.[k];
-        if (val === undefined || val === null) return '';
-        if (typeof val === 'string') return val;
-        if (typeof val === 'number' || typeof val === 'boolean') return val.toString();
-        return JSON.stringify(val);
-      });
-    },
-  } as LanguageProvider;
-}
-
-let eventCounter = 0;
-
-/** Create a minimal event */
-function makeEvent(type: string, data?: unknown): ISemanticEvent {
-  return {
-    id: `evt-${type}-${++eventCounter}`,
-    type,
-    timestamp: Date.now(),
-    entities: {},
-    data,
-  };
-}
+import { makeEvent, makeProvider } from './test-helpers.js';
 
 describe('TextService.processTurn (full pipeline)', () => {
   it('should return empty array for empty input', () => {

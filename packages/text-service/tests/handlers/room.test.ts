@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { handleRoomDescription } from '../../src/handlers/room.js';
-import { makeEvent, makeProvider, makeContext } from './test-helpers.js';
+import { makeEvent, makeProvider, makeContext } from '../test-helpers.js';
 
 describe('handleRoomDescription', () => {
   describe('non-verbose mode', () => {

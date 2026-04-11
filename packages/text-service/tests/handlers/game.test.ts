@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { handleGameStarted } from '../../src/handlers/game.js';
-import { makeEvent, makeProvider, makeContext } from './test-helpers.js';
+import { makeEvent, makeProvider, makeContext } from '../test-helpers.js';
 
 describe('handleGameStarted', () => {
   it('should produce a banner block from language provider template', () => {
