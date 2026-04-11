@@ -5,7 +5,7 @@
  * Used for the well puzzle and watering the hot peppers.
  *
  * Replaces the anti-pattern of:
- * - (bucket as any).hasWater = true
+ * - bucket['hasWater'] = true
  *
  * This trait persists through checkpoint save/restore.
  */

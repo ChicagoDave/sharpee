@@ -4,7 +4,7 @@
  * Trait for tracking the hot air balloon's state in the volcano region.
  * Used by the balloon entity to persist state through checkpoint save/restore.
  *
- * Replaces the anti-pattern of (balloon as any).balloonState = {...}.
+ * Replaces the anti-pattern of balloon['balloonState'] = {...}.
  * This trait persists through checkpoint save/restore, unlike custom properties.
  */
 

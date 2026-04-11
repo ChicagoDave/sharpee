@@ -5,7 +5,7 @@
  * The exorcism ritual clears the spirits and opens the passage.
  *
  * Replaces the anti-pattern of:
- * - (room as any).spiritsBlocking = true
+ * - room['spiritsBlocking'] = true
  *
  * This trait persists through checkpoint save/restore.
  */

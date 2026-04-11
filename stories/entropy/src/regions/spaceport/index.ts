@@ -91,8 +91,6 @@ export function createSpaceportRegion(world: WorldModel): void {
  * Connect spaceport rooms.
  */
 export function connectSpaceportRooms(world: WorldModel): void {
-  const w = world as any;
-
   // Spaceport → Main Cabin (enter Caledonia)
-  w.connectRooms(SpaceportRoomIds.SPACEPORT, SpaceportRoomIds.MAIN_CABIN, Direction.IN);
+  world.connectRooms(SpaceportRoomIds.SPACEPORT, SpaceportRoomIds.MAIN_CABIN, Direction.IN);
 }

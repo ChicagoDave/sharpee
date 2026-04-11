@@ -85,10 +85,12 @@ describe('Parser Performance', () => {
     const longInput = 'take the incredibly shiny and remarkably well-preserved ancient golden sword of legendary power';
     
     bench('tokenize long input', () => {
+      // as any: justified — benchmarking private tokenizeRich() for perf regression detection
       (parser as any).tokenizeRich(longInput);
     });
-    
+
     bench('tokenize with many prepositions', () => {
+      // as any: justified — benchmarking private tokenizeRich() for perf regression detection
       (parser as any).tokenizeRich('look at the box on the table under the window behind the curtain');
     });
   });
@@ -129,7 +131,7 @@ describe('Parser Performance', () => {
     });
     
     bench('lookup with part of speech filter', () => {
-      vocabularyRegistry.lookup('on', 'preposition' as any);
+      vocabularyRegistry.lookup('on', 'preposition');
     });
     
     bench('check word existence', () => {

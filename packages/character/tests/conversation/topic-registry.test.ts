@@ -7,14 +7,14 @@
 
 import { describe, it, expect } from 'vitest';
 import { TopicRegistry, TopicDef } from '../../src/conversation/topic-registry';
-import { CharacterModelTrait } from '@sharpee/world-model';
+import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeTrait(overrides?: Record<string, unknown>): CharacterModelTrait {
-  return new CharacterModelTrait(overrides as any);
+function makeTrait(overrides?: ICharacterModelData): CharacterModelTrait {
+  return new CharacterModelTrait(overrides);
 }
 
 function makeTraitWithKnowledge(topics: string[]): CharacterModelTrait {

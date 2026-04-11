@@ -1,8 +1,19 @@
+/**
+ * Test platform for Sharpee engine.
+ *
+ * Provides a minimal platform that captures text output, semantic events,
+ * and query interactions for use in integration tests.
+ *
+ * Public interface: TestPlatformOptions, createTestEngine, TestPlatform.
+ * Owner context: @sharpee/test-platform
+ */
+
 import { GameEngine } from '@sharpee/engine';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { Story } from '@sharpee/engine';
+import { PlatformEventType } from '@sharpee/core';
 
 export interface TestPlatformOptions {
   story?: Story;
@@ -34,68 +45,53 @@ export function createTestEngine(options: TestPlatformOptions): GameEngine {
   return engine;
 }
 
+/**
+ * Test platform that captures engine output for assertions.
+ *
+ * Subscribes to the engine's public event API to collect text output,
+ * platform events, and query interactions.
+ */
 export class TestPlatform {
   public output: string[] = [];
-  public queries: Array<{ prompt: string; response?: string }> = [];
-  public events: Array<{ event: string; data: any }> = [];
+  public events: Array<{ event: string; data: Record<string, unknown> }> = [];
 
   constructor(private engine: GameEngine) {
     this.initialize();
   }
 
   private initialize(): void {
-    (this.engine as any).events.on('output', (data: any) => {
-      this.output.push(data.text);
-    });
-
-    (this.engine as any).events.on('text.output', (data: any) => {
-      this.output.push(data.text);
-    });
-
-    (this.engine as any).events.on('client.query', (data: any) => {
-      const query = { prompt: data.prompt };
-      this.queries.push(query);
-
-      if (data.autoResponse) {
-        (this.engine as any).events.emit('client.queryResponse', {
-          queryId: data.queryId,
-          response: data.autoResponse,
-        });
+    // Capture text output via the public text:output event
+    this.engine.on('text:output', (blocks) => {
+      const text = blocks.map(b => {
+        if (!b.content) return '';
+        return b.content.map(c => typeof c === 'string' ? c : c.text ?? '').join('');
+      }).join('\n');
+      if (text) {
+        this.output.push(text);
       }
     });
 
-    (this.engine as any).events.on('platform.quit', () => {
-      this.events.push({ event: 'platform.quit', data: {} });
+    // Capture platform events via the public event channel
+    this.engine.on('event', (event) => {
+      switch (event.type) {
+        case PlatformEventType.QUIT_REQUESTED:
+          this.events.push({ event: 'platform.quit', data: {} });
+          break;
+        case PlatformEventType.SAVE_REQUESTED:
+          this.events.push({ event: 'platform.save', data: event.data ?? {} });
+          break;
+        case PlatformEventType.RESTORE_REQUESTED:
+          this.events.push({ event: 'platform.restore', data: event.data ?? {} });
+          break;
+        case PlatformEventType.RESTART_REQUESTED:
+          this.events.push({ event: 'platform.restart', data: {} });
+          break;
+      }
     });
-
-    (this.engine as any).events.on('platform.save', (data: any) => {
-      this.events.push({ event: 'platform.save', data });
-    });
-
-    (this.engine as any).events.on('platform.restore', (data: any) => {
-      this.events.push({ event: 'platform.restore', data });
-    });
-
-    (this.engine as any).events.on('platform.restart', () => {
-      this.events.push({ event: 'platform.restart', data: {} });
-    });
-  }
-
-  respondToQuery(response: string, queryIndex: number = -1): void {
-    const index = queryIndex < 0 ? this.queries.length + queryIndex : queryIndex;
-    const query = this.queries[index];
-    if (query) {
-      query.response = response;
-      (this.engine as any).events.emit('client.queryResponse', {
-        queryId: `test-query-${index}`,
-        response,
-      });
-    }
   }
 
   clear(): void {
     this.output = [];
-    this.queries = [];
     this.events = [];
   }
 }

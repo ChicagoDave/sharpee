@@ -110,7 +110,7 @@ describe('YourAction', () => {
       // For location changes:
       // expect(world.getLocation(item.id)).toBe(room.id);
       // For property changes:
-      // const traitBefore = item.get(TraitType.SOME_TRAIT) as any;
+      // const traitBefore = item.get(TraitType.SOME_TRAIT);
       // expect(traitBefore.someProperty).toBe(initialValue);
 
       const command = createCommand(IFActions.YOUR_ACTION, {

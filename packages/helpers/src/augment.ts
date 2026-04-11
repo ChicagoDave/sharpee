@@ -22,7 +22,9 @@ declare module '@sharpee/world-model' {
   }
 }
 
-// Patch WorldModel.prototype at import time
+// as any: justified — prototype augmentation via declaration merging (type safety
+// is provided by the declare module block above; TypeScript does not allow direct
+// assignment to class prototypes even after declaration merge)
 (WorldModel.prototype as any).helpers = function (this: WorldModel): EntityHelpers {
   return createHelpers(this as unknown as import('@sharpee/world-model').IWorldModel);
 };

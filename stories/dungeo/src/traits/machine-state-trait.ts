@@ -5,7 +5,7 @@
  * The machine can only be used once to convert coal to diamond.
  *
  * Replaces the anti-pattern of:
- * - (machine as any).machineActivated = true
+ * - machine['machineActivated'] = true
  *
  * This trait persists through checkpoint save/restore.
  */

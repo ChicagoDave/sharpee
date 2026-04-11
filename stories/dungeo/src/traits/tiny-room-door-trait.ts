@@ -11,12 +11,12 @@
  * 4. UNLOCK DOOR WITH KEY - standard unlock
  *
  * Replaces the anti-pattern of:
- * - (door as any).keyInLock = true
- * - (door as any).matUnderDoor = false
- * - (door as any).keyOnMat = false
- * - (door as any).isTinyRoomDoor = true
- * - (door as any).connectsRooms = [...]
- * - (door as any).blocksDirection = {...}
+ * - door['keyInLock'] = true
+ * - door['matUnderDoor'] = false
+ * - door['keyOnMat'] = false
+ * - door['isTinyRoomDoor'] = true
+ * - door['connectsRooms'] = [...]
+ * - door['blocksDirection'] = {...}
  *
  * This trait persists through checkpoint save/restore.
  */

@@ -13,7 +13,9 @@ export {
 
 export {
   type WorldModel,
-  type IFEntity
+  type IFEntity,
+  TraitType,
+  StoryInfoTrait
 } from '@sharpee/world-model';
 
 // Query system and platform events from core

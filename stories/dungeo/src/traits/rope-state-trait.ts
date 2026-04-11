@@ -5,7 +5,7 @@
  * Required for climbing down to the Torch Room.
  *
  * Replaces the anti-pattern of:
- * - (room as any).ropeAttached = true
+ * - room['ropeAttached'] = true
  *
  * This trait persists through checkpoint save/restore.
  */

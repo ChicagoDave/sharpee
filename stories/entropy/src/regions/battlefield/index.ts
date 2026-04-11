@@ -147,18 +147,16 @@ export function createBattlefieldRegion(world: WorldModel): void {
  * Connect battlefield rooms to each other and to adjacent regions.
  */
 export function connectBattlefieldRooms(world: WorldModel): void {
-  const w = world as any;
-
   // Lost Battlefield connections
-  w.connectRooms(BattlefieldRoomIds.LOST_BATTLEFIELD, BattlefieldRoomIds.EDGE_OF_CITY, Direction.NORTH);
-  w.connectRooms(BattlefieldRoomIds.LOST_BATTLEFIELD, BattlefieldRoomIds.SMOKING_FOREST, Direction.WEST);
+  world.connectRooms(BattlefieldRoomIds.LOST_BATTLEFIELD, BattlefieldRoomIds.EDGE_OF_CITY, Direction.NORTH);
+  world.connectRooms(BattlefieldRoomIds.LOST_BATTLEFIELD, BattlefieldRoomIds.SMOKING_FOREST, Direction.WEST);
 
   // Lost Battlefield → Deep Crater (underground region)
-  w.connectRooms(BattlefieldRoomIds.LOST_BATTLEFIELD, 'deep-crater', Direction.EAST);
+  world.connectRooms(BattlefieldRoomIds.LOST_BATTLEFIELD, 'deep-crater', Direction.EAST);
 
   // Smoking Forest → Scorched Fields
-  w.connectRooms(BattlefieldRoomIds.SMOKING_FOREST, BattlefieldRoomIds.SCORCHED_FIELDS, Direction.WEST);
+  world.connectRooms(BattlefieldRoomIds.SMOKING_FOREST, BattlefieldRoomIds.SCORCHED_FIELDS, Direction.WEST);
 
   // Scorched Fields → Spaceport (spaceport region)
-  w.connectRooms(BattlefieldRoomIds.SCORCHED_FIELDS, 'spaceport', Direction.NORTHWEST);
+  world.connectRooms(BattlefieldRoomIds.SCORCHED_FIELDS, 'spaceport', Direction.NORTHWEST);
 }

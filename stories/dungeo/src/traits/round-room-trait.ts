@@ -5,7 +5,7 @@
  * When not fixed, exits are randomized. The robot can fix it.
  *
  * Replaces the anti-pattern of:
- * - (room as any).isFixed = false
+ * - room['isFixed'] = false
  *
  * This trait persists through checkpoint save/restore.
  */

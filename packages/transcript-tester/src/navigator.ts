@@ -7,15 +7,7 @@
  */
 
 import { NavigateResult } from './types';
-
-// WorldModel interface (minimal subset needed for navigation)
-interface WorldModelLike {
-  getLocation(entityId: string): string | undefined;
-  getEntity(entityId: string): any | undefined;
-  findByTrait(traitType: string): any[];
-  findWhere(predicate: (entity: any) => boolean): any[];
-  findPath(fromRoomId: string, toRoomId: string): string[] | null;
-}
+import type { WorldModelLike } from './runner';
 
 // GameEngine interface for command execution
 interface GameEngineLike {
@@ -57,7 +49,7 @@ function calculateRoomDistance(
       if (typeof exitInfo === 'string') {
         dest = exitInfo;
       } else if (typeof exitInfo === 'object') {
-        dest = (exitInfo as any).destination;
+        dest = (exitInfo as { destination?: string }).destination;
       }
 
       if (!dest) continue;
@@ -136,7 +128,7 @@ function getDirectionToRoom(
     if (typeof exitInfo === 'string') {
       destination = exitInfo;
     } else if (typeof exitInfo === 'object') {
-      destination = (exitInfo as any).destination;
+      destination = (exitInfo as { destination?: string }).destination;
     }
 
     if (destination === toRoomId) {
@@ -273,7 +265,7 @@ export async function executeNavigate(
       if (typeof exitInfo === 'string') {
         dest = exitInfo;
       } else if (typeof exitInfo === 'object') {
-        dest = (exitInfo as any).destination;
+        dest = (exitInfo as { destination?: string }).destination;
       }
 
       if (!dest) continue;

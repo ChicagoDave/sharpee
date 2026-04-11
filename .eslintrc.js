@@ -15,7 +15,7 @@ module.exports = {
       files: ['packages/*/src/**/*.ts'],
       excludedFiles: ['**/*.test.ts', '**/*.spec.ts'],
       rules: {
-        '@typescript-eslint/no-explicit-any': 'warn'
+        '@typescript-eslint/no-explicit-any': 'error'
       }
     }
   ]

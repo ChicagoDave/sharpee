@@ -10,14 +10,14 @@ import { GoalManager } from '../../src/goals/goal-activation';
 import { evaluateGoalStep, GoalStepContext } from '../../src/goals/step-evaluator';
 import { findNextRoom, SimpleRoomGraph } from '../../src/goals/pathfinding';
 import { GoalDef, ActiveGoal, MovementProfile } from '../../src/goals/goal-types';
-import { CharacterModelTrait } from '@sharpee/world-model';
+import { CharacterModelTrait, ICharacterModelData } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeTrait(overrides?: Record<string, unknown>): CharacterModelTrait {
-  return new CharacterModelTrait(overrides as any);
+function makeTrait(overrides?: ICharacterModelData): CharacterModelTrait {
+  return new CharacterModelTrait(overrides);
 }
 
 function makeStepContext(overrides?: Partial<GoalStepContext>): GoalStepContext {

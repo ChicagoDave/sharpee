@@ -12,14 +12,14 @@ import {
   applyCognitiveColoring,
 } from '../../src/conversation/acl';
 import { ResponseCandidate, ResponseIntent } from '../../src/conversation/response-types';
-import { CharacterModelTrait, STABLE_COGNITIVE_PROFILE } from '@sharpee/world-model';
+import { CharacterModelTrait, ICharacterModelData, STABLE_COGNITIVE_PROFILE } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeTrait(overrides?: Record<string, unknown>): CharacterModelTrait {
-  return new CharacterModelTrait(overrides as any);
+function makeTrait(overrides?: ICharacterModelData): CharacterModelTrait {
+  return new CharacterModelTrait(overrides);
 }
 
 function makeCandidate(overrides?: Partial<ResponseCandidate>): ResponseCandidate {

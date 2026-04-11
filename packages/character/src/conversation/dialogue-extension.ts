@@ -375,11 +375,11 @@ export class CharacterModelDialogue implements DialogueExtension {
       trait.adjustThreat(mutations.threat);
     }
     if (mutations.mood !== undefined) {
-      trait.setMood(mutations.mood as any);
+      trait.setMood(mutations.mood);
     }
     if (mutations.disposition) {
       for (const [entityId, word] of Object.entries(mutations.disposition)) {
-        trait.setDisposition(entityId, word as any);
+        trait.setDisposition(entityId, word);
       }
     }
   }

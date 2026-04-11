@@ -5,8 +5,8 @@
  * The key starts hidden (in the lock on the other side of the door).
  *
  * Replaces the anti-pattern of:
- * - (key as any).isHidden = true
- * - (key as any).isTinyRoomKey = true
+ * - key['isHidden'] = true
+ * - key['isTinyRoomKey'] = true
  *
  * This trait persists through checkpoint save/restore.
  */

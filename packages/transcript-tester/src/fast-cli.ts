@@ -422,7 +422,7 @@ async function main(): Promise<void> {
 
       console.log(`Restoring from: ${savePath}`);
       const worldState = fs.readFileSync(savePath, 'utf-8');
-      (game.world as any).loadJSON(worldState);
+      game.world.loadJSON(worldState);
       console.log(`Restored save: ${options.restore}`);
     }
 

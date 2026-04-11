@@ -5,7 +5,7 @@
  * Burning incense in the basin disarms its trap temporarily.
  *
  * Replaces the anti-pattern of:
- * - (room as any).basinState = 'disarmed'
+ * - room['basinState'] = 'disarmed'
  *
  * This trait persists through checkpoint save/restore.
  */

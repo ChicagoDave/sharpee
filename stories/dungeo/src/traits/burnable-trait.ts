@@ -4,7 +4,7 @@
  * Trait for marking entities that can be burned/set on fire.
  * Used by incense, guidebook, newspaper, and other flammable items.
  *
- * Replaces the anti-pattern of (entity as any).isBurning = true/false.
+ * Replaces the anti-pattern of entity['isBurning'] = true/false.
  * This trait persists through checkpoint save/restore, unlike custom properties.
  *
  * Different burnable types:
