@@ -27,8 +27,9 @@ function makeProvider(
       return entry.replace(/\{(\w+)\}/g, (_, k: string) => {
         const val = params?.[k];
         if (val === undefined || val === null) return '';
-        if (typeof val === 'object') return JSON.stringify(val);
-        return String(val);
+        if (typeof val === 'string') return val;
+        if (typeof val === 'number' || typeof val === 'boolean') return val.toString();
+        return JSON.stringify(val);
       });
     },
   } as LanguageProvider;
