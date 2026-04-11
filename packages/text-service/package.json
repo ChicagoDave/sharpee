@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "test": "vitest",
     "lint": "eslint src --ext .ts",
     "clean": "rimraf dist",
     "build:npm": "tsc --outDir dist"
