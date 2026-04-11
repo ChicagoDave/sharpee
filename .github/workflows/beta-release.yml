@@ -53,14 +53,22 @@ jobs:
         pnpm --filter '@sharpee/sharpee' run build
         pnpm --filter '@sharpee/transcript-tester' run build
 
+    - name: Typecheck
+      run: pnpm --filter '@sharpee/sharpee' exec tsc --noEmit
+
     - name: Run tests
       run: |
         pnpm --filter '@sharpee/core' test
         pnpm --filter '@sharpee/world-model' test
+        pnpm --filter '@sharpee/event-processor' test
         pnpm --filter '@sharpee/parser-en-us' test
+        pnpm --filter '@sharpee/lang-en-us' test
+        pnpm --filter '@sharpee/if-services' test
+        pnpm --filter '@sharpee/text-service' test
         pnpm --filter '@sharpee/stdlib' test
         pnpm --filter '@sharpee/character' test
         pnpm --filter '@sharpee/engine' test
+        pnpm --filter '@sharpee/transcript-tester' test
 
     - name: Create release artifacts
       run: |
