@@ -1,11 +1,12 @@
 /**
  * Shared test helpers for text-service tests
  *
- * Provides minimal event and LanguageProvider factories.
+ * Provides minimal event, block, and LanguageProvider factories.
  */
 
 import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider } from '@sharpee/if-domain';
+import type { ITextBlock } from '@sharpee/text-blocks';
 import type { HandlerContext } from '../src/handlers/types.js';
 
 let eventCounter = 0;
@@ -46,6 +47,23 @@ export function makeProvider(
       });
     },
   } as LanguageProvider;
+}
+
+/**
+ * Create a plain text block
+ */
+export function makeBlock(key: string, text: string): ITextBlock {
+  return { key, content: [text] };
+}
+
+/**
+ * Create a block with decoration objects
+ */
+export function makeDecoratedBlock(
+  key: string,
+  parts: Array<string | { type: string; content: string[] }>,
+): ITextBlock {
+  return { key, content: parts };
 }
 
 /**
