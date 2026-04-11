@@ -1,4 +1,9 @@
-# Platform Known Issues (List 04)
+# Platform Known Issues (List 04) — CLOSED
+
+> **This list is closed.** Open issues have been migrated to
+> [GitHub Issues](https://github.com/ChicagoDave/sharpee/issues) as of 2026-04-11.
+> New issues should be filed on GitHub. This file is retained as historical record
+> for fixed issues and root cause analysis.
 
 Catalog of known platform bugs and issues to be addressed.
 Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
@@ -9,6 +14,24 @@ Continued from [issues-list-03.md](issues-list-03.md) (closed 2026-02-16).
 **Numbering note**: Issues 031-056 were assigned in lists 01-03. This list
 starts new issues at 057. Carried-over issues from list-03 keep their
 original numbers.
+
+## Migration Map (local → GitHub)
+
+| Local | GitHub | Title |
+|-------|--------|-------|
+| ISSUE-059 | [#77](https://github.com/ChicagoDave/sharpee/issues/77) | Transcript tester: story: header field is metadata-only |
+| ISSUE-060 | [#78](https://github.com/ChicagoDave/sharpee/issues/78) | Transcript tester: no 'execute but don't assert' assertion type |
+| ISSUE-062 | [#79](https://github.com/ChicagoDave/sharpee/issues/79) | Fuse skipNextTick behavior undocumented |
+| ISSUE-066 | [#80](https://github.com/ChicagoDave/sharpee/issues/80) | Grammar: entering/exiting pattern explosion |
+| ISSUE-067 | [#81](https://github.com/ChicagoDave/sharpee/issues/81) | Grammar: trace commands as 10 literal patterns |
+| ISSUE-069 | [#82](https://github.com/ChicagoDave/sharpee/issues/82) | getStateValue/setStateValue code smell |
+| ISSUE-070 | [#83](https://github.com/ChicagoDave/sharpee/issues/83) | Computed entity descriptions |
+| ISSUE-071 | [#84](https://github.com/ChicagoDave/sharpee/issues/84) | Family Zoo tutorial transcript tests |
+| ISSUE-072 | [#85](https://github.com/ChicagoDave/sharpee/issues/85) | as-any cast regression |
+| ISSUE-073 | [#86](https://github.com/ChicagoDave/sharpee/issues/86) | TODO/FIXME triage |
+| (new) | [#87](https://github.com/ChicagoDave/sharpee/issues/87) | Connected door handling missing |
+| (new) | [#88](https://github.com/ChicagoDave/sharpee/issues/88) | unblock/block/schedule effects unimplemented |
+| (new) | [#89](https://github.com/ChicagoDave/sharpee/issues/89) | Parser property constraints not handled |
 
 ## Summary
 
@@ -21,6 +44,8 @@ original numbers.
 | ISSUE-057 | Multi-word aliases don't resolve in the parser | Medium | parser-en-us, stdlib | 2026-03-23 | 2026-03-26 |
 | ISSUE-058 | ~~Entity creation is excessively repetitive — needs builder/helper API~~ | Low | world-model | 2026-03-23 | **DONE** 2026-04-03 (ADR-140, @sharpee/helpers) |
 | ISSUE-071 | Family Zoo tutorial has no transcript tests | High | tutorials | 2026-04-03 | - |
+| ISSUE-072 | `as any` cast regression — 66 casts reintroduced since ISSUE-063 cleanup | Medium | platform-wide | 2026-04-11 | - |
+| ISSUE-073 | 47 TODO/FIXME/HACK markers need triage | Low | platform-wide | 2026-04-11 | - |
 | ISSUE-059 | Transcript tester `story:` header field is metadata-only | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-060 | No "execute but don't assert" transcript assertion | Low | transcript-tester | 2026-03-24 | - |
 | ISSUE-061 | Multi-word entity names fail in story grammar `:thing` slots | Medium | parser-en-us | 2026-03-24 | 2026-03-26 (same root cause as ISSUE-057) |
@@ -199,6 +224,43 @@ Audit found the three systems are a **pipeline** (pre-parse → parse → valida
 **Follow-up noted**: `StandardScopeResolver.canSee()` duplicates logic from `VisibilityBehavior.canSee()` — recommend future issue to have stdlib delegate to world-model's visibility behavior.
 
 **Branch**: issue-064-visibility-dedup
+
+---
+
+## Open Issues — Type Safety
+
+### ISSUE-072: `as any` cast regression — 66 casts reintroduced since ISSUE-063 cleanup
+
+**Reported**: 2026-04-11
+**Severity**: Medium
+**Component**: Platform-wide
+**Type**: Regression
+
+ISSUE-063 eliminated all `as any` casts (PRs #64, #66, completed 2026-03-27). As of 2026-04-11, 66 `as any` casts have been reintroduced across platform source files. Major concentrations:
+
+- `transcript-tester` (8 casts) — `(entity as any).isDead`, `(engine.world as any).loadJSON`, `(exitInfo as any).destination`
+- `character` (3 casts) — `trait.setMood(mutations.mood as any)`, builder `(parent as any).compile()`
+- `helpers` (1 cast) — `(WorldModel.prototype as any).helpers` (augmentation pattern)
+
+**Note**: Some of these may be in packages added or heavily modified after the ISSUE-063 cleanup (character, transcript-tester, helpers). The ESLint `no-explicit-any: "warn"` guard added in ISSUE-063 should have flagged these during development.
+
+**Recommended approach**: Per David's standing instructions, each cast must be reviewed individually — no batch changes, no intuitive leaps. Show each cast before applying a fix. Discuss semantic changes (where the fix changes runtime behavior, not just types).
+
+---
+
+### ISSUE-073: 47 TODO/FIXME/HACK markers need triage
+
+**Reported**: 2026-04-11
+**Severity**: Low
+**Component**: Platform-wide
+**Type**: Maintenance
+
+47 TODO/FIXME/HACK markers exist across platform source files. These need triage:
+- **Actionable items** should become GitHub issues with clear scope
+- **Stale items** (completed or no longer relevant) should be removed
+- **Intentional deferred items** should include a rationale or link to a tracking issue
+
+This is a cleanup task, not a code change task. The goal is to ensure every marker either becomes a tracked issue or gets removed.
 
 ---
 
