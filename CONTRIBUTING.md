@@ -4,8 +4,8 @@ Thank you for your interest in contributing to Sharpee! This guide covers what y
 
 ## Prerequisites
 
-- Node.js 18+
-- pnpm 8+
+- Node.js 22+
+- pnpm 10.13.1+ — `corepack enable && corepack prepare pnpm@10.13.1 --activate`
 - Git
 - TypeScript knowledge
 
@@ -27,6 +27,9 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 
 # Run walkthrough chain
 node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
+
+# Interactive play
+node dist/cli/sharpee.js --play
 ```
 
 ### Build Script
@@ -49,7 +52,7 @@ packages/
 ├── if-services/           # Runtime service interfaces
 ├── engine/                # Game loop, turn cycle, command processor
 ├── world-model/           # Entity system with traits and behaviors
-├── stdlib/                # 48 standard IF actions
+├── stdlib/                # 49 standard IF actions
 ├── event-processor/       # Applies semantic events to world model
 ├── parser-en-us/          # English natural language parser
 ├── lang-en-us/            # English language messages
@@ -67,7 +70,7 @@ packages/
 ├── sharpee/               # Umbrella package and CLI
 └── zifmia/                # Tauri desktop runner
 stories/
-├── dungeo/                # Mainframe Zork (~191 rooms, 750 points)
+├── dungeo/                # Mainframe Zork (~191 rooms, 650 + 100 endgame points)
 ├── cloak-of-darkness/     # Classic IF demo
 └── armoured/              # Trait composition demo
 ```
@@ -134,7 +137,8 @@ Before creating an issue, search existing issues. Include:
    test: add parser edge cases
    ```
 5. **Open a PR** with a clear description of what and why
-6. **All tests must pass** before merge
+6. **CI runs typecheck and tests** for 11 packages on every PR to main
+7. **Run the walkthrough chain locally** before submitting: `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript`
 
 ## Testing
 
@@ -205,16 +209,9 @@ For verbs that only exist in one story (e.g., INCANT, RING, PRAY), create the ac
 
 Remember: trait methods don't survive serialization. Use static behavior methods or direct property access for logic that runs after save/restore.
 
-## Publishing
+## API Reference
 
-Publishing is handled by maintainers using [tsf](https://github.com/ChicagoDave/tsf):
-
-```bash
-tsf build --npm    # Build all packages for npm
-tsf publish        # Publish to npm registry
-```
-
-All 20 packages are published under the `@sharpee` npm scope.
+Auto-generated API docs live in `packages/sharpee/docs/genai-api/`. Read `engine.md` first (Story interface), then `world-model.md` (entities/traits), then `stdlib.md` (actions).
 
 ## Getting Help
 

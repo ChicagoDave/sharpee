@@ -55,7 +55,7 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 | `@sharpee/plugins` | Plugin contracts for engine extensibility |
 | `@sharpee/runtime` | Headless engine for iframe embedding |
 | `@sharpee/sharpee` | Umbrella package (re-exports everything) |
-| `@sharpee/stdlib` | 48 standard IF actions (take, drop, open, lock, etc.) |
+| `@sharpee/stdlib` | 49 standard IF actions (take, drop, open, lock, etc.) |
 | `@sharpee/text-blocks` | Structured text output interfaces |
 | `@sharpee/text-service` | Text rendering and status line |
 | `@sharpee/transcript-tester` | Transcript-based testing framework |
