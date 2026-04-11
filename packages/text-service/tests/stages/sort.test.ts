@@ -12,6 +12,8 @@ import { describe, it, expect } from 'vitest';
 import { sortEventsForProse, getChainMetadata } from '../../src/stages/sort.js';
 import type { ISemanticEvent } from '@sharpee/core';
 
+let eventCounter = 0;
+
 /**
  * Create a minimal event with optional chain metadata
  */
@@ -22,7 +24,7 @@ function makeEvent(
   extra?: Record<string, unknown>,
 ): ISemanticEvent {
   return {
-    id: `evt-${type}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `evt-${type}-${++eventCounter}`,
     type,
     timestamp: Date.now(),
     entities: {},

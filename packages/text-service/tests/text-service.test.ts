@@ -34,10 +34,12 @@ function makeProvider(
   } as LanguageProvider;
 }
 
+let eventCounter = 0;
+
 /** Create a minimal event */
 function makeEvent(type: string, data?: unknown): ISemanticEvent {
   return {
-    id: `evt-${type}-${Math.random().toString(36).slice(2, 6)}`,
+    id: `evt-${type}-${++eventCounter}`,
     type,
     timestamp: Date.now(),
     entities: {},
