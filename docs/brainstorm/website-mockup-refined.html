@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpee Website — Lighter Gold on Dark</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #1a1a2e;
+      color: #ccc;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: #e6edf3;
+      margin-bottom: 0.5rem;
+      font-size: 1.8rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #8b949e;
+      margin-bottom: 3rem;
+      font-size: 0.95rem;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .option {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #30363d;
+    }
+
+    .option-label {
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    .mockup {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      min-height: 480px;
+      background: #0d1117;
+    }
+
+    .content {
+      padding: 2rem;
+    }
+
+    .content h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+      color: #f0e6d3;
+    }
+
+    .content .tagline {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+      color: #8b949e;
+    }
+
+    .content .cta {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      margin-bottom: 1.5rem;
+      color: #0d1117;
+    }
+
+    .content .blurb {
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #8b949e;
+    }
+
+    .content .blurb p {
+      margin-bottom: 0.75rem;
+    }
+
+    .sidebar {
+      padding: 2rem 1.25rem;
+      background: #161b22;
+      border-left: 1px solid #30363d;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 0.4rem 0;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #8b949e;
+      transition: color 0.15s;
+    }
+
+    .sidebar .active {
+      font-weight: 700;
+    }
+
+    .sidebar hr {
+      border: none;
+      border-top: 1px solid #30363d;
+      margin: 0.5rem 0;
+      opacity: 0.3;
+    }
+
+    /* ── 1: One step lighter ── */
+    .opt-1 .option-label { background: #e8b84d; color: #0d1117; }
+    .opt-1 .content .cta { background: #e8b84d; }
+    .opt-1 .sidebar a:hover, .opt-1 .sidebar .active { color: #e8b84d; }
+
+    /* ── 2: Two steps lighter ── */
+    .opt-2 .option-label { background: #f0c75e; color: #0d1117; }
+    .opt-2 .content .cta { background: #f0c75e; }
+    .opt-2 .sidebar a:hover, .opt-2 .sidebar .active { color: #f0c75e; }
+
+    /* ── 3: Champagne gold ── */
+    .opt-3 .option-label { background: #f2d280; color: #0d1117; }
+    .opt-3 .content .cta { background: #f2d280; }
+    .opt-3 .sidebar a:hover, .opt-3 .sidebar .active { color: #f2d280; }
+
+    /* ── 4: Pale gold ── */
+    .opt-4 .option-label { background: #f5dda0; color: #0d1117; }
+    .opt-4 .content .cta { background: #f5dda0; }
+    .opt-4 .sidebar a:hover, .opt-4 .sidebar .active { color: #f5dda0; }
+
+  </style>
+</head>
+<body>
+
+<h1>Sharpee — Lighter Gold on Dark</h1>
+<p class="subtitle">Same dark background as Option A, gold accent getting progressively lighter.</p>
+
+<div class="option-grid">
+
+  <div class="option opt-1">
+    <div class="option-label">1 — One step lighter (#e8b84d)</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="option opt-2">
+    <div class="option-label">2 — Two steps lighter (#f0c75e)</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="option opt-3">
+    <div class="option-label">3 — Champagne gold (#f2d280)</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="option opt-4">
+    <div class="option-label">4 — Pale gold (#f5dda0)</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

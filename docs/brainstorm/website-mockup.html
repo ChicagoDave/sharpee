@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpee Website — Color Options</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #1a1a2e;
+      color: #ccc;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: #e6edf3;
+      margin-bottom: 0.5rem;
+      font-size: 1.8rem;
+    }
+    .subtitle {
+      text-align: center;
+      color: #8b949e;
+      margin-bottom: 3rem;
+      font-size: 0.95rem;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .option {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #30363d;
+    }
+
+    .option-label {
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    /* ── Mockup Layout ── */
+    .mockup {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      min-height: 420px;
+    }
+
+    .content {
+      padding: 2rem;
+    }
+
+    .content h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .content .tagline {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .content .cta {
+      display: inline-block;
+      padding: 0.6rem 1.4rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      margin-bottom: 1.5rem;
+    }
+
+    .content .blurb {
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .content .blurb p {
+      margin-bottom: 0.75rem;
+    }
+
+    .sidebar {
+      padding: 2rem 1.25rem;
+      border-left-width: 1px;
+      border-left-style: solid;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 0.4rem 0;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .sidebar .active {
+      font-weight: 700;
+    }
+
+    .sidebar hr {
+      border: none;
+      border-top: 1px solid;
+      margin: 0.5rem 0;
+      opacity: 0.3;
+    }
+
+    /* ── Option A: Amber / Gold ── */
+    .opt-a .option-label { background: #d4940a; color: #0d1117; }
+    .opt-a .mockup { background: #0d1117; }
+    .opt-a .content h2 { color: #f0e6d3; }
+    .opt-a .content .tagline { color: #8b949e; }
+    .opt-a .content .cta { background: #d4940a; color: #0d1117; }
+    .opt-a .content .blurb { color: #8b949e; }
+    .opt-a .sidebar { background: #161b22; border-left-color: #30363d; }
+    .opt-a .sidebar a { color: #8b949e; }
+    .opt-a .sidebar a:hover, .opt-a .sidebar .active { color: #d4940a; }
+    .opt-a .sidebar hr { border-top-color: #30363d; }
+
+    /* ── Option B: Coral / Warm Rose ── */
+    .opt-b .option-label { background: #e8725a; color: #0d1117; }
+    .opt-b .mockup { background: #0d1117; }
+    .opt-b .content h2 { color: #f0e6d3; }
+    .opt-b .content .tagline { color: #8b949e; }
+    .opt-b .content .cta { background: #e8725a; color: #fff; }
+    .opt-b .content .blurb { color: #8b949e; }
+    .opt-b .sidebar { background: #161b22; border-left-color: #30363d; }
+    .opt-b .sidebar a { color: #8b949e; }
+    .opt-b .sidebar a:hover, .opt-b .sidebar .active { color: #e8725a; }
+    .opt-b .sidebar hr { border-top-color: #30363d; }
+
+    /* ── Option C: Teal / Sage ── */
+    .opt-c .option-label { background: #3dbfa0; color: #0d1117; }
+    .opt-c .mockup { background: #0d1117; }
+    .opt-c .content h2 { color: #e6edf3; }
+    .opt-c .content .tagline { color: #8b949e; }
+    .opt-c .content .cta { background: #3dbfa0; color: #0d1117; }
+    .opt-c .content .blurb { color: #8b949e; }
+    .opt-c .sidebar { background: #161b22; border-left-color: #30363d; }
+    .opt-c .sidebar a { color: #8b949e; }
+    .opt-c .sidebar a:hover, .opt-c .sidebar .active { color: #3dbfa0; }
+    .opt-c .sidebar hr { border-top-color: #30363d; }
+
+    /* ── Option D: Lavender / Soft Purple ── */
+    .opt-d .option-label { background: #b49cde; color: #0d1117; }
+    .opt-d .mockup { background: #0d1117; }
+    .opt-d .content h2 { color: #e6edf3; }
+    .opt-d .content .tagline { color: #8b949e; }
+    .opt-d .content .cta { background: #b49cde; color: #0d1117; }
+    .opt-d .content .blurb { color: #8b949e; }
+    .opt-d .sidebar { background: #161b22; border-left-color: #30363d; }
+    .opt-d .sidebar a { color: #8b949e; }
+    .opt-d .sidebar a:hover, .opt-d .sidebar .active { color: #b49cde; }
+    .opt-d .sidebar hr { border-top-color: #30363d; }
+
+    /* ── Option E: Warm Sand (lighter bg) ── */
+    .opt-e .option-label { background: #c9956b; color: #1a1a1a; }
+    .opt-e .mockup { background: #1c1917; }
+    .opt-e .content h2 { color: #faf5f0; }
+    .opt-e .content .tagline { color: #a89987; }
+    .opt-e .content .cta { background: #c9956b; color: #1a1a1a; }
+    .opt-e .content .blurb { color: #a89987; }
+    .opt-e .sidebar { background: #231f1b; border-left-color: #3d352e; }
+    .opt-e .sidebar a { color: #a89987; }
+    .opt-e .sidebar a:hover, .opt-e .sidebar .active { color: #c9956b; }
+    .opt-e .sidebar hr { border-top-color: #3d352e; }
+
+    /* ── Option F: Sky Blue + Warm White (light mode) ── */
+    .opt-f .option-label { background: #3b82c4; color: #fff; }
+    .opt-f .mockup { background: #faf9f7; }
+    .opt-f .content h2 { color: #1a1a1a; }
+    .opt-f .content .tagline { color: #555; }
+    .opt-f .content .cta { background: #3b82c4; color: #fff; }
+    .opt-f .content .blurb { color: #555; }
+    .opt-f .sidebar { background: #f0eeeb; border-left-color: #d4d0cc; }
+    .opt-f .sidebar a { color: #666; }
+    .opt-f .sidebar a:hover, .opt-f .sidebar .active { color: #3b82c4; }
+    .opt-f .sidebar hr { border-top-color: #d4d0cc; }
+  </style>
+</head>
+<body>
+
+<h1>Sharpee Website — Accent Color Options</h1>
+<p class="subtitle">Same DevArch bones (dark bg, clean spacing, system fonts). Right sidebar, TADS-style nav. Pick a vibe.</p>
+
+<div class="option-grid">
+
+  <!-- Option A -->
+  <div class="option opt-a">
+    <div class="option-label">A — Amber / Gold</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="option opt-b">
+    <div class="option-label">B — Coral / Warm Rose</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div class="option opt-c">
+    <div class="option-label">C — Teal / Sage</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option D -->
+  <div class="option opt-d">
+    <div class="option-label">D — Lavender / Soft Purple</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option E -->
+  <div class="option opt-e">
+    <div class="option-label">E — Warm Sand (earthy dark)</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option F -->
+  <div class="option opt-f">
+    <div class="option-label">F — Sky Blue + Light Mode</div>
+    <div class="mockup">
+      <div class="content">
+        <h2>Write Interactive Fiction.<br>It's Easier Than You Think.</h2>
+        <p class="tagline">Sharpee is a modern authoring tool for parser-based interactive fiction. Create rich, explorable worlds with clean TypeScript.</p>
+        <a class="cta" href="#">Get Started</a>
+        <div class="blurb">
+          <p>Start with a tutorial. Cloak of Darkness walks you through the basics. Family Zoo shows you how to build something real.</p>
+          <p>No framework experience needed. Just ideas and a text editor.</p>
+        </div>
+      </div>
+      <div class="sidebar">
+        <a class="active" href="#">Home</a>
+        <a href="#">Getting Started</a>
+        <hr>
+        <a href="#">Cloak of Darkness</a>
+        <a href="#">Family Zoo</a>
+        <hr>
+        <a href="#">Community</a>
+        <a href="#">News</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

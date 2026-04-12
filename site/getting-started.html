@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Getting Started — Sharpee</title>
+  <meta name="description" content="Install Sharpee and create your first interactive fiction story in minutes.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+  <main class="content">
+    <h1>Getting Started</h1>
+
+    <p>Create a new story project with a single command:</p>
+
+    <pre><code>npx @sharpee/sharpee init my-adventure
+cd my-adventure
+npm install</code></pre>
+
+    <p>Build and play in your browser:</p>
+
+    <pre><code>npx @sharpee/sharpee build
+open dist/web/index.html</code></pre>
+
+    <p>That's it. You have a running story.</p>
+
+    <h2>What You Get</h2>
+
+    <p>The starter project gives you a simple world with a couple of rooms and objects. From there, you build out your story by:</p>
+
+    <ul>
+      <li>Creating rooms and connecting them</li>
+      <li>Adding objects with traits (openable, lockable, switchable, etc.)</li>
+      <li>Writing the prose that brings it all to life</li>
+    </ul>
+
+    <h2>CLI Commands</h2>
+
+    <p>Everything runs through <code>npx @sharpee/sharpee</code>:</p>
+
+    <ul>
+      <li><code>init &lt;name&gt;</code> — Create a new story project</li>
+      <li><code>init-browser</code> — Add a browser client to an existing project</li>
+      <li><code>build</code> — Build your story bundle and browser client</li>
+      <li><code>build-browser</code> — Rebuild the browser client only</li>
+      <li><code>ifid</code> — Generate or validate an IFID</li>
+    </ul>
+
+    <h2>Next Steps</h2>
+
+    <p>Try the tutorials to see how a real story comes together:</p>
+
+    <ul>
+      <li><a href="cloak-of-darkness.html">Cloak of Darkness</a> — The classic IF benchmark, step by step</li>
+      <li><a href="family-zoo.html">Family Zoo</a> — A fuller example with multiple rooms and objects</li>
+    </ul>
+
+  </main>
+
+  <aside class="sidebar">
+    <nav>
+      <a href="index.html">Home</a>
+      <a class="active" href="getting-started.html">Getting Started</a>
+      <hr>
+      <a href="cloak-of-darkness.html">Cloak of Darkness</a>
+      <a href="family-zoo.html">Family Zoo</a>
+      <hr>
+      <a href="community.html">Community</a>
+      <a href="news.html">News</a>
+      <hr>
+      <a href="https://github.com/ChicagoDave/sharpee/tree/main/packages/sharpee/docs/genai-api">API Reference</a>
+      <a href="https://github.com/ChicagoDave/sharpee/tree/main/docs/guides">Author Guides</a>
+    </nav>
+    <div class="theme-toggle">
+      <button id="theme-toggle">Light mode</button>
+    </div>
+  </aside>
+
+  <footer class="footer">
+    <span>&copy; 2025 David Cornelson. MIT License.</span>
+    <div class="footer-links">
+      <a href="https://github.com/ChicagoDave/sharpee">GitHub</a>
+    </div>
+  </footer>
+</div>
+
+<script src="theme.js"></script>
+</body>
+</html>
