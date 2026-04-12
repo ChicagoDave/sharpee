@@ -1,3 +1,0 @@
-
-Object MemorySystems "memorysystems"
-	with
