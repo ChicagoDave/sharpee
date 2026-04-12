@@ -45,7 +45,7 @@ a:hover { color: var(--accent-hover); }
 /* ── Layout ── */
 .page {
   display: grid;
-  grid-template-columns: 1fr 200px;
+  grid-template-columns: minmax(0, 1fr) 200px;
   max-width: var(--max-width);
   margin: 0 auto;
   min-height: 100vh;
@@ -54,6 +54,8 @@ a:hover { color: var(--accent-hover); }
 /* ── Content ── */
 .content {
   padding: 3rem 2.5rem;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .content h1 {
