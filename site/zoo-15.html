@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timed Events — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 15: Timed Events</h1>
+
+    <h2>Concept</h2>
+
+    <p>The <strong>SchedulerPlugin</strong> adds timed events to the Sharpee engine. After each player turn, the scheduler "ticks" — running all active daemons and counting down all active fuses.</p>
+
+    <p><strong>Daemons</strong> are functions that run every turn (like background processes). They can optionally have a <code>condition()</code> that controls when they run.</p>
+
+    <p><strong>Fuses</strong> are countdown timers. They tick down each turn and trigger when they reach zero. A fuse can be one-shot (fires once and disappears) or repeating (re-arms after triggering).</p>
+
+    <h2>Key Code Pattern</h2>
+
+<pre><code>import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
+import type { Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+
+// In onEngineReady():
+const schedulerPlugin = new SchedulerPlugin();
+engine.getPluginRegistry().register(schedulerPlugin);
+const scheduler = schedulerPlugin.getScheduler();
+
+// Daemon — runs every turn when condition is met
+const myDaemon: Daemon = {
+  id: 'story.daemon.name',
+  name: 'Human Readable Name',
+  condition: (ctx: SchedulerContext) =&gt; ctx.turn % 5 === 0,
+  run: (ctx: SchedulerContext) =&gt; [{
+    id: `event-${ctx.turn}`,
+    type: 'game.message',
+    timestamp: Date.now(),
+    entities: {},
+    data: { messageId: 'story.message.id' },
+    narrate: true,
+  }],
+};
+scheduler.registerDaemon(myDaemon);
+
+// Fuse — counts down and triggers after N turns
+const myFuse: Fuse = {
+  id: 'story.fuse.name',
+  name: 'Countdown Timer',
+  turns: 10,          // Fires after 10 turns
+  repeat: true,       // Re-arm after triggering
+  originalTurns: 8,   // Subsequent triggers every 8 turns
+  trigger: (ctx: SchedulerContext) =&gt; [/* events */],
+};
+scheduler.setFuse(myFuse);</code></pre>
+
+    <h2>What to Try</h2>
+
+<pre><code>&gt; wait                (repeat 5 times — PA announcement fires)
+&gt; south / east        (go to petting zoo)
+&gt; wait                (repeat until "FEEDING TIME")
+&gt; wait                (goats start bleating)
+&gt; take feed
+&gt; feed goats          (stops the bleating)</code></pre>
+
+    <h2>Common Mistakes</h2>
+
+    <ul>
+      <li><strong>Forgetting to register the SchedulerPlugin</strong> — Daemons and fuses do nothing until the plugin is registered with the engine.</li>
+      <li><strong>Using <code>ctx.turn</code> without understanding the offset</strong> — Turn counting starts at 1 for the first player command. The opening turn may or may not tick the scheduler.</li>
+      <li><strong>Daemon without condition</strong> — A daemon with no <code>condition()</code> runs every single turn. Use a condition to control timing.</li>
+      <li><strong>Fuse skipNextTick</strong> — New fuses skip their first tick, so a fuse with <code>turns: 10</code> fires 11 ticks after registration (10 countdown + 1 skip).</li>
+    </ul>
+
+    <div class="step-nav">
+      <a href="zoo-14.html">&larr; Previous: Capability Dispatch</a>
+      <a href="zoo-16.html">Next: Scoring &amp; Endgame &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

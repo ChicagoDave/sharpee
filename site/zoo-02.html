@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiple Rooms &amp; Navigation — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 2: Multiple Rooms &amp; Navigation</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>The zoo now has four locations: the Zoo Entrance, a Main Path, a Petting Zoo with pygmy goats, and an Aviary with a toucan. You can walk between them using compass directions — north, south, east, west.</p>
+
+    <h2>What's New (Compared to V1)</h2>
+
+    <p>V1 had one room with nowhere to go. V2 adds three more rooms and connects them with exits. Everything from V1 (the entrance, the sign, the booth) is still here.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>Room Connections via Exits</h3>
+
+    <p>Rooms are connected through <strong>exits</strong> on the <code>RoomTrait</code>. Each exit maps a compass direction to a destination room:</p>
+
+<pre><code>entranceRoom.exits = {
+  [Direction.SOUTH]: { destination: mainPath.id },
+};</code></pre>
+
+    <p>This means: "when the player types <code>south</code> in the entrance, move them to the main path."</p>
+
+    <p>The <code>Direction</code> enum provides all the standard IF directions:</p>
+
+    <table>
+      <tr><th>Direction</th><th>Short Form</th><th>What the Player Types</th></tr>
+      <tr><td><code>Direction.NORTH</code></td><td><code>n</code></td><td>"north", "n", "go north"</td></tr>
+      <tr><td><code>Direction.SOUTH</code></td><td><code>s</code></td><td>"south", "s", "go south"</td></tr>
+      <tr><td><code>Direction.EAST</code></td><td><code>e</code></td><td>"east", "e", "go east"</td></tr>
+      <tr><td><code>Direction.WEST</code></td><td><code>w</code></td><td>"west", "w", "go west"</td></tr>
+      <tr><td><code>Direction.UP</code></td><td><code>u</code></td><td>"up", "u", "go up"</td></tr>
+      <tr><td><code>Direction.DOWN</code></td><td><code>d</code></td><td>"down", "d", "go down"</td></tr>
+      <tr><td><code>Direction.NORTHEAST</code></td><td><code>ne</code></td><td>"northeast", "ne"</td></tr>
+      <tr><td><code>Direction.NORTHWEST</code></td><td><code>nw</code></td><td>"northwest", "nw"</td></tr>
+      <tr><td><code>Direction.SOUTHEAST</code></td><td><code>se</code></td><td>"southeast", "se"</td></tr>
+      <tr><td><code>Direction.SOUTHWEST</code></td><td><code>sw</code></td><td>"southwest", "sw"</td></tr>
+      <tr><td><code>Direction.IN</code></td><td>—</td><td>"in", "enter"</td></tr>
+      <tr><td><code>Direction.OUT</code></td><td>—</td><td>"out", "exit"</td></tr>
+    </table>
+
+    <h3>Exits Are One-Way</h3>
+
+    <p>This is the most common mistake new authors make: <strong>exits only go one direction.</strong> If the entrance has a south exit to the main path, the player can walk south — but they can't walk back north unless the main path ALSO has a north exit to the entrance.</p>
+
+    <p>Always wire exits in pairs:</p>
+
+<pre><code>// Entrance &rarr; Main Path
+entranceRoom.exits = {
+  [Direction.SOUTH]: { destination: mainPath.id },
+};
+
+// Main Path &rarr; Entrance (the return trip)
+mainPathRoom.exits = {
+  [Direction.NORTH]: { destination: entrance.id },
+};</code></pre>
+
+    <p>If you forget the return exit, the player gets stuck with no way back.</p>
+
+    <h3>Create First, Connect Second</h3>
+
+    <p>You can't set an exit to a room that doesn't exist yet. If you try to reference <code>mainPath.id</code> before creating <code>mainPath</code>, you'll get an error.</p>
+
+    <p>The pattern is:</p>
+
+    <ol>
+      <li>Create all rooms (with empty exits)</li>
+      <li>Wire up all exits after every room exists</li>
+    </ol>
+
+<pre><code>// Step 1: Create rooms with empty exits
+const entrance = world.createEntity('Zoo Entrance', EntityType.ROOM);
+entrance.add(new RoomTrait({ exits: {} }));
+
+const mainPath = world.createEntity('Main Path', EntityType.ROOM);
+mainPath.add(new RoomTrait({ exits: {} }));
+
+// Step 2: Wire exits now that both rooms exist
+const entranceRoom = entrance.get(RoomTrait)!;
+entranceRoom.exits = {
+  [Direction.SOUTH]: { destination: mainPath.id },
+};</code></pre>
+
+    <h3>Getting a Trait Back</h3>
+
+    <p>Once you've attached a trait to an entity, you can retrieve it later with <code>.get()</code>:</p>
+
+<pre><code>const entranceRoom = entrance.get(RoomTrait)!;</code></pre>
+
+    <p>The <code>!</code> (non-null assertion) tells TypeScript "I know this trait exists." If you're not sure whether an entity has a trait, use an <code>if</code> check instead:</p>
+
+<pre><code>const roomTrait = entrance.get(RoomTrait);
+if (roomTrait) {
+  roomTrait.exits = { ... };
+}</code></pre>
+
+    <h3>The Going Action</h3>
+
+    <p>You don't need to write any code to handle movement. Sharpee's standard library includes a <code>going</code> action that:</p>
+
+    <ol>
+      <li>Looks at the current room's exits</li>
+      <li>Finds the exit matching the player's direction</li>
+      <li>Moves the player to the destination room</li>
+      <li>Displays the new room's description</li>
+    </ol>
+
+    <p>All of this happens automatically when the player types a direction command.</p>
+
+    <h2>The Zoo Map</h2>
+
+<pre><code>                    Zoo Entrance
+                         |
+                       south
+                         |
+          Aviary ---  Main Path  --- Petting Zoo
+              east &larr;    &UpDownArrow;    &rarr; east
+              west &rarr;    &UpDownArrow;    &larr; west
+                       north
+                         |
+                    Zoo Entrance</code></pre>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; look                  See where you are
+&gt; south                 Walk to the Main Path
+&gt; examine signs         Read the direction signs
+&gt; east                  Walk to the Petting Zoo
+&gt; examine goats         Look at the pygmy goats
+&gt; west                  Back to the Main Path
+&gt; west                  Walk to the Aviary
+&gt; examine toucan        Look at the toucan
+&gt; east                  Back to the Main Path
+&gt; north                 Back to the Zoo Entrance</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v02.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>Rooms are connected by exits on <code>RoomTrait</code>. Each exit maps a <code>Direction</code> to a destination room ID. Always wire exits in both directions, and create all rooms before connecting them.</p>
+
+    <div class="step-nav">
+      <a href="zoo-01.html">&larr; Previous: A Single Room</a>
+      <a href="zoo-03.html">Next: Scenery &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

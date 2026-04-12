@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portable Objects — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 4: Portable Objects</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>There are now things you can actually pick up: a zoo map at the entrance, a bag of animal feed at the petting zoo, and a souvenir penny on the main path. You can take them, carry them between rooms, check your inventory, and drop them wherever you like.</p>
+
+    <h2>What's New (Compared to V3)</h2>
+
+    <p>V3 was all about things you can't take. V4 is the opposite — things you can.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>Items Are Portable by Default</h3>
+
+    <p>This is the key insight in Sharpee's design: <strong>you don't need a special trait to make something portable.</strong> Just create an entity with <code>EntityType.ITEM</code> and an <code>IdentityTrait</code>, and the player can take it.</p>
+
+<pre><code>const zooMap = world.createEntity('zoo map', EntityType.ITEM);
+zooMap.add(new IdentityTrait({
+  name: 'zoo map',
+  description: 'A colorful folding map of the zoo.',
+  aliases: ['map', 'zoo map', 'folding map'],
+}));
+world.moveEntity(zooMap.id, entrance.id);</code></pre>
+
+    <p>That's all you need. No "PortableTrait" exists — portability is the default. You add SceneryTrait to <em>remove</em> portability, not the other way around.</p>
+
+    <h3>Built-in Actions for Portable Objects</h3>
+
+    <p>Sharpee's standard library handles all the common inventory actions automatically:</p>
+
+    <table>
+      <tr><th>Player Types</th><th>What Happens</th></tr>
+      <tr><td><code>take map</code></td><td>Moves the map from the room to the player's inventory</td></tr>
+      <tr><td><code>drop map</code></td><td>Moves the map from inventory to the current room</td></tr>
+      <tr><td><code>inventory</code> or <code>i</code></td><td>Lists everything the player is carrying</td></tr>
+      <tr><td><code>take all</code></td><td>Takes every portable object in the room</td></tr>
+      <tr><td><code>drop all</code></td><td>Drops everything the player is carrying</td></tr>
+    </table>
+
+    <p>You don't write any code for these — they're built into the engine.</p>
+
+    <h3>How Taking Works Under the Hood</h3>
+
+    <p>When the player types <code>take map</code>:</p>
+
+    <ol>
+      <li>The <strong>parser</strong> finds the entity named "map" in the current room</li>
+      <li>The <strong>taking action</strong> checks if the entity has <code>SceneryTrait</code>
+        <ul>
+          <li>If yes: blocked — <em>"The map is fixed in place."</em></li>
+          <li>If no: proceeds to step 3</li>
+        </ul>
+      </li>
+      <li>The taking action calls <code>world.moveEntity(map.id, player.id)</code></li>
+      <li>The player sees <em>"Taken."</em></li>
+    </ol>
+
+    <p>That's it. The distinction between portable and non-portable is simply: does the entity have SceneryTrait?</p>
+
+    <h3>Portable Objects Move with the Player</h3>
+
+    <p>When the player carries an item and walks to a new room, the item moves with them. This happens automatically — items inside the player's ContainerTrait travel wherever the player goes.</p>
+
+    <h3>Room Descriptions Show Loose Objects</h3>
+
+    <p>When the player types <code>look</code>, portable objects lying on the ground are listed after the room description:</p>
+
+<pre><code>Main Path
+A wide gravel path winds through the heart of the zoo...
+
+You can see a souvenir penny here.</code></pre>
+
+    <p>Scenery objects are NOT listed this way — they're expected to be mentioned in the room's description text.</p>
+
+    <h3>EntityType.ITEM</h3>
+
+    <p><code>EntityType.ITEM</code> is the type for generic portable objects. It's the counterpart to <code>EntityType.SCENERY</code>:</p>
+
+    <table>
+      <tr><th>Entity Type</th><th>Portable by Default</th><th>Example</th></tr>
+      <tr><td><code>EntityType.ITEM</code></td><td>Yes</td><td>Maps, keys, coins</td></tr>
+      <tr><td><code>EntityType.SCENERY</code></td><td>No (with SceneryTrait)</td><td>Fences, benches, animals</td></tr>
+    </table>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; look                  Notice the zoo map on the ground
+&gt; take map              Pick up the map
+&gt; inventory             See what you're carrying
+&gt; examine map           Read the map
+&gt; south                 Walk to Main Path (map comes with you)
+&gt; take penny            Pick up the souvenir penny
+&gt; inventory             Now carrying map and penny
+&gt; drop map              Leave the map here
+&gt; look                  Map is now on the ground in Main Path
+&gt; east                  Go to Petting Zoo
+&gt; take feed             Pick up the bag of animal feed
+&gt; take goats            Can't — they're scenery!</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v04.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>Items are portable by default — no special trait needed. Create an entity with <code>EntityType.ITEM</code> and <code>IdentityTrait</code>, place it in a room, and the player can take it, carry it, and drop it. SceneryTrait is what blocks portability, not what enables it.</p>
+
+    <div class="step-nav">
+      <a href="zoo-03.html">&larr; Previous: Scenery</a>
+      <a href="zoo-05.html">Next: Containers &amp; Supporters &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

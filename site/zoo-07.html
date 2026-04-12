@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Locked Doors &amp; Keys — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 7: Locked Doors &amp; Keys</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>A staff gate now blocks the path south from the main path. It's locked. You need to find the keycard at the entrance and use it to unlock the gate, then open it, then walk through to reach the supply room.</p>
+
+    <h2>What's New (Compared to V6)</h2>
+
+    <p>V6 introduced openable containers. V7 adds locks — entities that can't be opened until they're unlocked with the right key. It also introduces doors and the exit <code>via</code> property.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>LockableTrait</h3>
+
+    <p>LockableTrait adds lock/unlock state to any entity. It's almost always combined with OpenableTrait, because the whole point of a lock is preventing something from being opened.</p>
+
+<pre><code>staffGate.add(new LockableTrait({
+  isLocked: true,          // Starts locked
+  keyId: keycard.id,       // THIS key unlocks THIS lock
+}));</code></pre>
+
+    <p>The critical property is <code>keyId</code> — it creates the wiring between a specific key entity and a specific lock. When the player types <code>unlock gate with keycard</code>, the engine checks: does the player have an entity whose ID matches this lock's <code>keyId</code>?</p>
+
+    <h3>The Unlock Sequence</h3>
+
+    <p>A locked door requires three steps from the player:</p>
+
+    <ol>
+      <li><strong>Find the key</strong> — <code>take keycard</code></li>
+      <li><strong>Unlock the lock</strong> — <code>unlock gate with keycard</code></li>
+      <li><strong>Open the door</strong> — <code>open gate</code></li>
+    </ol>
+
+    <p>Only after all three steps can they walk through. This is realistic and creates natural puzzles.</p>
+
+    <h3>DoorTrait</h3>
+
+    <p>DoorTrait marks an entity as a connection between two rooms:</p>
+
+<pre><code>staffGate.add(new DoorTrait({
+  room1: mainPath.id,        // One side of the door
+  room2: supplyRoom.id,      // Other side
+  bidirectional: true,       // Can go through both ways
+}));</code></pre>
+
+    <p>This tells the engine which rooms the door sits between, so it can be visible from either side.</p>
+
+    <h3>Exit <code>via</code> Property</h3>
+
+    <p>The key to making doors work is the <code>via</code> property on room exits:</p>
+
+<pre><code>mainPathRoom.exits = {
+  [Direction.SOUTH]: {
+    destination: supplyRoom.id,
+    via: staffGate.id,          // Must pass through this entity
+  },
+};</code></pre>
+
+    <p>When the player types <code>south</code>, the going action checks the <code>via</code> entity:</p>
+
+    <ul>
+      <li>Is it closed? &rarr; "The staff gate is closed."</li>
+      <li>Is it locked? &rarr; "The staff gate is locked."</li>
+      <li>Is it open? &rarr; Player walks through.</li>
+    </ul>
+
+    <p>Without <code>via</code>, the exit would be unconditional — the player could always walk through regardless of the gate's state.</p>
+
+    <h3>Wiring It All Together</h3>
+
+    <p>A locked door needs five traits working together:</p>
+
+    <table>
+      <tr><th>Trait</th><th>Purpose</th></tr>
+      <tr><td><code>IdentityTrait</code></td><td>Name, description, aliases</td></tr>
+      <tr><td><code>DoorTrait</code></td><td>Connects two rooms</td></tr>
+      <tr><td><code>OpenableTrait</code></td><td>Can be opened/closed</td></tr>
+      <tr><td><code>LockableTrait</code></td><td>Can be locked/unlocked with a key</td></tr>
+      <tr><td><code>SceneryTrait</code></td><td>Can't be picked up</td></tr>
+    </table>
+
+    <p>Plus:</p>
+
+    <ul>
+      <li>A <strong>key entity</strong> (any portable item — its <code>id</code> goes in <code>LockableTrait.keyId</code>)</li>
+      <li>Exits with <strong><code>via</code></strong> pointing to the door entity</li>
+    </ul>
+
+    <h3>Keys Are Just Items</h3>
+
+    <p>A key doesn't need any special trait. It's just a regular <code>EntityType.ITEM</code> with an <code>IdentityTrait</code>. The only thing that makes it a "key" is that some <code>LockableTrait</code> references its <code>id</code> in <code>keyId</code>.</p>
+
+    <p>This means anything can be a key — a literal key, a keycard, a magic word, a gemstone. The lock decides what unlocks it, not the key.</p>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; take keycard                Pick up the keycard
+&gt; south                       Go to Main Path
+&gt; south                       "The staff gate is locked."
+&gt; unlock gate with keycard    Unlock it
+&gt; open gate                   Open it
+&gt; south                       Walk through to Supply Room
+&gt; examine shelves             Look at the supply room
+&gt; north                       Back through the open gate</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v07.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>LockableTrait prevents opening until unlocked with the right key. The <code>keyId</code> property wires a key to a lock. Exit <code>via</code> makes the going action check a door entity before letting the player through. Keys are just items — the lock decides what fits.</p>
+
+    <div class="step-nav">
+      <a href="zoo-06.html">&larr; Previous: Openable Things</a>
+      <a href="zoo-08.html">Next: Light &amp; Dark &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capability Dispatch — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 14: Capability Dispatch</h1>
+
+    <h2>What This Version Teaches</h2>
+
+    <p>Capability dispatch is for verbs where the meaning depends on what you do it to. "Pet goats" (affectionate) is very different from "pet parrot" (ouch!). The entity decides how to respond, not the action.</p>
+
+    <h2>Key Concepts</h2>
+
+    <h3>When to Use Capability Dispatch</h3>
+
+    <table>
+      <tr><th>Pattern</th><th>When</th></tr>
+      <tr><td>Custom Action (V13)</td><td>New verb with fixed behavior for all targets</td></tr>
+      <tr><td>Capability Dispatch (V14)</td><td>Same verb, different behavior per entity</td></tr>
+    </table>
+
+    <h3>The Three Pieces</h3>
+
+    <p><strong>1. A custom trait</strong> with <code>capabilities[]</code>:</p>
+
+<pre><code>class PettableTrait implements ITrait {
+  static readonly type = 'zoo.trait.pettable';
+  static readonly capabilities = ['zoo.action.petting'] as const;
+  readonly type = PettableTrait.type;
+  readonly animalKind: 'goats' | 'rabbits' | 'parrot';
+
+  constructor(kind: 'goats' | 'rabbits' | 'parrot') {
+    this.animalKind = kind;
+  }
+}</code></pre>
+
+    <p><strong>2. Capability behaviors</strong> (one per entity type):</p>
+
+<pre><code>const goatPettingBehavior: CapabilityBehavior = {
+  validate(): CapabilityValidationResult { return { valid: true }; },
+  execute(): void {},
+  report(entity): CapabilityEffect[] {
+    return [createEffect('action.success', {
+      messageId: 'zoo.petting.goats',
+      params: { target: entity.name },
+    })];
+  },
+  blocked(entity, _w, _a, error): CapabilityEffect[] {
+    return [createEffect('action.blocked', { messageId: error })];
+  },
+};</code></pre>
+
+    <p><strong>3. Registration</strong> connecting trait + capability + behavior:</p>
+
+<pre><code>registerCapabilityBehavior(
+  PettableTrait.type,          // Which trait
+  'zoo.action.petting',        // Which capability
+  goatPettingBehavior,         // Which behavior
+  { condition: (t) =&gt; t.animalKind === 'goats' },  // When to use it
+);</code></pre>
+
+    <h3>The Dispatch Action</h3>
+
+    <p>Use <code>createCapabilityDispatchAction()</code> — it builds the Action automatically:</p>
+
+<pre><code>const pettingAction = createCapabilityDispatchAction({
+  actionId: 'zoo.action.petting',
+  group: 'interaction',
+  noTargetError: 'zoo.petting.cant_pet',
+  cantDoThatError: 'zoo.petting.cant_pet',
+});</code></pre>
+
+    <p>This factory creates an action that automatically:</p>
+
+    <ol>
+      <li>Finds the trait claiming the capability on the target entity</li>
+      <li>Delegates to the registered behavior</li>
+      <li>Handles all four phases</li>
+    </ol>
+
+    <h3>How It All Fits Together</h3>
+
+<pre><code>Player types: "pet goats"
+  &darr;
+Parser: matches "pet :thing" &rarr; zoo.action.petting, target = goats entity
+  &darr;
+Capability dispatch action:
+  1. Find trait on goats with capability 'zoo.action.petting' &rarr; PettableTrait
+  2. Find behavior for PettableTrait + 'zoo.action.petting' where animalKind='goats'
+  3. Call goatPettingBehavior.validate() &rarr; { valid: true }
+  4. Call goatPettingBehavior.execute() &rarr; (nothing)
+  5. Call goatPettingBehavior.report() &rarr; "The goat bleats happily"</code></pre>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; south / east           (go to petting zoo)
+&gt; pet goats              (affectionate — they love it)
+&gt; pet rabbits            (soft and fuzzy)
+&gt; pet hay bale           (can't pet that — no PettableTrait)
+&gt; west / west            (go to aviary)
+&gt; pet parrot             (CHOMP! It bites!)</code></pre>
+
+    <h2>Key Takeaways</h2>
+
+    <ul>
+      <li>Capability dispatch = one verb, many behaviors, the entity decides</li>
+      <li>Custom traits declare <code>capabilities[]</code> listing which action IDs they respond to</li>
+      <li><code>registerCapabilityBehavior()</code> links trait type + action ID + behavior</li>
+      <li>Use <code>condition</code> to dispatch to different behaviors based on trait data</li>
+      <li><code>createCapabilityDispatchAction()</code> builds the action automatically</li>
+      <li>Entities without the trait get the <code>cantDoThatError</code> message</li>
+    </ul>
+
+    <div class="step-nav">
+      <a href="zoo-13.html">&larr; Previous: Custom Actions</a>
+      <a href="zoo-15.html">Next: Timed Events &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

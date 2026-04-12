@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Readable Objects — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 9: Readable Objects</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>Info plaques appear at the petting zoo and aviary with detailed animal facts. A warning sign near the nocturnal exhibit cautions about flash photography. A zoo brochure at the entrance can be picked up and read anywhere.</p>
+
+    <h2>What's New (Compared to V8)</h2>
+
+    <p>V8 introduced light and dark. V9 adds ReadableTrait — entities with text the player can read, separate from their physical description.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>ReadableTrait</h3>
+
+    <p>ReadableTrait gives an entity text that the <code>read</code> action displays:</p>
+
+<pre><code>plaque.add(new ReadableTrait({
+  text: 'PYGMY GOATS — These Nigerian Dwarf goats are gentle...',
+}));</code></pre>
+
+    <h3>Read vs Examine</h3>
+
+    <p>This is the key distinction:</p>
+
+    <table>
+      <tr><th>Command</th><th>Trait Used</th><th>What It Shows</th></tr>
+      <tr><td><code>examine plaque</code></td><td><code>IdentityTrait.description</code></td><td>What the object looks like</td></tr>
+      <tr><td><code>read plaque</code></td><td><code>ReadableTrait.text</code></td><td>What the object says</td></tr>
+    </table>
+
+    <p>A brass plaque <em>looks like</em> "a brass plaque mounted on a wooden post." But it <em>says</em> "PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always hungry."</p>
+
+    <p>Not everything readable needs to look the same. A brochure looks like a glossy pamphlet but reads as a guide to the zoo.</p>
+
+    <h3>Readable + Scenery = Info Plaques</h3>
+
+    <p>Plaques are scenery (can't take them) that you can read:</p>
+
+<pre><code>plaque.add(new IdentityTrait({ description: 'A brass plaque...' }));
+plaque.add(new ReadableTrait({ text: 'PYGMY GOATS...' }));
+plaque.add(new SceneryTrait());  // Can't take it</code></pre>
+
+    <h3>Readable + Portable = Brochures, Letters, Books</h3>
+
+    <p>Portable readable items can be taken and read anywhere:</p>
+
+<pre><code>brochure.add(new IdentityTrait({ description: 'A glossy tri-fold brochure.' }));
+brochure.add(new ReadableTrait({ text: 'WILLOWBROOK FAMILY ZOO — Your Guide...' }));
+// No SceneryTrait — player can take it</code></pre>
+
+    <h3>When to Use ReadableTrait vs Just a Long Description</h3>
+
+    <p>Use <strong>ReadableTrait</strong> when the object has distinct written content — signs, books, letters, labels, inscriptions.</p>
+
+    <p>Use <strong>IdentityTrait.description</strong> alone when the object is just a physical thing to look at — a rock, a fence, a tree.</p>
+
+    <p>The test: would a real person say "I want to <em>read</em> this"? If yes, use ReadableTrait.</p>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; take brochure          Pick up the brochure
+&gt; read brochure          Read the zoo guide
+&gt; examine brochure       See the physical brochure
+&gt; south; east            Go to Petting Zoo
+&gt; read plaque            Read about the animals
+&gt; examine plaque         See the plaque itself</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v09.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>ReadableTrait separates what an object <em>says</em> from what it <em>looks like</em>. <code>examine</code> shows the description; <code>read</code> shows the text. Use ReadableTrait for anything with written content.</p>
+
+    <div class="step-nav">
+      <a href="zoo-08.html">&larr; Previous: Light &amp; Dark</a>
+      <a href="zoo-10.html">Next: Switchable Devices &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Containers &amp; Supporters — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 5: Containers &amp; Supporters</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>The zoo now has things that hold other things. A red backpack at the entrance can store items inside it. A feed dispenser at the petting zoo is a container mounted to a post. A park bench on the main path lets you place things on top of it.</p>
+
+    <h2>What's New (Compared to V4)</h2>
+
+    <p>V4 introduced portable items the player carries directly. V5 adds intermediate holders — containers you put things <em>in</em> and supporters you put things <em>on</em>.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>Two Kinds of Holders</h3>
+
+    <p>Sharpee has two traits for entities that hold other entities:</p>
+
+    <p><strong>ContainerTrait</strong> — things go <em>inside</em>:</p>
+
+<pre><code>&gt; put map in backpack
+You put zoo map in backpack.
+&gt; look in backpack
+In the backpack you can see a zoo map.</code></pre>
+
+    <p><strong>SupporterTrait</strong> — things go <em>on top</em>:</p>
+
+<pre><code>&gt; put penny on bench
+You put souvenir penny on park bench.</code></pre>
+
+    <p>The parser handles the preposition automatically — "put X <strong>in</strong> Y" routes to ContainerTrait, "put X <strong>on</strong> Y" routes to SupporterTrait.</p>
+
+    <h3>ContainerTrait</h3>
+
+    <p>ContainerTrait lets an entity hold other entities inside it. You've already seen it on the player (for inventory). In V5, we use it on objects too.</p>
+
+<pre><code>const backpack = world.createEntity('backpack', EntityType.CONTAINER);
+
+backpack.add(new IdentityTrait({
+  name: 'backpack',
+  description: 'A small red canvas backpack.',
+  aliases: ['backpack', 'bag', 'pack'],
+}));
+
+backpack.add(new ContainerTrait({
+  capacity: { maxItems: 5 },   // Can hold up to 5 things
+}));</code></pre>
+
+    <h3>Portable vs Fixed Containers</h3>
+
+    <p>Containers can be portable or fixed:</p>
+
+    <table>
+      <tr><th>Container</th><th>Portable?</th><th>How?</th></tr>
+      <tr><td>Backpack</td><td>Yes</td><td>No SceneryTrait — player can take it</td></tr>
+      <tr><td>Feed dispenser</td><td>No</td><td>Has SceneryTrait — fixed in place</td></tr>
+    </table>
+
+    <p>A portable container is powerful: the player can take the backpack, and everything inside comes along. They're carrying a container full of items, which counts as one item in their own inventory.</p>
+
+    <p>A fixed container is useful for dispensers, lockers, drawers, and other built-in storage the player can access but not move.</p>
+
+    <h3>SupporterTrait</h3>
+
+    <p>SupporterTrait is the surface counterpart to ContainerTrait. Things go <em>on</em> a supporter rather than <em>in</em> it.</p>
+
+<pre><code>const parkBench = world.createEntity('park bench', EntityType.SUPPORTER);
+
+parkBench.add(new SupporterTrait({
+  capacity: { maxItems: 3 },
+}));
+
+parkBench.add(new SceneryTrait());   // Can't take the bench itself</code></pre>
+
+    <p>Common supporters: tables, shelves, counters, altars, pedestals, desks.</p>
+
+    <p>The key difference from containers: supporters are typically <strong>open</strong> — you can see what's on them without a special action. Containers can be open or closed (we'll explore OpenableTrait in V6).</p>
+
+    <h3>Capacity Limits</h3>
+
+    <p>Both ContainerTrait and SupporterTrait accept a <code>capacity</code> option:</p>
+
+<pre><code>capacity: { maxItems: 5 }</code></pre>
+
+    <p>If the player tries to put a sixth item in, they'll get a "can't fit" message. This prevents infinite storage and lets you create puzzles around limited space.</p>
+
+    <h3>The Player Is a Container</h3>
+
+    <p>Remember from V1: the player entity has ContainerTrait with <code>maxItems: 10</code>. That's why inventory works — carried items are literally inside the player's ContainerTrait. The player is a walking container.</p>
+
+    <h3>Combining Traits</h3>
+
+    <p>V5 shows an important pattern: <strong>entities can have multiple traits.</strong> The park bench has both <code>SupporterTrait</code> (things go on it) and <code>SceneryTrait</code> (can't be taken). The feed dispenser has both <code>ContainerTrait</code> (things go in it) and <code>SceneryTrait</code> (can't be taken).</p>
+
+    <p>Traits are composable. You mix and match them to create the exact behavior you need.</p>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; take backpack          Pick up the portable container
+&gt; take map               Pick up the zoo map
+&gt; put map in backpack    Store the map inside the backpack
+&gt; look in backpack       See what's in the backpack
+&gt; inventory              Backpack is one item in your inventory
+&gt; south                  Go to Main Path
+&gt; take penny             Pick up the penny
+&gt; put penny on bench     Place penny on the supporter
+&gt; look                   Penny visible on the bench
+&gt; east                   Go to Petting Zoo
+&gt; take dispenser         Can't — it's scenery
+&gt; examine dispenser      But you can look at it</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v05.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>ContainerTrait lets entities hold things inside them. SupporterTrait lets entities have things placed on them. Both can be portable or fixed (via SceneryTrait). Traits are composable — combine them to create the exact behavior each object needs.</p>
+
+    <div class="step-nav">
+      <a href="zoo-04.html">&larr; Previous: Portable Objects</a>
+      <a href="zoo-06.html">Next: Openable Things &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

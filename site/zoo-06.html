@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Openable Things — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 6: Openable Things</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>The feed dispenser at the petting zoo and a lunchbox on the main path can now be opened and closed. You must open them before you can see or access what's inside.</p>
+
+    <h2>What's New (Compared to V5)</h2>
+
+    <p>V5 introduced containers you could freely put things in. V6 adds a closed state — containers that must be opened first.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>OpenableTrait</h3>
+
+    <p>OpenableTrait gives an entity an open/closed state. The player can use the built-in <code>open</code> and <code>close</code> actions to change it.</p>
+
+<pre><code>lunchbox.add(new OpenableTrait({
+  isOpen: false,          // Starts closed
+  canClose: true,         // Player can close it again
+  revealsContents: true,  // Opening shows what's inside
+}));</code></pre>
+
+    <p>By itself, OpenableTrait just tracks whether something is open or closed. Its power comes from combining it with other traits.</p>
+
+    <h3>OpenableTrait + ContainerTrait</h3>
+
+    <p>When an entity has BOTH OpenableTrait and ContainerTrait:</p>
+
+    <ul>
+      <li><strong>Closed container</strong>: contents are hidden. <code>look in lunchbox</code> says it's closed. <code>put map in lunchbox</code> is blocked.</li>
+      <li><strong>Open container</strong>: contents are visible. All container operations work normally.</li>
+    </ul>
+
+    <p>This is how you create discoverable containers — the player opens something and finds items inside.</p>
+
+    <h3>Key Properties</h3>
+
+    <table>
+      <tr><th>Property</th><th>Default</th><th>What It Does</th></tr>
+      <tr><td><code>isOpen</code></td><td><code>false</code></td><td>Current state — open or closed</td></tr>
+      <tr><td><code>canClose</code></td><td><code>true</code></td><td>Whether the player can close it again after opening</td></tr>
+      <tr><td><code>revealsContents</code></td><td><code>true</code></td><td>Whether opening shows "Inside you can see..."</td></tr>
+    </table>
+
+    <h3>Placing Items in Closed Containers</h3>
+
+    <p>During world setup, you might need to place items inside a container that starts closed. The engine normally blocks <code>put X in Y</code> when Y is closed. The workaround is to temporarily open the container:</p>
+
+<pre><code>lunchbox.get(OpenableTrait)!.isOpen = true;   // Temporarily open
+world.moveEntity(juice.id, lunchbox.id);       // Place item inside
+lunchbox.get(OpenableTrait)!.isOpen = false;   // Close it back</code></pre>
+
+    <h3>Future Combinations</h3>
+
+    <p>OpenableTrait becomes even more powerful in V7 when combined with LockableTrait — creating locked containers and doors that must be unlocked before they can be opened.</p>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; south                     Go to Main Path
+&gt; examine lunchbox          It's closed
+&gt; open lunchbox             Open it — "Inside you can see a juice box"
+&gt; take juice                Take the juice box
+&gt; close lunchbox            Close it again
+&gt; east                      Go to Petting Zoo
+&gt; open dispenser            Open the feed dispenser
+&gt; take dispenser            Can't — it's scenery</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v06.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>OpenableTrait adds open/close state. Combined with ContainerTrait, it creates containers that hide their contents until opened. The <code>open</code> and <code>close</code> actions are built into stdlib.</p>
+
+    <div class="step-nav">
+      <a href="zoo-05.html">&larr; Previous: Containers &amp; Supporters</a>
+      <a href="zoo-07.html">Next: Locked Doors &amp; Keys &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

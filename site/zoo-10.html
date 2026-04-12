@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Switchable Devices — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 10: Switchable Devices</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>A battered radio in the supply room can be switched on and off. It plays zoo-themed music when on, and powers down when off. It's bolted to the shelf so you can't take it.</p>
+
+    <h2>What's New (Compared to V9)</h2>
+
+    <p>V8 introduced SwitchableTrait alongside LightSourceTrait for the flashlight. V10 shows SwitchableTrait on its own — a device with on/off state that isn't a light source.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>SwitchableTrait Standalone</h3>
+
+    <p>SwitchableTrait gives any entity a toggleable on/off state:</p>
+
+<pre><code>radio.add(new SwitchableTrait({
+  isOn: false,   // Starts off
+}));</code></pre>
+
+    <p>The player uses <code>switch on radio</code> or <code>turn on radio</code> to toggle it. The stdlib handles the switching action automatically.</p>
+
+    <h3>SwitchableTrait vs OpenableTrait</h3>
+
+    <p>These two traits look similar but serve different semantic purposes:</p>
+
+    <table>
+      <tr><th>Trait</th><th>Verb</th><th>Models</th><th>Examples</th></tr>
+      <tr><td><code>SwitchableTrait</code></td><td>switch on / switch off</td><td>Devices, electronics</td><td>Radio, flashlight, alarm, fan</td></tr>
+      <tr><td><code>OpenableTrait</code></td><td>open / close</td><td>Physical barriers</td><td>Door, container, book, lid</td></tr>
+    </table>
+
+    <p>The parser routes <code>switch on X</code> to SwitchableTrait and <code>open X</code> to OpenableTrait. You'd never "switch on" a door or "open" a radio.</p>
+
+    <h3>Trait Combinations with SwitchableTrait</h3>
+
+    <p>SwitchableTrait combines naturally with other traits:</p>
+
+    <table>
+      <tr><th>Combination</th><th>What It Creates</th></tr>
+      <tr><td>SwitchableTrait alone</td><td>Simple device (radio, alarm)</td></tr>
+      <tr><td>SwitchableTrait + LightSourceTrait</td><td>Flashlight, lamp, lantern</td></tr>
+      <tr><td>SwitchableTrait + SceneryTrait</td><td>Fixed device (wall switch, panel)</td></tr>
+    </table>
+
+    <h3>Common Verbs</h3>
+
+    <p>All of these work for SwitchableTrait:</p>
+
+    <ul>
+      <li><code>switch on radio</code></li>
+      <li><code>switch off radio</code></li>
+      <li><code>turn on radio</code></li>
+      <li><code>turn off radio</code></li>
+    </ul>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; take keycard; south; unlock gate with keycard; open gate; south
+&gt; examine radio           See the radio
+&gt; switch on radio         Turn it on
+&gt; switch off radio        Turn it off
+&gt; take radio              Can't — scenery</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v10.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>SwitchableTrait gives entities an on/off toggle. It works standalone for simple devices (radio) or combined with LightSourceTrait for lights (flashlight). The <code>switch on/off</code> and <code>turn on/off</code> verbs are handled by stdlib automatically.</p>
+
+    <div class="step-nav">
+      <a href="zoo-09.html">&larr; Previous: Readable Objects</a>
+      <a href="zoo-11.html">Next: Non-Player Characters &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

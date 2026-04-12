@@ -266,6 +266,78 @@ a:hover { color: var(--accent-hover); }
   height: auto;
 }
 
+/* ── Three-column layout (Family Zoo) ── */
+.page-three-col {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 200px;
+  grid-template-rows: 1fr auto;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.page-three-col .footer {
+  grid-column: 1 / -1;
+}
+
+.step-tabs {
+  padding: 3rem 0.5rem;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.step-tab {
+  width: 40px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.step-tab:hover {
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+.step-tab.active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.step-section {
+  display: none;
+}
+
+/* ── Step navigation ── */
+.step-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.step-nav a {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .page {
@@ -307,6 +379,21 @@ a:hover { color: var(--accent-hover); }
     gap: 0.5rem;
     text-align: center;
     padding: 1.25rem;
+  }
+
+  .page-three-col {
+    grid-template-columns: 1fr;
+  }
+
+  .step-tabs {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 1rem 0.75rem;
+    gap: 4px;
   }
 }
 

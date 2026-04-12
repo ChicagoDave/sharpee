@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Single Room — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 1: A Single Room</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>You're standing at the entrance to the Willowbrook Family Zoo. There's a welcome sign and a ticket booth. You can look around and examine things, but there's nowhere to go yet.</p>
+
+    <p>That's it. One room, two things to look at. This is the simplest possible Sharpee story.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>The Story Interface</h3>
+
+    <p>Every Sharpee story is a TypeScript class that implements the <code>Story</code> interface. The engine calls your class's methods during startup to build the game world. There are three things every story must provide:</p>
+
+    <ol>
+      <li><strong><code>config</code></strong> — A <code>StoryConfig</code> object with the story's title, author, version, and ID. The engine displays this as a banner when the game starts.</li>
+      <li><strong><code>createPlayer(world)</code></strong> — Creates the player character. The engine calls this first, before anything else. You create an entity, attach traits to it, and return it.</li>
+      <li><strong><code>initializeWorld(world)</code></strong> — Builds the game world. This is where you create rooms, objects, and connections. The engine calls this after <code>createPlayer</code>.</li>
+    </ol>
+
+    <p>There are optional methods too (<code>extendParser</code>, <code>extendLanguage</code>, <code>onEngineReady</code>, and others), but you don't need any of them for a basic story.</p>
+
+    <h3>Entities</h3>
+
+    <p>Everything in a Sharpee game is an <strong>entity</strong> — rooms, objects, characters, doors, even the player. An entity by itself is just an empty shell with an ID. You make it useful by attaching <strong>traits</strong>.</p>
+
+    <p>Entities have a <strong>type</strong> that gives the engine a hint about what they are:</p>
+
+    <table>
+      <tr><th>Type</th><th>What It Is</th></tr>
+      <tr><td><code>EntityType.ROOM</code></td><td>A location the player can be in</td></tr>
+      <tr><td><code>EntityType.ITEM</code></td><td>A portable object</td></tr>
+      <tr><td><code>EntityType.ACTOR</code></td><td>A character (player or NPC)</td></tr>
+      <tr><td><code>EntityType.SCENERY</code></td><td>A fixed object that can't be picked up</td></tr>
+      <tr><td><code>EntityType.CONTAINER</code></td><td>An object that holds other objects</td></tr>
+      <tr><td><code>EntityType.SUPPORTER</code></td><td>An object things can be placed on</td></tr>
+    </table>
+
+    <p>You create entities with <code>world.createEntity(name, type)</code>.</p>
+
+    <h3>Traits</h3>
+
+    <p>Traits are components you attach to entities to give them capabilities. Think of them as answers to "what IS this thing?" and "what can this thing DO?"</p>
+
+    <p>In V1, we use four traits:</p>
+
+    <ul>
+      <li><strong><code>IdentityTrait</code></strong> — Gives an entity a name, description, and aliases. Almost every entity has this. The <code>description</code> is what the player sees when they type <code>examine</code>. The <code>aliases</code> are alternative words the parser recognizes — so the player can type <code>examine sign</code> or <code>examine wooden sign</code> and both work.</li>
+      <li><strong><code>ActorTrait</code></strong> — Marks an entity as a character. The <code>isPlayer: true</code> flag tells the engine this is the player character.</li>
+      <li><strong><code>ContainerTrait</code></strong> — Lets an entity hold other entities inside it. The player needs this so they can carry items in their inventory.</li>
+      <li><strong><code>SceneryTrait</code></strong> — Marks an entity as fixed scenery. The player can examine it but not pick it up. Without this, <code>take sign</code> would put the sign in the player's inventory.</li>
+      <li><strong><code>RoomTrait</code></strong> — Marks an entity as a room. Rooms have exits (empty in V1 since there's only one room) and a darkness flag.</li>
+    </ul>
+
+    <h3>Placing Things in Rooms</h3>
+
+    <p>Creating an entity doesn't put it anywhere. You must explicitly place it with <code>world.moveEntity(entityId, locationId)</code>. This puts the entity "inside" the location — whether that's an object inside a room, an item inside a container, or the player inside a room.</p>
+
+    <p>If you forget this step, the entity exists in the world's database but is invisible — the player can never find it.</p>
+
+    <h3>The Player's Starting Location</h3>
+
+    <p>The player is an entity too, and they need to be placed in a room just like any object. <code>world.moveEntity(player.id, entrance.id)</code> sets the starting location.</p>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; look                  See the room description
+&gt; examine sign          Read the welcome sign
+&gt; examine booth         Look at the ticket booth
+&gt; take sign             Can't — it's scenery ("fixed in place")
+&gt; inventory             Check what you're carrying (nothing yet)</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v01.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>A Sharpee story is a class with a config, a player creator, and a world initializer. The world is made of entities with traits. Place everything explicitly, or it won't exist.</p>
+
+    <div class="step-nav">
+      <a href="zoo-02.html">Next: Multiple Rooms &amp; Navigation &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Non-Player Characters — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 11: Non-Player Characters</h1>
+
+    <h2>What This Version Teaches</h2>
+
+    <p>NPCs are characters in your game world that aren't controlled by the player. They can walk around, talk, react to the player, and generally make your world feel alive.</p>
+
+    <p>Sharpee's NPC system has three parts:</p>
+
+    <ol>
+      <li><strong>NpcTrait</strong> — a trait you add to an entity to mark it as an NPC</li>
+      <li><strong>NpcBehavior</strong> — an object that defines what the NPC does each turn</li>
+      <li><strong>NpcPlugin</strong> — an engine plugin that gives NPCs their own turn phase</li>
+    </ol>
+
+    <h2>Key Concepts</h2>
+
+    <h3>Creating an NPC Entity</h3>
+
+    <p>An NPC needs three traits: <code>IdentityTrait</code> (name and description), <code>ActorTrait</code> (marks it as a character), and <code>NpcTrait</code> (connects it to a behavior):</p>
+
+<pre><code>const zookeeper = world.createEntity('zookeeper', EntityType.ACTOR);
+
+zookeeper.add(new IdentityTrait({
+  name: 'zookeeper',
+  description: 'A friendly zookeeper in khaki overalls.',
+  aliases: ['keeper', 'sam'],
+}));
+
+// ActorTrait with isPlayer: false — this is an NPC, not the player
+zookeeper.add(new ActorTrait({ isPlayer: false }));
+
+// NpcTrait connects this entity to a registered behavior
+zookeeper.add(new NpcTrait({
+  behaviorId: 'zoo-keeper-patrol',  // must match behavior's id
+  canMove: true,                     // allowed to change rooms
+  isAlive: true,
+  isConscious: true,
+}));
+
+world.moveEntity(zookeeper.id, mainPath.id);</code></pre>
+
+    <h3>Registering the NPC Plugin</h3>
+
+    <p>In <code>onEngineReady()</code>, register the plugin and behaviors:</p>
+
+<pre><code>onEngineReady(engine: GameEngine): void {
+  // 1. Create and register the plugin
+  const npcPlugin = new NpcPlugin();
+  engine.getPluginRegistry().register(npcPlugin);
+
+  // 2. Get the NPC service
+  const npcService = npcPlugin.getNpcService();
+
+  // 3. Register behaviors
+  npcService.registerBehavior(myBehavior);
+}</code></pre>
+
+    <h3>Built-in Behaviors</h3>
+
+    <p>Sharpee includes several ready-made behaviors:</p>
+
+    <table>
+      <tr><th>Behavior</th><th>What It Does</th></tr>
+      <tr><td><code>createPatrolBehavior({ route, loop, waitTurns })</code></td><td>Walk a fixed route of rooms</td></tr>
+      <tr><td><code>createWandererBehavior({ moveChance })</code></td><td>Move randomly between rooms</td></tr>
+      <tr><td><code>createFollowerBehavior({ immediate })</code></td><td>Follow the player</td></tr>
+      <tr><td><code>guardBehavior</code></td><td>Stand guard, block passage, fight</td></tr>
+      <tr><td><code>passiveBehavior</code></td><td>Do nothing (react-only NPCs)</td></tr>
+    </table>
+
+    <h3>Writing a Custom Behavior</h3>
+
+    <p>Implement the <code>NpcBehavior</code> interface:</p>
+
+<pre><code>const parrotBehavior: NpcBehavior = {
+  id: 'zoo-parrot',
+  name: 'Parrot Behavior',
+
+  onTurn(context: NpcContext): NpcAction[] {
+    if (!context.playerVisible) return [];
+    if (context.random.chance(0.5)) {
+      return [{
+        type: 'speak',
+        messageId: 'npc.speech',
+        data: { npcName: 'parrot', text: 'Polly wants a cracker!' },
+      }];
+    }
+    return [];
+  },
+
+  onPlayerEnters(context: NpcContext): NpcAction[] {
+    return [{
+      type: 'emote',
+      messageId: 'npc.emote',
+      data: { npcName: 'parrot', text: 'The parrot eyes you with interest.' },
+    }];
+  },
+};</code></pre>
+
+    <h3>NpcAction Types</h3>
+
+    <table>
+      <tr><th>Action</th><th>What It Does</th></tr>
+      <tr><td><code>{ type: 'move', direction: Direction.NORTH }</code></td><td>Walk to a connected room</td></tr>
+      <tr><td><code>{ type: 'speak', messageId, data }</code></td><td>Say something (visible text)</td></tr>
+      <tr><td><code>{ type: 'emote', messageId, data }</code></td><td>Do something visible</td></tr>
+      <tr><td><code>{ type: 'wait' }</code></td><td>Do nothing this turn</td></tr>
+      <tr><td><code>{ type: 'take', target: entityId }</code></td><td>Pick up an item</td></tr>
+      <tr><td><code>{ type: 'drop', target: entityId }</code></td><td>Drop an item</td></tr>
+    </table>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; examine zookeeper       (see the zookeeper's description)
+&gt; wait                    (watch the zookeeper patrol)
+&gt; west                    (go to aviary — meet the parrot)
+&gt; examine parrot          (see the parrot's description)
+&gt; wait                    (the parrot might squawk)</code></pre>
+
+    <h2>Key Takeaways</h2>
+
+    <ul>
+      <li>NPCs are entities with <code>ActorTrait</code> (isPlayer: false) + <code>NpcTrait</code></li>
+      <li><code>NpcTrait.behaviorId</code> must match a registered behavior's <code>id</code></li>
+      <li>The <code>NpcPlugin</code> must be registered in <code>onEngineReady()</code> for NPCs to act</li>
+      <li>Use built-in behaviors for common patterns; write custom ones for unique NPCs</li>
+      <li><code>NpcContext</code> gives behaviors access to the world, the NPC, and the player</li>
+    </ul>
+
+    <div class="step-nav">
+      <a href="zoo-10.html">&larr; Previous: Switchable Devices</a>
+      <a href="zoo-12.html">Next: Event Handlers &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

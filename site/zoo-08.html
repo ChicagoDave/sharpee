@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Light &amp; Dark — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 8: Light &amp; Dark</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>A nocturnal animals exhibit lies south of the supply room. It's pitch black inside — you can't see a thing. A flashlight in the supply room solves the problem: switch it on, carry it in, and the exhibit comes alive with sugar gliders, bush babies, and a barn owl.</p>
+
+    <h2>What's New (Compared to V7)</h2>
+
+    <p>V7 introduced locked doors. V8 introduces darkness and light sources — a fundamental IF mechanic where certain areas are inaccessible without illumination.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>Dark Rooms</h3>
+
+    <p>Any room can be made dark by setting <code>isDark: true</code> on its <code>RoomTrait</code>:</p>
+
+<pre><code>nocturnalExhibit.add(new RoomTrait({
+  exits: {},
+  isDark: true,     // This room is dark!
+}));</code></pre>
+
+    <p>When the player enters a dark room without a light source, they see a darkness message instead of the room description. They can't examine things, take things, or interact with anything — all they can do is leave.</p>
+
+    <h3>LightSourceTrait</h3>
+
+    <p>LightSourceTrait marks an entity as something that can illuminate dark rooms:</p>
+
+<pre><code>flashlight.add(new LightSourceTrait({
+  brightness: 8,       // How powerful (1-10)
+  isLit: false,        // Starts unlit
+}));</code></pre>
+
+    <p>When the player carries an entity with <code>LightSourceTrait</code> where <code>isLit</code> is true, dark rooms become illuminated. The room description appears normally, and all objects in the room become accessible.</p>
+
+    <h3>SwitchableTrait</h3>
+
+    <p>SwitchableTrait gives an entity an on/off state:</p>
+
+<pre><code>flashlight.add(new SwitchableTrait({
+  isOn: false,         // Starts off
+}));</code></pre>
+
+    <p>The player uses <code>switch on flashlight</code> and <code>switch off flashlight</code> to toggle it. When combined with LightSourceTrait, switching on the device lights it up.</p>
+
+    <h3>The Flashlight Pattern</h3>
+
+    <p>A flashlight combines three traits:</p>
+
+    <table>
+      <tr><th>Trait</th><th>What It Provides</th></tr>
+      <tr><td><code>SwitchableTrait</code></td><td>On/off toggle via "switch on/off"</td></tr>
+      <tr><td><code>LightSourceTrait</code></td><td>Illumination for dark rooms</td></tr>
+      <tr><td><code>IdentityTrait</code></td><td>Name, description, aliases</td></tr>
+    </table>
+
+    <p>When the player switches on the flashlight:</p>
+
+    <ol>
+      <li><code>SwitchableTrait.isOn</code> &rarr; <code>true</code></li>
+      <li><code>LightSourceTrait.isLit</code> &rarr; <code>true</code> (linked to switch state)</li>
+      <li>Any dark room the player enters is now illuminated</li>
+    </ol>
+
+    <h3>Other Light Source Patterns</h3>
+
+    <p>The flashlight is the simplest pattern, but Sharpee supports others:</p>
+
+    <p><strong>Always-on light</strong> (glowing gem, enchanted sword):</p>
+
+<pre><code>gem.add(new LightSourceTrait({ isLit: true, brightness: 5 }));
+// No SwitchableTrait — it's always lit</code></pre>
+
+    <p><strong>Consumable light</strong> (candle, torch):</p>
+
+<pre><code>candle.add(new LightSourceTrait({
+  isLit: false,
+  brightness: 3,
+  fuelRemaining: 50,        // Burns for 50 turns
+  fuelConsumptionRate: 1,    // Uses 1 fuel per turn
+}));</code></pre>
+
+    <p><strong>Adjustable light</strong> (lantern with dimmer):</p>
+
+<pre><code>lantern.add(new LightSourceTrait({
+  brightness: 10,    // Full brightness
+}));
+// Story code can adjust brightness dynamically</code></pre>
+
+    <h3>Dark Room Design</h3>
+
+    <p>Objects inside dark rooms exist even when the player can't see them. They're just inaccessible without light. Once the player brings a light source, everything works normally — examine, take, interact.</p>
+
+    <p>This makes light sources a natural gating mechanism: you put valuable content behind darkness, and the flashlight (or candle, or magic spell) is the key.</p>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; take keycard                        Get the key
+&gt; south                               Main Path
+&gt; unlock gate with keycard            Unlock staff gate
+&gt; open gate                           Open it
+&gt; south                               Supply Room
+&gt; take flashlight                     Get the flashlight
+&gt; south                               Nocturnal Exhibit — dark!
+&gt; look                                "It is pitch dark"
+&gt; north                               Retreat to Supply Room
+&gt; switch on flashlight                Let there be light
+&gt; south                               Nocturnal Exhibit — now lit!
+&gt; look                                See the animals
+&gt; examine owl                         Look at the barn owl
+&gt; examine gliders                     Look at the sugar gliders
+&gt; switch off flashlight               Darkness returns
+&gt; look                                Dark again
+&gt; switch on flashlight                Light it back up
+&gt; north                               Back to Supply Room</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v08.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p><code>isDark: true</code> on a room makes it pitch black. <code>LightSourceTrait</code> lets entities illuminate dark rooms. <code>SwitchableTrait</code> adds on/off toggle. A flashlight is just an item with both traits — switch it on, carry it in, and the darkness lifts.</p>
+
+    <div class="step-nav">
+      <a href="zoo-07.html">&larr; Previous: Locked Doors &amp; Keys</a>
+      <a href="zoo-09.html">Next: Readable Objects &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

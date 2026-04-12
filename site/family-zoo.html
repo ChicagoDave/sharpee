@@ -4,39 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Family Zoo Tutorial — Sharpee</title>
-  <meta name="description" content="Build a Family Zoo interactive fiction story in Sharpee — multiple rooms, custom actions, NPCs, timed events, and scoring.">
+  <meta name="description" content="Build a Family Zoo interactive fiction story in Sharpee — 16 steps from a single room to a complete scoring adventure.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="page">
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+
   <main class="content">
     <h1>Family Zoo Tutorial</h1>
 
-    <p><em>Family Zoo</em> is an intermediate tutorial that builds a small, scoring zoo adventure. You'll learn multi-file story organization, custom actions, NPC behaviors, timed events, and the entity helper API.</p>
+    <p><em>Family Zoo</em> builds a small zoo adventure in 16 steps. Each step adds one concept — by the end you'll have a complete game with rooms, objects, NPCs, puzzles, timed events, and scoring.</p>
 
     <h2>The Game</h2>
 
     <p><strong>Seven rooms</strong>: Zoo Entrance, Main Path, Petting Zoo, Aviary, Gift Shop, Supply Room, Nocturnal Exhibit</p>
     <p><strong>Key objects</strong>: zoo brochure, zoo map, animal feed, souvenir penny press, flashlight, disposable camera, backpack, lunchbox</p>
     <p><strong>NPCs</strong>: a patrolling zookeeper ("Sam"), a squawking parrot, pettable goats and rabbits</p>
-    <p><strong>The goal</strong>: Earn 100 points by visiting exhibits, feeding animals, pressing a souvenir penny, taking photos, and staying after hours to hear what the animals <em>really</em> think.</p>
+    <p><strong>The goal</strong>: Earn 100 points by visiting exhibits, feeding animals, pressing a souvenir penny, taking photos, and staying after hours.</p>
 
-    <h2>What You'll Learn</h2>
+    <h2>The Steps</h2>
 
     <table>
-      <tr><th>Concept</th><th>Where it appears</th></tr>
-      <tr><td>Entity helpers (<code>world.helpers()</code>)</td><td>Room, object, container, door, actor builders</td></tr>
-      <tr><td>Multi-file story organization</td><td><code>zoo-map.ts</code>, <code>zoo-items.ts</code>, <code>characters.ts</code>, <code>events.ts</code>, <code>scoring.ts</code>, <code>language.ts</code></td></tr>
-      <tr><td>Custom actions (feed, photograph, pet)</td><td>Four-phase action pattern with grammar extension</td></tr>
-      <tr><td>Capability dispatch</td><td><code>PettableTrait</code> + <code>CapabilityBehavior</code> for petting</td></tr>
-      <tr><td>NPC behaviors</td><td>Zookeeper patrol, parrot chatter</td></tr>
-      <tr><td>Runtime behavior swap</td><td>Parrot switches from squawking to candid after hours</td></tr>
-      <tr><td>Daemons and fuses</td><td>PA announcements, feeding time, after-hours events</td></tr>
-      <tr><td>Scoring system</td><td>Point awards via <code>world.awardScore()</code>, victory daemon</td></tr>
-      <tr><td>Language layer</td><td>All prose in <code>language.ts</code> via <code>language.addMessage()</code></td></tr>
-      <tr><td>Locked doors</td><td>Staff gate with keycard</td></tr>
-      <tr><td>Dark rooms</td><td>Nocturnal exhibit requires flashlight</td></tr>
+      <tr><th>#</th><th>Topic</th><th>What You'll Learn</th></tr>
+      <tr><td>1</td><td><a href="zoo-01.html">A Single Room</a></td><td>Story interface, entities, traits, placing things</td></tr>
+      <tr><td>2</td><td><a href="zoo-02.html">Multiple Rooms</a></td><td>Room connections, exits, compass directions</td></tr>
+      <tr><td>3</td><td><a href="zoo-03.html">Scenery</a></td><td>SceneryTrait, non-portable objects, aliases</td></tr>
+      <tr><td>4</td><td><a href="zoo-04.html">Portable Objects</a></td><td>Items, inventory, taking and dropping</td></tr>
+      <tr><td>5</td><td><a href="zoo-05.html">Containers</a></td><td>ContainerTrait, SupporterTrait, capacity</td></tr>
+      <tr><td>6</td><td><a href="zoo-06.html">Openable</a></td><td>OpenableTrait, closed containers, hidden contents</td></tr>
+      <tr><td>7</td><td><a href="zoo-07.html">Locked Doors</a></td><td>LockableTrait, DoorTrait, keys, exit via</td></tr>
+      <tr><td>8</td><td><a href="zoo-08.html">Light & Dark</a></td><td>Dark rooms, LightSourceTrait, SwitchableTrait</td></tr>
+      <tr><td>9</td><td><a href="zoo-09.html">Readable</a></td><td>ReadableTrait, read vs examine</td></tr>
+      <tr><td>10</td><td><a href="zoo-10.html">Switchable</a></td><td>SwitchableTrait standalone, device patterns</td></tr>
+      <tr><td>11</td><td><a href="zoo-11.html">NPCs</a></td><td>NpcTrait, behaviors, patrol, custom behaviors</td></tr>
+      <tr><td>12</td><td><a href="zoo-12.html">Event Handlers</a></td><td>Reacting to actions, chain events, item transformation</td></tr>
+      <tr><td>13</td><td><a href="zoo-13.html">Custom Actions</a></td><td>Four-phase actions, grammar extension, language</td></tr>
+      <tr><td>14</td><td><a href="zoo-14.html">Capability Dispatch</a></td><td>Per-entity behaviors, custom traits, dispatch</td></tr>
+      <tr><td>15</td><td><a href="zoo-15.html">Timed Events</a></td><td>Daemons, fuses, SchedulerPlugin</td></tr>
+      <tr><td>16</td><td><a href="zoo-16.html">Scoring & Endgame</a></td><td>Score ledger, victory conditions, event chains</td></tr>
     </table>
 
     <h2>Prerequisites</h2>
@@ -47,345 +54,13 @@
       <li>Familiarity with Sharpee basics (the <a href="cloak-of-darkness.html">Cloak of Darkness</a> tutorial)</li>
     </ul>
 
-    <h2>Step 1: Project Structure</h2>
-
-    <p>The Family Zoo tutorial ships with Sharpee in <code>tutorials/familyzoo/</code>. The story is split across multiple files by concern:</p>
-
-    <pre><code>tutorials/familyzoo/src/v17/
-├── index.ts        # Story class — wires everything together
-├── zoo-map.ts      # Rooms, exits, scenery, locked door
-├── zoo-items.ts    # Portable objects, containers, supporters
-├── characters.ts   # Zookeeper, parrot, pettable animals, NPC behaviors
-├── events.ts       # PA announcements, feeding time, after-hours daemons
-├── scoring.ts      # Score IDs, point values, victory condition
-└── language.ts     # All player-facing text</code></pre>
-
-    <p>Each file has a single responsibility. As your story grows, this pattern keeps things manageable.</p>
-
-    <h2>Step 2: Building the Map with Entity Helpers</h2>
-
-    <p>Instead of manually creating entities and adding traits one at a time, the Family Zoo uses <strong>entity helpers</strong> — a fluent builder API accessed via <code>world.helpers()</code>:</p>
-
-    <pre><code>import '@sharpee/helpers';
-
-export function createZooMap(world: WorldModel) {
-  const { room, object, door } = world.helpers();
-
-  const entrance = room('Zoo Entrance')
-    .description('You stand before the wrought-iron gates of the Willowbrook Family Zoo...')
-    .aliases('entrance', 'gates', 'gate')
-    .build();
-
-  const mainPath = room('Main Path')
-    .description('A wide gravel path winds through the heart of the zoo...')
-    .aliases('path', 'main path', 'gravel path')
-    .build();</code></pre>
-
-    <p>The helpers handle <code>IdentityTrait</code>, <code>RoomTrait</code>, and entity creation automatically. Compare this with the manual approach from Cloak of Darkness — much less boilerplate.</p>
-
-    <h3>Dark Rooms</h3>
-
-    <p>The nocturnal exhibit is dark, requiring a flashlight:</p>
-
-    <pre><code>  const nocturnalExhibit = room('Nocturnal Animals Exhibit')
-    .description('A cool, dimly lit cavern designed to simulate nighttime...')
-    .dark()
-    .build();</code></pre>
-
-    <h3>Locked Doors</h3>
-
-    <p>The staff gate is a door that connects two rooms and requires a keycard:</p>
-
-    <pre><code>  const keycard = object('staff keycard')
-    .description('A white plastic keycard with "WILLOWBROOK ZOO — STAFF ONLY".')
-    .aliases('keycard', 'key card', 'card', 'key')
-    .in(entrance)
-    .build();
-
-  door('staff gate')
-    .description('A sturdy metal gate with a "STAFF ONLY" sign.')
-    .aliases('gate', 'staff gate', 'metal gate')
-    .between(mainPath, supplyRoom, Direction.SOUTH)
-    .openable({ isOpen: false })
-    .lockable({ isLocked: true, keyId: keycard.id })
-    .build();</code></pre>
-
-    <h3>Scenery</h3>
-
-    <p>Non-portable decorative objects use <code>.scenery()</code>:</p>
-
-    <pre><code>  object('welcome sign')
-    .description('A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY ZOO."')
-    .aliases('sign', 'welcome sign')
-    .scenery()
-    .in(entrance)
-    .build();</code></pre>
-
-    <h2>Step 3: Creating Objects</h2>
-
-    <p>Objects live in <code>zoo-items.ts</code>. The helpers support containers, supporters, light sources, openable items, and placing items inside closed containers:</p>
-
-    <pre><code>export function createZooItems(world: WorldModel, rooms: RoomIds) {
-  const { object, container } = world.helpers();
-
-  // Portable light source
-  const flashlight = object('flashlight')
-    .description('A heavy-duty yellow flashlight.')
-    .aliases('flashlight', 'torch', 'light')
-    .lightSource({ isLit: false })
-    .addTrait(new SwitchableTrait({ isOn: false }))
-    .in(supplyRoomEntity)
-    .build();
-
-  // Container
-  const lunchbox = container('lunchbox')
-    .description('A dented metal lunchbox decorated with cartoon zoo animals.')
-    .aliases('lunchbox', 'lunch box', 'box')
-    .openable({ isOpen: false })
-    .in(mainPathEntity)
-    .build();
-
-  // Place item inside a closed container (bypasses validation)
-  const juice = object('juice box')
-    .description('A small juice box with a picture of a happy elephant.')
-    .aliases('juice', 'juice box', 'drink')
-    .skipValidation()
-    .in(lunchbox)
-    .build();</code></pre>
-
-    <p>The <code>.skipValidation()</code> call uses <code>AuthorModel</code> internally to bypass the rule that prevents placing items in closed containers during world setup.</p>
-
-    <h2>Step 4: Characters and NPC Behaviors</h2>
-
-    <p>Characters are defined in <code>characters.ts</code>. The zookeeper patrols between rooms using a built-in patrol behavior:</p>
-
-    <pre><code>export function createCharacters(world: WorldModel, rooms: RoomIds) {
-  const { actor, object } = world.helpers();
-
-  const zookeeper = actor('zookeeper')
-    .description('A friendly zookeeper in khaki overalls. A name tag reads "Sam."')
-    .aliases('keeper', 'zookeeper', 'sam')
-    .addTrait(new NpcTrait({
-      behaviorId: KEEPER_PATROL_ID,
-      canMove: true, isAlive: true, isConscious: true,
-    }))
-    .in(mainPathEntity)
-    .build();</code></pre>
-
-    <h3>Custom Traits</h3>
-
-    <p>The <code>PettableTrait</code> is a custom trait that marks animals as pettable and declares a capability:</p>
-
-    <pre><code>export class PettableTrait implements ITrait {
-  static readonly type = 'zoo.trait.pettable' as const;
-  static readonly capabilities = ['zoo.action.petting'] as const;
-  readonly type = PettableTrait.type;
-  readonly animalKind: AnimalKind;
-  constructor(kind: AnimalKind) {
-    this.animalKind = kind;
-  }
-}</code></pre>
-
-    <h2>Step 5: Custom Actions</h2>
-
-    <p>The Family Zoo defines three story-specific actions: <strong>feed</strong>, <strong>photograph</strong>, and <strong>pet</strong>. Each follows the four-phase pattern (validate/execute/report/blocked).</p>
-
-    <h3>The Petting Action (Capability Dispatch)</h3>
-
-    <p>Petting uses <strong>capability dispatch</strong> because different animals react differently:</p>
-
-    <pre><code>const pettingBehavior: CapabilityBehavior = {
-  validate(entity, world, actorId, sharedData) {
-    return { valid: true };
-  },
-  execute(entity, world, actorId, sharedData) { },
-  report(entity, world, actorId, sharedData) {
-    const pettable = entity.get(PettableTrait);
-    let messageId = PetMessages.CANT_PET;
-    switch (pettable?.animalKind) {
-      case 'goats':   messageId = PetMessages.PET_GOATS; break;
-      case 'rabbits': messageId = PetMessages.PET_RABBITS; break;
-      case 'parrot':  messageId = PetMessages.PET_PARROT; break;
-    }
-    return [createEffect('zoo.event.petted', {
-      messageId, params: { target: entity.name }
-    })];
-  },
-  blocked(entity, world, actorId, error, sharedData) {
-    return [createEffect('zoo.event.petting_blocked', { messageId: error })];
-  },
-};</code></pre>
-
-    <h3>Grammar Extension</h3>
-
-    <p>Story-specific verbs are registered in <code>extendParser()</code>:</p>
-
-    <pre><code>extendParser(parser: Parser): void {
-  const grammar = parser.getStoryGrammar();
-  grammar.define('feed :thing').mapsTo(FEED_ACTION_ID).withPriority(150).build();
-  grammar.define('photograph :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
-  grammar.define('photo :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
-  grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
-  grammar.define('stroke :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
-}</code></pre>
-
-    <h2>Step 6: Timed Events (Daemons and Fuses)</h2>
-
-    <p>The zoo has a living world powered by the <strong>Scheduler Plugin</strong>:</p>
-
-    <ul>
-      <li><strong>PA Announcements</strong> (daemon): Every 5 turns, a PA announcement counts down to closing</li>
-      <li><strong>Feeding Time</strong> (fuse): Every 8 turns, announces feeding time at the petting zoo</li>
-      <li><strong>Goat Bleating</strong> (daemon): While feeding time is active, goats bleat for 3 turns</li>
-      <li><strong>Victory Check</strong> (daemon): Triggers when the player reaches 100 points</li>
-    </ul>
-
-    <pre><code>// PA announcement daemon — fires every 5 turns, counts down to close
-export function createPAAnnouncementDaemon(): Daemon {
-  let announcementCount = 0;
-  return {
-    id: 'zoo.daemon.pa_announcements',
-    name: 'Zoo PA Announcements',
-    priority: 5,
-    condition: (ctx) => ctx.turn > 0 && ctx.turn % 5 === 0 && announcementCount &lt; 4,
-    run: (ctx) => {
-      announcementCount++;
-      // On the 4th announcement, flip the after-hours flag
-      if (announcementCount === 4) {
-        ctx.world.setStateValue('zoo.after_hours', true);
-      }
-      return [{ /* message event */ }];
-    },
-  };
-}</code></pre>
-
-    <h2>Step 7: After-Hours Phase</h2>
-
-    <p>When the zoo closes (4th PA announcement), the world changes:</p>
-
-    <ol>
-      <li><strong>Zookeeper departs</strong> — one-shot daemon removes the keeper and awards bonus points if the player witnesses it</li>
-      <li><strong>Animals speak candidly</strong> — visiting each exhibit after hours triggers unique dialogue and awards 5 bonus points</li>
-      <li><strong>Parrot behavior swap</strong> — the parrot's NPC behavior is replaced at runtime</li>
-    </ol>
-
-    <pre><code>// Runtime behavior swap — the canonical way to change NPC behavior mid-game
-scheduler.registerDaemon({
-  id: 'zoo.daemon.parrot_behavior_swap',
-  condition: (ctx) => !behaviorSwapped
-    && ctx.world.getStateValue('zoo.after_hours') === true,
-  run: () => {
-    behaviorSwapped = true;
-    npcService.removeBehavior('zoo-parrot');
-    npcService.registerBehavior(parrotAfterHoursBehavior);
-    return [];
-  },
-});</code></pre>
-
-    <p>The parrot goes from squawking "Polly wants a cracker!" to complaining about the gift shop markup.</p>
-
-    <h2>Step 8: Scoring</h2>
-
-    <p>Points are defined in <code>scoring.ts</code> and awarded throughout the game:</p>
-
-    <table>
-      <tr><th>Action</th><th>Points</th></tr>
-      <tr><td>Visit each exhibit (5 rooms)</td><td>5 each = 25</td></tr>
-      <tr><td>Feed the goats</td><td>10</td></tr>
-      <tr><td>Feed the rabbits</td><td>10</td></tr>
-      <tr><td>Collect zoo map</td><td>5</td></tr>
-      <tr><td>Press a souvenir penny</td><td>10</td></tr>
-      <tr><td>Photograph an animal</td><td>5</td></tr>
-      <tr><td>Pet an animal</td><td>5</td></tr>
-      <tr><td>Read the brochure</td><td>5</td></tr>
-      <tr><td colspan="2"><strong>After-hours bonus</strong></td></tr>
-      <tr><td>Witness zookeeper leaving</td><td>5</td></tr>
-      <tr><td>Hear goats after hours</td><td>5</td></tr>
-      <tr><td>Hear rabbits after hours</td><td>5</td></tr>
-      <tr><td>Hear parrot after hours</td><td>5</td></tr>
-      <tr><td>Hear snake after hours</td><td>5</td></tr>
-      <tr><td><strong>Total</strong></td><td><strong>100</strong></td></tr>
-    </table>
-
-    <h2>Step 9: The Language Layer</h2>
-
-    <p>All player-facing text lives in <code>language.ts</code>, registered via <code>language.addMessage()</code>:</p>
-
-    <pre><code>export function registerMessages(language: LanguageProvider): void {
-  language.addMessage(FeedMessages.FED_GOATS,
-    'You scatter some feed on the ground. The pygmy goats rush over, bleating excitedly...');
-
-  language.addMessage(AfterHoursMessages.PARROT_CANDID,
-    'The parrot clears its throat and fixes you with a knowing look. "Right then. Now that the '
-    + 'performative squawking is over, let me tell you something..."');
-
-  language.addMessage(ScoreMessages.VICTORY,
-    'Congratulations! You\'ve earned your MASTER ZOOKEEPER badge! *** You have won ***');
-}</code></pre>
-
-    <p>This keeps all prose in one place and supports future localization.</p>
-
-    <h2>Build and Play</h2>
-
-    <pre><code>npx @sharpee/sharpee build
-open dist/web/index.html</code></pre>
-
-    <h2>Sample Playthrough</h2>
-
-    <pre><code>&gt; look
-Zoo Entrance
-You stand before the wrought-iron gates of the Willowbrook Family Zoo...
-
-&gt; take brochure
-Taken.
-
-&gt; read brochure
-WILLOWBROOK FAMILY ZOO — Your Guide...
-
-&gt; south
-Main Path
-A wide gravel path winds through the heart of the zoo...
-
-&gt; east
-Petting Zoo
-A cheerful open-air enclosure filled with friendly animals...
-
-&gt; take feed
-Taken.
-
-&gt; feed goats
-You scatter some feed on the ground. The pygmy goats rush over...
-
-&gt; pet rabbits
-You gently stroke one of the rabbits. Its fur is incredibly soft...
-
-&gt; west. west
-Aviary
-You step inside a soaring mesh dome...
-
-&gt; pet parrot
-CHOMP! It nips your finger with its beak. "NO TOUCHING!" it squawks.</code></pre>
-
-    <h2>What You Learned</h2>
-
-    <ul>
-      <li><strong>Entity helpers</strong>: Fluent builder API via <code>world.helpers()</code> — snap traits together with chained methods</li>
-      <li><strong>Multi-file organization</strong>: Split by concern (map, items, characters, events, scoring, language)</li>
-      <li><strong>Custom actions</strong>: Four-phase pattern (validate/execute/report/blocked) with grammar extension</li>
-      <li><strong>Capability dispatch</strong>: <code>PettableTrait</code> declares capabilities, <code>CapabilityBehavior</code> implements per-entity logic</li>
-      <li><strong>NPC behaviors</strong>: Patrol routes, chatter, and runtime behavior swapping</li>
-      <li><strong>Daemons and fuses</strong>: Timed world events via the Scheduler Plugin</li>
-      <li><strong>Event chains</strong>: React to standard actions (movement, taking, reading) for scoring</li>
-      <li><strong>Scoring</strong>: <code>world.awardScore()</code> with score IDs and victory daemon</li>
-      <li><strong>Language separation</strong>: All prose registered via <code>language.addMessage()</code></li>
-      <li><strong>Locked doors and dark rooms</strong>: Door builder with <code>.lockable()</code>, room builder with <code>.dark()</code></li>
-    </ul>
+    <p>Use the numbered tabs on the left to step through the tutorial, or <a href="zoo-01.html">start with Step 1</a>.</p>
 
     <h2>Resources</h2>
 
     <ul>
-      <li><a href="cloak-of-darkness.html">Cloak of Darkness Tutorial</a> — the beginner tutorial</li>
       <li><a href="https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo">Source code on GitHub</a></li>
+      <li><a href="cloak-of-darkness.html">Cloak of Darkness Tutorial</a> — the beginner tutorial</li>
     </ul>
 
   </main>

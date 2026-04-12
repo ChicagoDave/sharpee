@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scoring &amp; Endgame — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 16: Scoring &amp; Endgame</h1>
+
+    <h2>Concept</h2>
+
+    <p>Sharpee's <strong>score ledger</strong> tracks player achievements with <code>world.awardScore()</code>. Each award has a unique ID that prevents double-scoring — awarding the same ID twice does nothing. A <strong>victory daemon</strong> watches for the win condition each turn and triggers the endgame.</p>
+
+    <h2>Key Code Pattern</h2>
+
+<pre><code>// Set max score in initializeWorld()
+world.setMaxScore(75);
+
+// Award points (idempotent — same ID never scores twice)
+const awarded = world.awardScore(
+  'story.visit.room_name',   // Unique ID
+  5,                          // Points
+  'Visited the room'          // Description (for debugging)
+);
+// awarded === true first time, false on subsequent calls
+
+// Check score
+const currentScore = world.getScore();
+const maxScore = world.getMaxScore();
+
+// Victory daemon — checks for win condition each turn
+const victoryDaemon: Daemon = {
+  id: 'story.daemon.victory',
+  name: 'Victory Check',
+  priority: 100,  // Run last
+  condition: (ctx) =&gt; ctx.world.getScore() &gt;= MAX_SCORE,
+  run: (ctx) =&gt; {
+    ctx.world.setStateValue('game.victory', true);
+    ctx.world.setStateValue('game.ended', true);
+    return [/* victory events */];
+  },
+};
+
+// Score on room visit via event handler
+world.chainEvent('if.event.actor_moved', (event, w) =&gt; {
+  const toRoom = event.data.toRoom;
+  w.awardScore(`visit:${toRoom}`, 5, 'Visited room');
+  return null;
+});</code></pre>
+
+    <h2>Scoring Breakdown</h2>
+
+    <table>
+      <tr><th>Achievement</th><th>Points</th><th>Score ID</th></tr>
+      <tr><td>Visit Petting Zoo</td><td>5</td><td><code>zoo.visit.petting_zoo</code></td></tr>
+      <tr><td>Visit Aviary</td><td>5</td><td><code>zoo.visit.aviary</code></td></tr>
+      <tr><td>Visit Gift Shop</td><td>5</td><td><code>zoo.visit.gift_shop</code></td></tr>
+      <tr><td>Visit Supply Room</td><td>5</td><td><code>zoo.visit.supply_room</code></td></tr>
+      <tr><td>Visit Nocturnal Exhibit</td><td>5</td><td><code>zoo.visit.nocturnal</code></td></tr>
+      <tr><td>Feed the goats</td><td>10</td><td><code>zoo.action.fed_goats</code></td></tr>
+      <tr><td>Feed the rabbits</td><td>10</td><td><code>zoo.action.fed_rabbits</code></td></tr>
+      <tr><td>Collect zoo map</td><td>5</td><td><code>zoo.collect.map</code></td></tr>
+      <tr><td>Collect pressed penny</td><td>10</td><td><code>zoo.collect.pressed_penny</code></td></tr>
+      <tr><td>Photograph something</td><td>5</td><td><code>zoo.action.photographed</code></td></tr>
+      <tr><td>Pet an animal</td><td>5</td><td><code>zoo.action.petted</code></td></tr>
+      <tr><td>Read the brochure</td><td>5</td><td><code>zoo.action.read_brochure</code></td></tr>
+      <tr><td><strong>Total</strong></td><td><strong>75</strong></td><td></td></tr>
+    </table>
+
+    <h2>What to Try</h2>
+
+<pre><code>&gt; score               (check current score — 0)
+&gt; south / east        (visit petting zoo — 5 pts)
+&gt; score               (now 5 out of 75)
+&gt; take feed
+&gt; feed goats          (10 pts)
+&gt; ... visit all exhibits, collect items ...
+&gt; score               (75 out of 75 — victory!)</code></pre>
+
+    <h2>Common Mistakes</h2>
+
+    <ul>
+      <li><strong>Non-unique score IDs</strong> — If two different achievements share the same ID, only the first one awards points. Always use unique, descriptive IDs.</li>
+      <li><strong>Forgetting <code>world.setMaxScore()</code></strong> — Without this, the built-in <code>score</code> command can't show "X out of Y".</li>
+      <li><strong>Victory daemon priority</strong> — Set victory check to high priority (100) so it runs after all scoring logic has completed for the turn.</li>
+    </ul>
+
+    <div class="step-nav">
+      <a href="zoo-15.html">&larr; Previous: Timed Events</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

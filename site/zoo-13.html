@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Actions — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 13: Custom Actions</h1>
+
+    <h2>What This Version Teaches</h2>
+
+    <p>Custom actions let you add entirely new verbs to your game. When stdlib doesn't have the verb you need, you create your own action with the four-phase pattern.</p>
+
+    <h2>Key Concepts</h2>
+
+    <h3>The Action Interface</h3>
+
+    <p>Every action implements four phases:</p>
+
+<pre><code>const feedAction: Action = {
+  id: 'zoo.action.feeding',
+  group: 'interaction',
+
+  // Phase 1: Can the action proceed?
+  validate(context: ActionContext): ValidationResult {
+    if (!hasRequiredItem) return { valid: false, error: 'no_item' };
+    return { valid: true };
+  },
+
+  // Phase 2: Mutate the world (called only if valid)
+  execute(context: ActionContext): void {
+    context.world.setStateValue('item-used', true);
+  },
+
+  // Phase 3: Generate success events (text output)
+  report(context: ActionContext): ISemanticEvent[] {
+    return [context.event('action.success', { messageId: 'success_msg' })];
+  },
+
+  // Phase 4: Generate failure events (called only if invalid)
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    return [context.event('action.blocked', { messageId: result.error })];
+  },
+};</code></pre>
+
+    <h3>Registering Custom Actions</h3>
+
+    <p>Return your actions from <code>getCustomActions()</code>:</p>
+
+<pre><code>getCustomActions(): any[] {
+  return [feedAction, photographAction];
+}</code></pre>
+
+    <h3>Grammar Extension</h3>
+
+    <p>Teach the parser your new verbs in <code>extendParser()</code>:</p>
+
+<pre><code>extendParser(parser: Parser): void {
+  const grammar = parser.getStoryGrammar();
+  grammar.define('feed :thing').mapsTo('zoo.action.feeding').withPriority(150).build();
+  grammar.define('photograph :thing').mapsTo('zoo.action.photographing').withPriority(150).build();
+}</code></pre>
+
+    <h3>Language Extension</h3>
+
+    <p>Register message text in <code>extendLanguage()</code>:</p>
+
+<pre><code>extendLanguage(language: LanguageProvider): void {
+  language.addMessage('zoo.feeding.fed_goats', 'The goats eat the feed happily!');
+  language.addMessage('zoo.photo.no_camera', "You don't have a camera.");
+}</code></pre>
+
+    <h3>Passing Data Between Phases</h3>
+
+    <p>Use <code>context.sharedData</code> to pass data from validate to execute/report:</p>
+
+<pre><code>validate(context) {
+  context.sharedData.target = someEntity;
+  return { valid: true };
+},
+execute(context) {
+  const target = context.sharedData.target;
+  // use target...
+}</code></pre>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; south / east / take feed   (get the feed)
+&gt; feed goats                 (feed the goats!)
+&gt; feed goats                 (already fed)
+&gt; photograph toucan          (no camera — blocked)
+&gt; west / west / west         (go to gift shop)
+&gt; take camera                (get the camera)
+&gt; photograph postcards       (Click! Photo taken)</code></pre>
+
+    <h2>Key Takeaways</h2>
+
+    <ul>
+      <li>Custom actions need: an Action object, grammar patterns, language messages, and <code>getCustomActions()</code></li>
+      <li>The four phases separate concerns: validation, mutation, text output, error handling</li>
+      <li>Grammar patterns use <code>:slot</code> for entity arguments the parser resolves</li>
+      <li>Use <code>withPriority(150+)</code> so story patterns take precedence over stdlib</li>
+      <li>Message IDs with <code>{param}</code> placeholders get filled by the text service</li>
+    </ul>
+
+    <div class="step-nav">
+      <a href="zoo-12.html">&larr; Previous: Event Handlers</a>
+      <a href="zoo-14.html">Next: Capability Dispatch &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

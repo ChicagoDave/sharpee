@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scenery — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 3: Scenery</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>The zoo feels more alive now. Every area has things to look at — iron fences, flower beds, hay bales, rabbits, parrots, waterfalls, rope perches. You can examine all of them, but you can't pick any of them up. They're part of the environment.</p>
+
+    <h2>What's New (Compared to V2)</h2>
+
+    <p>V2 had a few scenery objects (sign, booth, goats, toucan). V3 fills out the world with scenery in every room, and explains the SceneryTrait in detail.</p>
+
+    <h2>What You'll Learn</h2>
+
+    <h3>SceneryTrait</h3>
+
+    <p>SceneryTrait is one of the simplest traits, but it's one you'll use constantly. It does exactly one thing: <strong>prevents the player from taking the entity.</strong></p>
+
+<pre><code>const fence = world.createEntity('iron fence', EntityType.SCENERY);
+fence.add(new IdentityTrait({
+  name: 'iron fence',
+  description: 'A tall wrought-iron fence with animal silhouettes.',
+  aliases: ['fence', 'iron fence', 'railing'],
+}));
+fence.add(new SceneryTrait());
+world.moveEntity(fence.id, entrance.id);</code></pre>
+
+    <p>When the player types <code>take fence</code>, they'll see: <em>"iron fence is fixed in place."</em></p>
+
+    <p>But <code>examine fence</code> still works — SceneryTrait doesn't block examining. The entity still has an IdentityTrait with a description.</p>
+
+    <h3>Why Scenery Matters</h3>
+
+    <p>In Sharpee, <strong>items are portable by default.</strong> If you create an entity with IdentityTrait and nothing else, the player can pick it up, carry it around, and drop it wherever they want.</p>
+
+    <p>That's usually not what you want for environmental objects. You don't want the player stuffing a park bench into their backpack. SceneryTrait is how you say "this is part of the world, not a collectible."</p>
+
+    <h3>EntityType.SCENERY vs SceneryTrait</h3>
+
+    <p>These are two different things that happen to have the same name:</p>
+
+    <ul>
+      <li><strong><code>EntityType.SCENERY</code></strong> is a <em>label</em>. It tells the engine "this entity represents scenery." But by itself, it doesn't prevent taking.</li>
+      <li><strong><code>SceneryTrait</code></strong> is a <em>mechanism</em>. It's the thing that actually blocks the taking action.</li>
+    </ul>
+
+    <p>You need both for a proper scenery object. <code>EntityType.SCENERY</code> without <code>SceneryTrait</code> would be scenery that the player can pick up — which is almost never what you want.</p>
+
+    <h3>When to Use SceneryTrait</h3>
+
+    <table>
+      <tr><th>Use SceneryTrait</th><th>Don't Use SceneryTrait</th></tr>
+      <tr><td>Fences, walls, gates</td><td>Maps, keys, coins</td></tr>
+      <tr><td>Animals in enclosures</td><td>Food, tools, equipment</td></tr>
+      <tr><td>Trees, rocks, waterfalls</td><td>Letters, books, notes</td></tr>
+      <tr><td>Benches, signs, posts</td><td>Bags, boxes, containers</td></tr>
+      <tr><td>Architectural features</td><td>Anything the player should carry</td></tr>
+    </table>
+
+    <p>The rule of thumb: if you'd find it strange for the player to put it in their pocket, it's scenery.</p>
+
+    <h3>Aliases Make Scenery Discoverable</h3>
+
+    <p>Scenery objects should have generous aliases so the player can refer to them naturally:</p>
+
+<pre><code>aliases: ['fence', 'iron fence', 'wrought-iron fence', 'railing'],</code></pre>
+
+    <p>If the room description mentions "a wrought-iron fence," the player might type <code>examine wrought-iron fence</code>, <code>examine fence</code>, or <code>examine railing</code>. All of those should work. Aliases make that happen.</p>
+
+    <h2>Commands to Try</h2>
+
+<pre><code>&gt; look                  See the room with all its scenery
+&gt; examine fence         Look at the iron fence
+&gt; take fence            "iron fence is fixed in place."
+&gt; south                 Go to the Main Path
+&gt; examine flowers       Look at the flower beds
+&gt; examine bench         Look at the park bench
+&gt; east                  Go to the Petting Zoo
+&gt; examine hay bale      Look at the hay bale
+&gt; examine rabbits       Look at the rabbits
+&gt; west; west            Go to the Aviary
+&gt; examine parrots       Look at the parrots
+&gt; examine waterfall     Look at the waterfall
+&gt; examine perches       Look at the rope perches</code></pre>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v03.ts</code> for the complete, commented source.</p>
+
+    <h2>Key Takeaway</h2>
+
+    <p>SceneryTrait prevents taking. Without it, everything is portable by default. Use SceneryTrait for anything that's part of the environment — and give it plenty of aliases so the player can find it naturally.</p>
+
+    <div class="step-nav">
+      <a href="zoo-02.html">&larr; Previous: Multiple Rooms &amp; Navigation</a>
+      <a href="zoo-04.html">Next: Portable Objects &rarr;</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>
