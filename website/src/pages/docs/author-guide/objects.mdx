@@ -81,7 +81,7 @@ import { SupporterTrait } from '@sharpee/world-model';
 
 const table = world.createEntity('table', EntityType.SCENERY);
 table.add(new IdentityTrait({ name: 'oak table', description: 'A solid oak table.' }));
-table.add(new SupporterTrait({ capacity: 50 }));
+table.add(new SupporterTrait({ capacity: { maxItems: 10, maxWeight: 50 } }));
 table.add(new SceneryTrait());  // Can't pick up the table
 ```
 
@@ -139,7 +139,7 @@ import { EdibleTrait } from '@sharpee/world-model';
 
 const apple = world.createEntity('apple', EntityType.ITEM);
 apple.add(new IdentityTrait({ name: 'red apple', description: 'A crisp red apple.' }));
-apple.add(new EdibleTrait({ nutrition: 10, consumedOnEat: true }));
+apple.add(new EdibleTrait({ nutrition: 10, servings: 1 }));
 ```
 
 ## Placing Items in Containers
@@ -179,7 +179,7 @@ Use `AuthorModel` when:
 | `SwitchableTrait` | On/off toggle | `isOn` |
 | `LightSourceTrait` | Provides illumination | `brightness`, `requiresOn` |
 | `ReadableTrait` | Has text to read | `text` |
-| `EdibleTrait` | Can be eaten | `nutrition`, `consumedOnEat` |
+| `EdibleTrait` | Can be eaten | `nutrition`, `servings` |
 | `WearableTrait` | Can be worn | `isWorn` |
 | `DoorTrait` | Connects rooms | — |
 | `ClimbableTrait` | Can climb on | — |

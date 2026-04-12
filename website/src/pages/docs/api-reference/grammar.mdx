@@ -141,6 +141,21 @@ eat <item>                    Eat food
 drink/quaff <item>            Drink liquid
 ```
 
+## Concealment
+
+```
+hide behind <target>          Hide behind something
+duck behind <target>          Same as hide behind
+crouch behind <target>        Same as hide behind
+hide under <target>           Hide under something
+hide in/inside <target>       Hide inside something
+hide on <target>              Hide on something (balcony, ledge)
+stand up                      Come out of hiding
+come out                      Same as stand up
+reveal myself                 Same as stand up
+stop hiding                   Same as stand up
+```
+
 ## Meta Commands
 
 ```
@@ -159,29 +174,100 @@ about                         Show game information
 version                       Show version
 ```
 
+## Grammar APIs
+
+The platform provides two grammar APIs. The **action-centric** `.forAction()` API (ADR-087) is the primary way to define verb patterns. The **pattern-centric** `.define()` API handles phrasal verbs and complex multi-slot patterns.
+
+### Action-Centric: `.forAction()` (preferred)
+
+Use `.forAction()` when a verb has a simple structure — one or more verb synonyms, an optional entity slot, and optional trait constraints:
+
+```typescript
+// Verb aliases with entity slot
+grammar
+  .forAction('if.action.taking')
+  .verbs(['take', 'get', 'grab'])
+  .pattern(':item')
+  .build();
+// Generates: take :item, get :item, grab :item
+
+// No-argument command with aliases
+grammar
+  .forAction('if.action.inventory')
+  .verbs(['inventory', 'inv', 'i'])
+  .build();
+
+// Verb + particle + trait constraint
+grammar
+  .forAction('if.action.switching_on')
+  .verbs(['turn', 'switch', 'flip'])
+  .pattern('on :device')
+  .hasTrait('device', TraitType.SWITCHABLE)
+  .build();
+
+// Direction commands
+grammar
+  .forAction('if.action.going')
+  .directions({
+    'north': ['north', 'n'],
+    'south': ['south', 's'],
+    'up': ['up', 'u'],
+    'down': ['down', 'd'],
+  })
+  .build();
+```
+
+### Pattern-Centric: `.define()` (for complex patterns)
+
+Use `.define()` for phrasal verbs (multi-word verb phrases), patterns with multiple entity slots, or alternate word orders:
+
+```typescript
+// Phrasal verb — can't use forAction because the verb has a space
+grammar
+  .define('pick up :item')
+  .mapsTo('if.action.taking')
+  .withPriority(100)
+  .build();
+
+// Two entity slots with trait constraint
+grammar
+  .define('put :item in|into|inside :container')
+  .hasTrait('container', TraitType.CONTAINER)
+  .mapsTo('if.action.inserting')
+  .withPriority(100)
+  .build();
+
+// Alternate word order for the same action
+grammar
+  .define('turn :device on')
+  .hasTrait('device', TraitType.SWITCHABLE)
+  .mapsTo('if.action.switching_on')
+  .build();
+```
+
 ## Extending Grammar in Stories
 
-Stories can add custom commands in `extendParser()`:
+Stories add custom commands in `extendParser()`:
 
 ```typescript
 extendParser(parser: Parser): void {
   const grammar = parser.getStoryGrammar();
 
-  // Simple literal command
+  // Action-centric for simple verb patterns
   grammar
-    .define('ring bell')
-    .mapsTo('dungeo.action.ring_bell')
+    .forAction('dungeo.action.ring_bell')
+    .verbs(['ring'])
+    .pattern(':target')
     .withPriority(150)
     .build();
 
-  // Command with a slot
+  // Pattern-centric for complex or literal commands
   grammar
     .define('say :message')
     .mapsTo('dungeo.action.say')
     .withPriority(150)
     .build();
 
-  // Command with trait constraint
   grammar
     .define('turn :dial to :number')
     .hasTrait('dial', TraitType.SWITCHABLE)
