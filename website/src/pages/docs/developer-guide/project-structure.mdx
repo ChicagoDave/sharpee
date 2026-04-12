@@ -26,22 +26,45 @@ sharpee/
 │   ├── parser-en-us/             # English parser and grammar
 │   ├── lang-en-us/               # English language messages
 │   ├── event-processor/          # Event handling pipeline
-│   ├── text-service/             # Output rendering
+│   ├── text-service/             # Output rendering pipeline
 │   ├── text-blocks/              # Text block processing
+│   ├── text-service-browser/     # Browser-specific text rendering
+│   ├── text-service-template/    # Text service template
 │   ├── if-domain/                # IF domain types
 │   ├── if-services/              # IF service interfaces
+│   ├── helpers/                  # Fluent entity builders
+│   ├── bridge/                   # Engine-to-client bridge
+│   ├── character/                # Character/NPC personality system
+│   ├── media/                    # Audio events and sound design
+│   ├── runtime/                  # Runtime orchestration
+│   ├── client-react/             # React client components
+│   ├── map-editor/               # Visual map editor
 │   ├── plugin-npc/               # NPC turn plugin
 │   ├── plugin-scheduler/         # Daemon/fuse scheduler plugin
 │   ├── plugin-state-machine/     # State machine plugin
 │   ├── plugins/                  # Plugin registry and interfaces
 │   ├── platform-browser/         # Browser platform adapter
+│   ├── zifmia/                   # Zifmia/Tauri desktop client
 │   ├── extensions/
+│   │   ├── basic-combat/         # Combat system extension
+│   │   ├── conversation/         # Conversation system extension
 │   │   └── testing/              # Test utilities
+│   ├── platforms/
+│   │   ├── browser-en-us/        # Browser platform (English)
+│   │   ├── cli-en-us/            # CLI platform (English)
+│   │   └── test/                 # Test platform
 │   ├── transcript-tester/        # Transcript test runner
 │   └── sharpee/                  # Umbrella package (CLI + re-exports)
 ├── stories/                      # Story implementations
-│   └── dungeo/                   # Mainframe Zork port (~191 rooms)
-├── website/                      # Documentation site (Astro/Starlight)
+│   ├── dungeo/                   # Mainframe Zork port (~191 rooms)
+│   ├── thealderman/              # Murder mystery — character package reference
+│   ├── cloak-of-darkness/        # Classic IF benchmark
+│   ├── concealment-test/         # Concealment system test story
+│   ├── armoured/                 # Armoured story
+│   └── secretletter2025/         # Secret Letter story
+├── tutorials/                    # Tutorial story projects
+│   └── familyzoo/                # Family Zoo tutorial
+├── website/                      # Documentation site (Astro)
 ├── docs/                         # Internal documentation
 │   ├── architecture/adrs/        # Architecture Decision Records
 │   ├── reference/                # API reference
