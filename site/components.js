@@ -70,6 +70,7 @@
       { n: '14', label: 'Capability Dispatch' },
       { n: '15', label: 'Timed Events' },
       { n: '16', label: 'Scoring & Endgame' },
+      { n: '17', label: 'Putting It All Together' },
     ];
 
     var html = '<a class="step-tab' + (currentPage === 'family-zoo.html' ? ' active' : '') +

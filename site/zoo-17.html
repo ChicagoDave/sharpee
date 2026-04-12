@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Putting It All Together — Family Zoo — Sharpee</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-three-col">
+  <nav id="step-tabs" class="step-tabs"></nav>
+  <main class="content">
+    <h1>Step 17: Putting It All Together</h1>
+
+    <h2>What This Version Does</h2>
+
+    <p>This is the complete Family Zoo as a multi-file story. Every concept from steps 1 through 16 &mdash; rooms, objects, containers, locked doors, light and dark, NPCs, event handlers, custom actions, capability dispatch, timed events, and scoring &mdash; comes together in a production-ready structure.</p>
+
+    <p>Instead of a single <code>.ts</code> file that grows ever longer, v17 splits the story into focused modules. Each file has a single responsibility, making the code easier to navigate, test, and extend.</p>
+
+    <h2>Multi-File Organization</h2>
+
+    <p>The v17 directory looks like this:</p>
+
+<pre><code>tutorials/familyzoo/src/v17/
+├── index.ts        # Story class — wires everything together
+├── zoo-map.ts      # Rooms, exits, scenery, locked door
+├── zoo-items.ts    # Portable objects, containers, supporters
+├── characters.ts   # Zookeeper, parrot, pettable animals, NPC behaviors
+├── events.ts       # PA announcements, feeding time, after-hours daemons
+├── scoring.ts      # Score IDs, point values, victory condition
+└── language.ts     # All player-facing text</code></pre>
+
+    <p>Why does this matter? When your story has seven rooms it might fit comfortably in one file. But the Family Zoo already has NPCs, timed events, custom actions, and a scoring system. Finding the code for "what happens when the player feeds the goats" means scrolling past room definitions, NPC setup, grammar patterns, and language text.</p>
+
+    <p>With one responsibility per file, you can find code by what it does:</p>
+
+    <ul>
+      <li>Room connections wrong? Open <code>zoo-map.ts</code>.</li>
+      <li>NPC acting oddly? Open <code>characters.ts</code>.</li>
+      <li>Typo in a message? Open <code>language.ts</code>.</li>
+      <li>Score not awarding? Open <code>scoring.ts</code>.</li>
+    </ul>
+
+    <h2>The Story Class</h2>
+
+    <p><code>index.ts</code> is the hub. It implements the <code>Story</code> interface and imports from the other files, wiring everything together through Sharpee's lifecycle methods:</p>
+
+    <table>
+      <tr><th>Method</th><th>What It Does</th></tr>
+      <tr><td><code>initializeWorld()</code></td><td>Calls helpers in <code>zoo-map.ts</code>, <code>zoo-items.ts</code>, <code>characters.ts</code>, and <code>scoring.ts</code> to build the world</td></tr>
+      <tr><td><code>createPlayer()</code></td><td>Creates the player entity and places them at the entrance</td></tr>
+      <tr><td><code>onEngineReady()</code></td><td>Registers NPC plugin, scheduler plugin, event handlers from <code>events.ts</code></td></tr>
+      <tr><td><code>extendParser()</code></td><td>Adds story-specific grammar patterns (feed, photograph, pet)</td></tr>
+      <tr><td><code>extendLanguage()</code></td><td>Delegates to <code>language.ts</code> to register all message text</td></tr>
+      <tr><td><code>getCustomActions()</code></td><td>Returns the feed, photograph, and petting actions</td></tr>
+    </table>
+
+    <p>The story class itself stays short &mdash; it delegates to the specialist modules rather than containing all the logic.</p>
+
+    <h2>Entity Helpers</h2>
+
+    <p>By v17, the story uses <code>world.helpers()</code> instead of manual entity creation. The helpers provide a fluent builder pattern that is more readable and less error-prone:</p>
+
+<pre><code>const { room, object, door, container, actor } = world.helpers();
+
+const entrance = room('Zoo Entrance')
+  .description('You stand before the wrought-iron gates of the city zoo.')
+  .aliases('entrance', 'gates')
+  .build();
+
+const brochure = object('zoo brochure')
+  .description('A colorful tri-fold brochure.')
+  .aliases('brochure', 'pamphlet')
+  .readable('Welcome to the Family Zoo! ...')
+  .in(entrance)
+  .build();
+
+const backpack = container('backpack')
+  .description('A sturdy canvas backpack.')
+  .aliases('pack', 'bag')
+  .capacity(5)
+  .openable({ isOpen: false })
+  .in(entrance)
+  .build();</code></pre>
+
+    <p>Compare this to the v01 approach of creating an entity, then adding IdentityTrait, then LocationTrait, then each additional trait one by one. The helpers do the same thing under the hood, but the code reads like a description of the thing you're building.</p>
+
+    <h2>The Language Layer</h2>
+
+    <p>All player-facing text lives in <code>language.ts</code>. No English strings appear in the story logic files. This is the same pattern Sharpee uses internally &mdash; the engine emits message IDs, and the language layer provides the actual prose.</p>
+
+<pre><code>// language.ts
+export function registerMessages(language: LanguageProvider): void {
+  // Feeding
+  language.addMessage('zoo.feeding.fed_goats',
+    'You scatter the feed on the ground. The goats rush over!');
+  language.addMessage('zoo.feeding.already_fed',
+    'The goats are still happily munching away.');
+
+  // Petting
+  language.addMessage('zoo.petting.goats',
+    'You reach over the fence and pet a goat. It bleats contentedly.');
+  language.addMessage('zoo.petting.parrot',
+    'You extend a finger. The parrot bites it. Hard.');
+
+  // Timed events
+  language.addMessage('zoo.pa.announcement',
+    'A tinny PA speaker crackles: "The zoo closes in one hour."');
+  // ...
+}</code></pre>
+
+    <p>This pays off in several ways: you can review all your game text in one place, a proofreader can edit <code>language.ts</code> without touching game logic, and if you ever want to translate the game, you write a second language file and swap it in.</p>
+
+    <h2>Build and Play</h2>
+
+<pre><code>npx @sharpee/sharpee build
+open dist/web/index.html</code></pre>
+
+    <h2>What You Learned</h2>
+
+    <p>Over 17 steps, you built a complete interactive fiction game. Here is what each step covered:</p>
+
+    <table>
+      <tr><th>Step</th><th>Concept</th></tr>
+      <tr><td>1</td><td>Story interface, entities, traits &mdash; a single room</td></tr>
+      <tr><td>2</td><td>Room connections and compass directions</td></tr>
+      <tr><td>3</td><td>Scenery &mdash; non-portable objects that enrich rooms</td></tr>
+      <tr><td>4</td><td>Portable objects, inventory, taking and dropping</td></tr>
+      <tr><td>5</td><td>Containers and supporters</td></tr>
+      <tr><td>6</td><td>Openable containers with hidden contents</td></tr>
+      <tr><td>7</td><td>Locked doors and keys</td></tr>
+      <tr><td>8</td><td>Light, dark rooms, and switchable light sources</td></tr>
+      <tr><td>9</td><td>Readable objects</td></tr>
+      <tr><td>10</td><td>Switchable devices</td></tr>
+      <tr><td>11</td><td>Non-player characters with behaviors</td></tr>
+      <tr><td>12</td><td>Event handlers and chain events</td></tr>
+      <tr><td>13</td><td>Custom actions with the four-phase pattern</td></tr>
+      <tr><td>14</td><td>Capability dispatch &mdash; per-entity verb behaviors</td></tr>
+      <tr><td>15</td><td>Timed events with daemons and fuses</td></tr>
+      <tr><td>16</td><td>Scoring and endgame conditions</td></tr>
+      <tr><td>17</td><td>Multi-file organization and entity helpers</td></tr>
+    </table>
+
+    <p>You now have the tools to build your own interactive fiction with Sharpee. Start with a single room, add things one concept at a time, and split into multiple files when the code outgrows a single module. The architecture scales from a tutorial to a full-sized game.</p>
+
+    <h2>The Code</h2>
+
+    <p>See <code>src/v17/</code> for the complete, multi-file source.</p>
+
+    <div class="step-nav">
+      <a href="zoo-16.html">&larr; Previous: Scoring &amp; Endgame</a>
+    </div>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>
