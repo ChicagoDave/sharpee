@@ -153,6 +153,14 @@ a:hover { color: var(--accent-hover); }
   flex-direction: column;
 }
 
+.site-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+}
+
 .sidebar nav {
   flex: 1;
 }
