@@ -123,6 +123,27 @@ a:hover { color: var(--accent-hover); }
   padding: 0;
 }
 
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.content th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--border);
+  color: var(--heading);
+  font-weight: 600;
+}
+
+.content td {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
 .cta {
   display: inline-block;
   padding: 0.65rem 1.5rem;

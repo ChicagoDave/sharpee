@@ -11,11 +11,293 @@
 
 <div class="page">
   <main class="content">
-    <h1>Cloak of Darkness</h1>
+    <h1>Cloak of Darkness Tutorial</h1>
 
-    <p>Cloak of Darkness is the classic IF benchmark — a tiny game that exercises the core mechanics of any authoring system. If you can build this, you understand the fundamentals.</p>
+    <p><em>Cloak of Darkness</em> is a simple game used to compare interactive fiction systems. By building it, you'll learn the core concepts of Sharpee.</p>
 
-    <p><em>Tutorial content coming soon.</em></p>
+    <h2>The Game</h2>
+
+    <p><strong>Three rooms</strong>: Foyer, Bar, Cloakroom</p>
+    <p><strong>One object</strong>: A velvet cloak (worn by the player)</p>
+    <p><strong>The puzzle</strong>: The bar is dark. If you try to do anything in the dark, you "disturb" a message written in the dust. Hang your cloak on the hook in the cloakroom first — the cloak blocks light. Then you can read the message in the now-lit bar.</p>
+    <p><strong>Win condition</strong>: Read the message in the bar without disturbing it.</p>
+
+    <h2>Prerequisites</h2>
+
+    <ul>
+      <li>Node.js 18+</li>
+      <li>Basic TypeScript knowledge</li>
+    </ul>
+
+    <h2>Step 1: Create the Project</h2>
+
+    <p>Use the Sharpee CLI to scaffold your project:</p>
+
+    <pre><code>npx @sharpee/sharpee init cloak-of-darkness</code></pre>
+
+    <p>Answer the prompts:</p>
+    <ul>
+      <li><strong>Story title</strong>: Cloak of Darkness</li>
+      <li><strong>Story ID</strong>: cloak-of-darkness</li>
+      <li><strong>Author name</strong>: Your Name</li>
+      <li><strong>Description</strong>: A basic IF demonstration</li>
+    </ul>
+
+    <p>Then install dependencies:</p>
+
+    <pre><code>cd cloak-of-darkness
+npm install</code></pre>
+
+    <p>Your project now has:</p>
+
+    <pre><code>cloak-of-darkness/
+├── src/
+│   └── index.ts      # Your story code
+├── package.json
+├── tsconfig.json
+└── .gitignore</code></pre>
+
+    <h2>Step 2: Understand the Story Structure</h2>
+
+    <p>Open <code>src/index.ts</code>. Your story is a class that implements the <code>Story</code> interface with two required methods: <code>initializeWorld</code> (creates rooms and objects) and <code>createPlayer</code> (creates the player entity).</p>
+
+    <pre><code>import {
+  Story,
+  StoryConfig,
+  GameEngine,
+} from '@sharpee/engine';
+
+import {
+  WorldModel,
+  IFEntity,
+  EntityType,
+  IdentityTrait,
+  ActorTrait,
+  ContainerTrait,
+  RoomTrait,
+  WearableTrait,
+  SceneryTrait,
+  SupporterTrait,
+  LightSourceTrait,
+  Direction,
+} from '@sharpee/world-model';
+
+export const config: StoryConfig = {
+  id: 'cloak-of-darkness',
+  title: 'Cloak of Darkness',
+  author: 'Your Name',
+  version: '1.0.0',
+  description: 'A basic IF demonstration',
+};
+
+export class CloakOfDarkness implements Story {
+  config = config;
+
+  initializeWorld(world: WorldModel): void {
+    // Your rooms and objects go here
+  }
+
+  createPlayer(world: WorldModel): IFEntity {
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add(new IdentityTrait({
+      name: 'yourself',
+      aliases: ['self', 'me'],
+      description: 'As good-looking as ever.',
+      properName: false,
+    }));
+    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ContainerTrait({ capacity: 100 }));
+    return player;
+  }
+}
+
+export const story = new CloakOfDarkness();
+export default story;</code></pre>
+
+    <h2>Step 3: Create the Rooms</h2>
+
+    <p>Rooms are entities with <code>RoomTrait</code> and <code>IdentityTrait</code>. Fill in the <code>initializeWorld</code> method:</p>
+
+    <pre><code>initializeWorld(world: WorldModel): void {
+  // === FOYER ===
+  const foyer = world.createEntity('foyer', EntityType.ROOM);
+  foyer.add(new IdentityTrait({
+    name: 'Foyer of the Opera House',
+    description: 'You are standing in a spacious hall, splendidly decorated in red and gold, with glittering chandeliers overhead. The entrance from the street is to the north, and there are doorways south and west.',
+  }));
+  foyer.add(new RoomTrait({
+    exits: {
+      [Direction.SOUTH]: { destination: 'bar' },
+      [Direction.WEST]: { destination: 'cloakroom' },
+    },
+  }));
+
+  // === CLOAKROOM ===
+  const cloakroom = world.createEntity('cloakroom', EntityType.ROOM);
+  cloakroom.add(new IdentityTrait({
+    name: 'Cloakroom',
+    description: 'The walls of this small room were clearly once lined with hooks, though now only one remains. The exit is a door to the east.',
+  }));
+  cloakroom.add(new RoomTrait({
+    exits: {
+      [Direction.EAST]: { destination: foyer.id },
+    },
+  }));
+
+  // === BAR (dark) ===
+  const bar = world.createEntity('bar', EntityType.ROOM);
+  bar.add(new IdentityTrait({
+    name: 'Foyer Bar',
+    description: 'The bar, much rougher than you would have guessed after the opulence of the foyer to the north, is completely empty. There seems to be some sort of message scrawled in the sawdust on the floor.',
+  }));
+  bar.add(new RoomTrait({
+    isDark: true,
+    exits: {
+      [Direction.NORTH]: { destination: foyer.id },
+    },
+  }));
+
+  // Fix foyer exits to use actual IDs
+  const foyerTrait = foyer.get(RoomTrait);
+  if (foyerTrait) {
+    foyerTrait.exits[Direction.SOUTH] = { destination: bar.id };
+    foyerTrait.exits[Direction.WEST] = { destination: cloakroom.id };
+  }
+
+  // Place player in foyer
+  const player = world.getPlayer();
+  if (player) {
+    world.moveEntity(player.id, foyer.id);
+  }
+}</code></pre>
+
+    <p>Note: We update the foyer exits after creating all rooms so we can reference the actual entity IDs.</p>
+
+    <h2>Step 4: Create the Cloak</h2>
+
+    <p>The cloak is key — it blocks light while worn. Add this before the player placement:</p>
+
+    <pre><code>  // === THE CLOAK ===
+  const cloak = world.createEntity('cloak', EntityType.OBJECT);
+  cloak.add(new IdentityTrait({
+    name: 'velvet cloak',
+    aliases: ['cloak', 'velvet', 'dark cloak', 'black cloak'],
+    description: 'A handsome cloak, of velvet trimmed with satin, and slightly spattered with raindrops. Its blackness is so deep that it almost seems to suck light from the room.',
+  }));
+  cloak.add(new WearableTrait({ isWorn: true }));
+
+  // Place on player (worn)
+  if (player) {
+    world.moveEntity(cloak.id, player.id);
+  }</code></pre>
+
+    <h2>Step 5: Create the Hook</h2>
+
+    <p>The hook in the cloakroom holds the cloak:</p>
+
+    <pre><code>  // === THE HOOK ===
+  const hook = world.createEntity('hook', EntityType.OBJECT);
+  hook.add(new IdentityTrait({
+    name: 'small brass hook',
+    aliases: ['hook', 'brass hook', 'peg'],
+    description: "It's just a small brass hook, screwed to the wall.",
+  }));
+  hook.add(new SceneryTrait());
+  hook.add(new SupporterTrait({ capacity: 1 }));
+
+  world.moveEntity(hook.id, cloakroom.id);</code></pre>
+
+    <h2>Step 6: Create the Message</h2>
+
+    <p>The message in the sawdust is the win condition:</p>
+
+    <pre><code>  // === THE MESSAGE ===
+  const message = world.createEntity('message', EntityType.OBJECT);
+  message.add(new IdentityTrait({
+    name: 'message',
+    aliases: ['message', 'sawdust', 'scrawl', 'writing', 'floor'],
+    description: '',  // Set dynamically based on disturbance
+  }));
+  message.add(new SceneryTrait());
+
+  world.moveEntity(message.id, bar.id);</code></pre>
+
+    <h2>Step 7: Build and Test</h2>
+
+    <p>Build your story:</p>
+
+    <pre><code>npx @sharpee/sharpee build
+open dist/web/index.html</code></pre>
+
+    <h2>Sample Playthrough</h2>
+
+    <h3>Winning path</h3>
+
+    <pre><code>&gt; look
+Foyer of the Opera House
+You are standing in a spacious hall...
+
+&gt; west
+Cloakroom
+The walls of this small room were clearly once lined with hooks...
+
+&gt; hang cloak on hook
+You put the velvet cloak on the small brass hook.
+
+&gt; east
+Foyer of the Opera House
+
+&gt; south
+Foyer Bar
+The bar, much rougher than you would have guessed...
+
+&gt; read message
+The message, neatly marked in the sawdust, reads: "You have won!"</code></pre>
+
+    <h3>Losing path</h3>
+
+    <pre><code>&gt; south
+It's pitch dark, and you can't see a thing.
+
+&gt; look
+In the dark? You could easily disturb something!
+
+&gt; north
+Foyer of the Opera House
+
+&gt; west
+Cloakroom
+
+&gt; hang cloak on hook
+You put the velvet cloak on the small brass hook.
+
+&gt; east. south
+Foyer Bar
+
+&gt; read message
+The message has been carelessly trampled...</code></pre>
+
+    <h2>What You Learned</h2>
+
+    <ul>
+      <li><strong>Project setup</strong>: Using <code>npx @sharpee/sharpee init</code> to scaffold a project</li>
+      <li><strong>Story class</strong>: Implementing the <code>Story</code> interface with <code>initializeWorld</code> and <code>createPlayer</code></li>
+      <li><strong>Entity creation</strong>: Using <code>world.createEntity(name, EntityType.X)</code> for rooms, objects, and actors</li>
+      <li><strong>Traits</strong>: Adding behaviors with <code>entity.add(new SomeTrait({...}))</code> — like snapping Lego pieces together</li>
+      <li><strong>Room connections</strong>: Setting exits via <code>RoomTrait</code></li>
+      <li><strong>Dark rooms</strong>: Using <code>isDark: true</code> in <code>RoomTrait</code></li>
+    </ul>
+
+    <h2>Next Steps</h2>
+
+    <p>Ready for more? The <a href="family-zoo.html">Family Zoo</a> tutorial covers multi-file stories, custom actions, NPCs, timed events, and scoring.</p>
+
+    <h2>Resources</h2>
+
+    <ul>
+      <li><a href="https://www.firthworks.com/roger/cloak/">Cloak of Darkness specification</a></li>
+      <li><a href="https://github.com/ChicagoDave/sharpee/tree/main/stories/cloak-of-darkness">Source code on GitHub</a></li>
+    </ul>
 
   </main>
 
