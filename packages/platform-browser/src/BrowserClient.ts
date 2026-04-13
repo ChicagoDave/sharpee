@@ -70,6 +70,13 @@ export class BrowserClient implements BrowserClientInterface {
   initialize(elements: DOMElements): void {
     this.elements = elements;
 
+    // Set page title and menu title from story config
+    document.title = this.config.storyInfo.title;
+    const menuTitle = document.getElementById('menu-title');
+    if (menuTitle) {
+      menuTitle.textContent = this.config.storyInfo.title;
+    }
+
     // Create text display and status line first (no dependencies)
     this.textDisplay = new TextDisplay({
       textContent: elements.textContent,

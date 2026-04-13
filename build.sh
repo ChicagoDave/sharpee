@@ -819,12 +819,11 @@ build_browser_client() {
     mkdir -p "$OUTDIR"
 
     # Bundle
-    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/${STORY_NAME}.js' --sourcemap --minify --conditions=require --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\" --alias:@sharpee/platform-browser=$REPO_ROOT/packages/platform-browser/dist/index.js"
+    run_build "bundle" "npx esbuild '$ENTRY' --bundle --platform=browser --target=es2020 --format=iife --global-name=SharpeeGame --outfile='$OUTDIR/game.js' --sourcemap --minify --conditions=require --define:process.env.PARSER_DEBUG=undefined --define:process.env.DEBUG_PRONOUNS=undefined --define:process.env.NODE_ENV=\\\"production\\\" --alias:@sharpee/platform-browser=$REPO_ROOT/packages/platform-browser/dist/index.js"
 
-    # Copy HTML template
+    # Copy HTML template (title set at runtime by BrowserClient from story config)
     if [ -f "templates/browser/index.html" ]; then
         cp templates/browser/index.html "$OUTDIR/"
-        sed -i '' "s/{{TITLE}}/${STORY_NAME}/g" "$OUTDIR/index.html"
         log_ok "html"
     fi
 
@@ -845,13 +844,13 @@ build_browser_client() {
     local WEBSITE_DIR="website/public/web/${STORY_NAME}"
     if [ -d "website/public" ]; then
         mkdir -p "$WEBSITE_DIR"
-        cp "$OUTDIR/${STORY_NAME}.js" "$WEBSITE_DIR/"
+        cp "$OUTDIR/game.js" "$WEBSITE_DIR/"
         cp "$OUTDIR/index.html" "$WEBSITE_DIR/"
         cp "$OUTDIR/styles.css" "$WEBSITE_DIR/"
         log_ok "website"
     fi
 
-    local BUNDLE_SIZE=$(ls -lh "$OUTDIR/${STORY_NAME}.js" | awk '{print $5}')
+    local BUNDLE_SIZE=$(ls -lh "$OUTDIR/game.js" | awk '{print $5}')
     echo "Output: $OUTDIR/ ($BUNDLE_SIZE)"
     echo ""
 }
