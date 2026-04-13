@@ -824,7 +824,7 @@ build_browser_client() {
     # Copy HTML template
     if [ -f "templates/browser/index.html" ]; then
         cp templates/browser/index.html "$OUTDIR/"
-        sed -i "s/{{TITLE}}/${STORY_NAME}/g" "$OUTDIR/index.html"
+        sed -i '' "s/{{TITLE}}/${STORY_NAME}/g" "$OUTDIR/index.html"
         log_ok "html"
     fi
 
@@ -832,6 +832,13 @@ build_browser_client() {
     if [ -f "templates/browser/infocom.css" ]; then
         cp templates/browser/infocom.css "$OUTDIR/styles.css"
         log_ok "css"
+    fi
+
+    # Copy story assets (audio, images, etc.)
+    local ASSETS_DIR="stories/${STORY_NAME}/assets"
+    if [ -d "$ASSETS_DIR" ]; then
+        cp -r "$ASSETS_DIR"/* "$OUTDIR/" 2>/dev/null
+        log_ok "assets"
     fi
 
     # Copy to website

@@ -69,6 +69,9 @@ import { createMazeRegion, connectMazeToClearing, connectCyclopsToLivingRoom, co
 import { createRoyalPuzzleRegion, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleRoomIds } from './regions/royal-puzzle';
 import { createEndgameRegion, createEndgameObjects, EndgameRoomIds } from './regions/endgame';
 
+// Import audio setup
+import { initializeAudio, registerAudioHandler } from './audio/audio-setup';
+
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
 import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
@@ -577,6 +580,19 @@ export class DungeoStory implements Story {
     // Set max score via score ledger (ADR-129)
     world.setMaxScore(616);
 
+    // Initialize audio atmospheres for underground rooms (ADR-138)
+    initializeAudio(
+      this.undergroundIds as unknown as Record<string, string>,
+      [
+        ...Object.values(this.coalMineIds),
+        ...Object.values(this.templeIds),
+        ...Object.values(this.wellRoomIds),
+        ...Object.values(this.mazeIds),
+        ...Object.values(this.royalPuzzleIds),
+        ...Object.values(this.endgameIds),
+      ],
+    );
+
     // Set initial player location to West of House
     const player = world.getPlayer();
     if (player) {
@@ -756,6 +772,9 @@ export class DungeoStory implements Story {
   onEngineReady(engine: GameEngine): void {
     // Register GDT input mode handler (ADR-137)
     engine.registerInputMode(GDT_INPUT_MODE_ID, gdtInputModeHandler);
+
+    // Register audio event handler for room atmosphere changes (ADR-138)
+    registerAudioHandler(engine.getEventProcessor());
 
     initializeOrchestration(
       engine,

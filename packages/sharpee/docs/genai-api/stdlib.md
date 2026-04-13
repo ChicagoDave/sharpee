@@ -242,7 +242,7 @@ export interface ActionContext {
      * Shared data store for passing information between action phases.
      *
      * This property enables clean data passing from the execute phase to the report phase,
-     * eliminating the need for context pollution patterns like `(context as any)._previousLocation`.
+     * eliminating the need for context pollution patterns like `context['_previousLocation']`.
      *
      * Data stored here during execute() is available in report() for creating rich events
      * with full context about what changed during the action.

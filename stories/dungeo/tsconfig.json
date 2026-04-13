@@ -19,6 +19,7 @@
       "@sharpee/world-model": ["./node_modules/@sharpee/world-model"],
       "@sharpee/stdlib": ["./node_modules/@sharpee/stdlib"],
       "@sharpee/lang-en-us": ["./node_modules/@sharpee/lang-en-us"],
+      "@sharpee/media": ["./node_modules/@sharpee/media"],
       "@sharpee/parser-en-us": ["./node_modules/@sharpee/parser-en-us"],
       "@sharpee/text-services": ["./node_modules/@sharpee/text-services"],
       "@sharpee/engine": ["./node_modules/@sharpee/engine"],

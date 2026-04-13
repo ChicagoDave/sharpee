@@ -4276,7 +4276,7 @@ export declare function canActorWalkInVehicle(world: WorldModel, actorId: string
 import { ITrait } from '../trait';
 /**
  * StoryInfoTrait stores metadata about the game on a system entity.
- * Replaces scattered (world as any).storyConfig / .versionInfo casts.
+ * Replaces scattered world['storyConfig'] / world['versionInfo'] casts.
  *
  * The entity carrying this trait has no location and is never visible
  * in the game world. Actions read it via world.findByTrait().
