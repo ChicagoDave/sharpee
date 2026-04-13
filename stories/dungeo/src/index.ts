@@ -593,6 +593,7 @@ export class DungeoStory implements Story {
       ],
       forestRoomIds: this.forestIds as unknown as Record<string, string>,
       frigidRiverRoomIds: this.frigidRiverIds as unknown as Record<string, string>,
+      riverSoundRoomIds: [this.damIds.damBase],
     });
 
     // Set initial player location to West of House

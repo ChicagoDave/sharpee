@@ -31,6 +31,7 @@ export function initializeAudio(config: {
   additionalUndergroundIds?: string[];
   forestRoomIds: Record<string, string>;
   frigidRiverRoomIds: Record<string, string>;
+  riverSoundRoomIds?: string[];
 }): void {
   // Dungeon ambience for all underground rooms
   for (const roomId of Object.values(config.undergroundRoomIds)) {
@@ -57,6 +58,14 @@ export function initializeAudio(config: {
 
   // River flow ambience for all frigid river rooms
   for (const roomId of Object.values(config.frigidRiverRoomIds)) {
+    audioRegistry
+      .atmosphere(roomId)
+      .ambient('audio/river_flow.ogg', 'environment', 0.5)
+      .build();
+  }
+
+  // Additional rooms near water (dam base, etc.)
+  for (const roomId of config.riverSoundRoomIds ?? []) {
     audioRegistry
       .atmosphere(roomId)
       .ambient('audio/river_flow.ogg', 'environment', 0.5)
