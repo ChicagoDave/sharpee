@@ -377,6 +377,107 @@ const activeScenes = w.scenes
 - **Scenes vs. state machines.** Scenes are intentionally simpler than a general state machine system. If Sharpee later gains a state machine runtime (per the discussion in ADR-119's scope), scenes could be implemented as sugar on top of it. This ADR does not preclude that evolution.
 - **Region nesting is optional.** Stories can use flat regions (no `parentRegionId`) and still get all the benefits.
 
+## Test Requirements
+
+### Region E2E Scenario
+
+```
+Given:
+  - Region 'reg-underground' (no parent)
+  - Region 'reg-coal-mine' (parent: reg-underground)
+  - Region 'reg-forest' (no parent)
+  - Room 'r01' in reg-forest
+  - Room 'r02' in reg-underground
+  - Room 'r03' in reg-coal-mine
+  - Player in r01
+
+When:  player moves from r01 to r02
+Then:
+  - region_exited fires with { regionId: 'reg-forest' }
+  - region_entered fires with { regionId: 'reg-underground' }
+  - world.isInRegion(player, 'reg-underground') === true
+  - world.isInRegion(player, 'reg-forest') === false
+
+When:  player moves from r02 to r03
+Then:
+  - region_exited does NOT fire (still in underground via parent)
+  - region_entered fires with { regionId: 'reg-coal-mine' }
+  - world.isInRegion(player, 'reg-coal-mine') === true
+  - world.isInRegion(player, 'reg-underground') === true (parent)
+
+When:  player moves from r03 to r01
+Then:
+  - region_exited fires for reg-coal-mine THEN reg-underground (inner first)
+  - region_entered fires for reg-forest
+```
+
+### Scene E2E Scenario
+
+```
+Given:
+  - Scene 'scene-flood' with:
+      begin: w.getStateValue('dam-open') === true
+      end: w.getStateValue('flood-drained') === true
+      recurring: false
+  - State value 'dam-open' is false
+
+Turn 1: any command
+Then:
+  - scene_began does NOT fire
+  - world.isSceneActive('scene-flood') === false
+
+Action: w.setStateValue('dam-open', true)
+Turn 2: any command
+Then:
+  - scene_began fires with { sceneId: 'scene-flood', sceneName: 'The Flood' }
+  - world.isSceneActive('scene-flood') === true
+  - SceneTrait.activeTurns === 1
+
+Turn 3: any command
+Then:
+  - SceneTrait.activeTurns === 2
+  - No scene events fire
+
+Action: w.setStateValue('flood-drained', true)
+Turn 4: any command
+Then:
+  - scene_ended fires with { sceneId: 'scene-flood', totalTurns: 3 }
+  - world.isSceneActive('scene-flood') === false
+  - world.hasSceneEnded('scene-flood') === true
+  - world.hasSceneHappened('scene-flood') === true
+```
+
+### Boundary Tests
+
+- **Nested region exit**: Move from deepest child to outside all ancestors — all exits fire inner-to-outer
+- **Same-region move**: Move between two rooms in the same region — no region events fire
+- **Room with no region**: Move from a room with regionId to one without — exit fires, no enter
+- **Recurring scene**: Scene ends, begin condition becomes true again — scene re-enters 'active', second scene_began fires
+- **Multiple active scenes**: Two scenes active simultaneously — both evaluated independently, both fire events
+
+### Negative Tests
+
+- **No regionId on room**: `getRegionCrossings` returns empty arrays, no events fire
+- **Nonexistent region reference**: Room has `regionId` pointing to deleted/nonexistent region — `isInRegion` returns false, no crash
+- **Scene begin never true**: Scene stays in 'waiting' indefinitely — no events, no errors
+- **Scene with no conditions after restore**: Engine skips evaluation, scene stays in its persisted state
+
+## Acceptance Criteria
+
+1. `createRegion()` atomically creates entity + trait; returned entity has `RegionTrait`
+2. `createScene()` atomically creates entity + trait + registers conditions
+3. `assignRoom()` sets regionId and validates the region exists
+4. `world.isInRegion()` traverses parent hierarchy correctly
+5. `getRegionCrossings()` computes correct enter/exit lists for nested regions
+6. Going action emits `region_entered`/`region_exited` events using `getRegionCrossings`
+7. Scene evaluation phase runs between NPC turns and daemons/fuses
+8. `isSceneActive()`, `hasSceneEnded()`, `hasSceneHappened()` return correct values through full lifecycle
+9. Region e2e scenario passes
+10. Scene e2e scenario passes
+11. All boundary and negative tests pass
+12. Existing platform and story test suites pass unchanged
+13. Scene trait data persists across save/restore; conditions re-registered by story
+
 ## Implementation Notes
 
 ### Package Location
