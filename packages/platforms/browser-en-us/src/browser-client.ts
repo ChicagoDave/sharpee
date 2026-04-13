@@ -1,13 +1,20 @@
 /**
  * Browser Client for Sharpee IF
- * 
+ *
  * This is the browser-specific UI layer that:
  * 1. Displays text from the text service
  * 2. Captures player input
  * 3. Updates status line
- * 
- * It does NOT translate events - that's the text service's job
+ * 4. Forwards audio events to a registered handler
+ *
+ * It does NOT translate events - that's the text service's job.
+ * Audio events are forwarded to an optional handler; if none is
+ * registered, audio events are logged and silently dropped.
+ *
+ * Owner context: @sharpee/platform-browser-en-us
  */
+
+import type { AudioEvent } from '@sharpee/sharpee';
 
 export class BrowserClient {
     private statusLine: HTMLElement | null = null;
@@ -20,6 +27,7 @@ export class BrowserClient {
     private commandHistory: string[] = [];
     private historyIndex: number = -1;
     private onCommandCallback?: (command: string) => void;
+    private onAudioEventCallback?: (event: AudioEvent) => void;
     private currentPrompt: string = '> ';
     
     constructor() {
@@ -154,10 +162,34 @@ export class BrowserClient {
     }
     
     /**
-     * Set callback for when player enters a command
+     * Set callback for when player enters a command.
      */
     onCommand(callback: (command: string) => void): void {
         this.onCommandCallback = callback;
+    }
+
+    /**
+     * Set callback for audio events. Clients that support audio (e.g., a
+     * Web Audio renderer) register here to receive forwarded audio events.
+     *
+     * @param callback - Handler invoked for each audio event
+     */
+    onAudioEvent(callback: (event: AudioEvent) => void): void {
+        this.onAudioEventCallback = callback;
+    }
+
+    /**
+     * Forward an audio event to the registered handler.
+     * If no handler is registered, the event is logged and dropped.
+     *
+     * @param event - The audio event from the engine's event pipeline
+     */
+    handleAudioEvent(event: AudioEvent): void {
+        if (this.onAudioEventCallback) {
+            this.onAudioEventCallback(event);
+        } else {
+            console.debug('[audio] No handler registered, dropping:', event.type);
+        }
     }
     
     private handleCommand(): void {

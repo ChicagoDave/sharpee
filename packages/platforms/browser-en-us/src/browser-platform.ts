@@ -1,8 +1,9 @@
 import type {
   GameEngine,
-  PlatformEvent
+  PlatformEvent,
+  AudioEvent,
 } from '@sharpee/sharpee';
-import { TraitType, StoryInfoTrait } from '@sharpee/sharpee';
+import { TraitType, StoryInfoTrait, isAudioEvent } from '@sharpee/sharpee';
 import type { ISemanticEvent } from '@sharpee/core';
 import { VERSION_INFO } from './version.js';
 import { 
@@ -74,6 +75,11 @@ export class BrowserPlatform {
         this.pendingPlatformOps.push(event as PlatformEvent);
         // Process it immediately
         this.processPlatformOperations();
+      }
+
+      // Forward audio events to the browser client
+      if (isAudioEvent(event)) {
+        this.client.handleAudioEvent(event as AudioEvent);
       }
       
       // Handle platform completion events
