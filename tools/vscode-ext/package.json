@@ -1,0 +1,135 @@
+{
+  "name": "sharpee-vscode",
+  "displayName": "Sharpee — Interactive Fiction Authoring",
+  "description": "Syntax highlighting, snippets, and tooling for Sharpee interactive fiction projects",
+  "version": "0.1.0",
+  "publisher": "chicagodave",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:sharpee-transcript",
+    "onCommand:sharpee.newStory"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "sharpee-transcript",
+        "aliases": [
+          "Sharpee Transcript",
+          "transcript"
+        ],
+        "extensions": [
+          ".transcript"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "sharpee-transcript",
+        "scopeName": "source.sharpee-transcript",
+        "path": "./syntaxes/sharpee-transcript.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "typescript",
+        "path": "./snippets/sharpee-story.json"
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "sharpee",
+        "required": [
+          "command"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The sharpee command to run (e.g., 'test')"
+          },
+          "file": {
+            "type": "string",
+            "description": "The transcript file to test"
+          }
+        }
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "sharpee-transcript",
+        "owner": "sharpee",
+        "fileLocation": "absolute",
+        "pattern": [
+          {
+            "regexp": "^\\s+Line (\\d+):\\s+(.+)$",
+            "line": 1,
+            "message": 2
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^Testing:",
+          "endsPattern": "^(PASS|FAIL|Results:)"
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "sharpee.runTranscript",
+        "title": "Sharpee: Run Transcript Test",
+        "icon": "$(play)"
+      },
+      {
+        "command": "sharpee.newStory",
+        "title": "Sharpee: New Story"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == sharpee-transcript",
+          "command": "sharpee.runTranscript",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "sharpee.runTranscript",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
+        "when": "resourceLangId == sharpee-transcript"
+      }
+    ],
+    "configuration": {
+      "title": "Sharpee",
+      "properties": {
+        "sharpee.cliBundlePath": {
+          "type": "string",
+          "default": "dist/cli/sharpee.js",
+          "description": "Path to the Sharpee CLI bundle relative to the workspace root"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "package": "vsce package",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}
