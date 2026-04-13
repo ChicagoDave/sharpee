@@ -14,6 +14,17 @@ import * as vscode from 'vscode';
 import { TranscriptCodeLensProvider, RUN_TRANSCRIPT_COMMAND } from './codelens-provider';
 import { runTranscriptTest, TestResult } from './test-runner';
 import { handleNewStory, NEW_STORY_COMMAND } from './new-story-wizard';
+import { createSharpeeTestController } from './test-controller';
+import {
+  SharpeeTaskProvider,
+  BUILD_STORY_COMMAND,
+  PLAY_STORY_COMMAND,
+  PLAY_IN_BROWSER_COMMAND,
+  handleBuildStory,
+  handlePlayStory,
+  handlePlayInBrowser,
+  onBuildDone,
+} from './build-provider';
 import { applyDecorations, clearDecorations, passDecorationType, failDecorationType } from './decorations';
 
 // ---------------------------------------------------------------------------
@@ -351,16 +362,46 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(NEW_STORY_COMMAND, handleNewStory),
   );
 
-  // Clear decorations and status when switching away from a transcript file
+  // Test Explorer controller
+  createSharpeeTestController(context);
+
+  // Build & Play commands
+  context.subscriptions.push(
+    vscode.commands.registerCommand(BUILD_STORY_COMMAND, handleBuildStory),
+    vscode.commands.registerCommand(PLAY_STORY_COMMAND, handlePlayStory),
+    vscode.commands.registerCommand(PLAY_IN_BROWSER_COMMAND, handlePlayInBrowser),
+  );
+
+  // Build task provider
+  context.subscriptions.push(
+    vscode.tasks.registerTaskProvider(SharpeeTaskProvider.type, new SharpeeTaskProvider()),
+  );
+
+  // Update status bar after builds
+  onBuildDone((success, storyId) => {
+    if (success) {
+      statusBarItem.text = `$(pass) Sharpee: Build OK (${storyId})`;
+      statusBarItem.backgroundColor = undefined;
+    } else {
+      statusBarItem.text = `$(error) Sharpee: Build failed (${storyId})`;
+      statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+    }
+    statusBarItem.show();
+  });
+
+  // Show status bar persistently — show build state or transcript state
+  statusBarItem.text = '$(play) Sharpee: Ready';
+  statusBarItem.show();
+
+  // Update status bar context when switching editors
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (!editor || editor.document.languageId !== 'sharpee-transcript') {
-        statusBarItem.hide();
+      if (editor?.document.languageId === 'sharpee-transcript') {
+        statusBarItem.command = RUN_TRANSCRIPT_COMMAND;
+        statusBarItem.tooltip = 'Click to run the current transcript test';
       } else {
-        // Show status bar when a transcript is active (even if no results yet)
-        statusBarItem.text = '$(play) Sharpee: Ready';
-        statusBarItem.backgroundColor = undefined;
-        statusBarItem.show();
+        statusBarItem.command = BUILD_STORY_COMMAND;
+        statusBarItem.tooltip = 'Click to build the current story';
       }
     }),
   );

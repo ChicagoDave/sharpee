@@ -38,6 +38,7 @@ interface CliOptions {
   stopOnFailure: boolean;
   chain: boolean;
   play: boolean;
+  worldJson: boolean;
   restore: string | null;
   storyPath: string;
 }
@@ -63,6 +64,7 @@ function parseArgs(args: string[]): CliOptions {
     stopOnFailure: false,
     chain: false,
     play: false,
+    worldJson: false,
     restore: null,
     storyPath: 'stories/dungeo'
   };
@@ -82,6 +84,8 @@ function parseArgs(args: string[]): CliOptions {
       options.chain = true;
     } else if (arg === '--play' || arg === '-p') {
       options.play = true;
+    } else if (arg === '--world-json') {
+      options.worldJson = true;
     } else if (arg.startsWith('--restore=')) {
       options.restore = arg.split('=')[1];
       options.play = true;  // --restore implies --play
@@ -128,6 +132,7 @@ Options:
   --emit-traits          Show entity traits for objects referenced in events (implies --verbose)
   -s, --stop-on-failure  Stop on first failure
   -p, --play             Interactive play mode (REPL)
+  --world-json           Dump initialized world model as JSON to stdout and exit
   --restore <name>       Restore from save file and enter play mode
   --story <path>         Story path (default: stories/dungeo)
   -h, --help             Show this help message
@@ -396,6 +401,97 @@ async function main(): Promise<void> {
   }
 
   const options = parseArgs(args);
+
+  // World JSON dump mode
+  if (options.worldJson) {
+    const game = loadStoryAndCreateGame(options.storyPath);
+    const world = game.world;
+    const allEntities = world.getAllEntities();
+
+    const rooms: any[] = [];
+    const entities: any[] = [];
+    const npcs: any[] = [];
+
+    for (const entity of allEntities) {
+      const identity = entity.get('identity') as any;
+      const name = identity?.name || entity.id;
+      const location = world.getLocation(entity.id) || null;
+      const traitTypes = entity.getTraitTypes();
+
+      if (traitTypes.includes('room')) {
+        const roomTrait = entity.get('room') as any;
+        const exits: Record<string, string> = {};
+        if (roomTrait?.exits) {
+          for (const [dir, exitData] of Object.entries(roomTrait.exits)) {
+            const dest = (exitData as any)?.destination;
+            if (dest) {
+              // Resolve destination name
+              const destEntity = world.getEntity(dest);
+              const destIdentity = destEntity?.get('identity') as any;
+              exits[dir] = dest;
+              if (destIdentity?.name) {
+                exits[dir + '_name'] = destIdentity.name;
+              }
+            }
+          }
+        }
+        rooms.push({
+          id: entity.id,
+          name,
+          aliases: identity?.aliases || [],
+          isDark: roomTrait?.isDark || false,
+          exits,
+        });
+      } else if (traitTypes.includes('actor') && !traitTypes.includes('player')) {
+        const npcTrait = entity.get('npc') as any;
+        npcs.push({
+          id: entity.id,
+          name,
+          location,
+          traits: traitTypes,
+          behaviorId: npcTrait?.behaviorId || null,
+        });
+      } else if (entity.type !== 'player') {
+        entities.push({
+          id: entity.id,
+          name,
+          location,
+          traits: traitTypes,
+        });
+      }
+    }
+
+    // Gather story-specific actions from the engine
+    const storyActions: any[] = [];
+    if (game.engine.getActionRegistry) {
+      try {
+        const registry = game.engine.getActionRegistry();
+        if (registry?.getAll) {
+          for (const action of registry.getAll()) {
+            if (action.id && !action.id.startsWith('if.action.')) {
+              storyActions.push({
+                id: action.id,
+                group: action.group || null,
+              });
+            }
+          }
+        }
+      } catch {
+        // Action registry not available — skip
+      }
+    }
+
+    const output = {
+      storyPath: options.storyPath,
+      rooms,
+      entities,
+      npcs,
+      actions: storyActions,
+    };
+
+    process.stdout.write(JSON.stringify(output, null, 2));
+    process.exit(0);
+  }
 
   // Interactive play mode
   if (options.play) {
