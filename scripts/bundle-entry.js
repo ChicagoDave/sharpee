@@ -128,6 +128,8 @@ if (require.main === module) {
         options.chain = true;
       } else if (arg === '--play' || arg === '-p') {
         options.play = true;
+      } else if (arg === '--world-json') {
+        options.worldJson = true;
       } else if (arg === '--test' || arg === '-t') {
         options.test = true;
       } else if (arg === '--debug') {
@@ -174,6 +176,7 @@ Options:
   --test, -t           Run transcript tests
   --play, -p           Interactive play mode (REPL)
   --exec <cmds>        Run commands non-interactively (separate with /)
+  --world-json         Dump initialized world model as JSON to stdout and exit
   --debug              Show parsed/validated/events JSON (use with --exec)
   --restore <name>     Restore from save file
   --chain, -c          Chain transcripts (don't reset game state between them)
@@ -482,6 +485,76 @@ Examples:
         console.log('');
       }
       process.exit(0);
+    }
+
+    if (options.worldJson) {
+      const game = loadStoryAndCreateGame(options.storyPath);
+      const world = game.world;
+      const allEntities = world.getAllEntities();
+
+      const rooms = [];
+      const entities = [];
+      const npcs = [];
+
+      for (const entity of allEntities) {
+        const identity = entity.get('identity');
+        const name = identity ? identity.name : entity.id;
+        const location = world.getLocation(entity.id) || null;
+        const traitTypes = entity.getTraitTypes();
+
+        if (traitTypes.includes('room')) {
+          const roomTrait = entity.get('room');
+          const exitEntries = {};
+          if (roomTrait && roomTrait.exits) {
+            for (const [dir, exitData] of Object.entries(roomTrait.exits)) {
+              const dest = exitData ? exitData.destination : null;
+              if (dest) {
+                const destEntity = world.getEntity(dest);
+                const destIdentity = destEntity ? destEntity.get('identity') : null;
+                exitEntries[dir] = {
+                  id: dest,
+                  name: destIdentity ? destIdentity.name : dest
+                };
+              }
+            }
+          }
+          rooms.push({
+            id: entity.id,
+            name,
+            aliases: identity ? (identity.aliases || []) : [],
+            isDark: roomTrait ? (roomTrait.isDark || false) : false,
+            exits: exitEntries,
+          });
+        } else if (traitTypes.includes('actor') && !traitTypes.includes('player')) {
+          const npcTrait = entity.get('npc');
+          npcs.push({
+            id: entity.id,
+            name,
+            location,
+            traits: traitTypes,
+            behaviorId: npcTrait ? (npcTrait.behaviorId || null) : null,
+          });
+        } else if (entity.type !== 'player') {
+          entities.push({
+            id: entity.id,
+            name,
+            location,
+            traits: traitTypes,
+          });
+        }
+      }
+
+      const output = {
+        storyPath: options.storyPath,
+        rooms,
+        entities,
+        npcs,
+      };
+
+      const jsonStr = JSON.stringify(output, null, 2);
+      process.stdout.write(jsonStr, () => {
+        process.exit(0);
+      });
     }
 
     if (options.play) {

@@ -2,7 +2,7 @@
   "name": "sharpee-vscode",
   "displayName": "Sharpee — Interactive Fiction Authoring",
   "description": "Syntax highlighting, snippets, and tooling for Sharpee interactive fiction projects",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "publisher": "chicagodave",
   "license": "MIT",
   "engines": {
@@ -14,7 +14,13 @@
   ],
   "activationEvents": [
     "onLanguage:sharpee-transcript",
-    "onCommand:sharpee.newStory"
+    "workspaceContains:**/*.transcript",
+    "onCommand:sharpee.newStory",
+    "onCommand:sharpee.buildStory",
+    "onCommand:sharpee.playStory",
+    "onCommand:sharpee.playInBrowser",
+    "onView:sharpee.worldExplorer",
+    "onLanguage:typescript"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -38,6 +44,24 @@
         "path": "./syntaxes/sharpee-transcript.tmLanguage.json"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sharpee-explorer",
+          "title": "Sharpee",
+          "icon": "$(book)"
+        }
+      ]
+    },
+    "views": {
+      "sharpee-explorer": [
+        {
+          "id": "sharpee.worldExplorer",
+          "name": "World Explorer",
+          "contextualTitle": "Sharpee World Explorer"
+        }
+      ]
+    },
     "snippets": [
       {
         "language": "typescript",
@@ -90,6 +114,26 @@
       {
         "command": "sharpee.newStory",
         "title": "Sharpee: New Story"
+      },
+      {
+        "command": "sharpee.buildStory",
+        "title": "Sharpee: Build Story",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "sharpee.playStory",
+        "title": "Sharpee: Play Story",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "sharpee.playInBrowser",
+        "title": "Sharpee: Play in Browser",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "sharpee.refreshWorldExplorer",
+        "title": "Sharpee: Refresh World Explorer",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -97,6 +141,13 @@
         {
           "when": "resourceLangId == sharpee-transcript",
           "command": "sharpee.runTranscript",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "sharpee.refreshWorldExplorer",
+          "when": "view == sharpee.worldExplorer",
           "group": "navigation"
         }
       ]
@@ -107,6 +158,11 @@
         "key": "ctrl+shift+t",
         "mac": "cmd+shift+t",
         "when": "resourceLangId == sharpee-transcript"
+      },
+      {
+        "command": "sharpee.buildStory",
+        "key": "ctrl+shift+b",
+        "mac": "cmd+shift+b"
       }
     ],
     "configurationDefaults": {
@@ -121,6 +177,21 @@
           "type": "string",
           "default": "dist/cli/sharpee.js",
           "description": "Path to the Sharpee CLI bundle relative to the workspace root"
+        },
+        "sharpee.storyId": {
+          "type": "string",
+          "default": "",
+          "description": "Story ID to build and play (e.g., 'dungeo'). If empty, auto-detects from stories/ directory."
+        },
+        "sharpee.buildScript": {
+          "type": "string",
+          "default": "./build.sh",
+          "description": "Path to the build script relative to the workspace root"
+        },
+        "sharpee.enableEntityAutocomplete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable entity ID autocomplete in TypeScript story files (room IDs, entity IDs, NPC IDs)"
         }
       }
     }
