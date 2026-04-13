@@ -123,19 +123,53 @@ When the player moves between rooms in different regions, the engine emits:
 
 These fire **after** the standard `if.event.actor_moved` event, in the same turn. If the player crosses multiple region boundaries (nested regions), events fire from outermost to innermost for entry, innermost to outermost for exit.
 
+#### Creation Helper
+
+Region creation is atomic — entity, trait, and registration in one call:
+
+```typescript
+interface RegionOptions {
+  name: string;
+  parentRegionId?: string;
+  ambientSound?: string;
+  ambientSmell?: string;
+  defaultDark?: boolean;
+}
+
+// On WorldModel
+world.createRegion(id: string, options: RegionOptions): IFEntity;
+```
+
+`createRegion` creates the entity with `EntityType.REGION`, applies `RegionTrait` with the given options, and returns the entity. There is no separate registration step — a region entity with a `RegionTrait` is fully functional.
+
+#### Room Assignment
+
+Rooms declare their region via a helper that validates the region exists:
+
+```typescript
+// On WorldModel
+world.assignRoom(roomId: string, regionId: string): void;
+```
+
+`assignRoom` sets `RoomTrait.regionId` on the room. Throws if `regionId` does not reference an existing region entity. Direct assignment via `room.get(RoomTrait)!.regionId = 'reg-x'` also works but skips validation.
+
 #### Story Usage
 
 ```typescript
-// Story initialization
-const underground = world.createEntity('reg-underground', EntityType.REGION);
-underground.set(RegionTrait, { name: 'Underground' });
+// Story initialization — one call per region
+const underground = world.createRegion('reg-underground', {
+  name: 'Underground',
+  defaultDark: true,
+});
 
-const coalMine = world.createEntity('reg-coal-mine', EntityType.REGION);
-coalMine.set(RegionTrait, { name: 'Coal Mine', parentRegionId: 'reg-underground' });
+const coalMine = world.createRegion('reg-coal-mine', {
+  name: 'Coal Mine',
+  parentRegionId: 'reg-underground',
+});
 
 // Room assignment
-cellar.get(RoomTrait)!.regionId = 'reg-underground';
-coalRoom.get(RoomTrait)!.regionId = 'reg-coal-mine';
+world.assignRoom(cellar.id, 'reg-underground');
+world.assignRoom(coalRoom.id, 'reg-coal-mine');
 
 // Event handler
 world.on('if.event.region_entered', (event) => {
@@ -192,22 +226,28 @@ class SceneTrait implements ITrait {
 }
 ```
 
-#### Condition Functions
+#### Creation Helper
 
-Scene transitions are defined via condition functions registered during story initialization:
+Scene creation is atomic — entity, trait, and condition registration in one call:
 
 ```typescript
-interface SceneConditions {
+interface SceneOptions {
+  name: string;
   /** Returns true when the scene should begin. Evaluated each turn when state is 'waiting'. */
   begin: (world: WorldModel) => boolean;
-
   /** Returns true when the scene should end. Evaluated each turn when state is 'active'. */
   end: (world: WorldModel) => boolean;
+  /** Whether the scene can activate more than once. Default: false. */
+  recurring?: boolean;
 }
 
-// Registration API
-world.registerScene(sceneId: string, conditions: SceneConditions): void;
+// On WorldModel
+world.createScene(id: string, options: SceneOptions): IFEntity;
 ```
+
+`createScene` creates the entity with `EntityType.SCENE`, applies `SceneTrait` (state: `'waiting'`, activeTurns: 0), registers the begin/end condition functions, and returns the entity. There is no separate `registerScene` step — a scene entity without conditions cannot exist.
+
+**Condition functions are closures and cannot be serialized.** On save/restore, the trait data (state, activeTurns, beganAtTurn, endedAtTurn) is persisted, but conditions are lost. Stories must re-call `createScene` (or a future `reregisterSceneConditions`) after restore to re-attach the condition functions. The engine skips evaluation for scene entities with no registered conditions.
 
 #### Turn Cycle Integration
 
@@ -261,11 +301,9 @@ The `w.scenes` entry point is added by `@sharpee/queries` alongside `w.rooms`, `
 #### Story Usage
 
 ```typescript
-// Story initialization
-const flood = world.createEntity('scene-flood', EntityType.SCENE);
-flood.set(SceneTrait, { name: 'The Flood', state: 'waiting', recurring: false, activeTurns: 0 });
-
-world.registerScene('scene-flood', {
+// Story initialization — one call creates entity, trait, and conditions
+const flood = world.createScene('scene-flood', {
+  name: 'The Flood',
   begin: (w) => w.getStateValue('dam-gates') === 'open',
   end: (w) => w.getStateValue('flood-drained') === true,
 });
