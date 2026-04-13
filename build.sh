@@ -437,6 +437,7 @@ build_platform() {
         "@sharpee/media:media"
         "@sharpee/world-model:world-model"
         "@sharpee/helpers:helpers"
+        "@sharpee/queries:queries"
         "@sharpee/event-processor:event-processor"
         "@sharpee/lang-en-us:lang-en-us"
         "@sharpee/parser-en-us:parser-en-us"

@@ -95,7 +95,7 @@ w.rooms.inRegion('reg-coal-mine')                // EntityQuery — just Coal Mi
 w.rooms.inRegion('reg-forest').any(r => r.id === currentRoomId)
 
 // Get the region entity for a room
-w.entities.ofType(EntityType.REGION)
+w.all.ofType(EntityType.REGION)
   .where(r => r.id === room.get(RoomTrait)?.regionId)
   .first()
 
@@ -242,7 +242,7 @@ Scene queries use the EntityQuery API (ADR-150) for collection-based access, wit
 
 ```typescript
 // EntityQuery — all active scenes
-w.entities.ofType(EntityType.SCENE)
+w.all.ofType(EntityType.SCENE)
   .where(s => s.get(SceneTrait)?.state === 'active')
 
 // Shorthand via query entry point

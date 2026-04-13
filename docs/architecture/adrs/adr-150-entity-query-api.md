@@ -234,8 +234,8 @@ Exposed via declaration merging (same pattern as ADR-140's `@sharpee/helpers`):
 // In @sharpee/queries — augments IWorldModel
 declare module '@sharpee/world-model' {
   interface IWorldModel {
-    /** Query all entities in the world. */
-    readonly entities: EntityQuery;
+    /** Query all entities in the world. Named `all` because WorldModel has a private `entities` field. */
+    readonly all: EntityQuery;
 
     /** Query all rooms. */
     readonly rooms: EntityQuery;
@@ -390,7 +390,7 @@ const regionTree = w.regions.select(r => ({
 
 ```typescript
 // Group all entities by their containing room
-const byRoom = w.entities.groupBy(e => w.getLocation(e.id) ?? 'nowhere');
+const byRoom = w.all.groupBy(e => w.getLocation(e.id) ?? 'nowhere');
 
 // Group objects by type
 const byType = w.objects.groupBy(e => {
@@ -513,7 +513,7 @@ Then:
   w.contents('r01').named('sword').single().id        === 'y01'
   w.contents('r01').withTrait(WeaponTrait).any()      === true
   w.contents('r01').withTrait(LightSourceTrait).none() === true
-  w.entities.count()                                  >= 3  (room + 2 entities + player)
+  w.all.count()                                  >= 3  (room + 2 entities + player)
   w.contents('r01').toIdSet()                         === Set {'y01', 'y02'}
   w.contents('r01').named('axe').first()              === undefined
   w.contents('r01').named('axe').single()             throws "Expected exactly one entity, found none"
@@ -546,7 +546,7 @@ This exercises: prototype augmentation, entry points (`w.rooms`, `w.contents()`)
 
 - **New package to maintain**: Though small (~200 lines of implementation)
 - **Two ways to query**: `world.findByTrait()` and `world.having()` coexist. Mitigated: existing methods remain for platform internals; query API is the recommended authoring surface
-- **Eager evaluation**: `w.entities.where(expensive).first()` evaluates `expensive` on all entities even though only the first match is needed. Acceptable for Sharpee's world sizes
+- **Eager evaluation**: `w.all.where(expensive).first()` evaluates `expensive` on all entities even though only the first match is needed. Acceptable for Sharpee's world sizes
 
 ### Neutral
 

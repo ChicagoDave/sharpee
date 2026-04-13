@@ -19,6 +19,7 @@
     "packages/lang-en-us/tsconfig.json",
     "packages/if-services/tsconfig.json",
     "packages/helpers/tsconfig.json",
+    "packages/queries/tsconfig.json",
     "packages/if-domain/tsconfig.json",
     "packages/event-processor/tsconfig.json",
     "packages/engine/tsconfig.json",
