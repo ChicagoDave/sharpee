@@ -31,6 +31,8 @@
       link('community.html', 'Community') +
       link('news.html', 'News') +
       '<hr>' +
+      '<a href="https://demos.sharpee.net">Demos</a>' +
+      '<hr>' +
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/packages/sharpee/docs/genai-api">API Reference</a>' +
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/docs/guides">Author Guides</a>' +
     '</nav>' +

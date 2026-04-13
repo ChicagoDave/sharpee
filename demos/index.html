@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpee Demos — Play Interactive Fiction</title>
+  <meta name="description" content="Play interactive fiction games built with Sharpee. Try parser-based adventures in your browser.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="site-title">Sharpee <span>demos</span></div>
+    <div class="header-links">
+      <a href="https://sharpee.net">Main Site</a>
+      <a href="https://sharpee.net/getting-started.html">Get Started</a>
+      <a href="https://github.com/ChicagoDave/sharpee">GitHub</a>
+      <button class="theme-btn" id="theme-toggle">Light mode</button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="content">
+    <h1>Play Sharpee Games</h1>
+    <p class="subtitle">Parser-based interactive fiction, running in your browser. Type commands, explore worlds.</p>
+
+    <!-- Demo Cards -->
+    <div class="demo-grid">
+
+      <!-- Dungeo -->
+      <div class="demo-card">
+        <div class="demo-card-image">
+          <pre>
+West of House
+You are standing in an open
+field west of a white house,
+with a boarded front door.
+
+There is a small mailbox here.
+
+> open mailbox</pre>
+        </div>
+        <div class="demo-card-body">
+          <div class="demo-card-title">Dungeo</div>
+          <div class="demo-card-author">by David Cornelson</div>
+          <div class="demo-card-desc">A faithful reimplementation of Mainframe Zork (1981) built to dog-food the Sharpee platform. Explore the Great Underground Empire.</div>
+          <div class="demo-card-footer">
+            <a class="play-btn" href="/dungeo/">Play</a>
+            <span class="demo-tag">Completed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cloak of Darkness -->
+      <div class="demo-card">
+        <div class="demo-card-image">
+          <pre>
+Foyer of the Opera House
+You are standing in a spacious
+hall, splendidly decorated in
+red and gold, with glittering
+chandeliers overhead.
+
+> hang cloak on hook</pre>
+        </div>
+        <div class="demo-card-body">
+          <div class="demo-card-title">Cloak of Darkness</div>
+          <div class="demo-card-author">by Roger Firth (Sharpee port)</div>
+          <div class="demo-card-desc">The classic three-room benchmark game for IF systems. A short puzzle demonstrating core mechanics.</div>
+          <div class="demo-card-footer">
+            <a class="play-btn" href="/cloak/">Play</a>
+            <span class="demo-tag">Completed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family Zoo -->
+      <div class="demo-card">
+        <div class="demo-card-image">
+          <pre>
+Zoo Entrance
+Welcome to the Family Zoo!
+Paths lead north to the
+animal exhibits and east
+to the gift shop.
+
+> go north</pre>
+        </div>
+        <div class="demo-card-body">
+          <div class="demo-card-title">Family Zoo</div>
+          <div class="demo-card-author">Tutorial Story</div>
+          <div class="demo-card-desc">A tutorial game built step-by-step in the Family Zoo guide. Demonstrates every Sharpee feature from rooms to scoring.</div>
+          <div class="demo-card-footer">
+            <a class="play-btn" href="/zoo/">Play</a>
+            <span class="demo-tag">Tutorial</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+      <h2>What is this?</h2>
+      <p>These are playable demos of interactive fiction games built with <a href="https://sharpee.net">Sharpee</a>, a modern TypeScript platform for parser-based IF. Each game runs entirely in your browser — no server required for gameplay.</p>
+
+      <div class="info-columns">
+        <div>
+          <h3>How to Play</h3>
+          <ul>
+            <li>Type commands like <code>look</code>, <code>take lamp</code>, <code>go north</code></li>
+            <li>Examine things: <code>examine mailbox</code></li>
+            <li>Check inventory: <code>inventory</code> or <code>i</code></li>
+            <li>Get help: <code>help</code></li>
+          </ul>
+        </div>
+        <div>
+          <h3>About Sharpee</h3>
+          <ul>
+            <li>Trait-based entity system</li>
+            <li>Language layer separation</li>
+            <li>Capability dispatch for puzzles</li>
+            <li>AI-assisted authoring (coming soon)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>&copy; 2025 David Cornelson. MIT License.</span>
+    <div class="footer-links">
+      <a href="https://sharpee.net">sharpee.net</a>
+      <a href="https://github.com/ChicagoDave/sharpee">GitHub</a>
+    </div>
+  </footer>
+
+</div>
+
+<script src="theme.js"></script>
+</body>
+</html>

@@ -23,6 +23,8 @@ export * from './wearable';
 export * from './clothing';
 export * from './edible';
 export * from './door';
+export * from './region';
+export * from './scene';
 export * from './actor';
 
 // Manipulation traits

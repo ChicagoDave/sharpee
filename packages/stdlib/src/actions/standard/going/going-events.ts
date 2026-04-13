@@ -73,6 +73,34 @@ export interface ActorEnteredEventData {
 }
 
 /**
+ * Data for 'if.event.region_entered' event (ADR-149)
+ *
+ * Emitted when an actor crosses into a new region boundary.
+ */
+export interface RegionEnteredEventData {
+  /** The actor who crossed the boundary */
+  actorId: EntityId;
+  /** The region entity ID that was entered */
+  regionId: string;
+  /** The region that was exited (if any) */
+  fromRegionId?: string;
+}
+
+/**
+ * Data for 'if.event.region_exited' event (ADR-149)
+ *
+ * Emitted when an actor leaves a region boundary.
+ */
+export interface RegionExitedEventData {
+  /** The actor who crossed the boundary */
+  actorId: EntityId;
+  /** The region entity ID that was exited */
+  regionId: string;
+  /** The region being entered (if any) */
+  toRegionId?: string;
+}
+
+/**
  * Data for 'action.error' events from going action
  */
 export interface GoingErrorData {

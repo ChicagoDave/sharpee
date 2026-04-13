@@ -15,7 +15,13 @@ export {
   EventChainHandler,
   ChainEventOptions,
   // Score Ledger (ADR-129)
-  ScoreEntry
+  ScoreEntry,
+  // Region Management (ADR-149)
+  RegionOptions,
+  RegionCrossings,
+  // Scene Management (ADR-149)
+  SceneOptions,
+  SceneConditions
 } from './WorldModel';
 
 // Re-export grammar vocabulary types from if-domain for convenience

@@ -35,6 +35,8 @@ export const TraitType = {
   // Spatial traits
   DOOR: 'door',
   CLIMBABLE: 'climbable',
+  REGION: 'region',
+  SCENE: 'scene',
 
   // Object property traits
 
@@ -121,6 +123,8 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.DOOR]: TraitCategory.STANDARD,
   [TraitType.CLIMBABLE]: TraitCategory.INTERACTIVE,
   [TraitType.EXIT]: TraitCategory.STANDARD,
+  [TraitType.REGION]: TraitCategory.STANDARD,
+  [TraitType.SCENE]: TraitCategory.STANDARD,
 
   // Object property
 

@@ -235,7 +235,7 @@ export class RoomBehavior extends Behavior {
    */
   static getRegion(room: IFEntity): string | undefined {
     const roomTrait = RoomBehavior.require<RoomTrait>(room, TraitType.ROOM);
-    return roomTrait.region;
+    return roomTrait.regionId;
   }
   
   /**

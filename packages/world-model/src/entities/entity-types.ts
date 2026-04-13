@@ -29,6 +29,12 @@ export const EntityType = {
   /** A directional exit (rarely used as entity) */
   EXIT: 'exit',
   
+  /** A geographic grouping of rooms (ADR-149) */
+  REGION: 'region',
+
+  /** A temporal phase of the story (ADR-149) */
+  SCENE: 'scene',
+
   /** Generic object type (default) */
   OBJECT: 'object'
 } as const;
@@ -59,6 +65,8 @@ export function getEntityTypePrefix(type: EntityType): string {
     [EntityType.SUPPORTER]: 's',
     [EntityType.SCENERY]: 'y',
     [EntityType.EXIT]: 'e',
+    [EntityType.REGION]: 'rg',
+    [EntityType.SCENE]: 'sc',
     [EntityType.OBJECT]: 'o'
   };
   

@@ -26,7 +26,8 @@ import {
   canActorWalkInVehicle,
   getInterceptorForAction,
   ActionInterceptor,
-  InterceptorSharedData
+  InterceptorSharedData,
+  RegionCrossings,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -68,6 +69,8 @@ export interface GoingSharedData {
   destinationRoom?: IFEntity;
   /** Which interceptor blocked the action, if any */
   blockedBy?: 'source' | 'destination';
+  /** Region boundary crossings computed during execute (ADR-149) */
+  regionCrossings?: RegionCrossings;
 }
 
 export function getGoingSharedData(context: ActionContext): GoingSharedData {
@@ -362,6 +365,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       RoomBehavior.markVisited(destination, actor);
     }
 
+    // Compute region boundary crossings (ADR-149)
+    sharedData.regionCrossings = context.world.getRegionCrossings(sourceRoom.id, destination.id);
+
     // === SOURCE POST-EXECUTE HOOK ===
     // Called after standard execution - can perform additional mutations
     const interceptor = sharedData.interceptor;
@@ -399,6 +405,27 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       context.event('if.event.actor_moved', movedData),
       context.event('if.event.actor_entered', enteredData)
     ];
+
+    // Emit region boundary crossing events (ADR-149)
+    const crossings = sharedData.regionCrossings;
+    if (crossings) {
+      // Exit events — innermost first
+      for (const regionId of crossings.exited) {
+        events.push(context.event('if.event.region_exited', {
+          actorId: context.player.id,
+          regionId,
+          toRegionId: crossings.entered[0],
+        }));
+      }
+      // Entry events — outermost first
+      for (const regionId of crossings.entered) {
+        events.push(context.event('if.event.region_entered', {
+          actorId: context.player.id,
+          regionId,
+          fromRegionId: crossings.exited[0],
+        }));
+      }
+    }
 
     // Check if destination is dark (no usable light source)
     const isDark = VisibilityBehavior.isDark(destinationRoom, context.world);

@@ -23,6 +23,10 @@ import type {
   EventPreviewer,
   EventChainHandler,
   ChainEventOptions,
+  RegionOptions,
+  RegionCrossings,
+  SceneOptions,
+  SceneConditions,
 } from './WorldModel';
 import type { ScoreEntry } from './ScoreLedger';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -285,6 +289,48 @@ export class AuthorModel implements IWorldModel {
     keyId?: string;
   }): IFEntity {
     return this.worldModel.createDoor(displayName, opts);
+  }
+
+  // Region Management (ADR-149)
+  createRegion(id: string, options: RegionOptions): IFEntity {
+    return this.worldModel.createRegion(id, options);
+  }
+
+  assignRoom(roomId: string, regionId: string): void {
+    this.worldModel.assignRoom(roomId, regionId);
+  }
+
+  isInRegion(entityId: string, regionId: string): boolean {
+    return this.worldModel.isInRegion(entityId, regionId);
+  }
+
+  getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings {
+    return this.worldModel.getRegionCrossings(fromRoomId, toRoomId);
+  }
+
+  // Scene Management (ADR-149)
+  createScene(id: string, options: SceneOptions): IFEntity {
+    return this.worldModel.createScene(id, options);
+  }
+
+  getSceneConditions(sceneId: string): SceneConditions | undefined {
+    return this.worldModel.getSceneConditions(sceneId);
+  }
+
+  getAllSceneConditions(): Map<string, SceneConditions> {
+    return this.worldModel.getAllSceneConditions();
+  }
+
+  isSceneActive(sceneId: string): boolean {
+    return this.worldModel.isSceneActive(sceneId);
+  }
+
+  hasSceneEnded(sceneId: string): boolean {
+    return this.worldModel.hasSceneEnded(sceneId);
+  }
+
+  hasSceneHappened(sceneId: string): boolean {
+    return this.worldModel.hasSceneHappened(sceneId);
   }
 
   // Capability Management
