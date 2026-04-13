@@ -34,6 +34,9 @@ export * from './game-engine';
 // Plugin system (ADR-120)
 export { PluginRegistry, TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 
+// Scene evaluation (ADR-149)
+export { SceneEvaluationPlugin } from './scene-evaluation-plugin';
+
 // Extracted services
 export * from './vocabulary-manager';
 export * from './save-restore-service';

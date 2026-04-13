@@ -27,7 +27,7 @@ describe('RoomTrait', () => {
       expect(trait.initialDescription).toBeUndefined();
       expect(trait.ambientSound).toBeUndefined();
       expect(trait.ambientSmell).toBeUndefined();
-      expect(trait.region).toBeUndefined();
+      expect(trait.regionId).toBeUndefined();
       expect(trait.tags).toEqual([]);
     });
 
@@ -45,7 +45,7 @@ describe('RoomTrait', () => {
         initialDescription: 'As you enter the courtyard, birds scatter from the fountain.',
         ambientSound: 'Birds chirp in the nearby trees.',
         ambientSmell: 'The scent of roses fills the air.',
-        region: 'castle-grounds',
+        regionId: 'castle-grounds',
         tags: ['outdoor', 'courtyard', 'peaceful']
       });
       
@@ -59,7 +59,7 @@ describe('RoomTrait', () => {
       expect(trait.initialDescription).toContain('birds scatter');
       expect(trait.ambientSound).toContain('Birds chirp');
       expect(trait.ambientSmell).toContain('roses');
-      expect(trait.region).toBe('castle-grounds');
+      expect(trait.regionId).toBe('castle-grounds');
       expect(trait.tags).toContain('outdoor');
       expect(trait.tags).toContain('peaceful');
     });
@@ -227,9 +227,9 @@ describe('RoomTrait', () => {
     it('should handle region assignment', () => {
       const room = createTestRoom(world, 'Guard Tower');
       const trait = room.get(TraitType.ROOM) as RoomTrait;
-      trait.region = 'castle-walls';
-      
-      expect(trait.region).toBe('castle-walls');
+      trait.regionId = 'castle-walls';
+
+      expect(trait.regionId).toBe('castle-walls');
     });
 
     it('should handle multiple tags', () => {
@@ -246,7 +246,7 @@ describe('RoomTrait', () => {
       const room = createTestRoom(world, 'Generic Room');
       const trait = room.get(TraitType.ROOM) as RoomTrait;
       
-      expect(trait.region).toBeUndefined();
+      expect(trait.regionId).toBeUndefined();
       expect(trait.tags).toEqual([]);
     });
   });

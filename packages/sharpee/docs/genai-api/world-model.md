@@ -416,6 +416,10 @@ export declare const EntityType: {
     readonly SCENERY: "scenery";
     /** A directional exit (rarely used as entity) */
     readonly EXIT: "exit";
+    /** A geographic grouping of rooms (ADR-149) */
+    readonly REGION: "region";
+    /** A temporal phase of the story (ADR-149) */
+    readonly SCENE: "scene";
     /** Generic object type (default) */
     readonly OBJECT: "object";
 };
@@ -1905,6 +1909,8 @@ export declare const TraitType: {
     readonly MOVEABLE_SCENERY: "moveableScenery";
     readonly DOOR: "door";
     readonly CLIMBABLE: "climbable";
+    readonly REGION: "region";
+    readonly SCENE: "scene";
     readonly ACTOR: "actor";
     readonly EXIT: "exit";
     readonly WEAPON: "weapon";
@@ -1988,6 +1994,8 @@ import { ReadableTrait } from './readable/readableTrait';
 import { LightSourceTrait } from './light-source/lightSourceTrait';
 import { DoorTrait } from './door/doorTrait';
 import { ClimbableTrait } from './climbable/climbableTrait';
+import { RegionTrait } from './region/regionTrait';
+import { SceneTrait } from './scene/sceneTrait';
 import { ActorTrait } from './actor/actorTrait';
 import { ExitTrait } from './exit/exitTrait';
 import { PullableTrait } from './pullable/pullableTrait';
@@ -2018,7 +2026,7 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### traits/identity/identityTrait
@@ -2308,8 +2316,8 @@ export interface IRoomData {
     ambientSound?: string;
     /** Ambient smell description */
     ambientSmell?: string;
-    /** Region or area this room belongs to */
-    region?: string;
+    /** ID of the region entity this room belongs to (ADR-149) */
+    regionId?: string;
     /** Tags for categorizing rooms */
     tags?: string[];
     /** Capacity constraints for the room (optional) */
@@ -2347,7 +2355,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     initialDescriptionId?: string;
     ambientSound?: string;
     ambientSmell?: string;
-    region?: string;
+    regionId?: string;
     tags: string[];
     capacity?: {
         maxWeight?: number;
@@ -5290,6 +5298,43 @@ import { IScopeRule } from '../scope/scope-rule';
 import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem';
 export type { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions };
 export { WorldState, WorldConfig, ContentsOptions, WorldChange } from '@sharpee/if-domain';
+export interface RegionOptions {
+    /** Human-readable region name. */
+    name: string;
+    /** Parent region entity ID for nesting. */
+    parentRegionId?: string;
+    /** Region-wide ambient sound. */
+    ambientSound?: string;
+    /** Region-wide ambient smell. */
+    ambientSmell?: string;
+    /** Whether rooms in this region default to dark. */
+    defaultDark?: boolean;
+}
+export interface SceneOptions {
+    /** Human-readable scene name. */
+    name: string;
+    /** Returns true when the scene should begin. Evaluated each turn when state is 'waiting'. */
+    begin: (world: IWorldModel) => boolean;
+    /** Returns true when the scene should end. Evaluated each turn when state is 'active'. */
+    end: (world: IWorldModel) => boolean;
+    /** Whether the scene can activate more than once. Default: false. */
+    recurring?: boolean;
+}
+/** Stored condition closures for a scene (not serializable). */
+export interface SceneConditions {
+    begin: (world: IWorldModel) => boolean;
+    end: (world: IWorldModel) => boolean;
+}
+/**
+ * Result of comparing region hierarchies for two rooms (ADR-149).
+ *
+ * @param exited - Region IDs exited, innermost first.
+ * @param entered - Region IDs entered, outermost first.
+ */
+export interface RegionCrossings {
+    exited: string[];
+    entered: string[];
+}
 import { ScoreEntry } from './ScoreLedger';
 export { ScoreEntry } from './ScoreLedger';
 export interface IWorldModel {
@@ -5342,6 +5387,16 @@ export interface IWorldModel {
         isLocked?: boolean;
         keyId?: string;
     }): IFEntity;
+    createRegion(id: string, options: RegionOptions): IFEntity;
+    assignRoom(roomId: string, regionId: string): void;
+    isInRegion(entityId: string, regionId: string): boolean;
+    getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
+    createScene(id: string, options: SceneOptions): IFEntity;
+    getSceneConditions(sceneId: string): SceneConditions | undefined;
+    getAllSceneConditions(): Map<string, SceneConditions>;
+    isSceneActive(sceneId: string): boolean;
+    hasSceneEnded(sceneId: string): boolean;
+    hasSceneHappened(sceneId: string): boolean;
     awardScore(id: string, points: number, description: string): boolean;
     revokeScore(id: string): boolean;
     hasScore(id: string): boolean;
@@ -5391,6 +5446,7 @@ export declare class WorldModel implements IWorldModel {
     private config;
     private capabilities;
     private scoreLedger;
+    private sceneConditions;
     private idCounters;
     private eventSystem;
     private serializer;
@@ -5537,6 +5593,92 @@ export declare class WorldModel implements IWorldModel {
         isLocked?: boolean;
         keyId?: string;
     }): IFEntity;
+    /**
+     * Creates a region entity with RegionTrait atomically.
+     *
+     * @param id - Explicit entity ID for the region (e.g., 'reg-underground').
+     *             Must be unique; throws if already exists.
+     * @param options - Region configuration.
+     * @returns The created region entity.
+     */
+    createRegion(id: string, options: RegionOptions): IFEntity;
+    /**
+     * Assigns a room to a region by setting RoomTrait.regionId.
+     *
+     * @param roomId - ID of the room entity.
+     * @param regionId - ID of the region entity (must exist and have RegionTrait).
+     * @throws If room not found, region not found, or types are wrong.
+     */
+    assignRoom(roomId: string, regionId: string): void;
+    /**
+     * Tests whether an entity (or its containing room) is in a region,
+     * traversing the parent region hierarchy.
+     *
+     * @param entityId - The entity to test. If it's a room, checks its regionId.
+     *                   Otherwise, resolves the entity's containing room first.
+     * @param regionId - The region to test membership against.
+     * @returns true if the entity is in the region or any child of it.
+     */
+    isInRegion(entityId: string, regionId: string): boolean;
+    /**
+     * Computes which regions are exited and entered when moving between rooms.
+     * Exit list is innermost-first; entry list is outermost-first.
+     *
+     * @param fromRoomId - The source room entity ID.
+     * @param toRoomId - The destination room entity ID.
+     * @returns Region IDs exited and entered. Both empty if same region or no regions.
+     */
+    getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
+    /**
+     * Builds the ancestry chain for a region: [self, parent, grandparent, ...].
+     * Returns empty array if regionId is undefined or not found.
+     */
+    private getRegionAncestry;
+    /**
+     * Checks whether a region ancestry chain includes a target region.
+     */
+    private regionAncestryIncludes;
+    /**
+     * Creates a scene entity with SceneTrait and registers condition closures.
+     *
+     * @param id - Explicit entity ID (e.g., 'scene-flood'). Must be unique.
+     * @param options - Scene name, begin/end conditions, recurring flag.
+     * @returns The created scene entity.
+     */
+    createScene(id: string, options: SceneOptions): IFEntity;
+    /**
+     * Retrieves the condition closures for a scene.
+     * Returns undefined if the scene has no registered conditions
+     * (e.g., after save/restore before re-registration).
+     *
+     * @param sceneId - The scene entity ID.
+     */
+    getSceneConditions(sceneId: string): SceneConditions | undefined;
+    /**
+     * Returns all registered scene conditions. Used by the engine's
+     * scene evaluation phase to iterate over scenes each turn.
+     */
+    getAllSceneConditions(): Map<string, SceneConditions>;
+    /**
+     * Returns true if the scene is currently in the 'active' state.
+     *
+     * @param sceneId - The scene entity ID.
+     */
+    isSceneActive(sceneId: string): boolean;
+    /**
+     * Returns true if the scene has reached the 'ended' state.
+     * For recurring scenes, this is true only while in the 'ended' state
+     * (resets to 'waiting' when the scene re-activates).
+     *
+     * @param sceneId - The scene entity ID.
+     */
+    hasSceneEnded(sceneId: string): boolean;
+    /**
+     * Returns true if the scene has ever been active (beganAtTurn is set).
+     *
+     * @param sceneId - The scene entity ID.
+     */
+    hasSceneHappened(sceneId: string): boolean;
 }
 ```
 
@@ -5682,7 +5824,7 @@ import { TraitType } from '../traits/trait-types';
 import { SpatialIndex } from './SpatialIndex';
 import { ITrait } from '../traits/trait';
 import { ICapabilityStore } from './capabilities';
-import type { IWorldModel, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldModel';
+import type { IWorldModel, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel';
 import type { ScoreEntry } from './ScoreLedger';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
@@ -5789,6 +5931,16 @@ export declare class AuthorModel implements IWorldModel {
         isLocked?: boolean;
         keyId?: string;
     }): IFEntity;
+    createRegion(id: string, options: RegionOptions): IFEntity;
+    assignRoom(roomId: string, regionId: string): void;
+    isInRegion(entityId: string, regionId: string): boolean;
+    getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
+    createScene(id: string, options: SceneOptions): IFEntity;
+    getSceneConditions(sceneId: string): SceneConditions | undefined;
+    getAllSceneConditions(): Map<string, SceneConditions>;
+    isSceneActive(sceneId: string): boolean;
+    hasSceneEnded(sceneId: string): boolean;
+    hasSceneHappened(sceneId: string): boolean;
     registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
     updateCapability(name: string, data: Partial<ICapabilityData>): void;
     getCapability(name: string): ICapabilityData | undefined;

@@ -37,6 +37,7 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*",
+    "@sharpee/queries": "workspace:*",
     "lz-string": "^1.5.0"
   },
   "devDependencies": {

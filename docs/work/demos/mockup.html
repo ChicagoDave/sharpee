@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sharpee Demos — Play Interactive Fiction</title>
+  <meta name="description" content="Play interactive fiction games built with Sharpee. Try parser-based adventures in your browser.">
+  <style>
+    /**
+     * demos.sharpee.net stylesheet
+     * Matches the main site's design language: dark default, champagne gold accent.
+     */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --bg-sidebar: #161b22;
+      --bg-card: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #f2d280;
+      --accent-hover: #f5dda0;
+      --heading: #f0e6d3;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      --max-width: 960px;
+    }
+
+    [data-theme="light"] {
+      --bg: #faf9f7;
+      --bg-sidebar: #f0eeeb;
+      --bg-card: #f0eeeb;
+      --border: #d4d0cc;
+      --text: #2a2520;
+      --text-muted: #555;
+      --accent: #3b82c4;
+      --accent-hover: #2d6da3;
+      --heading: #1a1a1a;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    /* ── Layout ── */
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .site-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .site-title span {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 0.85rem;
+      margin-left: 0.5rem;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+    }
+
+    .header-links a {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .header-links a:hover {
+      color: var(--accent);
+    }
+
+    .theme-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .theme-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ── Content ── */
+    .content {
+      padding: 3rem 2.5rem;
+      flex: 1;
+    }
+
+    .content h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--heading);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .content .subtitle {
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      font-size: 1.05rem;
+    }
+
+    /* ── Demo Cards ── */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .demo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+
+    .demo-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .demo-card-image {
+      width: 100%;
+      height: 160px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ASCII art preview inside the card image area */
+    .demo-card-image pre {
+      font-family: "SF Mono", "Cascadia Code", "Fira Code", Menlo, Consolas, monospace;
+      font-size: 0.65rem;
+      line-height: 1.3;
+      color: var(--accent);
+      opacity: 0.6;
+      text-align: left;
+      padding: 0.75rem;
+      white-space: pre;
+    }
+
+    .demo-card-body {
+      padding: 1rem 1.25rem;
+    }
+
+    .demo-card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--heading);
+      margin-bottom: 0.25rem;
+    }
+
+    .demo-card-author {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .demo-card-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+    }
+
+    .demo-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .play-btn {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+      font-size: 0.85rem;
+      border-radius: 5px;
+      transition: background 0.15s;
+    }
+
+    .play-btn:hover {
+      background: var(--accent-hover);
+      color: var(--bg);
+    }
+
+    .demo-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .demo-tag.wip {
+      border-color: var(--accent);
+      color: var(--accent);
+      opacity: 0.7;
+    }
+
+    /* ── Info Section ── */
+    .info-section {
+      margin-top: 1rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .info-section h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--heading);
+      margin-bottom: 0.75rem;
+    }
+
+    .info-section p {
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    .info-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+
+    .info-columns h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--heading);
+      margin-bottom: 0.5rem;
+    }
+
+    .info-columns ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .info-columns li {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 0.25rem 0;
+    }
+
+    .info-columns li::before {
+      content: ">";
+      color: var(--accent);
+      margin-right: 0.5rem;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 0.8rem;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 2.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.25rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .site-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1.25rem;
+      }
+
+      .content {
+        padding: 2rem 1.25rem;
+      }
+
+      .demo-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .info-columns {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+        padding: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="site-title">Sharpee <span>demos</span></div>
+    <div class="header-links">
+      <a href="https://sharpee.net">Main Site</a>
+      <a href="https://sharpee.net/getting-started.html">Get Started</a>
+      <a href="https://github.com/ChicagoDave/sharpee">GitHub</a>
+      <button class="theme-btn" id="theme-toggle">Light mode</button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="content">
+    <h1>Play Sharpee Games</h1>
+    <p class="subtitle">Parser-based interactive fiction, running in your browser. Type commands, explore worlds.</p>
+
+    <!-- Demo Cards -->
+    <div class="demo-grid">
+
+      <!-- Dungeo -->
+      <div class="demo-card">
+        <div class="demo-card-image">
+          <pre>
+West of House
+You are standing in an open
+field west of a white house,
+with a boarded front door.
+
+There is a small mailbox here.
+
+> open mailbox</pre>
+        </div>
+        <div class="demo-card-body">
+          <div class="demo-card-title">Dungeo</div>
+          <div class="demo-card-author">by David Cornelson</div>
+          <div class="demo-card-desc">A faithful reimplementation of Mainframe Zork (1981) built to dog-food the Sharpee platform. Explore the Great Underground Empire.</div>
+          <div class="demo-card-footer">
+            <a class="play-btn" href="/dungeo/">Play</a>
+            <span class="demo-tag wip">In Progress</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cloak of Darkness -->
+      <div class="demo-card">
+        <div class="demo-card-image">
+          <pre>
+Foyer of the Opera House
+You are standing in a spacious
+hall, splendidly decorated in
+red and gold, with glittering
+chandeliers overhead.
+
+> hang cloak on hook</pre>
+        </div>
+        <div class="demo-card-body">
+          <div class="demo-card-title">Cloak of Darkness</div>
+          <div class="demo-card-author">by Roger Firth (Sharpee port)</div>
+          <div class="demo-card-desc">The classic three-room benchmark game for IF systems. A short puzzle demonstrating core mechanics.</div>
+          <div class="demo-card-footer">
+            <a class="play-btn" href="/cloak/">Play</a>
+            <span class="demo-tag">Complete</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family Zoo (placeholder for future) -->
+      <div class="demo-card">
+        <div class="demo-card-image">
+          <pre>
+Zoo Entrance
+Welcome to the Family Zoo!
+Paths lead north to the
+animal exhibits and east
+to the gift shop.
+
+> go north</pre>
+        </div>
+        <div class="demo-card-body">
+          <div class="demo-card-title">Family Zoo</div>
+          <div class="demo-card-author">Tutorial Story</div>
+          <div class="demo-card-desc">A tutorial game built step-by-step in the Family Zoo guide. Demonstrates every Sharpee feature from rooms to scoring.</div>
+          <div class="demo-card-footer">
+            <a class="play-btn" href="/zoo/">Play</a>
+            <span class="demo-tag">Tutorial</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+      <h2>What is this?</h2>
+      <p>These are playable demos of interactive fiction games built with <a href="https://sharpee.net">Sharpee</a>, a modern TypeScript platform for parser-based IF. Each game runs entirely in your browser — no server required for gameplay.</p>
+
+      <div class="info-columns">
+        <div>
+          <h3>How to Play</h3>
+          <ul>
+            <li>Type commands like <code>look</code>, <code>take lamp</code>, <code>go north</code></li>
+            <li>Examine things: <code>examine mailbox</code></li>
+            <li>Check inventory: <code>inventory</code> or <code>i</code></li>
+            <li>Get help: <code>help</code></li>
+          </ul>
+        </div>
+        <div>
+          <h3>About Sharpee</h3>
+          <ul>
+            <li>Trait-based entity system</li>
+            <li>Language layer separation</li>
+            <li>Capability dispatch for puzzles</li>
+            <li>AI-assisted authoring (coming soon)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>&copy; 2025 David Cornelson. MIT License.</span>
+    <div class="footer-links">
+      <a href="https://sharpee.net">sharpee.net</a>
+      <a href="https://github.com/ChicagoDave/sharpee">GitHub</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  /**
+   * Light/dark theme toggle.
+   * Persists preference in localStorage.
+   */
+  (function () {
+    var btn = document.getElementById('theme-toggle');
+    var root = document.documentElement;
+
+    function apply(theme) {
+      root.setAttribute('data-theme', theme);
+      btn.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+      localStorage.setItem('sharpee-theme', theme);
+    }
+
+    var saved = localStorage.getItem('sharpee-theme') || 'dark';
+    apply(saved);
+
+    btn.addEventListener('click', function () {
+      apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
+
+</body>
+</html>

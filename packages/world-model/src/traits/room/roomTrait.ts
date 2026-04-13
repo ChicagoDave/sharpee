@@ -64,8 +64,8 @@ export interface IRoomData {
   /** Ambient smell description */
   ambientSmell?: string;
   
-  /** Region or area this room belongs to */
-  region?: string;
+  /** ID of the region entity this room belongs to (ADR-149) */
+  regionId?: string;
   
   /** Tags for categorizing rooms */
   tags?: string[];
@@ -113,7 +113,7 @@ export class RoomTrait implements ITrait, IRoomData {
   initialDescriptionId?: string;
   ambientSound?: string;
   ambientSmell?: string;
-  region?: string;
+  regionId?: string;
   tags: string[];
   
   // Container functionality
@@ -142,7 +142,7 @@ export class RoomTrait implements ITrait, IRoomData {
     this.initialDescriptionId = data.initialDescriptionId;
     this.ambientSound = data.ambientSound;
     this.ambientSmell = data.ambientSmell;
-    this.region = data.region;
+    this.regionId = data.regionId;
     this.tags = data.tags ?? [];
     
     // Container properties

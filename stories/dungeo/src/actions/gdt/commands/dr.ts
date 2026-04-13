@@ -55,8 +55,8 @@ export const drHandler: GDTCommandHandler = {
       output.push(`  Dark: ${roomTrait.isDark ? 'YES' : 'no'}`);
       output.push(`  Outdoors: ${roomTrait.isOutdoors ? 'yes' : 'no'}`);
       output.push(`  Underground: ${roomTrait.isUnderground ? 'yes' : 'no'}`);
-      if (roomTrait.region) {
-        output.push(`  Region: ${roomTrait.region}`);
+      if (roomTrait.regionId) {
+        output.push(`  Region: ${roomTrait.regionId}`);
       }
       if (roomTrait.tags && roomTrait.tags.length > 0) {
         output.push(`  Tags: ${roomTrait.tags.join(', ')}`);

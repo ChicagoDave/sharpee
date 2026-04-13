@@ -1239,6 +1239,35 @@ export declare class GameEngine {
 export {};
 ```
 
+### scene-evaluation-plugin
+
+```typescript
+/**
+ * Scene evaluation turn plugin (ADR-149).
+ *
+ * Evaluates scene begin/end conditions each turn. Runs after NPC turns
+ * and state machines, before daemons/fuses (priority 60).
+ *
+ * For each registered scene:
+ * - If state='waiting' and begin() returns true → activate, emit scene_began
+ * - If state='active' and end() returns true → end (or reset if recurring), emit scene_ended
+ * - If state='active' → increment activeTurns
+ *
+ * Public interface: SceneEvaluationPlugin (TurnPlugin implementation).
+ * Owner context: @sharpee/engine — turn cycle
+ */
+import { ISemanticEvent } from '@sharpee/core';
+import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+export declare class SceneEvaluationPlugin implements TurnPlugin {
+    id: string;
+    priority: number;
+    /**
+     * Evaluates all registered scene conditions after a successful action.
+     */
+    onAfterAction(context: TurnPluginContext): ISemanticEvent[];
+}
+```
+
 ### vocabulary-manager
 
 ```typescript

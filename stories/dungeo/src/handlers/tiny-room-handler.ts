@@ -67,7 +67,6 @@ export function findTinyRoomDoor(world: WorldModel, roomId: string): IFEntity | 
  * Find the tiny room key
  */
 export function findTinyRoomKey(world: WorldModel): IFEntity | undefined {
-  // Search everywhere for the key using the trait
   const keys = world.findWhere((e: IFEntity) => e.get(TinyRoomKeyTrait) !== undefined);
   return keys.length > 0 ? keys[0] : undefined;
 }
@@ -76,7 +75,6 @@ export function findTinyRoomKey(world: WorldModel): IFEntity | undefined {
  * Find the mat (welcome mat from West of House)
  */
 export function findMat(world: WorldModel, playerId: string): IFEntity | undefined {
-  // Check player inventory first
   const inventory = world.getContents(playerId);
   for (const item of inventory) {
     const identity = item.get(IdentityTrait);

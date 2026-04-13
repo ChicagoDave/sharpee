@@ -5,6 +5,8 @@ import { EntityType, isEntityType } from '../entities/entity-types';
 import { TraitType } from '../traits/trait-types';
 import { RoomTrait } from '../traits/room';
 import { RoomBehavior } from '../traits/room/roomBehavior';
+import { RegionTrait, IRegionData } from '../traits/region/regionTrait';
+import { SceneTrait } from '../traits/scene/sceneTrait';
 import { DoorTrait } from '../traits/door';
 import { SceneryTrait } from '../traits/scenery';
 import { IdentityTrait } from '../traits/identity/identityTrait';
@@ -60,6 +62,49 @@ export {
   ContentsOptions,
   WorldChange
 } from '@sharpee/if-domain';
+
+// Region management (ADR-149)
+export interface RegionOptions {
+  /** Human-readable region name. */
+  name: string;
+  /** Parent region entity ID for nesting. */
+  parentRegionId?: string;
+  /** Region-wide ambient sound. */
+  ambientSound?: string;
+  /** Region-wide ambient smell. */
+  ambientSmell?: string;
+  /** Whether rooms in this region default to dark. */
+  defaultDark?: boolean;
+}
+
+// Scene management (ADR-149)
+export interface SceneOptions {
+  /** Human-readable scene name. */
+  name: string;
+  /** Returns true when the scene should begin. Evaluated each turn when state is 'waiting'. */
+  begin: (world: IWorldModel) => boolean;
+  /** Returns true when the scene should end. Evaluated each turn when state is 'active'. */
+  end: (world: IWorldModel) => boolean;
+  /** Whether the scene can activate more than once. Default: false. */
+  recurring?: boolean;
+}
+
+/** Stored condition closures for a scene (not serializable). */
+export interface SceneConditions {
+  begin: (world: IWorldModel) => boolean;
+  end: (world: IWorldModel) => boolean;
+}
+
+/**
+ * Result of comparing region hierarchies for two rooms (ADR-149).
+ *
+ * @param exited - Region IDs exited, innermost first.
+ * @param entered - Region IDs entered, outermost first.
+ */
+export interface RegionCrossings {
+  exited: string[];
+  entered: string[];
+}
 
 // Score Ledger (ADR-129)
 import { ScoreLedger, ScoreEntry } from './ScoreLedger';
@@ -135,6 +180,20 @@ export interface IWorldModel {
     isLocked?: boolean;
     keyId?: string;
   }): IFEntity;
+
+  // Region Management (ADR-149)
+  createRegion(id: string, options: RegionOptions): IFEntity;
+  assignRoom(roomId: string, regionId: string): void;
+  isInRegion(entityId: string, regionId: string): boolean;
+  getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
+
+  // Scene Management (ADR-149)
+  createScene(id: string, options: SceneOptions): IFEntity;
+  getSceneConditions(sceneId: string): SceneConditions | undefined;
+  getAllSceneConditions(): Map<string, SceneConditions>;
+  isSceneActive(sceneId: string): boolean;
+  hasSceneEnded(sceneId: string): boolean;
+  hasSceneHappened(sceneId: string): boolean;
 
   // Score Ledger (ADR-129)
   awardScore(id: string, points: number, description: string): boolean;
@@ -220,6 +279,9 @@ export class WorldModel implements IWorldModel {
 
   // Score Ledger (ADR-129)
   private scoreLedger = new ScoreLedger();
+
+  // Scene condition closures (ADR-149) — not serialized
+  private sceneConditions: Map<string, SceneConditions> = new Map();
 
   // ID generation
   private idCounters: Map<string, number> = new Map();
@@ -1191,5 +1253,266 @@ export class WorldModel implements IWorldModel {
     this.moveEntity(door.id, opts.room1Id);
 
     return door;
+  }
+
+  // ── Region Management (ADR-149) ──────────────────────────────────
+
+  /**
+   * Creates a region entity with RegionTrait atomically.
+   *
+   * @param id - Explicit entity ID for the region (e.g., 'reg-underground').
+   *             Must be unique; throws if already exists.
+   * @param options - Region configuration.
+   * @returns The created region entity.
+   */
+  createRegion(id: string, options: RegionOptions): IFEntity {
+    if (this.hasEntity(id)) {
+      throw new Error(`createRegion: entity '${id}' already exists`);
+    }
+    if (options.parentRegionId && !this.hasEntity(options.parentRegionId)) {
+      throw new Error(`createRegion: parent region '${options.parentRegionId}' not found`);
+    }
+
+    const entity = new IFEntity(id, EntityType.REGION, {
+      attributes: {
+        displayName: options.name,
+        name: options.name,
+        entityType: EntityType.REGION,
+      },
+    });
+    entity.add(new RegionTrait(options));
+    this.entities.set(id, entity);
+
+    return entity;
+  }
+
+  /**
+   * Assigns a room to a region by setting RoomTrait.regionId.
+   *
+   * @param roomId - ID of the room entity.
+   * @param regionId - ID of the region entity (must exist and have RegionTrait).
+   * @throws If room not found, region not found, or types are wrong.
+   */
+  assignRoom(roomId: string, regionId: string): void {
+    const room = this.getEntity(roomId);
+    if (!room) {
+      throw new Error(`assignRoom: room '${roomId}' not found`);
+    }
+    const roomTrait = room.get<RoomTrait>(TraitType.ROOM);
+    if (!roomTrait) {
+      throw new Error(`assignRoom: entity '${roomId}' does not have RoomTrait`);
+    }
+    const region = this.getEntity(regionId);
+    if (!region) {
+      throw new Error(`assignRoom: region '${regionId}' not found`);
+    }
+    if (!region.hasTrait(TraitType.REGION)) {
+      throw new Error(`assignRoom: entity '${regionId}' is not a region`);
+    }
+    roomTrait.regionId = regionId;
+  }
+
+  /**
+   * Tests whether an entity (or its containing room) is in a region,
+   * traversing the parent region hierarchy.
+   *
+   * @param entityId - The entity to test. If it's a room, checks its regionId.
+   *                   Otherwise, resolves the entity's containing room first.
+   * @param regionId - The region to test membership against.
+   * @returns true if the entity is in the region or any child of it.
+   */
+  isInRegion(entityId: string, regionId: string): boolean {
+    const entity = this.getEntity(entityId);
+    if (!entity) return false;
+
+    // If the entity is a room, use its regionId directly.
+    // Otherwise, resolve the containing room.
+    let roomRegionId: string | undefined;
+    if (entity.type === EntityType.ROOM) {
+      roomRegionId = entity.get<RoomTrait>(TraitType.ROOM)?.regionId;
+    } else {
+      const room = this.getContainingRoom(entityId);
+      if (!room) return false;
+      roomRegionId = room.get<RoomTrait>(TraitType.ROOM)?.regionId;
+    }
+
+    if (!roomRegionId) return false;
+
+    // Walk up the parent chain from the room's region
+    return this.regionAncestryIncludes(roomRegionId, regionId);
+  }
+
+  /**
+   * Computes which regions are exited and entered when moving between rooms.
+   * Exit list is innermost-first; entry list is outermost-first.
+   *
+   * @param fromRoomId - The source room entity ID.
+   * @param toRoomId - The destination room entity ID.
+   * @returns Region IDs exited and entered. Both empty if same region or no regions.
+   */
+  getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings {
+    const fromRoom = this.getEntity(fromRoomId);
+    const toRoom = this.getEntity(toRoomId);
+
+    const fromChain = fromRoom
+      ? this.getRegionAncestry(fromRoom.get<RoomTrait>(TraitType.ROOM)?.regionId)
+      : [];
+    const toChain = toRoom
+      ? this.getRegionAncestry(toRoom.get<RoomTrait>(TraitType.ROOM)?.regionId)
+      : [];
+
+    // Convert to sets for fast lookup
+    const fromSet = new Set(fromChain);
+    const toSet = new Set(toChain);
+
+    // Exited: regions in fromChain but not in toChain (innermost first — natural order)
+    const exited = fromChain.filter(id => !toSet.has(id));
+
+    // Entered: regions in toChain but not in fromChain (outermost first — reverse natural order)
+    const entered = toChain.filter(id => !fromSet.has(id)).reverse();
+
+    return { exited, entered };
+  }
+
+  // ── Private region helpers ───────────────────────────────────────────
+
+  /**
+   * Builds the ancestry chain for a region: [self, parent, grandparent, ...].
+   * Returns empty array if regionId is undefined or not found.
+   */
+  private getRegionAncestry(regionId: string | undefined): string[] {
+    const chain: string[] = [];
+    let currentId = regionId;
+    const visited = new Set<string>(); // guard against cycles
+
+    while (currentId) {
+      if (visited.has(currentId)) break;
+      visited.add(currentId);
+
+      const region = this.getEntity(currentId);
+      if (!region) break;
+
+      const trait = region.get<RegionTrait>(TraitType.REGION);
+      if (!trait) break;
+
+      chain.push(currentId);
+      currentId = trait.parentRegionId;
+    }
+
+    return chain;
+  }
+
+  /**
+   * Checks whether a region ancestry chain includes a target region.
+   */
+  private regionAncestryIncludes(startRegionId: string, targetRegionId: string): boolean {
+    let currentId: string | undefined = startRegionId;
+    const visited = new Set<string>();
+
+    while (currentId) {
+      if (currentId === targetRegionId) return true;
+      if (visited.has(currentId)) return false;
+      visited.add(currentId);
+
+      const region = this.getEntity(currentId);
+      if (!region) return false;
+
+      const trait = region.get<RegionTrait>(TraitType.REGION);
+      if (!trait) return false;
+
+      currentId = trait.parentRegionId;
+    }
+
+    return false;
+  }
+
+  // ── Scene Management (ADR-149) ───────────────────────────────────
+
+  /**
+   * Creates a scene entity with SceneTrait and registers condition closures.
+   *
+   * @param id - Explicit entity ID (e.g., 'scene-flood'). Must be unique.
+   * @param options - Scene name, begin/end conditions, recurring flag.
+   * @returns The created scene entity.
+   */
+  createScene(id: string, options: SceneOptions): IFEntity {
+    if (this.hasEntity(id)) {
+      throw new Error(`createScene: entity '${id}' already exists`);
+    }
+
+    const entity = new IFEntity(id, EntityType.SCENE, {
+      attributes: {
+        displayName: options.name,
+        name: options.name,
+        entityType: EntityType.SCENE,
+      },
+    });
+    entity.add(new SceneTrait({
+      name: options.name,
+      recurring: options.recurring,
+    }));
+    this.entities.set(id, entity);
+
+    // Store condition closures separately (not serializable)
+    this.sceneConditions.set(id, {
+      begin: options.begin,
+      end: options.end,
+    });
+
+    return entity;
+  }
+
+  /**
+   * Retrieves the condition closures for a scene.
+   * Returns undefined if the scene has no registered conditions
+   * (e.g., after save/restore before re-registration).
+   *
+   * @param sceneId - The scene entity ID.
+   */
+  getSceneConditions(sceneId: string): SceneConditions | undefined {
+    return this.sceneConditions.get(sceneId);
+  }
+
+  /**
+   * Returns all registered scene conditions. Used by the engine's
+   * scene evaluation phase to iterate over scenes each turn.
+   */
+  getAllSceneConditions(): Map<string, SceneConditions> {
+    return this.sceneConditions;
+  }
+
+  /**
+   * Returns true if the scene is currently in the 'active' state.
+   *
+   * @param sceneId - The scene entity ID.
+   */
+  isSceneActive(sceneId: string): boolean {
+    const entity = this.getEntity(sceneId);
+    if (!entity) return false;
+    return entity.get<SceneTrait>(TraitType.SCENE)?.state === 'active';
+  }
+
+  /**
+   * Returns true if the scene has reached the 'ended' state.
+   * For recurring scenes, this is true only while in the 'ended' state
+   * (resets to 'waiting' when the scene re-activates).
+   *
+   * @param sceneId - The scene entity ID.
+   */
+  hasSceneEnded(sceneId: string): boolean {
+    const entity = this.getEntity(sceneId);
+    if (!entity) return false;
+    return entity.get<SceneTrait>(TraitType.SCENE)?.state === 'ended';
+  }
+
+  /**
+   * Returns true if the scene has ever been active (beganAtTurn is set).
+   *
+   * @param sceneId - The scene entity ID.
+   */
+  hasSceneHappened(sceneId: string): boolean {
+    const entity = this.getEntity(sceneId);
+    if (!entity) return false;
+    return entity.get<SceneTrait>(TraitType.SCENE)?.beganAtTurn !== undefined;
   }
 }

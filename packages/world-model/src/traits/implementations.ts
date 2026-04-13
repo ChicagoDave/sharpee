@@ -26,6 +26,8 @@ import { LightSourceTrait } from './light-source/lightSourceTrait';
 // Spatial traits
 import { DoorTrait } from './door/doorTrait';
 import { ClimbableTrait } from './climbable/climbableTrait';
+import { RegionTrait } from './region/regionTrait';
+import { SceneTrait } from './scene/sceneTrait';
 
 // Basic traits
 import { ActorTrait } from './actor/actorTrait';
@@ -89,6 +91,8 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Spatial traits
   [TraitType.DOOR]: DoorTrait,
   [TraitType.CLIMBABLE]: ClimbableTrait,
+  [TraitType.REGION]: RegionTrait,
+  [TraitType.SCENE]: SceneTrait,
 
   // Basic traits
   [TraitType.ACTOR]: ActorTrait,
@@ -175,6 +179,8 @@ export {
 
   // Spatial
   DoorTrait,
+  RegionTrait,
+  SceneTrait,
 
   // Basic
   ActorTrait,
