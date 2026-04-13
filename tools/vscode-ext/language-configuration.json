@@ -2,18 +2,12 @@
   "comments": {
     "lineComment": "#"
   },
-  "brackets": [
-    ["[GOAL:", "[END GOAL]"],
-    ["[IF:", "[END IF]"],
-    ["[WHILE:", "[END WHILE]"],
-    ["[RETRY:", "[END RETRY]"],
-    ["[DO]", "[UNTIL"]
-  ],
+  "brackets": [],
   "autoClosingPairs": [],
   "surroundingPairs": [],
   "folding": {
     "markers": {
-      "start": "^\\s*\\[(GOAL|IF|WHILE|RETRY|DO)[:>\\]]",
+      "start": "^\\s*\\[(GOAL|IF|WHILE|RETRY):|^\\s*\\[DO\\]",
       "end": "^\\s*\\[(END GOAL|END IF|END WHILE|END RETRY|UNTIL)\\b"
     }
   }

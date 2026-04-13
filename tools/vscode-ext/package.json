@@ -109,6 +109,11 @@
         "when": "resourceLangId == sharpee-transcript"
       }
     ],
+    "configurationDefaults": {
+      "[sharpee-transcript]": {
+        "editor.foldingStrategy": "auto"
+      }
+    },
     "configuration": {
       "title": "Sharpee",
       "properties": {
