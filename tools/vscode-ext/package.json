@@ -2,7 +2,7 @@
   "name": "sharpee-vscode",
   "displayName": "Sharpee — Interactive Fiction Authoring",
   "description": "Syntax highlighting, snippets, and tooling for Sharpee interactive fiction projects",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "chicagodave",
   "license": "MIT",
   "engines": {
@@ -19,7 +19,7 @@
     "onCommand:sharpee.buildStory",
     "onCommand:sharpee.playStory",
     "onCommand:sharpee.playInBrowser",
-    "onView:sharpee.worldExplorer",
+    "onCommand:sharpee.openWorldIndex",
     "onLanguage:typescript"
   ],
   "main": "./out/extension.js",
@@ -44,24 +44,6 @@
         "path": "./syntaxes/sharpee-transcript.tmLanguage.json"
       }
     ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "sharpee-explorer",
-          "title": "Sharpee",
-          "icon": "$(book)"
-        }
-      ]
-    },
-    "views": {
-      "sharpee-explorer": [
-        {
-          "id": "sharpee.worldExplorer",
-          "name": "World Explorer",
-          "contextualTitle": "Sharpee World Explorer"
-        }
-      ]
-    },
     "snippets": [
       {
         "language": "typescript",
@@ -131,8 +113,13 @@
         "icon": "$(globe)"
       },
       {
-        "command": "sharpee.refreshWorldExplorer",
-        "title": "Sharpee: Refresh World Explorer",
+        "command": "sharpee.openWorldIndex",
+        "title": "Sharpee: Open World Index",
+        "icon": "$(map)"
+      },
+      {
+        "command": "sharpee.refreshWorldData",
+        "title": "Sharpee: Refresh World Data",
         "icon": "$(refresh)"
       }
     ],
@@ -141,13 +128,6 @@
         {
           "when": "resourceLangId == sharpee-transcript",
           "command": "sharpee.runTranscript",
-          "group": "navigation"
-        }
-      ],
-      "view/title": [
-        {
-          "command": "sharpee.refreshWorldExplorer",
-          "when": "view == sharpee.worldExplorer",
           "group": "navigation"
         }
       ]

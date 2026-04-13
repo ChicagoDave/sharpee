@@ -3,7 +3,7 @@
  *
  * Provides completion items for room IDs, entity IDs, and NPC IDs
  * when editing story source code. Completions are sourced from the
- * cached world data in WorldExplorerProvider (populated by --world-json).
+ * cached world data from PanelDataLoader (populated by --world-json).
  *
  * Trigger contexts: string literals inside getEntity(), moveEntity(),
  * destination properties, and other entity-reference patterns.
@@ -13,7 +13,6 @@
  */
 
 import * as vscode from 'vscode';
-import { WorldExplorerProvider } from './world-explorer';
 
 // ---------------------------------------------------------------------------
 // Completion context patterns
@@ -65,12 +64,22 @@ const COMPLETION_CONTEXTS: CompletionContext[] = [
 // Provider
 // ---------------------------------------------------------------------------
 
+/** Minimal interface for a world data source. */
+export interface WorldDataSource {
+  rooms: { id: string; name: string; aliases: string[]; isDark: boolean; exits: Record<string, { id: string; name: string }> }[];
+  entities: { id: string; name: string; location: string | null; traits: string[] | { type: string }[] }[];
+  npcs: { id: string; name: string; location: string | null; traits: string[] | { type: string }[]; behaviorId: string | null }[];
+}
+
+/** Function that returns the current world data or null. */
+export type WorldDataGetter = () => WorldDataSource | null;
+
 /**
  * Provides entity ID completions in TypeScript story files.
- * Reads cached world data from the WorldExplorerProvider singleton.
+ * Reads cached world data via a getter function.
  */
 export class SharpeeCompletionProvider implements vscode.CompletionItemProvider {
-  constructor(private readonly worldExplorer: WorldExplorerProvider) {}
+  constructor(private readonly getWorldData: WorldDataGetter) {}
 
   provideCompletionItems(
     document: vscode.TextDocument,
@@ -82,7 +91,7 @@ export class SharpeeCompletionProvider implements vscode.CompletionItemProvider 
       return undefined;
     }
 
-    const worldData = this.worldExplorer.getWorldData();
+    const worldData = this.getWorldData();
     if (!worldData) return undefined;
 
     // Get text from line start to cursor
@@ -162,7 +171,7 @@ export class SharpeeCompletionProvider implements vscode.CompletionItemProvider 
    * Builds a completion item for a non-room, non-NPC entity.
    */
   private buildEntityCompletion(
-    entity: { id: string; name: string; location: string | null; traits: string[] },
+    entity: { id: string; name: string; location: string | null; traits: string[] | { type: string }[] },
     worldData: { rooms: { id: string; name: string }[] },
   ): vscode.CompletionItem {
     const item = new vscode.CompletionItem(entity.id, vscode.CompletionItemKind.Value);
@@ -176,7 +185,7 @@ export class SharpeeCompletionProvider implements vscode.CompletionItemProvider 
     const doc = new vscode.MarkdownString();
     doc.appendMarkdown(`**${entity.name}** \`${entity.id}\`\n\n`);
     doc.appendMarkdown(`Location: ${locName}\n\n`);
-    doc.appendMarkdown(`Traits: ${entity.traits.join(', ')}\n`);
+    doc.appendMarkdown(`Traits: ${normalizeTraits(entity.traits).join(', ')}\n`);
     item.documentation = doc;
 
     return item;
@@ -186,7 +195,7 @@ export class SharpeeCompletionProvider implements vscode.CompletionItemProvider 
    * Builds a completion item for an NPC.
    */
   private buildNpcCompletion(
-    npc: { id: string; name: string; location: string | null; traits: string[]; behaviorId: string | null },
+    npc: { id: string; name: string; location: string | null; traits: string[] | { type: string }[]; behaviorId: string | null },
     worldData: { rooms: { id: string; name: string }[] },
   ): vscode.CompletionItem {
     const item = new vscode.CompletionItem(npc.id, vscode.CompletionItemKind.Class);
@@ -203,9 +212,18 @@ export class SharpeeCompletionProvider implements vscode.CompletionItemProvider 
     if (npc.behaviorId) {
       doc.appendMarkdown(`Behavior: \`${npc.behaviorId}\`\n\n`);
     }
-    doc.appendMarkdown(`Traits: ${npc.traits.join(', ')}\n`);
+    doc.appendMarkdown(`Traits: ${normalizeTraits(npc.traits).join(', ')}\n`);
     item.documentation = doc;
 
     return item;
   }
+}
+
+/**
+ * Normalizes trait arrays that may be string[] or { type: string }[] to string[].
+ */
+function normalizeTraits(traits: string[] | { type: string }[]): string[] {
+  if (traits.length === 0) return [];
+  if (typeof traits[0] === 'string') return traits as string[];
+  return (traits as { type: string }[]).map(t => t.type);
 }

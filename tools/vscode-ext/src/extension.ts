@@ -25,8 +25,10 @@ import {
   handlePlayInBrowser,
   onBuildDone,
 } from './build-provider';
-import { WorldExplorerProvider, REFRESH_WORLD_COMMAND } from './world-explorer';
 import { SharpeeCompletionProvider } from './entity-completions';
+import { PanelDataLoader } from './webview/panel-data-loader';
+import { PanelManager } from './webview/webview-panel-manager';
+import { buildWorldIndexHtml, WORLD_INDEX_PANEL_ID } from './webview/world-index-panel';
 import { applyDecorations, clearDecorations, passDecorationType, failDecorationType } from './decorations';
 
 // ---------------------------------------------------------------------------
@@ -379,33 +381,57 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.tasks.registerTaskProvider(SharpeeTaskProvider.type, new SharpeeTaskProvider()),
   );
 
-  // World Explorer sidebar
-  const worldExplorer = new WorldExplorerProvider();
-  const worldTreeView = vscode.window.createTreeView('sharpee.worldExplorer', {
-    treeDataProvider: worldExplorer,
-    showCollapseAll: true,
-  });
+  // Reference panel infrastructure
+  const dataLoader = new PanelDataLoader();
+  const panelManager = new PanelManager();
+
+  // World Index command — opens the webview panel
   context.subscriptions.push(
-    worldTreeView,
-    vscode.commands.registerCommand(REFRESH_WORLD_COMMAND, () => worldExplorer.refresh()),
+    vscode.commands.registerCommand('sharpee.openWorldIndex', async () => {
+      let data = dataLoader.getData();
+      if (!data) {
+        data = await dataLoader.refresh();
+      }
+      if (data) {
+        panelManager.open({
+          id: WORLD_INDEX_PANEL_ID,
+          title: `World Index — ${data.storyId}`,
+          html: buildWorldIndexHtml(data),
+        });
+      }
+    }),
+  );
+
+  // Refresh World Data command — reloads data and updates open panels
+  context.subscriptions.push(
+    vscode.commands.registerCommand('sharpee.refreshWorldData', async () => {
+      const data = await dataLoader.refresh();
+      if (data && panelManager.isOpen(WORLD_INDEX_PANEL_ID)) {
+        panelManager.update(WORLD_INDEX_PANEL_ID, buildWorldIndexHtml(data));
+      }
+    }),
   );
 
   // Entity ID autocomplete in TypeScript story files
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(
       { language: 'typescript' },
-      new SharpeeCompletionProvider(worldExplorer),
+      new SharpeeCompletionProvider(() => dataLoader.getData()),
       "'", '"', '`',
     ),
   );
 
-  // Update status bar after builds and auto-refresh world explorer
+  // Update status bar after builds and auto-refresh world data
   onBuildDone((success, storyId) => {
     if (success) {
       statusBarItem.text = `$(pass) Sharpee: Build OK (${storyId})`;
       statusBarItem.backgroundColor = undefined;
-      // Auto-refresh world explorer after successful build
-      worldExplorer.refresh();
+      // Auto-refresh data and update open panels
+      dataLoader.refresh().then(data => {
+        if (data && panelManager.isOpen(WORLD_INDEX_PANEL_ID)) {
+          panelManager.update(WORLD_INDEX_PANEL_ID, buildWorldIndexHtml(data));
+        }
+      });
     } else {
       statusBarItem.text = `$(error) Sharpee: Build failed (${storyId})`;
       statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
