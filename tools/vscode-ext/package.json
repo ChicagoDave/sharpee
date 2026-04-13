@@ -2,7 +2,7 @@
   "name": "sharpee-vscode",
   "displayName": "Sharpee — Interactive Fiction Authoring",
   "description": "Syntax highlighting, snippets, and tooling for Sharpee interactive fiction projects",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "publisher": "chicagodave",
   "license": "MIT",
   "engines": {
@@ -18,7 +18,9 @@
     "onCommand:sharpee.newStory",
     "onCommand:sharpee.buildStory",
     "onCommand:sharpee.playStory",
-    "onCommand:sharpee.playInBrowser"
+    "onCommand:sharpee.playInBrowser",
+    "onView:sharpee.worldExplorer",
+    "onLanguage:typescript"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -42,6 +44,24 @@
         "path": "./syntaxes/sharpee-transcript.tmLanguage.json"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sharpee-explorer",
+          "title": "Sharpee",
+          "icon": "$(book)"
+        }
+      ]
+    },
+    "views": {
+      "sharpee-explorer": [
+        {
+          "id": "sharpee.worldExplorer",
+          "name": "World Explorer",
+          "contextualTitle": "Sharpee World Explorer"
+        }
+      ]
+    },
     "snippets": [
       {
         "language": "typescript",
@@ -109,6 +129,11 @@
         "command": "sharpee.playInBrowser",
         "title": "Sharpee: Play in Browser",
         "icon": "$(globe)"
+      },
+      {
+        "command": "sharpee.refreshWorldExplorer",
+        "title": "Sharpee: Refresh World Explorer",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -116,6 +141,13 @@
         {
           "when": "resourceLangId == sharpee-transcript",
           "command": "sharpee.runTranscript",
+          "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "sharpee.refreshWorldExplorer",
+          "when": "view == sharpee.worldExplorer",
           "group": "navigation"
         }
       ]
@@ -155,6 +187,11 @@
           "type": "string",
           "default": "./build.sh",
           "description": "Path to the build script relative to the workspace root"
+        },
+        "sharpee.enableEntityAutocomplete": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable entity ID autocomplete in TypeScript story files (room IDs, entity IDs, NPC IDs)"
         }
       }
     }

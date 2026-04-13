@@ -25,6 +25,8 @@ import {
   handlePlayInBrowser,
   onBuildDone,
 } from './build-provider';
+import { WorldExplorerProvider, REFRESH_WORLD_COMMAND } from './world-explorer';
+import { SharpeeCompletionProvider } from './entity-completions';
 import { applyDecorations, clearDecorations, passDecorationType, failDecorationType } from './decorations';
 
 // ---------------------------------------------------------------------------
@@ -377,11 +379,33 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.tasks.registerTaskProvider(SharpeeTaskProvider.type, new SharpeeTaskProvider()),
   );
 
-  // Update status bar after builds
+  // World Explorer sidebar
+  const worldExplorer = new WorldExplorerProvider();
+  const worldTreeView = vscode.window.createTreeView('sharpee.worldExplorer', {
+    treeDataProvider: worldExplorer,
+    showCollapseAll: true,
+  });
+  context.subscriptions.push(
+    worldTreeView,
+    vscode.commands.registerCommand(REFRESH_WORLD_COMMAND, () => worldExplorer.refresh()),
+  );
+
+  // Entity ID autocomplete in TypeScript story files
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      { language: 'typescript' },
+      new SharpeeCompletionProvider(worldExplorer),
+      "'", '"', '`',
+    ),
+  );
+
+  // Update status bar after builds and auto-refresh world explorer
   onBuildDone((success, storyId) => {
     if (success) {
       statusBarItem.text = `$(pass) Sharpee: Build OK (${storyId})`;
       statusBarItem.backgroundColor = undefined;
+      // Auto-refresh world explorer after successful build
+      worldExplorer.refresh();
     } else {
       statusBarItem.text = `$(error) Sharpee: Build failed (${storyId})`;
       statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
