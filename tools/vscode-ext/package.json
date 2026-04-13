@@ -2,7 +2,7 @@
   "name": "sharpee-vscode",
   "displayName": "Sharpee — Interactive Fiction Authoring",
   "description": "Syntax highlighting, snippets, and tooling for Sharpee interactive fiction projects",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "publisher": "chicagodave",
   "license": "MIT",
   "engines": {
@@ -56,9 +56,10 @@
     "views": {
       "sharpee-explorer": [
         {
+          "type": "webview",
           "id": "sharpee.worldExplorer",
-          "name": "World Explorer",
-          "contextualTitle": "Sharpee World Explorer"
+          "name": "World Index",
+          "contextualTitle": "Sharpee World Index"
         }
       ]
     },

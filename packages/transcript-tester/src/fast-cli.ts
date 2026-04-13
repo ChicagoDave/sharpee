@@ -440,6 +440,7 @@ async function main(): Promise<void> {
           name,
           aliases: identity?.aliases || [],
           isDark: roomTrait?.isDark || false,
+          regionId: roomTrait?.regionId || null,
           exits,
         });
       } else if (traitTypes.includes('actor') && !traitTypes.includes('player')) {
@@ -451,12 +452,41 @@ async function main(): Promise<void> {
           traits: traitTypes,
           behaviorId: npcTrait?.behaviorId || null,
         });
-      } else if (entity.type !== 'player') {
+      } else if (entity.type !== 'player'
+                 && !traitTypes.includes('region')
+                 && !traitTypes.includes('scene')) {
         entities.push({
           id: entity.id,
           name,
           location,
           traits: traitTypes,
+        });
+      }
+    }
+
+    // Collect regions (ADR-149)
+    const regions: any[] = [];
+    for (const entity of allEntities) {
+      const regionTrait = entity.get('region') as any;
+      if (regionTrait) {
+        regions.push({
+          id: entity.id,
+          name: regionTrait.name,
+          parentRegionId: regionTrait.parentRegionId || null,
+        });
+      }
+    }
+
+    // Collect scenes (ADR-149)
+    const scenes: any[] = [];
+    for (const entity of allEntities) {
+      const sceneTrait = entity.get('scene') as any;
+      if (sceneTrait) {
+        scenes.push({
+          id: entity.id,
+          name: sceneTrait.name,
+          state: sceneTrait.state,
+          recurring: sceneTrait.recurring,
         });
       }
     }
@@ -487,6 +517,8 @@ async function main(): Promise<void> {
       entities,
       npcs,
       actions: storyActions,
+      regions,
+      scenes,
     };
 
     process.stdout.write(JSON.stringify(output, null, 2));

@@ -379,14 +379,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.tasks.registerTaskProvider(SharpeeTaskProvider.type, new SharpeeTaskProvider()),
   );
 
-  // World Explorer sidebar
+  // World Index sidebar webview
   const worldExplorer = new WorldExplorerProvider();
-  const worldTreeView = vscode.window.createTreeView('sharpee.worldExplorer', {
-    treeDataProvider: worldExplorer,
-    showCollapseAll: true,
-  });
   context.subscriptions.push(
-    worldTreeView,
+    vscode.window.registerWebviewViewProvider('sharpee.worldExplorer', worldExplorer),
     vscode.commands.registerCommand(REFRESH_WORLD_COMMAND, () => worldExplorer.refresh()),
   );
 

@@ -523,6 +523,7 @@ Examples:
             name,
             aliases: identity ? (identity.aliases || []) : [],
             isDark: roomTrait ? (roomTrait.isDark || false) : false,
+            regionId: roomTrait ? (roomTrait.regionId || null) : null,
             exits: exitEntries,
           });
         } else if (traitTypes.includes('actor') && !traitTypes.includes('player')) {
@@ -534,7 +535,9 @@ Examples:
             traits: traitTypes,
             behaviorId: npcTrait ? (npcTrait.behaviorId || null) : null,
           });
-        } else if (entity.type !== 'player') {
+        } else if (entity.type !== 'player'
+                   && !traitTypes.includes('region')
+                   && !traitTypes.includes('scene')) {
           entities.push({
             id: entity.id,
             name,
@@ -544,11 +547,40 @@ Examples:
         }
       }
 
+      // Collect regions (ADR-149)
+      const regions = [];
+      for (const entity of allEntities) {
+        const regionTrait = entity.get('region');
+        if (regionTrait) {
+          regions.push({
+            id: entity.id,
+            name: regionTrait.name,
+            parentRegionId: regionTrait.parentRegionId || null,
+          });
+        }
+      }
+
+      // Collect scenes (ADR-149)
+      const scenes = [];
+      for (const entity of allEntities) {
+        const sceneTrait = entity.get('scene');
+        if (sceneTrait) {
+          scenes.push({
+            id: entity.id,
+            name: sceneTrait.name,
+            state: sceneTrait.state,
+            recurring: sceneTrait.recurring,
+          });
+        }
+      }
+
       const output = {
         storyPath: options.storyPath,
         rooms,
         entities,
         npcs,
+        regions,
+        scenes,
       };
 
       const jsonStr = JSON.stringify(output, null, 2);
