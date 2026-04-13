@@ -29,6 +29,7 @@
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/if-services": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/media": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/platform-browser": "workspace:*",
     "@sharpee/plugin-npc": "workspace:*",

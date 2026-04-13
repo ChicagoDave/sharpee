@@ -1,13 +1,20 @@
 /**
  * Browser Client for Sharpee IF
- * 
+ *
  * This is the browser-specific UI layer that:
  * 1. Displays text from the text service
  * 2. Captures player input
  * 3. Updates status line
- * 
- * It does NOT translate events - that's the text service's job
+ * 4. Forwards audio events to a registered handler
+ *
+ * It does NOT translate events - that's the text service's job.
+ * Audio events are forwarded to an optional handler; if none is
+ * registered, audio events are logged and silently dropped.
+ *
+ * Owner context: @sharpee/platform-browser-en-us
  */
+
+import type { AudioEvent } from '@sharpee/sharpee';
 
 export class BrowserClient {
     private statusLine: HTMLElement | null = null;
@@ -20,7 +27,17 @@ export class BrowserClient {
     private commandHistory: string[] = [];
     private historyIndex: number = -1;
     private onCommandCallback?: (command: string) => void;
+    private onAudioEventCallback?: (event: AudioEvent) => void;
     private currentPrompt: string = '> ';
+
+    /** Active ambient audio channels — keyed by channel name */
+    private ambientChannels: Map<string, HTMLAudioElement> = new Map();
+    /** Active music track */
+    private musicTrack: HTMLAudioElement | null = null;
+    /** Whether audio has been unlocked by a user gesture */
+    private audioUnlocked: boolean = false;
+    /** Audio events received before unlock — replayed after first gesture */
+    private pendingAudioEvents: AudioEvent[] = [];
     
     constructor() {
         this.initialize();
@@ -51,6 +68,7 @@ export class BrowserClient {
         
         // Set up input handling
         this.commandInput.addEventListener('keydown', (e) => {
+            this.unlockAudio();
             if (e.key === 'Enter') {
                 this.handleCommand();
             } else if (e.key === 'ArrowUp') {
@@ -154,10 +172,139 @@ export class BrowserClient {
     }
     
     /**
-     * Set callback for when player enters a command
+     * Set callback for when player enters a command.
      */
     onCommand(callback: (command: string) => void): void {
         this.onCommandCallback = callback;
+    }
+
+    /**
+     * Set callback for audio events. Clients that support audio (e.g., a
+     * Web Audio renderer) register here to receive forwarded audio events.
+     *
+     * @param callback - Handler invoked for each audio event
+     */
+    onAudioEvent(callback: (event: AudioEvent) => void): void {
+        this.onAudioEventCallback = callback;
+    }
+
+    /**
+     * Handle an audio event from the engine's event pipeline.
+     * Delegates to the registered callback if present, otherwise
+     * uses the built-in HTML5 audio renderer.
+     *
+     * @param event - The audio event from the engine's event pipeline
+     */
+    handleAudioEvent(event: AudioEvent): void {
+        if (this.onAudioEventCallback) {
+            this.onAudioEventCallback(event);
+            return;
+        }
+        this.renderAudio(event);
+    }
+
+    /**
+     * Unlock audio playback on the first user gesture. Browsers
+     * (especially Safari) block Audio.play() until a user-initiated
+     * event. Called from the keydown handler so the gesture context
+     * propagates. Replays any queued audio events after unlock.
+     */
+    private unlockAudio(): void {
+        if (this.audioUnlocked) return;
+        this.audioUnlocked = true;
+
+        // Replay any audio events that arrived before the first gesture
+        const pending = this.pendingAudioEvents.splice(0);
+        for (const event of pending) {
+            this.renderAudioNow(event);
+        }
+    }
+
+    /**
+     * Built-in HTML5 audio renderer. Queues events until audio is
+     * unlocked by a user gesture, then plays immediately.
+     */
+    private renderAudio(event: AudioEvent): void {
+        if (!this.audioUnlocked) {
+            this.pendingAudioEvents.push(event);
+            return;
+        }
+        this.renderAudioNow(event);
+    }
+
+    /**
+     * Actually play/stop audio. Only called after audio is unlocked.
+     */
+    private renderAudioNow(event: AudioEvent): void {
+        const data = (event as any).data ?? event;
+
+        switch (event.type) {
+            case 'audio.ambient.play': {
+                const channel = data.channel as string;
+                // Stop existing channel if playing
+                const existing = this.ambientChannels.get(channel);
+                if (existing) {
+                    existing.pause();
+                    existing.remove();
+                }
+                const audio = new Audio(data.src);
+                audio.loop = data.loop !== false;
+                audio.volume = data.volume ?? 0.3;
+                audio.play().catch(() => {
+                    // Autoplay blocked — browser requires user interaction first
+                    console.debug('[audio] Autoplay blocked for ambient channel:', channel);
+                });
+                this.ambientChannels.set(channel, audio);
+                break;
+            }
+
+            case 'audio.ambient.stop': {
+                const ch = data.channel as string;
+                const el = this.ambientChannels.get(ch);
+                if (el) {
+                    el.pause();
+                    el.remove();
+                    this.ambientChannels.delete(ch);
+                }
+                break;
+            }
+
+            case 'audio.ambient.stop_all': {
+                for (const [, el] of this.ambientChannels) {
+                    el.pause();
+                    el.remove();
+                }
+                this.ambientChannels.clear();
+                break;
+            }
+
+            case 'audio.music.play': {
+                if (this.musicTrack) {
+                    this.musicTrack.pause();
+                    this.musicTrack.remove();
+                }
+                const music = new Audio(data.src);
+                music.loop = data.loop !== false;
+                music.volume = data.volume ?? 0.5;
+                music.play().catch(() => {
+                    console.debug('[audio] Autoplay blocked for music');
+                });
+                this.musicTrack = music;
+                break;
+            }
+
+            case 'audio.music.stop': {
+                if (this.musicTrack) {
+                    this.musicTrack.pause();
+                    this.musicTrack.remove();
+                    this.musicTrack = null;
+                }
+                break;
+            }
+
+            default:
+                console.debug('[audio] Unhandled audio event:', event.type);
+        }
     }
     
     private handleCommand(): void {

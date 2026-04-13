@@ -70,6 +70,13 @@ export class BrowserClient implements BrowserClientInterface {
   initialize(elements: DOMElements): void {
     this.elements = elements;
 
+    // Set page title and menu title from story config
+    document.title = this.config.storyInfo.title;
+    const menuTitle = document.getElementById('menu-title');
+    if (menuTitle) {
+      menuTitle.textContent = this.config.storyInfo.title;
+    }
+
     // Create text display and status line first (no dependencies)
     this.textDisplay = new TextDisplay({
       textContent: elements.textContent,
@@ -202,6 +209,12 @@ export class BrowserClient implements BrowserClientInterface {
     this.engine.on('event', (event: ISemanticEvent) => {
       console.log('[event]', event.type, event.data);
 
+      // Forward audio events to the audio manager
+      if (event.type.startsWith('audio.')) {
+        this.audioManager.handleAudioEvent(event as { type: string; data: any });
+        return;
+      }
+
       // Let story handle custom events first
       if (this.config.callbacks?.handleStoryEvent?.(event, this)) {
         return; // Story handled it
@@ -320,6 +333,9 @@ export class BrowserClient implements BrowserClientInterface {
    * Execute a command
    */
   async executeCommand(command: string): Promise<void> {
+    // Unlock audio on first user command (browsers block autoplay)
+    this.audioManager.unlock();
+
     // Display command echo
     this.textDisplay.displayCommand(command);
 
