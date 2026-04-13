@@ -111,9 +111,27 @@ world.isInRegion(entityId: string, regionId: string): boolean;
 
 `isInRegion` checks the entity's location (or the entity itself if it's a room) against the region, including parent region traversal. The `inRegion()` filter on EntityQuery delegates to this same traversal logic internally.
 
-#### Events
+#### Region Boundary Detection
 
-When the player moves between rooms in different regions, the engine emits:
+When a player moves between rooms, the going action in stdlib needs to detect region boundary crossings. The hierarchy traversal logic belongs in world-model, not stdlib. WorldModel provides:
+
+```typescript
+interface RegionCrossings {
+  /** Region IDs exited, innermost first (e.g., [coalMine, underground]). */
+  exited: string[];
+  /** Region IDs entered, outermost first (e.g., [forest]). */
+  entered: string[];
+}
+
+// On WorldModel
+world.getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
+```
+
+`getRegionCrossings` reads `regionId` from both rooms' `RoomTrait`, walks the parent hierarchy for each, and computes the diff. If both rooms are in the same region (or neither has one), both arrays are empty.
+
+The going action calls `world.getRegionCrossings(sourceRoom, destRoom)` after a successful move, then emits one event per entry in each array. This keeps stdlib free of region hierarchy knowledge.
+
+#### Events
 
 ```typescript
 // New events
@@ -121,7 +139,7 @@ When the player moves between rooms in different regions, the engine emits:
 'if.event.region_exited'   — { actorId, regionId, toRegionId? }
 ```
 
-These fire **after** the standard `if.event.actor_moved` event, in the same turn. If the player crosses multiple region boundaries (nested regions), events fire from outermost to innermost for entry, innermost to outermost for exit.
+These fire **after** the standard `if.event.actor_moved` event, in the same turn. For nested region crossings, exit events fire innermost-first, entry events fire outermost-first.
 
 #### Creation Helper
 
