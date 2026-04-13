@@ -581,9 +581,9 @@ export class DungeoStory implements Story {
     world.setMaxScore(616);
 
     // Initialize audio atmospheres for underground rooms (ADR-138)
-    initializeAudio(
-      this.undergroundIds as unknown as Record<string, string>,
-      [
+    initializeAudio({
+      undergroundRoomIds: this.undergroundIds as unknown as Record<string, string>,
+      additionalUndergroundIds: [
         ...Object.values(this.coalMineIds),
         ...Object.values(this.templeIds),
         ...Object.values(this.wellRoomIds),
@@ -591,7 +591,9 @@ export class DungeoStory implements Story {
         ...Object.values(this.royalPuzzleIds),
         ...Object.values(this.endgameIds),
       ],
-    );
+      forestRoomIds: this.forestIds as unknown as Record<string, string>,
+      frigidRiverRoomIds: this.frigidRiverIds as unknown as Record<string, string>,
+    });
 
     // Set initial player location to West of House
     const player = world.getPlayer();

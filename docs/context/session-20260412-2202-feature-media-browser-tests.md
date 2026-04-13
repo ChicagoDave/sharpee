@@ -36,9 +36,11 @@ Three test files added to `packages/media/tests/`:
 
 All 50 tests pass. All grade GREEN by the project's mutation audit criteria.
 
-### Dungeo ambient audio
-- Downloaded CC0 "Loopable Dungeon Ambience" (`dungeon_ambient_1.ogg`), added to `stories/dungeo/assets/audio/` with `CREDITS.md`
-- `stories/dungeo/src/audio/audio-setup.ts` — `AudioRegistry` setup registering ambient atmospheres for underground rooms
+### Dungeo ambient audio — three regions
+- **Underground**: CC0 "Loopable Dungeon Ambience" (`dungeon_ambient_1.ogg`, 1.6 MB) — all underground, coal mine, temple, well, maze, royal puzzle, and endgame rooms
+- **Forest**: "Forest Daytime" (`forest_daytime.ogg`, 150 KB, Pixabay License) — trimmed from 2 min to 30s loop via ffmpeg — all forest region rooms
+- **Frigid River**: "Soothing River Flow" (`river_flow.ogg`, 186 KB, Pixabay License) — converted to OGG — all frigid river region rooms
+- `stories/dungeo/src/audio/audio-setup.ts` — `AudioRegistry` setup with config object for underground, forest, and frigid river rooms
 - `stories/dungeo/src/index.ts` — audio initialization calls wired in
 - Event handler on `if.event.actor_moved` emits audio events via `EmitEffect` pattern
 - Verified working in Safari
@@ -47,8 +49,9 @@ All 50 tests pass. All grade GREEN by the project's mutation audit criteria.
 - `build.sh` — fixed macOS `sed -i` (empty string arg required); removed `{{TITLE}}` template variable substitution (runtime title set from story config via `BrowserClient`); added asset copying step for `stories/{name}/assets/`; bundle renamed from `${STORY_NAME}.js` to `game.js`
 - `templates/browser/index.html` and `templates/react/index.html` — removed `{{TITLE}}` template variable
 
-### GitHub issue
+### GitHub issues
 - Created issue #95 for compound command support (e.g., `N.E.OPEN WINDOW.W.W.`)
+- Created issue #97 for pronoun capture from error messages (e.g., "The window is closed." → "OPEN IT" should resolve to window)
 
 ## Key Decisions
 
@@ -86,6 +89,7 @@ Possible follow-up work (not planned):
 - Atmosphere transition system (cross-fade on room change) when Dungeo audio is expanded
 - AudioCapabilities negotiation for low-powered devices or users with audio off
 - Issue #95: compound command support
+- Issue #97: pronoun capture from error messages
 
 ## Files Modified
 
@@ -113,7 +117,10 @@ Possible follow-up work (not planned):
 **Dungeo story** (3 files):
 - `stories/dungeo/src/audio/audio-setup.ts` - AudioRegistry setup for underground atmospheres
 - `stories/dungeo/src/index.ts` - audio initialization wired in
-- `stories/dungeo/assets/audio/dungeon_ambient_1.ogg` + `CREDITS.md` - CC0 audio asset
+- `stories/dungeo/assets/audio/dungeon_ambient_1.ogg` - CC0 dungeon ambient (1.6 MB)
+- `stories/dungeo/assets/audio/forest_daytime.ogg` - forest ambience (150 KB, Pixabay License)
+- `stories/dungeo/assets/audio/river_flow.ogg` - river flow (186 KB, Pixabay License)
+- `stories/dungeo/assets/audio/CREDITS.md` - attribution for all audio assets
 
 **Build system** (3 files):
 - `build.sh` - sed fix, asset copying, game.js naming, template cleanup

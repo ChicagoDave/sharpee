@@ -21,26 +21,45 @@ export const audioRegistry = new AudioRegistry();
  * Register ambient atmospheres for Dungeo rooms.
  * Called during initializeWorld() after all regions are created.
  *
- * @param undergroundRoomIds - Room IDs for the underground region
- * @param additionalUndergroundIds - Room IDs from other regions that are underground
+ * @param config.undergroundRoomIds - Room IDs for the underground region
+ * @param config.additionalUndergroundIds - Room IDs from other underground regions
+ * @param config.forestRoomIds - Room IDs for the forest region
+ * @param config.frigidRiverRoomIds - Room IDs for the frigid river region
  */
-export function initializeAudio(
-  undergroundRoomIds: Record<string, string>,
-  additionalUndergroundIds: string[] = [],
-): void {
-  // Register the dungeon ambience for all underground rooms
-  for (const roomId of Object.values(undergroundRoomIds)) {
+export function initializeAudio(config: {
+  undergroundRoomIds: Record<string, string>;
+  additionalUndergroundIds?: string[];
+  forestRoomIds: Record<string, string>;
+  frigidRiverRoomIds: Record<string, string>;
+}): void {
+  // Dungeon ambience for all underground rooms
+  for (const roomId of Object.values(config.undergroundRoomIds)) {
     audioRegistry
       .atmosphere(roomId)
       .ambient('audio/dungeon_ambient_1.ogg', 'environment', 0.3)
       .build();
   }
 
-  // Additional underground rooms from other regions (coal mine, temple, etc.)
-  for (const roomId of additionalUndergroundIds) {
+  for (const roomId of config.additionalUndergroundIds ?? []) {
     audioRegistry
       .atmosphere(roomId)
       .ambient('audio/dungeon_ambient_1.ogg', 'environment', 0.3)
+      .build();
+  }
+
+  // Forest daytime ambience for all forest rooms
+  for (const roomId of Object.values(config.forestRoomIds)) {
+    audioRegistry
+      .atmosphere(roomId)
+      .ambient('audio/forest_daytime.ogg', 'environment', 0.4)
+      .build();
+  }
+
+  // River flow ambience for all frigid river rooms
+  for (const roomId of Object.values(config.frigidRiverRoomIds)) {
+    audioRegistry
+      .atmosphere(roomId)
+      .ambient('audio/river_flow.ogg', 'environment', 0.5)
       .build();
   }
 }
