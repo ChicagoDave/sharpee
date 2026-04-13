@@ -81,6 +81,30 @@ export {
   type CognitivePresetName,
 } from '@sharpee/character';
 
+// Media / Audio (ADR-138)
+export {
+  AudioRegistry,
+  AtmosphereBuilder,
+  isAudioEvent,
+  type AudioCue,
+  type VariationPool,
+  type DuckingConfig,
+  type RoomAtmosphere,
+  type FadeDefaults,
+  type AudioEvent,
+  type AudioSfxEvent,
+  type AudioMusicPlayEvent,
+  type AudioMusicStopEvent,
+  type AudioAmbientPlayEvent,
+  type AudioAmbientStopEvent,
+  type AudioAmbientStopAllEvent,
+  type AudioProceduralEvent,
+  type AudioEffectEvent,
+  type AudioEffectClearEvent,
+  type AudioCapabilities,
+  type AudioPreferences,
+} from '@sharpee/media';
+
 // Plugin system (ADR-120)
 export { TurnPlugin, TurnPluginContext, TurnPluginActionResult, PluginRegistry } from '@sharpee/plugins';
 export { NpcPlugin } from '@sharpee/plugin-npc';
