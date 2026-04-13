@@ -1,0 +1,272 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Sharpee Transcript",
+  "scopeName": "source.sharpee-transcript",
+  "patterns": [
+    { "include": "#frontmatter" },
+    { "include": "#comment" },
+    { "include": "#annotation" },
+    { "include": "#block-directive-open" },
+    { "include": "#block-directive-close" },
+    { "include": "#assertion" },
+    { "include": "#command" }
+  ],
+  "repository": {
+    "frontmatter": {
+      "comment": "YAML front matter block between --- delimiters",
+      "begin": "\\A(?=---\\s*$)",
+      "end": "^---\\s*$",
+      "patterns": [
+        {
+          "match": "^---\\s*$",
+          "name": "punctuation.definition.frontmatter.sharpee-transcript"
+        },
+        {
+          "match": "^(title|story|author|description)(:)\\s*(.*)",
+          "captures": {
+            "1": { "name": "entity.name.tag.sharpee-transcript" },
+            "2": { "name": "punctuation.separator.key-value.sharpee-transcript" },
+            "3": { "name": "string.unquoted.sharpee-transcript" }
+          }
+        },
+        {
+          "match": "^([a-zA-Z_-]+)(:)\\s*(.*)",
+          "captures": {
+            "1": { "name": "entity.name.tag.sharpee-transcript" },
+            "2": { "name": "punctuation.separator.key-value.sharpee-transcript" },
+            "3": { "name": "string.unquoted.sharpee-transcript" }
+          }
+        }
+      ]
+    },
+
+    "comment": {
+      "match": "^\\s*(#)(.*)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.comment.sharpee-transcript" },
+        "2": { "name": "comment.line.number-sign.sharpee-transcript" }
+      }
+    },
+
+    "annotation": {
+      "patterns": [
+        {
+          "comment": "Session start/end annotations",
+          "match": "^\\s*(\\$)(session)\\s+(start|end)\\s*(.*)?$",
+          "captures": {
+            "1": { "name": "punctuation.definition.annotation.sharpee-transcript" },
+            "2": { "name": "keyword.control.annotation.sharpee-transcript" },
+            "3": { "name": "keyword.control.annotation.sharpee-transcript" },
+            "4": { "name": "string.unquoted.annotation-arg.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "Annotation commands with arguments",
+          "match": "^\\s*(\\$)(bookmark|note|bug|expected|save|restore|teleport)\\s+(.*)?$",
+          "captures": {
+            "1": { "name": "punctuation.definition.annotation.sharpee-transcript" },
+            "2": { "name": "keyword.control.annotation.sharpee-transcript" },
+            "3": { "name": "string.unquoted.annotation-arg.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "Annotation commands without arguments",
+          "match": "^\\s*(\\$)(review|export|confusing|gdt|ex)\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.annotation.sharpee-transcript" },
+            "2": { "name": "keyword.control.annotation.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "GDT helper commands (tk, ah, kill, etc.)",
+          "match": "^\\s*(\\$)(tk|ah|kill)\\s+(.*)?$",
+          "captures": {
+            "1": { "name": "punctuation.definition.annotation.sharpee-transcript" },
+            "2": { "name": "keyword.control.annotation.sharpee-transcript" },
+            "3": { "name": "string.unquoted.annotation-arg.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "Fallback: any $ annotation",
+          "match": "^\\s*(\\$)(\\S+)(.*)$",
+          "captures": {
+            "1": { "name": "punctuation.definition.annotation.sharpee-transcript" },
+            "2": { "name": "keyword.control.annotation.sharpee-transcript" },
+            "3": { "name": "string.unquoted.annotation-arg.sharpee-transcript" }
+          }
+        }
+      ]
+    },
+
+    "block-directive-open": {
+      "patterns": [
+        {
+          "comment": "GOAL open with label",
+          "match": "^\\s*(\\[)(GOAL)(:)\\s*(.+?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+            "2": { "name": "keyword.control.directive.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "string.unquoted.directive-label.sharpee-transcript" },
+            "5": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "IF open with condition",
+          "match": "^\\s*(\\[)(IF)(:)\\s*(.+?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+            "2": { "name": "keyword.control.directive.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "meta.condition.sharpee-transcript" },
+            "5": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "WHILE open with condition",
+          "match": "^\\s*(\\[)(WHILE)(:)\\s*(.+?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+            "2": { "name": "keyword.control.directive.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "meta.condition.sharpee-transcript" },
+            "5": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "RETRY open with params",
+          "match": "^\\s*(\\[)(RETRY)(:)\\s*(.+?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+            "2": { "name": "keyword.control.directive.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "variable.parameter.sharpee-transcript" },
+            "5": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "NAVIGATE TO directive",
+          "match": "^\\s*(\\[)(NAVIGATE TO)(:)\\s*(.+?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+            "2": { "name": "keyword.control.directive.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "string.quoted.double.sharpee-transcript" },
+            "5": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "DO directive (no arguments)",
+          "match": "^\\s*(\\[)(DO)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+            "2": { "name": "keyword.control.directive.sharpee-transcript" },
+            "3": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "UNTIL directive with conditions",
+          "match": "^\\s*(\\[)(UNTIL)\\s+(.+?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+            "2": { "name": "keyword.control.directive.sharpee-transcript" },
+            "3": { "name": "string.quoted.double.sharpee-transcript" },
+            "4": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+          }
+        }
+      ]
+    },
+
+    "block-directive-close": {
+      "match": "^\\s*(\\[)(END\\s+(?:GOAL|IF|WHILE|RETRY))(\\])\\s*$",
+      "captures": {
+        "1": { "name": "punctuation.definition.directive.begin.sharpee-transcript" },
+        "2": { "name": "keyword.control.directive.sharpee-transcript" },
+        "3": { "name": "punctuation.definition.directive.end.sharpee-transcript" }
+      }
+    },
+
+    "assertion": {
+      "patterns": [
+        {
+          "comment": "OK assertion with matcher",
+          "match": "^\\s*(\\[)(OK)(:)\\s*(contains|not contains|contains_any|matches)\\s+(.*?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.assertion.begin.sharpee-transcript" },
+            "2": { "name": "support.type.assertion.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "keyword.operator.assertion.sharpee-transcript" },
+            "5": { "name": "string.quoted.double.sharpee-transcript" },
+            "6": { "name": "punctuation.definition.assertion.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "EVENT assertion",
+          "match": "^\\s*(\\[)(EVENT)(:)\\s*(true|false)(,\\s*type=)(\"[^\"]+\")(.*?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.assertion.begin.sharpee-transcript" },
+            "2": { "name": "support.type.assertion.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "constant.language.boolean.sharpee-transcript" },
+            "5": { "name": "punctuation.separator.sharpee-transcript" },
+            "6": { "name": "string.quoted.double.sharpee-transcript" },
+            "7": { "name": "variable.parameter.sharpee-transcript" },
+            "8": { "name": "punctuation.definition.assertion.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "STATE assertion",
+          "match": "^\\s*(\\[)(STATE)(:)\\s*(true|false)(,\\s*)(.*?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.assertion.begin.sharpee-transcript" },
+            "2": { "name": "support.type.assertion.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "constant.language.boolean.sharpee-transcript" },
+            "5": { "name": "punctuation.separator.sharpee-transcript" },
+            "6": { "name": "variable.other.state-expression.sharpee-transcript" },
+            "7": { "name": "punctuation.definition.assertion.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "ENSURES assertion with condition",
+          "match": "^\\s*(\\[)(ENSURES)(:)\\s*(.*?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.assertion.begin.sharpee-transcript" },
+            "2": { "name": "support.type.assertion.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "meta.condition.sharpee-transcript" },
+            "5": { "name": "punctuation.definition.assertion.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "REQUIRES assertion with condition",
+          "match": "^\\s*(\\[)(REQUIRES)(:)\\s*(.*?)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.assertion.begin.sharpee-transcript" },
+            "2": { "name": "support.type.assertion.sharpee-transcript" },
+            "3": { "name": "punctuation.separator.sharpee-transcript" },
+            "4": { "name": "meta.condition.sharpee-transcript" },
+            "5": { "name": "punctuation.definition.assertion.end.sharpee-transcript" }
+          }
+        },
+        {
+          "comment": "FAIL / SKIP / TODO markers",
+          "match": "^\\s*(\\[)(FAIL|SKIP|TODO)(\\])\\s*$",
+          "captures": {
+            "1": { "name": "punctuation.definition.assertion.begin.sharpee-transcript" },
+            "2": { "name": "keyword.other.assertion-marker.sharpee-transcript" },
+            "3": { "name": "punctuation.definition.assertion.end.sharpee-transcript" }
+          }
+        }
+      ]
+    },
+
+    "command": {
+      "match": "^\\s*(>)\\s+(.+)$",
+      "captures": {
+        "1": { "name": "punctuation.definition.command.sharpee-transcript" },
+        "2": { "name": "markup.bold.command.sharpee-transcript" }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "comments": {
+    "lineComment": "#"
+  },
+  "brackets": [
+    ["[GOAL:", "[END GOAL]"],
+    ["[IF:", "[END IF]"],
+    ["[WHILE:", "[END WHILE]"],
+    ["[RETRY:", "[END RETRY]"],
+    ["[DO]", "[UNTIL"]
+  ],
+  "autoClosingPairs": [],
+  "surroundingPairs": [],
+  "folding": {
+    "markers": {
+      "start": "^\\s*\\[(GOAL|IF|WHILE|RETRY|DO)[:>\\]]",
+      "end": "^\\s*\\[(END GOAL|END IF|END WHILE|END RETRY|UNTIL)\\b"
+    }
+  }
+}
