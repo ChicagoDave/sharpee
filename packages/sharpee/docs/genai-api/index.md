@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.
 
-Generated: 2026-04-13 21:40:04 UTC
+Generated: 2026-04-14 06:00:26 UTC
 
 ## Quick Start
 
@@ -23,12 +23,12 @@ Generated: 2026-04-13 21:40:04 UTC
 | File | Package(s) | Description |
 |------|-----------|-------------|
 | [core.md](core.md) | @sharpee/core | Base types, query system, platform events, entity interfaces, debug utilities. (25 files, ~2439 lines) |
-| [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (17 files, ~2232 lines) |
+| [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (17 files, ~2238 lines) |
 | [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (91 files, ~7208 lines) |
-| [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (13 files, ~1630 lines) |
+| [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (13 files, ~1722 lines) |
 | [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (34 files, ~3226 lines) |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~407 lines) |
-| [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (16 files, ~2486 lines) |
+| [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (16 files, ~2493 lines) |
 | [plugins.md](plugins.md) | Plugins | Plugin system, NPC plugin, scheduler (daemons/fuses), state machine. (12 files, ~569 lines) |
 | [text.md](text.md) | Text System | Text blocks, decorations, text service, rendering. (13 files, ~640 lines) |
 | [if-services.md](if-services.md) | @sharpee/if-services | Runtime service interfaces (perception). (1 files, ~78 lines) |

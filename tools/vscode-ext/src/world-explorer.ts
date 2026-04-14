@@ -121,10 +121,10 @@ export class WorldExplorerProvider implements vscode.WebviewViewProvider {
       enableScripts: true,
     };
 
-    // Handle click-to-navigate messages from the webview
+    // Handle click-to-navigate: grep for room name in region source, open at line
     webviewView.webview.onDidReceiveMessage((msg) => {
       if (msg.type === 'navigate') {
-        vscode.commands.executeCommand('workbench.action.quickOpen', msg.name);
+        this.navigateToRoomSource(msg.name);
       }
     });
 
@@ -144,6 +144,47 @@ export class WorldExplorerProvider implements vscode.WebviewViewProvider {
     if (this._view) {
       this._view.webview.html = this.buildHtml();
     }
+  }
+
+  // -----------------------------------------------------------------------
+  // Source navigation
+  // -----------------------------------------------------------------------
+
+  /**
+   * Searches region source files for a room name and opens the file at
+   * the matching line. Falls back to workspace search if grep finds nothing.
+   *
+   * @param roomName - The room's display name (e.g., "West of House")
+   */
+  private navigateToRoomSource(roomName: string): void {
+    const ws = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!ws) return;
+
+    try {
+      const result = cp.execFileSync(
+        'grep',
+        ['-rn', '--include=*.ts', '-m', '1', '-F', `'${roomName}'`, 'stories/'],
+        { cwd: ws, encoding: 'utf-8' },
+      );
+      const match = result.match(/^([^:]+):(\d+):/);
+      if (match) {
+        const uri = vscode.Uri.file(path.join(ws, match[1]));
+        const line = parseInt(match[2], 10) - 1;
+        const pos = new vscode.Position(line, 0);
+        vscode.window.showTextDocument(uri, { selection: new vscode.Range(pos, pos) });
+        return;
+      }
+    } catch {
+      // grep returned no matches — fall through to workspace search
+    }
+
+    // Fallback: open search panel with the room name
+    vscode.commands.executeCommand('workbench.action.findInFiles', {
+      query: roomName,
+      filesToInclude: 'stories/*/src/regions/**/*.ts',
+      triggerSearch: true,
+      isCaseSensitive: true,
+    });
   }
 
   // -----------------------------------------------------------------------
@@ -313,7 +354,7 @@ export class WorldExplorerProvider implements vscode.WebviewViewProvider {
           .sort((a, b) => a.name.localeCompare(b.name))
           .map(r => this.renderRoom(r, entitiesByRoom, npcsByRoom, oneWayExits))
           .join('');
-        return `<details class="region" open>
+        return `<details class="region">
           <summary class="region-header">${regionName} <span class="count">(${regionRooms.length})</span></summary>
           ${roomHtml}
         </details>`;

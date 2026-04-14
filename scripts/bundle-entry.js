@@ -574,11 +574,18 @@ Examples:
         }
       }
 
+      // Engine introspection — actions with patterns and metadata
+      const introspection = game.engine.introspect();
+
       const output = {
         storyPath: options.storyPath,
         rooms,
         entities,
         npcs,
+        actions: introspection.actions,
+        traits: introspection.traits,
+        behaviors: introspection.behaviors,
+        messages: introspection.messages,
         regions,
         scenes,
       };

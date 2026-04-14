@@ -289,7 +289,17 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   getSupportedActions(): string[] {
     return standardActionLanguage.map(lang => lang.actionId);
   }
-  
+
+  /**
+   * Returns all registered message IDs and their text.
+   * Used by tooling for language introspection.
+   *
+   * @returns Copy of the internal message map
+   */
+  getAllMessages(): Map<string, string> {
+    return new Map(this.messages);
+  }
+
   /**
    * Get entity name/description
    * @param entity Entity object or ID

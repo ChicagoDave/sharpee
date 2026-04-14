@@ -80,6 +80,13 @@ export interface LanguageProvider {
    * @returns Array of action IDs
    */
   getSupportedActions?(): string[];
+
+  /**
+   * Get all registered message IDs and their text.
+   * Used by tooling (VS Code extension) for language introspection.
+   * @returns Map of message ID to text, or undefined if not supported
+   */
+  getAllMessages?(): Map<string, string>;
 }
 
 /**

@@ -121,6 +121,13 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     getSupportedActions(): string[];
     /**
+     * Returns all registered message IDs and their text.
+     * Used by tooling for language introspection.
+     *
+     * @returns Copy of the internal message map
+     */
+    getAllMessages(): Map<string, string>;
+    /**
      * Get entity name/description
      * @param entity Entity object or ID
      * @returns Entity name or fallback

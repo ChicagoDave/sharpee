@@ -491,32 +491,18 @@ async function main(): Promise<void> {
       }
     }
 
-    // Gather story-specific actions from the engine
-    const storyActions: any[] = [];
-    if (game.engine.getActionRegistry) {
-      try {
-        const registry = game.engine.getActionRegistry();
-        if (registry?.getAll) {
-          for (const action of registry.getAll()) {
-            if (action.id && !action.id.startsWith('if.action.')) {
-              storyActions.push({
-                id: action.id,
-                group: action.group || null,
-              });
-            }
-          }
-        }
-      } catch {
-        // Action registry not available — skip
-      }
-    }
+    // Engine introspection — actions with patterns and metadata
+    const introspection = game.engine.introspect();
 
     const output = {
       storyPath: options.storyPath,
       rooms,
       entities,
       npcs,
-      actions: storyActions,
+      actions: introspection.actions,
+      traits: introspection.traits,
+      behaviors: introspection.behaviors,
+      messages: introspection.messages,
       regions,
       scenes,
     };

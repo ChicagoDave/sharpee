@@ -2,7 +2,7 @@
   "name": "sharpee-vscode",
   "displayName": "Sharpee — Interactive Fiction Authoring",
   "description": "Syntax highlighting, snippets, and tooling for Sharpee interactive fiction projects",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "publisher": "chicagodave",
   "license": "MIT",
   "engines": {
@@ -20,6 +20,11 @@
     "onCommand:sharpee.playStory",
     "onCommand:sharpee.playInBrowser",
     "onView:sharpee.worldExplorer",
+    "onView:sharpee.entityExplorer",
+    "onView:sharpee.actionsExplorer",
+    "onView:sharpee.traitsExplorer",
+    "onView:sharpee.behaviorsExplorer",
+    "onView:sharpee.languageExplorer",
     "onLanguage:typescript"
   ],
   "main": "./out/extension.js",
@@ -60,6 +65,36 @@
           "id": "sharpee.worldExplorer",
           "name": "World Index",
           "contextualTitle": "Sharpee World Index"
+        },
+        {
+          "type": "webview",
+          "id": "sharpee.entityExplorer",
+          "name": "Entity Index",
+          "contextualTitle": "Sharpee Entity Index"
+        },
+        {
+          "type": "webview",
+          "id": "sharpee.actionsExplorer",
+          "name": "Actions Index",
+          "contextualTitle": "Sharpee Actions Index"
+        },
+        {
+          "type": "webview",
+          "id": "sharpee.traitsExplorer",
+          "name": "Traits Index",
+          "contextualTitle": "Sharpee Traits Index"
+        },
+        {
+          "type": "webview",
+          "id": "sharpee.behaviorsExplorer",
+          "name": "Behaviors Index",
+          "contextualTitle": "Sharpee Behaviors Index"
+        },
+        {
+          "type": "webview",
+          "id": "sharpee.languageExplorer",
+          "name": "Language Index",
+          "contextualTitle": "Sharpee Language Index"
         }
       ]
     },
@@ -135,6 +170,31 @@
         "command": "sharpee.refreshWorldExplorer",
         "title": "Sharpee: Refresh World Explorer",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "sharpee.refreshEntityExplorer",
+        "title": "Sharpee: Refresh Entity Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sharpee.refreshActionsExplorer",
+        "title": "Sharpee: Refresh Actions Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sharpee.refreshTraitsExplorer",
+        "title": "Sharpee: Refresh Traits Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sharpee.refreshBehaviorsExplorer",
+        "title": "Sharpee: Refresh Behaviors Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sharpee.refreshLanguageExplorer",
+        "title": "Sharpee: Refresh Language Explorer",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -149,6 +209,31 @@
         {
           "command": "sharpee.refreshWorldExplorer",
           "when": "view == sharpee.worldExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sharpee.refreshEntityExplorer",
+          "when": "view == sharpee.entityExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sharpee.refreshActionsExplorer",
+          "when": "view == sharpee.actionsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sharpee.refreshTraitsExplorer",
+          "when": "view == sharpee.traitsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sharpee.refreshBehaviorsExplorer",
+          "when": "view == sharpee.behaviorsExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sharpee.refreshLanguageExplorer",
+          "when": "view == sharpee.languageExplorer",
           "group": "navigation"
         }
       ]
