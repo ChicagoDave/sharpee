@@ -22,6 +22,7 @@ DEPLOY_DIR="/var/www/sharpee-demos"
 declare -A DEMOS=(
   [dungeo]="dungeo"
   [cloak-of-darkness]="cloak"
+  [familyzoo]="zoo"
 )
 
 RED='\033[0;31m'

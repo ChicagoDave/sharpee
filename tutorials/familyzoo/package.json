@@ -9,16 +9,19 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@sharpee/core": "file:../../packages/core",
-    "@sharpee/engine": "file:../../packages/engine",
-    "@sharpee/stdlib": "file:../../packages/stdlib",
-    "@sharpee/world-model": "file:../../packages/world-model",
-    "@sharpee/helpers": "file:../../packages/helpers",
-    "@sharpee/lang-en-us": "file:../../packages/lang-en-us",
-    "@sharpee/parser-en-us": "file:../../packages/parser-en-us",
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/event-processor": "workspace:*",
+    "@sharpee/helpers": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/platform-browser": "workspace:*",
+    "@sharpee/plugin-npc": "workspace:*",
+    "@sharpee/plugin-scheduler": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-service": "workspace:*",
-    "@sharpee/plugin-npc": "file:../../packages/plugin-npc",
-    "@sharpee/plugin-scheduler": "file:../../packages/plugin-scheduler"
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

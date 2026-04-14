@@ -807,7 +807,8 @@ build_story_bundle() {
 
 build_browser_client() {
     local STORY_NAME="$1"
-    local ENTRY="stories/${STORY_NAME}/src/browser-entry.ts"
+    local STORY_DIR=$(resolve_story_dir "$STORY_NAME")
+    local ENTRY="${STORY_DIR}/src/browser-entry.ts"
     local OUTDIR="dist/web/${STORY_NAME}"
 
     log_step "Building Browser Client: ${STORY_NAME}"
@@ -835,7 +836,7 @@ build_browser_client() {
     fi
 
     # Copy story assets (audio, images, etc.)
-    local ASSETS_DIR="stories/${STORY_NAME}/assets"
+    local ASSETS_DIR="${STORY_DIR}/assets"
     if [ -d "$ASSETS_DIR" ]; then
         cp -r "$ASSETS_DIR"/* "$OUTDIR/" 2>/dev/null
         log_ok "assets"
