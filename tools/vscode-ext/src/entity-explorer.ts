@@ -10,8 +10,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as cp from 'child_process';
+import { navigateToSource } from './source-navigation';
 import type { WorldExplorerProvider } from './world-explorer';
 
 // ---------------------------------------------------------------------------
@@ -104,43 +103,8 @@ export class EntityExplorerProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  // -----------------------------------------------------------------------
-  // Source navigation
-  // -----------------------------------------------------------------------
-
-  /**
-   * Searches story source files for an entity name and opens at the line.
-   *
-   * @param entityName - The entity's display name
-   */
   private navigateToEntitySource(entityName: string): void {
-    const ws = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!ws) return;
-
-    try {
-      const result = cp.execFileSync(
-        'grep',
-        ['-rn', '--include=*.ts', '-m', '1', '-F', `'${entityName}'`, 'stories/'],
-        { cwd: ws, encoding: 'utf-8' },
-      );
-      const match = result.match(/^([^:]+):(\d+):/);
-      if (match) {
-        const uri = vscode.Uri.file(path.join(ws, match[1]));
-        const line = parseInt(match[2], 10) - 1;
-        const pos = new vscode.Position(line, 0);
-        vscode.window.showTextDocument(uri, { selection: new vscode.Range(pos, pos) });
-        return;
-      }
-    } catch {
-      // no match — fall through
-    }
-
-    vscode.commands.executeCommand('workbench.action.findInFiles', {
-      query: entityName,
-      filesToInclude: 'stories/*/src/**/*.ts',
-      triggerSearch: true,
-      isCaseSensitive: true,
-    });
+    navigateToSource(`'${entityName}'`, 'stories/**/src/**/*.ts');
   }
 
   // -----------------------------------------------------------------------

@@ -2,7 +2,7 @@
   "name": "sharpee-vscode",
   "displayName": "Sharpee — Interactive Fiction Authoring",
   "description": "Syntax highlighting, snippets, and tooling for Sharpee interactive fiction projects",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "publisher": "chicagodave",
   "license": "MIT",
   "engines": {

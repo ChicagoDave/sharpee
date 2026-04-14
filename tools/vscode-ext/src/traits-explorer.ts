@@ -10,8 +10,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as cp from 'child_process';
+import { navigateToSource } from './source-navigation';
 import type { WorldExplorerProvider } from './world-explorer';
 
 // ---------------------------------------------------------------------------
@@ -73,49 +72,11 @@ export class TraitsExplorerProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  // -----------------------------------------------------------------------
-  // Source navigation
-  // -----------------------------------------------------------------------
-
-  /**
-   * Searches source files for a trait type and opens at the matching line.
-   *
-   * @param traitType - The trait's type identifier
-   */
   private navigateToTraitSource(traitType: string): void {
-    const ws = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!ws) return;
-
-    const searchDirs = traitType.startsWith('dungeo.')
-      ? ['stories/']
-      : ['packages/world-model/'];
-
-    for (const dir of searchDirs) {
-      try {
-        const result = cp.execFileSync(
-          'grep',
-          ['-rn', '--include=*.ts', '-m', '1', '-F', `'${traitType}'`, dir],
-          { cwd: ws, encoding: 'utf-8' },
-        );
-        const match = result.match(/^([^:]+):(\d+):/);
-        if (match) {
-          const uri = vscode.Uri.file(path.join(ws, match[1]));
-          const line = parseInt(match[2], 10) - 1;
-          const pos = new vscode.Position(line, 0);
-          vscode.window.showTextDocument(uri, { selection: new vscode.Range(pos, pos) });
-          return;
-        }
-      } catch {
-        // no match — try next
-      }
-    }
-
-    vscode.commands.executeCommand('workbench.action.findInFiles', {
-      query: traitType,
-      filesToInclude: '{packages,stories}/**/*.ts',
-      triggerSearch: true,
-      isCaseSensitive: true,
-    });
+    const pattern = traitType.startsWith('dungeo.')
+      ? 'stories/**/src/**/*.ts'
+      : 'packages/world-model/**/*.ts';
+    navigateToSource(`'${traitType}'`, pattern);
   }
 
   // -----------------------------------------------------------------------
