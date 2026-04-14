@@ -440,6 +440,7 @@ async function main(): Promise<void> {
           name,
           aliases: identity?.aliases || [],
           isDark: roomTrait?.isDark || false,
+          regionId: roomTrait?.regionId || null,
           exits,
         });
       } else if (traitTypes.includes('actor') && !traitTypes.includes('player')) {
@@ -451,7 +452,9 @@ async function main(): Promise<void> {
           traits: traitTypes,
           behaviorId: npcTrait?.behaviorId || null,
         });
-      } else if (entity.type !== 'player') {
+      } else if (entity.type !== 'player'
+                 && !traitTypes.includes('region')
+                 && !traitTypes.includes('scene')) {
         entities.push({
           id: entity.id,
           name,
@@ -461,32 +464,47 @@ async function main(): Promise<void> {
       }
     }
 
-    // Gather story-specific actions from the engine
-    const storyActions: any[] = [];
-    if (game.engine.getActionRegistry) {
-      try {
-        const registry = game.engine.getActionRegistry();
-        if (registry?.getAll) {
-          for (const action of registry.getAll()) {
-            if (action.id && !action.id.startsWith('if.action.')) {
-              storyActions.push({
-                id: action.id,
-                group: action.group || null,
-              });
-            }
-          }
-        }
-      } catch {
-        // Action registry not available — skip
+    // Collect regions (ADR-149)
+    const regions: any[] = [];
+    for (const entity of allEntities) {
+      const regionTrait = entity.get('region') as any;
+      if (regionTrait) {
+        regions.push({
+          id: entity.id,
+          name: regionTrait.name,
+          parentRegionId: regionTrait.parentRegionId || null,
+        });
       }
     }
+
+    // Collect scenes (ADR-149)
+    const scenes: any[] = [];
+    for (const entity of allEntities) {
+      const sceneTrait = entity.get('scene') as any;
+      if (sceneTrait) {
+        scenes.push({
+          id: entity.id,
+          name: sceneTrait.name,
+          state: sceneTrait.state,
+          recurring: sceneTrait.recurring,
+        });
+      }
+    }
+
+    // Engine introspection — actions with patterns and metadata
+    const introspection = game.engine.introspect();
 
     const output = {
       storyPath: options.storyPath,
       rooms,
       entities,
       npcs,
-      actions: storyActions,
+      actions: introspection.actions,
+      traits: introspection.traits,
+      behaviors: introspection.behaviors,
+      messages: introspection.messages,
+      regions,
+      scenes,
     };
 
     process.stdout.write(JSON.stringify(output, null, 2));

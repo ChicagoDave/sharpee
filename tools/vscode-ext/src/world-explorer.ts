@@ -1,12 +1,12 @@
 /**
- * World Explorer sidebar panel for Sharpee stories.
+ * World Index sidebar webview for Sharpee stories.
  *
  * Runs `node dist/cli/sharpee.js --world-json` to extract the initialized
- * world model, then presents rooms, entities, and NPCs as a browsable tree
- * in the VS Code sidebar. Clicking a node attempts to navigate to the
- * source file where the entity is defined.
+ * world model, then renders an HTML World Index in the VS Code sidebar
+ * webview. Shows rooms grouped by region, with exits, contained entities,
+ * dead-end and one-way exit highlighting.
  *
- * Public interface: WorldExplorerProvider, REFRESH_WORLD_COMMAND, getWorldCache()
+ * Public interface: WorldExplorerProvider, REFRESH_WORLD_COMMAND, getWorldData()
  * Owner: tools/vscode-ext
  */
 
@@ -14,6 +14,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as cp from 'child_process';
 import { resolveStoryId } from './build-provider';
+import { navigateToSource } from './source-navigation';
 
 // ---------------------------------------------------------------------------
 // Command IDs
@@ -23,7 +24,7 @@ import { resolveStoryId } from './build-provider';
 export const REFRESH_WORLD_COMMAND = 'sharpee.refreshWorldExplorer';
 
 // ---------------------------------------------------------------------------
-// World JSON types
+// World JSON types (exported for entity-completions.ts)
 // ---------------------------------------------------------------------------
 
 /** Exit destination from --world-json output. */
@@ -38,7 +39,23 @@ interface WorldRoom {
   name: string;
   aliases: string[];
   isDark: boolean;
+  regionId: string | null;
   exits: Record<string, WorldExit>;
+}
+
+/** Region entry from --world-json output (ADR-149). */
+interface WorldRegion {
+  id: string;
+  name: string;
+  parentRegionId: string | null;
+}
+
+/** Scene entry from --world-json output (ADR-149). */
+interface WorldScene {
+  id: string;
+  name: string;
+  state: 'waiting' | 'active' | 'ended';
+  recurring: boolean;
 }
 
 /** Entity entry from --world-json output. */
@@ -64,91 +81,79 @@ interface WorldData {
   rooms: WorldRoom[];
   entities: WorldEntity[];
   npcs: WorldNpc[];
+  regions: WorldRegion[];
+  scenes: WorldScene[];
 }
 
 // ---------------------------------------------------------------------------
-// Tree node types
-// ---------------------------------------------------------------------------
-
-/** Discriminated union for tree node kinds. */
-type WorldNodeKind =
-  | 'category'
-  | 'room'
-  | 'exit'
-  | 'entity'
-  | 'npc'
-  | 'location-group'
-  | 'trait-list'
-  | 'detail';
-
-/** A node in the World Explorer tree. */
-class WorldNode extends vscode.TreeItem {
-  constructor(
-    label: string,
-    public readonly kind: WorldNodeKind,
-    collapsible: vscode.TreeItemCollapsibleState,
-    public readonly children: WorldNode[] = [],
-  ) {
-    super(label, collapsible);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Provider
+// Provider — WebviewViewProvider (sidebar webview)
 // ---------------------------------------------------------------------------
 
 /**
- * Tree data provider that shows rooms, entities, and NPCs from the
- * initialized world model. Data is fetched by running the CLI with
- * --world-json and cached in memory until explicitly refreshed.
+ * Sidebar webview provider that renders the World Index as HTML.
+ * Replaces the former TreeDataProvider. Data is fetched by running the CLI
+ * with --world-json and cached in memory until explicitly refreshed.
  */
-export class WorldExplorerProvider implements vscode.TreeDataProvider<WorldNode> {
-  private _onDidChangeTreeData = new vscode.EventEmitter<WorldNode | undefined | null>();
-  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+export class WorldExplorerProvider implements vscode.WebviewViewProvider {
+  private _view?: vscode.WebviewView;
 
   /** Cached world data from the last --world-json run. */
   private worldData: WorldData | null = null;
 
-  /** Timestamp of the last successful fetch. */
-  private lastFetchMs = 0;
-
-  /** Root category nodes, built from worldData. */
-  private rootNodes: WorldNode[] = [];
-
-  /** Room ID → room name lookup, for labeling entity locations. */
-  private roomNameById: Map<string, string> = new Map();
-
   /**
    * Returns the current cached world data (or null).
-   * Used by other providers (e.g., entity autocomplete) that
-   * share this data without running a separate CLI call.
+   * Used by other providers (e.g., entity autocomplete).
    */
   getWorldData(): WorldData | null {
     return this.worldData;
   }
 
-  getTreeItem(element: WorldNode): vscode.TreeItem {
-    return element;
-  }
+  /**
+   * Called by VS Code when the sidebar view becomes visible.
+   */
+  resolveWebviewView(
+    webviewView: vscode.WebviewView,
+    _context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken,
+  ): void {
+    this._view = webviewView;
 
-  getChildren(element?: WorldNode): WorldNode[] {
-    if (!element) {
-      return this.rootNodes;
-    }
-    return element.children;
+    webviewView.webview.options = {
+      enableScripts: true,
+    };
+
+    // Handle click-to-navigate: grep for room name in region source, open at line
+    webviewView.webview.onDidReceiveMessage((msg) => {
+      if (msg.type === 'navigate') {
+        this.navigateToRoomSource(msg.name);
+      }
+    });
+
+    // Render initial state
+    webviewView.webview.html = this.buildHtml();
   }
 
   /**
-   * Refreshes the tree by re-running --world-json.
-   * Shows a progress notification during the fetch.
+   * Refreshes the webview by re-running --world-json.
    */
   async refresh(): Promise<void> {
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Window, title: 'Sharpee: Loading world data...' },
       () => this.fetchWorldData(),
     );
-    this.buildTree();
-    this._onDidChangeTreeData.fire(undefined);
+
+    if (this._view) {
+      this._view.webview.html = this.buildHtml();
+    }
+  }
+
+  /**
+   * Searches story source files for a room name and opens the first match.
+   *
+   * @param roomName - The room's display name (e.g., "West of House")
+   */
+  private navigateToRoomSource(roomName: string): void {
+    navigateToSource(`'${roomName}'`, 'stories/**/src/**/*.ts');
   }
 
   // -----------------------------------------------------------------------
@@ -173,9 +178,13 @@ export class WorldExplorerProvider implements vscode.TreeDataProvider<WorldNode>
     const cliAbsolute = path.join(workspaceFolder.uri.fsPath, cliBundlePath);
 
     try {
-      const json = await this.runCli(cliAbsolute, workspaceFolder.uri.fsPath, storyId);
+      let json = await this.runCli(cliAbsolute, workspaceFolder.uri.fsPath, storyId);
+      // The CLI may emit trailing text after the JSON. Trim to the closing brace.
+      const lastBrace = json.lastIndexOf('}');
+      if (lastBrace !== -1 && lastBrace < json.length - 1) {
+        json = json.substring(0, lastBrace + 1);
+      }
       this.worldData = JSON.parse(json) as WorldData;
-      this.lastFetchMs = Date.now();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       vscode.window.showErrorMessage(`World Explorer: ${message}`);
@@ -185,11 +194,6 @@ export class WorldExplorerProvider implements vscode.TreeDataProvider<WorldNode>
 
   /**
    * Spawns the CLI process and collects stdout.
-   *
-   * @param cliPath - Absolute path to the CLI bundle
-   * @param cwd - Working directory (workspace root)
-   * @param storyId - Story identifier for the --story flag
-   * @returns Resolved with the raw stdout string
    */
   private runCli(cliPath: string, cwd: string, storyId: string): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -220,258 +224,311 @@ export class WorldExplorerProvider implements vscode.TreeDataProvider<WorldNode>
   }
 
   // -----------------------------------------------------------------------
-  // Tree building
+  // HTML rendering
   // -----------------------------------------------------------------------
 
   /**
-   * Builds the tree node hierarchy from cached worldData.
+   * Builds the complete HTML string for the sidebar webview.
    */
-  private buildTree(): void {
+  private buildHtml(): string {
     if (!this.worldData) {
-      this.rootNodes = [
-        new WorldNode(
-          'No world data — build the story and refresh',
-          'detail',
-          vscode.TreeItemCollapsibleState.None,
-        ),
-      ];
-      return;
+      return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>${this.baseStyles()}</style>
+</head><body>
+<div class="empty-state">
+  <p>No world data loaded.</p>
+  <p>Build the story, then click the refresh button above.</p>
+</div>
+</body></html>`;
     }
 
-    // Build room name lookup
-    this.roomNameById.clear();
-    for (const room of this.worldData.rooms) {
-      this.roomNameById.set(room.id, room.name);
+    const data = this.worldData;
+    const rooms = data.rooms ?? [];
+    const entities = data.entities ?? [];
+    const npcs = data.npcs ?? [];
+    const regions = data.regions ?? [];
+    const scenes = data.scenes ?? [];
+
+    // Build lookups
+    const roomById = new Map<string, WorldRoom>();
+    for (const room of rooms) {
+      roomById.set(room.id, room);
+    }
+    const regionNameById = new Map<string, string>();
+    for (const reg of regions) {
+      regionNameById.set(reg.id, reg.name);
     }
 
-    const roomsCategory = this.buildRoomsCategory(this.worldData.rooms);
-    const entitiesCategory = this.buildEntitiesCategory(this.worldData.entities);
-    const npcsCategory = this.buildNpcsCategory(this.worldData.npcs);
-
-    this.rootNodes = [roomsCategory, entitiesCategory, npcsCategory];
-  }
-
-  /**
-   * Builds the Rooms category with room nodes and exit children.
-   */
-  private buildRoomsCategory(rooms: WorldRoom[]): WorldNode {
-    const sorted = [...rooms].sort((a, b) => a.name.localeCompare(b.name));
-
-    const children = sorted.map(room => {
-      const exitChildren = Object.entries(room.exits).map(([dir, dest]) => {
-        const exitNode = new WorldNode(
-          `${dir} → ${dest.name}`,
-          'exit',
-          vscode.TreeItemCollapsibleState.None,
-        );
-        exitNode.description = dest.id;
-        exitNode.iconPath = new vscode.ThemeIcon('arrow-right');
-        return exitNode;
-      });
-
-      const hasExits = exitChildren.length > 0;
-      const roomNode = new WorldNode(
-        room.name,
-        'room',
-        hasExits ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None,
-        exitChildren,
-      );
-      roomNode.description = room.id;
-      roomNode.tooltip = this.buildRoomTooltip(room);
-      roomNode.iconPath = new vscode.ThemeIcon(room.isDark ? 'eye-closed' : 'home');
-
-      // Enable source navigation via the search command
-      roomNode.command = {
-        command: 'workbench.action.quickOpen',
-        title: 'Go to source',
-        arguments: [room.name],
-      };
-
-      return roomNode;
-    });
-
-    const category = new WorldNode(
-      `Rooms (${rooms.length})`,
-      'category',
-      vscode.TreeItemCollapsibleState.Expanded,
-      children,
-    );
-    category.iconPath = new vscode.ThemeIcon('map');
-    return category;
-  }
-
-  /**
-   * Builds the Entities category, grouped by location.
-   */
-  private buildEntitiesCategory(entities: WorldEntity[]): WorldNode {
-    // Group by location
-    const byLocation = new Map<string, WorldEntity[]>();
-    for (const entity of entities) {
-      const locKey = entity.location ?? '(no location)';
-      const group = byLocation.get(locKey) ?? [];
-      group.push(entity);
-      byLocation.set(locKey, group);
+    // Group entities by location
+    const entitiesByRoom = new Map<string, WorldEntity[]>();
+    for (const ent of entities) {
+      if (ent.location) {
+        const group = entitiesByRoom.get(ent.location) ?? [];
+        group.push(ent);
+        entitiesByRoom.set(ent.location, group);
+      }
     }
 
-    // Sort groups by room name
-    const sortedGroups = [...byLocation.entries()].sort((a, b) => {
-      const nameA = this.roomNameById.get(a[0]) ?? a[0];
-      const nameB = this.roomNameById.get(b[0]) ?? b[0];
-      return nameA.localeCompare(nameB);
-    });
-
-    const groupNodes = sortedGroups.map(([locId, ents]) => {
-      const locName = this.roomNameById.get(locId) ?? locId;
-      const sortedEnts = [...ents].sort((a, b) => a.name.localeCompare(b.name));
-
-      const entityChildren = sortedEnts.map(ent => {
-        const entityNode = new WorldNode(
-          ent.name,
-          'entity',
-          vscode.TreeItemCollapsibleState.None,
-        );
-        entityNode.description = ent.id;
-        entityNode.tooltip = `${ent.name} (${ent.id})\nTraits: ${ent.traits.join(', ')}`;
-        entityNode.iconPath = this.entityIcon(ent.traits);
-
-        entityNode.command = {
-          command: 'workbench.action.quickOpen',
-          title: 'Go to source',
-          arguments: [ent.name],
-        };
-
-        return entityNode;
-      });
-
-      const groupNode = new WorldNode(
-        locName,
-        'location-group',
-        vscode.TreeItemCollapsibleState.Collapsed,
-        entityChildren,
-      );
-      groupNode.description = `${ents.length} item${ents.length === 1 ? '' : 's'}`;
-      groupNode.iconPath = new vscode.ThemeIcon('folder');
-      return groupNode;
-    });
-
-    const category = new WorldNode(
-      `Entities (${entities.length})`,
-      'category',
-      vscode.TreeItemCollapsibleState.Collapsed,
-      groupNodes,
-    );
-    category.iconPath = new vscode.ThemeIcon('package');
-    return category;
-  }
-
-  /**
-   * Builds the NPCs category.
-   */
-  private buildNpcsCategory(npcs: WorldNpc[]): WorldNode {
-    const sorted = [...npcs].sort((a, b) => a.name.localeCompare(b.name));
-
-    const children = sorted.map(npc => {
-      const details: WorldNode[] = [];
-
-      // Location detail
+    // Group NPCs by location
+    const npcsByRoom = new Map<string, WorldNpc[]>();
+    for (const npc of npcs) {
       if (npc.location) {
-        const locName = this.roomNameById.get(npc.location) ?? npc.location;
-        const locNode = new WorldNode(
-          `Location: ${locName}`,
-          'detail',
-          vscode.TreeItemCollapsibleState.None,
-        );
-        locNode.iconPath = new vscode.ThemeIcon('home');
-        details.push(locNode);
+        const group = npcsByRoom.get(npc.location) ?? [];
+        group.push(npc);
+        npcsByRoom.set(npc.location, group);
       }
-
-      // Behavior detail
-      if (npc.behaviorId) {
-        const behavNode = new WorldNode(
-          `Behavior: ${npc.behaviorId}`,
-          'detail',
-          vscode.TreeItemCollapsibleState.None,
-        );
-        behavNode.iconPath = new vscode.ThemeIcon('symbol-event');
-        details.push(behavNode);
-      }
-
-      const npcNode = new WorldNode(
-        npc.name,
-        'npc',
-        details.length > 0
-          ? vscode.TreeItemCollapsibleState.Collapsed
-          : vscode.TreeItemCollapsibleState.None,
-        details,
-      );
-      npcNode.description = npc.id;
-      npcNode.tooltip = `${npc.name} (${npc.id})\nTraits: ${npc.traits.join(', ')}`;
-      npcNode.iconPath = new vscode.ThemeIcon('person');
-
-      npcNode.command = {
-        command: 'workbench.action.quickOpen',
-        title: 'Go to source',
-        arguments: [npc.name],
-      };
-
-      return npcNode;
-    });
-
-    const category = new WorldNode(
-      `NPCs (${npcs.length})`,
-      'category',
-      vscode.TreeItemCollapsibleState.Collapsed,
-      children,
-    );
-    category.iconPath = new vscode.ThemeIcon('person');
-    return category;
-  }
-
-  // -----------------------------------------------------------------------
-  // Helpers
-  // -----------------------------------------------------------------------
-
-  /**
-   * Selects a ThemeIcon based on an entity's trait list.
-   */
-  private entityIcon(traits: string[]): vscode.ThemeIcon {
-    if (traits.includes('light_source')) return new vscode.ThemeIcon('lightbulb');
-    if (traits.includes('container')) return new vscode.ThemeIcon('archive');
-    if (traits.includes('supporter')) return new vscode.ThemeIcon('layout');
-    if (traits.includes('openable') || traits.includes('lockable')) return new vscode.ThemeIcon('lock');
-    if (traits.includes('weapon')) return new vscode.ThemeIcon('zap');
-    if (traits.includes('readable')) return new vscode.ThemeIcon('book');
-    if (traits.includes('wearable')) return new vscode.ThemeIcon('jersey');
-    if (traits.includes('edible')) return new vscode.ThemeIcon('heart');
-    return new vscode.ThemeIcon('symbol-variable');
-  }
-
-  /**
-   * Builds a markdown tooltip string for a room.
-   */
-  private buildRoomTooltip(room: WorldRoom): vscode.MarkdownString {
-    const lines: string[] = [
-      `**${room.name}** \`${room.id}\``,
-    ];
-
-    if (room.isDark) {
-      lines.push('*Dark room*');
     }
 
-    if (room.aliases.length > 0) {
-      lines.push(`Aliases: ${room.aliases.join(', ')}`);
-    }
-
-    const exitCount = Object.keys(room.exits).length;
-    if (exitCount > 0) {
-      lines.push('', `**Exits** (${exitCount}):`);
+    // Detect one-way exits
+    const oneWayExits = new Set<string>(); // "roomId:direction"
+    for (const room of rooms) {
       for (const [dir, dest] of Object.entries(room.exits)) {
-        lines.push(`- ${dir} → ${dest.name}`);
+        const destRoom = roomById.get(dest.id);
+        if (destRoom) {
+          const hasReturn = Object.values(destRoom.exits).some(e => e.id === room.id);
+          if (!hasReturn) {
+            oneWayExits.add(`${room.id}:${dir}`);
+          }
+        }
       }
     }
 
-    const md = new vscode.MarkdownString(lines.join('\n'));
-    md.isTrusted = true;
-    return md;
+    // Group rooms by region
+    const hasRegions = regions.length > 0 && rooms.some(r => r.regionId);
+    let roomSections: string;
+
+    if (hasRegions) {
+      const byRegion = new Map<string, WorldRoom[]>();
+      for (const room of rooms) {
+        const key = room.regionId ?? '(unassigned)';
+        const group = byRegion.get(key) ?? [];
+        group.push(room);
+        byRegion.set(key, group);
+      }
+
+      const sortedGroups = [...byRegion.entries()].sort((a, b) => {
+        if (a[0] === '(unassigned)') return 1;
+        if (b[0] === '(unassigned)') return -1;
+        const nameA = regionNameById.get(a[0]) ?? a[0];
+        const nameB = regionNameById.get(b[0]) ?? b[0];
+        return nameA.localeCompare(nameB);
+      });
+
+      roomSections = sortedGroups.map(([regionId, regionRooms]) => {
+        const regionName = regionId === '(unassigned)'
+          ? 'Unassigned'
+          : this.esc(regionNameById.get(regionId) ?? regionId);
+        const roomHtml = regionRooms
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map(r => this.renderRoom(r, entitiesByRoom, npcsByRoom, oneWayExits))
+          .join('');
+        return `<details class="region">
+          <summary class="region-header">${regionName} <span class="count">(${regionRooms.length})</span></summary>
+          ${roomHtml}
+        </details>`;
+      }).join('');
+    } else {
+      const sorted = [...rooms].sort((a, b) => a.name.localeCompare(b.name));
+      roomSections = sorted
+        .map(r => this.renderRoom(r, entitiesByRoom, npcsByRoom, oneWayExits))
+        .join('');
+    }
+
+    // Scenes section
+    let scenesSection = '';
+    if (scenes.length > 0) {
+      const sceneItems = scenes
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(s => {
+          const icon = s.state === 'active' ? '&#9654;' : s.state === 'ended' ? '&#10003;' : '&#9675;';
+          const label = s.recurring ? `${s.state} (recurring)` : s.state;
+          return `<div class="scene"><span class="scene-icon">${icon}</span> <strong>${this.esc(s.name)}</strong> <span class="muted">${this.esc(s.id)}</span> &mdash; ${this.esc(label)}</div>`;
+        })
+        .join('');
+      scenesSection = `<details class="section" open>
+        <summary class="section-header">Scenes <span class="count">(${scenes.length})</span></summary>
+        ${sceneItems}
+      </details>`;
+    }
+
+    // Stats
+    const deadEnds = rooms.filter(r => Object.keys(r.exits).length <= 1);
+    const darkRooms = rooms.filter(r => r.isDark);
+
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+<style>${this.baseStyles()}</style>
+</head><body>
+<div class="stats">
+  <span>${rooms.length} rooms</span>
+  <span>${entities.length} entities</span>
+  <span>${npcs.length} NPCs</span>
+  ${darkRooms.length > 0 ? `<span>${darkRooms.length} dark</span>` : ''}
+  ${deadEnds.length > 0 ? `<span class="warn">${deadEnds.length} dead-ends</span>` : ''}
+  ${oneWayExits.size > 0 ? `<span class="warn">${oneWayExits.size} one-way exits</span>` : ''}
+</div>
+
+<details class="section" open>
+  <summary class="section-header">Rooms <span class="count">(${rooms.length})</span></summary>
+  ${roomSections}
+</details>
+
+${scenesSection}
+
+<script>
+  const vscode = acquireVsCodeApi();
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-navigate]');
+    if (link) {
+      vscode.postMessage({ type: 'navigate', name: link.dataset.navigate });
+    }
+  });
+</script>
+</body></html>`;
+  }
+
+  /**
+   * Renders a single room card.
+   */
+  private renderRoom(
+    room: WorldRoom,
+    entitiesByRoom: Map<string, WorldEntity[]>,
+    npcsByRoom: Map<string, WorldNpc[]>,
+    oneWayExits: Set<string>,
+  ): string {
+    const exitCount = Object.keys(room.exits).length;
+    const isDeadEnd = exitCount <= 1;
+    const roomEntities = entitiesByRoom.get(room.id) ?? [];
+    const roomNpcs = npcsByRoom.get(room.id) ?? [];
+
+    const exitHtml = Object.entries(room.exits).map(([dir, dest]) => {
+      const isOneWay = oneWayExits.has(`${room.id}:${dir}`);
+      const cls = isOneWay ? ' class="one-way"' : '';
+      const marker = isOneWay ? ' <span class="one-way-badge">one-way</span>' : '';
+      return `<span${cls}>${this.esc(dir)} &rarr; <a data-navigate="${this.esc(dest.name)}">${this.esc(dest.name)}</a>${marker}</span>`;
+    }).join(', ');
+
+    const contentsHtml = [...roomEntities, ...roomNpcs]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(e => {
+        const icon = 'behaviorId' in e ? '&#128100;' : '&#128230;';
+        return `<span class="entity-chip">${icon} ${this.esc(e.name)}</span>`;
+      })
+      .join(' ');
+
+    const darkBadge = room.isDark ? '<span class="badge dark">dark</span>' : '';
+    const deadEndBadge = isDeadEnd ? '<span class="badge dead-end">dead-end</span>' : '';
+
+    return `<div class="room${isDeadEnd ? ' is-dead-end' : ''}">
+  <div class="room-header">
+    <a class="room-name" data-navigate="${this.esc(room.name)}">${this.esc(room.name)}</a>
+    <span class="room-id">${this.esc(room.id)}</span>
+    ${darkBadge}${deadEndBadge}
+  </div>
+  ${exitCount > 0 ? `<div class="exits">${exitHtml}</div>` : '<div class="exits muted">No exits</div>'}
+  ${contentsHtml ? `<div class="contents">${contentsHtml}</div>` : ''}
+</div>`;
+  }
+
+  /**
+   * CSS styles using VS Code theme variables.
+   */
+  private baseStyles(): string {
+    return `
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: var(--vscode-sideBar-background);
+        color: var(--vscode-sideBar-foreground, var(--vscode-foreground));
+        font-family: var(--vscode-font-family);
+        font-size: var(--vscode-font-size, 13px);
+        padding: 8px;
+        line-height: 1.5;
+      }
+
+      .empty-state { padding: 24px 8px; text-align: center; opacity: 0.7; }
+      .empty-state p + p { margin-top: 8px; }
+
+      .stats {
+        display: flex; flex-wrap: wrap; gap: 8px;
+        padding: 6px 0 10px; border-bottom: 1px solid var(--vscode-panel-border);
+        margin-bottom: 10px; font-size: 0.9em;
+      }
+      .stats span { opacity: 0.8; }
+      .stats .warn { color: var(--vscode-editorWarning-foreground); }
+
+      .section, .region { margin-bottom: 4px; }
+      .section-header, .region-header {
+        cursor: pointer; font-weight: 600; padding: 4px 0;
+        user-select: none;
+      }
+      .section-header { font-size: 1.05em; }
+      .region-header {
+        font-size: 0.95em; padding-left: 4px;
+        border-left: 3px solid var(--vscode-textLink-foreground);
+        margin: 8px 0 4px;
+      }
+      .count { font-weight: 400; opacity: 0.6; }
+
+      .room {
+        padding: 6px 8px; margin: 2px 0;
+        border-radius: 3px;
+        border-left: 3px solid transparent;
+      }
+      .room:hover { background: var(--vscode-list-hoverBackground); }
+      .room.is-dead-end { border-left-color: var(--vscode-editorWarning-foreground); }
+
+      .room-header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .room-name {
+        font-weight: 600; cursor: pointer;
+        color: var(--vscode-textLink-foreground);
+        text-decoration: none;
+      }
+      .room-name:hover { text-decoration: underline; }
+      .room-id { font-size: 0.85em; opacity: 0.5; font-family: var(--vscode-editor-font-family); }
+
+      .badge {
+        font-size: 0.75em; padding: 1px 5px; border-radius: 3px;
+        font-weight: 600; text-transform: uppercase;
+      }
+      .badge.dark {
+        background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
+      }
+      .badge.dead-end {
+        background: var(--vscode-editorWarning-foreground); color: var(--vscode-editor-background);
+      }
+
+      .exits { font-size: 0.9em; padding: 2px 0; }
+      .exits a {
+        color: var(--vscode-textLink-foreground); cursor: pointer; text-decoration: none;
+      }
+      .exits a:hover { text-decoration: underline; }
+      .one-way { color: var(--vscode-editorWarning-foreground); }
+      .one-way-badge {
+        font-size: 0.7em; opacity: 0.8; font-style: italic;
+      }
+
+      .contents { font-size: 0.85em; padding: 2px 0; }
+      .entity-chip {
+        display: inline-block; padding: 1px 4px; margin: 1px 2px;
+        background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
+        border-radius: 3px; font-size: 0.9em;
+      }
+
+      .muted { opacity: 0.5; }
+
+      .scene { padding: 4px 8px; }
+      .scene-icon { font-size: 0.9em; }
+
+      details > summary { list-style: revert; }
+    `;
+  }
+
+  /**
+   * Escapes a string for safe HTML insertion.
+   */
+  private esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 }

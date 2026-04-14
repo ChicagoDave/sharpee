@@ -311,6 +311,23 @@ export class DungeoStory implements Story {
 
     // Reality Altered: migrated to state machine (ADR-119)
 
+    // Create region entities (ADR-149) — must exist before assignRoom calls
+    world.createRegion('reg-white-house', { name: 'White House', defaultDark: false });
+    world.createRegion('reg-house-interior', { name: 'House Interior', defaultDark: false });
+    world.createRegion('reg-forest', { name: 'Forest', defaultDark: false });
+    world.createRegion('reg-underground', { name: 'Underground', defaultDark: true });
+    world.createRegion('reg-round-room', { name: 'Round Room', defaultDark: true });
+    world.createRegion('reg-dam', { name: 'Dam & Reservoir', defaultDark: true });
+    world.createRegion('reg-coal-mine', { name: 'Coal Mine', defaultDark: true });
+    world.createRegion('reg-temple', { name: 'Temple', defaultDark: true });
+    world.createRegion('reg-volcano', { name: 'Volcano', defaultDark: true });
+    world.createRegion('reg-bank', { name: 'Bank of Zork', defaultDark: true });
+    world.createRegion('reg-well-room', { name: 'Well Room', defaultDark: true });
+    world.createRegion('reg-frigid-river', { name: 'Frigid River', defaultDark: true });
+    world.createRegion('reg-maze', { name: 'Maze', defaultDark: true });
+    world.createRegion('reg-royal-puzzle', { name: 'Royal Puzzle', defaultDark: true });
+    world.createRegion('reg-endgame', { name: 'Endgame', defaultDark: true });
+
     // Create all rooms
     this.whiteHouseIds = createWhiteHouseRegion(world);
     this.houseInteriorIds = createHouseInteriorRegion(world);
@@ -327,6 +344,37 @@ export class DungeoStory implements Story {
     this.royalPuzzleIds = createRoyalPuzzleRegion(world);
     this.endgameIds = createEndgameRegion(world);
     this.roundRoomIds = createRoundRoomRegion(world);
+
+    // Assign rooms to regions (ADR-149)
+    // Some RoomIds interfaces include non-room entity IDs (e.g., Royal Puzzle's goldCard),
+    // so we filter by RoomTrait presence.
+    const assignRooms = (ids: object, regionId: string) => {
+      for (const entityId of Object.values(ids) as string[]) {
+        const entity = world.getEntity(entityId);
+        if (entity?.get(RoomTrait)) {
+          world.assignRoom(entityId, regionId);
+        }
+      }
+    };
+
+    assignRooms(this.whiteHouseIds, 'reg-white-house');
+    assignRooms(this.houseInteriorIds, 'reg-house-interior');
+    assignRooms(this.forestIds, 'reg-forest');
+    assignRooms(this.undergroundIds, 'reg-underground');
+    assignRooms({ roundRoom: this.roundRoomIds.roundRoom }, 'reg-round-room');
+    assignRooms(this.damIds, 'reg-dam');
+    assignRooms(this.coalMineIds, 'reg-coal-mine');
+    assignRooms(this.templeIds, 'reg-temple');
+    assignRooms(this.volcanoIds, 'reg-volcano');
+    assignRooms(this.bankIds, 'reg-bank');
+    assignRooms(this.wellRoomIds, 'reg-well-room');
+    assignRooms(this.frigidRiverIds, 'reg-frigid-river');
+    assignRooms(this.mazeIds, 'reg-maze');
+    assignRooms(this.royalPuzzleIds, 'reg-royal-puzzle');
+    assignRooms(this.endgameIds, 'reg-endgame');
+    // Override: East/West of Chasm are underground rooms, not bank rooms
+    world.assignRoom(this.bankIds.eastOfChasm, 'reg-underground');
+    world.assignRoom(this.bankIds.westOfChasm, 'reg-underground');
 
     // Connect regions
     connectHouseInteriorToExterior(world, this.houseInteriorIds, this.whiteHouseIds.behindHouse);

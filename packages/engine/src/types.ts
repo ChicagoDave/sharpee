@@ -260,3 +260,92 @@ export interface EngineConfig {
    */
   maxUndoSnapshots?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Engine introspection — serializable summaries for tooling
+// ---------------------------------------------------------------------------
+
+/**
+ * Summary of a registered action, suitable for JSON serialization.
+ * Produced by GameEngine.introspect().
+ */
+export interface ActionSummary {
+  /** Action identifier (e.g., "if.action.taking" or "dungeo.action.say"). */
+  id: string;
+  /** Semantic group (e.g., "inventory", "container"). */
+  group: string | null;
+  /** Pattern matching priority. */
+  priority: number;
+  /** True for stdlib actions (if.action.* prefix). */
+  isStandard: boolean;
+  /** Verb patterns from the language provider (e.g., ["take :item", "get :item"]). */
+  patterns: string[];
+  /** Help text from the language provider, if available. */
+  help: { description: string; verbs: string[]; examples: string[] } | null;
+}
+
+/**
+ * Summary of a trait type in use across all entities.
+ * Produced by GameEngine.introspect().
+ */
+export interface TraitSummary {
+  /** Trait type identifier (e.g., "container", "dungeo.trait.troll_axe"). */
+  type: string;
+  /** True for world-model/stdlib traits, false for story-defined traits. */
+  isStandard: boolean;
+  /** Number of entities that have this trait. */
+  entityCount: number;
+  /** Entity IDs that have this trait. */
+  entityIds: string[];
+  /** Property names from a sample trait instance. */
+  properties: string[];
+  /** Capability action IDs this trait declares (from static capabilities). */
+  capabilities: string[];
+  /** Interceptor action IDs this trait declares (from static interceptors). */
+  interceptors: string[];
+}
+
+/**
+ * Summary of a capability behavior binding (trait + action + phases).
+ * Produced by GameEngine.introspect().
+ */
+export interface BehaviorBindingSummary {
+  /** Trait type this behavior is registered on. */
+  traitType: string;
+  /** Action/capability ID this behavior handles. */
+  actionId: string;
+  /** Registration priority (higher = checked first). */
+  priority: number;
+  /** Which 4-phase methods the behavior implements. */
+  phases: string[];
+  /** "capability" for CapabilityBehavior, "interceptor" for ActionInterceptor. */
+  kind: 'capability' | 'interceptor';
+}
+
+/**
+ * Summary of a registered message ID and its text.
+ * Produced by GameEngine.introspect().
+ */
+export interface MessageSummary {
+  /** Full message ID (e.g., "if.action.taking.taken" or "dungeo.thief.appears"). */
+  id: string;
+  /** The message text or template string. */
+  text: string;
+  /** "platform" for stdlib/engine messages, "story" for story-registered messages. */
+  source: 'platform' | 'story';
+}
+
+/**
+ * Serializable snapshot of engine state for tooling (VS Code extension, CLI).
+ * Returned by GameEngine.introspect().
+ */
+export interface EngineIntrospection {
+  /** All registered actions with patterns and metadata. */
+  actions: ActionSummary[];
+  /** All trait types in use with usage counts and metadata. */
+  traits: TraitSummary[];
+  /** All capability behavior and interceptor bindings. */
+  behaviors: BehaviorBindingSummary[];
+  /** All registered message IDs with text and source classification. */
+  messages: MessageSummary[];
+}

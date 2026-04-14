@@ -76,8 +76,10 @@ interface QueryEntryPoints {
 }
 
 declare module '@sharpee/world-model' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
-  interface IWorldModel extends QueryEntryPoints {}
+  // Only augment the concrete class — augmenting IWorldModel would force
+  // every implementor (e.g. AuthorModel) to satisfy the query contract,
+  // which they don't need. Story code accesses queries through the
+  // WorldModel instance, not through IWorldModel references.
   // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface WorldModel extends QueryEntryPoints {}
 }

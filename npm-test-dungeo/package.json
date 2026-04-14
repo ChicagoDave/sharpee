@@ -1,0 +1,36 @@
+{
+  "name": "sharpee-npm-regression-dungeo",
+  "version": "1.0.0",
+  "description": "Regression test: compile and run Dungeo against published npm packages",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "npx transcript-test . tests/transcripts/*.transcript"
+  },
+  "dependencies": {
+    "@sharpee/sharpee": "^0.9.95",
+    "@sharpee/core": "^0.9.95",
+    "@sharpee/engine": "^0.9.95",
+    "@sharpee/event-processor": "^0.9.95",
+    "@sharpee/if-domain": "^0.9.95",
+    "@sharpee/lang-en-us": "^0.9.95",
+    "@sharpee/media": "^0.9.95",
+    "@sharpee/parser-en-us": "^0.9.95",
+    "@sharpee/platform-browser": "^0.9.95",
+    "@sharpee/plugin-npc": "^0.9.95",
+    "@sharpee/plugin-scheduler": "^0.9.95",
+    "@sharpee/plugin-state-machine": "^0.9.95",
+    "@sharpee/stdlib": "^0.9.95",
+    "@sharpee/text-service": "^0.9.95",
+    "@sharpee/world-model": "^0.9.95",
+    "lz-string": "^1.5.0"
+  },
+  "devDependencies": {
+    "@sharpee/transcript-tester": "^0.9.95",
+    "@types/lz-string": "^1.5.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["sharpee", "regression-test", "dungeo"],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

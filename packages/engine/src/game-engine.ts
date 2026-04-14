@@ -4,8 +4,8 @@
  * Manages game state, turn execution, and coordinates all subsystems
  */
 
-import { 
-  WorldModel, 
+import {
+  WorldModel,
   IFEntity,
   IdentityTrait,
   ActorTrait,
@@ -14,7 +14,9 @@ import {
   ITrait,
   TraitType,
   EntityType,
-  StoryInfoTrait
+  StoryInfoTrait,
+  getAllCapabilityBindings,
+  getAllInterceptorBindings
 } from '@sharpee/world-model';
 import { EventProcessor, Effect } from '@sharpee/event-processor';
 import {
@@ -49,7 +51,12 @@ import {
   CommandResult,
   EngineConfig,
   InputModeHandler,
-  INPUT_MODE_STATE_KEY
+  INPUT_MODE_STATE_KEY,
+  EngineIntrospection,
+  ActionSummary,
+  TraitSummary,
+  BehaviorBindingSummary,
+  MessageSummary
 } from './types';
 import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
@@ -333,6 +340,140 @@ export class GameEngine {
    */
   getLanguageProvider(): LanguageProvider | undefined {
     return this.languageProvider;
+  }
+
+  /**
+   * Returns a serializable snapshot of the engine's internal state for
+   * tooling (VS Code extension, CLI --world-json). The engine owns the
+   * serialization — callers consume the plain data shape.
+   *
+   * @returns EngineIntrospection with actions, patterns, and metadata
+   */
+  introspect(): EngineIntrospection {
+    const actions: ActionSummary[] = [];
+    const lang = this.languageProvider;
+
+    for (const action of this.actionRegistry.getAll()) {
+      const patterns = lang?.getActionPatterns(action.id) ?? [];
+      const rawHelp = lang?.getActionHelp?.(action.id);
+      const help = rawHelp
+        ? { description: rawHelp.description, verbs: rawHelp.verbs, examples: rawHelp.examples }
+        : null;
+
+      actions.push({
+        id: action.id,
+        group: action.group ?? null,
+        priority: action.priority ?? 0,
+        isStandard: action.id.startsWith('if.action.'),
+        patterns,
+        help,
+      });
+    }
+
+    // Trait summaries — enumerate all trait types in use across entities
+    const traitMap = new Map<string, { entityIds: string[]; sample: ITrait | null }>();
+    for (const entity of this.world.getAllEntities()) {
+      for (const trait of entity.getTraits()) {
+        const type = trait.type as string;
+        const entry = traitMap.get(type);
+        if (entry) {
+          entry.entityIds.push(entity.id);
+          if (!entry.sample) entry.sample = trait;
+        } else {
+          traitMap.set(type, { entityIds: [entity.id], sample: trait });
+        }
+      }
+    }
+
+    // Collect capability and interceptor registrations per trait type
+    const capsByTrait = new Map<string, string[]>();
+    for (const [key] of getAllCapabilityBindings()) {
+      const [traitType, capability] = key.split(':');
+      const list = capsByTrait.get(traitType) ?? [];
+      list.push(capability);
+      capsByTrait.set(traitType, list);
+    }
+
+    const intsByTrait = new Map<string, string[]>();
+    for (const [key] of getAllInterceptorBindings()) {
+      const [traitType, actionId] = key.split(':');
+      const list = intsByTrait.get(traitType) ?? [];
+      list.push(actionId);
+      intsByTrait.set(traitType, list);
+    }
+
+    const PLATFORM_PREFIXES = ['room', 'identity', 'container', 'supporter', 'openable',
+      'lockable', 'switchable', 'readable', 'scenery', 'actor', 'combatant',
+      'light-source', 'wearable', 'region', 'scene', 'story-info', 'player',
+      'npc', 'portable'];
+
+    const traits: TraitSummary[] = [];
+    for (const [type, { entityIds, sample }] of traitMap) {
+      const properties = sample
+        ? Object.keys(sample).filter(k => k !== 'type')
+        : [];
+
+      traits.push({
+        type,
+        isStandard: PLATFORM_PREFIXES.includes(type) || type.startsWith('if.'),
+        entityCount: entityIds.length,
+        entityIds,
+        properties,
+        capabilities: capsByTrait.get(type) ?? [],
+        interceptors: intsByTrait.get(type) ?? [],
+      });
+    }
+
+    // Behavior bindings — capability behaviors and action interceptors
+    const behaviors: BehaviorBindingSummary[] = [];
+
+    for (const [key, binding] of getAllCapabilityBindings()) {
+      const [traitType, capability] = key.split(':');
+      const behavior = binding.behavior;
+      const phases: string[] = [];
+      if (typeof behavior.validate === 'function') phases.push('validate');
+      if (typeof behavior.execute === 'function') phases.push('execute');
+      if (typeof behavior.report === 'function') phases.push('report');
+      if (typeof behavior.blocked === 'function') phases.push('blocked');
+
+      behaviors.push({
+        traitType,
+        actionId: capability,
+        priority: binding.priority ?? 0,
+        phases,
+        kind: 'capability',
+      });
+    }
+
+    for (const [key, binding] of getAllInterceptorBindings()) {
+      const [traitType, actionId] = key.split(':');
+      const interceptor = binding.interceptor;
+      const phases: string[] = [];
+      if (typeof interceptor.preValidate === 'function') phases.push('preValidate');
+      if (typeof interceptor.postValidate === 'function') phases.push('postValidate');
+      if (typeof interceptor.postExecute === 'function') phases.push('postExecute');
+
+      behaviors.push({
+        traitType,
+        actionId,
+        priority: binding.priority ?? 0,
+        phases,
+        kind: 'interceptor',
+      });
+    }
+
+    // Language messages — all registered message IDs with text and source
+    const messages: MessageSummary[] = [];
+    const allMessages = lang?.getAllMessages?.();
+    if (allMessages) {
+      const PLATFORM_PREFIXES = ['if.', 'core.', 'game.', 'npc.', 'combat.', 'character.'];
+      for (const [id, text] of allMessages) {
+        const source = PLATFORM_PREFIXES.some(p => id.startsWith(p)) ? 'platform' : 'story';
+        messages.push({ id, text, source });
+      }
+    }
+
+    return { actions, traits, behaviors, messages };
   }
 
   /**

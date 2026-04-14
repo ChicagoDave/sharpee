@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/sharpee",
-  "version": "0.9.107",
+  "version": "0.9.111",
   "description": "Sharpee - Interactive Fiction Engine for TypeScript",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",

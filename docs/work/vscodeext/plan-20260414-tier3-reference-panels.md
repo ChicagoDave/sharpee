@@ -1,7 +1,7 @@
 # VS Code Extension — Tier 3: Reference Panels
 
 **Created**: 2026-04-14
-**Status**: Proposal — not yet scoped into phases
+**Status**: DONE — all 7 phases completed 2026-04-13
 
 ## Concept
 
@@ -90,6 +90,16 @@ This would likely mean evolving `--world-json` into a broader `--introspect` fla
 - How much of the trait/behavior introspection can be extracted from the runtime vs. requiring static analysis of source?
 - Should the panels be interactive (filter/search/click-to-navigate) or static reference pages?
 - The Tier 2 tree view (Phase 3) should be replaced by the webview World Index — the tree doesn't scale to large stories like Dungeo
+
+## Phased Work List
+
+1. ~~**World Index webview**~~ — DONE (plan-20260413-tier3-phase1-world-index.md)
+2. ~~**Dungeo region assignment**~~ — DONE (175 rooms, 15 regions, 0 unassigned)
+3. ~~**Entity Index panel**~~ — DONE (entities by trait/type, platform vs story sections)
+4. ~~**Actions Index panel**~~ — DONE (105 actions: 50 stdlib, 55 story; engine.introspect() added)
+5. ~~**Traits Index panel**~~ — DONE (47 traits: 12 platform, 35 story)
+6. ~~**Behaviors Index panel**~~ — DONE (20 bindings: 6 capabilities, 14 interceptors)
+7. ~~**Language Index panel**~~ — DONE (1,289 messages: 824 platform, 465 story)
 
 ## Relationship to Tier 2
 

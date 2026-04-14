@@ -26,6 +26,11 @@ import {
   onBuildDone,
 } from './build-provider';
 import { WorldExplorerProvider, REFRESH_WORLD_COMMAND } from './world-explorer';
+import { EntityExplorerProvider, REFRESH_ENTITIES_COMMAND } from './entity-explorer';
+import { ActionsExplorerProvider, REFRESH_ACTIONS_COMMAND } from './actions-explorer';
+import { TraitsExplorerProvider, REFRESH_TRAITS_COMMAND } from './traits-explorer';
+import { BehaviorsExplorerProvider, REFRESH_BEHAVIORS_COMMAND } from './behaviors-explorer';
+import { LanguageExplorerProvider, REFRESH_LANGUAGE_COMMAND } from './language-explorer';
 import { SharpeeCompletionProvider } from './entity-completions';
 import { applyDecorations, clearDecorations, passDecorationType, failDecorationType } from './decorations';
 
@@ -379,15 +384,46 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.tasks.registerTaskProvider(SharpeeTaskProvider.type, new SharpeeTaskProvider()),
   );
 
-  // World Explorer sidebar
+  // World Index sidebar webview
   const worldExplorer = new WorldExplorerProvider();
-  const worldTreeView = vscode.window.createTreeView('sharpee.worldExplorer', {
-    treeDataProvider: worldExplorer,
-    showCollapseAll: true,
-  });
   context.subscriptions.push(
-    worldTreeView,
+    vscode.window.registerWebviewViewProvider('sharpee.worldExplorer', worldExplorer),
     vscode.commands.registerCommand(REFRESH_WORLD_COMMAND, () => worldExplorer.refresh()),
+  );
+
+  // Entity Index sidebar webview (shares world data from World Index)
+  const entityExplorer = new EntityExplorerProvider(worldExplorer);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('sharpee.entityExplorer', entityExplorer),
+    vscode.commands.registerCommand(REFRESH_ENTITIES_COMMAND, () => entityExplorer.refresh()),
+  );
+
+  // Actions Index sidebar webview (shares world data from World Index)
+  const actionsExplorer = new ActionsExplorerProvider(worldExplorer);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('sharpee.actionsExplorer', actionsExplorer),
+    vscode.commands.registerCommand(REFRESH_ACTIONS_COMMAND, () => actionsExplorer.refresh()),
+  );
+
+  // Traits Index sidebar webview (shares world data from World Index)
+  const traitsExplorer = new TraitsExplorerProvider(worldExplorer);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('sharpee.traitsExplorer', traitsExplorer),
+    vscode.commands.registerCommand(REFRESH_TRAITS_COMMAND, () => traitsExplorer.refresh()),
+  );
+
+  // Behaviors Index sidebar webview (shares world data from World Index)
+  const behaviorsExplorer = new BehaviorsExplorerProvider(worldExplorer);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('sharpee.behaviorsExplorer', behaviorsExplorer),
+    vscode.commands.registerCommand(REFRESH_BEHAVIORS_COMMAND, () => behaviorsExplorer.refresh()),
+  );
+
+  // Language Index sidebar webview (shares world data from World Index)
+  const languageExplorer = new LanguageExplorerProvider(worldExplorer);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider('sharpee.languageExplorer', languageExplorer),
+    vscode.commands.registerCommand(REFRESH_LANGUAGE_COMMAND, () => languageExplorer.refresh()),
   );
 
   // Entity ID autocomplete in TypeScript story files
@@ -404,8 +440,14 @@ export function activate(context: vscode.ExtensionContext): void {
     if (success) {
       statusBarItem.text = `$(pass) Sharpee: Build OK (${storyId})`;
       statusBarItem.backgroundColor = undefined;
-      // Auto-refresh world explorer after successful build
-      worldExplorer.refresh();
+      // Auto-refresh all index panels after successful build
+      worldExplorer.refresh().then(() => {
+        entityExplorer.refresh();
+        actionsExplorer.refresh();
+        traitsExplorer.refresh();
+        behaviorsExplorer.refresh();
+        languageExplorer.refresh();
+      });
     } else {
       statusBarItem.text = `$(error) Sharpee: Build failed (${storyId})`;
       statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
