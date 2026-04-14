@@ -63,6 +63,12 @@
 - Platform vs story sections
 - 1,289 messages (824 platform, 465 story)
 
+### Post-Commit Fix — SonarQube PATH Security
+- SonarQube flagged `cp.execFileSync('grep', ...)` as a PATH security risk
+- Replaced all 6 navigator methods with a shared `source-navigation.ts` utility that uses VS Code's built-in `findInFiles` command — no shell, no PATH
+- All search queries include surrounding quotes (e.g., `'West of House'`) to avoid false positives from comments
+- Extension bumped to v0.8.1
+
 ## Key Decisions
 
 ### 1. introspect() pattern over public getters
@@ -114,12 +120,13 @@ All 5 new panels (Entity, Actions, Traits, Behaviors, Language) share cached wor
 **Story** (1 file):
 - `stories/dungeo/src/index.ts` — region creation and room assignment (15 regions, 175 rooms)
 
-**VS Code extension — new** (5 files):
+**VS Code extension — new** (6 files):
 - `tools/vscode-ext/src/entity-explorer.ts`
 - `tools/vscode-ext/src/actions-explorer.ts`
 - `tools/vscode-ext/src/traits-explorer.ts`
 - `tools/vscode-ext/src/behaviors-explorer.ts`
 - `tools/vscode-ext/src/language-explorer.ts`
+- `tools/vscode-ext/src/source-navigation.ts` — shared click-to-source utility (replaced grep shell-outs)
 
 **VS Code extension — modified** (3 files):
 - `tools/vscode-ext/src/world-explorer.ts` — collapsed regions by default, click-to-source navigation
