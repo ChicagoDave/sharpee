@@ -2,9 +2,37 @@
 
 ## Status
 
-Proposed
+**Abandoned** (2026-04-19) — superseded by decisions recorded in `docs/brainstorm/multiuser/overview.md`.
 
-## Context
+### Why abandoned
+
+This ADR was drafted before the multiuser platform brainstorm concluded. In the course of that brainstorm, the project made several concrete decisions that either invalidate or subsume what this ADR proposed:
+
+1. **Isolation strategy is decided — and is not a pluggable backend.** The platform will execute untrusted `.sharpee` code in a **Deno subprocess with `--allow-none` permissions** (no filesystem, no network egress beyond the platform control plane, no env). Deno's V8-level capability model is a real security boundary that ships for free — no microVM image management, no worker-thread false-security, no multi-backend abstraction to maintain. See the "Running Untrusted `.sharpee` on the Server" and "Filesystem posture" sections of the brainstorm.
+2. **Per-room container/VM isolation is explicitly deferred.** The brainstorm's MVP scope puts Firecracker microVMs, WASM sandboxing, and per-room containers in the "explicitly deferred" bucket with recorded rationale. The "MicroVMBackend" this ADR planned as a future deliverable is not on the roadmap at all — its threat model (public unauthenticated uploads) was deliberately excluded from MVP (stories are operator-preloaded, not user-uploaded).
+3. **"Pluggable backend" is YAGNI here.** The ADR's core design was an abstraction layer (Runtime Host Interface, WorkerBackend / ProcessBackend / MicroVMBackend) intended to postpone a backend choice. The brainstorm made the choice. A message-passing contract between the server and the sandbox still exists — save/restore is an opaque-blob API over that boundary — but it is a direct contract with the Deno sandbox, not a generic backend interface with multiple implementations.
+4. **Worker-thread isolation was never going to ship.** The ADR offered `WorkerBackend` as a "trusted uploader" default, but the brainstorm concluded that Workers are **not a security boundary** (Node's docs say so explicitly; so does this ADR's context section). Offering a non-boundary as the default backend was a latent misstep that the brainstorm's direct decision avoids.
+5. **Deployment model is narrower than this ADR anticipated.** The MVP is a single Docker image with a Node server (PID 1) spawning Deno subprocesses as children — not a server that selects among multiple isolation technologies at deploy time. The per-room-container / per-room-VM path is an acknowledged post-MVP upgrade, not a first-class configuration.
+
+### What survives from this ADR
+
+The ADR's framing of a **message-passing boundary with opaque SAVE/RESTORE blobs** (server persists bytes; runtime never touches disk) is correct and is carried forward verbatim in the brainstorm's save/restore and filesystem-posture decisions. If a future ADR documents the specific Node↔Deno protocol, it should cite the save-blob framing here rather than re-deriving it.
+
+The ADR's **security analysis of `.sharpee` file execution risk** (exfil, forgery, memory exhaustion, cookie theft, etc.) is also correct and is referenced by the brainstorm's "Security Posture of `.sharpee` Files" section. Readers interested in the threat model can still read it here.
+
+### What replaces this ADR
+
+No replacement ADR is planned for v0.1. The implementation contract is narrow enough that:
+
+- The Deno sandbox spec (message types, save-blob protocol, lifecycle signals) belongs in a future engineering doc under `docs/work/multiuser/`, not an ADR.
+- The single-backend decision is already captured in the brainstorm's "Hosting — Decided" and "Running Untrusted `.sharpee` on the Server" sections.
+- If a second isolation backend is ever introduced (post-MVP, e.g. per-room containers for higher-trust workloads), that decision gets its own ADR at that time, not a placeholder now.
+
+The remainder of this document is retained for historical reference only. Do not implement against it.
+
+---
+
+## Context (historical)
 
 Zifmia is Sharpee's story runner, currently deployed as a local runtime in Tauri desktop apps and in the browser. Each deployment hosts a single `.sharpee` story file for a single player.
 

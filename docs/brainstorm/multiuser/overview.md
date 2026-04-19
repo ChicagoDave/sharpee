@@ -588,67 +588,342 @@ Described bluntly: the muted user sits in the room watching everyone else conver
 
 **Escape hatch for truly intractable cases:** the Primary Host can always `delete room` (already decided). That's a room-level nuke rather than a person-level action, but it's available when the situation warrants.
 
+### Flow: Save & Restore
+
+Prior decisions this builds on: saves are room-scoped (one timeline per room), persisted as opaque blobs to server-side SQLite, routed through the server API (story code never touches disk).
+
+**Step 1 — Who can save — Decided (any Command Entrant).**
+
+Any participant holding Command Entrant authority or above (Command Entrant, Co-Host, Primary Host) can trigger a save. No additional gating.
+
+Rationale: save is cheap and reversible. If you're trusted to change game state (enter commands), you're trusted to snapshot it. Matches the single-player IF model — whoever is at the keyboard saves. Adding an extra authority tier for save would be ceremony without payoff.
+
+**Step 2 — Who can restore — Decided (any Command Entrant).**
+
+Same tier as save. Any Command Entrant (and above) can restore the room to any save in its timeline.
+
+Restore is destructive — it discards the current state — but in a beta-test or group-play context, the people entering commands are the people best positioned to decide "let's go back and try that again." Restricting restore to Co-Host would create a bottleneck exactly at the moments when fast iteration matters most (replaying a failed puzzle attempt, recovering from an unintended command). Trust flows with the keyboard.
+
+If restore abuse becomes a real problem in practice, the event log records who restored what — social accountability + operator ability to review is the first line. Harder gates can be added post-MVP if needed.
+
+**Step 3 — Save naming — Decided (auto-named only).**
+
+Saves are named automatically by the platform. No user input at save time.
+
+Format: `{story-slug} — T{turn-number} — {ISO-timestamp}`. Example: `zephyr — T147 — 2026-04-19T14:32:05Z`.
+
+- Zero ceremony. Save is a single click / keystroke with no form, no modal, no text field.
+- Auto-names are unique by construction (timestamp) and informative (turn number gives a sense of progress).
+- No user-supplied labels in MVP. Labels are attractive for beta-test review but add a decision point to every save. The event log already captures which participant triggered each save and surrounds it with the context of recent commands — that provides more context than a hand-typed label would.
+
+Labels can be added post-MVP as an optional field if it turns out users want them. Starting without avoids the feature creeping into the MVP form.
+
+**Step 4 — Idle recycle and saves — Decided (silent recycle).**
+
+When a room hits the 14-day idle timer and is recycled, all saves for that room are cascade-deleted along with the room record, transcript, and chat history. No warning, no notification, no grace period beyond what pinning already provides.
+
+- The platform has no email, no push, no out-of-band notification surface in MVP. Adding one just to warn about recycle would be disproportionate scope.
+- Pinning already exists as the explicit "keep this room alive" action. Anyone who cares about a save/room beyond 14 days can pin it. That's the affordance.
+- A pre-recycle UI warning on the Primary Host's next visit was considered but rejected: if they're not visiting, the warning doesn't land; if they are visiting, `last_activity_at` was just updated and recycle won't fire.
+
+Silent recycle keeps the lifecycle model clean: one timer, one trigger, one action. No partial states.
+
+### Flow: Pin & Delete UX
+
+Prior decisions this builds on: Pin/Unpin and Delete are Primary-Host-only. Pin bypasses the 14-day idle recycle. Delete is immediate, cascades all room data, broadcasts a final "closed by host" message.
+
+**Step 1 — Pin affordance location — Decided (room settings panel).**
+
+Pin lives in a **room settings panel** (a drawer or modal) alongside other Primary-Host-only controls. It is not a header-level toggle.
+
+Rationale:
+
+- Pin is infrequent. Once a campaign room is pinned, it stays pinned for the duration; toggling is rare.
+- Delete lives in the same panel. Grouping destructive and lifecycle actions in one gated surface makes it harder to hit them accidentally.
+- A header icon for a rarely-used action consumes prime UI real estate for little value, and adds a Primary-Host-only affordance to a header that is otherwise uniform across tiers.
+- The settings panel can grow (mute list, participant management, succession nomination override, future additions) without crowding the header.
+
+Pin state is still surfaced elsewhere — a small "pinned" indicator somewhere in the room UI tells participants the room is protected from recycle. The *action* of pinning lives in settings; the *status* of being pinned is ambient.
+
+**Step 2 — Delete confirmation — Decided (type-to-confirm).**
+
+Delete requires the Primary Host to **type the room title** to unlock the Delete button, GitHub-repo-style.
+
+- Dialog reads: `Delete "Beta test for Zephyr v0.3"? This permanently destroys all saves, transcript, chat, and DMs. Type the room title to confirm.`
+- The Delete button is disabled until the typed text matches the room title exactly.
+- Cancel is always available and returns to the room with no changes.
+
+Rationale:
+
+- Delete is **irreversible**. Unlike 14-day silent recycle (predictable, slow, expected), a deliberate delete destroys a live room mid-session. A click-only confirm is too easy to mis-hit, especially from the same settings panel that holds other innocuous actions.
+- The friction is aimed specifically at the "I clicked the wrong thing" failure mode, which is disproportionately costly when the consequence is losing a pinned long-form campaign.
+- Participants already get a broadcast notice, but that's consolation, not prevention — the notice lands after the destructive action has committed.
+
+The earlier lean toward click-only confirm is overturned: 14-day recycle is not an adequate floor for delete-click safety once pinning enters the picture. A pinned multi-week campaign deserves protection against accidental destruction by the same person who pinned it.
+
+**Step 3 — Operator-level recycle override — Decided (config-level default).**
+
+Operators can change the idle-recycle window via platform config. A single declarative setting, not per-room, not an admin UI:
+
+```yaml
+# sharpee-platform.yaml
+rooms:
+  idle_recycle_days: 14   # default; classroom operator might set 90
+```
+
+- Applies to all rooms on the instance. Pinning still works on top of it (pinned rooms never recycle regardless of the setting).
+- No per-room "operator hold" in MVP — that would require an admin CLI or admin UI, neither of which is built.
+- No per-participant config. The operator sets the instance's rhythm; users within that instance work to that rhythm.
+
+Rationale:
+
+- Different operators run very different workloads. A beta-test instance wants short recycle (rooms are one-shot, disk hygiene matters). A classroom instance needs semester-long rooms and shouldn't make students pin. A club running monthly sessions wants month-plus recycle. One default does not fit all.
+- Keeping it to a single config value matches the "small config surface" discipline from the Shape of the Thing section. No nested schema, no per-role overrides, no time-of-day rules.
+- Defers the harder question (per-room operator override, admin UI) to post-MVP when real usage shows whether it's needed.
+
+The config reload story (is it live, does it require restart?) follows whatever the rest of the config does — orthogonal to this decision and handled when the config loader is built.
+
+## MVP Scope
+
+Consolidates every decision made in this brainstorm into an explicit "ships in v0.1" vs. "deferred" contract. Everything in v0.1 has a decision in the sections above; everything deferred has at least one explicit reason recorded.
+
+### Ships in v0.1
+
+#### Deployment & Operations
+- Single Docker image (Node server + Deno binary + SQLite tooling), multi-stage build, slim runtime.
+- Reference `docker-compose.yml` stands up a working instance.
+- Single HTTP/WebSocket port. Operator fronts it with their existing reverse proxy (TLS is the operator's responsibility).
+- Single-container model: Node server as PID 1, Deno subprocesses spawned as children. Security boundary is Deno's capability model, not per-room containers.
+- Config: one declarative YAML file (`/etc/sharpee-platform.yaml`) plus env vars for secrets. Small surface.
+- Persistent volumes: `/data/db` (SQLite), `/data/stories` (preloaded `.sharpee` files), `/etc/sharpee-platform.yaml`.
+- Operator docs: install guide, config reference, backup/restore runbook, upgrade guide.
+- Reference instance (`sharpee.net`) runs the same image as everyone else — no privileged build.
+
+#### Story Handling
+- Stories are preloaded by the operator into the stories directory out-of-band.
+- Platform scans the directory; room-creation form lists available stories as a dropdown.
+- Story runtime executes server-side in a Deno subprocess with `--allow-none` equivalent permissions.
+- **No filesystem access in the story runtime.** Save/restore is server-mediated via opaque blobs.
+- Message framing distinguishes platform content from story-emitted content.
+
+#### Identity & Auth
+- **No user accounts.** No login, no email, no password.
+- Durable session token issued on first join (to the Primary Host at room creation; to other participants after entering the join code and display name).
+- Token stored in browser `localStorage`, scoped to the room URL.
+- Reconnecting with the token preserves role + display name.
+- Losing the token means rejoining as a fresh Participant.
+- Display name: user-chosen nickname, required on join.
+
+#### Rooms: Creation
+- Fully open — anyone reaching the instance URL can create a room.
+- **CAPTCHA-gated**, operator-configurable provider (Turnstile / hCaptcha / Friendly Captcha / similar). Default to a zero-config option.
+- Minimal create-room form: Story (dropdown), Room title (optional, with auto-generated fallback), Display name (required), CAPTCHA.
+- On submit: room created, join code issued, Primary Host token issued scoped to room URL, creator redirected into the room.
+
+#### Rooms: Joining
+- Join via shareable URL (`https://{instance}/r/XYZB-3F56`) or raw code (`XYZB-3F56`). Both paths lead to the same join page.
+- Both URL and code are always visible in the room UI with individual copy buttons.
+- Join form: Display name + CAPTCHA.
+- Every joiner enters as a Participant.
+
+#### Rooms: Lifecycle
+- States: created → active → (pinned | idle-expired | deleted).
+- `last_activity_at` updated on command submission, chat, (re)join.
+- **14-day idle recycle** by default, operator-configurable via `rooms.idle_recycle_days`. Cascade-deletes room record, saves, transcripts, chat, DMs, event log.
+- **Pin** — Primary-Host-only, bypasses idle recycle. Lives in the room settings panel. Pin status surfaced elsewhere in UI (ambient indicator).
+- **Delete** — Primary-Host-only, immediate, irreversible, type-to-confirm (type room title to unlock Delete button). Broadcasts a final "closed by host" message to participants.
+- Join code returns to pool on recycle/delete and may be reissued to a future room.
+
+#### Roles & Authority
+- Four tiers: **Primary Host** → **Co-Host** → **Command Entrant** → **Participant**.
+- **Promotion: strict one-level-down.** Only the Primary Host can create Co-Hosts. Co-Hosts can promote to Command Entrant. Nobody else promotes.
+- **Demotion: Primary-Host-only** at every tier. Deliberate friction.
+- **Cascading succession invariant:** as long as ≥2 people are in the room, there is always exactly 1 Primary Host and ≥1 designated Co-Host successor.
+- Automatic successor nomination on first non-PH join; Primary Host can change successor at any time.
+- Primary Host disconnect: 5-minute grace, then designated successor is promoted.
+- Original Primary Host returning after auto-transfer rejoins as a Participant.
+- "First Participant for auto-elevation" = earliest join time, still currently connected.
+
+#### Input Model: Lock-on-Typing
+- **Lock trigger:** first keystroke in the command input.
+- **Lock release:** on submission, on empty input (backspace-to-empty), on 60-second AFK timeout, on Co-Host force-release.
+- **Live preview:** every room occupant (all tiers) sees the lock holder's keystrokes streaming in real time. Rendered as `Alice is typing: > take swo▮`.
+- Keystroke broadcasts are debounced deltas; not persisted.
+- Other Command Entrants' input fields are disabled while the lock is held.
+- Co-Host force-release is logged to the event log with actor + target.
+- **No attribution in story pane** — commands render as classic single-player IF. Attribution lives in the event log for out-of-band review.
+
+#### Chat
+- Single room-wide chat channel.
+- All joined participants can send chat messages from the moment they join (no unmute ceremony).
+- Chat is separate from the story pane.
+
+#### Private Messages
+- Axis is **Primary Host ↔ any Co-Host only**. No Co-Host ↔ Co-Host. No Command Entrant or Participant DMs.
+- DMs persisted to the session event log as `kind=dm`, cascade-delete with room.
+- UI: Primary Host sees one tab per DM'd Co-Host (lazy). Co-Hosts see one "Primary Host" tab. Command Entrants and Participants see no tabs at all.
+
+#### Moderation
+- **Mute** is the only moderation action. No kick, no ban, no IP-based enforcement.
+- Mute disables outbound chat (and outbound DM, for muted Co-Hosts). Muted user still sees everything, keeps their role, keeps command authority (if they have it).
+- Mute indicator visible to all participants next to the muted user's display name.
+- Authority: Primary Host can mute anyone below; Co-Host can mute Command Entrants and Participants (not other Co-Hosts).
+- Flat unmute: any Primary Host or Co-Host can unmute.
+- Mute persists across disconnect/reconnect; clears on unmute or room recycle.
+- Escape hatch for unmanageable cases: Primary Host deletes the room.
+
+#### Save & Restore
+- Saves are **room-scoped** — one timeline per room, shared by all participants.
+- Any **Command Entrant or above** can save or restore.
+- Auto-named: `{story-slug} — T{turn#} — {ISO-timestamp}`. No user-supplied labels in MVP.
+- Saves persisted as opaque blobs to SQLite (WAL mode).
+- Save/restore triggers logged to event log with triggering participant.
+- Cascade-delete with room on recycle/delete.
+
+#### Session Event Log
+- Single append-only table `session_events (event_id, room_id, participant_id, ts, kind, payload_json)`.
+- `kind` values: `command`, `output`, `chat`, `dm`, `role`, `save`, `restore`, `join`, `leave`, `lifecycle`.
+- Every command (including errors and cancellations), engine output, chat message, DM, role change, mute/unmute, save/restore, join/leave/disconnect/reconnect, and lifecycle event is persisted.
+- Cascade-delete with room. Privacy boundary == room boundary.
+- Persistent "REC" indicator in room UI.
+- Recording-transparency notice shown to every participant on join (covers DMs explicitly, applies equally to Hosts).
+
+### Explicitly Deferred (not in v0.1)
+
+#### User Accounts & Identity
+- User accounts, login, email, password, recovery.
+- Per-user libraries.
+- Cross-room identity.
+- Federation (ActivityPub, Matrix bridge, etc.).
+
+#### Story Catalog
+- Upload UI.
+- Author submission / curation workflow.
+- Per-story validation pipeline beyond what the sandbox provides.
+- Per-user or per-operator story quotas.
+
+#### Moderation & Abuse
+- Kick / ban / IP-based enforcement.
+- Rate limiting beyond the CAPTCHA (deferred to reverse-proxy layer if needed).
+- Raise-hand button for Participants (chat-based signaling is the MVP mechanism).
+- Broadcast DMs (Primary Host → all Co-Hosts as a group).
+- Co-Host ↔ Co-Host DMs.
+- Participant-facing DMs of any kind.
+- Per-room operator override of recycle/moderation (admin CLI or admin UI).
+
+#### UX & Client
+- Mobile / touch-first UI. Explicit non-goal.
+- Collaborative in-flight command editing ("Bob fixes Alice's typo before she submits").
+- Partial-visibility tiers for live preview.
+- Operator-tunable AFK timeout.
+- Theming beyond the shipped defaults.
+
+#### Save/Restore Features
+- User-supplied save labels.
+- Per-participant save stores.
+- Save export / import across rooms.
+- Save naming collisions (n/a — auto-naming is unique by timestamp).
+
+#### Operations & Scaling
+- Per-room container isolation (Docker socket, Kubernetes pod per room).
+- Firecracker microVM isolation (see ADR-152 fate).
+- WASM sandboxing (would require Sharpee runtime port).
+- Pre-recycle warning notifications (requires email/push infrastructure not built).
+- Transcript export tooling.
+- Admin CLI or admin web UI.
+- Horizontal scaling across multiple Node servers.
+- Live config reload beyond whatever the config loader happens to support.
+
+#### Content & Community
+- Competitive landscape survey (docs artifact, not a product feature).
+- Role assessment docs (operator / author / player / host detailed needs).
+- Revenue / business model (N/A — community tool, not commercial product).
+- "Floyd-style" single-story standing deployments (achievable by configuration of the same primitives, not a separate feature).
+
+### Framework & Libraries
+
+Prior commitments: Node.js for the application server (Deno is only the sandbox subprocess runtime); TypeScript end-to-end; SQLite as the persistence layer; single Docker image deployment.
+
+**Web framework — Hono.**
+
+- TS-first, tiny dependency footprint, runtime-agnostic (Node / Deno / Bun / Workers / Edge).
+- Fits the "platform-agnostic, no mandatory cloud service" ethos — the web layer doesn't lock the project to Node if an operator later wants to deploy to Deno Deploy or a Worker runtime.
+- The HTTP surface is small (create-room, join, CAPTCHA verify, static assets, a handful of API endpoints) — Express's ecosystem advantage doesn't buy us much here.
+- Rejected: Express (dated middleware API, slower, no payoff for a small surface), Fastify (close second; would be fine, but Hono's runtime portability is the tiebreaker).
+
+**WebSocket library — `ws` (bare).**
+
+- The primitive most Node WebSocket stacks are built on; Hono's WS helpers will delegate to it under the hood via the Node adapter anyway.
+- We're going to write our own room/broadcast/authority layer regardless: "room" in our domain model carries roles, lock-on-typing arbitration, event-log integration, cascading succession — none of which map cleanly onto a generic library's "channel" primitive.
+- Socket.IO's extra features (transport fallbacks, auto-reconnect) overlap with decisions already made differently (durable session tokens, desktop-only modern browsers with native WebSocket).
+- Rejected: Socket.IO (too opinionated and heavy for our constraints), uWebSockets.js (over-optimized for our throughput — correctness and debuggability win), framework-native WS helpers (fine, but add an indirection without extra value when we're already building the room layer ourselves).
+
+**SQLite driver — `better-sqlite3`.**
+
+- Synchronous API: easier to reason about, easier to audit for correctness. The event log's append semantics are naturally serial; async doesn't buy anything.
+- Native binding rebuilt on `npm install` — standard Docker practice, handled by the multi-stage build.
+- Performance is comfortable at community scale: ~10–20k small JSON rows per 4-hour session is well within what a single Node event loop can absorb synchronously.
+- Rejected: `sqlite3` (older callback-heavy async API), `@libsql/client` (drags in Turso dependency without a payoff for local-first MVP).
+
+**Data access — raw parameterized SQL + repository pattern.**
+
+- No ORM, no query builder in MVP. Each table has a repository module (e.g. `RoomsRepository`, `SessionEventsRepository`, `SavesRepository`) that exposes a small set of named methods (`create`, `findById`, `appendEvent`, `listEventsForRoom`, etc.) backed by prepared statements.
+- All queries are parameterized via `better-sqlite3`'s `.prepare()` API — **no string concatenation into SQL, ever.** SQL injection is foreclosed at the access layer by construction, not by hygiene.
+- Repositories are the unit of persistence concern. Application code depends on the repository interface, not on the driver directly. Swapping the driver (or adding read replicas, adding Turso, moving to Postgres) is a repository-layer change.
+- The schema is tiny (~5 tables: `rooms`, `participants`, `session_events`, `saves`, `config`). A query builder or ORM adds a layer of indirection to debug and learn without reducing the surface materially.
+- Migrations: a simple forward-only migration runner (ordered `.sql` files in a `migrations/` directory, tracked via a `schema_migrations` table). No rollback tooling in MVP — if a migration is wrong, forward-fix.
+- If type friction becomes real (e.g., JSON payload typing on `session_events.payload`), **Kysely** is the lightweight upgrade path — it's a typed query builder with no runtime, and repositories are already the right abstraction to absorb that swap.
+- Rejected: Drizzle (ORM overhead without clear payoff at this schema size), Prisma (heavy, generated client adds build-time complexity), ad-hoc SQL scattered across handlers (violates repository boundary, harder to audit).
+
+### What v0.1 is *not*
+
+- Not a replacement for IFDB or the IFComp website.
+- Not a long-term save archive or IF-transcript publishing platform.
+- Not a general-purpose chat system.
+- Not a Sharpee-exclusive runtime — any story built with the Sharpee toolchain runs, and the same image runs on any operator's box.
+- Not a SaaS. `sharpee.net` is one deployment among many, not the product.
+
 ## Brainstorm Progress
 
 - [x] **Problem & Vision** — signal from intfiction.org, platform framing, desktop-only.
 - [x] **Core Concepts** — rooms, participants, roles, saves, tokens, lifecycle states all defined.
-- [~] **User Activities** — Creating a room: story selection decided (preloaded, no upload). Auth/display name/other fields TBD.
-- [x] **Structural Patterns** — role hierarchy, room lifecycle, idle-and-pin policy.
-- [ ] **Competitive Landscape** — not yet covered.
-- [~] **Tech Stack** — TS/Node/Deno/SQLite/Apache chosen; framework choices (server web layer, client UI) still open.
-- [x] **Architecture** — server-side engine, Deno sandbox subprocess per room, opaque save protocol, thin browser clients.
-- [ ] **Role Assessments** — not yet.
-- [ ] **Thought Exercises** — not yet.
-- [ ] **Revenue & Business Model** — probably N/A (community tool, not product).
-- [ ] **MVP Scope** — not yet.
-- [x] **Open Questions** — tracked below, updated progressively.
+- [x] **User Activities** — create-room, join, play (lock-on-typing), promotion/demotion, disconnect/reconnect, moderation (mute), save/restore, pin/delete all decided.
+- [x] **Structural Patterns** — role hierarchy, cascading succession invariant, room lifecycle, idle-and-pin policy.
+- [ ] **Competitive Landscape** — deferred; docs artifact, not a blocker for MVP.
+- [x] **Tech Stack** — TS/Node/Deno/SQLite/Docker decided; framework choices (Hono / `ws` / `better-sqlite3` / raw SQL + repositories) decided.
+- [x] **Architecture** — server-side engine, Deno subprocess per room with `--allow-none`, opaque save/restore protocol, thin browser clients, session event log.
+- [ ] **Role Assessments** — deferred; not on MVP critical path.
+- [ ] **Thought Exercises** — deferred.
+- [x] **Revenue & Business Model** — N/A (community tool, not product).
+- [x] **MVP Scope** — ships-in-v0.1 vs. deferred contract recorded.
+- [x] **ADR-152 fate** — abandoned; superseded by this brainstorm's isolation decisions.
+- [x] **Open Questions** — all MVP-blocking questions resolved; remaining items are post-MVP.
 
 ## Open Questions
 
-### Session Model
-- What can a plain **Participant** (joined but not a Command Entrant) do? Watch output only? Send chat? Nothing?
-- **Lock trigger precision** — does the lock engage on first keystroke, on focusing the input, or on first non-whitespace character? (Affects UX: focusing-to-see locks others out needlessly; first-keystroke is more forgiving.)
-- **Lock release** — on Enter (submission), yes. Also on a cancel/escape? Also on timeout if the typist goes AFK mid-command? If so, how long?
-- **Delegation revocation** — can a Primary Host demote a Host? Can a Host demote a Command Entrant they didn't promote? (Permission tree governance.)
-- **Kick / ban** — can Hosts remove disruptive Participants? Does a kicked user's join code still work, or do they need a new code?
-- **Primary Host disconnect** — if the Primary Host closes their tab, does the session end? Does authority transfer to a Host? Is there a grace period for reconnection?
+All MVP-blocking session-model, architecture, and identity questions from earlier drafts have been answered in the sections above. The resolved topics are kept under their respective section headings; the summary below captures what's left for future sessions.
 
-### Architecture — Decided
+### Resolved in this brainstorm
+- **Session model** — Participant capabilities, lock trigger (first keystroke), lock release (submit / empty / 60s AFK / Co-Host force), delegation revocation (PH-only demotion), kick/ban (replaced by mute + delete-room), Primary Host disconnect (5-min grace, cascading succession).
+- **Architecture** — server-side engine execution, Deno `--allow-none` subprocess per room, opaque SAVE/RESTORE blob protocol, session event log, filesystem isolation.
+- **Identity** — durable session token in `localStorage`, scoped to room URL; no accounts; display name on join; losing the token = fresh rejoin.
+- **Room pinning & delete** — pin is PH-only (room settings panel), delete is PH-only with type-to-confirm, operator-tunable idle-recycle default.
+- **Platform scope** — general-purpose self-hostable platform; operators configure their instance for their use case; stories preloaded by operator, no upload UI in MVP.
+- **Identity model, story distribution, operator question, moderation/abuse** — all answered by the MVP Scope section.
+- **ADR-152 fate** — abandoned (isolation decision made; single backend; no pluggable abstraction).
 
-**Engine runs on the server.** Browser clients are thin: they send commands up and receive domain events back. All story execution happens on platform infrastructure.
+### Deferred to post-MVP
+These are tracked as explicit "not in v0.1" items in the MVP Scope section and do not block shipping:
 
-This is the platform-as-runtime model. It puts the isolation-of-untrusted-JS problem squarely on the platform.
+- Upload UI, author catalog, per-user libraries, user accounts.
+- Kick / ban / IP-based enforcement; rate-limiting beyond CAPTCHA.
+- Transcript export tooling; save labels; per-participant save stores.
+- Per-room container or microVM isolation; WASM sandboxing.
+- Email / push / ntfy out-of-band notifications.
+- Admin CLI or admin web UI; live config reload guarantees.
+- Mobile / touch UI (explicit non-goal).
+- Competitive landscape survey; role-assessment docs; federation / ActivityPub / Matrix bridge.
+- Raise-hand button for Participants; partial-visibility tiers for live preview; collaborative in-flight command editing.
 
-### Open questions under server-side execution
-- **Isolation strategy.** See "Running Untrusted `.sharpee` on the Server" section. This is the key unresolved technical question.
-- **Chat transport** — same channel as game events, or separate?
-- **Persistence** — do sessions survive everyone disconnecting? Is there a "save room" concept? Is the transcript preserved? Where are saves stored — per-user, per-room, per-story?
-
-### Identity Within a Session — Decided
-
-- Server issues a **durable session token** to each participant on first join (to the Primary Host at room creation, to others after entering the join code).
-- Token is stored in browser `localStorage`, scoped to the room URL.
-- Reconnecting with the token preserves role + display name across refresh/tab close/reopen.
-- Display name: user-chosen nickname on join.
-- No password, no email, no recovery. Losing the token means losing your role — you rejoin as a fresh participant; a Host must re-promote you if desired.
-
-### Room Pinning — Decided
-
-- Primary Host may **pin** a room to bypass the 14-day idle recycle.
-- Motivated by long-form games (e.g. Zork-scale campaigns) where weeks-long hiatus is normal.
-- Pinned rooms persist indefinitely until either (a) the Primary Host unpins and 14 days of idle then elapse, or (b) the Primary Host explicitly deletes it.
-- Pin / unpin is a Primary-Host-only action. Hosts cannot pin.
-
-### Early Delete — Decided
-
-- Primary Host has **full control** to delete a room at any time, even with active participants.
-- Acknowledged social consequence: this can be rude to participants mid-game. The system does not prevent this because the Primary Host's authority is intentionally absolute over their own room.
-- Delete cascades: room record, all saves, transcript, chat history. Join code returns to pool.
-- UX: confirmation dialog before destruction. Broadcast a final "this room has been closed by the host" message to participants before disconnect.
-
-### Platform Scope
-- **Who is the platform for, primarily?** Candidates: authors wanting to publish co-op-enabled stories (audience = players discovering the catalog); players/communities wanting to run their own sessions (audience = hosts bringing their own stories); event organizers running scheduled games. These shape very different UIs and features.
-- **Story distribution onto the platform.** Host uploads a local `.sharpee` file per session? Curated catalog submitted by authors? Both? Is there any vetting?
-- **Identity model.** Accounts for all users, accounts only for Hosts, or pure join-code anonymity? Affects moderation, persistence, and the join UX.
-- **Operator.** Who runs and funds this? Sharpee project? IFTF? Needs to be explicit because funding shapes feature scope.
-- **Moderation and abuse.** What happens when someone opens a room hosting a stalker's story, or runs a harassment campaign via chat, or uploads a `.sharpee` designed to abuse resource limits?
+### Next step (outside this brainstorm)
+Move from brainstorm to implementation planning. Create an implementation plan under `docs/work/multiuser/` that decomposes the MVP Scope into buildable phases (e.g. repo scaffolding → SQLite schema + repositories → HTTP layer + room creation → WebSocket layer + joining → Deno sandbox integration → lock-on-typing → role/succession → moderation → Docker packaging).
