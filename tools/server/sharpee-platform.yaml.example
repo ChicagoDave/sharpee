@@ -1,0 +1,31 @@
+# Sharpee Multiuser Server — operator configuration template.
+#
+# This file is read at startup. Environment variables (see .env.example) override
+# any value set here. Path: /etc/sharpee-platform.yaml in the reference Docker image.
+#
+# Referenced by ADR-153 (Multiuser Sharpee Server).
+
+server:
+  port: 8080                         # HTTP + WebSocket listening port (single port).
+
+storage:
+  db_path: /data/db/sharpee.db       # SQLite database file (WAL mode enabled at startup).
+  stories_dir: /data/stories         # Directory of operator-preloaded .sharpee files.
+
+rooms:
+  idle_recycle_days: 14              # Cascade-delete rooms with no activity this long.
+                                     # Pinned rooms bypass recycle entirely.
+
+captcha:
+  provider: none                     # turnstile | hcaptcha | friendly | none
+  site_key: ""                       # public site key (shown to the browser)
+  secret_key: ""                     # server-side secret for token verification
+  bypass: false                      # TEST ONLY — skips verification when true.
+
+sandbox:
+  # Per-room Deno subprocess limits. Enforced by Deno flags + OS rlimits.
+  memory_mb: 256                     # max-old-space-size for V8 inside the sandbox.
+  turn_timeout_ms: 5000              # wall-clock cap per COMMAND → OUTPUT round-trip.
+
+logging:
+  level: info                        # trace | debug | info | warn | error

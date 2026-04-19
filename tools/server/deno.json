@@ -1,0 +1,16 @@
+{
+  "// comment": "Deno configuration for the story-execution sandbox (src/sandbox/deno-entry.ts).",
+  "// runtime": "The sandbox is launched by the Node server as: deno run --allow-none --v8-flags=--max-old-space-size=256 src/sandbox/deno-entry.ts",
+  "// isolation": "--allow-none revokes filesystem, network, env, and subprocess capabilities. The only IO is stdio (JSON newline-delimited) back to the Node parent.",
+  "imports": {
+    "@sharpee/engine": "../../packages/engine/dist/index.js",
+    "@sharpee/core": "../../packages/core/dist/index.js"
+  },
+  "compilerOptions": {
+    "lib": ["deno.ns", "esnext"],
+    "strict": true
+  },
+  "tasks": {
+    "sandbox": "deno run --allow-none src/sandbox/deno-entry.ts"
+  }
+}
