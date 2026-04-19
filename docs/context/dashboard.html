@@ -3,577 +3,413 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sharpee — Project Dashboard</title>
+<title>Sharpee — DevArch Dashboard</title>
 <style>
   :root {
     --bg: #0f172a;
-    --bg-card: #1e293b;
-    --bg-card-alt: #162032;
+    --bg-elev: #1e293b;
+    --bg-card: #1a2438;
     --border: #334155;
     --text: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-dim: #64748b;
+    --text-dim: #94a3b8;
+    --text-mute: #64748b;
     --accent: #f59e0b;
-    --accent-dim: #b45309;
+    --accent-soft: #fbbf24;
     --green: #22c55e;
     --yellow: #eab308;
     --red: #ef4444;
     --gray: #6b7280;
     --blue: #3b82f6;
-    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', monospace;
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
-
   @media (prefers-color-scheme: light) {
     :root {
       --bg: #f8fafc;
+      --bg-elev: #ffffff;
       --bg-card: #ffffff;
-      --bg-card-alt: #f1f5f9;
       --border: #e2e8f0;
-      --text: #1e293b;
-      --text-muted: #475569;
-      --text-dim: #94a3b8;
+      --text: #0f172a;
+      --text-dim: #475569;
+      --text-mute: #94a3b8;
       --accent: #d97706;
-      --accent-dim: #f59e0b;
-      --green: #16a34a;
-      --yellow: #ca8a04;
-      --red: #dc2626;
-      --gray: #6b7280;
-      --blue: #2563eb;
+      --accent-soft: #f59e0b;
     }
   }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: var(--font-mono);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg);
     color: var(--text);
-    line-height: 1.6;
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    line-height: 1.5;
+    padding: 2rem 1rem;
+    min-height: 100vh;
   }
-
-  h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; }
-
-  h1 {
-    font-size: 1.75rem;
-    color: var(--accent);
-    margin-bottom: 0.25rem;
-  }
-
-  h2 {
-    font-size: 1.1rem;
-    color: var(--text);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
+  .container { max-width: 1100px; margin: 0 auto; }
+  header {
     border-bottom: 2px solid var(--accent);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
   }
-
-  .header-left { flex: 1; min-width: 280px; }
-
-  .header-meta {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.5rem;
-  }
-
-  .header-meta a {
-    color: var(--blue);
-    text-decoration: none;
-  }
-
-  .badges {
+  header .title {
     display: flex;
-    gap: 0.5rem;
+    align-items: baseline;
+    gap: 1rem;
     flex-wrap: wrap;
-    margin-top: 0.75rem;
   }
-
+  h1 {
+    color: var(--accent);
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+  .version-tag {
+    color: var(--text-dim);
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.85rem;
+  }
+  .badges { display: inline-flex; gap: 0.4rem; margin-left: auto; }
   .badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.6rem;
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
     border-radius: 4px;
-    font-family: var(--font-mono);
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-  }
-
-  .badge-cap { background: var(--accent-dim); color: #fff; }
-  .badge-ver { background: var(--border); color: var(--text-muted); }
-
-  .header-right {
-    text-align: right;
-    font-size: 0.75rem;
+    background: var(--bg-elev);
     color: var(--text-dim);
+    border: 1px solid var(--border);
   }
-
-  /* Pulse Cards */
+  .badge.cap { background: rgba(245, 158, 11, 0.15); color: var(--accent-soft); border-color: var(--accent); }
+  .updated {
+    color: var(--text-mute);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  section { margin-bottom: 2.5rem; }
+  h2 {
+    font-size: 1.1rem;
+    color: var(--accent-soft);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
   .pulse-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    margin-bottom: 2rem;
   }
-
   .pulse-card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 1.25rem;
-    text-align: center;
+    padding: 1rem 1.25rem;
   }
-
   .pulse-card .label {
     font-size: 0.7rem;
-    color: var(--text-dim);
+    color: var(--text-mute);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.4rem;
   }
-
   .pulse-card .value {
     font-size: 1.5rem;
     font-weight: 700;
-    font-family: var(--font-sans);
+    color: var(--text);
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   }
-
   .pulse-card .sub {
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: var(--text-dim);
     margin-top: 0.25rem;
   }
-
-  .text-green { color: var(--green); }
-  .text-yellow { color: var(--yellow); }
-  .text-red { color: var(--red); }
-  .text-accent { color: var(--accent); }
-  .text-blue { color: var(--blue); }
-  .text-muted { color: var(--text-muted); }
-
-  /* Sections */
-  .section {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  /* Tables */
+  .pulse-card.green .value { color: var(--green); }
+  .pulse-card.yellow .value { color: var(--yellow); }
+  .pulse-card.red .value { color: var(--red); }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.875rem;
   }
-
-  thead th {
+  th, td {
+    padding: 0.6rem 0.85rem;
     text-align: left;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 2px solid var(--border);
-    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: var(--bg-elev);
+    color: var(--accent-soft);
+    font-weight: 600;
+    text-transform: uppercase;
     font-size: 0.7rem;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-
-  tbody td {
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-  }
-
-  tbody tr:last-child td { border-bottom: none; }
-
-  tbody tr:hover { background: var(--bg-card-alt); }
-
-  /* Status badges */
-  .status {
+  tr:last-child td { border-bottom: none; }
+  td.mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; color: var(--text-dim); }
+  .status-pill {
     display: inline-block;
-    font-size: 0.65rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 3px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .status-complete { background: rgba(34,197,94,0.15); color: var(--green); }
-  .status-incomplete { background: rgba(234,179,8,0.15); color: var(--yellow); }
-  .status-blocked { background: rgba(239,68,68,0.15); color: var(--red); }
-  .status-current { background: rgba(234,179,8,0.15); color: var(--yellow); }
-  .status-pending { background: rgba(107,114,128,0.15); color: var(--gray); }
-  .status-new { background: rgba(59,130,246,0.15); color: var(--blue); }
-
-  /* Test Health Bar */
-  .grade-bar {
-    display: flex;
-    height: 32px;
-    border-radius: 6px;
-    overflow: hidden;
-    margin: 1rem 0;
-  }
-
-  .grade-bar .segment {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
     font-weight: 700;
-    color: #fff;
-    font-family: var(--font-sans);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
   }
-
-  .grade-bar .seg-green { background: var(--green); }
-  .grade-bar .seg-yellow { background: var(--yellow); color: #1e293b; }
-  .grade-bar .seg-red { background: var(--red); }
-
-  .grade-stats {
-    display: flex;
-    gap: 2rem;
-    font-size: 0.85rem;
-    justify-content: center;
-  }
-
-  .grade-stat { display: flex; align-items: center; gap: 0.4rem; }
-  .grade-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-  }
-
-  /* Plan items */
-  .plan-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.4rem 0;
-    font-size: 0.85rem;
-  }
-
-  .plan-item .step-num {
-    color: var(--text-dim);
-    min-width: 1.5rem;
-    text-align: right;
-  }
-
-  /* Archive list */
-  .archive-list {
+  .status-DONE, .status-COMPLETE { background: rgba(34,197,94,0.18); color: var(--green); }
+  .status-CURRENT, .status-IN_PROGRESS { background: rgba(234,179,8,0.18); color: var(--yellow); }
+  .status-PENDING { background: rgba(107,114,128,0.18); color: var(--gray); }
+  .status-INCOMPLETE, .status-BLOCKED { background: rgba(239,68,68,0.18); color: var(--red); }
+  ul.archive-list, ul.blocker-list {
     list-style: none;
-    font-size: 0.8rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0;
   }
-
-  .archive-list li {
-    padding: 0.35rem 0;
+  ul.archive-list li, ul.blocker-list li {
+    padding: 0.5rem 1rem;
     border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
     display: flex;
-    gap: 0.75rem;
+    justify-content: space-between;
+    gap: 1rem;
   }
-
-  .archive-list li:last-child { border-bottom: none; }
-
-  .archive-date {
-    color: var(--text-dim);
-    min-width: 6rem;
+  ul.archive-list li:last-child, ul.blocker-list li:last-child { border-bottom: none; }
+  ul.archive-list .date, ul.blocker-list .session-id {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    color: var(--text-mute);
+    font-size: 0.75rem;
+    flex-shrink: 0;
   }
-
-  /* Two-column layout for smaller sections */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  @media (max-width: 768px) {
-    body { padding: 1rem; }
-    .two-col { grid-template-columns: 1fr; }
-    .pulse-grid { grid-template-columns: repeat(2, 1fr); }
-    .header { flex-direction: column; }
-    .header-right { text-align: left; }
-  }
-
-  .goal-text {
-    max-width: 500px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .commit-line {
-    font-size: 0.8rem;
-    padding: 0.3rem 0;
-    display: flex;
-    gap: 0.75rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .commit-line:last-child { border-bottom: none; }
-  .commit-hash { color: var(--accent); min-width: 5rem; }
-  .commit-date { color: var(--text-dim); min-width: 6.5rem; }
-
-  .blocker-clear {
-    text-align: center;
+  .blocker-list li { flex-direction: column; gap: 0.25rem; }
+  .blocker-list .header-row { display: flex; justify-content: space-between; gap: 1rem; }
+  .blocker-list .desc { color: var(--text-dim); font-size: 0.8rem; }
+  .empty-state {
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
     padding: 1.5rem;
-    color: var(--green);
-    font-size: 1rem;
-    font-weight: 600;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 0.9rem;
   }
+  .test-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  .test-stat-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .test-stat .num {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .test-stat .lab {
+    font-size: 0.7rem;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  footer {
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 0.75rem;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
+<div class="container">
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
+<header>
+  <div class="title">
     <h1>Sharpee</h1>
-    <div class="header-meta">
-      Parser-based Interactive Fiction authoring tool &middot;
-      <a href="https://github.com/ChicagoDave/sharpee">ChicagoDave/sharpee</a>
-    </div>
+    <span class="version-tag">v0.9.2-beta.1 · DevArch 1.8.0</span>
     <div class="badges">
-      <span class="badge badge-ver">DevArch 1.4.0</span>
-      <span class="badge badge-cap">base</span>
+      <span class="badge cap">base</span>
     </div>
   </div>
-  <div class="header-right">
-    Last updated: 2026-04-06 23:25 CST<br>
-    Branch: <strong>main</strong><br>
-    Last commit: <code>429078f4</code>
-  </div>
-</div>
+  <div class="updated">Generated 2026-04-19 12:52 CDT · branch <strong>main</strong> · <a href="https://github.com/ChicagoDave/sharpee">github.com/ChicagoDave/sharpee</a></div>
+</header>
 
-<!-- HEALTH PULSE -->
-<div class="pulse-grid">
-  <div class="pulse-card">
-    <div class="label">Last Commit</div>
-    <div class="value text-accent">Today</div>
-    <div class="sub">429078f4 — Merge PR #71</div>
+<section>
+  <h2>Health Pulse</h2>
+  <div class="pulse-grid">
+    <div class="pulse-card green">
+      <div class="label">Last Commit</div>
+      <div class="value">just now</div>
+      <div class="sub mono">ac523102 — multiuser server Phase 4</div>
+    </div>
+    <div class="pulse-card">
+      <div class="label">Commits This Week</div>
+      <div class="value">37</div>
+      <div class="sub">across main</div>
+    </div>
+    <div class="pulse-card">
+      <div class="label">Active Sessions</div>
+      <div class="value">7</div>
+      <div class="sub">+ 103 archived</div>
+    </div>
+    <div class="pulse-card yellow">
+      <div class="label">Open Blockers</div>
+      <div class="value">2</div>
+      <div class="sub">incomplete sessions (no hard blocker)</div>
+    </div>
   </div>
-  <div class="pulse-card">
-    <div class="label">Commits This Week</div>
-    <div class="value text-blue">56</div>
-    <div class="sub">139 in last 30 days</div>
-  </div>
-  <div class="pulse-card">
-    <div class="label">Sessions Tracked</div>
-    <div class="value text-accent">81</div>
-    <div class="sub">6 active + 75 archived</div>
-  </div>
-  <div class="pulse-card">
-    <div class="label">Blockers</div>
-    <div class="value text-green">Clear</div>
-    <div class="sub">No open blockers</div>
-  </div>
-</div>
+</section>
 
-<!-- TEST HEALTH -->
-<div class="section">
-  <h2>Test Health</h2>
-  <div class="grade-bar">
-    <div class="segment seg-green" style="flex: 177;">177 GREEN</div>
-  </div>
-  <div class="grade-stats">
-    <div class="grade-stat">
-      <span class="grade-dot" style="background: var(--green);"></span>
-      <strong>177</strong> GREEN
-    </div>
-    <div class="grade-stat">
-      <span class="grade-dot" style="background: var(--yellow);"></span>
-      <strong>0</strong> YELLOW
-    </div>
-    <div class="grade-stat">
-      <span class="grade-dot" style="background: var(--red);"></span>
-      <strong>0</strong> RED
-    </div>
-  </div>
-  <div style="text-align:center; margin-top:0.75rem; font-size:0.75rem; color: var(--text-muted);">
-    177 test files graded via <code>scripts/grade-tests.sh</code> &middot; All tests at GREEN quality
-  </div>
-</div>
-
-<!-- CURRENT PLAN -->
-<div class="section">
+<section>
   <h2>Current Plan</h2>
-  <div style="text-align: center; padding: 1rem; color: var(--text-dim); font-size: 0.9rem;">
-    No active plan &mdash; last plan completed (VisibilityBehavior Deduplication / Scope Audit)
-  </div>
-</div>
-
-<!-- TWO COLUMN: Recent Commits + Open Blockers -->
-<div class="two-col">
-
-  <!-- RECENT COMMITS -->
-  <div class="section">
-    <h2>Recent Commits</h2>
-    <div class="commit-line">
-      <span class="commit-hash">429078f4</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Merge PR #71 — testing mitigation</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">00bc714e</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Phase 8 — test grading + Stryker</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">925cf586</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Phases 5-7 — consolidate, 60 tests</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">17f6a0b2</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Phase 3+4 — 23 mutation tests, cleanup</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">e30cddaa</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Phase 1+2 session summary</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">3b497d53</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Phase 2 — fix 2 src bugs, 2 test bugs</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">1dd23d3a</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Complete test inventory — 3,164 tests</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">cf7018be</span>
-      <span class="commit-date">Apr 06</span>
-      <span>Phase 1 — remove 167 dead tests</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">37a5a3b2</span>
-      <span class="commit-date">Apr 04</span>
-      <span>ADR-142 + ADRs 144-146 NPC chain</span>
-    </div>
-    <div class="commit-line">
-      <span class="commit-hash">34edb85c</span>
-      <span class="commit-date">Apr 04</span>
-      <span>Bump versions to 0.9.106</span>
-    </div>
-  </div>
-
-  <!-- OPEN BLOCKERS -->
-  <div class="section">
-    <h2>Open Blockers</h2>
-    <div class="blocker-clear">All clear</div>
-    <div style="font-size: 0.75rem; color: var(--text-dim); text-align: center;">
-      No INCOMPLETE or BLOCKED sessions with unresolved issues.<br>
-      DevArch gate: <code>session-init</code> (normal)
-    </div>
-  </div>
-
-</div>
-
-<!-- SESSION HISTORY -->
-<div class="section">
-  <h2>Session History <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: 400;">(6 active + 75 archived = 81 total)</span></h2>
+  <p style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;">
+    <strong>docs/context/plan.md</strong> — bundled multi-issue plan covering ISSUE-064, ISSUE-065, ISSUE-070, ISSUE-054.
+  </p>
   <table>
     <thead>
-      <tr>
-        <th>Date</th>
-        <th>Branch</th>
-        <th>Status</th>
-        <th>Goals</th>
-      </tr>
+      <tr><th style="width:10%">Phase</th><th>Title</th><th style="width:14%">Issue</th><th style="width:12%">Status</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">1</td><td>Extract shared container-walk helper in VisibilityBehavior</td><td class="mono">ISSUE-064</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">2</td><td>Scope system audit and recommendation</td><td class="mono">ISSUE-065</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">3</td><td>Scope system resolution (rename + dead-code cleanup)</td><td class="mono">ISSUE-065</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">4</td><td>Delegate StandardScopeResolver.canSee() to world.canSee()</td><td class="mono">ISSUE-064</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">5</td><td>Platform — computed description getter + trait fields</td><td class="mono">ISSUE-070</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">6</td><td>Story — migrate Dungeo openable/inflatable mutations</td><td class="mono">ISSUE-070</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">7</td><td>Replace wt-09 teleports (Up a Tree route)</td><td class="mono">ISSUE-054</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">8</td><td>Replace wt-10 teleports (Engravings Cave)</td><td class="mono">ISSUE-054</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">9</td><td>Replace wt-13 teleports (Forest canary, Treasure Room)</td><td class="mono">ISSUE-054</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+      <tr><td class="mono">10</td><td>Replace wt-16 teleports (Gallery and return)</td><td class="mono">ISSUE-054</td><td><span class="status-pill status-DONE">Done</span></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.8rem;color:var(--text-mute);margin-top:0.5rem;">
+    All 10 phases of the bundled plan are done. The active workstream has shifted to the multiuser server (separate plan: <code>docs/work/multiuser/plan-20260419-multiuser-server.md</code> — 14 phases, Phases 0–4 complete).
+  </p>
+</section>
+
+<section>
+  <h2>Test Health</h2>
+  <div class="test-card">
+    <div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:0.4rem;">No aggregate test grader detected. Per-package counts from the project profile:</div>
+    <div class="test-stat-row">
+      <div class="test-stat"><div class="num">190</div><div class="lab">Test Files</div></div>
+      <div class="test-stat"><div class="num">8,211</div><div class="lab">expect() Assertions</div></div>
+      <div class="test-stat"><div class="num">123</div><div class="lab">Transcript Tests</div></div>
+      <div class="test-stat"><div class="num" style="color:var(--green);">65</div><div class="lab">tools/server tests (new)</div></div>
+    </div>
+    <div style="font-size:0.75rem;color:var(--text-mute);margin-top:0.75rem;">
+      Stack: Vitest 3.x · Stryker 9.x mutation testing · Behavior Statement (DOES/WHEN/BECAUSE/REJECTS WHEN) discipline enforced for new code.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Session History</h2>
+  <table>
+    <thead>
+      <tr><th style="width:18%">Date</th><th style="width:10%">Branch</th><th style="width:14%">Status</th><th>Goal</th></tr>
     </thead>
     <tbody>
       <tr>
-        <td>2026-04-06 23:25</td>
-        <td>main</td>
-        <td><span class="status status-new">New</span></td>
-        <td class="goal-text">Current session</td>
+        <td class="mono">2026-04-19 12:52</td>
+        <td class="mono">main</td>
+        <td><span class="status-pill status-CURRENT">Current</span></td>
+        <td>Just initialized — no goals recorded yet</td>
       </tr>
       <tr>
-        <td>2026-04-06 15:00</td>
-        <td>testing-mitigation</td>
-        <td><span class="status status-complete">Complete</span></td>
-        <td class="goal-text">Phase 8 — test grading infra + Stryker mutation config</td>
+        <td class="mono">2026-04-19 02:23</td>
+        <td class="mono">main</td>
+        <td><span class="status-pill status-PENDING">Stub</span></td>
+        <td>Empty stub (no goals filled)</td>
       </tr>
       <tr>
-        <td>2026-04-06 11:04</td>
-        <td>testing-mitigation</td>
-        <td><span class="status status-complete">Complete</span></td>
-        <td class="goal-text">Phases 5-7 — consolidate tests, behavioral tests, coverage gaps</td>
+        <td class="mono">2026-04-19 01:11</td>
+        <td class="mono">main</td>
+        <td><span class="status-pill status-INCOMPLETE">Incomplete</span></td>
+        <td>Multiuser Sharpee Server — Phases 0–4 (scaffolding through Deno sandbox), 65 new tests</td>
       </tr>
       <tr>
-        <td>2026-04-06 03:38</td>
-        <td>testing-mitigation</td>
-        <td><span class="status status-incomplete">Incomplete</span></td>
-        <td class="goal-text">Phases 3+4 — mutation tests, fix/remove broken tests</td>
+        <td class="mono">2026-04-19 00:41</td>
+        <td class="mono">main</td>
+        <td><span class="status-pill status-COMPLETE">Complete</span></td>
+        <td>Finish multiuser brainstorm + write ADR-153 (implementation-ready)</td>
       </tr>
       <tr>
-        <td>2026-04-06 03:35</td>
-        <td>testing-mitigation</td>
-        <td><span class="status status-incomplete">Incomplete</span></td>
-        <td class="goal-text">Full test suite audit — 3,164 tests inventoried, Phases 1+2</td>
+        <td class="mono">2026-04-18 04:27</td>
+        <td class="mono">main</td>
+        <td><span class="status-pill status-INCOMPLETE">Incomplete</span></td>
+        <td>Multiuser brainstorm continuation — User Activity flows, role/DM/moderation decisions</td>
       </tr>
       <tr>
-        <td>2026-04-04 23:57</td>
-        <td>main</td>
-        <td><span class="status status-complete">Complete</span></td>
-        <td class="goal-text">ADR-142 resolved + ADR-144, 145, 146 created (NPC chain)</td>
+        <td class="mono">2026-04-18 03:31</td>
+        <td class="mono">main</td>
+        <td><span class="status-pill status-COMPLETE">Complete</span></td>
+        <td>ADR-152 review (graded 6/13, abandoned), reset to multiuser brainstorm</td>
+      </tr>
+      <tr>
+        <td class="mono">2026-04-16 14:06</td>
+        <td class="mono">main</td>
+        <td><span class="status-pill status-COMPLETE">Complete</span></td>
+        <td>C# port feasibility analysis + TS 6 upgrade risk assessment</td>
       </tr>
     </tbody>
   </table>
-</div>
+  <p style="font-size:0.75rem;color:var(--text-mute);margin-top:0.4rem;">Showing 7 active sessions. 103 sessions in <code>docs/context/archive/</code>.</p>
+</section>
 
-<!-- ARCHIVED PLANS -->
-<div class="section">
+<section>
   <h2>Archived Plans</h2>
   <ul class="archive-list">
+    <li><span>plan-prompt-system</span><span class="date">undated</span></li>
+    <li><span>plan-20260409-1707</span><span class="date">2026-04-09</span></li>
+    <li><span>plan-20260409-0224</span><span class="date">2026-04-09</span></li>
+    <li><span>plan-20260404 — ADR-143 directions</span><span class="date">2026-04-04</span></li>
+    <li><span>plan-20260331-1521</span><span class="date">2026-03-31</span></li>
+    <li><span>plan-20260329-2221</span><span class="date">2026-03-29</span></li>
+    <li><span>plan-20260328-0029</span><span class="date">2026-03-28</span></li>
+    <li><span>plan-20260328-0006</span><span class="date">2026-03-28</span></li>
+    <li><span>plan-20260326-1958</span><span class="date">2026-03-26</span></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Open Blockers</h2>
+  <ul class="blocker-list">
     <li>
-      <span class="archive-date">2026-04-04</span>
-      <span>ADR-143 — Location-Relative Direction Vocabularies</span>
+      <div class="header-row">
+        <strong>Multiuser server — implementation incomplete</strong>
+        <span class="session-id">session-20260419-0111</span>
+      </div>
+      <div class="desc">Phases 0–4 of 14 done (scaffolding → Deno sandbox). Clean suspension between phases — no hard blocker. Next: Phase 5 lock-on-typing arbitration. Real engine integration in <code>deno-entry.ts</code> still a stub.</div>
     </li>
     <li>
-      <span class="archive-date">2026-03-31</span>
-      <span>Fix: Capability Dispatch Message Key Double-Prefix Bug</span>
-    </li>
-    <li>
-      <span class="archive-date">2026-03-29</span>
-      <span>ISSUE-064/065 — VisibilityBehavior Dedup + Scope Audit</span>
-    </li>
-    <li>
-      <span class="archive-date">2026-03-28</span>
-      <span>ISSUE-064/065 — VisibilityBehavior Dedup + Scope Audit (v2)</span>
-    </li>
-    <li>
-      <span class="archive-date">2026-03-28</span>
-      <span>ISSUE-064/065 — VisibilityBehavior Dedup + Scope Audit (v1)</span>
-    </li>
-    <li>
-      <span class="archive-date">2026-03-26</span>
-      <span>ISSUE-063 Phase 1 — Generic getTrait, Eliminate as-any Casts</span>
-    </li>
-    <li>
-      <span class="archive-date">&mdash;</span>
-      <span>GamePrompt + GDT Input Mode</span>
+      <div class="header-row">
+        <strong>Multiuser brainstorm continuation</strong>
+        <span class="session-id">session-20260418-0427</span>
+      </div>
+      <div class="desc">Marked INCOMPLETE but resolved by subsequent session 20260419-0041 which closed brainstorm and produced ADR-153. Effectively closed.</div>
     </li>
   </ul>
-</div>
+  <p style="font-size:0.75rem;color:var(--text-mute);margin-top:0.5rem;">DevArch gate state: <code>session-init</code>. No type-error or build-failure blockers detected.</p>
+</section>
 
-<!-- FOOTER -->
-<div style="text-align: center; font-size: 0.7rem; color: var(--text-dim); margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-  Generated by DevArch Dashboard &middot; Sharpee &middot; 2026-04-06
-</div>
+<footer>
+  Sharpee · DevArch dashboard · adapt with <code>/dashboard</code>
+</footer>
 
+</div>
 </body>
 </html>
