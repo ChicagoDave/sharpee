@@ -92,15 +92,17 @@ The solution space therefore has to address **shared or passable input authority
 ### Roles
 
 - **Primary Host** — started the session. Highest authority. Can promote others.
-- **Host** — a participant the Primary Host (and possibly other Hosts) has delegated authority to.
-- **Command Entrant** — a participant Hosts have granted permission to enter game commands. All Hosts are implicitly Command Entrants.
-- **Participant** — any other joined user. Presumably can observe and chat but not issue game commands. (TBD — needs confirmation.)
+- **Co-Host** — a participant the Primary Host (and possibly other Co-Hosts) has delegated authority to. Can promote/demote others below their own level.
+- **Command Entrant** — a participant Co-Hosts have granted permission to enter game commands. All Co-Hosts are implicitly Command Entrants.
+- **Participant** — any other joined user. Default role on join.
 
-Authority flows top-down: Primary Host → Hosts → Command Entrants → Participants. Delegation is an explicit action by someone with higher authority.
+Authority flows top-down: Primary Host → Co-Hosts → Command Entrants → Participants. Delegation is an explicit action by someone with higher authority.
+
+(Terminology note: "Co-Host" replaces the earlier "Host" term to remove ambiguity with Primary Host and to match the common videoconference model.)
 
 ### Input Model: Lock-on-Typing
 
-Command Entrants (all Hosts plus delegated users) can enter commands with no turn mechanic or queueing — it's free-for-all.
+Command Entrants (all Co-Hosts plus delegated users) can enter commands with no turn mechanic or queueing — it's free-for-all.
 
 **The exception:** as soon as any Command Entrant begins entering a command, **all other inputs are locked out** until that command completes. This prevents collisions while avoiding the ceremony of explicit turn-passing. In effect, the "controller" is held only for the duration of a single command's composition, then released automatically.
 
@@ -268,11 +270,329 @@ The IF community has 40 years of "download story, load into interpreter, safe" t
 
 - **Mobile support.** Desktop/laptop browsers only. Do not constrain the UI, input model, or screen layout for small-screen or touch-first use. Players on phones will need to join the Discord/Zoom call for voice and use a laptop for the game itself.
 
+## User Activities
+
+Walking the concrete flows to surface remaining gaps. Decisions recorded as they are made.
+
+### Flow: Creating a Room
+
+**Step 1 — Story selection — Decided (MVP).**
+
+Stories are **preloaded on the server** by the operator. No upload UI in the MVP. The Primary Host, at room creation, picks from a list of stories the operator has already installed on the instance.
+
+- Operator puts `.sharpee` files in the platform's stories directory out-of-band (SSH, git pull, rsync — whatever they use to manage their server). The platform scans that directory for available stories.
+- The room-creation UI lists available stories. User picks one.
+- No per-user libraries, no upload form, no catalog submission flow. All deferred past MVP.
+- Consequences: no story-upload abuse surface in MVP; no quota or storage management for end users; the "who can publish a story on this instance" question collapses into "who has shell access to the server" — i.e., the operator. This is fine for beta-test, club, and classroom instances.
+
+Deferred: per-user libraries (requires accounts), operator-curated catalog with author submission (requires a moderation workflow), direct upload (requires validation, quotas, and eventually the isolation story to be airtight).
+
+**Step 2 — Who can create a room — Decided.**
+
+**Room creation is fully open — no accounts required.** Anyone who reaches the instance URL can create a room. The creator becomes Primary Host by virtue of creating.
+
+**A CAPTCHA gates room creation** to deter automated abuse (bot-driven room spam, sandbox-exhaustion attempts, etc.). This is the only anti-abuse control on creation in the MVP.
+
+- CAPTCHA specifics deferred: hCaptcha, Turnstile, Friendly Captcha, or similar — operator choice via config. Default to a zero-config option (Turnstile's no-sign-up mode or an equivalent) so self-hosters aren't forced to register with a third party to stand up an instance.
+- No rate-limiting beyond the CAPTCHA in MVP. If per-IP abuse becomes an issue post-MVP, add a rate limiter at the reverse proxy or in the app.
+- No "creator account" concept. The creator's authority over their room is derived from the durable session token issued at creation time (same mechanism as for joining Participants), not from any persisted identity.
+
+Consequence: the entire platform MVP ships without an auth system. Room creation, joining, and reconnection all ride on the join-code + durable-token pattern already decided. This is a significant scope simplification.
+
+**Step 3 — Create-room form fields — Decided.**
+
+Minimal form:
+
+- **Story** — dropdown of stories preloaded by the operator. Required.
+- **Room title** — free-text, shown to joiners ("Beta test for Zephyr v0.3", "Club night: Zork I"). Required or optional is a small UX choice; keep optional with a generated fallback (e.g. `{story-name} — {date}`) to avoid blocking the flow.
+- **Display name** — the creator's nickname for this session. Required.
+- **CAPTCHA** — required.
+- **Submit** — creates the room, issues a join code, issues a Primary Host durable session token (scoped to the room URL), redirects the creator into the room.
+
+Saves stay on the server (already decided) — nothing about saves appears on the create-room form. Save/restore is an in-room action available once the room exists.
+
+No other fields on the MVP form.
+
+### Flow: Joining a Room
+
+**Step 1 — Join code handoff — Decided.**
+
+After room creation, the Primary Host's room view surfaces **both** a shareable URL and the raw join code, each with its own copy button:
+
+- **URL** — `https://{instance}/r/XYZB-3F56`. Click-to-join; pastes well into Discord, Slack, email. The primary sharing affordance, visually prominent.
+- **Code** — `XYZB-3F56`, shown as secondary text. Optimized for voice-dictation over Zoom or in-person — easy to read aloud, easy to type into a join form on the instance home page.
+
+Both forms resolve to the same room. Clicking the URL lands the joiner on the room's join page (where they enter display name + CAPTCHA). Entering the code on the instance home page does the same.
+
+The creator can re-surface both at any time from within the room (there is no "get the link again" friction — it's always visible in the room's header/sidebar).
+
+**Step 2 — Default role on join — Decided.**
+
+**Every joiner enters as a Participant.** No configuration at room creation, no per-instance toggle. Uniform default.
+
+Promotion to Co-Host or Command Entrant is an explicit action taken by someone with higher authority (Primary Host, or a Co-Host acting within their delegation scope). This keeps the create-room form minimal and makes the authority model predictable: joining never grants command authority, only the explicit promotion action does.
+
+Consequences:
+- **Beta-test use case**: the author (Primary Host) promotes testers to Command Entrant as they arrive. One click per tester. Acceptable ceremony for the value of predictable authority.
+- **Classroom / demo use case**: teacher leaves students as Participants. No ceremony; the default is correct.
+- **Club night**: Primary Host promotes the drivers to Command Entrant or Co-Host. Observers stay as Participants.
+
+This resolves the earlier open question about "configurable default" — no config needed.
+
+**Step 3 — Participant capabilities — Decided.**
+
+A plain Participant can:
+
+- **See story output** in real time (same view as everyone else in the room).
+- **See chat** — all chat messages are visible to all participants regardless of role.
+- **Send chat messages** — freely, from the moment they join. No unmute ceremony, no moderation gate. Matches voice-call norms.
+
+A plain Participant cannot:
+
+- Enter game commands (requires Command Entrant or above).
+- Promote, demote, kick, or pin (requires Co-Host or Primary Host).
+
+Promotion requests are **informal** — a Participant who wants to drive just asks in chat ("can I take a turn?") and a Co-Host or the Primary Host promotes them. No explicit "raise hand" affordance in MVP. If chat-based signaling proves too noisy in practice, a raise-hand button is a small post-MVP addition.
+
+### Flow: Playing (Lock-on-Typing Mechanics)
+
+This is where the core differentiator lives — the lock-on-typing input model — and several precision questions remain open.
+
+**Step 1 — Lock trigger — Decided.**
+
+The lock engages **on the first keystroke** in the command input field, not on focus.
+
+- Focusing the field is a free action — anyone can click into the input to see where the cursor lands or to read the prompt area without locking out other Command Entrants.
+- The first character typed signals real intent to compose a command. That is when the lock engages and propagates to all other Command Entrants' clients.
+- "First non-whitespace" was considered and rejected as overkill — accidental space presses are rare, and the extra rule complicates the implementation.
+
+There is a small race window between keystroke-on-typist-A and lock-arrival-on-typist-B, during which both could begin typing. This is acceptable: the server arbitrates by timestamp on first keystroke, and the loser's local input is rolled back with a brief "{name} got there first" indicator. The window is small enough (single round-trip latency) that genuine collisions will be rare.
+
+**Step 2 — Lock release — Decided.**
+
+The lock releases under any of:
+
+- **Submission.** Enter pressed; command goes to the engine; lock releases.
+- **Empty input.** If the typist clears the field back to empty (by backspacing, by selecting and deleting, by Esc-clears-field, however), the lock releases immediately. Predictable rule: input empty ⇒ no lock.
+- **AFK timeout (60 seconds).** If the typist makes no keystroke for 60 seconds while still holding the lock with non-empty input, the server auto-releases. The typist's draft is preserved locally (not lost), but other Command Entrants are now free to grab the lock. If the original typist returns and starts typing again, they re-acquire the lock normally — racing fairly with anyone else.
+- **Co-Host force-release.** Any Co-Host (or Primary Host) sees a "release lock" affordance whenever someone else holds the lock. Used for genuinely stuck or disruptive situations. Logged to the session event log (with actor + target) for accountability.
+
+60 seconds was chosen as a balance: long enough that a Command Entrant can think mid-command without losing the floor, short enough that walking away doesn't strand the room. Operator-tunable post-MVP if it proves wrong; not configurable in MVP.
+
+**Step 3 — Lock visibility — Decided (live preview).**
+
+When a Command Entrant holds the lock, **everyone else sees their keystrokes in real time**. Other Command Entrants' input fields show:
+
+```
+Alice is typing:  > take swo▮
+```
+
+…with the field disabled (no cursor, no input) until the lock releases.
+
+Rationale: the platform exists specifically because screen-share + Discord is awkward for IF. Live preview turns the locked period into shared design space — the room can backseat-drive in chat ("no, the troll first!") in real time, which is exactly the social interaction the platform is meant to enable. Anything less than live preview leaves the platform marginally better than screen-share rather than meaningfully better.
+
+Implementation notes (deferred but flagged):
+
+- Keystroke broadcasts are debounced (e.g. 50ms) and sent only as deltas — not raw key events. Cheap on the wire even for fast typists.
+- Keystrokes are **not** persisted to the session event log — only the final submitted command is. The event log captures intent (the submitted text) and outcome (engine response), not composition noise.
+- The lock holder can still see their own field normally; the broadcast is one-way.
+- No support for collaborative editing of the in-flight command (no "Bob can fix Alice's typo before she submits"). One person owns the keyboard at a time; others can suggest in chat.
+
+**Step 4 — Live preview audience — Decided.**
+
+**Everyone in the room** sees the live preview, regardless of role. Participants and Command Entrants alike see "Alice is typing: > take swo▮" with the keystrokes streaming in real time.
+
+Rationale: the room sees what the room sees. Participants can already chat freely; giving them visibility into in-flight commands lets them suggest meaningfully ("ask Alice to check inventory first"). For the beta-test use case, the watching author benefits from seeing the tester's hesitation and revisions in real time — that texture is part of the data.
+
+No partial-visibility tier. The only thing role determines about the input area is whether you can type, not whether you can watch.
+
+**Step 5 — Command attribution in the story pane — Decided.**
+
+**No attribution in the rendered story pane.** Every submitted command renders as classic single-player IF:
+
+```
+> take sword
+Taken.
+```
+
+No "— Alice" suffix, no "Alice:" prefix, no color-coding by typist. The story pane preserves the feel of reading an IF transcript, not a multi-user chat log.
+
+Attribution is **not** lost — it lives in the **session event log**, which records `participant_id` on every `kind=command` row. Out-of-band review (transcript export for beta-test analysis, classroom grading, moderation audit) can render with full attribution by joining the event log against the participant table. But the in-the-moment reading experience is clean.
+
+This keeps the two concerns cleanly separated:
+
+- **Story pane** = immersive IF experience. Presentational.
+- **Session event log** = structured record of who did what. Analytical.
+
+Export tooling (not MVP) can render either style — anonymous transcript for sharing-as-IF-recording, or attributed transcript for review.
+
+### Flow: Promotion & Demotion
+
+**Step 1 — Promotion authority — Decided (strict one-level-down).**
+
+Each tier can only grant the tier immediately below its own:
+
+- **Primary Host** promotes Participants (or Command Entrants) to **Co-Host**. This is the Primary Host's unique privilege — no one else can create Co-Hosts.
+- **Co-Host** promotes Participants to **Command Entrant**. Cannot create peer Co-Hosts.
+- **Command Entrant** cannot promote anyone.
+- **Participant** cannot promote anyone.
+
+Consequences:
+
+- The **Co-Host tier is guarded by the Primary Host** and cannot expand without their action. This preserves the Primary Host's authority as the single source of "who is trusted here."
+- A Co-Host managing tester churn (promote new arrivals to Command Entrant as they join a beta session) does not require Primary Host intervention — the common case stays friction-free.
+- Promoting a Participant directly to Co-Host is allowed (Primary Host skips the Command-Entrant step). Co-Host inherits Command Entrant implicitly, as already specified.
+
+This is more restrictive than Zoom's model but matches the "Primary Host's room" framing already established elsewhere (delete, pin, recycle are all Primary-Host-only).
+
+**Step 2 — Demotion authority — Decided (Primary-Host-only, with deliberate friction).**
+
+**Only the Primary Host can demote anyone, at any tier.**
+
+- A Co-Host who promoted a Participant to Command Entrant **cannot reverse their own grant**. If that Command Entrant turns out to be disruptive, the Co-Host must go to the Primary Host and ask for the demotion.
+- A Co-Host cannot demote another Co-Host (obvious — the Primary Host guards that tier per the promotion rule).
+- A Co-Host cannot demote a Command Entrant another Co-Host promoted.
+
+This is **intentional friction**. The rationale:
+
+- **Promotion is a social act, not an administrative one.** A Co-Host granting Command Entrant authority is vouching for that person. If the vouch turns out to be wrong, the path forward is a conversation with the Primary Host, not a silent revoke. Accountability stays at the tier that granted the authority.
+- **Prevents Co-Host ping-pong.** Without this rule, two Co-Hosts could promote/demote the same person in a loop. The rule collapses that dynamic — only the Primary Host can revoke.
+- **Preserves Primary Host's authority as ultimate arbiter.** Consistent with the existing model where delete, pin, and Co-Host promotion are all Primary-Host-only.
+
+**New requirement surfaced: Private Messages.**
+
+The demotion rule works only if Co-Hosts can reach the Primary Host privately. Asking for a demotion in the public room chat ("Hey, can you demote Bob?") is socially clumsy and leaks moderation discussion to the target. So the platform needs a DM channel.
+
+This is a new feature for MVP — previously chat was modeled as a single room-wide channel. DM scope, UI, and persistence details still TBD (separate sub-question below).
+
+**Step 3 — DM scope — Decided (minimal axis only).**
+
+DMs are available **only on the Primary Host ↔ Co-Host axis**:
+
+- Primary Host ↔ any Co-Host. Bidirectional.
+- No Co-Host ↔ Co-Host DMs.
+- No DMs involving Command Entrants or Participants.
+- No broadcast DM to all Co-Hosts as a group (at least not in MVP).
+
+Rationale:
+
+- The feature exists to serve one specific need — a Co-Host asking the Primary Host for a demotion without leaking the discussion to the target. That need is satisfied entirely by the Co-Host ↔ Primary Host axis.
+- Everything else (Co-Host coordination, Participant-to-host appeals, cross-tier chat) expands moderation surface without clear benefit. Those conversations can happen in the room chat (for non-sensitive matters) or out-of-band (for sensitive matters).
+- Zero Participant-facing DM surface means zero Participant-to-Participant harassment vector from the platform. A major safety win for operators running open-access instances.
+
+A Co-Host who wants to coordinate with another Co-Host uses the room chat — the moderation discussion is by design visible to the Primary Host and to other Co-Hosts. Only demotion requests (which target a specific person and shouldn't leak) need the private axis.
+
+Post-MVP widening is cheap if a real need emerges. Starting narrow is the safer default.
+
+**Step 4 — DM persistence and recording transparency — Decided.**
+
+**All DMs are persisted** to the session event log alongside everything else (commands, chat, role changes, save/restore). `kind=dm` rows record both endpoints, timestamp, and content. DMs cascade-delete with the room.
+
+**Recording is transparent to all participants — including Hosts.** On joining a room, every participant sees a clearly worded notice (one-time per session, dismissible but acknowledged):
+
+> **This session is recorded.** Everything in this room is logged: every command, every chat message, every direct message between Primary Host and Co-Hosts, every role change. Logs persist for the lifetime of the room and can be reviewed by the Primary Host. **Be on good behavior — this includes Hosts and Co-Hosts. Your DMs are not exempt.**
+
+The notice exists to:
+
+- Set expectations honestly. There is no "off-the-record" tier in this platform.
+- Apply social pressure to moderators themselves — Co-Hosts and Primary Hosts know that their private demotion discussions are part of the same audit trail as everything else. Discourages bad-faith moderation.
+- Give Participants confidence that abuse can be reviewed.
+
+A persistent "REC" indicator stays visible somewhere in the room UI for the duration of the session, reinforcing the notice without being intrusive.
+
+**UI:**
+
+- **Primary Host** sees a "Room" tab plus one tab per Co-Host they've DM'd with (tabs appear lazily as DM threads are opened).
+- **Co-Hosts** see a "Room" tab plus a single "Primary Host" tab.
+- **Command Entrants and Participants** see no tabs — just the room channel. The DM axis is not visible to them at all (they have no reason to know about it; the channel switcher's absence is itself the affordance).
+
+### Flow: Disconnect & Reconnect
+
+**Step 1 — Seat-holding policy by tier — Decided.**
+
+Different tiers, different policies:
+
+| Tier             | On disconnect                                                                                  |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| Participant      | Seat held indefinitely. Token reconnects them with role + display name preserved, anytime.     |
+| Command Entrant  | Same — seat held indefinitely.                                                                 |
+| Co-Host          | Same — seat held indefinitely.                                                                 |
+| Primary Host     | Seat held during a grace period; on expiry, **authority auto-transfers** to a Co-Host.          |
+
+**Rationale.** The durable session token's promise — "reconnecting preserves role and display name" — holds forever for everyone except the Primary Host. Treating non-Primary-Host disconnects uniformly keeps the model simple: a transient network blip, a closed laptop overnight, or a deliberate return three days later all behave the same way.
+
+The Primary Host case is special because the room is **moderation-blocked** without a Primary Host (only the Primary Host can demote, pin, delete, or promote to Co-Host). Holding the room indefinitely with no Primary Host present means moderation requests stack up unanswered. So Primary Host disconnect triggers an auto-transfer to a Co-Host after a grace period, restoring the room's moderation capability.
+
+The original Primary Host returning after the transfer reconnects as a Co-Host (their token is still valid; their tier is updated). They no longer own the room — the new Primary Host does.
+
+**Step 2 — Primary Host transfer mechanics — Decided (nomination + cascading succession).**
+
+The platform maintains a continuity invariant: **the room always has exactly one Primary Host and at least one nominated successor Co-Host**, so long as at least one person is present.
+
+**Mandatory nomination.** The Primary Host is **required** to pick a specific Co-Host as their designated successor. This is not optional — the platform forces the nomination (UI prompts until a successor exists). Additional Co-Hosts may be promoted beyond the successor, but one Co-Host at all times is the named heir.
+
+**Succession triggers.** The nominated Co-Host becomes Primary Host when either:
+
+- The Primary Host is **not present** when the session is next "picked up" (i.e., the room resumes after a period with no connected Primary Host), or
+- The Primary Host **disconnects or goes idle for 5 minutes** during an active session.
+
+5 minutes is short on purpose — for a live IF session, a 5-minute absence already feels like an outage, and handing moderation to a present successor restores the room quickly.
+
+**Cascading succession.** When the designated Co-Host is promoted into the Primary Host slot (or leaves for any reason), the successor slot is refilled automatically: **the first Participant in the room is auto-elevated to Co-Host** and becomes the new designated successor. The chain continues indefinitely — each time the moderation slot vacates, the platform promotes the next person in line.
+
+This means: as long as anyone is in the room, the room has a Primary Host and a Co-Host. Moderation never stalls for lack of people.
+
+**Original Primary Host returning.** They reconnect as a Participant by default (they've fallen out of the chain). A Co-Host or the new Primary Host may re-elevate them if desired. This is a deliberate reset — the chain moved on without them, and rejoining doesn't reinstate lost authority.
+
+**Step 3 — Nomination timing and succession order — Decided.**
+
+**Nomination is automatic on first join.** The very first participant to join after the Primary Host is auto-designated as the successor Co-Host. The Primary Host sees a passive notice ("Alice joined and is now your designated successor — click to change."). No blocking modals, no warning banners — the room always has a successor from the moment a second person arrives.
+
+The Primary Host can change the designated successor at any time by promoting a different participant to Co-Host and marking them as successor. Additional Co-Hosts beyond the designated successor may also be promoted (same one-level-down promotion rule as before).
+
+**"First Participant" for auto-elevation** means: **earliest join time, still present in the room**. Offline participants are not eligible — if the earliest joiner has disconnected, the next-earliest still-connected participant is elevated. This avoids promoting absent people who may never return, and it keeps the chain walking through the room's actively-present members.
+
+Join timestamps are recorded on first join for this purpose. The "still present" check uses the current connection state, not the token's validity — a participant whose tab is closed is "not present" even though their token remains valid.
+
+If no participants are currently present (only the Primary Host is in the room), succession doesn't fire — there's nothing to succeed into. The platform's invariant holds whenever the room has ≥2 people in it.
+
+### Flow: Moderation — Mute (No Kick)
+
+**Decided — Mute is the moderation hammer; there is no kick.**
+
+The platform does not support kicking or banning participants in MVP. Instead, **Primary Host and Co-Hosts can mute any lower-tier participant**, which disables that participant's ability to send chat messages. They remain in the room, retain their session token, keep their role, and continue to see story output and incoming chat in real time — they simply cannot contribute to the chat channel.
+
+Described bluntly: the muted user sits in the room watching everyone else converse while unable to respond. Cruel and effective — the social visibility of being muted is part of the deterrent, and it preserves presence so that false-positive mutes don't become "you've been ejected from the session" events.
+
+**Scope of mute:**
+
+- **Affects:** room chat (outbound). Muted user cannot post to the public chat channel.
+- **Does not affect:** ability to watch story output, ability to see chat, ability to enter game commands if they hold Command Entrant (gameplay isn't the abuse vector being addressed), ability to DM the Primary Host (mute is about the room chat surface, not private moderation channels).
+- **Muted user's experience:** when they try to type into chat, their input field shows "You've been muted" and rejects the send. They can still see everything.
+- **Other participants' experience:** a mute indicator (e.g., a muted-speaker icon) appears next to the muted user's display name in the participant list. Visible to everyone, reinforcing the social shame.
+
+**Authority:**
+
+- Primary Host can mute anyone below their tier.
+- Co-Host can mute Command Entrants and Participants.
+- Co-Host **cannot** mute another Co-Host (same guard-the-tier logic as demotion — only Primary Host can touch Co-Hosts).
+- Command Entrants and Participants cannot mute anyone.
+
+**Unmute:** any Primary Host or Co-Host can unmute any muted participant (flat authority on unmute — doesn't need ownership tracking; the forgiveness action is low-stakes).
+
+**Persistence:** mute is a per-participant flag persisted with the room. It survives disconnect/reconnect — reconnecting a muted user reconnects them muted. Mute clears when the participant is unmuted by a Host, or when the room is recycled/deleted.
+
+**All mute actions are recorded in the session event log** (`kind=role`, payload distinguishes mute/unmute), same as promotions/demotions. Accountability for moderator actions.
+
+**Why no kick?** Kick opens a family of hard problems (token invalidation, re-entry prevention, IP bans, shared-network false positives) without clearly solving a need that mute doesn't already cover. For community-scale tools with social accountability, mute is enough. If an operator needs kick/ban later, it's a post-MVP addition.
+
+**Escape hatch for truly intractable cases:** the Primary Host can always `delete room` (already decided). That's a room-level nuke rather than a person-level action, but it's available when the situation warrants.
+
 ## Brainstorm Progress
 
 - [x] **Problem & Vision** — signal from intfiction.org, platform framing, desktop-only.
 - [x] **Core Concepts** — rooms, participants, roles, saves, tokens, lifecycle states all defined.
-- [ ] **User Activities** — next up.
+- [~] **User Activities** — Creating a room: story selection decided (preloaded, no upload). Auth/display name/other fields TBD.
 - [x] **Structural Patterns** — role hierarchy, room lifecycle, idle-and-pin policy.
 - [ ] **Competitive Landscape** — not yet covered.
 - [~] **Tech Stack** — TS/Node/Deno/SQLite/Apache chosen; framework choices (server web layer, client UI) still open.
