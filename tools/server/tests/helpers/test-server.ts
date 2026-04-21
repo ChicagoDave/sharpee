@@ -54,6 +54,8 @@ export interface BuildTestServerOptions {
   stories?: string[];
   /** Override arguments passed to the sandbox spawn. Appended to the stub path. */
   sandboxArgs?: string[];
+  /** Forward to createWsServer — lets tests shrink the AFK sweep for E2E timing. */
+  afkTimerOptions?: import('../../src/ws/afk-timer.js').AfkTimerOptions;
 }
 
 /** Launch an HTTP+WS server backed by :memory: SQLite and a temp stories dir. */
@@ -109,6 +111,7 @@ export async function buildTestServer(
     sessionEvents,
     connections,
     roomManager,
+    afkTimerOptions: opts.afkTimerOptions,
   });
 
   const server = await new Promise<ReturnType<typeof serve>>((resolve) => {

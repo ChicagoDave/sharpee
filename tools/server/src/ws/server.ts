@@ -3,7 +3,7 @@
  *
  * Public interface: {@link createWsServer}, {@link WsDeps}, {@link WsServerHandle}.
  * Bounded context: real-time presence, chat, story-output push (ADR-153
- * Interface Contracts; Decision 15).
+ * Interface Contracts; Decisions 7, 15).
  *
  * URL scheme: `/ws/:room_id`. The client opens the socket to that path and
  * immediately sends `{ kind: 'hello', token }`. The server validates the
@@ -12,6 +12,13 @@
  *
  * A `hello` must arrive within {@link HELLO_TIMEOUT_MS} of connect; otherwise
  * the socket is closed with `4003 / hello_timeout`.
+ *
+ * Phase 5 adds four dispatch targets beyond `submit_command`:
+ *   - `draft_delta`  → live-typing broadcast + lock acquisition
+ *   - `release_lock` → voluntary release
+ *   - `force_release`→ authority release
+ * plus a server-owned {@link AfkTimer} that sweeps idle holders every
+ * {@link AfkTimerOptions.intervalMs} ms.
  */
 
 import type { IncomingMessage } from 'node:http';
@@ -28,6 +35,11 @@ import { createConnectionManager, type ConnectionManager } from './connection-ma
 import { handleHello } from './handlers/hello.js';
 import { handleDisconnect } from './handlers/presence.js';
 import { handleSubmitCommand } from './handlers/submit-command.js';
+import { handleDraftDelta } from './handlers/draft-delta.js';
+import { handleReleaseLock } from './handlers/release-lock.js';
+import { handleForceRelease } from './handlers/force-release.js';
+import { createLockManager, type LockManager } from './lock-manager.js';
+import { createAfkTimer, type AfkTimer, type AfkTimerOptions } from './afk-timer.js';
 import type { RoomManager } from '../rooms/room-manager.js';
 
 /** How long a freshly-connected socket has to deliver the hello frame. */
@@ -46,6 +58,13 @@ export interface WsDeps {
    * If omitted, a fresh one is created.
    */
   connections?: ConnectionManager;
+  /**
+   * Externally-constructed LockManager. If omitted, a fresh one is created.
+   * Tests may inject a lock manager backed by a mock clock.
+   */
+  locks?: LockManager;
+  /** Optional AFK sweep options; lets tests shrink the interval / threshold. */
+  afkTimerOptions?: AfkTimerOptions;
   /** Optional for Phase 3-only wiring; required once submit_command is routed. */
   roomManager?: RoomManager;
 }
@@ -53,6 +72,8 @@ export interface WsDeps {
 export interface WsServerHandle {
   readonly wss: WebSocketServer;
   readonly connections: ConnectionManager;
+  readonly locks: LockManager;
+  readonly afkTimer: AfkTimer;
   handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void;
   close(): Promise<void>;
 }
@@ -99,10 +120,20 @@ function sendMsg(ws: WebSocket, msg: ServerMsg): void {
  *
  * The caller is responsible for wiring the host HTTP server's `upgrade`
  * event to this handle's `handleUpgrade`.
+ *
+ * Side effect: the returned handle has already started its AFK sweep timer.
+ * Call `handle.close()` to stop it during shutdown or test teardown.
  */
 export function createWsServer(deps: WsDeps): WsServerHandle {
   const wss = new WebSocketServer({ noServer: true });
   const connections = deps.connections ?? createConnectionManager();
+  const locks = deps.locks ?? createLockManager();
+  const afkTimer = createAfkTimer(
+    { locks, connections, sessionEvents: deps.sessionEvents },
+    deps.afkTimerOptions ?? {}
+  );
+  afkTimer.start();
+
   const pending = new WeakMap<WebSocket, PendingSocket>();
   const socketRoom = new WeakMap<WebSocket, string>();
 
@@ -173,6 +204,49 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
             participants: deps.participants,
             connections,
             roomManager: deps.roomManager,
+            locks,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'draft_delta') {
+        handleDraftDelta(
+          {
+            participants: deps.participants,
+            connections,
+            locks,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'release_lock') {
+        handleReleaseLock(
+          {
+            participants: deps.participants,
+            connections,
+            locks,
+          },
+          ws,
+          actor
+        );
+        return;
+      }
+
+      if (frame.kind === 'force_release') {
+        handleForceRelease(
+          {
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            connections,
+            locks,
           },
           ws,
           actor,
@@ -184,7 +258,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
       sendMsg(ws, {
         kind: 'error',
         code: 'not_implemented',
-        detail: `frame kind ${(frame as { kind: string }).kind} not handled in phase 4`,
+        detail: `frame kind ${(frame as { kind: string }).kind} not handled in phase 5`,
       });
     });
 
@@ -195,6 +269,13 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
 
       const meta = connections.unregisterSocket(ws);
       if (meta) {
+        // If the disconnecting socket held the lock, release it so the next
+        // typist in the room can acquire. Broadcast only if a release
+        // actually happened.
+        const released = locks.release(meta.room_id, meta.participant_id);
+        if (released) {
+          connections.broadcast(meta.room_id, { kind: 'lock_state', holder_id: null });
+        }
         handleDisconnect(
           {
             db: deps.db,
@@ -226,6 +307,8 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
   return {
     wss,
     connections,
+    locks,
+    afkTimer,
     handleUpgrade(req, socket, head) {
       const roomId = parseRoomIdFromUrl(req.url);
       if (!roomId) {
@@ -237,6 +320,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
       });
     },
     async close() {
+      afkTimer.stop();
       await new Promise<void>((resolve) => wss.close(() => resolve()));
     },
   };

@@ -56,6 +56,9 @@ describe('submit_command → story_output', () => {
     server = await buildTestServer({ stories: ['zork'] });
     const { host, hostClient, guestClient } = await openBothSockets(server);
 
+    // Phase 5: submit_command requires the sender to be the current lock
+    // holder. Acquire the lock via a draft_delta before submitting.
+    hostClient.send({ kind: 'draft_delta', seq: 1, text: 'look' });
     hostClient.send({ kind: 'submit_command', text: 'look' });
 
     const hostOutput = await hostClient.waitFor(
@@ -97,6 +100,8 @@ describe('submit_command → story_output', () => {
     });
     const { hostClient, guestClient } = await openBothSockets(server);
 
+    // Phase 5: acquire lock first (see note above).
+    hostClient.send({ kind: 'draft_delta', seq: 1, text: 'look' });
     hostClient.send({ kind: 'submit_command', text: 'look' });
 
     const crashMsg = await hostClient.waitFor(
