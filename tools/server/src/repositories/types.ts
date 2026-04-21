@@ -40,7 +40,7 @@ export type EventPayload =
   | { kind: 'dm'; to_participant_id: string; text: string }
   | {
       kind: 'role';
-      op: 'promote' | 'demote' | 'mute' | 'unmute' | 'nominate';
+      op: 'promote' | 'demote' | 'mute' | 'unmute' | 'nominate' | 'force_release';
       target_participant_id: string;
       from_tier?: Tier;
       to_tier?: Tier;
