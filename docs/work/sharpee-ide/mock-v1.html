@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sharpee IDE — Mock v1</title>
+<style>
+  :root {
+    --bg: #1e1f26;
+    --bg-alt: #262832;
+    --bg-raised: #2d2f3a;
+    --bg-input: #171821;
+    --border: #3a3c48;
+    --border-strong: #4a4d5c;
+    --fg: #d8d9e0;
+    --fg-dim: #8e90a0;
+    --fg-faint: #5c5f6d;
+    --accent: #89b4fa;
+    --accent-alt: #cba6f7;
+    --ok: #a6e3a1;
+    --warn: #f9e2af;
+    --err: #f38ba8;
+    --rail-bg: #16171d;
+    --rail-icon: #6c6f80;
+    --rail-icon-active: #cdd6f4;
+    --play-bg: #13141a;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace;
+    --ui: -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 13px/1.4 var(--ui);
+    display: grid;
+    grid-template-rows: 28px 1fr 22px;
+    grid-template-columns: 100%;
+    overflow: hidden;
+  }
+
+  /* ---------- Title bar ---------- */
+  .titlebar {
+    background: var(--rail-bg);
+    color: var(--fg-dim);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .titlebar .project-name { color: var(--fg); font-weight: 500; }
+  .titlebar .sep { color: var(--fg-faint); }
+  .titlebar .menu { display: flex; gap: 14px; margin-left: 24px; }
+  .titlebar .menu span { cursor: default; }
+  .titlebar .menu span:hover { color: var(--fg); }
+
+  /* ---------- Main 3-panel layout ---------- */
+  .main {
+    display: grid;
+    grid-template-columns: 40px 260px 1fr 320px;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Left rail */
+  .rail {
+    background: var(--rail-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 10px;
+    gap: 2px;
+  }
+  .rail button {
+    width: 40px;
+    height: 40px;
+    border: 0;
+    background: transparent;
+    color: var(--rail-icon);
+    cursor: pointer;
+    font-size: 18px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rail button.active {
+    color: var(--rail-icon-active);
+  }
+  .rail button.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--accent);
+  }
+  .rail button:hover:not(.active) { color: var(--fg); }
+  .rail .spacer { flex: 1; }
+
+  /* ---------- Project panel ---------- */
+  .project {
+    background: var(--bg-alt);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .project .section-title {
+    padding: 10px 14px 6px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .project .section-title .badge {
+    font-size: 9px;
+    color: var(--fg-faint);
+    background: var(--bg-raised);
+    padding: 1px 6px;
+    border-radius: 8px;
+    letter-spacing: 0;
+  }
+  .project .tree { overflow-y: auto; flex: 1; padding-bottom: 20px; }
+  .project .tree ul { list-style: none; margin: 0; padding: 0; }
+  .project .node {
+    padding: 3px 14px 3px 20px;
+    cursor: default;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .project .node:hover { background: rgba(255,255,255,0.03); }
+  .project .node.active { background: rgba(137,180,250,0.12); color: var(--fg); }
+  .project .node.folder { color: var(--fg); font-weight: 500; }
+  .project .node.folder .chev { color: var(--fg-dim); }
+  .project .node.leaf { color: var(--fg-dim); font-weight: 400; padding-left: 34px; }
+  .project .node .icon { width: 14px; text-align: center; font-size: 11px; opacity: 0.85; }
+  .project ul.nested { padding-left: 14px; }
+  .project .dep-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 14px 3px 20px;
+    color: var(--fg-dim);
+  }
+  .project .dep-row:hover { background: rgba(255,255,255,0.03); }
+  .project .dep-row .pkg { font-family: var(--mono); font-size: 11px; }
+  .project .dep-row .ver { color: var(--fg-faint); font-family: var(--mono); font-size: 10px; }
+  .project .dep-row .open { color: var(--fg-faint); font-size: 10px; cursor: pointer; }
+  .project .dep-row:hover .open { color: var(--accent); }
+
+  /* ---------- Editor ---------- */
+  .editor {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .tabs {
+    display: flex;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+    min-height: 32px;
+  }
+  .tab {
+    padding: 8px 16px;
+    color: var(--fg-dim);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    cursor: default;
+  }
+  .tab.active { background: var(--bg); color: var(--fg); border-top: 2px solid var(--accent); padding-top: 6px; }
+  .tab .close { color: var(--fg-faint); margin-left: 6px; font-size: 14px; }
+  .tab.active .close { color: var(--fg-dim); }
+  .breadcrumbs {
+    padding: 4px 14px;
+    background: var(--bg);
+    color: var(--fg-faint);
+    font-size: 11px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+  }
+  .breadcrumbs .sep { color: var(--fg-faint); margin: 0 6px; }
+
+  .code {
+    flex: 1;
+    overflow: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 12px 0 20px;
+    background: var(--bg);
+  }
+  .code .ln {
+    display: flex;
+    white-space: pre;
+  }
+  .code .ln:hover { background: rgba(255,255,255,0.02); }
+  .code .gutter {
+    color: var(--fg-faint);
+    width: 48px;
+    text-align: right;
+    padding-right: 14px;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .code .src { white-space: pre; }
+  .kw { color: #cba6f7; }
+  .id { color: #89b4fa; }
+  .fn { color: #89dceb; }
+  .str { color: #a6e3a1; }
+  .num { color: #f9e2af; }
+  .cmt { color: var(--fg-faint); font-style: italic; }
+  .op { color: #f5c2e7; }
+  .punc { color: var(--fg-dim); }
+  .prop { color: #f5e0dc; }
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.3em;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.2; } }
+
+  /* Inline trait-hint bubble */
+  .hint {
+    display: block;
+    background: var(--bg-raised);
+    border-left: 2px solid var(--accent);
+    padding: 8px 12px;
+    margin: 4px 72px 4px 60px;
+    font-family: var(--ui);
+    font-size: 11px;
+    color: var(--fg-dim);
+    border-radius: 0 4px 4px 0;
+  }
+  .hint strong { color: var(--fg); }
+  .hint code { font-family: var(--mono); color: var(--accent); }
+
+  /* ---------- Play panel ---------- */
+  .play {
+    background: var(--play-bg);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .play .play-header {
+    padding: 8px 14px;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--fg-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .play .play-header .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 8px var(--ok);
+  }
+  .play .play-header .sep { flex: 1; }
+  .play .play-header button {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--fg-dim);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .play .play-header button:hover { color: var(--fg); }
+  .transcript {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    color: #e8e9ef;
+  }
+  .transcript .room-title { color: #f5c2e7; font-weight: 600; }
+  .transcript .prose { color: #cdd6f4; margin-bottom: 10px; }
+  .transcript .prompt { color: var(--fg-faint); }
+  .transcript .cmd { color: var(--accent); }
+  .transcript .msg { color: #cdd6f4; margin-bottom: 10px; }
+  .input-row {
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 8px 14px;
+    gap: 8px;
+    background: var(--bg-input);
+  }
+  .input-row .chev { color: var(--fg-faint); font-family: var(--mono); }
+  .input-row input {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    outline: 0;
+    color: var(--fg);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  /* ---------- Statusbar ---------- */
+  .statusbar {
+    background: var(--accent);
+    color: #11131a;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+  }
+  .statusbar .seg { display: flex; align-items: center; gap: 4px; }
+  .statusbar .spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- Title bar -->
+<div class="titlebar">
+  <span>Sharpee IDE</span>
+  <span class="sep">·</span>
+  <span class="project-name">untold-garden</span>
+  <span class="sep">story</span>
+  <div class="menu">
+    <span>File</span><span>Edit</span><span>View</span><span>Project</span><span>Play</span><span>Build</span><span>Help</span>
+  </div>
+</div>
+
+<!-- Main 3-panel -->
+<div class="main">
+
+  <!-- Left rail (collapsed-panel entry points) -->
+  <div class="rail">
+    <button class="active" title="Project">📂</button>
+    <button title="Search">🔍</button>
+    <button title="Play">▶</button>
+    <button title="Build">🔨</button>
+    <button title="Outline">📋</button>
+    <button title="Problems">⚠</button>
+    <div class="spacer"></div>
+    <button title="Settings">⚙</button>
+  </div>
+
+  <!-- Project panel -->
+  <aside class="project">
+
+    <div class="section-title">
+      <span>Story &mdash; untold-garden</span>
+      <span class="badge">v0.3.2</span>
+    </div>
+    <div class="tree">
+      <div class="node folder"><span class="chev">▾</span><span class="icon">📁</span>Rooms</div>
+      <ul class="nested">
+        <li class="node leaf"><span class="icon">🏠</span>kitchen.ts</li>
+        <li class="node leaf active"><span class="icon">🏠</span>walled-garden.ts</li>
+        <li class="node leaf"><span class="icon">🏠</span>greenhouse.ts</li>
+        <li class="node leaf"><span class="icon">🏠</span>orchard.ts</li>
+        <li class="node leaf"><span class="icon">🏠</span>cellar.ts</li>
+      </ul>
+      <div class="node folder"><span class="chev">▾</span><span class="icon">📁</span>Objects</div>
+      <ul class="nested">
+        <li class="node leaf"><span class="icon">🔑</span>brass-key.ts</li>
+        <li class="node leaf"><span class="icon">🍎</span>windfall-apples.ts</li>
+        <li class="node leaf"><span class="icon">📜</span>torn-letter.ts</li>
+      </ul>
+      <div class="node folder"><span class="chev">▸</span><span class="icon">📁</span>NPCs</div>
+      <div class="node folder"><span class="chev">▸</span><span class="icon">📁</span>Regions</div>
+      <div class="node folder"><span class="chev">▸</span><span class="icon">📁</span>Grammar</div>
+      <div class="node folder"><span class="chev">▸</span><span class="icon">⚙</span>Story Settings</div>
+
+      <div class="section-title" style="margin-top:10px;">
+        <span>Extensions</span>
+        <span class="badge">2</span>
+      </div>
+      <div class="dep-row">
+        <span class="pkg">@sharpee/ext-conversation</span>
+        <span class="ver">1.2.0</span>
+      </div>
+      <div class="dep-row">
+        <span class="pkg">@garden/ext-weather</span>
+        <span class="ver">0.4.1 <span style="color:var(--warn)">↑</span></span>
+      </div>
+
+      <div class="section-title" style="margin-top:10px;">
+        <span>Plugins</span>
+        <span class="badge">3</span>
+      </div>
+      <div class="dep-row">
+        <span class="pkg">@sharpee/plugin-npc</span>
+        <span class="ver">0.9.111</span>
+      </div>
+      <div class="dep-row">
+        <span class="pkg">@sharpee/plugin-scheduler</span>
+        <span class="ver">0.9.111</span>
+      </div>
+      <div class="dep-row">
+        <span class="pkg">@sharpee/plugin-state-machine</span>
+        <span class="ver">0.9.111</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Editor -->
+  <section class="editor">
+    <div class="tabs">
+      <div class="tab">
+        <span>🏠</span>kitchen.ts<span class="close">×</span>
+      </div>
+      <div class="tab active">
+        <span>🏠</span>walled-garden.ts<span class="close">×</span>
+      </div>
+      <div class="tab">
+        <span>🔑</span>brass-key.ts<span class="close">×</span>
+      </div>
+    </div>
+    <div class="breadcrumbs">src <span class="sep">›</span> regions <span class="sep">›</span> rooms <span class="sep">›</span> walled-garden.ts</div>
+
+    <div class="code">
+      <div class="ln"><span class="gutter">1</span><span class="src"><span class="kw">import</span> <span class="punc">{</span> <span class="id">room</span><span class="punc">,</span> <span class="id">scenery</span><span class="punc">,</span> <span class="id">portable</span> <span class="punc">}</span> <span class="kw">from</span> <span class="str">'@sharpee/author'</span><span class="punc">;</span></span></div>
+      <div class="ln"><span class="gutter">2</span><span class="src"><span class="kw">import</span> <span class="punc">{</span> <span class="id">kitchen</span> <span class="punc">}</span> <span class="kw">from</span> <span class="str">'./kitchen'</span><span class="punc">;</span></span></div>
+      <div class="ln"><span class="gutter">3</span><span class="src"></span></div>
+      <div class="ln"><span class="gutter">4</span><span class="src"><span class="kw">export const</span> <span class="id">walledGarden</span> <span class="op">=</span> <span class="fn">room</span><span class="punc">(</span><span class="str">'walled-garden'</span><span class="punc">,</span> <span class="punc">{</span></span></div>
+      <div class="ln"><span class="gutter">5</span><span class="src">  <span class="prop">name</span><span class="punc">:</span> <span class="str">'The Walled Garden'</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">6</span><span class="src">  <span class="prop">description</span><span class="punc">:</span> <span class="str">`High stone walls ring a tangle of overgrown roses and</span></span></div>
+      <div class="ln"><span class="gutter">7</span><span class="src"><span class="str">    forget-me-nots. A brass key glints at the foot of the sundial.`</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">8</span><span class="src">  <span class="prop">exits</span><span class="punc">:</span> <span class="punc">{</span> <span class="prop">north</span><span class="punc">:</span> <span class="id">kitchen</span> <span class="punc">}</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">9</span><span class="src">  <span class="prop">lit</span><span class="punc">:</span> <span class="kw">true</span><span class="punc">,</span><span class="cursor"></span></span></div>
+      <div class="hint">
+        <strong>trait <code>lit</code></strong> — marks a room as having ambient light. When <code>false</code> (default), the player's inventory must include a lit light source to see, or room description is replaced by the <em>darkness</em> message.
+      </div>
+      <div class="ln"><span class="gutter">10</span><span class="src"><span class="punc">});</span></span></div>
+      <div class="ln"><span class="gutter">11</span><span class="src"></span></div>
+      <div class="ln"><span class="gutter">12</span><span class="src"><span class="kw">export const</span> <span class="id">sundial</span> <span class="op">=</span> <span class="fn">scenery</span><span class="punc">(</span><span class="str">'sundial'</span><span class="punc">,</span> <span class="punc">{</span></span></div>
+      <div class="ln"><span class="gutter">13</span><span class="src">  <span class="prop">in</span><span class="punc">:</span> <span class="id">walledGarden</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">14</span><span class="src">  <span class="prop">name</span><span class="punc">:</span> <span class="str">'stone sundial'</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">15</span><span class="src">  <span class="prop">synonyms</span><span class="punc">:</span> <span class="punc">[</span><span class="str">'sundial'</span><span class="punc">,</span> <span class="str">'stone'</span><span class="punc">,</span> <span class="str">'dial'</span><span class="punc">],</span></span></div>
+      <div class="ln"><span class="gutter">16</span><span class="src">  <span class="prop">description</span><span class="punc">:</span> <span class="str">'Weathered and chalk-white, its gnomon points past noon.'</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">17</span><span class="src"><span class="punc">});</span></span></div>
+      <div class="ln"><span class="gutter">18</span><span class="src"></span></div>
+      <div class="ln"><span class="gutter">19</span><span class="src"><span class="kw">export const</span> <span class="id">brassKey</span> <span class="op">=</span> <span class="fn">portable</span><span class="punc">(</span><span class="str">'brass-key'</span><span class="punc">,</span> <span class="punc">{</span></span></div>
+      <div class="ln"><span class="gutter">20</span><span class="src">  <span class="prop">in</span><span class="punc">:</span> <span class="id">walledGarden</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">21</span><span class="src">  <span class="prop">name</span><span class="punc">:</span> <span class="str">'brass key'</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">22</span><span class="src">  <span class="prop">description</span><span class="punc">:</span> <span class="str">'Small, tarnished, with a clover-shaped bow.'</span><span class="punc">,</span></span></div>
+      <div class="ln"><span class="gutter">23</span><span class="src"><span class="punc">});</span></span></div>
+    </div>
+  </section>
+
+  <!-- Play panel -->
+  <aside class="play">
+    <div class="play-header">
+      <span class="dot"></span>
+      <span>Play · untold-garden</span>
+      <span class="sep"></span>
+      <button>Restart</button>
+      <button>Log</button>
+    </div>
+    <div class="transcript">
+      <div class="room-title">The Walled Garden</div>
+      <div class="prose">High stone walls ring a tangle of overgrown roses and forget-me-nots. A brass key glints at the foot of the sundial.</div>
+      <div class="prose">You can see a brass key and a stone sundial here.</div>
+      <div><span class="prompt">&gt;</span> <span class="cmd">examine sundial</span></div>
+      <div class="msg">Weathered and chalk-white, its gnomon points past noon.</div>
+      <div><span class="prompt">&gt;</span> <span class="cmd">take key</span></div>
+      <div class="msg">Taken.</div>
+      <div><span class="prompt">&gt;</span> <span class="cmd">north</span></div>
+      <div class="room-title">Kitchen</div>
+      <div class="prose">Sunlight falls across a scrubbed wooden table. A half-eaten pie cools on the sill.</div>
+      <div><span class="prompt">&gt;</span> <span class="cursor"></span></div>
+    </div>
+    <div class="input-row">
+      <span class="chev">&gt;</span>
+      <input placeholder="type a command..." />
+    </div>
+  </aside>
+</div>
+
+<!-- Status bar -->
+<div class="statusbar">
+  <span class="seg">🌿 main</span>
+  <span class="seg">TypeScript 5.3</span>
+  <span class="seg">LF</span>
+  <span class="seg">UTF-8</span>
+  <span class="spacer"></span>
+  <span class="seg">Ln 9, Col 14</span>
+  <span class="seg">Spaces: 2</span>
+  <span class="seg">Sharpee 0.9.111</span>
+</div>
+
+</body>
+</html>
