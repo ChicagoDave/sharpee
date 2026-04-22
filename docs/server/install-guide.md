@@ -17,18 +17,49 @@ Referenced by ADR-153 Acceptance Criterion 9 (operator documentation).
 
 Tools used during install:
 - `git` (to clone the repo)
-- `curl` (for the `/health` probe and smoke test)
-- `jq` (only for the optional smoke test script)
+- `curl` (used in Section 5 verification and the smoke test)
+- `jq` (used in Section 5 verification and the smoke test — `sudo apt install -y jq`)
 
-Verify Docker is ready:
+### 1.1 Install Docker (Ubuntu)
+
+Skip this subsection if `docker --version && docker compose version && docker run --rm hello-world` already works for your user.
+
+Three installation paths exist on Ubuntu. **Use the first.**
+
+- **Docker CE from Docker's official apt repo** — recommended, and what the rest of this guide assumes works.
+- `sudo apt install docker.io` — Ubuntu-maintained package. Works, but lags the upstream release and does not always include the compose v2 plugin. Acceptable only if the Docker CE repo is unavailable for some reason.
+- `sudo snap install docker` — **do not use**. The snap sandbox interferes with bind mounts and networking in ways that will break the Sharpee compose file.
+
+Install Docker CE (each command is a single line; run them one at a time):
 
 ```bash
-docker --version
-docker compose version
-docker run --rm hello-world
+sudo apt-get update
+```
+```bash
+sudo apt-get install -y ca-certificates curl
+```
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings && sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && sudo chmod a+r /etc/apt/keyrings/docker.asc
+```
+```bash
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && sudo apt-get update
+```
+```bash
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+```bash
+sudo usermod -aG docker $USER && newgrp docker
 ```
 
-If any of those fail, install Docker per the official docs (<https://docs.docker.com/engine/install/>) before continuing.
+Verify:
+
+```bash
+docker --version && docker compose version && docker run --rm hello-world
+```
+
+`hello-world` should print the Docker welcome message. If you get a permission error on the docker socket, the `newgrp docker` didn't take effect in your shell — log out and back in, or open a new terminal.
+
+Other distros: see <https://docs.docker.com/engine/install/> and pick the appropriate guide.
 
 ---
 
@@ -74,9 +105,16 @@ mkdir -p stories
 
 Drop one or more `.sharpee` story files into it. The server lists exactly these at `GET /api/stories`.
 
-Where do `.sharpee` files come from? They are built by the Sharpee authoring toolchain (see the root `build.sh`, e.g. `./build.sh -s dungeo` produces `dist/stories/dungeo.sharpee`). For operators, a story author or release will provide the file directly. Any file with a `.sharpee` extension works; the filename (minus extension) becomes the story slug.
+Where do `.sharpee` files come from? They are built by the Sharpee authoring toolchain (`./build.sh -s <story-name>` produces `dist/stories/<story-name>.sharpee` from a repo with the full pnpm dev environment). For a server-only host, the simplest path is to build elsewhere and copy the artifact:
 
-Verify:
+```bash
+# Run this from a dev machine that has already built the story:
+scp /path/to/sharpee/dist/stories/<name>.sharpee <user>@<server>:~/sharpee/tools/server/stories/
+```
+
+Any file with a `.sharpee` extension works; the filename (minus extension) becomes the story slug returned by the API. For a first smoke run, copying the `dungeo.sharpee` bundled with a dev build is a reasonable default.
+
+Verify on the server:
 
 ```bash
 ls stories/
