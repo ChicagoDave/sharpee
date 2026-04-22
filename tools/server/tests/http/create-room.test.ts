@@ -150,4 +150,62 @@ describe('POST /api/rooms', () => {
     const body = (await res.json()) as { code: string };
     expect(body.code).toBe('bad_request');
   });
+
+  it('story marked unhealthy at boot → 500 story_load_failed; no row written (N-6)', async () => {
+    app.cleanup();
+    app = buildTestApp({
+      stories: ['zork', 'broken'],
+      unhealthyStories: { broken: 'sandbox crashed before READY: module not found' },
+    });
+
+    const res = await app.fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        story_slug: 'broken',
+        title: 'Attempt',
+        display_name: 'Alice',
+        captcha_token: 'stub',
+      }),
+    });
+
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { code: string; detail: string };
+    expect(body.code).toBe('story_load_failed');
+    expect(body.detail).toMatch(/module not found/);
+
+    // No partial row anywhere.
+    const roomCount = (app.db.prepare('SELECT COUNT(*) as c FROM rooms').get() as {
+      c: number;
+    }).c;
+    const participantCount = (app.db
+      .prepare('SELECT COUNT(*) as c FROM participants')
+      .get() as { c: number }).c;
+    const eventCount = (app.db
+      .prepare('SELECT COUNT(*) as c FROM session_events')
+      .get() as { c: number }).c;
+    expect(roomCount).toBe(0);
+    expect(participantCount).toBe(0);
+    expect(eventCount).toBe(0);
+  });
+
+  it('story healthy at boot → happy path unchanged', async () => {
+    app.cleanup();
+    app = buildTestApp({
+      stories: ['zork'],
+      // No unhealthyStories override — zork is implicitly healthy.
+    });
+
+    const res = await app.fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        story_slug: 'zork',
+        title: 'Ok',
+        display_name: 'Alice',
+        captcha_token: 'stub',
+      }),
+    });
+    expect(res.status).toBe(201);
+  });
 });

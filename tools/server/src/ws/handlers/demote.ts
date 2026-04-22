@@ -22,22 +22,14 @@ import type { WebSocket } from 'ws';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
 import type { ConnectionManager } from '../connection-manager.js';
-import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
+import type { ClientMsg } from '../../wire/browser-server.js';
 import type { Tier } from '../../repositories/types.js';
+import { sendErr } from '../error-response.js';
 
 export interface DemoteDeps {
   participants: ParticipantsRepository;
   sessionEvents: SessionEventsRepository;
   connections: ConnectionManager;
-}
-
-function sendErr(ws: WebSocket, code: string, detail: string): void {
-  const msg: ServerMsg = { kind: 'error', code, detail };
-  try {
-    ws.send(JSON.stringify(msg));
-  } catch {
-    /* socket down */
-  }
 }
 
 const TIER_RANK: Record<Tier, number> = {

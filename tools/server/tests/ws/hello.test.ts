@@ -59,6 +59,10 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
       expect(welcome.room.saves).toEqual([]);
       expect(welcome.participants.length).toBe(1);
       expect(welcome.participants[0]?.participant_id).toBe(host.participant_id);
+      // ADR-153 Decision 8: welcome must carry the recording-transparency
+      // notice on every handshake. Exact wording is a wire contract.
+      expect(welcome.recording_notice).toMatch(/recorded/i);
+      expect(welcome.recording_notice).toMatch(/Direct Messages/);
 
       const connected = (server.db
         .prepare('SELECT connected FROM participants WHERE participant_id = ?')

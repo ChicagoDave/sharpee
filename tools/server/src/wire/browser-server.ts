@@ -66,6 +66,12 @@ export type ServerMsg =
       participant_id: string;
       room: RoomSnapshot;
       participants: ParticipantSummary[];
+      /**
+       * Recording-transparency notice (ADR-153 Decision 8). Always present.
+       * Clients are expected to display it once on first join and show a
+       * persistent "REC" indicator while in the room.
+       */
+      recording_notice: string;
     }
   | { kind: 'presence'; participant_id: string; connected: boolean }
   | { kind: 'draft_frame'; typist_id: string; seq: number; text: string }
@@ -85,4 +91,15 @@ export type ServerMsg =
   | { kind: 'room_state'; pinned: boolean; last_activity_at: string }
   | { kind: 'room_closed'; reason: 'deleted' | 'recycled'; message?: string }
   | { kind: 'successor'; participant_id: string }
-  | { kind: 'error'; code: string; detail: string };
+  | {
+      kind: 'error';
+      code: string;
+      detail: string;
+      /**
+       * Populated only when the error is scoped to a specific in-flight turn
+       * (currently: `runtime_crash` during a command). Clients correlate this
+       * with the turn_id they were waiting on so the spinner/lock for that
+       * specific turn can be cleared — distinct from room-wide errors.
+       */
+      turn_id?: string;
+    };

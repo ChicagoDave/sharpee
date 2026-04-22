@@ -15,21 +15,12 @@ import type { WebSocket } from 'ws';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
 import type { ConnectionManager } from '../connection-manager.js';
 import type { LockManager } from '../lock-manager.js';
-import type { ServerMsg } from '../../wire/browser-server.js';
+import { sendErr } from '../error-response.js';
 
 export interface ReleaseLockDeps {
   participants: ParticipantsRepository;
   connections: ConnectionManager;
   locks: LockManager;
-}
-
-function sendErr(ws: WebSocket, code: string, detail: string): void {
-  const msg: ServerMsg = { kind: 'error', code, detail };
-  try {
-    ws.send(JSON.stringify(msg));
-  } catch {
-    /* socket down; close handler will reap */
-  }
 }
 
 /**

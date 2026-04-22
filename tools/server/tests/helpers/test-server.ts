@@ -133,9 +133,16 @@ export async function buildTestServer(
     connections,
     roomManager,
     saveService,
+    sandboxes,
     afkTimerOptions: opts.afkTimerOptions,
     phGraceTimerOptions: opts.phGraceTimerOptions,
     phGraceTimerClock: opts.phGraceTimerClock,
+    // Disable automatic recycle sweeps during tests — E2E fixtures create
+    // backdated rooms deliberately. Tests that want to exercise the sweeper
+    // call ws.recycleSweeper.sweep() explicitly. Use the 32-bit setTimeout
+    // cap (~24.8 days) rather than MAX_SAFE_INTEGER so Node doesn't silently
+    // clamp to 1 ms.
+    recycleSweeperOptions: { intervalMs: 2_147_483_647 },
   });
 
   const server = await new Promise<ReturnType<typeof serve>>((resolve) => {

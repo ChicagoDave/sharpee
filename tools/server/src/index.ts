@@ -23,6 +23,7 @@ import { createParticipantsRepository } from './repositories/participants.js';
 import { createSessionEventsRepository } from './repositories/session-events.js';
 import { createSavesRepository } from './repositories/saves.js';
 import { createStoryScanner } from './stories/scanner.js';
+import { createStoryHealth } from './stories/story-health.js';
 import { createCaptchaVerifier } from './http/middleware/captcha.js';
 import { createWsServer } from './ws/server.js';
 import { createConnectionManager } from './ws/connection-manager.js';
@@ -61,7 +62,27 @@ async function main(): Promise<void> {
     sandboxes,
     connections,
   });
-  const app = createApp({ config, db, rooms, participants, sessionEvents, stories, captcha });
+
+  // Validate every story at boot so POST /api/rooms can fail fast on broken
+  // story files (N-6). Serial, but small story counts keep the cost bounded.
+  const storyHealth = createStoryHealth({ stories, sandboxes });
+  await storyHealth.validateAll();
+  for (const [slug, s] of Object.entries(storyHealth.snapshot())) {
+    if (!s.healthy) {
+      console.error(`[sharpee-server] story "${slug}" failed validation: ${s.error}`);
+    }
+  }
+
+  const app = createApp({
+    config,
+    db,
+    rooms,
+    participants,
+    sessionEvents,
+    stories,
+    storyHealth,
+    captcha,
+  });
   const ws = createWsServer({
     config,
     db,
@@ -71,6 +92,7 @@ async function main(): Promise<void> {
     sessionEvents,
     connections,
     roomManager,
+    sandboxes,
   });
 
   const server = serve(

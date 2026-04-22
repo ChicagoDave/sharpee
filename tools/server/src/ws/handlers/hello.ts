@@ -20,6 +20,7 @@ import type { SessionEventsRepository } from '../../repositories/session-events.
 import type { ConnectionManager } from '../connection-manager.js';
 import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
 import { buildRoomSnapshot } from '../room-snapshot.js';
+import { getRecordingNotice } from '../recording-notice.js';
 
 export interface HelloDeps {
   db: Database;
@@ -123,6 +124,7 @@ export function handleHello(
     participant_id: participant.participant_id,
     room: snapshot,
     participants,
+    recording_notice: getRecordingNotice(),
   });
 
   deps.connections.broadcast(

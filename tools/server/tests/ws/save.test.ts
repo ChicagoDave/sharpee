@@ -64,6 +64,7 @@ function fakeConnections(): { mgr: ConnectionManager; calls: BroadcastCall[] } {
       calls.push({ room_id, msg });
     },
     send: () => false,
+    closeRoom: () => 0,
     getConnectedCount: () => 0,
     getParticipantSocket: () => null,
     getSocketMeta: () => null,
@@ -336,5 +337,27 @@ describe('handleSave', () => {
       { kind: 'error', code: 'save_failed', detail: 'db corrupt' },
     ]);
     expect(conns.calls).toEqual([]);
+  });
+
+  it('persistence_failure broadcasts to the room (N-2); nothing is sent to sender only', async () => {
+    const { svc } = fakeSaveService({
+      ok: false,
+      error: new SaveServiceError('persistence_failure', 'disk full'),
+    });
+    await invoke(PH, svc);
+
+    // Sender receives nothing direct — the broadcast reaches them via the room.
+    expect(ws.sent).toEqual([]);
+    // Room-wide broadcast with the canonical wording from ADR-153.
+    expect(conns.calls).toEqual([
+      {
+        room_id: 'room-A',
+        msg: {
+          kind: 'error',
+          code: 'persistence_failure',
+          detail: 'The session log could not be written. The action has been rolled back.',
+        },
+      },
+    ]);
   });
 });

@@ -13,11 +13,19 @@ import type { Database, Statement } from 'better-sqlite3';
 import type { EventKind, EventPayload, SessionEvent } from './types.js';
 
 export interface SessionEventsRepository {
+  /**
+   * Append a row to the unified event log. Returns the generated `event_id`.
+   *
+   * If `ts` is supplied, it is persisted verbatim — used by chat/dm handlers
+   * that need to echo the exact timestamp on the wire. If omitted, the
+   * repository generates `new Date().toISOString()`.
+   */
   append(input: {
     room_id: string;
     participant_id: string | null;
     kind: EventKind;
     payload: EventPayload;
+    ts?: string;
   }): number;
   listForRoom(
     room_id: string,
@@ -53,7 +61,7 @@ export function createSessionEventsRepository(db: Database): SessionEventsReposi
 
   return {
     append(input) {
-      const ts = new Date().toISOString();
+      const ts = input.ts ?? new Date().toISOString();
       const info = insert.run(
         input.room_id,
         input.participant_id,

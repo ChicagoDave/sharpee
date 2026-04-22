@@ -16,6 +16,7 @@ import type { ParticipantsRepository } from '../../repositories/participants.js'
 import type { ConnectionManager } from '../connection-manager.js';
 import type { LockManager } from '../lock-manager.js';
 import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
+import { sendErr } from '../error-response.js';
 
 export interface DraftDeltaDeps {
   participants: ParticipantsRepository;
@@ -23,16 +24,13 @@ export interface DraftDeltaDeps {
   locks: LockManager;
 }
 
+/** Send an arbitrary non-error frame to a single socket. */
 function sendMsg(ws: WebSocket, msg: ServerMsg): void {
   try {
     ws.send(JSON.stringify(msg));
   } catch {
     /* socket down; close handler will reap */
   }
-}
-
-function sendErr(ws: WebSocket, code: string, detail: string): void {
-  sendMsg(ws, { kind: 'error', code, detail });
 }
 
 /**

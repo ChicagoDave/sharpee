@@ -16,6 +16,7 @@ import { createRoomsRepository } from '../../src/repositories/rooms.js';
 import { createParticipantsRepository } from '../../src/repositories/participants.js';
 import { createSessionEventsRepository } from '../../src/repositories/session-events.js';
 import { createStoryScanner } from '../../src/stories/scanner.js';
+import type { StoryHealth, StoryHealthStatus } from '../../src/stories/story-health.js';
 import { createCaptchaVerifier } from '../../src/http/middleware/captcha.js';
 import { loadConfig } from '../../src/config.js';
 
@@ -31,6 +32,12 @@ export interface BuildTestAppOptions {
   stories?: string[];
   /** Force CAPTCHA to reject by flipping bypass off and using an always-fail fetcher. */
   failCaptcha?: boolean;
+  /**
+   * Per-slug boot-time health override. Slugs listed here are reported as
+   * unhealthy with the given error, so tests can exercise N-6 without
+   * spawning a real sandbox. Slugs not listed are implicitly healthy.
+   */
+  unhealthyStories?: Record<string, string>;
 }
 
 /** Build a working test app backed by :memory: SQLite and a temp stories dir. */
@@ -63,7 +70,33 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
       : undefined,
   });
 
-  const app = createApp({ config, db, rooms, participants, sessionEvents, stories, captcha });
+  // Build a stub StoryHealth map for the subset of slugs the test tagged as
+  // unhealthy. Slugs absent from this map are implicitly treated as healthy
+  // (check() returns a positive status) so existing tests keep passing.
+  const healthMap: Record<string, StoryHealthStatus> = {};
+  const checkedAt = new Date().toISOString();
+  for (const slug of opts.stories ?? []) {
+    healthMap[slug] = { healthy: true, checked_at: checkedAt };
+  }
+  for (const [slug, error] of Object.entries(opts.unhealthyStories ?? {})) {
+    healthMap[slug] = { healthy: false, error, checked_at: checkedAt };
+  }
+  const storyHealth: StoryHealth = {
+    check: (slug) => healthMap[slug] ?? null,
+    validateAll: async () => {},
+    snapshot: () => ({ ...healthMap }),
+  };
+
+  const app = createApp({
+    config,
+    db,
+    rooms,
+    participants,
+    sessionEvents,
+    stories,
+    storyHealth,
+    captcha,
+  });
 
   return {
     fetch: (input, init) =>

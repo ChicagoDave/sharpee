@@ -16,22 +16,14 @@ import type { ParticipantsRepository } from '../../repositories/participants.js'
 import type { ConnectionManager } from '../connection-manager.js';
 import type { RoomManager } from '../../rooms/room-manager.js';
 import type { LockManager } from '../lock-manager.js';
-import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
+import type { ClientMsg } from '../../wire/browser-server.js';
+import { sendErr } from '../error-response.js';
 
 export interface SubmitCommandDeps {
   participants: ParticipantsRepository;
   connections: ConnectionManager;
   roomManager: RoomManager;
   locks: LockManager;
-}
-
-function sendErr(ws: WebSocket, code: string, detail: string): void {
-  const msg: ServerMsg = { kind: 'error', code, detail };
-  try {
-    ws.send(JSON.stringify(msg));
-  } catch {
-    /* socket down; nothing to do */
-  }
 }
 
 /**

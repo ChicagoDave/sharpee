@@ -43,6 +43,18 @@ import { handleRestore } from './handlers/restore.js';
 import { handlePromote } from './handlers/promote.js';
 import { handleDemote } from './handlers/demote.js';
 import { handleNominateSuccessor } from './handlers/nominate-successor.js';
+import { handleChat } from './handlers/chat.js';
+import { handleDm } from './handlers/dm.js';
+import { handleMute } from './handlers/mute.js';
+import { handleUnmute } from './handlers/unmute.js';
+import { handlePin } from './handlers/pin.js';
+import { handleDeleteRoom } from './handlers/delete-room.js';
+import {
+  createRecycleSweeper,
+  type RecycleSweeper,
+  type RecycleSweeperOptions,
+} from '../rooms/recycle-sweeper.js';
+import type { SandboxRegistry } from '../sandbox/sandbox-registry.js';
 import { createLockManager, type LockManager } from './lock-manager.js';
 import { createAfkTimer, type AfkTimer, type AfkTimerOptions } from './afk-timer.js';
 import {
@@ -86,6 +98,19 @@ export interface WsDeps {
   phGraceTimerOptions?: PhGraceTimerOptions;
   /** Inject a MockClock in tests so the grace timer advances deterministically. */
   phGraceTimerClock?: Clock;
+  /**
+   * Sandbox registry — required once `delete_room` is routed and the idle
+   * recycle sweeper needs to tear sandboxes down before the DB cascade.
+   */
+  sandboxes?: SandboxRegistry;
+  /**
+   * Recycle sweeper overrides. When omitted, the sweeper is auto-created if
+   * {@link sandboxes} is provided, using `config.rooms.idleRecycleDays` and
+   * the default 60-second interval.
+   */
+  recycleSweeperOptions?: Partial<RecycleSweeperOptions>;
+  /** Inject a MockClock so tests can advance recycle-sweeper time deterministically. */
+  recycleSweeperClock?: Clock;
 }
 
 export interface WsServerHandle {
@@ -94,6 +119,8 @@ export interface WsServerHandle {
   readonly locks: LockManager;
   readonly afkTimer: AfkTimer;
   readonly phGraceTimer: PhGraceTimer;
+  /** Null when no SandboxRegistry was provided at construction time. */
+  readonly recycleSweeper: RecycleSweeper | null;
   handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void;
   close(): Promise<void>;
 }
@@ -209,6 +236,27 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
     },
     deps.phGraceTimerOptions ?? {}
   );
+
+  // Recycle sweeper: created only when a SandboxRegistry is available, since
+  // teardown of a sandbox is a mandatory step in the recycle transaction.
+  const recycleSweeper: RecycleSweeper | null = deps.sandboxes
+    ? createRecycleSweeper(
+        {
+          rooms: deps.rooms,
+          sandboxes: deps.sandboxes,
+          connections,
+          clock: deps.recycleSweeperClock,
+        },
+        {
+          idleRecycleDays:
+            deps.recycleSweeperOptions?.idleRecycleDays ?? deps.config.rooms.idleRecycleDays,
+          ...(deps.recycleSweeperOptions?.intervalMs !== undefined && {
+            intervalMs: deps.recycleSweeperOptions.intervalMs,
+          }),
+        }
+      )
+    : null;
+  recycleSweeper?.start();
 
   const pending = new WeakMap<WebSocket, PendingSocket>();
   const socketRoom = new WeakMap<WebSocket, string>();
@@ -421,10 +469,106 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
         return;
       }
 
+      if (frame.kind === 'chat') {
+        handleChat(
+          {
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            rooms: deps.rooms,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'dm') {
+        handleDm(
+          {
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            rooms: deps.rooms,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'mute') {
+        handleMute(
+          {
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'unmute') {
+        handleUnmute(
+          {
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'pin' || frame.kind === 'unpin') {
+        handlePin(
+          {
+            participants: deps.participants,
+            rooms: deps.rooms,
+            sessionEvents: deps.sessionEvents,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'delete_room') {
+        if (!deps.sandboxes) {
+          sendMsg(ws, {
+            kind: 'error',
+            code: 'not_ready',
+            detail: 'sandbox registry not wired',
+          });
+          return;
+        }
+        handleDeleteRoom(
+          {
+            participants: deps.participants,
+            rooms: deps.rooms,
+            connections,
+            sandboxes: deps.sandboxes,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
       sendMsg(ws, {
         kind: 'error',
         code: 'not_implemented',
-        detail: `frame kind ${(frame as { kind: string }).kind} not handled in phase 7`,
+        detail: `frame kind ${(frame as { kind: string }).kind} not handled in phase 10`,
       });
     });
 
@@ -485,6 +629,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
     locks,
     afkTimer,
     phGraceTimer,
+    recycleSweeper,
     handleUpgrade(req, socket, head) {
       const roomId = parseRoomIdFromUrl(req.url);
       if (!roomId) {
@@ -498,6 +643,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
     async close() {
       afkTimer.stop();
       phGraceTimer.cancelAll();
+      recycleSweeper?.stop();
       await new Promise<void>((resolve) => wss.close(() => resolve()));
     },
   };

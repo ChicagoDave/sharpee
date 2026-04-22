@@ -20,6 +20,7 @@ import type { StoryScanner } from '../stories/scanner.js';
 import type { ConnectionManager } from '../ws/connection-manager.js';
 import type { SandboxRegistry, SandboxEntry } from '../sandbox/sandbox-registry.js';
 import type { Output, SandboxToServerMessage } from '../wire/server-sandbox.js';
+import type { ServerMsg } from '../wire/browser-server.js';
 
 export interface RoomManagerDeps {
   db: Database;
@@ -48,6 +49,18 @@ export interface RoomManager {
 export function createRoomManager(deps: RoomManagerDeps): RoomManager {
   const turnTimeoutMs = deps.turnTimeoutMs ?? 30_000;
 
+  // In-flight turn id per room. Populated when `submitCommand` dispatches a
+  // COMMAND, cleared on OUTPUT, error, or crash. The sandbox crash handler
+  // reads this to distinguish "crashed during your command" (include turn_id)
+  // from "crashed while idle" (room-wide notice only) — ADR-153 N-1.
+  const inflightTurnId = new Map<string, string>();
+
+  // Rooms whose sandbox already has a crash listener attached. A new
+  // getOrSpawn for the same room returns the same entry; attaching `once`
+  // per submitCommand would register N listeners that all fire on one
+  // crash. This set guards against that.
+  const crashAttached = new Set<string>();
+
   function spawnFor(room_id: string): SandboxEntry {
     const room = deps.rooms.findById(room_id);
     if (!room) throw new Error(`room-manager: unknown room ${room_id}`);
@@ -61,16 +74,25 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
       args: deps.sandboxOverride?.args,
     });
 
-    // Wire crash → broadcast once per sandbox.
-    entry.process.once('crash', (info) => {
-      deps.connections.broadcast(room_id, {
-        kind: 'error',
-        code: 'runtime_crash',
-        detail:
-          info.stderr?.slice(0, 400) ||
-          'The story runtime crashed. Restore from the last save to continue.',
+    if (!crashAttached.has(room_id)) {
+      crashAttached.add(room_id);
+      entry.process.once('crash', (info) => {
+        const turn_id = inflightTurnId.get(room_id);
+        const detail = turn_id
+          ? 'The story runtime crashed during your command. The last turn may be incomplete. Restore from the last save to continue.'
+          : info.stderr?.slice(0, 400) ||
+            'The story runtime crashed. Restore from the last save to continue.';
+
+        const frame: ServerMsg = turn_id
+          ? { kind: 'error', code: 'runtime_crash', detail, turn_id }
+          : { kind: 'error', code: 'runtime_crash', detail };
+        deps.connections.broadcast(room_id, frame);
+
+        inflightTurnId.delete(room_id);
+        // Allow a future respawn (e.g. post-RESTORE) to re-wire crash handling.
+        crashAttached.delete(room_id);
       });
-    });
+    }
 
     return entry;
   }
@@ -84,30 +106,38 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
     await entry.ready;
 
     const turn_id = randomUUID();
+    inflightTurnId.set(room_id, turn_id);
 
-    const output = await new Promise<Output>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        entry.process.off('message', onMessage);
-        reject(new Error('turn timeout'));
-      }, turnTimeoutMs);
-
-      const onMessage = (msg: SandboxToServerMessage) => {
-        if (msg.kind === 'OUTPUT' && msg.turn_id === turn_id) {
-          clearTimeout(timer);
+    try {
+      const output = await new Promise<Output>((resolve, reject) => {
+        const timer = setTimeout(() => {
           entry.process.off('message', onMessage);
-          resolve(msg);
-        } else if (msg.kind === 'ERROR' && msg.turn_id === turn_id) {
-          clearTimeout(timer);
-          entry.process.off('message', onMessage);
-          reject(new Error(msg.detail));
-        }
-      };
-      entry.process.on('message', onMessage);
+          reject(new Error('turn timeout'));
+        }, turnTimeoutMs);
 
-      entry.process.send({ kind: 'COMMAND', turn_id, input: text, actor: actor_id });
-    });
+        const onMessage = (msg: SandboxToServerMessage) => {
+          if (msg.kind === 'OUTPUT' && msg.turn_id === turn_id) {
+            clearTimeout(timer);
+            entry.process.off('message', onMessage);
+            resolve(msg);
+          } else if (msg.kind === 'ERROR' && msg.turn_id === turn_id) {
+            clearTimeout(timer);
+            entry.process.off('message', onMessage);
+            reject(new Error(msg.detail));
+          }
+        };
+        entry.process.on('message', onMessage);
 
-    return output;
+        entry.process.send({ kind: 'COMMAND', turn_id, input: text, actor: actor_id });
+      });
+      return output;
+    } finally {
+      // Always clear the in-flight marker — resolution path AND rejection
+      // path — so the next crash (if any) is classified correctly.
+      if (inflightTurnId.get(room_id) === turn_id) {
+        inflightTurnId.delete(room_id);
+      }
+    }
   }
 
   return {

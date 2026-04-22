@@ -32,6 +32,13 @@ export interface ConnectionManager {
   unregisterSocket(ws: WebSocket): { room_id: string; participant_id: string } | null;
   broadcast(room_id: string, msg: ServerMsg, opts?: { except_participant_id?: string }): void;
   send(participant_id: string, msg: ServerMsg): boolean;
+  /**
+   * Close every socket in a room with a WebSocket application close code
+   * and reason. Each ws.close() triggers its own `close` handler which
+   * removes the entry from the registry, so no explicit cleanup is needed.
+   * Returns the number of sockets that were told to close.
+   */
+  closeRoom(room_id: string, code: number, reason: string): number;
   getConnectedCount(room_id: string): number;
   getParticipantSocket(participant_id: string): WebSocket | null;
   /** Reverse lookup: which participant/room does this socket represent? */
@@ -119,6 +126,22 @@ export function createConnectionManager(): ConnectionManager {
     },
 
     send,
+
+    closeRoom(room_id, code, reason) {
+      const room = byRoom.get(room_id);
+      if (!room) return 0;
+      // Snapshot the list — the close handler on each socket races with us to
+      // mutate byRoom/byParticipant/bySocket as sockets close.
+      const sockets = [...room.values()];
+      for (const ws of sockets) {
+        try {
+          ws.close(code, reason);
+        } catch {
+          /* socket already in bad state — leave to per-socket close handler */
+        }
+      }
+      return sockets.length;
+    },
 
     getConnectedCount(room_id) {
       return byRoom.get(room_id)?.size ?? 0;

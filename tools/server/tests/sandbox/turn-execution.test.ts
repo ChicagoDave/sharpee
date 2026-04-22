@@ -110,6 +110,11 @@ describe('submit_command → story_output', () => {
       10_000
     );
     expect(crashMsg.code).toBe('runtime_crash');
+    // N-1: mid-turn crash includes the turn_id so the client can unblock
+    // the specific turn's spinner rather than assuming room-wide state is bad.
+    expect(crashMsg.turn_id).toMatch(/^[0-9a-f-]{36}$/);
+    // Detail text reflects the mid-turn phase, not the idle phase.
+    expect(crashMsg.detail).toMatch(/during your command/i);
 
     // Both clients receive it (broadcast).
     const guestCrash = await guestClient.waitFor(
@@ -118,6 +123,7 @@ describe('submit_command → story_output', () => {
       5_000
     );
     expect(guestCrash.code).toBe('runtime_crash');
+    expect(guestCrash.turn_id).toBe(crashMsg.turn_id);
 
     // Server still responsive: issue another HTTP call to prove it.
     const stillAlive = await fetch(`${server.httpUrl}/health`);

@@ -64,6 +64,7 @@ function fakeConnections(): { mgr: ConnectionManager; calls: BroadcastCall[] } {
       calls.push({ room_id, msg });
     },
     send: () => false,
+    closeRoom: () => 0,
     getConnectedCount: () => 0,
     getParticipantSocket: () => null,
     getSocketMeta: () => null,

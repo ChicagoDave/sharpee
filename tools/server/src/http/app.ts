@@ -16,6 +16,7 @@ import type { RoomsRepository } from '../repositories/rooms.js';
 import type { ParticipantsRepository } from '../repositories/participants.js';
 import type { SessionEventsRepository } from '../repositories/session-events.js';
 import type { StoryScanner } from '../stories/scanner.js';
+import type { StoryHealth } from '../stories/story-health.js';
 import type { CaptchaVerifier } from './middleware/captcha.js';
 import { installErrorEnvelope } from './middleware/error-envelope.js';
 import { registerCreateRoomRoute } from './routes/create-room.js';
@@ -30,6 +31,8 @@ export interface AppDeps {
   participants: ParticipantsRepository;
   sessionEvents: SessionEventsRepository;
   stories: StoryScanner;
+  /** Optional boot-time validator. Threaded through to create-room (ADR-153 N-6). */
+  storyHealth?: StoryHealth;
   captcha: CaptchaVerifier;
 }
 

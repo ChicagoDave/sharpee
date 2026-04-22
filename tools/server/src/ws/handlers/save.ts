@@ -19,21 +19,13 @@ import type { ParticipantsRepository } from '../../repositories/participants.js'
 import type { ConnectionManager } from '../connection-manager.js';
 import type { SaveService } from '../../saves/save-service.js';
 import { SaveServiceError } from '../../saves/save-service.js';
-import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
+import type { ClientMsg } from '../../wire/browser-server.js';
+import { sendErr } from '../error-response.js';
 
 export interface SaveDeps {
   participants: ParticipantsRepository;
   connections: ConnectionManager;
   saveService: SaveService;
-}
-
-function sendErr(ws: WebSocket, code: string, detail: string): void {
-  const msg: ServerMsg = { kind: 'error', code, detail };
-  try {
-    ws.send(JSON.stringify(msg));
-  } catch {
-    /* socket down; close handler will reap */
-  }
 }
 
 /**
@@ -80,7 +72,18 @@ export async function handleSave(
     });
   } catch (err) {
     if (err instanceof SaveServiceError) {
-      sendErr(ws, err.code, err.message);
+      // Persistence failures are systemic (disk full, locked DB) — the room
+      // as a whole needs to know because follow-up actions will likely hit
+      // the same wall. Other errors (sandbox timeout, auth) are just sender-local.
+      if (err.code === 'persistence_failure') {
+        deps.connections.broadcast(actor.room_id, {
+          kind: 'error',
+          code: 'persistence_failure',
+          detail: 'The session log could not be written. The action has been rolled back.',
+        });
+      } else {
+        sendErr(ws, err.code, err.message);
+      }
     } else {
       sendErr(ws, 'save_failed', err instanceof Error ? err.message : 'save failed');
     }

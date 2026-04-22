@@ -17,6 +17,7 @@ import type { RoomsRepository } from '../../repositories/rooms.js';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
 import type { StoryScanner } from '../../stories/scanner.js';
+import type { StoryHealth } from '../../stories/story-health.js';
 import type { CaptchaVerifier } from '../middleware/captcha.js';
 import { HttpError } from '../middleware/error-envelope.js';
 import { generateToken } from '../tokens.js';
@@ -27,6 +28,13 @@ export interface CreateRoomDeps {
   participants: ParticipantsRepository;
   sessionEvents: SessionEventsRepository;
   stories: StoryScanner;
+  /**
+   * Optional boot-time validator (ADR-153 N-6). When present, a story whose
+   * recorded status is unhealthy causes the request to fail fast with
+   * `story_load_failed`, before any DB writes. When absent, the legacy
+   * "trust the scanner" behaviour is preserved.
+   */
+  storyHealth?: StoryHealth;
   captcha: CaptchaVerifier;
 }
 
@@ -64,6 +72,18 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
 
     const story = deps.stories.findBySlug(story_slug);
     if (!story) throw new HttpError(400, 'unknown_story', `No story with slug ${story_slug}`);
+
+    // N-6: if boot-time validation recorded this story as broken, reject
+    // here — before any DB write or sandbox spawn — so no partial room
+    // ever exists for an unloadable story.
+    const health = deps.storyHealth?.check(story_slug);
+    if (health && !health.healthy) {
+      throw new HttpError(
+        500,
+        'story_load_failed',
+        health.error ?? 'story failed to load at server startup'
+      );
+    }
 
     const title = rawTitle || `${story.title} — ${new Date().toISOString().slice(0, 10)}`;
 

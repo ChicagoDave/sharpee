@@ -23,22 +23,14 @@ import type { ConnectionManager } from '../connection-manager.js';
 import type { LockManager } from '../lock-manager.js';
 import type { SaveService } from '../../saves/save-service.js';
 import { SaveServiceError } from '../../saves/save-service.js';
-import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
+import type { ClientMsg } from '../../wire/browser-server.js';
+import { sendErr } from '../error-response.js';
 
 export interface RestoreDeps {
   participants: ParticipantsRepository;
   connections: ConnectionManager;
   locks: LockManager;
   saveService: SaveService;
-}
-
-function sendErr(ws: WebSocket, code: string, detail: string): void {
-  const msg: ServerMsg = { kind: 'error', code, detail };
-  try {
-    ws.send(JSON.stringify(msg));
-  } catch {
-    /* socket down; close handler will reap */
-  }
 }
 
 /**
@@ -93,7 +85,17 @@ export async function handleRestore(
     });
   } catch (err) {
     if (err instanceof SaveServiceError) {
-      sendErr(ws, err.code, err.message);
+      // Mirror the save handler: persistence failures broadcast to the room;
+      // other SaveServiceError codes (sandbox, lookup) go only to sender.
+      if (err.code === 'persistence_failure') {
+        deps.connections.broadcast(actor.room_id, {
+          kind: 'error',
+          code: 'persistence_failure',
+          detail: 'The session log could not be written. The action has been rolled back.',
+        });
+      } else {
+        sendErr(ws, err.code, err.message);
+      }
     } else {
       sendErr(ws, 'restore_failed', err instanceof Error ? err.message : 'restore failed');
     }
