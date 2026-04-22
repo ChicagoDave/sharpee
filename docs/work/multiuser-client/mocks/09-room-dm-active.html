@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Room (DM tab active)</title>
+<link rel="stylesheet" href="_common.css">
+</head>
+<body class="room-layout">
+
+<!--
+  State: You (Dave, PH) have a Room tab and one DM tab ("Alice") open.
+  The DM tab is active; the Room tab has one unread message.
+-->
+
+<div class="app">
+
+  <header class="room-header">
+    <div class="room-title">Tuesday book club — Zork I</div>
+    <div class="header-actions">
+      <span class="rec-indicator">REC</span>
+      <button class="copy-btn">Copy URL</button>
+      <button class="copy-btn">Copy code <span class="code">XYZB-3F56</span></button>
+      <button class="theme-picker">
+        <span class="swatch"></span><span class="current">modern-dark</span><span class="caret">▾</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="room-body">
+
+    <section class="game">
+      <div class="transcript">
+        <div class="story-output"><div class="room-title-block">West of House</div>You are standing in an open field west of a white house, with a boarded front door. There is a small mailbox here.</div>
+        <div class="command-echo">&gt; open mailbox <span class="who">— Alice</span></div>
+        <div class="story-output">Opening the small mailbox reveals a leaflet.</div>
+      </div>
+      <div class="command-area">
+        <div class="lock-status">No one is typing.</div>
+        <div class="command-input"><span class="prompt">&gt;</span><span class="draft" style="color: var(--text-faint);">type a command…</span></div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="roster">
+        <div class="roster-heading">Players · 5</div>
+        <div class="participant me"><span class="dot"></span><span class="name">You (Dave)</span><span class="badge badge-ph">PH</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Alice</span><span class="badge badge-ch">CH</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Charlie</span><span class="badge badge-ce">CE</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Bob</span><span class="badge badge-p">P</span><span></span></div>
+        <div class="participant offline"><span class="dot"></span><span class="name">Erin</span><span class="badge badge-p">P</span><span class="mute-icon">✕</span></div>
+      </div>
+
+      <div class="tab-strip">
+        <div class="tab">Room <span class="badge-unread">1</span></div>
+        <div class="tab active">Alice</div>
+      </div>
+
+      <div class="chat-messages" style="background: rgba(137, 180, 250, 0.02);">
+        <div style="padding: 8px 10px; margin-bottom: 6px; background: rgba(250, 179, 135, 0.1); border-left: 3px solid var(--warning); font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+          <strong style="color: var(--warning);">Recorded.</strong> DMs are logged in the room's event log like any other message. Hosts do not have a privacy channel.
+        </div>
+        <div class="chat-msg me"><div class="meta"><span class="author">You</span><span>10:17</span></div><div class="body">hey — I'm not sure Charlie is ready for CE, thoughts?</div></div>
+        <div class="chat-msg ch"><div class="meta"><span class="author">Alice</span><span>10:18</span></div><div class="body">give him one more turn, he's trying</div></div>
+        <div class="chat-msg me"><div class="meta"><span class="author">You</span><span>10:18</span></div><div class="body">ok</div></div>
+      </div>
+
+      <div class="chat-input-row">
+        <div class="chat-input"><input placeholder="Message Alice directly…"></div>
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — PH-grace countdown + succession toast</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  /* Grace banner sits below the room header, full-width */
+  .grace-banner {
+    background: linear-gradient(90deg,
+      rgba(250, 179, 135, 0.12) 0%,
+      rgba(250, 179, 135, 0.04) 100%);
+    border-bottom: 1px solid rgba(250, 179, 135, 0.3);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+  }
+  .grace-banner .hourglass {
+    font-size: 15px;
+    color: var(--warning);
+  }
+  .grace-banner .message {
+    color: var(--text);
+    flex: 1;
+  }
+  .grace-banner .countdown {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--warning);
+    min-width: 50px;
+    text-align: center;
+    padding: 4px 10px;
+    background: rgba(250, 179, 135, 0.1);
+    border-radius: 4px;
+  }
+  .grace-banner .name { color: var(--ph-color); font-weight: 600; }
+  .grace-banner .successor { color: var(--ch-color); font-weight: 600; }
+
+  /* Toast stack, top-right */
+  .toast-stack {
+    position: fixed;
+    top: 80px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 100;
+    max-width: 360px;
+  }
+  .toast {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+  .toast.role {
+    border-left-color: var(--ph-color);
+  }
+  .toast .hdr {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--accent-hot);
+  }
+  .toast .body { color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+</style>
+</head>
+<body class="room-layout">
+
+<!--
+  State: The Primary Host (Dave) just disconnected. All remaining participants see the
+  grace banner under the header. Toast announces that Alice (Co-Host) is now PH
+  after the 5-minute grace elapsed. Both shown together here; in practice the toast
+  appears after the countdown completes.
+-->
+
+<div class="app">
+
+  <header class="room-header">
+    <div class="room-title">Tuesday book club — Zork I</div>
+    <div class="header-actions">
+      <span class="rec-indicator">REC</span>
+      <button class="copy-btn">Copy URL</button>
+      <button class="copy-btn">Copy code <span class="code">XYZB-3F56</span></button>
+    </div>
+  </header>
+
+  <div class="grace-banner">
+    <span class="hourglass">⧖</span>
+    <span class="message">
+      <span class="name">Dave</span> (Primary Host) disconnected.
+      If they do not return, <span class="successor">Alice</span> will be promoted to Primary Host.
+    </span>
+    <span class="countdown">3:27</span>
+  </div>
+
+  <main class="room-body">
+    <section class="game">
+      <div class="transcript" style="opacity: 0.8;">
+        <div class="story-output"><div class="room-title-block">West of House</div>You are standing in an open field west of a white house…</div>
+      </div>
+      <div class="command-area">
+        <div class="lock-status">No one is typing.</div>
+        <div class="command-input"><span class="prompt">&gt;</span><span class="draft" style="color: var(--text-faint);">type a command…</span></div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="roster">
+        <div class="roster-heading">Players · 5</div>
+        <div class="participant offline"><span class="dot"></span><span class="name">Dave</span><span class="badge badge-ph">PH</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Alice</span><span class="badge badge-ch">CH</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Charlie</span><span class="badge badge-ce">CE</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Bob</span><span class="badge badge-p">P</span><span></span></div>
+      </div>
+      <div class="chat-header">Room chat</div>
+      <div class="chat-messages"></div>
+      <div class="chat-input-row">
+        <div class="chat-input"><input placeholder="Message the room…"></div>
+      </div>
+    </aside>
+  </main>
+
+</div>
+
+<!-- Toast shown after the countdown hits 0:00 -->
+<div class="toast-stack">
+  <div class="toast role">
+    <div class="hdr">Alice is now Primary Host</div>
+    <div class="body">Dave's grace period expired. Alice has been promoted automatically. Bob has been promoted to Co-Host as the new designated successor.</div>
+  </div>
+</div>
+
+</body>
+</html>

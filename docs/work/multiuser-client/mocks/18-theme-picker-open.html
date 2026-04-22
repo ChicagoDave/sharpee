@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Theme picker dropdown open</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  header.app-header {
+    background: var(--bg-sunken);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wordmark { font-size: 22px; font-weight: 700; color: var(--accent-hot); }
+  .wordmark .dot { color: var(--accent); }
+  .wordmark .tagline {
+    font-size: 13px; font-weight: 400; color: var(--text-muted); margin-left: 12px;
+  }
+
+  .picker-wrap { position: relative; display: inline-block; }
+  .picker-btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--accent);   /* focused state */
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .picker-btn .swatch {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1px solid var(--border-soft);
+  }
+  .picker-btn .current { font-family: var(--font-mono); font-size: 12px; }
+  .picker-btn .caret { font-size: 10px; color: var(--text-faint); }
+
+  .picker-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    z-index: 50;
+  }
+  .picker-menu .option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .picker-menu .option:hover { background: var(--border); }
+  .picker-menu .option.selected {
+    background: rgba(137, 180, 250, 0.12);
+    color: var(--accent-hot);
+  }
+  .picker-menu .option .swatch {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--border-soft);
+  }
+  .picker-menu .option .name-mono { font-family: var(--font-mono); font-size: 12px; }
+  .picker-menu .option .check {
+    margin-left: auto;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* Swatches per theme — approximate */
+  .sw-light    { background: linear-gradient(135deg, #fffef9 50%, #3d3d3d 50%); }
+  .sw-dark     { background: linear-gradient(135deg, #1e1e2e 50%, #cdd6f4 50%); }
+  .sw-terminal { background: linear-gradient(135deg, #0a1510 50%, #5bd16d 50%); }
+  .sw-paper    { background: linear-gradient(135deg, #f7f2e3 50%, #3b2f20 50%); }
+
+  main { padding: 40px 32px; opacity: 0.25; color: var(--text-faint); }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="wordmark">Sharpee<span class="dot">.</span>play
+    <span class="tagline">multi-user interactive fiction</span>
+  </div>
+  <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+
+    <div class="picker-wrap">
+      <button class="picker-btn">
+        <span class="swatch sw-dark"></span>
+        <span class="current">modern-dark</span>
+        <span class="caret">▾</span>
+      </button>
+
+      <div class="picker-menu">
+        <div class="option">
+          <span class="swatch sw-light"></span>
+          <span class="name-mono">classic-light</span>
+        </div>
+        <div class="option selected">
+          <span class="swatch sw-dark"></span>
+          <span class="name-mono">modern-dark</span>
+          <span class="check">✓</span>
+        </div>
+        <div class="option">
+          <span class="swatch sw-terminal"></span>
+          <span class="name-mono">retro-terminal</span>
+        </div>
+        <div class="option">
+          <span class="swatch sw-paper"></span>
+          <span class="name-mono">paper</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary">+ Create Room</button>
+  </div>
+</header>
+
+<main>
+  [ landing content dimmed behind the open dropdown ]
+</main>
+
+</body>
+</html>

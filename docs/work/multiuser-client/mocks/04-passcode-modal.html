@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Passcode modal</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  .ghost-landing {
+    position: fixed; inset: 0;
+    padding: 40px;
+    color: var(--text-faint);
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    opacity: 0.3;
+  }
+  .code-input {
+    text-transform: uppercase;
+    letter-spacing: 0.2em !important;
+    font-family: var(--font-mono) !important;
+    font-size: 17px !important;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="ghost-landing">Sharpee<span style="color:var(--accent)">.</span>play</div>
+
+<div class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Join "Tuesday book club — Zork I"</h2>
+      <div class="subtitle">Enter the passcode the host gave you.</div>
+    </div>
+
+    <div class="modal-body">
+      <label class="field">
+        <span class="label-text">Passcode</span>
+        <input type="text" class="code-input" value="XYZB-3F56">
+        <span class="hint">Pre-filled from the room URL if you clicked a shared link.</span>
+      </label>
+
+      <label class="field">
+        <span class="label-text">Your display name</span>
+        <input type="text" placeholder="Enter your name">
+      </label>
+
+      <label class="field">
+        <span class="label-text">Verify you're human</span>
+        <div class="captcha-placeholder">[ CAPTCHA widget ]</div>
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary">Cancel</button>
+      <button class="btn-primary">Join room</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Small-viewport placeholder</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .placeholder {
+    max-width: 420px;
+    text-align: center;
+  }
+  .placeholder .wordmark {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent-hot);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .placeholder .wordmark .dot { color: var(--accent); }
+  .placeholder .tag {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 38px;
+  }
+  .placeholder .icon {
+    font-size: 48px;
+    color: var(--text-faint);
+    margin-bottom: 20px;
+  }
+  .placeholder h1 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    color: var(--text);
+  }
+  .placeholder p {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 18px;
+  }
+  .placeholder .reasons {
+    font-size: 12px;
+    color: var(--text-faint);
+    text-align: left;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-top: 24px;
+  }
+  .placeholder .reasons strong { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="placeholder">
+  <div class="wordmark">Sharpee<span class="dot">.</span>play</div>
+  <div class="tag">multi-user interactive fiction</div>
+
+  <div class="icon">⌨</div>
+  <h1>Please use a laptop or desktop</h1>
+  <p>
+    Sharpee multi-user rooms are designed for full keyboards and wider screens.
+    Phones and small tablets can't fit the live-typing panel, chat, and participant roster.
+  </p>
+
+  <div class="reasons">
+    <strong>Why desktop-only?</strong><br>
+    Multi-user Sharpee lets everyone watch a shared typist's keystrokes stream live.
+    That means a keyboard in hand, fast reactions, and enough vertical space to read
+    long story output — not a thumb-typing session on a phone.
+  </div>
+</div>
+
+</body>
+</html>

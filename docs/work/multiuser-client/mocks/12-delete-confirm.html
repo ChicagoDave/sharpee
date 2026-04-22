@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Delete room (type-to-confirm)</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  .type-match {
+    border-color: var(--success) !important;
+    color: var(--success);
+  }
+  .confirm-card {
+    max-width: 480px;
+  }
+  .confirm-card .modal-header h2 { color: var(--error); }
+  .warning-row {
+    display: flex;
+    gap: 12px;
+    background: rgba(243, 139, 168, 0.08);
+    border: 1px solid rgba(243, 139, 168, 0.3);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  .warning-row .icon { color: var(--error); font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="modal-backdrop">
+  <div class="modal confirm-card">
+    <div class="modal-header">
+      <h2>Delete this room?</h2>
+      <div class="subtitle">This cannot be undone.</div>
+    </div>
+
+    <div class="modal-body">
+      <div class="warning-row">
+        <span class="icon">⚠</span>
+        <div>
+          All 4 participants will be disconnected. Every chat message, DM, save, and event log entry for this room will be deleted. The join code <code style="font-family: var(--font-mono); color: var(--accent);">XYZB-3F56</code> will return to the pool.
+        </div>
+      </div>
+
+      <label class="field">
+        <span class="label-text">Type the room title to confirm</span>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">
+          Expected: <code style="font-family: var(--font-mono); color: var(--accent-hot);">Tuesday book club — Zork I</code>
+        </div>
+        <input type="text" class="type-match" value="Tuesday book club — Zork I">
+        <span class="hint" style="color: var(--success);">✓ Matches — Delete is available.</span>
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary">Cancel</button>
+      <button class="btn-danger">Delete room</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

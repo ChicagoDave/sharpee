@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — RESTORED block in transcript</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  .restored-block {
+    margin: 24px 0 20px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--warning);
+    border-bottom: 1px solid var(--warning);
+    background: rgba(250, 179, 135, 0.06);
+    position: relative;
+  }
+  .restored-block .label {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--bg);
+    padding: 0 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--warning);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+  .restored-block .body { color: var(--text); white-space: pre-wrap; }
+</style>
+</head>
+<body class="room-layout">
+
+<!-- State: Charlie just restored save "before-troll". The RESTORED block is visually distinct. -->
+
+<div class="app">
+
+  <header class="room-header">
+    <div class="room-title">Tuesday book club — Zork I</div>
+    <div class="header-actions">
+      <span class="rec-indicator">REC</span>
+      <button class="copy-btn">Copy URL</button>
+      <button class="copy-btn">Copy code <span class="code">XYZB-3F56</span></button>
+      <button class="theme-picker">
+        <span class="swatch"></span><span class="current">modern-dark</span><span class="caret">▾</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="room-body">
+
+    <section class="game">
+      <div class="transcript">
+        <div class="command-echo">&gt; attack troll <span class="who">— Bob</span></div>
+        <div class="story-output">The troll's axe catches you squarely in the chest. You are dead.</div>
+
+        <div class="restored-block">
+          <div class="label">· RESTORED · before-troll · by Charlie ·</div>
+          <div class="body">
+You have returned to the following state:
+
+Troll Room.
+This is a small room with passages to the east and south and a forbidding hole leading west. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+A nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.
+
+Your inventory: brass lantern, sword.</div>
+        </div>
+
+        <div class="command-echo">&gt; take sword <span class="who">— Bob</span></div>
+        <div class="story-output">Taken.</div>
+      </div>
+
+      <div class="command-area">
+        <div class="lock-status">No one is typing.</div>
+        <div class="command-input"><span class="prompt">&gt;</span><span class="draft" style="color: var(--text-faint);">type a command…</span></div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="roster">
+        <div class="roster-heading">Players · 4</div>
+        <div class="participant me"><span class="dot"></span><span class="name">You (Dave)</span><span class="badge badge-ph">PH</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Alice</span><span class="badge badge-ch">CH</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Charlie</span><span class="badge badge-ce">CE</span><span></span></div>
+        <div class="participant"><span class="dot"></span><span class="name">Bob</span><span class="badge badge-p">P</span><span></span></div>
+      </div>
+      <div class="chat-header">Room chat</div>
+      <div class="chat-messages">
+        <div class="chat-msg ce"><div class="meta"><span class="author">Charlie</span><span>11:02</span></div><div class="body">restoring before-troll</div></div>
+        <div class="chat-msg me"><div class="meta"><span class="author">You</span><span>11:02</span></div><div class="body">thx</div></div>
+      </div>
+      <div class="chat-input-row">
+        <div class="chat-input"><input placeholder="Message the room…"></div>
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+</body>
+</html>

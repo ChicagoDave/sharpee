@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Landing (empty state)</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  header.app-header {
+    background: var(--bg-sunken);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wordmark {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--accent-hot);
+  }
+  .wordmark .dot { color: var(--accent); }
+  .wordmark .tagline {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 12px;
+  }
+
+  .header-actions { display: flex; align-items: center; gap: 12px; }
+  .theme-picker {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .theme-picker .swatch {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e1e2e 50%, #cdd6f4 50%);
+    border: 1px solid var(--border-soft);
+  }
+  .theme-picker .current { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
+  .theme-picker .caret { font-size: 10px; color: var(--text-faint); }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 40px;
+  }
+  section h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+    font-weight: 600;
+  }
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .empty-state .headline {
+    color: var(--accent-hot);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .empty-state .sub {
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  footer {
+    margin-top: 60px;
+    padding: 24px 32px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="wordmark">Sharpee<span class="dot">.</span>play
+    <span class="tagline">multi-user interactive fiction</span>
+  </div>
+  <div class="header-actions">
+    <button class="theme-picker">
+      <span class="swatch"></span>
+      <span class="current">modern-dark</span>
+      <span class="caret">▾</span>
+    </button>
+    <button class="btn-primary">+ Create Room</button>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <h2>Active Rooms · 0</h2>
+    <div class="empty-state">
+      <div class="headline">No rooms in progress</div>
+      <div class="sub">When someone is playing, their room shows up here.</div>
+      <button class="btn-primary">+ Create the first room</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Available Stories · 0</h2>
+    <div class="empty-state">
+      <div class="headline">No stories installed</div>
+      <div class="sub">The operator needs to drop a <code style="font-family: var(--font-mono); color: var(--accent);">.sharpee</code> file into <code style="font-family: var(--font-mono); color: var(--accent);">/data/stories</code>.</div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Sharpee multi-user server · ADR-153
+</footer>
+
+</body>
+</html>

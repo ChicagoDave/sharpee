@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Room (MOCKUP)</title>
+<style>
+  /* Catppuccin Mocha palette — matches 01-landing.html.
+     Static mockup — no JS. Represents the room state where another user
+     (Charlie, Command Entrant) is mid-typing. The lock is held by Charlie;
+     the local user (You, Primary Host) sees the live draft and cannot edit. */
+
+  :root {
+    --bg:          #1e1e2e;
+    --bg-alt:      #181825;
+    --bg-sunken:   #11111b;
+    --panel:       #181825;
+    --panel-hdr:   #11111b;
+    --border:      #313244;
+    --border-soft: #45475a;
+    --text:        #cdd6f4;
+    --text-muted:  #a6adc8;
+    --text-faint:  #6c7086;
+    --accent:      #89b4fa;
+    --accent-hot:  #f5e0dc;
+    --link:        #89dceb;
+    --error:       #f38ba8;
+    --rec:         #f38ba8;
+    --success:     #a6e3a1;
+    --warning:     #fab387;
+    --ph-color:    #f5e0dc;
+    --ch-color:    #cba6f7;
+    --ce-color:    #89b4fa;
+
+    --font-ui:     'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono:   'JetBrains Mono', Consolas, Monaco, monospace;
+    --font-story:  'Inter', system-ui, sans-serif;
+    --radius:      6px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.55;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== Layout ===== */
+  .app {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    min-height: 0;
+  }
+
+  header.room-header {
+    background: var(--bg-sunken);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .room-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-hot);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .room-title .pinned {
+    font-size: 11px;
+    color: var(--warning);
+    background: rgba(250, 179, 135, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rec-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--rec);
+    padding: 4px 8px;
+    background: rgba(243, 139, 168, 0.1);
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+  }
+  .rec-indicator::before {
+    content: "";
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--rec);
+    box-shadow: 0 0 6px var(--rec);
+  }
+
+  .copy-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px 10px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+  .copy-btn .code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  /* Theme picker (shared vocabulary with landing page) */
+  .theme-picker {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 5px 10px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .theme-picker:hover { border-color: var(--accent); color: var(--text); }
+  .theme-picker .swatch {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e1e2e 50%, #cdd6f4 50%);
+    border: 1px solid var(--border-soft);
+  }
+  .theme-picker .current {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text);
+  }
+  .theme-picker .caret { font-size: 9px; color: var(--text-faint); }
+
+  /* ===== Main body ===== */
+  main.room-body {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ===== Roster (sits atop chat in the right column) ===== */
+  .roster {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    overflow-y: auto;
+    min-height: 0;
+    flex-shrink: 0;
+  }
+  .roster-heading {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .participant {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--text);
+    transition: background 0.1s;
+  }
+  .participant:hover { background: var(--bg-alt); }
+  .participant.holds-lock { background: rgba(137, 180, 250, 0.08); }
+  .participant .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+  .participant.offline .dot { background: var(--text-faint); }
+  .participant .name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .participant.me .name { color: var(--accent-hot); }
+  .participant .badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+  }
+  .badge-ph { color: var(--ph-color); background: rgba(245, 224, 220, 0.1); }
+  .badge-ch { color: var(--ch-color); background: rgba(203, 166, 247, 0.1); }
+  .badge-ce { color: var(--ce-color); background: rgba(137, 180, 250, 0.1); }
+  .badge-p  { color: var(--text-muted); background: rgba(166, 173, 200, 0.08); }
+
+  .participant .mute-icon {
+    font-size: 12px;
+    color: var(--error);
+    font-weight: 700;
+  }
+  .participant .lock-marker {
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  .roster-section + .roster-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ===== Center: Transcript + command input ===== */
+  section.game {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .transcript {
+    overflow-y: auto;
+    padding: 24px 40px;
+    font-family: var(--font-story);
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 0;
+  }
+
+  .transcript .story-output {
+    color: var(--text);
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+  }
+  .transcript .room-title-block {
+    color: var(--accent-hot);
+    font-weight: 600;
+    font-size: 17px;
+    margin-bottom: 8px;
+  }
+  .transcript .command-echo {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    margin-bottom: 14px;
+    margin-top: 8px;
+  }
+  .transcript .command-echo .who {
+    font-family: var(--font-ui);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 10px;
+  }
+  .transcript .system {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  /* Command input area with lock-on-typing live preview */
+  .command-area {
+    background: var(--bg-sunken);
+    border-top: 1px solid var(--border);
+    padding: 14px 40px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .lock-status {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lock-status.held {
+    color: var(--accent);
+  }
+  .lock-status .typist-name { color: var(--ce-color); font-weight: 600; }
+  .lock-status .cursor-pulse {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+  .command-input {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+  }
+  .command-input.readonly {
+    border-style: dashed;
+    opacity: 0.85;
+    cursor: not-allowed;
+  }
+  .command-input .prompt {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .command-input .draft {
+    flex: 1;
+    color: var(--text);
+  }
+  .command-input .draft .caret {
+    display: inline-block;
+    width: 8px;
+    background: var(--text);
+    margin-left: 1px;
+    animation: blink 1s step-end infinite;
+    color: transparent;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
+  }
+
+  /* ===== Right column: roster + chat stacked ===== */
+  aside.side-panel {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .chat-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+    background: var(--panel-hdr);
+  }
+
+  .chat-messages {
+    overflow-y: auto;
+    padding: 14px 14px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chat-msg .meta {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-bottom: 2px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .chat-msg .meta .author { color: var(--text-muted); font-weight: 600; }
+  .chat-msg.me .meta .author { color: var(--accent-hot); }
+  .chat-msg.ph .meta .author { color: var(--ph-color); }
+  .chat-msg.ch .meta .author { color: var(--ch-color); }
+  .chat-msg.ce .meta .author { color: var(--ce-color); }
+  .chat-msg .body {
+    font-size: 13px;
+    color: var(--text);
+    word-wrap: break-word;
+  }
+
+  .chat-input-row {
+    padding: 12px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border);
+  }
+  .chat-input {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+  }
+  .chat-input input {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font: inherit;
+    flex: 1;
+    outline: none;
+  }
+  .chat-input input::placeholder { color: var(--text-faint); }
+
+  /* ===== Scrollbars ===== */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-soft); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="room-header">
+    <div class="room-title">
+      Tuesday book club — Zork I
+      <span class="pinned">● pinned</span>
+    </div>
+    <div class="header-actions">
+      <span class="rec-indicator">REC</span>
+      <button class="copy-btn"><span>Copy URL</span></button>
+      <button class="copy-btn">Copy code <span class="code">XYZB-3F56</span></button>
+      <button class="theme-picker" title="Change theme">
+        <span class="swatch"></span>
+        <span class="current">modern-dark</span>
+        <span class="caret">▾</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="room-body">
+
+    <!-- ===== Left (main): Transcript + command input ===== -->
+    <section class="game">
+
+      <div class="transcript">
+
+        <div class="story-output">
+          <div class="room-title-block">West of House</div>
+          You are standing in an open field west of a white house, with a boarded front door. There is a small mailbox here.
+        </div>
+
+        <div class="command-echo">
+          &gt; open mailbox
+          <span class="who">— Alice</span>
+        </div>
+
+        <div class="story-output">
+          Opening the small mailbox reveals a leaflet.
+        </div>
+
+        <div class="command-echo">
+          &gt; read leaflet
+          <span class="who">— Charlie</span>
+        </div>
+
+        <div class="system">(Taking the leaflet first)</div>
+
+        <div class="story-output">
+          "WELCOME TO ZORK!
+
+ZORK is a game of adventure, danger, and low cunning. In it you will explore some of the most amazing territory ever seen by mortals. No computer should be without one!"
+        </div>
+
+        <div class="command-echo">
+          &gt; drop leaflet
+          <span class="who">— Alice</span>
+        </div>
+
+        <div class="story-output">
+          Dropped.
+        </div>
+
+      </div>
+
+      <div class="command-area">
+        <div class="lock-status held">
+          <span class="cursor-pulse"></span>
+          <span><span class="typist-name">Charlie</span> is typing…</span>
+        </div>
+        <div class="command-input readonly">
+          <span class="prompt">&gt;</span>
+          <span class="draft">look in mailbox<span class="caret">|</span></span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===== Right: Roster + Chat stacked ===== -->
+    <aside class="side-panel">
+
+      <div class="roster">
+        <div class="roster-heading">Players · 5</div>
+        <div class="participant me">
+          <span class="dot"></span>
+          <span class="name">You (Dave)</span>
+          <span class="badge badge-ph">PH</span>
+          <span></span>
+        </div>
+        <div class="participant">
+          <span class="dot"></span>
+          <span class="name">Alice</span>
+          <span class="badge badge-ch">CH</span>
+          <span></span>
+        </div>
+        <div class="participant holds-lock">
+          <span class="dot"></span>
+          <span class="name">Charlie</span>
+          <span class="badge badge-ce">CE</span>
+          <span class="lock-marker" title="typing">⌨</span>
+        </div>
+        <div class="participant">
+          <span class="dot"></span>
+          <span class="name">Bob</span>
+          <span class="badge badge-p">P</span>
+          <span></span>
+        </div>
+        <div class="participant offline">
+          <span class="dot"></span>
+          <span class="name">Erin</span>
+          <span class="badge badge-p">P</span>
+          <span class="mute-icon" title="muted">✕</span>
+        </div>
+      </div>
+
+      <div class="chat-header">Room chat</div>
+
+      <div class="chat-messages">
+
+        <div class="chat-msg ch">
+          <div class="meta"><span class="author">Alice</span><span>10:14</span></div>
+          <div class="body">wait read the leaflet first</div>
+        </div>
+
+        <div class="chat-msg ce">
+          <div class="meta"><span class="author">Charlie</span><span>10:14</span></div>
+          <div class="body">already on it</div>
+        </div>
+
+        <div class="chat-msg me">
+          <div class="meta"><span class="author">You</span><span>10:15</span></div>
+          <div class="body">ok mailbox was empty after</div>
+        </div>
+
+        <div class="chat-msg">
+          <div class="meta"><span class="author">Bob</span><span>10:15</span></div>
+          <div class="body">should we try the house?</div>
+        </div>
+
+        <div class="chat-msg ce">
+          <div class="meta"><span class="author">Charlie</span><span>10:16</span></div>
+          <div class="body">one sec let me poke the mailbox again</div>
+        </div>
+
+        <div class="chat-msg me">
+          <div class="meta"><span class="author">You</span><span>10:16</span></div>
+          <div class="body">go for it</div>
+        </div>
+
+      </div>
+
+      <div class="chat-input-row">
+        <div class="chat-input">
+          <input type="text" placeholder="Message the room…">
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Roster menu open</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  .participant .menu-trigger {
+    font-size: 14px;
+    color: var(--text-faint);
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .participant:hover .menu-trigger,
+  .participant.menu-open .menu-trigger { color: var(--text); }
+
+  /* Context menu floating over the roster row */
+  .ctx-menu {
+    position: absolute;
+    top: 64px;       /* approximately below the participant row */
+    right: 16px;
+    width: 220px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+    padding: 6px;
+    z-index: 20;
+  }
+  .ctx-menu .section-label {
+    font-size: 10px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 6px 10px 4px;
+  }
+  .ctx-menu .item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--text);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .ctx-menu .item:hover { background: var(--border); }
+  .ctx-menu .item.disabled { color: var(--text-faint); cursor: not-allowed; }
+  .ctx-menu .item.destructive { color: var(--error); }
+  .ctx-menu .item .shortcut {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .ctx-menu hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 4px 0;
+  }
+
+  aside.side-panel { position: relative; }
+</style>
+</head>
+<body class="room-layout">
+
+<!-- State: You (PH) right-clicked on Charlie's (CE) row. The moderation menu is open. -->
+
+<div class="app">
+
+  <header class="room-header">
+    <div class="room-title">Tuesday book club — Zork I</div>
+    <div class="header-actions">
+      <span class="rec-indicator">REC</span>
+      <button class="copy-btn">Copy URL</button>
+      <button class="copy-btn">Copy code <span class="code">XYZB-3F56</span></button>
+      <button class="theme-picker">
+        <span class="swatch"></span><span class="current">modern-dark</span><span class="caret">▾</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="room-body">
+
+    <section class="game">
+      <div class="transcript">
+        <div class="story-output"><div class="room-title-block">West of House</div>You are standing in an open field west of a white house, with a boarded front door. There is a small mailbox here.</div>
+        <div class="command-echo">&gt; open mailbox <span class="who">— Alice</span></div>
+        <div class="story-output">Opening the small mailbox reveals a leaflet.</div>
+      </div>
+      <div class="command-area">
+        <div class="lock-status">No one is typing. Click the command box to take the lock.</div>
+        <div class="command-input"><span class="prompt">&gt;</span><span class="draft" style="color: var(--text-faint);">type a command…</span></div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="roster">
+        <div class="roster-heading">Players · 5</div>
+        <div class="participant me">
+          <span class="dot"></span><span class="name">You (Dave)</span><span class="badge badge-ph">PH</span><span></span>
+        </div>
+        <div class="participant">
+          <span class="dot"></span><span class="name">Alice</span><span class="badge badge-ch">CH</span>
+          <span class="menu-trigger">⋮</span>
+        </div>
+        <div class="participant menu-open" style="background: var(--bg-alt);">
+          <span class="dot"></span><span class="name">Charlie</span><span class="badge badge-ce">CE</span>
+          <span class="menu-trigger">⋮</span>
+        </div>
+
+        <div class="ctx-menu">
+          <div class="section-label">Charlie · Command Entrant</div>
+          <div class="item">Send DM <span class="shortcut">disabled — not Co-Host</span></div>
+          <hr>
+          <div class="section-label">Moderation</div>
+          <div class="item">Mute</div>
+          <div class="item">Promote → Co-Host</div>
+          <div class="item disabled">Promote → Command Entrant <span class="shortcut">already</span></div>
+          <div class="item">Demote → Participant</div>
+          <hr>
+          <div class="section-label">As Primary Host only</div>
+          <div class="item destructive">Remove from room (demote + mute)</div>
+        </div>
+
+        <div class="participant">
+          <span class="dot"></span><span class="name">Bob</span><span class="badge badge-p">P</span>
+          <span class="menu-trigger">⋮</span>
+        </div>
+        <div class="participant offline">
+          <span class="dot"></span><span class="name">Erin</span><span class="badge badge-p">P</span>
+          <span class="mute-icon">✕</span>
+        </div>
+      </div>
+      <div class="chat-header">Room chat</div>
+      <div class="chat-messages">
+        <div class="chat-msg ch"><div class="meta"><span class="author">Alice</span><span>10:14</span></div><div class="body">wait read the leaflet first</div></div>
+      </div>
+      <div class="chat-input-row">
+        <div class="chat-input"><input placeholder="Message the room…"></div>
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+</body>
+</html>

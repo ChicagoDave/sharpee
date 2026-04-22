@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Room (local user typing)</title>
+<link rel="stylesheet" href="_common.css">
+</head>
+<body class="room-layout">
+
+<!-- State: You (Dave, PH) are holding the lock and typing. -->
+
+<div class="app">
+
+  <header class="room-header">
+    <div class="room-title">
+      Tuesday book club — Zork I
+      <span class="pinned">● pinned</span>
+    </div>
+    <div class="header-actions">
+      <span class="rec-indicator">REC</span>
+      <button class="copy-btn">Copy URL</button>
+      <button class="copy-btn">Copy code <span class="code">XYZB-3F56</span></button>
+      <button class="theme-picker">
+        <span class="swatch"></span>
+        <span class="current">modern-dark</span>
+        <span class="caret">▾</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="room-body">
+
+    <section class="game">
+      <div class="transcript">
+        <div class="story-output">
+          <div class="room-title-block">West of House</div>
+          You are standing in an open field west of a white house, with a boarded front door. There is a small mailbox here.
+        </div>
+        <div class="command-echo">&gt; open mailbox <span class="who">— Alice</span></div>
+        <div class="story-output">Opening the small mailbox reveals a leaflet.</div>
+        <div class="command-echo">&gt; read leaflet <span class="who">— Charlie</span></div>
+        <div class="system">(Taking the leaflet first)</div>
+        <div class="story-output">"WELCOME TO ZORK!
+
+ZORK is a game of adventure, danger, and low cunning."</div>
+      </div>
+
+      <div class="command-area">
+        <div class="lock-status held-by-me">
+          <span class="cursor-pulse" style="background: var(--success);"></span>
+          <span>You hold the lock &nbsp;·&nbsp; Enter to submit &nbsp;·&nbsp; clear to release</span>
+        </div>
+        <div class="command-input active">
+          <span class="prompt">&gt;</span>
+          <span class="draft">north<span class="caret">|</span></span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="roster">
+        <div class="roster-heading">Players · 5</div>
+        <div class="participant me holds-lock">
+          <span class="dot"></span>
+          <span class="name">You (Dave)</span>
+          <span class="badge badge-ph">PH</span>
+          <span class="lock-marker" title="typing">⌨</span>
+        </div>
+        <div class="participant">
+          <span class="dot"></span><span class="name">Alice</span><span class="badge badge-ch">CH</span><span></span>
+        </div>
+        <div class="participant">
+          <span class="dot"></span><span class="name">Charlie</span><span class="badge badge-ce">CE</span><span></span>
+        </div>
+        <div class="participant">
+          <span class="dot"></span><span class="name">Bob</span><span class="badge badge-p">P</span><span></span>
+        </div>
+        <div class="participant offline">
+          <span class="dot"></span><span class="name">Erin</span><span class="badge badge-p">P</span><span class="mute-icon">✕</span>
+        </div>
+      </div>
+      <div class="chat-header">Room chat</div>
+      <div class="chat-messages">
+        <div class="chat-msg ch"><div class="meta"><span class="author">Alice</span><span>10:14</span></div><div class="body">wait read the leaflet first</div></div>
+        <div class="chat-msg ce"><div class="meta"><span class="author">Charlie</span><span>10:14</span></div><div class="body">already on it</div></div>
+        <div class="chat-msg me"><div class="meta"><span class="author">You</span><span>10:16</span></div><div class="body">ok let me try north</div></div>
+      </div>
+      <div class="chat-input-row">
+        <div class="chat-input"><input placeholder="Message the room…"></div>
+      </div>
+    </aside>
+
+  </main>
+</div>
+
+</body>
+</html>

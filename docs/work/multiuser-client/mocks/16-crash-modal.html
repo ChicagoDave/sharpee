@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Sandbox crash modal</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  .crash-modal { max-width: 500px; }
+  .crash-modal .modal-header h2 { color: var(--error); }
+  .crash-modal .icon-row {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .crash-modal .icon-row .icon {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: rgba(243, 139, 168, 0.15);
+    color: var(--error);
+    font-size: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .crash-modal .desc {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .crash-modal .save-option {
+    background: var(--bg-sunken);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .crash-modal .save-option .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .crash-modal .save-option .name { font-size: 14px; color: var(--text); font-weight: 500; }
+  .crash-modal .save-option .meta { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+  .ghost-room {
+    position: fixed; inset: 0; padding: 40px;
+    color: var(--text-faint);
+    opacity: 0.25;
+  }
+</style>
+</head>
+<body>
+
+<div class="ghost-room">
+  <div style="color: var(--accent-hot); font-size: 16px; font-weight: 600;">Tuesday book club — Zork I</div>
+</div>
+
+<div class="modal-backdrop">
+  <div class="modal crash-modal">
+    <div class="modal-header">
+      <h2>The story process stopped</h2>
+      <div class="subtitle">Don't worry — the room is still alive. You can restart from a save.</div>
+    </div>
+
+    <div class="modal-body">
+      <div class="icon-row">
+        <div class="icon">⚠</div>
+        <div class="desc">
+          The isolated story runtime for this room exited unexpectedly.
+          Nothing outside this room is affected — chat, DMs, participants, and the server are all fine.
+          To continue playing, restore from the most recent save.
+        </div>
+      </div>
+
+      <div class="save-option">
+        <div style="flex: 1;">
+          <div class="label">Most recent save</div>
+          <div class="name">unnamed</div>
+          <div class="meta">by Dave · 3 minutes ago</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; font-size: 12px; color: var(--text-faint);">
+        If no save is available, the Primary Host can close the room and start a new one with the same story.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary">Close room</button>
+      <button class="btn-primary">Restore from last save</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

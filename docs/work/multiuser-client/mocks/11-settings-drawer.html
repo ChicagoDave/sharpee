@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — PH Settings drawer</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  /* Settings drawer overlays the right portion of the room. */
+  .drawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 40;
+  }
+  .drawer {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 380px;
+    background: var(--bg-alt);
+    border-left: 1px solid var(--border);
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+  }
+  .drawer .hdr {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .drawer .hdr h2 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--accent-hot);
+  }
+  .drawer .close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+  }
+  .drawer .body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .drawer .section {
+    padding: 14px 0 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .drawer .section:last-child { border-bottom: none; }
+  .drawer .section h3 {
+    margin: 0 0 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+  .toggle-row .desc { font-size: 13px; color: var(--text); }
+  .toggle-row .sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+  .switch {
+    width: 38px; height: 22px;
+    background: var(--accent);
+    border-radius: 22px;
+    position: relative;
+    cursor: pointer;
+  }
+  .switch.off { background: var(--border); }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 18px;
+    width: 18px; height: 18px;
+    background: var(--bg-sunken);
+    border-radius: 50%;
+    transition: left 0.15s;
+  }
+  .switch.off::after { left: 2px; }
+
+  .successor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .successor-row:hover { background: var(--border); }
+  .successor-row.selected {
+    background: rgba(137, 180, 250, 0.1);
+    border: 1px solid var(--accent);
+  }
+  .successor-row input[type="radio"] { accent-color: var(--accent); }
+
+  .danger-zone {
+    background: rgba(243, 139, 168, 0.06);
+    border: 1px solid rgba(243, 139, 168, 0.3);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 14px;
+  }
+  .danger-zone h3 { color: var(--error); }
+
+  /* Ghost room behind drawer */
+  .ghost-room {
+    position: fixed;
+    inset: 0;
+    right: 380px;
+    padding: 40px;
+    color: var(--text-faint);
+    opacity: 0.3;
+  }
+</style>
+</head>
+<body class="room-layout">
+
+<div class="ghost-room">
+  <div style="color: var(--accent-hot); font-size: 16px; font-weight: 600;">Tuesday book club — Zork I</div>
+  <div style="margin-top: 30px; font-family: var(--font-story); font-size: 15px; line-height: 1.6;">
+    West of House.<br><br>
+    You are standing in an open field west of a white house…
+  </div>
+</div>
+
+<div class="drawer-backdrop"></div>
+<div class="drawer">
+  <div class="hdr">
+    <h2>Room settings</h2>
+    <button class="close">✕</button>
+  </div>
+
+  <div class="body">
+
+    <div class="section">
+      <h3>Title</h3>
+      <label class="field">
+        <input type="text" value="Tuesday book club — Zork I" maxlength="80">
+        <span class="hint">Shown on the public landing page. Up to 80 characters.</span>
+      </label>
+      <button class="btn-secondary" style="margin-top: 4px;">Save changes</button>
+    </div>
+
+    <div class="section">
+      <h3>Pin</h3>
+      <div class="toggle-row">
+        <div>
+          <div class="desc">Pin this room</div>
+          <div class="sub">Pinned rooms are not recycled after 14 days of inactivity.</div>
+        </div>
+        <div class="switch" title="on"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Designated successor</h3>
+      <div class="sub" style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+        If you disconnect for more than 5 minutes, this Co-Host becomes Primary Host.
+      </div>
+      <label class="successor-row selected">
+        <input type="radio" name="succ" checked>
+        <span class="name">Alice</span>
+        <span class="badge badge-ch">CH</span>
+      </label>
+      <label class="successor-row">
+        <input type="radio" name="succ">
+        <span class="name">(no other Co-Hosts — promote one first)</span>
+      </label>
+    </div>
+
+    <div class="section">
+      <h3>Danger zone</h3>
+      <div class="danger-zone">
+        <div style="font-size: 13px; color: var(--text); margin-bottom: 10px;">
+          Deleting a room immediately disconnects all participants and removes every chat message, DM, save, and event log entry for this room. The join code returns to the pool.
+        </div>
+        <button class="btn-secondary">Delete this room…</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

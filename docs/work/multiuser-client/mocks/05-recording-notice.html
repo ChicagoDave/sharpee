@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Recording-transparency notice</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  .ghost-room {
+    position: fixed; inset: 0;
+    padding: 40px;
+    color: var(--text-faint);
+    opacity: 0.25;
+    font-family: var(--font-story);
+  }
+  .notice-modal { max-width: 500px; }
+  .notice-body {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .notice-body p { margin: 0 0 14px; }
+  .notice-body .rec-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--rec);
+    padding: 6px 10px;
+    background: rgba(243, 139, 168, 0.1);
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+    margin: 6px 0 18px;
+  }
+  .notice-body .rec-line::before {
+    content: "";
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--rec);
+    box-shadow: 0 0 6px var(--rec);
+  }
+  .notice-body strong { color: var(--accent-hot); font-weight: 600; }
+  .ack-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="ghost-room">
+  West of House<br><br>
+  You are standing in an open field west of a white house, with a boarded front door. There is a small mailbox here.
+</div>
+
+<div class="modal-backdrop">
+  <div class="modal notice-modal">
+    <div class="modal-header">
+      <h2>This room is recorded</h2>
+    </div>
+
+    <div class="modal-body notice-body">
+      <div class="rec-line">REC &nbsp;· always on</div>
+
+      <p>
+        Every command typed, every chat message, every direct message between the Primary Host
+        and Co-Hosts, and every role change in this room is written to the room's event log.
+      </p>
+
+      <p>
+        Be on good behavior — <strong>this includes Hosts and Co-Hosts.</strong> Your DMs are
+        not exempt from the log. If this room is ever flagged for moderation review, the log is
+        what gets reviewed.
+      </p>
+
+      <p>
+        A persistent <span style="color: var(--rec); font-weight: 600;">REC</span> indicator
+        stays visible in the room so you always know recording is active.
+      </p>
+    </div>
+
+    <div class="modal-footer">
+      <label class="ack-row">
+        <input type="checkbox" checked> I understand
+      </label>
+      <button class="btn-primary" style="margin-left: auto;">Continue to room</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

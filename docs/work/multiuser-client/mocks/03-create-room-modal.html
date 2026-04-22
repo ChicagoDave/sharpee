@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Create Room modal</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  /* Backdrop shows a dimmed landing-page hint behind the modal. */
+  body { background: var(--bg); }
+  .ghost-landing {
+    position: fixed; inset: 0;
+    padding: 40px;
+    color: var(--text-faint);
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    opacity: 0.3;
+  }
+</style>
+</head>
+<body>
+
+<div class="ghost-landing">Sharpee<span style="color:var(--accent)">.</span>play</div>
+
+<div class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Create a room</h2>
+      <div class="subtitle">Pick a story and share the passcode with your players.</div>
+    </div>
+
+    <div class="modal-body">
+      <label class="field">
+        <span class="label-text">Room title</span>
+        <input type="text" value="Tuesday book club — Zork I" maxlength="80">
+        <span class="hint">Shown on the public landing page. Up to 80 characters.</span>
+      </label>
+
+      <label class="field">
+        <span class="label-text">Story</span>
+        <select>
+          <option>Dungeo (dungeo.sharpee)</option>
+          <option>Entropy (entropy.sharpee)</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="label-text">Your display name</span>
+        <input type="text" value="Dave">
+        <span class="hint">Visible to other participants in this room.</span>
+      </label>
+
+      <label class="field">
+        <span class="label-text">Verify you're human</span>
+        <div class="captcha-placeholder">[ CAPTCHA widget — renders Turnstile / hCaptcha / Friendly based on server config ]</div>
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary">Cancel</button>
+      <button class="btn-primary">Create room</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
