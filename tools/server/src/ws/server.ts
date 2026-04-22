@@ -38,9 +38,22 @@ import { handleSubmitCommand } from './handlers/submit-command.js';
 import { handleDraftDelta } from './handlers/draft-delta.js';
 import { handleReleaseLock } from './handlers/release-lock.js';
 import { handleForceRelease } from './handlers/force-release.js';
+import { handleSave } from './handlers/save.js';
+import { handleRestore } from './handlers/restore.js';
+import { handlePromote } from './handlers/promote.js';
+import { handleDemote } from './handlers/demote.js';
+import { handleNominateSuccessor } from './handlers/nominate-successor.js';
 import { createLockManager, type LockManager } from './lock-manager.js';
 import { createAfkTimer, type AfkTimer, type AfkTimerOptions } from './afk-timer.js';
+import {
+  createPhGraceTimer,
+  type PhGraceTimer,
+  type PhGraceTimerOptions,
+  type Clock,
+} from '../rooms/ph-grace-timer.js';
+import { performSuccession } from '../rooms/succession.js';
 import type { RoomManager } from '../rooms/room-manager.js';
+import type { SaveService } from '../saves/save-service.js';
 
 /** How long a freshly-connected socket has to deliver the hello frame. */
 export const HELLO_TIMEOUT_MS = 5_000;
@@ -67,6 +80,12 @@ export interface WsDeps {
   afkTimerOptions?: AfkTimerOptions;
   /** Optional for Phase 3-only wiring; required once submit_command is routed. */
   roomManager?: RoomManager;
+  /** Required once the `save` / `restore` frames are routed (Phase 6). */
+  saveService?: SaveService;
+  /** PH grace timer options — lets tests use a 1-second window for speed. */
+  phGraceTimerOptions?: PhGraceTimerOptions;
+  /** Inject a MockClock in tests so the grace timer advances deterministically. */
+  phGraceTimerClock?: Clock;
 }
 
 export interface WsServerHandle {
@@ -74,6 +93,7 @@ export interface WsServerHandle {
   readonly connections: ConnectionManager;
   readonly locks: LockManager;
   readonly afkTimer: AfkTimer;
+  readonly phGraceTimer: PhGraceTimer;
   handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void;
   close(): Promise<void>;
 }
@@ -134,6 +154,62 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
   );
   afkTimer.start();
 
+  // PH grace timer — started on PH disconnect, cancelled on PH reconnect,
+  // fires the succession chain when the 5-minute window elapses.
+  const phGraceTimer = createPhGraceTimer(
+    {
+      clock: deps.phGraceTimerClock,
+      onFire: (room_id) => {
+        // Recheck: PH may have reconnected between scheduling and fire.
+        const room = deps.rooms.findById(room_id);
+        if (!room || !room.primary_host_id) return;
+        const currentPh = deps.participants.findById(room.primary_host_id);
+        if (!currentPh || currentPh.connected) return; // raced reconnect
+
+        const outcome = performSuccession(
+          {
+            db: deps.db,
+            rooms: deps.rooms,
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+          },
+          room_id
+        );
+        if (outcome.kind !== 'succeeded') return;
+
+        // Broadcast the three role_change frames + a `successor` push.
+        // actor_id is null for every frame — these are system-initiated.
+        if (outcome.old_ph_id) {
+          connections.broadcast(room_id, {
+            kind: 'role_change',
+            participant_id: outcome.old_ph_id,
+            tier: 'participant',
+            actor_id: null,
+          });
+        }
+        connections.broadcast(room_id, {
+          kind: 'role_change',
+          participant_id: outcome.new_ph_id,
+          tier: 'primary_host',
+          actor_id: null,
+        });
+        if (outcome.new_co_host_id) {
+          connections.broadcast(room_id, {
+            kind: 'role_change',
+            participant_id: outcome.new_co_host_id,
+            tier: 'co_host',
+            actor_id: null,
+          });
+          connections.broadcast(room_id, {
+            kind: 'successor',
+            participant_id: outcome.new_co_host_id,
+          });
+        }
+      },
+    },
+    deps.phGraceTimerOptions ?? {}
+  );
+
   const pending = new WeakMap<WebSocket, PendingSocket>();
   const socketRoom = new WeakMap<WebSocket, string>();
 
@@ -163,7 +239,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
           ws.close(4005, 'malformed_frame');
           return;
         }
-        handleHello(
+        const participant_id = handleHello(
           {
             db: deps.db,
             rooms: deps.rooms,
@@ -176,6 +252,16 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
           pendingInfo.url_room_id,
           frame
         );
+
+        // If the joining participant is the current PH of this room, their
+        // hello is a reconnect within the grace window — cancel the pending
+        // succession fire.
+        if (participant_id) {
+          const room = deps.rooms.findById(pendingInfo.url_room_id);
+          if (room && room.primary_host_id === participant_id) {
+            phGraceTimer.cancel(pendingInfo.url_room_id);
+          }
+        }
         return;
       }
 
@@ -255,10 +341,90 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
         return;
       }
 
+      if (frame.kind === 'save') {
+        if (!deps.saveService) {
+          sendMsg(ws, { kind: 'error', code: 'not_ready', detail: 'save service not wired' });
+          return;
+        }
+        void handleSave(
+          {
+            participants: deps.participants,
+            connections,
+            saveService: deps.saveService,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'restore') {
+        if (!deps.saveService) {
+          sendMsg(ws, { kind: 'error', code: 'not_ready', detail: 'save service not wired' });
+          return;
+        }
+        void handleRestore(
+          {
+            participants: deps.participants,
+            connections,
+            locks,
+            saveService: deps.saveService,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'promote') {
+        handlePromote(
+          {
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'demote') {
+        handleDemote(
+          {
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
+      if (frame.kind === 'nominate_successor') {
+        handleNominateSuccessor(
+          {
+            db: deps.db,
+            participants: deps.participants,
+            sessionEvents: deps.sessionEvents,
+            connections,
+          },
+          ws,
+          actor,
+          frame
+        );
+        return;
+      }
+
       sendMsg(ws, {
         kind: 'error',
         code: 'not_implemented',
-        detail: `frame kind ${(frame as { kind: string }).kind} not handled in phase 5`,
+        detail: `frame kind ${(frame as { kind: string }).kind} not handled in phase 7`,
       });
     });
 
@@ -286,6 +452,15 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
           meta.participant_id,
           meta.room_id
         );
+
+        // If the disconnecting socket belongs to the current PH, start the
+        // grace timer. Re-scheduling is idempotent — a second disconnect
+        // during the window simply restarts the clock (matches the handler
+        // contract in ph-grace-timer.ts).
+        const room = deps.rooms.findById(meta.room_id);
+        if (room && room.primary_host_id === meta.participant_id) {
+          phGraceTimer.start(meta.room_id);
+        }
       }
     });
 
@@ -309,6 +484,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
     connections,
     locks,
     afkTimer,
+    phGraceTimer,
     handleUpgrade(req, socket, head) {
       const roomId = parseRoomIdFromUrl(req.url);
       if (!roomId) {
@@ -321,6 +497,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
     },
     async close() {
       afkTimer.stop();
+      phGraceTimer.cancelAll();
       await new Promise<void>((resolve) => wss.close(() => resolve()));
     },
   };

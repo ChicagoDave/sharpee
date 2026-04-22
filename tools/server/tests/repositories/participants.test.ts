@@ -90,6 +90,20 @@ describe('ParticipantsRepository', () => {
     expect(participants.findById(p.participant_id)?.connected).toBe(false);
   });
 
+  it('setIsSuccessor toggles the is_successor flag and persists', () => {
+    const room_id = setupRoom(db);
+    const participants = createParticipantsRepository(db);
+    const p = participants.createOrReconnect({ room_id, token: 't', display_name: 'A' });
+
+    expect(participants.findById(p.participant_id)?.is_successor).toBe(false);
+
+    participants.setIsSuccessor(p.participant_id, true);
+    expect(participants.findById(p.participant_id)?.is_successor).toBe(true);
+
+    participants.setIsSuccessor(p.participant_id, false);
+    expect(participants.findById(p.participant_id)?.is_successor).toBe(false);
+  });
+
   it('listForRoom orders by joined_at ascending', async () => {
     const room_id = setupRoom(db);
     const participants = createParticipantsRepository(db);

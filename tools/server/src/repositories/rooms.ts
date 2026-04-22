@@ -19,6 +19,12 @@ export interface RoomsRepository {
   findByJoinCode(code: string): Room | null;
   updateLastActivity(room_id: string, ts: string): void;
   setPinned(room_id: string, pinned: boolean): void;
+  /**
+   * Update the aggregate's Primary Host pointer. Called by the succession
+   * state machine after promoting a Co-Host. The caller is responsible for
+   * updating the promoted participant's tier in the same transaction.
+   */
+  updatePrimaryHost(room_id: string, primary_host_id: string): void;
   /** Cascade-deletes participants, session_events, saves in one transaction. */
   delete(room_id: string): void;
   listRecycleCandidates(now: string, idle_days: number): Room[];
@@ -77,6 +83,10 @@ export function createRoomsRepository(db: Database): RoomsRepository {
 
   const updatePinned: Statement = db.prepare(
     `UPDATE rooms SET pinned = ? WHERE room_id = ?`
+  );
+
+  const updatePrimaryHostStmt: Statement = db.prepare(
+    `UPDATE rooms SET primary_host_id = ? WHERE room_id = ?`
   );
 
   const deleteRoom: Statement = db.prepare(`DELETE FROM rooms WHERE room_id = ?`);
@@ -152,6 +162,10 @@ export function createRoomsRepository(db: Database): RoomsRepository {
 
     setPinned(room_id, pinned) {
       updatePinned.run(pinned ? 1 : 0, room_id);
+    },
+
+    updatePrimaryHost(room_id, primary_host_id) {
+      updatePrimaryHostStmt.run(primary_host_id, room_id);
     },
 
     delete(room_id) {

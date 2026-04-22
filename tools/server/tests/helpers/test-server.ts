@@ -17,6 +17,8 @@ import type { Hono } from 'hono';
 import type { WsServerHandle } from '../../src/ws/server.js';
 import type { SandboxRegistry } from '../../src/sandbox/sandbox-registry.js';
 import type { RoomManager } from '../../src/rooms/room-manager.js';
+import type { SaveService } from '../../src/saves/save-service.js';
+import { createSaveService } from '../../src/saves/save-service.js';
 import { createApp } from '../../src/http/app.js';
 import { createRoomsRepository } from '../../src/repositories/rooms.js';
 import { createParticipantsRepository } from '../../src/repositories/participants.js';
@@ -46,6 +48,7 @@ export interface TestServerHandle {
   readonly ws: WsServerHandle;
   readonly sandboxes: SandboxRegistry;
   readonly roomManager: RoomManager;
+  readonly saveService: SaveService;
   /** Shut the server + DB down; also removes the temp stories dir. */
   close(): Promise<void>;
 }
@@ -56,6 +59,10 @@ export interface BuildTestServerOptions {
   sandboxArgs?: string[];
   /** Forward to createWsServer — lets tests shrink the AFK sweep for E2E timing. */
   afkTimerOptions?: import('../../src/ws/afk-timer.js').AfkTimerOptions;
+  /** Forward to createWsServer — PH grace-timer config for deterministic tests. */
+  phGraceTimerOptions?: import('../../src/rooms/ph-grace-timer.js').PhGraceTimerOptions;
+  /** Inject a mock clock so tests can drive the grace-timer fire deterministically. */
+  phGraceTimerClock?: import('../../src/rooms/ph-grace-timer.js').Clock;
 }
 
 /** Launch an HTTP+WS server backed by :memory: SQLite and a temp stories dir. */
@@ -101,6 +108,20 @@ export async function buildTestServer(
     },
   });
 
+  const saveService = createSaveService({
+    db,
+    rooms,
+    saves,
+    sessionEvents,
+    stories,
+    sandboxes,
+    sandboxTimeoutMs: 5_000,
+    sandboxOverride: {
+      binary: process.execPath,
+      args: [STUB_SANDBOX_PATH, ...extraArgs],
+    },
+  });
+
   const app = createApp({ config, db, rooms, participants, sessionEvents, stories, captcha });
   const ws = createWsServer({
     config,
@@ -111,7 +132,10 @@ export async function buildTestServer(
     sessionEvents,
     connections,
     roomManager,
+    saveService,
     afkTimerOptions: opts.afkTimerOptions,
+    phGraceTimerOptions: opts.phGraceTimerOptions,
+    phGraceTimerClock: opts.phGraceTimerClock,
   });
 
   const server = await new Promise<ReturnType<typeof serve>>((resolve) => {
@@ -132,6 +156,7 @@ export async function buildTestServer(
     ws,
     sandboxes,
     roomManager,
+    saveService,
     async close() {
       sandboxes.tearDownAll();
       await ws.close();

@@ -14,6 +14,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import type { Database } from 'better-sqlite3';
 import { openTestDb } from '../helpers/test-db.js';
 import { createRoomsRepository } from '../../src/repositories/rooms.js';
@@ -72,6 +73,15 @@ describe('RoomsRepository', () => {
     expect(rooms.findById(r.room_id)?.last_activity_at).toBe(later);
   });
 
+  it('updatePrimaryHost rewrites the primary_host_id pointer', () => {
+    const rooms = createRoomsRepository(db);
+    const r = rooms.create({ title: 'A', story_slug: 's', primary_host_id: 'p1' });
+    expect(rooms.findById(r.room_id)?.primary_host_id).toBe('p1');
+
+    rooms.updatePrimaryHost(r.room_id, 'p2');
+    expect(rooms.findById(r.room_id)?.primary_host_id).toBe('p2');
+  });
+
   it('listRecycleCandidates returns unpinned rooms past the threshold; excludes pinned peers', () => {
     const rooms = createRoomsRepository(db);
     const old = rooms.create({ title: 'old', story_slug: 's', primary_host_id: 'p1' });
@@ -108,6 +118,7 @@ describe('RoomsRepository', () => {
       payload: { kind: 'join', display_name: 'Alice', reconnect: false },
     });
     saves.create({
+      save_id: randomUUID(),
       room_id: room.room_id,
       actor_id: p.participant_id,
       name: 'save-1',

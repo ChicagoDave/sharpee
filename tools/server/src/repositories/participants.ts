@@ -29,9 +29,23 @@ export interface ParticipantsRepository {
   setTier(participant_id: string, tier: Tier, actor_id: string): void;
   setMuted(participant_id: string, muted: boolean, actor_id: string): void;
   setConnected(participant_id: string, connected: boolean): void;
+  /**
+   * Mark a participant as the designated successor (`is_successor = 1`) or
+   * clear the flag. Callers are responsible for ensuring at most one
+   * participant per room carries the flag — the repo does not enforce it so
+   * the succession transaction can clear + set in two statements.
+   */
+  setIsSuccessor(participant_id: string, is_successor: boolean): void;
   listForRoom(room_id: string): Participant[];
-  /** Earliest-joined still-connected participant in a room. Used by the succession chain. */
-  earliestConnectedParticipant(room_id: string): Participant | null;
+  /**
+   * Earliest-joined still-connected participant in a room. Used by the
+   * succession chain. Pass `exclude_participant_id` to skip the newly
+   * promoted PH so the same row is not returned as the next Co-Host.
+   */
+  earliestConnectedParticipant(
+    room_id: string,
+    exclude_participant_id?: string
+  ): Participant | null;
 }
 
 interface ParticipantRow {
@@ -94,9 +108,18 @@ export function createParticipantsRepository(db: Database): ParticipantsReposito
     ORDER BY joined_at ASC
     LIMIT 1
   `);
+  const selectEarliestConnectedExcluding: Statement = db.prepare(`
+    SELECT * FROM participants
+    WHERE room_id = ? AND connected = 1 AND participant_id != ?
+    ORDER BY joined_at ASC
+    LIMIT 1
+  `);
 
   const updateTier: Statement = db.prepare(`UPDATE participants SET tier = ? WHERE participant_id = ?`);
   const updateMuted: Statement = db.prepare(`UPDATE participants SET muted = ? WHERE participant_id = ?`);
+  const updateIsSuccessor: Statement = db.prepare(
+    `UPDATE participants SET is_successor = ? WHERE participant_id = ?`
+  );
   const updateConnected: Statement = db.prepare(
     `UPDATE participants SET connected = ? WHERE participant_id = ?`
   );
@@ -181,13 +204,21 @@ export function createParticipantsRepository(db: Database): ParticipantsReposito
       updateConnected.run(connected ? 1 : 0, participant_id);
     },
 
+    setIsSuccessor(participant_id, is_successor) {
+      updateIsSuccessor.run(is_successor ? 1 : 0, participant_id);
+    },
+
     listForRoom(room_id) {
       const rows = selectByRoom.all(room_id) as ParticipantRow[];
       return rows.map(rowToParticipant);
     },
 
-    earliestConnectedParticipant(room_id) {
-      const row = selectEarliestConnected.get(room_id) as ParticipantRow | undefined;
+    earliestConnectedParticipant(room_id, exclude_participant_id) {
+      const row = exclude_participant_id
+        ? (selectEarliestConnectedExcluding.get(room_id, exclude_participant_id) as
+            | ParticipantRow
+            | undefined)
+        : (selectEarliestConnected.get(room_id) as ParticipantRow | undefined);
       return row ? rowToParticipant(row) : null;
     },
   };

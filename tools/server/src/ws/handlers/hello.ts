@@ -131,5 +131,38 @@ export function handleHello(
     { except_participant_id: participant.participant_id }
   );
 
+  // Auto-nominate successor (ADR-153 D6): if the room currently has no
+  // designated successor and the joining participant is not the PH, mark
+  // them as the successor and broadcast `successor`. Runs on any hello —
+  // first-join or reconnect — so a room that somehow lost its successor
+  // recovers on the next eligible hello.
+  if (participant.tier !== 'primary_host') {
+    const hasSuccessor = deps.participants
+      .listForRoom(room.room_id)
+      .some((p) => p.is_successor);
+    if (!hasSuccessor) {
+      const nominateTx = deps.db.transaction(() => {
+        deps.participants.setIsSuccessor(participant.participant_id, true);
+        deps.sessionEvents.append({
+          room_id: room.room_id,
+          // null = system actor — the auto-nomination is not user-initiated
+          participant_id: null,
+          kind: 'role',
+          payload: {
+            kind: 'role',
+            op: 'nominate',
+            target_participant_id: participant.participant_id,
+          },
+        });
+      });
+      nominateTx();
+
+      deps.connections.broadcast(room.room_id, {
+        kind: 'successor',
+        participant_id: participant.participant_id,
+      });
+    }
+  }
+
   return participant.participant_id;
 }

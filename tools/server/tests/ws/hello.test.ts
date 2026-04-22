@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   buildTestServer,
   createRoomViaHttp,
+  joinRoomViaHttp,
   type TestServerHandle,
 } from '../helpers/test-server.js';
 import { openWsClient } from '../helpers/ws-client.js';
@@ -143,6 +144,139 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
       expect(close.code).toBe(4000);
     } finally {
       client.close();
+    }
+  });
+
+  /* ---------- Phase 7: first-join auto-nomination ---------- */
+
+  it('second participant hello: auto-nominates them, is_successor=1, successor broadcast, role(nominate) logged (actor=null)', async () => {
+    const host = await createRoomViaHttp(server, {
+      story_slug: 'zork',
+      display_name: 'Alice',
+    });
+    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+
+    const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      hostClient.send({ kind: 'hello', token: host.token });
+      await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
+      );
+
+      guestClient.send({ kind: 'hello', token: guest.token });
+      await guestClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
+      );
+
+      const successor = await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'successor' }> => m.kind === 'successor'
+      );
+      expect(successor.participant_id).toBe(guest.participant_id);
+
+      // is_successor persisted in DB
+      const guestRow = server.db
+        .prepare('SELECT is_successor FROM participants WHERE participant_id = ?')
+        .get(guest.participant_id) as { is_successor: number };
+      expect(guestRow.is_successor).toBe(1);
+
+      // role(nominate) event with actor=null (system)
+      const ev = server.db
+        .prepare(
+          `SELECT participant_id, payload FROM session_events
+           WHERE room_id = ? AND kind = 'role' ORDER BY event_id DESC LIMIT 1`
+        )
+        .get(host.room_id) as { participant_id: string | null; payload: string };
+      expect(ev.participant_id).toBeNull();
+      expect(JSON.parse(ev.payload)).toEqual({
+        kind: 'role',
+        op: 'nominate',
+        target_participant_id: guest.participant_id,
+      });
+    } finally {
+      hostClient.close();
+      guestClient.close();
+    }
+  });
+
+  it('third participant hello with a successor already in place: NO auto-nomination', async () => {
+    const host = await createRoomViaHttp(server, {
+      story_slug: 'zork',
+      display_name: 'Alice',
+    });
+    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest2 = await joinRoomViaHttp(server, host.room_id, 'Carol');
+
+    const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    const guest2Client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      hostClient.send({ kind: 'hello', token: host.token });
+      await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
+      );
+
+      guestClient.send({ kind: 'hello', token: guest.token });
+      await guestClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
+      );
+      // First successor broadcast — guest was auto-nominated.
+      await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'successor' }> => m.kind === 'successor'
+      );
+
+      guest2Client.send({ kind: 'hello', token: guest2.token });
+      await guest2Client.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
+      );
+
+      // Give the server a tick to emit anything else
+      await new Promise((r) => setTimeout(r, 50));
+
+      // No SECOND successor broadcast — successor is still `guest`
+      const successorBroadcasts = hostClient.received.filter(
+        (m) => m.kind === 'successor'
+      );
+      expect(successorBroadcasts.length).toBe(1);
+      expect((successorBroadcasts[0] as Extract<ServerMsg, { kind: 'successor' }>).participant_id).toBe(
+        guest.participant_id
+      );
+
+      // DB: only guest has is_successor=1
+      const guest2Row = server.db
+        .prepare('SELECT is_successor FROM participants WHERE participant_id = ?')
+        .get(guest2.participant_id) as { is_successor: number };
+      expect(guest2Row.is_successor).toBe(0);
+    } finally {
+      hostClient.close();
+      guestClient.close();
+      guest2Client.close();
+    }
+  });
+
+  it('PH hello in an empty room: no auto-nomination', async () => {
+    const host = await createRoomViaHttp(server, {
+      story_slug: 'zork',
+      display_name: 'Alice',
+    });
+
+    const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      hostClient.send({ kind: 'hello', token: host.token });
+      await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
+      );
+      await new Promise((r) => setTimeout(r, 30));
+
+      expect(hostClient.received.some((m) => m.kind === 'successor')).toBe(false);
+
+      // PH is not marked as their own successor
+      const hostRow = server.db
+        .prepare('SELECT is_successor FROM participants WHERE participant_id = ?')
+        .get(host.participant_id) as { is_successor: number };
+      expect(hostRow.is_successor).toBe(0);
+    } finally {
+      hostClient.close();
     }
   });
 });

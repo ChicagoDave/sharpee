@@ -73,7 +73,12 @@ export type ServerMsg =
   | { kind: 'story_output'; turn_id: string; text_blocks: TextBlock[]; events: DomainEvent[] }
   | { kind: 'chat'; event_id: number; from: string; text: string; ts: string }
   | { kind: 'dm'; event_id: number; from: string; to: string; text: string; ts: string }
-  | { kind: 'role_change'; participant_id: string; tier: Tier; actor_id: string }
+  /**
+   * `actor_id` is null when the role change was system-initiated (e.g. the
+   * cascading succession chain fired by the PH grace timer). Clients should
+   * surface "(system)" or equivalent in that case.
+   */
+  | { kind: 'role_change'; participant_id: string; tier: Tier; actor_id: string | null }
   | { kind: 'mute_state'; participant_id: string; muted: boolean; actor_id: string }
   | { kind: 'save_created'; save_id: string; name: string; actor_id: string; ts: string }
   | { kind: 'restored'; save_id: string; text_blocks: TextBlock[]; actor_id: string }

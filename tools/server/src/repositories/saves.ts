@@ -8,12 +8,23 @@
  * `listForRoom` deliberately omits the blob column to keep the roster query cheap.
  */
 
-import { randomUUID } from 'node:crypto';
 import type { Database, Statement } from 'better-sqlite3';
 import type { Save, SaveSummary } from './types.js';
 
 export interface SavesRepository {
-  create(input: { room_id: string; actor_id: string; name: string; blob: Buffer }): Save;
+  /**
+   * Persist a save blob. The `save_id` is supplied by the caller because it
+   * is used to correlate with the sandbox's SAVE/SAVED round-trip — the id
+   * must be stable across the wire exchange, the session_events row, and
+   * the broadcast. SaveService owns generation.
+   */
+  create(input: {
+    save_id: string;
+    room_id: string;
+    actor_id: string;
+    name: string;
+    blob: Buffer;
+  }): Save;
   findById(save_id: string): Save | null;
   /** Returns summaries (no blob bytes) ordered oldest-first. */
   listForRoom(room_id: string): SaveSummary[];
@@ -45,11 +56,17 @@ export function createSavesRepository(db: Database): SavesRepository {
 
   return {
     create(input) {
-      const save_id = randomUUID();
       const created_at = new Date().toISOString();
-      insert.run(save_id, input.room_id, input.actor_id, input.name, input.blob, created_at);
+      insert.run(
+        input.save_id,
+        input.room_id,
+        input.actor_id,
+        input.name,
+        input.blob,
+        created_at
+      );
       return {
-        save_id,
+        save_id: input.save_id,
         room_id: input.room_id,
         actor_id: input.actor_id,
         name: input.name,
