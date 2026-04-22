@@ -1,0 +1,32 @@
+# Sharpee Multiuser Server — Docker build context filter.
+#
+# The build context is the repo root (the Dockerfile reaches into
+# ../../packages/core). This file keeps the context minimal: only the two
+# trees that `tools/server/Dockerfile` COPYs are shipped to the daemon.
+#
+# Pattern: ignore everything, then re-include packages/core and tools/server,
+# then prune dev/build artifacts inside those trees.
+
+# Ignore everything by default.
+**
+
+# Re-include the two trees the Dockerfile copies.
+!packages
+!packages/core
+!packages/core/**
+
+!tools
+!tools/server
+!tools/server/**
+
+# Prune dev/build artifacts inside the included trees.
+**/node_modules
+**/dist
+**/coverage
+**/.turbo
+**/.next
+**/*.log
+**/.DS_Store
+**/.git
+**/.env
+**/.env.*

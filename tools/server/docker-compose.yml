@@ -24,6 +24,15 @@ services:
       - ./sharpee-platform.yaml:/etc/sharpee-platform.yaml:ro
     environment:
       NODE_ENV: production
+      # Operators: leave unset in production. Smoke tests set this to "1"
+      # to bypass CAPTCHA verification on /api/rooms.
+      CAPTCHA_BYPASS: "${CAPTCHA_BYPASS:-}"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 volumes:
   db-data:

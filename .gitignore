@@ -66,6 +66,10 @@ lerna-debug.log
 # Stories output files
 stories/*/output/
 
+# Multiuser server — operator-local artifacts
+tools/server/sharpee-platform.yaml
+tools/server/stories/
+
 # Client builds
 packages/clients/*/public/build/
 packages/clients/*/dist/
