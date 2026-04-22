@@ -17,7 +17,7 @@ services:
     image: sharpee-server:local
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - db-data:/data/db
       - ./stories:/data/stories:ro
