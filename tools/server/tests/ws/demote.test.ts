@@ -3,8 +3,8 @@
  *
  * Behavior Statement — handleDemote
  *   DOES:
- *     - When sender is primary_host, not muted, and target is in the same
- *       room at a strictly higher tier than to_tier (and is not the PH):
+ *     - When sender is primary_host and target is in the same room at a
+ *       strictly higher tier than to_tier (and is not the PH):
  *       calls setTier(target, to_tier, sender); clears is_successor iff the
  *       target was a successor being demoted below co_host; appends a
  *       role(demote) event with actor = sender and from/to tiers; broadcasts
@@ -19,12 +19,15 @@
  *     - target_participant_id missing/empty  → bad_target
  *     - to_tier not participant / command_entrant / co_host → bad_tier
  *     - sender unknown                        → unknown_participant
- *     - sender muted                          → muted
  *     - sender tier != primary_host           → insufficient_authority
  *     - target not in the same room           → unknown_target_participant
  *     - target is the primary_host            → cannot_demote_ph
  *     - target tier == to_tier                → same_tier
  *     - target tier < to_tier                 → invalid_demotion
+ *
+ *   NOTE: sender.muted is NOT a rejection. Per ADR-153 Decision 9, mute
+ *   silences chat/DM but preserves role authority so a muted PH can still
+ *   unstick governance.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -323,13 +326,36 @@ describe('handleDemote', () => {
     );
   });
 
-  it('muted sender: muted error', () => {
+  // ADR-153 Decision 9: muted PH retains role authority. Assert on the full
+  // mutation path (setTier call + event + broadcast) — not on absence of error.
+  it('muted PH: still demotes; setTier + event + broadcast fire, no error sent', () => {
     invoke('muted-ph', {
       kind: 'demote',
       target_participant_id: COHOST,
       to_tier: 'participant',
     });
-    expect((ws.sent[0] as Extract<ServerMsg, { kind: 'error' }>).code).toBe('muted');
+    expect(participants.setTierCalls).toEqual([
+      { participant_id: COHOST, tier: 'participant', actor_id: 'muted-ph' },
+    ]);
+    expect(events.calls.length).toBe(1);
+    expect(events.calls[0]!.payload).toMatchObject({
+      op: 'demote',
+      target_participant_id: COHOST,
+      from_tier: 'co_host',
+      to_tier: 'participant',
+    });
+    expect(conns.calls).toEqual([
+      {
+        room_id: ROOM,
+        msg: {
+          kind: 'role_change',
+          participant_id: COHOST,
+          tier: 'participant',
+          actor_id: 'muted-ph',
+        },
+      },
+    ]);
+    expect(ws.sent).toEqual([]);
   });
 
   /* ---------- target rejections ---------- */

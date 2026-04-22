@@ -16,11 +16,14 @@
  *     - target_participant_id missing/empty  → bad_target
  *     - to_tier not co_host / command_entrant → bad_tier
  *     - sender unknown                        → unknown_participant
- *     - sender muted                          → muted
  *     - (sender_tier, to_tier) not authorised → insufficient_authority
  *     - target not in the same room           → unknown_target_participant
  *     - target already at to_tier             → same_tier
  *     - target tier > to_tier (demotion)      → invalid_promotion
+ *
+ *   NOTE: sender.muted is NOT a rejection. Per ADR-153 Decision 9, mute
+ *   silences chat/DM but preserves role authority so a muted moderator can
+ *   still unstick governance.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -171,6 +174,7 @@ describe('handlePromote', () => {
       { participant_id: ALICE, tier: 'participant' },
       { participant_id: BOB, tier: 'participant' },
       { participant_id: 'muted-ph', tier: 'primary_host', muted: true },
+      { participant_id: 'muted-cohost', tier: 'co_host', muted: true },
       { participant_id: STRANGER, tier: 'participant', room_id: OTHER_ROOM },
     ]);
     ws = fakeSocket();
@@ -322,13 +326,58 @@ describe('handlePromote', () => {
     );
   });
 
-  it('muted sender: muted error', () => {
+  // ADR-153 Decision 9: muted moderators retain role authority. Mute silences
+  // chat/DM, not governance. These tests assert on the full mutation path
+  // (setTier call + event + broadcast) — not on absence of error.
+  it('muted PH: still promotes; setTier + event + broadcast fire, no error sent', () => {
     invoke('muted-ph', {
       kind: 'promote',
       target_participant_id: ALICE,
       to_tier: 'co_host',
     });
-    expect((ws.sent[0] as Extract<ServerMsg, { kind: 'error' }>).code).toBe('muted');
+    expect(participants.setTierCalls).toEqual([
+      { participant_id: ALICE, tier: 'co_host', actor_id: 'muted-ph' },
+    ]);
+    expect(events.calls.length).toBe(1);
+    expect(events.calls[0]!.payload).toMatchObject({
+      op: 'promote',
+      target_participant_id: ALICE,
+      from_tier: 'participant',
+      to_tier: 'co_host',
+    });
+    expect(conns.calls).toEqual([
+      {
+        room_id: ROOM,
+        msg: {
+          kind: 'role_change',
+          participant_id: ALICE,
+          tier: 'co_host',
+          actor_id: 'muted-ph',
+        },
+      },
+    ]);
+    expect(ws.sent).toEqual([]);
+  });
+
+  it('muted co_host: still promotes within authority; setTier + event + broadcast fire', () => {
+    invoke('muted-cohost', {
+      kind: 'promote',
+      target_participant_id: ALICE,
+      to_tier: 'command_entrant',
+    });
+    expect(participants.setTierCalls).toEqual([
+      { participant_id: ALICE, tier: 'command_entrant', actor_id: 'muted-cohost' },
+    ]);
+    expect(events.calls[0]!.payload).toMatchObject({
+      op: 'promote',
+      to_tier: 'command_entrant',
+    });
+    expect(conns.calls[0]!.msg).toMatchObject({
+      kind: 'role_change',
+      tier: 'command_entrant',
+      actor_id: 'muted-cohost',
+    });
+    expect(ws.sent).toEqual([]);
   });
 
   /* ---------- target rejections ---------- */

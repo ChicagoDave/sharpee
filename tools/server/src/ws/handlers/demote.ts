@@ -50,7 +50,7 @@ function isDemotableTier(value: unknown): value is DemotableTier {
  *
  * Order of checks:
  *   1. target_participant_id non-empty; to_tier valid
- *   2. sender known + not muted
+ *   2. sender known (ADR-153 Decision 9: muted moderators retain role authority)
  *   3. sender is primary_host (the only tier that may demote)
  *   4. target exists in the same room
  *   5. target is not the PH themselves (use succession instead)
@@ -77,10 +77,8 @@ export function handleDemote(
     sendErr(ws, 'unknown_participant', 'participant no longer exists');
     return;
   }
-  if (sender.muted) {
-    sendErr(ws, 'muted', 'you have been muted');
-    return;
-  }
+  // ADR-153 Decision 9: mute silences chat/DM but preserves role authority.
+  // A muted primary_host may still demote so governance can unstick.
   if (sender.tier !== 'primary_host') {
     sendErr(ws, 'insufficient_authority', 'only primary_host may demote');
     return;

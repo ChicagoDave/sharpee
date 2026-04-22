@@ -60,7 +60,7 @@ function isPromotableTier(value: unknown): value is PromotableTier {
  *
  * Order of checks:
  *   1. target_participant_id present; to_tier valid
- *   2. sender known + not muted
+ *   2. sender known (ADR-153 Decision 9: muted moderators retain role authority)
  *   3. sender's tier authorises this (actor, to_tier) combination
  *   4. target exists in the same room
  *   5. target.tier < to_tier (otherwise same_tier / invalid_promotion)
@@ -86,10 +86,8 @@ export function handlePromote(
     sendErr(ws, 'unknown_participant', 'participant no longer exists');
     return;
   }
-  if (sender.muted) {
-    sendErr(ws, 'muted', 'you have been muted');
-    return;
-  }
+  // ADR-153 Decision 9: mute silences chat/DM but preserves role authority.
+  // Muted PH/co_host may still promote so governance can unstick.
   if (!isPromotionAuthorized(sender.tier, msg.to_tier)) {
     sendErr(
       ws,
