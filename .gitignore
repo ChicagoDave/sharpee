@@ -138,8 +138,9 @@ docs/context/.session-state.json
 **/.commit-files
 **/.commit-msg
 
-# Runtime game saves
+# Runtime game saves (engine/story saves — NOT the server's saves/ source dir)
 saves/
+!tools/server/src/saves/
 
 # Reference source code (not ours to distribute)
 docs/dungeon-ref/
