@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Landing (MOCKUP)</title>
+<style>
+  /* Catppuccin Mocha palette — from Zifmia modern-dark theme.
+     This file is a static HTML mockup. No JS behavior. Clicks do nothing. */
+
+  :root {
+    --bg:          #1e1e2e;
+    --bg-alt:      #181825;
+    --bg-sunken:   #11111b;
+    --panel:       #181825;
+    --panel-hdr:   #11111b;
+    --border:      #313244;
+    --text:        #cdd6f4;
+    --text-muted:  #a6adc8;
+    --accent:      #89b4fa;
+    --accent-hot:  #f5e0dc;
+    --link:        #89dceb;
+    --error:       #f38ba8;
+    --success:     #a6e3a1;
+
+    --font-ui:     'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono:   'JetBrains Mono', Consolas, Monaco, monospace;
+    --radius:      8px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header.app-header {
+    background: var(--bg-sunken);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wordmark {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--accent-hot);
+  }
+  .wordmark .dot { color: var(--accent); }
+  .wordmark .tagline {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 12px;
+    letter-spacing: 0;
+  }
+
+  /* Primary button */
+  button.primary {
+    background: var(--accent);
+    color: var(--bg-sunken);
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  button.primary:hover { filter: brightness(1.1); }
+
+  /* Header actions row */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Theme picker button */
+  .theme-picker {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .theme-picker:hover { border-color: var(--accent); color: var(--text); }
+  .theme-picker .swatch {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e1e2e 50%, #cdd6f4 50%);
+    border: 1px solid var(--border-soft, #45475a);
+  }
+  .theme-picker .current {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text);
+  }
+  .theme-picker .caret { font-size: 10px; color: var(--text-faint, #6c7086); }
+
+  /* Main layout */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 40px;
+  }
+  section h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0 0 16px 0;
+    font-weight: 600;
+  }
+
+  /* Active rooms list */
+  .room-list { display: flex; flex-direction: column; gap: 12px; }
+  .room-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+    transition: border-color 0.15s;
+  }
+  .room-card:hover { border-color: var(--accent); }
+  .room-card .title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-hot);
+    margin-bottom: 6px;
+  }
+  .room-card .meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .room-card .meta .story {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg-sunken);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .room-card .meta .participants {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .room-card .meta .participants::before {
+    content: "●";
+    color: var(--success);
+    font-size: 10px;
+  }
+  .enter-btn {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 8px 18px;
+    border-radius: var(--radius);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .enter-btn:hover {
+    background: var(--accent);
+    color: var(--bg-sunken);
+  }
+
+  .empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* Stories list */
+  .story-list { display: flex; flex-direction: column; gap: 8px; }
+  .story-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+  }
+  .story-card .title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .story-card .slug {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  footer {
+    margin-top: 60px;
+    padding: 24px 32px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  footer a { color: var(--link); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="wordmark">
+    Sharpee<span class="dot">.</span>play
+    <span class="tagline">multi-user interactive fiction</span>
+  </div>
+  <div class="header-actions">
+    <button class="theme-picker" title="Change theme">
+      <span class="swatch"></span>
+      <span class="current">modern-dark</span>
+      <span class="caret">▾</span>
+    </button>
+    <button class="primary">+ Create Room</button>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <h2>Active Rooms · 2</h2>
+    <div class="room-list">
+
+      <div class="room-card">
+        <div>
+          <div class="title">Tuesday book club — Zork I</div>
+          <div class="meta">
+            <span class="story">dungeo</span>
+            <span class="participants">3 players</span>
+          </div>
+        </div>
+        <button class="enter-btn">Enter →</button>
+      </div>
+
+      <div class="room-card">
+        <div>
+          <div class="title">Entropy speedrun attempt 7</div>
+          <div class="meta">
+            <span class="story">entropy</span>
+            <span class="participants">2 players</span>
+          </div>
+        </div>
+        <button class="enter-btn">Enter →</button>
+      </div>
+
+      <!--
+      Empty state (when no rooms): replace room cards with this block.
+      <div class="empty">No active rooms. Create one to start playing.</div>
+      -->
+    </div>
+  </section>
+
+  <section>
+    <h2>Available Stories · 2</h2>
+    <div class="story-list">
+
+      <div class="story-card">
+        <div class="title">Dungeo</div>
+        <div class="slug">dungeo.sharpee</div>
+      </div>
+
+      <div class="story-card">
+        <div class="title">Entropy</div>
+        <div class="slug">entropy.sharpee</div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Sharpee multiuser server · ADR-153 · <a href="https://github.com/ChicagoDave/sharpee">source</a>
+</footer>
+
+</body>
+</html>

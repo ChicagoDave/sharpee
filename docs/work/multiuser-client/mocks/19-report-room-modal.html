@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee — Report a room modal</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  .ghost-landing {
+    position: fixed; inset: 0;
+    padding: 40px;
+    color: var(--text-faint);
+    font-size: 22px;
+    opacity: 0.3;
+  }
+  .report-card { max-width: 460px; }
+  .report-card .target-row {
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .report-card .target-row .lbl {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .report-card .target-row .title {
+    font-size: 14px;
+    color: var(--accent-hot);
+    font-weight: 600;
+  }
+  .report-card .target-row .story {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .report-card .notice {
+    font-size: 12px;
+    color: var(--text-faint);
+    background: rgba(137, 180, 250, 0.06);
+    border-left: 3px solid var(--accent);
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="ghost-landing">Sharpee<span style="color:var(--accent)">.</span>play</div>
+
+<div class="modal-backdrop">
+  <div class="modal report-card">
+    <div class="modal-header">
+      <h2>Report this room</h2>
+      <div class="subtitle">Send a note to the operator of this Sharpee instance.</div>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="target-row">
+        <div class="lbl">Reporting</div>
+        <div class="title">[inappropriate or offensive title shown here]</div>
+        <div class="story">story: dungeo · 3 players</div>
+      </div>
+
+      <label class="field">
+        <span class="label-text">Reason (optional)</span>
+        <textarea rows="4" placeholder="What's wrong with this room? e.g. offensive title, looks like spam, advertising, impersonation…"></textarea>
+      </label>
+
+      <div class="notice">
+        The operator will see: this room's ID, the reason you wrote, and the approximate time of the report. Your browser does not send an email address or an account ID — there are no accounts on this instance.
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary">Cancel</button>
+      <button class="btn-primary">Send report</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

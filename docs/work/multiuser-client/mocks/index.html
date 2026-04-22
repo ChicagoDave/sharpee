@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sharpee multi-user — Mockup index</title>
+<link rel="stylesheet" href="_common.css">
+<style>
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+  h1 { color: var(--accent-hot); margin: 0 0 6px; font-size: 26px; }
+  .sub { color: var(--text-muted); font-size: 14px; margin: 0 0 32px; }
+  h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin: 34px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  a.mock {
+    display: block;
+    padding: 14px 18px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  a.mock:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  a.mock .num {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 12px;
+    margin-right: 10px;
+  }
+  a.mock .name { font-weight: 600; font-size: 14px; }
+  a.mock .desc {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .plan-ref {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-left: 8px;
+  }
+  footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <h1>Multi-user client mockups</h1>
+  <p class="sub">Static HTML visual references for the screens specified in Plans 01–05.</p>
+
+  <h2>Landing and entry</h2>
+  <div class="grid">
+    <a class="mock" href="01-landing.html">
+      <div><span class="num">01</span><span class="name">Landing (populated)</span><span class="plan-ref">Plan 01 / Phase 3</span></div>
+      <div class="desc">Active rooms list, stories list, Create Room, theme picker.</div>
+    </a>
+    <a class="mock" href="06-landing-empty.html">
+      <div><span class="num">06</span><span class="name">Landing (empty state)</span><span class="plan-ref">Plan 01 / Phase 3</span></div>
+      <div class="desc">First-visit placeholder when there are no rooms and no stories.</div>
+    </a>
+    <a class="mock" href="03-create-room-modal.html">
+      <div><span class="num">03</span><span class="name">Create Room modal</span><span class="plan-ref">Plan 01 / Phase 4</span></div>
+      <div class="desc">Title + story + name + CAPTCHA. Primary Host creation flow.</div>
+    </a>
+    <a class="mock" href="04-passcode-modal.html">
+      <div><span class="num">04</span><span class="name">Passcode modal</span><span class="plan-ref">Plan 01 / Phase 5</span></div>
+      <div class="desc">Join flow — passcode + name + CAPTCHA. Pre-filled from /r/:code.</div>
+    </a>
+    <a class="mock" href="05-recording-notice.html">
+      <div><span class="num">05</span><span class="name">Recording-transparency notice</span><span class="plan-ref">Plan 01 / Phase 9</span></div>
+      <div class="desc">One-time notice on first join per room per browser.</div>
+    </a>
+  </div>
+
+  <h2>Room — gameplay states</h2>
+  <div class="grid">
+    <a class="mock" href="02-room.html">
+      <div><span class="num">02</span><span class="name">Room (another user typing)</span><span class="plan-ref">Plan 01 / Phase 8</span></div>
+      <div class="desc">Lock held by Charlie. Local user sees live draft, input is read-only.</div>
+    </a>
+    <a class="mock" href="07-room-local-typing.html">
+      <div><span class="num">07</span><span class="name">Room (you are typing)</span><span class="plan-ref">Plan 01 / Phase 8</span></div>
+      <div class="desc">Local user holds the lock. Input is active and editable.</div>
+    </a>
+    <a class="mock" href="09-room-dm-active.html">
+      <div><span class="num">09</span><span class="name">Room with DM tab active</span><span class="plan-ref">Plan 04</span></div>
+      <div class="desc">Tabbed side panel. PH viewing a DM thread with Alice. Unread on Room tab.</div>
+    </a>
+    <a class="mock" href="10-restore-block.html">
+      <div><span class="num">10</span><span class="name">Transcript with RESTORED block</span><span class="plan-ref">Plan 03 / Phase 2</span></div>
+      <div class="desc">Visually distinct restore-point rendering in the transcript.</div>
+    </a>
+  </div>
+
+  <h2>Moderation and lifecycle</h2>
+  <div class="grid">
+    <a class="mock" href="08-roster-menu.html">
+      <div><span class="num">08</span><span class="name">Roster moderation menu</span><span class="plan-ref">Plan 02 / Phases 2–3</span></div>
+      <div class="desc">Right-click/⋮ menu on a participant. Mute, promote, demote.</div>
+    </a>
+    <a class="mock" href="11-settings-drawer.html">
+      <div><span class="num">11</span><span class="name">PH settings drawer</span><span class="plan-ref">Plan 02 / Phase 4</span></div>
+      <div class="desc">Title edit, pin toggle, successor nomination, danger zone.</div>
+    </a>
+    <a class="mock" href="12-delete-confirm.html">
+      <div><span class="num">12</span><span class="name">Delete room (type-to-confirm)</span><span class="plan-ref">Plan 02 / Phase 5</span></div>
+      <div class="desc">PH retypes the room title to unlock the Delete button.</div>
+    </a>
+    <a class="mock" href="14-succession-banner.html">
+      <div><span class="num">14</span><span class="name">PH-grace banner + succession toast</span><span class="plan-ref">Plan 02 / Phase 6</span></div>
+      <div class="desc">5-minute countdown when PH disconnects; toast on auto-promotion.</div>
+    </a>
+    <a class="mock" href="15-room-closed.html">
+      <div><span class="num">15</span><span class="name">Room-closed overlay</span><span class="plan-ref">Plan 02 / Phase 7</span></div>
+      <div class="desc">Full-viewport notice on delete or recycle. Auto-redirects to /.</div>
+    </a>
+  </div>
+
+  <h2>Save / restore</h2>
+  <div class="grid">
+    <a class="mock" href="13-save-panel.html">
+      <div><span class="num">13</span><span class="name">Save panel</span><span class="plan-ref">Plan 03 / Phases 1–2</span></div>
+      <div class="desc">Save list + naming dialog. Restore button per entry.</div>
+    </a>
+    <a class="mock" href="16-crash-modal.html">
+      <div><span class="num">16</span><span class="name">Sandbox crash modal</span><span class="plan-ref">Plan 03 / Phase 4</span></div>
+      <div class="desc">Non-technical explanation + restore-from-last-save affordance.</div>
+    </a>
+  </div>
+
+  <h2>Polish and edge states</h2>
+  <div class="grid">
+    <a class="mock" href="17-small-viewport.html">
+      <div><span class="num">17</span><span class="name">Small-viewport placeholder</span><span class="plan-ref">Plan 05 / Phase 1</span></div>
+      <div class="desc">Mobile/narrow-screen intercept. "Please use a laptop."</div>
+    </a>
+    <a class="mock" href="18-theme-picker-open.html">
+      <div><span class="num">18</span><span class="name">Theme picker dropdown open</span><span class="plan-ref">Plan 01 / Phase 1</span></div>
+      <div class="desc">Four Zifmia themes with swatches; current selection marked.</div>
+    </a>
+    <a class="mock" href="19-report-room-modal.html">
+      <div><span class="num">19</span><span class="name">Report a room modal</span><span class="plan-ref">Plan 05 / Phase 5</span></div>
+      <div class="desc">Public-instance moderation. Anonymous report to operator.</div>
+    </a>
+  </div>
+
+  <footer>
+    All mockups are static HTML — no live behavior. Shared palette + room layout in <code style="font-family: var(--font-mono); color: var(--accent);">_common.css</code>.
+    Colors from Zifmia's <span style="font-family: var(--font-mono); color: var(--accent);">modern-dark</span> theme (Catppuccin Mocha).
+  </footer>
+
+</main>
+
+</body>
+</html>
