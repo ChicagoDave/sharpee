@@ -5,18 +5,29 @@
  *   DOES: renders each entry with author name (or "(you)" marker) + body +
  *         local-time timestamp; on Enter-with-non-empty-text, emits
  *         `{kind:'dm', to_participant_id, text}` via the injected send;
- *         trims whitespace; Shift+Enter does not submit.
+ *         trims whitespace; Shift+Enter does not submit. On first mount per
+ *         browser, also renders a dismissible recording-transparency notice;
+ *         Got-it persists `sharpee.dm_notice_ack` and skips the notice on
+ *         subsequent mounts.
  *   WHEN: the PH or a Co-Host opens the DM tab for their peer.
- *   BECAUSE: ADR-153 Decision 8 — PH↔Co-Host DM axis.
+ *   BECAUSE: ADR-153 Decision 8 — PH↔Co-Host DM axis. Decision 11 —
+ *            recording transparency.
  *   REJECTS WHEN: empty/whitespace-only input (no dispatch).
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DmPanel from './DmPanel';
 import type { ClientMsg, ParticipantSummary } from '../types/wire';
 import type { DmEntry } from '../state/types';
+
+beforeEach(() => {
+  window.localStorage.clear();
+});
+afterEach(() => {
+  window.localStorage.clear();
+});
 
 const PARTS: ParticipantSummary[] = [
   {
@@ -138,5 +149,58 @@ describe('<DmPanel>', () => {
     await userEvent.type(input, 'draft');
     await userEvent.keyboard('{Shift>}{Enter}{/Shift}');
     expect(send).not.toHaveBeenCalled();
+  });
+
+  // ---------- Plan 04 Phase 5 — DM recording notice ----------
+
+  it('first mount renders the recording-transparency notice', () => {
+    render(
+      <DmPanel
+        peerId="p-ch"
+        peerName="Bob"
+        entries={[]}
+        participants={PARTS}
+        selfId="p-host"
+        send={vi.fn()}
+      />,
+    );
+    const notice = screen.getByRole('note', { name: /recording notice/i });
+    expect(notice).toHaveTextContent(/logged in this room/i);
+    expect(
+      screen.getByRole('button', { name: /dismiss dm recording notice/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('dismissing the notice persists the acknowledgment and hides the notice', async () => {
+    render(
+      <DmPanel
+        peerId="p-ch"
+        peerName="Bob"
+        entries={[]}
+        participants={PARTS}
+        selfId="p-host"
+        send={vi.fn()}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: /dismiss dm recording notice/i }),
+    );
+    expect(screen.queryByRole('note', { name: /recording notice/i })).toBeNull();
+    expect(window.localStorage.getItem('sharpee.dm_notice_ack')).toBe('1');
+  });
+
+  it('subsequent mounts skip the notice when the ack is already in storage', () => {
+    window.localStorage.setItem('sharpee.dm_notice_ack', '1');
+    render(
+      <DmPanel
+        peerId="p-ch"
+        peerName="Bob"
+        entries={[]}
+        participants={PARTS}
+        selfId="p-host"
+        send={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('note', { name: /recording notice/i })).toBeNull();
   });
 });

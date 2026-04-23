@@ -113,12 +113,19 @@ export function handleHello(
 
   deps.connections.register(room.room_id, participant.participant_id, ws);
 
-  const { snapshot, participants, chat_backlog } = buildRoomSnapshot(room, {
-    rooms: deps.rooms,
-    participants: deps.participants,
-    saves: deps.saves,
-    sessionEvents: deps.sessionEvents,
-  });
+  const { snapshot, participants, chat_backlog, dm_threads } = buildRoomSnapshot(
+    room,
+    {
+      rooms: deps.rooms,
+      participants: deps.participants,
+      saves: deps.saves,
+      sessionEvents: deps.sessionEvents,
+    },
+    {
+      participant_id: participant.participant_id,
+      tier: participant.tier,
+    },
+  );
 
   sendMsg(ws, {
     kind: 'welcome',
@@ -127,6 +134,7 @@ export function handleHello(
     participants,
     recording_notice: getRecordingNotice(),
     chat_backlog,
+    dm_threads,
   });
 
   deps.connections.broadcast(

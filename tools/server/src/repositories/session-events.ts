@@ -37,6 +37,20 @@ export interface SessionEventsRepository {
    * handshake so reconnects don't lose visible room history.
    */
   listRecentChat(room_id: string, limit: number): SessionEvent[];
+  /**
+   * Return the most recent `limit` DM events the given participant was
+   * party to (sender or recipient), in chronological order (oldest →
+   * newest). Used to rehydrate DM threads on welcome (Plan 04 Phase 4).
+   *
+   * The repository does not enforce DM-axis authority (PH↔Co-Host only) —
+   * that's the caller's responsibility. The query simply matches sender
+   * or recipient by id.
+   */
+  listRecentDmsForParticipant(
+    room_id: string,
+    participant_id: string,
+    limit: number,
+  ): SessionEvent[];
 }
 
 interface SessionEventRow {
@@ -113,6 +127,25 @@ export function createSessionEventsRepository(db: Database): SessionEventsReposi
            LIMIT ?`,
         )
         .all(room_id, limit) as SessionEventRow[];
+      return rows.map(rowToEvent).reverse();
+    },
+
+    listRecentDmsForParticipant(room_id, participant_id, limit) {
+      // Match sender (`participant_id` column) or recipient
+      // (`payload.to_participant_id`). JSON_EXTRACT is supported in SQLite
+      // 3.38+ which better-sqlite3 ships with. Same pattern as
+      // listRecentChat — descending by event_id then flipped to oldest-first.
+      const rows = db
+        .prepare(
+          `SELECT * FROM session_events
+           WHERE room_id = ?
+             AND kind = 'dm'
+             AND (participant_id = ?
+                  OR JSON_EXTRACT(payload, '$.to_participant_id') = ?)
+           ORDER BY event_id DESC
+           LIMIT ?`,
+        )
+        .all(room_id, participant_id, participant_id, limit) as SessionEventRow[];
       return rows.map(rowToEvent).reverse();
     },
   };

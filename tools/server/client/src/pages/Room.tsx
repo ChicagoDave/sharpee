@@ -32,6 +32,7 @@ import Transcript from '../components/Transcript';
 import { sendRestore } from '../api/ws';
 import { useWebSocket, type WsConnectionState } from '../hooks/useWebSocket';
 import { navigate } from '../router';
+import { selectDmUnread } from '../state/selectors';
 import type { RoomState } from '../state/types';
 import { clearCode, readCode } from '../storage/room-code';
 import { clearToken, readToken } from '../storage/token';
@@ -39,6 +40,11 @@ import type { ClientMsg } from '../types/wire';
 
 /** Noop send used when RoomView is rendered standalone (e.g., in tests). */
 const NOOP_SEND: (msg: ClientMsg) => void = () => {
+  /* noop */
+};
+
+/** Noop markDmRead used when RoomView is rendered standalone (e.g., in tests). */
+const NOOP_MARK_DM_READ: (peerId: string, upToEventId: number) => void = () => {
   /* noop */
 };
 
@@ -53,6 +59,11 @@ export interface RoomViewProps {
   connection: WsConnectionState;
   /** Send a client intent. Defaults to a noop when unwired (tests). */
   send?: (msg: ClientMsg) => void;
+  /**
+   * Acknowledge DM read up to an event_id. Defaults to a noop when unwired
+   * (tests). In production this is the `useWebSocket` hook's `markDmRead`.
+   */
+  markDmRead?: (peerId: string, upToEventId: number) => void;
   /**
    * PH-only Bearer token used by the settings panel for PATCH /api/rooms/:id.
    * When omitted, the gear icon is hidden even for PH viewers — the settings
@@ -75,7 +86,7 @@ interface RoomLiveProps {
 }
 
 function RoomLive({ roomId, token, code }: RoomLiveProps): JSX.Element {
-  const { state, connection, send } = useWebSocket({ roomId, token });
+  const { state, connection, send, markDmRead } = useWebSocket({ roomId, token });
   return (
     <RoomView
       roomId={roomId}
@@ -83,6 +94,7 @@ function RoomLive({ roomId, token, code }: RoomLiveProps): JSX.Element {
       state={state}
       connection={connection}
       send={send}
+      markDmRead={markDmRead}
       token={token}
     />
   );
@@ -98,6 +110,7 @@ export function RoomView({
   state,
   connection,
   send = NOOP_SEND,
+  markDmRead = NOOP_MARK_DM_READ,
   token = null,
 }: RoomViewProps): JSX.Element {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -110,17 +123,47 @@ export function RoomView({
   // DM threads. Tab list is the union of `state.dmThreads` keys and any
   // tabs the viewer has explicitly opened (e.g. PH clicked "DM Alice"
   // before any message was sent — the thread doesn't exist yet).
+  //
+  // Active-tab and opened-tabs state lives HERE (component-local), not in
+  // RoomState. Per Plan 04 Phase 3 design and CLAUDE.md rule 7a: which
+  // tab the user is looking at is per-browser UI affordance, not part of
+  // the projection of server-shared truth. The reducer owns only the
+  // unread cursors that are derived from the message stream.
   const [activeTabId, setActiveTabId] = useState<string>('room');
   const [openedDmPeers, setOpenedDmPeers] = useState<Set<string>>(new Set());
-  const openDm = useCallback((peer_participant_id: string) => {
-    setOpenedDmPeers((prev) => {
-      if (prev.has(peer_participant_id)) return prev;
-      const next = new Set(prev);
-      next.add(peer_participant_id);
-      return next;
-    });
-    setActiveTabId(`dm:${peer_participant_id}`);
-  }, []);
+  // Acknowledge a DM tab as read by advancing the cursor to the latest
+  // event_id currently in that thread. Called whenever the user activates
+  // (or opens) a `dm:<peerId>` tab — the latest event_id in `dmThreads`
+  // is "everything the user could have seen at this moment."
+  const ackDmRead = useCallback(
+    (peerId: string) => {
+      const thread = state.dmThreads[peerId];
+      if (!thread || thread.length === 0) return;
+      const latest = thread[thread.length - 1]!.event_id;
+      markDmRead(peerId, latest);
+    },
+    [state.dmThreads, markDmRead],
+  );
+  const selectTab = useCallback(
+    (id: string) => {
+      setActiveTabId(id);
+      if (id.startsWith('dm:')) ackDmRead(id.slice(3));
+    },
+    [ackDmRead],
+  );
+  const openDm = useCallback(
+    (peer_participant_id: string) => {
+      setOpenedDmPeers((prev) => {
+        if (prev.has(peer_participant_id)) return prev;
+        const next = new Set(prev);
+        next.add(peer_participant_id);
+        return next;
+      });
+      setActiveTabId(`dm:${peer_participant_id}`);
+      ackDmRead(peer_participant_id);
+    },
+    [ackDmRead],
+  );
   if (state.closed) {
     return (
       <RoomClosedOverlay
@@ -290,6 +333,7 @@ export function RoomView({
               return {
                 id: `dm:${peerId}`,
                 label: peer?.display_name ?? peerId,
+                unread: selectDmUnread(state, peerId),
               };
             })
             // Stable ordering by label so tabs don't jitter between renders.
@@ -307,7 +351,7 @@ export function RoomView({
             <SidePanelTabs
               tabs={tabs}
               activeId={safeActive}
-              onSelect={setActiveTabId}
+              onSelect={selectTab}
               renderBody={(id) => {
                 if (id === 'room') {
                   return (

@@ -626,6 +626,26 @@ These rules apply whenever you write or modify code. They are not optional — t
    - When a boundary does not exist and you are adding new code, create one. Do not add to an already-leaking abstraction without tightening it.
    - Dependencies flow inward: domain logic does not import infrastructure. Infrastructure adapts to domain interfaces.
 
+### Boundary Statements `[DEVARCH-CANDIDATE]`
+
+7a. Before adding a field, branch, or behavior to a module that owns cross-boundary state — **state projections**, **reducers**, **stores**, **selectors**, **domain modules**, or anything whose header doc names a "bounded context" — produce a **Boundary Statement** in the conversation. This is not a code comment; it's a thinking step performed before the Edit, analogous to the Behavior Statement in rule 10.
+
+    **[module path :: field/behavior]**
+    - **OWNER:** which layer owns this state? (server-shared, per-browser/per-render, bounded-context-internal, infrastructure, etc.)
+    - **SHARED?:** would two consumers in the same context legitimately disagree on this value? If yes, it is per-consumer state and almost certainly belongs **outside** this module.
+    - **PROMISE:** does the module's header doc, its existing types, or an exhaustiveness guard make a promise this change would weaken or break? Quote the relevant text.
+    - **ALTERNATIVES:** what is the smallest, most local place this could live instead — and why is THIS module still the right home?
+
+    **Triggers** — produce a Boundary Statement when:
+    - Adding a field to a state shape, projection, or store.
+    - Widening a discriminated union that carries an exhaustiveness guard.
+    - "Lifting" state across a layer (UI → reducer, infra → domain, child → parent reducer).
+    - Adding a synthetic action type to a reducer whose input was previously one well-defined source (e.g., wire messages, domain events).
+
+    If any answer to OWNER/SHARED?/PROMISE/ALTERNATIVES is fuzzy, **stop and discuss the design before editing.** Plans that propose such changes get the same scrutiny as the code — a plan is not a license to skip the check.
+
+    The PreToolUse hook at `.claude/hooks/boundary-check.sh` reminds about this rule when you Edit/Write a triggering file. The hook is advisory; the rule is the contract.
+
 ### Documentation Standards
 
 8. Every file begins with a **header comment** that states: the module's purpose (one sentence), its public interface (what callers use), and its owner context (which bounded context or system area it belongs to).

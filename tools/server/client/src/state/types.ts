@@ -126,6 +126,24 @@ export interface RoomState {
    * and by the welcome snapshot's `dm_threads` backlog (Plan 04 Phase 4).
    */
   dmThreads: Record<string, DmEntry[]>;
+  /**
+   * Per-thread "last read" pointer, keyed by peer participant id. The value
+   * is the highest `event_id` the local user has acknowledged seeing in that
+   * thread. Unread count = strictly-greater event_ids in `dmThreads[peer]`.
+   *
+   * Advanced exclusively by the `ui:dm_read` synthetic action — never by
+   * incoming `dm` ServerMsgs, so messages arriving while the tab is
+   * inactive accumulate as unread. Reset on welcome (every rehydrated
+   * message is treated as "already seen": cursor jumps to the per-thread
+   * max event_id once Phase 4 lands the server backlog; until then the map
+   * stays empty on welcome and unread = thread length until the user opens
+   * the tab).
+   *
+   * This is per-client/per-session state, not per-render — every component
+   * in the same browser sees the same cursors. Two browsers in the same
+   * room legitimately disagree on cursors, which is the intended semantics.
+   */
+  dmReadCursors: Record<string, number>;
   /** Last room-scope error pushed by the server, or null. */
   lastError: RoomError | null;
   /** Populated when the server sends `room_closed`. */
@@ -152,6 +170,7 @@ export const initialRoomState: RoomState = {
   transcript: [],
   chatMessages: [],
   dmThreads: {},
+  dmReadCursors: {},
   lastError: null,
   closed: null,
   sandboxCrashed: false,

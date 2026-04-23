@@ -2,7 +2,8 @@
  * Wire protocol between the browser client and the Node server.
  *
  * Public interface: {@link ClientMsg}, {@link ServerMsg}, {@link RoomSnapshot},
- * {@link ParticipantSummary}, {@link ChatEntry}, {@link Tier}, {@link TextBlock}.
+ * {@link ParticipantSummary}, {@link ChatEntry}, {@link DmThreadEntry},
+ * {@link Tier}, {@link TextBlock}.
  *
  * Bounded context: client-facing WebSocket protocol (ADR-153 Interface Contracts).
  * Every message is a JSON object with a `kind` discriminator.
@@ -30,6 +31,19 @@ export interface ParticipantSummary {
 export interface ChatEntry {
   event_id: number;
   from: string;
+  text: string;
+  ts: string;
+}
+
+/**
+ * One DM event as carried in the welcome snapshot's `dm_threads`. Mirrors
+ * the live `dm` ServerMsg shape minus the `kind` discriminator — the kind
+ * is implied by being inside `dm_threads`.
+ */
+export interface DmThreadEntry {
+  event_id: number;
+  from: string;
+  to: string;
   text: string;
   ts: string;
 }
@@ -91,6 +105,18 @@ export type ServerMsg =
        * then append from subsequent `chat` pushes.
        */
       chat_backlog: ChatEntry[];
+      /**
+       * DM threads visible to this viewer, keyed by peer participant_id.
+       * Each thread is oldest → newest, bounded server-side. Only Primary
+       * Hosts and Co-Hosts ever receive non-empty threads (ADR-153 Decision
+       * 8 — DMs are PH↔CoHost only). Participants and Command Entrants
+       * always see `{}`.
+       *
+       * Clients seed `dmThreads` from this on welcome and zero unread
+       * counters by jumping `dmReadCursors[peer]` to the per-thread max
+       * `event_id` (every rehydrated message is "already seen").
+       */
+      dm_threads: Record<string, DmThreadEntry[]>;
     }
   | {
       kind: 'presence';

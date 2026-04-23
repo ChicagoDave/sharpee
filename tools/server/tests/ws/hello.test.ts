@@ -70,6 +70,8 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
       expect(connected).toBe(1);
       // Fresh room has no chat history yet.
       expect(welcome.chat_backlog).toEqual([]);
+      // No DMs yet either — Plan 04 Phase 4 wire contract.
+      expect(welcome.dm_threads).toEqual({});
     } finally {
       client.close();
     }
@@ -111,6 +113,106 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
         expect(typeof entry.event_id).toBe('number');
         expect(typeof entry.ts).toBe('string');
       }
+    } finally {
+      client.close();
+    }
+  });
+
+  // ---------- Plan 04 Phase 4 — DM thread rehydration on welcome ----------
+
+  it('welcome.dm_threads carries prior DMs grouped by peer for a Primary Host viewer', async () => {
+    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const ch = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    server.db.prepare(`UPDATE participants SET tier = 'co_host' WHERE participant_id = ?`).run(ch.participant_id);
+
+    // Seed two DMs in each direction PH↔CH.
+    const insert = server.db.prepare(
+      `INSERT INTO session_events (room_id, participant_id, ts, kind, payload)
+       VALUES (?, ?, ?, 'dm', ?)`,
+    );
+    insert.run(host.room_id, host.participant_id, '2026-04-23T17:00:00Z',
+      JSON.stringify({ kind: 'dm', to_participant_id: ch.participant_id, text: 'a' }));
+    insert.run(host.room_id, ch.participant_id, '2026-04-23T17:00:01Z',
+      JSON.stringify({ kind: 'dm', to_participant_id: host.participant_id, text: 'b' }));
+    insert.run(host.room_id, host.participant_id, '2026-04-23T17:00:02Z',
+      JSON.stringify({ kind: 'dm', to_participant_id: ch.participant_id, text: 'c' }));
+
+    server.db.prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?').run(host.participant_id);
+    const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      client.send({ kind: 'hello', token: host.token });
+      const welcome = await client.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+      // PH sees one thread, keyed by the Co-Host's id.
+      expect(Object.keys(welcome.dm_threads)).toEqual([ch.participant_id]);
+      const thread = welcome.dm_threads[ch.participant_id]!;
+      expect(thread).toHaveLength(3);
+      expect(thread.map((e) => e.text)).toEqual(['a', 'b', 'c']);
+      // Every entry preserves from/to so the client can render direction.
+      expect(thread[0]!.from).toBe(host.participant_id);
+      expect(thread[0]!.to).toBe(ch.participant_id);
+      expect(thread[1]!.from).toBe(ch.participant_id);
+      expect(thread[1]!.to).toBe(host.participant_id);
+    } finally {
+      client.close();
+    }
+  });
+
+  it('Co-Host viewer sees the same thread keyed by the PH id', async () => {
+    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const ch = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    server.db.prepare(`UPDATE participants SET tier = 'co_host' WHERE participant_id = ?`).run(ch.participant_id);
+
+    const insert = server.db.prepare(
+      `INSERT INTO session_events (room_id, participant_id, ts, kind, payload)
+       VALUES (?, ?, ?, 'dm', ?)`,
+    );
+    insert.run(host.room_id, host.participant_id, '2026-04-23T17:00:00Z',
+      JSON.stringify({ kind: 'dm', to_participant_id: ch.participant_id, text: 'hi' }));
+
+    server.db.prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?').run(ch.participant_id);
+    const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      client.send({ kind: 'hello', token: ch.token });
+      const welcome = await client.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+      // Co-Host's view: thread keyed by the PH's id, not their own.
+      expect(Object.keys(welcome.dm_threads)).toEqual([host.participant_id]);
+      expect(welcome.dm_threads[host.participant_id]!).toHaveLength(1);
+      expect(welcome.dm_threads[host.participant_id]![0]!.text).toBe('hi');
+    } finally {
+      client.close();
+    }
+  });
+
+  it('Participant viewer sees dm_threads = {} even when DM events name them', async () => {
+    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const part = await joinRoomViaHttp(server, host.room_id, 'Charlie');
+    // Charlie defaults to 'participant' — no tier promotion.
+
+    // Defense-in-depth: simulate an out-of-band DM row that names Charlie.
+    // The handler shouldn't ever emit one, but the snapshot filter must
+    // still drop it for non-PH/CoHost viewers.
+    server.db.prepare(
+      `INSERT INTO session_events (room_id, participant_id, ts, kind, payload)
+       VALUES (?, ?, ?, 'dm', ?)`,
+    ).run(
+      host.room_id,
+      host.participant_id,
+      '2026-04-23T17:00:00Z',
+      JSON.stringify({ kind: 'dm', to_participant_id: part.participant_id, text: 'leak?' }),
+    );
+
+    server.db.prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?').run(part.participant_id);
+    const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      client.send({ kind: 'hello', token: part.token });
+      const welcome = await client.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+      expect(welcome.dm_threads).toEqual({});
     } finally {
       client.close();
     }

@@ -111,6 +111,7 @@ const welcomeMsg: ServerMsg = {
   ],
   recording_notice: 'Recorded.',
   chat_backlog: [],
+  dm_threads: {},
 };
 
 describe('useWebSocket', () => {

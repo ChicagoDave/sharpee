@@ -58,6 +58,7 @@ function welcomed(): RoomState {
     participants: PARTS,
     recording_notice: 'This session is recorded.',
     chat_backlog: [],
+    dm_threads: {},
   });
 }
 
@@ -81,6 +82,7 @@ describe('roomReducer', () => {
       participants: PARTS,
       recording_notice: '',
       chat_backlog: [],
+      dm_threads: {},
     });
     expect(s.lockHolderId).toBe('p-host');
   });
@@ -98,6 +100,7 @@ describe('roomReducer', () => {
       participants: PARTS,
       recording_notice: '',
       chat_backlog: [],
+      dm_threads: {},
     });
     expect(s.transcript).toEqual([]);
     expect(s.lastError).toBeNull();
@@ -334,6 +337,7 @@ describe('roomReducer', () => {
         { event_id: 1, from: 'p-host', text: 'welcome in', ts: '2026-04-22T17:00:00Z' },
         { event_id: 2, from: 'p-guest', text: 'thanks', ts: '2026-04-22T17:00:01Z' },
       ],
+      dm_threads: {},
     });
     expect(s.chatMessages).toHaveLength(2);
     expect(s.chatMessages[0]!.text).toBe('welcome in');
@@ -625,6 +629,7 @@ describe('roomReducer', () => {
       ],
       recording_notice: '',
       chat_backlog: [],
+      dm_threads: {},
     });
     const s = roomReducer(phState, {
       kind: 'dm',
@@ -688,6 +693,7 @@ describe('roomReducer', () => {
       ],
       recording_notice: '',
       chat_backlog: [],
+      dm_threads: {},
     });
     // CH ↔ CH — not allowed; should drop.
     const tryChPeer = roomReducer(chState, {
@@ -734,6 +740,7 @@ describe('roomReducer', () => {
       ],
       recording_notice: '',
       chat_backlog: [],
+      dm_threads: {},
     });
     const once = roomReducer(phState, {
       kind: 'dm',
@@ -752,5 +759,181 @@ describe('roomReducer', () => {
       ts: '2026-04-23T17:00:00Z',
     });
     expect(twice).toBe(once);
+  });
+
+  // ---------- Plan 04 Phase 3 — DM read cursors ----------
+
+  it('initial state has an empty dmReadCursors map', () => {
+    expect(initialRoomState.dmReadCursors).toEqual({});
+  });
+
+  it('welcome resets dmReadCursors to {}', () => {
+    // Seed a state with a non-empty cursor map, then welcome again.
+    const seeded: RoomState = {
+      ...welcomed(),
+      dmReadCursors: { 'p-other': 99 },
+    };
+    const next = roomReducer(seeded, {
+      kind: 'welcome',
+      participant_id: 'p-guest',
+      room: ROOM,
+      participants: PARTS,
+      recording_notice: '',
+      chat_backlog: [],
+      dm_threads: {},
+    });
+    expect(next.dmReadCursors).toEqual({});
+  });
+
+  it('ui:dm_read advances the cursor for the named peer', () => {
+    const next = roomReducer(welcomed(), {
+      kind: 'ui:dm_read',
+      peer_participant_id: 'p-host',
+      up_to_event_id: 12,
+    });
+    expect(next.dmReadCursors['p-host']).toBe(12);
+  });
+
+  it('ui:dm_read on a peer with an existing cursor advances it strictly upward', () => {
+    const seeded: RoomState = {
+      ...welcomed(),
+      dmReadCursors: { 'p-host': 5 },
+    };
+    const next = roomReducer(seeded, {
+      kind: 'ui:dm_read',
+      peer_participant_id: 'p-host',
+      up_to_event_id: 8,
+    });
+    expect(next.dmReadCursors['p-host']).toBe(8);
+  });
+
+  it('ui:dm_read with up_to_event_id <= current cursor is a no-op (same reference)', () => {
+    const seeded: RoomState = {
+      ...welcomed(),
+      dmReadCursors: { 'p-host': 10 },
+    };
+    const equal = roomReducer(seeded, {
+      kind: 'ui:dm_read',
+      peer_participant_id: 'p-host',
+      up_to_event_id: 10,
+    });
+    const lower = roomReducer(seeded, {
+      kind: 'ui:dm_read',
+      peer_participant_id: 'p-host',
+      up_to_event_id: 3,
+    });
+    expect(equal).toBe(seeded);
+    expect(lower).toBe(seeded);
+  });
+
+  it('ui:dm_read for one peer leaves other peers cursors untouched', () => {
+    const seeded: RoomState = {
+      ...welcomed(),
+      dmReadCursors: { 'p-host': 4, 'p-other': 9 },
+    };
+    const next = roomReducer(seeded, {
+      kind: 'ui:dm_read',
+      peer_participant_id: 'p-host',
+      up_to_event_id: 7,
+    });
+    expect(next.dmReadCursors).toEqual({ 'p-host': 7, 'p-other': 9 });
+  });
+
+  // ---------- Plan 04 Phase 4 — DM rehydration on welcome ----------
+
+  it('welcome with dm_threads populates dmThreads verbatim', () => {
+    const s = roomReducer(initialRoomState, {
+      kind: 'welcome',
+      participant_id: 'p-host',
+      room: ROOM,
+      participants: PARTS,
+      recording_notice: '',
+      chat_backlog: [],
+      dm_threads: {
+        'p-ch': [
+          { event_id: 5, from: 'p-host', to: 'p-ch', text: 'hi', ts: 't' },
+          { event_id: 8, from: 'p-ch', to: 'p-host', text: 'hey', ts: 't' },
+        ],
+      },
+    });
+    expect(s.dmThreads['p-ch']).toHaveLength(2);
+    expect(s.dmThreads['p-ch']![0]!.event_id).toBe(5);
+    expect(s.dmThreads['p-ch']![1]!.event_id).toBe(8);
+  });
+
+  it('welcome seeds dmReadCursors to the per-thread max event_id', () => {
+    const s = roomReducer(initialRoomState, {
+      kind: 'welcome',
+      participant_id: 'p-host',
+      room: ROOM,
+      participants: PARTS,
+      recording_notice: '',
+      chat_backlog: [],
+      dm_threads: {
+        'p-ch': [
+          { event_id: 5, from: 'p-host', to: 'p-ch', text: 'a', ts: 't' },
+          { event_id: 12, from: 'p-ch', to: 'p-host', text: 'b', ts: 't' },
+          { event_id: 9, from: 'p-host', to: 'p-ch', text: 'c', ts: 't' },
+        ],
+        'p-ch2': [
+          { event_id: 3, from: 'p-host', to: 'p-ch2', text: 'd', ts: 't' },
+        ],
+      },
+    });
+    // Max of the thread, not assuming sorted input.
+    expect(s.dmReadCursors['p-ch']).toBe(12);
+    expect(s.dmReadCursors['p-ch2']).toBe(3);
+  });
+
+  it('welcome with empty dm_threads leaves dmReadCursors empty', () => {
+    const s = roomReducer(initialRoomState, {
+      kind: 'welcome',
+      participant_id: 'p-host',
+      room: ROOM,
+      participants: PARTS,
+      recording_notice: '',
+      chat_backlog: [],
+      dm_threads: {},
+    });
+    expect(s.dmReadCursors).toEqual({});
+  });
+
+  it('incoming dm does not advance the cursor — it accumulates as unread', () => {
+    // PH state with Alice (CH) so the dm is admitted by dmPeerFor.
+    const phState = roomReducer(initialRoomState, {
+      kind: 'welcome',
+      participant_id: 'p-host',
+      room: ROOM,
+      participants: [
+        {
+          participant_id: 'p-host',
+          display_name: 'Host',
+          tier: 'primary_host',
+          connected: true,
+          muted: false,
+        },
+        {
+          participant_id: 'p-ch',
+          display_name: 'Alice',
+          tier: 'co_host',
+          connected: true,
+          muted: false,
+        },
+      ],
+      recording_notice: '',
+      chat_backlog: [],
+      dm_threads: {},
+    });
+    const after = roomReducer(phState, {
+      kind: 'dm',
+      event_id: 42,
+      from: 'p-ch',
+      to: 'p-host',
+      text: 'hey',
+      ts: '2026-04-23T17:00:00Z',
+    });
+    expect(after.dmThreads['p-ch']).toHaveLength(1);
+    // Cursor untouched — only ui:dm_read may advance it.
+    expect(after.dmReadCursors['p-ch']).toBeUndefined();
   });
 });

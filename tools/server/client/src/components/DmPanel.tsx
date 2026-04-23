@@ -9,14 +9,16 @@
  * the message shape is `DmEntry` (has `to` as well as `from`, unlike
  * room chat).
  *
- * The panel deliberately does not re-surface the recording-transparency
- * notice per ADR-153 Decision 11 — that one-time notice ships in Plan 04
- * Phase 5 as a dismissible banner above the DM body.
+ * On first DM view per browser, a dismissible recording-transparency
+ * banner appears above the message list (ADR-153 Decision 11; Plan 04
+ * Phase 5). Acknowledgment persists in localStorage globally — once
+ * dismissed in any room, it stays dismissed across rooms and sessions.
  */
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { sendDm, type Sender } from '../api/ws';
 import type { DmEntry } from '../state/types';
+import { readDmNoticeAck, writeDmNoticeAck } from '../storage/dm-notice-ack';
 import type { ParticipantSummary } from '../types/wire';
 
 export interface DmPanelProps {
@@ -44,11 +46,18 @@ export default function DmPanel({
 }: DmPanelProps): JSX.Element {
   const listRef = useRef<HTMLUListElement | null>(null);
   const [value, setValue] = useState('');
+  // Lazy initial state — read storage exactly once per mount.
+  const [showNotice, setShowNotice] = useState<boolean>(() => !readDmNoticeAck());
 
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [entries.length]);
+
+  const dismissNotice = (): void => {
+    writeDmNoticeAck();
+    setShowNotice(false);
+  };
 
   const submit = () => {
     const trimmed = value.trim();
@@ -73,6 +82,44 @@ export default function DmPanel({
         height: '100%',
       }}
     >
+      {showNotice && (
+        <div
+          role="note"
+          aria-label="Direct message recording notice"
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            padding: 'var(--sharpee-spacing-sm)',
+            borderBottom: '1px solid var(--sharpee-border)',
+            background: 'var(--sharpee-bg-tertiary, var(--sharpee-bg-secondary))',
+            fontSize: '0.8rem',
+            color: 'var(--sharpee-text-muted)',
+          }}
+        >
+          <p style={{ margin: 0, flex: 1 }}>
+            Direct messages are logged in this room&rsquo;s event log like any
+            other event. Hosts do not have a private channel.
+          </p>
+          <button
+            type="button"
+            onClick={dismissNotice}
+            aria-label="Dismiss DM recording notice"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--sharpee-border)',
+              borderRadius: 'var(--sharpee-border-radius)',
+              padding: '2px 8px',
+              cursor: 'pointer',
+              font: 'inherit',
+              fontSize: '0.75rem',
+              color: 'var(--sharpee-text)',
+            }}
+          >
+            Got it
+          </button>
+        </div>
+      )}
       <ul
         ref={listRef}
         aria-label="DM messages"

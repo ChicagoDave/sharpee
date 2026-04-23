@@ -49,6 +49,17 @@ export interface UseWebSocketResult {
    * don't have to queue.
    */
   send: (msg: ClientMsg) => void;
+  /**
+   * Acknowledge that the local user has seen DM messages from `peerId` up
+   * to and including `upToEventId`. Dispatches the `ui:dm_read` synthetic
+   * reducer action — pure local state, never sent over the wire (DM read
+   * receipts are not part of the wire contract; ADR-153 Decision 11).
+   *
+   * Narrowly named on purpose. Resist the urge to expose raw `dispatch`
+   * from this hook — the reducer's UI-action vocabulary is meant to stay
+   * small and intentional (see roomReducer.ts header).
+   */
+  markDmRead: (peerId: string, upToEventId: number) => void;
 }
 
 /**
@@ -146,5 +157,13 @@ export function useWebSocket({
     ws.send(JSON.stringify(msg));
   }, []);
 
-  return { state, connection, send };
+  const markDmRead = useCallback((peerId: string, upToEventId: number) => {
+    dispatch({
+      kind: 'ui:dm_read',
+      peer_participant_id: peerId,
+      up_to_event_id: upToEventId,
+    });
+  }, []);
+
+  return { state, connection, send, markDmRead };
 }

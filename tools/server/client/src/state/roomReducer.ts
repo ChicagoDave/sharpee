@@ -1,23 +1,97 @@
 /**
- * Pure reducer that folds server pushes into a `RoomState`.
+ * Pure reducer that folds server pushes (and a small set of narrowly-scoped
+ * synthetic UI actions) into a `RoomState`.
  *
- * Public interface: {@link roomReducer}.
+ * Public interface: {@link roomReducer}, {@link UiAction}, {@link RoomAction}.
  *
  * Bounded context: client state layer (ADR-153 Interface Contracts).
  *
- * Coverage rule: every `ServerMsg` kind has an explicit case so `switch`
- * exhaustiveness is enforced by TypeScript. Kinds that belong to features
- * landing in later plans (chat → Plan 02, DMs → Plan 04, saves → Plan 03,
- * etc.) are handled as no-ops with a pointer comment. This keeps a Phase 6
- * client alive when a Phase 7+ server starts emitting those kinds during
- * development, instead of crashing on an unhandled message.
+ * Coverage rule: every `ServerMsg` kind has an explicit case in the
+ * server-side `switch` so exhaustiveness is enforced by TypeScript. The
+ * synthetic `ui:*` actions are handled in a separate branch *before* that
+ * switch — keeping the wire-side exhaustiveness guard intact (the `default`
+ * arm's `never` assertion still proves every wire message is handled).
+ *
+ * `ui:*` action vocabulary is deliberately narrow. Today: `ui:dm_read`
+ * advances a per-peer "last read" cursor used to compute DM unread counts
+ * (Plan 04 Phase 3). Resist the urge to grow this into a general UI-action
+ * union — most UI state belongs in components, not in the projection.
  */
 
 import type { ServerMsg } from '../types/wire';
 import { dmPeerFor } from './authority';
 import { CHAT_IN_MEMORY_LIMIT, type RoomState } from './types';
 
-export function roomReducer(state: RoomState, msg: ServerMsg): RoomState {
+/**
+ * Synthetic, client-originated actions handled by the room reducer.
+ * Discriminated by a `kind` value prefixed with `ui:` to make the surface
+ * obvious at every callsite and unambiguous against any wire `kind`.
+ */
+export type UiAction = {
+  kind: 'ui:dm_read';
+  peer_participant_id: string;
+  /** Highest DM event_id the user has acknowledged for this peer. */
+  up_to_event_id: number;
+};
+
+/** Total accepted reducer input — wire pushes plus the small ui:* set. */
+export type RoomAction = ServerMsg | UiAction;
+
+function isUiAction(action: RoomAction): action is UiAction {
+  return action.kind.startsWith('ui:');
+}
+
+/**
+ * Seed `dmReadCursors` from a freshly-arrived `dm_threads` map. Each
+ * cursor lands at the highest `event_id` in the corresponding thread, so
+ * every rehydrated message renders as already-seen on welcome. Empty
+ * threads are skipped (no cursor needed; selectDmUnread short-circuits).
+ */
+function seedDmReadCursors(
+  dmThreads: Record<string, { event_id: number }[]>,
+): Record<string, number> {
+  const cursors: Record<string, number> = {};
+  for (const peer of Object.keys(dmThreads)) {
+    const thread = dmThreads[peer]!;
+    if (thread.length === 0) continue;
+    let max = thread[0]!.event_id;
+    for (let i = 1; i < thread.length; i += 1) {
+      const id = thread[i]!.event_id;
+      if (id > max) max = id;
+    }
+    cursors[peer] = max;
+  }
+  return cursors;
+}
+
+function applyUiAction(state: RoomState, action: UiAction): RoomState {
+  switch (action.kind) {
+    case 'ui:dm_read': {
+      const current = state.dmReadCursors[action.peer_participant_id] ?? 0;
+      // Cursor is monotonic — never regress it. Stale dispatches (e.g., a
+      // tab activation racing with a fresh incoming `dm`) become no-ops.
+      if (action.up_to_event_id <= current) return state;
+      return {
+        ...state,
+        dmReadCursors: {
+          ...state.dmReadCursors,
+          [action.peer_participant_id]: action.up_to_event_id,
+        },
+      };
+    }
+    default: {
+      // Exhaustiveness guard for the ui:* set: if a new variant is added
+      // without a matching case, `action.kind` won't be `never` here and
+      // the satisfies clause fails at compile time.
+      action.kind satisfies never;
+      return state;
+    }
+  }
+}
+
+export function roomReducer(state: RoomState, action: RoomAction): RoomState {
+  if (isUiAction(action)) return applyUiAction(state, action);
+  const msg = action;
   switch (msg.kind) {
     case 'welcome':
       return {
@@ -40,9 +114,15 @@ export function roomReducer(state: RoomState, msg: ServerMsg): RoomState {
         // The server bounds chat_backlog server-side, but respect the local
         // cap too in case a future server change ever exceeds it.
         chatMessages: msg.chat_backlog.slice(-CHAT_IN_MEMORY_LIMIT),
-        // Welcome does not (yet) carry dm_threads; Plan 04 Phase 4 will
-        // add that server-side. Reset to empty on every welcome.
-        dmThreads: {},
+        // Rehydrate DM threads the server says this viewer is entitled to.
+        // Server filters by tier (PH/CoHost only — ADR-153 Decision 8); we
+        // copy the map verbatim and trust that filter (defense in depth in
+        // the `dm` push branch via dmPeerFor).
+        dmThreads: { ...msg.dm_threads },
+        // Cursors jump to the per-thread max event_id so every rehydrated
+        // message reads as "already seen" (Plan 04 Phase 3 AC). New DMs
+        // arriving after welcome will then naturally surface as unread.
+        dmReadCursors: seedDmReadCursors(msg.dm_threads),
         lastError: null,
         closed: null,
         sandboxCrashed: false,

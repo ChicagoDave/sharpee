@@ -54,6 +54,7 @@ function hydrated(overrides: Partial<RoomState> = {}): RoomState {
     transcript: [],
     chatMessages: [],
     dmThreads: {},
+    dmReadCursors: {},
     lastError: null,
     closed: null,
     sandboxCrashed: false,
@@ -325,7 +326,52 @@ describe('<RoomView>', () => {
       },
     });
     render(<RoomView roomId="room-1" code={null} state={state} connection="open" />);
-    expect(screen.getByRole('tab', { name: /^bob$/i })).toBeInTheDocument();
+    // Tab's accessible name includes the unread-count badge ("Bob 1 unread"),
+    // so match loosely — the test is about tab creation, not the badge text.
+    expect(screen.getByRole('tab', { name: /bob/i })).toBeInTheDocument();
+  });
+
+  it('activating a DM tab calls markDmRead with the latest event_id in that thread', async () => {
+    const userEvent = (await import('@testing-library/user-event')).default;
+    const markDmRead = vi.fn();
+    const state = hydrated({
+      participants: [
+        {
+          participant_id: 'p-me',
+          display_name: 'Alice',
+          tier: 'primary_host',
+          connected: true,
+          muted: false,
+        },
+        {
+          participant_id: 'p-ch',
+          display_name: 'Bob',
+          tier: 'co_host',
+          connected: true,
+          muted: false,
+        },
+      ],
+      dmThreads: {
+        'p-ch': [
+          { event_id: 1, from: 'p-ch', to: 'p-me', text: 'a', ts: 't' },
+          { event_id: 5, from: 'p-ch', to: 'p-me', text: 'b', ts: 't' },
+          { event_id: 9, from: 'p-ch', to: 'p-me', text: 'c', ts: 't' },
+        ],
+      },
+    });
+    render(
+      <RoomView
+        roomId="room-1"
+        code={null}
+        state={state}
+        connection="open"
+        markDmRead={markDmRead}
+      />,
+    );
+    const tab = screen.getByRole('tab', { name: /bob/i });
+    await userEvent.click(tab);
+    // Cursor should advance to the latest event_id in the thread.
+    expect(markDmRead).toHaveBeenCalledWith('p-ch', 9);
   });
 
   it('clicking the saves toggle opens the SavePanel', async () => {

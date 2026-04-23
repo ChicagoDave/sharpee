@@ -18,10 +18,11 @@ import type { SavesRepository } from '../repositories/saves.js';
 import type { SessionEventsRepository } from '../repositories/session-events.js';
 import type {
   ChatEntry,
+  DmThreadEntry,
   ParticipantSummary,
   RoomSnapshot,
 } from '../wire/browser-server.js';
-import type { Room } from '../repositories/types.js';
+import type { Room, Tier } from '../repositories/types.js';
 
 /**
  * Cap on the chat history bundled with each welcome. Kept small so the
@@ -29,6 +30,15 @@ import type { Room } from '../repositories/types.js';
  * via the session event log if a future plan surfaces that UI.
  */
 export const WELCOME_CHAT_BACKLOG_LIMIT = 50;
+
+/**
+ * Cap on the DM events the welcome carries for the viewer. Kept generous
+ * (200 across all the viewer's threads) since DMs are typically lower-volume
+ * than chat and losing thread history on reconnect is a worse UX than
+ * losing room-chat tail. Per-thread distribution is whatever falls out of
+ * "most recent N events the viewer was party to."
+ */
+export const WELCOME_DM_BACKLOG_LIMIT = 200;
 
 export interface SnapshotDeps {
   rooms: RoomsRepository;
@@ -39,13 +49,25 @@ export interface SnapshotDeps {
   sessionEvents?: SessionEventsRepository;
 }
 
+/**
+ * Identity of the viewer the welcome is being assembled for. Used to scope
+ * `dm_threads` to threads this viewer is entitled to see (PH↔Co-Host axis,
+ * ADR-153 Decision 8). Participants and Command Entrants always see `{}`.
+ */
+export interface SnapshotViewer {
+  participant_id: string;
+  tier: Tier;
+}
+
 export function buildRoomSnapshot(
   room: Room,
   deps: SnapshotDeps,
+  viewer: SnapshotViewer,
 ): {
   snapshot: RoomSnapshot;
   participants: ParticipantSummary[];
   chat_backlog: ChatEntry[];
+  dm_threads: Record<string, DmThreadEntry[]>;
 } {
   const savesList = deps.saves
     ? deps.saves.listForRoom(room.room_id).map((s) => ({
@@ -85,5 +107,32 @@ export function buildRoomSnapshot(
         }))
     : [];
 
-  return { snapshot, participants, chat_backlog };
+  // DM threads are visible only to PH and CoHost (ADR-153 Decision 8).
+  // Other tiers always receive an empty map regardless of any DM events
+  // their participant_id might appear in (defense in depth — the dm
+  // handler already enforces the axis on send).
+  const dm_threads: Record<string, DmThreadEntry[]> = {};
+  if (
+    deps.sessionEvents &&
+    (viewer.tier === 'primary_host' || viewer.tier === 'co_host')
+  ) {
+    const events = deps.sessionEvents.listRecentDmsForParticipant(
+      room.room_id,
+      viewer.participant_id,
+      WELCOME_DM_BACKLOG_LIMIT,
+    );
+    for (const e of events) {
+      if (e.payload.kind !== 'dm' || e.participant_id === null) continue;
+      const from = e.participant_id;
+      const to = (e.payload as { kind: 'dm'; to_participant_id: string }).to_participant_id;
+      const text = (e.payload as { kind: 'dm'; text: string }).text;
+      const peer = from === viewer.participant_id ? to : from;
+      const entry: DmThreadEntry = { event_id: e.event_id, from, to, text, ts: e.ts };
+      const bucket = dm_threads[peer];
+      if (bucket) bucket.push(entry);
+      else dm_threads[peer] = [entry];
+    }
+  }
+
+  return { snapshot, participants, chat_backlog, dm_threads };
 }

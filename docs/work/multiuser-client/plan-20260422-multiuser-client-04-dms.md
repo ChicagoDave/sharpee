@@ -110,17 +110,49 @@ This is the largest UX-only plan and the only one in the five that expands the r
 
 **Goal**: tab badges show unread DM counts. Switching to a tab clears its unread counter. The counter is a small pill after the tab label.
 
+**Boundary discipline (revised 2026-04-23)**: An earlier draft proposed lifting `activeTabId` and `openedDmPeers` into `RoomState` and widening the reducer to accept a general `UiAction` union alongside `ServerMsg`. That was wrong: `RoomState` is documented as the projection of authoritative server state, and "which tab is active" is a per-browser UI fact. Two clients in the same room can — and do — have different active tabs. Mixing those concerns would (a) break the "no React types in `state/`" promise documented at the top of `state/types.ts`, (b) corrupt the exhaustiveness guard on `ServerMsg`, and (c) put per-browser state into a shape that's supposed to mean "shared truth."
+
+The split below keeps each concern on the side of the boundary it belongs to.
+
+**What lives where**:
+
+| Concern | Owner | Rationale |
+|---|---|---|
+| `dmReadCursors: Record<peerId, lastReadEventId>` | `RoomState` (reducer) | Derived projection of incoming `dm` ServerMsgs. Computing unread = `messages.filter(m => m.event_id > cursor).length` is a pure read of server state. |
+| `activeTabId`, `openedDmPeers` | `Room.tsx` local `useState` | Per-browser UI affordance. No server analogue. |
+| Cursor advances on tab activation | Component dispatches a single, narrowly-scoped action | Keeps the reducer's input vocabulary almost entirely server-driven; the one synthetic action is explicitly named for what it represents. |
+
+**Reducer surface change** (the *only* widening):
+- Reducer signature becomes `roomReducer(state, action: ServerMsg | DmReadAck)` where `DmReadAck = {kind: 'ui:dm_read', peer_participant_id: string, up_to_event_id: number}`.
+- Exhaustiveness guard splits into two `switch`es internally — one for `ServerMsg` kinds (still exhaustive against the wire union), one for the small `ui:*` set. This preserves "the wire is fully handled" as a compile-time check without burying it.
+- Welcome resets `dmReadCursors` to `{}` (per AC: reload zeroes unreads — every message in the rehydrated backlog is "already seen," so the cursor jumps to the latest `event_id` per thread on welcome).
+
 **Files**:
-- `tools/server/client/src/components/SidePanelTabs.tsx` — render unread badge per tab.
-- `tools/server/client/src/state/roomReducer.ts` — handle `setActiveTab` action: clear that tab's unread counter.
-- `tools/server/client/src/components/SidePanelTabs.tsx` — fire the setActiveTab action on click.
+- `tools/server/client/src/state/types.ts` — add `dmReadCursors: Record<string, number>` to `RoomState`; default `{}`. No tab-related fields added.
+- `tools/server/client/src/state/roomReducer.ts` —
+  - On welcome: set `dmReadCursors[peer]` to the max `event_id` in each thread's rehydrated backlog (zeroes unreads on reload).
+  - On `dm` ServerMsg: no change to cursor logic here — the cursor only advances on user activation, never automatically.
+  - New `ui:dm_read` action: advances `dmReadCursors[peer]` to `max(current, up_to_event_id)`.
+- `tools/server/client/src/state/selectors.ts` (NEW) — `selectDmUnread(state, peerId): number` returns `messages.filter(m => m.event_id > (cursor ?? 0)).length`. Selector lives next to the state — pure function, no React types.
+- `tools/server/client/src/pages/Room.tsx` — when `activeTabId` changes to `dm:<peerId>`, dispatch `ui:dm_read` with the latest event_id in that thread. `activeTabId` and `openedDmPeers` stay in local `useState` — Phase 1's structure is correct.
+- `tools/server/client/src/components/SidePanelTabs.tsx` — already supports `unread` on `TabDescriptor` (Phase 1). No change.
+
+**Out of scope (deliberately)**:
+- A general `UiAction` discriminated union routed through the reducer. If a second `ui:*` action becomes necessary, revisit; do not pre-build the abstraction.
+- Storing `activeTabId` in `RoomState`. It is local UI state.
 
 **Definition of Done**:
-- DMs arriving while a tab is not active increment its badge. Clicking the tab clears the badge.
-- Reload preserves the thread history (from welcome snapshot) and resets unreads to 0 (all messages are "already seen").
+- DMs arriving while a peer's tab is not active cause `selectDmUnread(state, peer) > 0`. Activating that tab dispatches `ui:dm_read` and the count returns to 0.
+- Reload: welcome populates threads (Phase 4 land), cursors jump to latest event_ids, badges read 0.
+- `RoomState` shape has no `activeTabId` field. `roomReducer` accepts `ServerMsg | DmReadAck` only — no general UI-action union.
 
 **Tests**:
-- `roomReducer.test.ts` — unread increment; tab-activation clears; reload resets.
+- `roomReducer.test.ts` —
+  - `dm` ServerMsg arrives with no prior cursor → `selectDmUnread` = 1.
+  - `ui:dm_read` with `up_to_event_id` advances cursor; subsequent `selectDmUnread` = 0 for messages at or below that id, > 0 for any newer.
+  - Cursor never regresses: `ui:dm_read` with a smaller `up_to_event_id` than the current cursor is a no-op.
+  - Welcome with rehydrated `dm_threads` (Phase 4 fixture) sets cursors to per-thread max `event_id`.
+- `selectors.test.ts` (NEW) — `selectDmUnread` returns 0 for unknown peer, 0 when cursor ≥ all event_ids, count of strictly-greater events otherwise.
 
 ---
 
