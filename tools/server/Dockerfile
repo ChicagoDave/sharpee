@@ -27,6 +27,12 @@ RUN npm install --no-audit --no-fund
 # Source + config files.
 COPY tools/server/client/tsconfig.json tools/server/client/vite.config.ts tools/server/client/index.html ./
 COPY tools/server/client/src ./src
+# The client re-exports wire types from the server's authoritative definitions
+# (see client/src/types/wire.ts). Expose only the wire module, not the whole
+# server, to preserve single-source-of-truth without leaking server internals.
+# src/wire/primitives.ts holds the shared primitives (Tier, TextBlock,
+# DomainEvent); the whole wire/ directory is self-contained and Node-free.
+COPY tools/server/src/wire /build/tools/server/src/wire
 
 RUN npm run build
 

@@ -10,7 +10,7 @@
  * The server is authoritative; the client issues intents and renders pushes.
  */
 
-import type { DomainEvent, TextBlock, Tier } from '../repositories/types.js';
+import type { DomainEvent, TextBlock, Tier } from './primitives.js';
 
 export type { Tier, TextBlock, DomainEvent };
 

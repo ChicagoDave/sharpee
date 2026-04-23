@@ -2,14 +2,19 @@
  * Shared domain types surfaced by the repository layer.
  *
  * Public interface: {@link Room}, {@link Participant}, {@link SessionEvent},
- * {@link Save}, {@link Tier}, {@link EventKind}, {@link EventPayload}.
+ * {@link Save}, {@link EventKind}, {@link EventPayload}. Wire primitives
+ * ({@link Tier}, {@link TextBlock}, {@link DomainEvent}) are re-exported
+ * from `../wire/primitives.js` so existing server-internal consumers keep
+ * their import paths; the authoritative source lives in the wire module.
  * Bounded context: persistence boundary — the only place where DB rows
  * are shaped into domain records for the rest of the server to consume.
  *
  * Reference: ADR-153 Interface Contracts (Repository Interfaces, Session Event Log Payloads).
  */
 
-export type Tier = 'primary_host' | 'co_host' | 'command_entrant' | 'participant';
+import type { Tier, TextBlock, DomainEvent } from '../wire/primitives.js';
+
+export type { Tier, TextBlock, DomainEvent };
 
 export type EventKind =
   | 'command'
@@ -22,16 +27,6 @@ export type EventKind =
   | 'join'
   | 'leave'
   | 'lifecycle';
-
-/** Forward-declared shapes; @sharpee/core versions are used by the wire layer. */
-export interface TextBlock {
-  kind: string;
-  [key: string]: unknown;
-}
-export interface DomainEvent {
-  type: string;
-  [key: string]: unknown;
-}
 
 export type EventPayload =
   | { kind: 'command'; input: string; turn_id: string }

@@ -10,7 +10,7 @@
  * Binary save blobs are base64-encoded inside the JSON envelope.
  */
 
-import type { TextBlock, DomainEvent } from '../repositories/types.js';
+import type { TextBlock, DomainEvent } from './primitives.js';
 
 /** Current wire protocol version. Servers and sandboxes that disagree refuse to proceed. */
 export const PROTOCOL_VERSION = 1;
