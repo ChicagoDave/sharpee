@@ -11,6 +11,14 @@ import { parse as parseYaml } from 'yaml';
 export interface Config {
   server: {
     port: number;
+    /**
+     * Optional absolute path to the built multi-user client dist directory.
+     * When set, the HTTP app serves it as static + SPA fallback. When unset,
+     * non-API GETs fall through to Hono's default 404 (dev mode runs the
+     * Vite dev server separately). Set via `CLIENT_DIST_DIR` or YAML
+     * `server.client_dist_dir`.
+     */
+    clientDistDir?: string;
   };
   storage: {
     dbPath: string;
@@ -63,6 +71,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   if (env.PORT) cfg.server.port = parseIntOrThrow(env.PORT, 'PORT');
+  if (env.CLIENT_DIST_DIR) cfg.server.clientDistDir = env.CLIENT_DIST_DIR;
   if (env.DB_PATH) cfg.storage.dbPath = env.DB_PATH;
   if (env.STORIES_DIR) cfg.storage.storiesDir = env.STORIES_DIR;
   if (env.ROOMS_IDLE_RECYCLE_DAYS) {
@@ -79,6 +88,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 function mergeYaml(dst: Config, src: Partial<Record<string, unknown>>): void {
   const s = src as any;
   if (s.server?.port != null) dst.server.port = Number(s.server.port);
+  if (s.server?.client_dist_dir) dst.server.clientDistDir = String(s.server.client_dist_dir);
   if (s.storage?.db_path) dst.storage.dbPath = String(s.storage.db_path);
   if (s.storage?.stories_dir) dst.storage.storiesDir = String(s.storage.stories_dir);
   if (s.rooms?.idle_recycle_days != null) dst.rooms.idleRecycleDays = Number(s.rooms.idle_recycle_days);

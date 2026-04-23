@@ -66,6 +66,15 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
 
     if (!story_slug) throw new HttpError(400, 'missing_field', 'story_slug is required');
     if (!display_name) throw new HttpError(400, 'missing_field', 'display_name is required');
+    // ADR-153 frontend: the Primary Host authors a human-readable title at
+    // create time; it is shown on the public landing page. Must be a non-empty
+    // trimmed string ≤ 80 characters.
+    if (typeof body.title !== 'string' || !rawTitle) {
+      throw new HttpError(400, 'missing_field', 'title is required');
+    }
+    if (rawTitle.length > 80) {
+      throw new HttpError(400, 'invalid_title', 'title must be 80 characters or fewer');
+    }
 
     // CAPTCHA runs BEFORE any DB work — a rejected challenge leaves no trace.
     await deps.captcha.verify(captchaToken);
@@ -85,7 +94,7 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
       );
     }
 
-    const title = rawTitle || `${story.title} — ${new Date().toISOString().slice(0, 10)}`;
+    const title = rawTitle;
 
     // Pre-generate ids so we can insert room + participant + events in one transaction.
     const participant_id = randomUUID();

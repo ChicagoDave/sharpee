@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.local
+.vite/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Editor
+.vscode/
+.idea/

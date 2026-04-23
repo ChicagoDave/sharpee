@@ -38,6 +38,11 @@ export interface BuildTestAppOptions {
    * spawning a real sandbox. Slugs not listed are implicitly healthy.
    */
   unhealthyStories?: Record<string, string>;
+  /**
+   * Absolute path to a built client dist directory. When set, the HTTP app
+   * serves it as static + SPA fallback. Used by app.test.ts.
+   */
+  clientDistDir?: string;
 }
 
 /** Build a working test app backed by :memory: SQLite and a temp stories dir. */
@@ -96,6 +101,7 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
     stories,
     storyHealth,
     captcha,
+    clientDistDir: opts.clientDistDir,
   });
 
   return {

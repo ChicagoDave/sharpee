@@ -23,6 +23,7 @@ async function createRoom(app: TestAppHandle, slug = 'zork') {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       story_slug: slug,
+      title: 'Test Room',
       display_name: 'Host',
       captcha_token: 'stub',
     }),

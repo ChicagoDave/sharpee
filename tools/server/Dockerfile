@@ -6,13 +6,31 @@
 # Or via the reference compose, which sets the context explicitly.
 #
 # Multi-stage build:
-#   1. node-builder — installs deps, compiles TypeScript → tools/server/dist/.
-#   2. runtime      — slim Node image + Deno binary, copies built server + sandbox entry.
+#   1. client-builder — installs deps, builds the React multi-user client
+#                        → tools/server/client/dist/ (ADR-153 frontend).
+#   2. node-builder   — installs deps, compiles TypeScript → tools/server/dist/.
+#   3. runtime        — slim Node image + Deno binary, copies built server,
+#                        sandbox entry, and the client dist to /app/client-dist.
 #
 # The Deno binary is required at runtime for spawning --allow-none sandboxes
-# (ADR-153 Decision 1).
+# (ADR-153 Decision 1). The CLIENT_DIST_DIR env var points the server at the
+# baked-in client so GET / serves the SPA instead of 404ing.
 
-# ---------- Stage 1: Build the Node server ----------
+# ---------- Stage 1: Build the multi-user browser client ----------
+FROM node:22-slim AS client-builder
+WORKDIR /build/tools/server/client
+
+# Install client deps first so changes to src/ do not bust the install layer.
+COPY tools/server/client/package.json tools/server/client/package-lock.json* ./
+RUN npm install --no-audit --no-fund
+
+# Source + config files.
+COPY tools/server/client/tsconfig.json tools/server/client/vite.config.ts tools/server/client/index.html ./
+COPY tools/server/client/src ./src
+
+RUN npm run build
+
+# ---------- Stage 2: Build the Node server ----------
 FROM node:22-slim AS node-builder
 WORKDIR /build
 
@@ -36,7 +54,7 @@ RUN npx tsc
 # via the existing dist COPY.
 RUN cp src/sandbox/deno-entry.ts dist/sandbox/deno-entry.ts
 
-# ---------- Stage 2: Runtime ----------
+# ---------- Stage 3: Runtime ----------
 FROM node:22-slim AS runtime
 # Install Deno for the sandbox; retain curl for the compose healthcheck.
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -52,6 +70,7 @@ COPY --from=node-builder --chown=node:node /build/tools/server/node_modules ./no
 COPY --from=node-builder --chown=node:node /build/tools/server/package.json ./package.json
 COPY --from=node-builder --chown=node:node /build/tools/server/migrations ./migrations
 COPY --chown=node:node tools/server/deno.json ./deno.json
+COPY --from=client-builder --chown=node:node /build/tools/server/client/dist ./client-dist
 
 # Create data dirs owned by node so named volumes inherit writable perms on first up.
 RUN mkdir -p /data/db /data/stories && chown -R node:node /data
@@ -65,6 +84,7 @@ EXPOSE 8080
 ENV NODE_ENV=production \
     DB_PATH=/data/db/sharpee.db \
     STORIES_DIR=/data/stories \
-    CONFIG_FILE=/etc/sharpee-platform.yaml
+    CONFIG_FILE=/etc/sharpee-platform.yaml \
+    CLIENT_DIST_DIR=/app/client-dist
 
 CMD ["node", "dist/index.js"]

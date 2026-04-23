@@ -1,0 +1,211 @@
+/**
+ * Sharpee multi-user client — theme variables.
+ *
+ * Public interface: CSS custom properties scoped under [data-theme="..."].
+ *
+ * Bounded context: visual theming (ADR-153 frontend; ported from Zifmia
+ * packages/zifmia/src/styles/themes.css so both clients share palette identity).
+ *
+ * Four themes: classic-light, modern-dark (default), retro-terminal, paper.
+ * The current theme is applied as `data-theme="<name>"` on <html>, set before
+ * React mounts by src/storage/theme.ts. Only the variable blocks are ported in
+ * Phase 1 — component styling is added as components land in later phases.
+ */
+
+/* ============================================================================
+   Classic Light
+   ============================================================================ */
+
+:root,
+[data-theme="classic-light"] {
+  --sharpee-font-transcript: 'Literata', Georgia, 'Times New Roman', serif;
+  --sharpee-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 16px;
+  --sharpee-line-height: 1.7;
+
+  --sharpee-bg: #fffef9;
+  --sharpee-bg-secondary: #f5f3eb;
+  --sharpee-text: #3d3d3d;
+  --sharpee-text-muted: #666666;
+  --sharpee-accent: #6b4423;
+  --sharpee-room-title: #5c4033;
+  --sharpee-command: #6b4423;
+  --sharpee-border: #e0d8c8;
+  --sharpee-link: #4a6da7;
+  --sharpee-error: #a94442;
+
+  --sharpee-status-bg: #8b7355;
+  --sharpee-status-text: #ffffff;
+
+  --sharpee-panel-bg: #f9f7f2;
+  --sharpee-panel-header: #e8e4db;
+  --sharpee-tab-active: #6b4423;
+  --sharpee-tab-inactive: #999;
+
+  --sharpee-spacing-xs: 4px;
+  --sharpee-spacing-sm: 8px;
+  --sharpee-spacing-md: 16px;
+  --sharpee-spacing-lg: 24px;
+  --sharpee-spacing-xl: 32px;
+
+  --sharpee-max-width: 800px;
+  --sharpee-border-radius: 4px;
+}
+
+/* ============================================================================
+   Modern Dark (Catppuccin Mocha) — default
+   ============================================================================ */
+
+[data-theme="modern-dark"] {
+  --sharpee-font-transcript: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 15px;
+  --sharpee-line-height: 1.6;
+
+  --sharpee-bg: #1e1e2e;
+  --sharpee-bg-secondary: #181825;
+  --sharpee-text: #cdd6f4;
+  --sharpee-text-muted: #a6adc8;
+  --sharpee-accent: #89b4fa;
+  --sharpee-room-title: #f5e0dc;
+  --sharpee-command: #89b4fa;
+  --sharpee-border: #313244;
+  --sharpee-link: #89dceb;
+  --sharpee-error: #f38ba8;
+
+  --sharpee-status-bg: #11111b;
+  --sharpee-status-text: #89b4fa;
+
+  --sharpee-panel-bg: #181825;
+  --sharpee-panel-header: #11111b;
+  --sharpee-tab-active: #89b4fa;
+  --sharpee-tab-inactive: #6c7086;
+
+  --sharpee-border-radius: 6px;
+}
+
+/* ============================================================================
+   Retro Terminal (Green Phosphor)
+   ============================================================================ */
+
+[data-theme="retro-terminal"] {
+  --sharpee-font-transcript: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-ui: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 14px;
+  --sharpee-line-height: 1.5;
+
+  --sharpee-bg: #0a0a0a;
+  --sharpee-bg-secondary: #0f0f0f;
+  --sharpee-text: #00ff00;
+  --sharpee-text-muted: #00aa00;
+  --sharpee-accent: #00ff00;
+  --sharpee-room-title: #00ff00;
+  --sharpee-command: #ffff00;
+  --sharpee-border: #003300;
+  --sharpee-link: #00ffff;
+  --sharpee-error: #ff0000;
+
+  --sharpee-status-bg: #001100;
+  --sharpee-status-text: #00ff00;
+
+  --sharpee-panel-bg: #050505;
+  --sharpee-panel-header: #001100;
+  --sharpee-tab-active: #00ff00;
+  --sharpee-tab-inactive: #006600;
+
+  --sharpee-border-radius: 0;
+}
+
+[data-theme="retro-terminal"] body {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+/* ============================================================================
+   Paper (High Contrast Book Style)
+   ============================================================================ */
+
+[data-theme="paper"] {
+  --sharpee-font-transcript: 'Crimson Text', Georgia, 'Times New Roman', serif;
+  --sharpee-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --sharpee-font-input: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --sharpee-font-size: 17px;
+  --sharpee-line-height: 1.7;
+
+  --sharpee-bg: #f5f5f0;
+  --sharpee-bg-secondary: #eaeae5;
+  --sharpee-text: #1a1a1a;
+  --sharpee-text-muted: #555555;
+  --sharpee-accent: #2c2c2c;
+  --sharpee-room-title: #000000;
+  --sharpee-command: #0055aa;
+  --sharpee-border: #cccccc;
+  --sharpee-link: #0055aa;
+  --sharpee-error: #cc0000;
+
+  --sharpee-status-bg: #2c2c2c;
+  --sharpee-status-text: #f5f5f0;
+
+  --sharpee-panel-bg: #f0f0eb;
+  --sharpee-panel-header: #e5e5e0;
+  --sharpee-tab-active: #1a1a1a;
+  --sharpee-tab-inactive: #888888;
+
+  --sharpee-border-radius: 2px;
+}
+
+/* ============================================================================
+   Base reset and body
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--sharpee-font-ui);
+  font-size: var(--sharpee-font-size);
+  line-height: var(--sharpee-line-height);
+  background-color: var(--sharpee-bg);
+  color: var(--sharpee-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbars — themed */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sharpee-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sharpee-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sharpee-text-muted);
+}

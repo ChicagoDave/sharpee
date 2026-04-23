@@ -187,7 +187,14 @@ export async function createRoomViaHttp(
   const res = await fetch(`${handle.httpUrl}/api/rooms`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ ...input, captcha_token: 'stub' }),
+    // Title is required by the server (ADR-153 frontend). Callers who care
+    // about the title value should set it explicitly; everything else gets a
+    // stable default so the helper keeps its single-line ergonomics.
+    body: JSON.stringify({
+      title: input.title ?? 'Test Room',
+      ...input,
+      captcha_token: 'stub',
+    }),
   });
   if (res.status !== 201) {
     throw new Error(`createRoomViaHttp: expected 201, got ${res.status}`);

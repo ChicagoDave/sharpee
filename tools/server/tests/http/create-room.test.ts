@@ -88,6 +88,7 @@ describe('POST /api/rooms', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         story_slug: 'does-not-exist',
+        title: 'Unknown Story Test',
         display_name: 'Alice',
         captcha_token: 'stub',
       }),
@@ -109,6 +110,7 @@ describe('POST /api/rooms', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         story_slug: 'zork',
+        title: 'Captcha Test',
         display_name: 'Alice',
         captcha_token: 'will-be-rejected',
       }),
@@ -119,25 +121,6 @@ describe('POST /api/rooms', () => {
 
     const count = (app.db.prepare('SELECT COUNT(*) AS n FROM rooms').get() as { n: number }).n;
     expect(count).toBe(0);
-  });
-
-  it('auto-generates a title when the body omits it', async () => {
-    const res = await app.fetch('/api/rooms', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        story_slug: 'zork',
-        display_name: 'Alice',
-        captcha_token: 'stub',
-      }),
-    });
-    expect(res.status).toBe(201);
-    const body = (await res.json()) as { room_id: string };
-    const row = app.db
-      .prepare('SELECT title FROM rooms WHERE room_id = ?')
-      .get(body.room_id) as { title: string };
-    expect(row.title.length).toBeGreaterThan(0);
-    expect(row.title).toContain('zork');
   });
 
   it('malformed JSON body → 400 bad_request', async () => {
@@ -187,6 +170,76 @@ describe('POST /api/rooms', () => {
     expect(roomCount).toBe(0);
     expect(participantCount).toBe(0);
     expect(eventCount).toBe(0);
+  });
+
+  it('missing title → 400 missing_field, no room written', async () => {
+    const res = await app.fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        story_slug: 'zork',
+        display_name: 'Alice',
+        captcha_token: 'stub',
+      }),
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('missing_field');
+    const rooms = (app.db.prepare('SELECT COUNT(*) AS c FROM rooms').get() as { c: number }).c;
+    expect(rooms).toBe(0);
+  });
+
+  it('whitespace-only title → 400 missing_field', async () => {
+    const res = await app.fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        story_slug: 'zork',
+        title: '   \t  ',
+        display_name: 'Alice',
+        captcha_token: 'stub',
+      }),
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('missing_field');
+  });
+
+  it('title longer than 80 chars → 400 invalid_title', async () => {
+    const overlong = 'x'.repeat(81);
+    const res = await app.fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        story_slug: 'zork',
+        title: overlong,
+        display_name: 'Alice',
+        captcha_token: 'stub',
+      }),
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('invalid_title');
+  });
+
+  it('title of exactly 80 chars → 201 (boundary accepted)', async () => {
+    const exactly80 = 'x'.repeat(80);
+    const res = await app.fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        story_slug: 'zork',
+        title: exactly80,
+        display_name: 'Alice',
+        captcha_token: 'stub',
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as { room_id: string };
+    const row = app.db
+      .prepare('SELECT title FROM rooms WHERE room_id = ?')
+      .get(body.room_id) as { title: string } | undefined;
+    expect(row?.title).toBe(exactly80);
   });
 
   it('story healthy at boot → happy path unchanged', async () => {

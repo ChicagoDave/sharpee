@@ -19,10 +19,12 @@ import type { StoryScanner } from '../stories/scanner.js';
 import type { StoryHealth } from '../stories/story-health.js';
 import type { CaptchaVerifier } from './middleware/captcha.js';
 import { installErrorEnvelope } from './middleware/error-envelope.js';
+import { installStaticSpa } from './middleware/static-spa.js';
 import { registerCreateRoomRoute } from './routes/create-room.js';
 import { registerJoinRoomRoute } from './routes/join-room.js';
 import { registerResolveCodeRoute } from './routes/resolve-code.js';
 import { registerListStoriesRoute } from './routes/list-stories.js';
+import { registerListRoomsRoute } from './routes/list-rooms.js';
 
 export interface AppDeps {
   config: Config;
@@ -34,6 +36,12 @@ export interface AppDeps {
   /** Optional boot-time validator. Threaded through to create-room (ADR-153 N-6). */
   storyHealth?: StoryHealth;
   captcha: CaptchaVerifier;
+  /**
+   * Optional absolute path to the built multi-user client's dist directory.
+   * When present, the server serves it as static files with an SPA fallback
+   * for unknown non-API paths (ADR-153 frontend). Absent in dev/tests.
+   */
+  clientDistDir?: string;
 }
 
 /**
@@ -53,6 +61,35 @@ export function createApp(deps: AppDeps): Hono {
   registerJoinRoomRoute(app, deps);
   registerResolveCodeRoute(app, deps);
   registerListStoriesRoute(app, deps);
+  registerListRoomsRoute(app, deps);
+
+  // Catch-all — must be installed last so specific routes win.
+  installStaticSpa(app, {
+    distDir: deps.clientDistDir,
+    configScript: buildClientConfigScript(deps.config),
+  });
 
   return app;
+}
+
+/**
+ * Build the `<script>` tag that exposes a public-safe slice of server
+ * configuration to the browser via `window.__SHARPEE_CONFIG__`.
+ *
+ * IMPORTANT: only fields intended for the browser are emitted. In particular
+ * `captcha.secretKey`, `captcha.bypass`, DB credentials, and logging config
+ * are NEVER interpolated here.
+ */
+function buildClientConfigScript(config: Config): string {
+  const publicConfig = {
+    captcha: {
+      provider: config.captcha.provider,
+      siteKey: config.captcha.siteKey,
+    },
+  };
+  // Defend against accidental `</script>` inside values by JSON-escaping
+  // the forward slash. Our own config shapes do not contain such strings,
+  // but this keeps the injection safe against future additions.
+  const json = JSON.stringify(publicConfig).replace(/</g, '\\u003c');
+  return `<script>window.__SHARPEE_CONFIG__ = ${json};</script>`;
 }
