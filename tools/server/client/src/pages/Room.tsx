@@ -164,6 +164,38 @@ export function RoomView({
     },
     [ackDmRead],
   );
+
+  // Toast stack (auto-promotion announcements). Declared before the early
+  // returns below so React sees the same hook count every render — otherwise
+  // unhydrated → hydrated transitions trip React error #310.
+  const [toasts, setToasts] = useState<ToastEntry[]>([]);
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+  const pushToast = useCallback((text: string) => {
+    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setToasts((prev) => [...prev, { id, text }]);
+  }, []);
+
+  // Track the current PH across renders so we can detect transitions.
+  // Derived from state.participants — safe to compute before hydration
+  // (participants is [] pre-hydration, so currentPhId is null and the
+  // effect's null-guard short-circuits until hydration lands).
+  const currentPh = state.participants.find((p) => p.tier === 'primary_host');
+  const currentPhId = currentPh?.participant_id ?? null;
+  const prevPhIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevPhIdRef.current;
+    prevPhIdRef.current = currentPhId;
+    if (prev === null || prev === currentPhId) return;
+    if (state.selfId && prev === state.selfId) {
+      pushToast('You are now a Participant.');
+    } else if (currentPh) {
+      pushToast(`${currentPh.display_name} is now the Primary Host.`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPhId]);
+
   if (state.closed) {
     return (
       <RoomClosedOverlay
@@ -212,33 +244,6 @@ export function RoomView({
   const selfMuted = selfParticipant?.muted ?? false;
   const remoteDraft =
     state.draft && state.draft.typist_id !== state.selfId ? state.draft.text : '';
-
-  // ----- Toast stack (auto-promotion, etc.) -----
-  const [toasts, setToasts] = useState<ToastEntry[]>([]);
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-  const pushToast = useCallback((text: string) => {
-    const id = `t-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setToasts((prev) => [...prev, { id, text }]);
-  }, []);
-
-  // Track the current PH across renders so we can detect transitions.
-  const currentPh = state.participants.find((p) => p.tier === 'primary_host');
-  const currentPhId = currentPh?.participant_id ?? null;
-  const prevPhIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    const prev = prevPhIdRef.current;
-    prevPhIdRef.current = currentPhId;
-    if (prev === null || prev === currentPhId) return;
-    // PH identity changed — announce it.
-    if (state.selfId && prev === state.selfId) {
-      pushToast('You are now a Participant.');
-    } else if (currentPh) {
-      pushToast(`${currentPh.display_name} is now the Primary Host.`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPhId]);
 
   return (
     <section
