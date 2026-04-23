@@ -23,15 +23,21 @@ export interface DisconnectDeps {
  * client navigation, network drop). Idempotent: calling twice with the
  * same participant_id is a no-op on the second call.
  *
- * @param reason 'disconnect' for normal close, 'tab_closed' when the client
- *               signaled a deliberate exit, 'grace_expired' when a reconnect
- *               window elapsed (Phase 7 uses this).
+ * @param reason         'disconnect' for normal close, 'tab_closed' when
+ *                       the client signaled a deliberate exit,
+ *                       'grace_expired' when a reconnect window elapsed.
+ * @param grace_deadline ISO timestamp carried on the presence broadcast
+ *                       when the disconnecting participant is the current
+ *                       PH. Null for any other disconnect. Caller (the
+ *                       ws server) computes this alongside starting the
+ *                       grace timer so the wire value matches the timer.
  */
 export function handleDisconnect(
   deps: DisconnectDeps,
   participant_id: string,
   room_id: string,
-  reason: 'disconnect' | 'tab_closed' | 'grace_expired' = 'disconnect'
+  reason: 'disconnect' | 'tab_closed' | 'grace_expired' = 'disconnect',
+  grace_deadline: string | null = null,
 ): void {
   const participant = deps.participants.findById(participant_id);
   if (!participant) return;
@@ -54,5 +60,6 @@ export function handleDisconnect(
     kind: 'presence',
     participant_id,
     connected: false,
+    grace_deadline,
   });
 }

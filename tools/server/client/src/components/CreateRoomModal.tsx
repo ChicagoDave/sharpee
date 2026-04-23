@@ -21,6 +21,7 @@ import Modal from './Modal';
 import { ApiError, createRoom as apiCreateRoom } from '../api/http';
 import type { CreateRoomResponse, StorySummary } from '../types/api';
 import type { SharpeeClientConfig } from '../config';
+import { writeCode } from '../storage/room-code';
 import { writeToken } from '../storage/token';
 
 export interface CreateRoomModalProps {
@@ -89,6 +90,7 @@ export default function CreateRoomModal({
           captcha_token: captchaToken ?? undefined,
         });
         writeToken(result.room_id, result.token);
+        writeCode(result.room_id, result.join_code);
         onCreated(result);
       } catch (err) {
         if (err instanceof ApiError) {

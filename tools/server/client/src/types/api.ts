@@ -4,7 +4,7 @@
  * Public interface: {@link StorySummary}, {@link RoomSummary},
  * {@link ListStoriesResponse}, {@link ListRoomsResponse},
  * {@link CreateRoomResponse}, {@link JoinRoomResponse},
- * {@link ErrorEnvelope}.
+ * {@link ResolveCodeResponse}, {@link ErrorEnvelope}.
  *
  * Bounded context: HTTP boundary between client and server. These types are
  * hand-mirrored from `tools/server/src/http/routes/*.ts`. When either side
@@ -66,4 +66,11 @@ export interface JoinRoomResponse {
   participant_id: string;
   token: string;
   tier: 'participant' | 'command_entrant' | 'co_host' | 'primary_host';
+}
+
+export interface ResolveCodeResponse {
+  room_id: string;
+  title: string;
+  story_slug: string;
+  pinned: boolean;
 }

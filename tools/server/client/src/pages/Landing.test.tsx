@@ -20,7 +20,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Landing from './Landing';
-import type { CreateRoomResponse, ListRoomsResponse, ListStoriesResponse } from '../types/api';
+import type {
+  CreateRoomResponse,
+  JoinRoomResponse,
+  ListRoomsResponse,
+  ListStoriesResponse,
+  ResolveCodeResponse,
+} from '../types/api';
 
 function resolved<T>(value: T): () => Promise<T> {
   return () => Promise.resolve(value);
@@ -49,7 +55,7 @@ describe('<Landing>', () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
-        onEnter={vi.fn()}
+        onJoined={vi.fn()}
         captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
         fetchStories={resolved(stories)}
         fetchRooms={resolved(rooms)}
@@ -68,7 +74,7 @@ describe('<Landing>', () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
-        onEnter={vi.fn()}
+        onJoined={vi.fn()}
         captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
         fetchStories={resolved({ stories: [] })}
         fetchRooms={resolved({
@@ -91,7 +97,7 @@ describe('<Landing>', () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
-        onEnter={vi.fn()}
+        onJoined={vi.fn()}
         captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
         fetchStories={resolved({ stories: [] })}
         fetchRooms={resolved({ rooms: [] })}
@@ -113,7 +119,7 @@ describe('<Landing>', () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
-        onEnter={vi.fn()}
+        onJoined={vi.fn()}
         captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
         fetchStories={rejectOnce}
         fetchRooms={fetchRooms}
@@ -134,7 +140,7 @@ describe('<Landing>', () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
-        onEnter={vi.fn()}
+        onJoined={vi.fn()}
         fetchStories={resolved({
           stories: [{ slug: 'zork', title: 'Zork', path: '/s/zork.sharpee' }],
         })}
@@ -163,7 +169,7 @@ describe('<Landing>', () => {
     render(
       <Landing
         onRoomCreated={onRoomCreated}
-        onEnter={vi.fn()}
+        onJoined={vi.fn()}
         fetchStories={resolved({
           stories: [{ slug: 'zork', title: 'Zork', path: '/s/zork.sharpee' }],
         })}
@@ -188,8 +194,7 @@ describe('<Landing>', () => {
     expect(dialog).not.toBeInTheDocument();
   });
 
-  it('clicking Enter on a room invokes onEnter with that room_id', async () => {
-    const onEnter = vi.fn();
+  it('clicking Enter on a room opens the PasscodeModal', async () => {
     const rooms: ListRoomsResponse = {
       rooms: [
         {
@@ -204,13 +209,75 @@ describe('<Landing>', () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
-        onEnter={onEnter}
+        onJoined={vi.fn()}
         fetchStories={resolved({ stories: [] })}
         fetchRooms={resolved(rooms)}
+        captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
       />,
     );
     const enterButton = await screen.findByRole('button', { name: /enter room pick me/i });
     await userEvent.click(enterButton);
-    expect(onEnter).toHaveBeenCalledWith('room-123');
+    expect(
+      await screen.findByRole('dialog', { name: /enter passcode/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('prefillCode opens the PasscodeModal with the code pre-populated', async () => {
+    render(
+      <Landing
+        onRoomCreated={vi.fn()}
+        onJoined={vi.fn()}
+        prefillCode="DEEPLINK"
+        fetchStories={resolved({ stories: [] })}
+        fetchRooms={resolved({ rooms: [] })}
+        captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
+      />,
+    );
+    const dialog = await screen.findByRole('dialog', { name: /enter passcode/i });
+    const passcodeInput = screen.getByLabelText('Passcode') as HTMLInputElement;
+    expect(dialog).toBeInTheDocument();
+    expect(passcodeInput.value).toBe('DEEPLINK');
+  });
+
+  it('on successful join via the passcode modal, closes it and invokes onJoined(room_id)', async () => {
+    const onJoined = vi.fn();
+    const resolveCodeFn = vi
+      .fn<(c: string) => Promise<ResolveCodeResponse>>()
+      .mockResolvedValue({
+        room_id: 'target-room',
+        title: 'Target',
+        story_slug: 'zork',
+        pinned: false,
+      });
+    const joinRoomFn = vi
+      .fn<(
+        room_id: string,
+        body: { display_name: string; captcha_token?: string },
+      ) => Promise<JoinRoomResponse>>()
+      .mockResolvedValue({
+        participant_id: 'p-xyz',
+        token: 'tok-xyz',
+        tier: 'participant',
+      });
+
+    render(
+      <Landing
+        onRoomCreated={vi.fn()}
+        onJoined={onJoined}
+        prefillCode="GO"
+        fetchStories={resolved({ stories: [] })}
+        fetchRooms={resolved({ rooms: [] })}
+        resolveCodeFn={resolveCodeFn}
+        joinRoomFn={joinRoomFn}
+        captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
+      />,
+    );
+
+    const dialog = await screen.findByRole('dialog', { name: /enter passcode/i });
+    await userEvent.type(screen.getByLabelText(/display name/i), 'Alice');
+    await userEvent.click(screen.getByRole('button', { name: /^join room$/i }));
+
+    await waitFor(() => expect(onJoined).toHaveBeenCalledWith('target-room'));
+    expect(dialog).not.toBeInTheDocument();
   });
 });

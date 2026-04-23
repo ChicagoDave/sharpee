@@ -92,10 +92,12 @@ export function handlePin(
   // last_activity_at straight from the repository.
   const refreshed = deps.rooms.findById(actor.room_id);
   const last_activity_at = refreshed?.last_activity_at ?? room.last_activity_at;
+  const title = refreshed?.title ?? room.title;
 
   deps.connections.broadcast(actor.room_id, {
     kind: 'room_state',
     pinned: desired,
     last_activity_at,
+    title,
   });
 }

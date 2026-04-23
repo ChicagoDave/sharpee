@@ -118,6 +118,90 @@ describe('WebSocket presence broadcast', () => {
     }
   });
 
+  it('PH disconnect: presence broadcast carries a future grace_deadline ISO timestamp', async () => {
+    // Use a short grace window so the pending setTimeout doesn't keep the
+    // test-server open at teardown.
+    await server.close();
+    server = await buildTestServer({
+      stories: ['zork'],
+      phGraceTimerOptions: { timeoutMs: 200 },
+    });
+    const host = await createRoomViaHttp(server, {
+      story_slug: 'zork',
+      display_name: 'Alice',
+    });
+    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+
+    server.db
+      .prepare('UPDATE participants SET connected = 0 WHERE room_id = ?')
+      .run(host.room_id);
+
+    const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      hostClient.send({ kind: 'hello', token: host.token });
+      guestClient.send({ kind: 'hello', token: guest.token });
+      await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+      await guestClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+
+      const before = Date.now();
+      hostClient.close();
+      const leave = await guestClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'presence' }> =>
+          m.kind === 'presence' &&
+          (m as { participant_id: string }).participant_id === host.participant_id &&
+          (m as { connected: boolean }).connected === false,
+      );
+      expect(leave.grace_deadline).not.toBeNull();
+      const deadlineMs = Date.parse(leave.grace_deadline as string);
+      expect(Number.isNaN(deadlineMs)).toBe(false);
+      // Must be in the future relative to the close we just issued.
+      expect(deadlineMs).toBeGreaterThan(before);
+    } finally {
+      guestClient.close();
+    }
+  });
+
+  it('non-PH disconnect: presence.grace_deadline is null', async () => {
+    const host = await createRoomViaHttp(server, {
+      story_slug: 'zork',
+      display_name: 'Alice',
+    });
+    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+
+    server.db
+      .prepare('UPDATE participants SET connected = 0 WHERE room_id = ?')
+      .run(host.room_id);
+
+    const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      hostClient.send({ kind: 'hello', token: host.token });
+      guestClient.send({ kind: 'hello', token: guest.token });
+      await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+      await guestClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+
+      guestClient.close();
+      const leave = await hostClient.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'presence' }> =>
+          m.kind === 'presence' &&
+          (m as { participant_id: string }).participant_id === guest.participant_id &&
+          (m as { connected: boolean }).connected === false,
+      );
+      expect(leave.grace_deadline).toBeNull();
+    } finally {
+      hostClient.close();
+    }
+  });
+
   it('connection registry is cleaned up after close (no leak across connect cycles)', async () => {
     const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
     server.db

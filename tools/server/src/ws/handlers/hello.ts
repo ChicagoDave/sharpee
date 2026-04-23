@@ -113,10 +113,11 @@ export function handleHello(
 
   deps.connections.register(room.room_id, participant.participant_id, ws);
 
-  const { snapshot, participants } = buildRoomSnapshot(room, {
+  const { snapshot, participants, chat_backlog } = buildRoomSnapshot(room, {
     rooms: deps.rooms,
     participants: deps.participants,
     saves: deps.saves,
+    sessionEvents: deps.sessionEvents,
   });
 
   sendMsg(ws, {
@@ -125,11 +126,17 @@ export function handleHello(
     room: snapshot,
     participants,
     recording_notice: getRecordingNotice(),
+    chat_backlog,
   });
 
   deps.connections.broadcast(
     room.room_id,
-    { kind: 'presence', participant_id: participant.participant_id, connected: true },
+    {
+      kind: 'presence',
+      participant_id: participant.participant_id,
+      connected: true,
+      grace_deadline: null,
+    },
     { except_participant_id: participant.participant_id }
   );
 

@@ -21,6 +21,7 @@ import type {
   JoinRoomResponse,
   ListRoomsResponse,
   ListStoriesResponse,
+  ResolveCodeResponse,
 } from '../types/api';
 
 export class ApiError extends Error {
@@ -103,4 +104,58 @@ export function joinRoom(
   body: JoinRoomRequest,
 ): Promise<JoinRoomResponse> {
   return postJson<JoinRoomRequest, JoinRoomResponse>(`/api/rooms/${room_id}/join`, body);
+}
+
+/**
+ * Resolve a public join code (the `/r/:code` fragment) to the room it unlocks.
+ * Throws `ApiError` with `code: 'room_not_found'` on 404.
+ */
+export function resolveCode(code: string): Promise<ResolveCodeResponse> {
+  return getJson<ResolveCodeResponse>(`/r/${encodeURIComponent(code)}`);
+}
+
+export interface RenameRoomResponse {
+  room_id: string;
+  title: string;
+}
+
+/**
+ * PATCH /api/rooms/:room_id — Primary Host renames the room.
+ * Requires the Host's Bearer token. Non-PH calls resolve to `ApiError` with
+ * `code: 'insufficient_authority'`; validation errors follow the same code
+ * set as create (`missing_field`, `invalid_title`).
+ */
+export async function renameRoom(
+  room_id: string,
+  title: string,
+  token: string,
+): Promise<RenameRoomResponse> {
+  const res = await fetch(`/api/rooms/${encodeURIComponent(room_id)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) {
+    // parseError is module-local; re-parse inline to avoid exporting it.
+    const fallback: ErrorEnvelope = {
+      code: `http_${res.status}`,
+      detail: res.statusText || 'request failed',
+    };
+    let envelope: ErrorEnvelope = fallback;
+    try {
+      const body = (await res.json()) as Partial<ErrorEnvelope>;
+      envelope = {
+        code: typeof body.code === 'string' ? body.code : fallback.code,
+        detail: typeof body.detail === 'string' ? body.detail : fallback.detail,
+      };
+    } catch {
+      /* fall through */
+    }
+    throw new ApiError(res.status, envelope);
+  }
+  return (await res.json()) as RenameRoomResponse;
 }

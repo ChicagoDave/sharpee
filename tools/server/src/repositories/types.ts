@@ -49,7 +49,7 @@ export type EventPayload =
   | { kind: 'restore'; save_id: string }
   | { kind: 'join'; display_name: string; reconnect: boolean }
   | { kind: 'leave'; reason: 'disconnect' | 'tab_closed' | 'grace_expired' }
-  | { kind: 'lifecycle'; op: 'created' | 'pinned' | 'unpinned' | 'deleted' | 'recycled' };
+  | { kind: 'lifecycle'; op: 'created' | 'pinned' | 'unpinned' | 'renamed' | 'deleted' | 'recycled' };
 
 export interface Room {
   room_id: string;

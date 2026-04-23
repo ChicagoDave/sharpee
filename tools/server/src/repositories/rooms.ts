@@ -19,6 +19,8 @@ export interface RoomsRepository {
   findByJoinCode(code: string): Room | null;
   updateLastActivity(room_id: string, ts: string): void;
   setPinned(room_id: string, pinned: boolean): void;
+  /** Replace the room's display title. Caller validates length + non-empty. */
+  setTitle(room_id: string, title: string): void;
   /**
    * Update the aggregate's Primary Host pointer. Called by the succession
    * state machine after promoting a Co-Host. The caller is responsible for
@@ -83,6 +85,10 @@ export function createRoomsRepository(db: Database): RoomsRepository {
 
   const updatePinned: Statement = db.prepare(
     `UPDATE rooms SET pinned = ? WHERE room_id = ?`
+  );
+
+  const updateTitle: Statement = db.prepare(
+    `UPDATE rooms SET title = ? WHERE room_id = ?`
   );
 
   const updatePrimaryHostStmt: Statement = db.prepare(
@@ -162,6 +168,10 @@ export function createRoomsRepository(db: Database): RoomsRepository {
 
     setPinned(room_id, pinned) {
       updatePinned.run(pinned ? 1 : 0, room_id);
+    },
+
+    setTitle(room_id, title) {
+      updateTitle.run(title, room_id);
     },
 
     updatePrimaryHost(room_id, primary_host_id) {

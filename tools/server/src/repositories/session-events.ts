@@ -31,6 +31,12 @@ export interface SessionEventsRepository {
     room_id: string,
     opts?: { since_event_id?: number; limit?: number; kinds?: EventKind[] }
   ): SessionEvent[];
+  /**
+   * Return the most recent `limit` chat events for the room in chronological
+   * order (oldest → newest). Used to carry a chat backlog on the welcome
+   * handshake so reconnects don't lose visible room history.
+   */
+  listRecentChat(room_id: string, limit: number): SessionEvent[];
 }
 
 interface SessionEventRow {
@@ -94,6 +100,20 @@ export function createSessionEventsRepository(db: Database): SessionEventsReposi
 
       const rows = db.prepare(sql).all(...params) as SessionEventRow[];
       return rows.map(rowToEvent);
+    },
+
+    listRecentChat(room_id, limit) {
+      // Take the last `limit` chat rows by event_id, then flip back to
+      // chronological order for the client — callers assume oldest-first.
+      const rows = db
+        .prepare(
+          `SELECT * FROM session_events
+           WHERE room_id = ? AND kind = 'chat'
+           ORDER BY event_id DESC
+           LIMIT ?`,
+        )
+        .all(room_id, limit) as SessionEventRow[];
+      return rows.map(rowToEvent).reverse();
     },
   };
 }

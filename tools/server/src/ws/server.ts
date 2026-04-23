@@ -59,6 +59,7 @@ import { createLockManager, type LockManager } from './lock-manager.js';
 import { createAfkTimer, type AfkTimer, type AfkTimerOptions } from './afk-timer.js';
 import {
   createPhGraceTimer,
+  DEFAULT_PH_GRACE_TIMEOUT_MS,
   type PhGraceTimer,
   type PhGraceTimerOptions,
   type Clock,
@@ -586,6 +587,18 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
         if (released) {
           connections.broadcast(meta.room_id, { kind: 'lock_state', holder_id: null });
         }
+        // Compute the grace deadline *before* broadcasting presence so the
+        // clients' banner countdown matches the timer exactly. Deadline is
+        // null for non-PH disconnects.
+        const room = deps.rooms.findById(meta.room_id);
+        const isPhDisconnect =
+          room !== null && room.primary_host_id === meta.participant_id;
+        const graceTimeoutMs =
+          deps.phGraceTimerOptions?.timeoutMs ?? DEFAULT_PH_GRACE_TIMEOUT_MS;
+        const grace_deadline = isPhDisconnect
+          ? new Date(Date.now() + graceTimeoutMs).toISOString()
+          : null;
+
         handleDisconnect(
           {
             db: deps.db,
@@ -594,15 +607,16 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
             connections,
           },
           meta.participant_id,
-          meta.room_id
+          meta.room_id,
+          'disconnect',
+          grace_deadline,
         );
 
         // If the disconnecting socket belongs to the current PH, start the
         // grace timer. Re-scheduling is idempotent — a second disconnect
         // during the window simply restarts the clock (matches the handler
         // contract in ph-grace-timer.ts).
-        const room = deps.rooms.findById(meta.room_id);
-        if (room && room.primary_host_id === meta.participant_id) {
+        if (isPhDisconnect) {
           phGraceTimer.start(meta.room_id);
         }
       }

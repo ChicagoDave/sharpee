@@ -2,7 +2,7 @@
  * Wire protocol between the browser client and the Node server.
  *
  * Public interface: {@link ClientMsg}, {@link ServerMsg}, {@link RoomSnapshot},
- * {@link ParticipantSummary}, {@link Tier}, {@link TextBlock}.
+ * {@link ParticipantSummary}, {@link ChatEntry}, {@link Tier}, {@link TextBlock}.
  *
  * Bounded context: client-facing WebSocket protocol (ADR-153 Interface Contracts).
  * Every message is a JSON object with a `kind` discriminator.
@@ -20,6 +20,18 @@ export interface ParticipantSummary {
   tier: Tier;
   connected: boolean;
   muted: boolean;
+}
+
+/**
+ * One room-chat event, as carried by a `chat` ServerMsg or the welcome
+ * backlog. Shape mirrors the `chat` push minus its `kind` discriminator
+ * so a single renderer can handle both forms.
+ */
+export interface ChatEntry {
+  event_id: number;
+  from: string;
+  text: string;
+  ts: string;
 }
 
 /** Point-in-time room snapshot delivered on `welcome` (connect or reconnect). */
@@ -72,8 +84,27 @@ export type ServerMsg =
        * persistent "REC" indicator while in the room.
        */
       recording_notice: string;
+      /**
+       * Most recent chat events for this room, oldest → newest. Bounded by
+       * the server to a small constant (current cap: 50) so reconnects don't
+       * lose visible history. Clients seed their chat list from this and
+       * then append from subsequent `chat` pushes.
+       */
+      chat_backlog: ChatEntry[];
     }
-  | { kind: 'presence'; participant_id: string; connected: boolean }
+  | {
+      kind: 'presence';
+      participant_id: string;
+      connected: boolean;
+      /**
+       * ISO timestamp after which the server will auto-promote the current
+       * successor if the PH has not reconnected. Populated only when the
+       * disconnecting participant is the current PH; `null` otherwise (including
+       * on any reconnect push). Clients render the countdown locally ticking
+       * toward this deadline (ADR-153 Decision 6; server source of truth).
+       */
+      grace_deadline: string | null;
+    }
   | { kind: 'draft_frame'; typist_id: string; seq: number; text: string }
   | { kind: 'lock_state'; holder_id: string | null }
   | { kind: 'story_output'; turn_id: string; text_blocks: TextBlock[]; events: DomainEvent[] }
@@ -88,7 +119,7 @@ export type ServerMsg =
   | { kind: 'mute_state'; participant_id: string; muted: boolean; actor_id: string }
   | { kind: 'save_created'; save_id: string; name: string; actor_id: string; ts: string }
   | { kind: 'restored'; save_id: string; text_blocks: TextBlock[]; actor_id: string }
-  | { kind: 'room_state'; pinned: boolean; last_activity_at: string }
+  | { kind: 'room_state'; pinned: boolean; last_activity_at: string; title: string }
   | { kind: 'room_closed'; reason: 'deleted' | 'recycled'; message?: string }
   | { kind: 'successor'; participant_id: string }
   | {

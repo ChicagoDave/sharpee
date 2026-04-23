@@ -82,6 +82,7 @@ async function main(): Promise<void> {
     stories,
     storyHealth,
     captcha,
+    connections,
     clientDistDir: config.server.clientDistDir,
   });
   const ws = createWsServer({

@@ -68,6 +68,49 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
         .prepare('SELECT connected FROM participants WHERE participant_id = ?')
         .get(host.participant_id) as { connected: number }).connected;
       expect(connected).toBe(1);
+      // Fresh room has no chat history yet.
+      expect(welcome.chat_backlog).toEqual([]);
+    } finally {
+      client.close();
+    }
+  });
+
+  it('welcome.chat_backlog carries prior chat events in chronological order, capped by the server', async () => {
+    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    // Seed 60 chat events directly; the welcome cap is 50 so the oldest 10
+    // should drop off and the remaining 50 should arrive in ASC event_id.
+    const insert = server.db.prepare(
+      `INSERT INTO session_events (room_id, participant_id, ts, kind, payload)
+       VALUES (?, ?, ?, 'chat', ?)`,
+    );
+    for (let i = 1; i <= 60; i += 1) {
+      const ts = new Date(Date.UTC(2026, 3, 22, 17, 0, i)).toISOString();
+      insert.run(
+        host.room_id,
+        host.participant_id,
+        ts,
+        JSON.stringify({ kind: 'chat', text: `msg ${i}` }),
+      );
+    }
+    server.db
+      .prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?')
+      .run(host.participant_id);
+
+    const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
+    try {
+      client.send({ kind: 'hello', token: host.token });
+      const welcome = await client.waitFor(
+        (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
+      );
+      expect(welcome.chat_backlog).toHaveLength(50);
+      expect(welcome.chat_backlog[0]!.text).toBe('msg 11');
+      expect(welcome.chat_backlog.at(-1)!.text).toBe('msg 60');
+      // Every entry carries the sender id and a server-generated event_id.
+      for (const entry of welcome.chat_backlog) {
+        expect(entry.from).toBe(host.participant_id);
+        expect(typeof entry.event_id).toBe('number');
+        expect(typeof entry.ts).toBe('string');
+      }
     } finally {
       client.close();
     }

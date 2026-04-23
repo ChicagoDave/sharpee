@@ -8,8 +8,9 @@
  *   2. Render both lists with empty-state copy when arrays come back empty.
  *   3. Own the Create Room modal; bubble the created room id to the parent
  *      via `onRoomCreated` so App can navigate to `/room/:id`.
- *   4. Bubble Enter-on-a-listed-room clicks via `onEnter`; the passcode
- *      modal that accepts those lands in Phase 5.
+ *   4. Own the Passcode modal; opens either because the user clicked Enter
+ *      on a listed room, or because App detected a `/r/:code` deep-link and
+ *      passed `prefillCode`. Bubbles the joined room id via `onJoined`.
  *
  * The data fetches run in parallel and the whole page enters a loading state
  * until both settle; any failure renders an inline retryable error.
@@ -19,11 +20,21 @@ import { useCallback, useEffect, useState } from 'react';
 import ActiveRoomsList from '../components/ActiveRoomsList';
 import Button from '../components/Button';
 import CreateRoomModal from '../components/CreateRoomModal';
+import PasscodeModal from '../components/PasscodeModal';
 import StoriesList from '../components/StoriesList';
-import { listRooms, listStories, createRoom as apiCreateRoom } from '../api/http';
+import {
+  joinRoom as apiJoinRoom,
+  listRooms,
+  listStories,
+  createRoom as apiCreateRoom,
+  resolveCode as apiResolveCode,
+} from '../api/http';
 import type {
   CreateRoomRequest,
   CreateRoomResponse,
+  JoinRoomRequest,
+  JoinRoomResponse,
+  ResolveCodeResponse,
   RoomSummary,
   StorySummary,
 } from '../types/api';
@@ -32,8 +43,13 @@ import type { SharpeeClientConfig } from '../config';
 export interface LandingProps {
   /** Called after a room is successfully created, with the new room_id. */
   onRoomCreated: (room_id: string) => void;
-  /** Called when the user clicks Enter on a listed room. */
-  onEnter: (room_id: string) => void;
+  /** Called after a user successfully joins a room from the passcode modal. */
+  onJoined: (room_id: string) => void;
+  /**
+   * When present, the landing page auto-opens the passcode modal with this
+   * code pre-filled. Set by App.tsx when the browser is at `/r/:code`.
+   */
+  prefillCode?: string;
   /**
    * Fetch overrides for tests. Each defaults to the real endpoint helper.
    * Kept as injectable so unit tests do not need global fetch mocks.
@@ -42,7 +58,11 @@ export interface LandingProps {
   fetchRooms?: () => Promise<{ rooms: RoomSummary[] }>;
   /** Test override: replaces the POST /api/rooms call. */
   createRoomFn?: (body: CreateRoomRequest) => Promise<CreateRoomResponse>;
-  /** Test override: forces a specific captcha config for the modal. */
+  /** Test override: replaces GET /r/:code. */
+  resolveCodeFn?: (code: string) => Promise<ResolveCodeResponse>;
+  /** Test override: replaces POST /api/rooms/:id/join. */
+  joinRoomFn?: (room_id: string, body: JoinRoomRequest) => Promise<JoinRoomResponse>;
+  /** Test override: forces a specific captcha config for both modals. */
   captchaConfig?: SharpeeClientConfig;
 }
 
@@ -53,14 +73,30 @@ type LoadState =
 
 export default function Landing({
   onRoomCreated,
-  onEnter,
+  onJoined,
+  prefillCode,
   fetchStories = listStories,
   fetchRooms = listRooms,
   createRoomFn = apiCreateRoom,
+  resolveCodeFn = apiResolveCode,
+  joinRoomFn = apiJoinRoom,
   captchaConfig,
 }: LandingProps): JSX.Element {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [createOpen, setCreateOpen] = useState(false);
+  /**
+   * Passcode modal state. `expectedRoomId` is set when opened from a list
+   * Enter-click so a mismatched resolution can be rejected. It's undefined
+   * when opened from a `/r/:code` deep-link, where any valid code is allowed.
+   */
+  const [passcodeState, setPasscodeState] = useState<
+    { open: false } | { open: true; expectedRoomId?: string }
+  >(prefillCode ? { open: true } : { open: false });
+
+  // If App later sets prefillCode (e.g., user navigates to `/r/:code`), open.
+  useEffect(() => {
+    if (prefillCode) setPasscodeState({ open: true });
+  }, [prefillCode]);
 
   const load = useCallback(async () => {
     setState({ status: 'loading' });
@@ -87,6 +123,18 @@ export default function Landing({
       onRoomCreated(res.room_id);
     },
     [onRoomCreated],
+  );
+
+  const handleEnter = useCallback((room_id: string) => {
+    setPasscodeState({ open: true, expectedRoomId: room_id });
+  }, []);
+
+  const handleJoined = useCallback(
+    (room_id: string) => {
+      setPasscodeState({ open: false });
+      onJoined(room_id);
+    },
+    [onJoined],
   );
 
   const stories = state.status === 'ready' ? state.stories : [];
@@ -164,7 +212,7 @@ export default function Landing({
             <h2 id="active-rooms-heading" style={{ marginBottom: 'var(--sharpee-spacing-sm)' }}>
               Active rooms
             </h2>
-            <ActiveRoomsList rooms={state.rooms} stories={state.stories} onEnter={onEnter} />
+            <ActiveRoomsList rooms={state.rooms} stories={state.stories} onEnter={handleEnter} />
           </section>
 
           <section aria-labelledby="stories-heading">
@@ -184,6 +232,19 @@ export default function Landing({
         createRoomFn={createRoomFn}
         captchaConfig={captchaConfig}
       />
+
+      {passcodeState.open && (
+        <PasscodeModal
+          open
+          onClose={() => setPasscodeState({ open: false })}
+          prefillCode={prefillCode}
+          expectedRoomId={passcodeState.expectedRoomId}
+          onJoined={handleJoined}
+          resolveCodeFn={resolveCodeFn}
+          joinRoomFn={joinRoomFn}
+          captchaConfig={captchaConfig}
+        />
+      )}
     </section>
   );
 }

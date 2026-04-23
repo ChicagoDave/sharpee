@@ -15,20 +15,38 @@
 import type { RoomsRepository } from '../repositories/rooms.js';
 import type { ParticipantsRepository } from '../repositories/participants.js';
 import type { SavesRepository } from '../repositories/saves.js';
-import type { RoomSnapshot, ParticipantSummary } from '../wire/browser-server.js';
+import type { SessionEventsRepository } from '../repositories/session-events.js';
+import type {
+  ChatEntry,
+  ParticipantSummary,
+  RoomSnapshot,
+} from '../wire/browser-server.js';
 import type { Room } from '../repositories/types.js';
+
+/**
+ * Cap on the chat history bundled with each welcome. Kept small so the
+ * handshake stays compact on slow networks; longer history is recoverable
+ * via the session event log if a future plan surfaces that UI.
+ */
+export const WELCOME_CHAT_BACKLOG_LIMIT = 50;
 
 export interface SnapshotDeps {
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
   /** Optional — when absent, `saves` is always []. Phase 6 wires this in. */
   saves?: SavesRepository;
+  /** Optional — when absent, `chat_backlog` is always []. */
+  sessionEvents?: SessionEventsRepository;
 }
 
 export function buildRoomSnapshot(
   room: Room,
-  deps: SnapshotDeps
-): { snapshot: RoomSnapshot; participants: ParticipantSummary[] } {
+  deps: SnapshotDeps,
+): {
+  snapshot: RoomSnapshot;
+  participants: ParticipantSummary[];
+  chat_backlog: ChatEntry[];
+} {
   const savesList = deps.saves
     ? deps.saves.listForRoom(room.room_id).map((s) => ({
         save_id: s.save_id,
@@ -55,5 +73,17 @@ export function buildRoomSnapshot(
     muted: p.muted,
   }));
 
-  return { snapshot, participants };
+  const chat_backlog: ChatEntry[] = deps.sessionEvents
+    ? deps.sessionEvents
+        .listRecentChat(room.room_id, WELCOME_CHAT_BACKLOG_LIMIT)
+        .filter((e) => e.participant_id !== null && e.payload.kind === 'chat')
+        .map((e) => ({
+          event_id: e.event_id,
+          from: e.participant_id as string,
+          text: (e.payload as { kind: 'chat'; text: string }).text,
+          ts: e.ts,
+        }))
+    : [];
+
+  return { snapshot, participants, chat_backlog };
 }

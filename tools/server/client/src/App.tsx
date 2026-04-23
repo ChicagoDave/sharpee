@@ -3,30 +3,29 @@
  *
  * Public interface: {@link App} default export — rendered by main.tsx.
  *
- * Bounded context: client root (ADR-153 frontend). Phase 3 wires two routes:
+ * Bounded context: client root (ADR-153 frontend). Three routes:
  *   - `/`              → {@link Landing}
+ *   - `/r/:code`       → {@link Landing} with passcode modal pre-opened
  *   - `/room/:room_id` → {@link Room}
- * Any other path falls back to the landing page. The passcode deep-link at
- * `/r/:code` and the create-room flow land in Phases 4–5.
+ * Any other path falls back to the landing page.
  */
 
 import { useCallback } from 'react';
 import Landing from './pages/Landing';
 import Room from './pages/Room';
 import ThemePicker from './components/ThemePicker';
-import { matchRoomPath, navigate, useRoute } from './router';
+import { matchCodePath, matchRoomPath, navigate, useRoute } from './router';
 
 export default function App(): JSX.Element {
   const path = useRoute();
   const roomId = matchRoomPath(path);
+  const code = matchCodePath(path);
 
   const handleRoomCreated = useCallback((room_id: string) => {
     navigate(`/room/${encodeURIComponent(room_id)}`);
   }, []);
 
-  const handleEnter = useCallback((room_id: string) => {
-    // Placeholder — PasscodeModal lands in Phase 5. For now, navigate
-    // straight to the room route; real join flow comes later.
+  const handleJoined = useCallback((room_id: string) => {
     navigate(`/room/${encodeURIComponent(room_id)}`);
   }, []);
 
@@ -70,7 +69,11 @@ export default function App(): JSX.Element {
         {roomId !== null ? (
           <Room roomId={roomId} />
         ) : (
-          <Landing onRoomCreated={handleRoomCreated} onEnter={handleEnter} />
+          <Landing
+            onRoomCreated={handleRoomCreated}
+            onJoined={handleJoined}
+            prefillCode={code ?? undefined}
+          />
         )}
       </main>
     </div>
