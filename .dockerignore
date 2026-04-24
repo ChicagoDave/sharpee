@@ -11,9 +11,12 @@
 **
 
 # Re-include the two trees the Dockerfile copies.
+!package.json
+!pnpm-workspace.yaml
+!pnpm-lock.yaml
+
 !packages
-!packages/core
-!packages/core/**
+!packages/**
 
 !tools
 !tools/server
@@ -22,6 +25,8 @@
 # Prune dev/build artifacts inside the included trees.
 **/node_modules
 **/dist
+**/dist-cjs
+**/dist-npm
 **/coverage
 **/.turbo
 **/.next

@@ -259,7 +259,8 @@ export function RoomView({
           "transcript chat"
           "input chat"
         `,
-        minHeight: '80vh',
+        flex: 1,
+        minHeight: 0,
         background: 'var(--sharpee-bg)',
       }}
     >
@@ -292,7 +293,7 @@ export function RoomView({
           minHeight: 0,
         }}
       >
-        <Transcript entries={state.transcript} />
+        <Transcript entries={state.transcript} participants={state.participants} />
       </main>
       <aside
         aria-label="Roster"

@@ -28,6 +28,21 @@ export interface ParticipantSummary {
  * backlog. Shape mirrors the `chat` push minus its `kind` discriminator
  * so a single renderer can handle both forms.
  */
+/**
+ * One entry in the transcript backlog carried by `welcome`. Either an output
+ * entry (story text from the engine) or a command-echo entry (what a
+ * participant typed). Shape matches the runtime `state.transcript` entry
+ * shape so the reducer can set `state.transcript = welcome.transcript_backlog`
+ * directly without remapping.
+ */
+export interface TranscriptBacklogEntry {
+  turn_id: string;
+  text_blocks: TextBlock[];
+  events: DomainEvent[];
+  /** Set on command-echo entries (no text_blocks / events). */
+  command?: { actor_id: string; text: string; ts: string };
+}
+
 export interface ChatEntry {
   event_id: number;
   from: string;
@@ -106,6 +121,16 @@ export type ServerMsg =
        */
       chat_backlog: ChatEntry[];
       /**
+       * Replay of the room's command echoes + story outputs, oldest → newest.
+       * Clients seed `state.transcript` from this so a reconnect or late-join
+       * immediately sees the story so far without needing the next turn to
+       * arrive. Built from session_events rows (kind IN `command`, `output`).
+       * System-initiated commands (opening-scene look) are filtered out server-
+       * side so joiners don't see noise. Optional for forward/back wire compat
+       * with older clients / tests that don't supply it.
+       */
+      transcript_backlog?: TranscriptBacklogEntry[];
+      /**
        * DM threads visible to this viewer, keyed by peer participant_id.
        * Each thread is oldest → newest, bounded server-side. Only Primary
        * Hosts and Co-Hosts ever receive non-empty threads (ADR-153 Decision
@@ -134,6 +159,12 @@ export type ServerMsg =
   | { kind: 'draft_frame'; typist_id: string; seq: number; text: string }
   | { kind: 'lock_state'; holder_id: string | null }
   | { kind: 'story_output'; turn_id: string; text_blocks: TextBlock[]; events: DomainEvent[] }
+  /**
+   * Echo of a player-submitted command. Broadcast immediately on submit so
+   * all participants see what was typed before the engine produces OUTPUT.
+   * Suppressed for system-initiated commands (e.g., the opening-scene look).
+   */
+  | { kind: 'player_command'; turn_id: string; actor_id: string; text: string; ts: string }
   | { kind: 'chat'; event_id: number; from: string; text: string; ts: string }
   | { kind: 'dm'; event_id: number; from: string; to: string; text: string; ts: string }
   /**

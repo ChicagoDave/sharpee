@@ -41,6 +41,13 @@ export interface RoomManager {
    * the OUTPUT has been broadcast and logged.
    */
   submitCommand(input: { room_id: string; actor_id: string; text: string }): Promise<void>;
+  /**
+   * Fire the opening-scene `look` for a room if it has never run one before.
+   * Idempotent: in-memory guard + a one-shot DB check for any prior `output`
+   * event. Called on first WS `hello` so users see the opening text without
+   * having to type anything (parity with platform-browser + Zifmia startup).
+   */
+  ensureInitialLook(room_id: string): Promise<void>;
   /** Tear down the sandbox for a room, if any. */
   closeRoom(room_id: string): void;
 }
@@ -59,6 +66,11 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
   // per submitCommand would register N listeners that all fire on one
   // crash. This set guards against that.
   const crashAttached = new Set<string>();
+
+  // Rooms whose opening-scene `look` has already been fired (or confirmed
+  // unnecessary because prior OUTPUT exists in session_events). Prevents
+  // duplicate initial-look firings when multiple participants hello at once.
+  const initialLookDone = new Set<string>();
 
   async function spawnFor(room_id: string): Promise<SandboxEntry> {
     const room = deps.rooms.findById(room_id);
@@ -111,6 +123,20 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
     const turn_id = randomUUID();
     inflightTurnId.set(room_id, turn_id);
 
+    // Broadcast the command echo eagerly so all participants see what was
+    // typed while the turn is still running. System-initiated commands
+    // (opening-scene look) are suppressed — they'd look like spontaneous
+    // input from nowhere.
+    if (actor_id !== 'system') {
+      deps.connections.broadcast(room_id, {
+        kind: 'player_command',
+        turn_id,
+        actor_id,
+        text,
+        ts: new Date().toISOString(),
+      });
+    }
+
     try {
       const output = await new Promise<Output>((resolve, reject) => {
         const timer = setTimeout(() => {
@@ -143,53 +169,72 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
     }
   }
 
-  return {
-    async submitCommand({ room_id, actor_id, text }) {
-      let output: Output;
-      try {
-        output = await runTurn(room_id, actor_id, text);
-      } catch (err) {
-        const detail = err instanceof Error ? err.message : 'turn failed';
-        deps.connections.broadcast(room_id, {
-          kind: 'error',
-          code: 'turn_failed',
-          detail,
-        });
-        return;
-      }
-
-      // Log + update activity + broadcast — atomicity on the two event
-      // appends + activity bump.
-      const tx = deps.db.transaction(() => {
-        deps.sessionEvents.append({
-          room_id,
-          participant_id: actor_id,
-          kind: 'command',
-          payload: { kind: 'command', input: text, turn_id: output.turn_id },
-        });
-        deps.sessionEvents.append({
-          room_id,
-          participant_id: null,
-          kind: 'output',
-          payload: {
-            kind: 'output',
-            turn_id: output.turn_id,
-            text_blocks: output.text_blocks,
-            events: output.events,
-          },
-        });
-        deps.rooms.updateLastActivity(room_id, new Date().toISOString());
-      });
-      tx();
-
+  async function submitCommand(input: {
+    room_id: string;
+    actor_id: string;
+    text: string;
+  }): Promise<void> {
+    const { room_id, actor_id, text } = input;
+    let output: Output;
+    try {
+      output = await runTurn(room_id, actor_id, text);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'turn failed';
       deps.connections.broadcast(room_id, {
-        kind: 'story_output',
-        turn_id: output.turn_id,
-        text_blocks: output.text_blocks,
-        events: output.events,
+        kind: 'error',
+        code: 'turn_failed',
+        detail,
       });
-    },
+      return;
+    }
 
+    // Log + update activity + broadcast — atomicity on the two event
+    // appends + activity bump.
+    const tx = deps.db.transaction(() => {
+      deps.sessionEvents.append({
+        room_id,
+        participant_id: actor_id,
+        kind: 'command',
+        payload: { kind: 'command', input: text, turn_id: output.turn_id },
+      });
+      deps.sessionEvents.append({
+        room_id,
+        participant_id: null,
+        kind: 'output',
+        payload: {
+          kind: 'output',
+          turn_id: output.turn_id,
+          text_blocks: output.text_blocks,
+          events: output.events,
+        },
+      });
+      deps.rooms.updateLastActivity(room_id, new Date().toISOString());
+    });
+    tx();
+
+    deps.connections.broadcast(room_id, {
+      kind: 'story_output',
+      turn_id: output.turn_id,
+      text_blocks: output.text_blocks,
+      events: output.events,
+    });
+  }
+
+  async function ensureInitialLook(room_id: string): Promise<void> {
+    if (initialLookDone.has(room_id)) return;
+    // Claim the slot synchronously so parallel hellos don't double-fire.
+    initialLookDone.add(room_id);
+    // Persisted guard: if the room already has an OUTPUT event (prior session,
+    // server restart), the transcript replay on WS welcome covers the opening
+    // text. No need to fire again.
+    const prior = deps.sessionEvents.listForRoom(room_id, { kinds: ['output'], limit: 1 });
+    if (prior.length > 0) return;
+    await submitCommand({ room_id, actor_id: 'system', text: 'look' });
+  }
+
+  return {
+    submitCommand,
+    ensureInitialLook,
     closeRoom(room_id) {
       deps.sandboxes.tearDown(room_id);
     },

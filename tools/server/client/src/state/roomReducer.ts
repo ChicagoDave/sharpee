@@ -110,7 +110,11 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
         // in progress, the next `presence` push on this socket will
         // re-populate it.
         phGraceDeadline: null,
-        transcript: [],
+        // Rehydrate the story transcript from the server's backlog so a
+        // reconnect or late-join sees the full play history (command echoes +
+        // story outputs) without waiting for the next turn. Optional on the
+        // wire (older clients/tests may not supply it).
+        transcript: msg.transcript_backlog ?? [],
         // The server bounds chat_backlog server-side, but respect the local
         // cap too in case a future server change ever exceeds it.
         chatMessages: msg.chat_backlog.slice(-CHAT_IN_MEMORY_LIMIT),
@@ -190,6 +194,23 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
           },
         ],
         draft: null,
+      };
+
+    case 'player_command':
+      // Echo the typed command into the transcript so every participant sees
+      // what was submitted before the engine's OUTPUT arrives. The echo and
+      // the eventual story_output share turn_id but are distinct entries.
+      return {
+        ...state,
+        transcript: [
+          ...state.transcript,
+          {
+            turn_id: `${msg.turn_id}:echo`,
+            text_blocks: [],
+            events: [],
+            command: { actor_id: msg.actor_id, text: msg.text, ts: msg.ts },
+          },
+        ],
       };
 
     case 'error': {

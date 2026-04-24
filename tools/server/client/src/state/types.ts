@@ -58,6 +58,12 @@ export interface TranscriptEntry {
    * with the save's name so restorations are obvious in the transcript.
    */
   restored?: { save_id: string; save_name: string };
+  /**
+   * Set when this entry is an echo of a participant's submitted command
+   * (wire `player_command`). Rendered with a prompt-style prefix and the
+   * typist's display name so all viewers see who typed what.
+   */
+  command?: { actor_id: string; text: string; ts: string };
 }
 
 export interface RoomClosedState {

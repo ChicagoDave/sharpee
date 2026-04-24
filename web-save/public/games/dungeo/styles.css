@@ -1,0 +1,700 @@
+/* Sharpee IF Browser Client - Multi-theme support */
+
+/* ============================================
+   Theme: DOS Classic (default)
+   ============================================ */
+:root,
+[data-theme="dos-classic"] {
+  --theme-bg: #0000aa;
+  --theme-bg-alt: #000088;
+  --theme-text: #ffffff;
+  --theme-text-muted: #aaaaaa;
+  --theme-accent: #00aaaa;
+  --theme-accent-text: #000000;
+  --theme-border: #00aaaa;
+  --theme-input-bg: transparent;
+  --theme-menu-bg: #0000aa;
+  --theme-menu-hover: #000088;
+  --theme-font: "Perfect DOS VGA 437", "Consolas", "Courier New", monospace;
+  --theme-font-size: 16px;
+  --theme-line-height: 1.4;
+}
+
+/* ============================================
+   Theme: Modern Dark (Catppuccin Mocha)
+   ============================================ */
+[data-theme="modern-dark"] {
+  --theme-bg: #1e1e2e;
+  --theme-bg-alt: #181825;
+  --theme-text: #cdd6f4;
+  --theme-text-muted: #a6adc8;
+  --theme-accent: #89b4fa;
+  --theme-accent-text: #1e1e2e;
+  --theme-border: #313244;
+  --theme-input-bg: #11111b;
+  --theme-menu-bg: #181825;
+  --theme-menu-hover: #313244;
+  --theme-font: "Inter", system-ui, -apple-system, sans-serif;
+  --theme-font-size: 15px;
+  --theme-line-height: 1.6;
+}
+
+/* ============================================
+   Theme: Retro Terminal (Green Phosphor)
+   ============================================ */
+[data-theme="retro-terminal"] {
+  --theme-bg: #0a0a0a;
+  --theme-bg-alt: #0f0f0f;
+  --theme-text: #00ff00;
+  --theme-text-muted: #00aa00;
+  --theme-accent: #00ff00;
+  --theme-accent-text: #000000;
+  --theme-border: #003300;
+  --theme-input-bg: transparent;
+  --theme-menu-bg: #0f0f0f;
+  --theme-menu-hover: #001100;
+  --theme-font: "JetBrains Mono", "Consolas", monospace;
+  --theme-font-size: 14px;
+  --theme-line-height: 1.5;
+}
+
+[data-theme="retro-terminal"] body {
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+/* ============================================
+   Theme: Paper (High Contrast Book Style)
+   ============================================ */
+[data-theme="paper"] {
+  --theme-bg: #f5f5f0;
+  --theme-bg-alt: #eaeae5;
+  --theme-text: #1a1a1a;
+  --theme-text-muted: #555555;
+  --theme-accent: #2c2c2c;
+  --theme-accent-text: #f5f5f0;
+  --theme-border: #cccccc;
+  --theme-input-bg: #ffffff;
+  --theme-menu-bg: #eaeae5;
+  --theme-menu-hover: #ddddd8;
+  --theme-font: "Crimson Text", Georgia, serif;
+  --theme-font-size: 17px;
+  --theme-line-height: 1.7;
+}
+
+/* Legacy DOS variable aliases for compatibility */
+:root {
+  --dos-blue: var(--theme-bg);
+  --dos-cyan: var(--theme-accent);
+  --dos-white: var(--theme-text-muted);
+  --dos-bright-white: var(--theme-text);
+  --dos-black: var(--theme-accent-text);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+/* ============================================
+   Menu Bar
+   ============================================ */
+
+#menu-bar {
+  display: flex;
+  align-items: center;
+  background: var(--theme-bg-alt);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
+  height: 28px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+#menu-title {
+  font-weight: bold;
+  margin-right: 16px;
+  text-transform: uppercase;
+}
+
+#menu-items {
+  display: flex;
+  gap: 2px;
+}
+
+.menu-item {
+  position: relative;
+}
+
+.menu-button {
+  background: transparent;
+  border: none;
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 4px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.menu-button:hover,
+.menu-button.active {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+  background: var(--theme-menu-bg);
+  border: 1px solid var(--theme-border);
+  z-index: 1000;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+
+.menu-item:hover .menu-dropdown,
+.menu-dropdown.show {
+  display: block;
+}
+
+.menu-option {
+  padding: 6px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.menu-option:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.menu-option.checked::before {
+  content: "\2713";
+  margin-right: 8px;
+}
+
+.menu-separator {
+  height: 1px;
+  background: var(--theme-border);
+  margin: 4px 8px;
+}
+
+.menu-submenu {
+  position: relative;
+}
+
+.menu-has-submenu::after {
+  content: "";
+}
+
+.menu-submenu .submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+}
+
+.menu-submenu:hover .submenu {
+  display: block;
+}
+
+.theme-option.active {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.theme-option.active::before {
+  content: "\2713 ";
+}
+
+#game-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 80ch;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Status Line */
+#status-line {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  padding: 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+#location-name {
+  text-transform: uppercase;
+}
+
+/* Main Text Window */
+#main-window {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  padding-bottom: 1em;
+}
+
+#text-content p {
+  margin-bottom: 0.8em;
+}
+
+#text-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Command echo styling */
+.command-echo {
+  color: var(--theme-text-muted);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+/* Input Area */
+#input-area {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-top: 2px solid var(--theme-border);
+  flex-shrink: 0;
+  background: var(--theme-bg);
+}
+
+.prompt {
+  color: var(--theme-text);
+  margin-right: 4px;
+}
+
+#command-input {
+  flex: 1;
+  background: var(--theme-input-bg);
+  border: none;
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  outline: none;
+  caret-color: var(--theme-text);
+}
+
+#command-input::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.5;
+}
+
+/* Hide scrollbar but allow scrolling (Webkit) */
+#main-window::-webkit-scrollbar {
+  width: 8px;
+}
+
+#main-window::-webkit-scrollbar-track {
+  background: var(--theme-bg);
+}
+
+#main-window::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Firefox scrollbar */
+#main-window {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
+}
+
+/* System messages */
+.system-message {
+  color: var(--theme-accent);
+}
+
+/* Game over / victory */
+.game-status {
+  color: var(--theme-text);
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--theme-border);
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  #game-container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  #status-line {
+    font-size: 12px;
+    padding: 6px 12px;
+    /* Safe area for notched phones */
+    padding-top: max(6px, env(safe-area-inset-top));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  #main-window {
+    padding: 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  #input-area {
+    padding: 8px 12px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    /* Larger touch target */
+    min-height: 48px;
+  }
+
+  #command-input {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+    padding: 8px 0;
+  }
+
+  .prompt {
+    font-size: 16px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 380px) {
+  body {
+    font-size: 13px;
+  }
+
+  #status-line {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+/* Landscape phone */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  #status-line {
+    padding: 2px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  #main-window {
+    padding: 4px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  #text-content p {
+    margin-bottom: 0.5em;
+  }
+
+  #input-area {
+    padding: 4px 8px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    min-height: 36px;
+  }
+}
+
+/* When virtual keyboard is likely open - use dvh for dynamic viewport */
+@supports (height: 100dvh) {
+  #game-container {
+    height: 100dvh;
+  }
+}
+
+/* Touch-specific: larger tap targets, no hover effects */
+@media (pointer: coarse) {
+  #command-input {
+    padding: 12px 0;
+  }
+
+  #input-area {
+    min-height: 52px;
+  }
+
+  /* Ensure scrollbar is visible on touch */
+  #main-window {
+    scrollbar-width: auto;
+  }
+
+  #main-window::-webkit-scrollbar {
+    width: 12px;
+  }
+}
+
+/* Blinking cursor effect */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+#command-input:focus {
+  caret-color: var(--theme-text);
+}
+
+/* ============================================
+   Save/Restore Modal Dialogs
+   ============================================ */
+
+.modal-hidden {
+  display: none !important;
+}
+
+#modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-dialog {
+  background: var(--theme-bg);
+  border: 2px solid var(--theme-border);
+  min-width: 300px;
+  max-width: 90vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-title {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  padding: 4px 8px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.modal-content {
+  padding: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.save-input-row label {
+  white-space: nowrap;
+}
+
+#save-name-input {
+  flex: 1;
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 4px 6px;
+  outline: none;
+}
+
+#save-name-input:focus {
+  border-color: var(--theme-accent);
+}
+
+.saves-list-label {
+  color: var(--theme-text-muted);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.saves-list {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.save-slot {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #333;
+}
+
+.save-slot:last-child {
+  border-bottom: none;
+}
+
+.save-slot:hover {
+  background: var(--theme-menu-hover);
+}
+
+.save-slot.selected {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-slot-info {
+  color: var(--theme-text-muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.save-slot.selected .save-slot-info {
+  color: var(--theme-accent-text);
+}
+
+.no-saves-message {
+  color: var(--theme-text-muted);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px;
+  border-top: 1px solid var(--theme-border);
+}
+
+.modal-btn {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+  padding: 6px 20px;
+  cursor: pointer;
+  min-width: 80px;
+}
+
+.modal-btn:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+.modal-btn:focus {
+  outline: 1px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+.modal-btn:disabled {
+  color: var(--theme-text-muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Startup dialog */
+.startup-info {
+  color: var(--theme-accent);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.startup-question {
+  color: var(--theme-text);
+  margin: 0;
+}
+
+/* Modal scrollbar styling */
+.saves-list::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.saves-list::-webkit-scrollbar-track,
+.modal-content::-webkit-scrollbar-track {
+  background: var(--theme-bg-alt);
+}
+
+.saves-list::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Mobile modal adjustments */
+@media (max-width: 600px) {
+  .modal-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+
+  .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .modal-buttons {
+    gap: 12px;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}

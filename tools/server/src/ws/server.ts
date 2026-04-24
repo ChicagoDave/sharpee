@@ -296,6 +296,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
             saves: deps.saves,
             sessionEvents: deps.sessionEvents,
             connections,
+            roomManager: deps.roomManager,
           },
           ws,
           pendingInfo.url_room_id,

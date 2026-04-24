@@ -81,7 +81,7 @@ RUN cp src/sandbox/deno-entry.ts dist/sandbox/deno-entry.ts
 # symlinks to /build/packages), drops devDeps, and produces a tree that can
 # be copied verbatim into the runtime stage.
 WORKDIR /build
-RUN pnpm --filter sharpee-server deploy --prod /deploy
+RUN pnpm --filter sharpee-server deploy --prod --legacy /deploy
 
 # ---------- Stage 3: Runtime ----------
 FROM node:22-slim AS runtime

@@ -136,6 +136,21 @@ export async function main({ story: storyModule, meta }: HostInput): Promise<voi
   // here — the server drives the opening scene via its post-READY COMMAND.
   engine.start();
 
+  // Capture text:output blocks for meta-commands (SCORE, HELP, ABOUT, etc.).
+  // The engine's executeMetaCommand path emits blocks ONLY via the text:output
+  // event — the MetaCommandResult it returns has no `blocks` field. Regular
+  // commands populate `result.blocks` directly. To cover both paths uniformly
+  // without changing the engine, we catch text:output and stash the latest
+  // blocks; the COMMAND handler picks them up whenever `result.blocks` is
+  // empty. Matches the pattern platform-browser/Zifmia use (both subscribe
+  // to text:output) and keeps the fix on the tools/server side.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let capturedBlocks: any[] | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (engine as any).on?.('text:output', (blocks: any[]) => {
+    capturedBlocks = blocks;
+  });
+
   // --- READY -------------------------------------------------------
   // Opening-scene text is NOT emitted here; server follows up with an initial
   // COMMAND 'look' to produce the first OUTPUT. meta.json is the source of
@@ -181,6 +196,10 @@ export async function main({ story: storyModule, meta }: HostInput): Promise<voi
           setPendingRestore: (d) => {
             pendingRestoreData = d;
           },
+          getCapturedBlocks: () => capturedBlocks,
+          resetCapturedBlocks: () => {
+            capturedBlocks = null;
+          },
         });
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
@@ -200,6 +219,10 @@ interface HookAccess {
   getSaveData(): ISaveData | null;
   clearSaveData(): void;
   setPendingRestore(data: ISaveData | null): void;
+  /** Blocks captured from the engine's `text:output` event since the last reset. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getCapturedBlocks(): any[] | null;
+  resetCapturedBlocks(): void;
 }
 
 /** Dispatch a single inbound frame. Errors here bubble up to main's try/catch. */
@@ -220,11 +243,21 @@ async function handleFrame(
       if (typeof frame.turn_id !== 'string' || typeof frame.input !== 'string') {
         throw new Error('COMMAND missing turn_id/input');
       }
+      // Reset the meta-path capture BEFORE executeTurn; the text:output
+      // listener set up in main() will repopulate it if this turn goes
+      // through executeMetaCommand (SCORE/HELP/ABOUT/etc.).
+      hooks.resetCapturedBlocks();
       const result = await engine.executeTurn(frame.input);
+      // Prefer result.blocks (regular command path). If that's empty and we
+      // captured blocks via text:output (meta-command path), use those.
+      const fallback = hooks.getCapturedBlocks();
+      const blocks = (result.blocks && result.blocks.length > 0)
+        ? result.blocks
+        : (fallback ?? []);
       await emit({
         kind: 'OUTPUT',
         turn_id: frame.turn_id,
-        text_blocks: result.blocks ?? [],
+        text_blocks: blocks,
         events: result.events ?? [],
       });
       return;

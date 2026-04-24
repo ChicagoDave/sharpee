@@ -18,6 +18,7 @@ import type { ParticipantsRepository } from '../../repositories/participants.js'
 import type { SavesRepository } from '../../repositories/saves.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
 import type { ConnectionManager } from '../connection-manager.js';
+import type { RoomManager } from '../../rooms/room-manager.js';
 import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
 import { buildRoomSnapshot } from '../room-snapshot.js';
 import { getRecordingNotice } from '../recording-notice.js';
@@ -29,6 +30,8 @@ export interface HelloDeps {
   saves: SavesRepository;
   sessionEvents: SessionEventsRepository;
   connections: ConnectionManager;
+  /** Optional so unit tests can omit it; omitted ⇒ no auto opening-scene fire. */
+  roomManager?: RoomManager;
 }
 
 function sendMsg(ws: WebSocket, msg: ServerMsg): void {
@@ -113,7 +116,15 @@ export function handleHello(
 
   deps.connections.register(room.room_id, participant.participant_id, ws);
 
-  const { snapshot, participants, chat_backlog, dm_threads } = buildRoomSnapshot(
+  // Opening-scene parity with platform-browser + Zifmia: on the first hello
+  // for a room that has never run a turn, fire a `look` so joiners see the
+  // opening text without having to type anything. Fire-and-forget — errors
+  // just mean the user has to type `look` manually, which is the old flow.
+  deps.roomManager?.ensureInitialLook(room.room_id).catch(() => {
+    /* initial look failed; user can retype */
+  });
+
+  const { snapshot, participants, chat_backlog, transcript_backlog, dm_threads } = buildRoomSnapshot(
     room,
     {
       rooms: deps.rooms,
@@ -134,6 +145,7 @@ export function handleHello(
     participants,
     recording_notice: getRecordingNotice(),
     chat_backlog,
+    transcript_backlog,
     dm_threads,
   });
 

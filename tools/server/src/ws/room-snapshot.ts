@@ -21,7 +21,9 @@ import type {
   DmThreadEntry,
   ParticipantSummary,
   RoomSnapshot,
+  TranscriptBacklogEntry,
 } from '../wire/browser-server.js';
+import type { TextBlock, DomainEvent } from '../wire/primitives.js';
 import type { Room, Tier } from '../repositories/types.js';
 
 /**
@@ -67,6 +69,7 @@ export function buildRoomSnapshot(
   snapshot: RoomSnapshot;
   participants: ParticipantSummary[];
   chat_backlog: ChatEntry[];
+  transcript_backlog: TranscriptBacklogEntry[];
   dm_threads: Record<string, DmThreadEntry[]>;
 } {
   const savesList = deps.saves
@@ -107,6 +110,48 @@ export function buildRoomSnapshot(
         }))
     : [];
 
+  // Transcript backlog — replay all command + output events so a reconnect or
+  // late-joiner's view seeds `state.transcript` with the story so far. Rows
+  // are ordered by event_id ASC (listForRoom's default), which preserves turn
+  // sequence. System-initiated commands (opening-scene look) are omitted from
+  // the echo stream — the opening OUTPUT carries the context already, and a
+  // "> look (by System)" line at the top would be noise for joiners.
+  const transcript_backlog: TranscriptBacklogEntry[] = deps.sessionEvents
+    ? deps.sessionEvents
+        .listForRoom(room.room_id, { kinds: ['command', 'output'] })
+        .flatMap((e): TranscriptBacklogEntry[] => {
+          if (e.kind === 'command' && e.payload.kind === 'command') {
+            const p = e.payload as { kind: 'command'; input: string; turn_id: string };
+            // Skip system-originated commands (initial look).
+            if (!e.participant_id || e.participant_id === 'system') return [];
+            return [
+              {
+                turn_id: `${p.turn_id}:echo`,
+                text_blocks: [] as TextBlock[],
+                events: [] as DomainEvent[],
+                command: { actor_id: e.participant_id, text: p.input, ts: e.ts },
+              },
+            ];
+          }
+          if (e.kind === 'output' && e.payload.kind === 'output') {
+            const p = e.payload as {
+              kind: 'output';
+              turn_id: string;
+              text_blocks: TextBlock[];
+              events: DomainEvent[];
+            };
+            return [
+              {
+                turn_id: p.turn_id,
+                text_blocks: p.text_blocks,
+                events: p.events,
+              },
+            ];
+          }
+          return [];
+        })
+    : [];
+
   // DM threads are visible only to PH and CoHost (ADR-153 Decision 8).
   // Other tiers always receive an empty map regardless of any DM events
   // their participant_id might appear in (defense in depth — the dm
@@ -134,5 +179,5 @@ export function buildRoomSnapshot(
     }
   }
 
-  return { snapshot, participants, chat_backlog, dm_threads };
+  return { snapshot, participants, chat_backlog, transcript_backlog, dm_threads };
 }

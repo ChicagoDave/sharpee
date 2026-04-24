@@ -35,7 +35,8 @@
     "typescript": "^5.0.4"
   },
   "files": [
-    "dist"
+    "dist",
+    "dist-esm"
   ],
   "keywords": [
     "interactive-fiction",

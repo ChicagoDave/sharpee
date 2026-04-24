@@ -32,7 +32,8 @@ export default function App(): JSX.Element {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100vh',
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -65,7 +66,7 @@ export default function App(): JSX.Element {
         </a>
         <ThemePicker />
       </header>
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {roomId !== null ? (
           <Room roomId={roomId} />
         ) : (
