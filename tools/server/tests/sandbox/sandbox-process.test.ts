@@ -22,11 +22,16 @@ import type {
   SandboxToServerMessage,
 } from '../../src/wire/server-sandbox.js';
 
-const STUB = resolvePath(
+// Minimal test subprocess. NOT a stub of the production sandbox — it is
+// the collaborator at the process boundary that lets us drive the
+// SandboxProcess wrapper's protocol (READY, crash, frame-parse) paths. See
+// the header in fixtures/sandbox-process-child.mjs. End-to-end coverage of
+// the real Deno path lives in tests/sandbox/deno-engine-integration.test.ts.
+const CHILD = resolvePath(
   dirname(fileURLToPath(import.meta.url)),
   '..',
   'fixtures',
-  'stub-sandbox.mjs'
+  'sandbox-process-child.mjs'
 );
 
 function spawn(extraArgs: string[] = []): SandboxProcess {
@@ -34,7 +39,7 @@ function spawn(extraArgs: string[] = []): SandboxProcess {
     room_id: 'r1',
     story_file: '/unused/story.sharpee',
     binary: process.execPath,
-    args: [STUB, ...extraArgs],
+    args: [CHILD, ...extraArgs],
     protocol: 1,
     readyTimeoutMs: 5_000,
   });

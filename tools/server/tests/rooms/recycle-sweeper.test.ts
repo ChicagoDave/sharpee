@@ -108,7 +108,7 @@ function fakeRooms(candidatesByCall: Room[][]): {
   return { repo, listCalls, deleteCalls };
 }
 
-function fakeSandboxes(): { reg: SandboxRegistry; tearDownCalls: string[] } {
+function stubRegistry(): { reg: SandboxRegistry; tearDownCalls: string[] } {
   const tearDownCalls: string[] = [];
   const reg: SandboxRegistry = {
     getOrSpawn: () => {
@@ -145,12 +145,12 @@ describe('recycleSweeper', () => {
 
   let clock: MockClock;
   let conns: ReturnType<typeof fakeConnections>;
-  let sandboxes: ReturnType<typeof fakeSandboxes>;
+  let sandboxes: ReturnType<typeof stubRegistry>;
 
   beforeEach(() => {
     clock = createMockClock(0);
     conns = fakeConnections();
-    sandboxes = fakeSandboxes();
+    sandboxes = stubRegistry();
   });
 
   function buildSweeper(rooms: ReturnType<typeof fakeRooms>) {

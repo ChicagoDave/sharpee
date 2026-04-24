@@ -14,20 +14,82 @@
  *            crash listener on every submitCommand would stack N listeners
  *            and broadcast runtime_crash N times on a single crash.
  *   REJECTS WHEN: n/a — internal invariant.
+ *
+ * Test-double posture (No-Stub-Under-Test, see docs/work/stub-antipattern.md):
+ * the inline fake sandbox below drives crash events a real Deno sandbox
+ * would never emit on command. Scoped to this file; injected via
+ * `createSandboxRegistry(factory)` — not a shared fixture.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EventEmitter } from 'node:events';
 import type { Database } from 'better-sqlite3';
 import { createRoomManager } from '../../src/rooms/room-manager.js';
 import { createSandboxRegistry } from '../../src/sandbox/sandbox-registry.js';
-import { createFakeSandboxFactory } from '../helpers/fake-sandbox.js';
+import type { SandboxProcess } from '../../src/sandbox/sandbox-process.js';
+import type {
+  SandboxToServerMessage,
+  ServerToSandboxMessage,
+} from '../../src/wire/server-sandbox.js';
 import type { RoomsRepository } from '../../src/repositories/rooms.js';
 import type { SessionEventsRepository } from '../../src/repositories/session-events.js';
 import type { StoryScanner } from '../../src/stories/scanner.js';
 import type { ConnectionManager } from '../../src/ws/connection-manager.js';
 import type { ServerMsg } from '../../src/wire/browser-server.js';
 
+// room-manager.spawnFor awaits getCompiledBundle before getOrSpawn. These
+// unit tests don't exercise a real bundle; short-circuit to a stub path.
+vi.mock('../../src/sandbox/story-cache.js', () => ({
+  getCompiledBundle: vi.fn(async (sourcePath: string) => `${sourcePath}.bundle`),
+}));
+
 const ROOM = 'room-crash';
+
+// ---------- In-file test double ----------
+
+class InlineFakeSandbox extends EventEmitter {
+  readonly sent: ServerToSandboxMessage[] = [];
+
+  send(msg: ServerToSandboxMessage): void {
+    this.sent.push(msg);
+  }
+
+  shutdown(): void {}
+  kill(): void {}
+
+  emitReady(): void {
+    this.emit('ready', {
+      kind: 'READY',
+      story_metadata: { title: 'fake-story' },
+    });
+  }
+
+  emitMessage(msg: SandboxToServerMessage): void {
+    this.emit('message', msg);
+  }
+
+  emitCrash(info: { exitCode: number | null; signal: null; stderr: string }): void {
+    this.emit('crash', info);
+  }
+}
+
+function createInlineFakeFactory(): {
+  factory: (opts: { room_id: string }) => SandboxProcess;
+  getFake: (room_id: string) => InlineFakeSandbox | undefined;
+} {
+  // Keyed by room_id; re-spawns overwrite, matching registry behavior —
+  // the second test asserts the factory returns a fresh instance for the
+  // same room on a post-crash getOrSpawn.
+  const fakes = new Map<string, InlineFakeSandbox>();
+  const factory = (opts: { room_id: string }): SandboxProcess => {
+    const fake = new InlineFakeSandbox();
+    fakes.set(opts.room_id, fake);
+    return fake as unknown as SandboxProcess;
+  };
+  return { factory, getFake: (room_id) => fakes.get(room_id) };
+}
+
+// ---------- Collaborator fakes ----------
 
 type BroadcastCall = { room_id: string; msg: ServerMsg };
 
@@ -98,13 +160,30 @@ function fakeDb(): Database {
   } as unknown as Database;
 }
 
+// Yield enough for the mocked `await getCompiledBundle` chain to resolve
+// through room-manager's spawnFor before the test drives the fake.
+const tick = () => new Promise<void>((r) => setImmediate(r));
+
+async function waitForFake(
+  factory: ReturnType<typeof createInlineFakeFactory>,
+  room_id: string,
+  predicate?: (f: InlineFakeSandbox) => boolean
+): Promise<InlineFakeSandbox> {
+  for (let i = 0; i < 200; i++) {
+    const f = factory.getFake(room_id);
+    if (f && (!predicate || predicate(f))) return f;
+    await tick();
+  }
+  throw new Error(`fake sandbox ${room_id} never matched`);
+}
+
 describe('room-manager crashAttached guard', () => {
   let conns: ReturnType<typeof fakeConnections>;
-  let sandboxFactory: ReturnType<typeof createFakeSandboxFactory>;
+  let sandboxFactory: ReturnType<typeof createInlineFakeFactory>;
 
   beforeEach(() => {
     conns = fakeConnections();
-    sandboxFactory = createFakeSandboxFactory();
+    sandboxFactory = createInlineFakeFactory();
   });
 
   afterEach(() => {
@@ -130,14 +209,12 @@ describe('room-manager crashAttached guard', () => {
     const p2 = mgr.submitCommand({ room_id: ROOM, actor_id: 'alice', text: 'look' });
     const p3 = mgr.submitCommand({ room_id: ROOM, actor_id: 'alice', text: 'look' });
 
-    // Let the three calls reach their `await entry.ready`.
-    await Promise.resolve();
-    const fake = sandboxFactory.getFake(ROOM)!;
-    expect(fake).toBeDefined();
+    // Wait for the fake to register (past the mocked `await getCompiledBundle`).
+    const fake = await waitForFake(sandboxFactory, ROOM);
 
     // Unblock them past entry.ready; each will send COMMAND and wait for OUTPUT.
     fake.emitReady();
-    await Promise.resolve();
+    await tick();
 
     // One crash event — should broadcast runtime_crash exactly once.
     fake.emitCrash({ exitCode: 1, signal: null, stderr: 'boom' });
@@ -170,23 +247,21 @@ describe('room-manager crashAttached guard', () => {
 
     // First sandbox, first crash.
     const first = mgr.submitCommand({ room_id: ROOM, actor_id: 'alice', text: 'look' });
-    await Promise.resolve();
-    const fake1 = sandboxFactory.getFake(ROOM)!;
+    const fake1 = await waitForFake(sandboxFactory, ROOM);
     fake1.emitReady();
-    await Promise.resolve();
+    await tick();
     fake1.emitCrash({ exitCode: 1, signal: null, stderr: 'first' });
     await first.catch(() => {});
 
     // Registry will return a fresh entry on next getOrSpawn because the
     // previous entry.status is now 'crashed'. The fake factory creates a
-    // new FakeSandbox for the same room_id on that call.
+    // new InlineFakeSandbox for the same room_id on that call — wait until
+    // the registered instance is a DIFFERENT reference from fake1.
     const second = mgr.submitCommand({ room_id: ROOM, actor_id: 'alice', text: 'look' });
-    await Promise.resolve();
-    const fake2 = sandboxFactory.getFake(ROOM)!;
-    // Sanity: factory returned a brand new fake (different instance) for the respawn.
+    const fake2 = await waitForFake(sandboxFactory, ROOM, (f) => f !== fake1);
     expect(fake2).not.toBe(fake1);
     fake2.emitReady();
-    await Promise.resolve();
+    await tick();
     fake2.emitCrash({ exitCode: 1, signal: null, stderr: 'second' });
     await second.catch(() => {});
 

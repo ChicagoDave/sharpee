@@ -1,5 +1,5 @@
 /**
- * End-to-end save + restore over WebSocket + sandbox.
+ * End-to-end save + restore over WebSocket + real Deno sandbox.
  *
  * Behavior Statement — save / restore round-trip
  *   DOES:
@@ -12,12 +12,20 @@
  *       round-trips it through the sandbox (RESTORE → RESTORED), appends a
  *       'restore' event, and broadcasts `restored` to every connected client
  *       in the room.
- *   WHEN: two sockets are connected to the same room, using the stub sandbox.
+ *   WHEN: two sockets are connected to the same room, backed by real Deno
+ *         running `dungeo.sharpee`.
  *   BECAUSE: AC2 — two users reach the same post-restore state after
- *            disconnect/reconnect; ADR-153 D2/D10/D11.
+ *            disconnect/reconnect; ADR-153 D2/D10/D11. The assertion must
+ *            survive replacement with the production spawn path — no canned
+ *            `stub-save:<id>` blob, no canned "Restored." text block.
  *   REJECTS WHEN: a Participant (not Command Entrant+) attempts `save` —
  *                 sender receives `error { code: 'insufficient_authority' }`
  *                 and no save row is created.
+ *
+ * Gating: this suite is gated on `SHARPEE_REAL_SANDBOX=1` because it spawns
+ * Deno and compiles a real bundle for the save/restore round-trip tests.
+ * CI sets the env var; local dev can too (once `deno` is installed) or
+ * skip silently.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -30,6 +38,8 @@ import {
 import { openWsClient, type TestWsClient } from '../helpers/ws-client.js';
 import type { ServerMsg } from '../../src/wire/browser-server.js';
 
+const REAL = Boolean(process.env.SHARPEE_REAL_SANDBOX);
+
 interface Room {
   host: Awaited<ReturnType<typeof createRoomViaHttp>>;
   guest: Awaited<ReturnType<typeof joinRoomViaHttp>>;
@@ -39,7 +49,7 @@ interface Room {
 
 async function openBothSockets(server: TestServerHandle): Promise<Room> {
   const host = await createRoomViaHttp(server, {
-    story_slug: 'zork',
+    story_slug: 'dungeo',
     display_name: 'Alice',
   });
   const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
@@ -63,12 +73,12 @@ async function openBothSockets(server: TestServerHandle): Promise<Room> {
   return { host, guest, hostClient, guestClient };
 }
 
-describe('save + restore round-trip', () => {
+describe.skipIf(!REAL)('save + restore round-trip (real sandbox)', () => {
   let server: TestServerHandle;
   let openClients: TestWsClient[];
 
   beforeEach(async () => {
-    server = await buildTestServer({ stories: ['zork'] });
+    server = await buildTestServer({ stories: ['dungeo'], realSandbox: true });
     openClients = [];
   });
   afterEach(async () => {
@@ -89,17 +99,24 @@ describe('save + restore round-trip', () => {
     hostClient.send({ kind: 'save' });
 
     const hostSaved = await hostClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created'
+      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created',
+      30_000,
     );
     const guestSaved = await guestClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created'
+      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created',
+      30_000,
     );
 
     expect(hostSaved.save_id).toBe(guestSaved.save_id);
     expect(hostSaved.actor_id).toBe(host.participant_id);
-    expect(hostSaved.name).toMatch(/^zork — T0 — \d{4}-\d{2}-\d{2}T/);
+    // Name format: `${story_slug} — T${turn_number} — ${ISO_timestamp}`.
+    // Real engine on fresh spawn has turn_number = 0, but keep the regex
+    // tolerant in case the format evolves.
+    expect(hostSaved.name).toMatch(/^dungeo — T\d+ — \d{4}-\d{2}-\d{2}T/);
 
-    // DB row exists with correlated save_id and the stub sandbox's blob
+    // DB row exists with real engine state blob — not the stub's short
+    // canned string. Mirror the acceptance gate's size floor (blob_b64 > 500
+    // becomes blob bytes > 375 after base64 decode — floor at 300 for slack).
     const row = server.db
       .prepare('SELECT save_id, room_id, actor_id, name, blob FROM saves WHERE save_id = ?')
       .get(hostSaved.save_id) as
@@ -108,7 +125,7 @@ describe('save + restore round-trip', () => {
     expect(row).toBeDefined();
     expect(row!.room_id).toBe(host.room_id);
     expect(row!.actor_id).toBe(host.participant_id);
-    expect(row!.blob.toString('utf8')).toBe(`stub-save:${hostSaved.save_id}`);
+    expect(row!.blob.length).toBeGreaterThan(300);
 
     // Session event row appended, referencing the same save_id
     const ev = server.db
@@ -123,7 +140,7 @@ describe('save + restore round-trip', () => {
       save_id: hostSaved.save_id,
       save_name: hostSaved.name,
     });
-  });
+  }, 60_000);
 
   it('reconnecting client sees the save in welcome.room.saves', async () => {
     const { host, guest, hostClient, guestClient } = await openBothSockets(server);
@@ -131,7 +148,8 @@ describe('save + restore round-trip', () => {
 
     hostClient.send({ kind: 'save' });
     const saved = await guestClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created'
+      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created',
+      30_000,
     );
 
     // Guest disconnects and reconnects
@@ -150,7 +168,7 @@ describe('save + restore round-trip', () => {
     expect(welcome.room.saves.find((s) => s.save_id === saved.save_id)!.name).toBe(
       saved.name
     );
-  });
+  }, 60_000);
 
   it('primary_host restore: both clients receive restored with text_blocks', async () => {
     const { host, hostClient, guestClient } = await openBothSockets(server);
@@ -160,26 +178,32 @@ describe('save + restore round-trip', () => {
     // First, save
     hostClient.send({ kind: 'save' });
     const saved = await hostClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created'
+      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created',
+      30_000,
     );
     await guestClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created'
+      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created',
+      30_000,
     );
 
     // Then restore
     hostClient.send({ kind: 'restore', save_id: saved.save_id });
 
     const hostRestored = await hostClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'restored' }> => m.kind === 'restored'
+      (m): m is Extract<ServerMsg, { kind: 'restored' }> => m.kind === 'restored',
+      30_000,
     );
     const guestRestored = await guestClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'restored' }> => m.kind === 'restored'
+      (m): m is Extract<ServerMsg, { kind: 'restored' }> => m.kind === 'restored',
+      30_000,
     );
 
     expect(hostRestored.save_id).toBe(saved.save_id);
     expect(hostRestored.actor_id).toBe(host.participant_id);
-    // stub-sandbox canned RESTORED text
-    expect(hostRestored.text_blocks).toEqual([{ kind: 'para', text: 'Restored.' }]);
+    // Real RESTORED from deno-entry emits an empty text_blocks array (the
+    // restore itself does not render scene text — the next command does).
+    // The stub's canned [{ kind: 'para', text: 'Restored.' }] is gone.
+    expect(Array.isArray(hostRestored.text_blocks)).toBe(true);
     expect(guestRestored.save_id).toBe(saved.save_id);
 
     // A 'restore' session_event row exists
@@ -194,7 +218,7 @@ describe('save + restore round-trip', () => {
       kind: 'restore',
       save_id: saved.save_id,
     });
-  });
+  }, 60_000);
 
   it('Participant save attempt: insufficient_authority to sender; no save row, no broadcast', async () => {
     const { host, hostClient, guestClient } = await openBothSockets(server);
@@ -230,10 +254,12 @@ describe('save + restore round-trip', () => {
     // Create a save first
     hostClient.send({ kind: 'save' });
     const saved = await hostClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created'
+      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created',
+      30_000,
     );
     await guestClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created'
+      (m): m is Extract<ServerMsg, { kind: 'save_created' }> => m.kind === 'save_created',
+      30_000,
     );
 
     // Host starts typing — acquires the lock
@@ -247,7 +273,8 @@ describe('save + restore round-trip', () => {
     hostClient.send({ kind: 'restore', save_id: saved.save_id });
 
     await hostClient.waitFor(
-      (m): m is Extract<ServerMsg, { kind: 'restored' }> => m.kind === 'restored'
+      (m): m is Extract<ServerMsg, { kind: 'restored' }> => m.kind === 'restored',
+      30_000,
     );
     const lockCleared = await guestClient.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'lock_state' }> =>
@@ -255,5 +282,5 @@ describe('save + restore round-trip', () => {
     );
     expect(lockCleared.holder_id).toBeNull();
     expect(server.ws.locks.getState(host.room_id).holder_id).toBeNull();
-  });
+  }, 60_000);
 });

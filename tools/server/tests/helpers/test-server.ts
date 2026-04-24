@@ -6,7 +6,7 @@
  * Bounded context: WebSocket-layer integration tests.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,8 +34,6 @@ import { loadConfig } from '../../src/config.js';
 import { openTestDb } from './test-db.js';
 
 const __thisDir = dirname(fileURLToPath(import.meta.url));
-/** Absolute path to tests/fixtures/stub-sandbox.mjs. */
-export const STUB_SANDBOX_PATH = resolvePath(__thisDir, '..', 'fixtures', 'stub-sandbox.mjs');
 
 export interface TestServerHandle {
   /** Base HTTP URL — e.g. `http://127.0.0.1:54321` */
@@ -55,8 +53,18 @@ export interface TestServerHandle {
 
 export interface BuildTestServerOptions {
   stories?: string[];
-  /** Override arguments passed to the sandbox spawn. Appended to the stub path. */
-  sandboxArgs?: string[];
+  /**
+   * When true, the test server wires real story files instead of empty
+   * placeholders. For each slug in `stories`, the matching bundle from
+   * `tools/server/stories/<slug>.sharpee` is copied into the temp dir so
+   * production spawn paths (`getCompiledBundle` → `spawnSandbox` → Deno)
+   * have real input. Set `STORIES_COMPILED_DIR` is also pointed at a per-
+   * handle temp cache so bundles don't leak between tests.
+   *
+   * Gate tests behind `describe.skipIf(!process.env.SHARPEE_REAL_SANDBOX)`
+   * — only CI with Deno on PATH should run them.
+   */
+  realSandbox?: boolean;
   /** Forward to createWsServer — lets tests shrink the AFK sweep for E2E timing. */
   afkTimerOptions?: import('../../src/ws/afk-timer.js').AfkTimerOptions;
   /** Forward to createWsServer — PH grace-timer config for deterministic tests. */
@@ -72,8 +80,29 @@ export async function buildTestServer(
   const db = openTestDb();
   const storiesDir = mkdtempSync(join(tmpdir(), 'sharpee-stories-'));
   mkdirSync(storiesDir, { recursive: true });
+
+  // When realSandbox is enabled, copy the production .sharpee from
+  // tools/server/stories/<slug>.sharpee. When disabled (default), an empty
+  // placeholder file is sufficient for tests that never actually spawn.
+  const prodStoriesDir = resolvePath(__thisDir, '..', '..', 'stories');
   for (const slug of opts.stories ?? []) {
-    writeFileSync(join(storiesDir, `${slug}.sharpee`), '');
+    const dest = join(storiesDir, `${slug}.sharpee`);
+    if (opts.realSandbox) {
+      copyFileSync(join(prodStoriesDir, `${slug}.sharpee`), dest);
+    } else {
+      writeFileSync(dest, '');
+    }
+  }
+
+  // Real-sandbox tests need a writable bundle cache scoped to this handle
+  // so compiled bundles don't leak across tests. The env var is the only
+  // knob story-cache honours — see src/sandbox/story-cache.ts.
+  let compiledDir: string | undefined;
+  let priorCompiledDir: string | undefined;
+  if (opts.realSandbox) {
+    compiledDir = mkdtempSync(join(tmpdir(), 'sharpee-compiled-'));
+    priorCompiledDir = process.env.STORIES_COMPILED_DIR;
+    process.env.STORIES_COMPILED_DIR = compiledDir;
   }
 
   const rooms = createRoomsRepository(db);
@@ -93,7 +122,6 @@ export async function buildTestServer(
 
   const sandboxes = createSandboxRegistry();
   const connections = createConnectionManager();
-  const extraArgs = opts.sandboxArgs ?? [];
   const roomManager = createRoomManager({
     db,
     rooms,
@@ -102,10 +130,6 @@ export async function buildTestServer(
     sandboxes,
     connections,
     turnTimeoutMs: 5_000,
-    sandboxOverride: {
-      binary: process.execPath,
-      args: [STUB_SANDBOX_PATH, ...extraArgs],
-    },
   });
 
   const saveService = createSaveService({
@@ -116,10 +140,6 @@ export async function buildTestServer(
     stories,
     sandboxes,
     sandboxTimeoutMs: 5_000,
-    sandboxOverride: {
-      binary: process.execPath,
-      args: [STUB_SANDBOX_PATH, ...extraArgs],
-    },
   });
 
   const app = createApp({ config, db, rooms, participants, sessionEvents, stories, captcha });
@@ -170,6 +190,14 @@ export async function buildTestServer(
       await new Promise<void>((resolve) => server.close(() => resolve()));
       db.close();
       rmSync(storiesDir, { recursive: true, force: true });
+      if (compiledDir) {
+        rmSync(compiledDir, { recursive: true, force: true });
+        if (priorCompiledDir === undefined) {
+          delete process.env.STORIES_COMPILED_DIR;
+        } else {
+          process.env.STORIES_COMPILED_DIR = priorCompiledDir;
+        }
+      }
     },
   };
 }

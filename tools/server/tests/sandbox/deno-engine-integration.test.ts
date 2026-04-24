@@ -8,8 +8,9 @@
  *
  * Rule enforced: No-Stub-Under-Test (see docs/work/stub-antipattern.md).
  * The system under test is not replaceable with something we wrote. This
- * file NEVER uses `tests/fixtures/stub-sandbox.mjs`, `tests/helpers/fake-sandbox.ts`,
- * or any `sandboxOverride` on production code paths. The imports make that
+ * file uses no test doubles of the sandbox on the production code path —
+ * the sandbox apparatus that predated 4-R-3 (fixtures and helpers that
+ * substituted for the real spawn) has been deleted. The imports make that
  * statically checkable.
  *
  * Expected state on 2026-04-23: RED. `deno-entry.ts` is a Phase 0 stub

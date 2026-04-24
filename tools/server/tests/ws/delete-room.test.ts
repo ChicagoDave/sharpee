@@ -148,7 +148,7 @@ function fakeParticipants(
   };
 }
 
-function fakeSandboxes(): { reg: SandboxRegistry; tearDownCalls: string[] } {
+function stubRegistry(): { reg: SandboxRegistry; tearDownCalls: string[] } {
   const tearDownCalls: string[] = [];
   const reg: SandboxRegistry = {
     getOrSpawn: () => {
@@ -188,14 +188,14 @@ describe('handleDeleteRoom', () => {
 
   let conns: ReturnType<typeof fakeConnections>;
   let rooms: ReturnType<typeof fakeRooms>;
-  let sandboxes: ReturnType<typeof fakeSandboxes>;
+  let sandboxes: ReturnType<typeof stubRegistry>;
   let participants: ParticipantsRepository;
   let ws: FakeSocket;
 
   beforeEach(() => {
     conns = fakeConnections();
     rooms = fakeRooms([makeRoom({ title: 'Adventure Camp' })]);
-    sandboxes = fakeSandboxes();
+    sandboxes = stubRegistry();
     participants = fakeParticipants([
       { participant_id: PH, tier: 'primary_host' },
       { participant_id: COHOST, tier: 'co_host' },

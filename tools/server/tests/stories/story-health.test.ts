@@ -12,24 +12,83 @@
  *            story files without creating any DB rows.
  *   REJECTS WHEN: never throws at the method level — individual stories
  *                 that fail are recorded as unhealthy.
+ *
+ * Test-double posture (No-Stub-Under-Test, see docs/work/stub-antipattern.md):
+ * the inline fake sandbox below drives crash / timeout / READY responses a
+ * real Deno sandbox would never emit on command. It is scoped to this file
+ * and injected via `createSandboxRegistry(factory)` — not a shared fixture.
  */
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { EventEmitter } from 'node:events';
 import { createStoryHealth } from '../../src/stories/story-health.js';
 import { createSandboxRegistry } from '../../src/sandbox/sandbox-registry.js';
-import { createFakeSandboxFactory, type FakeSandbox } from '../helpers/fake-sandbox.js';
+import type { SandboxProcess } from '../../src/sandbox/sandbox-process.js';
+import type {
+  SandboxToServerMessage,
+  ServerToSandboxMessage,
+} from '../../src/wire/server-sandbox.js';
 import type { StoryScanner, StoryEntry } from '../../src/stories/scanner.js';
+
+// Short-circuit the bundle cache: these unit tests use a fake sandbox via
+// the registry factory, so no real bundle lookup is meaningful. The
+// returned path is never read.
+vi.mock('../../src/sandbox/story-cache.js', () => ({
+  getCompiledBundle: vi.fn(async (sourcePath: string) => `${sourcePath}.bundle`),
+}));
+
+// ---------- In-file test double ----------
+
+class InlineFakeSandbox extends EventEmitter {
+  readonly sent: ServerToSandboxMessage[] = [];
+
+  send(msg: ServerToSandboxMessage): void {
+    this.sent.push(msg);
+  }
+
+  shutdown(): void {}
+  kill(): void {}
+
+  emitReady(): void {
+    this.emit('ready', {
+      kind: 'READY',
+      story_metadata: { title: 'fake-story' },
+    });
+  }
+
+  emitMessage(msg: SandboxToServerMessage): void {
+    this.emit('message', msg);
+  }
+
+  emitCrash(info: { exitCode: number | null; signal: null; stderr: string }): void {
+    this.emit('crash', info);
+  }
+}
+
+function createInlineFakeFactory(): {
+  factory: (opts: { room_id: string }) => SandboxProcess;
+  getFake: (room_id: string) => InlineFakeSandbox | undefined;
+} {
+  const fakes = new Map<string, InlineFakeSandbox>();
+  const factory = (opts: { room_id: string }): SandboxProcess => {
+    const fake = new InlineFakeSandbox();
+    fakes.set(opts.room_id, fake);
+    return fake as unknown as SandboxProcess;
+  };
+  return { factory, getFake: (room_id) => fakes.get(room_id) };
+}
 
 /**
  * Poll for a fake sandbox to be registered under the given room_id.
  * The serial validateAll loop yields an unpredictable number of microtasks
- * between iterations (depending on how many `.then` hops entry.ready has);
- * polling is cheaper than hand-counting Promise.resolve() calls.
+ * between iterations (depending on how many `.then` hops entry.ready has
+ * and the mocked `await getCompiledBundle`); polling is cheaper than
+ * hand-counting Promise.resolve() calls.
  */
 async function waitForFake(
-  fakes: ReturnType<typeof createFakeSandboxFactory>,
+  fakes: ReturnType<typeof createInlineFakeFactory>,
   room_id: string
-): Promise<FakeSandbox> {
+): Promise<InlineFakeSandbox> {
   for (let i = 0; i < 200; i++) {
     const f = fakes.getFake(room_id);
     if (f) return f;
@@ -57,7 +116,7 @@ describe('StoryHealth', () => {
   });
 
   it('validateAll: marks a story healthy when its sandbox emits READY; tears down the validation sandbox', async () => {
-    const fakes = createFakeSandboxFactory();
+    const fakes = createInlineFakeFactory();
     const sandboxes = createSandboxRegistry(fakes.factory);
     const health = createStoryHealth({
       stories: makeScanner([story('zork')]),
@@ -78,7 +137,7 @@ describe('StoryHealth', () => {
   });
 
   it('validateAll: marks a story unhealthy and records an error when the sandbox crashes before READY', async () => {
-    const fakes = createFakeSandboxFactory();
+    const fakes = createInlineFakeFactory();
     const sandboxes = createSandboxRegistry(fakes.factory);
     const health = createStoryHealth({
       stories: makeScanner([story('broken')]),
@@ -97,7 +156,7 @@ describe('StoryHealth', () => {
   });
 
   it('validateAll: marks a story unhealthy when READY does not arrive before the timeout', async () => {
-    const fakes = createFakeSandboxFactory();
+    const fakes = createInlineFakeFactory();
     const sandboxes = createSandboxRegistry(fakes.factory);
     const health = createStoryHealth({
       stories: makeScanner([story('slow')]),
@@ -114,7 +173,7 @@ describe('StoryHealth', () => {
   });
 
   it('validateAll: validates multiple stories serially; healthy + unhealthy recorded independently', async () => {
-    const fakes = createFakeSandboxFactory();
+    const fakes = createInlineFakeFactory();
     const sandboxes = createSandboxRegistry(fakes.factory);
     const health = createStoryHealth({
       stories: makeScanner([story('good'), story('bad')]),
@@ -143,7 +202,7 @@ describe('StoryHealth', () => {
   });
 
   it('check: returns null for a slug that was never validated', async () => {
-    const fakes = createFakeSandboxFactory();
+    const fakes = createInlineFakeFactory();
     const sandboxes = createSandboxRegistry(fakes.factory);
     const health = createStoryHealth({
       stories: makeScanner([]),

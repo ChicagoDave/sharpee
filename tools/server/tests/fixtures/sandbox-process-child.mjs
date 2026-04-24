@@ -1,17 +1,27 @@
 /**
- * Test stub sandbox — mirrors the server↔sandbox wire protocol without Deno.
+ * Test subprocess driver for `tests/sandbox/sandbox-process.test.ts`.
  *
- * Used by Phase 4 tests so they don't depend on `deno` being installed.
- * Behavior is intentionally trivial:
+ * This file is NOT a stub of the production sandbox. It is a minimal Node
+ * subprocess used to exercise the `SandboxProcess` WRAPPER class — its
+ * message framing, READY handling, crash detection, and malformed-frame
+ * paths. The system under test is `SandboxProcess`; this child is its
+ * collaborator at the process boundary. Real Deno cannot be used here
+ * because it does not expose controls like `--crash-on-command` or
+ * malformed-frame injection.
+ *
+ * End-to-end coverage of the production sandbox (real Deno running the
+ * compiled bundle) is in `tests/sandbox/deno-engine-integration.test.ts`.
+ *
+ * Protocol (mirrors the wire types in src/wire/server-sandbox.ts):
  *   INIT    → READY with fake story metadata
  *   COMMAND → OUTPUT echoing the input
  *   SAVE    → SAVED with a base64 "stub-save" blob
  *   RESTORE → RESTORED with a canned text block
  *   SHUTDOWN → EXITED clean + process.exit(0)
  *
- * Special sentinel: if argv contains `--crash-on-command`, the stub exits
+ * Special sentinel: if argv contains `--crash-on-command`, the child exits
  * ungracefully on the first COMMAND instead of emitting OUTPUT — used by
- * the AC7 crash-recovery test.
+ * the crash-detection test.
  */
 /* eslint-disable no-console */
 
