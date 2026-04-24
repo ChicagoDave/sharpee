@@ -9,10 +9,12 @@ packages:
   - stories/dungeo
   - stories/entropy
   - tutorials/familyzoo
+  - tools/server
 
 ignoredBuiltDependencies:
   - electron
 
 onlyBuiltDependencies:
+  - better-sqlite3
   - esbuild
   - nx

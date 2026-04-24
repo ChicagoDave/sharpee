@@ -14,8 +14,6 @@
 
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { resolve as resolvePath, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createLineFramer, frameMessage } from './message-framing.js';
 import type {
   SandboxToServerMessage,
@@ -28,18 +26,19 @@ import type {
 export interface SandboxSpawnOptions {
   /** Room this sandbox serves (used only for logs/diagnostics). */
   room_id: string;
-  /** Story file to load inside the sandbox. Passed through the INIT message. */
+  /**
+   * Path to the source `.sharpee` file. Passed through the INIT message for
+   * provenance and narrowed into Deno's `--allow-read` list; the file is NOT
+   * re-read at runtime — the compiled bundle embeds its contents.
+   */
   story_file: string;
   /**
-   * Executable to spawn. Default `'deno'`. Tests override to `'node'` and
-   * point at a stub script so they don't depend on Deno being installed.
+   * Path to the install-time-compiled self-contained ESM
+   * (`<slug>.host.js`). This is the *only* file Deno executes. Callers
+   * resolve it via `story-cache.getCompiledBundle(story_file)` before
+   * spawning; sandbox-process does not compile on the hot path.
    */
-  binary?: string;
-  /**
-   * Argv for the spawn. Defaults to `['run', '--no-prompt', <DENO_ENTRY>]`.
-   * The entry path is resolved relative to this package.
-   */
-  args?: string[];
+  bundle_path: string;
   /** Wire protocol version to announce in INIT. Defaults to current. */
   protocol?: number;
   /** Milliseconds to wait for READY before considering the spawn failed. */
@@ -54,14 +53,6 @@ export interface SandboxProcessEvents {
   frameError: (err: Error, line: string) => void;
 }
 
-/** Resolve the default Deno entry path shipped with this package. */
-function defaultDenoEntry(): string {
-  // In dev (no build), deno-entry.ts lives next to this file.
-  // In the built image, it's at dist/sandbox/deno-entry.ts (still .ts — Deno reads .ts directly).
-  const here = dirname(fileURLToPath(import.meta.url));
-  return resolvePath(here, 'deno-entry.ts');
-}
-
 export class SandboxProcess extends EventEmitter {
   public readonly room_id: string;
   private readonly child: ChildProcessWithoutNullStreams;
@@ -69,6 +60,12 @@ export class SandboxProcess extends EventEmitter {
   private exitReported = false;
   private readyReceived = false;
   private readyTimer: NodeJS.Timeout | null = null;
+  /**
+   * Set when the child's `error` event has already been surfaced as a
+   * `crash` event. Prevents the subsequent `exit` event (which fires after
+   * `error` when spawn itself fails) from double-crashing.
+   */
+  private crashReported = false;
 
   constructor(
     opts: SandboxSpawnOptions & { binary: string; args: string[]; readyTimeoutMs: number }
@@ -91,9 +88,29 @@ export class SandboxProcess extends EventEmitter {
       if (this.stderrBuf.length > 200) this.stderrBuf.splice(0, this.stderrBuf.length - 200);
     });
 
+    // A missing binary or unusable executable surfaces as `error`, not `exit`.
+    // Without this handler the event becomes an uncaught exception and takes
+    // the whole server down (observed during ADR-153 Phase 4 remediation —
+    // Deno absent from PATH crashed the Node process instead of emitting a
+    // crash signal per-room). Emit `crash` so callers can clean up the room
+    // and, critically, so the server stays up.
+    this.child.on('error', (err: NodeJS.ErrnoException) => {
+      if (this.readyTimer) clearTimeout(this.readyTimer);
+      if (this.crashReported) return;
+      this.crashReported = true;
+      const detail = err.code ? `${err.code}: ${err.message}` : err.message;
+      this.emit('crash', {
+        exitCode: null,
+        signal: null,
+        stderr: `spawn failed: ${detail}\n${this.stderrBuf.join('')}`,
+      });
+    });
+
     this.child.on('exit', (code, signal) => {
       if (this.readyTimer) clearTimeout(this.readyTimer);
+      if (this.crashReported) return;
       if (this.exitReported) return;
+      this.crashReported = true;
       // Unreported exit == crash.
       this.emit('crash', {
         exitCode: code,
@@ -170,11 +187,28 @@ export class SandboxProcess extends EventEmitter {
   }
 }
 
-/** Construct a SandboxProcess with the project defaults filled in. */
+/**
+ * Construct a SandboxProcess with the project defaults filled in.
+ *
+ * Spawn command: `deno run --allow-read=<bundle>,<story> --v8-flags=--max-old-space-size=256 <bundle>`.
+ * - `--allow-read` is narrowed to the compiled bundle and source story file
+ *   only; all other Deno permissions are denied by default (ADR-153
+ *   Decision 1 / Phase 4 remediation Option B).
+ * - `--v8-flags=--max-old-space-size=256` caps rogue-story memory pressure
+ *   at the inner boundary; the container is the outer boundary.
+ * - No injection surface: callers must provide a pre-compiled `bundle_path`.
+ *   See `story-cache.getCompiledBundle(story_file)` for the install-time
+ *   compilation path.
+ */
 export function spawnSandbox(opts: SandboxSpawnOptions): SandboxProcess {
-  const binary = opts.binary ?? 'deno';
-  const args =
-    opts.args ?? ['run', '--no-prompt', defaultDenoEntry(), opts.story_file];
+  const binary = 'deno';
+  const allowRead = `--allow-read=${opts.bundle_path},${opts.story_file}`;
+  const args = [
+    'run',
+    allowRead,
+    '--v8-flags=--max-old-space-size=256',
+    opts.bundle_path,
+  ];
   return new SandboxProcess({
     ...opts,
     binary,

@@ -21,6 +21,7 @@ import type { ConnectionManager } from '../ws/connection-manager.js';
 import type { SandboxRegistry, SandboxEntry } from '../sandbox/sandbox-registry.js';
 import type { Output, SandboxToServerMessage } from '../wire/server-sandbox.js';
 import type { ServerMsg } from '../wire/browser-server.js';
+import { getCompiledBundle } from '../sandbox/story-cache.js';
 
 export interface RoomManagerDeps {
   db: Database;
@@ -31,8 +32,6 @@ export interface RoomManagerDeps {
   connections: ConnectionManager;
   /** How long to wait for an OUTPUT before timing out (ms). */
   turnTimeoutMs?: number;
-  /** Override the sandbox binary/args (tests use a Node stub). */
-  sandboxOverride?: { binary?: string; args?: string[] };
 }
 
 export interface RoomManager {
@@ -61,17 +60,21 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
   // crash. This set guards against that.
   const crashAttached = new Set<string>();
 
-  function spawnFor(room_id: string): SandboxEntry {
+  async function spawnFor(room_id: string): Promise<SandboxEntry> {
     const room = deps.rooms.findById(room_id);
     if (!room) throw new Error(`room-manager: unknown room ${room_id}`);
     const story = deps.stories.findBySlug(room.story_slug);
     if (!story) throw new Error(`room-manager: story ${room.story_slug} not available`);
 
+    // Resolve (or compile) the install-time bundle before spawning. Hot-path
+    // cost is ~one stat() on cache hit; first-ever spawn for a story pays
+    // the esbuild compile once. See story-cache.ts.
+    const bundle_path = await getCompiledBundle(story.path);
+
     const entry = deps.sandboxes.getOrSpawn({
       room_id,
       story_file: story.path,
-      binary: deps.sandboxOverride?.binary,
-      args: deps.sandboxOverride?.args,
+      bundle_path,
     });
 
     if (!crashAttached.has(room_id)) {
@@ -102,7 +105,7 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
     actor_id: string,
     text: string
   ): Promise<Output> {
-    const entry = spawnFor(room_id);
+    const entry = await spawnFor(room_id);
     await entry.ready;
 
     const turn_id = randomUUID();

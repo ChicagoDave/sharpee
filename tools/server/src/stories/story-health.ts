@@ -18,6 +18,7 @@
 
 import type { StoryScanner } from './scanner.js';
 import type { SandboxRegistry } from '../sandbox/sandbox-registry.js';
+import { getCompiledBundle } from '../sandbox/story-cache.js';
 
 /** Recorded result of a single story validation attempt. */
 export interface StoryHealthStatus {
@@ -50,8 +51,6 @@ export interface StoryHealth {
 export interface StoryHealthDeps {
   stories: StoryScanner;
   sandboxes: SandboxRegistry;
-  /** Override sandbox binary/args — tests pass a Node stub. */
-  sandboxOverride?: { binary?: string; args?: string[] };
   /** Max time to wait for READY before declaring the story unhealthy. Default 10 s. */
   readyTimeoutMs?: number;
 }
@@ -66,11 +65,14 @@ export function createStoryHealth(deps: StoryHealthDeps): StoryHealth {
   async function validateOne(slug: string, path: string): Promise<void> {
     const validateRoomId = VALIDATE_ROOM_PREFIX + slug;
     try {
+      // Boot-time compile check: resolving the compiled bundle here surfaces
+      // a bad .sharpee (missing meta.json, unknown format, esbuild failure)
+      // as an unhealthy story — not a runtime crash when a player joins.
+      const bundle_path = await getCompiledBundle(path);
       const entry = deps.sandboxes.getOrSpawn({
         room_id: validateRoomId,
         story_file: path,
-        binary: deps.sandboxOverride?.binary,
-        args: deps.sandboxOverride?.args,
+        bundle_path,
       });
 
       // Race the READY-or-crash promise against a timeout. If READY arrives

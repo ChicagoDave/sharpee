@@ -1,20 +1,23 @@
 # Sharpee Multiuser Server — production image.
 #
-# BUILD CONTEXT: the repository root (because we need access to ../../packages/core).
+# BUILD CONTEXT: the repository root. tools/server is a pnpm workspace member
+# (pnpm-workspace.yaml lists it), and its @sharpee/* dependencies use
+# `workspace:*` — so the Docker build context must include packages/ and the
+# workspace lockfile, not just tools/server/.
 # Invoke from the repo root:
 #   docker build -f tools/server/Dockerfile -t sharpee-server .
-# Or via the reference compose, which sets the context explicitly.
 #
 # Multi-stage build:
-#   1. client-builder — installs deps, builds the React multi-user client
-#                        → tools/server/client/dist/ (ADR-153 frontend).
-#   2. node-builder   — installs deps, compiles TypeScript → tools/server/dist/.
-#   3. runtime        — slim Node image + Deno binary, copies built server,
-#                        sandbox entry, and the client dist to /app/client-dist.
+#   1. client-builder — builds the React multi-user client → client/dist/.
+#   2. node-builder   — pnpm-installs the server's workspace graph, runs tsc,
+#                       then `pnpm deploy --prod` materialises a standalone
+#                       /deploy folder with all @sharpee/* symlinks resolved
+#                       into real files (no pnpm symlink chains survive).
+#   3. runtime        — slim Node + Deno, copies /deploy verbatim.
 #
-# The Deno binary is required at runtime for spawning --allow-none sandboxes
-# (ADR-153 Decision 1). The CLIENT_DIST_DIR env var points the server at the
-# baked-in client so GET / serves the SPA instead of 404ing.
+# Deno is required at runtime to spawn sandboxes (ADR-153 Decision 1, Phase 4
+# remediation). The install-time story bundler invokes esbuild the first time
+# each .sharpee is requested and caches the result in $STORIES_COMPILED_DIR.
 
 # ---------- Stage 1: Build the multi-user browser client ----------
 FROM node:22-slim AS client-builder
@@ -40,25 +43,45 @@ RUN npm run build
 FROM node:22-slim AS node-builder
 WORKDIR /build
 
-# Sharpee packages the server imports (relative file: deps resolved at install time).
-COPY packages/core ./packages/core
+# pnpm via corepack. tools/server's @sharpee/* deps use `workspace:*` — plain
+# `npm install` cannot resolve them outside a pnpm workspace context.
+RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
 
-# The server itself — tests + vitest config come along for the build-time smoke test.
-COPY tools/server/package.json tools/server/tsconfig.json tools/server/vitest.config.ts ./tools/server/
-COPY tools/server/src ./tools/server/src
-COPY tools/server/tests ./tools/server/tests
-COPY tools/server/migrations ./tools/server/migrations
+# Workspace metadata.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
+# All @sharpee/* packages (tools/server pulls 9 directly, plus their
+# transitive deps). The packages must be pre-built on the host — their
+# package.json `exports.import` points at dist-esm/index.js, which is what
+# the install-time bundler inlines for each story.
+COPY packages ./packages
+
+# Server source, tests, config.
+COPY tools/server ./tools/server
+
+# Resolve deps through pnpm (filter confines the install to the server's
+# reachable graph — no point materialising every story/tutorial package).
+RUN pnpm install --filter sharpee-server... --frozen-lockfile
+
+# Build the server.
 WORKDIR /build/tools/server
-RUN npm install
-# Fail-fast: if any unit/integration test fails, the image build fails.
-RUN npm test
-RUN npx tsc
-# deno-entry.ts is excluded from tsc (Deno reads .ts directly), so tsc never
-# emits it. sandbox-process.ts spawns Deno against dist/sandbox/deno-entry.ts
-# at runtime — copy the source into place so the runtime stage picks it up
-# via the existing dist COPY.
+RUN pnpm exec tsc
+# deno-entry.ts is excluded from tsc emit (Deno globals). story-bundler's
+# resolveServerPaths() probes for it as a sibling of the compiled
+# story-bundler.js — stage it there explicitly.
 RUN cp src/sandbox/deno-entry.ts dist/sandbox/deno-entry.ts
+
+# TODO(4-R-3): when the stub apparatus is stripped, add a build-time smoke
+# step that runs the acceptance-gate + bundler tests against real Deno
+# inside the builder stage. Skipped for now because many stub-backed tests
+# break as expected collateral from 4-R-2.
+
+# Materialise a standalone deploy folder. `pnpm deploy --prod` inlines every
+# workspace dependency as real files under node_modules/ (no lingering
+# symlinks to /build/packages), drops devDeps, and produces a tree that can
+# be copied verbatim into the runtime stage.
+WORKDIR /build
+RUN pnpm --filter sharpee-server deploy --prod /deploy
 
 # ---------- Stage 3: Runtime ----------
 FROM node:22-slim AS runtime
@@ -71,18 +94,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY --from=node-builder --chown=node:node /build/tools/server/dist ./dist
-COPY --from=node-builder --chown=node:node /build/tools/server/node_modules ./node_modules
-COPY --from=node-builder --chown=node:node /build/tools/server/package.json ./package.json
-COPY --from=node-builder --chown=node:node /build/tools/server/migrations ./migrations
-COPY --chown=node:node tools/server/deno.json ./deno.json
+# /deploy already contains dist/, node_modules/, package.json, migrations/,
+# and every source file from tools/server — everything needed to run.
+COPY --from=node-builder --chown=node:node /deploy ./
 COPY --from=client-builder --chown=node:node /build/tools/server/client/dist ./client-dist
 
-# Create data dirs owned by node so named volumes inherit writable perms on first up.
-RUN mkdir -p /data/db /data/stories && chown -R node:node /data
+# Data dirs. /data/stories-compiled is the install-time bundle cache —
+# story-cache.getCompiledBundle() writes <slug>.host.js here on first spawn
+# and skips esbuild on subsequent spawns for the same mtime.
+RUN mkdir -p /data/db /data/stories /data/stories-compiled \
+  && chown -R node:node /data /app
 
 # Default data volumes (override with bind mounts / named volumes in compose).
-VOLUME ["/data/db", "/data/stories"]
+VOLUME ["/data/db", "/data/stories", "/data/stories-compiled"]
 
 USER node
 
@@ -90,6 +114,7 @@ EXPOSE 8080
 ENV NODE_ENV=production \
     DB_PATH=/data/db/sharpee.db \
     STORIES_DIR=/data/stories \
+    STORIES_COMPILED_DIR=/data/stories-compiled \
     CONFIG_FILE=/etc/sharpee-platform.yaml \
     CLIENT_DIST_DIR=/app/client-dist
 

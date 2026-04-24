@@ -23,11 +23,14 @@
  * to install Deno on the test host, never to swap in a fake.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { dirname, resolve as resolvePath } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve as resolvePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSandbox, type SandboxProcess } from '../../src/sandbox/sandbox-process.js';
+import { getCompiledBundle } from '../../src/sandbox/story-cache.js';
 import type {
   SandboxToServerMessage,
   Ready,
@@ -91,11 +94,29 @@ function waitForReady(proc: SandboxProcess): Promise<Ready> {
 
 describe('deno-entry integration (real Deno, real engine, real story)', () => {
   let proc: SandboxProcess | null = null;
+  let cacheDir: string;
+  let bundle_path: string;
+
+  beforeAll(async () => {
+    // The production spawn path first resolves a compiled bundle via
+    // story-cache (see room-manager/save-service wiring). This test follows
+    // the same path — no `bundle_path` shortcut, no stub. Compile once for
+    // the whole describe; each beforeEach spawns fresh.
+    cacheDir = await mkdtemp(join(tmpdir(), 'gate-bundle-'));
+    process.env.STORIES_COMPILED_DIR = cacheDir;
+    bundle_path = await getCompiledBundle(STORY_PATH);
+  }, 30_000);
+
+  afterAll(async () => {
+    delete process.env.STORIES_COMPILED_DIR;
+    await rm(cacheDir, { recursive: true, force: true });
+  });
 
   beforeEach(() => {
     proc = spawnSandbox({
       room_id: 'acceptance-' + randomUUID(),
       story_file: STORY_PATH,
+      bundle_path,
       readyTimeoutMs: READY_TIMEOUT_MS,
     });
   });
@@ -149,6 +170,19 @@ describe('deno-entry integration (real Deno, real engine, real story)', () => {
 
   it('SAVE then RESTORE round-trips observable engine state', async () => {
     await waitForReady(proc!);
+
+    // Warm-up look: the first look of a session emits a one-shot story banner
+    // (title, version, credits) that is NOT re-emitted on subsequent looks in
+    // the same session. If we saved BEFORE this warm-up, the save would carry
+    // "banner already shown = false" and the post-restore look would include
+    // the banner while the post-mutation look would not — a divergence that
+    // isn't a save/restore bug, just session-state sequencing. Warm up first,
+    // then capture / save / mutate / restore / compare from a stable baseline.
+    const warmupId = 'look-warmup-' + randomUUID();
+    proc!.send({ kind: 'COMMAND', turn_id: warmupId, input: 'look' });
+    await waitForMessage<'OUTPUT'>(proc!, 'OUTPUT', {
+      filter: (m) => m.turn_id === warmupId,
+    });
 
     // Capture pre-save observable state.
     const lookBeforeId = 'look-before-' + randomUUID();

@@ -28,6 +28,7 @@ import type { SavesRepository } from '../repositories/saves.js';
 import type { SessionEventsRepository } from '../repositories/session-events.js';
 import type { StoryScanner } from '../stories/scanner.js';
 import type { SandboxRegistry, SandboxEntry } from '../sandbox/sandbox-registry.js';
+import { getCompiledBundle } from '../sandbox/story-cache.js';
 import type { TextBlock } from '../repositories/types.js';
 import type { SandboxToServerMessage } from '../wire/server-sandbox.js';
 
@@ -65,8 +66,6 @@ export interface SaveServiceDeps {
   sandboxes: SandboxRegistry;
   /** How long to wait for SAVED / RESTORED before timing out (ms). Default 30s. */
   sandboxTimeoutMs?: number;
-  /** Override the sandbox binary/args (tests use a Node stub). */
-  sandboxOverride?: { binary?: string; args?: string[] };
   /** Override the clock for auto-name timestamps (tests). */
   now?: () => Date;
 }
@@ -101,7 +100,7 @@ export function createSaveService(deps: SaveServiceDeps): SaveService {
   const sandboxTimeoutMs = deps.sandboxTimeoutMs ?? 30_000;
   const now = deps.now ?? (() => new Date());
 
-  function spawnFor(room_id: string): SandboxEntry {
+  async function spawnFor(room_id: string): Promise<SandboxEntry> {
     const room = deps.rooms.findById(room_id);
     if (!room) throw new SaveServiceError('unknown_room', `room ${room_id} not found`);
     const story = deps.stories.findBySlug(room.story_slug);
@@ -111,11 +110,11 @@ export function createSaveService(deps: SaveServiceDeps): SaveService {
         `story ${room.story_slug} not available`
       );
     }
+    const bundle_path = await getCompiledBundle(story.path);
     return deps.sandboxes.getOrSpawn({
       room_id,
       story_file: story.path,
-      binary: deps.sandboxOverride?.binary,
-      args: deps.sandboxOverride?.args,
+      bundle_path,
     });
   }
 
@@ -134,7 +133,7 @@ export function createSaveService(deps: SaveServiceDeps): SaveService {
 
   return {
     async save({ room_id, actor_id }) {
-      const entry = spawnFor(room_id);
+      const entry = await spawnFor(room_id);
       await entry.ready;
 
       const save_id = randomUUID();
@@ -228,7 +227,7 @@ export function createSaveService(deps: SaveServiceDeps): SaveService {
         );
       }
 
-      const entry = spawnFor(room_id);
+      const entry = await spawnFor(room_id);
       await entry.ready;
 
       const restored = await new Promise<{ save_id: string; text_blocks: TextBlock[] }>(

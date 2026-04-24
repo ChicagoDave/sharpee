@@ -17,10 +17,20 @@
   "dependencies": {
     "@hono/node-server": "^1.13.0",
     "better-sqlite3": "^11.3.0",
+    "esbuild": "^0.27.2",
+    "fflate": "^0.8.2",
     "hono": "^4.6.0",
     "ws": "^8.18.0",
     "yaml": "^2.6.0",
-    "@sharpee/core": "file:../../packages/core"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/plugin-npc": "workspace:*",
+    "@sharpee/plugin-scheduler": "workspace:*",
+    "@sharpee/plugin-state-machine": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
