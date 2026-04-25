@@ -11,6 +11,7 @@
  * - ActionInterceptor: Hooks into phases, action owns core logic (ENTER, PUT)
  */
 
+import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity } from '../entities';
 import { WorldModel } from '../world';
 import { CapabilityEffect } from './types';
@@ -36,6 +37,135 @@ export interface InterceptorResult {
   error?: string;
   /** Additional context for error messages */
   params?: Record<string, unknown>;
+}
+
+/**
+ * Result returned by `ActionInterceptor.postReport` (ISSUE-074).
+ *
+ * Distinguishes two semantically different intents that the old
+ * entity-`on` system collapsed onto a single `Effect[]` shape:
+ *
+ * 1. `override` — replace the primary domain event's `messageId`
+ *    (and optional params). Use when the interceptor's narration
+ *    *substitutes* for the action's standard message. Example: rug push
+ *    reveals the trap door — the rug-reveal text replaces the generic
+ *    "you give the rug a push" line.
+ *
+ * 2. `emit` — additional events to render alongside the action's
+ *    standard ones. Use for side-channel narration (multi-line
+ *    consequences) or events that are not message overrides.
+ *
+ * Both fields are optional and independent. Return `{}` (or simply
+ * an empty object literal) when the interceptor has nothing to do.
+ *
+ * Mirrors the override semantic that `event-processor.invokeEntityHandlers()`
+ * applies to single `game.message` reactions from story-level handlers
+ * (ADR-106), making the same intent explicit at the interceptor contract.
+ *
+ * @see applyInterceptorReportResult
+ */
+export interface InterceptorReportResult {
+  /** Override the primary domain event's messageId (and optional params/text).
+   *
+   *  - `messageId`: replaces the primary event's `data.messageId`.
+   *  - `params` (optional): replaces the primary event's `data.params`.
+   *  - `text` (optional): replaces the primary event's `data.text`. Used
+   *    when the interceptor has a pre-rendered string and wants the
+   *    text-service to fall back to it if `messageId` doesn't resolve
+   *    to a language template (mirrors the inline-text fallback in
+   *    `event-processor.ts`'s entity-handler override path).
+   *
+   *  Multiple interceptors returning `override` for the same action is a
+   *  hard error mirroring ADR-106's "multiple game.message reactions" rule. */
+  override?: {
+    messageId: string;
+    params?: Record<string, unknown>;
+    text?: string;
+  };
+
+  /** Emit additional events alongside the action's standard events. */
+  emit?: CapabilityEffect[];
+}
+
+/**
+ * Minimal context shape required by `applyInterceptorReportResult`.
+ *
+ * Real action contexts (both the engine's closure-based factory and the
+ * stdlib's class-based `EnhancedActionContext`) satisfy this structurally
+ * by exposing `event(type, data)`. Passing the *context object* — rather
+ * than an unbound `context.event` callback — preserves `this` for the
+ * class-based implementation, which would otherwise crash inside
+ * `createEventInternal`. Callers cannot forget to bind because there is
+ * nothing to bind.
+ */
+export interface InterceptorEventContext {
+  event(type: string, data: Record<string, any>): ISemanticEvent;
+}
+
+/**
+ * Apply an interceptor's `postReport` result to an action's emitted events.
+ *
+ * - If `result.override` is set, copies `messageId` (and optional `params`/`text`)
+ *   onto the data of the event whose type matches `primaryEventType`.
+ * - If `result.emit` is set, converts each effect to an `ISemanticEvent`
+ *   via `context.event(...)` and appends to `events`.
+ *
+ * The action's `report()` phase is responsible for calling this helper
+ * with the events array it has built so far, the event type that
+ * carries the standard message (e.g. `'if.event.pushed'`), and the
+ * action context whose `event(...)` method produces events with proper
+ * entity bindings.
+ *
+ * @param events - The action's events array; mutated in place.
+ * @param primaryEventType - The event type whose `messageId` an `override`
+ *                           should replace (e.g. `'if.event.pushed'`).
+ * @param result - The value returned from `interceptor.postReport`.
+ * @param context - The action context (any object exposing
+ *                  `event(type, data)`).
+ *
+ * @example
+ * ```typescript
+ * // In the pushing action's report() phase, after pushing the standard
+ * // if.event.pushed onto events:
+ * if (interceptor?.postReport) {
+ *   const result = interceptor.postReport(target, world, actorId, interceptorData);
+ *   applyInterceptorReportResult(events, 'if.event.pushed', result, context);
+ * }
+ * ```
+ */
+export function applyInterceptorReportResult(
+  events: ISemanticEvent[],
+  primaryEventType: string,
+  result: InterceptorReportResult,
+  context: InterceptorEventContext
+): void {
+  if (result.override) {
+    const primary = events.find((e) => e.type === primaryEventType);
+    if (primary) {
+      const data = primary.data as Record<string, unknown>;
+      data.messageId = result.override.messageId;
+      if (result.override.params) {
+        data.params = result.override.params;
+      }
+      if (result.override.text) {
+        data.text = result.override.text;
+      }
+    } else {
+      // Defensive: an interceptor asked for an override but the action
+      // didn't emit a primary event of that type. Either the action's
+      // contract changed or the interceptor is misconfigured.
+      console.warn(
+        `applyInterceptorReportResult: override requested for primary event type ` +
+        `"${primaryEventType}" but no event of that type was found in the events array.`
+      );
+    }
+  }
+
+  if (result.emit) {
+    for (const effect of result.emit) {
+      events.push(context.event(effect.type, effect.payload));
+    }
+  }
 }
 
 /**
@@ -160,14 +290,37 @@ export interface ActionInterceptor {
   /**
    * Called AFTER standard report.
    *
-   * Return additional effects to emit after the standard effects.
-   * Return empty array if no additional effects needed.
+   * Return an `InterceptorReportResult` that declares either:
+   * - `override`: replace the primary domain event's `messageId` (so the
+   *   interceptor's narration *substitutes* for the standard message), or
+   * - `emit`: additional events to render alongside the standard ones, or
+   * - both, or neither (return `{}` for no-op).
+   *
+   * Use `override` when the interceptor's message should *replace* the
+   * action's default text. Use `emit` for side-channel narration or
+   * non-message events.
+   *
+   * The action's `report()` phase applies the result via
+   * `applyInterceptorReportResult` (see helper below).
    *
    * @example
-   * // Add glacier melting message
+   * // Override: rug push reveals trap door — the rug-reveal text
+   * // replaces the generic "you give the rug a push" message.
    * postReport(entity, world, actorId, sharedData) {
-   *   if (!sharedData.melted) return [];
-   *   return [createEffect('dungeo.glacier.melted', { messageId: 'dungeo.glacier.melts' })];
+   *   if (!sharedData.rugRevealed) return {};
+   *   return { override: { messageId: 'dungeo.rug.moved.reveal_trapdoor' } };
+   * }
+   *
+   * @example
+   * // Emit: ghost ritual narrates two consecutive lines.
+   * postReport(entity, world, actorId, sharedData) {
+   *   if (!sharedData.ritualCompleted) return {};
+   *   return {
+   *     emit: [
+   *       createEffect('game.message', { messageId: 'dungeo.ghost.appears' }),
+   *       createEffect('game.message', { messageId: 'dungeo.ghost.canvas_spawns' })
+   *     ]
+   *   };
    * }
    */
   postReport?(
@@ -175,7 +328,7 @@ export interface ActionInterceptor {
     world: WorldModel,
     actorId: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[];
+  ): InterceptorReportResult;
 
   /**
    * Called when action is blocked (validation failed).

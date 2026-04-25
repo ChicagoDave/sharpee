@@ -16,7 +16,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
-  CapabilityEffect,
+  InterceptorReportResult,
   createEffect,
   IFEntity,
   WorldModel
@@ -101,23 +101,26 @@ export const GhostRitualDroppingInterceptor: ActionInterceptor = {
   },
 
   /**
-   * Post-report: Add ghost appearance message.
+   * Post-report: Emit ghost appearance and canvas-spawn narration as
+   * additional events alongside the standard drop confirmation. Two
+   * distinct beats — emit, not override.
    */
   postReport(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] {
-    if (!sharedData.ritualCompleted) return [];
-
-    return [
-      createEffect('game.message', {
-        messageId: GhostRitualInterceptorMessages.GHOST_APPEARS
-      }),
-      createEffect('game.message', {
-        messageId: GhostRitualInterceptorMessages.CANVAS_SPAWNS
-      })
-    ];
+  ): InterceptorReportResult {
+    if (!sharedData.ritualCompleted) return {};
+    return {
+      emit: [
+        createEffect('game.message', {
+          messageId: GhostRitualInterceptorMessages.GHOST_APPEARS,
+        }),
+        createEffect('game.message', {
+          messageId: GhostRitualInterceptorMessages.CANVAS_SPAWNS,
+        }),
+      ],
+    };
   }
 };

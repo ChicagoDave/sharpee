@@ -24,7 +24,8 @@ import {
   IDropItemResult,
   IFEntity,
   getInterceptorForAction,
-  InterceptorSharedData
+  InterceptorSharedData,
+  applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
@@ -416,13 +417,13 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     ];
 
     // === POST-REPORT HOOK ===
+    // Apply interceptor's override (replaces if.event.dropped.messageId)
+    // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport) {
-      const additionalEffects = interceptor.postReport(noun, context.world, actor.id, interceptorData);
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
+      const result = interceptor.postReport(noun, context.world, actor.id, interceptorData);
+      applyInterceptorReportResult(events, 'if.event.dropped', result, context);
     }
 
     return events;

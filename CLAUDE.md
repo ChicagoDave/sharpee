@@ -120,6 +120,20 @@ The right approach: Sharpee already has **Capability Dispatch (ADR-090)** where 
 
 If all four are "no," then discuss a platform change. Usually the architecture already supports what you need.
 
+### Migration Audits Enumerate Emissions, Not Just Mutations
+
+When migrating an entity `on` handler to a capability behavior or action interceptor, the audit must document, for each handler:
+
+1. **State it mutates** — world entities, traits, attributes.
+2. **Events it emits, and the semantic each carries** — override-the-primary-message vs append; single message vs multi-line narration; side-effect events vs message reactions.
+3. **What the dispatch layer did with those emissions** in the old system — consumed as override, forwarded to text-service, processed as a reaction.
+
+Migrate each responsibility explicitly. If the new pattern has no equivalent for one of them, flag the gap before committing.
+
+The failure mode this prevents: ISSUE-074 / ADR-157. The rug `on['if.event.pushed']` returned a single `game.message`, which the OLD `event-processor.invokeEntityHandlers()` consumed as an override on the original `if.event.pushed.messageId`. ISSUE-068 migrated the rug to an interceptor with the same `Effect[]` return shape, but the interceptor invocation path appends rather than overrides. The override responsibility was silently dropped, and the player saw both the standard "you give the rug a push" line *and* the rug-reveal line. The walkthrough used `[OK: contains "trap door"]`, so the regression was invisible to the test baseline.
+
+The substitution `Effect[]` ↔ `CapabilityEffect[]` is rarely purely structural. Don't assume it is.
+
 ### Story Organization Pattern
 
 Stories are organized by **regions**, with each region as a folder containing:

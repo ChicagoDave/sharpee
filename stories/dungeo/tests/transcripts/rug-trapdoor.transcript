@@ -26,9 +26,13 @@ description: Test moving the rug to reveal the trap door and descending to the C
 [OK: contains "rug"]
 
 # Move the rug to reveal trap door
-# Note: game.message events are consumed as overrides (copied to if.event.pushed messageId)
+# Note: ISSUE-074 — interceptor's override semantic replaces the standard
+# pushing.pushed_nudged messageId with the rug-reveal message. The
+# "doesn't move far" assertion below is the regression baseline that
+# would have caught the double-rendering bug post-cleanup.
 > push rug
 [OK: contains "Moving the rug reveals a trap door"]
+[OK: not contains "doesn't move far"]
 [EVENT: true, type="if.event.pushed"]
 [EVENT: false, type="if.event.destroyed"]
 [STATE: true, y08.location = r06]

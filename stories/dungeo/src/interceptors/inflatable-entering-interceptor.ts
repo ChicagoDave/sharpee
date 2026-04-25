@@ -15,8 +15,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
-  CapabilityEffect,
-  createEffect,
+  InterceptorReportResult,
   IFEntity,
   WorldModel,
   IdentityTrait,
@@ -144,23 +143,22 @@ export const InflatableEnteringInterceptor: ActionInterceptor = {
   },
 
   /**
-   * Post-report: Add puncture message to output.
+   * Post-report: Override the standard enter message with the puncture
+   * narration. Player has been ejected back outside, so the standard
+   * "you enter" text would be misleading — replace it.
    */
   postReport(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] {
-    if (!sharedData.punctured) {
-      return [];
-    }
-
-    return [
-      createEffect('game.message', {
+  ): InterceptorReportResult {
+    if (!sharedData.punctured) return {};
+    return {
+      override: {
         messageId: 'dungeo.boat.punctured',
-        params: { item: sharedData.punctureItemName }
-      })
-    ];
+        params: { item: sharedData.punctureItemName as string },
+      },
+    };
   }
 };

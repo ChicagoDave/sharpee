@@ -19,6 +19,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
+  InterceptorReportResult,
   IFEntity,
   WorldModel,
   IdentityTrait,
@@ -454,35 +455,38 @@ export const MeleeInterceptor: ActionInterceptor = {
   },
 
   /**
-   * POST-REPORT: Emit the canonical melee message as a game.message event.
+   * POST-REPORT: Override the standard if.event.attacked message with the
+   * canonical melee blow narration, and emit any villain death messages
+   * (e.g. thief's "black fog" / "booty remains") as additional events.
    */
   postReport(
     _villain: IFEntity,
     _world: WorldModel,
     _actorId: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] {
-    const effects: CapabilityEffect[] = [];
+  ): InterceptorReportResult {
+    const result: InterceptorReportResult = {};
 
     const message = sharedData.meleeMessage as string | undefined;
     if (message) {
-      effects.push(
-        createEffect('game.message', {
-          messageId: MeleeMessages.HERO_ATTACK,
-          text: message,
-        }),
-      );
+      // Pre-rendered combat string flows through the text-service's
+      // inline-text fallback path when MeleeMessages.HERO_ATTACK has
+      // no language template.
+      result.override = {
+        messageId: MeleeMessages.HERO_ATTACK,
+        text: message,
+      };
     }
 
     // Emit villain death messages (e.g., thief's "black fog" / "booty remains")
     const deathMessages = sharedData.deathMessages as string[] | undefined;
-    if (deathMessages) {
-      for (const text of deathMessages) {
-        effects.push(createEffect('game.message', { text }));
-      }
+    if (deathMessages && deathMessages.length > 0) {
+      result.emit = deathMessages.map((text) =>
+        createEffect('game.message', { text }),
+      );
     }
 
-    return effects;
+    return result;
   },
 
   /**

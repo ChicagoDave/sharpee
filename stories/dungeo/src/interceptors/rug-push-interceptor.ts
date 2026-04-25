@@ -16,14 +16,13 @@
 import {
   ActionInterceptor,
   InterceptorSharedData,
+  InterceptorReportResult,
   IFEntity,
   WorldModel,
   PushableTrait,
   RoomBehavior,
   Direction,
   TraitType,
-  createEffect,
-  CapabilityEffect,
 } from '@sharpee/world-model';
 import { RugTrait } from '../traits/rug-trait';
 
@@ -78,22 +77,22 @@ export const RugPushInterceptor: ActionInterceptor = {
   },
 
   /**
-   * POST-REPORT: Emit the trapdoor reveal message.
+   * POST-REPORT: Override the standard pushed_nudged message with the
+   * trapdoor reveal text. The rug-reveal message *replaces* the generic
+   * "you give the rug a push" line — pre-cleanup behavior matching MDL.
    */
   postReport(
     _entity: IFEntity,
     _world: WorldModel,
     _actorId: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] {
+  ): InterceptorReportResult {
     if (!sharedData.rugRevealed) {
-      return [];
+      return {};
     }
 
-    return [
-      createEffect('game.message', {
-        messageId: RugPushMessages.REVEAL_TRAPDOOR,
-      }),
-    ];
+    return {
+      override: { messageId: RugPushMessages.REVEAL_TRAPDOOR },
+    };
   },
 };

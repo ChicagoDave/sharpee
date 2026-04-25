@@ -23,7 +23,8 @@ import {
   VisibilityBehavior,
   getInterceptorForAction,
   ActionInterceptor,
-  InterceptorSharedData
+  InterceptorSharedData,
+  applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -349,15 +350,15 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     }
 
     // === POST-REPORT HOOK ===
+    // Apply interceptor's override (replaces if.event.switched_on.messageId)
+    // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport) {
       const noun = context.command.directObject?.entity;
       if (noun) {
-        const additionalEffects = interceptor.postReport(noun, context.world, context.player.id, interceptorData);
-        for (const effect of additionalEffects) {
-          events.push(context.event(effect.type, effect.payload));
-        }
+        const result = interceptor.postReport(noun, context.world, context.player.id, interceptorData);
+        applyInterceptorReportResult(events, 'if.event.switched_on', result, context);
       }
     }
 

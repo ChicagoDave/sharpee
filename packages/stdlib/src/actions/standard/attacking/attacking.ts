@@ -23,7 +23,8 @@ import {
   getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
-  createEffect
+  createEffect,
+  applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { AttackedEventData } from './attacking-events';
@@ -473,13 +474,13 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     // === POST-REPORT HOOK ===
     // Run before death/knockout events so attack blow text renders
     // before consequence messages (e.g., troll disappearance smoke).
+    // See ISSUE-074: postReport may override the if.event.attacked
+    // messageId or emit additional narration events.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport) {
-      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
+      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      applyInterceptorReportResult(events, 'if.event.attacked', result, context);
     }
 
     // For killed targets, emit a death event

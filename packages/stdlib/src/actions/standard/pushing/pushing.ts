@@ -23,7 +23,8 @@ import {
   SwitchableTrait,
   SwitchableBehavior,
   getInterceptorForAction,
-  InterceptorSharedData
+  InterceptorSharedData,
+  applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
@@ -327,15 +328,13 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     }));
 
     // === POST-REPORT HOOK ===
-    // Called after standard report - can add additional effects
+    // Apply interceptor's override (replaces if.event.pushed.messageId)
+    // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport) {
-      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      // Convert CapabilityEffects to ISemanticEvents
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
+      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      applyInterceptorReportResult(events, 'if.event.pushed', result, context);
     }
 
     return events;

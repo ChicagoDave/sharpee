@@ -67,7 +67,10 @@ export {
 export {
   ActionInterceptor,
   InterceptorSharedData,
-  InterceptorResult
+  InterceptorResult,
+  InterceptorReportResult,
+  InterceptorEventContext,
+  applyInterceptorReportResult
 } from './action-interceptor';
 
 // Interceptor registry
