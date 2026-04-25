@@ -325,6 +325,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       events.push(context.event('if.event.room.description', {
         // Rendering data (messageId + params for text-service)
         messageId: 'if.action.looking.room_description',
+        // ADR-158 exception: room titles render proper-style ("Living Room",
+        // "West of House") and are not articled — pass bare name string,
+        // not EntityInfo. The looking template uses {name}, not {the:cap:name}.
         params: {
           name: room.name,
           description: room.description
