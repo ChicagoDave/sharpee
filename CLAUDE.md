@@ -30,6 +30,7 @@ CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any dec
 - stdlib: Define message IDs in `*-messages.ts` files
 - lang-en-us: Provide actual text via message ID → string/function mapping
 - Never hardcode English strings in engine, stdlib, or world-model
+- **Entity-valued template parameters pass `entityInfoFrom(entity)`, not `entity.name`** (ADR-158). Bare strings strip the `nounType`/`properName`/`article` metadata the formatter chain (`{the:cap:item}`, `{a:item}`, `{some:item}`) needs to choose the correct article. Use the formatter chain at sentence-start positions in templates.
 
 ### Parser vs Language Layer
 

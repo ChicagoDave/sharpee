@@ -1,6 +1,6 @@
 # ADR-158: Entity-Valued Message Params Carry `EntityInfo`, Not Bare Names
 
-## Status: PROPOSAL
+## Status: ACCEPTED
 
 ## Date: 2026-04-24
 
@@ -127,6 +127,25 @@ See `docs/work/lang-articles/plan-20260424-the-cap-migration.md` for the four-ph
 3. Per-action rollout, one commit per action
 4. Lock-in — guardrail test + CLAUDE.md rule + this ADR merged
 
+## Implementation Outcome
+
+Phase 3 rollout completed 2026-04-24 across three sessions on the `lang-articles-migration` branch. **26 stdlib actions migrated**, one commit per action:
+
+- Sessions 1–2 (commit 6345c7dc + 54b38cdc + bc8ae0d5): taking, pushing, pulling, opening, closing, locking, unlocking, switching_on, switching_off, examining, putting (+ lock-shared, examining-data shared helpers).
+- Session 3 (bc8ae0d5): inserting, removing, entering, exiting, throwing, attacking, giving, showing, smelling, listening, touching, dropping (+ dropping-data).
+- Session 4 (commits f0181bd9–4a8e472c): talking, climbing, searching, wearing, reading, eating, drinking, taking_off, going (+ wearable-shared, searching-helpers shared helpers).
+
+**Patterns that emerged during implementation** (codified for future migrations):
+
+- **Shared helpers migrate alongside their consumers.** `lock-shared.ts`, `examining-data.ts`, `dropping-data.ts`, `searching-helpers.ts`, `wearable-shared.ts` all hold `params:` shapes consumed by their action(s); migrating one without the other leaves mixed shapes within a single logical unit.
+- **Diverged params shape from top-level event data.** Where actions previously used `...params` spread into top-level event data, the spread had to be replaced with explicit shape declarations: `params` carries `EntityInfo` for the formatter chain while top-level event fields (`itemId`, `itemName`, `targetId`, `targetName`) remain strings for handler consumption.
+- **Re-derive the entity in `report()` when only a name string is in shared data.** Pattern: `const noun = context.command.directObject?.entity; params: { item: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } }`. Avoids enlarging `SharedData` per-action.
+- **Validate-path returns must carry `params`** when the lang template references the entity. The `taking_off` migration caught a pre-existing rendering gap where validate-path returns had no `params` and the template's `{item}` would have rendered unresolved.
+- **Multi-take label patterns left unchanged.** `taken_multi` ("`{item}: Taken.`") uses the IF list-label convention; applying `{the:cap:item}` would produce "The sword: Taken." (wrong). Formatter falls through to `EntityInfo.name` when no article formatter is applied — backward compatible.
+- **Combat-path strings deferred.** `attacking`'s `combat.*` templates intentionally retained `{targetName}` (bare string). `CombatService` passes a string, not an `EntityInfo`; that migration is a separate task tracked outside this branch.
+
+**Verification:** every migrated action passes its `*-golden.test.ts` in isolation. Regression transcripts (article-rendering, rug-trapdoor) green throughout. Full Dungeo walkthrough chain RNG-variable due to thief-combat noise; not a regression introduced by this branch.
+
 ## Session
 
-`session-20260424-2042-main.md` (bug diagnosis and plan draft) → `session-…-lang-articles-migration.md` (implementation).
+`session-20260424-2042-main.md` (bug diagnosis and plan draft) → `session-20260424-2158-lang-articles-migration.md` (Sessions 1–3) → `session-20260424-2329-lang-articles-migration.md` (Session 4 + Phase 4 finalization).
