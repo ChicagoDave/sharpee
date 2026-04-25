@@ -16,6 +16,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ReadableTrait } from '@sharpee/world-model';
+import { entityInfoFrom } from '../../../utils';
 import {
   ReadingEventData,
   createReadingEvent
@@ -89,7 +90,7 @@ export const reading: Action = {
       return {
         valid: false,
         error: 'not_readable',
-        params: { item: String(target.attributes.name || 'that') }
+        params: { item: entityInfoFrom(target) }
       };
     }
 
@@ -99,7 +100,7 @@ export const reading: Action = {
         valid: false,
         error: 'cannot_read_now',
         params: {
-          item: String(target.attributes.name || 'that'),
+          item: entityInfoFrom(target),
           reason: readable.cannotReadMessage || 'cannot_read_now'
         }
       };
@@ -162,8 +163,9 @@ export const reading: Action = {
       messageId = 'read_inscription';
     }
 
+    // params carry EntityInfo for the formatter chain (ADR-158)
     const params: Record<string, any> = {
-      item: String(target.attributes.name || 'something'),
+      item: entityInfoFrom(target),
       text: eventData.text
     };
 
@@ -183,7 +185,8 @@ export const reading: Action = {
     return [context.event('if.event.read', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { item: target?.name, ...result.params },
+      // params carry EntityInfo for the formatter chain (ADR-158)
+      params: { item: target ? entityInfoFrom(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name
