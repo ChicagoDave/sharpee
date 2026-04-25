@@ -36,6 +36,7 @@ import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { buildEventData } from '../../data-builder-types';
 import { GoingMessages } from './going-messages';
+import { entityInfoFrom } from '../../../utils';
 
 // Import our data builders
 import {
@@ -131,7 +132,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: GoingMessages.NOT_IN_ROOM,
-          params: { vehicle: walkCheck.vehicle?.name }
+          params: { vehicle: walkCheck.vehicle ? entityInfoFrom(walkCheck.vehicle) : undefined }
         };
       }
       // In a vehicle that allows walking (boat, etc.) - get the containing room
@@ -220,7 +221,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
             valid: false,
             error: GoingMessages.DOOR_LOCKED,
             params: {
-              door: door.name,
+              door: entityInfoFrom(door),
               direction: direction,
               isClosed: isClosed,
               isLocked: true
@@ -232,7 +233,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           return {
             valid: false,
             error: GoingMessages.DOOR_CLOSED,
-            params: { door: door.name, direction: direction }
+            params: { door: entityInfoFrom(door), direction: direction }
           };
         }
       }
