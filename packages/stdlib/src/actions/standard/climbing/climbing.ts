@@ -18,6 +18,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -127,7 +128,8 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.climbed', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { target: target?.name, ...result.params },
+      // params carry EntityInfo for the formatter chain (ADR-158)
+      params: { target: target ? entityInfoFrom(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name,
@@ -166,9 +168,11 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       }
     } else {
       // Object climbing - emit climbed event with messageId for text rendering
+      // params carry EntityInfo for the formatter chain (ADR-158)
+      const target = context.command.directObject?.entity;
       events.push(context.event('if.event.climbed', {
         messageId: `${context.action.id}.climbed_onto`,
-        params: { target: sharedData.targetName },
+        params: { target: target ? entityInfoFrom(target) : { name: sharedData.targetName ?? '' } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         method: 'onto'
@@ -241,13 +245,13 @@ function validateObjectClimbing(
   }
 
   if (!isClimbable) {
-    return { valid: false, error: 'not_climbable', params: { object: target.name } };
+    return { valid: false, error: 'not_climbable', params: { object: entityInfoFrom(target) } };
   }
 
   // Check if already on/in the target
   const currentLocation = context.world.getLocation(context.player.id);
   if (currentLocation === target.id) {
-    return { valid: false, error: 'already_there', params: { place: target.name } };
+    return { valid: false, error: 'already_there', params: { place: entityInfoFrom(target) } };
   }
 
   return { valid: true };

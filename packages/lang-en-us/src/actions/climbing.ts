@@ -27,12 +27,13 @@ export const climbingLanguage = {
   
   messages: {
     'no_target': "What do {you} want to climb?",
-    'not_climbable': "{You} {can't} climb {object}.",
+    'not_climbable': "{You} {can't} climb {the:object}.",
     'cant_go_that_way': "{You} {can't} climb {direction} from here.",
     'climbed_up': "{You} {climb} up.",
     'climbed_down': "{You} {climb} down.",
-    'climbed_onto': "{You} {climb} onto {object}.",
-    'already_there': "{You're} already on {place}.",
+    // Note: success path passes `target` param, not `object`. Keep {target}.
+    'climbed_onto': "{You} {climb} onto {the:target}.",
+    'already_there': "{You're} already on {the:place}.",
     'too_high': "That's too high to climb.",
     'too_dangerous': "That looks too dangerous to climb.",
     'need_equipment': "{You}'d need climbing equipment for that.",

@@ -277,7 +277,7 @@ describe('climbingAction (Golden Pattern)', () => {
       // Should emit CLIMBED event with messageId for text rendering
       expectEvent(events, 'if.event.climbed', {
         messageId: 'if.action.climbing.climbed_onto',
-        params: { target: 'oak tree' },
+        params: { target: { name: 'oak tree' } },
         targetId: tree.id,
         method: 'onto'
       });
