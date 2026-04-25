@@ -18,7 +18,7 @@ export const waitingLanguage = {
     'nothing_happens': "{You} {wait}. Nothing happens.",
 
     // Contextual waiting
-    'waited_in_vehicle': "{You} {wait} in {vehicle}.",
+    'waited_in_vehicle': "{You} {wait} in {the:vehicle}.",
     'waited_for_event': "{You} {wait} for something to happen.",
     'waited_anxiously': "{You} {wait} anxiously.",
     'waited_briefly': "{You} {wait} for a moment.",
