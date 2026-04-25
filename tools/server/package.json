@@ -16,12 +16,6 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
-    "better-sqlite3": "^11.3.0",
-    "esbuild": "^0.27.2",
-    "fflate": "^0.8.2",
-    "hono": "^4.6.0",
-    "ws": "^8.18.0",
-    "yaml": "^2.6.0",
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
@@ -30,7 +24,14 @@
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/world-model": "workspace:*",
+    "argon2": "^0.44.0",
+    "better-sqlite3": "^11.3.0",
+    "esbuild": "^0.27.2",
+    "fflate": "^0.8.2",
+    "hono": "^4.6.0",
+    "ws": "^8.18.0",
+    "yaml": "^2.6.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",

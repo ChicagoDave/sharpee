@@ -17,6 +17,7 @@ import type { Hono } from 'hono';
 import type { Database } from 'better-sqlite3';
 import type { RoomsRepository } from '../../repositories/rooms.js';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
+import type { IdentitiesRepository } from '../../repositories/identities.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
 import type { CaptchaVerifier } from '../middleware/captcha.js';
 import { HttpError } from '../middleware/error-envelope.js';
@@ -26,6 +27,7 @@ export interface JoinRoomDeps {
   db: Database;
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
+  identities: IdentitiesRepository;
   sessionEvents: SessionEventsRepository;
   captcha: CaptchaVerifier;
 }
@@ -38,6 +40,7 @@ export interface JoinRoomResponse {
 
 interface JoinBody {
   display_name?: unknown;
+  identity_id?: unknown;
   captcha_token?: unknown;
 }
 
@@ -51,10 +54,16 @@ export function registerJoinRoomRoute(app: Hono, deps: JoinRoomDeps): void {
     if (!body) throw new HttpError(400, 'bad_request', 'JSON body required');
 
     const display_name = typeof body.display_name === 'string' ? body.display_name.trim() : '';
+    const identity_id = typeof body.identity_id === 'string' ? body.identity_id : '';
     const captchaToken = typeof body.captcha_token === 'string' ? body.captcha_token : undefined;
     if (!display_name) throw new HttpError(400, 'missing_field', 'display_name is required');
+    if (!identity_id) throw new HttpError(400, 'missing_field', 'identity_id is required');
 
     await deps.captcha.verify(captchaToken);
+
+    if (!deps.identities.findById(identity_id)) {
+      throw new HttpError(404, 'unknown_identity', 'no identity with that id');
+    }
 
     const presented = parseBearer(c.req.header('authorization'));
     if (presented) {
@@ -70,6 +79,7 @@ export function registerJoinRoomRoute(app: Hono, deps: JoinRoomDeps): void {
     const tx = deps.db.transaction(() => {
       const participant = deps.participants.createOrReconnect({
         room_id,
+        identity_id,
         token,
         display_name,
       });

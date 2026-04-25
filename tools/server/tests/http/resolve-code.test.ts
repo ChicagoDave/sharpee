@@ -20,6 +20,7 @@ async function createRoom(app: TestAppHandle) {
       story_slug: 'zork',
       title: 'Beta',
       display_name: 'Alice',
+      identity_id: app.seedIdentity(),
       captcha_token: 'stub',
     }),
   });

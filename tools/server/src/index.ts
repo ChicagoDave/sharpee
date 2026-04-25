@@ -20,11 +20,13 @@ import { openDatabase } from './db/connection.js';
 import { createApp } from './http/app.js';
 import { createRoomsRepository } from './repositories/rooms.js';
 import { createParticipantsRepository } from './repositories/participants.js';
+import { createIdentitiesRepository } from './repositories/identities.js';
 import { createSessionEventsRepository } from './repositories/session-events.js';
 import { createSavesRepository } from './repositories/saves.js';
 import { createStoryScanner } from './stories/scanner.js';
 import { createStoryHealth } from './stories/story-health.js';
 import { createCaptchaVerifier } from './http/middleware/captcha.js';
+import { createHashService } from './auth/hash-service.js';
 import { createWsServer } from './ws/server.js';
 import { createConnectionManager } from './ws/connection-manager.js';
 import { createSandboxRegistry } from './sandbox/sandbox-registry.js';
@@ -47,10 +49,12 @@ async function main(): Promise<void> {
 
   const rooms = createRoomsRepository(db);
   const participants = createParticipantsRepository(db);
+  const identities = createIdentitiesRepository(db);
   const sessionEvents = createSessionEventsRepository(db);
   const saves = createSavesRepository(db);
   const stories = createStoryScanner(config.storage.storiesDir);
   const captcha = createCaptchaVerifier({ config });
+  const hashService = createHashService();
 
   const sandboxes = createSandboxRegistry();
   const connections = createConnectionManager();
@@ -78,6 +82,8 @@ async function main(): Promise<void> {
     db,
     rooms,
     participants,
+    identities,
+    hashService,
     sessionEvents,
     stories,
     storyHealth,
@@ -90,6 +96,8 @@ async function main(): Promise<void> {
     db,
     rooms,
     participants,
+    identities,
+    hashService,
     saves,
     sessionEvents,
     connections,

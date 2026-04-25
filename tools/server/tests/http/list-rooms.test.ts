@@ -32,6 +32,7 @@ function createRoom(
         story_slug: overrides.story_slug ?? 'zork',
         title: overrides.title ?? 'Test Room',
         display_name: overrides.display_name ?? 'Alice',
+        identity_id: app.seedIdentity(),
         captcha_token: 'stub',
       }),
     })
@@ -103,22 +104,24 @@ describe('GET /api/rooms', () => {
     const created = await createRoom(app);
 
     // PH is connected by default (count == 1). Insert two more participants:
-    // one connected, one disconnected.
+    // one connected, one disconnected. Each needs a distinct identity (ADR-159).
     const now = new Date().toISOString();
+    const idBob = app.seedIdentity();
+    const idCarol = app.seedIdentity();
     app.db
       .prepare(
-        `INSERT INTO participants (participant_id, room_id, token, display_name, tier,
+        `INSERT INTO participants (participant_id, room_id, identity_id, token, display_name, tier,
                                    muted, connected, is_successor, joined_at)
-         VALUES (?, ?, ?, ?, 'participant', 0, 1, 0, ?)`,
+         VALUES (?, ?, ?, ?, ?, 'participant', 0, 1, 0, ?)`,
       )
-      .run('conn-2', created.room_id, 'tok-2', 'Bob', now);
+      .run('conn-2', created.room_id, idBob, 'tok-2', 'Bob', now);
     app.db
       .prepare(
-        `INSERT INTO participants (participant_id, room_id, token, display_name, tier,
+        `INSERT INTO participants (participant_id, room_id, identity_id, token, display_name, tier,
                                    muted, connected, is_successor, joined_at)
-         VALUES (?, ?, ?, ?, 'participant', 0, 0, 0, ?)`,
+         VALUES (?, ?, ?, ?, ?, 'participant', 0, 0, 0, ?)`,
       )
-      .run('disc-3', created.room_id, 'tok-3', 'Carol', now);
+      .run('disc-3', created.room_id, idCarol, 'tok-3', 'Carol', now);
 
     const res = await app.fetch('/api/rooms');
     const body = (await res.json()) as {

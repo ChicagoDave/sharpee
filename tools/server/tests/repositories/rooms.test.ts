@@ -19,6 +19,7 @@ import type { Database } from 'better-sqlite3';
 import { openTestDb } from '../helpers/test-db.js';
 import { createRoomsRepository } from '../../src/repositories/rooms.js';
 import { createParticipantsRepository } from '../../src/repositories/participants.js';
+import { createIdentitiesRepository } from '../../src/repositories/identities.js';
 import { createSessionEventsRepository } from '../../src/repositories/session-events.js';
 import { createSavesRepository } from '../../src/repositories/saves.js';
 
@@ -106,11 +107,18 @@ describe('RoomsRepository', () => {
   it('delete cascades to participants, session_events, saves atomically; join code is freed', () => {
     const rooms = createRoomsRepository(db);
     const participants = createParticipantsRepository(db);
+    const identities = createIdentitiesRepository(db);
     const events = createSessionEventsRepository(db);
     const saves = createSavesRepository(db);
 
+    const identity = identities.create({ username: 'alice', secret_hash: 'h' });
     const room = rooms.create({ title: 'Doomed', story_slug: 's', primary_host_id: 'p1' });
-    const p = participants.createOrReconnect({ room_id: room.room_id, token: 't1', display_name: 'Alice' });
+    const p = participants.createOrReconnect({
+      room_id: room.room_id,
+      identity_id: identity.identity_id,
+      token: 't1',
+      display_name: 'Alice',
+    });
     events.append({
       room_id: room.room_id,
       participant_id: p.participant_id,

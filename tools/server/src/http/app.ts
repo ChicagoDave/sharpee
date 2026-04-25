@@ -14,25 +14,37 @@ import type { Database } from 'better-sqlite3';
 import type { Config } from '../config.js';
 import type { RoomsRepository } from '../repositories/rooms.js';
 import type { ParticipantsRepository } from '../repositories/participants.js';
+import type { IdentitiesRepository } from '../repositories/identities.js';
 import type { SessionEventsRepository } from '../repositories/session-events.js';
 import type { StoryScanner } from '../stories/scanner.js';
 import type { StoryHealth } from '../stories/story-health.js';
 import type { ConnectionManager } from '../ws/connection-manager.js';
 import type { CaptchaVerifier } from './middleware/captcha.js';
+import type { HashService } from '../auth/hash-service.js';
 import { installErrorEnvelope } from './middleware/error-envelope.js';
 import { installStaticSpa } from './middleware/static-spa.js';
+import { createRateLimiter, rateLimitMiddleware } from './middleware/rate-limit.js';
 import { registerCreateRoomRoute } from './routes/create-room.js';
 import { registerJoinRoomRoute } from './routes/join-room.js';
 import { registerRenameRoomRoute } from './routes/rename-room.js';
 import { registerResolveCodeRoute } from './routes/resolve-code.js';
 import { registerListStoriesRoute } from './routes/list-stories.js';
 import { registerListRoomsRoute } from './routes/list-rooms.js';
+import { registerCreateIdentityRoute } from './routes/create-identity.js';
+import { registerReclaimIdentityRoute } from './routes/reclaim-identity.js';
 
 export interface AppDeps {
   config: Config;
   db: Database;
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
+  identities: IdentitiesRepository;
+  /**
+   * argon2id hash service. Required by the identity create + reclaim routes
+   * (Phase 2). Tests that don't exercise those routes can pass a stub built
+   * via `createStubHashService()`.
+   */
+  hashService: HashService;
   sessionEvents: SessionEventsRepository;
   stories: StoryScanner;
   /** Optional boot-time validator. Threaded through to create-room (ADR-153 N-6). */
@@ -72,6 +84,22 @@ export function createApp(deps: AppDeps): Hono {
   registerResolveCodeRoute(app, deps);
   registerListStoriesRoute(app, deps);
   registerListRoomsRoute(app, deps);
+
+  // Identity routes — per-IP rate limit per ADR-159 (10 attempts/min).
+  // The limiter is local to this app instance; multi-instance deployments
+  // would need a Redis-backed limiter. ADR-159 v1 accepts single-process scope.
+  const identityLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+  const identityRateLimit = rateLimitMiddleware(identityLimiter);
+  registerCreateIdentityRoute(app, {
+    identities: deps.identities,
+    hashService: deps.hashService,
+    rateLimit: identityRateLimit,
+  });
+  registerReclaimIdentityRoute(app, {
+    identities: deps.identities,
+    hashService: deps.hashService,
+    rateLimit: identityRateLimit,
+  });
 
   // Catch-all — must be installed last so specific routes win.
   installStaticSpa(app, {

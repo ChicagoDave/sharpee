@@ -56,10 +56,10 @@ describe('PH grace-timer wiring (presence + hello)', () => {
 
   async function openAndHello(
     room_id: string,
-    token: string
+    creds: { username: string; secret: string }
   ): Promise<TestWsClient> {
     const c = track(await openWsClient(`${server.wsUrl}/ws/${room_id}`));
-    c.send({ kind: 'hello', token });
+    c.send({ kind: 'hello', username: creds.username, secret: creds.secret });
     await c.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
     );
@@ -71,7 +71,7 @@ describe('PH grace-timer wiring (presence + hello)', () => {
       story_slug: 'zork',
       display_name: 'Alice',
     });
-    const hostClient = await openAndHello(host.room_id, host.token);
+    const hostClient = await openAndHello(host.room_id, host);
 
     expect(server.ws.phGraceTimer.pending()).toEqual([]);
 
@@ -91,8 +91,8 @@ describe('PH grace-timer wiring (presence + hello)', () => {
     });
     const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
 
-    const hostClient = await openAndHello(host.room_id, host.token);
-    const guestClient = await openAndHello(host.room_id, guest.token);
+    const hostClient = await openAndHello(host.room_id, host);
+    const guestClient = await openAndHello(host.room_id, guest);
     // Swallow the auto-nomination successor broadcast so it doesn't leak.
     await hostClient.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'successor' }> => m.kind === 'successor'
@@ -114,14 +114,14 @@ describe('PH grace-timer wiring (presence + hello)', () => {
       story_slug: 'zork',
       display_name: 'Alice',
     });
-    const hostClient = await openAndHello(host.room_id, host.token);
+    const hostClient = await openAndHello(host.room_id, host);
 
     hostClient.close();
     await new Promise((r) => setTimeout(r, 50));
     expect(server.ws.phGraceTimer.pending()).toEqual([host.room_id]);
 
     // Re-open and re-hello
-    await openAndHello(host.room_id, host.token);
+    await openAndHello(host.room_id, host);
 
     expect(server.ws.phGraceTimer.pending()).toEqual([]);
   });
@@ -134,8 +134,8 @@ describe('PH grace-timer wiring (presence + hello)', () => {
     });
     const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
 
-    const hostClient = await openAndHello(host.room_id, host.token);
-    const guestClient = await openAndHello(host.room_id, guest.token);
+    const hostClient = await openAndHello(host.room_id, host);
+    const guestClient = await openAndHello(host.room_id, guest);
 
     // Guest was auto-nominated on their hello. Drain that broadcast.
     await hostClient.waitFor(
@@ -185,8 +185,8 @@ describe('PH grace-timer wiring (presence + hello)', () => {
     });
     const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
 
-    const hostClient = await openAndHello(host.room_id, host.token);
-    const guestClient = await openAndHello(host.room_id, guest.token);
+    const hostClient = await openAndHello(host.room_id, host);
+    const guestClient = await openAndHello(host.room_id, guest);
     await hostClient.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'successor' }> => m.kind === 'successor'
     );
@@ -201,7 +201,7 @@ describe('PH grace-timer wiring (presence + hello)', () => {
     );
 
     // Original PH reconnects
-    const reconnect = await openAndHello(host.room_id, host.token);
+    const reconnect = await openAndHello(host.room_id, host);
 
     const welcome = reconnect.received.find(
       (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'

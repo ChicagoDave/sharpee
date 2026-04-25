@@ -35,6 +35,7 @@ describe('POST /api/rooms', () => {
         story_slug: 'zork',
         title: 'Beta',
         display_name: 'Alice',
+        identity_id: app.seedIdentity(),
         captcha_token: 'stub',
       }),
     });
@@ -90,6 +91,7 @@ describe('POST /api/rooms', () => {
         story_slug: 'does-not-exist',
         title: 'Unknown Story Test',
         display_name: 'Alice',
+        identity_id: app.seedIdentity(),
         captcha_token: 'stub',
       }),
     });
@@ -112,6 +114,7 @@ describe('POST /api/rooms', () => {
         story_slug: 'zork',
         title: 'Captcha Test',
         display_name: 'Alice',
+        identity_id: app.seedIdentity(),
         captcha_token: 'will-be-rejected',
       }),
     });
@@ -148,6 +151,7 @@ describe('POST /api/rooms', () => {
         story_slug: 'broken',
         title: 'Attempt',
         display_name: 'Alice',
+        identity_id: app.seedIdentity(),
         captcha_token: 'stub',
       }),
     });
@@ -231,6 +235,7 @@ describe('POST /api/rooms', () => {
         story_slug: 'zork',
         title: exactly80,
         display_name: 'Alice',
+        identity_id: app.seedIdentity(),
         captcha_token: 'stub',
       }),
     });
@@ -256,6 +261,7 @@ describe('POST /api/rooms', () => {
         story_slug: 'zork',
         title: 'Ok',
         display_name: 'Alice',
+        identity_id: app.seedIdentity(),
         captcha_token: 'stub',
       }),
     });

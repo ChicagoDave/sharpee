@@ -15,6 +15,7 @@ import { randomUUID } from 'node:crypto';
 import type { Database } from 'better-sqlite3';
 import type { RoomsRepository } from '../../repositories/rooms.js';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
+import type { IdentitiesRepository } from '../../repositories/identities.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
 import type { StoryScanner } from '../../stories/scanner.js';
 import type { StoryHealth } from '../../stories/story-health.js';
@@ -26,6 +27,7 @@ export interface CreateRoomDeps {
   db: Database;
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
+  identities: IdentitiesRepository;
   sessionEvents: SessionEventsRepository;
   stories: StoryScanner;
   /**
@@ -51,6 +53,7 @@ interface CreateRoomBody {
   story_slug?: unknown;
   title?: unknown;
   display_name?: unknown;
+  identity_id?: unknown;
   captcha_token?: unknown;
 }
 
@@ -62,6 +65,7 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
     const story_slug = typeof body.story_slug === 'string' ? body.story_slug : '';
     const display_name = typeof body.display_name === 'string' ? body.display_name.trim() : '';
     const rawTitle = typeof body.title === 'string' ? body.title.trim() : '';
+    const identity_id = typeof body.identity_id === 'string' ? body.identity_id : '';
     const captchaToken = typeof body.captcha_token === 'string' ? body.captcha_token : undefined;
 
     if (!story_slug) throw new HttpError(400, 'missing_field', 'story_slug is required');
@@ -75,9 +79,17 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
     if (rawTitle.length > 80) {
       throw new HttpError(400, 'invalid_title', 'title must be 80 characters or fewer');
     }
+    if (!identity_id) throw new HttpError(400, 'missing_field', 'identity_id is required');
 
     // CAPTCHA runs BEFORE any DB work — a rejected challenge leaves no trace.
     await deps.captcha.verify(captchaToken);
+
+    // Identity must exist (and not be soft-deleted). Phase 2 ships the route
+    // that creates one; until then callers supply an identity_id obtained
+    // out-of-band. DB lookup so this is post-CAPTCHA.
+    if (!deps.identities.findById(identity_id)) {
+      throw new HttpError(404, 'unknown_identity', 'no identity with that id');
+    }
 
     const story = deps.stories.findBySlug(story_slug);
     if (!story) throw new HttpError(400, 'unknown_story', `No story with slug ${story_slug}`);
@@ -105,6 +117,7 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
       deps.participants.createWithId({
         participant_id,
         room_id: room.room_id,
+        identity_id,
         token,
         display_name,
         tier: 'primary_host',

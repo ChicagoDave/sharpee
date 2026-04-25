@@ -24,6 +24,7 @@ import type { Database } from 'better-sqlite3';
 import { openTestDb } from '../helpers/test-db.js';
 import { createRoomsRepository } from '../../src/repositories/rooms.js';
 import { createParticipantsRepository } from '../../src/repositories/participants.js';
+import { createIdentitiesRepository } from '../../src/repositories/identities.js';
 import { createSessionEventsRepository } from '../../src/repositories/session-events.js';
 import { performSuccession, type SuccessionDeps } from '../../src/rooms/succession.js';
 import type { Tier } from '../../src/repositories/types.js';
@@ -62,10 +63,14 @@ function seedRoom(
 
   // Participants are inserted via the repo; joined_at is `now()`. To
   // guarantee a deterministic joined_at order we sleep 1ms between inserts.
+  // Each participant binds to a unique identity (ADR-159).
+  const identities = createIdentitiesRepository(deps.db);
   for (const m of members) {
+    const identity = identities.create({ username: `id-${m.name}`, secret_hash: 'h' });
     const p = deps.participants.createWithId({
       participant_id: `p-${m.name}`,
       room_id: room.room_id,
+      identity_id: identity.identity_id,
       token: `tok-${m.name}`,
       display_name: m.name,
       tier: m.tier,

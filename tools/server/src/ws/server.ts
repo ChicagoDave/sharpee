@@ -28,8 +28,10 @@ import type { Database } from 'better-sqlite3';
 import type { Config } from '../config.js';
 import type { RoomsRepository } from '../repositories/rooms.js';
 import type { ParticipantsRepository } from '../repositories/participants.js';
+import type { IdentitiesRepository } from '../repositories/identities.js';
 import type { SavesRepository } from '../repositories/saves.js';
 import type { SessionEventsRepository } from '../repositories/session-events.js';
+import type { HashService } from '../auth/hash-service.js';
 import type { ClientMsg, ServerMsg } from '../wire/browser-server.js';
 import { createConnectionManager, type ConnectionManager } from './connection-manager.js';
 import { handleHello } from './handlers/hello.js';
@@ -76,6 +78,8 @@ export interface WsDeps {
   db: Database;
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
+  identities: IdentitiesRepository;
+  hashService: HashService;
   saves: SavesRepository;
   sessionEvents: SessionEventsRepository;
   /**
@@ -288,30 +292,37 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
           ws.close(4005, 'malformed_frame');
           return;
         }
-        const participant_id = handleHello(
-          {
-            db: deps.db,
-            rooms: deps.rooms,
-            participants: deps.participants,
-            saves: deps.saves,
-            sessionEvents: deps.sessionEvents,
-            connections,
-            roomManager: deps.roomManager,
-          },
-          ws,
-          pendingInfo.url_room_id,
-          frame
-        );
+        // hello processing is async because secret verification calls argon2.
+        // Resolve before the PH-grace cancel so the cancel sees the same
+        // participant_id the client now believes they own.
+        void (async () => {
+          const participant_id = await handleHello(
+            {
+              db: deps.db,
+              rooms: deps.rooms,
+              participants: deps.participants,
+              identities: deps.identities,
+              hashService: deps.hashService,
+              saves: deps.saves,
+              sessionEvents: deps.sessionEvents,
+              connections,
+              roomManager: deps.roomManager,
+            },
+            ws,
+            pendingInfo.url_room_id,
+            frame
+          );
 
-        // If the joining participant is the current PH of this room, their
-        // hello is a reconnect within the grace window — cancel the pending
-        // succession fire.
-        if (participant_id) {
-          const room = deps.rooms.findById(pendingInfo.url_room_id);
-          if (room && room.primary_host_id === participant_id) {
-            phGraceTimer.cancel(pendingInfo.url_room_id);
+          // If the joining participant is the current PH of this room, their
+          // hello is a reconnect within the grace window — cancel the pending
+          // succession fire.
+          if (participant_id) {
+            const room = deps.rooms.findById(pendingInfo.url_room_id);
+            if (room && room.primary_host_id === participant_id) {
+              phGraceTimer.cancel(pendingInfo.url_room_id);
+            }
           }
-        }
+        })();
         return;
       }
 

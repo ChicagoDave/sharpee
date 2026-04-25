@@ -77,7 +77,10 @@ export interface RoomSnapshot {
 // ---------- Client → Server intents ----------
 
 export type ClientMsg =
-  | { kind: 'hello'; token: string }
+  // First frame on every WS connection. Carries the persistent identity
+  // credentials per ADR-159; the per-room token is no longer the WS hello
+  // credential — it survives only as an HTTP-side session marker.
+  | { kind: 'hello'; username: string; secret: string }
   | { kind: 'draft_delta'; seq: number; text: string }
   | { kind: 'submit_command'; text: string }
   | { kind: 'release_lock' }

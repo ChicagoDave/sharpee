@@ -2,19 +2,21 @@
  * WebSocket `hello` handshake behavior tests.
  *
  * Behavior Statement — handleHello
- *   DOES: on valid token + matching room, flips participants.connected=1,
- *         appends a `join(reconnect=true)` event, registers the socket in
- *         the connection manager, sends `welcome` with a RoomSnapshot and
- *         participant summaries, broadcasts `presence(connected=true)` to
- *         other room sockets.
+ *   DOES: on valid (username, secret), looks up identity, verifies hash,
+ *         resolves or creates the participant for (identity_id, room_id),
+ *         flips participants.connected=1, appends a `join` event, registers
+ *         the socket in the connection manager, sends `welcome` with a
+ *         RoomSnapshot and participant summaries, broadcasts
+ *         `presence(connected=true)` to other room sockets.
  *   WHEN: the first frame on a newly-opened /ws/:room_id socket is hello.
- *   BECAUSE: token-based reconnect (ADR-153 Decision 4) requires a hand-
- *            shake that re-syncs the client's view from DB truth.
+ *   BECAUSE: ADR-159 cutover — the persistent identity is the WS hello
+ *            credential; the per-room token survives only as an HTTP-side
+ *            session marker.
  *   REJECTS WHEN:
- *     - missing/unknown token                → error(token_invalid) + close
- *     - token belongs to a different room    → error(token_room_mismatch) + close
- *     - room no longer exists (recycled)     → room_closed + close (N-4)
  *     - first frame is not hello             → error(hello_required) + close
+ *     - room no longer exists (recycled)     → room_closed + close (N-4)
+ *     - identity-specific paths (unknown_identity / bad_credentials) live
+ *       in tests/ws/hello-identity.test.ts.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -48,7 +50,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
 
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      client.send({ kind: 'hello', token: host.token });
+      client.send({ kind: 'hello', username: host.username, secret: host.secret });
       const welcome = await client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );
@@ -100,7 +102,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
 
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      client.send({ kind: 'hello', token: host.token });
+      client.send({ kind: 'hello', username: host.username, secret: host.secret });
       const welcome = await client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
       );
@@ -140,7 +142,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
     server.db.prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?').run(host.participant_id);
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      client.send({ kind: 'hello', token: host.token });
+      client.send({ kind: 'hello', username: host.username, secret: host.secret });
       const welcome = await client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
       );
@@ -174,7 +176,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
     server.db.prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?').run(ch.participant_id);
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      client.send({ kind: 'hello', token: ch.token });
+      client.send({ kind: 'hello', username: ch.username, secret: ch.secret });
       const welcome = await client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
       );
@@ -208,7 +210,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
     server.db.prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?').run(part.participant_id);
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      client.send({ kind: 'hello', token: part.token });
+      client.send({ kind: 'hello', username: part.username, secret: part.secret });
       const welcome = await client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
       );
@@ -218,56 +220,22 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
     }
   });
 
-  it('invalid/unknown token → error(token_invalid) + close', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
-    const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
-    try {
-      client.send({ kind: 'hello', token: 'not-a-real-token' });
-      const err = await client.waitFor(
-        (m): m is Extract<ServerMsg, { kind: 'error' }> => m.kind === 'error'
-      );
-      expect(err.code).toBe('token_invalid');
-      const close = await client.waitForClose();
-      expect(close.code).toBe(4001);
-    } finally {
-      client.close();
-    }
-  });
-
-  it('token from a different room → error(token_room_mismatch) + close', async () => {
-    const roomA = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'A' });
-    const roomB = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'B' });
-
-    const client = await openWsClient(`${server.wsUrl}/ws/${roomB.room_id}`);
-    try {
-      client.send({ kind: 'hello', token: roomA.token });
-      const err = await client.waitFor(
-        (m): m is Extract<ServerMsg, { kind: 'error' }> => m.kind === 'error'
-      );
-      expect(err.code).toBe('token_room_mismatch');
-      const close = await client.waitForClose();
-      expect(close.code).toBe(4002);
-    } finally {
-      client.close();
-    }
-  });
+  // ADR-159: identity rejection paths (unknown_identity / bad_credentials)
+  // live in tests/ws/hello-identity.test.ts. The "token from a different
+  // room" scenario is no longer applicable — identity is room-agnostic;
+  // first hello to a new room creates a participant there.
 
   it('deleted room → room_closed + close (N-4)', async () => {
     const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
 
-    // Simulate an idle recycle mid-session: cascade delete before the client says hello.
-    // The participants row is deleted by the cascade, so findByToken will miss —
-    // which surfaces as token_invalid rather than room_closed. To exercise the
-    // room_closed branch we keep the participant row but NULL out the room.
-    //   → easiest path: delete only from rooms, leaving the participant dangling,
-    //     then turn off FK checks for the setup.
-    server.db.pragma('foreign_keys = OFF');
+    // The room check runs before identity verification, so deleting the room
+    // alone surfaces room_closed. Cascade is fine — we don't depend on the
+    // participant row remaining.
     server.db.prepare('DELETE FROM rooms WHERE room_id = ?').run(host.room_id);
-    server.db.pragma('foreign_keys = ON');
 
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      client.send({ kind: 'hello', token: host.token });
+      client.send({ kind: 'hello', username: host.username, secret: host.secret });
       const closed = await client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'room_closed' }> => m.kind === 'room_closed'
       );
@@ -308,12 +276,12 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      hostClient.send({ kind: 'hello', token: host.token });
+      hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
       await hostClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );
 
-      guestClient.send({ kind: 'hello', token: guest.token });
+      guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
       await guestClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );
@@ -360,12 +328,12 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guest2Client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      hostClient.send({ kind: 'hello', token: host.token });
+      hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
       await hostClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );
 
-      guestClient.send({ kind: 'hello', token: guest.token });
+      guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
       await guestClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );
@@ -374,7 +342,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
         (m): m is Extract<ServerMsg, { kind: 'successor' }> => m.kind === 'successor'
       );
 
-      guest2Client.send({ kind: 'hello', token: guest2.token });
+      guest2Client.send({ kind: 'hello', username: guest2.username, secret: guest2.secret });
       await guest2Client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );
@@ -411,7 +379,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
 
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      hostClient.send({ kind: 'hello', token: host.token });
+      hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
       await hostClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );

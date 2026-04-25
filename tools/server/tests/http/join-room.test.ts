@@ -25,6 +25,7 @@ async function createRoom(app: TestAppHandle, slug = 'zork') {
       story_slug: slug,
       title: 'Test Room',
       display_name: 'Host',
+      identity_id: app.seedIdentity(),
       captcha_token: 'stub',
     }),
   });
@@ -51,7 +52,7 @@ describe('POST /api/rooms/:room_id/join', () => {
     const res = await app.fetch(`/api/rooms/${host.room_id}/join`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ display_name: 'Bob', captcha_token: 'stub' }),
+      body: JSON.stringify({ display_name: 'Bob', identity_id: app.seedIdentity(), captcha_token: 'stub' }),
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { participant_id: string; token: string; tier: string };
@@ -71,7 +72,7 @@ describe('POST /api/rooms/:room_id/join', () => {
     const res = await app.fetch('/api/rooms/nope/join', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ display_name: 'Bob', captcha_token: 'stub' }),
+      body: JSON.stringify({ display_name: 'Bob', identity_id: app.seedIdentity(), captcha_token: 'stub' }),
     });
     expect(res.status).toBe(404);
     const body = (await res.json()) as { code: string };
@@ -83,7 +84,7 @@ describe('POST /api/rooms/:room_id/join', () => {
     const joinRes = await app.fetch(`/api/rooms/${host.room_id}/join`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ display_name: 'Bob', captcha_token: 'stub' }),
+      body: JSON.stringify({ display_name: 'Bob', identity_id: app.seedIdentity(), captcha_token: 'stub' }),
     });
     const first = (await joinRes.json()) as { participant_id: string; token: string };
 
@@ -98,7 +99,7 @@ describe('POST /api/rooms/:room_id/join', () => {
         'content-type': 'application/json',
         authorization: `Bearer ${first.token}`,
       },
-      body: JSON.stringify({ display_name: 'Bob', captcha_token: 'stub' }),
+      body: JSON.stringify({ display_name: 'Bob', identity_id: app.seedIdentity(), captcha_token: 'stub' }),
     });
     expect(reconnectRes.status).toBe(200);
     const second = (await reconnectRes.json()) as { participant_id: string; token: string };
@@ -121,7 +122,7 @@ describe('POST /api/rooms/:room_id/join', () => {
         'content-type': 'application/json',
         authorization: `Bearer ${roomA.token}`,
       },
-      body: JSON.stringify({ display_name: 'Host', captcha_token: 'stub' }),
+      body: JSON.stringify({ display_name: 'Host', identity_id: app.seedIdentity(), captcha_token: 'stub' }),
     });
     expect(res.status).toBe(401);
     const body = (await res.json()) as { code: string };
@@ -138,7 +139,7 @@ describe('POST /api/rooms/:room_id/join', () => {
     await app.fetch(`/api/rooms/${host.room_id}/join`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ display_name: 'Bob', captcha_token: 'stub' }),
+      body: JSON.stringify({ display_name: 'Bob', identity_id: app.seedIdentity(), captcha_token: 'stub' }),
     });
 
     const after = (app.db

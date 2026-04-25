@@ -31,8 +31,15 @@ case "$TRIGGER" in
     fi
     ;;
   startup|clear|*)
-    # New session - find previous session before creating new one
-    PREV_SESSION=$(ls -t ${SESSION_DIR}/session-*-${BRANCH}.md 2>/dev/null | head -1)
+    # New session - find previous session before creating new one.
+    # Search across ALL session files regardless of branch/topic suffix:
+    # session files written on a feature branch retain that branch's suffix
+    # in the filename even after the branch merges to main, so a branch-scoped
+    # glob would silently exclude recently-merged work.
+    # Exclude the file we're about to create so we never self-reference.
+    PREV_SESSION=$(ls -t ${SESSION_DIR}/session-*.md 2>/dev/null \
+      | grep -v "/$(basename "$SESSION_FILE")$" \
+      | head -1)
 
     # Create new session file
     if [ -f "$TEMPLATE" ]; then

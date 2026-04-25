@@ -66,10 +66,10 @@ describe('succession E2E (AC3): full 3-user cascade', () => {
 
   async function openAndHello(
     room_id: string,
-    token: string
+    creds: { username: string; secret: string }
   ): Promise<TestWsClient> {
     const c = track(await openWsClient(`${server.wsUrl}/ws/${room_id}`));
-    c.send({ kind: 'hello', token });
+    c.send({ kind: 'hello', username: creds.username, secret: creds.secret });
     await c.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
     );
@@ -85,9 +85,9 @@ describe('succession E2E (AC3): full 3-user cascade', () => {
     const bob = await joinRoomViaHttp(server, alice.room_id, 'Bob');
     const carol = await joinRoomViaHttp(server, alice.room_id, 'Carol');
 
-    const aliceClient = await openAndHello(alice.room_id, alice.token);
-    const bobClient = await openAndHello(alice.room_id, bob.token);
-    const carolClient = await openAndHello(alice.room_id, carol.token);
+    const aliceClient = await openAndHello(alice.room_id, alice);
+    const bobClient = await openAndHello(alice.room_id, bob);
+    const carolClient = await openAndHello(alice.room_id, carol);
 
     // Drain the auto-nomination successor broadcast Bob got on his hello.
     await aliceClient.waitFor(
@@ -221,7 +221,7 @@ describe('succession E2E (AC3): full 3-user cascade', () => {
     ]);
 
     // --- Alice reconnects; welcome shows tier=participant
-    const aliceReconnect = await openAndHello(alice.room_id, alice.token);
+    const aliceReconnect = await openAndHello(alice.room_id, alice);
     const welcome = aliceReconnect.received.find(
       (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
     );

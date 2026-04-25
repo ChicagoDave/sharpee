@@ -14,6 +14,10 @@ import { openTestDb } from './test-db.js';
 import { createApp } from '../../src/http/app.js';
 import { createRoomsRepository } from '../../src/repositories/rooms.js';
 import { createParticipantsRepository } from '../../src/repositories/participants.js';
+import { createIdentitiesRepository } from '../../src/repositories/identities.js';
+import type { IdentitiesRepository } from '../../src/repositories/identities.js';
+import { createHashService, createStubHashService } from '../../src/auth/hash-service.js';
+import type { HashService } from '../../src/auth/hash-service.js';
 import { createSessionEventsRepository } from '../../src/repositories/session-events.js';
 import { createStoryScanner } from '../../src/stories/scanner.js';
 import type { StoryHealth, StoryHealthStatus } from '../../src/stories/story-health.js';
@@ -24,6 +28,17 @@ export interface TestAppHandle {
   fetch: (input: Request | string, init?: RequestInit) => Promise<Response>;
   db: Database;
   storiesDir: string;
+  /**
+   * Identities repository for tests that need to seed identity rows directly
+   * (used by HTTP route tests that hit /api/rooms before Phase 2 ships the
+   * identity-creation route). See {@link seedIdentity} for a one-call helper.
+   */
+  identities: IdentitiesRepository;
+  /**
+   * Convenience: create a fresh identity and return its identity_id. Random
+   * username so repeated calls don't collide on the UNIQUE index.
+   */
+  seedIdentity(): string;
   cleanup(): void;
 }
 
@@ -43,6 +58,12 @@ export interface BuildTestAppOptions {
    * serves it as static + SPA fallback. Used by app.test.ts.
    */
   clientDistDir?: string;
+  /**
+   * Use the real argon2 hash service. Defaults to a fast stub for tests that
+   * don't exercise the cryptographic property. Set to true when testing
+   * hash-related ACs (AC-6) end-to-end.
+   */
+  realHashService?: boolean;
 }
 
 /** Build a working test app backed by :memory: SQLite and a temp stories dir. */
@@ -56,6 +77,10 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
 
   const rooms = createRoomsRepository(db);
   const participants = createParticipantsRepository(db);
+  const identities = createIdentitiesRepository(db);
+  const hashService: HashService = opts.realHashService
+    ? createHashService()
+    : createStubHashService();
   const sessionEvents = createSessionEventsRepository(db);
   const stories = createStoryScanner(storiesDir);
 
@@ -97,6 +122,8 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
     db,
     rooms,
     participants,
+    identities,
+    hashService,
     sessionEvents,
     stories,
     storyHealth,
@@ -111,6 +138,11 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
       ),
     db,
     storiesDir,
+    identities,
+    seedIdentity() {
+      const username = `tester-${Math.random().toString(36).slice(2, 10)}`;
+      return identities.create({ username, secret_hash: 'test-stub-hash' }).identity_id;
+    },
     cleanup() {
       db.close();
       rmSync(storiesDir, { recursive: true, force: true });

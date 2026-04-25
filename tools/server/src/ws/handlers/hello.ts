@@ -1,32 +1,47 @@
 /**
- * WebSocket `hello` handler — validates the bearer token, matches it to the
- * URL-scoped room, and responds with `welcome` or an error close.
+ * WebSocket `hello` handler — verifies the persistent identity credentials,
+ * binds the connection to the URL-scoped room, and responds with `welcome`
+ * or an error close.
  *
  * Public interface: {@link handleHello}, {@link HelloDeps}.
- * Bounded context: WebSocket presence (ADR-153 Decision 4 reconnect path).
+ * Bounded context: WebSocket presence (ADR-153 Decision 4 reconnect path,
+ * ADR-159 hello frame contract).
  *
- * Negative paths covered:
- *   - token not found        → error(token_invalid) + close
- *   - token in a other room  → error(token_room_mismatch) + close
- *   - room no longer exists  → room_closed + close (N-4 from ADR-153)
+ * Per ADR-159, the hello frame carries `(username, secret)` rather than the
+ * legacy per-room token. The server looks up the identity, verifies the
+ * argon2id hash, and resolves to a participant via `(identity_id, room_id)`.
+ * If no participant exists for the pair, one is created on the spot —
+ * a returning identity reaches a room they have never joined without an
+ * out-of-band HTTP join step.
+ *
+ * Negative paths:
+ *   - room no longer exists      → room_closed close (4004)
+ *   - hello envelope malformed   → hello_required close (4000)
+ *   - unknown username           → unknown_identity close (4001)
+ *   - secret mismatch            → bad_credentials close (4006)
  */
 
 import type { WebSocket } from 'ws';
 import type { Database } from 'better-sqlite3';
 import type { RoomsRepository } from '../../repositories/rooms.js';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
+import type { IdentitiesRepository } from '../../repositories/identities.js';
 import type { SavesRepository } from '../../repositories/saves.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
+import type { HashService } from '../../auth/hash-service.js';
 import type { ConnectionManager } from '../connection-manager.js';
 import type { RoomManager } from '../../rooms/room-manager.js';
 import type { ClientMsg, ServerMsg } from '../../wire/browser-server.js';
 import { buildRoomSnapshot } from '../room-snapshot.js';
 import { getRecordingNotice } from '../recording-notice.js';
+import { generateToken } from '../../http/tokens.js';
 
 export interface HelloDeps {
   db: Database;
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
+  identities: IdentitiesRepository;
+  hashService: HashService;
   saves: SavesRepository;
   sessionEvents: SessionEventsRepository;
   connections: ConnectionManager;
@@ -51,65 +66,112 @@ function closeWith(ws: WebSocket, code: number, reason: string): void {
 }
 
 /**
- * Process a `hello` message received on a freshly-opened socket bound to `url_room_id`.
+ * Process a `hello` message received on a freshly-opened socket bound to
+ * `url_room_id`. Async because secret verification calls the argon2 binding.
  *
- * On success: the participant is marked connected, the registry is updated,
- * a `welcome` is sent to the new socket, and a `presence(connected=true)`
- * is broadcast to every other participant in the room.
+ * On success: the participant is resolved (or created on first contact in
+ * this room), marked connected, registered with the {@link ConnectionManager},
+ * and a `welcome` is sent to the new socket. A `presence(connected=true)` is
+ * broadcast to every other participant.
  *
  * On any rejection path the socket is closed with an application-level
  * close code (4xxx) carrying a machine-readable reason.
  *
  * @returns the participant_id if accepted, otherwise null
  */
-export function handleHello(
+export async function handleHello(
   deps: HelloDeps,
   ws: WebSocket,
   url_room_id: string,
   raw: ClientMsg
-): string | null {
-  if (raw.kind !== 'hello' || typeof raw.token !== 'string' || !raw.token) {
-    sendMsg(ws, { kind: 'error', code: 'hello_required', detail: 'first frame must be hello' });
+): Promise<string | null> {
+  if (
+    raw.kind !== 'hello' ||
+    typeof raw.username !== 'string' ||
+    !raw.username ||
+    typeof raw.secret !== 'string' ||
+    !raw.secret
+  ) {
+    sendMsg(ws, {
+      kind: 'error',
+      code: 'hello_required',
+      detail: 'first frame must be hello with username and secret',
+    });
     closeWith(ws, 4000, 'hello_required');
     return null;
   }
 
-  const participant = deps.participants.findByToken(raw.token);
-  if (!participant) {
-    sendMsg(ws, { kind: 'error', code: 'token_invalid', detail: 'token not recognized' });
-    closeWith(ws, 4001, 'token_invalid');
-    return null;
-  }
-
-  // If the DB lost the room (e.g. idle-recycled mid-session), the FK cascade
-  // removed the participants row too — so token would be unknown. A surviving
-  // participant row implies the room exists; verify anyway to make N-4 explicit.
-  const room = deps.rooms.findById(participant.room_id);
+  // Cheap room check first — avoids spending an argon2 cycle on a recycled room.
+  const room = deps.rooms.findById(url_room_id);
   if (!room) {
     sendMsg(ws, { kind: 'room_closed', reason: 'recycled', message: 'room no longer exists' });
     closeWith(ws, 4004, 'room_closed');
     return null;
   }
 
-  if (participant.room_id !== url_room_id) {
+  const auth = deps.identities.findHashByUsername(raw.username);
+  if (!auth) {
     sendMsg(ws, {
       kind: 'error',
-      code: 'token_room_mismatch',
-      detail: 'token does not match this room',
+      code: 'unknown_identity',
+      detail: 'no identity with that username',
     });
-    closeWith(ws, 4002, 'token_room_mismatch');
+    closeWith(ws, 4001, 'unknown_identity');
     return null;
+  }
+
+  const ok = await deps.hashService.verify(raw.secret, auth.secret_hash);
+  if (!ok) {
+    sendMsg(ws, {
+      kind: 'error',
+      code: 'bad_credentials',
+      detail: 'incorrect secret for that username',
+    });
+    closeWith(ws, 4006, 'bad_credentials');
+    return null;
+  }
+
+  // Identity is verified. Touch last_seen and read the canonical-case username.
+  deps.identities.touchLastSeen(auth.identity_id);
+  const identity = deps.identities.findById(auth.identity_id);
+  if (!identity) {
+    // Soft-deleted between findHashByUsername and findById — vanishingly rare
+    // (no concurrent admin in tests; even in production the window is sub-ms),
+    // but bail safely.
+    closeWith(ws, 4500, 'internal_error');
+    return null;
+  }
+
+  // Resolve or create the participant for (identity, room). The participant
+  // row carries the per-connection token (unused by hello, still used by
+  // HTTP routes that authenticate via Bearer).
+  const existing = deps.participants.findByIdentityAndRoom(identity.identity_id, room.room_id);
+  const isReconnect = existing !== null;
+
+  let participant = existing;
+  if (!participant) {
+    const token = generateToken();
+    participant = deps.participants.createOrReconnect({
+      room_id: room.room_id,
+      identity_id: identity.identity_id,
+      token,
+      display_name: identity.username,
+    });
   }
 
   // Commit presence update + join-event append atomically so readers never
   // see the connected flag flipped without the corresponding log entry.
   const tx = deps.db.transaction(() => {
-    deps.participants.setConnected(participant.participant_id, true);
+    deps.participants.setConnected(participant!.participant_id, true);
     deps.sessionEvents.append({
       room_id: room.room_id,
-      participant_id: participant.participant_id,
+      participant_id: participant!.participant_id,
       kind: 'join',
-      payload: { kind: 'join', display_name: participant.display_name, reconnect: true },
+      payload: {
+        kind: 'join',
+        display_name: participant!.display_name,
+        reconnect: isReconnect,
+      },
     });
   });
   tx();
@@ -124,19 +186,20 @@ export function handleHello(
     /* initial look failed; user can retype */
   });
 
-  const { snapshot, participants, chat_backlog, transcript_backlog, dm_threads } = buildRoomSnapshot(
-    room,
-    {
-      rooms: deps.rooms,
-      participants: deps.participants,
-      saves: deps.saves,
-      sessionEvents: deps.sessionEvents,
-    },
-    {
-      participant_id: participant.participant_id,
-      tier: participant.tier,
-    },
-  );
+  const { snapshot, participants, chat_backlog, transcript_backlog, dm_threads } =
+    buildRoomSnapshot(
+      room,
+      {
+        rooms: deps.rooms,
+        participants: deps.participants,
+        saves: deps.saves,
+        sessionEvents: deps.sessionEvents,
+      },
+      {
+        participant_id: participant.participant_id,
+        tier: participant.tier,
+      },
+    );
 
   sendMsg(ws, {
     kind: 'welcome',
@@ -166,12 +229,11 @@ export function handleHello(
   // first-join or reconnect — so a room that somehow lost its successor
   // recovers on the next eligible hello.
   if (participant.tier !== 'primary_host') {
-    const hasSuccessor = deps.participants
-      .listForRoom(room.room_id)
-      .some((p) => p.is_successor);
+    const all = deps.participants.listForRoom(room.room_id);
+    const hasSuccessor = all.some((p) => p.is_successor);
     if (!hasSuccessor) {
       const nominateTx = deps.db.transaction(() => {
-        deps.participants.setIsSuccessor(participant.participant_id, true);
+        deps.participants.setIsSuccessor(participant!.participant_id, true);
         deps.sessionEvents.append({
           room_id: room.room_id,
           // null = system actor — the auto-nomination is not user-initiated
@@ -180,7 +242,7 @@ export function handleHello(
           payload: {
             kind: 'role',
             op: 'nominate',
-            target_participant_id: participant.participant_id,
+            target_participant_id: participant!.participant_id,
           },
         });
       });

@@ -60,6 +60,11 @@ export interface Room {
 export interface Participant {
   participant_id: string;
   room_id: string;
+  /**
+   * The persistent identity this participant is bound to (ADR-159).
+   * NOT NULL — every participant row is tied to a created identity.
+   */
+  identity_id: string;
   token: string;
   display_name: string;
   tier: Tier;
@@ -68,6 +73,19 @@ export interface Participant {
   joined_at: string;
   /** True for the one Participant nominated as next-in-line successor. At most one per room. */
   is_successor: boolean;
+}
+
+/**
+ * Persistent user identity (ADR-159). One row per human; participants reference
+ * via `participants.identity_id`. The `secret_hash` is never returned to callers —
+ * verification is performed by the HashService against the persisted hash.
+ * Soft-deleted rows (`deleted_at IS NOT NULL`) are not returned by the repository.
+ */
+export interface Identity {
+  identity_id: string;
+  username: string;
+  created_at: string;
+  last_seen_at: string;
 }
 
 export interface SessionEvent {

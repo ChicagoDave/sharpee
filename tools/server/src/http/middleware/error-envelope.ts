@@ -21,7 +21,7 @@ export interface ErrorEnvelope {
  */
 export class HttpError extends HTTPException {
   public readonly code: string;
-  constructor(status: 400 | 401 | 403 | 404 | 409 | 500, code: string, detail: string) {
+  constructor(status: 400 | 401 | 403 | 404 | 409 | 429 | 500, code: string, detail: string) {
     super(status, { message: detail });
     this.code = code;
   }

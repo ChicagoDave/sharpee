@@ -768,7 +768,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4(vitest@3.2.4))(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/transcript-tester:
     dependencies:
@@ -992,6 +992,9 @@ importers:
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../packages/world-model
+      argon2:
+        specifier: ^0.44.0
+        version: 0.44.0
       better-sqlite3:
         specifier: ^11.3.0
         version: 11.10.0
@@ -1250,6 +1253,9 @@ packages:
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
+
+  '@epic-web/invariant@1.0.0':
+    resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -1759,6 +1765,10 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
+  '@phc/format@1.0.0':
+    resolution: {integrity: sha512-m7X9U6BG2+J+R1lSOdCiITLLrxm+cWlNI3HUFA92oLO77ObGNzaKdh8pMLqdZcshtkKuV84olNNXDfMc4FezBQ==}
+    engines: {node: '>=10'}
+
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
@@ -2213,6 +2223,10 @@ packages:
     resolution: {integrity: sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==}
     engines: {node: '>=12'}
 
+  argon2@0.44.0:
+    resolution: {integrity: sha512-zHPGN3S55sihSQo0dBbK0A5qpi2R31z7HZDZnry3ifOyj8bZZnpZND2gpmhnRGO1V/d555RwBqIK5W4Mrmv3ig==}
+    engines: {node: '>=16.17.0'}
+
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
@@ -2353,6 +2367,11 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  cross-env@10.1.0:
+    resolution: {integrity: sha512-GsYosgnACZTADcmEyJctkJIoqAhHjttw7RsFrVoJNXbsWWqaq6Ym+7kZjq6mS45O0jij6vtiReppKQEtqWy6Dw==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   cross-env@7.0.3:
     resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
@@ -3058,6 +3077,14 @@ packages:
   node-abi@3.89.0:
     resolution: {integrity: sha512-6u9UwL0HlAl21+agMN3YAMXcKByMqwGx+pq+P76vii5f7hTPtKDp08/H9py6DY+cfDw7kQNTGEj/rly3IgbNQA==}
     engines: {node: '>=10'}
+
+  node-addon-api@8.7.0:
+    resolution: {integrity: sha512-9MdFxmkKaOYVTV+XVRG8ArDwwQ77XIgIPyKASB1k3JPq3M8fGQQQE3YpMOrKm6g//Ktx8ivZr8xo1Qmtqub+GA==}
+    engines: {node: ^18 || ^20 || >= 21}
+
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
 
   node-releases@2.0.37:
     resolution: {integrity: sha512-1h5gKZCF+pO/o3Iqt5Jp7wc9rH3eJJ0+nh/CIoiRwjRxde/hAHyLPXYN4V3CqKAbiZPSeJFSWHmJsbkicta0Eg==}
@@ -3990,6 +4017,8 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
+  '@epic-web/invariant@1.0.0': {}
+
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
 
@@ -4346,6 +4375,8 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
+
+  '@phc/format@1.0.0': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -4771,14 +4802,6 @@ snapshots:
     optionalDependencies:
       vite: 5.4.21(@types/node@22.19.17)(lightningcss@1.30.2)(terser@5.44.1)
 
-  '@vitest/mocker@3.2.4(vite@5.4.21(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1))':
-    dependencies:
-      '@vitest/spy': 3.2.4
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 5.4.21(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1)
-
   '@vitest/mocker@3.2.4(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.44.1))':
     dependencies:
       '@vitest/spy': 3.2.4
@@ -4851,7 +4874,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(lightningcss@1.30.2)(terser@5.44.1)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(@vitest/ui@3.2.4)(lightningcss@1.30.2)(terser@5.44.1)
 
   '@vitest/utils@1.6.1':
     dependencies:
@@ -4909,6 +4932,13 @@ snapshots:
   ansi-styles@5.2.0: {}
 
   ansi-styles@6.2.3: {}
+
+  argon2@0.44.0:
+    dependencies:
+      '@phc/format': 1.0.0
+      cross-env: 10.1.0
+      node-addon-api: 8.7.0
+      node-gyp-build: 4.8.4
 
   argparse@2.0.1: {}
 
@@ -5049,6 +5079,11 @@ snapshots:
   confbox@0.1.8: {}
 
   convert-source-map@2.0.0: {}
+
+  cross-env@10.1.0:
+    dependencies:
+      '@epic-web/invariant': 1.0.0
+      cross-spawn: 7.0.6
 
   cross-env@7.0.3:
     dependencies:
@@ -5757,6 +5792,10 @@ snapshots:
     dependencies:
       semver: 7.7.3
 
+  node-addon-api@8.7.0: {}
+
+  node-gyp-build@4.8.4: {}
+
   node-releases@2.0.37: {}
 
   npm-run-path@5.3.0:
@@ -6383,7 +6422,7 @@ snapshots:
       lightningcss: 1.30.2
       terser: 5.44.1
 
-  vitest@1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4)(lightningcss@1.30.2)(terser@5.44.1):
+  vitest@1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4(vitest@3.2.4))(lightningcss@1.30.2)(terser@5.44.1):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1
@@ -6493,7 +6532,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@5.4.21(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1))
+      '@vitest/mocker': 3.2.4(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.44.1))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4

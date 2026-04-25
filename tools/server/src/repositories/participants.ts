@@ -10,8 +10,18 @@ import type { Database, Statement } from 'better-sqlite3';
 import type { Participant, Tier } from './types.js';
 
 export interface ParticipantsRepository {
-  /** Insert a new participant, or mark an existing one reconnected if the token matches. */
-  createOrReconnect(input: { room_id: string; token: string; display_name: string }): Participant;
+  /**
+   * Insert a new participant, or mark an existing one reconnected if the token
+   * matches. `identity_id` is required for the create path (every participant
+   * is bound to a persistent identity per ADR-159); on the reconnect path the
+   * identity_id is taken from the existing row (token routes the reconnect).
+   */
+  createOrReconnect(input: {
+    room_id: string;
+    identity_id: string;
+    token: string;
+    display_name: string;
+  }): Participant;
   /**
    * Insert a new participant with a caller-supplied participant_id and tier.
    * Used by room creation so the Primary Host id can be set on the room row
@@ -20,12 +30,20 @@ export interface ParticipantsRepository {
   createWithId(input: {
     participant_id: string;
     room_id: string;
+    identity_id: string;
     token: string;
     display_name: string;
     tier: Tier;
   }): Participant;
   findById(participant_id: string): Participant | null;
   findByToken(token: string): Participant | null;
+  /**
+   * Resolve the participant row for a given (identity, room) pair. Used by
+   * the WS hello handler (ADR-159 cutover) to decide between a fresh
+   * participant insert and a reconnect on the existing seat. Returns null
+   * when the identity has never joined this room.
+   */
+  findByIdentityAndRoom(identity_id: string, room_id: string): Participant | null;
   setTier(participant_id: string, tier: Tier, actor_id: string): void;
   setMuted(participant_id: string, muted: boolean, actor_id: string): void;
   setConnected(participant_id: string, connected: boolean): void;
@@ -51,6 +69,7 @@ export interface ParticipantsRepository {
 interface ParticipantRow {
   participant_id: string;
   room_id: string;
+  identity_id: string;
   token: string;
   display_name: string;
   tier: string;
@@ -64,6 +83,7 @@ function rowToParticipant(row: ParticipantRow): Participant {
   return {
     participant_id: row.participant_id,
     room_id: row.room_id,
+    identity_id: row.identity_id,
     token: row.token,
     display_name: row.display_name,
     tier: row.tier as Tier,
@@ -83,22 +103,25 @@ function rowToParticipant(row: ParticipantRow): Participant {
 export function createParticipantsRepository(db: Database): ParticipantsRepository {
   const insert: Statement = db.prepare(`
     INSERT INTO participants (
-      participant_id, room_id, token, display_name, tier,
+      participant_id, room_id, identity_id, token, display_name, tier,
       muted, connected, is_successor, joined_at
-    ) VALUES (@participant_id, @room_id, @token, @display_name, 'participant',
+    ) VALUES (@participant_id, @room_id, @identity_id, @token, @display_name, 'participant',
               0, 1, 0, @now)
   `);
 
   const insertWithTier: Statement = db.prepare(`
     INSERT INTO participants (
-      participant_id, room_id, token, display_name, tier,
+      participant_id, room_id, identity_id, token, display_name, tier,
       muted, connected, is_successor, joined_at
-    ) VALUES (@participant_id, @room_id, @token, @display_name, @tier,
+    ) VALUES (@participant_id, @room_id, @identity_id, @token, @display_name, @tier,
               0, 1, 0, @now)
   `);
 
   const selectById: Statement = db.prepare(`SELECT * FROM participants WHERE participant_id = ?`);
   const selectByToken: Statement = db.prepare(`SELECT * FROM participants WHERE token = ?`);
+  const selectByIdentityAndRoom: Statement = db.prepare(
+    `SELECT * FROM participants WHERE identity_id = ? AND room_id = ?`
+  );
   const selectByRoom: Statement = db.prepare(
     `SELECT * FROM participants WHERE room_id = ? ORDER BY joined_at ASC`
   );
@@ -141,6 +164,7 @@ export function createParticipantsRepository(db: Database): ParticipantsReposito
       insert.run({
         participant_id,
         room_id: input.room_id,
+        identity_id: input.identity_id,
         token: input.token,
         display_name: input.display_name,
         now,
@@ -149,6 +173,7 @@ export function createParticipantsRepository(db: Database): ParticipantsReposito
       return {
         participant_id,
         room_id: input.room_id,
+        identity_id: input.identity_id,
         token: input.token,
         display_name: input.display_name,
         tier: 'participant',
@@ -164,6 +189,7 @@ export function createParticipantsRepository(db: Database): ParticipantsReposito
       insertWithTier.run({
         participant_id: input.participant_id,
         room_id: input.room_id,
+        identity_id: input.identity_id,
         token: input.token,
         display_name: input.display_name,
         tier: input.tier,
@@ -172,6 +198,7 @@ export function createParticipantsRepository(db: Database): ParticipantsReposito
       return {
         participant_id: input.participant_id,
         room_id: input.room_id,
+        identity_id: input.identity_id,
         token: input.token,
         display_name: input.display_name,
         tier: input.tier,
@@ -189,6 +216,11 @@ export function createParticipantsRepository(db: Database): ParticipantsReposito
 
     findByToken(token) {
       const row = selectByToken.get(token) as ParticipantRow | undefined;
+      return row ? rowToParticipant(row) : null;
+    },
+
+    findByIdentityAndRoom(identity_id, room_id) {
+      const row = selectByIdentityAndRoom.get(identity_id, room_id) as ParticipantRow | undefined;
       return row ? rowToParticipant(row) : null;
     },
 

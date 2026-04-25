@@ -22,6 +22,9 @@ import { createSaveService } from '../../src/saves/save-service.js';
 import { createApp } from '../../src/http/app.js';
 import { createRoomsRepository } from '../../src/repositories/rooms.js';
 import { createParticipantsRepository } from '../../src/repositories/participants.js';
+import { createIdentitiesRepository } from '../../src/repositories/identities.js';
+import type { IdentitiesRepository } from '../../src/repositories/identities.js';
+import { createStubHashService } from '../../src/auth/hash-service.js';
 import { createSessionEventsRepository } from '../../src/repositories/session-events.js';
 import { createSavesRepository } from '../../src/repositories/saves.js';
 import { createStoryScanner } from '../../src/stories/scanner.js';
@@ -47,6 +50,12 @@ export interface TestServerHandle {
   readonly sandboxes: SandboxRegistry;
   readonly roomManager: RoomManager;
   readonly saveService: SaveService;
+  /**
+   * Identities repository — exposed so tests can seed identities directly
+   * for HTTP-route fixtures. Callers that just want a quick fixture should
+   * use {@link ensureTestIdentity}.
+   */
+  readonly identities: IdentitiesRepository;
   /** Shut the server + DB down; also removes the temp stories dir. */
   close(): Promise<void>;
 }
@@ -107,6 +116,7 @@ export async function buildTestServer(
 
   const rooms = createRoomsRepository(db);
   const participants = createParticipantsRepository(db);
+  const identities = createIdentitiesRepository(db);
   const sessionEvents = createSessionEventsRepository(db);
   const saves = createSavesRepository(db);
   const stories = createStoryScanner(storiesDir);
@@ -142,12 +152,28 @@ export async function buildTestServer(
     sandboxTimeoutMs: 5_000,
   });
 
-  const app = createApp({ config, db, rooms, participants, sessionEvents, stories, captcha });
+  const app = createApp({
+    config,
+    db,
+    rooms,
+    participants,
+    identities,
+    hashService: createStubHashService(),
+    sessionEvents,
+    stories,
+    captcha,
+  });
+  // The WS server uses the same hash service the HTTP app uses. Sharing one
+  // instance means a real-argon2 caller can opt in by replacing test-server's
+  // factory; for now both stay on the stub variant.
+  const wsHashService = createStubHashService();
   const ws = createWsServer({
     config,
     db,
     rooms,
     participants,
+    identities,
+    hashService: wsHashService,
     saves,
     sessionEvents,
     connections,
@@ -184,6 +210,7 @@ export async function buildTestServer(
     sandboxes,
     roomManager,
     saveService,
+    identities,
     async close() {
       sandboxes.tearDownAll();
       await ws.close();
@@ -202,52 +229,101 @@ export async function buildTestServer(
   };
 }
 
-/** Convenience: POST /api/rooms via HTTP and return the parsed body. */
+export interface TestIdentity {
+  identity_id: string;
+  username: string;
+  /** Plaintext secret usable for WS hello against the stub hash service. */
+  secret: string;
+}
+
+/**
+ * Seed an identity row directly via the repository, returning the full triple
+ * needed to connect a WS client. The stub hash format (`stub:<secret>`)
+ * matches `createStubHashService` so verifies succeed; tests that need real
+ * argon2 should hit `/api/identities` instead.
+ *
+ * Random username default so repeated calls don't collide on the
+ * case-insensitive UNIQUE index.
+ */
+export function ensureTestIdentity(
+  handle: TestServerHandle,
+  username = `tester-${Math.random().toString(36).slice(2, 10)}`
+): TestIdentity {
+  const secret = `s-${Math.random().toString(36).slice(2)}`;
+  const identity = handle.identities.create({ username, secret_hash: `stub:${secret}` });
+  return { identity_id: identity.identity_id, username: identity.username, secret };
+}
+
+/**
+ * Convenience: POST /api/rooms via HTTP and return the parsed body, augmented
+ * with the (username, secret) of the identity bound to the new participant.
+ * Callers need that credential pair to connect WS — the hello frame post-ADR-159
+ * carries `(username, secret)` rather than the per-room token.
+ */
 export async function createRoomViaHttp(
   handle: TestServerHandle,
-  input: { story_slug: string; display_name: string; title?: string }
+  input: { story_slug: string; display_name: string; title?: string; identity?: TestIdentity }
 ): Promise<{
   room_id: string;
   join_code: string;
   token: string;
   participant_id: string;
+  username: string;
+  secret: string;
 }> {
+  // Auto-create a fresh identity when caller doesn't supply one. Random
+  // username so tests that re-use display_name across calls don't collide on
+  // the identities.username UNIQUE index.
+  const identity = input.identity ?? ensureTestIdentity(handle);
   const res = await fetch(`${handle.httpUrl}/api/rooms`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    // Title is required by the server (ADR-153 frontend). Callers who care
-    // about the title value should set it explicitly; everything else gets a
-    // stable default so the helper keeps its single-line ergonomics.
     body: JSON.stringify({
       title: input.title ?? 'Test Room',
-      ...input,
+      story_slug: input.story_slug,
+      display_name: input.display_name,
+      identity_id: identity.identity_id,
       captcha_token: 'stub',
     }),
   });
   if (res.status !== 201) {
     throw new Error(`createRoomViaHttp: expected 201, got ${res.status}`);
   }
-  return (await res.json()) as {
+  const body = (await res.json()) as {
     room_id: string;
     join_code: string;
     token: string;
     participant_id: string;
   };
+  return { ...body, username: identity.username, secret: identity.secret };
 }
 
-/** Convenience: POST /api/rooms/:id/join via HTTP. */
+/**
+ * Convenience: POST /api/rooms/:id/join via HTTP. Returns the join response
+ * augmented with the (username, secret) of the identity bound to the joined
+ * participant.
+ */
 export async function joinRoomViaHttp(
   handle: TestServerHandle,
   room_id: string,
-  display_name: string
-): Promise<{ participant_id: string; token: string; tier: string }> {
+  display_name: string,
+  identity?: TestIdentity
+): Promise<{
+  participant_id: string;
+  token: string;
+  tier: string;
+  username: string;
+  secret: string;
+}> {
+  const id = identity ?? ensureTestIdentity(handle);
   const res = await fetch(`${handle.httpUrl}/api/rooms/${room_id}/join`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ display_name, captcha_token: 'stub' }),
+    body: JSON.stringify({ display_name, identity_id: id.identity_id, captcha_token: 'stub' }),
   });
   if (res.status !== 200) {
     throw new Error(`joinRoomViaHttp: expected 200, got ${res.status}`);
   }
-  return (await res.json()) as { participant_id: string; token: string; tier: string };
+  const body = (await res.json()) as { participant_id: string; token: string; tier: string };
+  return { ...body, username: id.username, secret: id.secret };
 }

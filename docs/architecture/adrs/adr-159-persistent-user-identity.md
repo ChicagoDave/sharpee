@@ -119,7 +119,6 @@ A first-mover keeps `bob` forever. There is no mediation, no claims process, no 
 - **Lost secret = lost identity.** No mitigation. UX must communicate this clearly at creation. Some users will lose their identity and create a duplicate; the orphan rows are minor DB cost.
 - **Squatting.** First-mover wins. Likely fine; flagged here so future maintainers don't re-litigate.
 - **Username existence leak.** Server distinguishes "unknown user" from "wrong secret" in error responses. Acceptable for a public community; would not be for a private system.
-- **Existing rooms have participants without identities.** Migration is required (see below).
 - **No server-mediated cross-device transfer.** Users either copy/paste, save the file, or lose access on the second device. Acceptable for the audience.
 
 ### Constrains Future Sessions
@@ -129,6 +128,7 @@ A first-mover keeps `bob` forever. There is no mediation, no claims process, no 
 - ADR-160 (engine-state continuity) takes identity as given.
 - Any future "I want a different identity per room" feature is an additive change to `participants` (a per-room `display_name_override`), not a rework of this ADR.
 - Any future account/email integration is layered on top of this identity (an identity gains an optional email; this ADR does not need to retract).
+- **The `identities` table schema is a stable interface.** Admin tooling — current (delete-identity script) and future (identity transfer / export / import between deployments) — binds to this schema. Greenfield-mode and one-shot cutover apply to the rest of the platform; the `identities` table is the named exception. Changes to its columns or constraints require a deliberate review of every admin script that reads or writes it. New columns may be added; existing columns should not be renamed, dropped, or have their semantics shifted without updating the admin tooling in the same change.
 
 ### Does Not Constrain
 
@@ -136,25 +136,16 @@ A first-mover keeps `bob` forever. There is no mediation, no claims process, no 
 - Display-name presentation is unchanged from a participant's perspective: the UI still shows a string. The string is now sourced from the identity's username.
 - ADR-153 PH (Participant Host) succession logic — `is_successor`, grace timer, nominate/promote/demote — operates on participants, not identities. Unchanged.
 
-## Migration Plan
+## Rollout
 
-Existing rooms have participants without identities. Two-phase rollout:
+One-shot cutover. The Sharpee multi-user server is operated by an admin who installs games and starts them; schema and wire-protocol changes are not softened by additive-then-deprecate windows. The admin coordinates disruption to currently running games (announce, drain, cut over, restart) when this ships.
 
-**Phase 1 — additive schema, no behavior change.**
+Concretely:
 
-- Create `identities` table.
-- Add `participants.identity_id` (nullable initially).
-- Server accepts BOTH the old `(participant_token)` hello frame and the new `(username, secret)` hello frame. Old token resolves participants without identity_id.
-- New users created via the UI's identity-creation flow get an `identity_id`.
-- Existing users continue with their per-room token; no forced migration.
-
-**Phase 2 — full identity, with grandfather path.**
-
-- A returning user with the old per-room token sees a one-time UI prompt: "Create an identity to access this room from other devices." Optional; old token still works.
-- After the prompt, the participant row's `identity_id` is populated and the old-token path stops being authoritative.
-- After a deprecation window, server logs but no longer accepts hello frames carrying only the old token; documentation directs holdouts to create or claim.
-
-The exact deprecation window and forcing function are decided when Phase 2 ships — out of scope here.
+- `identities` table is created.
+- `participants.identity_id` is `NOT NULL` from the start. Foreign-key into `identities`.
+- The WS `hello` frame carries `(username, secret)` from the start. There is no dual-credential handler for the old `(participant_token)` shape.
+- Any pre-existing `participants` rows from prior dev/test runs are wiped at deploy; greenfield posture means no data preservation requirement.
 
 ## Acceptance Criteria
 
@@ -166,8 +157,6 @@ The exact deprecation window and forcing function are decided when Phase 2 ships
 | AC-4  | The "Show my identity" UI displays `(username, secret)` with copy-to-clipboard, and offers a `.identity.json` download.                                |
 | AC-5  | A wrong secret for a known username returns `bad_credentials`; an unknown username returns `unknown_identity`.                                         |
 | AC-6  | The DB never stores plaintext secrets — verified by inspection and a unit test that hashes are non-reversible (argon2id or scrypt).                    |
-| AC-7  | An existing user with only a per-room token (pre-migration) continues to function in Phase 1 without forced identity creation.                         |
-| AC-8  | After Phase 2, a participant row that has been linked to an identity routes hello frames through `(username, secret)` resolution, not the legacy token. |
 
 ## Resolved Implementation Choices
 
