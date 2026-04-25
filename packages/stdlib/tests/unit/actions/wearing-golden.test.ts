@@ -155,7 +155,7 @@ describe('wearingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.wear_blocked', {
         messageId: expect.stringContaining('already_wearing'),
-        params: { item: 'old hat' }
+        params: { item: { name: 'old hat' } }
       });
     });
 
