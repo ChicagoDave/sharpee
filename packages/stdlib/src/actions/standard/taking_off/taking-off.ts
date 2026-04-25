@@ -18,6 +18,7 @@ import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { RemovedEventData } from './taking-off-events';
+import { entityInfoFrom } from '../../../utils';
 import {
   analyzeWearableContext,
   checkRemovalBlockers,
@@ -72,18 +73,18 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!item.has(TraitType.WEARABLE)) {
-      return { valid: false, error: 'not_wearing' };
+      return { valid: false, error: 'not_wearing', params: { item: entityInfoFrom(item) } };
     }
 
     if (!WearableBehavior.canRemove(item, actor)) {
       const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
       if (!wearable.worn) {
-        return { valid: false, error: 'not_wearing' };
+        return { valid: false, error: 'not_wearing', params: { item: entityInfoFrom(item) } };
       }
       if (wearable.wornBy !== actor.id) {
-        return { valid: false, error: 'not_wearing' };
+        return { valid: false, error: 'not_wearing', params: { item: entityInfoFrom(item) } };
       }
-      return { valid: false, error: 'cant_remove' };
+      return { valid: false, error: 'cant_remove', params: { item: entityInfoFrom(item) } };
     }
 
     return { valid: true };
@@ -112,16 +113,17 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       sharedData.failed = true;
       sharedData.errorMessageId = 'prevents_removal';
       sharedData.errorReason = 'prevents_removal';
-      sharedData.errorParams = { blocking: blockingItem.name };
+      sharedData.errorParams = { blocking: entityInfoFrom(blockingItem) };
       return;
     }
 
-    // Check if removing this would cause problems (e.g., cursed items)
+    // Check if removing this would cause problems (e.g., cursed items).
+    // params carry EntityInfo for the formatter chain (ADR-158).
     if (hasRemovalRestrictions(wearableTrait)) {
       sharedData.failed = true;
       sharedData.errorMessageId = 'cant_remove';
       sharedData.errorReason = 'cant_remove';
-      sharedData.errorParams = { item: item.name };
+      sharedData.errorParams = { item: entityInfoFrom(item) };
       return;
     }
 
@@ -134,15 +136,15 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       if (result.notWorn) {
         sharedData.errorMessageId = 'not_wearing';
         sharedData.errorReason = 'not_wearing';
-        sharedData.errorParams = { item: item.name };
+        sharedData.errorParams = { item: entityInfoFrom(item) };
       } else if (result.wornByOther) {
         sharedData.errorMessageId = 'not_wearing';
         sharedData.errorReason = 'worn_by_other';
-        sharedData.errorParams = { item: item.name, wornBy: result.wornByOther };
+        sharedData.errorParams = { item: entityInfoFrom(item), wornBy: result.wornByOther };
       } else {
         sharedData.errorMessageId = 'cant_remove';
         sharedData.errorReason = 'cant_remove';
-        sharedData.errorParams = { item: item.name };
+        sharedData.errorParams = { item: entityInfoFrom(item) };
       }
       return;
     }
