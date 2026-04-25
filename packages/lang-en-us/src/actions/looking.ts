@@ -22,8 +22,8 @@ export const lookingLanguage = {
     'you_see': "{You} can {see} {items} here.",
     'contents_list': "{You} can {see} {items} here.",
     'nothing_special': "{You} {see} nothing special.",
-    'container_contents': "In {container} {you} {see} {items}.",
-    'surface_contents': "On {surface} {you} {see} {items}."
+    'container_contents': "In {the:container} {you} {see} {items}.",
+    'surface_contents': "On {the:surface} {you} {see} {items}."
   },
   
   help: {

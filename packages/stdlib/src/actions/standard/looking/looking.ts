@@ -16,6 +16,7 @@ import { ActionMetadata } from '../../../validation';
 import { captureRoomSnapshot } from '../../base/snapshot-utils';
 import { emitIllustrations } from '../../helpers/emit-illustrations';
 import { buildEventData } from '../../data-builder-types';
+import { entityInfoFrom } from '../../../utils';
 import {
   lookingEventDataConfig,
   roomDescriptionDataConfig,
@@ -116,10 +117,15 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
           : 'surface_contents';
         const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
 
+        // params carry EntityInfo for the formatter chain (ADR-158);
+        // top-level event fields stay strings for handler consumption.
+        const containerEntity = context.world.getEntity(containerInfo.containerId);
         events.push(context.event('if.event.list.contents', {
           messageId: `${context.action.id}.${contentsMessageId}`,
           params: {
-            [containerKey]: containerInfo.containerName,
+            [containerKey]: containerEntity
+              ? entityInfoFrom(containerEntity)
+              : { name: containerInfo.containerName },
             items: containerInfo.itemNames.join(', ')
           },
           containerId: containerInfo.containerId,
