@@ -101,7 +101,7 @@ describe('openingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.open_blocked', {
         messageId: 'if.action.opening.not_openable',
-        params: expect.objectContaining({ item: 'rock' })
+        params: expect.objectContaining({ item: { name: 'rock' } })
       });
     });
 
@@ -123,7 +123,7 @@ describe('openingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.open_blocked', {
         messageId: 'if.action.opening.already_open',
-        params: expect.objectContaining({ item: 'box' })
+        params: expect.objectContaining({ item: { name: 'box' } })
       });
     });
 
@@ -150,7 +150,7 @@ describe('openingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.open_blocked', {
         messageId: 'if.action.opening.locked',
-        params: expect.objectContaining({ item: 'treasure chest' })
+        params: expect.objectContaining({ item: { name: 'treasure chest' } })
       });
     });
   });
@@ -247,7 +247,7 @@ describe('openingAction (Golden Pattern)', () => {
         targetId: object.id,
         targetName: 'empty box',
         messageId: expect.stringContaining('its_empty'),
-        params: { container: 'empty box' }
+        params: { container: { name: 'empty box' } }
       });
 
       // Should NOT have any revealed events (empty container)
@@ -280,7 +280,7 @@ describe('openingAction (Golden Pattern)', () => {
         targetId: object.id,
         targetName: 'oak door',
         messageId: expect.stringContaining('opened'),
-        params: { item: 'oak door' }
+        params: { item: { name: 'oak door' } }
       });
 
       // Note: exit_revealed events would be emitted but require
@@ -366,7 +366,7 @@ describe('Opening Action Edge Cases', () => {
       targetId: object.id,
       targetName: 'thick book',
       messageId: expect.stringContaining('opened'),
-      params: { item: 'thick book' }
+      params: { item: { name: 'thick book' } }
     });
   });
 

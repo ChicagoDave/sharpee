@@ -148,7 +148,7 @@ describe('pullingAction (Golden Pattern - Simplified)', () => {
         targetName: 'rope',
         pullCount: 0,
         messageId: `${pullingAction.id}.pulled`,
-        params: { target: 'rope' }
+        params: { target: { name: 'rope' } }
       });
 
       // Verify state was updated

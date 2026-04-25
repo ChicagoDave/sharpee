@@ -174,7 +174,7 @@ describe('pushingAction (Golden Pattern)', () => {
         activated: true,
         sound: 'click',
         messageId: 'if.action.pushing.button_clicks',
-        params: { target: 'red button', newState: 'on' }
+        params: { target: { name: 'red button' }, newState: 'on' }
       });
     });
 
@@ -207,7 +207,7 @@ describe('pushingAction (Golden Pattern)', () => {
         currentState: true,
         newState: false,
         messageId: 'if.action.pushing.switch_toggled',
-        params: { target: 'light switch', newState: 'off' }
+        params: { target: { name: 'light switch' }, newState: 'off' }
       });
     });
 
@@ -234,7 +234,7 @@ describe('pushingAction (Golden Pattern)', () => {
         pushType: 'button',
         activated: true,
         messageId: 'if.action.pushing.button_pushed',
-        params: { target: 'alarm button' }
+        params: { target: { name: 'alarm button' } }
       });
     });
   });
@@ -272,7 +272,7 @@ describe('pushingAction (Golden Pattern)', () => {
         moved: true,
         moveDirection: 'north',
         messageId: 'if.action.pushing.pushed_with_effort',
-        params: { target: 'wooden crate', direction: 'north' }
+        params: { target: { name: 'wooden crate' }, direction: 'north' }
       });
     });
 
@@ -304,7 +304,7 @@ describe('pushingAction (Golden Pattern)', () => {
         moved: false,
         nudged: true,
         messageId: 'if.action.pushing.wont_budge',
-        params: { target: 'massive boulder' }
+        params: { target: { name: 'massive boulder' } }
       });
     });
 
@@ -340,7 +340,7 @@ describe('pushingAction (Golden Pattern)', () => {
         moveDirection: 'east',
         sound: 'stone-scrape',
         messageId: 'if.action.pushing.pushed_direction',
-        params: { target: 'ancient statue', direction: 'east' }
+        params: { target: { name: 'ancient statue' }, direction: 'east' }
       });
     });
 
@@ -371,7 +371,7 @@ describe('pushingAction (Golden Pattern)', () => {
         nudged: true,
         moved: false,
         messageId: 'if.action.pushing.pushed_nudged',
-        params: { target: 'round boulder' }
+        params: { target: { name: 'round boulder' } }
       });
     });
 
@@ -406,7 +406,7 @@ describe('pushingAction (Golden Pattern)', () => {
         moved: true,
         moveDirection: 'west',
         messageId: 'if.action.pushing.reveals_passage',
-        params: { target: 'stone block', direction: 'west' }
+        params: { target: { name: 'stone block' }, direction: 'west' }
       });
     });
   });
@@ -436,7 +436,7 @@ describe('pushingAction (Golden Pattern)', () => {
         nudged: true,
         moved: false,
         messageId: 'if.action.pushing.pushed_nudged',
-        params: { target: 'cardboard box' }
+        params: { target: { name: 'cardboard box' } }
       });
     });
 
@@ -467,7 +467,7 @@ describe('pushingAction (Golden Pattern)', () => {
         moved: true,
         moveDirection: 'north',
         messageId: 'if.action.pushing.pushed_direction',
-        params: { target: 'wooden chair', direction: 'north' }
+        params: { target: { name: 'wooden chair' }, direction: 'north' }
       });
     });
   });

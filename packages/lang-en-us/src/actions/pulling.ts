@@ -19,35 +19,35 @@ export const pullingLanguage = {
   messages: {
     // Error messages
     'no_target': "Pull what?",
-    'not_visible': "{You} {can't} see {target}.",
-    'not_reachable': "{You} {can't} reach {target}.",
-    'too_heavy': "{target} is too heavy to pull (weighs {weight}kg).",
-    'wearing_it': "{You} {can't} pull {target} while wearing it.",
-    'wont_budge': "{target} won't budge.",
+    'not_visible': "{You} {can't} see {the:target}.",
+    'not_reachable': "{You} {can't} reach {the:target}.",
+    'too_heavy': "{the:cap:target} is too heavy to pull (weighs {weight}kg).",
+    'wearing_it': "{You} {can't} pull {the:target} while wearing it.",
+    'wont_budge': "{the:cap:target} won't budge.",
 
     // Success messages - levers/handles
-    'lever_pulled': "{You} {pull} {target}.",
-    'lever_clicks': "{You} {pull} {target} with a satisfying click.",
-    'lever_toggled': "{You} {pull} {target}, switching it {newState}.",
+    'lever_pulled': "{You} {pull} {the:target}.",
+    'lever_clicks': "{You} {pull} {the:target} with a satisfying click.",
+    'lever_toggled': "{You} {pull} {the:target}, switching it {newState}.",
 
     // Success messages - cords/ropes
-    'cord_pulled': "{You} {pull} {target}.",
-    'bell_rings': "{You} {pull} {target}. A bell rings somewhere!",
-    'cord_activates': "{You} {give} {target} a firm tug.",
+    'cord_pulled': "{You} {pull} {the:target}.",
+    'bell_rings': "{You} {pull} {the:target}. A bell rings somewhere!",
+    'cord_activates': "{You} {give} {the:target} a firm tug.",
 
     // Success messages - attached objects
-    'comes_loose': "{You} {pull} {target} and it comes loose!",
-    'firmly_attached': "{You} {pull} {target}, but it's firmly attached.",
-    'tugging_useless': "Tugging on {target} accomplishes nothing.",
+    'comes_loose': "{You} {pull} {the:target} and it comes loose!",
+    'firmly_attached': "{You} {pull} {the:target}, but it's firmly attached.",
+    'tugging_useless': "Tugging on {the:target} accomplishes nothing.",
 
     // Success messages - moveable objects
-    'pulled_direction': "{You} {pull} {target} {direction}.",
-    'pulled_nudged': "{You} {tug} at {target}, moving it slightly.",
-    'pulled_with_effort': "With effort, {you} {drag} {target} {direction}.",
+    'pulled_direction': "{You} {pull} {the:target} {direction}.",
+    'pulled_nudged': "{You} {tug} at {the:target}, moving it slightly.",
+    'pulled_with_effort': "With effort, {you} {drag} {the:target} {direction}.",
 
     // Success messages - fixed objects
-    'pulling_does_nothing': "Pulling {target} has no effect.",
-    'fixed_in_place': "{target} is fixed in place."
+    'pulling_does_nothing': "Pulling {the:target} has no effect.",
+    'fixed_in_place': "{the:cap:target} is fixed in place."
   },
   
   help: {

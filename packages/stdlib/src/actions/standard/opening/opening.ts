@@ -21,6 +21,7 @@ import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { OpeningSharedData } from './opening-types';
 import { OpeningMessages } from './opening-messages';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Extended shared data for opening action with interceptor support.
@@ -113,7 +114,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: OpeningMessages.NOT_OPENABLE,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -122,7 +123,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: OpeningMessages.ALREADY_OPEN,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -131,7 +132,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: OpeningMessages.LOCKED,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -174,12 +175,13 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     const contents = isContainer ? context.world.getContents(noun.id) : [];
 
     let messageKey: string = OpeningMessages.OPENED;
-    let params: Record<string, any> = { item: noun.name };
+    // params carry EntityInfo for the formatter chain (ADR-158)
+    let params: Record<string, any> = { item: entityInfoFrom(noun) };
 
     // Special message for empty containers
     if (isContainer && contents.length === 0) {
       messageKey = OpeningMessages.ITS_EMPTY;
-      params = { container: noun.name };
+      params = { container: entityInfoFrom(noun) };
     }
 
     // 1. Primary domain event with messageId (simplified pattern - ADR-097)
@@ -229,11 +231,11 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
 
     return [context.event('if.event.open_blocked', {
-      // Rendering data
+      // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId,
       params: {
         ...result.params,
-        item: noun?.name
+        item: noun ? entityInfoFrom(noun) : undefined
       },
       // Domain data
       targetId: noun?.id,

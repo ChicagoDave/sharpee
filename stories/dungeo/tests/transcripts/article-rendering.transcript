@@ -1,0 +1,42 @@
+title: Article Rendering Regression
+story: dungeo
+author: Sharpee Team
+description: |
+  Locks in ADR-158: stdlib actions emit EntityInfo in message params so the
+  formatter chain (`{the:cap:item}`, etc.) can choose the correct article
+  per nounType / properName / IdentityTrait.article.
+
+  The original bug (rendered "white house is fixed in place." with no
+  article) was caused by stdlib's taking action passing `noun.name` (a
+  bare string) where the formatter expected EntityInfo. Phase 2 of the
+  lang-articles migration migrates the taking action and its templates;
+  this transcript is the regression sentinel.
+
+  See:
+    - ADR-158 Entity-Valued Message Params Carry EntityInfo
+    - docs/work/lang-articles/plan-20260424-the-cap-migration.md
+    - Original bug report: text "white house is fixed in place." in
+      Dungeo's web client
+
+---
+
+# Start: West of House. The white house is scenery declared with
+# article: 'the' on its IdentityTrait (see stories/dungeo/src/regions/white-house.ts:353).
+> look
+[OK: contains "West of House"]
+[OK: contains "white house"]
+
+# THE REGRESSION: TAKE on the white house must include the article.
+# Pre-ADR-158: rendered "white house is fixed in place." (bug)
+# Post-ADR-158: renders "The white house is fixed in place."
+#
+# The positive `contains "The white house is fixed in place."` is the
+# regression sentinel: if a future change drops the article back to
+# "white house is fixed in place." this assertion text won't be found.
+> take white house
+[OK: contains "The white house is fixed in place."]
+
+# Sanity: same pattern via alias. "house" is an alias for white house
+# (see stories/dungeo/src/regions/white-house.ts).
+> take house
+[OK: contains "The white house is fixed in place."]

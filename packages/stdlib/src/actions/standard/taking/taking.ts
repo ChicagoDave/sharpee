@@ -20,6 +20,7 @@ import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerB
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { TakingMessages } from './taking-messages';
+import { entityInfoFrom } from '../../../utils';
 
 // Import type guards and typed interfaces
 import {
@@ -85,7 +86,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: TakingMessages.ALREADY_HAVE,
-      params: { item: noun.name }
+      params: { item: entityInfoFrom(noun) }
     };
   }
 
@@ -94,7 +95,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: TakingMessages.CANT_TAKE_ROOM,
-      params: { item: noun.name }
+      params: { item: entityInfoFrom(noun) }
     };
   }
 
@@ -104,7 +105,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: customMessage || TakingMessages.FIXED_IN_PLACE,
-      params: { item: noun.name }
+      params: { item: entityInfoFrom(noun) }
     };
   }
 
@@ -160,7 +161,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: TakingMessages.CANNOT_TAKE,
-      params: { item: noun.name }
+      params: { item: entityInfoFrom(noun) }
     };
   }
 
@@ -296,24 +297,30 @@ function reportSingleSuccess(
     messageKey = TakingMessages.TAKEN;
   }
 
-  // Build params for message lookup
+  // Build rendering params: entity-valued keys carry EntityInfo so the
+  // formatter chain (`{the:cap:item}`, etc.) can pick the right article.
+  // See ADR-158.
   const params = {
+    item: entityInfoFrom(noun),
+    itemId: noun.id,
+    actor: actor.name,
+    actorId: actor.id,
+    previousLocation: result.previousLocation,
+    container: containerEntity ? entityInfoFrom(containerEntity) : ''
+  };
+
+  // Emit domain event with messageId (simplified pattern - ADR-097).
+  // Top-level fields are domain data (strings) for event-sourcing handlers;
+  // params carries EntityInfo for template rendering.
+  events.push(context.event('if.event.taken', {
+    messageId: `${context.action.id}.${messageKey}`,
+    params,
     item: noun.name,
     itemId: noun.id,
     actor: actor.name,
     actorId: actor.id,
     previousLocation: result.previousLocation,
     container: containerEntity?.name || ''
-  };
-
-  // Emit domain event with messageId (simplified pattern - ADR-097)
-  // Text-service will look up message directly from this event
-  events.push(context.event('if.event.taken', {
-    // Rendering data (messageId + params for text-service)
-    messageId: `${context.action.id}.${messageKey}`,
-    params,
-    // Domain data (for event sourcing / handlers)
-    ...params
   }));
 }
 
@@ -329,10 +336,10 @@ function reportSingleBlocked(
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.take_blocked', {
-    // Rendering data
+    // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { item: noun.name },
-    // Domain data
+    params: { item: entityInfoFrom(noun) },
+    // Domain data — strings for handlers
     item: noun.name,
     itemId: noun.id,
     reason: error
@@ -440,13 +447,13 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
 
     return [context.event('if.event.take_blocked', {
-      // Rendering data
+      // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId,
       params: {
         ...result.params,
-        item: noun?.name
+        item: noun ? entityInfoFrom(noun) : undefined
       },
-      // Domain data
+      // Domain data — strings for handlers
       item: noun?.name,
       itemId: noun?.id,
       reason: result.error

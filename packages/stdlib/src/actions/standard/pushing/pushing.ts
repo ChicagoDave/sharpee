@@ -30,6 +30,7 @@ import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { PushedEventData } from './pushing-events';
 import { getPushingSharedData, PushingSharedData } from './pushing-types';
+import { entityInfoFrom } from '../../../utils';
 
 export const pushingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUSHING,
@@ -190,12 +191,12 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
             sharedData.messageId = 'switch_toggled';
           }
 
-          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.target = entityInfoFrom(target);
           sharedData.messageParams.newState = sharedData.newState ? 'on' : 'off';
         } else {
           // Non-switchable button
           sharedData.messageId = 'button_pushed';
-          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.target = entityInfoFrom(target);
         }
 
         // Add push sound if specified
@@ -214,13 +215,13 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
           sharedData.moved = true;
           sharedData.moveDirection = direction;
           sharedData.messageId = 'pushed_with_effort';
-          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.target = entityInfoFrom(target);
           sharedData.messageParams.direction = direction;
         } else {
           sharedData.moved = false;
           sharedData.nudged = true;
           sharedData.messageId = 'wont_budge';
-          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.target = entityInfoFrom(target);
         }
         break;
 
@@ -238,13 +239,13 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
             sharedData.messageId = 'pushed_direction';
           }
 
-          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.target = entityInfoFrom(target);
           sharedData.messageParams.direction = direction;
         } else {
           sharedData.moved = false;
           sharedData.nudged = true;
           sharedData.messageId = 'pushed_nudged';
-          sharedData.messageParams.target = target.name;
+          sharedData.messageParams.target = entityInfoFrom(target);
         }
 
         // Add push sound if specified
@@ -256,7 +257,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       default:
         // Fallback for unknown push types
         sharedData.messageId = 'pushing_does_nothing';
-        sharedData.messageParams.target = target.name;
+        sharedData.messageParams.target = entityInfoFrom(target);
         break;
     }
 
@@ -288,11 +289,12 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Standard blocked handling
+    // Standard blocked handling — params carry EntityInfo for the
+    // formatter chain (ADR-158); top-level fields stay strings for handlers.
     return [context.event('if.event.pushed', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { target: target?.name, ...result.params },
+      params: { target: target ? entityInfoFrom(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name
