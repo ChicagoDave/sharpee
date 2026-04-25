@@ -18,6 +18,7 @@ import { IFActions } from '../../constants';
 import { TouchedEventData } from './touching-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -227,9 +228,10 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.touch_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        target: target?.name
+        target: target ? entityInfoFrom(target) : undefined
       },
       reason: result.error,
       targetId: target?.id,
@@ -242,9 +244,11 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getTouchingSharedData(context);
 
     // Emit touched event with messageId for text rendering
+    // params carry EntityInfo for the formatter chain (ADR-158)
+    const target = context.command.directObject?.entity;
     events.push(context.event('if.event.touched', {
       messageId: `${context.action.id}.${sharedData.messageId || 'touched'}`,
-      params: { target: sharedData.targetName },
+      params: { target: target ? entityInfoFrom(target) : { name: sharedData.targetName } },
       ...sharedData.eventData
     }));
 

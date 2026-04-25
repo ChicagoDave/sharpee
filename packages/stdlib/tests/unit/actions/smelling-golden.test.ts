@@ -73,7 +73,7 @@ describe('smellingAction (Golden Pattern)', () => {
         hasScent: true,
         scentType: 'edible',
         messageId: expect.stringContaining('food_scent'),
-        params: { target: 'fresh bread' }
+        params: { target: { name: 'fresh bread' } }
       });
     });
 
@@ -99,7 +99,7 @@ describe('smellingAction (Golden Pattern)', () => {
         hasScent: true,
         scentType: 'drinkable',
         messageId: expect.stringContaining('drink_scent'),
-        params: { target: 'hot coffee' }
+        params: { target: { name: 'hot coffee' } }
       });
     });
 
@@ -124,7 +124,7 @@ describe('smellingAction (Golden Pattern)', () => {
         hasScent: true,
         scentType: 'burning',
         messageId: expect.stringContaining('burning_scent'),
-        params: { target: 'burning torch' }
+        params: { target: { name: 'burning torch' } }
       });
     });
 
@@ -147,7 +147,7 @@ describe('smellingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.smelled', {
         target: candle.id,
         messageId: expect.stringContaining('no_particular_scent'),
-        params: { target: 'unlit candle' }
+        params: { target: { name: 'unlit candle' } }
       });
     });
 
@@ -186,7 +186,7 @@ describe('smellingAction (Golden Pattern)', () => {
         scentType: 'container_contents',
         scentSources: [apple.id],
         messageId: expect.stringContaining('container_food_scent'),
-        params: { target: 'wicker basket' }
+        params: { target: { name: 'wicker basket' } }
       });
     });
 
@@ -222,7 +222,7 @@ describe('smellingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.smelled', {
         target: box.id,
         messageId: expect.stringContaining('no_particular_scent'),
-        params: { target: 'sealed box' }
+        params: { target: { name: 'sealed box' } }
       });
     });
 
@@ -241,7 +241,7 @@ describe('smellingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.smelled', {
         target: rock.id,
         messageId: expect.stringContaining('no_particular_scent'),
-        params: { target: 'ordinary rock' }
+        params: { target: { name: 'ordinary rock' } }
       });
     });
   });

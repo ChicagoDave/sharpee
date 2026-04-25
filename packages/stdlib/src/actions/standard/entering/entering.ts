@@ -26,6 +26,7 @@ import {
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
 import { EnteringMessages } from './entering-messages';
+import { entityInfoFrom } from '../../../utils';
 
 interface EnteringExecutionState {
   targetId: string;
@@ -120,7 +121,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: EnteringMessages.ALREADY_INSIDE,
-        params: { place: target.name }
+        params: { place: entityInfoFrom(target) }
       };
     }
 
@@ -129,7 +130,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: EnteringMessages.NOT_ENTERABLE,
-        params: { place: target.name }
+        params: { place: entityInfoFrom(target) }
       };
     }
 
@@ -138,7 +139,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: EnteringMessages.CONTAINER_CLOSED,
-        params: { container: target.name }
+        params: { container: entityInfoFrom(target) }
       };
     }
 
@@ -214,10 +215,12 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     // Determine the message ID based on preposition
     const messageId = state.preposition === 'on' ? EnteringMessages.ENTERED_ON : EnteringMessages.ENTERED;
 
-    // Create the ENTERED event with messageId for text rendering
+    // Create the ENTERED event with messageId for text rendering.
+    // params carry EntityInfo for the formatter chain (ADR-158).
+    const target = context.command.directObject?.entity;
     const events: ISemanticEvent[] = [context.event('if.event.entered', {
       messageId: `${context.action.id}.${messageId}`,
-      params: { place: state.targetName },
+      params: { place: target ? entityInfoFrom(target) : { name: state.targetName } },
       targetId: state.targetId,
       targetName: state.targetName,
       fromLocation: state.fromLocation,
@@ -229,12 +232,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const target = context.command.directObject?.entity;
-      if (target) {
-        const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-        applyInterceptorReportResult(events, 'if.event.entered', result, context);
-      }
+    if (interceptor?.postReport && target) {
+      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      applyInterceptorReportResult(events, 'if.event.entered', result, context);
     }
 
     return events;
@@ -260,11 +260,11 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Standard blocked handling
+    // Standard blocked handling — params carry EntityInfo (ADR-158)
     return [context.event('if.event.entered', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { place: target?.name, ...result.params },
+      params: { place: target ? entityInfoFrom(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name

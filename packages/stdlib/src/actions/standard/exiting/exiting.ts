@@ -13,6 +13,7 @@ import {
 import { IFActions } from '../../constants';
 import { ExitedEventData } from './exiting-events';
 import { ExitingMessages } from './exiting-messages';
+import { entityInfoFrom } from '../../../utils';
 
 interface ExitingExecutionState {
   fromLocation: string;
@@ -92,7 +93,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: ExitingMessages.CONTAINER_CLOSED,
-          params: { container: currentContainer.name }
+          params: { container: entityInfoFrom(currentContainer) }
         };
       }
     }
@@ -150,10 +151,13 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       ];
     }
 
-    // Create the EXITED event with messageId for text rendering
+    // Create the EXITED event with messageId for text rendering.
+    // params carry EntityInfo for the formatter chain (ADR-158);
+    // re-derive from the entity since it's available via context.world.
+    const fromEntity = context.world.getEntity(state.fromLocation);
     return [context.event('if.event.exited', {
       messageId: `${context.action.id}.exited`,
-      params: { place: state.fromLocationName },
+      params: { place: fromEntity ? entityInfoFrom(fromEntity) : { name: state.fromLocationName } },
       fromLocation: state.fromLocation,
       fromLocationName: state.fromLocationName,
       toLocation: state.toLocation,

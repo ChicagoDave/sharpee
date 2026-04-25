@@ -86,18 +86,51 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 ### 5. Story-side custom scenery messages already supported
 `SceneryTrait.cantTakeMessage` stores a story-specific messageId. The migration enables stories to use `{the:cap:item}` formatter chains in those messages too. No story-side changes needed.
 
+## Phase 3 — Per-action rollout (Session 3: actions 12–22, total 22 of ~26 complete)
+
+Twelve more actions migrated. Bundle rebuilt mid-session (after inserting/removing) and again at end of session. Article-rendering and rug-trapdoor regression transcripts passed 17/17 throughout.
+
+| Action / Helper | Callsites migrated | Templates updated | Tests |
+|---|---|---|---|
+| inserting | 3 params blocks (no_destination, cant_insert, blocked) | inserting.ts | 20/20 |
+| removing | 7 validate paths (already_have, not_in_container ×3 branches, container_closed, cannot_take, no_source), success/failure helpers, blocked | removing.ts | 26/26 |
+| entering | 3 validate paths (already_inside, not_enterable, container_closed), report-phase params (re-derived from noun via context.command), blocked; removed duplicate `target` const in postReport hook scope | entering.ts | 17/17 (4 skip) |
+| exiting | container_closed validate path, report-phase params (re-derived via context.world.getEntity from sharedData.fromLocation id) | exiting.ts | 15/15 (5 skip) |
+| throwing | 4 validate paths (target_not_here, too_heavy), execute-phase params init + at_target target, blocked; ~25 templates updated | throwing.ts | 26/26 (2 skip) |
+| attacking | 5 validate paths (not_visible, not_reachable, already_dead, violence_not_the_answer, attack_failed), report-phase params (target + weapon), blocked; pre-combat templates migrated to {the:cap:target}; combat.* messages preserved {targetName} (CombatService passes string) | attacking.ts | 42/42 |
+| giving | 5 validate paths (not_actor, self, inventory_full, too_heavy, not_interested), execute-phase params, blocked | giving.ts | 24/24 |
+| showing | analyzeShowAction params init, 2 validate paths (viewer_too_far, self), blocked; 3 assertion updates | showing.ts | 21/21 |
+| smelling | analyzeSmellAction params.target, too_far validate path, blocked; 7 assertion updates | smelling.ts | 18/18 |
+| listening | params.target init, blocked; 8 assertion updates | listening.ts | 17/17 |
+| touching | blocked + report-phase params (re-derived from context.command); ~14 templates updated; 16 assertion updates | touching.ts | 22/22 |
+| dropping | `determineDroppingMessage` in dropping-data.ts (item, container, supporter, location all to EntityInfo), 3 validate paths (not_held, still_worn, container_full), reportSingleSuccess params + container/supporter overrides, reportSingleBlocked, blocked; dropped_in/dropped_on templates updated; dropped_multi label preserved; 4 assertion updates | dropping.ts | 22/22 (2 skip) |
+
+**Patterns refined this session:**
+- Actions where `report()` uses `sharedData.targetName` (a string) without direct entity access: re-derive via `context.command.directObject?.entity` or `context.world.getEntity(state.fromLocationId)`, then `entityInfoFrom(noun) ?? { name: sharedData.targetName }` as fallback. Avoids enlarging SharedData per-action.
+- For actions delegating to data builders (examining — Session 2, dropping — this session): migrate the data builder file alongside the action file; it owns the params shape.
+- For actions delegating to other actions (inserting → putting): migrate only the inserting-side error/blocked paths; the success path inherits from putting's already-migrated event data.
+- Removed duplicate `const target = ...` declarations in inner block scopes where the migration introduced a name collision with a pre-existing variable.
+- `attacking`'s `combat.*` message templates intentionally left with `{targetName}` (bare string) because `CombatService` passes `targetName` as a plain string, not an `EntityInfo`. Flagged as a follow-up item separate from this branch.
+
+**Verification status after Session 3:**
+- All 22 migrated actions pass unit tests in isolation.
+- Bundle rebuilt and walkthrough chain re-verified: first 5 walkthroughs 170/170 in isolation; full chain RNG variance confirmed (490 fail / 25 fail / 474 fail across 3 runs — same thief-RNG pattern as prior sessions, not a regression from this branch).
+- Article-rendering + rug-trapdoor regression transcripts: 17/17 throughout.
+
 ## Next Phase
-- **Phase 3 (continued)**: ~15 actions remain. Next in order: inserting, removing (related to putting), entering, exiting, throwing, attacking, giving, showing, talking, smelling, listening, touching, turning, climbing, searching, using, dropping, wearing, taking_off, reading, eating, drinking.
-- **Tier**: rollout (one commit per action)
-- **Entry state**: Phase 3 active; branch `lang-articles-migration`; 11 actions migrated and unit-tested; bundle NOT yet rebuilt for Session 2 actions — first task of Session 3 is to rebuild and re-run the 873-test chain.
+- **Phase 3 (continued)**: ~4 actions remain: `talking`, `climbing`, `searching`, `wearing`. Additional audit needed for: `going` (vehicle.name + door.name noted but not yet migrated), `reading`, `eating`, `drinking`, `taking_off`. Other action files (`about`, `again`, `help`, `inventory`, `looking`, `quitting`, `restarting`, `restoring`, `saving`, `scoring`, `sleeping`, `undoing`, `version`, `waiting`, `hiding`, `lowering`, `raising`) appear to have no entity-name params.
+- **Phase 4**: advisory scanner script (`pnpm audit:templates`), finalize ADR-158, update CLAUDE.md "Language Layer Separation" subsection with one-line rule, clean up dead `englishTemplates` export.
+- **Tier**: rollout (one commit per action remaining)
+- **Entry state**: Phase 3 active; branch `lang-articles-migration`; 22 actions migrated and unit-tested; bundle rebuilt and verified green for all Session 3 actions.
 
 ## Open Items
 
 ### Short Term
-- **Session 3 first task**: rebuild bundle and re-run walkthrough chain to verify actions 6–11 (locking through putting) don't introduce regressions
-- Continue Phase 3 per-action rollout (~15 actions remaining after Session 2)
-- Run walkthrough chain checkpoint after each 4-5 action batch
-- Phase 4: add advisory scanner script, finalize ADR-158, update CLAUDE.md "Language Layer Separation" subsection with one-line rule
+- Complete remaining Phase 3 actions: `talking`, `climbing`, `searching`, `wearing` (~4 actions)
+- Audit and migrate if needed: `going` (vehicle.name + door.name), `reading`, `eating`, `drinking`, `taking_off`
+- Phase 4: add advisory scanner script (`pnpm audit:templates`), finalize ADR-158, update CLAUDE.md "Language Layer Separation" subsection
+- `attacking` follow-up: `CombatService` passes `targetName` as a plain string to `combat.*` message templates — those templates are currently excluded from the migration; a separate task should migrate CombatService to pass EntityInfo
+- Run full walkthrough chain after Phase 3 is complete (thief-RNG noise makes individual runs unreliable; establish a deterministic seed or run enough times to separate signal from noise)
 
 ### Long Term
 - Dead code: `englishTemplates` in `packages/lang-en-us/src/data/templates.ts` — exported but never imported; clean up in Phase 4 or separate issue
@@ -114,7 +147,7 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 - `docs/architecture/adrs/adr-158-entity-info-in-message-params.md` — ADR (drafted)
 - `docs/work/lang-articles/plan-20260424-the-cap-migration.md` — plan
 
-**Modified — stdlib actions** (13 files):
+**Modified — stdlib actions** (26 files):
 - `packages/stdlib/src/actions/standard/taking/taking.ts` — Phase 2 callsite migration
 - `packages/stdlib/src/actions/standard/pushing/pushing.ts` — Phase 3 Session 1
 - `packages/stdlib/src/actions/standard/pulling/pulling.ts` — Phase 3 Session 1
@@ -128,8 +161,21 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 - `packages/stdlib/src/actions/standard/examining/examining.ts` — Phase 3 Session 2
 - `packages/stdlib/src/actions/standard/examining/examining-data.ts` — Phase 3 Session 2 (data builder)
 - `packages/stdlib/src/actions/standard/putting/putting.ts` — Phase 3 Session 2
+- `packages/stdlib/src/actions/standard/inserting/inserting.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/removing/removing.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/entering/entering.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/exiting/exiting.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/throwing/throwing.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/attacking/attacking.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/giving/giving.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/showing/showing.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/smelling/smelling.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/listening/listening.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/touching/touching.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/dropping/dropping.ts` — Phase 3 Session 3
+- `packages/stdlib/src/actions/standard/dropping/dropping-data.ts` — Phase 3 Session 3 (data builder)
 
-**Modified — lang-en-us templates** (11 files):
+**Modified — lang-en-us templates** (23 files):
 - `packages/lang-en-us/src/actions/taking.ts` — Phase 2 template migration
 - `packages/lang-en-us/src/actions/pushing.ts` — Phase 3 Session 1
 - `packages/lang-en-us/src/actions/pulling.ts` — Phase 3 Session 1
@@ -141,8 +187,20 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 - `packages/lang-en-us/src/actions/switching-off.ts` — Phase 3 Session 2
 - `packages/lang-en-us/src/actions/examining.ts` — Phase 3 Session 2
 - `packages/lang-en-us/src/actions/putting.ts` — Phase 3 Session 2
+- `packages/lang-en-us/src/actions/inserting.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/removing.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/entering.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/exiting.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/throwing.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/attacking.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/giving.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/showing.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/smelling.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/listening.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/touching.ts` — Phase 3 Session 3
+- `packages/lang-en-us/src/actions/dropping.ts` — Phase 3 Session 3
 
-**Modified — stdlib tests** (11 files):
+**Modified — stdlib tests** (21 files):
 - `packages/stdlib/tests/unit/actions/taking-golden.test.ts` — Phase 2 assertion updates
 - `packages/stdlib/tests/unit/actions/pushing*.test.ts` — Phase 3 Session 1
 - `packages/stdlib/tests/unit/actions/pulling*.test.ts` — Phase 3 Session 1
@@ -154,13 +212,24 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 - `packages/stdlib/tests/unit/actions/switching_off-golden.test.ts` — Phase 3 Session 2
 - `packages/stdlib/tests/unit/actions/examining-golden.test.ts` — Phase 3 Session 2
 - `packages/stdlib/tests/unit/actions/putting-golden.test.ts` — Phase 3 Session 2
+- `packages/stdlib/tests/unit/actions/inserting-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/removing-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/entering-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/exiting-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/attacking-golden.test.ts` + `attacking.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/showing-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/smelling-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/listening-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/touching-golden.test.ts` — Phase 3 Session 3
+- `packages/stdlib/tests/unit/actions/dropping-golden.test.ts` — Phase 3 Session 3
+- (throwing-golden.test.ts and giving-golden.test.ts had no assertion updates needed)
 
 **Modified — stdlib barrel** (1 file):
 - `packages/stdlib/src/utils/index.ts` — re-export of `entityInfoFrom`
 
 ## Notes
 
-**Session duration**: ~4 hours (Session 1) + additional Session 2 work (locking through putting)
+**Session duration**: ~4 hours (Session 1) + additional Session 2 work (locking through putting) + Session 3 (inserting through dropping — 12 actions)
 
 **Approach**: Diagnosis first, then a well-bounded plan covering all ~130 templates. Pilot on a single action (taking) to validate the diverged-params pattern before committing to the full rollout. Phase 3 proceeds one action per commit so any regression is trivially isolatable.
 
@@ -169,9 +238,9 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 ## Session Metadata
 
 - **Status**: INCOMPLETE
-- **Blocker**: Phase 3 rollout — ~15 stdlib actions remain to be migrated; bundle not yet rebuilt for Session 2 actions
+- **Blocker**: Phase 3 rollout — ~4 actions remain (talking, climbing, searching, wearing) plus audit of going/reading/eating/drinking/taking_off; Phase 4 (scanner + ADR-158 finalization) not started
 - **Blocker Category**: Other: planned multi-session rollout, not a blocking defect
-- **Estimated Remaining**: ~2–3 hours across ~1–2 sessions
+- **Estimated Remaining**: ~1–2 hours across ~1 session (Phase 3 near-complete); ~1 hour for Phase 4
 - **Rollback Safety**: safe to revert (all work is on `lang-articles-migration` branch, not merged to main)
 
 ## Dependency/Prerequisite Check
@@ -200,10 +269,10 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 
 - Tests added: 20 (9 unit + 11 integration for Phase 1; all other work was updates to existing assertions)
 - Tests passing before: baseline (all green on main before branch)
-- Tests passing after: all 11 migrated actions green in isolation; walkthrough chain 873/873 last verified after Session 1 commit (Session 2 actions unit-tested but bundle not yet rebuilt)
-- Assertion updates: ~150 individual changes across 11 test files, from bare `'name'` string to `{ name: 'name' }` shape
-- Known untested areas: ~15 remaining stdlib actions not yet migrated; bundle integration for Session 2 actions pending; story-side templates in `stories/dungeo/src/messages/` (out of scope for this branch)
+- Tests passing after: all 22 migrated actions green in isolation; first 5 walkthroughs 170/170 in isolation; full chain RNG-variable (thief combat noise — not a regression from this branch); article-rendering + rug-trapdoor regression transcripts 17/17
+- Assertion updates: ~150 (Sessions 1–2) + ~48 additional (Session 3: showing 3, smelling 7, listening 8, touching 16, dropping 4, removing ~11) ≈ ~200 total across 21 test files, from bare `'name'` string to `{ name: 'name' }` shape
+- Known untested areas: ~4 remaining stdlib actions not yet migrated (talking, climbing, searching, wearing); going/reading/eating/drinking/taking_off need audit; CombatService `combat.*` messages still use bare string targetName (separate follow-up); story-side templates in `stories/dungeo/src/messages/` (out of scope for this branch)
 
 ---
 
-**Progressive update**: Session 1 completed 2026-04-24 21:58 CST; Session 2 update appended 2026-04-24 (locking, unlocking, switching_on, switching_off, examining, putting — 6 actions + 2 helpers, 11 of ~26 total)
+**Progressive update**: Session 1 completed 2026-04-24 21:58 CST; Session 2 update appended 2026-04-24 (locking, unlocking, switching_on, switching_off, examining, putting — 6 actions + 2 helpers, 11 of ~26 total); Session 3 update appended 2026-04-24 (inserting, removing, entering, exiting, throwing, attacking, giving, showing, smelling, listening, touching, dropping — 12 actions, 22 of ~26 total)

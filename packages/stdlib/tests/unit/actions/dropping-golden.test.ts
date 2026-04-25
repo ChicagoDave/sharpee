@@ -181,10 +181,10 @@ describe('droppingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_in'),
-        params: { 
-          item: 'ball',
-          container: 'wooden box',
-          location: 'wooden box'
+        params: {
+          item: { name: 'ball' },
+          container: { name: 'wooden box' },
+          location: { name: 'wooden box' }
         }
       });
     });
@@ -244,9 +244,9 @@ describe('droppingAction (Golden Pattern)', () => {
       // Should emit success message
       expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped'),
-        params: { 
-          item: 'red ball',
-          location: 'Test Room'
+        params: {
+          item: { name: 'red ball' },
+          location: { name: 'Test Room' }
         }
       });
     });
@@ -285,10 +285,10 @@ describe('droppingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_in'),
-        params: { 
-          item: 'ruby',
-          container: 'wooden box',
-          location: 'wooden box'
+        params: {
+          item: { name: 'ruby' },
+          container: { name: 'wooden box' },
+          location: { name: 'wooden box' }
         }
       });
     });
@@ -323,10 +323,10 @@ describe('droppingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.dropped', {
         messageId: expect.stringContaining('dropped_on'),
-        params: { 
-          item: 'old book',
-          supporter: 'oak table',
-          location: 'oak table'
+        params: {
+          item: { name: 'old book' },
+          supporter: { name: 'oak table' },
+          location: { name: 'oak table' }
         }
       });
     });

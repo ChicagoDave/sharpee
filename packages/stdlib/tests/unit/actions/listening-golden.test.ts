@@ -75,7 +75,7 @@ describe('listeningAction (Golden Pattern)', () => {
         hasSound: true,
         soundType: 'device',
         messageId: expect.stringContaining('device_running'),
-        params: { target: 'electric fan' }
+        params: { target: { name: 'electric fan' } }
       });
     });
 
@@ -102,7 +102,7 @@ describe('listeningAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.listened', {
         target: radio.id,
         messageId: expect.stringContaining('device_off'),
-        params: { target: 'portable radio' }
+        params: { target: { name: 'portable radio' } }
       });
     });
 
@@ -135,7 +135,7 @@ describe('listeningAction (Golden Pattern)', () => {
         hasContents: true,
         contentCount: 1,
         messageId: expect.stringContaining('container_sounds'),
-        params: { target: 'metal box' }
+        params: { target: { name: 'metal box' } }
       });
     });
 
@@ -170,7 +170,7 @@ describe('listeningAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.listened', {
         target: bottle.id,
         messageId: expect.stringContaining('liquid_sounds'),
-        params: { target: 'glass bottle' }
+        params: { target: { name: 'glass bottle' } }
       });
     });
 
@@ -197,7 +197,7 @@ describe('listeningAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.listened', {
         target: box.id,
         messageId: expect.stringContaining('no_sound'),
-        params: { target: 'empty box' }
+        params: { target: { name: 'empty box' } }
       });
     });
 
@@ -220,7 +220,7 @@ describe('listeningAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.listened', {
         target: stone.id,
         messageId: expect.stringContaining('no_sound'),
-        params: { target: 'smooth stone' }
+        params: { target: { name: 'smooth stone' } }
       });
     });
   });
@@ -379,7 +379,7 @@ describe('listeningAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.listened', {
         target: bag.id,
         messageId: expect.stringContaining('liquid_sounds'),
-        params: { target: 'leather bag' }
+        params: { target: { name: 'leather bag' } }
       });
     });
 
@@ -412,7 +412,7 @@ describe('listeningAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.listened', {
         target: musicBox.id,
         messageId: expect.stringContaining('device_running'),
-        params: { target: 'music box' }
+        params: { target: { name: 'music box' } }
       });
     });
   });

@@ -97,7 +97,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('no_source'),
-        params: { item: 'ball' }
+        params: { item: { name: 'ball' } }
       });
     });
 
@@ -121,9 +121,9 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('not_in_container'),
-        params: { 
-          item: 'gold coin',
-          container: 'wooden box'
+        params: {
+          item: { name: 'gold coin' },
+          container: { name: 'wooden box' }
         }
       });
     });
@@ -148,9 +148,9 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('not_on_surface'),
-        params: { 
-          item: 'old book',
-          surface: 'oak table'
+        params: {
+          item: { name: 'old book' },
+          surface: { name: 'oak table' }
         }
       });
     });
@@ -173,7 +173,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('already_have'),
-        params: { item: 'brass key' }
+        params: { item: { name: 'brass key' } }
       });
     });
 
@@ -205,7 +205,7 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('container_closed'),
-        params: { container: 'treasure chest' }
+        params: { container: { name: 'treasure chest' } }
       });
     });
   });
@@ -244,9 +244,9 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.taken', {
         messageId: expect.stringContaining('removed_from'),
-        params: { 
-          item: 'silver coin',
-          container: 'small box'
+        params: {
+          item: { name: 'silver coin' },
+          container: { name: 'small box' }
         }
       });
     });
@@ -306,9 +306,9 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.taken', {
         messageId: expect.stringContaining('removed_from_surface'),
-        params: { 
-          item: 'desk lamp',
-          surface: 'wooden desk'
+        params: {
+          item: { name: 'desk lamp' },
+          surface: { name: 'wooden desk' }
         }
       });
     });
@@ -335,9 +335,9 @@ describe('removingAction (Golden Pattern)', () => {
       // Should default to container error message
       expectEvent(events, 'if.event.remove_blocked', {
         messageId: expect.stringContaining('not_in_container'),
-        params: { 
-          item: 'crumpled note',
-          container: 'stone statue'
+        params: {
+          item: { name: 'crumpled note' },
+          container: { name: 'stone statue' }
         }
       });
     });
@@ -369,9 +369,9 @@ describe('removingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.taken', {
         messageId: expect.stringContaining('removed_from'),
-        params: { 
-          item: 'fountain pen',
-          container: 'writing desk' 
+        params: {
+          item: { name: 'fountain pen' },
+          container: { name: 'writing desk' }
         }
       });
     });
@@ -466,9 +466,9 @@ describe('Removing Action Edge Cases', () => {
     });
     
     expectEvent(events, 'if.event.taken', {
-      params: { 
-        item: 'silver coin',
-        container: 'leather pouch'
+      params: {
+        item: { name: 'silver coin' },
+        container: { name: 'leather pouch' }
       }
     });
   });
@@ -497,8 +497,8 @@ describe('Removing Action Edge Cases', () => {
     expectEvent(events, 'if.event.remove_blocked', {
       messageId: expect.stringContaining('not_in_container'),
       params: {
-        item: 'playing card',
-        container: 'blue box'
+        item: { name: 'playing card' },
+        container: { name: 'blue box' }
       }
     });
   });

@@ -17,32 +17,32 @@ export const touchingLanguage = {
   messages: {
     // Error messages
     'no_target': "Touch what?",
-    'not_visible': "{You} {can't} see {target} to touch it.",
-    'not_reachable': "{You} {can't} reach {target}.",
+    'not_visible': "{You} {can't} see {the:target} to touch it.",
+    'not_reachable': "{You} {can't} reach {the:target}.",
 
     // Success messages - textures
-    'feels_normal': "{target} feels as {you}'d expect.",
-    'feels_warm': "{target} feels warm to the touch.",
-    'feels_hot': "{target} is hot! {You} {pull} {your} hand back quickly.",
-    'feels_cold': "{target} feels cold.",
-    'feels_soft': "{target} feels soft.",
-    'feels_hard': "{target} feels hard and solid.",
-    'feels_smooth': "{target} feels smooth.",
-    'feels_rough': "{target} feels rough.",
-    'feels_wet': "{target} feels damp.",
+    'feels_normal': "{the:cap:target} feels as {you}'d expect.",
+    'feels_warm': "{the:cap:target} feels warm to the touch.",
+    'feels_hot': "{the:cap:target} is hot! {You} {pull} {your} hand back quickly.",
+    'feels_cold': "{the:cap:target} feels cold.",
+    'feels_soft': "{the:cap:target} feels soft.",
+    'feels_hard': "{the:cap:target} feels hard and solid.",
+    'feels_smooth': "{the:cap:target} feels smooth.",
+    'feels_rough': "{the:cap:target} feels rough.",
+    'feels_wet': "{the:cap:target} feels damp.",
 
     // Success messages - specific objects
-    'device_vibrating': "{target} is vibrating slightly.",
-    'immovable_object': "{target} is solid and immovable.",
-    'liquid_container': "{You} {feel} liquid sloshing inside {target}.",
+    'device_vibrating': "{the:cap:target} is vibrating slightly.",
+    'immovable_object': "{the:cap:target} is solid and immovable.",
+    'liquid_container': "{You} {feel} liquid sloshing inside {the:target}.",
 
     // Generic touching
-    'touched': "{You} {touch} {target}.",
-    'touched_gently': "{You} gently {touch} {target}.",
-    'poked': "{You} {poke} {target}.",
-    'prodded': "{You} {prod} {target}.",
-    'patted': "{You} {pat} {target}.",
-    'stroked': "{You} {stroke} {target}."
+    'touched': "{You} {touch} {the:target}.",
+    'touched_gently': "{You} gently {touch} {the:target}.",
+    'poked': "{You} {poke} {the:target}.",
+    'prodded': "{You} {prod} {the:target}.",
+    'patted': "{You} {pat} {the:target}.",
+    'stroked': "{You} {stroke} {the:target}."
   },
   
   help: {

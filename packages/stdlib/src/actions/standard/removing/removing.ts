@@ -41,6 +41,7 @@ import { getRemovingSharedData, RemovingSharedData, RemovingItemResult } from '.
 
 // Import multi-object helpers
 import { isMultiObjectCommand, getExcludedNames } from '../../../helpers/multi-object-handler';
+import { entityInfoFrom } from '../../../utils';
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
@@ -79,7 +80,7 @@ function validateSingleEntity(
     return {
       valid: false,
       error: RemovingMessages.ALREADY_HAVE,
-      params: { item: item.name }
+      params: { item: entityInfoFrom(item) }
     };
   }
 
@@ -91,8 +92,8 @@ function validateSingleEntity(
         valid: false,
         error: RemovingMessages.NOT_IN_CONTAINER,
         params: {
-          item: item.name,
-          container: source.name
+          item: entityInfoFrom(item),
+          container: entityInfoFrom(source)
         }
       };
     } else if (source.has(TraitType.SUPPORTER)) {
@@ -100,8 +101,8 @@ function validateSingleEntity(
         valid: false,
         error: RemovingMessages.NOT_ON_SURFACE,
         params: {
-          item: item.name,
-          surface: source.name
+          item: entityInfoFrom(item),
+          surface: entityInfoFrom(source)
         }
       };
     } else {
@@ -109,8 +110,8 @@ function validateSingleEntity(
         valid: false,
         error: RemovingMessages.NOT_IN_CONTAINER,
         params: {
-          item: item.name,
-          container: source.name
+          item: entityInfoFrom(item),
+          container: entityInfoFrom(source)
         }
       };
     }
@@ -123,7 +124,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: RemovingMessages.CONTAINER_CLOSED,
-        params: { container: source.name }
+        params: { container: entityInfoFrom(source) }
       };
     }
   }
@@ -133,7 +134,7 @@ function validateSingleEntity(
     return {
       valid: false,
       error: RemovingMessages.CANNOT_TAKE,
-      params: { item: item.name }
+      params: { item: entityInfoFrom(item) }
     };
   }
 
@@ -156,7 +157,7 @@ function validateMultiObject(context: ActionContext): ValidationResult {
     return {
       valid: false,
       error: RemovingMessages.CONTAINER_CLOSED,
-      params: { container: source.name }
+      params: { container: entityInfoFrom(source) }
     };
   }
 
@@ -264,17 +265,17 @@ function reportSingleSuccess(
 ): void {
   const actor = context.player;
 
-  // Build message params and determine message
+  // Build message params — EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
-    item: item.name
+    item: entityInfoFrom(item)
   };
 
   let messageKey: string;
   if (source.has(TraitType.CONTAINER)) {
-    params.container = source.name;
+    params.container = entityInfoFrom(source);
     messageKey = RemovingMessages.REMOVED_FROM;
   } else {
-    params.surface = source.name;
+    params.surface = entityInfoFrom(source);
     messageKey = RemovingMessages.REMOVED_FROM_SURFACE;
   }
 
@@ -312,10 +313,10 @@ function reportSingleBlocked(
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.remove_blocked', {
-    // Rendering data
+    // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: item.name, source: source.name },
-    // Domain data
+    params: { ...errorParams, item: entityInfoFrom(item), source: entityInfoFrom(source) },
+    // Domain data — strings for handlers
     itemId: item.id,
     itemName: item.name,
     sourceId: source.id,
@@ -381,7 +382,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: RemovingMessages.NO_SOURCE,
-        params: { item: item.name }
+        params: { item: entityInfoFrom(item) }
       };
     }
 
@@ -453,17 +454,17 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const item = context.command.directObject!.entity!;
 
-    // Build message params and determine message
+    // Build message params — EntityInfo for the formatter chain (ADR-158)
     const params: Record<string, any> = {
-      item: item.name
+      item: entityInfoFrom(item)
     };
 
     let messageKey: string;
     if (source.has(TraitType.CONTAINER)) {
-      params.container = source.name;
+      params.container = entityInfoFrom(source);
       messageKey = RemovingMessages.REMOVED_FROM;
     } else {
-      params.surface = source.name;
+      params.surface = entityInfoFrom(source);
       messageKey = RemovingMessages.REMOVED_FROM_SURFACE;
     }
 
@@ -498,14 +499,14 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     const source = context.command.indirectObject?.entity;
 
     return [context.event('if.event.remove_blocked', {
-      // Rendering data
+      // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
-        item: item?.name,
-        source: source?.name
+        item: item ? entityInfoFrom(item) : undefined,
+        source: source ? entityInfoFrom(source) : undefined
       },
-      // Domain data
+      // Domain data — strings for handlers
       itemId: item?.id,
       itemName: item?.name,
       sourceId: source?.id,

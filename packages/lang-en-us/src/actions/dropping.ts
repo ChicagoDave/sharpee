@@ -15,11 +15,12 @@ export const droppingLanguage = {
   
   messages: {
     'no_target': "Drop what?",
-    'not_held': "{You} aren't holding {item}.",
+    'not_held': "{You} aren't holding {the:item}.",
     'nothing_to_drop': "{You} aren't carrying anything.",
     'dropped': "Dropped.",
-    'dropped_in': "{You} {put} {item} in {container}.",
-    'dropped_on': "{You} {put} {item} on {surface}.",
+    'dropped_in': "{You} {put} {the:item} in {the:container}.",
+    'dropped_on': "{You} {put} {the:item} on {the:surface}.",
+    // Multi-drop label format: rendered without article per IF convention
     'dropped_multi': "{item}: Dropped."
   },
   

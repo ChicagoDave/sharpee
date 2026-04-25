@@ -20,23 +20,23 @@ export const givingLanguage = {
     // Error messages
     'no_item': "Give what?",
     'no_recipient': "Give it to whom?",
-    'not_holding': "{You} aren't holding {item}.",
-    'recipient_not_visible': "{You} {can't} see {recipient}.",
-    'recipient_not_reachable': "{recipient} is too far away.",
+    'not_holding': "{You} aren't holding {the:item}.",
+    'recipient_not_visible': "{You} {can't} see {the:recipient}.",
+    'recipient_not_reachable': "{the:cap:recipient} is too far away.",
     'not_actor': "{You} can only give things to people.",
-    'self': "{You} already {have} {item}!",
+    'self': "{You} already {have} {the:item}!",
 
     // Refusal messages
-    'inventory_full': "{recipient} says, \"I can't carry any more.\"",
-    'too_heavy': "{recipient} says, \"That's too heavy for me.\"",
-    'not_interested': "{recipient} doesn't seem interested in {item}.",
-    'refuses': "{recipient} politely declines.",
+    'inventory_full': "{the:cap:recipient} says, \"I can't carry any more.\"",
+    'too_heavy': "{the:cap:recipient} says, \"That's too heavy for me.\"",
+    'not_interested': "{the:cap:recipient} doesn't seem interested in {the:item}.",
+    'refuses': "{the:cap:recipient} politely declines.",
 
     // Success messages
-    'given': "{You} {give} {item} to {recipient}.",
-    'accepts': "{recipient} accepts {item}.",
-    'gratefully_accepts': "{recipient} gratefully accepts {item}.",
-    'reluctantly_accepts': "{recipient} reluctantly takes {item}."
+    'given': "{You} {give} {the:item} to {the:recipient}.",
+    'accepts': "{the:cap:recipient} accepts {the:item}.",
+    'gratefully_accepts': "{the:cap:recipient} gratefully accepts {the:item}.",
+    'reluctantly_accepts': "{the:cap:recipient} reluctantly takes {the:item}."
   },
   
   help: {
