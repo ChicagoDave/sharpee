@@ -212,7 +212,7 @@ describe('goingAction (Golden Pattern)', () => {
         reason: 'door_closed',
         params: {
           direction: Direction.NORTH,
-          door: 'wooden door'
+          door: { name: 'wooden door' }
         }
       });
     });
@@ -259,7 +259,7 @@ describe('goingAction (Golden Pattern)', () => {
         reason: 'door_locked',
         params: {
           direction: Direction.EAST,
-          door: 'iron door',
+          door: { name: 'iron door' },
           isClosed: true,
           isLocked: true
         }
