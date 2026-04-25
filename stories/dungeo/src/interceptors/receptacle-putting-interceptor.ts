@@ -15,7 +15,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
-  CapabilityEffect,
+  InterceptorReportResult,
   createEffect,
   IFEntity,
   WorldModel,
@@ -144,25 +144,24 @@ export const ReceptaclePuttingInterceptor: ActionInterceptor = {
   },
 
   /**
-   * Post-report: Add inflation message to output if balloon inflated.
+   * Post-report: Emit inflation narration alongside the standard put-in
+   * confirmation. The two beats are distinct ("you put X in" + "and the
+   * balloon inflates") — emit, not override.
    */
   postReport(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] {
-    const effects: CapabilityEffect[] = [];
-
-    if (sharedData.balloonJustInflated) {
-      effects.push(
+  ): InterceptorReportResult {
+    if (!sharedData.balloonJustInflated) return {};
+    return {
+      emit: [
         createEffect('game.message', {
           messageId: ReceptacleMessages.BALLOON_INFLATES,
-          params: {}
-        })
-      );
-    }
-
-    return effects;
+          params: {},
+        }),
+      ],
+    };
   }
 };

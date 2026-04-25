@@ -28,6 +28,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   RegionCrossings,
+  applyInterceptorReportResult,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -492,25 +493,23 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // === SOURCE POST-REPORT HOOK ===
-    // Called after standard report - can add additional effects
+    // Apply interceptor's override (replaces if.event.went.messageId, when emitted)
+    // and/or emit (additional events). See ISSUE-074.
+    // Note: if.event.went is only emitted on dark/blocked; override is a no-op
+    // on success non-dark transitions. Use emit for narration after success.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport && sharedData.sourceRoom) {
-      const additionalEffects = interceptor.postReport(sharedData.sourceRoom, context.world, context.player.id, interceptorData);
-      // Convert CapabilityEffects to ISemanticEvents
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
+      const result = interceptor.postReport(sharedData.sourceRoom, context.world, context.player.id, interceptorData);
+      applyInterceptorReportResult(events, 'if.event.went', result, context);
     }
 
     // === DESTINATION POST-REPORT HOOK (ADR-126) ===
     const destInterceptor = sharedData.destinationInterceptor;
     const destInterceptorData = sharedData.destinationInterceptorData || {};
     if (destInterceptor?.postReport && sharedData.destinationRoom) {
-      const additionalEffects = destInterceptor.postReport(sharedData.destinationRoom, context.world, context.player.id, destInterceptorData);
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
+      const result = destInterceptor.postReport(sharedData.destinationRoom, context.world, context.player.id, destInterceptorData);
+      applyInterceptorReportResult(events, 'if.event.went', result, context);
     }
 
     return events;

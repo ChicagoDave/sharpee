@@ -20,7 +20,8 @@ import {
   getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
-  createEffect
+  createEffect,
+  applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
@@ -224,17 +225,15 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     } as EnteredEventData & { messageId: string; params: Record<string, any>; targetName: string })];
 
     // === POST-REPORT HOOK ===
-    // Called after standard report - can add additional effects
+    // Apply interceptor's override (replaces if.event.entered.messageId)
+    // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport) {
       const target = context.command.directObject?.entity;
       if (target) {
-        const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-        // Convert CapabilityEffects to ISemanticEvents
-        for (const effect of additionalEffects) {
-          events.push(context.event(effect.type, effect.payload));
-        }
+        const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+        applyInterceptorReportResult(events, 'if.event.entered', result, context);
       }
     }
 

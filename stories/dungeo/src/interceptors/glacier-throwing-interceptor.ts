@@ -16,6 +16,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
+  InterceptorReportResult,
   CapabilityEffect,
   createEffect,
   IFEntity,
@@ -181,20 +182,18 @@ export const GlacierThrowingInterceptor: ActionInterceptor = {
   },
 
   /**
-   * Post-report: Add glacier melting message to output.
+   * Post-report: Override the standard throw message with the glacier
+   * melt narration. The melt text *replaces* the action's default text.
    */
   postReport(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] {
-    if (sharedData.glacierMelted) {
-      return [createEffect('game.message', {
-        messageId: GlacierMessages.GLACIER_MELTS,
-        params: {}
-      })];
-    }
-    return [];
+  ): InterceptorReportResult {
+    if (!sharedData.glacierMelted) return {};
+    return {
+      override: { messageId: GlacierMessages.GLACIER_MELTS, params: {} },
+    };
   }
 };

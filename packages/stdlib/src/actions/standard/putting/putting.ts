@@ -30,7 +30,8 @@ import {
   IFEntity,
   getInterceptorForAction,
   ActionInterceptor,
-  InterceptorSharedData
+  InterceptorSharedData,
+  applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
@@ -551,15 +552,14 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // === POST-REPORT HOOK ===
-    // Called after standard report - can add additional effects
+    // Apply interceptor's override (replaces if.event.put_in/put_on messageId)
+    // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport) {
-      const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      // Convert CapabilityEffects to ISemanticEvents
-      for (const effect of additionalEffects) {
-        events.push(context.event(effect.type, effect.payload));
-      }
+      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+      const primaryEventType = targetPreposition === 'in' ? 'if.event.put_in' : 'if.event.put_on';
+      applyInterceptorReportResult(events, primaryEventType, result, context);
     }
 
     return events;

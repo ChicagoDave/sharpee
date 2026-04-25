@@ -32,7 +32,8 @@ import {
   getBehaviorForCapability,
   CapabilityBehavior,
   CapabilityEffect,
-  ITrait
+  ITrait,
+  applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
@@ -541,17 +542,15 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // === POST-REPORT HOOK ===
-    // Called after standard report - can add additional effects
+    // Apply interceptor's override (replaces if.event.thrown.messageId)
+    // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
     if (interceptor?.postReport) {
       const target = context.command.indirectObject?.entity;
       if (target) {
-        const additionalEffects = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-        // Convert CapabilityEffects to ISemanticEvents
-        for (const effect of additionalEffects) {
-          events.push(context.event(effect.type, effect.payload));
-        }
+        const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+        applyInterceptorReportResult(events, 'if.event.thrown', result, context);
       }
     }
 
