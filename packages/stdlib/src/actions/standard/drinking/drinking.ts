@@ -18,6 +18,7 @@ import { IFActions } from '../../constants';
 import { DrunkEventData, ImplicitTakenEventData } from './drinking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -212,17 +213,17 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!isDrinkable) {
-      return { valid: false, error: 'not_drinkable', params: { item: item.name } };
+      return { valid: false, error: 'not_drinkable', params: { item: entityInfoFrom(item) } };
     }
 
     // Check if already consumed
     if (edibleTrait && (edibleTrait.servings ?? 1) <= 0) {
-      return { valid: false, error: 'already_consumed', params: { item: item.name } };
+      return { valid: false, error: 'already_consumed', params: { item: entityInfoFrom(item) } };
     }
 
     // Check if container needs to be open
     if (containerTrait && item.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(item)) {
-      return { valid: false, error: 'container_closed', params: { item: item.name } };
+      return { valid: false, error: 'container_closed', params: { item: entityInfoFrom(item) } };
     }
 
     return { valid: true };
@@ -255,8 +256,9 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       itemName: item.name
     };
 
+    // params carry EntityInfo for the formatter chain (ADR-158)
     const params: Record<string, any> = {
-      item: item.name
+      item: entityInfoFrom(item)
     };
 
     // Capture state BEFORE mutations for determineMessage
@@ -314,7 +316,8 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.drunk', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { item: item?.name, ...result.params },
+      // params carry EntityInfo for the formatter chain (ADR-158)
+      params: { item: item ? entityInfoFrom(item) : undefined, ...result.params },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name
