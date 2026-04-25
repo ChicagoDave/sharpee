@@ -34,33 +34,37 @@ export const attackingLanguage = {
     // Combat validation errors
     'already_dead': "{the:cap:target} is already dead.",
     'violence_not_the_answer': "Violence is not the answer.",
-    'combat.cannot_attack': "{You} {can't} attack {targetName}.",
-    'combat.already_dead': "{targetName} is already dead.",
-    'combat.not_hostile': "{targetName} isn't hostile.",
+    // ADR-158: combat.* templates use the formatter chain via the
+    // {target} EntityInfo param; CombatService and the attacking action
+    // also pass {targetName} (bare string) on the same params block for
+    // handler / event-sourcing consumption.
+    'combat.cannot_attack': "{You} {can't} attack {the:target}.",
+    'combat.already_dead': "{the:cap:target} is already dead.",
+    'combat.not_hostile': "{the:cap:target} isn't hostile.",
     'combat.no_target': "Attack what?",
-    'combat.target_unconscious': "{targetName} is already unconscious.",
+    'combat.target_unconscious': "{the:cap:target} is already unconscious.",
     'combat.need_weapon': "{You} {need} a weapon to attack effectively.",
 
     // Combat attack outcomes (ADR-072 CombatService)
-    'combat.attack.missed': "{You} {swing} at {targetName} but miss!",
-    'combat.attack.hit': "{You} {hit} {targetName} for {damage} damage.",
-    'combat.attack.hit_light': "{You} {graze} {targetName}, doing {damage} damage.",
-    'combat.attack.hit_heavy': "{You} {land} a solid blow on {targetName}, dealing {damage} damage!",
-    'combat.attack.knocked_out': "{targetName} collapses, unconscious!",
-    'combat.attack.killed': "{You} {have} slain {targetName}!",
+    'combat.attack.missed': "{You} {swing} at {the:target} but miss!",
+    'combat.attack.hit': "{You} {hit} {the:target} for {damage} damage.",
+    'combat.attack.hit_light': "{You} {graze} {the:target}, doing {damage} damage.",
+    'combat.attack.hit_heavy': "{You} {land} a solid blow on {the:target}, dealing {damage} damage!",
+    'combat.attack.knocked_out': "{the:cap:target} collapses, unconscious!",
+    'combat.attack.killed': "{You} {have} slain {the:target}!",
 
     // Combat defense outcomes (ADR-072 CombatService)
-    'combat.defend.blocked': "{targetName} blocks {your} attack!",
-    'combat.defend.parried': "{targetName} parries {your} attack!",
-    'combat.defend.dodged': "{targetName} dodges out of the way!",
+    'combat.defend.blocked': "{the:cap:target} blocks {your} attack!",
+    'combat.defend.parried': "{the:cap:target} parries {your} attack!",
+    'combat.defend.dodged': "{the:cap:target} dodges out of the way!",
 
     // Health status descriptions (ADR-072 CombatService)
-    'combat.health.healthy': "{targetName} appears uninjured.",
-    'combat.health.wounded': "{targetName} has been wounded.",
-    'combat.health.badly_wounded': "{targetName} is badly wounded.",
-    'combat.health.near_death': "{targetName} is barely clinging to life!",
-    'combat.health.unconscious': "{targetName} lies unconscious.",
-    'combat.health.dead': "{targetName} is dead.",
+    'combat.health.healthy': "{the:cap:target} appears uninjured.",
+    'combat.health.wounded': "{the:cap:target} has been wounded.",
+    'combat.health.badly_wounded': "{the:cap:target} is badly wounded.",
+    'combat.health.near_death': "{the:cap:target} is barely clinging to life!",
+    'combat.health.unconscious': "{the:cap:target} lies unconscious.",
+    'combat.health.dead': "{the:cap:target} is dead.",
 
     // Special weapon effects (ADR-072 CombatService)
     'combat.special.sword_glows': "{Your} sword glows brightly!",

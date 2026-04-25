@@ -381,12 +381,16 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     // Determine message based on result type
     let messageId: string;
 
-    // Use CombatService message IDs for combatant attacks
+    // Use CombatService message IDs for combatant attacks.
+    // ADR-158: provide both `target` (EntityInfo for templates) and
+    // `targetName` (string for handler / event-sourcing compat). The
+    // combatResult.messageData also carries both shapes.
     if (usedCombatService && combatResult) {
       messageId = combatResult.messageId;
       params.damage = combatResult.damage;
       params.attackerName = context.player.name;
       params.targetName = target.name; // string for combat service compat
+      params.target = entityInfoFrom(target);
 
       // Add any extra data from combat result
       if (combatResult.messageData) {
