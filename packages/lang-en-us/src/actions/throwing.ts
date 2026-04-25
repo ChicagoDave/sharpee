@@ -49,6 +49,10 @@ export const throwingLanguage = {
     // Breaking messages
     'breaks_on_impact': "{the:cap:item} shatters on impact!",
     'breaks_against': "{the:cap:item} smashes against {the:target}!",
+    // ADR-158 exception: hand-written "The fragile" prefix wraps an
+    // adjective phrase around the entity, which the {the:cap:…} formatter
+    // cannot reproduce. Renders correctly for common nouns; the proper-name
+    // edge case ("The fragile Excalibur") is rare in practice.
     'fragile_breaks': "The fragile {item} breaks into pieces.",
 
     // Target reactions
