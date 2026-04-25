@@ -22,42 +22,42 @@ export const turningLanguage = {
   messages: {
     // Error messages
     'no_target': "Turn what?",
-    'not_visible': "{You} {can't} see {target}.",
-    'not_reachable': "{You} {can't} reach {target}.",
-    'wearing_it': "{You} {can't} turn {target} while wearing it.",
-    'cant_turn_that': "{target} isn't something {you} can turn.",
+    'not_visible': "{You} {can't} see {the:target}.",
+    'not_reachable': "{You} {can't} reach {the:target}.",
+    'wearing_it': "{You} {can't} turn {the:target} while wearing it.",
+    'cant_turn_that': "{the:cap:target} isn't something {you} can turn.",
 
     // Success messages - dials
-    'dial_turned': "{You} {turn} {target}.",
-    'dial_set': "{You} {turn} {target} to {setting}.",
-    'dial_adjusted': "{You} {adjust} {target} {direction}.",
+    'dial_turned': "{You} {turn} {the:target}.",
+    'dial_set': "{You} {turn} {the:target} to {setting}.",
+    'dial_adjusted': "{You} {adjust} {the:target} {direction}.",
 
     // Success messages - knobs
-    'knob_turned': "{You} {turn} {target}.",
-    'knob_clicks': "{You} {turn} {target} with a click.",
-    'knob_toggled': "{You} {turn} {target}, switching it {newState}.",
+    'knob_turned': "{You} {turn} {the:target}.",
+    'knob_clicks': "{You} {turn} {the:target} with a click.",
+    'knob_toggled': "{You} {turn} {the:target}, switching it {newState}.",
 
     // Success messages - wheels/cranks
-    'wheel_turned': "{You} {turn} {target}.",
-    'crank_turned': "{You} {crank} {target}.",
-    'mechanism_grinds': "{You} {turn} {target}. Gears grind and machinery moves.",
-    'requires_more_turns': "{You} {turn} {target}. It seems to need more turning.",
-    'mechanism_activated': "As {you} {turn} {target}, {you} {hear} machinery activate!",
+    'wheel_turned': "{You} {turn} {the:target}.",
+    'crank_turned': "{You} {crank} {the:target}.",
+    'mechanism_grinds': "{You} {turn} {the:target}. Gears grind and machinery moves.",
+    'requires_more_turns': "{You} {turn} {the:target}. It seems to need more turning.",
+    'mechanism_activated': "As {you} {turn} {the:target}, {you} {hear} machinery activate!",
 
     // Success messages - valves
-    'valve_opened': "{You} {turn} {target}, opening the valve.",
-    'valve_closed': "{You} {turn} {target}, closing the valve.",
-    'flow_changes': "{You} {turn} {target}, adjusting the flow.",
+    'valve_opened': "{You} {turn} {the:target}, opening the valve.",
+    'valve_closed': "{You} {turn} {the:target}, closing the valve.",
+    'flow_changes': "{You} {turn} {the:target}, adjusting the flow.",
 
     // Success messages - keys
-    'key_needs_lock': "{You} {need} to put {target} in a lock first.",
-    'key_turned': "{You} {turn} {target} in the lock.",
+    'key_needs_lock': "{You} {need} to put {the:target} in a lock first.",
+    'key_turned': "{You} {turn} {the:target} in the lock.",
 
     // Success messages - general
-    'turned': "{You} {turn} {target}.",
-    'rotated': "{You} {rotate} {target}.",
-    'spun': "{You} {spin} {target}.",
-    'nothing_happens': "{You} {turn} {target}, but nothing happens."
+    'turned': "{You} {turn} {the:target}.",
+    'rotated': "{You} {rotate} {the:target}.",
+    'spun': "{You} {spin} {the:target}.",
+    'nothing_happens': "{You} {turn} {the:target}, but nothing happens."
   },
   
   help: {
