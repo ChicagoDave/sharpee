@@ -146,6 +146,17 @@ Phase 3 rollout completed 2026-04-24 across three sessions on the `lang-articles
 
 **Verification:** every migrated action passes its `*-golden.test.ts` in isolation. Regression transcripts (article-rendering, rug-trapdoor) green throughout. Full Dungeo walkthrough chain RNG-variable due to thief-combat noise; not a regression introduced by this branch.
 
+### Follow-up rollout (plan-20260425-lang-articles-followups.md)
+
+The advisory scanner shipped at the end of the original Phase 4 reported **121 findings** — 26 actions had been migrated, but the scanner surfaced 10 additional actions that the manual audit missed because they don't follow the standard validate/execute/report/blocked shape. Follow-up work completed in the same branch (commits 4df199d6 through bd42b7d3):
+
+- **Phase A — three documented exceptions (3 commits).** `switching_on` room-description params (rooms render proper-style as headings, not articled), `inserting-semantic.ts` (deleted as dead reference code from ADR-054), `throwing.ts:fragile_breaks` (manual "The fragile X" prefix wraps an adjective phrase that the formatter chain cannot reproduce).
+- **Phase B — 9 actions / shared infrastructure (9 commits).** `inventory` (list-label exception), `waiting` (story-extension hook), `telling` + `asking` (lang-only — actions deferred to a future conversation extension), `using` (deleted as deliberately-rejected verb), `turning` (lang-only — action removed pending TURNABLE trait), `lowering` + `raising` + `capability-dispatch.ts` infrastructure (single-point fix covering the entire ADR-090 dispatcher — pays forward for any future capability-dispatched verb), `looking` + `looking-data.ts` (largest blast radius — auto-look events flow into `going` and `switching_on`).
+
+**Final scanner state: 5 findings, all documented intentional exceptions** (`switching_on` room title, `dropping_multi`/`taken_multi`/`item_list` IF list-labels, `throwing.fragile_breaks` adjective phrase). Down from 121.
+
+**Combat-path strings still deferred** (Phase C of the follow-up plan, not yet started). `CombatService` constructs `combat.*` events directly with bare `targetName` strings; the action-side `attacking` migration handles the `attack_failed` path but not the events fired from inside the combat loop. Tracked in `docs/work/lang-articles/plan-20260425-lang-articles-followups.md`.
+
 ## Session
 
-`session-20260424-2042-main.md` (bug diagnosis and plan draft) → `session-20260424-2158-lang-articles-migration.md` (Sessions 1–3) → `session-20260424-2329-lang-articles-migration.md` (Session 4 + Phase 4 finalization).
+`session-20260424-2042-main.md` (bug diagnosis and plan draft) → `session-20260424-2158-lang-articles-migration.md` (Sessions 1–3) → `session-20260424-2329-lang-articles-migration.md` (Session 4: Phase 3 finish + Phase 4 + follow-up Phases A and B).
