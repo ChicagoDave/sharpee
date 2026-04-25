@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/runtime",
-  "version": "0.9.111",
+  "version": "0.9.112",
   "description": "Headless Sharpee engine runtime for embedding in iframes via postMessage",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

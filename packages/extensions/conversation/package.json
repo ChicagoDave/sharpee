@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/extension-conversation",
-  "version": "0.9.79-beta",
+  "version": "0.9.112",
   "description": "Enhanced conversation system extension for Sharpee",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

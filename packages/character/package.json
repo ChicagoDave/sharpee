@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/character",
-  "version": "0.9.111",
+  "version": "0.9.112",
   "description": "Character model builder for Sharpee Interactive Fiction Platform (ADR-141)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

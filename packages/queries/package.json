@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/queries",
-  "version": "0.9.111",
+  "version": "0.9.112",
   "description": "LINQ-style fluent entity query API for Sharpee Interactive Fiction Platform",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
