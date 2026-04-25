@@ -152,11 +152,18 @@ The advisory scanner shipped at the end of the original Phase 4 reported **121 f
 
 - **Phase A — three documented exceptions (3 commits).** `switching_on` room-description params (rooms render proper-style as headings, not articled), `inserting-semantic.ts` (deleted as dead reference code from ADR-054), `throwing.ts:fragile_breaks` (manual "The fragile X" prefix wraps an adjective phrase that the formatter chain cannot reproduce).
 - **Phase B — 9 actions / shared infrastructure (9 commits).** `inventory` (list-label exception), `waiting` (story-extension hook), `telling` + `asking` (lang-only — actions deferred to a future conversation extension), `using` (deleted as deliberately-rejected verb), `turning` (lang-only — action removed pending TURNABLE trait), `lowering` + `raising` + `capability-dispatch.ts` infrastructure (single-point fix covering the entire ADR-090 dispatcher — pays forward for any future capability-dispatched verb), `looking` + `looking-data.ts` (largest blast radius — auto-look events flow into `going` and `switching_on`).
+- **Phase C — CombatService + combat.\* templates (commit e6b335e6).** Last out-of-band channel that bypassed Phase 3. `CombatService` (in `packages/extensions/basic-combat`) constructed `combat.*` events directly with bare `targetName` strings; the action-side `attacking` migration handled the `attack_failed` path but not events fired from inside the combat resolution loop. `basic-combat` already depends on `@sharpee/stdlib` so `entityInfoFrom` is reachable through the public API — no dependency-direction change required. The `messageData` shape now carries both `targetName: string` (handler / event-sourcing compat) and `target: EntityInfo` (formatter chain), same diverged-shape pattern used everywhere else. 22 `combat.*` templates migrated.
 
 **Final scanner state: 5 findings, all documented intentional exceptions** (`switching_on` room title, `dropping_multi`/`taken_multi`/`item_list` IF list-labels, `throwing.fragile_breaks` adjective phrase). Down from 121.
 
-**Combat-path strings still deferred** (Phase C of the follow-up plan, not yet started). `CombatService` constructs `combat.*` events directly with bare `targetName` strings; the action-side `attacking` migration handles the `attack_failed` path but not the events fired from inside the combat loop. Tracked in `docs/work/lang-articles/plan-20260425-lang-articles-followups.md`.
+**Verification at follow-up close-out:**
+- stdlib unit tests: 1172 passed (27 pre-existing skips).
+- lang-en-us: 205/205.
+- ext-basic-combat combat-service: 23/23.
+- attacking-golden + attacking: 42/42.
+- Dungeo walkthrough chain: 872/872 (second run after RNG-noisy first; documented thief-combat noise).
+- Article-rendering and rug-trapdoor regression transcripts: green throughout.
 
 ## Session
 
-`session-20260424-2042-main.md` (bug diagnosis and plan draft) → `session-20260424-2158-lang-articles-migration.md` (Sessions 1–3) → `session-20260424-2329-lang-articles-migration.md` (Session 4: Phase 3 finish + Phase 4 + follow-up Phases A and B).
+`session-20260424-2042-main.md` (bug diagnosis and plan draft) → `session-20260424-2158-lang-articles-migration.md` (Sessions 1–3) → `session-20260424-2329-lang-articles-migration.md` (Session 4: Phase 3 finish + Phase 4 + follow-up Phases A, B, C, D).
