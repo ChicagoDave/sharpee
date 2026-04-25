@@ -22,6 +22,9 @@ export const inventoryLanguage = {
     'carrying': "{You} {be} carrying:",
     'wearing': "{You} {be} wearing:",
     'carrying_and_wearing': "{You} {be} carrying and wearing:",
+    // ADR-158 exception: inventory list-line pattern. Each {item} is a
+    // list entry under the carrying/wearing header, not an in-sentence
+    // reference. Articling ("  the sword") would look wrong in a list.
     'item_list': "  {item}",
     'holding_list': "  {items}",
     'worn_list': "  {items} (worn)",
