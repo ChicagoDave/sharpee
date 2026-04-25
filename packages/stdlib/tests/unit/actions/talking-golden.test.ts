@@ -115,7 +115,7 @@ describe('talkingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.talk_blocked', {
         messageId: 'if.action.talking.not_available',
-        params: { target: 'busy worker' }
+        params: { target: { name: 'busy worker' } }
       });
     });
   });
@@ -142,7 +142,7 @@ describe('talkingAction (Golden Pattern)', () => {
         target: simpleNpc.id,
         targetName: 'service robot',
         messageId: 'if.action.talking.no_response',
-        params: { target: 'service robot' }
+        params: { target: { name: 'service robot' } }
       });
     });
   });
@@ -173,7 +173,7 @@ describe('talkingAction (Golden Pattern)', () => {
         firstMeeting: true,
         conversationState: 'initial',
         messageId: 'if.action.talking.first_meeting',
-        params: { target: 'traveling merchant' }
+        params: { target: { name: 'traveling merchant' } }
       });
     });
 
@@ -198,7 +198,7 @@ describe('talkingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.talked', {
         messageId: 'if.action.talking.formal_greeting',
-        params: { target: 'distinguished professor' }
+        params: { target: { name: 'distinguished professor' } }
       });
     });
 
@@ -223,7 +223,7 @@ describe('talkingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.talked', {
         messageId: 'if.action.talking.casual_greeting',
-        params: { target: 'friendly bartender' }
+        params: { target: { name: 'friendly bartender' } }
       });
     });
   });
@@ -250,7 +250,7 @@ describe('talkingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.talked', {
         messageId: 'if.action.talking.friendly_greeting',
-        params: { target: 'trusted ally' }
+        params: { target: { name: 'trusted ally' } }
       });
     });
 
@@ -275,7 +275,7 @@ describe('talkingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.talked', {
         messageId: 'if.action.talking.remembers_you',
-        params: { target: 'old innkeeper' }
+        params: { target: { name: 'old innkeeper' } }
       });
     });
 
@@ -300,7 +300,7 @@ describe('talkingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.talked', {
         messageId: 'if.action.talking.greets_again',
-        params: { target: 'store clerk' }
+        params: { target: { name: 'store clerk' } }
       });
     });
   });
@@ -334,7 +334,7 @@ describe('talkingAction (Golden Pattern)', () => {
         target: informativeNpc.id,
         hasTopics: true,
         messageId: 'if.action.talking.has_topics',
-        params: { target: 'helpful librarian' }
+        params: { target: { name: 'helpful librarian' } }
       });
     });
 
@@ -359,7 +359,7 @@ describe('talkingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.talked', {
         messageId: 'if.action.talking.nothing_to_say',
-        params: { target: 'silent guard' }
+        params: { target: { name: 'silent guard' } }
       });
     });
   });

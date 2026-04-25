@@ -72,7 +72,7 @@ $restore wt-16
 
 # Turn off the lamp to make the room dark
 > turn off lantern
-[OK: contains "switch off brass lantern"]
+[OK: contains "switch off the brass lantern"]
 
 # Wait 3 turns in darkness to trigger the endgame
 # Turn 1: darkness counter increments
@@ -102,7 +102,7 @@ $restore wt-16
 
 # Push the stone button (deactivates laser beam in Small Room)
 > push stone button
-[OK: contains "You push stone button"]
+[OK: contains "You push the stone button"]
 
 > south
 [OK: contains "Small Room"]

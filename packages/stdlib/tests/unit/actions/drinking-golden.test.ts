@@ -82,7 +82,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.drunk', {
         blocked: true,
         messageId: expect.stringContaining('not_drinkable'),
-        params: { item: 'loaf of bread' }
+        params: { item: { name: 'loaf of bread' } }
       });
     });
 
@@ -105,7 +105,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.drunk', {
         blocked: true,
         messageId: expect.stringContaining('already_consumed'),
-        params: { item: 'empty potion' }
+        params: { item: { name: 'empty potion' } }
       });
     });
 
@@ -132,7 +132,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.drunk', {
         blocked: true,
         messageId: expect.stringContaining('container_closed'),
-        params: { item: 'water bottle' }
+        params: { item: { name: 'water bottle' } }
       });
     });
   });
@@ -162,7 +162,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should emit success message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk'),
-        params: { item: 'cup of coffee' }
+        params: { item: { name: 'cup of coffee' } }
       });
     });
 
@@ -197,7 +197,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should emit success message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk'),
-        params: { item: 'can of soda' }
+        params: { item: { name: 'can of soda' } }
       });
     });
 
@@ -227,7 +227,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should emit "drunk_some" message for partial consumption
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk_some'),
-        params: { item: 'pot of tea' }
+        params: { item: { name: 'pot of tea' } }
       });
     });
 
@@ -277,7 +277,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use refreshing message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('refreshing'),
-        params: { item: 'cold lemonade' }
+        params: { item: { name: 'cold lemonade' } }
       });
     });
 
@@ -300,7 +300,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use bitter message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('bitter'),
-        params: { item: 'bitter medicine' }
+        params: { item: { name: 'bitter medicine' } }
       });
     });
 
@@ -323,7 +323,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use sweet message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('sweet'),
-        params: { item: 'hot cocoa' }
+        params: { item: { name: 'hot cocoa' } }
       });
     });
 
@@ -346,7 +346,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use strong message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('strong'),
-        params: { item: 'glass of whiskey' }
+        params: { item: { name: 'glass of whiskey' } }
       });
     });
 
@@ -375,7 +375,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use magical_effects message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('magical_effects'),
-        params: { item: 'glowing potion' }
+        params: { item: { name: 'glowing potion' } }
       });
     });
 
@@ -398,7 +398,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use healing message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('healing'),
-        params: { item: 'healing elixir' }
+        params: { item: { name: 'healing elixir' } }
       });
     });
 
@@ -427,7 +427,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use thirst_quenched message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('thirst_quenched'),
-        params: { item: 'fresh water' }
+        params: { item: { name: 'fresh water' } }
       });
     });
 
@@ -450,7 +450,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use still_thirsty message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('still_thirsty'),
-        params: { item: 'strong alcohol' }
+        params: { item: { name: 'strong alcohol' } }
       });
     });
 
@@ -487,8 +487,8 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use from_container message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('from_container'),
-        params: { 
-          item: 'metal flask',
+        params: {
+          item: { name: 'metal flask' },
           liquidType: 'water'
         }
       });
@@ -522,7 +522,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use empty_now message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('empty_now'),
-        params: { item: 'small cup' }
+        params: { item: { name: 'small cup' } }
       });
     });
 
@@ -546,7 +546,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use drunk_from message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('drunk_from'),
-        params: { item: 'water fountain' }
+        params: { item: { name: 'water fountain' } }
       });
     });
 
@@ -600,7 +600,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use sipped message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('sipped'),
-        params: { item: 'hot tea' }
+        params: { item: { name: 'hot tea' } }
       });
     });
 
@@ -628,7 +628,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use quaffed message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('quaffed'),
-        params: { item: 'mug of ale' }
+        params: { item: { name: 'mug of ale' } }
       });
     });
 
@@ -656,7 +656,7 @@ describe('drinkingAction (Golden Pattern)', () => {
       // Should use gulped message
       expectEvent(events, 'if.event.drunk', {
         messageId: expect.stringContaining('gulped'),
-        params: { item: 'small potion' }
+        params: { item: { name: 'small potion' } }
       });
     });
   });

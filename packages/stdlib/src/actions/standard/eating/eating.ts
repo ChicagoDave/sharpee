@@ -21,6 +21,7 @@ import { IFActions } from '../../constants';
 import { EatenEventData } from './eating-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -99,7 +100,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'not_edible',
-        params: { item: item.name }
+        params: { item: entityInfoFrom(item) }
       };
     }
 
@@ -108,7 +109,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'is_drink',
-        params: { item: item.name }
+        params: { item: entityInfoFrom(item) }
       };
     }
 
@@ -117,7 +118,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'already_consumed',
-        params: { item: item.name }
+        params: { item: entityInfoFrom(item) }
       };
     }
 
@@ -232,7 +233,8 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.eaten', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { item: item?.name, ...result.params },
+      // params carry EntityInfo for the formatter chain (ADR-158)
+      params: { item: item ? entityInfoFrom(item) : undefined, ...result.params },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name
@@ -251,11 +253,12 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Emit the EATEN event with messageId for text rendering
-    // eventData already contains item (id) and itemName (string)
+    // Emit the EATEN event with messageId for text rendering.
+    // params carry EntityInfo for the formatter chain (ADR-158).
+    const item = context.command.directObject?.entity;
     events.push(context.event('if.event.eaten', {
       messageId: `${context.action.id}.${sharedData.messageId}`,
-      params: { item: sharedData.eventData?.itemName },
+      params: { item: item ? entityInfoFrom(item) : { name: sharedData.eventData?.itemName ?? '' } },
       ...sharedData.eventData
     }));
 

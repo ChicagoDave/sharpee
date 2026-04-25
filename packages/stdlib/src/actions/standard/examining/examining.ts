@@ -23,6 +23,7 @@ import { buildEventData } from '../../data-builder-types';
 // Import our data builder
 import { examiningDataConfig, buildExaminingMessageParams } from './examining-data';
 import { ExaminingMessages } from './examining-messages';
+import { entityInfoFrom } from '../../../utils';
 
 export const examiningAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EXAMINING,
@@ -116,7 +117,9 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.examined', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { target: noun?.name, ...result.params },
+      // params carry EntityInfo for the formatter chain (ADR-158);
+      // top-level fields stay strings for handlers.
+      params: { target: noun ? entityInfoFrom(noun) : undefined, ...result.params },
       reason: result.error,
       targetId: noun?.id,
       targetName: noun?.name

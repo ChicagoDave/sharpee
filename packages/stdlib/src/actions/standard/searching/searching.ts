@@ -21,6 +21,7 @@ import { IFActions } from '../../constants';
 import { SearchedEventData } from './searching-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { entityInfoFrom } from '../../../utils';
 import {
   analyzeSearchTarget,
   revealConcealedItems,
@@ -79,10 +80,10 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     // Check if it's a container that needs to be open
     if (target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
       if (!OpenableBehavior.isOpen(target)) {
-        return { 
-          valid: false, 
+        return {
+          valid: false,
           error: 'container_closed',
-          params: { target: target.name }
+          params: { target: entityInfoFrom(target) }
         };
       }
     }
@@ -117,7 +118,8 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.searched', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { target: target?.name, ...result.params },
+      // params carry EntityInfo for the formatter chain (ADR-158)
+      params: { target: target ? entityInfoFrom(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name

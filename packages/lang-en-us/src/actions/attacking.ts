@@ -22,45 +22,49 @@ export const attackingLanguage = {
   messages: {
     // Error messages
     'no_target': "Attack what?",
-    'not_visible': "{You} {can't} see {target}.",
-    'not_reachable': "{You} {can't} reach {target}.",
+    'not_visible': "{You} {can't} see {the:target}.",
+    'not_reachable': "{You} {can't} reach {the:target}.",
     'self': "Violence against {yourself} isn't the answer.",
-    'not_holding_weapon': "{You} aren't holding {weapon}.",
-    'indestructible': "{target} is far too solid to damage.",
-    'need_weapon_to_damage': "{target} requires a weapon to damage.",
-    'wrong_weapon_type': "{target} can't be damaged with that type of weapon.",
-    'attack_ineffective': "{Your} attack has no effect on {target}.",
+    'not_holding_weapon': "{You} aren't holding {the:weapon}.",
+    'indestructible': "{the:cap:target} is far too solid to damage.",
+    'need_weapon_to_damage': "{the:cap:target} requires a weapon to damage.",
+    'wrong_weapon_type': "{the:cap:target} can't be damaged with that type of weapon.",
+    'attack_ineffective': "{Your} attack has no effect on {the:target}.",
 
     // Combat validation errors
-    'already_dead': "{target} is already dead.",
+    'already_dead': "{the:cap:target} is already dead.",
     'violence_not_the_answer': "Violence is not the answer.",
-    'combat.cannot_attack': "{You} {can't} attack {targetName}.",
-    'combat.already_dead': "{targetName} is already dead.",
-    'combat.not_hostile': "{targetName} isn't hostile.",
+    // ADR-158: combat.* templates use the formatter chain via the
+    // {target} EntityInfo param; CombatService and the attacking action
+    // also pass {targetName} (bare string) on the same params block for
+    // handler / event-sourcing consumption.
+    'combat.cannot_attack': "{You} {can't} attack {the:target}.",
+    'combat.already_dead': "{the:cap:target} is already dead.",
+    'combat.not_hostile': "{the:cap:target} isn't hostile.",
     'combat.no_target': "Attack what?",
-    'combat.target_unconscious': "{targetName} is already unconscious.",
+    'combat.target_unconscious': "{the:cap:target} is already unconscious.",
     'combat.need_weapon': "{You} {need} a weapon to attack effectively.",
 
     // Combat attack outcomes (ADR-072 CombatService)
-    'combat.attack.missed': "{You} {swing} at {targetName} but miss!",
-    'combat.attack.hit': "{You} {hit} {targetName} for {damage} damage.",
-    'combat.attack.hit_light': "{You} {graze} {targetName}, doing {damage} damage.",
-    'combat.attack.hit_heavy': "{You} {land} a solid blow on {targetName}, dealing {damage} damage!",
-    'combat.attack.knocked_out': "{targetName} collapses, unconscious!",
-    'combat.attack.killed': "{You} {have} slain {targetName}!",
+    'combat.attack.missed': "{You} {swing} at {the:target} but miss!",
+    'combat.attack.hit': "{You} {hit} {the:target} for {damage} damage.",
+    'combat.attack.hit_light': "{You} {graze} {the:target}, doing {damage} damage.",
+    'combat.attack.hit_heavy': "{You} {land} a solid blow on {the:target}, dealing {damage} damage!",
+    'combat.attack.knocked_out': "{the:cap:target} collapses, unconscious!",
+    'combat.attack.killed': "{You} {have} slain {the:target}!",
 
     // Combat defense outcomes (ADR-072 CombatService)
-    'combat.defend.blocked': "{targetName} blocks {your} attack!",
-    'combat.defend.parried': "{targetName} parries {your} attack!",
-    'combat.defend.dodged': "{targetName} dodges out of the way!",
+    'combat.defend.blocked': "{the:cap:target} blocks {your} attack!",
+    'combat.defend.parried': "{the:cap:target} parries {your} attack!",
+    'combat.defend.dodged': "{the:cap:target} dodges out of the way!",
 
     // Health status descriptions (ADR-072 CombatService)
-    'combat.health.healthy': "{targetName} appears uninjured.",
-    'combat.health.wounded': "{targetName} has been wounded.",
-    'combat.health.badly_wounded': "{targetName} is badly wounded.",
-    'combat.health.near_death': "{targetName} is barely clinging to life!",
-    'combat.health.unconscious': "{targetName} lies unconscious.",
-    'combat.health.dead': "{targetName} is dead.",
+    'combat.health.healthy': "{the:cap:target} appears uninjured.",
+    'combat.health.wounded': "{the:cap:target} has been wounded.",
+    'combat.health.badly_wounded': "{the:cap:target} is badly wounded.",
+    'combat.health.near_death': "{the:cap:target} is barely clinging to life!",
+    'combat.health.unconscious': "{the:cap:target} lies unconscious.",
+    'combat.health.dead': "{the:cap:target} is dead.",
 
     // Special weapon effects (ADR-072 CombatService)
     'combat.special.sword_glows': "{Your} sword glows brightly!",
@@ -74,43 +78,43 @@ export const attackingLanguage = {
     'combat.player_resurrected': "{You} {feel} life return to {your} body.",
 
     // Success messages - combat
-    'attacked': "{You} {attack} {target}.",
-    'attacked_with': "{You} {attack} {target} with {weapon}.",
-    'hit_target': "{You} {hit} {target}.",
+    'attacked': "{You} {attack} {the:target}.",
+    'attacked_with': "{You} {attack} {the:target} with {the:weapon}.",
+    'hit_target': "{You} {hit} {the:target}.",
     'hit_blindly': "{You} {swing} wildly, hitting nothing.",
-    'hit_with': "{You} {hit} {target} with {weapon}.",
-    'struck': "{You} {strike} {target}!",
-    'struck_with': "{You} {strike} {target} with {weapon}!",
+    'hit_with': "{You} {hit} {the:target} with {the:weapon}.",
+    'struck': "{You} {strike} {the:target}!",
+    'struck_with': "{You} {strike} {the:target} with {the:weapon}!",
 
     // Success messages - unarmed
-    'punched': "{You} {punch} {target}.",
-    'kicked': "{You} {kick} {target}.",
-    'unarmed_attack': "{You} {attack} {target} with {your} bare hands.",
+    'punched': "{You} {punch} {the:target}.",
+    'kicked': "{You} {kick} {the:target}.",
+    'unarmed_attack': "{You} {attack} {the:target} with {your} bare hands.",
 
     // Success messages - breaking/destroying
-    'target_broke': "{target} breaks!",
-    'target_shattered': "{target} shatters into pieces!",
-    'broke': "{You} {break} {target}!",
-    'smashed': "{You} {smash} {target} to pieces!",
-    'target_destroyed': "{target} is utterly destroyed!",
-    'destroyed': "{You} {destroy} {target}!",
-    'shattered': "{target} shatters!",
-    'target_damaged': "{target} shows signs of damage. ({damage} damage dealt)",
+    'target_broke': "{the:cap:target} breaks!",
+    'target_shattered': "{the:cap:target} shatters into pieces!",
+    'broke': "{You} {break} {the:target}!",
+    'smashed': "{You} {smash} {the:target} to pieces!",
+    'target_destroyed': "{the:cap:target} is utterly destroyed!",
+    'destroyed': "{You} {destroy} {the:target}!",
+    'shattered': "{the:cap:target} shatters!",
+    'target_damaged': "{the:cap:target} shows signs of damage. ({damage} damage dealt)",
 
     // Success messages - killing
-    'killed_target': "{You} {have} defeated {target}!",
+    'killed_target': "{You} {have} defeated {the:target}!",
     'killed_blindly': "Something dies in the darkness.",
 
     // Environmental results
-    'items_spilled': "{target}'s possessions spill onto the ground.",
+    'items_spilled': "{the:cap:target}'s possessions spill onto the ground.",
     'passage_revealed': "A hidden passage is revealed!",
-    'debris_created': "Debris from {target} litters the area.",
+    'debris_created': "Debris from {the:target} litters the area.",
 
     // Target reactions - actors
-    'defends': "{target} defends against {your} attack.",
-    'dodges': "{target} dodges {your} attack.",
-    'retaliates': "{target} fights back!",
-    'flees': "{target} flees from {you}!",
+    'defends': "{the:cap:target} defends against {your} attack.",
+    'dodges': "{the:cap:target} dodges {your} attack.",
+    'retaliates': "{the:cap:target} fights back!",
+    'flees': "{the:cap:target} flees from {you}!",
 
     // Violence discouragement
     'peaceful_solution': "Violence isn't necessary here.",

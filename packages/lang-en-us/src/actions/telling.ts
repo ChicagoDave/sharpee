@@ -16,25 +16,26 @@ export const tellingLanguage = {
     // Error messages
     'no_target': "Tell whom?",
     'no_topic': "Tell them about what?",
-    'not_visible': "{You} {can't} see {target}.",
-    'too_far': "{target} is too far away.",
+    'not_visible': "{You} {can't} see {the:target}.",
+    'too_far': "{the:cap:target} is too far away.",
     'not_actor': "{You} can only tell things to people.",
 
-    // Success messages - general
-    'told': "{You} {tell} {target} about {topic}.",
-    'informed': "{You} {inform} {target} about {topic}.",
+    // Success messages - general. Mid-sentence positions use {the:target}
+    // so proper-named NPCs render without an article.
+    'told': "{You} {tell} {the:target} about {topic}.",
+    'informed': "{You} {inform} {the:target} about {topic}.",
 
     // Responses - interested
-    'interested': "{target} listens with interest.",
-    'very_interested': "{target} says, \"Really? Tell me more!\"",
-    'grateful': "{target} says, \"Thank you for telling me!\"",
-    'already_knew': "{target} says, \"Yes, I'm aware of that.\"",
+    'interested': "{the:cap:target} listens with interest.",
+    'very_interested': "{the:cap:target} says, \"Really? Tell me more!\"",
+    'grateful': "{the:cap:target} says, \"Thank you for telling me!\"",
+    'already_knew': "{the:cap:target} says, \"Yes, I'm aware of that.\"",
 
     // Responses - not interested
-    'not_interested': "{target} doesn't seem interested.",
-    'bored': "{target} looks bored.",
-    'dismissive': "{target} says, \"So what?\"",
-    'ignores': "{target} ignores what {you're} saying."
+    'not_interested': "{the:cap:target} doesn't seem interested.",
+    'bored': "{the:cap:target} looks bored.",
+    'dismissive': "{the:cap:target} says, \"So what?\"",
+    'ignores': "{the:cap:target} ignores what {you're} saying."
   },
   
   help: {

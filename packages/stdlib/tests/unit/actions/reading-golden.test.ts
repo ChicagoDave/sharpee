@@ -50,7 +50,7 @@ describe('Reading Action - Golden Path', () => {
       expectEvent(events, 'if.event.read', {
         messageId: 'if.action.reading.read_text',
         params: {
-          item: 'note',
+          item: { name: 'note' },
           text: 'Meet me at midnight.'
         }
       });
@@ -79,7 +79,7 @@ describe('Reading Action - Golden Path', () => {
       expectEvent(events, 'if.event.read', {
         messageId: 'if.action.reading.read_book',
         params: {
-          item: 'novel',
+          item: { name: 'novel' },
           text: 'It was a dark and stormy night...'
         }
       });
@@ -104,7 +104,7 @@ describe('Reading Action - Golden Path', () => {
       expectEvent(events, 'if.event.read', {
         messageId: 'if.action.reading.read_sign',
         params: {
-          item: 'sign',
+          item: { name: 'sign' },
           text: 'DANGER: Keep Out!'
         }
       });
@@ -129,7 +129,7 @@ describe('Reading Action - Golden Path', () => {
       expectEvent(events, 'if.event.read', {
         messageId: 'if.action.reading.read_inscription',
         params: {
-          item: 'stone',
+          item: { name: 'stone' },
           text: 'Here lies an adventurer'
         }
       });
@@ -161,7 +161,7 @@ describe('Reading Action - Golden Path', () => {
       expectEvent(events, 'if.event.read', {
         messageId: 'if.action.reading.read_book_page',
         params: {
-          item: 'diary',
+          item: { name: 'diary' },
           text: 'Day 2: Things got worse...',
           currentPage: 2,
           totalPages: 3
@@ -196,7 +196,7 @@ describe('Reading Action - Golden Path', () => {
       
       expect(validation.valid).toBe(false);
       expect(validation.error).toBe('not_readable');
-      expect(validation.params?.item).toBe('rock');
+      expect(validation.params?.item).toMatchObject({ name: 'rock' });
     });
 
     it('should fail when text is not currently readable', () => {
@@ -218,7 +218,7 @@ describe('Reading Action - Golden Path', () => {
       
       expect(validation.valid).toBe(false);
       expect(validation.error).toBe('cannot_read_now');
-      expect(validation.params?.item).toBe('scroll');
+      expect(validation.params?.item).toMatchObject({ name: 'scroll' });
       expect(validation.params?.reason).toBe('The text is too faded to read.');
     });
 

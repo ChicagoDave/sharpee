@@ -16,14 +16,14 @@ export const removingLanguage = {
   
   messages: {
     'no_target': "Remove what?",
-    'no_source': "Remove {item} from what?",
-    'not_in_container': "{item} isn't in {container}.",
-    'not_on_surface': "{item} isn't on {surface}.",
-    'container_closed': "{container} is closed.",
-    'removed_from': "{You} {take} {item} from {container}.",
-    'removed_from_surface': "{You} {take} {item} from {surface}.",
-    'cant_reach': "{You} {can't} reach {item}.",
-    'already_have': "{You} already {have} {item}."
+    'no_source': "Remove {the:item} from what?",
+    'not_in_container': "{the:cap:item} isn't in {the:container}.",
+    'not_on_surface': "{the:cap:item} isn't on {the:surface}.",
+    'container_closed': "{the:cap:container} is closed.",
+    'removed_from': "{You} {take} {the:item} from {the:container}.",
+    'removed_from_surface': "{You} {take} {the:item} from {the:surface}.",
+    'cant_reach': "{You} {can't} reach {the:item}.",
+    'already_have': "{You} already {have} {the:item}."
   },
   
   help: {

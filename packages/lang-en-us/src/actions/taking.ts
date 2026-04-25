@@ -17,14 +17,17 @@ export const takingLanguage = {
   messages: {
     'no_target': "Take what?",
     'cant_take_self': "{You} {can't} take {yourself}.",
-    'already_have': "{You} already {have} {item}.",
-    'cant_take_room': "{You} {can't} take {item}.",
-    'fixed_in_place': "{item} is fixed in place.",
+    'already_have': "{You} already {have} {the:item}.",
+    'cant_take_room': "{You} {can't} take {the:item}.",
+    'fixed_in_place': "{the:cap:item} is fixed in place.",
     'container_full': "{You're} carrying too much already.",
     'too_heavy': "Your load is too heavy. You will have to leave something behind.",
-    'cannot_take': "{You} {can't} take {item}.",
+    'cannot_take': "{You} {can't} take {the:item}.",
     'taken': "Taken.",
-    'taken_from': "{You} {take} {item} from {container}.",
+    'taken_from': "{You} {take} {the:item} from {the:container}.",
+    // Multi-take label format: rendered without article per IF convention
+    // ("brass lantern: Taken." not "The brass lantern: Taken.").
+    // {item} with EntityInfo and no formatter renders value.name — backward compatible.
     'taken_multi': "{item}: Taken."
   },
   

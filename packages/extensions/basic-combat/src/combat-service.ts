@@ -14,6 +14,7 @@ import {
   CombatantTrait,
   WeaponTrait,
 } from '@sharpee/world-model';
+import { entityInfoFrom } from '@sharpee/stdlib';
 import { CombatMessages, HealthStatus } from './combat-messages.js';
 
 /**
@@ -136,11 +137,14 @@ export class CombatService implements ICombatService {
     const roll = random.int(1, 100);
     const hit = roll <= hitChance;
 
-    // Base message data
+    // Base message data.
+    // ADR-158: pass EntityInfo for entity-valued template params (target);
+    // keep *Name strings for handler / event-sourcing consumption.
     const messageData: Record<string, unknown> = {
       attackerName: attacker.name,
       targetName: target.name,
       weaponName: weapon?.name,
+      target: entityInfoFrom(target),
     };
 
     if (!hit) {
@@ -210,13 +214,14 @@ export class CombatService implements ICombatService {
    * Check if an entity can attack another
    */
   canAttack(attacker: IFEntity, target: IFEntity): CombatValidation {
-    // Check if target has combatant trait
+    // Check if target has combatant trait.
+    // ADR-158: include EntityInfo alongside the bare-string targetName.
     const targetCombat = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
     if (!targetCombat) {
       return {
         valid: false,
         messageId: CombatMessages.CANNOT_ATTACK,
-        messageData: { targetName: target.name },
+        messageData: { targetName: target.name, target: entityInfoFrom(target) },
       };
     }
 
@@ -225,7 +230,7 @@ export class CombatService implements ICombatService {
       return {
         valid: false,
         messageId: CombatMessages.ALREADY_DEAD,
-        messageData: { targetName: target.name },
+        messageData: { targetName: target.name, target: entityInfoFrom(target) },
       };
     }
 

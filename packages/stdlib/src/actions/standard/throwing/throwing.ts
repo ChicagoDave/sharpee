@@ -38,6 +38,7 @@ import {
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { ThrowingEventMap } from './throwing-events';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Helper to convert a string direction to Direction constant
@@ -212,7 +213,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: 'target_not_here',
-          params: { target: target.name }
+          params: { target: entityInfoFrom(target) }
         };
       }
 
@@ -246,7 +247,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: 'too_heavy',
-          params: { item: item.name, weight: itemWeight }
+          params: { item: entityInfoFrom(item), weight: itemWeight }
         };
       }
     }
@@ -303,8 +304,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       itemName.includes(keyword) || description.includes(keyword)
     );
 
-    // Initialize params
-    sharedData.params = { item: item.name };
+    // Initialize params — EntityInfo for formatter chain (ADR-158)
+    sharedData.params = { item: entityInfoFrom(item) };
 
     // Default final location
     let finalLocation = context.world.getLocation?.(actor.id) || '';
@@ -312,7 +313,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = 'thrown';
 
     if (sharedData.throwType === 'at_target' && target) {
-      sharedData.params.target = target.name;
+      sharedData.params.target = entityInfoFrom(target);
 
       // Check if target has a capability behavior for throwing (ADR-090)
       const capTrait = findTraitWithCapability(target, IFActions.THROWING);
@@ -455,14 +456,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Standard blocked handling
+    // Standard blocked handling — params carry EntityInfo (ADR-158)
     return [context.event('if.event.throw_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
-        item: item?.name,
-        target: target?.name
+        item: item ? entityInfoFrom(item) : undefined,
+        target: target ? entityInfoFrom(target) : undefined
       },
       reason: result.error,
       itemId: item?.id,

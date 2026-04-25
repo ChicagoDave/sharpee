@@ -14,15 +14,15 @@ export const lockingLanguage = {
   
   messages: {
     'no_target': "Lock what?",
-    'not_lockable': "{item} can't be locked.",
+    'not_lockable': "{the:cap:item} can't be locked.",
     'no_key': "What do {you} want to lock it with?",
-    'wrong_key': "{key} doesn't fit {item}.",
-    'already_locked': "{item} is already locked.",
-    'not_closed': "{You} {need} to close {item} first.",
-    'locked': "{You} {lock} {item}.",
-    'locked_with': "{You} {lock} {item} with {key}.",
-    'cant_reach': "{You} {can't} reach {item}.",
-    'key_not_held': "{You} {need} to be holding {key}."
+    'wrong_key': "{the:cap:key} doesn't fit {the:item}.",
+    'already_locked': "{the:cap:item} is already locked.",
+    'not_closed': "{You} {need} to close {the:item} first.",
+    'locked': "{You} {lock} {the:item}.",
+    'locked_with': "{You} {lock} {the:item} with {the:key}.",
+    'cant_reach': "{You} {can't} reach {the:item}.",
+    'key_not_held': "{You} {need} to be holding {the:key}."
   },
   
   help: {

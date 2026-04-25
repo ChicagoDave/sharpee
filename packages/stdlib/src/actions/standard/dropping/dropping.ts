@@ -31,6 +31,7 @@ import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { entityInfoFrom } from '../../../utils';
 import { DroppingMessages } from './dropping-messages';
 
 // Import our data builder
@@ -66,7 +67,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: DroppingMessages.NOT_HELD,
-      params: { item: noun.name }
+      params: { item: entityInfoFrom(noun) }
     };
   }
 
@@ -75,7 +76,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: DroppingMessages.STILL_WORN,
-      params: { item: noun.name }
+      params: { item: entityInfoFrom(noun) }
     };
   }
 
@@ -96,7 +97,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
           return {
             valid: false,
             error: DroppingMessages.CONTAINER_FULL,
-            params: { item: noun.name, container: dropLocation.name }
+            params: { item: entityInfoFrom(noun), container: entityInfoFrom(dropLocation) }
           };
         }
       }
@@ -184,11 +185,12 @@ function reportSingleSuccess(
     ? context.world.getEntity(result.dropLocation)
     : getDropLocation(context);
 
-  // Determine message key based on context
+  // Determine message key based on context.
+  // params carry EntityInfo for the formatter chain (ADR-158).
   let messageKey: string = DroppingMessages.DROPPED;
   const params: Record<string, any> = {
-    item: noun.name,
-    location: dropLocation?.name
+    item: entityInfoFrom(noun),
+    location: dropLocation ? entityInfoFrom(dropLocation) : undefined
   };
 
   // Determine location type flags and message
@@ -213,10 +215,10 @@ function reportSingleSuccess(
     messageKey = DroppingMessages.DROPPED_MULTI;
   } else if (toContainer) {
     messageKey = DroppingMessages.DROPPED_IN;
-    params.container = dropLocation?.name;
+    params.container = dropLocation ? entityInfoFrom(dropLocation) : undefined;
   } else if (toSupporter) {
     messageKey = DroppingMessages.DROPPED_ON;
-    params.supporter = dropLocation?.name;
+    params.supporter = dropLocation ? entityInfoFrom(dropLocation) : undefined;
   }
 
   // Emit domain event with messageId (simplified pattern - ADR-097)
@@ -250,10 +252,10 @@ function reportSingleBlocked(
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.drop_blocked', {
-    // Rendering data
+    // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: noun.name },
-    // Domain data
+    params: { ...errorParams, item: entityInfoFrom(noun) },
+    // Domain data — strings for handlers
     item: noun.name,
     itemId: noun.id,
     reason: error
@@ -444,10 +446,10 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     }
 
     return [context.event('if.event.drop_blocked', {
-      // Rendering data
+      // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId: `${context.action.id}.${result.error}`,
-      params: { ...result.params, item: noun?.name },
-      // Domain data
+      params: { ...result.params, item: noun ? entityInfoFrom(noun) : undefined },
+      // Domain data — strings for handlers
       item: noun?.name,
       itemId: noun?.id,
       reason: result.error

@@ -18,18 +18,18 @@ export const puttingLanguage = {
   
   messages: {
     'no_target': "Put what?",
-    'no_destination': "Where do {you} want to put {item}?",
-    'not_held': "{You} {need} to be holding {item} first.",
-    'not_container': "{You} {can't} put things in {destination}.",
-    'not_surface': "{You} {can't} put things on {destination}.",
-    'container_closed': "{container} is closed.",
-    'already_there': "{item} is already {relation} {destination}.",
-    'put_in': "{You} {put} {item} in {container}.",
-    'put_on': "{You} {put} {item} on {surface}.",
-    'cant_put_in_itself': "{You} {can't} put {item} inside itself.",
-    'cant_put_on_itself': "{You} {can't} put {item} on itself.",
-    'no_room': "There's no room in {container}.",
-    'no_space': "There's no space on {surface}."
+    'no_destination': "Where do {you} want to put {the:item}?",
+    'not_held': "{You} {need} to be holding {the:item} first.",
+    'not_container': "{You} {can't} put things in {the:destination}.",
+    'not_surface': "{You} {can't} put things on {the:destination}.",
+    'container_closed': "{the:cap:container} is closed.",
+    'already_there': "{the:cap:item} is already {relation} {the:destination}.",
+    'put_in': "{You} {put} {the:item} in {the:container}.",
+    'put_on': "{You} {put} {the:item} on {the:surface}.",
+    'cant_put_in_itself': "{You} {can't} put {the:item} inside itself.",
+    'cant_put_on_itself': "{You} {can't} put {the:item} on itself.",
+    'no_room': "There's no room in {the:container}.",
+    'no_space': "There's no space on {the:surface}."
   },
   
   help: {

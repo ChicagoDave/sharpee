@@ -177,7 +177,7 @@ describe('exitingAction (Golden Pattern)', () => {
       // Should emit EXITED event with success data
       expectEvent(events, 'if.event.exited', {
         messageId: 'if.action.exiting.exited',
-        params: { place: 'cardboard box' },
+        params: { place: { name: 'cardboard box' } },
         fromLocation: box.id,
         toLocation: room.id,
         preposition: 'out of'
@@ -203,7 +203,7 @@ describe('exitingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.exited', {
         messageId: 'if.action.exiting.exited',
-        params: { place: 'raised platform' },
+        params: { place: { name: 'raised platform' } },
         fromLocation: platform.id,
         toLocation: room.id,
         preposition: 'off'

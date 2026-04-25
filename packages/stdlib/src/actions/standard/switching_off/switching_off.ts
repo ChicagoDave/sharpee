@@ -19,6 +19,7 @@ import { ScopeLevel } from '../../../scope';
 import { SwitchedOffEventData } from './switching_off-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 import { MESSAGES } from './switching_off-messages';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -88,11 +89,11 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!noun.has(TraitType.SWITCHABLE)) {
-      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: noun.name } };
+      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: entityInfoFrom(noun) } };
     }
 
     if (!SwitchableBehavior.canSwitchOff(noun)) {
-      return { valid: false, error: MESSAGES.ALREADY_OFF, params: { target: noun.name } };
+      return { valid: false, error: MESSAGES.ALREADY_OFF, params: { target: entityInfoFrom(noun) } };
     }
 
     return { valid: true };
@@ -137,9 +138,9 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     // Analyze the switching context
     const analysis = analyzeSwitchingContext(context, noun);
 
-    // Initialize params
+    // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = {
-      target: noun.name
+      target: entityInfoFrom(noun)
     };
 
     // Add light source data if applicable
@@ -199,9 +200,11 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
+      const noun = context.command.directObject?.entity;
       return [context.event('if.event.switch_off_blocked', {
         messageId: `${context.action.id}.${sharedData.errorMessageId}`,
-        params: { target: sharedData.targetName },
+        // params carry EntityInfo for the formatter chain (ADR-158)
+        params: { target: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         reason: sharedData.errorMessageId

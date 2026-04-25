@@ -6,12 +6,13 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { 
+import {
   TraitType,
   IdentityBehavior,
   IFEntity
 } from '@sharpee/world-model';
 import { ActionContext } from '../enhanced-types';
+import { entityInfoFrom } from '../../utils';
 
 /**
  * Context about what was searched and found
@@ -86,8 +87,9 @@ export function determineSearchMessage(
 ): { messageId: string; params: Record<string, any> } {
   const { target, contents, concealedItems, targetType } = searchContext;
   
+  // params carry EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
-    target: target.name
+    target: entityInfoFrom(target)
   };
   
   // Found concealed items - most important result

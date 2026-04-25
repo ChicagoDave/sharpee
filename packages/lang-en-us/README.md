@@ -91,7 +91,6 @@ class BritishEnglishPlugin extends EnglishLanguagePlugin {
 The package exports its data for customization:
 
 - `englishVerbs` - All verb definitions
-- `englishTemplates` - All message templates
 - `englishWords` - Word lists (articles, prepositions, etc.)
 - `irregularPlurals` - Irregular plural mappings
 - `abbreviations` - Common abbreviations

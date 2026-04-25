@@ -25,6 +25,7 @@ import { IFActions } from '../../constants';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
 import { InsertingMessages } from './inserting-messages';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -108,7 +109,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: InsertingMessages.NO_DESTINATION,
-        params: { item: item?.name }
+        params: { item: item ? entityInfoFrom(item) : undefined }
       };
     }
 
@@ -173,7 +174,11 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       const container = context.command.indirectObject?.entity;
       return [context.event('if.event.insert_blocked', {
         messageId: `${context.action.id}.${InsertingMessages.CANT_INSERT}`,
-        params: { item: item?.name, container: container?.name },
+        // params carry EntityInfo for the formatter chain (ADR-158)
+        params: {
+          item: item ? entityInfoFrom(item) : undefined,
+          container: container ? entityInfoFrom(container) : undefined
+        },
         itemId: item?.id,
         itemName: item?.name,
         containerId: container?.id,
@@ -201,14 +206,14 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     const container = context.command.indirectObject?.entity;
 
     return [context.event('if.event.insert_blocked', {
-      // Rendering data
+      // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
-        item: item?.name,
-        container: container?.name
+        item: item ? entityInfoFrom(item) : undefined,
+        container: container ? entityInfoFrom(container) : undefined
       },
-      // Domain data
+      // Domain data — strings for handlers
       itemId: item?.id,
       itemName: item?.name,
       containerId: container?.id,

@@ -11,6 +11,7 @@ import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait } from '@
 import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior } from '@sharpee/world-model';
 import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { ExaminedEventData } from './examining-events';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Build examining action success data
@@ -184,7 +185,7 @@ export function buildExaminingMessageParams(
         contentsMessage = {
           messageId: 'container_contents',
           params: {
-            container: noun.name,
+            container: entityInfoFrom(noun),
             items: itemNames
           }
         };
@@ -202,7 +203,7 @@ export function buildExaminingMessageParams(
         contentsMessage = {
           messageId: 'surface_contents',
           params: {
-            surface: noun.name,
+            surface: entityInfoFrom(noun),
             items: itemNames
           }
         };
@@ -240,7 +241,7 @@ export function buildExaminingMessageParams(
 
     // Default parameters for basic examined message
     else if (messageId === 'examined') {
-      params.target = noun.name;
+      params.target = entityInfoFrom(noun);
     }
   }
 

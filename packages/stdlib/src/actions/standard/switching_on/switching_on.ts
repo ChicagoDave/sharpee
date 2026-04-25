@@ -31,6 +31,7 @@ import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 import { MESSAGES } from './switching_on-messages';
+import { entityInfoFrom } from '../../../utils';
 import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils';
 
 /**
@@ -128,16 +129,16 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!noun.has(TraitType.SWITCHABLE)) {
-      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: noun.name } };
+      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: entityInfoFrom(noun) } };
     }
 
     if (!SwitchableBehavior.canSwitchOn(noun)) {
       const switchable = noun.getTrait(SwitchableTrait);
       if (switchable?.isOn) {
-        return { valid: false, error: MESSAGES.ALREADY_ON, params: { target: noun.name } };
+        return { valid: false, error: MESSAGES.ALREADY_ON, params: { target: entityInfoFrom(noun) } };
       }
       if (switchable?.requiresPower && !switchable.hasPower) {
-        return { valid: false, error: MESSAGES.NO_POWER, params: { target: noun.name } };
+        return { valid: false, error: MESSAGES.NO_POWER, params: { target: entityInfoFrom(noun) } };
       }
     }
 
@@ -192,9 +193,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     // Analyze the switching context
     const analysis = analyzeSwitchingContext(context, noun);
 
-    // Initialize params
+    // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = {
-      target: noun.name
+      target: entityInfoFrom(noun)
     };
 
     // Add light source data if applicable
@@ -278,9 +279,11 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
+      const noun = context.command.directObject?.entity;
       return [context.event('if.event.switch_on_blocked', {
         messageId: `${context.action.id}.${sharedData.errorMessageId}`,
-        params: { target: sharedData.targetName },
+        // params carry EntityInfo for the formatter chain (ADR-158)
+        params: { target: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         reason: sharedData.errorMessageId
@@ -322,6 +325,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       events.push(context.event('if.event.room.description', {
         // Rendering data (messageId + params for text-service)
         messageId: 'if.action.looking.room_description',
+        // ADR-158 exception: room titles render proper-style ("Living Room",
+        // "West of House") and are not articled — pass bare name string,
+        // not EntityInfo. The looking template uses {name}, not {the:cap:name}.
         params: {
           name: room.name,
           description: room.description

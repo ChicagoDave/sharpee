@@ -9,6 +9,7 @@ import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
 import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Check if a location is dark (needs light but has none).
@@ -273,20 +274,23 @@ export function determineLookingMessage(
 
   // Check if we're in a closed container/vehicle (can't see the room)
   // This only happens when getDescribableLocation returns the container itself
+  // params carry EntityInfo for the formatter chain (ADR-158)
   if (!immediateContainer && location.hasTrait(TraitType.CONTAINER)) {
+    const info = entityInfoFrom(location);
     return {
       messageId: 'in_container',
       params: {
-        container: location.name,
-        location: location.name
+        container: info,
+        location: info
       }
     };
   } else if (!immediateContainer && location.hasTrait(TraitType.SUPPORTER)) {
+    const info = entityInfoFrom(location);
     return {
       messageId: 'on_supporter',
       params: {
-        supporter: location.name,
-        location: location.name
+        supporter: info,
+        location: info
       }
     };
   }

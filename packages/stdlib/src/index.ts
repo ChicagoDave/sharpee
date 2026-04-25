@@ -28,3 +28,4 @@ export * from './npc';
 export * from './combat';
 export * from './chains';
 export * from './inference';
+export * from './utils';

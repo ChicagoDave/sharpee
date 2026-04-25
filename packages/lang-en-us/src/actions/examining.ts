@@ -17,8 +17,8 @@ export const examiningLanguage = {
   messages: {
     // Error messages
     'no_target': "Examine what?",
-    'not_visible': "{You} {can't} see {item} here.",
-    'cant_see': "{You} {can't} see {item} here.",
+    'not_visible': "{You} {can't} see {the:item} here.",
+    'cant_see': "{You} {can't} see {the:item} here.",
 
     // Success messages - these match stdlib's ExaminingMessages
     'examined': "{description}",
@@ -29,19 +29,19 @@ export const examiningLanguage = {
     'examined_switchable': "{description}",
     'examined_wearable': "{description}",
     'examined_door': "{description}",
-    'nothing_special': "{You} {see} nothing special about {item}.",
+    'nothing_special': "{You} {see} nothing special about {the:item}.",
     'description': "{description}",
     'brief_description': "{description}",
-    'no_description': "{You} {see} nothing special about {item}.",
+    'no_description': "{You} {see} nothing special about {the:item}.",
 
     // Legacy messages for compatibility
-    'container_open': "{item} is open.",
-    'container_closed': "{item} is closed.",
-    'container_empty': "{item} is empty.",
-    'container_contents': "In {container} {you} {see} {items}.",
-    'surface_contents': "On {surface} {you} {see} {items}.",
-    'worn_by_you': "{You} {are} wearing {item}.",
-    'worn_by_other': "{actor} is wearing {item}."
+    'container_open': "{the:cap:item} is open.",
+    'container_closed': "{the:cap:item} is closed.",
+    'container_empty': "{the:cap:item} is empty.",
+    'container_contents': "In {the:container} {you} {see} {items}.",
+    'surface_contents': "On {the:surface} {you} {see} {items}.",
+    'worn_by_you': "{You} {are} wearing {the:item}.",
+    'worn_by_other': "{actor} is wearing {the:item}."
   },
   
   help: {

@@ -80,7 +80,7 @@ describe('lockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.lock_blocked', {
         messageId: 'if.action.locking.not_lockable',
-        params: { item: 'wooden box' }
+        params: { item: { name: 'wooden box' } }
       });
     });
 
@@ -105,7 +105,7 @@ describe('lockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.lock_blocked', {
         messageId: 'if.action.locking.already_locked',
-        params: { item: 'treasure chest' }
+        params: { item: { name: 'treasure chest' } }
       });
     });
 
@@ -133,7 +133,7 @@ describe('lockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.lock_blocked', {
         messageId: 'if.action.locking.not_closed',
-        params: { item: 'cabinet' }
+        params: { item: { name: 'cabinet' } }
       });
     });
   });
@@ -198,7 +198,7 @@ describe('lockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.lock_blocked', {
         messageId: 'if.action.locking.key_not_held',
-        params: { key: 'iron key' }
+        params: { key: { name: 'iron key' } }
       });
     });
 
@@ -233,8 +233,8 @@ describe('lockingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.lock_blocked', {
         messageId: 'if.action.locking.wrong_key',
         params: {
-          key: 'silver key',
-          item: 'door'
+          key: { name: 'silver key' },
+          item: { name: 'door' }
         }
       });
     });
@@ -271,7 +271,7 @@ describe('lockingAction (Golden Pattern)', () => {
         targetId: box.id,
         messageId: 'if.action.locking.locked',
         params: {
-          item: 'small box',
+          item: { name: 'small box' },
           isContainer: true
         }
       });
@@ -312,8 +312,8 @@ describe('lockingAction (Golden Pattern)', () => {
         keyId: key.id,
         messageId: 'if.action.locking.locked_with',
         params: {
-          item: 'wall safe',
-          key: 'safe key'
+          item: { name: 'wall safe' },
+          key: { name: 'safe key' }
         }
       });
     });
@@ -356,8 +356,8 @@ describe('lockingAction (Golden Pattern)', () => {
         keyId: key.id,
         messageId: 'if.action.locking.locked_with',
         params: {
-          item: 'front door',
-          key: 'house key',
+          item: { name: 'front door' },
+          key: { name: 'house key' },
           isDoor: true
         }
       });
@@ -427,7 +427,7 @@ describe('lockingAction (Golden Pattern)', () => {
         sound: 'heavy clunk',
         messageId: 'if.action.locking.locked',
         params: {
-          item: 'bank vault'
+          item: { name: 'bank vault' }
         }
       });
     });

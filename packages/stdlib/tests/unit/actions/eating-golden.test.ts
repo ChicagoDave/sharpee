@@ -79,7 +79,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('not_edible'),
-        params: { item: 'small rock' }
+        params: { item: { name: 'small rock' } }
       });
     });
 
@@ -100,7 +100,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('is_drink'),
-        params: { item: 'orange juice' }
+        params: { item: { name: 'orange juice' } }
       });
     });
 
@@ -121,7 +121,7 @@ describe('eatingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('already_consumed'),
-        params: { item: 'chocolate cookie' }
+        params: { item: { name: 'chocolate cookie' } }
       });
     });
   });
@@ -150,7 +150,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should emit success message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten'),
-        params: { item: 'ham sandwich' }
+        params: { item: { name: 'ham sandwich' } }
       });
     });
 
@@ -180,7 +180,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should emit "eaten_some" message for partial consumption
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten_some'),
-        params: { item: 'pepperoni pizza' }
+        params: { item: { name: 'pepperoni pizza' } }
       });
     });
 
@@ -208,7 +208,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       expectEvent(events1, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten_some'),
-        params: { item: 'apple pie' }
+        params: { item: { name: 'apple pie' } }
       });
 
       // Second eat - leaves one serving, still multi-serving
@@ -222,7 +222,7 @@ describe('eatingAction (Golden Pattern)', () => {
       });
       expectEvent(events2, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten_some'),
-        params: { item: 'apple pie' }
+        params: { item: { name: 'apple pie' } }
       });
 
       // Third eat - finishes it (eaten_all when going from >1 to 0)
@@ -233,7 +233,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // so message is 'eaten' not 'eaten_all'. This is a known limitation.
       expectEvent(events3, 'if.event.eaten', {
         messageId: expect.stringContaining('eaten'),
-        params: { item: 'apple pie' }
+        params: { item: { name: 'apple pie' } }
       });
     });
 
@@ -256,7 +256,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should use delicious message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('delicious'),
-        params: { item: 'dark chocolate' }
+        params: { item: { name: 'dark chocolate' } }
       });
     });
 
@@ -279,7 +279,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should use tasty message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('tasty'),
-        params: { item: 'fresh bread' }
+        params: { item: { name: 'fresh bread' } }
       });
     });
 
@@ -302,7 +302,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should use bland message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('bland'),
-        params: { item: 'plain cracker' }
+        params: { item: { name: 'plain cracker' } }
       });
     });
 
@@ -325,7 +325,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should use awful message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('awful'),
-        params: { item: 'stale rations' }
+        params: { item: { name: 'stale rations' } }
       });
     });
 
@@ -354,7 +354,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should use poisonous message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('poisonous'),
-        params: { item: 'suspicious mushroom' }
+        params: { item: { name: 'suspicious mushroom' } }
       });
     });
 
@@ -383,7 +383,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should use filling message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('filling'),
-        params: { item: 'grilled steak' }
+        params: { item: { name: 'grilled steak' } }
       });
     });
 
@@ -412,7 +412,7 @@ describe('eatingAction (Golden Pattern)', () => {
       // Should use still_hungry message
       expectEvent(events, 'if.event.eaten', {
         messageId: expect.stringContaining('still_hungry'),
-        params: { item: 'breath mint' }
+        params: { item: { name: 'breath mint' } }
       });
     });
 

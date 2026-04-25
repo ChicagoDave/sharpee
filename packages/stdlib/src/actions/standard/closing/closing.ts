@@ -23,6 +23,7 @@ import { ClosingMessages } from './closing-messages';
 import { ClosedEventData } from './closing-event-data';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -118,7 +119,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: ClosingMessages.NOT_CLOSABLE,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -129,14 +130,14 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: ClosingMessages.ALREADY_CLOSED,
-          params: { item: noun.name }
+          params: { item: entityInfoFrom(noun) }
         };
       }
       // Otherwise it can't be closed for some other reason
       return {
         valid: false,
         error: ClosingMessages.PREVENTS_CLOSING,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -150,7 +151,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
           valid: false,
           error: ClosingMessages.PREVENTS_CLOSING,
           params: {
-            item: noun.name,
+            item: entityInfoFrom(noun),
             obstacle: requirement.preventedBy
           }
         };
@@ -216,12 +217,12 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       contentsIds = contents.map(item => item.id);
     }
 
-    // Emit domain event with messageId (simplified pattern - ADR-097)
+    // Emit domain event with messageId (simplified pattern - ADR-097).
+    // params carries EntityInfo for the formatter chain (ADR-158);
+    // top-level fields stay strings for handlers.
     events.push(context.event('if.event.closed', {
-      // Rendering data (messageId + params for text-service)
       messageId: `${context.action.id}.${ClosingMessages.CLOSED}`,
-      params: { item: noun.name },
-      // Domain data (for event sourcing / handlers)
+      params: { item: entityInfoFrom(noun) },
       ...eventData,
       targetId: noun.id,
       targetName: noun.name,
@@ -264,13 +265,13 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
 
     return [context.event('if.event.close_blocked', {
-      // Rendering data
+      // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId,
       params: {
         ...result.params,
-        item: noun?.name
+        item: noun ? entityInfoFrom(noun) : undefined
       },
-      // Domain data
+      // Domain data — strings for handlers
       targetId: noun?.id,
       targetName: noun?.name,
       reason: result.error

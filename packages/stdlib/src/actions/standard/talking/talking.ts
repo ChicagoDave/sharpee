@@ -18,6 +18,7 @@ import { IFActions } from '../../constants';
 import { TalkedEventData } from './talking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -88,10 +89,10 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     
     // Check if target is an actor (can talk)
     if (!target.has(TraitType.ACTOR)) {
-      return { 
-        valid: false, 
+      return {
+        valid: false,
         error: 'not_actor',
-        params: { target: target.name }
+        params: { target: entityInfoFrom(target) }
       };
     }
     
@@ -108,10 +109,10 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     const targetActor = target.getTrait(ActorTrait);
     const conversation = targetActor?.customProperties?.['conversation'] || (targetActor as unknown as Record<string, unknown>)?.['conversation'] || ActorBehavior.getCustomProperty(target, 'conversation');
     if (conversation && conversation.isAvailable !== undefined && !conversation.isAvailable) {
-      return { 
-        valid: false, 
+      return {
+        valid: false,
         error: 'not_available',
-        params: { target: target.name }
+        params: { target: entityInfoFrom(target) }
       };
     }
     
@@ -194,9 +195,10 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.talk_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        target: target?.name
+        target: target ? entityInfoFrom(target) : undefined
       },
       reason: result.error,
       targetId: target?.id,
@@ -209,9 +211,11 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getTalkingSharedData(context);
 
     // Emit talked event with messageId for text rendering
+    // params carry EntityInfo for the formatter chain (ADR-158)
+    const target = context.command.directObject?.entity;
     events.push(context.event('if.event.talked', {
       messageId: `${context.action.id}.${sharedData.messageId || 'talked'}`,
-      params: { target: sharedData.targetName },
+      params: { target: target ? entityInfoFrom(target) : { name: sharedData.targetName } },
       ...sharedData.eventData
     }));
 

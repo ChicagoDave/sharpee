@@ -91,7 +91,7 @@ describe('touchingAction (Golden Pattern)', () => {
         temperature: 'hot',
         isLit: true,
         messageId: expect.stringContaining('feels_hot'),
-        params: { target: 'brass lantern' }
+        params: { target: { name: 'brass lantern' } }
       });
     });
 
@@ -117,7 +117,7 @@ describe('touchingAction (Golden Pattern)', () => {
         temperature: 'warm',
         isActive: true,
         messageId: expect.stringContaining('feels_warm'),
-        params: { target: 'portable radio' }
+        params: { target: { name: 'portable radio' } }
       });
     });
 
@@ -145,7 +145,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit device_vibrating message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('device_vibrating'),
-        params: { target: 'vibrating phone' }
+        params: { target: { name: 'vibrating phone' } }
       });
     });
   });
@@ -172,7 +172,7 @@ describe('touchingAction (Golden Pattern)', () => {
         target: sweater.id,
         texture: 'soft',
         messageId: expect.stringContaining('feels_soft'),
-        params: { target: 'wool sweater' }
+        params: { target: { name: 'wool sweater' } }
       });
     });
 
@@ -198,7 +198,7 @@ describe('touchingAction (Golden Pattern)', () => {
         texture: 'smooth',
         material: 'hard',
         messageId: expect.stringContaining('feels_smooth'),
-        params: { target: 'wooden door' }
+        params: { target: { name: 'wooden door' } }
       });
     });
 
@@ -223,7 +223,7 @@ describe('touchingAction (Golden Pattern)', () => {
         target: box.id,
         texture: 'solid',
         messageId: expect.stringContaining('feels_hard'),
-        params: { target: 'metal box' }
+        params: { target: { name: 'metal box' } }
       });
     });
 
@@ -248,7 +248,7 @@ describe('touchingAction (Golden Pattern)', () => {
         target: water.id,
         texture: 'liquid',
         messageId: expect.stringContaining('feels_wet'),
-        params: { target: 'puddle of water' }
+        params: { target: { name: 'puddle of water' } }
       });
     });
   });
@@ -283,7 +283,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit liquid_container message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('liquid_container'),
-        params: { target: 'glass bottle' }
+        params: { target: { name: 'glass bottle' } }
       });
     });
 
@@ -307,7 +307,7 @@ describe('touchingAction (Golden Pattern)', () => {
         target: statue.id,
         immovable: true,
         messageId: expect.stringContaining('immovable_object'),
-        params: { target: 'marble statue' }
+        params: { target: { name: 'marble statue' } }
       });
     });
 
@@ -350,7 +350,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit touched message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('touched'),
-        params: { target: 'wooden table' }
+        params: { target: { name: 'wooden table' } }
       });
     });
 
@@ -373,7 +373,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit poked message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('poked'),
-        params: { target: 'soft cushion' }
+        params: { target: { name: 'soft cushion' } }
       });
     });
 
@@ -396,7 +396,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit prodded message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('prodded'),
-        params: { target: 'fallen log' }
+        params: { target: { name: 'fallen log' } }
       });
     });
 
@@ -419,7 +419,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit patted message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('patted'),
-        params: { target: 'friendly dog' }
+        params: { target: { name: 'friendly dog' } }
       });
     });
 
@@ -442,7 +442,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit stroked message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('stroked'),
-        params: { target: 'sleeping cat' }
+        params: { target: { name: 'sleeping cat' } }
       });
     });
 
@@ -465,7 +465,7 @@ describe('touchingAction (Golden Pattern)', () => {
       // Should emit touched_gently message
       expectEvent(events, 'if.event.touched', {
         messageId: expect.stringContaining('touched_gently'),
-        params: { target: 'silk fabric' }
+        params: { target: { name: 'silk fabric' } }
       });
     });
   });
@@ -498,7 +498,7 @@ describe('touchingAction (Golden Pattern)', () => {
         texture: 'soft',
         isActive: true,
         messageId: expect.stringContaining('feels_warm'),
-        params: { target: 'heated jacket' }
+        params: { target: { name: 'heated jacket' } }
       });
     });
   });

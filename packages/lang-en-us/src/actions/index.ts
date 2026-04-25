@@ -60,7 +60,6 @@ export * from './answering';
 
 // Interaction actions
 export * from './throwing';
-export * from './using';
 export * from './eating';
 export * from './drinking';
 export * from './attacking';
@@ -120,7 +119,6 @@ import { askingLanguage } from './asking';
 import { tellingLanguage } from './telling';
 import { answeringLanguage } from './answering';
 import { throwingLanguage } from './throwing';
-import { usingLanguage } from './using';
 import { eatingLanguage } from './eating';
 import { drinkingLanguage } from './drinking';
 import { attackingLanguage } from './attacking';
@@ -197,7 +195,6 @@ export const standardActionLanguage = [
   
   // Interaction actions
   throwingLanguage,
-  usingLanguage,
   eatingLanguage,
   drinkingLanguage,
   attackingLanguage,

@@ -27,6 +27,7 @@ import {
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -120,7 +121,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'not_actor',
-        params: { recipient: recipient.name }
+        params: { recipient: entityInfoFrom(recipient) }
       };
     }
 
@@ -129,7 +130,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'self',
-        params: { item: item.name }
+        params: { item: entityInfoFrom(item) }
       };
     }
 
@@ -146,7 +147,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
           return {
             valid: false,
             error: 'inventory_full',
-            params: { recipient: recipient.name }
+            params: { recipient: entityInfoFrom(recipient) }
           };
         }
 
@@ -161,7 +162,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
             return {
               valid: false,
               error: 'too_heavy',
-              params: { item: item.name, recipient: recipient.name }
+              params: { item: entityInfoFrom(item), recipient: entityInfoFrom(recipient) }
             };
           }
         }
@@ -179,7 +180,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
             return {
               valid: false,
               error: 'not_interested',
-              params: { item: item.name, recipient: recipient.name }
+              params: { item: entityInfoFrom(item), recipient: entityInfoFrom(recipient) }
             };
           }
         }
@@ -256,9 +257,10 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
         sharedData.messageId = 'given';
     }
 
+    // params carry EntityInfo for the formatter chain (ADR-158)
     sharedData.params = {
-      item: item.name,
-      recipient: recipient.name
+      item: entityInfoFrom(item),
+      recipient: entityInfoFrom(recipient)
     };
   },
 
@@ -268,10 +270,11 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.give_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        item: item?.name,
-        recipient: recipient?.name
+        item: item ? entityInfoFrom(item) : undefined,
+        recipient: recipient ? entityInfoFrom(recipient) : undefined
       },
       reason: result.error,
       itemId: item?.id,

@@ -103,7 +103,7 @@ describe('takingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.take_blocked', {
         messageId: 'if.action.taking.cant_take_self',
-        params: { item: player.name }
+        params: { item: { name: player.name } }
       });
     });
 
@@ -120,9 +120,10 @@ describe('takingAction (Golden Pattern)', () => {
 
       const events = executeWithValidation(takingAction, context);
 
+      // Per ADR-158: params.item carries EntityInfo, not bare string
       expectEvent(events, 'if.event.take_blocked', {
         messageId: 'if.action.taking.already_have',
-        params: { item: 'red ball' }
+        params: { item: { name: 'red ball' } }
       });
     });
 
@@ -160,7 +161,7 @@ describe('takingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.take_blocked', {
         messageId: 'if.action.taking.fixed_in_place',
-        params: { item: 'ornate fountain' }
+        params: { item: { name: 'ornate fountain' } }
       });
     });
   });
@@ -200,7 +201,7 @@ describe('takingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.take_blocked', {
         messageId: 'if.action.taking.container_full',
-        params: { item: 'new item' }
+        params: { item: { name: 'new item' } }
       });
     });
 
@@ -275,7 +276,7 @@ describe('takingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.take_blocked', {
         messageId: 'if.action.taking.too_heavy',
-        params: { item: 'heavy boulder' }
+        params: { item: { name: 'heavy boulder' } }
       });
     });
   });

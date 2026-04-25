@@ -154,7 +154,7 @@ describe('showingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('viewer_too_far'),
-        params: { viewer: 'old pirate' }
+        params: { viewer: { name: 'old pirate' } }
       });
     });
 
@@ -193,7 +193,7 @@ describe('showingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.show_blocked', {
         messageId: expect.stringContaining('self'),
-        params: { item: 'silver locket' }
+        params: { item: { name: 'silver locket' } }
       });
     });
   });
@@ -360,8 +360,8 @@ describe('showingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.shown', {
         messageId: expect.stringContaining('shown'),
         params: {
-          item: 'business card',
-          viewer: 'secretary'
+          item: { name: 'business card' },
+          viewer: { name: 'secretary' }
         }
       });
     });

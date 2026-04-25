@@ -203,7 +203,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.insert_blocked', {
         messageId: expect.stringContaining('container_closed'),
-        params: { container: 'treasure chest' }
+        params: { container: { name: 'treasure chest' } }
       });
     });
 
@@ -228,7 +228,7 @@ describe('insertingAction (Golden Pattern)', () => {
       // Should fail because inserting is container-specific
       expectEvent(events, 'if.event.insert_blocked', {
         messageId: expect.stringContaining('not_container'),
-        params: { destination: 'wooden table' }
+        params: { destination: { name: 'wooden table' } }
       });
     });
   });
@@ -265,7 +265,7 @@ describe('insertingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.insert_blocked', {
         messageId: expect.stringContaining('no_room'),
-        params: { container: 'small pouch' }
+        params: { container: { name: 'small pouch' } }
       });
     });
 

@@ -23,10 +23,10 @@ export const exitingLanguage = {
   
   messages: {
     'already_outside': "{You're} not inside anything.",
-    'container_closed': "{container} is closed.",
-    'cant_exit': "{You} {can't} exit {place}.",
-    'exited': "{You} {get} out of {place}.",
-    'exited_from': "{You} {get} {preposition} {place}.",
+    'container_closed': "{the:cap:container} is closed.",
+    'cant_exit': "{You} {can't} exit {the:place}.",
+    'exited': "{You} {get} out of {the:place}.",
+    'exited_from': "{You} {get} {preposition} {the:place}.",
     'nowhere_to_go': "There's nowhere to go from here.",
     'exit_blocked': "The way out is blocked.",
     'must_stand_first': "{You}'ll need to stand up first."

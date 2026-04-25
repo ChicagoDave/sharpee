@@ -18,6 +18,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ShownEventData } from './showing-events';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -63,9 +64,10 @@ function analyzeShowAction(context: ActionContext): ShowAnalysis | null {
     isWorn: isWearing
   };
   
+  // params carry EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
-    item: item.name,
-    viewer: viewer.name
+    item: entityInfoFrom(item),
+    viewer: entityInfoFrom(viewer)
   };
   
   // Determine viewer reaction
@@ -186,7 +188,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'viewer_too_far',
-        params: { viewer: viewer.name }
+        params: { viewer: entityInfoFrom(viewer) }
       };
     }
     
@@ -203,7 +205,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'self',
-        params: { item: item.name }
+        params: { item: entityInfoFrom(item) }
       };
     }
 
@@ -229,10 +231,11 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.show_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
+      // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        item: item?.name,
-        viewer: viewer?.name
+        item: item ? entityInfoFrom(item) : undefined,
+        viewer: viewer ? entityInfoFrom(viewer) : undefined
       },
       reason: result.error,
       itemId: item?.id,

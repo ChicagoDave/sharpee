@@ -16,6 +16,7 @@ import {
 } from '@sharpee/world-model';
 import { ActionMetadata } from '../validation';
 import { ScopeLevel } from '../scope/types';
+import { entityInfoFrom } from '../utils';
 
 /**
  * Configuration for creating a capability-dispatch action.
@@ -112,13 +113,14 @@ export function createCapabilityDispatchAction(
         return { valid: false, error: config.noTargetError };
       }
 
-      // Find trait that claims this capability
+      // Find trait that claims this capability.
+      // params carry EntityInfo for the formatter chain (ADR-158).
       const trait = findTraitWithCapability(entity, config.actionId);
       if (!trait) {
         return {
           valid: false,
           error: config.cantDoThatError,
-          params: { target: entity.name }
+          params: { target: entityInfoFrom(entity) }
         };
       }
 
@@ -134,7 +136,7 @@ export function createCapabilityDispatchAction(
         return {
           valid: false,
           error: config.cantDoThatError,
-          params: { target: entity.name }
+          params: { target: entityInfoFrom(entity) }
         };
       }
 

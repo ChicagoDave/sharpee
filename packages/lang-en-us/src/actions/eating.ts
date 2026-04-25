@@ -19,35 +19,35 @@ export const eatingLanguage = {
   messages: {
     // Error messages
     'no_item': "Eat what?",
-    'not_visible': "{You} {can't} see {item}.",
-    'not_reachable': "{You} {can't} reach {item}.",
+    'not_visible': "{You} {can't} see {the:item}.",
+    'not_reachable': "{You} {can't} reach {the:item}.",
     'not_edible': "That's not something {you} can eat.",
-    'is_drink': "{You} should drink {item}, not eat it.",
-    'already_consumed': "There's nothing left of {item} to eat.",
+    'is_drink': "{You} should drink {the:item}, not eat it.",
+    'already_consumed': "There's nothing left of {the:item} to eat.",
 
     // Success messages - basic
-    'eaten': "{You} {eat} {item}.",
-    'eaten_all': "{You} {eat} all of {item}.",
-    'eaten_some': "{You} {eat} some of {item}.",
-    'eaten_portion': "{You} {eat} a portion of {item}.",
+    'eaten': "{You} {eat} {the:item}.",
+    'eaten_all': "{You} {eat} all of {the:item}.",
+    'eaten_some': "{You} {eat} some of {the:item}.",
+    'eaten_portion': "{You} {eat} a portion of {the:item}.",
 
     // Success messages - quality
-    'delicious': "{You} {eat} {item}. Delicious!",
-    'tasty': "{You} {eat} {item}. It's quite tasty.",
-    'bland': "{You} {eat} {item}. It's rather bland.",
-    'awful': "{You} {eat} {item}. It tastes awful!",
+    'delicious': "{You} {eat} {the:item}. Delicious!",
+    'tasty': "{You} {eat} {the:item}. It's quite tasty.",
+    'bland': "{You} {eat} {the:item}. It's rather bland.",
+    'awful': "{You} {eat} {the:item}. It tastes awful!",
 
     // Success messages - effects
-    'filling': "{You} {eat} {item}. That was filling.",
-    'still_hungry': "{You} {eat} {item}, but {you're} still hungry.",
-    'satisfying': "{You} {eat} {item}. Very satisfying!",
-    'poisonous': "{You} {eat} {item}. It tastes strange...",
+    'filling': "{You} {eat} {the:item}. That was filling.",
+    'still_hungry': "{You} {eat} {the:item}, but {you're} still hungry.",
+    'satisfying': "{You} {eat} {the:item}. Very satisfying!",
+    'poisonous': "{You} {eat} {the:item}. It tastes strange...",
 
     // Success messages - special
-    'nibbled': "{You} {nibble} on {item}.",
-    'tasted': "{You} {taste} {item}.",
-    'devoured': "{You} {devour} {item} hungrily.",
-    'munched': "{You} {munch} on {item}."
+    'nibbled': "{You} {nibble} on {the:item}.",
+    'tasted': "{You} {taste} {the:item}.",
+    'devoured': "{You} {devour} {the:item} hungrily.",
+    'munched': "{You} {munch} on {the:item}."
   },
   
   help: {
