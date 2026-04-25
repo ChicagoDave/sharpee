@@ -50,6 +50,7 @@
     "test:grade:ci": "./scripts/grade-tests.sh --ci",
     "test:grade:summary": "./scripts/grade-tests.sh --summary",
     "test:mutate": "stryker run",
+    "audit:templates": "node scripts/audit-templates.js",
     "typecheck": "tsc --noEmit",
     "lint": "pnpm -r run lint",
     "watch": "pnpm -r --parallel run watch",
