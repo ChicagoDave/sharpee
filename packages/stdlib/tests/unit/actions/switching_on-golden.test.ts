@@ -78,7 +78,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.switch_on_blocked', {
         messageId: 'if.action.switching_on.not_switchable',
-        params: { target: 'ordinary rock' }
+        params: { target: { name: 'ordinary rock' } }
       });
     });
 
@@ -99,7 +99,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.switch_on_blocked', {
         messageId: 'if.action.switching_on.already_on',
-        params: { target: 'portable radio' }
+        params: { target: { name: 'portable radio' } }
       });
     });
 
@@ -122,7 +122,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.switch_on_blocked', {
         messageId: 'if.action.switching_on.no_power',
-        params: { target: 'television' }
+        params: { target: { name: 'television' } }
       });
     });
   });
@@ -152,7 +152,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       // Should emit device_humming message for non-light devices
       expectEvent(events, 'if.event.switched_on', {
         messageId: expect.stringContaining('device_humming'),
-        params: { target: 'ceiling fan' }
+        params: { target: { name: 'ceiling fan' } }
       });
     });
 
@@ -181,7 +181,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.switched_on', {
         messageId: expect.stringContaining('with_sound'),
         params: { 
-          target: 'diesel generator',
+          target: { name: 'diesel generator' },
           sound: 'a loud rumbling'
         }
       });
@@ -212,7 +212,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       // Should emit temporary_activation message
       expectEvent(events, 'if.event.switched_on', {
         messageId: expect.stringContaining('temporary_activation'),
-        params: { target: 'egg timer' }
+        params: { target: { name: 'egg timer' } }
       });
     });
   });
@@ -249,7 +249,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       // Should emit illuminates_darkness message
       expectEvent(events, 'if.event.switched_on', {
         messageId: expect.stringContaining('illuminates_darkness'),
-        params: { target: 'desk lamp' }
+        params: { target: { name: 'desk lamp' } }
       });
     });
 
@@ -282,7 +282,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       // Should emit illuminates_darkness message
       expectEvent(events, 'if.event.switched_on', {
         messageId: expect.stringContaining('illuminates_darkness'),
-        params: { target: 'LED flashlight' }
+        params: { target: { name: 'LED flashlight' } }
       });
     });
 
@@ -349,7 +349,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       
       // Should succeed
       expectEvent(events, 'if.event.switched_on', {
-        params: { target: 'desktop computer' }
+        params: { target: { name: 'desktop computer' } }
       });
     });
   });
@@ -386,7 +386,7 @@ describe('switchingOnAction (Golden Pattern)', () => {
       // Should emit door_opens message
       expectEvent(events, 'if.event.switched_on', {
         messageId: expect.stringContaining('door_opens'),
-        params: { target: 'automatic door' }
+        params: { target: { name: 'automatic door' } }
       });
     });
 

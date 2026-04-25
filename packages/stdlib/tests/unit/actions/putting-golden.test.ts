@@ -105,7 +105,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_destination'),
-        params: { item: 'ball' }
+        params: { item: { name: 'ball' } }
       });
     });
 
@@ -132,7 +132,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('cant_put_in_itself'),
-        params: { item: 'magic box' }
+        params: { item: { name: 'magic box' } }
       });
     });
 
@@ -155,7 +155,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('cant_put_on_itself'),
-        params: { item: 'folding table' }
+        params: { item: { name: 'folding table' } }
       });
     });
 
@@ -279,7 +279,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('container_closed'),
-        params: { container: 'locked chest' }
+        params: { container: { name: 'locked chest' } }
       });
     });
 
@@ -304,7 +304,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('not_surface'),
-        params: { destination: 'cardboard box' }
+        params: { destination: { name: 'cardboard box' } }
       });
     });
   });
@@ -386,7 +386,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('not_container'),
-        params: { destination: 'kitchen counter' }
+        params: { destination: { name: 'kitchen counter' } }
       });
     });
   });
@@ -424,7 +424,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_room'),
-        params: { container: 'coin pouch' }
+        params: { container: { name: 'coin pouch' } }
       });
     });
 
@@ -465,7 +465,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_room'),
-        params: { container: 'canvas bag' }
+        params: { container: { name: 'canvas bag' } }
       });
     });
 
@@ -501,7 +501,7 @@ describe('puttingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.put_blocked', {
         messageId: expect.stringContaining('no_space'),
-        params: { surface: 'serving tray' }
+        params: { surface: { name: 'serving tray' } }
       });
     });
   });
@@ -767,7 +767,7 @@ describe('Putting Action Edge Cases', () => {
     // 3 + 8 = 11, exceeds maxVolume of 10
     expectEvent(events, 'if.event.put_blocked', {
       messageId: expect.stringContaining('no_room'),
-      params: { container: 'fruit basket' }
+      params: { container: { name: 'fruit basket' } }
     });
   });
 
@@ -821,7 +821,7 @@ describe('Putting Action Edge Cases', () => {
     
     expectEvent(events, 'if.event.put_blocked', {
       messageId: expect.stringContaining('not_container'),
-      params: { destination: 'marble statue' }
+      params: { destination: { name: 'marble statue' } }
     });
   });
 

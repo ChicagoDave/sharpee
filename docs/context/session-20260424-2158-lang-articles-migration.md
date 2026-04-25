@@ -8,9 +8,9 @@
 
 ## Phase Context
 - **Plan**: `docs/work/lang-articles/plan-20260424-the-cap-migration.md`
-- **Phase executed**: Phase 1 — "Helper + unit tests" (DONE), Phase 2 — "Pilot one action end-to-end (taking)" (DONE), Phase 3 — "Roll out per action" (IN PROGRESS — 4 of ~30 actions complete)
+- **Phase executed**: Phase 1 — "Helper + unit tests" (DONE), Phase 2 — "Pilot one action end-to-end (taking)" (DONE), Phase 3 — "Roll out per action" (IN PROGRESS — 11 of ~26 actions complete across 2 sessions)
 - **Tool calls used**: not tracked in .session-state.json this session
-- **Phase outcome**: Phases 1 and 2 completed on budget; Phase 3 partially completed
+- **Phase outcome**: Phases 1 and 2 completed on budget; Phase 3 partially completed (Session 1: 4 actions, Session 2: 7 source files + 6 actions + 2 shared helpers)
 
 ## Completed
 
@@ -32,7 +32,7 @@ Identified a ~130-template bug class in `packages/lang-en-us/`: stdlib actions p
 - Discovered `englishTemplates` in `packages/lang-en-us/src/data/templates.ts` is dead code (exported but never imported). Noted for Phase 4 cleanup.
 - Full Dungeo walkthrough chain ran 873/873 after three RNG-affected runs converged on a thief-clean result.
 
-### Phase 3 — Per-action rollout (4 actions complete)
+### Phase 3 — Per-action rollout (Session 1: 4 actions complete)
 
 Each action received: callsite migration in stdlib + template update in lang-en-us + test assertion updates. Same diverged-params pattern applied where `...params` spread existed.
 
@@ -44,6 +44,30 @@ Each action received: callsite migration in stdlib + template update in lang-en-
 | closing | 6 (4 validate + closed event + blocked) | 5 | 19/19 passing |
 
 Article-rendering transcript and rug-trapdoor regression transcript (ISSUE-074) continue passing after each migration.
+
+### Phase 3 — Per-action rollout (Session 2: actions 5–10, total 11 of ~26 complete)
+
+Six more actions migrated, with two shared helpers discovered and migrated alongside their consumers.
+
+| Action / Helper | Callsites migrated | Templates updated | Tests |
+|---|---|---|---|
+| lock-shared.ts (helper) | `validateKeyRequirements`, `createLockErrorEvent`, `analyzeLockContext` — all params blocks (key/item) | n/a — helper only | covered by locking + unlocking tests |
+| locking | validate paths (key/item), success-message params, failure-path params | locking.ts | 25/25 (locking-golden.test.ts) |
+| unlocking | validate paths, success params (item, key), failure-path re-derived (noun → EntityInfo), blocked() spread | unlocking.ts | 28/28 (unlocking-golden.test.ts) |
+| switching_on | 3 validate paths (not_switchable, already_on, no_power), execute-phase params, failure-path re-derived; templates updated for sentence-start vs mid-sentence patterns | switching-on.ts | 24/24 (switching_on-golden.test.ts) |
+| switching_off | same shape as switching_on; mirror of paired action | switching-off.ts | 24/24 (switching_off-golden.test.ts) |
+| examining | blocked-phase params in examining.ts; `buildExaminingMessageParams` data builder in examining-data.ts — container/surface/target keys; legacy compat message templates also updated | examining.ts | 22/22 (examining-golden.test.ts) |
+| putting | 12+ params blocks: `determineTargetPreposition` helper's 3 error paths, `validateSingleEntity`'s 5 paths (cant_put_in_itself, already_there, container_closed, no_room, no_space), `reportSingleSuccess`/`reportSingleBlocked` (put_in and put_on variants), blocked() phase, single-object report path (lines 521 and 537) | putting.ts | 33/33 (putting-golden.test.ts) |
+
+**Pattern observations codified during Session 2:**
+- Shared helpers (`lock-shared.ts`, `examining-data.ts`) must be migrated alongside their consuming actions — not as separate line items. Treating them as separate would leave mixed EntityInfo / bare-string shapes within a single logical unit.
+- Many actions store `targetName: string` on sharedData for use in failure-path event emission. Where `report()` lacks direct access to the noun entity, pattern is: `const noun = context.command.directObject?.entity;` then re-derive via `noun ? entityInfoFrom(noun) : { name: sharedData.targetName }` as fallback. Avoids enlarging `SharedData` per-action.
+- Action source files diverge in params spread usage: some use `...params` spread into top-level event data (taking, putting blocked), some don't (pushing, opening). Diverge only where spread exists.
+
+**Verification status after Session 2:**
+- All 11 migrated actions pass unit tests in isolation (~150 assertion updates from `'name'` to `{ name: 'name' }` shape across 11 test files).
+- Bundle + chain last verified green (873/873) after the Session 1 commit (pushing through closing).
+- Bundle NOT yet rebuilt for actions 6–11 (locking through putting). Full chain re-verification is the first task of Session 3.
 
 ## Key Decisions
 
@@ -63,14 +87,15 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 `SceneryTrait.cantTakeMessage` stores a story-specific messageId. The migration enables stories to use `{the:cap:item}` formatter chains in those messages too. No story-side changes needed.
 
 ## Next Phase
-- **Phase 3 (continued)**: ~26 actions remain. Next in order: locking, unlocking, switching_on, switching_off, examining, putting, inserting, removing, throwing, attacking, giving, showing, talking, smelling, listening, touching, turning, climbing, searching, using, dropping, wearing, taking_off, reading, eating, drinking.
+- **Phase 3 (continued)**: ~15 actions remain. Next in order: inserting, removing (related to putting), entering, exiting, throwing, attacking, giving, showing, talking, smelling, listening, touching, turning, climbing, searching, using, dropping, wearing, taking_off, reading, eating, drinking.
 - **Tier**: rollout (one commit per action)
-- **Entry state**: Phase 3 active; branch `lang-articles-migration`; article-rendering transcript passing; walkthrough chain last verified green at 873/873 after Phase 2.
+- **Entry state**: Phase 3 active; branch `lang-articles-migration`; 11 actions migrated and unit-tested; bundle NOT yet rebuilt for Session 2 actions — first task of Session 3 is to rebuild and re-run the 873-test chain.
 
 ## Open Items
 
 ### Short Term
-- Continue Phase 3 per-action rollout (~26 actions remaining)
+- **Session 3 first task**: rebuild bundle and re-run walkthrough chain to verify actions 6–11 (locking through putting) don't introduce regressions
+- Continue Phase 3 per-action rollout (~15 actions remaining after Session 2)
 - Run walkthrough chain checkpoint after each 4-5 action batch
 - Phase 4: add advisory scanner script, finalize ADR-158, update CLAUDE.md "Language Layer Separation" subsection with one-line rule
 
@@ -89,33 +114,53 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 - `docs/architecture/adrs/adr-158-entity-info-in-message-params.md` — ADR (drafted)
 - `docs/work/lang-articles/plan-20260424-the-cap-migration.md` — plan
 
-**Modified — stdlib actions** (5 files):
+**Modified — stdlib actions** (13 files):
 - `packages/stdlib/src/actions/standard/taking/taking.ts` — Phase 2 callsite migration
-- `packages/stdlib/src/actions/standard/pushing/pushing.ts` — Phase 3
-- `packages/stdlib/src/actions/standard/pulling/pulling.ts` — Phase 3
-- `packages/stdlib/src/actions/standard/opening/opening.ts` — Phase 3
-- `packages/stdlib/src/actions/standard/closing/closing.ts` — Phase 3
+- `packages/stdlib/src/actions/standard/pushing/pushing.ts` — Phase 3 Session 1
+- `packages/stdlib/src/actions/standard/pulling/pulling.ts` — Phase 3 Session 1
+- `packages/stdlib/src/actions/standard/opening/opening.ts` — Phase 3 Session 1
+- `packages/stdlib/src/actions/standard/closing/closing.ts` — Phase 3 Session 1
+- `packages/stdlib/src/actions/standard/locking/locking.ts` — Phase 3 Session 2
+- `packages/stdlib/src/actions/standard/locking/lock-shared.ts` — Phase 3 Session 2 (shared helper)
+- `packages/stdlib/src/actions/standard/unlocking/unlocking.ts` — Phase 3 Session 2
+- `packages/stdlib/src/actions/standard/switching_on/switching_on.ts` — Phase 3 Session 2
+- `packages/stdlib/src/actions/standard/switching_off/switching_off.ts` — Phase 3 Session 2
+- `packages/stdlib/src/actions/standard/examining/examining.ts` — Phase 3 Session 2
+- `packages/stdlib/src/actions/standard/examining/examining-data.ts` — Phase 3 Session 2 (data builder)
+- `packages/stdlib/src/actions/standard/putting/putting.ts` — Phase 3 Session 2
 
-**Modified — lang-en-us templates** (5 files):
+**Modified — lang-en-us templates** (11 files):
 - `packages/lang-en-us/src/actions/taking.ts` — Phase 2 template migration
-- `packages/lang-en-us/src/actions/pushing.ts` — Phase 3
-- `packages/lang-en-us/src/actions/pulling.ts` — Phase 3
-- `packages/lang-en-us/src/actions/opening.ts` — Phase 3
-- `packages/lang-en-us/src/actions/closing.ts` — Phase 3
+- `packages/lang-en-us/src/actions/pushing.ts` — Phase 3 Session 1
+- `packages/lang-en-us/src/actions/pulling.ts` — Phase 3 Session 1
+- `packages/lang-en-us/src/actions/opening.ts` — Phase 3 Session 1
+- `packages/lang-en-us/src/actions/closing.ts` — Phase 3 Session 1
+- `packages/lang-en-us/src/actions/locking.ts` — Phase 3 Session 2
+- `packages/lang-en-us/src/actions/unlocking.ts` — Phase 3 Session 2
+- `packages/lang-en-us/src/actions/switching-on.ts` — Phase 3 Session 2
+- `packages/lang-en-us/src/actions/switching-off.ts` — Phase 3 Session 2
+- `packages/lang-en-us/src/actions/examining.ts` — Phase 3 Session 2
+- `packages/lang-en-us/src/actions/putting.ts` — Phase 3 Session 2
 
-**Modified — stdlib tests** (5 files):
+**Modified — stdlib tests** (11 files):
 - `packages/stdlib/tests/unit/actions/taking-golden.test.ts` — Phase 2 assertion updates
-- `packages/stdlib/tests/unit/actions/pushing*.test.ts` — Phase 3
-- `packages/stdlib/tests/unit/actions/pulling*.test.ts` — Phase 3
-- `packages/stdlib/tests/unit/actions/opening*.test.ts` — Phase 3
-- `packages/stdlib/tests/unit/actions/closing*.test.ts` — Phase 3
+- `packages/stdlib/tests/unit/actions/pushing*.test.ts` — Phase 3 Session 1
+- `packages/stdlib/tests/unit/actions/pulling*.test.ts` — Phase 3 Session 1
+- `packages/stdlib/tests/unit/actions/opening*.test.ts` — Phase 3 Session 1
+- `packages/stdlib/tests/unit/actions/closing*.test.ts` — Phase 3 Session 1
+- `packages/stdlib/tests/unit/actions/locking-golden.test.ts` — Phase 3 Session 2
+- `packages/stdlib/tests/unit/actions/unlocking-golden.test.ts` — Phase 3 Session 2
+- `packages/stdlib/tests/unit/actions/switching_on-golden.test.ts` — Phase 3 Session 2
+- `packages/stdlib/tests/unit/actions/switching_off-golden.test.ts` — Phase 3 Session 2
+- `packages/stdlib/tests/unit/actions/examining-golden.test.ts` — Phase 3 Session 2
+- `packages/stdlib/tests/unit/actions/putting-golden.test.ts` — Phase 3 Session 2
 
 **Modified — stdlib barrel** (1 file):
 - `packages/stdlib/src/utils/index.ts` — re-export of `entityInfoFrom`
 
 ## Notes
 
-**Session duration**: ~4 hours
+**Session duration**: ~4 hours (Session 1) + additional Session 2 work (locking through putting)
 
 **Approach**: Diagnosis first, then a well-bounded plan covering all ~130 templates. Pilot on a single action (taking) to validate the diverged-params pattern before committing to the full rollout. Phase 3 proceeds one action per commit so any regression is trivially isolatable.
 
@@ -124,9 +169,9 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 ## Session Metadata
 
 - **Status**: INCOMPLETE
-- **Blocker**: Phase 3 rollout — ~26 stdlib actions remain to be migrated
+- **Blocker**: Phase 3 rollout — ~15 stdlib actions remain to be migrated; bundle not yet rebuilt for Session 2 actions
 - **Blocker Category**: Other: planned multi-session rollout, not a blocking defect
-- **Estimated Remaining**: ~3–4 hours across ~2 sessions
+- **Estimated Remaining**: ~2–3 hours across ~1–2 sessions
 - **Rollback Safety**: safe to revert (all work is on `lang-articles-migration` branch, not merged to main)
 
 ## Dependency/Prerequisite Check
@@ -153,11 +198,12 @@ Per user decision: the template static scanner is a manual script (`pnpm audit:t
 
 ## Test Coverage Delta
 
-- Tests added: 20 (9 unit + 11 integration for Phase 1; Phase 2 tests were updates to existing)
+- Tests added: 20 (9 unit + 11 integration for Phase 1; all other work was updates to existing assertions)
 - Tests passing before: baseline (all green on main before branch)
-- Tests passing after: Phase 1–3 actions all green; walkthrough chain 873/873 verified after Phase 2
-- Known untested areas: ~26 remaining stdlib actions not yet migrated; story-side templates in `stories/dungeo/src/messages/` (out of scope for this branch)
+- Tests passing after: all 11 migrated actions green in isolation; walkthrough chain 873/873 last verified after Session 1 commit (Session 2 actions unit-tested but bundle not yet rebuilt)
+- Assertion updates: ~150 individual changes across 11 test files, from bare `'name'` string to `{ name: 'name' }` shape
+- Known untested areas: ~15 remaining stdlib actions not yet migrated; bundle integration for Session 2 actions pending; story-side templates in `stories/dungeo/src/messages/` (out of scope for this branch)
 
 ---
 
-**Progressive update**: Session completed 2026-04-24 21:58 CST
+**Progressive update**: Session 1 completed 2026-04-24 21:58 CST; Session 2 update appended 2026-04-24 (locking, unlocking, switching_on, switching_off, examining, putting — 6 actions + 2 helpers, 11 of ~26 total)

@@ -19,6 +19,7 @@ import { ScopeLevel } from '../../../scope';
 import { UnlockedEventData } from './unlocking-events';
 import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared';
 import { MESSAGES } from './unlocking-messages';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -97,7 +98,7 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: MESSAGES.NOT_LOCKABLE,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -106,7 +107,7 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: MESSAGES.ALREADY_UNLOCKED,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -189,10 +190,11 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Determine success message
+    // Determine success message — params carry EntityInfo for the
+    // formatter chain (ADR-158); domain fields stay as separate strings.
     sharedData.messageId = determineLockMessage(false, !!withKey);
     sharedData.params = {
-      item: noun.name
+      item: entityInfoFrom(noun)
     };
 
     // Add container/door info to params
@@ -204,7 +206,7 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
       sharedData.params.isDoor = true;
     }
     if (withKey) {
-      sharedData.params.key = withKey.name;
+      sharedData.params.key = entityInfoFrom(withKey);
     }
     if (sharedData.willAutoOpen) {
       sharedData.params.willAutoOpen = true;
@@ -221,12 +223,14 @@ export const unlockingAction: Action & { metadata: ActionMetadata } = {
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getUnlockingSharedData(context);
+    const noun = context.command.directObject?.entity;
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
       return [context.event('if.event.unlock_blocked', {
         messageId: `${context.action.id}.${sharedData.errorMessageId}`,
-        params: { item: sharedData.targetName },
+        // params carry EntityInfo for the formatter chain (ADR-158)
+        params: { item: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         reason: sharedData.errorMessageId

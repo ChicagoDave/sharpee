@@ -19,6 +19,7 @@ import { ScopeLevel } from '../../../scope';
 import { LockedEventData } from './locking-events';
 import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared';
 import { MESSAGES } from './locking-messages';
+import { entityInfoFrom } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -93,7 +94,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: MESSAGES.NOT_LOCKABLE,
-        params: { item: noun.name }
+        params: { item: entityInfoFrom(noun) }
       };
     }
 
@@ -104,14 +105,14 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: MESSAGES.ALREADY_LOCKED,
-          params: { item: noun.name }
+          params: { item: entityInfoFrom(noun) }
         };
       }
       if (noun.has(TraitType.OPENABLE) && OpenableBehavior.isOpen(noun)) {
         return {
           valid: false,
           error: MESSAGES.NOT_CLOSED,
-          params: { item: noun.name }
+          params: { item: entityInfoFrom(noun) }
         };
       }
     }
@@ -184,10 +185,11 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       sharedData.sound = result.lockSound;
     }
 
-    // Determine success message
+    // Determine success message — params carry EntityInfo for the
+    // formatter chain (ADR-158); domain fields stay as separate strings.
     sharedData.messageId = determineLockMessage(true, !!withKey);
     sharedData.params = {
-      item: noun.name
+      item: entityInfoFrom(noun)
     };
 
     // Add container/door info
@@ -198,7 +200,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       sharedData.params.isDoor = true;
     }
     if (withKey) {
-      sharedData.params.key = withKey.name;
+      sharedData.params.key = entityInfoFrom(withKey);
     }
   },
 
@@ -209,12 +211,14 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getLockingSharedData(context);
+    const noun = context.command.directObject?.entity;
 
     // Check if behavior failed (safety net for edge cases)
     if (sharedData.failed) {
       return [context.event('if.event.lock_blocked', {
         messageId: `${context.action.id}.${sharedData.errorMessageId}`,
-        params: { item: sharedData.targetName },
+        // params carry EntityInfo for the formatter chain (ADR-158)
+        params: { item: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         reason: sharedData.errorMessageId

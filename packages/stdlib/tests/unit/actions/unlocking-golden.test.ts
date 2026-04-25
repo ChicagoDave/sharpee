@@ -77,7 +77,7 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.unlock_blocked', {
         messageId: 'if.action.unlocking.not_lockable',
-        params: { item: 'wooden box' }
+        params: { item: { name: 'wooden box' } }
       });
     });
 
@@ -99,7 +99,7 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.unlock_blocked', {
         messageId: 'if.action.unlocking.already_unlocked',
-        params: { item: 'treasure chest' }
+        params: { item: { name: 'treasure chest' } }
       });
     });
   });
@@ -154,7 +154,7 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.unlock_blocked', {
         messageId: 'if.action.unlocking.key_not_held',
-        params: { key: 'safe key' }
+        params: { key: { name: 'safe key' } }
       });
     });
 
@@ -184,8 +184,8 @@ describe('unlockingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.unlock_blocked', {
         messageId: 'if.action.unlocking.wrong_key',
         params: {
-          key: 'desk key',
-          item: 'cabinet'
+          key: { name: 'desk key' },
+          item: { name: 'cabinet' }
         }
       });
     });
@@ -216,7 +216,7 @@ describe('unlockingAction (Golden Pattern)', () => {
       
       expectEvent(events, 'if.event.unlocked', {
         messageId: 'if.action.unlocking.unlocked',
-        params: { item: 'simple latch' }
+        params: { item: { name: 'simple latch' } }
       });
     });
 
@@ -252,8 +252,8 @@ describe('unlockingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.unlocked', {
         messageId: 'if.action.unlocking.unlocked_with',
         params: {
-          item: 'iron chest',
-          key: 'iron key'
+          item: { name: 'iron chest' },
+          key: { name: 'iron key' }
         }
       });
     });
@@ -292,8 +292,8 @@ describe('unlockingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.unlocked', {
         params: {
-          item: 'heavy door',
-          key: 'dungeon key',
+          item: { name: 'heavy door' },
+          key: { name: 'dungeon key' },
           isDoor: true
         }
       });

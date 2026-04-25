@@ -42,6 +42,7 @@ import { getPuttingSharedData, PuttingSharedData, PuttingItemResult } from './pu
 
 // Import multi-object helpers
 import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
+import { entityInfoFrom } from '../../../utils';
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
@@ -69,13 +70,13 @@ function determineTargetPreposition(
         return {
           targetPreposition: 'in',
           error: PuttingMessages.NOT_CONTAINER,
-          params: { destination: target.name }
+          params: { destination: entityInfoFrom(target) }
         };
       } else {
         return {
           targetPreposition: 'on',
           error: PuttingMessages.NOT_SURFACE,
-          params: { destination: target.name }
+          params: { destination: entityInfoFrom(target) }
         };
       }
     }
@@ -89,7 +90,7 @@ function determineTargetPreposition(
       return {
         targetPreposition: 'in',
         error: PuttingMessages.NOT_CONTAINER,
-        params: { destination: target.name }
+        params: { destination: entityInfoFrom(target) }
       };
     }
   }
@@ -110,7 +111,7 @@ function validateSingleEntity(
     return {
       valid: false,
       error: messageId,
-      params: { item: item.name }
+      params: { item: entityInfoFrom(item) }
     };
   }
 
@@ -121,9 +122,9 @@ function validateSingleEntity(
       valid: false,
       error: PuttingMessages.ALREADY_THERE,
       params: {
-        item: item.name,
+        item: entityInfoFrom(item),
         relation: relation,
-        destination: target.name
+        destination: entityInfoFrom(target)
       }
     };
   }
@@ -141,7 +142,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: PuttingMessages.CONTAINER_CLOSED,
-        params: { container: target.name }
+        params: { container: entityInfoFrom(target) }
       };
     }
 
@@ -150,7 +151,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: PuttingMessages.NO_ROOM,
-        params: { container: target.name }
+        params: { container: entityInfoFrom(target) }
       };
     }
   }
@@ -161,7 +162,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: PuttingMessages.NO_SPACE,
-        params: { surface: target.name }
+        params: { surface: entityInfoFrom(target) }
       };
     }
   }
@@ -254,7 +255,7 @@ function reportSingleSuccess(
   const targetPreposition = result.targetPreposition as 'in' | 'on';
 
   if (targetPreposition === 'in') {
-    const params = { item: item.name, container: target.name };
+    const params = { item: entityInfoFrom(item), container: entityInfoFrom(target) };
     events.push(context.event('if.event.put_in', {
       // Rendering data (messageId + params for text-service)
       messageId: `${context.action.id}.${PuttingMessages.PUT_IN}`,
@@ -270,7 +271,7 @@ function reportSingleSuccess(
       targetSnapshot: captureEntitySnapshot(target, context.world, true)
     }));
   } else {
-    const params = { item: item.name, surface: target.name };
+    const params = { item: entityInfoFrom(item), surface: entityInfoFrom(target) };
     events.push(context.event('if.event.put_on', {
       // Rendering data (messageId + params for text-service)
       messageId: `${context.action.id}.${PuttingMessages.PUT_ON}`,
@@ -302,10 +303,10 @@ function reportSingleBlocked(
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.put_blocked', {
-    // Rendering data
+    // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: item.name, destination: target.name },
-    // Domain data
+    params: { ...errorParams, item: entityInfoFrom(item), destination: entityInfoFrom(target) },
+    // Domain data — strings for handlers
     itemId: item.id,
     itemName: item.name,
     targetId: target.id,
@@ -375,7 +376,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: PuttingMessages.NO_DESTINATION,
-        params: { item: item.name }
+        params: { item: entityInfoFrom(item) }
       };
     }
 
@@ -518,7 +519,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit domain event with messageId (simplified pattern - ADR-097)
     if (targetPreposition === 'in') {
-      const params = { item: item.name, container: target.name };
+      const params = { item: entityInfoFrom(item), container: entityInfoFrom(target) };
       events.push(context.event('if.event.put_in', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${PuttingMessages.PUT_IN}`,
@@ -534,7 +535,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         targetSnapshot: captureEntitySnapshot(target, context.world, true)
       }));
     } else {
-      const params = { item: item.name, surface: target.name };
+      const params = { item: entityInfoFrom(item), surface: entityInfoFrom(target) };
       events.push(context.event('if.event.put_on', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${PuttingMessages.PUT_ON}`,
@@ -587,16 +588,14 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Standard blocked handling
+    // Standard blocked handling — EntityInfo for formatter chain (ADR-158)
     return [context.event('if.event.put_blocked', {
-      // Rendering data
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
-        item: item?.name,
-        destination: target?.name
+        item: item ? entityInfoFrom(item) : undefined,
+        destination: target ? entityInfoFrom(target) : undefined
       },
-      // Domain data
       itemId: item?.id,
       itemName: item?.name,
       targetId: target?.id,

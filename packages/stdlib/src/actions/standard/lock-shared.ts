@@ -5,6 +5,7 @@
 import { ActionContext, ValidationResult } from '../enhanced-types';
 import { IFEntity, TraitType, LockableBehavior, OpenableBehavior } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
+import { entityInfoFrom } from '../../utils';
 
 /**
  * Shared message constants for lock/unlock validation
@@ -81,7 +82,7 @@ export function validateKeyRequirements(
     return {
       valid: false,
       error: LOCK_MESSAGES.KEY_NOT_HELD,
-      params: { key: key.name }
+      params: { key: entityInfoFrom(key) }
     };
   }
 
@@ -95,8 +96,8 @@ export function validateKeyRequirements(
       valid: false,
       error: LOCK_MESSAGES.WRONG_KEY,
       params: {
-        key: key.name,
-        item: target.name
+        key: entityInfoFrom(key),
+        item: entityInfoFrom(target)
       }
     };
   }
@@ -122,7 +123,7 @@ export function createLockErrorEvent(
         actionId,
         messageId: 'already_locked',
         reason: 'already_locked',
-        params: { item: target.name }
+        params: { item: entityInfoFrom(target) }
       });
     }
     if (result.notClosed) {
@@ -130,7 +131,7 @@ export function createLockErrorEvent(
         actionId,
         messageId: 'not_closed',
         reason: 'not_closed',
-        params: { item: target.name }
+        params: { item: entityInfoFrom(target) }
       });
     }
   } else {
@@ -139,11 +140,11 @@ export function createLockErrorEvent(
         actionId,
         messageId: 'already_unlocked',
         reason: 'already_unlocked',
-        params: { item: target.name }
+        params: { item: entityInfoFrom(target) }
       });
     }
   }
-  
+
   // Common errors for both
   if (result.noKey) {
     return context.event('action.error', {
@@ -152,25 +153,25 @@ export function createLockErrorEvent(
       reason: 'no_key'
     });
   }
-  
+
   if (result.wrongKey) {
     return context.event('action.error', {
       actionId,
       messageId: 'wrong_key',
       reason: 'wrong_key',
-      params: { 
-        key: key?.name || 'key', 
-        item: target.name 
+      params: {
+        key: key ? entityInfoFrom(key) : { name: 'key' },
+        item: entityInfoFrom(target)
       }
     });
   }
-  
+
   // Fallback error
   return context.event('action.error', {
     actionId,
     messageId: isLocking ? 'cannot_lock' : 'cannot_unlock',
     reason: isLocking ? 'cannot_lock' : 'cannot_unlock',
-    params: { item: target.name }
+    params: { item: entityInfoFrom(target) }
   });
 }
 

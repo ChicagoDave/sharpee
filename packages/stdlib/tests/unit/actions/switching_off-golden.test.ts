@@ -78,7 +78,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.switch_off_blocked', {
         messageId: expect.stringContaining('not_switchable'),
-        params: { target: 'ordinary rock' }
+        params: { target: { name: 'ordinary rock' } }
       });
     });
 
@@ -99,7 +99,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.switch_off_blocked', {
         messageId: expect.stringContaining('already_off'),
-        params: { target: 'portable radio' }
+        params: { target: { name: 'portable radio' } }
       });
     });
   });
@@ -129,7 +129,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       // Should emit device_stops message for non-light devices
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('device_stops'),
-        params: { target: 'ceiling fan' }
+        params: { target: { name: 'ceiling fan' } }
       });
     });
 
@@ -158,7 +158,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('with_sound'),
         params: { 
-          target: 'diesel engine',
+          target: { name: 'diesel engine' },
           sound: 'a sputtering cough'
         }
       });
@@ -188,7 +188,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       // Should emit silence_falls message
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('silence_falls'),
-        params: { target: 'power generator' }
+        params: { target: { name: 'power generator' } }
       });
     });
 
@@ -218,7 +218,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('was_temporary'),
         params: { 
-          target: 'kitchen timer',
+          target: { name: 'kitchen timer' },
           remainingTime: 45
         }
       });
@@ -256,7 +256,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       // Should emit light_off message
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('light_off'),
-        params: { target: 'bright lamp' }
+        params: { target: { name: 'bright lamp' } }
       });
     });
 
@@ -293,7 +293,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       // Should emit light_off_still_lit message
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('light_off_still_lit'),
-        params: { target: 'desk lamp' }
+        params: { target: { name: 'desk lamp' } }
       });
     });
 
@@ -391,7 +391,7 @@ describe('switchingOffAction (Golden Pattern)', () => {
       // Should emit door_closes message
       expectEvent(events, 'if.event.switched_off', {
         messageId: expect.stringContaining('door_closes'),
-        params: { target: 'automatic door' }
+        params: { target: { name: 'automatic door' } }
       });
     });
 
