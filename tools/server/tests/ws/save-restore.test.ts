@@ -50,9 +50,8 @@ interface Room {
 async function openBothSockets(server: TestServerHandle): Promise<Room> {
   const host = await createRoomViaHttp(server, {
     story_slug: 'dungeo',
-    display_name: 'Alice',
   });
-  const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+  const guest = await joinRoomViaHttp(server, host.room_id);
 
   // HTTP handlers left participants marked connected; force disconnected so
   // the WS `hello` performs a full reconnect (matching the Phase 4 tests).

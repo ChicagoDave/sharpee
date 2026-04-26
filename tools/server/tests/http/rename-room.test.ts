@@ -56,7 +56,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('PH renames the room: DB updated, lifecycle event logged, new title in response', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
       title: 'Old title',
     });
     const res = await rename(server, host.room_id, 'New title', host.token);
@@ -83,7 +82,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('trims whitespace before persisting', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const res = await rename(server, host.room_id, '   Quiet Room   ', host.token);
     expect(res.status).toBe(200);
@@ -94,7 +92,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('same-title rename is a no-op: no lifecycle row, no wire broadcast', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
       title: 'Stable',
     });
     const res = await rename(server, host.room_id, 'Stable', host.token);
@@ -113,7 +110,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('rejects an empty title with 400 missing_field', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const res = await rename(server, host.room_id, '   ', host.token);
     expect(res.status).toBe(400);
@@ -124,7 +120,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('rejects a title longer than 80 chars with 400 invalid_title', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const overlong = 'x'.repeat(81);
     const res = await rename(server, host.room_id, overlong, host.token);
@@ -136,7 +131,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('rejects a 80-char title is accepted (boundary)', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const boundary = 'x'.repeat(80);
     const res = await rename(server, host.room_id, boundary, host.token);
@@ -146,7 +140,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('no Bearer → 401 unauthorized', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const res = await rename(server, host.room_id, 'Anything', null);
     expect(res.status).toBe(401);
@@ -155,9 +148,8 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('non-PH token → 403 insufficient_authority', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
     const res = await rename(server, host.room_id, 'Bob rewrites', guest.token);
     expect(res.status).toBe(403);
     const body = (await res.json()) as { code: string };
@@ -167,11 +159,9 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('token from a different room → 401 unauthorized', async () => {
     const hostA = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const hostB = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Bob',
     });
     // Attempt to rename room A with a valid token for room B.
     const res = await rename(server, hostA.room_id, 'hijack', hostB.token);
@@ -181,7 +171,6 @@ describe('PATCH /api/rooms/:room_id', () => {
   it('unknown room id → 404 room_not_found', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const res = await rename(server, 'no-such-room', 'whatever', host.token);
     // The token lookup will reject first with 401 token_wrong_room since

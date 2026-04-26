@@ -69,7 +69,6 @@ describe('PH grace-timer wiring (presence + hello)', () => {
   it('PH socket-close starts the grace timer; pending() lists the room', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const hostClient = await openAndHello(host.room_id, host);
 
@@ -87,9 +86,8 @@ describe('PH grace-timer wiring (presence + hello)', () => {
   it('non-PH socket-close does NOT schedule a grace timer', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     const hostClient = await openAndHello(host.room_id, host);
     const guestClient = await openAndHello(host.room_id, guest);
@@ -112,7 +110,6 @@ describe('PH grace-timer wiring (presence + hello)', () => {
   it('PH reconnect before fire cancels the grace timer', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
     const hostClient = await openAndHello(host.room_id, host);
 
@@ -130,9 +127,8 @@ describe('PH grace-timer wiring (presence + hello)', () => {
     // Build a two-participant room so there IS a designated successor to promote.
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     const hostClient = await openAndHello(host.room_id, host);
     const guestClient = await openAndHello(host.room_id, guest);
@@ -181,9 +177,8 @@ describe('PH grace-timer wiring (presence + hello)', () => {
   it('PH reconnects after grace fired: welcome shows them as participant', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     const hostClient = await openAndHello(host.room_id, host);
     const guestClient = await openAndHello(host.room_id, guest);

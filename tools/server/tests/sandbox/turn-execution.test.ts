@@ -35,8 +35,8 @@ import type { ServerMsg } from '../../src/wire/browser-server.js';
 const REAL = Boolean(process.env.SHARPEE_REAL_SANDBOX);
 
 async function openBothSockets(server: TestServerHandle) {
-  const host = await createRoomViaHttp(server, { story_slug: 'dungeo', display_name: 'Alice' });
-  const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+  const host = await createRoomViaHttp(server, { story_slug: 'dungeo' });
+  const guest = await joinRoomViaHttp(server, host.room_id);
 
   server.db
     .prepare('UPDATE participants SET connected = 0 WHERE room_id = ?')

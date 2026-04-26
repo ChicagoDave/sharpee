@@ -275,14 +275,13 @@ function randomAlphaHandle(): string {
  * Callers need that credential pair to connect WS — the hello frame post
  * ADR-161 carries `(handle, passcode)` rather than the per-room token.
  *
- * NOTE: This helper still passes `identity_id` in the request body — the
- * room HTTP routes have not yet been switched to credential-shaped bodies
- * (that is Phase B's job). Once Phase B lands, the body shape here changes
- * to `(handle, passcode)`.
+ * Body shape per ADR-161 Phase B: `(story_slug, title, handle, passcode,
+ * captcha_token)`. The display name on the resulting `join` session-event is
+ * resolved server-side from `identity.handle`; callers cannot supply it.
  */
 export async function createRoomViaHttp(
   handle: TestServerHandle,
-  input: { story_slug: string; display_name: string; title?: string; identity?: TestIdentity },
+  input: { story_slug: string; title?: string; identity?: TestIdentity },
 ): Promise<{
   room_id: string;
   join_code: string;
@@ -298,8 +297,8 @@ export async function createRoomViaHttp(
     body: JSON.stringify({
       title: input.title ?? 'Test Room',
       story_slug: input.story_slug,
-      display_name: input.display_name,
-      identity_id: identity.id,
+      handle: identity.handle,
+      passcode: identity.passcode,
       captcha_token: 'stub',
     }),
   });
@@ -318,12 +317,15 @@ export async function createRoomViaHttp(
 /**
  * Convenience: POST /api/rooms/:id/join via HTTP. Returns the join response
  * augmented with the (handle, passcode) of the identity bound to the joined
- * participant. See note on `createRoomViaHttp` re: HTTP body shape.
+ * participant.
+ *
+ * Body shape per ADR-161 Phase B: `(handle, passcode, captcha_token)`. The
+ * display name on the resulting `join` session-event is resolved server-side
+ * from `identity.handle`.
  */
 export async function joinRoomViaHttp(
   handle: TestServerHandle,
   room_id: string,
-  display_name: string,
   identity?: TestIdentity,
 ): Promise<{
   participant_id: string;
@@ -336,7 +338,11 @@ export async function joinRoomViaHttp(
   const res = await fetch(`${handle.httpUrl}/api/rooms/${room_id}/join`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ display_name, identity_id: id.id, captcha_token: 'stub' }),
+    body: JSON.stringify({
+      handle: id.handle,
+      passcode: id.passcode,
+      captcha_token: 'stub',
+    }),
   });
   if (res.status !== 200) {
     throw new Error(`joinRoomViaHttp: expected 200, got ${res.status}`);

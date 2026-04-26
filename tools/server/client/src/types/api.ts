@@ -44,7 +44,8 @@ export interface ErrorEnvelope {
 export interface CreateRoomRequest {
   story_slug: string;
   title: string;
-  display_name: string;
+  handle: string;
+  passcode: string;
   captcha_token?: string;
 }
 
@@ -58,7 +59,8 @@ export interface CreateRoomResponse {
 }
 
 export interface JoinRoomRequest {
-  display_name: string;
+  handle: string;
+  passcode: string;
   captcha_token?: string;
 }
 

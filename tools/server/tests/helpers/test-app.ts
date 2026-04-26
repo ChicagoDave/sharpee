@@ -29,18 +29,17 @@ export interface TestAppHandle {
   db: Database;
   storiesDir: string;
   /**
-   * Identities repository for tests that need to seed identity rows directly
-   * (used by HTTP route tests that hit /api/rooms with `identity_id` in the
-   * body — Phase B will rewrite those routes to take `(handle, passcode)`,
-   * at which point this helper grows a richer return shape).
+   * Identities repository for tests that need to seed identity rows directly.
    */
   identities: IdentitiesRepository;
   /**
-   * Convenience: create a fresh identity and return its `id` (Crockford-32).
-   * Random alpha-only Handle so repeated calls don't collide on the
-   * case-insensitive UNIQUE index. Per ADR-161, Handle is 3–12 alpha.
+   * Convenience: create a fresh identity and return the full `(id, handle,
+   * passcode)` triple needed by ADR-161 Phase B routes. Random alpha-only
+   * Handle so repeated calls don't collide on the case-insensitive UNIQUE
+   * index. The stored hash is `stub:<passcode>` so `createStubHashService`
+   * verifies succeed.
    */
-  seedIdentity(): string;
+  seedIdentity(): { id: string; handle: string; passcode: string };
   cleanup(): void;
 }
 
@@ -148,7 +147,12 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
       for (let i = 0; i < 5; i++) {
         handle += letters[Math.floor(Math.random() * letters.length)];
       }
-      return identities.create({ handle, passcode_hash: 'test-stub-hash' }).id;
+      const passcode = `pc-${Math.random().toString(36).slice(2)}`;
+      const row = identities.create({
+        handle,
+        passcode_hash: `stub:${passcode}`,
+      });
+      return { id: row.id, handle: row.handle, passcode };
     },
     cleanup() {
       db.close();

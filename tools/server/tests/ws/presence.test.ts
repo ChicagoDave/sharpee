@@ -34,8 +34,8 @@ describe('WebSocket presence broadcast', () => {
   });
 
   it('second participant connecting causes the first to receive presence(connected=true)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     // Flip connected flags off so the hello handshake has real work to do.
     server.db
@@ -70,8 +70,8 @@ describe('WebSocket presence broadcast', () => {
   });
 
   it('participant disconnecting causes the remaining peer to receive presence(connected=false); session_events gets a leave row', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     server.db
       .prepare('UPDATE participants SET connected = 0 WHERE room_id = ?')
@@ -128,9 +128,8 @@ describe('WebSocket presence broadcast', () => {
     });
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     server.db
       .prepare('UPDATE participants SET connected = 0 WHERE room_id = ?')
@@ -169,9 +168,8 @@ describe('WebSocket presence broadcast', () => {
   it('non-PH disconnect: presence.grace_deadline is null', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     server.db
       .prepare('UPDATE participants SET connected = 0 WHERE room_id = ?')
@@ -203,7 +201,7 @@ describe('WebSocket presence broadcast', () => {
   });
 
   it('connection registry is cleaned up after close (no leak across connect cycles)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     server.db
       .prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?')
       .run(host.participant_id);

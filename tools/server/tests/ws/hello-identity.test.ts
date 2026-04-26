@@ -42,7 +42,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
   it('valid (handle, passcode) for room participant: welcome with same participant_id', async () => {
     // AC-2 (warm reconnect): a participant who previously joined a room
     // resolves to the same participant_id when their socket comes back.
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
 
     server.db
       .prepare('UPDATE participants SET connected = 0 WHERE participant_id = ?')
@@ -71,7 +71,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
     // ADR-161 hello flow: an identity already known to the server can connect
     // to a room they have not joined via HTTP — the WS hello creates the
     // participant row implicitly.
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     const stranger = ensureTestIdentity(server, 'Stranger');
 
     // Sanity: no participant exists for (stranger.id, host.room_id) before hello.
@@ -114,7 +114,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
   });
 
   it('same identity reconnecting to same room → same participant_id (AC-2)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
 
     // First connection establishes the participant.
     const c1 = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
@@ -147,7 +147,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
 
   it('unknown handle → unknown_handle error + close (4001)', async () => {
     // AC-5: unknown_handle vs bad_passcode are distinct close codes.
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
       client.send({ kind: 'hello', handle: 'nosuchuser', passcode: 'whatever' });
@@ -163,7 +163,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
   });
 
   it('wrong passcode for known handle → bad_passcode error + close (4006) (AC-5)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
       client.send({ kind: 'hello', handle: host.handle, passcode: 'definitely-wrong' });
@@ -179,7 +179,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
   });
 
   it('hello frame missing handle → hello_required close (4000)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
       client.ws.send(JSON.stringify({ kind: 'hello', passcode: 'p' }));
@@ -195,7 +195,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
   });
 
   it('hello frame missing passcode → hello_required close (4000)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
       client.ws.send(JSON.stringify({ kind: 'hello', handle: 'someone' }));
@@ -211,7 +211,7 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
   });
 
   it('erased identity → unknown_handle (hard delete makes it unreachable; AC-7)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     const stranger = ensureTestIdentity(server, 'Doomed');
     server.identities.delete(stranger.id);
 

@@ -80,10 +80,9 @@ describe('succession E2E (AC3): full 3-user cascade', () => {
     // --- setup: 3 users, Alice is PH; Bob promoted to co_host (still successor)
     const alice = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const bob = await joinRoomViaHttp(server, alice.room_id, 'Bob');
-    const carol = await joinRoomViaHttp(server, alice.room_id, 'Carol');
+    const bob = await joinRoomViaHttp(server, alice.room_id);
+    const carol = await joinRoomViaHttp(server, alice.room_id);
 
     const aliceClient = await openAndHello(alice.room_id, alice);
     const bobClient = await openAndHello(alice.room_id, bob);

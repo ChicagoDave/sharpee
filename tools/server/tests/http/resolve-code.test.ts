@@ -13,14 +13,15 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildTestApp, type TestAppHandle } from '../helpers/test-app.js';
 
 async function createRoom(app: TestAppHandle) {
+  const identity = app.seedIdentity();
   const res = await app.fetch('/api/rooms', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       story_slug: 'zork',
       title: 'Beta',
-      display_name: 'Alice',
-      identity_id: app.seedIdentity(),
+      handle: identity.handle,
+      passcode: identity.passcode,
       captcha_token: 'stub',
     }),
   });

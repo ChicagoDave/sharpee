@@ -40,7 +40,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   });
 
   it('valid token → welcome with participant_id and RoomSnapshot; participants.connected=1', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
 
     // After HTTP create, connected is currently 1 (the createWithId default).
     // Simulate a fresh-connection flow by flipping it off first.
@@ -80,7 +80,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   });
 
   it('welcome.chat_backlog carries prior chat events in chronological order, capped by the server', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     // Seed 60 chat events directly; the welcome cap is 50 so the oldest 10
     // should drop off and the remaining 50 should arrive in ASC event_id.
     const insert = server.db.prepare(
@@ -123,8 +123,8 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   // ---------- Plan 04 Phase 4 — DM thread rehydration on welcome ----------
 
   it('welcome.dm_threads carries prior DMs grouped by peer for a Primary Host viewer', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
-    const ch = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
+    const ch = await joinRoomViaHttp(server, host.room_id);
     server.db.prepare(`UPDATE participants SET tier = 'co_host' WHERE participant_id = ?`).run(ch.participant_id);
 
     // Seed two DMs in each direction PH↔CH.
@@ -162,8 +162,8 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   });
 
   it('Co-Host viewer sees the same thread keyed by the PH id', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
-    const ch = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
+    const ch = await joinRoomViaHttp(server, host.room_id);
     server.db.prepare(`UPDATE participants SET tier = 'co_host' WHERE participant_id = ?`).run(ch.participant_id);
 
     const insert = server.db.prepare(
@@ -190,8 +190,8 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   });
 
   it('Participant viewer sees dm_threads = {} even when DM events name them', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
-    const part = await joinRoomViaHttp(server, host.room_id, 'Charlie');
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
+    const part = await joinRoomViaHttp(server, host.room_id);
     // Charlie defaults to 'participant' — no tier promotion.
 
     // Defense-in-depth: simulate an out-of-band DM row that names Charlie.
@@ -226,7 +226,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   // first hello to a new room creates a participant there.
 
   it('deleted room → room_closed + close (N-4)', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
 
     // The room check runs before identity verification, so deleting the room
     // alone surfaces room_closed. Cascade is fine — we don't depend on the
@@ -248,7 +248,7 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   });
 
   it('non-hello first frame → error(hello_required) + close', async () => {
-    const host = await createRoomViaHttp(server, { story_slug: 'zork', display_name: 'Alice' });
+    const host = await createRoomViaHttp(server, { story_slug: 'zork' });
     const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
       // Cast because the type system rightly rejects a hello-shaped frame with wrong kind
@@ -269,9 +269,8 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   it('second participant hello: auto-nominates them, is_successor=1, successor broadcast, role(nominate) logged (actor=null)', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
@@ -319,10 +318,9 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   it('third participant hello with a successor already in place: NO auto-nomination', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
-    const guest2 = await joinRoomViaHttp(server, host.room_id, 'Carol');
+    const guest = await joinRoomViaHttp(server, host.room_id);
+    const guest2 = await joinRoomViaHttp(server, host.room_id);
 
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
@@ -374,7 +372,6 @@ describe('WebSocket /ws/:room_id — hello handshake', () => {
   it('PH hello in an empty room: no auto-nomination', async () => {
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
 
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);

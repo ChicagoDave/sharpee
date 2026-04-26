@@ -17,13 +17,14 @@ import { buildTestApp, type TestAppHandle } from '../helpers/test-app.js';
 
 function createRoom(
   app: TestAppHandle,
-  overrides: { story_slug?: string; title?: string; display_name?: string } = {},
+  overrides: { story_slug?: string; title?: string } = {},
 ): Promise<{
   room_id: string;
   join_code: string;
   token: string;
   participant_id: string;
 }> {
+  const identity = app.seedIdentity();
   return app
     .fetch('/api/rooms', {
       method: 'POST',
@@ -31,8 +32,8 @@ function createRoom(
       body: JSON.stringify({
         story_slug: overrides.story_slug ?? 'zork',
         title: overrides.title ?? 'Test Room',
-        display_name: overrides.display_name ?? 'Alice',
-        identity_id: app.seedIdentity(),
+        handle: identity.handle,
+        passcode: identity.passcode,
         captcha_token: 'stub',
       }),
     })
@@ -106,22 +107,22 @@ describe('GET /api/rooms', () => {
     // PH is connected by default (count == 1). Insert two more participants:
     // one connected, one disconnected. Each needs a distinct identity (ADR-159).
     const now = new Date().toISOString();
-    const idBob = app.seedIdentity();
-    const idCarol = app.seedIdentity();
+    const bob = app.seedIdentity();
+    const carol = app.seedIdentity();
     app.db
       .prepare(
         `INSERT INTO participants (participant_id, room_id, identity_id, token, tier,
                                    muted, connected, is_successor, joined_at)
          VALUES (?, ?, ?, ?, 'participant', 0, 1, 0, ?)`,
       )
-      .run('conn-2', created.room_id, idBob, 'tok-2', now);
+      .run('conn-2', created.room_id, bob.id, 'tok-2', now);
     app.db
       .prepare(
         `INSERT INTO participants (participant_id, room_id, identity_id, token, tier,
                                    muted, connected, is_successor, joined_at)
          VALUES (?, ?, ?, ?, 'participant', 0, 0, 0, ?)`,
       )
-      .run('disc-3', created.room_id, idCarol, 'tok-3', now);
+      .run('disc-3', created.room_id, carol.id, 'tok-3', now);
 
     const res = await app.fetch('/api/rooms');
     const body = (await res.json()) as {

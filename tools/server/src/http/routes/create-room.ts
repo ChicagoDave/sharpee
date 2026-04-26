@@ -3,7 +3,15 @@
  *
  * Public interface: {@link createRoomRoute}, {@link CreateRoomDeps},
  * {@link CreateRoomResponse}.
- * Bounded context: HTTP layer (ADR-153 Decision 3, Decision 4, Decision 11).
+ * Bounded context: HTTP layer (ADR-153 Decision 3, Decision 4, Decision 11;
+ * ADR-161 auth uniformity).
+ *
+ * Auth contract (ADR-161 Phase B): the body carries `(handle, passcode)`,
+ * not a bare `identity_id`. The server resolves credentials via
+ * `findHashByHandle + verify`; the resolved server-internal `id` is what
+ * gets persisted on the participant row. `id` is never accepted from the
+ * client. Display name is sourced from the resolved `identity.handle`,
+ * not from any per-request string.
  *
  * Atomicity: the room row, Primary Host participant row, and both
  * `lifecycle(created)` + `join(reconnect=false)` events are written in
@@ -17,6 +25,7 @@ import type { RoomsRepository } from '../../repositories/rooms.js';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
 import type { IdentitiesRepository } from '../../repositories/identities.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
+import type { HashService } from '../../auth/hash-service.js';
 import type { StoryScanner } from '../../stories/scanner.js';
 import type { StoryHealth } from '../../stories/story-health.js';
 import type { CaptchaVerifier } from '../middleware/captcha.js';
@@ -28,6 +37,7 @@ export interface CreateRoomDeps {
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
   identities: IdentitiesRepository;
+  hashService: HashService;
   sessionEvents: SessionEventsRepository;
   stories: StoryScanner;
   /**
@@ -52,8 +62,8 @@ export interface CreateRoomResponse {
 interface CreateRoomBody {
   story_slug?: unknown;
   title?: unknown;
-  display_name?: unknown;
-  identity_id?: unknown;
+  handle?: unknown;
+  passcode?: unknown;
   captcha_token?: unknown;
 }
 
@@ -63,13 +73,12 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
     if (!body) throw new HttpError(400, 'bad_request', 'JSON body required');
 
     const story_slug = typeof body.story_slug === 'string' ? body.story_slug : '';
-    const display_name = typeof body.display_name === 'string' ? body.display_name.trim() : '';
     const rawTitle = typeof body.title === 'string' ? body.title.trim() : '';
-    const identity_id = typeof body.identity_id === 'string' ? body.identity_id : '';
+    const handle = typeof body.handle === 'string' ? body.handle : '';
+    const passcode = typeof body.passcode === 'string' ? body.passcode : '';
     const captchaToken = typeof body.captcha_token === 'string' ? body.captcha_token : undefined;
 
     if (!story_slug) throw new HttpError(400, 'missing_field', 'story_slug is required');
-    if (!display_name) throw new HttpError(400, 'missing_field', 'display_name is required');
     // ADR-153 frontend: the Primary Host authors a human-readable title at
     // create time; it is shown on the public landing page. Must be a non-empty
     // trimmed string ≤ 80 characters.
@@ -79,16 +88,30 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
     if (rawTitle.length > 80) {
       throw new HttpError(400, 'invalid_title', 'title must be 80 characters or fewer');
     }
-    if (!identity_id) throw new HttpError(400, 'missing_field', 'identity_id is required');
+    if (!handle) throw new HttpError(400, 'missing_field', 'handle is required');
+    if (!passcode) throw new HttpError(400, 'missing_field', 'passcode is required');
 
-    // CAPTCHA runs BEFORE any DB work — a rejected challenge leaves no trace.
+    // CAPTCHA runs BEFORE any auth or DB work — a rejected challenge leaves
+    // no trace and burns no argon2 cycle.
     await deps.captcha.verify(captchaToken);
 
-    // Identity must exist (and not be soft-deleted). Phase 2 ships the route
-    // that creates one; until then callers supply an identity_id obtained
-    // out-of-band. DB lookup so this is post-CAPTCHA.
-    if (!deps.identities.findById(identity_id)) {
-      throw new HttpError(404, 'unknown_identity', 'no identity with that id');
+    // ADR-161 auth uniformity: every identity-bearing route resolves the
+    // caller via `(handle, passcode)`, not a bare `id`. Two-step lookup
+    // mirrors the WS hello handler.
+    const auth = deps.identities.findHashByHandle(handle);
+    if (!auth) {
+      throw new HttpError(404, 'unknown_handle', 'no identity with that handle');
+    }
+    const verified = await deps.hashService.verify(passcode, auth.passcode_hash);
+    if (!verified) {
+      throw new HttpError(401, 'bad_passcode', 'incorrect passcode for that handle');
+    }
+    // Resolve the canonical handle (case as originally registered) for the
+    // join event payload. Defensive findById guards against a hard-delete
+    // landing in the same request window — vanishingly rare.
+    const identity = deps.identities.findById(auth.id);
+    if (!identity) {
+      throw new HttpError(500, 'internal_error', 'identity vanished mid-request');
     }
 
     const story = deps.stories.findBySlug(story_slug);
@@ -111,13 +134,14 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
     // Pre-generate ids so we can insert room + participant + events in one transaction.
     const participant_id = randomUUID();
     const token = generateToken();
+    const display_name = identity.handle;
 
     const tx = deps.db.transaction(() => {
       const room = deps.rooms.create({ title, story_slug, primary_host_id: participant_id });
       deps.participants.createWithId({
         participant_id,
         room_id: room.room_id,
-        identity_id,
+        identity_id: identity.id,
         token,
         tier: 'primary_host',
       });

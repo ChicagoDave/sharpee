@@ -43,9 +43,8 @@ describe('AfkTimer wired into WebSocket server', () => {
 
     const host = await createRoomViaHttp(server, {
       story_slug: 'zork',
-      display_name: 'Alice',
     });
-    const guest = await joinRoomViaHttp(server, host.room_id, 'Bob');
+    const guest = await joinRoomViaHttp(server, host.room_id);
 
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);

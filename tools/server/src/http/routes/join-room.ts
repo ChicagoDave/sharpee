@@ -3,7 +3,13 @@
  *
  * Public interface: {@link registerJoinRoomRoute}, {@link JoinRoomDeps},
  * {@link JoinRoomResponse}.
- * Bounded context: HTTP layer (ADR-153 Decision 4, Decision 11).
+ * Bounded context: HTTP layer (ADR-153 Decision 4, Decision 11; ADR-161
+ * auth uniformity).
+ *
+ * Auth contract (ADR-161 Phase B): the body carries `(handle, passcode)`,
+ * not a bare `identity_id`. Resolution mirrors create-room and the WS
+ * hello handler. `id` is server-internal and never accepted from the
+ * client. Display name is sourced from the resolved `identity.handle`.
  *
  * Reconnect contract: if the request carries a valid `Authorization: Bearer <token>`
  * header AND the token resolves to a participant in the same room, the server
@@ -19,6 +25,7 @@ import type { RoomsRepository } from '../../repositories/rooms.js';
 import type { ParticipantsRepository } from '../../repositories/participants.js';
 import type { IdentitiesRepository } from '../../repositories/identities.js';
 import type { SessionEventsRepository } from '../../repositories/session-events.js';
+import type { HashService } from '../../auth/hash-service.js';
 import type { CaptchaVerifier } from '../middleware/captcha.js';
 import { HttpError } from '../middleware/error-envelope.js';
 import { generateToken, parseBearer } from '../tokens.js';
@@ -28,6 +35,7 @@ export interface JoinRoomDeps {
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
   identities: IdentitiesRepository;
+  hashService: HashService;
   sessionEvents: SessionEventsRepository;
   captcha: CaptchaVerifier;
 }
@@ -39,8 +47,8 @@ export interface JoinRoomResponse {
 }
 
 interface JoinBody {
-  display_name?: unknown;
-  identity_id?: unknown;
+  handle?: unknown;
+  passcode?: unknown;
   captcha_token?: unknown;
 }
 
@@ -53,16 +61,26 @@ export function registerJoinRoomRoute(app: Hono, deps: JoinRoomDeps): void {
     const body = (await c.req.json().catch(() => null)) as JoinBody | null;
     if (!body) throw new HttpError(400, 'bad_request', 'JSON body required');
 
-    const display_name = typeof body.display_name === 'string' ? body.display_name.trim() : '';
-    const identity_id = typeof body.identity_id === 'string' ? body.identity_id : '';
+    const handle = typeof body.handle === 'string' ? body.handle : '';
+    const passcode = typeof body.passcode === 'string' ? body.passcode : '';
     const captchaToken = typeof body.captcha_token === 'string' ? body.captcha_token : undefined;
-    if (!display_name) throw new HttpError(400, 'missing_field', 'display_name is required');
-    if (!identity_id) throw new HttpError(400, 'missing_field', 'identity_id is required');
+    if (!handle) throw new HttpError(400, 'missing_field', 'handle is required');
+    if (!passcode) throw new HttpError(400, 'missing_field', 'passcode is required');
 
     await deps.captcha.verify(captchaToken);
 
-    if (!deps.identities.findById(identity_id)) {
-      throw new HttpError(404, 'unknown_identity', 'no identity with that id');
+    // ADR-161 auth uniformity — same flow as create-room and WS hello.
+    const auth = deps.identities.findHashByHandle(handle);
+    if (!auth) {
+      throw new HttpError(404, 'unknown_handle', 'no identity with that handle');
+    }
+    const verified = await deps.hashService.verify(passcode, auth.passcode_hash);
+    if (!verified) {
+      throw new HttpError(401, 'bad_passcode', 'incorrect passcode for that handle');
+    }
+    const identity = deps.identities.findById(auth.id);
+    if (!identity) {
+      throw new HttpError(500, 'internal_error', 'identity vanished mid-request');
     }
 
     const presented = parseBearer(c.req.header('authorization'));
@@ -75,11 +93,12 @@ export function registerJoinRoomRoute(app: Hono, deps: JoinRoomDeps): void {
 
     const token = presented ?? generateToken();
     const now = new Date().toISOString();
+    const display_name = identity.handle;
 
     const tx = deps.db.transaction(() => {
       const participant = deps.participants.createOrReconnect({
         room_id,
-        identity_id,
+        identity_id: identity.id,
         token,
       });
       const isReconnect = participant.joined_at !== now && presented !== null;
