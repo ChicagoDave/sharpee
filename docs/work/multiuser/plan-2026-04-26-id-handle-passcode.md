@@ -312,7 +312,7 @@ erase-disconnect test (no mock socket).
 create, upload, erase. Reclaim is gone. Live WS connections terminate
 correctly on erase.
 
-**Status**: PENDING
+**Status**: DONE
 
 ---
 
@@ -426,7 +426,7 @@ sees Landing with disabled Create / Enter buttons).
 identity (create or upload), then create a room or join one. WS hello
 sends the new vocabulary. The build is clean.
 
-**Status**: PENDING
+**Status**: CURRENT
 
 ---
 

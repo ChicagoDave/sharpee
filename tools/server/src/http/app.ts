@@ -31,6 +31,8 @@ import { registerResolveCodeRoute } from './routes/resolve-code.js';
 import { registerListStoriesRoute } from './routes/list-stories.js';
 import { registerListRoomsRoute } from './routes/list-rooms.js';
 import { registerCreateIdentityRoute } from './routes/create-identity.js';
+import { registerUploadIdentityRoute } from './routes/upload-identity.js';
+import { registerEraseIdentityRoute } from './routes/erase-identity.js';
 
 export interface AppDeps {
   config: Config;
@@ -50,12 +52,13 @@ export interface AppDeps {
   storyHealth?: StoryHealth;
   captcha: CaptchaVerifier;
   /**
-   * Optional — when supplied, rename-room (and any future HTTP route that
-   * needs to broadcast on the WS channel) reaches into it to push
-   * `room_state` to other connected participants. Absent in HTTP-only
-   * tests that don't care about the broadcast.
+   * Required — used by rename-room to broadcast `room_state` and by the
+   * identity erase route to terminate live WS sessions of an erased
+   * identity (ADR-161). Pure HTTP tests that don't drive any sockets pass
+   * a fresh empty manager; production wires the same instance the WS
+   * server uses.
    */
-  connections?: ConnectionManager;
+  connections: ConnectionManager;
   /**
    * Optional absolute path to the built multi-user client's dist directory.
    * When present, the server serves it as static files with an SPA fallback
@@ -87,13 +90,25 @@ export function createApp(deps: AppDeps): Hono {
   // Identity routes — per-IP rate limit per ADR-161 (10 attempts/min).
   // The limiter is local to this app instance; multi-instance deployments
   // would need a Redis-backed limiter. ADR-161 v1 accepts single-process
-  // scope. Phase C will register `/upload` and `/erase` routes that share
-  // this same limiter bucket.
+  // scope. All three identity-shape routes (create / upload / erase) share
+  // this single bucket so a single per-IP limit applies to the whole
+  // identity surface, not 30/min spread across three endpoints.
   const identityLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
   const identityRateLimit = rateLimitMiddleware(identityLimiter);
   registerCreateIdentityRoute(app, {
     identities: deps.identities,
     hashService: deps.hashService,
+    rateLimit: identityRateLimit,
+  });
+  registerUploadIdentityRoute(app, {
+    identities: deps.identities,
+    hashService: deps.hashService,
+    rateLimit: identityRateLimit,
+  });
+  registerEraseIdentityRoute(app, {
+    identities: deps.identities,
+    hashService: deps.hashService,
+    connections: deps.connections,
     rateLimit: identityRateLimit,
   });
 

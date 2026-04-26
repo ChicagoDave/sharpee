@@ -177,7 +177,7 @@ export async function handleHello(
   });
   tx();
 
-  deps.connections.register(room.room_id, participant.participant_id, ws);
+  deps.connections.register(room.room_id, participant.participant_id, identity.id, ws);
 
   // Opening-scene parity with platform-browser + Zifmia: on the first hello
   // for a room that has never run a turn, fire a `look` so joiners see the

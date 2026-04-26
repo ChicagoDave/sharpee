@@ -162,6 +162,7 @@ export async function buildTestServer(
     sessionEvents,
     stories,
     captcha,
+    connections,
   });
   // The WS server uses the same hash service the HTTP app uses. Sharing one
   // instance means a real-argon2 caller can opt in by replacing test-server's

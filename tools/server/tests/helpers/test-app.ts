@@ -22,6 +22,8 @@ import { createSessionEventsRepository } from '../../src/repositories/session-ev
 import { createStoryScanner } from '../../src/stories/scanner.js';
 import type { StoryHealth, StoryHealthStatus } from '../../src/stories/story-health.js';
 import { createCaptchaVerifier } from '../../src/http/middleware/captcha.js';
+import { createConnectionManager } from '../../src/ws/connection-manager.js';
+import type { ConnectionManager } from '../../src/ws/connection-manager.js';
 import { loadConfig } from '../../src/config.js';
 
 export interface TestAppHandle {
@@ -40,6 +42,12 @@ export interface TestAppHandle {
    * verifies succeed.
    */
   seedIdentity(): { id: string; handle: string; passcode: string };
+  /**
+   * In-memory ConnectionManager exposed so tests can drive register /
+   * unregister against the same instance the erase route uses for socket
+   * teardown. Empty by default; callers register sockets manually.
+   */
+  connections: ConnectionManager;
   cleanup(): void;
 }
 
@@ -118,6 +126,8 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
     snapshot: () => ({ ...healthMap }),
   };
 
+  const connections = createConnectionManager();
+
   const app = createApp({
     config,
     db,
@@ -129,6 +139,7 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
     stories,
     storyHealth,
     captcha,
+    connections,
     clientDistDir: opts.clientDistDir,
   });
 
@@ -140,6 +151,7 @@ export function buildTestApp(opts: BuildTestAppOptions = {}): TestAppHandle {
     db,
     storiesDir,
     identities,
+    connections,
     seedIdentity() {
       // Build a 3–12 alpha-only handle: prefix + 5 random lowercase letters.
       const letters = 'abcdefghijklmnopqrstuvwxyz';

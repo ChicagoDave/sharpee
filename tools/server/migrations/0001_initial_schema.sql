@@ -42,7 +42,14 @@ CREATE TABLE rooms (
 CREATE TABLE participants (
     participant_id  TEXT PRIMARY KEY,
     room_id         TEXT NOT NULL REFERENCES rooms(room_id) ON DELETE CASCADE,
-    identity_id     TEXT NOT NULL REFERENCES identities(id),  -- column name keeps "identity_id"; the value is now Crockford-format
+    -- ADR-161 erase: hard-deleting an identity cascades through to its
+    -- participants, so the freed Handle becomes reclaimable without the
+    -- erase route having to enumerate participants by hand. Rooms left
+    -- with zero participants are recycled by the existing PH-grace /
+    -- recycle-sweeper path; session_events for the erased identity
+    -- remain (no FK on session_events.participant_id) until their room
+    -- is recycled.
+    identity_id     TEXT NOT NULL REFERENCES identities(id) ON DELETE CASCADE,
     token           TEXT UNIQUE NOT NULL,
     -- display_name dropped per ADR-161: Handle replaces it. The participant's
     -- display name is the joined identity's handle, looked up at read time.

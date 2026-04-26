@@ -1,14 +1,17 @@
 /**
  * Per-IP rate limit on identity routes — ADR-161 Resolved Implementation
- * (10/min sliding window). Currently fronts `POST /api/identities`; Phase C
- * will add `POST /api/identities/upload` and `POST /api/identities/erase`
- * to the same bucket.
+ * (10/min sliding window). All three identity-shape routes share one
+ * bucket: `POST /api/identities`, `POST /api/identities/upload`,
+ * `POST /api/identities/erase`. A single per-IP limit applies across the
+ * three; an attacker cannot mix-and-match endpoints to triple their
+ * brute-force budget.
  *
  * Behavior Statement — rateLimitMiddleware
- *   DOES: admits up to N requests per window per IP; on the (N+1)th
- *         request within the window, throws 429 rate_limited and sets a
- *         Retry-After header; entries age out of the bucket as the window
- *         slides.
+ *   DOES: admits up to N requests per window per IP across all three
+ *         identity routes; on the (N+1)th request within the window
+ *         (regardless of which of the three was hit first), throws 429
+ *         rate_limited and sets a Retry-After header; entries age out of
+ *         the bucket as the window slides.
  *   WHEN: fronts the identity routes.
  *   BECAUSE: brute-force on a 60M passcode space combined with the per-IP
  *            limit is the AC-6 / ADR-161 defense. Limiter also keeps log
@@ -93,6 +96,71 @@ describe('Identity routes per-IP rate limit', () => {
     expect(ok.status).toBe(201);
   });
 
-  // Phase C will add a "shared bucket" test that mixes /api/identities,
-  // /api/identities/upload, and /api/identities/erase across the same IP.
+  it('shared bucket: requests are counted across /api/identities, /upload, /erase', async () => {
+    const xff = '198.51.100.99';
+    // Seed identities so /upload and /erase have something to operate on.
+    // We don't drive the seed through HTTP because that would consume bucket
+    // slots before the test starts; the repo seed is bucket-free.
+    const seeded = app.seedIdentity();
+    const seededForErase = app.seedIdentity();
+
+    // 4 calls to /api/identities (creates).
+    const createHandles = ['shca', 'shcb', 'shcc', 'shcd'];
+    for (const handle of createHandles) {
+      const res = await app.fetch('/api/identities', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': xff },
+        body: JSON.stringify({ handle }),
+      });
+      expect(res.status).toBe(201);
+    }
+
+    // 4 calls to /api/identities/upload, all matrix-row 1 (fresh ids).
+    for (let i = 0; i < 4; i++) {
+      const res = await app.fetch('/api/identities/upload', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': xff },
+        body: JSON.stringify({
+          // Manually-constructed Crockford ids; the route's regex accepts these.
+          id: `1234-ABC${i}`,
+          handle: `shup${String.fromCharCode(97 + i)}`,
+          passcode: 'plate-music',
+        }),
+      });
+      expect(res.status).toBe(201);
+    }
+
+    // Call 9: erase the seeded identity. Now we've used 9/10 slots across
+    // all three routes.
+    const erase1 = await app.fetch('/api/identities/erase', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': xff },
+      body: JSON.stringify({ handle: seeded.handle, passcode: seeded.passcode }),
+    });
+    expect(erase1.status).toBe(200);
+
+    // Call 10: another erase (the second seeded identity). Used 10/10 now.
+    const erase2 = await app.fetch('/api/identities/erase', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': xff },
+      body: JSON.stringify({
+        handle: seededForErase.handle,
+        passcode: seededForErase.passcode,
+      }),
+    });
+    expect(erase2.status).toBe(200);
+
+    // Call 11 — across any of the three — should now hit 429.
+    const overflow = await app.fetch('/api/identities/upload', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': xff },
+      body: JSON.stringify({
+        id: '1234-OVRF',
+        handle: 'overflow',
+        passcode: 'plate-music',
+      }),
+    });
+    expect(overflow.status).toBe(429);
+    expect(((await overflow.json()) as { code: string }).code).toBe('rate_limited');
+  });
 });
