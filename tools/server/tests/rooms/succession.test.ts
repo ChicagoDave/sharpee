@@ -66,13 +66,13 @@ function seedRoom(
   // Each participant binds to a unique identity (ADR-159).
   const identities = createIdentitiesRepository(deps.db);
   for (const m of members) {
-    const identity = identities.create({ username: `id-${m.name}`, secret_hash: 'h' });
+    // Handle: alpha-only, 3–12 chars, unique per member.
+    const identity = identities.create({ handle: `${m.name}id`, passcode_hash: 'h' });
     const p = deps.participants.createWithId({
       participant_id: `p-${m.name}`,
       room_id: room.room_id,
-      identity_id: identity.identity_id,
+      identity_id: identity.id,
       token: `tok-${m.name}`,
-      display_name: m.name,
       tier: m.tier,
     });
     ids[m.name] = p.participant_id;

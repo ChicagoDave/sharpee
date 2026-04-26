@@ -44,14 +44,14 @@ describe('WebSocket presence broadcast', () => {
 
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
+      hostClient.send({ kind: 'hello', handle: host.handle, passcode: host.passcode });
       await hostClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );
 
       const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
       try {
-        guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
+        guestClient.send({ kind: 'hello', handle: guest.handle, passcode: guest.passcode });
         await guestClient.waitFor(
           (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
         );
@@ -80,8 +80,8 @@ describe('WebSocket presence broadcast', () => {
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
-      guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
+      hostClient.send({ kind: 'hello', handle: host.handle, passcode: host.passcode });
+      guestClient.send({ kind: 'hello', handle: guest.handle, passcode: guest.passcode });
       await hostClient.waitFor((m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome');
       await guestClient.waitFor((m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome');
 
@@ -139,8 +139,8 @@ describe('WebSocket presence broadcast', () => {
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
-      guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
+      hostClient.send({ kind: 'hello', handle: host.handle, passcode: host.passcode });
+      guestClient.send({ kind: 'hello', handle: guest.handle, passcode: guest.passcode });
       await hostClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
       );
@@ -180,8 +180,8 @@ describe('WebSocket presence broadcast', () => {
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     try {
-      hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
-      guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
+      hostClient.send({ kind: 'hello', handle: host.handle, passcode: host.passcode });
+      guestClient.send({ kind: 'hello', handle: guest.handle, passcode: guest.passcode });
       await hostClient.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome',
       );
@@ -210,7 +210,7 @@ describe('WebSocket presence broadcast', () => {
 
     for (let i = 0; i < 3; i++) {
       const client = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
-      client.send({ kind: 'hello', username: host.username, secret: host.secret });
+      client.send({ kind: 'hello', handle: host.handle, passcode: host.passcode });
       await client.waitFor(
         (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
       );

@@ -230,50 +230,67 @@ export async function buildTestServer(
 }
 
 export interface TestIdentity {
-  identity_id: string;
-  username: string;
-  /** Plaintext secret usable for WS hello against the stub hash service. */
-  secret: string;
+  id: string;
+  handle: string;
+  /** Plaintext passcode usable for WS hello against the stub hash service. */
+  passcode: string;
 }
 
 /**
  * Seed an identity row directly via the repository, returning the full triple
- * needed to connect a WS client. The stub hash format (`stub:<secret>`)
+ * needed to connect a WS client. The stub hash format (`stub:<passcode>`)
  * matches `createStubHashService` so verifies succeed; tests that need real
  * argon2 should hit `/api/identities` instead.
  *
- * Random username default so repeated calls don't collide on the
- * case-insensitive UNIQUE index.
+ * Random handle default so repeated calls don't collide on the
+ * case-insensitive UNIQUE index. The default handle is alpha-only with a
+ * random suffix to satisfy the 3–12 alpha rule (hex digits filtered out).
  */
 export function ensureTestIdentity(
   handle: TestServerHandle,
-  username = `tester-${Math.random().toString(36).slice(2, 10)}`
+  desiredHandle?: string,
 ): TestIdentity {
-  const secret = `s-${Math.random().toString(36).slice(2)}`;
-  const identity = handle.identities.create({ username, secret_hash: `stub:${secret}` });
-  return { identity_id: identity.identity_id, username: identity.username, secret };
+  const finalHandle = desiredHandle ?? randomAlphaHandle();
+  const passcode = `pc-${Math.random().toString(36).slice(2)}`;
+  const identity = handle.identities.create({
+    handle: finalHandle,
+    passcode_hash: `stub:${passcode}`,
+  });
+  return { id: identity.id, handle: identity.handle, passcode };
+}
+
+function randomAlphaHandle(): string {
+  // 8 random lowercase letters; well within the 3–12 alpha rule.
+  const letters = 'abcdefghijklmnopqrstuvwxyz';
+  let out = 'tst';
+  for (let i = 0; i < 5; i++) {
+    out += letters[Math.floor(Math.random() * letters.length)];
+  }
+  return out;
 }
 
 /**
  * Convenience: POST /api/rooms via HTTP and return the parsed body, augmented
- * with the (username, secret) of the identity bound to the new participant.
- * Callers need that credential pair to connect WS — the hello frame post-ADR-159
- * carries `(username, secret)` rather than the per-room token.
+ * with the (handle, passcode) of the identity bound to the new participant.
+ * Callers need that credential pair to connect WS — the hello frame post
+ * ADR-161 carries `(handle, passcode)` rather than the per-room token.
+ *
+ * NOTE: This helper still passes `identity_id` in the request body — the
+ * room HTTP routes have not yet been switched to credential-shaped bodies
+ * (that is Phase B's job). Once Phase B lands, the body shape here changes
+ * to `(handle, passcode)`.
  */
 export async function createRoomViaHttp(
   handle: TestServerHandle,
-  input: { story_slug: string; display_name: string; title?: string; identity?: TestIdentity }
+  input: { story_slug: string; display_name: string; title?: string; identity?: TestIdentity },
 ): Promise<{
   room_id: string;
   join_code: string;
   token: string;
   participant_id: string;
-  username: string;
-  secret: string;
+  handle: string;
+  passcode: string;
 }> {
-  // Auto-create a fresh identity when caller doesn't supply one. Random
-  // username so tests that re-use display_name across calls don't collide on
-  // the identities.username UNIQUE index.
   const identity = input.identity ?? ensureTestIdentity(handle);
   const res = await fetch(`${handle.httpUrl}/api/rooms`, {
     method: 'POST',
@@ -282,7 +299,7 @@ export async function createRoomViaHttp(
       title: input.title ?? 'Test Room',
       story_slug: input.story_slug,
       display_name: input.display_name,
-      identity_id: identity.identity_id,
+      identity_id: identity.id,
       captcha_token: 'stub',
     }),
   });
@@ -295,35 +312,35 @@ export async function createRoomViaHttp(
     token: string;
     participant_id: string;
   };
-  return { ...body, username: identity.username, secret: identity.secret };
+  return { ...body, handle: identity.handle, passcode: identity.passcode };
 }
 
 /**
  * Convenience: POST /api/rooms/:id/join via HTTP. Returns the join response
- * augmented with the (username, secret) of the identity bound to the joined
- * participant.
+ * augmented with the (handle, passcode) of the identity bound to the joined
+ * participant. See note on `createRoomViaHttp` re: HTTP body shape.
  */
 export async function joinRoomViaHttp(
   handle: TestServerHandle,
   room_id: string,
   display_name: string,
-  identity?: TestIdentity
+  identity?: TestIdentity,
 ): Promise<{
   participant_id: string;
   token: string;
   tier: string;
-  username: string;
-  secret: string;
+  handle: string;
+  passcode: string;
 }> {
   const id = identity ?? ensureTestIdentity(handle);
   const res = await fetch(`${handle.httpUrl}/api/rooms/${room_id}/join`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ display_name, identity_id: id.identity_id, captcha_token: 'stub' }),
+    body: JSON.stringify({ display_name, identity_id: id.id, captcha_token: 'stub' }),
   });
   if (res.status !== 200) {
     throw new Error(`joinRoomViaHttp: expected 200, got ${res.status}`);
   }
   const body = (await res.json()) as { participant_id: string; token: string; tier: string };
-  return { ...body, username: id.username, secret: id.secret };
+  return { ...body, handle: id.handle, passcode: id.passcode };
 }

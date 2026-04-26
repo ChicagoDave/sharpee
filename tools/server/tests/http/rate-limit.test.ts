@@ -6,9 +6,10 @@
  *         rejects with `retryAfterSeconds` until the oldest entry ages out;
  *         entries older than `windowMs` are pruned on the next check; per-key
  *         buckets are independent.
- *   WHEN: fronted by `rateLimitMiddleware` on identity create + reclaim
- *         routes.
- *   BECAUSE: ADR-159 #3 — 10 attempts/min sliding window per IP.
+ *   WHEN: fronted by `rateLimitMiddleware` on the identity routes (Phase A:
+ *         `POST /api/identities`; Phase C will add `/upload` and `/erase`
+ *         to the same shared bucket).
+ *   BECAUSE: ADR-161 — 10 attempts/min sliding window per IP.
  *   REJECTS WHEN: count >= max in the current window. Rejected attempts are
  *                 NOT counted against the bucket.
  */

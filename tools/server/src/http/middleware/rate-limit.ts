@@ -3,8 +3,9 @@
  *
  * Public interface: {@link RateLimiter}, {@link createRateLimiter},
  * {@link rateLimitMiddleware}.
- * Bounded context: HTTP layer (ADR-159 Resolved Implementation Choice #3 —
- * 10 attempts/min on identity create + reclaim).
+ * Bounded context: HTTP layer (ADR-161 — 10 attempts/min on the identity
+ * routes; currently `POST /api/identities`. Phase C will add `/upload`
+ * and `/erase` to the same shared bucket).
  *
  * Uses an in-process Map keyed by client IP. A sliding window keeps the
  * timestamps of recent attempts; a request is admitted iff the window's

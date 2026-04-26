@@ -49,8 +49,8 @@ describe('AfkTimer wired into WebSocket server', () => {
 
     const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
     const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
-    hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
-    guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
+    hostClient.send({ kind: 'hello', handle: host.handle, passcode: host.passcode });
+    guestClient.send({ kind: 'hello', handle: guest.handle, passcode: guest.passcode });
     await hostClient.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
     );

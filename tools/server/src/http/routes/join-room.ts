@@ -81,7 +81,6 @@ export function registerJoinRoomRoute(app: Hono, deps: JoinRoomDeps): void {
         room_id,
         identity_id,
         token,
-        display_name,
       });
       const isReconnect = participant.joined_at !== now && presented !== null;
       deps.sessionEvents.append({

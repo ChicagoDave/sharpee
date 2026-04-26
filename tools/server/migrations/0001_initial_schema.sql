@@ -1,31 +1,32 @@
 -- Sharpee Multiuser Server — initial schema.
 --
--- Reference: ADR-153 Decisions 3, 4, 5, 10, 11, 12; ADR-159 Persistent User Identity.
+-- Reference: ADR-153 Decisions 3, 4, 5, 10, 11, 12; ADR-161 Identity Model
+-- `(Id, Handle, passcode)` (supersedes ADR-159).
 --
 -- Foreign keys are declared with ON DELETE CASCADE so that a single
 -- `DELETE FROM rooms WHERE room_id = ?` fans out to participants,
 -- session_events, and saves — satisfying atomicity requirement #1
 -- (room delete cascade in one transaction; see ADR-153 Atomicity).
 --
--- The `identities` table is a stable interface for admin tooling
--- (delete-identity script today; identity transfer/export/import in the
--- future). Per ADR-159 "Constrains Future Sessions": new columns may be
--- added; existing columns must not be renamed or have semantics shifted
--- without updating admin tooling in the same change.
+-- The `identities` table is a stable interface for admin tooling. Per
+-- ADR-161 "Constrains Future Sessions": new columns may be added; the
+-- existing `id`, `handle`, and `passcode_hash` columns must not be
+-- renamed or have semantics shifted without updating admin tooling in
+-- the same change. Erase is hard-delete (no `deleted_at` soft-delete);
+-- a freed Handle is reclaimable by another user.
 --
 -- Booleans are SQLite INTEGER (0 | 1). Timestamps are ISO-8601 TEXT.
 -- JSON payloads are stored as TEXT and parsed at the repository boundary.
 
 CREATE TABLE identities (
-    identity_id   TEXT PRIMARY KEY,           -- UUIDv4
-    username      TEXT NOT NULL,              -- preserved case; uniqueness enforced on LOWER(username) below
-    secret_hash   TEXT NOT NULL,              -- argon2id; never stores plaintext
-    created_at    TEXT NOT NULL,
-    last_seen_at  TEXT NOT NULL,
-    deleted_at    TEXT                        -- soft-delete marker; admin script sets, queries filter out
+    id              TEXT PRIMARY KEY,           -- Crockford base32, 8 chars formatted XXXX-XXXX (ADR-161)
+    handle          TEXT NOT NULL,              -- preserved case; uniqueness enforced on LOWER(handle) below; 3–12 alpha
+    passcode_hash   TEXT NOT NULL,              -- argon2id; never stores plaintext
+    created_at      TEXT NOT NULL,
+    last_seen_at    TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX idx_identities_username_lower ON identities(LOWER(username));
+CREATE UNIQUE INDEX idx_identities_handle_lower ON identities(LOWER(handle));
 
 CREATE TABLE rooms (
     room_id           TEXT PRIMARY KEY,
@@ -41,9 +42,10 @@ CREATE TABLE rooms (
 CREATE TABLE participants (
     participant_id  TEXT PRIMARY KEY,
     room_id         TEXT NOT NULL REFERENCES rooms(room_id) ON DELETE CASCADE,
-    identity_id     TEXT NOT NULL REFERENCES identities(identity_id),
+    identity_id     TEXT NOT NULL REFERENCES identities(id),  -- column name keeps "identity_id"; the value is now Crockford-format
     token           TEXT UNIQUE NOT NULL,
-    display_name    TEXT NOT NULL,
+    -- display_name dropped per ADR-161: Handle replaces it. The participant's
+    -- display name is the joined identity's handle, looked up at read time.
     tier            TEXT NOT NULL DEFAULT 'participant',
     muted           INTEGER NOT NULL DEFAULT 0,
     connected       INTEGER NOT NULL DEFAULT 0,

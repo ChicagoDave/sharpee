@@ -2,15 +2,16 @@
  * HashService behavior tests.
  *
  * Behavior Statement — HashService (production, argon2id)
- *   DOES: hashes a plaintext secret to an argon2id-formatted string that is
- *         not equal to the plaintext; verifies a presented secret against a
- *         stored hash and returns true on match, false on mismatch.
- *   WHEN: invoked by the identity create route (hash) and the identity
- *         reclaim route + WS hello handler (verify).
- *   BECAUSE: ADR-159 AC-6 — the DB never stores plaintext; verification is
- *            argon2id (or scrypt) and non-reversible.
- *   REJECTS WHEN: verify with a wrong secret returns false; verify against a
- *                 malformed hash returns false (does not throw).
+ *   DOES: hashes a plaintext passcode to an argon2id-formatted string that
+ *         is not equal to the plaintext; verifies a presented passcode
+ *         against a stored hash and returns true on match, false on
+ *         mismatch.
+ *   WHEN: invoked by the identity create route (hash) and the WS hello
+ *         handler (verify); Phase C will add upload + erase callers.
+ *   BECAUSE: ADR-161 AC-6 — the DB never stores plaintext; verification
+ *            is argon2id and non-reversible.
+ *   REJECTS WHEN: verify with a wrong passcode returns false; verify
+ *                 against a malformed hash returns false (does not throw).
  *
  * These are real-path tests for AC-6: they exercise the production argon2
  * binding directly, not the stub. AC-6 cannot be satisfied by a stub.

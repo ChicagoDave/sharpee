@@ -78,9 +78,11 @@ export interface RoomSnapshot {
 
 export type ClientMsg =
   // First frame on every WS connection. Carries the persistent identity
-  // credentials per ADR-159; the per-room token is no longer the WS hello
-  // credential — it survives only as an HTTP-side session marker.
-  | { kind: 'hello'; username: string; secret: string }
+  // credentials per ADR-161 — `handle` is the user's globally-unique
+  // alpha label (replaces `username` from ADR-159), `passcode` is the
+  // EFF-wordlist credential (replaces `secret`). The per-room HTTP token
+  // is no longer a WS hello credential.
+  | { kind: 'hello'; handle: string; passcode: string }
   | { kind: 'draft_delta'; seq: number; text: string }
   | { kind: 'submit_command'; text: string }
   | { kind: 'release_lock' }

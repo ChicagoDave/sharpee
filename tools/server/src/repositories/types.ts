@@ -61,12 +61,14 @@ export interface Participant {
   participant_id: string;
   room_id: string;
   /**
-   * The persistent identity this participant is bound to (ADR-159).
-   * NOT NULL — every participant row is tied to a created identity.
+   * The persistent identity this participant is bound to (ADR-161).
+   * NOT NULL — every participant row references an existing
+   * `identities.id`. The display name shown to other participants is
+   * the joined identity's `handle`, looked up at read time; the
+   * `participants` table no longer carries a per-room display name.
    */
   identity_id: string;
   token: string;
-  display_name: string;
   tier: Tier;
   muted: boolean;
   connected: boolean;
@@ -76,14 +78,20 @@ export interface Participant {
 }
 
 /**
- * Persistent user identity (ADR-159). One row per human; participants reference
- * via `participants.identity_id`. The `secret_hash` is never returned to callers —
- * verification is performed by the HashService against the persisted hash.
- * Soft-deleted rows (`deleted_at IS NOT NULL`) are not returned by the repository.
+ * Persistent user identity (ADR-161 — supersedes ADR-159).
+ *
+ * One row per human; participants reference via `participants.identity_id`
+ * (column name unchanged; the value is the Crockford-format `id` from this
+ * table). The `passcode_hash` is never returned through this domain shape —
+ * verification is performed by the HashService against the persisted hash
+ * via `findHashByHandle`. Erase is hard-delete; there is no `deleted_at`.
+ *
+ * - `id` — Crockford base32, 8 chars `XXXX-XXXX`. PK.
+ * - `handle` — preserved case; uniqueness is case-insensitive (3–12 alpha).
  */
 export interface Identity {
-  identity_id: string;
-  username: string;
+  id: string;
+  handle: string;
   created_at: string;
   last_seen_at: string;
 }

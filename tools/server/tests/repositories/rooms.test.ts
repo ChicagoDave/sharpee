@@ -111,13 +111,12 @@ describe('RoomsRepository', () => {
     const events = createSessionEventsRepository(db);
     const saves = createSavesRepository(db);
 
-    const identity = identities.create({ username: 'alice', secret_hash: 'h' });
+    const identity = identities.create({ handle: 'alice', passcode_hash: 'h' });
     const room = rooms.create({ title: 'Doomed', story_slug: 's', primary_host_id: 'p1' });
     const p = participants.createOrReconnect({
       room_id: room.room_id,
-      identity_id: identity.identity_id,
+      identity_id: identity.id,
       token: 't1',
-      display_name: 'Alice',
     });
     events.append({
       room_id: room.room_id,

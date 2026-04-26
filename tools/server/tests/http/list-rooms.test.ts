@@ -110,18 +110,18 @@ describe('GET /api/rooms', () => {
     const idCarol = app.seedIdentity();
     app.db
       .prepare(
-        `INSERT INTO participants (participant_id, room_id, identity_id, token, display_name, tier,
+        `INSERT INTO participants (participant_id, room_id, identity_id, token, tier,
                                    muted, connected, is_successor, joined_at)
-         VALUES (?, ?, ?, ?, ?, 'participant', 0, 1, 0, ?)`,
+         VALUES (?, ?, ?, ?, 'participant', 0, 1, 0, ?)`,
       )
-      .run('conn-2', created.room_id, idBob, 'tok-2', 'Bob', now);
+      .run('conn-2', created.room_id, idBob, 'tok-2', now);
     app.db
       .prepare(
-        `INSERT INTO participants (participant_id, room_id, identity_id, token, display_name, tier,
+        `INSERT INTO participants (participant_id, room_id, identity_id, token, tier,
                                    muted, connected, is_successor, joined_at)
-         VALUES (?, ?, ?, ?, ?, 'participant', 0, 0, 0, ?)`,
+         VALUES (?, ?, ?, ?, 'participant', 0, 0, 0, ?)`,
       )
-      .run('disc-3', created.room_id, idCarol, 'tok-3', 'Carol', now);
+      .run('disc-3', created.room_id, idCarol, 'tok-3', now);
 
     const res = await app.fetch('/api/rooms');
     const body = (await res.json()) as {

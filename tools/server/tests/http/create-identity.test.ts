@@ -1,23 +1,26 @@
 /**
- * POST /api/identities behavior tests.
+ * POST /api/identities behavior tests (ADR-161).
  *
  * Behavior Statement — createIdentityRoute
- *   DOES: validates username (3–32 chars, [A-Za-z0-9_-]+); checks
- *         case-insensitive uniqueness; generates identity_id (UUIDv4) and
- *         secret (UUIDv4) server-side; hashes the secret; persists
- *         (identity_id, username, secret_hash); returns 201 with
- *         (identity_id, username, secret).
+ *   DOES: validates handle (3–12 alpha); checks case-insensitive uniqueness;
+ *         generates Id (Crockford-8 dashed) via the repository and passcode
+ *         (EFF word-pair); hashes the passcode; persists (id, handle,
+ *         passcode_hash); returns 201 with (id, handle, passcode).
  *   WHEN: a new visitor without an identity opts to create one.
  *   BECAUSE: identity creation is the precondition for participation under
- *            ADR-159; the secret is shown exactly once and cannot be
- *            recovered server-side.
- *   REJECTS WHEN: missing username → 400 missing_field; invalid format → 400
- *                 invalid_username; collision (case-insensitive) → 409
- *                 username_taken.
+ *            ADR-161; the passcode is shown exactly once and cannot be
+ *            recovered server-side. Cross-device portability uses
+ *            download/upload (Phase C), not re-fetch.
+ *   REJECTS WHEN: missing handle → 400 missing_field; invalid format
+ *                 (length / non-alpha) → 400 invalid_handle; collision
+ *                 (case-insensitive) → 409 handle_taken; malformed JSON →
+ *                 400 bad_request.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildTestApp, type TestAppHandle } from '../helpers/test-app.js';
+import { ID_PATTERN } from '../../src/identity/id-generator.js';
+import { PASSCODE_PATTERN } from '../../src/identity/passcode-generator.js';
 
 describe('POST /api/identities', () => {
   let app: TestAppHandle;
@@ -29,28 +32,28 @@ describe('POST /api/identities', () => {
     app.cleanup();
   });
 
-  it('happy path: valid username → 201 with identity_id, username, secret', async () => {
+  it('happy path: valid handle → 201 with id (Crockford), handle, passcode (word-pair)', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'Alice' }),
+      body: JSON.stringify({ handle: 'Alice' }),
     });
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { identity_id: string; username: string; secret: string };
-    expect(body.identity_id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(body.secret).toMatch(/^[0-9a-f-]{36}$/);
-    expect(body.username).toBe('Alice');
+    const body = (await res.json()) as { id: string; handle: string; passcode: string };
+    expect(body.id).toMatch(ID_PATTERN);
+    expect(body.passcode).toMatch(PASSCODE_PATTERN);
+    expect(body.handle).toBe('Alice');
 
-    // DB state: identity row persisted with hashed secret.
+    // DB state: identity row persisted with hashed passcode.
     const row = app.db
-      .prepare('SELECT secret_hash, username FROM identities WHERE identity_id = ?')
-      .get(body.identity_id) as { secret_hash: string; username: string };
-    expect(row.username).toBe('Alice');
-    expect(row.secret_hash).not.toBe(body.secret); // AC-6: never plaintext
-    expect(row.secret_hash.length).toBeGreaterThan(8);
+      .prepare('SELECT passcode_hash, handle FROM identities WHERE id = ?')
+      .get(body.id) as { passcode_hash: string; handle: string };
+    expect(row.handle).toBe('Alice');
+    expect(row.passcode_hash).not.toBe(body.passcode); // AC-6: never plaintext
+    expect(row.passcode_hash.length).toBeGreaterThan(8);
   });
 
-  it('missing username → 400 missing_field', async () => {
+  it('missing handle → 400 missing_field', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -60,98 +63,127 @@ describe('POST /api/identities', () => {
     expect(((await res.json()) as { code: string }).code).toBe('missing_field');
   });
 
-  it('username too short (< 3 chars) → 400 invalid_username', async () => {
+  it('handle too short (< 3 chars) → 400 invalid_handle', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'ab' }),
+      body: JSON.stringify({ handle: 'ab' }),
     });
     expect(res.status).toBe(400);
-    expect(((await res.json()) as { code: string }).code).toBe('invalid_username');
+    expect(((await res.json()) as { code: string }).code).toBe('invalid_handle');
   });
 
-  it('username too long (> 32 chars) → 400 invalid_username', async () => {
+  it('handle too long (> 12 chars) → 400 invalid_handle', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'a'.repeat(33) }),
+      body: JSON.stringify({ handle: 'a'.repeat(13) }),
     });
     expect(res.status).toBe(400);
-    expect(((await res.json()) as { code: string }).code).toBe('invalid_username');
+    expect(((await res.json()) as { code: string }).code).toBe('invalid_handle');
   });
 
-  it('username with invalid chars → 400 invalid_username', async () => {
+  it('handle with whitespace → 400 invalid_handle', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'has spaces' }),
+      body: JSON.stringify({ handle: 'has spaces' }),
     });
     expect(res.status).toBe(400);
-    expect(((await res.json()) as { code: string }).code).toBe('invalid_username');
+    expect(((await res.json()) as { code: string }).code).toBe('invalid_handle');
   });
 
-  it('username with @ rejected → 400 invalid_username', async () => {
+  it('handle with digits → 400 invalid_handle', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'a@b' }),
+      body: JSON.stringify({ handle: 'abc123' }),
     });
     expect(res.status).toBe(400);
-    expect(((await res.json()) as { code: string }).code).toBe('invalid_username');
+    expect(((await res.json()) as { code: string }).code).toBe('invalid_handle');
   });
 
-  it('underscore and hyphen accepted in username', async () => {
+  it('handle with underscore → 400 invalid_handle (alpha only)', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'a_b-c' }),
+      body: JSON.stringify({ handle: 'a_b' }),
+    });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { code: string }).code).toBe('invalid_handle');
+  });
+
+  it('handle with hyphen → 400 invalid_handle (alpha only)', async () => {
+    const res = await app.fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'a-b' }),
+    });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { code: string }).code).toBe('invalid_handle');
+  });
+
+  it('mixed-case alpha at length 3 accepted', async () => {
+    const res = await app.fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'aBc' }),
     });
     expect(res.status).toBe(201);
   });
 
-  it('duplicate username (exact case) → 409 username_taken', async () => {
-    await app.fetch('/api/identities', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'Alice' }),
-    });
+  it('alpha at length 12 accepted', async () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'Alice' }),
-    });
-    expect(res.status).toBe(409);
-    expect(((await res.json()) as { code: string }).code).toBe('username_taken');
-  });
-
-  it('duplicate username (different case) → 409 username_taken (case-insensitive uniqueness)', async () => {
-    await app.fetch('/api/identities', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'Alice' }),
-    });
-    const res = await app.fetch('/api/identities', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'ALICE' }),
-    });
-    expect(res.status).toBe(409);
-    expect(((await res.json()) as { code: string }).code).toBe('username_taken');
-  });
-
-  it('original case of username preserved in storage and response', async () => {
-    const res = await app.fetch('/api/identities', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'CaMeLcAsE' }),
+      body: JSON.stringify({ handle: 'abcdefghijkl' }),
     });
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { username: string };
-    expect(body.username).toBe('CaMeLcAsE');
+  });
+
+  it('duplicate handle (exact case) → 409 handle_taken', async () => {
+    await app.fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'Alice' }),
+    });
+    const res = await app.fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'Alice' }),
+    });
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { code: string }).code).toBe('handle_taken');
+  });
+
+  it('duplicate handle (different case) → 409 handle_taken (case-insensitive uniqueness)', async () => {
+    await app.fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'Alice' }),
+    });
+    const res = await app.fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'ALICE' }),
+    });
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { code: string }).code).toBe('handle_taken');
+  });
+
+  it('original case of handle preserved in storage and response', async () => {
+    const res = await app.fetch('/api/identities', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'CaMeLcAsE' }),
+    });
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as { handle: string };
+    expect(body.handle).toBe('CaMeLcAsE');
     const row = app.db
-      .prepare('SELECT username FROM identities WHERE LOWER(username) = ?')
-      .get('camelcase') as { username: string };
-    expect(row.username).toBe('CaMeLcAsE');
+      .prepare('SELECT handle FROM identities WHERE LOWER(handle) = ?')
+      .get('camelcase') as { handle: string };
+    expect(row.handle).toBe('CaMeLcAsE');
   });
 
   it('malformed JSON body → 400 bad_request', async () => {
@@ -172,14 +204,14 @@ describe('POST /api/identities', () => {
     const res = await app.fetch('/api/identities', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'realtest' }),
+      body: JSON.stringify({ handle: 'realtest' }),
     });
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { identity_id: string; secret: string };
+    const body = (await res.json()) as { id: string; passcode: string };
     const row = app.db
-      .prepare('SELECT secret_hash FROM identities WHERE identity_id = ?')
-      .get(body.identity_id) as { secret_hash: string };
-    expect(row.secret_hash).toMatch(/^\$argon2id\$/);
-    expect(row.secret_hash).not.toBe(body.secret);
+      .prepare('SELECT passcode_hash FROM identities WHERE id = ?')
+      .get(body.id) as { passcode_hash: string };
+    expect(row.passcode_hash).toMatch(/^\$argon2id\$/);
+    expect(row.passcode_hash).not.toBe(body.passcode);
   }, 5_000);
 });

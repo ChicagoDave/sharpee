@@ -14,6 +14,7 @@
 
 import type { RoomsRepository } from '../repositories/rooms.js';
 import type { ParticipantsRepository } from '../repositories/participants.js';
+import type { IdentitiesRepository } from '../repositories/identities.js';
 import type { SavesRepository } from '../repositories/saves.js';
 import type { SessionEventsRepository } from '../repositories/session-events.js';
 import type {
@@ -45,6 +46,12 @@ export const WELCOME_DM_BACKLOG_LIMIT = 200;
 export interface SnapshotDeps {
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
+  /**
+   * ADR-161: each ParticipantSummary's `display_name` is sourced from the
+   * joined identity's `handle`. The wire field name is preserved for now;
+   * Phase F may rename it.
+   */
+  identities: IdentitiesRepository;
   /** Optional — when absent, `saves` is always []. Phase 6 wires this in. */
   saves?: SavesRepository;
   /** Optional — when absent, `chat_backlog` is always []. */
@@ -90,13 +97,19 @@ export function buildRoomSnapshot(
     saves: savesList,
   };
 
-  const participants = deps.participants.listForRoom(room.room_id).map<ParticipantSummary>((p) => ({
-    participant_id: p.participant_id,
-    display_name: p.display_name,
-    tier: p.tier,
-    connected: p.connected,
-    muted: p.muted,
-  }));
+  const participants = deps.participants.listForRoom(room.room_id).map<ParticipantSummary>((p) => {
+    // Source the display name from the joined identity's handle.
+    // If the identity has been hard-deleted (post-erase, pre-cleanup),
+    // fall back to the participant_id so the row still renders.
+    const identity = deps.identities.findById(p.identity_id);
+    return {
+      participant_id: p.participant_id,
+      display_name: identity?.handle ?? p.participant_id,
+      tier: p.tier,
+      connected: p.connected,
+      muted: p.muted,
+    };
+  });
 
   const chat_backlog: ChatEntry[] = deps.sessionEvents
     ? deps.sessionEvents

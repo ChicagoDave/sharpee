@@ -119,7 +119,6 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
         room_id: room.room_id,
         identity_id,
         token,
-        display_name,
         tier: 'primary_host',
       });
       deps.sessionEvents.append({

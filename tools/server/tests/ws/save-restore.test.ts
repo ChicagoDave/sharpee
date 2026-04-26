@@ -62,8 +62,8 @@ async function openBothSockets(server: TestServerHandle): Promise<Room> {
 
   const hostClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
   const guestClient = await openWsClient(`${server.wsUrl}/ws/${host.room_id}`);
-  hostClient.send({ kind: 'hello', username: host.username, secret: host.secret });
-  guestClient.send({ kind: 'hello', username: guest.username, secret: guest.secret });
+  hostClient.send({ kind: 'hello', handle: host.handle, passcode: host.passcode });
+  guestClient.send({ kind: 'hello', handle: guest.handle, passcode: guest.passcode });
   await hostClient.waitFor(
     (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
   );
@@ -159,7 +159,7 @@ describe.skipIf(!REAL)('save + restore round-trip (real sandbox)', () => {
       .run(guest.participant_id);
 
     const guest2 = track(await openWsClient(`${server.wsUrl}/ws/${host.room_id}`));
-    guest2.send({ kind: 'hello', username: guest.username, secret: guest.secret });
+    guest2.send({ kind: 'hello', handle: guest.handle, passcode: guest.passcode });
     const welcome = await guest2.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
     );

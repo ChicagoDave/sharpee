@@ -5,20 +5,20 @@
  *
  * Public interface: {@link handleHello}, {@link HelloDeps}.
  * Bounded context: WebSocket presence (ADR-153 Decision 4 reconnect path,
- * ADR-159 hello frame contract).
+ * ADR-161 hello frame contract — supersedes ADR-159).
  *
- * Per ADR-159, the hello frame carries `(username, secret)` rather than the
- * legacy per-room token. The server looks up the identity, verifies the
- * argon2id hash, and resolves to a participant via `(identity_id, room_id)`.
- * If no participant exists for the pair, one is created on the spot —
- * a returning identity reaches a room they have never joined without an
+ * Per ADR-161, the hello frame carries `(handle, passcode)`. The server
+ * looks up the identity by handle, verifies the argon2id hash of the
+ * passcode, and resolves to a participant via `(identity.id, room_id)`.
+ * If no participant exists for the pair, one is created on the spot — a
+ * returning identity reaches a room they have never joined without an
  * out-of-band HTTP join step.
  *
  * Negative paths:
  *   - room no longer exists      → room_closed close (4004)
  *   - hello envelope malformed   → hello_required close (4000)
- *   - unknown username           → unknown_identity close (4001)
- *   - secret mismatch            → bad_credentials close (4006)
+ *   - unknown handle             → unknown_handle close (4001)
+ *   - passcode mismatch          → bad_passcode close (4006)
  */
 
 import type { WebSocket } from 'ws';
@@ -67,7 +67,7 @@ function closeWith(ws: WebSocket, code: number, reason: string): void {
 
 /**
  * Process a `hello` message received on a freshly-opened socket bound to
- * `url_room_id`. Async because secret verification calls the argon2 binding.
+ * `url_room_id`. Async because passcode verification calls the argon2 binding.
  *
  * On success: the participant is resolved (or created on first contact in
  * this room), marked connected, registered with the {@link ConnectionManager},
@@ -83,19 +83,19 @@ export async function handleHello(
   deps: HelloDeps,
   ws: WebSocket,
   url_room_id: string,
-  raw: ClientMsg
+  raw: ClientMsg,
 ): Promise<string | null> {
   if (
     raw.kind !== 'hello' ||
-    typeof raw.username !== 'string' ||
-    !raw.username ||
-    typeof raw.secret !== 'string' ||
-    !raw.secret
+    typeof raw.handle !== 'string' ||
+    !raw.handle ||
+    typeof raw.passcode !== 'string' ||
+    !raw.passcode
   ) {
     sendMsg(ws, {
       kind: 'error',
       code: 'hello_required',
-      detail: 'first frame must be hello with username and secret',
+      detail: 'first frame must be hello with handle and passcode',
     });
     closeWith(ws, 4000, 'hello_required');
     return null;
@@ -109,35 +109,34 @@ export async function handleHello(
     return null;
   }
 
-  const auth = deps.identities.findHashByUsername(raw.username);
+  const auth = deps.identities.findHashByHandle(raw.handle);
   if (!auth) {
     sendMsg(ws, {
       kind: 'error',
-      code: 'unknown_identity',
-      detail: 'no identity with that username',
+      code: 'unknown_handle',
+      detail: 'no identity with that handle',
     });
-    closeWith(ws, 4001, 'unknown_identity');
+    closeWith(ws, 4001, 'unknown_handle');
     return null;
   }
 
-  const ok = await deps.hashService.verify(raw.secret, auth.secret_hash);
+  const ok = await deps.hashService.verify(raw.passcode, auth.passcode_hash);
   if (!ok) {
     sendMsg(ws, {
       kind: 'error',
-      code: 'bad_credentials',
-      detail: 'incorrect secret for that username',
+      code: 'bad_passcode',
+      detail: 'incorrect passcode for that handle',
     });
-    closeWith(ws, 4006, 'bad_credentials');
+    closeWith(ws, 4006, 'bad_passcode');
     return null;
   }
 
-  // Identity is verified. Touch last_seen and read the canonical-case username.
-  deps.identities.touchLastSeen(auth.identity_id);
-  const identity = deps.identities.findById(auth.identity_id);
+  // Identity is verified. Touch last_seen and read the canonical-case handle.
+  deps.identities.touchLastSeen(auth.id);
+  const identity = deps.identities.findById(auth.id);
   if (!identity) {
-    // Soft-deleted between findHashByUsername and findById — vanishingly rare
-    // (no concurrent admin in tests; even in production the window is sub-ms),
-    // but bail safely.
+    // Hard-deleted between findHashByHandle and findById (e.g. an erase
+    // landed in this same request window). Vanishingly rare; bail safely.
     closeWith(ws, 4500, 'internal_error');
     return null;
   }
@@ -145,7 +144,7 @@ export async function handleHello(
   // Resolve or create the participant for (identity, room). The participant
   // row carries the per-connection token (unused by hello, still used by
   // HTTP routes that authenticate via Bearer).
-  const existing = deps.participants.findByIdentityAndRoom(identity.identity_id, room.room_id);
+  const existing = deps.participants.findByIdentityAndRoom(identity.id, room.room_id);
   const isReconnect = existing !== null;
 
   let participant = existing;
@@ -153,14 +152,16 @@ export async function handleHello(
     const token = generateToken();
     participant = deps.participants.createOrReconnect({
       room_id: room.room_id,
-      identity_id: identity.identity_id,
+      identity_id: identity.id,
       token,
-      display_name: identity.username,
     });
   }
 
   // Commit presence update + join-event append atomically so readers never
   // see the connected flag flipped without the corresponding log entry.
+  // The join event's `display_name` field carries the identity's handle —
+  // the EventPayload field name is preserved for wire stability; Phase F
+  // may rename it.
   const tx = deps.db.transaction(() => {
     deps.participants.setConnected(participant!.participant_id, true);
     deps.sessionEvents.append({
@@ -169,7 +170,7 @@ export async function handleHello(
       kind: 'join',
       payload: {
         kind: 'join',
-        display_name: participant!.display_name,
+        display_name: identity.handle,
         reconnect: isReconnect,
       },
     });
@@ -192,6 +193,7 @@ export async function handleHello(
       {
         rooms: deps.rooms,
         participants: deps.participants,
+        identities: deps.identities,
         saves: deps.saves,
         sessionEvents: deps.sessionEvents,
       },
@@ -220,7 +222,7 @@ export async function handleHello(
       connected: true,
       grace_deadline: null,
     },
-    { except_participant_id: participant.participant_id }
+    { except_participant_id: participant.participant_id },
   );
 
   // Auto-nominate successor (ADR-153 D6): if the room currently has no

@@ -1,155 +1,206 @@
 /**
- * Identities repository — persistent user identity per ADR-159.
+ * Identities repository — persistent user identity per ADR-161.
  *
  * Public interface: {@link IdentitiesRepository}, {@link createIdentitiesRepository}.
  * Bounded context: persistence layer.
  *
- * The `identities` table is a stable interface for admin tooling (delete-identity
- * script today; identity transfer/export/import in the future). New columns may be
- * added; existing columns must not be renamed or have semantics shifted without
- * updating the admin tooling in the same change.
+ * The `identities` table is a stable interface for admin tooling. New
+ * columns may be added; existing columns must not be renamed or have
+ * semantics shifted without updating admin tooling in the same change.
  *
- * The `secret_hash` is never returned through this repository's surface — the
- * HashService layer performs verification by reading the hash via `findHashByUsername`
- * and comparing against the plaintext supplied by the client.
+ * The `passcode_hash` is never returned through the domain `Identity`
+ * shape — the HashService layer performs verification by reading the hash
+ * via `findHashByHandle` and comparing against the plaintext supplied by
+ * the client. `findHashByHandle` is the only auth surface that exposes
+ * the hash, by design.
+ *
+ * Erase is hard-delete (no `deleted_at` soft-delete column). Calling
+ * `delete(id)` removes the row outright; the freed Handle is reclaimable
+ * by another user (AC-7). Dependent participants will fail their FK on
+ * subsequent reads — Phase C ships the cascading WS-disconnect + room
+ * successor logic that handles erase mid-session.
  */
 
-import { randomUUID } from 'node:crypto';
 import type { Database, Statement } from 'better-sqlite3';
+import { generateId } from '../identity/id-generator.js';
 import type { Identity } from './types.js';
 
 export interface IdentitiesRepository {
   /**
-   * Insert a new identity. Throws if `username` collides case-insensitively with
-   * an existing row (UNIQUE index on `LOWER(username)`). Caller supplies the hash;
-   * the repository never sees plaintext.
+   * Insert a new identity, generating the `Id` server-side using the
+   * Crockford generator with retry on UNIQUE-on-id collision (budget 3,
+   * statistically near-impossible to exhaust given 1.1T combinations).
+   *
+   * Throws if `handle` collides case-insensitively with an existing row
+   * (UNIQUE index on `LOWER(handle)`); the error message contains
+   * `UNIQUE` so the route can map it to a 409 response. Caller supplies
+   * the hash; the repository never sees plaintext.
    */
-  create(input: { username: string; secret_hash: string }): Identity;
+  create(input: { handle: string; passcode_hash: string }): Identity;
 
   /**
-   * Look up an identity by username (case-insensitive). Returns null for unknown
-   * usernames and for soft-deleted rows.
+   * Insert a new identity with a caller-supplied `id`. Used by the
+   * upload route (Phase C) for the new-registration case where the
+   * uploaded CSV's Id is recorded as-is. Throws on UNIQUE failure for
+   * either column; the route distinguishes `id_mismatch` vs
+   * `handle_taken` based on which row pre-existed.
    */
-  findByUsername(username: string): Identity | null;
+  createWithId(input: { id: string; handle: string; passcode_hash: string }): Identity;
 
   /**
-   * Look up an identity by its primary key. Returns null for unknown ids and for
-   * soft-deleted rows.
+   * Look up an identity by handle (case-insensitive). Returns null for
+   * unknown handles.
    */
-  findById(identity_id: string): Identity | null;
+  findByHandle(handle: string): Identity | null;
+
+  /** Look up an identity by its primary key. Returns null for unknown ids. */
+  findById(id: string): Identity | null;
 
   /**
-   * Read the persisted secret_hash for verification. Returns null if the username
-   * is unknown or soft-deleted. Used by the HashService to verify a presented secret.
-   * Not exposed beyond the auth layer.
+   * Read the persisted passcode_hash for verification. Returns null if
+   * the handle is unknown. The only auth surface that exposes the hash —
+   * domain reads must use `findByHandle` / `findById` and never receive
+   * the hash.
    */
-  findHashByUsername(username: string): { identity_id: string; secret_hash: string } | null;
+  findHashByHandle(handle: string): { id: string; passcode_hash: string } | null;
 
   /**
-   * Mark `last_seen_at` to the current time. Called on successful resolve (warm
-   * reconnect or cold reclaim) so the admin can see which identities are dormant.
+   * Mark `last_seen_at` to the current time. Called on successful resolve
+   * (warm reconnect or upload accept) so the admin can see which
+   * identities are dormant.
    */
-  touchLastSeen(identity_id: string): void;
+  touchLastSeen(id: string): void;
 
   /**
-   * Soft-delete an identity. Sets `deleted_at` to the current ISO-8601 timestamp;
-   * subsequent `findByUsername` / `findById` return null. Does not modify
-   * dependent participant rows — they continue to satisfy the FK against the
-   * soft-deleted identity. The Phase 7 admin script decides whether to additionally
-   * anonymize participant rows; this repository only owns the identity row.
+   * Hard-delete an identity row. The freed Handle becomes reclaimable
+   * (AC-7). Dependent participants are not touched here — Phase C's
+   * `/erase` route handles WS disconnect + successor transfer before
+   * calling this; participants whose identity has been erased will fail
+   * subsequent FK-checked reads, which is the intended terminal state.
+   *
+   * Idempotent: deleting an unknown id is a no-op (no error).
    */
-  softDelete(identity_id: string): void;
+  delete(id: string): void;
 }
 
 interface IdentityRow {
-  identity_id: string;
-  username: string;
-  secret_hash: string;
+  id: string;
+  handle: string;
+  passcode_hash: string;
   created_at: string;
   last_seen_at: string;
-  deleted_at: string | null;
 }
 
 function rowToIdentity(row: IdentityRow): Identity {
   return {
-    identity_id: row.identity_id,
-    username: row.username,
+    id: row.id,
+    handle: row.handle,
     created_at: row.created_at,
     last_seen_at: row.last_seen_at,
   };
 }
 
+const ID_COLLISION_RETRY_BUDGET = 3;
+
 export function createIdentitiesRepository(db: Database): IdentitiesRepository {
-  const insert: Statement = db.prepare(`
-    INSERT INTO identities (
-      identity_id, username, secret_hash, created_at, last_seen_at
-    ) VALUES (@identity_id, @username, @secret_hash, @now, @now)
+  const insertStmt: Statement = db.prepare(`
+    INSERT INTO identities (id, handle, passcode_hash, created_at, last_seen_at)
+    VALUES (@id, @handle, @passcode_hash, @now, @now)
   `);
 
-  const selectByUsername: Statement = db.prepare(`
-    SELECT * FROM identities
-    WHERE LOWER(username) = LOWER(?) AND deleted_at IS NULL
+  const selectByHandle: Statement = db.prepare(`
+    SELECT * FROM identities WHERE LOWER(handle) = LOWER(?)
   `);
 
   const selectById: Statement = db.prepare(`
-    SELECT * FROM identities
-    WHERE identity_id = ? AND deleted_at IS NULL
+    SELECT * FROM identities WHERE id = ?
   `);
 
-  const selectHashByUsername: Statement = db.prepare(`
-    SELECT identity_id, secret_hash FROM identities
-    WHERE LOWER(username) = LOWER(?) AND deleted_at IS NULL
+  const selectHashByHandle: Statement = db.prepare(`
+    SELECT id, passcode_hash FROM identities WHERE LOWER(handle) = LOWER(?)
   `);
 
   const updateLastSeen: Statement = db.prepare(`
-    UPDATE identities SET last_seen_at = ? WHERE identity_id = ?
+    UPDATE identities SET last_seen_at = ? WHERE id = ?
   `);
 
-  const softDeleteStmt: Statement = db.prepare(`
-    UPDATE identities SET deleted_at = ? WHERE identity_id = ? AND deleted_at IS NULL
+  const deleteStmt: Statement = db.prepare(`
+    DELETE FROM identities WHERE id = ?
   `);
+
+  function findByHandle(handle: string): Identity | null {
+    const row = selectByHandle.get(handle) as IdentityRow | undefined;
+    return row ? rowToIdentity(row) : null;
+  }
+
+  function createWithId(input: {
+    id: string;
+    handle: string;
+    passcode_hash: string;
+  }): Identity {
+    const now = new Date().toISOString();
+    insertStmt.run({
+      id: input.id,
+      handle: input.handle,
+      passcode_hash: input.passcode_hash,
+      now,
+    });
+    return {
+      id: input.id,
+      handle: input.handle,
+      created_at: now,
+      last_seen_at: now,
+    };
+  }
+
+  function create(input: { handle: string; passcode_hash: string }): Identity {
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < ID_COLLISION_RETRY_BUDGET; attempt++) {
+      const id = generateId();
+      try {
+        return createWithId({ id, handle: input.handle, passcode_hash: input.passcode_hash });
+      } catch (err) {
+        lastErr = err;
+        if (err instanceof Error && /UNIQUE/i.test(err.message)) {
+          // Distinguish Handle vs Id collision: if the Handle is now in
+          // the DB (either pre-existing or just inserted by another
+          // process), this was a Handle conflict and we re-throw so the
+          // route surfaces a 409 handle_taken. Otherwise the conflict
+          // must have been on `id` — retry with a fresh Id.
+          if (findByHandle(input.handle)) throw err;
+          continue;
+        }
+        throw err;
+      }
+    }
+    // 1.1T-combination space + 3 attempts; reaching here implies a serious
+    // generator/DB issue. Surface the last error so it's diagnosable.
+    throw new Error(
+      `identity Id collision retry budget (${ID_COLLISION_RETRY_BUDGET}) exhausted: ${
+        lastErr instanceof Error ? lastErr.message : String(lastErr)
+      }`,
+    );
+  }
 
   return {
-    create(input) {
-      const identity_id = randomUUID();
-      const now = new Date().toISOString();
-      insert.run({
-        identity_id,
-        username: input.username,
-        secret_hash: input.secret_hash,
-        now,
-      });
-      return {
-        identity_id,
-        username: input.username,
-        created_at: now,
-        last_seen_at: now,
-      };
-    },
-
-    findByUsername(username) {
-      const row = selectByUsername.get(username) as IdentityRow | undefined;
+    create,
+    createWithId,
+    findByHandle,
+    findById(id) {
+      const row = selectById.get(id) as IdentityRow | undefined;
       return row ? rowToIdentity(row) : null;
     },
-
-    findById(identity_id) {
-      const row = selectById.get(identity_id) as IdentityRow | undefined;
-      return row ? rowToIdentity(row) : null;
-    },
-
-    findHashByUsername(username) {
-      const row = selectHashByUsername.get(username) as
-        | { identity_id: string; secret_hash: string }
+    findHashByHandle(handle) {
+      const row = selectHashByHandle.get(handle) as
+        | { id: string; passcode_hash: string }
         | undefined;
       return row ?? null;
     },
-
-    touchLastSeen(identity_id) {
-      updateLastSeen.run(new Date().toISOString(), identity_id);
+    touchLastSeen(id) {
+      updateLastSeen.run(new Date().toISOString(), id);
     },
-
-    softDelete(identity_id) {
-      softDeleteStmt.run(new Date().toISOString(), identity_id);
+    delete(id) {
+      deleteStmt.run(id);
     },
   };
 }

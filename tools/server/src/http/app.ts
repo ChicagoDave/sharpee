@@ -31,7 +31,6 @@ import { registerResolveCodeRoute } from './routes/resolve-code.js';
 import { registerListStoriesRoute } from './routes/list-stories.js';
 import { registerListRoomsRoute } from './routes/list-rooms.js';
 import { registerCreateIdentityRoute } from './routes/create-identity.js';
-import { registerReclaimIdentityRoute } from './routes/reclaim-identity.js';
 
 export interface AppDeps {
   config: Config;
@@ -40,9 +39,9 @@ export interface AppDeps {
   participants: ParticipantsRepository;
   identities: IdentitiesRepository;
   /**
-   * argon2id hash service. Required by the identity create + reclaim routes
-   * (Phase 2). Tests that don't exercise those routes can pass a stub built
-   * via `createStubHashService()`.
+   * argon2id hash service. Required by the identity create route and the
+   * upcoming upload + erase routes (Phase C). Tests that don't exercise
+   * those routes can pass a stub built via `createStubHashService()`.
    */
   hashService: HashService;
   sessionEvents: SessionEventsRepository;
@@ -85,17 +84,14 @@ export function createApp(deps: AppDeps): Hono {
   registerListStoriesRoute(app, deps);
   registerListRoomsRoute(app, deps);
 
-  // Identity routes — per-IP rate limit per ADR-159 (10 attempts/min).
+  // Identity routes — per-IP rate limit per ADR-161 (10 attempts/min).
   // The limiter is local to this app instance; multi-instance deployments
-  // would need a Redis-backed limiter. ADR-159 v1 accepts single-process scope.
+  // would need a Redis-backed limiter. ADR-161 v1 accepts single-process
+  // scope. Phase C will register `/upload` and `/erase` routes that share
+  // this same limiter bucket.
   const identityLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
   const identityRateLimit = rateLimitMiddleware(identityLimiter);
   registerCreateIdentityRoute(app, {
-    identities: deps.identities,
-    hashService: deps.hashService,
-    rateLimit: identityRateLimit,
-  });
-  registerReclaimIdentityRoute(app, {
     identities: deps.identities,
     hashService: deps.hashService,
     rateLimit: identityRateLimit,

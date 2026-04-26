@@ -56,10 +56,10 @@ describe('PH grace-timer wiring (presence + hello)', () => {
 
   async function openAndHello(
     room_id: string,
-    creds: { username: string; secret: string }
+    creds: { handle: string; passcode: string }
   ): Promise<TestWsClient> {
     const c = track(await openWsClient(`${server.wsUrl}/ws/${room_id}`));
-    c.send({ kind: 'hello', username: creds.username, secret: creds.secret });
+    c.send({ kind: 'hello', handle: creds.handle, passcode: creds.passcode });
     await c.waitFor(
       (m): m is Extract<ServerMsg, { kind: 'welcome' }> => m.kind === 'welcome'
     );
