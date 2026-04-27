@@ -1,6 +1,7 @@
 # Plan — ADR-161: Identity Model `(Id, Handle, passcode)` with Download/Upload Portability
 
 **Created**: 2026-04-26
+**Status**: COMPLETE — all phases A–F shipped on 2026-04-26 (commits `fea27717` → `14968ea4`). AC-1 through AC-9 delivered.
 **ADR**: [`docs/architecture/adrs/adr-161-identity-id-handle-passcode.md`](../../architecture/adrs/adr-161-identity-id-handle-passcode.md) (ACCEPTED)
 **Supersedes**: [`plan-20260425-adr-159-identity.md`](./plan-20260425-adr-159-identity.md)
 **Requirements doc**: [`requirements-identity-2026-04-26.md`](./requirements-identity-2026-04-26.md)
@@ -176,7 +177,7 @@ vocabulary; all generators have unit tests; reclaim route + tests are
 gone; the schema + repository layer is the canonical source for the new
 identity shape.
 
-**Status**: PENDING
+**Status**: DONE (commit `fea27717`)
 
 ---
 
@@ -226,7 +227,7 @@ least one happy-path test per route, asserting the participant row's
 **Exit state**: room creation and join require credentials; no path that
 takes a bare `id` exists; the auth gap from ADR-159 is closed.
 
-**Status**: PENDING
+**Status**: DONE (commit `4d73f8d2`)
 
 ---
 
@@ -312,7 +313,7 @@ erase-disconnect test (no mock socket).
 create, upload, erase. Reclaim is gone. Live WS connections terminate
 correctly on erase.
 
-**Status**: DONE
+**Status**: DONE (commit `ea7960bd`)
 
 ---
 
@@ -426,7 +427,7 @@ sees Landing with disabled Create / Enter buttons).
 identity (create or upload), then create a room or join one. WS hello
 sends the new vocabulary. The build is clean.
 
-**Status**: CURRENT
+**Status**: DONE (commit `e9739abe`)
 
 ---
 
@@ -489,7 +490,7 @@ unidentified state).
 **Exit state**: identity management is complete. Users can self-serve
 download (for portability) and erase (for departure).
 
-**Status**: PENDING
+**Status**: DONE (commit `14968ea4`)
 
 ---
 
@@ -528,7 +529,7 @@ and room rows).
 **Exit state**: vocabulary is fully migrated; UI surfaces all use
 Handle. ADR-156 is amended with the identity UI surface map.
 
-**Status**: PENDING
+**Status**: DONE (commit `14968ea4`; wire-type extraction `tools/server/src/wire/http-api.ts` was added as a Phase F prerequisite per rule 7b)
 
 ---
 
