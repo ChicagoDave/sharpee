@@ -14,14 +14,20 @@
  */
 
 import type {
+  CreateIdentityRequest,
+  CreateIdentityResponse,
   CreateRoomRequest,
   CreateRoomResponse,
+  EraseIdentityRequest,
+  EraseIdentityResponse,
   ErrorEnvelope,
   JoinRoomRequest,
   JoinRoomResponse,
   ListRoomsResponse,
   ListStoriesResponse,
   ResolveCodeResponse,
+  UploadIdentityRequest,
+  UploadIdentityResponse,
 } from '../types/api';
 
 export class ApiError extends Error {
@@ -112,6 +118,64 @@ export function joinRoom(
  */
 export function resolveCode(code: string): Promise<ResolveCodeResponse> {
   return getJson<ResolveCodeResponse>(`/r/${encodeURIComponent(code)}`);
+}
+
+// ---------- ADR-161 identity lifecycle helpers ----------
+
+/**
+ * POST /api/identities — create a new persistent identity.
+ *
+ * The server generates the `id` (Crockford-32) and `passcode` (EFF
+ * word-pair); the caller supplies only the desired Handle. The plaintext
+ * passcode is returned exactly once and must be persisted by the client
+ * (see `identity-store.ts`) — the server cannot recover it later.
+ *
+ * Throws ApiError with codes `invalid_handle`, `handle_taken`,
+ * `missing_field`, or `rate_limited`.
+ */
+export function createIdentity(
+  body: CreateIdentityRequest,
+): Promise<CreateIdentityResponse> {
+  return postJson<CreateIdentityRequest, CreateIdentityResponse>(
+    '/api/identities',
+    body,
+  );
+}
+
+/**
+ * POST /api/identities/upload — register or accept an existing identity
+ * with the server using the user's downloaded `(id, handle, passcode)`
+ * triple.
+ *
+ * Throws ApiError with codes `malformed_id`, `invalid_handle`,
+ * `bad_passcode`, `id_mismatch`, `handle_taken`, `missing_field`, or
+ * `rate_limited`. Status 200 means accepted-existing; 201 means
+ * registered-new — both responses have the same shape.
+ */
+export function uploadIdentity(
+  body: UploadIdentityRequest,
+): Promise<UploadIdentityResponse> {
+  return postJson<UploadIdentityRequest, UploadIdentityResponse>(
+    '/api/identities/upload',
+    body,
+  );
+}
+
+/**
+ * POST /api/identities/erase — hard-delete an identity. Live WS sessions
+ * bound to the identity are closed with code 4007 `identity_erased`. The
+ * Handle becomes reclaimable.
+ *
+ * Throws ApiError with codes `unknown_handle`, `bad_passcode`,
+ * `missing_field`, or `rate_limited`.
+ */
+export function eraseIdentity(
+  body: EraseIdentityRequest,
+): Promise<EraseIdentityResponse> {
+  return postJson<EraseIdentityRequest, EraseIdentityResponse>(
+    '/api/identities/erase',
+    body,
+  );
 }
 
 export interface RenameRoomResponse {

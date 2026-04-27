@@ -1,17 +1,28 @@
 /**
- * CreateRoomModal — collects title, story, display name, and a CAPTCHA
- * token, then posts `POST /api/rooms`. On success, persists the returned
- * Primary Host token under `sharpee.token.<room_id>` and hands the new
- * room id to the parent via {@link CreateRoomModalProps.onCreated}.
+ * CreateRoomModal — collects title and story, reads the stored identity
+ * for `(handle, passcode)` credentials, and posts `POST /api/rooms`. On
+ * success, persists the returned Primary Host token under
+ * `sharpee.token.<room_id>` and hands the new room id to the parent via
+ * {@link CreateRoomModalProps.onCreated}.
  *
  * Public interface: {@link CreateRoomModal} default export,
  * {@link CreateRoomModalProps}.
  *
- * Bounded context: client create-room flow (ADR-153 Decision 3, Decision 5).
+ * Bounded context: client create-room flow (ADR-153 Decision 3, Decision 5,
+ * ADR-161 identity model).
+ *
+ * Identity coupling: per ADR-161, the Handle replaces the historical
+ * display name, and the room create call requires `(handle, passcode)`.
+ * App.tsx ensures the Create button is disabled until an identity exists,
+ * so this modal only opens with a valid identity. As a defensive
+ * fallback, the submit handler bails to a form-level alert if
+ * `getStoredIdentity()` returns null at submit (e.g., another tab erased
+ * mid-form).
  *
  * Error handling: server validation errors (`code: missing_field`,
- * `invalid_title`, `unknown_story`) are surfaced inline on the offending
- * field. Any other non-2xx response is shown as a form-level alert.
+ * `invalid_title`, `unknown_story`, `unknown_handle`, `bad_passcode`) are
+ * surfaced inline on the offending field. Any other non-2xx response is
+ * shown as a form-level alert.
  */
 
 import { useCallback, useState } from 'react';
@@ -19,10 +30,15 @@ import Button from './Button';
 import CaptchaWidget from './CaptchaWidget';
 import Modal from './Modal';
 import { ApiError, createRoom as apiCreateRoom } from '../api/http';
-import type { CreateRoomResponse, StorySummary } from '../types/api';
+import type {
+  CreateRoomRequest,
+  CreateRoomResponse,
+  StorySummary,
+} from '../types/api';
 import type { SharpeeClientConfig } from '../config';
 import { writeCode } from '../storage/room-code';
 import { writeToken } from '../storage/token';
+import { getStoredIdentity } from '../identity/identity-store';
 
 export interface CreateRoomModalProps {
   open: boolean;
@@ -31,17 +47,12 @@ export interface CreateRoomModalProps {
   /** Invoked after a successful POST /api/rooms with the created response. */
   onCreated: (result: CreateRoomResponse) => void;
   /** Test override: replaces the real API call. */
-  createRoomFn?: (body: {
-    story_slug: string;
-    title: string;
-    display_name: string;
-    captcha_token?: string;
-  }) => Promise<CreateRoomResponse>;
+  createRoomFn?: (body: CreateRoomRequest) => Promise<CreateRoomResponse>;
   /** Test override: replaces the captcha config so tests can skip real provider logic. */
   captchaConfig?: SharpeeClientConfig;
 }
 
-type FieldErrors = Partial<{ title: string; story_slug: string; display_name: string }>;
+type FieldErrors = Partial<{ title: string; story_slug: string }>;
 
 const TITLE_MAX = 80;
 
@@ -55,7 +66,6 @@ export default function CreateRoomModal({
 }: CreateRoomModalProps): JSX.Element | null {
   const [title, setTitle] = useState('');
   const [storySlug, setStorySlug] = useState<string>(stories[0]?.slug ?? '');
-  const [displayName, setDisplayName] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -71,14 +81,21 @@ export default function CreateRoomModal({
       e.preventDefault();
       const errs: FieldErrors = {};
       const trimmedTitle = title.trim();
-      const trimmedName = displayName.trim();
       if (!trimmedTitle) errs.title = 'Title is required.';
       else if (trimmedTitle.length > TITLE_MAX)
         errs.title = `Title must be ${TITLE_MAX} characters or fewer.`;
       if (!storySlug) errs.story_slug = 'Pick a story.';
-      if (!trimmedName) errs.display_name = 'Display name is required.';
       setFieldErrors(errs);
       if (Object.keys(errs).length > 0) return;
+
+      // Identity must be present at submit. App.tsx already gates the
+      // Create button on identity-existence, but a cross-tab erase could
+      // land between open and submit; bail with a form-level alert.
+      const identity = getStoredIdentity();
+      if (!identity) {
+        setFormError('Identity unavailable — reload to set up your identity.');
+        return;
+      }
 
       setFormError(null);
       setSubmitting(true);
@@ -86,7 +103,8 @@ export default function CreateRoomModal({
         const result = await createRoomFn({
           story_slug: storySlug,
           title: trimmedTitle,
-          display_name: trimmedName,
+          handle: identity.handle,
+          passcode: identity.passcode,
           captcha_token: captchaToken ?? undefined,
         });
         writeToken(result.room_id, result.token);
@@ -98,13 +116,18 @@ export default function CreateRoomModal({
           if (err.code === 'missing_field') {
             const low = err.detail.toLowerCase();
             if (low.includes('title')) setFieldErrors({ title: err.detail });
-            else if (low.includes('display_name')) setFieldErrors({ display_name: err.detail });
             else if (low.includes('story_slug')) setFieldErrors({ story_slug: err.detail });
             else setFormError(err.detail);
           } else if (err.code === 'invalid_title') {
             setFieldErrors({ title: err.detail });
           } else if (err.code === 'unknown_story') {
             setFieldErrors({ story_slug: err.detail });
+          } else if (err.code === 'unknown_handle' || err.code === 'bad_passcode') {
+            // Stored identity is no longer valid on this server (server
+            // erased it, or identity was forged). Tell the user to reset.
+            setFormError(
+              'Your identity is no longer valid. Reload and set up a new identity.',
+            );
           } else {
             setFormError(err.detail);
           }
@@ -115,7 +138,7 @@ export default function CreateRoomModal({
         setSubmitting(false);
       }
     },
-    [title, displayName, storySlug, captchaToken, createRoomFn, onCreated],
+    [title, storySlug, captchaToken, createRoomFn, onCreated],
   );
 
   if (!open) return null;
@@ -192,22 +215,6 @@ export default function CreateRoomModal({
               </option>
             ))}
           </select>
-        </FormField>
-
-        <FormField
-          label="Your display name"
-          error={fieldErrors.display_name}
-          htmlFor="field-name"
-        >
-          <input
-            id="field-name"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-            aria-invalid={fieldErrors.display_name ? 'true' : undefined}
-            style={fieldInputStyle}
-          />
         </FormField>
 
         <div style={{ marginTop: 'var(--sharpee-spacing-md)' }}>

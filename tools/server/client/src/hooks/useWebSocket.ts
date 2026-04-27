@@ -4,10 +4,13 @@
  * Public interface: {@link useWebSocket}, {@link UseWebSocketArgs},
  * {@link UseWebSocketResult}, {@link defaultBackoffMs}.
  *
- * Bounded context: client network layer (ADR-153 Interface Contracts).
+ * Bounded context: client network layer (ADR-153 Interface Contracts,
+ * ADR-161 hello frame).
  *
  * Responsibilities:
- *   1. Connect to `/ws/:room_id`, send `{kind:'hello', token}` on open.
+ *   1. Connect to `/ws/:room_id`, send `{kind:'hello', handle, passcode}`
+ *      on open. Per ADR-161 the persistent identity is the WS hello
+ *      credential; the per-room token survives only on the HTTP side.
  *   2. Parse incoming `ServerMsg` JSON and dispatch through `roomReducer`.
  *   3. Reconnect on non-normal close with capped exponential backoff.
  *   4. Clean unmount — close with code 1000 and suppress the reconnect path.
@@ -26,8 +29,16 @@ export type WsConnectionState = 'connecting' | 'open' | 'closed';
 export interface UseWebSocketArgs {
   /** Room the socket is scoped to. Changes trigger a full reconnect. */
   roomId: string;
-  /** Bearer token supplied in the `hello` intent. */
-  token: string;
+  /**
+   * Identity Handle — sent in the `hello` frame for authentication.
+   * Per ADR-161, the persistent identity authenticates the WS connection.
+   */
+  handle: string;
+  /**
+   * Identity passcode — verified server-side against the persisted argon2
+   * hash. Sent in the `hello` frame alongside the Handle.
+   */
+  passcode: string;
   /**
    * Test override for the WebSocket constructor. Production callers should
    * omit this so the browser's built-in WebSocket is used.
@@ -73,7 +84,8 @@ export function defaultBackoffMs(attempt: number): number {
 
 export function useWebSocket({
   roomId,
-  token,
+  handle,
+  passcode,
   WebSocketImpl,
   backoffMs,
 }: UseWebSocketArgs): UseWebSocketResult {
@@ -104,7 +116,9 @@ export function useWebSocket({
         attempt = 0;
         setConnection('open');
         try {
-          ws.send(JSON.stringify({ kind: 'hello', token } satisfies ClientMsg));
+          ws.send(
+            JSON.stringify({ kind: 'hello', handle, passcode } satisfies ClientMsg),
+          );
         } catch {
           // If send fails the server won't respond and onclose will retry.
         }
@@ -149,7 +163,7 @@ export function useWebSocket({
         }
       }
     };
-  }, [roomId, token]);
+  }, [roomId, handle, passcode]);
 
   const send = useCallback((msg: ClientMsg) => {
     const ws = socketRef.current;

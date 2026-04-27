@@ -31,6 +31,7 @@ import Toast, { type ToastEntry } from '../components/Toast';
 import Transcript from '../components/Transcript';
 import { sendRestore } from '../api/ws';
 import { useWebSocket, type WsConnectionState } from '../hooks/useWebSocket';
+import { getStoredIdentity } from '../identity/identity-store';
 import { navigate } from '../router';
 import { selectDmUnread } from '../state/selectors';
 import type { RoomState } from '../state/types';
@@ -86,7 +87,22 @@ interface RoomLiveProps {
 }
 
 function RoomLive({ roomId, token, code }: RoomLiveProps): JSX.Element {
-  const { state, connection, send, markDmRead } = useWebSocket({ roomId, token });
+  const identity = getStoredIdentity();
+  if (!identity) return <RoomNoIdentity roomId={roomId} />;
+  return <RoomLiveWithIdentity roomId={roomId} token={token} code={code} identity={identity} />;
+}
+
+function RoomLiveWithIdentity({
+  roomId,
+  token,
+  code,
+  identity,
+}: RoomLiveProps & { identity: { handle: string; passcode: string } }): JSX.Element {
+  const { state, connection, send, markDmRead } = useWebSocket({
+    roomId,
+    handle: identity.handle,
+    passcode: identity.passcode,
+  });
   return (
     <RoomView
       roomId={roomId}
@@ -462,6 +478,35 @@ export function RoomView({
         />
       )}
       <Toast entries={toasts} onDismiss={dismissToast} />
+    </section>
+  );
+}
+
+function RoomNoIdentity({ roomId }: { roomId: string }): JSX.Element {
+  return (
+    <section
+      aria-label="No identity"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--sharpee-spacing-md)',
+        maxWidth: 640,
+        margin: '0 auto',
+        padding: 'var(--sharpee-spacing-lg)',
+      }}
+    >
+      <h1 style={{ margin: 0 }}>Identity required</h1>
+      <p style={{ color: 'var(--sharpee-text-muted)' }}>
+        You don&rsquo;t have an identity set up. Return to the landing page to
+        create or upload one before joining <code>{roomId}</code>.
+      </p>
+      <Button
+        variant="primary"
+        onClick={() => navigate('/')}
+        style={{ alignSelf: 'start' }}
+      >
+        Back to landing
+      </Button>
     </section>
   );
 }

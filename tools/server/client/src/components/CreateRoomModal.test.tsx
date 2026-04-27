@@ -2,27 +2,31 @@
  * CreateRoomModal behaviour tests.
  *
  * Behavior Statement — CreateRoomModal
- *   DOES: submits (story_slug, title, display_name, captcha_token) via the
+ *   DOES: reads the stored identity for credentials; submits
+ *         (story_slug, title, handle, passcode, captcha_token) via the
  *         injected createRoomFn; on success, writes the returned token to
  *         localStorage under `sharpee.token.<room_id>` and calls
  *         onCreated(response). On a 400 with code=invalid_title /
  *         missing_field (title) / unknown_story, surfaces an inline field
- *         error. On other non-2xx, surfaces a form-level alert. Empty /
- *         whitespace-only title is caught client-side before POST.
+ *         error. On unknown_handle / bad_passcode, surfaces a form-level
+ *         "identity invalid — reload" alert. On other non-2xx, surfaces a
+ *         form-level alert. Empty / whitespace-only title is caught
+ *         client-side before POST.
  *   WHEN: the form submits.
  *   BECAUSE: the modal is the entry point for Primary Host sessions
- *            (ADR-153 Decision 3); token persistence is required for
- *            reconnect (ADR-153 Decision 5).
- *   REJECTS WHEN: title invalid, display name empty, story slug empty,
- *                 or server returns an error envelope.
+ *            (ADR-153 Decision 3); per ADR-161 the Handle is the display
+ *            name, and credentials come from the persistent identity.
+ *   REJECTS WHEN: title invalid, story slug empty, identity missing at
+ *                 submit, or server returns an error envelope.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CreateRoomModal from './CreateRoomModal';
 import { ApiError } from '../api/http';
 import type { CreateRoomResponse, StorySummary } from '../types/api';
+import { storeIdentity } from '../identity/identity-store';
 
 const STORIES: StorySummary[] = [
   { slug: 'zork', title: 'Zork', path: '/s/zork.sharpee' },
@@ -58,11 +62,19 @@ function renderModal(overrides: {
 async function fillValidForm(): Promise<void> {
   await userEvent.type(screen.getByLabelText(/title/i), 'Alpha');
   await userEvent.selectOptions(screen.getByLabelText(/story/i), 'zork');
-  await userEvent.type(screen.getByLabelText(/display name/i), 'Alice');
 }
 
 describe('<CreateRoomModal>', () => {
-  it('submits the form with valid input and persists the token', async () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    // Seed an identity so the modal's submit path proceeds.
+    storeIdentity({ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' });
+  });
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('submits the form with stored identity credentials and persists the token', async () => {
     const createRoomFn = vi.fn().mockResolvedValue(OK_RESPONSE);
     const onCreated = vi.fn();
     renderModal({ createRoomFn, onCreated });
@@ -74,7 +86,8 @@ describe('<CreateRoomModal>', () => {
     expect(createRoomFn).toHaveBeenCalledWith({
       story_slug: 'zork',
       title: 'Alpha',
-      display_name: 'Alice',
+      handle: 'Alice',
+      passcode: 'plate-music',
       captcha_token: 'bypass',
     });
     expect(window.localStorage.getItem('sharpee.token.room-99')).toBe('tok-primary-host');
@@ -86,10 +99,21 @@ describe('<CreateRoomModal>', () => {
     renderModal({ createRoomFn });
 
     await userEvent.selectOptions(screen.getByLabelText(/story/i), 'zork');
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Alice');
     await userEvent.click(screen.getByRole('button', { name: /^create room$/i }));
 
     expect(await screen.findByText(/title is required/i)).toBeInTheDocument();
+    expect(createRoomFn).not.toHaveBeenCalled();
+  });
+
+  it('identity missing at submit → form-level alert, no POST', async () => {
+    window.localStorage.clear();
+    const createRoomFn = vi.fn();
+    renderModal({ createRoomFn });
+
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: /^create room$/i }));
+
+    expect(await screen.findByText(/identity unavailable/i)).toBeInTheDocument();
     expect(createRoomFn).not.toHaveBeenCalled();
   });
 
@@ -117,6 +141,38 @@ describe('<CreateRoomModal>', () => {
     await userEvent.click(screen.getByRole('button', { name: /^create room$/i }));
 
     expect(await screen.findByText(/no story with slug zork/i)).toBeInTheDocument();
+  });
+
+  it('server unknown_handle → form-level "identity no longer valid" alert', async () => {
+    const createRoomFn = vi
+      .fn()
+      .mockRejectedValue(
+        new ApiError(404, { code: 'unknown_handle', detail: 'no identity with that handle' }),
+      );
+    renderModal({ createRoomFn });
+
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: /^create room$/i }));
+
+    expect(
+      await screen.findByText(/identity is no longer valid/i),
+    ).toBeInTheDocument();
+  });
+
+  it('server bad_passcode → form-level "identity no longer valid" alert', async () => {
+    const createRoomFn = vi
+      .fn()
+      .mockRejectedValue(
+        new ApiError(401, { code: 'bad_passcode', detail: 'incorrect passcode' }),
+      );
+    renderModal({ createRoomFn });
+
+    await fillValidForm();
+    await userEvent.click(screen.getByRole('button', { name: /^create room$/i }));
+
+    expect(
+      await screen.findByText(/identity is no longer valid/i),
+    ).toBeInTheDocument();
   });
 
   it('server 500 → form-level alert', async () => {

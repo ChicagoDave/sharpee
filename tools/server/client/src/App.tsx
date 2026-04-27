@@ -3,23 +3,52 @@
  *
  * Public interface: {@link App} default export — rendered by main.tsx.
  *
- * Bounded context: client root (ADR-153 frontend). Three routes:
+ * Bounded context: client root (ADR-153 frontend, ADR-161 R11 identity
+ * banner). Three routes:
  *   - `/`              → {@link Landing}
  *   - `/r/:code`       → {@link Landing} with passcode modal pre-opened
  *   - `/room/:room_id` → {@link Room}
  * Any other path falls back to the landing page.
+ *
+ * App also owns the persistent identity (ADR-161). When no identity is
+ * stored, {@link IdentitySetupPanel} renders as a banner above the page —
+ * Landing remains visible (browse/explore is unaffected) but action
+ * buttons that need an identity self-disable until one exists. This is a
+ * gate-as-banner, not a page-replacement, per ADR-161 R11.
+ *
+ * The identity is read from localStorage on mount and refreshed whenever
+ * any tab (this one or another) writes/erases via
+ * {@link subscribeToIdentityChanges}, so an erase in another tab
+ * immediately re-locks this tab's action buttons and re-shows the panel.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Landing from './pages/Landing';
 import Room from './pages/Room';
 import ThemePicker from './components/ThemePicker';
+import IdentitySetupPanel from './identity/IdentitySetupPanel';
+import {
+  getStoredIdentity,
+  subscribeToIdentityChanges,
+  type StoredIdentity,
+} from './identity/identity-store';
 import { matchCodePath, matchRoomPath, navigate, useRoute } from './router';
 
 export default function App(): JSX.Element {
   const path = useRoute();
   const roomId = matchRoomPath(path);
   const code = matchCodePath(path);
+  const [identity, setIdentity] = useState<StoredIdentity | null>(() =>
+    getStoredIdentity(),
+  );
+
+  // Re-read on any same-tab or cross-tab identity change so the banner +
+  // gating reflect the current localStorage state without polling.
+  useEffect(() => {
+    return subscribeToIdentityChanges(() => {
+      setIdentity(getStoredIdentity());
+    });
+  }, []);
 
   const handleRoomCreated = useCallback((room_id: string) => {
     navigate(`/room/${encodeURIComponent(room_id)}`);
@@ -27,6 +56,10 @@ export default function App(): JSX.Element {
 
   const handleJoined = useCallback((room_id: string) => {
     navigate(`/room/${encodeURIComponent(room_id)}`);
+  }, []);
+
+  const handleIdentityEstablished = useCallback((triple: StoredIdentity) => {
+    setIdentity(triple);
   }, []);
 
   return (
@@ -66,7 +99,18 @@ export default function App(): JSX.Element {
         </a>
         <ThemePicker />
       </header>
-      <main style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <main
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'auto',
+        }}
+      >
+        {!identity && (
+          <IdentitySetupPanel onIdentityEstablished={handleIdentityEstablished} />
+        )}
         {roomId !== null ? (
           <Room roomId={roomId} />
         ) : (
@@ -74,6 +118,7 @@ export default function App(): JSX.Element {
             onRoomCreated={handleRoomCreated}
             onJoined={handleJoined}
             prefillCode={code ?? undefined}
+            identity={identity}
           />
         )}
       </main>

@@ -3,7 +3,8 @@
  *
  * Behavior Statement — useWebSocket
  *   DOES: opens a WebSocket at `/ws/:room_id`; on open sends a `hello`
- *         intent carrying the token; parses each incoming JSON frame as a
+ *         intent carrying the persistent identity (handle, passcode) per
+ *         ADR-161; parses each incoming JSON frame as a
  *         `ServerMsg` and dispatches it through `roomReducer` so `state`
  *         reflects server pushes; exposes `send` that JSON-serialises a
  *         `ClientMsg` onto the open socket; on non-normal close, reconnects
@@ -123,11 +124,11 @@ describe('useWebSocket', () => {
     vi.useRealTimers();
   });
 
-  it('connects to /ws/:room_id and sends hello with the token on open', () => {
+  it('connects to /ws/:room_id and sends hello with handle+passcode on open', () => {
     const { result } = renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
         backoffMs: () => 0,
       }),
@@ -143,7 +144,7 @@ describe('useWebSocket', () => {
 
     expect(result.current.connection).toBe('open');
     expect(FakeWebSocket.latest().sent).toEqual([
-      JSON.stringify({ kind: 'hello', token: 'tok-xyz' }),
+      JSON.stringify({ kind: 'hello', handle: 'Alice', passcode: 'plate-music' }),
     ]);
   });
 
@@ -151,7 +152,7 @@ describe('useWebSocket', () => {
     renderHook(() =>
       useWebSocket({
         roomId: 'room/with space',
-        token: 't',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
       }),
     );
@@ -162,7 +163,7 @@ describe('useWebSocket', () => {
     const { result } = renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
       }),
     );
@@ -179,7 +180,7 @@ describe('useWebSocket', () => {
     const { result } = renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
       }),
     );
@@ -198,7 +199,7 @@ describe('useWebSocket', () => {
     const { result } = renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
       }),
     );
@@ -214,7 +215,7 @@ describe('useWebSocket', () => {
     const { result } = renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
         backoffMs: backoff,
       }),
@@ -240,7 +241,7 @@ describe('useWebSocket', () => {
 
     // Re-issues hello so the server replies with a fresh welcome.
     expect(FakeWebSocket.latest().sent).toEqual([
-      JSON.stringify({ kind: 'hello', token: 'tok-xyz' }),
+      JSON.stringify({ kind: 'hello', handle: 'Alice', passcode: 'plate-music' }),
     ]);
   });
 
@@ -249,7 +250,7 @@ describe('useWebSocket', () => {
     renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
         backoffMs: backoff,
       }),
@@ -285,7 +286,7 @@ describe('useWebSocket', () => {
     const { unmount } = renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
         backoffMs: backoff,
       }),
@@ -309,7 +310,7 @@ describe('useWebSocket', () => {
     const { result } = renderHook(() =>
       useWebSocket({
         roomId: 'room-1',
-        token: 'tok-xyz',
+        handle: 'Alice', passcode: 'plate-music',
         WebSocketImpl: FakeWsImpl,
       }),
     );

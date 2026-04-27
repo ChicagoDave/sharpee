@@ -1,14 +1,16 @@
 /**
- * PasscodeModal — collects a room passcode, display name, and CAPTCHA, then
- * resolves the code via `GET /r/:code` and joins the resulting room via
- * `POST /api/rooms/:room_id/join`. On success, persists the participant token
- * under `sharpee.token.<room_id>` and hands the room id to the parent via
- * {@link PasscodeModalProps.onJoined}.
+ * PasscodeModal — collects a room passcode and CAPTCHA, reads the stored
+ * identity for `(handle, passcode)` credentials, resolves the code via
+ * `GET /r/:code`, and joins the resulting room via
+ * `POST /api/rooms/:room_id/join`. On success, persists the participant
+ * token under `sharpee.token.<room_id>` and hands the room id to the
+ * parent via {@link PasscodeModalProps.onJoined}.
  *
  * Public interface: {@link PasscodeModal} default export,
  * {@link PasscodeModalProps}.
  *
- * Bounded context: client join flow (ADR-153 Decision 3, Decision 5).
+ * Bounded context: client join flow (ADR-153 Decision 3, Decision 5,
+ * ADR-161 identity model).
  *
  * Two entry paths funnel through this modal:
  *   1. Deep-link from an invite at `/r/:code` — `prefillCode` is set and the
@@ -16,6 +18,13 @@
  *   2. Enter-click on a row in the Active Rooms list — `expectedRoomId` is
  *      passed, and a resolution that lands on a different room is rejected
  *      with the same "invalid passcode" copy as an unknown code.
+ *
+ * Identity coupling: per ADR-161, the Handle replaces the historical
+ * display name. Landing's per-row Enter button is gated on identity
+ * existence, so the modal only opens with a valid identity. As a
+ * defensive fallback, the submit handler bails to a form-level alert if
+ * `getStoredIdentity()` returns null at submit (e.g., another tab erased
+ * mid-form).
  */
 
 import { useCallback, useState } from 'react';
@@ -35,6 +44,7 @@ import type {
 import type { SharpeeClientConfig } from '../config';
 import { writeCode } from '../storage/room-code';
 import { writeToken } from '../storage/token';
+import { getStoredIdentity } from '../identity/identity-store';
 
 export interface PasscodeModalProps {
   open: boolean;
@@ -57,7 +67,7 @@ export interface PasscodeModalProps {
   captchaConfig?: SharpeeClientConfig;
 }
 
-type FieldErrors = Partial<{ code: string; display_name: string }>;
+type FieldErrors = Partial<{ code: string }>;
 
 export default function PasscodeModal({
   open,
@@ -70,7 +80,6 @@ export default function PasscodeModal({
   captchaConfig,
 }: PasscodeModalProps): JSX.Element | null {
   const [code, setCode] = useState(prefillCode ?? '');
-  const [displayName, setDisplayName] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -86,11 +95,18 @@ export default function PasscodeModal({
       e.preventDefault();
       const errs: FieldErrors = {};
       const trimmedCode = code.trim();
-      const trimmedName = displayName.trim();
       if (!trimmedCode) errs.code = 'Passcode is required.';
-      if (!trimmedName) errs.display_name = 'Display name is required.';
       setFieldErrors(errs);
       if (Object.keys(errs).length > 0) return;
+
+      // Identity must be present at submit. Landing already gates the
+      // Enter button on identity-existence, but a cross-tab erase could
+      // land between open and submit; bail with a form-level alert.
+      const identity = getStoredIdentity();
+      if (!identity) {
+        setFormError('Identity unavailable — reload to set up your identity.');
+        return;
+      }
 
       setFormError(null);
       setSubmitting(true);
@@ -101,7 +117,8 @@ export default function PasscodeModal({
           return;
         }
         const joined = await joinRoomFn(resolved.room_id, {
-          display_name: trimmedName,
+          handle: identity.handle,
+          passcode: identity.passcode,
           captcha_token: captchaToken ?? undefined,
         });
         writeToken(resolved.room_id, joined.token);
@@ -112,10 +129,11 @@ export default function PasscodeModal({
           if (err.code === 'room_not_found') {
             setFieldErrors({ code: 'Invalid passcode.' });
           } else if (err.code === 'missing_field') {
-            const low = err.detail.toLowerCase();
-            if (low.includes('display_name'))
-              setFieldErrors({ display_name: err.detail });
-            else setFormError(err.detail);
+            setFormError(err.detail);
+          } else if (err.code === 'unknown_handle' || err.code === 'bad_passcode') {
+            setFormError(
+              'Your identity is no longer valid. Reload and set up a new identity.',
+            );
           } else if (err.code === 'captcha_failed') {
             setFormError('CAPTCHA failed. Please try again.');
           } else {
@@ -128,7 +146,7 @@ export default function PasscodeModal({
         setSubmitting(false);
       }
     },
-    [code, displayName, captchaToken, expectedRoomId, resolveCodeFn, joinRoomFn, onJoined],
+    [code, captchaToken, expectedRoomId, resolveCodeFn, joinRoomFn, onJoined],
   );
 
   if (!open) return null;
@@ -184,22 +202,6 @@ export default function PasscodeModal({
             spellCheck={false}
             required
             aria-invalid={fieldErrors.code ? 'true' : undefined}
-            style={fieldInputStyle}
-          />
-        </FormField>
-
-        <FormField
-          label="Your display name"
-          error={fieldErrors.display_name}
-          htmlFor="field-name"
-        >
-          <input
-            id="field-name"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-            aria-invalid={fieldErrors.display_name ? 'true' : undefined}
             style={fieldInputStyle}
           />
         </FormField>

@@ -16,10 +16,11 @@
  *   REJECTS WHEN: N/A — read-only view.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Landing from './Landing';
+import { storeIdentity } from '../identity/identity-store';
 import type {
   CreateRoomResponse,
   JoinRoomResponse,
@@ -136,11 +137,12 @@ describe('<Landing>', () => {
     expect(fetchRooms).toHaveBeenCalledTimes(2);
   });
 
-  it('clicking Create opens the CreateRoomModal', async () => {
+  it('clicking Create opens the CreateRoomModal (identity present)', async () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
         onJoined={vi.fn()}
+        identity={{ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' }}
         fetchStories={resolved({
           stories: [{ slug: 'zork', title: 'Zork', path: '/s/zork.sharpee' }],
         })}
@@ -166,10 +168,13 @@ describe('<Landing>', () => {
       participant_id: 'p-1',
     };
     const createRoomFn = vi.fn().mockResolvedValue(createdResponse);
+    // CreateRoomModal reads identity at submit; seed one.
+    storeIdentity({ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' });
     render(
       <Landing
         onRoomCreated={onRoomCreated}
         onJoined={vi.fn()}
+        identity={{ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' }}
         fetchStories={resolved({
           stories: [{ slug: 'zork', title: 'Zork', path: '/s/zork.sharpee' }],
         })}
@@ -186,7 +191,6 @@ describe('<Landing>', () => {
       'Alpha',
     );
     await userEvent.selectOptions(screen.getByLabelText(/story/i), 'zork');
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Alice');
     await userEvent.click(screen.getByRole('button', { name: /^create room$/i }));
 
     await waitFor(() => expect(onRoomCreated).toHaveBeenCalledWith('new-room-1'));
@@ -210,6 +214,7 @@ describe('<Landing>', () => {
       <Landing
         onRoomCreated={vi.fn()}
         onJoined={vi.fn()}
+        identity={{ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' }}
         fetchStories={resolved({ stories: [] })}
         fetchRooms={resolved(rooms)}
         captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
@@ -252,7 +257,7 @@ describe('<Landing>', () => {
     const joinRoomFn = vi
       .fn<(
         room_id: string,
-        body: { display_name: string; captcha_token?: string },
+        body: { handle: string; passcode: string; captcha_token?: string },
       ) => Promise<JoinRoomResponse>>()
       .mockResolvedValue({
         participant_id: 'p-xyz',
@@ -260,11 +265,15 @@ describe('<Landing>', () => {
         tier: 'participant',
       });
 
+    // PasscodeModal needs a stored identity to proceed.
+    storeIdentity({ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' });
+
     render(
       <Landing
         onRoomCreated={vi.fn()}
         onJoined={onJoined}
         prefillCode="GO"
+        identity={{ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' }}
         fetchStories={resolved({ stories: [] })}
         fetchRooms={resolved({ rooms: [] })}
         resolveCodeFn={resolveCodeFn}
@@ -274,10 +283,84 @@ describe('<Landing>', () => {
     );
 
     const dialog = await screen.findByRole('dialog', { name: /enter passcode/i });
-    await userEvent.type(screen.getByLabelText(/display name/i), 'Alice');
     await userEvent.click(screen.getByRole('button', { name: /^join room$/i }));
 
     await waitFor(() => expect(onJoined).toHaveBeenCalledWith('target-room'));
     expect(dialog).not.toBeInTheDocument();
+  });
+});
+
+describe('<Landing> — identity gating (ADR-161 R11)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('Create Room button is disabled when identity is null', async () => {
+    render(
+      <Landing
+        onRoomCreated={vi.fn()}
+        onJoined={vi.fn()}
+        identity={null}
+        captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
+        fetchStories={resolved({ stories: [] })}
+        fetchRooms={resolved({ rooms: [] })}
+      />,
+    );
+
+    const createButton = await screen.findByRole('button', {
+      name: /set up your identity first/i,
+    });
+    expect(createButton).toBeDisabled();
+  });
+
+  it('Create Room button is enabled when identity is provided', async () => {
+    render(
+      <Landing
+        onRoomCreated={vi.fn()}
+        onJoined={vi.fn()}
+        identity={{ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' }}
+        captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
+        fetchStories={resolved({ stories: [] })}
+        fetchRooms={resolved({ rooms: [] })}
+      />,
+    );
+
+    const createButton = await screen.findByRole('button', {
+      name: /create a new room/i,
+    });
+    expect(createButton).not.toBeDisabled();
+  });
+
+  it('per-row Enter buttons are disabled when identity is null', async () => {
+    render(
+      <Landing
+        onRoomCreated={vi.fn()}
+        onJoined={vi.fn()}
+        identity={null}
+        captchaConfig={{ captcha: { provider: 'none', siteKey: '' } }}
+        fetchStories={resolved({ stories: [] })}
+        fetchRooms={resolved({
+          rooms: [
+            {
+              room_id: 'room-a',
+              title: 'Alpha',
+              story_slug: 'zork',
+              participant_count: 1,
+              last_activity_at: '2026-04-22T17:00:00Z',
+            },
+          ],
+        })}
+      />,
+    );
+
+    // The button is labelled "Set up your identity first" when gated.
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+    const enter = screen.getAllByRole('button', { name: /set up your identity first/i });
+    // One for Create Room (header) + one per gated row.
+    expect(enter.length).toBeGreaterThanOrEqual(2);
+    enter.forEach((btn) => expect(btn).toBeDisabled());
   });
 });

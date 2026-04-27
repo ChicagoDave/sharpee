@@ -18,6 +18,12 @@ export interface ActiveRoomsListProps {
   /** Used to render the story's human title instead of the raw slug. */
   stories: StorySummary[];
   onEnter: (room_id: string) => void;
+  /**
+   * When true, per-row Enter buttons are disabled with explanatory copy.
+   * Set by Landing when the user has no stored identity (ADR-161 R11
+   * gate). Defaults to false so existing call sites keep working.
+   */
+  identityMissing?: boolean;
 }
 
 function storyTitleFor(slug: string, stories: StorySummary[]): string {
@@ -28,7 +34,9 @@ export default function ActiveRoomsList({
   rooms,
   stories,
   onEnter,
+  identityMissing = false,
 }: ActiveRoomsListProps): JSX.Element {
+  const gateLabel = 'Set up your identity first';
   if (rooms.length === 0) {
     return (
       <p
@@ -91,7 +99,11 @@ export default function ActiveRoomsList({
           <Button
             variant="secondary"
             onClick={() => onEnter(room.room_id)}
-            aria-label={`Enter room ${room.title}`}
+            aria-label={
+              identityMissing ? gateLabel : `Enter room ${room.title}`
+            }
+            title={identityMissing ? gateLabel : undefined}
+            disabled={identityMissing}
           >
             Enter
           </Button>

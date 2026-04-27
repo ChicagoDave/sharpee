@@ -39,6 +39,7 @@ import type {
   StorySummary,
 } from '../types/api';
 import type { SharpeeClientConfig } from '../config';
+import type { StoredIdentity } from '../identity/identity-store';
 
 export interface LandingProps {
   /** Called after a room is successfully created, with the new room_id. */
@@ -50,6 +51,13 @@ export interface LandingProps {
    * code pre-filled. Set by App.tsx when the browser is at `/r/:code`.
    */
   prefillCode?: string;
+  /**
+   * Persistent identity threaded down from App (ADR-161). When null, the
+   * page renders normally — rooms list, story list — but action buttons
+   * (Create Room, per-row Enter) are disabled with explanatory copy until
+   * the user sets up an identity in the banner above.
+   */
+  identity?: StoredIdentity | null;
   /**
    * Fetch overrides for tests. Each defaults to the real endpoint helper.
    * Kept as injectable so unit tests do not need global fetch mocks.
@@ -75,6 +83,7 @@ export default function Landing({
   onRoomCreated,
   onJoined,
   prefillCode,
+  identity,
   fetchStories = listStories,
   fetchRooms = listRooms,
   createRoomFn = apiCreateRoom,
@@ -82,6 +91,8 @@ export default function Landing({
   joinRoomFn = apiJoinRoom,
   captchaConfig,
 }: LandingProps): JSX.Element {
+  const identityMissing = !identity;
+  const gateLabel = 'Set up your identity first';
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [createOpen, setCreateOpen] = useState(false);
   /**
@@ -167,8 +178,9 @@ export default function Landing({
         <Button
           variant="primary"
           onClick={() => setCreateOpen(true)}
-          aria-label="Create a new room"
-          disabled={state.status === 'loading'}
+          aria-label={identityMissing ? gateLabel : 'Create a new room'}
+          title={identityMissing ? gateLabel : undefined}
+          disabled={state.status === 'loading' || identityMissing}
           style={{ whiteSpace: 'nowrap' }}
         >
           Create room
@@ -212,7 +224,12 @@ export default function Landing({
             <h2 id="active-rooms-heading" style={{ marginBottom: 'var(--sharpee-spacing-sm)' }}>
               Active rooms
             </h2>
-            <ActiveRoomsList rooms={state.rooms} stories={state.stories} onEnter={handleEnter} />
+            <ActiveRoomsList
+              rooms={state.rooms}
+              stories={state.stories}
+              onEnter={handleEnter}
+              identityMissing={identityMissing}
+            />
           </section>
 
           <section aria-labelledby="stories-heading">

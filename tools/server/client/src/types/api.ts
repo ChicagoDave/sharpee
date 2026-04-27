@@ -76,3 +76,36 @@ export interface ResolveCodeResponse {
   story_slug: string;
   pinned: boolean;
 }
+
+// ---------- ADR-161 identity lifecycle ----------
+
+export interface CreateIdentityRequest {
+  handle: string;
+}
+
+export interface CreateIdentityResponse {
+  id: string;
+  handle: string;
+  /** Plaintext passcode — returned exactly once at creation time. */
+  passcode: string;
+}
+
+export interface UploadIdentityRequest {
+  id: string;
+  handle: string;
+  passcode: string;
+}
+
+export interface UploadIdentityResponse {
+  id: string;
+  handle: string;
+}
+
+export interface EraseIdentityRequest {
+  handle: string;
+  passcode: string;
+}
+
+export interface EraseIdentityResponse {
+  erased: true;
+}
