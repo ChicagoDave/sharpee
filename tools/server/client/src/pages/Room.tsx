@@ -207,7 +207,7 @@ export function RoomView({
     if (state.selfId && prev === state.selfId) {
       pushToast('You are now a Participant.');
     } else if (currentPh) {
-      pushToast(`${currentPh.display_name} is now the Primary Host.`);
+      pushToast(`${currentPh.handle} is now the Primary Host.`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPhId]);
@@ -354,7 +354,7 @@ export function RoomView({
               );
               return {
                 id: `dm:${peerId}`,
-                label: peer?.display_name ?? peerId,
+                label: peer?.handle ?? peerId,
                 unread: selectDmUnread(state, peerId),
               };
             })
@@ -394,7 +394,7 @@ export function RoomView({
                   return (
                     <DmPanel
                       peerId={peerId}
-                      peerName={peer?.display_name ?? peerId}
+                      peerName={peer?.handle ?? peerId}
                       entries={state.dmThreads[peerId] ?? []}
                       participants={state.participants}
                       selfId={state.selfId}

@@ -112,3 +112,60 @@ describe('App — identity banner gate', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe('App — header IdentityPickerButton visibility (ADR-161 Phase E)', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.history.replaceState(null, '', '/');
+  });
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('does not render the IdentityPickerButton when no identity is stored', () => {
+    render(<App />);
+    expect(screen.queryByTestId('identity-picker')).not.toBeInTheDocument();
+  });
+
+  it('renders the IdentityPickerButton in the header when an identity is stored, labelled with the Handle', () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' }),
+    );
+    render(<App />);
+    const picker = screen.getByTestId('identity-picker');
+    expect(picker).toBeInTheDocument();
+    // Trigger label embeds the Handle.
+    expect(picker.textContent).toContain('Alice');
+  });
+
+  it('cross-tab erase removes the IdentityPickerButton and shows the IdentitySetupPanel', async () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ id: '1234-ABCD', handle: 'Alice', passcode: 'plate-music' }),
+    );
+    render(<App />);
+    expect(screen.getByTestId('identity-picker')).toBeInTheDocument();
+
+    window.localStorage.removeItem(STORAGE_KEY);
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: STORAGE_KEY,
+        oldValue: JSON.stringify({
+          id: '1234-ABCD',
+          handle: 'Alice',
+          passcode: 'plate-music',
+        }),
+        newValue: null,
+        storageArea: window.localStorage,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('identity-picker')).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole('region', { name: /set up your sharpee identity/i }),
+    ).toBeInTheDocument();
+  });
+});

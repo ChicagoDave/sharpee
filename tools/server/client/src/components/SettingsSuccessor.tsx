@@ -96,7 +96,7 @@ export default function SettingsSuccessor({
                 checked={selected === p.participant_id}
                 onChange={() => setSelected(p.participant_id)}
               />
-              <span>{p.display_name}</span>
+              <span>{p.handle}</span>
               {p.participant_id === designatedSuccessorId && (
                 <span
                   style={{

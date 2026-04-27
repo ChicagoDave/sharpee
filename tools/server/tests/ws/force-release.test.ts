@@ -105,7 +105,6 @@ function fakeParticipants(
       participant_id: e.participant_id,
       room_id: e.room_id ?? 'room-A',
       token: e.token ?? 'tok-' + e.participant_id,
-      display_name: e.display_name ?? e.participant_id,
       tier: e.tier,
       muted: e.muted ?? false,
       connected: e.connected ?? true,

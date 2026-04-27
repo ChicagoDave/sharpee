@@ -122,7 +122,7 @@ describe('RoomsRepository', () => {
       room_id: room.room_id,
       participant_id: p.participant_id,
       kind: 'join',
-      payload: { kind: 'join', display_name: 'Alice', reconnect: false },
+      payload: { kind: 'join', handle: 'Alice', reconnect: false },
     });
     saves.create({
       save_id: randomUUID(),

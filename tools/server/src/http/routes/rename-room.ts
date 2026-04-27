@@ -1,8 +1,10 @@
 /**
  * PATCH /api/rooms/:room_id — the Primary Host renames their room.
  *
- * Public interface: {@link registerRenameRoomRoute}, {@link RenameRoomDeps},
- * {@link RenameRoomResponse}.
+ * Public interface: {@link registerRenameRoomRoute}, {@link RenameRoomDeps}.
+ * Wire types (`RenameRoomRequest`, `RenameRoomResponse`) live in
+ * `../../wire/http-api.ts` — shared with the browser client.
+ *
  * Bounded context: HTTP layer (ADR-153 Decision 3).
  *
  * Title validation mirrors `POST /api/rooms` so a rename can never produce
@@ -22,6 +24,7 @@ import type { SessionEventsRepository } from '../../repositories/session-events.
 import type { ConnectionManager } from '../../ws/connection-manager.js';
 import { HttpError } from '../middleware/error-envelope.js';
 import { parseBearer } from '../tokens.js';
+import type { RenameRoomResponse } from '../../wire/http-api.js';
 
 export interface RenameRoomDeps {
   rooms: RoomsRepository;
@@ -33,11 +36,6 @@ export interface RenameRoomDeps {
    * supplies one.
    */
   connections?: ConnectionManager;
-}
-
-export interface RenameRoomResponse {
-  room_id: string;
-  title: string;
 }
 
 interface RenameBody {

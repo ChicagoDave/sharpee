@@ -3,13 +3,14 @@
  *
  * Public interface: {@link ParticipantsRepository}, {@link createParticipantsRepository}.
  * Bounded context: persistence layer (ADR-153 Decision 4, Decision 5, Decision 9;
- * ADR-161 — `display_name` is replaced by the joined identity's `handle`).
+ * ADR-161 — the per-room display-name model is collapsed into a single
+ * global Handle).
  *
- * Display name: the `participants` table no longer carries a per-room
- * `display_name`. Callers that need to render a participant's display
- * name look up the joined identity's `handle` at read time. This change
- * collapses the per-room display-name model into a single global Handle
- * per ADR-161 R1.
+ * Handle resolution: the `participants` table carries no per-row name
+ * field. Callers that need to render a participant look up the joined
+ * identity's `handle` at read time. This is reflected on the wire as
+ * `ParticipantSummary.handle` (ADR-161 Phase F renamed from the legacy
+ * `display_name`).
  */
 
 import { randomUUID } from 'node:crypto';

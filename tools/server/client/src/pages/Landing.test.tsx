@@ -47,7 +47,11 @@ describe('<Landing>', () => {
           room_id: 'room-a',
           title: 'Alpha Session',
           story_slug: 'zork',
-          participant_count: 3,
+          participants: [
+            { handle: 'Alice' },
+            { handle: 'Bob' },
+            { handle: 'Carol' },
+          ],
           last_activity_at: '2026-04-22T17:00:00Z',
         },
       ],
@@ -64,14 +68,15 @@ describe('<Landing>', () => {
     );
 
     expect(await screen.findByText('Alpha Session')).toBeInTheDocument();
-    // Active room row shows the resolved story TITLE, not the slug.
-    expect(screen.getByText(/Zork · 3 people/)).toBeInTheDocument();
+    // Active room row shows the resolved story TITLE, not the slug,
+    // followed by the participants' Handles inline (ADR-161 Phase F).
+    expect(screen.getByText(/Alice, Bob, Carol/)).toBeInTheDocument();
     // Stories list shows title AND slug.
     expect(screen.getByText('Cloak of Darkness')).toBeInTheDocument();
     expect(screen.getByText('cloak')).toBeInTheDocument();
   });
 
-  it('uses singular "person" copy when a room has exactly one participant', async () => {
+  it('renders the lone Handle inline when a room has exactly one participant', async () => {
     render(
       <Landing
         onRoomCreated={vi.fn()}
@@ -84,14 +89,14 @@ describe('<Landing>', () => {
               room_id: 'solo',
               title: 'Just me',
               story_slug: 'zork',
-              participant_count: 1,
+              participants: [{ handle: 'Solo' }],
               last_activity_at: '2026-04-22T17:00:00Z',
             },
           ],
         })}
       />,
     );
-    expect(await screen.findByText(/1 person\b/)).toBeInTheDocument();
+    expect(await screen.findByText(/\bSolo\b/)).toBeInTheDocument();
   });
 
   it('renders empty-state messages when both lists are empty', async () => {
@@ -205,7 +210,7 @@ describe('<Landing>', () => {
           room_id: 'room-123',
           title: 'Pick Me',
           story_slug: 'zork',
-          participant_count: 2,
+          participants: [{ handle: 'Pat' }, { handle: 'Quinn' }],
           last_activity_at: '2026-04-22T17:00:00Z',
         },
       ],
@@ -348,7 +353,7 @@ describe('<Landing> — identity gating (ADR-161 R11)', () => {
               room_id: 'room-a',
               title: 'Alpha',
               story_slug: 'zork',
-              participant_count: 1,
+              participants: [{ handle: 'Solo' }],
               last_activity_at: '2026-04-22T17:00:00Z',
             },
           ],

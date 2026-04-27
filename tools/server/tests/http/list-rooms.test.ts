@@ -3,11 +3,15 @@
  *
  * Behavior Statement — listRoomsRoute
  *   DOES: returns rooms[] where each entry is a non-secret summary
- *         (room_id, title, story_slug, participant_count, last_activity_at)
+ *         (room_id, title, story_slug, participants[], last_activity_at)
  *         for rooms that have at least one row in participants with
- *         connected=1. Always returns 200; empty list when no rooms qualify.
+ *         connected=1. `participants` is the connected roster as
+ *         `{ handle }` entries sourced from `identities.handle`,
+ *         alphabetised. Always returns 200; empty list when no rooms
+ *         qualify.
  *   WHEN: any unauthenticated GET /api/rooms.
  *   BECAUSE: the landing page needs a live-activity discovery signal
+ *            (with Handles for the roster preview, ADR-161 Phase F)
  *            without leaking join_code, tokens, or participant identity.
  *   REJECTS WHEN: never — this is a read endpoint with no bad state.
  */
@@ -100,7 +104,7 @@ describe('GET /api/rooms', () => {
     expect(raw).not.toContain('primary_host_id');
   });
 
-  it('participant_count reflects only connected participants', async () => {
+  it('participants reflects only connected participants and is keyed on Handle', async () => {
     app = buildTestApp({ stories: ['zork'] });
     const created = await createRoom(app);
 
@@ -126,10 +130,40 @@ describe('GET /api/rooms', () => {
 
     const res = await app.fetch('/api/rooms');
     const body = (await res.json()) as {
-      rooms: Array<{ room_id: string; participant_count: number }>;
+      rooms: Array<{ room_id: string; participants: Array<{ handle: string }> }>;
     };
     expect(body.rooms).toHaveLength(1);
-    expect(body.rooms[0]?.participant_count).toBe(2);
+    const handles = body.rooms[0]?.participants.map((p) => p.handle) ?? [];
+    // Two connected: PH (created by createRoom) + Bob. Carol is disconnected.
+    expect(handles).toHaveLength(2);
+    // Bob's seeded handle starts with 'tst' so the alpha sort is determinable
+    // only against the PH's own handle. Just assert Bob is present and Carol
+    // isn't, plus that the array is sorted.
+    expect(handles).toContain(bob.handle);
+    expect(handles).not.toContain(carol.handle);
+    expect(handles).toEqual([...handles].sort());
+  });
+
+  it('participants list is empty for a room with one connected PH and surfaces only Handles, not ids', async () => {
+    app = buildTestApp({ stories: ['zork'] });
+    const created = await createRoom(app, { title: 'Solo' });
+
+    const res = await app.fetch('/api/rooms');
+    const body = (await res.json()) as {
+      rooms: Array<{
+        room_id: string;
+        participants: Array<{ handle: string }>;
+      }>;
+    };
+    const summary = body.rooms.find((r) => r.room_id === created.room_id);
+    expect(summary).toBeDefined();
+    expect(summary?.participants).toHaveLength(1);
+    // Each entry must be a `{ handle }` shape only — no participant_id, no
+    // identity_id, no token-shaped values.
+    const entry = summary?.participants[0];
+    expect(entry && Object.keys(entry)).toEqual(['handle']);
+    expect(typeof entry?.handle).toBe('string');
+    expect(entry?.handle.length).toBeGreaterThan(0);
   });
 
   it('returns rooms ordered by last_activity_at DESC', async () => {

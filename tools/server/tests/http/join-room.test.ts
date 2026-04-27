@@ -5,7 +5,7 @@
  *   DOES: on new-token path, inserts a participant (tier=participant) whose
  *         `identity_id` references the server-internal `id` resolved from
  *         `(handle, passcode)`, appends a join(reconnect=false) event whose
- *         `display_name` payload is sourced from `identity.handle`, and
+ *         `handle` payload is sourced from `identity.handle`, and
  *         updates rooms.last_activity_at. On reconnect-token path, flips
  *         connected=1 on the existing participant and appends
  *         join(reconnect=true). In both cases, mutations run in one
@@ -90,15 +90,15 @@ describe('POST /api/rooms/:room_id/join', () => {
       .get(host.room_id) as { n: number }).n;
     expect(n).toBe(2);
 
-    // The join event's display_name is the resolved identity.handle.
+    // The join event's handle is the resolved identity.handle.
     const events = app.db
       .prepare(
         "SELECT payload FROM session_events WHERE room_id = ? AND kind = 'join' AND participant_id = ?",
       )
       .all(host.room_id, body.participant_id) as { payload: string }[];
     expect(events).toHaveLength(1);
-    const parsed = JSON.parse(events[0]!.payload) as { display_name: string };
-    expect(parsed.display_name).toBe(guest.handle);
+    const parsed = JSON.parse(events[0]!.payload) as { handle: string };
+    expect(parsed.handle).toBe(guest.handle);
   });
 
   it('happy path with REAL argon2: full credential round-trip (Integration Reality)', async () => {

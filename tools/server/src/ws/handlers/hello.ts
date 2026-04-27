@@ -159,9 +159,8 @@ export async function handleHello(
 
   // Commit presence update + join-event append atomically so readers never
   // see the connected flag flipped without the corresponding log entry.
-  // The join event's `display_name` field carries the identity's handle —
-  // the EventPayload field name is preserved for wire stability; Phase F
-  // may rename it.
+  // The join event's `handle` field carries the identity's public-facing
+  // identity (ADR-161 Phase F).
   const tx = deps.db.transaction(() => {
     deps.participants.setConnected(participant!.participant_id, true);
     deps.sessionEvents.append({
@@ -170,7 +169,7 @@ export async function handleHello(
       kind: 'join',
       payload: {
         kind: 'join',
-        display_name: identity.handle,
+        handle: identity.handle,
         reconnect: isReconnect,
       },
     });

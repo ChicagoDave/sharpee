@@ -119,7 +119,7 @@ export default function ParticipantRoster({
               }}
             />
             <span style={{ fontWeight: 600, flex: 1, minWidth: 0 }}>
-              {p.display_name}
+              {p.handle}
               {isSelf && (
                 <span style={{ color: 'var(--sharpee-text-muted)', fontWeight: 400 }}>
                   {' (you)'}

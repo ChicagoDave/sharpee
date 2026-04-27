@@ -1,111 +1,39 @@
 /**
- * Shape types for the server's JSON HTTP responses.
+ * HTTP wire types — re-exported from the server's authoritative
+ * definitions in `../../../src/wire/http-api`.
  *
- * Public interface: {@link StorySummary}, {@link RoomSummary},
- * {@link ListStoriesResponse}, {@link ListRoomsResponse},
- * {@link CreateRoomResponse}, {@link JoinRoomResponse},
- * {@link ResolveCodeResponse}, {@link ErrorEnvelope}.
+ * Public interface: re-exports the contracts the client uses against the
+ * Node server's HTTP routes (ADR-153 Interface Contracts, ADR-161
+ * identity lifecycle).
  *
- * Bounded context: HTTP boundary between client and server. These types are
- * hand-mirrored from `tools/server/src/http/routes/*.ts`. When either side
- * changes the shape, tests on both sides catch the drift — we accept this
- * cost to keep the client self-contained and avoid a tsconfig path that
- * pulls server source into the client bundle.
+ * Bounded context: HTTP boundary between client and server. Both sides
+ * import from the same file under `tools/server/src/wire/`. Any rename
+ * or removal on the server compiles the client in the same commit, or
+ * fails the type checker in the same commit — drift is mechanically
+ * prevented.
+ *
+ * Companion to `./wire.ts`, which re-exports the WebSocket protocol
+ * types from `../../src/wire/browser-server`.
  */
 
-export interface StorySummary {
-  slug: string;
-  title: string;
-  path: string;
-}
-
-export interface ListStoriesResponse {
-  stories: StorySummary[];
-}
-
-export interface RoomSummary {
-  room_id: string;
-  title: string;
-  story_slug: string;
-  participant_count: number;
-  last_activity_at: string;
-}
-
-export interface ListRoomsResponse {
-  rooms: RoomSummary[];
-}
-
-/** Uniform error envelope — mirrors the server's `ErrorEnvelope`. */
-export interface ErrorEnvelope {
-  code: string;
-  detail: string;
-}
-
-export interface CreateRoomRequest {
-  story_slug: string;
-  title: string;
-  handle: string;
-  passcode: string;
-  captcha_token?: string;
-}
-
-export interface CreateRoomResponse {
-  room_id: string;
-  join_code: string;
-  join_url: string;
-  token: string;
-  tier: 'primary_host';
-  participant_id: string;
-}
-
-export interface JoinRoomRequest {
-  handle: string;
-  passcode: string;
-  captcha_token?: string;
-}
-
-export interface JoinRoomResponse {
-  participant_id: string;
-  token: string;
-  tier: 'participant' | 'command_entrant' | 'co_host' | 'primary_host';
-}
-
-export interface ResolveCodeResponse {
-  room_id: string;
-  title: string;
-  story_slug: string;
-  pinned: boolean;
-}
-
-// ---------- ADR-161 identity lifecycle ----------
-
-export interface CreateIdentityRequest {
-  handle: string;
-}
-
-export interface CreateIdentityResponse {
-  id: string;
-  handle: string;
-  /** Plaintext passcode — returned exactly once at creation time. */
-  passcode: string;
-}
-
-export interface UploadIdentityRequest {
-  id: string;
-  handle: string;
-  passcode: string;
-}
-
-export interface UploadIdentityResponse {
-  id: string;
-  handle: string;
-}
-
-export interface EraseIdentityRequest {
-  handle: string;
-  passcode: string;
-}
-
-export interface EraseIdentityResponse {
-  erased: true;
-}
+export type {
+  ErrorEnvelope,
+  StorySummary,
+  ListStoriesResponse,
+  RoomParticipantSummary,
+  RoomSummary,
+  ListRoomsResponse,
+  CreateRoomRequest,
+  CreateRoomResponse,
+  JoinRoomRequest,
+  JoinRoomResponse,
+  ResolveCodeResponse,
+  RenameRoomRequest,
+  RenameRoomResponse,
+  CreateIdentityRequest,
+  CreateIdentityResponse,
+  UploadIdentityRequest,
+  UploadIdentityResponse,
+  EraseIdentityRequest,
+  EraseIdentityResponse,
+} from '../../../src/wire/http-api';

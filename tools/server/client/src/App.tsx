@@ -27,6 +27,7 @@ import Landing from './pages/Landing';
 import Room from './pages/Room';
 import ThemePicker from './components/ThemePicker';
 import IdentitySetupPanel from './identity/IdentitySetupPanel';
+import IdentityPickerButton from './identity/identity-picker-button';
 import {
   getStoredIdentity,
   subscribeToIdentityChanges,
@@ -97,7 +98,10 @@ export default function App(): JSX.Element {
         >
           Sharpee
         </a>
-        <ThemePicker />
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {identity && <IdentityPickerButton identity={identity} />}
+          <ThemePicker />
+        </div>
       </header>
       <main
         style={{

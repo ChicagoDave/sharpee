@@ -8,10 +8,19 @@
  * Bounded context: client landing page (ADR-153 frontend). Clicking "Enter"
  * on a row delegates to the parent, which opens the passcode modal. This
  * component never has the passcode — joining is always code-gated.
+ *
+ * Roster preview (ADR-161 Phase F): each row shows the connected
+ * participants by Handle. The list is capped at {@link ROSTER_PREVIEW_LIMIT};
+ * any overflow renders as `+N more`. The full Handle list is exposed via
+ * the row's `title` attribute so a hover/tap reveals everyone without
+ * widening the row.
  */
 
 import Button from './Button';
 import type { RoomSummary, StorySummary } from '../types/api';
+
+/** Maximum Handles rendered inline per room before collapsing to `+N more`. */
+const ROSTER_PREVIEW_LIMIT = 5;
 
 export interface ActiveRoomsListProps {
   rooms: RoomSummary[];
@@ -28,6 +37,12 @@ export interface ActiveRoomsListProps {
 
 function storyTitleFor(slug: string, stories: StorySummary[]): string {
   return stories.find((s) => s.slug === slug)?.title ?? slug;
+}
+
+function rosterPreview(handles: string[]): string {
+  if (handles.length <= ROSTER_PREVIEW_LIMIT) return handles.join(', ');
+  const visible = handles.slice(0, ROSTER_PREVIEW_LIMIT).join(', ');
+  return `${visible}, +${handles.length - ROSTER_PREVIEW_LIMIT} more`;
 }
 
 export default function ActiveRoomsList({
@@ -64,51 +79,65 @@ export default function ActiveRoomsList({
         gap: 'var(--sharpee-spacing-xs)',
       }}
     >
-      {rooms.map((room) => (
-        <li
-          key={room.room_id}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 'var(--sharpee-spacing-md)',
-            padding: 'var(--sharpee-spacing-sm) var(--sharpee-spacing-md)',
-            border: '1px solid var(--sharpee-border)',
-            borderRadius: 'var(--sharpee-border-radius)',
-            background: 'var(--sharpee-panel-bg)',
-          }}
-        >
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontWeight: 600,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {room.title}
-            </div>
-            <div style={{ fontSize: '0.85em', color: 'var(--sharpee-text-muted)' }}>
-              {storyTitleFor(room.story_slug, stories)}
-              {' · '}
-              {room.participant_count}{' '}
-              {room.participant_count === 1 ? 'person' : 'people'}
-            </div>
-          </div>
-          <Button
-            variant="secondary"
-            onClick={() => onEnter(room.room_id)}
-            aria-label={
-              identityMissing ? gateLabel : `Enter room ${room.title}`
-            }
-            title={identityMissing ? gateLabel : undefined}
-            disabled={identityMissing}
+      {rooms.map((room) => {
+        const handles = room.participants.map((p) => p.handle);
+        const preview = rosterPreview(handles);
+        const fullRoster = handles.join(', ');
+        return (
+          <li
+            key={room.room_id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 'var(--sharpee-spacing-md)',
+              padding: 'var(--sharpee-spacing-sm) var(--sharpee-spacing-md)',
+              border: '1px solid var(--sharpee-border)',
+              borderRadius: 'var(--sharpee-border-radius)',
+              background: 'var(--sharpee-panel-bg)',
+            }}
           >
-            Enter
-          </Button>
-        </li>
-      ))}
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {room.title}
+              </div>
+              <div style={{ fontSize: '0.85em', color: 'var(--sharpee-text-muted)' }}>
+                {storyTitleFor(room.story_slug, stories)}
+                {' · '}
+                <span
+                  data-testid="roster-preview"
+                  title={fullRoster}
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {preview}
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={() => onEnter(room.room_id)}
+              aria-label={
+                identityMissing ? gateLabel : `Enter room ${room.title}`
+              }
+              title={identityMissing ? gateLabel : undefined}
+              disabled={identityMissing}
+            >
+              Enter
+            </Button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

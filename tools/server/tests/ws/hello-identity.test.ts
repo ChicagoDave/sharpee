@@ -101,13 +101,14 @@ describe('WebSocket hello — identity credentials (ADR-161)', () => {
       expect(after!.identity_id).toBe(stranger.id);
       expect(after!.tier).toBe('participant');
 
-      // The display_name surfaced on the welcome's roster is sourced from the
-      // identity's handle (ADR-161 — display_name column on participants is
-      // gone; the handle is the displayed name).
+      // The Handle surfaced on the welcome's roster is sourced from the
+      // identity row (ADR-161 Phase F — `ParticipantSummary.handle` replaces
+      // the legacy `display_name` field; the participants table never
+      // carried a per-room display name).
       const summary = welcome.participants.find(
         (p) => p.participant_id === welcome.participant_id,
       );
-      expect(summary?.display_name).toBe('Stranger');
+      expect(summary?.handle).toBe('Stranger');
     } finally {
       client.close();
     }

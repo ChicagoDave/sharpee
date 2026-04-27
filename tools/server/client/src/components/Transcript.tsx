@@ -15,7 +15,7 @@ import type { ParticipantSummary } from '../types/wire';
 
 export interface TranscriptProps {
   entries: TranscriptEntry[];
-  /** For resolving command-echo actor_id → display_name. */
+  /** For resolving command-echo actor_id → handle. */
   participants?: ParticipantSummary[];
 }
 
@@ -36,7 +36,7 @@ export default function Transcript({ entries, participants }: TranscriptProps): 
   const nameFor = (actor_id: string): string => {
     if (actor_id === 'system') return 'System';
     return (
-      participants?.find((p) => p.participant_id === actor_id)?.display_name ?? actor_id
+      participants?.find((p) => p.participant_id === actor_id)?.handle ?? actor_id
     );
   };
 

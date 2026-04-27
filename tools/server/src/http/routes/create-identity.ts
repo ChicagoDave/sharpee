@@ -1,8 +1,10 @@
 /**
  * POST /api/identities — create a new persistent identity (ADR-161).
  *
- * Public interface: {@link registerCreateIdentityRoute}, {@link CreateIdentityDeps},
- * {@link CreateIdentityResponse}.
+ * Public interface: {@link registerCreateIdentityRoute}, {@link CreateIdentityDeps}.
+ * Wire types (`CreateIdentityRequest`, `CreateIdentityResponse`) live in
+ * `../../wire/http-api.ts` — shared with the browser client.
+ *
  * Bounded context: HTTP layer (ADR-161 Decision: Identity lifecycle / Create).
  *
  * Generates `(id, passcode)` server-side, hashes the passcode with argon2id,
@@ -27,6 +29,7 @@ import type { IdentitiesRepository } from '../../repositories/identities.js';
 import type { HashService } from '../../auth/hash-service.js';
 import { HttpError } from '../middleware/error-envelope.js';
 import { generatePasscode } from '../../identity/passcode-generator.js';
+import type { CreateIdentityResponse } from '../../wire/http-api.js';
 
 export interface CreateIdentityDeps {
   identities: IdentitiesRepository;
@@ -36,13 +39,6 @@ export interface CreateIdentityDeps {
    * that don't exercise rate limiting omit it.
    */
   rateLimit?: MiddlewareHandler;
-}
-
-export interface CreateIdentityResponse {
-  id: string;
-  handle: string;
-  /** Plaintext passcode — returned exactly once. */
-  passcode: string;
 }
 
 interface CreateIdentityBody {

@@ -6,7 +6,7 @@
  *         whose `identity_id` references the server-internal `id` resolved
  *         from `(handle, passcode)`, and two `session_events` rows
  *         (lifecycle/created, join/false) — all in one DB transaction.
- *         The join event's `display_name` payload is sourced from
+ *         The join event's `handle` payload is sourced from
  *         `identity.handle`, not from any per-request string. Returns 201
  *         with room_id, join_code, token, participant_id, and
  *         tier=primary_host.
@@ -85,15 +85,15 @@ describe('POST /api/rooms', () => {
       .get(body.room_id) as { n: number }).n;
     expect(eventCount).toBe(2);
 
-    // The join event's display_name is the resolved identity.handle, not any
+    // The join event's handle is the resolved identity.handle, not any
     // per-request string. (Single-source-of-truth invariant.)
     const joinEvent = app.db
       .prepare(
         "SELECT payload FROM session_events WHERE room_id = ? AND kind = 'join'",
       )
       .get(body.room_id) as { payload: string };
-    const parsed = JSON.parse(joinEvent.payload) as { display_name: string };
-    expect(parsed.display_name).toBe(identity.handle);
+    const parsed = JSON.parse(joinEvent.payload) as { handle: string };
+    expect(parsed.handle).toBe(identity.handle);
   });
 
   it('happy path with REAL argon2: full credential round-trip (Integration Reality)', async () => {

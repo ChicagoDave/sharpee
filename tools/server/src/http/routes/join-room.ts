@@ -1,8 +1,10 @@
 /**
  * POST /api/rooms/:room_id/join — joins an existing room or reconnects.
  *
- * Public interface: {@link registerJoinRoomRoute}, {@link JoinRoomDeps},
- * {@link JoinRoomResponse}.
+ * Public interface: {@link registerJoinRoomRoute}, {@link JoinRoomDeps}.
+ * Wire types (`JoinRoomRequest`, `JoinRoomResponse`) live in
+ * `../../wire/http-api.ts` — shared with the browser client.
+ *
  * Bounded context: HTTP layer (ADR-153 Decision 4, Decision 11; ADR-161
  * auth uniformity).
  *
@@ -29,6 +31,7 @@ import type { HashService } from '../../auth/hash-service.js';
 import type { CaptchaVerifier } from '../middleware/captcha.js';
 import { HttpError } from '../middleware/error-envelope.js';
 import { generateToken, parseBearer } from '../tokens.js';
+import type { JoinRoomResponse } from '../../wire/http-api.js';
 
 export interface JoinRoomDeps {
   db: Database;
@@ -38,12 +41,6 @@ export interface JoinRoomDeps {
   hashService: HashService;
   sessionEvents: SessionEventsRepository;
   captcha: CaptchaVerifier;
-}
-
-export interface JoinRoomResponse {
-  participant_id: string;
-  token: string;
-  tier: 'participant' | 'command_entrant' | 'co_host' | 'primary_host';
 }
 
 interface JoinBody {
@@ -93,7 +90,6 @@ export function registerJoinRoomRoute(app: Hono, deps: JoinRoomDeps): void {
 
     const token = presented ?? generateToken();
     const now = new Date().toISOString();
-    const display_name = identity.handle;
 
     const tx = deps.db.transaction(() => {
       const participant = deps.participants.createOrReconnect({
@@ -106,7 +102,7 @@ export function registerJoinRoomRoute(app: Hono, deps: JoinRoomDeps): void {
         room_id,
         participant_id: participant.participant_id,
         kind: 'join',
-        payload: { kind: 'join', display_name, reconnect: isReconnect },
+        payload: { kind: 'join', handle: identity.handle, reconnect: isReconnect },
       });
       deps.rooms.updateLastActivity(room_id, now);
       return participant;

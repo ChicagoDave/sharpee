@@ -14,10 +14,17 @@ import type { DomainEvent, TextBlock, Tier } from './primitives.js';
 
 export type { Tier, TextBlock, DomainEvent };
 
-/** Summary fields a participant shows in the room roster. */
+/**
+ * Summary fields a participant shows in the room roster.
+ *
+ * ADR-161 Phase F: the public-facing identity field is `handle` — the
+ * Crockford-32 `id` is server-internal and never surfaces here. Older
+ * code/wire instances that referenced `display_name` have been removed
+ * in the same migration; there is no transitional shape.
+ */
 export interface ParticipantSummary {
   participant_id: string;
-  display_name: string;
+  handle: string;
   tier: Tier;
   connected: boolean;
   muted: boolean;

@@ -1,8 +1,10 @@
 /**
  * POST /api/rooms — creates a room and issues a Primary Host token.
  *
- * Public interface: {@link createRoomRoute}, {@link CreateRoomDeps},
- * {@link CreateRoomResponse}.
+ * Public interface: {@link createRoomRoute}, {@link CreateRoomDeps}.
+ * Wire types (`CreateRoomRequest`, `CreateRoomResponse`) live in
+ * `../../wire/http-api.ts` — shared with the browser client.
+ *
  * Bounded context: HTTP layer (ADR-153 Decision 3, Decision 4, Decision 11;
  * ADR-161 auth uniformity).
  *
@@ -31,6 +33,7 @@ import type { StoryHealth } from '../../stories/story-health.js';
 import type { CaptchaVerifier } from '../middleware/captcha.js';
 import { HttpError } from '../middleware/error-envelope.js';
 import { generateToken } from '../tokens.js';
+import type { CreateRoomResponse } from '../../wire/http-api.js';
 
 export interface CreateRoomDeps {
   db: Database;
@@ -48,15 +51,6 @@ export interface CreateRoomDeps {
    */
   storyHealth?: StoryHealth;
   captcha: CaptchaVerifier;
-}
-
-export interface CreateRoomResponse {
-  room_id: string;
-  join_code: string;
-  join_url: string;
-  token: string;
-  tier: 'primary_host';
-  participant_id: string;
 }
 
 interface CreateRoomBody {
@@ -134,7 +128,6 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
     // Pre-generate ids so we can insert room + participant + events in one transaction.
     const participant_id = randomUUID();
     const token = generateToken();
-    const display_name = identity.handle;
 
     const tx = deps.db.transaction(() => {
       const room = deps.rooms.create({ title, story_slug, primary_host_id: participant_id });
@@ -155,7 +148,7 @@ export function registerCreateRoomRoute(app: Hono, deps: CreateRoomDeps): void {
         room_id: room.room_id,
         participant_id,
         kind: 'join',
-        payload: { kind: 'join', display_name, reconnect: false },
+        payload: { kind: 'join', handle: identity.handle, reconnect: false },
       });
       return room;
     });

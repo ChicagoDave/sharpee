@@ -47,9 +47,10 @@ export interface SnapshotDeps {
   rooms: RoomsRepository;
   participants: ParticipantsRepository;
   /**
-   * ADR-161: each ParticipantSummary's `display_name` is sourced from the
-   * joined identity's `handle`. The wire field name is preserved for now;
-   * Phase F may rename it.
+   * ADR-161 Phase F: each ParticipantSummary's `handle` is sourced from
+   * the joined identity row. If the identity has been hard-deleted, we
+   * fall back to the `participant_id` so the row still renders rather
+   * than crashing the snapshot.
    */
   identities: IdentitiesRepository;
   /** Optional — when absent, `saves` is always []. Phase 6 wires this in. */
@@ -98,13 +99,13 @@ export function buildRoomSnapshot(
   };
 
   const participants = deps.participants.listForRoom(room.room_id).map<ParticipantSummary>((p) => {
-    // Source the display name from the joined identity's handle.
+    // Source the public-facing handle from the joined identity row.
     // If the identity has been hard-deleted (post-erase, pre-cleanup),
     // fall back to the participant_id so the row still renders.
     const identity = deps.identities.findById(p.identity_id);
     return {
       participant_id: p.participant_id,
-      display_name: identity?.handle ?? p.participant_id,
+      handle: identity?.handle ?? p.participant_id,
       tier: p.tier,
       connected: p.connected,
       muted: p.muted,

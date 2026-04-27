@@ -150,7 +150,7 @@ export default function DmPanel({
           entries.map((m) => {
             const isSelf = m.from === selfId;
             const author = participants.find((p) => p.participant_id === m.from);
-            const displayName = author?.display_name ?? m.from;
+            const displayName = author?.handle ?? m.from;
             return (
               <li key={m.event_id} style={{ padding: '4px 8px' }}>
                 <div

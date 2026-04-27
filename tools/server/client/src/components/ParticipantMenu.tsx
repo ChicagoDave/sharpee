@@ -100,7 +100,7 @@ export default function ParticipantMenu({
     [send, target.participant_id],
   );
 
-  const label = `Actions for ${target.display_name}`;
+  const label = `Actions for ${target.handle}`;
 
   // Demote-to-Co-Host is a wire-level possibility but has no realistic UI
   // trigger (PH can't be demoted from a menu). We list the tiers the menu
@@ -181,7 +181,7 @@ export default function ParticipantMenu({
           ))}
           {canDm && (
             <MenuItem
-              label={`DM ${target.display_name}`}
+              label={`DM ${target.handle}`}
               onSelect={() => {
                 onOpenDm?.(target.participant_id);
                 setOpen(false);

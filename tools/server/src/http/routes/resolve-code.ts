@@ -2,6 +2,9 @@
  * GET /r/:code — resolves a join code to room summary metadata.
  *
  * Public interface: {@link registerResolveCodeRoute}, {@link ResolveCodeDeps}.
+ * Wire type `ResolveCodeResponse` lives in `../../wire/http-api.ts` —
+ * shared with the browser client.
+ *
  * Bounded context: HTTP layer (ADR-153 Decision 3).
  *
  * This endpoint is reached by the join URL in emails / chat links.
@@ -11,16 +14,10 @@
 import type { Hono } from 'hono';
 import type { RoomsRepository } from '../../repositories/rooms.js';
 import { HttpError } from '../middleware/error-envelope.js';
+import type { ResolveCodeResponse } from '../../wire/http-api.js';
 
 export interface ResolveCodeDeps {
   rooms: RoomsRepository;
-}
-
-export interface ResolveCodeResponse {
-  room_id: string;
-  title: string;
-  story_slug: string;
-  pinned: boolean;
 }
 
 export function registerResolveCodeRoute(app: Hono, deps: ResolveCodeDeps): void {

@@ -34,14 +34,14 @@ function hydrated(overrides: Partial<RoomState> = {}): RoomState {
     participants: [
       {
         participant_id: 'p-me',
-        display_name: 'Alice',
+        handle: 'Alice',
         tier: 'primary_host',
         connected: true,
         muted: false,
       },
       {
         participant_id: 'p-other',
-        display_name: 'Bob',
+        handle: 'Bob',
         tier: 'command_entrant',
         connected: true,
         muted: false,
@@ -153,14 +153,14 @@ describe('<RoomView>', () => {
       participants: [
         {
           participant_id: 'p-obs',
-          display_name: 'Eve',
+          handle: 'Eve',
           tier: 'participant',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-other',
-          display_name: 'Bob',
+          handle: 'Bob',
           tier: 'command_entrant',
           connected: true,
           muted: false,
@@ -216,7 +216,7 @@ describe('<RoomView>', () => {
       participants: [
         {
           participant_id: 'p-me',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'primary_host',
           connected: true,
           muted: true,
@@ -251,7 +251,7 @@ describe('<RoomView>', () => {
       participants: [
         {
           participant_id: 'p-obs',
-          display_name: 'Eve',
+          handle: 'Eve',
           tier: 'participant',
           connected: true,
           muted: false,
@@ -270,14 +270,14 @@ describe('<RoomView>', () => {
       participants: [
         {
           participant_id: 'p-me',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'primary_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch',
-          display_name: 'Bob',
+          handle: 'Bob',
           tier: 'co_host',
           connected: true,
           muted: false,
@@ -300,14 +300,14 @@ describe('<RoomView>', () => {
       participants: [
         {
           participant_id: 'p-me',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'primary_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch',
-          display_name: 'Bob',
+          handle: 'Bob',
           tier: 'co_host',
           connected: true,
           muted: false,
@@ -338,14 +338,14 @@ describe('<RoomView>', () => {
       participants: [
         {
           participant_id: 'p-me',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'primary_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch',
-          display_name: 'Bob',
+          handle: 'Bob',
           tier: 'co_host',
           connected: true,
           muted: false,

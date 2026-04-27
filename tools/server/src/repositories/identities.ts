@@ -16,9 +16,11 @@
  *
  * Erase is hard-delete (no `deleted_at` soft-delete column). Calling
  * `delete(id)` removes the row outright; the freed Handle is reclaimable
- * by another user (AC-7). Dependent participants will fail their FK on
- * subsequent reads — Phase C ships the cascading WS-disconnect + room
- * successor logic that handles erase mid-session.
+ * by another user (AC-7). The schema's `ON DELETE CASCADE` on
+ * `participants.identity_id` removes that identity's participant rows in
+ * the same transaction; Phase C's `/erase` route additionally closes
+ * live WS sessions and runs the room-successor logic before the delete
+ * fires.
  */
 
 import type { Database, Statement } from 'better-sqlite3';
@@ -73,10 +75,11 @@ export interface IdentitiesRepository {
 
   /**
    * Hard-delete an identity row. The freed Handle becomes reclaimable
-   * (AC-7). Dependent participants are not touched here — Phase C's
-   * `/erase` route handles WS disconnect + successor transfer before
-   * calling this; participants whose identity has been erased will fail
-   * subsequent FK-checked reads, which is the intended terminal state.
+   * (AC-7). The schema's `ON DELETE CASCADE` on
+   * `participants.identity_id` removes that identity's participant rows
+   * in the same transaction; Phase C's `/erase` route handles WS
+   * disconnect + room-successor transfer before calling this so the
+   * cascade does not surprise live sessions.
    *
    * Idempotent: deleting an unknown id is a no-op (no error).
    */

@@ -28,7 +28,7 @@ import type { ClientMsg, ParticipantSummary, Tier } from '../types/wire';
 function makeTarget(overrides: Partial<ParticipantSummary> = {}): ParticipantSummary {
   return {
     participant_id: 'p-target',
-    display_name: 'Bob',
+    handle: 'Bob',
     tier: 'participant',
     connected: true,
     muted: false,

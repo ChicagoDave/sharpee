@@ -18,14 +18,14 @@ import type { ParticipantSummary } from '../types/wire';
 const PARTS: ParticipantSummary[] = [
   {
     participant_id: 'p-host',
-    display_name: 'Alice',
+    handle: 'Alice',
     tier: 'primary_host',
     connected: false,
     muted: false,
   },
   {
     participant_id: 'p-ch',
-    display_name: 'Bob',
+    handle: 'Bob',
     tier: 'co_host',
     connected: true,
     muted: false,

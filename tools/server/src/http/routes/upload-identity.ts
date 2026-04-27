@@ -3,7 +3,10 @@
  * (ADR-161).
  *
  * Public interface: {@link registerUploadIdentityRoute},
- * {@link UploadIdentityDeps}, {@link UploadIdentityResponse}.
+ * {@link UploadIdentityDeps}.
+ * Wire types (`UploadIdentityRequest`, `UploadIdentityResponse`) live in
+ * `../../wire/http-api.ts` — shared with the browser client.
+ *
  * Bounded context: HTTP layer (ADR-161 Decision: Identity lifecycle / Upload).
  *
  * The body is the three-field tuple `(id, handle, passcode)` — exactly the
@@ -28,17 +31,13 @@ import type { IdentitiesRepository } from '../../repositories/identities.js';
 import type { HashService } from '../../auth/hash-service.js';
 import { HttpError } from '../middleware/error-envelope.js';
 import { isWellFormedId } from '../../identity/id-generator.js';
+import type { UploadIdentityResponse } from '../../wire/http-api.js';
 
 export interface UploadIdentityDeps {
   identities: IdentitiesRepository;
   hashService: HashService;
   /** Optional rate-limit middleware. Tests that don't exercise the limit omit it. */
   rateLimit?: MiddlewareHandler;
-}
-
-export interface UploadIdentityResponse {
-  id: string;
-  handle: string;
 }
 
 interface UploadIdentityBody {

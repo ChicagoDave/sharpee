@@ -23,7 +23,7 @@ import type { ClientMsg, ParticipantSummary } from '../types/wire';
 function cohost(id: string, name: string): ParticipantSummary {
   return {
     participant_id: id,
-    display_name: name,
+    handle: name,
     tier: 'co_host',
     connected: true,
     muted: false,

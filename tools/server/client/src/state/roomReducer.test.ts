@@ -36,14 +36,14 @@ const ROOM: RoomSnapshot = {
 const PARTS: ParticipantSummary[] = [
   {
     participant_id: 'p-host',
-    display_name: 'Host',
+    handle: 'Host',
     tier: 'primary_host',
     connected: true,
     muted: false,
   },
   {
     participant_id: 'p-guest',
-    display_name: 'Guest',
+    handle: 'Guest',
     tier: 'participant',
     connected: true,
     muted: false,
@@ -614,14 +614,14 @@ describe('roomReducer', () => {
       participants: [
         {
           participant_id: 'p-host',
-          display_name: 'Host',
+          handle: 'Host',
           tier: 'primary_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'co_host',
           connected: true,
           muted: false,
@@ -671,21 +671,21 @@ describe('roomReducer', () => {
       participants: [
         {
           participant_id: 'p-host',
-          display_name: 'Host',
+          handle: 'Host',
           tier: 'primary_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'co_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch2',
-          display_name: 'Bob',
+          handle: 'Bob',
           tier: 'co_host',
           connected: true,
           muted: false,
@@ -725,14 +725,14 @@ describe('roomReducer', () => {
       participants: [
         {
           participant_id: 'p-host',
-          display_name: 'Host',
+          handle: 'Host',
           tier: 'primary_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'co_host',
           connected: true,
           muted: false,
@@ -907,14 +907,14 @@ describe('roomReducer', () => {
       participants: [
         {
           participant_id: 'p-host',
-          display_name: 'Host',
+          handle: 'Host',
           tier: 'primary_host',
           connected: true,
           muted: false,
         },
         {
           participant_id: 'p-ch',
-          display_name: 'Alice',
+          handle: 'Alice',
           tier: 'co_host',
           connected: true,
           muted: false,

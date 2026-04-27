@@ -104,7 +104,7 @@ const welcomeMsg: ServerMsg = {
   participants: [
     {
       participant_id: 'p-guest',
-      display_name: 'Guest',
+      handle: 'Guest',
       tier: 'participant',
       connected: true,
       muted: false,

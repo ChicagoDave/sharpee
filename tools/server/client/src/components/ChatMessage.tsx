@@ -45,7 +45,7 @@ export default function ChatMessage({
   const author = participants.find((p) => p.participant_id === entry.from);
   const isSelf = entry.from === selfId;
   const color = author ? TIER_COLOR[author.tier] : 'var(--sharpee-text-muted)';
-  const displayName = author?.display_name ?? entry.from;
+  const displayName = author?.handle ?? entry.from;
 
   return (
     <li

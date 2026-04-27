@@ -48,7 +48,7 @@ export default function GraceBanner({
 
   const remaining = deadlineMs - now;
   const successor = participants.find((p) => p.participant_id === designatedSuccessorId);
-  const successorName = successor?.display_name ?? 'a Co-Host';
+  const successorName = successor?.handle ?? 'a Co-Host';
 
   const copy =
     remaining > 0

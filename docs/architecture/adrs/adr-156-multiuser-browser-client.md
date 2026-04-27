@@ -151,6 +151,39 @@ The ADR's load-bearing commitments are verified by:
 
 The four ADR decisions are complete as of Plan 01 delivery. Plans 02–05 build features *under* these decisions; they do not revise them.
 
+## Amendment — ADR-161 Identity Surfaces (2026-04-26)
+
+ADR-161 (Persistent Identity Model) replaced the original session-bound
+display-name model from this ADR's Plan 01 with a global `(Id, Handle,
+passcode)` triple. The client surface area touched by this amendment:
+
+- **HTTP wire types** are now shared via direct import from
+  `tools/server/src/wire/http-api.ts` rather than hand-mirrored in
+  `client/src/types/api.ts`. Both sides import the same file; the
+  rule-7b drift guarantee from this ADR's Decision 5 now extends to
+  every HTTP shape (`RoomSummary`, `JoinRoomRequest`,
+  `CreateIdentityResponse`, `EraseIdentityRequest`, …) in addition to
+  the WS protocol.
+- **`ParticipantSummary`** in the WebSocket protocol exposes the
+  participant's public identity as `handle` (renamed from
+  `display_name`). The participants table never carried a per-room
+  display name; the field is now sourced canonically from the joined
+  identity row at read time.
+- **`RoomSummary`** in the public room-list response carries
+  `participants: { handle: string }[]` instead of an opaque
+  `participant_count`. The landing page renders an inline roster
+  preview from this list (cap 5 inline + `+N more`) so users see who
+  is in a room before they ask to enter.
+- **First-visit identity setup banner** (`IdentitySetupPanel`) and
+  **persistent identity-management popover** (`IdentityPickerButton`
+  + `IdentityPanel`) are added to the App shell. The banner replaces
+  the old name-on-create flow; the popover gives the user
+  download/erase affordances. Erase is gated by a Handle-typed
+  confirmation modal.
+
+For the full identity contract (lifecycle routes, error mapping,
+WebSocket close codes, schema), see ADR-161.
+
 ## References
 
 - **Parent**: `docs/architecture/adrs/adr-153-multiuser-sharpee-server.md` (server architecture; this ADR is the client half).
@@ -159,3 +192,4 @@ The four ADR decisions are complete as of Plan 01 delivery. Plans 02–05 build 
 - **Plans**: `docs/work/multiuser-client/plan-20260422-multiuser-client-0[1-5]-*.md`.
 - **Root assessment**: `docs/work/multiuser/root-assessment.md` (§3.4, §3.5, §3.6, §3.10, §4 Decisions 16, 19, 20).
 - **Methodology**: CLAUDE.md rule 7b (Co-Located Wire-Type Sharing), rule 7a (Boundary Statements).
+- **Amendment**: ADR-161 (Persistent Identity Model) — see "Amendment" section above for the client-surface delta.

@@ -42,7 +42,7 @@ export type EventPayload =
     }
   | { kind: 'save'; save_id: string; save_name: string }
   | { kind: 'restore'; save_id: string }
-  | { kind: 'join'; display_name: string; reconnect: boolean }
+  | { kind: 'join'; handle: string; reconnect: boolean }
   | { kind: 'leave'; reason: 'disconnect' | 'tab_closed' | 'grace_expired' }
   | { kind: 'lifecycle'; op: 'created' | 'pinned' | 'unpinned' | 'renamed' | 'deleted' | 'recycled' };
 
