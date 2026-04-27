@@ -30,7 +30,8 @@
     "vitest": "^3.2.4"
   },
   "files": [
-    "dist"
+    "dist",
+    "dist-esm"
   ],
   "keywords": [
     "interactive-fiction",

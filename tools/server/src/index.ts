@@ -31,6 +31,7 @@ import { createWsServer } from './ws/server.js';
 import { createConnectionManager } from './ws/connection-manager.js';
 import { createSandboxRegistry } from './sandbox/sandbox-registry.js';
 import { createRoomManager } from './rooms/room-manager.js';
+import { createSaveService } from './saves/save-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,6 +66,14 @@ async function main(): Promise<void> {
     stories,
     sandboxes,
     connections,
+  });
+  const saveService = createSaveService({
+    db,
+    rooms,
+    saves,
+    sessionEvents,
+    stories,
+    sandboxes,
   });
 
   // Validate every story at boot so POST /api/rooms can fail fast on broken
@@ -103,6 +112,7 @@ async function main(): Promise<void> {
     connections,
     roomManager,
     sandboxes,
+    saveService,
   });
 
   const server = serve(

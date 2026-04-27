@@ -63,9 +63,11 @@ COPY tools/server ./tools/server
 # reachable graph — no point materialising every story/tutorial package).
 RUN pnpm install --filter sharpee-server... --frozen-lockfile
 
-# Build the server.
+# Build the server. `pnpm run build` runs `tsc` and stages non-TS assets
+# (e.g. the EFF wordlist read by passcode-generator at module init) that
+# tsc itself does not copy into dist/.
 WORKDIR /build/tools/server
-RUN pnpm exec tsc
+RUN pnpm run build
 # deno-entry.ts is excluded from tsc emit (Deno globals). story-bundler's
 # resolveServerPaths() probes for it as a sibling of the compiled
 # story-bundler.js — stage it there explicitly.
