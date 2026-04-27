@@ -1,6 +1,6 @@
 # ADR-162: World-Model Replication for Multiuser Renderers
 
-## Status: PROPOSAL
+## Status: ACCEPTED
 
 ## Date: 2026-04-27
 
@@ -52,13 +52,15 @@ Location*. None of those facts are on the wire as data; they are buried
 inside `text_blocks`. The same gap blocks every future renderer feature.
 
 A clarifying observation: **the world model is the data store.** It is
-not a remote service to project away from. It is JSON. `WorldModel` has
-`toJSON()` / `fromJSON()` (`packages/world-model/src/world/WorldModel.ts:208`,
-`packages/world-model/src/entities/entity-store.ts:111`). The engine's
+not a remote service to project away from. It is JSON. `WorldModel`
+exposes `toJSON(): string` and `loadJSON(json: string): void`
+(`packages/world-model/src/world/WorldModel.ts:208-209`); its
+`EntityStore` has a matching static `fromJSON`
+(`packages/world-model/src/entities/entity-store.ts:111`). The engine's
 `ISaveData` blob — already round-tripping over the wire for save and
-restore (ADR-153 Decision 10) — *is* the world model serialized. The
-world model is not trapped behind an IPC boundary; it is plain data
-that can ride the wire.
+restore (ADR-153 Decision 10) — wraps the same world serialization
+inside an engine-state envelope. The world model is not trapped behind
+an IPC boundary; it is plain data that can ride the wire.
 
 A further clarification: **renderers need read access only.** The
 sandbox is the sole writer. Server and client never mutate world state.
@@ -77,7 +79,7 @@ turn frame. The server hydrates a per-room read-only mirror. Each
 connected client also hydrates its own read-only mirror. Renderers query
 their local mirror via the same idioms used in Zifmia and elsewhere.**
 
-Five constituent decisions:
+Six constituent decisions:
 
 ### 1. Authoritative writer is unchanged
 
@@ -97,13 +99,23 @@ no new attack surface, no new code paths into the engine.
   snapshot the server has hydrated, so a fresh tab or reconnect renders
   fully on first paint.
 
-### 3. Server and client both hydrate via `WorldModel.fromJSON`
+### 3. Server and client both hydrate via `new WorldModel().loadJSON(snapshot)`
 
-`WorldModel` already deserializes a JSON blob into a fully-functional
-instance. Server holds one mirror per active room; each client holds
-one mirror for the room it's in. When a new snapshot arrives, the
-mirror is replaced (not patched) — full replacement is simpler, and the
-"correct" state is whatever the sandbox just emitted.
+`WorldModel` exposes `loadJSON(json: string): void`
+(`packages/world-model/src/world/WorldModel.ts:209`) which populates an
+existing instance from a serialized blob. There is no static factory.
+Hydration pattern, used identically on both sides of the wire:
+
+```ts
+const mirror = new WorldModel();
+mirror.loadJSON(snapshot);
+```
+
+Server holds one mirror per active room; each client holds one mirror
+for the room it's in. When a new snapshot arrives, the mirror is
+replaced (a fresh `new WorldModel()` + `loadJSON`) — not patched. Full
+replacement is simpler, and the "correct" state is whatever the sandbox
+just emitted.
 
 ### 4. Mirrors are typed read-only by construction
 
@@ -157,12 +169,47 @@ fails if mirror code calls `createEntity`, `moveEntity`, etc. Runtime
 calls would also work (the methods exist) but the type system prevents
 them from ever being written.
 
-### 5. Snapshot shape is the same shape as `ISaveData`
+### 5. Snapshot wire shape is `SerializedWorldModel` (a JSON string), distinct from `ISaveData`
 
-The save/restore blob already serializes the world. Reusing the same
-shape for per-turn snapshots means one serializer, one hydrator, one
-test surface. Save metadata (creator, name, timestamp) is layered
-*outside* the blob, in the `saves` table — that does not change.
+`WorldModel.toJSON()` returns a JSON `string`
+(`packages/world-model/src/world/WorldModel.ts:208`). The wire's
+`world` field carries that string verbatim — no double-parse, no
+re-stringify on the receiving side, and `loadJSON` consumes a string
+directly. Type alias:
+
+```ts
+type SerializedWorldModel = ReturnType<WorldModel['toJSON']>; // = string
+```
+
+`ISaveData` (`packages/core/src/types/save-data.ts:8`) is a *superset*:
+it wraps the world subset inside `engineState.spatialIndex` and adds
+engine-level state (event source, turn history, parser/scheduler/plugin
+state) that renderer mirrors do not need. Per-turn snapshots carry
+only the world serialization, not the full save envelope. The save
+path keeps `ISaveData`; the live-snapshot path uses
+`SerializedWorldModel`. They share the same world serializer; they do
+not share a wire shape.
+
+### 6. Welcome path requires a held snapshot — no staleness
+
+The welcome `RoomSnapshot` MUST carry a non-stale snapshot. If the
+server has no held mirror (cold start before the first turn, or
+sandbox-restart that wiped the server's cached mirror), welcome is
+delayed until the sandbox replies to a `STATUS_REQUEST → STATUS`
+round-trip carrying a fresh snapshot. The server caches the result and
+serves welcome from it. Subsequent welcomes within the same room reuse
+the cached mirror; the mirror updates normally on each `OUTPUT`.
+
+New wire frames in `tools/server/src/wire/server-sandbox.ts`:
+
+```ts
+export interface StatusRequest { kind: 'STATUS_REQUEST'; }    // server → sandbox
+export interface Status        { kind: 'STATUS'; world: string; } // sandbox → server
+```
+
+The sandbox handles `STATUS_REQUEST` by calling `world.toJSON()` and
+emitting `STATUS` immediately — no turn execution, no event side
+effects.
 
 ## Invariants
 
@@ -183,6 +230,16 @@ test surface. Save metadata (creator, name, timestamp) is layered
 - **Replacement, not patch.** Hydration is full replacement. We do not
   attempt to diff or merge. The wire carries the complete shape every
   time.
+- **Snapshot-emit failure suppresses OUTPUT.** If `world.toJSON()`
+  throws inside the sandbox, the sandbox emits an `ERROR` frame
+  (`phase: 'turn'`) and does NOT emit the corresponding `OUTPUT` for
+  that turn. The mirror remains stale by one turn until the next
+  successful snapshot. The turn itself is not retried; the sandbox is
+  not restarted.
+- **Malformed snapshot is logged and discarded.** If the server or
+  client receives a `world` field that fails to parse or that
+  `loadJSON` rejects, the receiver logs the failure and retains its
+  prior mirror. Subsequent valid snapshots resume normal hydration.
 
 ## Acceptance Criteria
 
@@ -192,9 +249,14 @@ test surface. Save metadata (creator, name, timestamp) is layered
    present and parses to a `WorldModel`.
 2. **AC-2**: `RESTORED` wire type carries the same field. Sandbox
    populates it after `engine.executeTurn('restore')`.
-3. **AC-3**: `RoomSnapshot` (ws welcome) carries the latest server-held
-   snapshot. A fresh client connecting to an in-progress room receives
-   a renderable world without waiting for the next turn.
+3. **AC-3**: `RoomSnapshot` (ws welcome, defined in
+   `tools/server/src/wire/browser-server.ts`) carries a non-stale
+   `world: string`. If the server has no held mirror, the welcome
+   handler issues a `STATUS_REQUEST` and waits for the `STATUS` reply
+   before sending the welcome frame. Test: cold-start the server,
+   sandbox boots, fresh client connects before any command — assert
+   welcome arrives with a populated `world` field and the client
+   renders without waiting for an `OUTPUT`.
 4. **AC-4**: Server's `RoomManager` keeps a `Map<room_id, WorldModel>`
    that updates on each `OUTPUT` and `RESTORED`. Existing turn-routing
    logic is unchanged; the map is purely a hydration target.
@@ -213,6 +275,11 @@ test surface. Save metadata (creator, name, timestamp) is layered
 8. **AC-8**: Bandwidth measurement on dungeo: serialized snapshot size
    per turn. Recorded in the implementation plan; not a hard ceiling
    for this ADR but a baseline for any future delta-encoding work.
+9. **AC-9**: Malformed snapshot rejection. Test: feed a malformed
+   `world` field (invalid JSON, or JSON that `loadJSON` rejects) to
+   the server's `RoomManager` and to the client's `roomReducer`.
+   Assert the prior mirror is unchanged, an error is logged, and the
+   next valid snapshot rehydrates normally.
 
 ## Consequences
 
@@ -249,20 +316,31 @@ test surface. Save metadata (creator, name, timestamp) is layered
 
 ## Resolved Implementation Choices
 
-- **Snapshot encoding**: JSON. Already what `toJSON()` produces; no
-  protobuf, no msgpack, no schemas-on-the-wire. WS frame compression
-  is the existing transport-level mitigation.
+- **Snapshot encoding**: JSON string, the verbatim return value of
+  `WorldModel.toJSON()`. No double-parse, no protobuf, no msgpack, no
+  schemas-on-the-wire. WS frame compression is the existing
+  transport-level mitigation.
 - **`SerializedWorldModel` as a wire type**: declared in
   `tools/server/src/wire/world-mirror.ts` as `type SerializedWorldModel
-  = ReturnType<WorldModel['toJSON']>`. No structural duplication.
+  = ReturnType<WorldModel['toJSON']>` (resolves to `string`). No
+  structural duplication.
+- **Hydration pattern**: `const m = new WorldModel(); m.loadJSON(snapshot);`
+  on both server and client. No static factory.
 - **Hydration trigger**: explicit, in the `'story_output'` /
-  `'restored'` reducer cases. No automatic background hydration.
+  `'restored'` / welcome reducer cases. No automatic background
+  hydration.
+- **Welcome path with empty server mirror**: server issues
+  `STATUS_REQUEST` to the sandbox, awaits `STATUS` reply, then sends
+  welcome. No stale-window fallback.
 - **Mirror disposal**: server discards the mirror when the room's
   sandbox tears down (`roomManager.closeRoom`). Client discards on
   unmount or room change.
 - **Read-only type location**: `tools/server/src/wire/world-mirror.ts`
   for now. Promotion to `@sharpee/world-model` deferred to a follow-up
   ADR if a second consumer surfaces.
+- **Save path unchanged**: `ISaveData` continues to envelope the world
+  for save/restore. Per-turn snapshots are `SerializedWorldModel` only.
+  The two paths share the world serializer, not the wire shape.
 
 ## Open Questions for Implementation
 
@@ -270,17 +348,7 @@ test surface. Save metadata (creator, name, timestamp) is layered
   read-only command (e.g. `look`, `inventory`), the world is identical
   to last turn. Cheap optimisation: include a content hash on the
   snapshot, skip rebroadcast when unchanged. Worth measuring before
-  building.
-- **Welcome snapshot freshness window.** If the server has a stale
-  mirror (e.g. sandbox crashed and was restarted), the welcome
-  snapshot may not match the live engine. The `room_state` welcome
-  could trigger a one-shot `STATUS_REQUEST → STATUS` round-trip with
-  the sandbox to refresh before sending. Or accept staleness for one
-  turn — the next `OUTPUT` corrects it.
-- **Save snapshot vs. live snapshot field equivalence.** Confirm that
-  `ISaveData` and `world.toJSON()` produce equal shapes for the same
-  world state. If they diverge (e.g. save adds metadata fields), we
-  pick one canonical shape and adapt the other.
+  building. Non-blocking optimization.
 
 ## Constrains Future Sessions
 
@@ -307,7 +375,11 @@ test surface. Save metadata (creator, name, timestamp) is layered
 - `packages/zifmia/src/context/GameContext.tsx:289` — example renderer
   pattern this ADR brings to the multiuser stack
 - `tools/server/src/wire/server-sandbox.ts:52-57` — `Output` wire type
-  to be extended
+  to be extended; new `STATUS_REQUEST` / `STATUS` frames to be added
+- `tools/server/src/wire/browser-server.ts` — `RoomSnapshot` welcome
+  type to be extended with the `world` field
+- `packages/world-model/src/world/WorldModel.ts:208-209` — `toJSON()` /
+  `loadJSON()` declarations
 
 ## Session
 
