@@ -34,7 +34,8 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/text-service": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/world-model": "workspace:*",
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@sharpee/plugin-scheduler": "workspace:*",

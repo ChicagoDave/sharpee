@@ -1,25 +1,32 @@
 /**
- * Save/Restore Service - Manages game state persistence and undo
+ * Save/Restore Service — manages game state persistence and undo.
  *
- * Extracted from GameEngine as part of Phase 4 remediation.
- * Handles save/restore data creation, undo snapshots, and serialization.
+ * Public interface: {@link SaveRestoreService} class — `createSaveData`,
+ * `loadSaveData`, plus undo helpers (`createUndoSnapshot`, `undo`,
+ * `canUndo`, `getUndoLevels`, `clearUndoSnapshots`).
+ *
+ * Bounded context: `@sharpee/engine` runtime. Every Sharpee host (CLI,
+ * platform-browser, multi-user sandbox) routes saves through this
+ * service.
+ *
+ * Save format v2.0.0 (one-shot cutover from v1.0.0; v1 saves rejected):
+ *   - `IEngineState.worldSnapshot` carries the verbatim
+ *     `WorldModel.toJSON()` output, gzipped, then base64-encoded for
+ *     JSON-safety. Hydration: base64-decode → gunzip → `world.loadJSON()`.
+ *   - This replaces v1's partial `spatialIndex` serializer, which
+ *     captured only entity traits + room contents and silently dropped
+ *     the ScoreLedger, capabilities, world state values, relationships,
+ *     ID counters, and sub-container containment.
  */
 
-import {
-  WorldModel,
-  IFEntity,
-  ITrait,
-  TraitType
-} from '@sharpee/world-model';
+import { gunzipSync, gzipSync, strFromU8, strToU8 } from 'fflate';
+
+import { WorldModel } from '@sharpee/world-model';
 import {
   ISaveData,
   ISaveMetadata,
   IEngineState,
   ISerializedEvent,
-  ISerializedSpatialIndex,
-  ISerializedEntity,
-  ISerializedLocation,
-  ISerializedRelationship,
   ISerializedTurn,
   ISerializedParserState,
   ISemanticEventSource,
@@ -28,6 +35,62 @@ import {
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types';
 import { Story } from './story';
+
+/**
+ * Save format version. Bumped from `1.0.0` → `2.0.0` when the partial
+ * `spatialIndex` serializer was replaced with the full `worldSnapshot`
+ * (gzipped `WorldModel.toJSON()`). v1 saves are rejected — they are
+ * known-broken (drop score / capabilities / state values / relationships)
+ * and the codebase is greenfield, so no migration shim ships.
+ */
+const SAVE_FORMAT_VERSION = '2.0.0';
+
+/** btoa/atob are universal across Node 18+, Deno, and modern browsers. */
+declare const btoa: (s: string) => string;
+declare const atob: (s: string) => string;
+
+/**
+ * Encode a `Uint8Array` to a base64 string. Chunked to stay under the
+ * call-argument limit on `String.fromCharCode.apply` for snapshots in
+ * the hundreds of KB.
+ */
+function uint8ToBase64(bytes: Uint8Array): string {
+  const CHUNK = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    const slice = bytes.subarray(i, i + CHUNK);
+    binary += String.fromCharCode.apply(
+      null,
+      slice as unknown as number[],
+    );
+  }
+  return btoa(binary);
+}
+
+/** Decode a base64 string to a `Uint8Array`. Inverse of `uint8ToBase64`. */
+function base64ToUint8(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
+}
+
+/**
+ * Compress a JSON string with gzip and base64-encode the result so it
+ * can ride the `ISaveData` JSON envelope without escaping.
+ */
+function compressWorldSnapshot(json: string): string {
+  return uint8ToBase64(gzipSync(strToU8(json)));
+}
+
+/**
+ * Inverse of {@link compressWorldSnapshot}. Throws if the snapshot is
+ * malformed (bad base64 or invalid gzip stream); the caller surfaces
+ * the failure rather than partially restoring.
+ */
+function decompressWorldSnapshot(b64: string): string {
+  return strFromU8(gunzipSync(base64ToUint8(b64)));
+}
 
 /**
  * Interface for accessing engine state needed for save/restore
@@ -143,14 +206,14 @@ export class SaveRestoreService {
 
     const engineState: IEngineState = {
       eventSource: this.serializeEventSource(eventSource),
-      spatialIndex: this.serializeSpatialIndex(world),
+      worldSnapshot: compressWorldSnapshot(world.toJSON()),
       turnHistory: this.serializeTurnHistory(context.history),
       parserState: this.serializeParserState(parser),
       pluginStates: pluginRegistry.getStates()
     };
 
     return {
-      version: '1.0.0',
+      version: SAVE_FORMAT_VERSION,
       timestamp: Date.now(),
       metadata,
       engineState,
@@ -178,8 +241,9 @@ export class SaveRestoreService {
   } {
     const story = provider.getStory();
 
-    // Validate save compatibility
-    if (saveData.version !== '1.0.0') {
+    // Validate save compatibility. v1 saves are rejected outright (no
+    // migration shim — see SAVE_FORMAT_VERSION docs above).
+    if (saveData.version !== SAVE_FORMAT_VERSION) {
       throw new Error(`Unsupported save version: ${saveData.version}`);
     }
 
@@ -191,19 +255,25 @@ export class SaveRestoreService {
       throw new Error(`Save is for different story: ${saveData.storyConfig.id}`);
     }
 
-    // Restore event source
+    // Restore event source.
     const eventSource = this.deserializeEventSource(saveData.engineState.eventSource);
 
-    // Restore spatial index (world state)
+    // Restore world state. The full WorldModel state — entity traits,
+    // spatial containment graph, ScoreLedger, capabilities, state
+    // values, relationships, ID counters — rides the `worldSnapshot`
+    // field. `WorldModel.loadJSON` clears the existing world and
+    // rebuilds, so the fresh-engine entities created by `setStory` are
+    // replaced wholesale by the saved entities.
     const world = provider.getWorld();
-    this.deserializeSpatialIndex(saveData.engineState.spatialIndex, world);
+    world.loadJSON(decompressWorldSnapshot(saveData.engineState.worldSnapshot));
 
-    // Restore plugin states if present (ADR-120)
+    // Restore plugin states if present (ADR-120).
     if (saveData.engineState.pluginStates) {
       provider.getPluginRegistry().setStates(saveData.engineState.pluginStates);
     }
 
-    // Clear undo snapshots after restore
+    // Clear undo snapshots after restore — they were taken against the
+    // pre-restore world and are no longer meaningful.
     this.clearUndoSnapshots();
 
     return {
@@ -309,89 +379,6 @@ export class SaveRestoreService {
   }
 
   /**
-   * Serialize spatial index (world state)
-   */
-  private serializeSpatialIndex(world: WorldModel): ISerializedSpatialIndex {
-    const entities: Record<string, ISerializedEntity> = {};
-    const locations: Record<string, ISerializedLocation> = {};
-    const relationships: Record<string, ISerializedRelationship[]> = {};
-
-    // Serialize all entities
-    for (const entity of world.getAllEntities()) {
-      const traits: Record<string, unknown> = {};
-
-      // Serialize each trait
-      for (const [name, trait] of entity.traits) {
-        traits[name] = this.serializeTrait(trait);
-      }
-
-      entities[entity.id] = {
-        id: entity.id,
-        traits,
-        entityType: entity.constructor.name
-      };
-    }
-
-    // Serialize locations and their contents
-    const allLocations = world.getAllEntities().filter(
-      (e) => e.type === 'room' || e.type === 'location' || e.has('if.trait.room')
-    );
-    for (const location of allLocations) {
-      const contents = world.getContents(location.id);
-      locations[location.id] = {
-        id: location.id,
-        properties: {
-          name: (location.get(TraitType.IDENTITY) as { name?: string })?.name || 'Unknown',
-          description: (location.get(TraitType.IDENTITY) as { description?: string })?.description || ''
-        },
-        contents: contents.map((e) => e.id),
-        connections: this.extractConnections(location, world)
-      };
-    }
-
-    return { entities, locations, relationships };
-  }
-
-  /**
-   * Deserialize spatial index
-   */
-  private deserializeSpatialIndex(
-    index: ISerializedSpatialIndex,
-    world: WorldModel
-  ): void {
-    // Note: Full deserialization would need to clear and recreate the world
-    // For now, this restores entity traits and locations
-
-    // Restore entity traits
-    for (const [id, data] of Object.entries(index.entities)) {
-      const entity = world.getEntity(id);
-      if (entity) {
-        // Restore traits
-        for (const [name, traitData] of Object.entries(data.traits)) {
-          const trait = this.deserializeTrait(name, traitData);
-          if (trait) {
-            // Remove existing trait if present, then add the restored one
-            if (entity.has(name)) {
-              entity.remove(name);
-            }
-            entity.add(trait);
-          }
-        }
-      }
-    }
-
-    // Restore locations and contents
-    for (const [locationId, data] of Object.entries(index.locations)) {
-      for (const entityId of data.contents) {
-        const entity = world.getEntity(entityId);
-        if (entity) {
-          world.moveEntity(entity.id, locationId);
-        }
-      }
-    }
-  }
-
-  /**
    * Serialize turn history
    */
   private serializeTurnHistory(history: TurnResult[]): ISerializedTurn[] {
@@ -448,71 +435,6 @@ export class SaveRestoreService {
     return {};
   }
 
-  /**
-   * Serialize a trait
-   */
-  private serializeTrait(trait: unknown): unknown {
-    if (typeof trait === 'object' && trait !== null) {
-      return { ...trait };
-    }
-    return trait;
-  }
-
-  /**
-   * Deserialize a trait
-   */
-  private deserializeTrait(name: string, data: unknown): ITrait | null {
-    if (data && typeof data === 'object') {
-      return { type: name, ...data } as ITrait;
-    }
-    return null;
-  }
-
-  /**
-   * Extract connections from a location entity
-   */
-  private extractConnections(
-    location: IFEntity,
-    world: WorldModel
-  ): Record<string, string> {
-    const connections: Record<string, string> = {};
-
-    // Check for ROOM trait with exits
-    const roomTrait = location.get('if.trait.room') as {
-      exits?: Record<string, { destination?: string }>;
-    };
-    if (roomTrait?.exits) {
-      Object.entries(roomTrait.exits).forEach(([direction, exit]) => {
-        if (exit.destination) {
-          connections[direction] = exit.destination;
-        }
-      });
-    }
-
-    // Check for doors in this location
-    const contents = world.getContents(location.id);
-    contents.forEach((entity) => {
-      const doorTrait = entity.get('if.trait.door') as {
-        room1?: string;
-        room2?: string;
-      };
-      if (doorTrait) {
-        const otherRoom =
-          doorTrait.room1 === location.id ? doorTrait.room2 : doorTrait.room1;
-        if (otherRoom) {
-          // Try to determine direction from door name
-          const name = entity.name?.toLowerCase() || '';
-          if (name.includes('north')) connections.north = otherRoom;
-          else if (name.includes('south')) connections.south = otherRoom;
-          else if (name.includes('east')) connections.east = otherRoom;
-          else if (name.includes('west')) connections.west = otherRoom;
-          else connections.door = otherRoom;
-        }
-      }
-    });
-
-    return connections;
-  }
 }
 
 /**

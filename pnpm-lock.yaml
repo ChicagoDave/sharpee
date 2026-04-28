@@ -182,6 +182,9 @@ importers:
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.2
     devDependencies:
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
@@ -5075,14 +5078,6 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@22.19.17)(lightningcss@1.30.2)(terser@5.44.1))':
-    dependencies:
-      '@vitest/spy': 2.1.9
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 5.4.21(@types/node@22.19.17)(lightningcss@1.30.2)(terser@5.44.1)
-
   '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.44.1))':
     dependencies:
       '@vitest/spy': 2.1.9
@@ -6849,7 +6844,7 @@ snapshots:
   vitest@2.1.9(@types/node@22.19.17)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@22.19.17)(lightningcss@1.30.2)(terser@5.44.1))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.44.1))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
