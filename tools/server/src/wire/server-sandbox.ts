@@ -11,6 +11,7 @@
  */
 
 import type { TextBlock, DomainEvent } from './primitives.js';
+import type { SerializedWorldModel } from './world-mirror.js';
 
 /** Current wire protocol version. Servers and sandboxes that disagree refuse to proceed. */
 export const PROTOCOL_VERSION = 1;
@@ -54,6 +55,14 @@ export interface Output {
   turn_id: string;
   text_blocks: TextBlock[];
   events: DomainEvent[];
+  /**
+   * Serialized world snapshot (ADR-162). Receivers hydrate via
+   * `new WorldModel().loadJSON(world)`. Sandbox always populates
+   * this on a successful turn; on `world.toJSON()` failure the
+   * sandbox emits an ERROR (`phase: 'turn'`) and suppresses the
+   * OUTPUT entirely.
+   */
+  world: SerializedWorldModel;
 }
 
 export interface Cancel {
@@ -84,6 +93,32 @@ export interface Restored {
   kind: 'RESTORED';
   save_id: string;
   text_blocks: TextBlock[];
+  /**
+   * Post-restore world snapshot (ADR-162). Clients re-hydrate without
+   * waiting for the next look. Sandbox always populates this on a
+   * successful restore; on `world.toJSON()` failure the sandbox emits
+   * an ERROR (`phase: 'turn'`) and suppresses the RESTORED entirely.
+   */
+  world: SerializedWorldModel;
+}
+
+// ---------- Status (ADR-162 Decision 6) ----------
+
+/**
+ * Request a fresh world snapshot from the sandbox without executing a turn.
+ * Used by the server's welcome path when no held mirror exists.
+ */
+export interface StatusRequest {
+  kind: 'STATUS_REQUEST';
+}
+
+/**
+ * Sandbox reply to a {@link StatusRequest}: a serialized world snapshot
+ * captured immediately, with no turn execution and no event side effects.
+ */
+export interface Status {
+  kind: 'STATUS';
+  world: SerializedWorldModel;
 }
 
 // ---------- Health + errors ----------
@@ -101,6 +136,6 @@ export interface WireError {
   detail: string;
 }
 
-export type ServerToSandboxMessage = Init | Command | Cancel | SaveRequest | Restore | Shutdown;
-export type SandboxToServerMessage = Ready | Output | SaveResponse | Restored | Heartbeat | WireError | Exited;
+export type ServerToSandboxMessage = Init | Command | Cancel | SaveRequest | Restore | StatusRequest | Shutdown;
+export type SandboxToServerMessage = Ready | Output | SaveResponse | Restored | Status | Heartbeat | WireError | Exited;
 export type SandboxMessage = ServerToSandboxMessage | SandboxToServerMessage;

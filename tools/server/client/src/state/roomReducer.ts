@@ -18,9 +18,33 @@
  * union — most UI state belongs in components, not in the projection.
  */
 
-import type { ServerMsg } from '../types/wire';
+import { WorldModel } from '@sharpee/world-model';
+import type { ReadOnlyWorldModel, ServerMsg } from '../types/wire';
 import { dmPeerFor } from './authority';
 import { CHAT_IN_MEMORY_LIMIT, type RoomState } from './types';
+
+/**
+ * Hydrate a fresh `WorldModel` mirror from a serialized snapshot.
+ * On `loadJSON` failure (malformed wire payload — ADR-162 AC-9), logs
+ * the error and returns the prior mirror unchanged so renderers don't
+ * flicker between empty and populated states.
+ */
+function hydrateWorld(
+  prior: ReadOnlyWorldModel | null,
+  json: string,
+): ReadOnlyWorldModel | null {
+  try {
+    const next = new WorldModel();
+    next.loadJSON(json);
+    return next;
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error(
+      `[roomReducer] world hydration failed; retaining prior mirror: ${detail}`,
+    );
+    return prior;
+  }
+}
 
 /**
  * Synthetic, client-originated actions handled by the room reducer.
@@ -102,6 +126,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
         participants: msg.participants,
         lockHolderId: msg.room.lock_holder_id,
         draft: null,
+        world: hydrateWorld(state.world, msg.room.world),
         // Welcome snapshot does not carry the designated successor — the
         // server pushes `successor` separately (auto-nomination runs on
         // hello, so it typically arrives right after).
@@ -194,6 +219,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
           },
         ],
         draft: null,
+        world: hydrateWorld(state.world, msg.world),
       };
 
     case 'player_command':
@@ -361,6 +387,7 @@ export function roomReducer(state: RoomState, action: RoomAction): RoomState {
         // Server re-initialized the sandbox with the save blob; whatever
         // crash triggered this restore is now recovered.
         sandboxCrashed: false,
+        world: hydrateWorld(state.world, msg.world),
       };
     }
 

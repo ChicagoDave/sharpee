@@ -29,6 +29,7 @@ function hydrated(overrides: Partial<RoomState> = {}): RoomState {
       last_activity_at: '2026-04-22T17:00:00Z',
       lock_holder_id: null,
       saves: [],
+      world: '{}',
     },
     recordingNotice: 'Recorded.',
     participants: [
@@ -58,6 +59,7 @@ function hydrated(overrides: Partial<RoomState> = {}): RoomState {
     lastError: null,
     closed: null,
     sandboxCrashed: false,
+    world: null,
     ...overrides,
   };
 }
@@ -397,6 +399,7 @@ describe('<RoomView>', () => {
         last_activity_at: '2026-04-23T17:00:00Z',
         lock_holder_id: null,
         saves: [{ save_id: 's-1', name: 'zork t-3', created_at: '2026-04-23T17:00:00Z' }],
+        world: '{}',
       },
     });
     render(
@@ -432,6 +435,7 @@ describe('<RoomView>', () => {
           { save_id: 's-1', name: 'zork t-3', created_at: '2026-04-23T17:00:00Z' },
           { save_id: 's-2', name: 'zork t-7', created_at: '2026-04-23T18:00:00Z' },
         ],
+        world: '{}',
       },
     });
     render(

@@ -11,6 +11,7 @@
  */
 
 import type { DomainEvent, TextBlock, Tier } from './primitives.js';
+import type { SerializedWorldModel } from './world-mirror.js';
 
 export type { Tier, TextBlock, DomainEvent };
 
@@ -79,6 +80,13 @@ export interface RoomSnapshot {
   last_activity_at: string;
   lock_holder_id: string | null;
   saves: Array<{ save_id: string; name: string; created_at: string }>;
+  /**
+   * Serialized world snapshot (ADR-162). Per Decision 6, the welcome
+   * path always carries a non-stale mirror; the server uses its held
+   * mirror when available, otherwise it issues STATUS_REQUEST to the
+   * sandbox and waits for STATUS before sending welcome.
+   */
+  world: SerializedWorldModel;
 }
 
 // ---------- Client → Server intents ----------
@@ -170,7 +178,18 @@ export type ServerMsg =
     }
   | { kind: 'draft_frame'; typist_id: string; seq: number; text: string }
   | { kind: 'lock_state'; holder_id: string | null }
-  | { kind: 'story_output'; turn_id: string; text_blocks: TextBlock[]; events: DomainEvent[] }
+  | {
+      kind: 'story_output';
+      turn_id: string;
+      text_blocks: TextBlock[];
+      events: DomainEvent[];
+      /**
+       * Serialized world snapshot (ADR-162). The client hydrates a fresh
+       * `WorldModel` mirror from this on every turn for renderer-side
+       * queries (status line, future map/inventory).
+       */
+      world: SerializedWorldModel;
+    }
   /**
    * Echo of a player-submitted command. Broadcast immediately on submit so
    * all participants see what was typed before the engine produces OUTPUT.
@@ -187,7 +206,18 @@ export type ServerMsg =
   | { kind: 'role_change'; participant_id: string; tier: Tier; actor_id: string | null }
   | { kind: 'mute_state'; participant_id: string; muted: boolean; actor_id: string }
   | { kind: 'save_created'; save_id: string; name: string; actor_id: string; ts: string }
-  | { kind: 'restored'; save_id: string; text_blocks: TextBlock[]; actor_id: string }
+  | {
+      kind: 'restored';
+      save_id: string;
+      text_blocks: TextBlock[];
+      actor_id: string;
+      /**
+       * Post-restore world snapshot (ADR-162). Forwarded from the sandbox
+       * RESTORED frame so client mirrors rehydrate without waiting for a
+       * follow-up turn.
+       */
+      world: SerializedWorldModel;
+    }
   | { kind: 'room_state'; pinned: boolean; last_activity_at: string; title: string }
   | { kind: 'room_closed'; reason: 'deleted' | 'recycled'; message?: string }
   | { kind: 'successor'; participant_id: string }

@@ -132,7 +132,7 @@ export async function buildTestServer(
 
   const sandboxes = createSandboxRegistry();
   const connections = createConnectionManager();
-  const roomManager = createRoomManager({
+  const baseRoomManager = createRoomManager({
     db,
     rooms,
     sessionEvents,
@@ -141,6 +141,23 @@ export async function buildTestServer(
     connections,
     turnTimeoutMs: 5_000,
   });
+
+  // ADR-162: when realSandbox is false, the placeholder story bundle can't
+  // satisfy STATUS_REQUEST → STATUS, and the welcome handler would block
+  // until the 2s timeout fires. Tests that don't exercise world content
+  // get a stub world ('{}') in place of the production round-trip; tests
+  // that DO want real world replication run with realSandbox: true and
+  // fall through to the unmodified RoomManager.
+  const roomManager: RoomManager = opts.realSandbox
+    ? baseRoomManager
+    : {
+        submitCommand: baseRoomManager.submitCommand,
+        ensureInitialLook: baseRoomManager.ensureInitialLook,
+        closeRoom: baseRoomManager.closeRoom,
+        getWorldMirror: () => null,
+        getWorldSnapshot: () => '{}',
+        requestStatusSnapshot: async () => '{}',
+      };
 
   const saveService = createSaveService({
     db,

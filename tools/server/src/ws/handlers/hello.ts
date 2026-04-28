@@ -186,6 +186,28 @@ export async function handleHello(
     /* initial look failed; user can retype */
   });
 
+  // Acquire the world snapshot for the welcome (ADR-162 AC-3 / Decision 6).
+  // - Held mirror present → serialize from it (cheap; no IPC round-trip).
+  // - No held mirror → STATUS_REQUEST round-trip to the sandbox; waits up
+  //   to statusTimeoutMs (default 2s).
+  // - No roomManager wired (test harnesses) → fall back to an empty serialized
+  //   world. The wire type requires a string; tests asserting on welcome
+  //   shape don't exercise the world content.
+  let welcomeWorld: string;
+  try {
+    if (deps.roomManager) {
+      const held = deps.roomManager.getWorldSnapshot(room.room_id);
+      welcomeWorld = held ?? (await deps.roomManager.requestStatusSnapshot(room.room_id));
+    } else {
+      welcomeWorld = '{}';
+    }
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : 'world snapshot unavailable';
+    sendMsg(ws, { kind: 'error', code: 'turn_failed', detail });
+    closeWith(ws, 4500, 'world_snapshot_unavailable');
+    return null;
+  }
+
   const { snapshot, participants, chat_backlog, transcript_backlog, dm_threads } =
     buildRoomSnapshot(
       room,
@@ -200,6 +222,7 @@ export async function handleHello(
         participant_id: participant.participant_id,
         tier: participant.tier,
       },
+      welcomeWorld,
     );
 
   sendMsg(ws, {

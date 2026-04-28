@@ -14,6 +14,7 @@
 
 import type { Database } from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
+import { WorldModel } from '@sharpee/world-model';
 import type { RoomsRepository } from '../repositories/rooms.js';
 import type { SessionEventsRepository } from '../repositories/session-events.js';
 import type { StoryScanner } from '../stories/scanner.js';
@@ -21,6 +22,7 @@ import type { ConnectionManager } from '../ws/connection-manager.js';
 import type { SandboxRegistry, SandboxEntry } from '../sandbox/sandbox-registry.js';
 import type { Output, SandboxToServerMessage } from '../wire/server-sandbox.js';
 import type { ServerMsg } from '../wire/browser-server.js';
+import type { ReadOnlyWorldModel } from '../wire/world-mirror.js';
 import { getCompiledBundle } from '../sandbox/story-cache.js';
 
 export interface RoomManagerDeps {
@@ -32,6 +34,8 @@ export interface RoomManagerDeps {
   connections: ConnectionManager;
   /** How long to wait for an OUTPUT before timing out (ms). */
   turnTimeoutMs?: number;
+  /** How long to wait for a STATUS reply on cold-start welcome (ms). */
+  statusTimeoutMs?: number;
 }
 
 export interface RoomManager {
@@ -50,10 +54,34 @@ export interface RoomManager {
   ensureInitialLook(room_id: string): Promise<void>;
   /** Tear down the sandbox for a room, if any. */
   closeRoom(room_id: string): void;
+  /**
+   * Read accessor for the room's world mirror (ADR-162 AC-4).
+   * Returns the mirror narrowed to its read-only surface, or null if
+   * no mirror is held (cold start, or the room's sandbox hasn't emitted
+   * its first OUTPUT yet — call {@link requestStatusSnapshot} to force
+   * one).
+   */
+  getWorldMirror(room_id: string): ReadOnlyWorldModel | null;
+  /**
+   * Re-serialize the held mirror to its JSON wire form, or return null
+   * if no mirror is held. Convenience for the welcome path so callers
+   * don't have to widen `ReadOnlyWorldModel` back to a `WorldModel` to
+   * access `toJSON`.
+   */
+  getWorldSnapshot(room_id: string): string | null;
+  /**
+   * Request a fresh world snapshot from the room's sandbox via
+   * STATUS_REQUEST/STATUS round-trip (ADR-162 Decision 6). Spawns the
+   * sandbox if necessary, hydrates the mirror with the reply, and
+   * returns the JSON string for direct use on the wire (e.g. the
+   * welcome RoomSnapshot). Rejects on timeout or sandbox error.
+   */
+  requestStatusSnapshot(room_id: string): Promise<string>;
 }
 
 export function createRoomManager(deps: RoomManagerDeps): RoomManager {
   const turnTimeoutMs = deps.turnTimeoutMs ?? 30_000;
+  const statusTimeoutMs = deps.statusTimeoutMs ?? 2_000;
 
   // In-flight turn id per room. Populated when `submitCommand` dispatches a
   // COMMAND, cleared on OUTPUT, error, or crash. The sandbox crash handler
@@ -71,6 +99,36 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
   // unnecessary because prior OUTPUT exists in session_events). Prevents
   // duplicate initial-look firings when multiple participants hello at once.
   const initialLookDone = new Set<string>();
+
+  // Per-room world mirror (ADR-162 AC-4). Hydrated on every OUTPUT and
+  // RESTORED via the persistent listener attached in `spawnFor`. Cleared
+  // on `closeRoom`.
+  const worldMirrors = new Map<string, WorldModel>();
+
+  // Rooms whose sandbox already has the mirror-hydration listener attached.
+  // Same anti-double-attach guard pattern as `crashAttached` — getOrSpawn
+  // can return an existing entry and we must not double-listen.
+  const mirrorAttached = new Set<string>();
+
+  /**
+   * Hydrate (replace) the per-room mirror from a serialized world string.
+   * On `loadJSON` failure (ADR-162 AC-9 malformed snapshot), the prior
+   * mirror is retained and the failure is logged — the receiver does NOT
+   * surface the error to the client; subsequent valid snapshots resume
+   * normal hydration.
+   */
+  function hydrateMirror(room_id: string, world_json: string): void {
+    try {
+      const next = new WorldModel();
+      next.loadJSON(world_json);
+      worldMirrors.set(room_id, next);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error(
+        `[room-manager] mirror hydration failed for room ${room_id}; retaining prior mirror: ${detail}`,
+      );
+    }
+  }
 
   async function spawnFor(room_id: string): Promise<SandboxEntry> {
     const room = deps.rooms.findById(room_id);
@@ -106,6 +164,23 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
         inflightTurnId.delete(room_id);
         // Allow a future respawn (e.g. post-RESTORE) to re-wire crash handling.
         crashAttached.delete(room_id);
+        // Mirror tracking is sandbox-bound; a respawn will re-attach.
+        mirrorAttached.delete(room_id);
+        worldMirrors.delete(room_id);
+      });
+    }
+
+    // Persistent mirror-hydration listener — fires on every OUTPUT and
+    // RESTORED for this sandbox, regardless of which code path triggered
+    // them (`runTurn` for COMMAND, `save-service` for RESTORE). Coexists
+    // with the request-correlation listeners both of those install — JS
+    // EventEmitters fan out to every listener.
+    if (!mirrorAttached.has(room_id)) {
+      mirrorAttached.add(room_id);
+      entry.process.on('message', (msg: SandboxToServerMessage) => {
+        if (msg.kind === 'OUTPUT' || msg.kind === 'RESTORED') {
+          hydrateMirror(room_id, msg.world);
+        }
       });
     }
 
@@ -217,6 +292,7 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
       turn_id: output.turn_id,
       text_blocks: output.text_blocks,
       events: output.events,
+      world: output.world,
     });
   }
 
@@ -232,11 +308,61 @@ export function createRoomManager(deps: RoomManagerDeps): RoomManager {
     await submitCommand({ room_id, actor_id: 'system', text: 'look' });
   }
 
+  function getWorldMirror(room_id: string): ReadOnlyWorldModel | null {
+    return worldMirrors.get(room_id) ?? null;
+  }
+
+  function getWorldSnapshot(room_id: string): string | null {
+    const mirror = worldMirrors.get(room_id);
+    return mirror ? mirror.toJSON() : null;
+  }
+
+  async function requestStatusSnapshot(room_id: string): Promise<string> {
+    const entry = await spawnFor(room_id);
+    await entry.ready;
+
+    return new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        entry.process.off('message', onMessage);
+        reject(new Error('STATUS_REQUEST timed out'));
+      }, statusTimeoutMs);
+
+      const onMessage = (msg: SandboxToServerMessage): void => {
+        if (msg.kind === 'STATUS') {
+          clearTimeout(timer);
+          entry.process.off('message', onMessage);
+          // The persistent mirror-hydration listener attached in `spawnFor`
+          // only watches OUTPUT/RESTORED — STATUS is delivered out-of-band
+          // for the welcome path, so we hydrate it explicitly here.
+          hydrateMirror(room_id, msg.world);
+          resolve(msg.world);
+        } else if (msg.kind === 'ERROR' && msg.phase === 'turn') {
+          // The sandbox emits ERROR(phase: 'turn') when world.toJSON()
+          // throws during STATUS_REQUEST handling (see captureWorldSnapshot
+          // in deno-entry). It cannot be correlated by turn_id (STATUS
+          // carries none), so we treat any phase:'turn' error during the
+          // wait window as the failure of this request.
+          clearTimeout(timer);
+          entry.process.off('message', onMessage);
+          reject(new Error(`sandbox error during STATUS_REQUEST: ${msg.detail}`));
+        }
+      };
+      entry.process.on('message', onMessage);
+
+      entry.process.send({ kind: 'STATUS_REQUEST' });
+    });
+  }
+
   return {
     submitCommand,
     ensureInitialLook,
     closeRoom(room_id) {
       deps.sandboxes.tearDown(room_id);
+      worldMirrors.delete(room_id);
+      mirrorAttached.delete(room_id);
     },
+    getWorldMirror,
+    getWorldSnapshot,
+    requestStatusSnapshot,
   };
 }

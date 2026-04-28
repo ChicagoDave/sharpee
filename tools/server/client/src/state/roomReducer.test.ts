@@ -15,13 +15,19 @@
  *                 prior state without exception.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { WorldModel } from '@sharpee/world-model';
 import { roomReducer } from './roomReducer';
 import { initialRoomState, type RoomState } from './types';
 import type {
   ParticipantSummary,
   RoomSnapshot,
 } from '../types/wire';
+
+/** Serialize a fresh, valid world for use as fixture data. */
+function makeWorldJson(): string {
+  return new WorldModel().toJSON();
+}
 
 const ROOM: RoomSnapshot = {
   room_id: 'room-1',
@@ -31,6 +37,10 @@ const ROOM: RoomSnapshot = {
   last_activity_at: '2026-04-22T17:00:00Z',
   lock_holder_id: null,
   saves: [],
+  // Use a real serialized world so reducers running through this fixture
+  // don't log retention noise on every hydration. AC-9 (malformed
+  // discard) is exercised explicitly by the dedicated tests below.
+  world: makeWorldJson(),
 };
 
 const PARTS: ParticipantSummary[] = [
@@ -256,6 +266,7 @@ describe('roomReducer', () => {
       turn_id: 't-1',
       text_blocks: [{ kind: 'paragraph', text: 'You are in a room.' }],
       events: [{ type: 'describe_room' }],
+      world: makeWorldJson(),
     });
     expect(after.transcript).toHaveLength(1);
     expect(after.transcript[0]!.turn_id).toBe('t-1');
@@ -299,6 +310,7 @@ describe('roomReducer', () => {
       save_id: 's-1',
       text_blocks: [],
       actor_id: 'p-host',
+      world: makeWorldJson(),
     });
     expect(recovered.sandboxCrashed).toBe(false);
   });
@@ -564,6 +576,7 @@ describe('roomReducer', () => {
       save_id: 's-1',
       text_blocks: [{ kind: 'paragraph', text: 'You wake up with a start.' }],
       actor_id: 'p-host',
+      world: makeWorldJson(),
     });
     expect(after.transcript).toHaveLength(1);
     const entry = after.transcript[0]!;
@@ -579,6 +592,7 @@ describe('roomReducer', () => {
       save_id: 's-missing',
       text_blocks: [],
       actor_id: 'p-host',
+      world: makeWorldJson(),
     });
     expect(after.transcript[0]!.restored?.save_name).toBe('(unknown)');
   });
@@ -600,6 +614,7 @@ describe('roomReducer', () => {
       save_id: 's-1',
       text_blocks: [],
       actor_id: 'p-host',
+      world: makeWorldJson(),
     });
     expect(after.draft).toBeNull();
   });
@@ -935,5 +950,138 @@ describe('roomReducer', () => {
     expect(after.dmThreads['p-ch']).toHaveLength(1);
     // Cursor untouched — only ui:dm_read may advance it.
     expect(after.dmReadCursors['p-ch']).toBeUndefined();
+  });
+
+  // ---------------------------------------------------------------
+  // ADR-162 AC-5: client world-mirror hydration on welcome /
+  // story_output / restored, with malformed-snapshot retention (AC-9).
+  // ---------------------------------------------------------------
+
+  describe('world hydration (ADR-162 AC-5)', () => {
+    it('welcome with a valid world.json hydrates state.world to a usable WorldModel', () => {
+      const world_json = makeWorldJson();
+      const room: RoomSnapshot = { ...ROOM, world: world_json };
+      const next = roomReducer(initialRoomState, {
+        kind: 'welcome',
+        participant_id: 'p-host',
+        room,
+        recording_notice: 'Recorded.',
+        participants: [],
+        chat_backlog: [],
+        transcript_backlog: [],
+        dm_threads: {},
+      });
+      expect(next.world).not.toBeNull();
+      // The hydrated mirror exposes the read-only query surface.
+      expect(() => next.world!.getAllEntities()).not.toThrow();
+    });
+
+    it('story_output replaces the prior mirror with a fresh hydration', () => {
+      const w1 = makeWorldJson();
+      const seeded = roomReducer(initialRoomState, {
+        kind: 'welcome',
+        participant_id: 'p-host',
+        room: { ...ROOM, world: w1 },
+        recording_notice: 'Recorded.',
+        participants: [],
+        chat_backlog: [],
+        transcript_backlog: [],
+        dm_threads: {},
+      });
+      const priorMirror = seeded.world;
+      expect(priorMirror).not.toBeNull();
+
+      const w2 = makeWorldJson();
+      const next = roomReducer(seeded, {
+        kind: 'story_output',
+        turn_id: 't-1',
+        text_blocks: [],
+        events: [],
+        world: w2,
+      });
+      // Mirror is a fresh instance — replacement, not patch.
+      expect(next.world).not.toBeNull();
+      expect(next.world).not.toBe(priorMirror);
+    });
+
+    it('restored hydrates the mirror from the post-restore snapshot', () => {
+      const w1 = makeWorldJson();
+      const seeded = roomReducer(initialRoomState, {
+        kind: 'welcome',
+        participant_id: 'p-host',
+        room: { ...ROOM, world: w1 },
+        recording_notice: 'Recorded.',
+        participants: [],
+        chat_backlog: [],
+        transcript_backlog: [],
+        dm_threads: {},
+      });
+      const priorMirror = seeded.world;
+
+      const w2 = makeWorldJson();
+      const next = roomReducer(seeded, {
+        kind: 'restored',
+        save_id: 's-1',
+        text_blocks: [],
+        actor_id: 'p-host',
+        world: w2,
+      });
+      expect(next.world).not.toBeNull();
+      expect(next.world).not.toBe(priorMirror);
+    });
+
+    it('AC-9: malformed story_output snapshot is logged and discarded; prior mirror retained', () => {
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const seeded = roomReducer(initialRoomState, {
+          kind: 'welcome',
+          participant_id: 'p-host',
+          room: { ...ROOM, world: makeWorldJson() },
+          recording_notice: 'Recorded.',
+          participants: [],
+          chat_backlog: [],
+          transcript_backlog: [],
+          dm_threads: {},
+        });
+        const priorMirror = seeded.world;
+        expect(priorMirror).not.toBeNull();
+
+        const next = roomReducer(seeded, {
+          kind: 'story_output',
+          turn_id: 't-bad',
+          text_blocks: [],
+          events: [],
+          world: 'not-json {{{',
+        });
+
+        // Same instance retained — no flicker, no null transition.
+        expect(next.world).toBe(priorMirror);
+        expect(errSpy).toHaveBeenCalled();
+        const msg = errSpy.mock.calls[0]?.[0] as string;
+        expect(msg).toMatch(/world hydration failed/);
+      } finally {
+        errSpy.mockRestore();
+      }
+    });
+
+    it('AC-9: malformed welcome on a fresh state leaves world null (no prior to retain)', () => {
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const next = roomReducer(initialRoomState, {
+          kind: 'welcome',
+          participant_id: 'p-host',
+          room: { ...ROOM, world: 'not-json' },
+          recording_notice: 'Recorded.',
+          participants: [],
+          chat_backlog: [],
+          transcript_backlog: [],
+          dm_threads: {},
+        });
+        expect(next.world).toBeNull();
+        expect(errSpy).toHaveBeenCalled();
+      } finally {
+        errSpy.mockRestore();
+      }
+    });
   });
 });

@@ -24,3 +24,12 @@ export type {
   TextBlock,
   DomainEvent,
 } from '../../../src/wire/browser-server';
+
+// ADR-162 world-model replication: re-export the read-only narrowing
+// from the server-side wire-type module so the client uses the same
+// authoritative definition (per CLAUDE.md rule 7b — co-located wire-type
+// sharing).
+export type {
+  ReadOnlyWorldModel,
+  SerializedWorldModel,
+} from '../../../src/wire/world-mirror';

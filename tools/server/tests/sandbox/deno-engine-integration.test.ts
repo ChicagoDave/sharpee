@@ -38,8 +38,10 @@ import type {
   Output,
   SaveResponse,
   Restored,
+  Status,
   Exited,
 } from '../../src/wire/server-sandbox.js';
+import { WorldModel } from '@sharpee/world-model';
 
 // Resolve the real story bundle that ships with this repo. This is the
 // same file the running container mounts at /data/stories/dungeo.sharpee.
@@ -222,6 +224,83 @@ describe('deno-entry integration (real Deno, real engine, real story)', () => {
     expect(JSON.stringify(lookAfter.text_blocks)).toBe(
       JSON.stringify(lookBefore.text_blocks),
     );
+  });
+
+  // ---------------------------------------------------------------
+  // ADR-162: world-model replication. Acceptance gates for AC-1, AC-2,
+  // and the sandbox-side half of AC-3 (STATUS_REQUEST round-trip).
+  // ---------------------------------------------------------------
+
+  it('ADR-162 AC-1: COMMAND → OUTPUT.world is a JSON string that hydrates a fresh WorldModel', async () => {
+    await waitForReady(proc!);
+    const turn_id = 'snap-output-' + randomUUID();
+    proc!.send({ kind: 'COMMAND', turn_id, input: 'look' });
+    const output = await waitForMessage<'OUTPUT'>(proc!, 'OUTPUT', {
+      filter: (m) => m.turn_id === turn_id,
+    });
+    // Field is present and non-empty.
+    expect(typeof output.world).toBe('string');
+    expect(output.world.length).toBeGreaterThan(0);
+    // The string parses as JSON.
+    expect(() => JSON.parse(output.world)).not.toThrow();
+    // The serialization round-trips through a fresh WorldModel.
+    const mirror = new WorldModel();
+    expect(() => mirror.loadJSON(output.world)).not.toThrow();
+    // The hydrated mirror reflects an actual game state — the player exists.
+    const player = mirror.getPlayer();
+    expect(player).toBeDefined();
+  });
+
+  it('ADR-162 AC-2: RESTORE → RESTORED.world is a hydrate-able snapshot', async () => {
+    await waitForReady(proc!);
+
+    // Warm up + capture a save (mirrors the existing round-trip test).
+    const warmupId = 'look-warmup-snap-' + randomUUID();
+    proc!.send({ kind: 'COMMAND', turn_id: warmupId, input: 'look' });
+    await waitForMessage<'OUTPUT'>(proc!, 'OUTPUT', {
+      filter: (m) => m.turn_id === warmupId,
+    });
+
+    const save_id = 'snap-rt-' + randomUUID();
+    proc!.send({ kind: 'SAVE', save_id });
+    const saved = await waitForMessage<'SAVED'>(proc!, 'SAVED', {
+      filter: (m) => m.save_id === save_id,
+    });
+
+    proc!.send({ kind: 'RESTORE', save_id, blob_b64: saved.blob_b64 });
+    const restored = await waitForMessage<'RESTORED'>(proc!, 'RESTORED', {
+      filter: (m) => m.save_id === save_id,
+    });
+
+    expect(typeof restored.world).toBe('string');
+    expect(restored.world.length).toBeGreaterThan(0);
+    const mirror = new WorldModel();
+    expect(() => mirror.loadJSON(restored.world)).not.toThrow();
+    expect(mirror.getPlayer()).toBeDefined();
+  });
+
+  it('ADR-162 AC-3 (sandbox half): STATUS_REQUEST → STATUS carries a fresh snapshot without executing a turn', async () => {
+    await waitForReady(proc!);
+
+    // Run one turn to establish a world state we can compare against.
+    const turn_id = 'pre-status-' + randomUUID();
+    proc!.send({ kind: 'COMMAND', turn_id, input: 'look' });
+    const output = await waitForMessage<'OUTPUT'>(proc!, 'OUTPUT', {
+      filter: (m) => m.turn_id === turn_id,
+    });
+
+    // Ask for status. No turn ID — STATUS is not turn-bound.
+    proc!.send({ kind: 'STATUS_REQUEST' });
+    const status = await waitForMessage<'STATUS'>(proc!, 'STATUS', {});
+
+    expect(typeof status.world).toBe('string');
+    expect(status.world.length).toBeGreaterThan(0);
+    const mirror = new WorldModel();
+    expect(() => mirror.loadJSON(status.world)).not.toThrow();
+
+    // Between the OUTPUT and the STATUS_REQUEST, no commands ran. The
+    // serialization should be identical — same mirror, no drift.
+    expect(status.world).toBe(output.world);
   });
 
   it('SHUTDOWN → EXITED cleanly with reason "shutdown"', async () => {

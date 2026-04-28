@@ -31,6 +31,7 @@ import Toast, { type ToastEntry } from '../components/Toast';
 import Transcript from '../components/Transcript';
 import { sendRestore } from '../api/ws';
 import { useWebSocket, type WsConnectionState } from '../hooks/useWebSocket';
+import { WorldProvider } from '../hooks/useWorld';
 import { getStoredIdentity } from '../identity/identity-store';
 import { navigate } from '../router';
 import { selectDmUnread } from '../state/selectors';
@@ -262,6 +263,7 @@ export function RoomView({
     state.draft && state.draft.typist_id !== state.selfId ? state.draft.text : '';
 
   return (
+    <WorldProvider world={state.world}>
     <section
       aria-label="Room"
       style={{
@@ -479,6 +481,7 @@ export function RoomView({
       )}
       <Toast entries={toasts} onDismiss={dismissToast} />
     </section>
+    </WorldProvider>
   );
 }
 

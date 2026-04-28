@@ -100,6 +100,7 @@ const welcomeMsg: ServerMsg = {
     last_activity_at: '2026-04-22T17:00:00Z',
     lock_holder_id: null,
     saves: [],
+    world: '{}',
   },
   participants: [
     {

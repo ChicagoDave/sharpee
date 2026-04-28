@@ -93,6 +93,12 @@ export interface SaveService {
   restore(input: { room_id: string; actor_id: string; save_id: string }): Promise<{
     save_id: string;
     text_blocks: TextBlock[];
+    /**
+     * Post-restore world snapshot (ADR-162). Forwarded directly from the
+     * sandbox's RESTORED frame so the client and server can rehydrate
+     * their mirrors in lockstep with the engine's restored state.
+     */
+    world: string;
   }>;
 }
 
@@ -230,7 +236,7 @@ export function createSaveService(deps: SaveServiceDeps): SaveService {
       const entry = await spawnFor(room_id);
       await entry.ready;
 
-      const restored = await new Promise<{ save_id: string; text_blocks: TextBlock[] }>(
+      const restored = await new Promise<{ save_id: string; text_blocks: TextBlock[]; world: string }>(
         (resolve, reject) => {
           const timer = setTimeout(() => {
             entry.process.off('message', onMessage);
@@ -250,7 +256,7 @@ export function createSaveService(deps: SaveServiceDeps): SaveService {
                 );
                 return;
               }
-              resolve({ save_id: msg.save_id, text_blocks: msg.text_blocks });
+              resolve({ save_id: msg.save_id, text_blocks: msg.text_blocks, world: msg.world });
             } else if (msg.kind === 'ERROR' && msg.phase === 'restore') {
               clearTimeout(timer);
               entry.process.off('message', onMessage);
@@ -290,6 +296,7 @@ export function createSaveService(deps: SaveServiceDeps): SaveService {
       return {
         save_id: restored.save_id,
         text_blocks: restored.text_blocks,
+        world: restored.world,
       };
     },
   };

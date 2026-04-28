@@ -17,6 +17,7 @@ import type {
   ChatEntry,
   DomainEvent,
   ParticipantSummary,
+  ReadOnlyWorldModel,
   RoomSnapshot,
   TextBlock,
 } from '../types/wire';
@@ -161,6 +162,17 @@ export interface RoomState {
    * sandbox with the save blob) and on a fresh welcome.
    */
   sandboxCrashed: boolean;
+  /**
+   * Read-only mirror of the room's world model (ADR-162). Hydrated from
+   * `welcome.room.world`, `story_output.world`, and `restored.world` —
+   * each push fully replaces the prior mirror. Renderers query this via
+   * the `useWorld()` hook for state-derived UI (status line, future
+   * map/inventory/scope-aware affordances).
+   *
+   * `null` until the first hydration succeeds. A malformed snapshot is
+   * logged and discarded; the prior value is retained (ADR-162 AC-9).
+   */
+  world: ReadOnlyWorldModel | null;
 }
 
 export const initialRoomState: RoomState = {
@@ -180,4 +192,5 @@ export const initialRoomState: RoomState = {
   lastError: null,
   closed: null,
   sandboxCrashed: false,
+  world: null,
 };

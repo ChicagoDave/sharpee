@@ -48,17 +48,30 @@ behavior change. Prepares the contract surface that B / C / D consume.
   - Documented header per CLAUDE.md rule 8 (purpose / public interface
     / owner context).
 - **Extend** `tools/server/src/wire/server-sandbox.ts`:
-  - `Output.world: SerializedWorldModel` field.
-  - `Restored.world: SerializedWorldModel` field.
+  - `Output.world?: SerializedWorldModel` field — **optional in Phase
+    A; Phase B tightens to required** once `deno-entry.ts` populates
+    it on every emit.
+  - `Restored.world?: SerializedWorldModel` field — same optional →
+    required path; tightened in Phase B.
   - New `StatusRequest = { kind: 'STATUS_REQUEST' }` (server → sandbox).
   - New `Status = { kind: 'STATUS'; world: SerializedWorldModel }`
-    (sandbox → server).
+    (sandbox → server). Required from day 1 — no existing producers
+    to break.
   - Discriminated unions `ServerToSandboxMessage` and
     `SandboxToServerMessage` updated.
 - **Extend** `tools/server/src/wire/browser-server.ts`:
-  - `RoomSnapshot.world: SerializedWorldModel`.
+  - `RoomSnapshot.world?: SerializedWorldModel` — **optional in Phase
+    A; Phase C tightens to required** once the welcome handler
+    populates it (with STATUS_REQUEST round-trip on cold start).
 - **Extend** `wire/http-api.ts` if any HTTP responses emit
   `RoomSnapshot` (verify; likely not).
+
+**Phase A optionality rationale**: Adding required wire fields without
+their producers would break 6 typecheck sites (1 server, 5 client) for
+RoomSnapshot — all test fixtures and `ws/room-snapshot.ts:91`. Per
+CLAUDE.md "no half-finished implementations", we don't want
+empty-string stubs. Each newly-introduced field starts optional and
+tightens in the phase that introduces its producer.
 
 **AC coverage**: contract pieces of AC-1, AC-2, AC-3 — types are
 present; the field-population work lands in B and C.
@@ -110,6 +123,12 @@ emission paths: post-turn, post-restore, on-demand status.
     throw, emit `{ kind: 'ERROR', phase: 'turn', detail: msg }` and
     skip the OUTPUT/RESTORED/STATUS for that cycle. Mirror stays stale
     by one turn.
+
+- **Tighten wire types** in `tools/server/src/wire/server-sandbox.ts`:
+  - `Output.world?` → `Output.world` (required).
+  - `Restored.world?` → `Restored.world` (required).
+  - This must land in the same commit as the deno-entry producer
+    change; otherwise typecheck breaks at the emit sites.
 
 - **Sandbox integration test** (extends existing `sandbox/*.test.ts`):
   - Run a sandbox; send a `COMMAND`; assert `OUTPUT.world` is a
@@ -171,6 +190,11 @@ when the map has no entry.
   - On `closeRoom(room_id)`: `worldMirrors.delete(room_id)`.
   - Malformed-snapshot handling: try/catch around `loadJSON`; on
     failure, log and retain the prior mirror (per AC-9).
+
+- **Tighten wire type** in `tools/server/src/wire/browser-server.ts`:
+  - `RoomSnapshot.world?` → `RoomSnapshot.world` (required). Lands
+    in the same commit as the welcome handler change so test fixtures
+    are updated together.
 
 - **Welcome handler** (`ws/handlers/hello.ts` or where `RoomSnapshot`
   is built):

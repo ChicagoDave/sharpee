@@ -138,6 +138,7 @@ function fakeSaveService(outcome: RestoreOutcome): {
       return {
         save_id: outcome.save_id,
         text_blocks: outcome.text_blocks,
+        world: '{}',
       };
     },
   };
@@ -212,6 +213,7 @@ describe('handleRestore', () => {
           save_id: 's-1',
           text_blocks: OK_TEXT,
           actor_id: PH,
+          world: '{}',
         },
       },
     ]);

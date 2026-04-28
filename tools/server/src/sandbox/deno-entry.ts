@@ -188,7 +188,7 @@ export async function main({ story: storyModule, meta }: HostInput): Promise<voi
         continue;
       }
       try {
-        await handleFrame(frame, engine, emit, {
+        await handleFrame(frame, engine, world, emit, {
           getSaveData: () => capturedSaveData,
           clearSaveData: () => {
             capturedSaveData = null;
@@ -208,6 +208,7 @@ export async function main({ story: storyModule, meta }: HostInput): Promise<voi
           frame?.kind === 'COMMAND' ? 'turn'
             : frame?.kind === 'SAVE' ? 'save'
             : frame?.kind === 'RESTORE' ? 'restore'
+            : frame?.kind === 'STATUS_REQUEST' ? 'turn'
             : 'init';
         await emit({ kind: 'ERROR', phase, ...(turn_id ? { turn_id } : {}), detail });
       }
@@ -225,11 +226,40 @@ interface HookAccess {
   resetCapturedBlocks(): void;
 }
 
+/**
+ * Capture a world snapshot for ADR-162 wire emission.
+ *
+ * On success returns the JSON string; on failure emits an ERROR
+ * (`phase: 'turn'`) and returns null. Callers MUST skip the
+ * accompanying OUTPUT/RESTORED/STATUS frame when null is returned —
+ * per ADR-162 the mirror stays one turn stale rather than receive an
+ * unsnapshotted frame.
+ */
+async function captureWorldSnapshot(
+  world: WorldModel,
+  emit: (msg: unknown) => Promise<void>,
+  turn_id: string | undefined,
+): Promise<string | null> {
+  try {
+    return world.toJSON();
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    await emit({
+      kind: 'ERROR',
+      phase: 'turn',
+      ...(turn_id ? { turn_id } : {}),
+      detail: `world.toJSON() failed: ${detail}`,
+    });
+    return null;
+  }
+}
+
 /** Dispatch a single inbound frame. Errors here bubble up to main's try/catch. */
 async function handleFrame(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   frame: any,
   engine: GameEngine,
+  world: WorldModel,
   emit: (msg: unknown) => Promise<void>,
   hooks: HookAccess,
 ): Promise<void> {
@@ -254,11 +284,14 @@ async function handleFrame(
       const blocks = (result.blocks && result.blocks.length > 0)
         ? result.blocks
         : (fallback ?? []);
+      const world_snap = await captureWorldSnapshot(world, emit, frame.turn_id);
+      if (world_snap === null) return; // ERROR already emitted; suppress OUTPUT
       await emit({
         kind: 'OUTPUT',
         turn_id: frame.turn_id,
         text_blocks: blocks,
         events: result.events ?? [],
+        world: world_snap,
       });
       return;
     }
@@ -291,7 +324,24 @@ async function handleFrame(
       // text_blocks intentionally empty — the server's next COMMAND 'look'
       // produces the post-restore room description. The wire type requires
       // the field; [] satisfies it without running an extra in-process turn.
-      await emit({ kind: 'RESTORED', save_id: frame.save_id, text_blocks: [] });
+      const restored_snap = await captureWorldSnapshot(world, emit, undefined);
+      if (restored_snap === null) return; // ERROR already emitted; suppress RESTORED
+      await emit({
+        kind: 'RESTORED',
+        save_id: frame.save_id,
+        text_blocks: [],
+        world: restored_snap,
+      });
+      return;
+    }
+
+    case 'STATUS_REQUEST': {
+      // ADR-162 Decision 6: server welcome path requests a fresh
+      // snapshot when it has no held mirror. No turn execution, no
+      // event side effects.
+      const status_snap = await captureWorldSnapshot(world, emit, undefined);
+      if (status_snap === null) return; // ERROR already emitted; suppress STATUS
+      await emit({ kind: 'STATUS', world: status_snap });
       return;
     }
 

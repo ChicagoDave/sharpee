@@ -73,6 +73,13 @@ export function buildRoomSnapshot(
   room: Room,
   deps: SnapshotDeps,
   viewer: SnapshotViewer,
+  /**
+   * Serialized world snapshot (ADR-162). Caller must acquire a non-stale
+   * snapshot — either via `roomManager.getWorldMirror(room_id).toJSON()`
+   * when a mirror is held, or via `roomManager.requestStatusSnapshot()`
+   * for the cold-start path.
+   */
+  world: string,
 ): {
   snapshot: RoomSnapshot;
   participants: ParticipantSummary[];
@@ -96,6 +103,7 @@ export function buildRoomSnapshot(
     last_activity_at: room.last_activity_at,
     lock_holder_id: null, // Phase 5 will populate from the lock service.
     saves: savesList,
+    world,
   };
 
   const participants = deps.participants.listForRoom(room.room_id).map<ParticipantSummary>((p) => {

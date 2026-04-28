@@ -107,6 +107,7 @@ export async function handleRestore(
     save_id: result.save_id,
     text_blocks: result.text_blocks,
     actor_id: actor.participant_id,
+    world: result.world,
   });
 
   const prior = deps.locks.forceRelease(actor.room_id);
