@@ -1,6 +1,6 @@
 {
   "name": "sharpee-server",
-  "version": "0.1.0-alpha.1",
+  "version": "0.9.113",
   "private": true,
   "description": "Multiuser Sharpee server — rooms, presence, lock-on-typing, Deno-sandboxed story execution (ADR-153).",
   "license": "MIT",

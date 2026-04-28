@@ -80,7 +80,7 @@
   --theme-accent: #2c2c2c;
   --theme-accent-text: #f5f5f0;
   --theme-border: #cccccc;
-  --theme-input-bg: #ffffff;
+  --theme-input-bg: transparent;
   --theme-menu-bg: #eaeae5;
   --theme-menu-hover: #ddddd8;
   --theme-font: "Crimson Text", Georgia, serif;

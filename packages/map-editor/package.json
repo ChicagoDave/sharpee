@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/map-editor",
-  "version": "0.9.112",
+  "version": "0.9.113",
   "description": "Visual map region editor for Sharpee stories",
   "main": "dist-electron/main.js",
   "scripts": {

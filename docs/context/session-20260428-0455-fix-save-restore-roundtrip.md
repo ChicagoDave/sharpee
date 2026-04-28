@@ -260,3 +260,44 @@ The SpatialIndex clarification (David's end-of-session question) confirmed we dr
 ---
 
 **Progressive update**: Session completed 2026-04-28 ~04:55 UTC
+
+---
+
+## Post-commit follow-up — paper-theme input background
+
+After committing `bf9b9564` and live-testing the platform-browser
+save/restore (which works), David flagged that the command-input
+in the **paper theme** rendered with a white strip against the
+cream `--theme-bg`. Investigation showed this was a pre-existing
+CSS choice in `templates/browser/infocom.css:83` — paper was the
+only theme using `--theme-input-bg: #ffffff`, while `dos-classic`
+and `retro-terminal` both use `transparent`.
+
+**Fix**: changed paper's `--theme-input-bg` from `#ffffff` to
+`transparent` in `templates/browser/infocom.css`. One-line CSS
+edit. David rebuilt dungeo afterwards, which propagated the change
+into `website/public/web/dungeo/styles.css` and bumped the usual
+build artifacts (`stories/dungeo/src/version.ts` BUILD_DATE,
+`packages/platforms/browser-en-us/src/version.ts` BUILD_DATE,
+`packages/sharpee/docs/genai-api/index.md` regen,
+`website/public/web/dungeo/game.js` rebuild).
+
+Not a save/restore regression — pre-existing styling that the
+save/restore live-test happened to surface.
+
+---
+
+## Post-commit follow-up — version bump
+
+David requested a version bump alongside the save/restore fix. All
+29 `@sharpee/*` workspace packages bumped from `0.9.112` → `0.9.113`;
+`sharpee-server` (`tools/server`) also bumped to `0.9.113` (was
+`0.1.0-alpha.1` — an early pre-release marker that no longer
+reflects its current state). `@sharpee/story-dungeo` bumped to
+`1.0.0` per David's instruction. `@sharpee/multiuser-client`
+(`tools/server/client`, currently `0.1.0`) left alone — still on
+its own pre-release track.
+
+No code beyond the version literals was touched. Workspace deps use
+`workspace:*` so internal references remain consistent with no
+additional edits.
