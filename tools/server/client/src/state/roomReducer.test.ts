@@ -1064,6 +1064,47 @@ describe('roomReducer', () => {
       }
     });
 
+    it('AC-9 recovery: a valid story_output after a malformed one rehydrates the mirror', () => {
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const seeded = roomReducer(initialRoomState, {
+          kind: 'welcome',
+          participant_id: 'p-host',
+          room: { ...ROOM, world: makeWorldJson() },
+          recording_notice: 'Recorded.',
+          participants: [],
+          chat_backlog: [],
+          transcript_backlog: [],
+          dm_threads: {},
+        });
+        const priorMirror = seeded.world;
+        expect(priorMirror).not.toBeNull();
+
+        // Malformed snapshot — prior retained.
+        const afterBad = roomReducer(seeded, {
+          kind: 'story_output',
+          turn_id: 't-bad',
+          text_blocks: [],
+          events: [],
+          world: 'not-json {{{',
+        });
+        expect(afterBad.world).toBe(priorMirror);
+
+        // Subsequent valid snapshot — mirror replaced (replace, not patch).
+        const afterGood = roomReducer(afterBad, {
+          kind: 'story_output',
+          turn_id: 't-recovered',
+          text_blocks: [],
+          events: [],
+          world: makeWorldJson(),
+        });
+        expect(afterGood.world).not.toBeNull();
+        expect(afterGood.world).not.toBe(priorMirror);
+      } finally {
+        errSpy.mockRestore();
+      }
+    });
+
     it('AC-9: malformed welcome on a fresh state leaves world null (no prior to retain)', () => {
       const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       try {

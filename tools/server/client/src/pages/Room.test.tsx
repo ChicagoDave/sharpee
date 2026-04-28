@@ -14,8 +14,42 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import { RoomTrait, StandardCapabilities, WorldModel } from '@sharpee/world-model';
 import { RoomView } from './Room';
 import { initialRoomState, type RoomState } from '../state/types';
+
+/**
+ * Build a hydrated `WorldModel` mirror suitable for asserting on StatusLine
+ * output (ADR-162 AC-6). The mirror has a player placed in a named room
+ * and a `scoring` capability seeded with score / maxScore / moves.
+ */
+function buildMirror(opts: {
+  scoreValue: number;
+  maxScore: number;
+  moves: number;
+  roomName: string;
+}): WorldModel {
+  const world = new WorldModel();
+  const player = world.createEntity('Player', 'actor');
+  world.setPlayer(player.id);
+  const room = world.createEntity(opts.roomName, 'room');
+  room.add(new RoomTrait());
+  world.moveEntity(player.id, room.id);
+  world.registerCapability(StandardCapabilities.SCORING, {
+    schema: {
+      scoreValue: { type: 'number', default: 0 },
+      maxScore: { type: 'number', default: 0 },
+      moves: { type: 'number', default: 0 },
+    },
+    initialData: { scoreValue: 0, maxScore: 0, moves: 0 },
+  });
+  world.updateCapability(StandardCapabilities.SCORING, {
+    scoreValue: opts.scoreValue,
+    maxScore: opts.maxScore,
+    moves: opts.moves,
+  });
+  return world;
+}
 
 function hydrated(overrides: Partial<RoomState> = {}): RoomState {
   return {
@@ -486,6 +520,82 @@ describe('<RoomView>', () => {
     await userEvent.click(screen.getByRole('button', { name: /leave now/i }));
     expect(window.localStorage.getItem('sharpee.token.room-1')).toBeNull();
     expect(window.localStorage.getItem('sharpee.code.room-1')).toBeNull();
+  });
+
+  it('renders StatusLine inside the layout, sourcing text from state.world (ADR-162 AC-6)', () => {
+    const world = buildMirror({
+      scoreValue: 12,
+      maxScore: 100,
+      moves: 4,
+      roomName: 'West of House',
+    });
+    render(
+      <RoomView
+        roomId="room-1"
+        code={null}
+        state={hydrated({ world })}
+        connection="open"
+      />,
+    );
+    const status = screen.getByRole('status', { name: /game status/i });
+    expect(status.textContent).toContain('Score: 12/100');
+    expect(status.textContent).toContain('Turns: 4');
+    expect(status.textContent).toContain('Location: West of House');
+  });
+
+  it('mid-game maxScore change propagates to StatusLine when state.world is replaced (ADR-162 AC-6)', () => {
+    const before = buildMirror({
+      scoreValue: 10,
+      maxScore: 100,
+      moves: 3,
+      roomName: 'Living Room',
+    });
+    const { rerender } = render(
+      <RoomView
+        roomId="room-1"
+        code={null}
+        state={hydrated({ world: before })}
+        connection="open"
+      />,
+    );
+    expect(
+      screen.getByRole('status', { name: /game status/i }).textContent,
+    ).toContain('Score: 10/100');
+
+    // ADR-162 Decision 1 — replace, never patch. A fresh mirror with a
+    // bumped maxScore replaces the prior, and the StatusLine reflects
+    // the new ceiling on the next render.
+    const after = buildMirror({
+      scoreValue: 10,
+      maxScore: 200,
+      moves: 3,
+      roomName: 'Living Room',
+    });
+    rerender(
+      <RoomView
+        roomId="room-1"
+        code={null}
+        state={hydrated({ world: after })}
+        connection="open"
+      />,
+    );
+    expect(
+      screen.getByRole('status', { name: /game status/i }).textContent,
+    ).toContain('Score: 10/200');
+  });
+
+  it('StatusLine renders the placeholder when state.world is null (unhydrated mirror)', () => {
+    render(
+      <RoomView
+        roomId="room-1"
+        code={null}
+        state={hydrated({ world: null })}
+        connection="open"
+      />,
+    );
+    expect(
+      screen.getByRole('status', { name: /game status/i }).textContent,
+    ).toBe('…');
   });
 
   it('renders the Room closed view when state.closed is set', () => {

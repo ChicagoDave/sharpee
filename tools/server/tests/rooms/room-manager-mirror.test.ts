@@ -275,6 +275,50 @@ describe('room-manager world mirror (ADR-162)', () => {
     expect(errMsg).toMatch(/mirror hydration failed/);
   });
 
+  it('AC-9 recovery: a valid OUTPUT after a malformed one rehydrates the mirror', async () => {
+    const mgr = build();
+    void mgr.submitCommand({ room_id: ROOM, actor_id: 'alice', text: 'look' }).catch(() => {});
+    const fake = await waitForFake(sandboxFactory, ROOM);
+    fake.emitReady();
+
+    // Establish a known-good mirror.
+    fake.emitMessage({
+      kind: 'OUTPUT',
+      turn_id: 't1',
+      text_blocks: [],
+      events: [],
+      world: makeWorldJson(),
+    });
+    await tick();
+    const priorMirror = mgr.getWorldMirror(ROOM);
+    expect(priorMirror).not.toBeNull();
+
+    // Drive a malformed OUTPUT — prior mirror retained (same instance).
+    fake.emitMessage({
+      kind: 'OUTPUT',
+      turn_id: 't2',
+      text_blocks: [],
+      events: [],
+      world: 'still bad {{{',
+    });
+    await tick();
+    expect(mgr.getWorldMirror(ROOM)).toBe(priorMirror);
+
+    // Drive a fresh valid OUTPUT — the mirror is replaced with a new
+    // instance (ADR-162 Decision 1 — replace, never patch).
+    fake.emitMessage({
+      kind: 'OUTPUT',
+      turn_id: 't3',
+      text_blocks: [],
+      events: [],
+      world: makeWorldJson(),
+    });
+    await tick();
+    const recoveredMirror = mgr.getWorldMirror(ROOM);
+    expect(recoveredMirror).not.toBeNull();
+    expect(recoveredMirror).not.toBe(priorMirror);
+  });
+
   it('STATUS_REQUEST → STATUS hydrates the mirror and returns the world JSON', async () => {
     const mgr = build();
     const promise = mgr.requestStatusSnapshot(ROOM);

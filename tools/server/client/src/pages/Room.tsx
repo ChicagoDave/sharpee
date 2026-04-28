@@ -27,6 +27,7 @@ import RoomHeader from '../components/RoomHeader';
 import SavePanel from '../components/SavePanel';
 import SettingsPanel from '../components/SettingsPanel';
 import SidePanelTabs, { type TabDescriptor } from '../components/SidePanelTabs';
+import StatusLine from '../components/StatusLine';
 import Toast, { type ToastEntry } from '../components/Toast';
 import Transcript from '../components/Transcript';
 import { sendRestore } from '../api/ws';
@@ -269,9 +270,10 @@ export function RoomView({
       style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 280px)',
-        gridTemplateRows: 'auto auto auto 1fr auto',
+        gridTemplateRows: 'auto auto auto auto 1fr auto',
         gridTemplateAreas: `
           "header header"
+          "status status"
           "banner banner"
           "transcript roster"
           "transcript chat"
@@ -294,6 +296,9 @@ export function RoomView({
               : undefined
           }
         />
+      </div>
+      <div style={{ gridArea: 'status' }}>
+        <StatusLine />
       </div>
       {state.phGraceDeadline && (
         <div style={{ gridArea: 'banner' }}>

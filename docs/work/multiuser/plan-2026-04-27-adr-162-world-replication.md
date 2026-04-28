@@ -2,7 +2,9 @@
 
 **Created**: 2026-04-27
 **ADR**: [`docs/architecture/adrs/adr-162-world-model-replication.md`](../../architecture/adrs/adr-162-world-model-replication.md) (ACCEPTED)
-**Status**: PENDING — phases A–F not yet started.
+**Status**: COMPLETE — all phases A–F delivered. AC-1 through AC-9
+verified. Bandwidth baseline captured in
+[`adr-162-bandwidth-baseline.md`](./adr-162-bandwidth-baseline.md).
 
 **Overall scope**: serialize the sandbox's `WorldModel` on every
 outbound turn frame; hydrate read-only mirrors on server and client;
@@ -328,7 +330,17 @@ renderer feature. StatusLine is the surface that triggered ADR-162.
 
 **Exit state**: StatusLine is live; status info renders correctly.
 
-**Status**: PENDING
+**Status**: DONE — `tools/server/client/src/components/StatusLine.tsx`
+created; mounted as a `status` grid row in `RoomView` between header
+and banner, inside `WorldProvider` scope. Behavior degrades segment-by-
+segment when `getPlayer()`, `getCapability('scoring')`, or
+`getContainingRoom(player.id)` is missing — never throws. Tests:
+`StatusLine.test.tsx` (7 unit) cover null mirror, hydrated render,
+missing-player / missing-scoring / unroomed-player guards, fresh-mirror
+re-render, and mid-game maxScore propagation. `Room.test.tsx`
+extended with 3 RoomView-level tests (StatusLine wired into layout,
+mid-game maxScore via mirror replacement, null-mirror placeholder).
+Client suite: 349 → 359 passing. Server suite untouched at 497.
 
 ---
 
@@ -375,7 +387,33 @@ renderer feature. StatusLine is the surface that triggered ADR-162.
 guarantee in place. Bandwidth baseline captured for future
 optimization decisions.
 
-**Status**: PENDING
+**Status**: DONE.
+
+- **AC-7** — `tools/server/src/wire/world-mirror.types.test-d.ts`
+  added. ~25 `@ts-expect-error` directives across entity, spatial,
+  state, capability, player, scoring, persistence, relationship,
+  scene, event-system, and scope mutators. Self-check probe: removing
+  any directive caused `tsc --noEmit` to exit 2 with TS2339;
+  restoring the directive returned exit 0. The `.test-d.ts` suffix
+  keeps Vitest from running the file at runtime; the regular
+  `tsc --noEmit` build covers it (the file lives under `src/`).
+- **AC-9** — recovery tests added on both sides. Server:
+  `room-manager-mirror.test.ts` "AC-9 recovery: a valid OUTPUT after a
+  malformed one rehydrates the mirror" — asserts `getWorldMirror`
+  returns the same instance after malformed and a fresh different
+  instance after recovery. Client: `roomReducer.test.ts` "AC-9
+  recovery: a valid story_output after a malformed one rehydrates" —
+  same assertion shape on `state.world`.
+- **AC-8** — `tools/server/tests/sandbox/bandwidth-baseline.test.ts`
+  added (gated on `SHARPEE_BANDWIDTH=1`; skipped in regular CI).
+  Drives a real Deno + dungeo bundle through ten frozen turns and
+  prints sizes + stats. Captured numbers landed in
+  `docs/work/multiuser/adr-162-bandwidth-baseline.md` along with the
+  full methodology, command sequence, and re-measurement protocol.
+  Median snapshot ≈ 418 KiB; per-turn delta ≈ 500–700 bytes.
+
+Final test counts: server 498/498 (+1 recovery, +1 baseline skipped
+unless gated); client 360/360 (+1 recovery). Both typecheck clean.
 
 ---
 
