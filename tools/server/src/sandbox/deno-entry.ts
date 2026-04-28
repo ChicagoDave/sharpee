@@ -24,7 +24,7 @@
  */
 
 import { GameEngine } from '@sharpee/engine';
-import { WorldModel, EntityType } from '@sharpee/world-model';
+import { WorldModel, EntityType, StandardCapabilities } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
@@ -151,6 +151,19 @@ export async function main({ story: storyModule, meta }: HostInput): Promise<voi
     capturedBlocks = blocks;
   });
 
+  // Per-COMMAND turn counter — mirrored into the scoring capability's
+  // `moves` field before each world snapshot. Engine's own `sessionMoves`
+  // and `currentTurn` are private on `GameEngine`, so the sandbox owns
+  // the counter the multi-user UI consumes. Not synced from saves on
+  // RESTORE (best-effort): the local count drives the displayed `Turns:`
+  // until the next live COMMAND.
+  let turnCount = 0;
+  const applyTurnCountToScoring = (w: WorldModel): void => {
+    if (w.hasCapability(StandardCapabilities.SCORING)) {
+      w.updateCapability(StandardCapabilities.SCORING, { moves: turnCount });
+    }
+  };
+
   // --- READY -------------------------------------------------------
   // Opening-scene text is NOT emitted here; server follows up with an initial
   // COMMAND 'look' to produce the first OUTPUT. meta.json is the source of
@@ -200,6 +213,10 @@ export async function main({ story: storyModule, meta }: HostInput): Promise<voi
           resetCapturedBlocks: () => {
             capturedBlocks = null;
           },
+          incrementTurn: () => {
+            turnCount += 1;
+          },
+          applyTurnCount: applyTurnCountToScoring,
         });
       } catch (err) {
         const detail = err instanceof Error ? err.message : String(err);
@@ -224,6 +241,10 @@ interface HookAccess {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getCapturedBlocks(): any[] | null;
   resetCapturedBlocks(): void;
+  /** Bump the per-COMMAND turn counter (used to surface `Turns:` in the UI). */
+  incrementTurn(): void;
+  /** Mirror the current turn counter into the scoring capability's `moves`. */
+  applyTurnCount(world: WorldModel): void;
 }
 
 /**
@@ -284,6 +305,11 @@ async function handleFrame(
       const blocks = (result.blocks && result.blocks.length > 0)
         ? result.blocks
         : (fallback ?? []);
+      // Bump the sandbox-owned turn counter and mirror it into the scoring
+      // capability so the snapshot's `moves` field reflects the just-
+      // executed turn (StatusLine reads `Turns:` from this).
+      hooks.incrementTurn();
+      hooks.applyTurnCount(world);
       const world_snap = await captureWorldSnapshot(world, emit, frame.turn_id);
       if (world_snap === null) return; // ERROR already emitted; suppress OUTPUT
       await emit({
@@ -324,6 +350,10 @@ async function handleFrame(
       // text_blocks intentionally empty — the server's next COMMAND 'look'
       // produces the post-restore room description. The wire type requires
       // the field; [] satisfies it without running an extra in-process turn.
+      // Apply (don't increment) the local turnCount: a restore doesn't
+      // consume a turn. The mirror reflects the local count until the next
+      // live COMMAND increments past it.
+      hooks.applyTurnCount(world);
       const restored_snap = await captureWorldSnapshot(world, emit, undefined);
       if (restored_snap === null) return; // ERROR already emitted; suppress RESTORED
       await emit({
@@ -338,7 +368,10 @@ async function handleFrame(
     case 'STATUS_REQUEST': {
       // ADR-162 Decision 6: server welcome path requests a fresh
       // snapshot when it has no held mirror. No turn execution, no
-      // event side effects.
+      // event side effects. Mirror the current turnCount into the
+      // capability so the welcome render shows the same `Turns:` value
+      // the next OUTPUT will.
+      hooks.applyTurnCount(world);
       const status_snap = await captureWorldSnapshot(world, emit, undefined);
       if (status_snap === null) return; // ERROR already emitted; suppress STATUS
       await emit({ kind: 'STATUS', world: status_snap });

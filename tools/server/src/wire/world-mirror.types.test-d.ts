@@ -78,9 +78,10 @@ declare const mirror: ReadOnlyWorldModel;
 }
 
 {
-  // Score-ledger mutators — rejected. `getScore` is intentionally not
-  // re-exported on the mirror either; renderers read through the
-  // scoring capability. The four writers are explicitly excluded.
+  // Score-ledger mutators — rejected. The corresponding readers
+  // (`getScore`, `getMaxScore`, `getScoreEntries`, `hasScore`) are in
+  // the Pick list (renderers consume them; StatusLine reads `getScore`
+  // and `getMaxScore`). The three writers are explicitly excluded.
   // @ts-expect-error awardScore is excluded from ReadOnlyWorldModel
   void mirror.awardScore('treasure-1', 10, 'found');
   // @ts-expect-error revokeScore is excluded from ReadOnlyWorldModel
@@ -147,6 +148,10 @@ void mirror.getEntity('a-1');
 void mirror.getPlayer();
 void mirror.getCapability('scoring');
 void mirror.getContainingRoom('a-1');
+void mirror.getScore();
+void mirror.getMaxScore();
+void mirror.getScoreEntries();
+void mirror.hasScore('treasure-1');
 
 // SELF-CHECK PROBE — uncomment to verify these `@ts-expect-error`
 // directives are actually catching errors. Removing the directive on a

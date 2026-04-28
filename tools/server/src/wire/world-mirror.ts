@@ -74,4 +74,11 @@ export type ReadOnlyWorldModel = Pick<
   | 'isSceneActive'
   | 'hasSceneEnded'
   | 'hasSceneHappened'
+  // ADR-129 ScoreLedger reads. Writers (`awardScore`, `revokeScore`,
+  // `setMaxScore`) are intentionally absent so renderers cannot mutate
+  // through a mirror reference.
+  | 'getScore'
+  | 'getMaxScore'
+  | 'getScoreEntries'
+  | 'hasScore'
 >;

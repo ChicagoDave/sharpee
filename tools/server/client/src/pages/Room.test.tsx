@@ -20,8 +20,9 @@ import { initialRoomState, type RoomState } from '../state/types';
 
 /**
  * Build a hydrated `WorldModel` mirror suitable for asserting on StatusLine
- * output (ADR-162 AC-6). The mirror has a player placed in a named room
- * and a `scoring` capability seeded with score / maxScore / moves.
+ * output (ADR-162 AC-6). The mirror has a player placed in a named room,
+ * an ADR-129 ScoreLedger seeded via `awardScore` / `setMaxScore`, and the
+ * `scoring` capability seeded with `moves` for the turns segment.
  */
 function buildMirror(opts: {
   scoreValue: number;
@@ -35,17 +36,23 @@ function buildMirror(opts: {
   const room = world.createEntity(opts.roomName, 'room');
   room.add(new RoomTrait());
   world.moveEntity(player.id, room.id);
+
+  // Score and max from the ADR-129 ScoreLedger (canonical post-fix path).
+  if (opts.scoreValue > 0) {
+    world.awardScore('test-award', opts.scoreValue, 'test fixture');
+  }
+  if (opts.maxScore > 0) {
+    world.setMaxScore(opts.maxScore);
+  }
+
+  // Turns from the scoring capability (still the canonical turn counter).
   world.registerCapability(StandardCapabilities.SCORING, {
     schema: {
-      scoreValue: { type: 'number', default: 0 },
-      maxScore: { type: 'number', default: 0 },
       moves: { type: 'number', default: 0 },
     },
-    initialData: { scoreValue: 0, maxScore: 0, moves: 0 },
+    initialData: { moves: 0 },
   });
   world.updateCapability(StandardCapabilities.SCORING, {
-    scoreValue: opts.scoreValue,
-    maxScore: opts.maxScore,
     moves: opts.moves,
   });
   return world;
@@ -538,12 +545,15 @@ describe('<RoomView>', () => {
       />,
     );
     const status = screen.getByRole('status', { name: /game status/i });
-    expect(status.textContent).toContain('Score: 12/100');
+    // Layout matches platform-browser/zifmia: location left, "Score: N |
+    // Turns: M" right. No `/max` fraction.
+    expect(status.textContent).toContain('West of House');
+    expect(status.textContent).toContain('Score: 12');
     expect(status.textContent).toContain('Turns: 4');
-    expect(status.textContent).toContain('Location: West of House');
+    expect(status.textContent).not.toMatch(/Score:\s*\d+\s*\//);
   });
 
-  it('mid-game maxScore change propagates to StatusLine when state.world is replaced (ADR-162 AC-6)', () => {
+  it('across-turn moves bump propagates to StatusLine when state.world is replaced (ADR-162 AC-6)', () => {
     const before = buildMirror({
       scoreValue: 10,
       maxScore: 100,
@@ -560,15 +570,15 @@ describe('<RoomView>', () => {
     );
     expect(
       screen.getByRole('status', { name: /game status/i }).textContent,
-    ).toContain('Score: 10/100');
+    ).toContain('Turns: 3');
 
-    // ADR-162 Decision 1 — replace, never patch. A fresh mirror with a
-    // bumped maxScore replaces the prior, and the StatusLine reflects
-    // the new ceiling on the next render.
+    // ADR-162 Decision 1 — replace, never patch. A fresh mirror with the
+    // sandbox's incremented `moves` replaces the prior, and the
+    // StatusLine reflects the new turn count on the next render.
     const after = buildMirror({
       scoreValue: 10,
-      maxScore: 200,
-      moves: 3,
+      maxScore: 100,
+      moves: 4,
       roomName: 'Living Room',
     });
     rerender(
@@ -581,7 +591,7 @@ describe('<RoomView>', () => {
     );
     expect(
       screen.getByRole('status', { name: /game status/i }).textContent,
-    ).toContain('Score: 10/200');
+    ).toContain('Turns: 4');
   });
 
   it('StatusLine renders the placeholder when state.world is null (unhydrated mirror)', () => {
