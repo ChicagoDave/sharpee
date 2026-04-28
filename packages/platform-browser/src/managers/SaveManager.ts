@@ -1,20 +1,46 @@
 /**
- * SaveManager - handles save/restore operations using localStorage
+ * `SaveManager` — wraps the engine's `ISaveData` for localStorage
+ * persistence and exposes a small UI surface (save index, autosave,
+ * transcript decompression).
+ *
+ * Public interface: {@link SaveManager} class.
+ *
+ * Bounded context: `@sharpee/platform-browser` host. The host registers
+ * `ISaveRestoreHooks` with the engine; on save the engine produces a
+ * complete `ISaveData` and the platform wraps it in a
+ * {@link BrowserSaveEnvelope}; on restore the platform unwraps the
+ * envelope and returns the engine save back to the engine, which
+ * applies it via `WorldModel.loadJSON`.
+ *
+ * History: v3.0.0-delta of this manager implemented its own
+ * locations + traits serializer that silently dropped score,
+ * capabilities, world state values, relationships, and ID counters.
+ * v4.0.0 (this version) routes through the engine's save/restore
+ * service and is therefore feature-complete by construction. The save
+ * format bumped from `'3.0.0-delta'` → envelope `'4.0.0'`; old slots
+ * are rejected.
  */
 
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
+import type { ISaveData } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
-import type { SaveSlotMeta, BrowserSaveData, SaveContext } from '../types';
+import type {
+  BrowserSaveEnvelope,
+  SaveContext,
+  SaveSlotMeta,
+} from '../types';
 import { AUTOSAVE_SLOT } from '../types';
 
 export interface SaveManagerConfig {
   /** Storage key prefix (e.g., "dungeo-") */
   storagePrefix: string;
-  /** WorldModel reference for state capture/restore */
+  /** WorldModel reference — used only for UI helpers (current location). */
   world: WorldModel;
   /** Callback when state changes (for UI updates) */
   onStateChange?: () => void;
 }
+
+const ENVELOPE_VERSION: BrowserSaveEnvelope['envelopeVersion'] = '4.0.0';
 
 export class SaveManager {
   private storagePrefix: string;
@@ -22,7 +48,6 @@ export class SaveManager {
   private savePrefix: string;
   private world: WorldModel;
   private onStateChange?: () => void;
-  private baseline: { locations: Record<string, string | null>; traits: Record<string, Record<string, unknown>> } | null = null;
 
   constructor(config: SaveManagerConfig) {
     this.storagePrefix = config.storagePrefix;
@@ -30,20 +55,85 @@ export class SaveManager {
     this.savePrefix = `${config.storagePrefix}save-`;
     this.world = config.world;
     this.onStateChange = config.onStateChange;
+
+    // One-shot cleanup of pre-v4 saves. Runs every page load — idempotent
+    // once the storage is clean. See {@link cleanupObsoleteSaves}.
+    this.cleanupObsoleteSaves();
   }
 
   /**
-   * Capture the initial world state as baseline for delta saves.
-   * Call after initializeWorld() completes but before the first turn.
+   * Walk localStorage for entries under this manager's `savePrefix` and
+   * delete any whose envelope is not the current `ENVELOPE_VERSION`.
+   * Prunes corresponding index entries.
+   *
+   * Treats malformed payloads (not lz-string compressed, not JSON, no
+   * `envelopeVersion`) as obsolete and deletes them — better than
+   * leaving unreadable bytes consuming quota.
+   *
+   * Idempotent: a second call after a clean-up is a no-op (every
+   * remaining entry will pass the version check).
    */
-  captureBaseline(): void {
-    this.baseline = this.captureWorldState();
-    console.log('[save] Baseline captured:', Object.keys(this.baseline.locations).length, 'entities');
+  private cleanupObsoleteSaves(): void {
+    // Collect keys first; mutating localStorage during iteration shifts
+    // indexes and silently skips entries.
+    const candidateKeys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(this.savePrefix)) {
+        candidateKeys.push(key);
+      }
+    }
+
+    const deleted: string[] = [];
+    for (const key of candidateKeys) {
+      const raw = localStorage.getItem(key);
+      let isCurrent = false;
+      if (raw) {
+        try {
+          const decompressed = decompressFromUTF16(raw);
+          if (decompressed) {
+            const parsed = JSON.parse(decompressed) as {
+              envelopeVersion?: string;
+            };
+            isCurrent = parsed.envelopeVersion === ENVELOPE_VERSION;
+          }
+        } catch {
+          // Treat parse failures as obsolete — see method docs.
+        }
+      }
+      if (!isCurrent) {
+        localStorage.removeItem(key);
+        deleted.push(key.substring(this.savePrefix.length));
+      }
+    }
+
+    if (deleted.length === 0) return;
+
+    // Prune index entries pointing at deleted slots so the UI doesn't
+    // list ghosts.
+    try {
+      const index = this.getSaveIndex().filter(
+        (meta) => !deleted.includes(meta.name),
+      );
+      localStorage.setItem(this.indexKey, JSON.stringify(index));
+    } catch {
+      // If the index itself is corrupted, drop it entirely.
+      localStorage.removeItem(this.indexKey);
+    }
+
+    console.log(
+      '[save] Cleaned up',
+      deleted.length,
+      'obsolete save(s):',
+      deleted,
+    );
   }
 
-  /**
-   * Get list of all saved games from index
-   */
+  // ---------------------------------------------------------------
+  // Index management — unchanged from v3.
+  // ---------------------------------------------------------------
+
+  /** Get list of all saved games from index. */
   getSaveIndex(): SaveSlotMeta[] {
     try {
       const json = localStorage.getItem(this.indexKey);
@@ -54,12 +144,10 @@ export class SaveManager {
     }
   }
 
-  /**
-   * Update save index with new/updated slot
-   */
+  /** Update save index with new/updated slot. */
   updateSaveIndex(meta: SaveSlotMeta): void {
     const index = this.getSaveIndex();
-    const existing = index.findIndex(s => s.name === meta.name);
+    const existing = index.findIndex((s) => s.name === meta.name);
     if (existing >= 0) {
       index[existing] = meta;
     } else {
@@ -70,9 +158,11 @@ export class SaveManager {
     localStorage.setItem(this.indexKey, JSON.stringify(index));
   }
 
-  /**
-   * Get current player location name
-   */
+  // ---------------------------------------------------------------
+  // UI helpers — naming, location lookup. Read-only on the world.
+  // ---------------------------------------------------------------
+
+  /** Get current player's containing-room name, or 'Unknown'. */
   getCurrentLocation(): string {
     try {
       const player = this.world.getPlayer();
@@ -91,9 +181,7 @@ export class SaveManager {
     return 'Unknown';
   }
 
-  /**
-   * Generate a suggested save name based on current state
-   */
+  /** Generate a suggested save name based on current state. */
   generateSaveName(turnCount: number): string {
     const location = this.getCurrentLocation()
       .toLowerCase()
@@ -103,175 +191,63 @@ export class SaveManager {
     return `turn-${turnCount}-${location}`;
   }
 
-  /**
-   * Sanitize save name for storage key
-   */
+  /** Sanitize a user-provided save name for use as a storage key. */
   sanitizeSaveName(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9-_]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
-      .substring(0, 30) || 'save';
+    return (
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 30) || 'save'
+    );
   }
 
-  /**
-   * Capture current world state (locations and traits) without full serialization
-   */
-  captureWorldState(): { locations: Record<string, string | null>; traits: Record<string, Record<string, unknown>> } {
-    const locations: Record<string, string | null> = {};
-    const traits: Record<string, Record<string, unknown>> = {};
-
-    for (const entity of this.world.getAllEntities()) {
-      // Capture location
-      const locationId = this.world.getLocation(entity.id);
-      locations[entity.id] = locationId || null;
-
-      // Capture all trait data
-      const entityTraits: Record<string, unknown> = {};
-      for (const [traitName, trait] of entity.traits) {
-        // Serialize trait by spreading its properties (excluding methods)
-        const traitData: Record<string, unknown> = {};
-        const traitAsAny = trait as unknown as Record<string, unknown>;
-        for (const key of Object.keys(trait)) {
-          const value = traitAsAny[key];
-          if (typeof value !== 'function') {
-            traitData[key] = value;
-          }
-        }
-        entityTraits[traitName] = traitData;
-      }
-      traits[entity.id] = entityTraits as Record<string, Record<string, unknown>>;
-    }
-
-    return { locations, traits };
-  }
+  // ---------------------------------------------------------------
+  // Save / restore — wrap and unwrap the engine's ISaveData.
+  // ---------------------------------------------------------------
 
   /**
-   * Capture only the state that changed from the baseline.
-   * Falls back to full capture if no baseline is set.
+   * Wrap an engine save in an envelope and persist it to localStorage.
+   *
+   * @param slotName - already-sanitized slot key.
+   * @param engineSave - the canonical save produced by the engine
+   *   (`ISaveData`). Carries the full world state via
+   *   `engineState.worldSnapshot`.
+   * @param context - browser-only context for UI display: turn count
+   *   for the slot meta, score for the envelope, transcript HTML to
+   *   restore the visible scrollback.
    */
-  private captureDelta(): { locations: Record<string, string | null>; traits: Record<string, Record<string, unknown>> } {
-    const current = this.captureWorldState();
-    if (!this.baseline) {
-      return current;
-    }
-
-    const deltaLocations: Record<string, string | null> = {};
-    const deltaTraits: Record<string, Record<string, unknown>> = {};
-
-    // Diff locations
-    for (const [id, loc] of Object.entries(current.locations)) {
-      if (loc !== this.baseline.locations[id]) {
-        deltaLocations[id] = loc;
-      }
-    }
-
-    // Diff traits
-    for (const [id, entityTraits] of Object.entries(current.traits)) {
-      const baseEntityTraits = this.baseline.traits[id] || {};
-      for (const [traitName, traitData] of Object.entries(entityTraits)) {
-        const baseTrait = baseEntityTraits[traitName] as Record<string, unknown> | undefined;
-        if (!baseTrait || !this.shallowEqual(traitData as Record<string, unknown>, baseTrait)) {
-          if (!deltaTraits[id]) deltaTraits[id] = {};
-          deltaTraits[id][traitName] = traitData;
-        }
-      }
-    }
-
-    return { locations: deltaLocations, traits: deltaTraits };
-  }
-
-  /**
-   * Shallow equality check for trait data objects.
-   */
-  private shallowEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
-    const keysA = Object.keys(a);
-    const keysB = Object.keys(b);
-    if (keysA.length !== keysB.length) return false;
-    for (const key of keysA) {
-      if (a[key] !== b[key]) return false;
-    }
-    return true;
-  }
-
-  /**
-   * Restore world state (locations and traits) to existing entities.
-   * This preserves entity handlers unlike world.loadJSON().
-   */
-  restoreWorldState(state: BrowserSaveData): void {
-    // Restore locations
-    for (const [entityId, locationId] of Object.entries(state.locations)) {
-      if (locationId) {
-        const entity = this.world.getEntity(entityId);
-        if (entity) {
-          this.world.moveEntity(entityId, locationId);
-        }
-      }
-    }
-
-    // Restore trait data
-    for (const [entityId, entityTraits] of Object.entries(state.traits)) {
-      const entity = this.world.getEntity(entityId);
-      if (!entity) continue;
-
-      for (const [traitName, traitData] of Object.entries(entityTraits)) {
-        const trait = entity.get(traitName);
-        if (trait) {
-          // Update trait properties
-          const traitAsAny = trait as unknown as Record<string, unknown>;
-          for (const [key, value] of Object.entries(traitData as Record<string, unknown>)) {
-            if (key !== 'type' && typeof value !== 'function') {
-              traitAsAny[key] = value;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Perform the actual save to localStorage
-   */
-  performSave(slotName: string, context: SaveContext, silent = false): { success: boolean; error?: string } {
+  performSave(
+    slotName: string,
+    engineSave: ISaveData,
+    context: SaveContext,
+    _silent = false,
+  ): { success: boolean; error?: string } {
     try {
-      // Capture only changed state (delta from baseline)
-      const { locations, traits } = this.captureDelta();
-
-      // Compress the transcript HTML for storage
-      const compressedHtml = compressToUTF16(context.transcriptHtml);
-
-      const saveData: BrowserSaveData = {
-        version: '3.0.0-delta',
+      const envelope: BrowserSaveEnvelope = {
+        envelopeVersion: ENVELOPE_VERSION,
         timestamp: Date.now(),
-        turnCount: context.turnCount,
+        engineSave,
         score: context.score,
-        locations,
-        traits,
-        transcriptHtml: compressedHtml,
+        transcriptHtml: compressToUTF16(context.transcriptHtml),
       };
 
-      // Compress entire payload to obscure contents and reduce size
       const key = this.savePrefix + slotName;
-      const compressed = compressToUTF16(JSON.stringify(saveData));
+      const compressed = compressToUTF16(JSON.stringify(envelope));
       localStorage.setItem(key, compressed);
 
-      // Update index
       const meta: SaveSlotMeta = {
         name: slotName,
-        timestamp: saveData.timestamp,
+        timestamp: envelope.timestamp,
         turnCount: context.turnCount,
         location: this.getCurrentLocation(),
       };
       this.updateSaveIndex(meta);
 
       console.log('[save] Game saved to', key, meta);
-
-      // Sync to world so stdlib actions know saves exist
       this.syncSavesToWorld();
-
       this.onStateChange?.();
-
       return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -281,38 +257,32 @@ export class SaveManager {
   }
 
   /**
-   * Perform auto-save (silent, no dialog)
+   * Persist an autosave to the dedicated autosave slot. Same envelope
+   * shape as {@link performSave}; only the slot key differs.
    */
-  performAutoSave(context: SaveContext): void {
+  performAutoSave(engineSave: ISaveData, context: SaveContext): void {
     try {
-      const { locations, traits } = this.captureDelta();
-
-      const compressedHtml = compressToUTF16(context.transcriptHtml);
-
-      const saveData: BrowserSaveData = {
-        version: '3.0.0-delta',
+      const envelope: BrowserSaveEnvelope = {
+        envelopeVersion: ENVELOPE_VERSION,
         timestamp: Date.now(),
-        turnCount: context.turnCount,
+        engineSave,
         score: context.score,
-        locations,
-        traits,
-        transcriptHtml: compressedHtml,
+        transcriptHtml: compressToUTF16(context.transcriptHtml),
       };
 
       const key = this.savePrefix + AUTOSAVE_SLOT;
-      const compressed = compressToUTF16(JSON.stringify(saveData));
+      const compressed = compressToUTF16(JSON.stringify(envelope));
       localStorage.setItem(key, compressed);
 
       const meta: SaveSlotMeta = {
         name: AUTOSAVE_SLOT,
-        timestamp: Date.now(),
+        timestamp: envelope.timestamp,
         turnCount: context.turnCount,
         location: this.getCurrentLocation(),
       };
       this.updateSaveIndex(meta);
 
       console.log('[autosave] Saved at turn', context.turnCount);
-
       this.syncSavesToWorld();
     } catch (error) {
       console.error('[autosave] Failed:', error);
@@ -320,42 +290,43 @@ export class SaveManager {
   }
 
   /**
-   * Load autosave data from localStorage
+   * Load and decompress an envelope from localStorage. Returns `null`
+   * for unknown slots, malformed payloads, or wrong-version envelopes.
+   * v3.0.0-delta saves are not migrated — they were known-broken.
    */
-  loadAutosave(): BrowserSaveData | null {
-    return this.loadSaveSlot(AUTOSAVE_SLOT);
-  }
-
-  /**
-   * Load any save slot from localStorage
-   */
-  loadSaveSlot(slotName: string): BrowserSaveData | null {
+  loadEnvelope(slotName: string): BrowserSaveEnvelope | null {
     try {
       const key = this.savePrefix + slotName;
       const raw = localStorage.getItem(key);
       if (!raw) return null;
 
-      // v3 saves are lz-string compressed; v2 saves are raw JSON
-      let json: string;
-      if (raw.startsWith('{')) {
-        // Legacy v2 uncompressed JSON
-        json = raw;
-      } else {
-        const decompressed = decompressFromUTF16(raw);
-        if (!decompressed) return null;
-        json = decompressed;
-      }
+      const decompressed = decompressFromUTF16(raw);
+      if (!decompressed) return null;
 
-      return JSON.parse(json) as BrowserSaveData;
+      const parsed = JSON.parse(decompressed) as { envelopeVersion?: string };
+      if (parsed.envelopeVersion !== ENVELOPE_VERSION) {
+        console.error(
+          '[load] Envelope version',
+          parsed.envelopeVersion,
+          'not supported (expected',
+          ENVELOPE_VERSION,
+          ')',
+        );
+        return null;
+      }
+      return parsed as BrowserSaveEnvelope;
     } catch (error) {
       console.error('[load] Failed to load slot:', slotName, error);
       return null;
     }
   }
 
-  /**
-   * Decompress transcript HTML from save data
-   */
+  /** Convenience: load the autosave envelope. */
+  loadAutosaveEnvelope(): BrowserSaveEnvelope | null {
+    return this.loadEnvelope(AUTOSAVE_SLOT);
+  }
+
+  /** Decompress transcript HTML from an envelope. */
   decompressTranscript(compressedHtml: string): string {
     try {
       return decompressFromUTF16(compressedHtml) || '';
@@ -364,15 +335,22 @@ export class SaveManager {
     }
   }
 
+  // ---------------------------------------------------------------
+  // World capability sync — unchanged from v3.
+  // ---------------------------------------------------------------
+
   /**
-   * Sync localStorage saves to world sharedData so stdlib actions know saves exist
+   * Sync localStorage saves to world `sharedData` so stdlib actions
+   * know saves exist (used by the `restoring` action's listing).
    */
   syncSavesToWorld(): void {
     const saves = this.getSaveIndex();
     if (saves.length === 0) return;
 
-    // Build saves object that the stdlib restoring action expects
-    const savesObj: Record<string, { name: string; timestamp: number; moves: number }> = {};
+    const savesObj: Record<
+      string,
+      { name: string; timestamp: number; moves: number }
+    > = {};
     for (const save of saves) {
       savesObj[save.name] = {
         name: save.name,
@@ -381,10 +359,9 @@ export class SaveManager {
       };
     }
 
-    // Register sharedData capability if not exists, then update with saves
     if (!this.world.hasCapability('sharedData')) {
       this.world.registerCapability('sharedData', {
-        initialData: { saves: savesObj }
+        initialData: { saves: savesObj },
       });
     } else {
       this.world.updateCapability('sharedData', { saves: savesObj });
@@ -393,18 +370,17 @@ export class SaveManager {
     console.log('[sync] Synced', saves.length, 'saves to world sharedData');
   }
 
-  /**
-   * Clear autosave (for restart)
-   */
+  // ---------------------------------------------------------------
+  // Slot-management helpers — unchanged from v3.
+  // ---------------------------------------------------------------
+
+  /** Clear the autosave slot (used on restart). */
   clearAutosave(): void {
     try {
       const key = this.savePrefix + AUTOSAVE_SLOT;
       localStorage.removeItem(key);
-
-      // Also update index
-      const index = this.getSaveIndex().filter(s => s.name !== AUTOSAVE_SLOT);
+      const index = this.getSaveIndex().filter((s) => s.name !== AUTOSAVE_SLOT);
       localStorage.setItem(this.indexKey, JSON.stringify(index));
-
       console.log('[autosave] Cleared');
     } catch {
       // Ignore errors
@@ -412,21 +388,17 @@ export class SaveManager {
   }
 
   /**
-   * Check if there's a recent save to continue from
-   * Returns the most recent save or null
+   * Return the most recent save (by timestamp), or `null` if none. Used
+   * by the startup dialog to offer a "continue last game" affordance.
    */
   checkForSavedGame(): SaveSlotMeta | null {
     const saves = this.getSaveIndex();
     if (saves.length === 0) return null;
-
-    // Return most recent save (already sorted by timestamp desc)
     return saves[0];
   }
 
-  /**
-   * Get user saves (excluding autosave)
-   */
+  /** Return user-visible saves (everything but the autosave slot). */
   getUserSaves(): SaveSlotMeta[] {
-    return this.getSaveIndex().filter(s => s.name !== AUTOSAVE_SLOT);
+    return this.getSaveIndex().filter((s) => s.name !== AUTOSAVE_SLOT);
   }
 }

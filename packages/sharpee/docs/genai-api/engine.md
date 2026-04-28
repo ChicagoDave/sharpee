@@ -1403,10 +1403,24 @@ export declare function createVocabularyManager(): VocabularyManager;
 
 ```typescript
 /**
- * Save/Restore Service - Manages game state persistence and undo
+ * Save/Restore Service — manages game state persistence and undo.
  *
- * Extracted from GameEngine as part of Phase 4 remediation.
- * Handles save/restore data creation, undo snapshots, and serialization.
+ * Public interface: {@link SaveRestoreService} class — `createSaveData`,
+ * `loadSaveData`, plus undo helpers (`createUndoSnapshot`, `undo`,
+ * `canUndo`, `getUndoLevels`, `clearUndoSnapshots`).
+ *
+ * Bounded context: `@sharpee/engine` runtime. Every Sharpee host (CLI,
+ * platform-browser, multi-user sandbox) routes saves through this
+ * service.
+ *
+ * Save format v2.0.0 (one-shot cutover from v1.0.0; v1 saves rejected):
+ *   - `IEngineState.worldSnapshot` carries the verbatim
+ *     `WorldModel.toJSON()` output, gzipped, then base64-encoded for
+ *     JSON-safety. Hydration: base64-decode → gunzip → `world.loadJSON()`.
+ *   - This replaces v1's partial `spatialIndex` serializer, which
+ *     captured only entity traits + room contents and silently dropped
+ *     the ScoreLedger, capabilities, world state values, relationships,
+ *     ID counters, and sub-container containment.
  */
 import { WorldModel } from '@sharpee/world-model';
 import { ISaveData, ISerializedTurn, ISemanticEventSource } from '@sharpee/core';
@@ -1490,14 +1504,6 @@ export declare class SaveRestoreService {
      */
     private deserializeEventData;
     /**
-     * Serialize spatial index (world state)
-     */
-    private serializeSpatialIndex;
-    /**
-     * Deserialize spatial index
-     */
-    private deserializeSpatialIndex;
-    /**
      * Serialize turn history
      */
     private serializeTurnHistory;
@@ -1509,18 +1515,6 @@ export declare class SaveRestoreService {
      * Serialize parser state
      */
     private serializeParserState;
-    /**
-     * Serialize a trait
-     */
-    private serializeTrait;
-    /**
-     * Deserialize a trait
-     */
-    private deserializeTrait;
-    /**
-     * Extract connections from a location entity
-     */
-    private extractConnections;
 }
 /**
  * Create a save/restore service instance

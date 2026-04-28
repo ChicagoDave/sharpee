@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/engine",
-  "version": "0.9.112",
+  "version": "0.9.113",
   "description": "Runtime engine for Sharpee IF Platform - game loop, command execution, and turn management",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
@@ -34,7 +34,8 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/text-service": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/world-model": "workspace:*",
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@sharpee/plugin-scheduler": "workspace:*",

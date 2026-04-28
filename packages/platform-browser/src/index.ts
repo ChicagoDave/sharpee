@@ -17,7 +17,7 @@ export type {
   StoryInfo,
   DOMElements,
   SaveSlotMeta,
-  BrowserSaveData,
+  BrowserSaveEnvelope,
   MenuHandlers,
   SaveContext,
 } from './types';

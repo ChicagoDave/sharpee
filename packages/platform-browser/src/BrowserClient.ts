@@ -51,6 +51,15 @@ export class BrowserClient implements BrowserClientInterface {
   private currentTurn = 0;
   private currentScore = 0;
   private turnOffset = 0; // Offset to add to engine turn after restore
+  /**
+   * The `ISaveData` produced by the engine for the in-flight save
+   * request. Set by `onSaveRequested` while the save dialog is open;
+   * cleared in the hook's `finally`. Reused by `performSave` so the
+   * persisted blob matches what the engine actually serialized for
+   * this request, not whatever the world looked like by the time the
+   * dialog returned.
+   */
+  private pendingEngineSave: ISaveData | null = null;
 
   // DOM elements reference
   private elements!: DOMElements;
@@ -199,9 +208,13 @@ export class BrowserClient implements BrowserClientInterface {
       this.currentTurn = turn + this.turnOffset;
       this.updateStatusLine();
 
-      // Auto-save after each turn (if enabled)
+      // Auto-save after each turn (if enabled). The engine produces a
+      // complete `ISaveData` via the same path the user-driven save
+      // uses; `SaveManager` wraps it in a `BrowserSaveEnvelope` and
+      // writes the autosave slot.
       if (this.config.autoSave && turn > 0) {
-        this.saveManager.performAutoSave(this.getSaveContext());
+        const engineSave = this.engineCreateSave();
+        this.saveManager.performAutoSave(engineSave, this.getSaveContext());
       }
     });
 
@@ -278,27 +291,29 @@ export class BrowserClient implements BrowserClientInterface {
       // Start the engine first (builds the world)
       await this.engine.start();
 
-      // Capture baseline state for delta saves (before any commands or restore)
-      this.saveManager.captureBaseline();
-
       // Sync localStorage saves to world
       this.saveManager.syncSavesToWorld();
 
-      // Check for autosave and restore
-      const autosaveData = this.saveManager.loadAutosave();
-      if (autosaveData && autosaveData.locations) {
+      // Check for autosave and restore. The envelope carries the
+      // engine's full `ISaveData`; applying it via the engine wipes
+      // the freshly-initialized world and rebuilds from the snapshot,
+      // restoring score / capabilities / state values / relationships
+      // / ID counters that the v3 in-house serializer used to drop.
+      const autosaveEnvelope = this.saveManager.loadAutosaveEnvelope();
+      if (autosaveEnvelope) {
         console.log('[startup] Found autosave, restoring...');
         try {
-          // Restore state without replacing entities (preserves handlers)
-          this.saveManager.restoreWorldState(autosaveData);
-          this.currentTurn = autosaveData.turnCount || 0;
-          this.currentScore = autosaveData.score || 0;
-          // Set offset so engine's turn counter aligns with saved turn
+          this.engineApplySave(autosaveEnvelope.engineSave);
+          this.currentTurn = autosaveEnvelope.engineSave.metadata.turnCount;
+          this.currentScore = autosaveEnvelope.score;
+          // Engine's turn counter is now `currentTurn + 1` after the
+          // engine restore; offset keeps the displayed counter aligned.
           this.turnOffset = this.currentTurn - 1;
 
-          // Restore transcript HTML if available
-          if (autosaveData.transcriptHtml) {
-            const html = this.saveManager.decompressTranscript(autosaveData.transcriptHtml);
+          if (autosaveEnvelope.transcriptHtml) {
+            const html = this.saveManager.decompressTranscript(
+              autosaveEnvelope.transcriptHtml,
+            );
             this.textDisplay.setHTML(html);
           }
 
@@ -355,45 +370,29 @@ export class BrowserClient implements BrowserClientInterface {
    */
   getSaveRestoreHooks(): ISaveRestoreHooks {
     return {
-      onSaveRequested: async (_data: ISaveData): Promise<void> => {
-        // Ignore the engine's ISaveData - we'll use our own state capture
-        const saved = await this.dialogManager.showSaveDialog();
-        if (!saved) {
-          this.textDisplay.displayText('[Save cancelled]');
+      onSaveRequested: async (data: ISaveData): Promise<void> => {
+        // Stash the engine's save data so the dialog handler
+        // (`performSave`) uses *this* `ISaveData` rather than producing
+        // a fresh one — the engine has already serialized for this
+        // request. Cleared in the `finally` so a later menu-driven
+        // save doesn't reuse stale state.
+        this.pendingEngineSave = data;
+        try {
+          const saved = await this.dialogManager.showSaveDialog();
+          if (!saved) {
+            this.textDisplay.displayText('[Save cancelled]');
+          }
+        } finally {
+          this.pendingEngineSave = null;
         }
       },
 
       onRestoreRequested: async (): Promise<ISaveData | null> => {
-        const slotName = await this.dialogManager.showRestoreDialog();
-        if (!slotName) {
-          this.textDisplay.displayText('[Restore cancelled]');
-          return null;
-        }
-
-        const saveData = this.saveManager.loadSaveSlot(slotName);
-        if (!saveData) {
-          this.textDisplay.displayText(`[No saved game found: ${slotName}]`);
-          this.beep();
-          return null;
-        }
-
-        // Restore world state
-        this.saveManager.restoreWorldState(saveData);
-        this.currentTurn = saveData.turnCount || 0;
-        this.currentScore = saveData.score || 0;
-        this.turnOffset = this.currentTurn - 1;
-
-        // Restore transcript
-        if (saveData.transcriptHtml) {
-          const html = this.saveManager.decompressTranscript(saveData.transcriptHtml);
-          this.textDisplay.setHTML(html);
-        }
-
-        this.updateStatusLine();
-        this.textDisplay.displayText(`[Game restored from "${slotName}"]`);
-        this.syncScoreFromWorld();
-
-        // Return null since we handled the restore ourselves
+        // The dialog helper applies the engine save itself (preserves
+        // the v3 timing where UI reads from the post-restore world),
+        // so we always return null here — the engine emits
+        // `restore_completed` regardless.
+        await this.runRestoreDialog();
         return null;
       },
 
@@ -416,8 +415,54 @@ export class BrowserClient implements BrowserClientInterface {
   }
 
   private async handleRestore(): Promise<void> {
-    const hooks = this.getSaveRestoreHooks();
-    await hooks.onRestoreRequested();
+    await this.runRestoreDialog();
+  }
+
+  /**
+   * Show the restore dialog, load the envelope, apply the engine save,
+   * and update browser-side UI. Returns true on success, false if the
+   * user cancelled or no save was found. Used by both the menu path
+   * and the engine-event hook path so they share identical timing.
+   *
+   * The order is deliberate: the engine save is applied to the world
+   * BEFORE any UI update so that {@link updateStatusLine} (which reads
+   * the player's containing room from the world) sees the post-restore
+   * state.
+   */
+  private async runRestoreDialog(): Promise<boolean> {
+    const slotName = await this.dialogManager.showRestoreDialog();
+    if (!slotName) {
+      this.textDisplay.displayText('[Restore cancelled]');
+      return false;
+    }
+
+    const envelope = this.saveManager.loadEnvelope(slotName);
+    if (!envelope) {
+      this.textDisplay.displayText(`[No saved game found: ${slotName}]`);
+      this.beep();
+      return false;
+    }
+
+    // Apply the engine save first — this clears the live world and
+    // rebuilds it from the snapshot. Without this, the v3 in-house
+    // serializer's known gaps return (score / capabilities / world
+    // state values / relationships / ID counters all silently
+    // dropped). See docs/work/save-restore/...platform-save-restore-bug.md.
+    this.engineApplySave(envelope.engineSave);
+
+    this.currentTurn = envelope.engineSave.metadata.turnCount;
+    this.currentScore = envelope.score;
+    this.turnOffset = this.currentTurn - 1;
+
+    if (envelope.transcriptHtml) {
+      const html = this.saveManager.decompressTranscript(envelope.transcriptHtml);
+      this.textDisplay.setHTML(html);
+    }
+
+    this.updateStatusLine();
+    this.textDisplay.displayText(`[Game restored from "${slotName}"]`);
+    this.syncScoreFromWorld();
+    return true;
   }
 
   private async handleRestart(): Promise<void> {
@@ -467,8 +512,42 @@ export class BrowserClient implements BrowserClientInterface {
 
   // === Private helpers ===
 
+  /**
+   * Call into the engine's save serializer. The engine produces a
+   * complete `ISaveData` carrying the world's full runtime state via
+   * the gzipped `worldSnapshot` field. Used by every save path
+   * (interactive, autosave, startup).
+   *
+   * The cast bypasses the engine's `private` modifier on this method;
+   * the platform-browser host needs both interactive (hook-driven) and
+   * non-interactive (autosave / startup-restore) save paths, and the
+   * public hook flow only covers the interactive case. Mirrors the
+   * pattern used by the engine's own test suite.
+   */
+  private engineCreateSave(): ISaveData {
+    return (
+      this.engine as unknown as { createSaveData(): ISaveData }
+    ).createSaveData();
+  }
+
+  /** Apply an engine save to the live world via `WorldModel.loadJSON`. */
+  private engineApplySave(data: ISaveData): void {
+    (
+      this.engine as unknown as { loadSaveData(d: ISaveData): void }
+    ).loadSaveData(data);
+  }
+
   private performSave(slotName: string): void {
-    const result = this.saveManager.performSave(slotName, this.getSaveContext());
+    // If we got here via an engine-fired `platform.save_requested`, the
+    // hook stashed the engine's save data; reuse it so the persisted
+    // state matches the moment the engine produced it. Otherwise (menu
+    // File→Save), produce a fresh save now.
+    const engineSave = this.pendingEngineSave ?? this.engineCreateSave();
+    const result = this.saveManager.performSave(
+      slotName,
+      engineSave,
+      this.getSaveContext(),
+    );
     if (result.success) {
       this.textDisplay.displayText(`[Game saved as "${slotName}"]`);
     } else {

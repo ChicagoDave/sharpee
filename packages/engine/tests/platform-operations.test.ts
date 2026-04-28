@@ -179,33 +179,13 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should load save data and emit completion event', async () => {
-      const mockSaveData: SaveData = {
-        version: '1.0.0',
-        timestamp: Date.now(),
-        metadata: {
-          storyId: 'minimal-test',
-          storyVersion: '1.0.0',
-          turnCount: 5,
-          playTime: 1000,
-          description: 'test-save'
-        },
-        engineState: {
-          eventSource: [],
-          spatialIndex: {
-            entities: {},
-            locations: {}
-          },
-          turnHistory: [],  // Add empty turn history
-          parserState: {}
-        },
-        storyConfig: {
-          id: 'minimal-test',
-          version: '1.0.0',
-          title: 'Minimal Test Story',
-          author: 'Test Suite'
-        }
-      };
-      
+      // Produce a real save from the live engine so the mock matches
+      // the current `SAVE_FORMAT_VERSION` and `worldSnapshot` shape.
+      // Hand-crafted v1 blobs were rejected after the format bump.
+      const mockSaveData: SaveData = (
+        engine as unknown as { createSaveData(): SaveData }
+      ).createSaveData();
+
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(mockSaveData);
       
       const events: any[] = [];

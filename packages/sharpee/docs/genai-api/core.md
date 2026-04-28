@@ -274,8 +274,22 @@ export interface ISaveMetadata {
 export interface IEngineState {
     /** Complete event history */
     eventSource: ISerializedEvent[];
-    /** Current world state */
-    spatialIndex: ISerializedSpatialIndex;
+    /**
+     * Verbatim `WorldModel.toJSON()` output, gzipped, then base64-encoded
+     * to keep the surrounding `ISaveData` JSON-safe.
+     *
+     * Carries the world's full runtime state — entity traits, spatial
+     * containment graph, ScoreLedger, capabilities, world state values,
+     * relationships, ID counters, scope rules. The receiver decodes,
+     * decompresses, and feeds the resulting JSON string straight to
+     * `WorldModel.loadJSON()`.
+     *
+     * Replaces the v1 `spatialIndex` field, which captured only a
+     * fraction of the runtime state and silently lost everything else
+     * across save/restore. Save format bumped from `1.0.0` → `2.0.0`
+     * with no v1 reader; v1 saves are rejected.
+     */
+    worldSnapshot: string;
     /** Turn history for undo/redo */
     turnHistory: ISerializedTurn[];
     /** Optional: Parser state if needed */
@@ -336,54 +350,6 @@ export interface ISerializedEvent {
     data: Record<string, unknown>;
     /** Optional metadata */
     metadata?: Record<string, unknown>;
-}
-/**
- * Serialized spatial index state
- */
-export interface ISerializedSpatialIndex {
-    /** All entities indexed by ID */
-    entities: Record<string, ISerializedEntity>;
-    /** All locations indexed by ID */
-    locations: Record<string, ISerializedLocation>;
-    /** Spatial relationships */
-    relationships: Record<string, ISerializedRelationship[]>;
-}
-/**
- * Serialized entity representation
- */
-export interface ISerializedEntity {
-    /** Unique entity ID */
-    id: string;
-    /** Entity traits as key-value pairs */
-    traits: Record<string, unknown>;
-    /** Entity type hint for deserialization */
-    entityType?: string;
-}
-/**
- * Serialized location representation
- */
-export interface ISerializedLocation {
-    /** Unique location ID */
-    id: string;
-    /** Location properties */
-    properties: Record<string, unknown>;
-    /** IDs of entities at this location */
-    contents: string[];
-    /** Connected locations */
-    connections?: Record<string, string>;
-}
-/**
- * Serialized spatial relationship
- */
-export interface ISerializedRelationship {
-    /** Relationship type (e.g., "contains", "supports") */
-    type: string;
-    /** Source entity/location ID */
-    sourceId: string;
-    /** Target entity/location ID */
-    targetId: string;
-    /** Additional relationship data */
-    data?: Record<string, unknown>;
 }
 /**
  * Serialized turn data

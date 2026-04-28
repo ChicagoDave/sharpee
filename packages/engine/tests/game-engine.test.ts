@@ -228,7 +228,7 @@ describe('GameEngine', () => {
       // Save/load are now private, accessed via saveRestoreService
       const state = (engine as unknown as EnginePrivate).createSaveData();
 
-      expect(state.version).toBe('1.0.0');
+      expect(state.version).toBe('2.0.0');
       expect(state.metadata.turnCount).toBe(1); // 1 turn executed
       expect(state.engineState).toBeDefined();
       expect(state.timestamp).toBeDefined();
@@ -258,7 +258,7 @@ describe('GameEngine', () => {
 
     it('should reject incompatible save versions', () => {
       const incompatibleState = {
-        version: '2.0.0',
+        version: '99.0.0', // not the engine's current SAVE_FORMAT_VERSION
         timestamp: Date.now(),
         metadata: {
           storyId: 'test',
@@ -269,7 +269,7 @@ describe('GameEngine', () => {
         },
         engineState: {
           eventSource: [],
-          spatialIndex: { entities: {}, locations: {}, relationships: {} },
+          worldSnapshot: '',
           turnHistory: [],
           pluginStates: {}
         },

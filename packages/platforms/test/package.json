@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/platform-test",
-  "version": "0.9.112",
+  "version": "0.9.113",
   "description": "Test platform for Sharpee interactive fiction engine",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

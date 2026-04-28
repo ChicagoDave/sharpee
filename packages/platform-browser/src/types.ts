@@ -2,7 +2,7 @@
  * Types and interfaces for @sharpee/platform-browser
  */
 
-import type { ISemanticEvent } from '@sharpee/core';
+import type { ISaveData, ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 
 /**
@@ -121,27 +121,31 @@ export interface SaveSlotMeta {
 }
 
 /**
- * Browser-specific save data format.
- * Captures state without replacing entities - allows restoring state to existing world.
+ * Browser-specific save envelope.
  *
- * v3.0.0-delta: Only stores entities whose locations or traits changed from
- * the initial world state (baseline). The entire payload is lz-string
- * compressed before writing to localStorage.
+ * Wraps the engine's `ISaveData` (which carries the full world state via
+ * the gzipped `worldSnapshot` field, post the platform-wide save/restore
+ * fix) with browser-only metadata that the engine doesn't model:
+ * the rendered transcript HTML and the visible status the user picked
+ * the slot by.
+ *
+ * v4.0.0: cutover from the v3.0.0-delta in-house serializer (which
+ * silently dropped score, capabilities, world state values,
+ * relationships, and ID counters). The whole envelope is lz-string
+ * compressed before writing to localStorage to keep storage compact
+ * even though the engine's worldSnapshot is already gzipped — the
+ * compression compounds on the surrounding JSON.
  */
-export interface BrowserSaveData {
-  /** Save format version */
-  version: string;
-  /** Unix timestamp when save was created */
+export interface BrowserSaveEnvelope {
+  /** Envelope format version. Distinct from the engine's save version. */
+  envelopeVersion: '4.0.0';
+  /** Unix timestamp when the envelope was written. */
   timestamp: number;
-  /** Number of turns at save time */
-  turnCount: number;
-  /** Score at save time */
+  /** Engine save data — the canonical world state. */
+  engineSave: ISaveData;
+  /** Score at save time, captured for the index display. */
   score: number;
-  /** Entity locations: entityId -> locationId (delta: only changed entries) */
-  locations: Record<string, string | null>;
-  /** Entity trait states: entityId -> { traitName -> traitData } (delta: only changed entries) */
-  traits: Record<string, Record<string, unknown>>;
-  /** Compressed HTML transcript (innerHTML of #text-content) */
+  /** Compressed HTML transcript (innerHTML of #text-content). */
   transcriptHtml?: string;
 }
 
