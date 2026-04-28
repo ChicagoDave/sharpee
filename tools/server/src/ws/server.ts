@@ -646,8 +646,42 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
       ws.close(4004, 'bad_url');
       return;
     }
+    // Heartbeat bookkeeping (see heartbeatInterval below). NAT / firewall
+    // / browser power-management can silently sever an idle WS in as
+    // little as 15s; without ping/pong neither side notices, the client
+    // observes "no response" symptoms, and reconnect-storms ensue. Each
+    // ping resets the upstream idle timer; the pong handler clears the
+    // dead-mark we set just before the next ping.
+    (ws as WebSocket & { isAlive?: boolean }).isAlive = true;
+    ws.on('pong', () => {
+      (ws as WebSocket & { isAlive?: boolean }).isAlive = true;
+    });
     attachHandlers(ws, url_room_id);
   });
+
+  // Heartbeat sweep: every 30s, terminate any client that didn't respond
+  // to the prior ping (`isAlive === false`), then ping all survivors and
+  // mark them tentatively dead. The pong handler installed above flips
+  // `isAlive` back to `true`. A stuck client is reaped after at most
+  // 60s — well below typical NAT idle thresholds yet long enough to
+  // tolerate transient packet loss. `ws.terminate()` skips the closing
+  // handshake (the socket is already presumed dead).
+  const HEARTBEAT_INTERVAL_MS = 30_000;
+  const heartbeatInterval = setInterval(() => {
+    for (const client of wss.clients) {
+      const c = client as WebSocket & { isAlive?: boolean };
+      if (c.isAlive === false) {
+        c.terminate();
+        continue;
+      }
+      c.isAlive = false;
+      try {
+        c.ping();
+      } catch {
+        // Socket already dying; the next sweep will reap it via terminate.
+      }
+    }
+  }, HEARTBEAT_INTERVAL_MS);
 
   return {
     wss,
@@ -667,6 +701,7 @@ export function createWsServer(deps: WsDeps): WsServerHandle {
       });
     },
     async close() {
+      clearInterval(heartbeatInterval);
       afkTimer.stop();
       phGraceTimer.cancelAll();
       recycleSweeper?.stop();
