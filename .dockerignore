@@ -35,3 +35,11 @@
 **/.git
 **/.env
 **/.env.*
+
+# Re-include packages' pre-built dist trees (required at runtime — `pnpm
+# deploy --prod` materialises them into the runtime image, and Node ESM
+# resolution after ADR-162 reaches into dist/ for @sharpee/world-model).
+!packages/*/dist
+!packages/*/dist/**
+!packages/*/dist-esm
+!packages/*/dist-esm/**

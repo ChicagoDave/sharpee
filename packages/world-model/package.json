@@ -8,6 +8,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js",
       "esm": "./dist-esm/index.js"

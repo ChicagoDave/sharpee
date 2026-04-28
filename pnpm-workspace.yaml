@@ -10,6 +10,7 @@ packages:
   - stories/entropy
   - tutorials/familyzoo
   - tools/server
+  - tools/server/client
 
 ignoredBuiltDependencies:
   - electron

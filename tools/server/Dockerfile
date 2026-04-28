@@ -21,23 +21,35 @@
 
 # ---------- Stage 1: Build the multi-user browser client ----------
 FROM node:22-slim AS client-builder
+WORKDIR /build
+
+# pnpm via corepack. The client uses `workspace:*` for @sharpee/world-model
+# (per ADR-162 Phase D), so plain npm cannot resolve the dep — pnpm must be
+# used inside the workspace context.
+RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
+
+# Workspace metadata.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+
+# @sharpee/* packages reachable from the client. @sharpee/world-model is the
+# only direct workspace:* dep right now; its source must be pre-built on the
+# host (its package.json `exports.import` points at dist-esm/index.js).
+COPY packages ./packages
+
+# Server source so pnpm can install sharpee-server's deps too. The client's
+# tsconfig path "@wire/*" → "../src/wire/*" pulls in tools/server/src/wire
+# at typecheck time, and that file imports `@sharpee/world-model` (type-only),
+# so the resolver from the wire file's location must be able to find the
+# package — which means sharpee-server's node_modules has to exist.
+COPY tools/server ./tools/server
+
+# Filter installs both the client's and the server's reachable graph. The
+# server filter is needed for the wire types to resolve at typecheck time
+# (see comment above). No story/tutorial packages are materialised.
+RUN pnpm install --filter @sharpee/multiuser-client... --filter sharpee-server --frozen-lockfile
+
 WORKDIR /build/tools/server/client
-
-# Install client deps first so changes to src/ do not bust the install layer.
-COPY tools/server/client/package.json tools/server/client/package-lock.json* ./
-RUN npm install --no-audit --no-fund
-
-# Source + config files.
-COPY tools/server/client/tsconfig.json tools/server/client/vite.config.ts tools/server/client/index.html ./
-COPY tools/server/client/src ./src
-# The client re-exports wire types from the server's authoritative definitions
-# (see client/src/types/wire.ts). Expose only the wire module, not the whole
-# server, to preserve single-source-of-truth without leaking server internals.
-# src/wire/primitives.ts holds the shared primitives (Tier, TextBlock,
-# DomainEvent); the whole wire/ directory is self-contained and Node-free.
-COPY tools/server/src/wire /build/tools/server/src/wire
-
-RUN npm run build
+RUN pnpm run build
 
 # ---------- Stage 2: Build the Node server ----------
 FROM node:22-slim AS node-builder
