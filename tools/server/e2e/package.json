@@ -1,0 +1,15 @@
+{
+  "name": "@sharpee/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "End-to-end Playwright tests for the sharpee multi-user web client.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "PLAYWRIGHT_TARGET=live playwright test --grep @smoke"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

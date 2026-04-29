@@ -9,12 +9,11 @@ Sharpee is a parser-based Interactive Fiction authoring tool built in Typescript
 CLAUDE CODE BUG: ESC Interupt is currently broken so you need to STOP at any decision point.
 
 - **One step at a time.** Do NOT queue up multiple steps or plan ahead. Complete one thing, show the result, then ask what's next.
-- **STOP means STOP.** When the user says "stop", "wait", "hold on", or anything similar, immediately cease all actions. Do not finish the current step, do not queue one more build, do not "just try one more thing." Stop and wait for instructions.
 - **Never auto-retry failed builds or tests.** If a build or test fails, report the error and WAIT. Do not attempt to fix and rebuild without explicit user instruction. Do not loop on build-fail-fix-rebuild cycles.
 - **Never queue a build without asking.** Even if building is the obvious next step, confirm before running `./build.sh`.
 - Never delete files without confirmation. Not even "to get a build working" or "to get the other tests working".
 - Never use batch scripts (sed/awk/grep) to modify multiple files. One file at a time.
-- We never care about backward compatibility, but discuss code smells or design flaws before changing.
+- We currently don't care about backward compatibility.
 - **Platform changes require discussion first.** Any changes to packages/ (engine, stdlib, world-model, parser-en-us, etc.) must be discussed with the user before implementation. Story-level changes (stories/) can proceed autonomously.
 
 ## Architecture Principles
@@ -134,56 +133,6 @@ Migrate each responsibility explicitly. If the new pattern has no equivalent for
 The failure mode this prevents: ISSUE-074 / ADR-157. The rug `on['if.event.pushed']` returned a single `game.message`, which the OLD `event-processor.invokeEntityHandlers()` consumed as an override on the original `if.event.pushed.messageId`. ISSUE-068 migrated the rug to an interceptor with the same `Effect[]` return shape, but the interceptor invocation path appends rather than overrides. The override responsibility was silently dropped, and the player saw both the standard "you give the rug a push" line *and* the rug-reveal line. The walkthrough used `[OK: contains "trap door"]`, so the regression was invisible to the test baseline.
 
 The substitution `Effect[]` ↔ `CapabilityEffect[]` is rarely purely structural. Don't assume it is.
-
-### Story Organization Pattern
-
-Stories are organized by **regions**, with each region as a folder containing:
-
-```
-stories/{story}/src/regions/{region}.ts
-├── index.ts           # Exports room creators, connection function, region IDs
-├── rooms/
-│   ├── room-one.ts    # One file per room
-│   ├── room-two.ts
-│   └── ...
-├── objects/
-│   └── index.ts       # All objects for this region
-└── README.md          # Region documentation (optional)
-```
-
-**Key patterns:**
-
-- **One room per TypeScript file** in `rooms/` folder
-- Room files export a `createXxxRoom(world: WorldModel): IFEntity` function
-- Region `{region-name}.ts` contains everything in that region (rooms, objects, etc)
-- NPCs go in `stories/{story}/src/npcs/{npc-name}/` with entity, behavior, and messages files
-- **AuthorModel for setup**: When placing objects inside closed containers during world initialization, use `AuthorModel` (wraps WorldModel) to skip validation. Normal WorldModel operations enforce game rules (can't put items in closed containers), but setup code needs to bypass this.
-
-## Current Work: Project Dungeo (Dec 2025)
-
-Dog-fooding Sharpee by implementing full Mainframe Zork (~191 rooms).
-
-**Canonical Source**: `docs/dungeon-81/mdlzork_810722/` is the authoritative reference for all game data (treasure values, room connections, puzzle mechanics). When referencing treasure values:
-- `OFVAL` (object find value) → `treasureValue` (points for taking)
-- `OTVAL` (object trophy value) → `trophyCaseValue` (points for putting in trophy case)
-
-**Documentation**: See `/docs/work/dungeo/` for:
-
-- `README.md` - Project overview and goals
-- `world-map.md` - All rooms organized by region
-- `objects-inventory.md` - Treasures, tools, NPCs
-- `stdlib-gap-analysis.md` - What exists vs. what's needed
-- `implementation-plan.md` - 10 phases, vertical slices
-
-**Key ADRs for Dungeo**:
-
-- ADR-070: NPC System Architecture
-- ADR-071: Daemons and Fuses (Timed Events)
-
-### Previous Work: Action Refactoring (Complete)
-
-All 43 stdlib actions now follow four-phase pattern (validate/execute/report/blocked):
-about, attacking, climbing, drinking, eating, opening, closing, pulling, pushing, taking, dropping, putting, inserting, removing, entering, exiting, going, looking, examining, waiting, locking, unlocking, switching_on, switching_off, wearing, taking_off, giving, throwing, touching, smelling, listening, talking, searching, reading, showing, sleeping, help, inventory, quitting, scoring, restarting, restoring, saving
 
 ## API Reference (GenAI)
 

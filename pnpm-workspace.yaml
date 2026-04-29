@@ -11,6 +11,7 @@ packages:
   - tutorials/familyzoo
   - tools/server
   - tools/server/client
+  - tools/server/e2e
 
 ignoredBuiltDependencies:
   - electron
