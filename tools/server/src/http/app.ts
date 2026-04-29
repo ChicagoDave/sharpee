@@ -93,8 +93,15 @@ export function createApp(deps: AppDeps): Hono {
   // scope. All three identity-shape routes (create / upload / erase) share
   // this single bucket so a single per-IP limit applies to the whole
   // identity surface, not 30/min spread across three endpoints.
-  const identityLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
-  const identityRateLimit = rateLimitMiddleware(identityLimiter);
+  //
+  // `RATE_LIMIT_BYPASS=1` disables the limiter entirely. Intended for dev
+  // / e2e bring-up where rapid back-to-back identity creations from a
+  // single IP would otherwise trip the limit. Mirrors the CAPTCHA_BYPASS
+  // pattern. Never set in production.
+  const rateLimitBypass = process.env.RATE_LIMIT_BYPASS === '1';
+  const identityRateLimit = rateLimitBypass
+    ? undefined
+    : rateLimitMiddleware(createRateLimiter({ windowMs: 60_000, max: 10 }));
   registerCreateIdentityRoute(app, {
     identities: deps.identities,
     hashService: deps.hashService,

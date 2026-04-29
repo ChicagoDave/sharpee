@@ -342,10 +342,25 @@ async function handleFrame(
       const json = new TextDecoder().decode(base64ToBytes(frame.blob_b64));
       const saveData = JSON.parse(json) as ISaveData;
       hooks.setPendingRestore(saveData);
+      let ok = false;
       try {
-        await engine.executeTurn('restore');
+        // Use engine.restore() — the public hook-driven entrypoint that
+        // bypasses the verb pipeline (parser → restoringAction.validate
+        // → blocked on `no_saves` because multi-user saves live server-side
+        // in SQLite, not in `sharedData.saves`). `restore()` reads the
+        // pendingRestore via the hook we registered above and routes
+        // straight to `loadSaveData → world.loadJSON()`.
+        ok = await engine.restore();
       } finally {
         hooks.setPendingRestore(null);
+      }
+      if (!ok) {
+        await emit({
+          kind: 'ERROR',
+          phase: 'restore',
+          detail: 'engine.restore() returned false',
+        });
+        return;
       }
       // text_blocks intentionally empty — the server's next COMMAND 'look'
       // produces the post-restore room description. The wire type requires

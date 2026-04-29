@@ -19,11 +19,15 @@ container `server-server-1` to be up and healthy:
 
 ```bash
 cd tools/server
-CAPTCHA_BYPASS=1 docker compose up -d --build
+CAPTCHA_BYPASS=1 RATE_LIMIT_BYPASS=1 docker compose up -d --build
 ```
 
-`CAPTCHA_BYPASS=1` is required for tests that create rooms. Without it,
-`/api/rooms` PUT calls return 403.
+- `CAPTCHA_BYPASS=1` is required for tests that create rooms. Without it,
+  `/api/rooms` POST calls return 403.
+- `RATE_LIMIT_BYPASS=1` disables the per-IP `/api/identities` rate limiter
+  (10 / minute). Without it, back-to-back e2e runs from a single IP trip
+  429 responses on identity registration. Both env vars MUST be unset in
+  production.
 
 Then install Playwright + Chromium browser (one-time):
 

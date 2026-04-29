@@ -510,44 +510,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        cant_take_self: string;
-        already_have: string;
-        cant_take_room: string;
-        fixed_in_place: string;
-        container_full: string;
-        too_heavy: string;
-        cannot_take: string;
-        taken: string;
-        taken_from: string;
-        taken_multi: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_held: string;
-        nothing_to_drop: string;
-        dropped: string;
-        dropped_in: string;
-        dropped_on: string;
-        dropped_multi: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         room_description: string;
         room_dark: string;
         exits: string;
@@ -583,6 +545,214 @@ export declare const standardActionLanguage: ({
         burden_light: string;
         burden_heavy: string;
         burden_overloaded: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_visible: string;
+        not_reachable: string;
+        wearing_it: string;
+        cant_turn_that: string;
+        dial_turned: string;
+        dial_set: string;
+        dial_adjusted: string;
+        knob_turned: string;
+        knob_clicks: string;
+        knob_toggled: string;
+        wheel_turned: string;
+        crank_turned: string;
+        mechanism_grinds: string;
+        requires_more_turns: string;
+        mechanism_activated: string;
+        valve_opened: string;
+        valve_closed: string;
+        flow_changes: string;
+        key_needs_lock: string;
+        key_turned: string;
+        turned: string;
+        rotated: string;
+        spun: string;
+        nothing_happens: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        cant_lower_that: string;
+        already_down: string;
+        lowered: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        cant_raise_that: string;
+        already_up: string;
+        raised: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_topic: string;
+        not_visible: string;
+        too_far: string;
+        not_actor: string;
+        unknown_topic: string;
+        shrugs: string;
+        no_idea: string;
+        confused: string;
+        responds: string;
+        explains: string;
+        already_told: string;
+        remembers: string;
+        not_yet: string;
+        must_do_first: string;
+        earned_trust: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_topic: string;
+        not_visible: string;
+        too_far: string;
+        not_actor: string;
+        told: string;
+        informed: string;
+        interested: string;
+        very_interested: string;
+        grateful: string;
+        already_knew: string;
+        not_interested: string;
+        bored: string;
+        dismissive: string;
+        ignores: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_item: string;
+        not_holding: string;
+        target_not_visible: string;
+        target_not_here: string;
+        no_exit: string;
+        too_heavy: string;
+        self: string;
+        thrown: string;
+        thrown_down: string;
+        thrown_gently: string;
+        thrown_at: string;
+        hits_target: string;
+        misses_target: string;
+        bounces_off: string;
+        lands_on: string;
+        lands_in: string;
+        thrown_direction: string;
+        sails_through: string;
+        breaks_on_impact: string;
+        breaks_against: string;
+        fragile_breaks: string;
+        target_ducks: string;
+        target_catches: string;
+        target_angry: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        waited: string;
+        waited_patiently: string;
+        time_passes: string;
+        nothing_happens: string;
+        waited_in_vehicle: string;
+        waited_for_event: string;
+        waited_anxiously: string;
+        waited_briefly: string;
+        something_approaches: string;
+        time_runs_out: string;
+        patience_rewarded: string;
+        grows_restless: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        cant_take_self: string;
+        already_have: string;
+        cant_take_room: string;
+        fixed_in_place: string;
+        container_full: string;
+        too_heavy: string;
+        cannot_take: string;
+        taken: string;
+        taken_from: string;
+        taken_multi: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_held: string;
+        nothing_to_drop: string;
+        dropped: string;
+        dropped_in: string;
+        dropped_on: string;
+        dropped_multi: string;
     };
     help: {
         description: string;
@@ -1100,69 +1270,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_visible: string;
-        not_reachable: string;
-        wearing_it: string;
-        cant_turn_that: string;
-        dial_turned: string;
-        dial_set: string;
-        dial_adjusted: string;
-        knob_turned: string;
-        knob_clicks: string;
-        knob_toggled: string;
-        wheel_turned: string;
-        crank_turned: string;
-        mechanism_grinds: string;
-        requires_more_turns: string;
-        mechanism_activated: string;
-        valve_opened: string;
-        valve_closed: string;
-        flow_changes: string;
-        key_needs_lock: string;
-        key_turned: string;
-        turned: string;
-        rotated: string;
-        spun: string;
-        nothing_happens: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        cant_lower_that: string;
-        already_down: string;
-        lowered: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        cant_raise_that: string;
-        already_up: string;
-        raised: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         no_item: string;
         no_recipient: string;
         not_holding: string;
@@ -1240,81 +1347,20 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        no_topic: string;
-        not_visible: string;
-        too_far: string;
-        not_actor: string;
-        unknown_topic: string;
-        shrugs: string;
-        no_idea: string;
-        confused: string;
-        responds: string;
-        explains: string;
-        already_told: string;
-        remembers: string;
-        not_yet: string;
-        must_do_first: string;
-        earned_trust: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        no_topic: string;
-        not_visible: string;
-        too_far: string;
-        not_actor: string;
-        told: string;
-        informed: string;
-        interested: string;
-        very_interested: string;
-        grateful: string;
-        already_knew: string;
-        not_interested: string;
-        bored: string;
-        dismissive: string;
-        ignores: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_item: string;
-        not_holding: string;
-        target_not_visible: string;
-        target_not_here: string;
-        no_exit: string;
-        too_heavy: string;
-        self: string;
-        thrown: string;
-        thrown_down: string;
-        thrown_gently: string;
-        thrown_at: string;
-        hits_target: string;
-        misses_target: string;
-        bounces_off: string;
-        lands_on: string;
-        lands_in: string;
-        thrown_direction: string;
-        sails_through: string;
-        breaks_on_impact: string;
-        breaks_against: string;
-        fragile_breaks: string;
-        target_ducks: string;
-        target_catches: string;
-        target_angry: string;
+        no_question: string;
+        no_one_asked: string;
+        too_late: string;
+        answered: string;
+        answered_yes: string;
+        answered_no: string;
+        gave_answer: string;
+        accepted: string;
+        rejected: string;
+        noted: string;
+        confused_by_answer: string;
+        invalid_response: string;
+        needs_yes_or_no: string;
+        unclear_answer: string;
     };
     help: {
         description: string;
@@ -1461,52 +1507,6 @@ export declare const standardActionLanguage: ({
         peaceful_solution: string;
         no_fighting: string;
         unnecessary_violence: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        waited: string;
-        waited_patiently: string;
-        time_passes: string;
-        nothing_happens: string;
-        waited_in_vehicle: string;
-        waited_for_event: string;
-        waited_anxiously: string;
-        waited_briefly: string;
-        something_approaches: string;
-        time_runs_out: string;
-        patience_rewarded: string;
-        grows_restless: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_question: string;
-        no_one_asked: string;
-        too_late: string;
-        answered: string;
-        answered_yes: string;
-        answered_no: string;
-        gave_answer: string;
-        accepted: string;
-        rejected: string;
-        noted: string;
-        confused_by_answer: string;
-        invalid_response: string;
-        needs_yes_or_no: string;
-        unclear_answer: string;
     };
     help: {
         description: string;

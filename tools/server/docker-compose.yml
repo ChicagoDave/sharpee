@@ -27,6 +27,10 @@ services:
       # Operators: leave unset in production. Smoke tests set this to "1"
       # to bypass CAPTCHA verification on /api/rooms.
       CAPTCHA_BYPASS: "${CAPTCHA_BYPASS:-}"
+      # Operators: leave unset in production. e2e tests set this to "1"
+      # to disable the per-IP /api/identities rate limiter so back-to-back
+      # runs from a single IP don't trip 429s. Mirrors CAPTCHA_BYPASS.
+      RATE_LIMIT_BYPASS: "${RATE_LIMIT_BYPASS:-}"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
       interval: 30s
