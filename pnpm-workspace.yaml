@@ -9,9 +9,6 @@ packages:
   - stories/dungeo
   - stories/entropy
   - tutorials/familyzoo
-  - tools/server
-  - tools/server/client
-  - tools/server/e2e
 
 ignoredBuiltDependencies:
   - electron
