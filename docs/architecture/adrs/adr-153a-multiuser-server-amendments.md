@@ -1,8 +1,10 @@
 # ADR-153a: Multiuser Server — Phase-4 Amendments
 
-## Status: PROPOSAL
+## Status: REPLACED
 
-## Date: 2026-04-24
+> **REPLACED on 2026-04-28.** This addendum amended ADR-153 with implementation-time clarifications around Deno spawn, turn timeout, log-before-broadcast, synthetic opening scene, and save-shape constraints. ADR-153 was replaced on the same day by the stateless-server pivot (`docs/brainstorm/stateless-multiuser/overview.md`); this addendum is replaced as a transitive consequence. The operational invariants it named no longer apply because the subprocess lifecycle they describe no longer exists. Replacement ADR pending.
+
+## Date: 2026-04-24 (replaced 2026-04-28)
 
 ## Relationship to ADR-153
 

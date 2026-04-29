@@ -1,8 +1,10 @@
 # ADR-162: World-Model Replication for Multiuser Renderers
 
-## Status: ACCEPTED
+## Status: REPLACED
 
-## Date: 2026-04-27
+> **REPLACED on 2026-04-28.** This ADR specified pushing the entire world snapshot (`world.toJSON()`) over the wire on every turn so the client could maintain a read-only mirror and render any view it wanted. The 2026-04-28 stateless-server pivot inverts the authorship: the engine emits **fyrevm-style channel I/O** — a small set of named channels (text/number/json) carrying just the data the UI surfaces need. The wire shrinks from "full world every turn" to "sparse channel deltas." The renderer no longer reads `world.getScore()` / `getCapability()` / `getContainingRoom()` — it consumes typed channel values that the server (via `@sharpee/channel-service`) produces from the engine's TextBlocks, events, and world. The world-mirror's `Pick<>` projection, the `hydrateWorld` patch logic, and the "every receive replaces the world identity" rule all go away. Brainstorm: `docs/brainstorm/stateless-multiuser/overview.md`. Replacement ADR pending.
+
+## Date: 2026-04-27 (replaced 2026-04-28)
 
 ## Relates to
 

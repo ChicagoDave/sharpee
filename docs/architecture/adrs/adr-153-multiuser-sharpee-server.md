@@ -1,8 +1,10 @@
 # ADR-153: Multiuser Sharpee Server
 
-## Status: PROPOSAL
+## Status: REPLACED
 
-## Date: 2026-04-19
+> **REPLACED on 2026-04-28.** This ADR specified the multi-user server as a long-running per-room Deno subprocess holding a `GameEngine` in memory, streaming `welcome` / `OUTPUT` / `RESTORED` snapshots over a stateful WebSocket. The 2026-04-28 pivot adopts a **fyrevm-style stateless server**: no per-room engine in memory; each turn loads the saved blob → executes one command → snapshots back. The wire becomes a small channel-I/O data packet rather than a stateful session. Q1 of the brainstorm settled that admin-installed stories are trusted, so the Deno subprocess sandbox is no longer load-bearing — the engine runs in-process Node. Most of this ADR's decisions become obsolete: Deno isolation, `Sandbox` lifecycle, turn protocol over stdin/stdout, save-shape tied to subprocess lifetimes, browser session phase model. Decisions that carry forward: identity contract (now governed by ADR-161), HTTP route surface, the "code is the credential" framing, the public listing rules. Brainstorm: `docs/brainstorm/stateless-multiuser/overview.md`. Replacement ADR pending.
+
+## Date: 2026-04-19 (replaced 2026-04-28)
 
 ## Supersedes
 
