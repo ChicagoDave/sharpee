@@ -2,11 +2,30 @@
 
 ## Status
 
-Proposed
+SUPERSEDED
+
+> **SUPERSEDED on 2026-04-29 by ADR-164** (Channel I/O Everywhere).
+> ADR-101's principle ("author-controlled media presentation; client
+> is a renderer, not an interpreter of game semantics") carries
+> forward verbatim into ADR-164. The implementation does not: ADR-101's
+> standalone media events (`media.image.show`, `media.sound.play`,
+> `media.music.play`, `media.ambient.play`, `media.layout.configure`,
+> `media.animation.play`, `media.transition`) become **channel
+> emissions** under the ADR-163 wire model. ADR-101 was Proposed for
+> ~3 months and never implemented; ADR-164 lands the same surface as
+> a fold into channel I/O without a separate event vocabulary. Two
+> ADR-101 specifics drop or rename in translation:
+> `media.status.update` is deleted (subsumed by ADR-163's `location` /
+> `score` / `turn` / `score_notify` standard channels);
+> `media.sound.play`'s `channel?` field is renamed `bus` to avoid
+> conflation with wire channels; hotspot `action` is renamed
+> `command`; animation `onComplete` is dropped (one-way trigger
+> semantics — engine does not track UI completion). Read ADR-164 §4
+> for the full event-to-channel mapping.
 
 ## Date
 
-2026-01-14
+2026-01-14 (superseded 2026-04-29)
 
 ## Context
 
