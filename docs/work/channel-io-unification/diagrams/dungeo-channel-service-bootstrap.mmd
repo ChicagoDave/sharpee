@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    participant P as Player
+    participant C as Client
+    participant S as Server
+    participant CS as ChannelService
+    participant E as Engine
+    participant W as World
+    participant DB as Save DB
+
+    P->>C: open connection
+    C->>S: hello packet
+    Note right of C: kind hello<br/>capabilities { text true, images false, sound false }
+    S->>DB: load save
+    DB-->>S: save blob or null
+    S->>W: instantiate world from save
+    Note over S,CS: story init registers the 13 standard channels<br/>capability-gated channels skipped — client said no
+    S->>CS: produceCmgtManifest
+    CS-->>S: channel registry
+    S->>C: cmgt packet
+    Note left of C: kind cmgt, protocol_version 1<br/>channels [ main, prompt, location, score, turn,<br/>death, endgame, score_notify, info, ifid,<br/>chat, presence, command_echo ]
+    S->>C: replay turn packet
+    Note left of C: kind turn, turn_id replay-0, replay true<br/>payload {<br/>  info { title, author, version },<br/>  ifid,<br/>  main [ room.name, room.description ],<br/>  location 'West of House',<br/>  score { current 0, max 350 },<br/>  turn 0, prompt '> '<br/>}
+    C->>P: render initial state

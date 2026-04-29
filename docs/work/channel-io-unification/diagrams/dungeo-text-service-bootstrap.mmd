@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    participant P as Player
+    participant H as Host (CLI / zifmia / browser)
+    participant E as Engine
+    participant TS as TextService
+    participant LP as LanguageProvider
+    participant W as World
+
+    P->>H: launches client / opens page
+    H->>E: new GameEngine(story, language)
+    E->>TS: createTextService(languageProvider)
+    E->>W: load story, build world
+    H->>E: start() → executes turn 0
+    E->>W: instantiate player at West of House
+    E-->>E: emit game.started event
+    E-->>E: emit if.event.room_description event
+    E->>TS: processTurn(events)
+    Note over TS: pipeline<br/>filter → sort → process → assemble<br/>route each event to handler<br/>handler resolves messageId via LanguageProvider
+    TS->>LP: resolve message ids
+    LP-->>TS: localised strings
+    TS-->>E: ITextBlock[]
+    Note over TS,E: blocks [<br/>  { key 'room.name', text 'West of House' },<br/>  { key 'room.description', text 'You are standing...' },<br/>  { key 'status.turns', text '0' }<br/>]
+    E-->>H: TurnResult { events, textBlocks, ... }
+    H->>H: render blocks per host conventions
+    Note over H: CLI: print room.name bold, blank line, room.description<br/>zifmia: blocks shipped over IPC, React renders by key<br/>browser: same, key-routing in client code
+    H->>P: opening prose visible

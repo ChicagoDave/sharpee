@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Alderman — Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:  #f3ecdc;
+    --paper:  #ebe2cd;
+    --ink:    #1f1a13;
+    --inkSoft:#4a4136;
+    --oxblood:#7a1d1d;
+    --brass:  #b08a4a;
+    --brassSoft:#d9b97a;
+    --rule:   #c9bfa6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: "IBM Plex Serif", Georgia, serif;
+    background-image:
+      radial-gradient(rgba(31,26,19,0.035) 1px, transparent 1px),
+      radial-gradient(rgba(31,26,19,0.025) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+    padding: 36px 44px 44px;
+  }
+
+  .page { max-width: 980px; margin: 0 auto; }
+
+  header.masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--oxblood);
+    margin-bottom: 6px;
+  }
+  h1.title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: 48px;
+    line-height: 0.95;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--inkSoft);
+    font-style: italic;
+  }
+  .imprint {
+    text-align: right;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--inkSoft);
+    line-height: 1.6;
+  }
+  .imprint .imprint-label { color: var(--brass); }
+
+  section.help-section { margin-bottom: 28px; }
+  .section-header {
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-kicker {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 4px;
+  }
+  .section-title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.1;
+  }
+  .section-note {
+    font-size: 12.5px;
+    color: var(--inkSoft);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .verbs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
+  .verb-card {
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--oxblood);
+    padding: 12px 14px;
+  }
+  .verb-syntax {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    background: #fff7e3;
+    border: 1px solid var(--rule);
+    padding: 4px 8px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .verb-syntax .verb { color: var(--oxblood); font-weight: 600; }
+  .verb-syntax .slot { color: var(--inkSoft); font-style: italic; }
+  .verb-desc {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .verb-example {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: var(--brass);
+    letter-spacing: 0.04em;
+  }
+  .verb-example::before { content: "ex. "; color: var(--inkSoft); font-style: italic; }
+
+  .gestures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 22px;
+  }
+  .gesture {
+    background: var(--cream);
+    border: 1px solid var(--rule);
+    padding: 10px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .gesture .input {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--inkSoft);
+    min-width: 140px;
+  }
+  .gesture .arrow { color: var(--brass); font-family: serif; }
+  .gesture .out {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--ink);
+  }
+  .gesture .out .cmd {
+    font-family: "IBM Plex Mono", monospace;
+    font-style: normal;
+    font-size: 12px;
+    color: var(--oxblood);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .standard-verbs {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--inkSoft);
+    line-height: 1.6;
+  }
+  .standard-verbs strong {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .standard-verbs .verb-list {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+    margin-top: 4px;
+  }
+
+  footer {
+    margin-top: 32px;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    color: var(--inkSoft);
+    font-style: italic;
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">REFERENCE · CONFIDENTIAL</div>
+      <h1 class="title">The Detective's Companion</h1>
+      <div class="subtitle">A help card for working a case at The Alderman.</div>
+    </div>
+    <div class="imprint">
+      <div><span class="imprint-label">Story</span> &nbsp; The Alderman</div>
+      <div><span class="imprint-label">Verbs</span> &nbsp; 6 investigative · standard IF</div>
+      <div><span class="imprint-label">Surface</span> &nbsp; case board · notebook</div>
+    </div>
+  </header>
+
+  <section class="help-section">
+    <div class="section-header">
+      <div class="section-kicker">Investigative · story-defined</div>
+      <div class="section-title">Investigative verbs</div>
+      <div class="section-note">Six verbs unique to the case. Each one updates the board the moment you commit it.</div>
+    </div>
+
+    <div class="verbs">
+
+      <div class="verb-card">
+        <div class="verb-syntax"><span class="verb">CHECK</span> <span class="slot">&lt;person&gt;</span> &nbsp;|&nbsp; <span class="verb">CHECK</span> <span class="slot">&lt;fact&gt;</span></div>
+        <div class="verb-desc">Reflect on what you know. The PC reasons aloud — no commitment, no edges drawn. Useful before you assert.</div>
+        <div class="verb-example">check catherine's truthfulness</div>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-syntax"><span class="verb">IDENTIFY GAP</span> &nbsp;in&nbsp; <span class="slot">&lt;person&gt;'s alibi</span></div>
+        <div class="verb-desc">Pin a hole in someone's account. Requires supporting evidence in the pile. Adds a new assertion to the board.</div>
+        <div class="verb-example">identify gap in catherine's alibi</div>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-syntax"><span class="verb">CONTRADICT</span> <span class="slot">&lt;claim&gt;</span> &nbsp;with&nbsp; <span class="slot">&lt;evidence&gt;</span></div>
+        <div class="verb-desc">Two facts in opposition. Draws a contradiction edge between the cited evidence and the claimant on the board.</div>
+        <div class="verb-example">contradict viola's rehearsal claim with the program</div>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-syntax"><span class="verb">SUSPECT</span> <span class="slot">&lt;person&gt;</span></div>
+        <div class="verb-desc">Mark someone for further attention. Adds the brass-glow treatment to their card on the case board.</div>
+        <div class="verb-example">suspect catherine</div>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-syntax"><span class="verb">CLEAR</span> <span class="slot">&lt;person | item | place&gt;</span></div>
+        <div class="verb-desc">Eliminate from consideration. Strikes the card on the board. Reversible — clear again to undo.</div>
+        <div class="verb-example">clear the revolver</div>
+      </div>
+
+      <div class="verb-card">
+        <div class="verb-syntax"><span class="verb">ACCUSE</span> <span class="slot">&lt;person&gt;</span> &nbsp;with&nbsp; <span class="slot">&lt;weapon&gt;</span> &nbsp;in&nbsp; <span class="slot">&lt;place&gt;</span></div>
+        <div class="verb-desc">The final accusation. You get three. Each one is permanent. The board's state at the moment of ACCUSE is what's judged.</div>
+        <div class="verb-example">accuse jack with the knife in the kitchen</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="help-section">
+    <div class="section-header">
+      <div class="section-kicker">Mouse · synthesized commands</div>
+      <div class="section-title">Working the board</div>
+      <div class="section-note">Every UI gesture round-trips as a parser command. The notebook stays the source of truth.</div>
+    </div>
+
+    <div class="gestures">
+      <div class="gesture">
+        <span class="input">Click a card</span>
+        <span class="arrow">→</span>
+        <span class="out">issues <span class="cmd">CLEAR &lt;item&gt;</span></span>
+      </div>
+      <div class="gesture">
+        <span class="input">Right-click a suspect</span>
+        <span class="arrow">→</span>
+        <span class="out">issues <span class="cmd">SUSPECT &lt;person&gt;</span></span>
+      </div>
+      <div class="gesture">
+        <span class="input">Click an evidence card</span>
+        <span class="arrow">→</span>
+        <span class="out">highlights it &amp; any assertions citing it</span>
+      </div>
+      <div class="gesture">
+        <span class="input">Hover an assertion</span>
+        <span class="arrow">→</span>
+        <span class="out">traces edges back to the cited evidence</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="help-section">
+    <div class="section-header">
+      <div class="section-kicker">Standard IF · platform</div>
+      <div class="section-title">The familiar verbs still work</div>
+      <div class="section-note">All standard interactive-fiction commands operate normally — investigation is layered on top of, not in place of, the parser.</div>
+    </div>
+
+    <div class="standard-verbs">
+      <div><strong>Movement &amp; perception</strong></div>
+      <div class="verb-list">LOOK · EXAMINE · GO &lt;direction&gt; · ENTER · EXIT · INVENTORY</div>
+      <div style="margin-top:10px;"><strong>Manipulation</strong></div>
+      <div class="verb-list">TAKE · DROP · PUT &lt;x&gt; IN &lt;y&gt; · OPEN · CLOSE · LOCK · UNLOCK · GIVE</div>
+      <div style="margin-top:10px;"><strong>Conversation</strong></div>
+      <div class="verb-list">ASK &lt;person&gt; ABOUT &lt;topic&gt; · TELL &lt;person&gt; ABOUT &lt;topic&gt; · SHOW &lt;item&gt; TO &lt;person&gt;</div>
+      <div style="margin-top:10px;"><strong>Meta</strong></div>
+      <div class="verb-list">SAVE · RESTORE · UNDO · QUIT · ABOUT · HINT</div>
+    </div>
+  </section>
+
+  <footer>
+    <div>Sharpee · The Alderman · help card</div>
+    <div>type HELP to see this card again</div>
+  </footer>
+
+</div>
+</body>
+</html>

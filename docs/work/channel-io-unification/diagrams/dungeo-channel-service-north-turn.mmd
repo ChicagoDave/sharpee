@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    participant P as Player
+    participant C as Client
+    participant S as Server
+    participant CS as ChannelService
+    participant E as Engine
+    participant W as World
+    participant DB as Save DB
+
+    P->>C: types north and enter
+    C->>S: command packet
+    Note right of C: kind command, text 'north'
+    S->>DB: load save blob
+    DB-->>S: blob with world and transcript
+    S->>W: rehydrate world from blob
+    S->>E: executeTurn north
+    E->>W: validate going, resolve direction, move player
+    E->>W: emit actor_moved and entered_room events
+    E-->>S: textBlocks and events
+    Note over E,S: textBlocks [<br/>  room.name 'Forest Path',<br/>  room.description 'A narrow trail...',<br/>  status.turns '1'<br/>]
+    S->>CS: produceTurnPacket
+    Note over CS: rule routing<br/>room.name → main append AND location replace<br/>room.description → main append<br/>status.turns → turn replace<br/>command echo → command_echo append (server)<br/>standard channels populate every turn — score, prompt, info, ifid<br/>emit even when unchanged
+    CS-->>S: turn packet
+    Note over CS,S: payload {<br/>  command_echo [ { actor_handle 'player', text 'north' } ],<br/>  main [ room.name, room.description ],<br/>  prompt '> ',<br/>  location 'Forest Path',<br/>  score { current 0, max 350 },     // unchanged but emitted<br/>  turn 1,<br/>  info { ... },                     // unchanged but emitted<br/>  ifid '...'                        // unchanged but emitted<br/>}
+    S->>W: append packet to transcript capability
+    S->>DB: save world.toJSON
+    S->>C: turn packet
+    C->>P: command echoed, prose appended to main pane,<br/>status line shows new location plus turn

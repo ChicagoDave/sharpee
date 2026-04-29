@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    participant P as Player
+    participant H as Host
+    participant E as Engine
+    participant TS as TextService
+    participant LP as LanguageProvider
+    participant W as World
+
+    P->>H: types north and enter
+    H->>E: executeTurn('north')
+    E->>W: parse, validate going, resolve direction
+    E->>W: move player to Forest Path
+    E-->>E: emit if.event.actor_moved
+    E-->>E: emit if.event.entered_room
+    E-->>E: emit if.event.room_description (new room)
+    E-->>E: emit if.event.turn_passed
+    E->>TS: processTurn(turnEvents)
+    Note over TS: pipeline<br/>filter — drop system / debug events<br/>sort — order for prose (ADR-094)<br/>route — handler per event type
+    TS->>LP: resolve room.description messageId<br/>resolve status.turns messageId
+    LP-->>TS: localised strings
+    TS-->>E: ITextBlock[]
+    Note over TS,E: blocks [<br/>  { key 'room.name', text 'Forest Path' },<br/>  { key 'room.description', text 'A narrow trail...' },<br/>  { key 'status.turns', text '1' }<br/>]
+    E-->>H: TurnResult { events, textBlocks, score, turn, ... }
+    H->>H: render blocks per host conventions
+    Note over H: CLI: print room.name then description, status line repaints<br/>zifmia: TurnResult marshalled over IPC,<br/>React UI re-renders main pane and status bar by key
+    H->>P: prose appended, status line updated
