@@ -34,12 +34,14 @@ export type {
 } from './wire';
 export { createDecoder } from './wire';
 
-// Producer-side rule types (decision 12)
+// Producer-side rule types (decision 12, §7)
 export type {
   ChannelRule,
   ChannelRuleWhen,
   ChannelRuleEmit,
   ChannelRuleExtract,
+  ChannelRuleInput,
+  ChannelRuleChannelResolver,
 } from './types';
 
 // Registry (decision 12, AC-11)
@@ -81,3 +83,20 @@ export {
   registerPlatformRules,
   flattenContent,
 } from './platform-rules';
+
+// Media channels (decisions 6, 7, AC-6)
+export {
+  MEDIA_CHANNEL_IDS,
+  MEDIA_CHANNELS,
+  registerMediaChannels,
+  registerAmbientChannel,
+  type MediaChannelId,
+} from './media-channels';
+
+// Media routing rules (decisions 7, 9, AC-6)
+export {
+  MEDIA_EVENT_TYPES,
+  mediaRules,
+  registerMediaRules,
+  type MediaEventType,
+} from './media-rules';

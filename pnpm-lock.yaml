@@ -106,6 +106,9 @@ importers:
         specifier: workspace:*
         version: link:../world-model
     devDependencies:
+      '@sharpee/story-channel-service-test':
+        specifier: workspace:*
+        version: link:../../stories/channel-service-test
       '@types/node':
         specifier: ^20.8.0
         version: 20.19.27
@@ -929,6 +932,15 @@ importers:
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
+
+  stories/channel-service-test:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@sharpee/text-blocks':
+        specifier: workspace:*
+        version: link:../../packages/text-blocks
 
   stories/dungeo:
     dependencies:

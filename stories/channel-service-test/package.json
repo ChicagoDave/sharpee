@@ -1,0 +1,13 @@
+{
+  "name": "@sharpee/story-channel-service-test",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Test fixture for @sharpee/channel-service Phase 2 (ADR-163). Not a playable story; supplies deterministic TextBlock and ISemanticEvent sequences for AC-3, AC-6, AC-8, AC-12 round-trip tests.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "files": ["src"],
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*"
+  }
+}

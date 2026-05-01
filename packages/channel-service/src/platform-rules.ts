@@ -15,7 +15,7 @@
 
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
-import type { ChannelRule } from './types';
+import type { ChannelRule, ChannelRuleInput } from './types';
 import { STANDARD_CHANNEL_IDS } from './standard-channels';
 import { addRules } from './registry';
 
@@ -43,13 +43,17 @@ export function flattenContent(content: ReadonlyArray<TextContent>): string {
  *
  * Today's stdlib emits `status.score` as a plain string like `'42'` or
  * `'42 / 100'`. The `score` channel expects `{ current, max }`. This
- * extractor parses both shapes and returns `null` for unparseable
- * values (so the producer can drop the emission rather than write
- * garbage to the wire).
+ * extractor parses both shapes and returns `undefined` for unparseable
+ * values — the producer's "extractor refused" signal, which drops the
+ * emission rather than write garbage to the wire. (`null` is reserved
+ * for valid `null` emissions per ADR-163 §7 media hide/stop signals.)
  */
-function extractScore(block: ITextBlock): { current: number; max: number | null } | null {
+function extractScore(input: ChannelRuleInput): { current: number; max: number | null } | undefined {
+  // Block predicate guarantees we receive an ITextBlock here; the wider
+  // ChannelRuleInput type matches the rule-extractor signature.
+  const block = input as ITextBlock;
   const flat = flattenContent(block.content).trim();
-  if (flat === '') return null;
+  if (flat === '') return undefined;
   const slashMatch = flat.match(/^(-?\d+)\s*\/\s*(\d+)$/);
   if (slashMatch) {
     return { current: Number(slashMatch[1]), max: Number(slashMatch[2]) };
@@ -58,7 +62,7 @@ function extractScore(block: ITextBlock): { current: number; max: number | null 
   if (intMatch) {
     return { current: Number(intMatch[1]), max: null };
   }
-  return null;
+  return undefined;
 }
 
 /**

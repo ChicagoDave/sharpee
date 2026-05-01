@@ -3,23 +3,33 @@
  *
  * Owner context: platform package. Routes engine output (text blocks,
  * events, world snapshot) through the session's registered rules into
- * a `TurnPacket` per ADR-163 §1, §5, §10, §12.
+ * a `TurnPacket` per ADR-163 §1, §5, §7, §10, §12.
  *
  * Responsibility split:
- *  - Rule matching — block-vs-rule predicate evaluation (key,
- *    keyPattern, keyPrefix, decoration, custom).
- *  - Extraction — apply `extract` to convert blocks into channel values
- *    (`'content'` | `'string'` | `'number'` | function).
+ *  - Rule matching — input-vs-rule predicate evaluation. Block rules
+ *    match `ITextBlock.key` (key / keyPattern / keyPrefix / decoration
+ *    / custom); event rules match `ISemanticEvent.type` (eventType /
+ *    eventTypePrefix / customEvent).
+ *  - Channel resolution — `emit.channel` is either a static id string
+ *    or a function of the matched input (used by media routing for
+ *    `image:<layer>` and `ambient:<id>` per §7).
+ *  - Extraction — apply `extract` to convert blocks/events into channel
+ *    values (`'content'` | `'string'` | `'number'` | `'payload'` |
+ *    `'eventType'` | function).
  *  - Mode application — `replace` keeps the latest contribution per
- *    block-iteration order; `append` accumulates new entries; `event`
- *    fires transient signals (last-write within a turn).
- *  - Conflict resolution (AC-10) — within a single block, multiple
+ *    iteration order; `append` accumulates new entries; `event` fires
+ *    transient signals (last-write within a turn).
+ *  - Conflict resolution (AC-10) — within a single input, multiple
  *    rules emitting to the same channel are resolved by priority then
  *    registration order; only the highest-priority match contributes.
+ *  - Dispatch ordering — blocks pass first, then events. For
+ *    replace-mode channels with both block and event contributors in
+ *    the same turn, the event's value wins (events represent
+ *    state-affecting actions; blocks represent narrative output).
  *  - Emit policy (§5, AC-9) — `always` channels appear in every payload;
  *    `sparse` channels appear only on change.
  *
- * @see ADR-163 — Channel-Service Platform — decisions 1, 5, 10, 12
+ * @see ADR-163 — Channel-Service Platform — decisions 1, 5, 7, 10, 12
  */
 
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
@@ -31,7 +41,12 @@ import type {
   ChannelContentType,
   ChannelMode,
 } from './wire';
-import type { ChannelRule, ChannelRuleExtract } from './types';
+import type {
+  ChannelRule,
+  ChannelRuleExtract,
+  ChannelRuleInput,
+  ChannelRuleChannelResolver,
+} from './types';
 import {
   _isManifestFrozen,
   _getRulesInDispatchOrder,
@@ -45,10 +60,10 @@ import { flattenContent } from './platform-rules';
 /**
  * Input bundle for `produceTurnPacket` (ADR-163 §12).
  *
- * `events` and `world` are accepted for forward compatibility — Phase 1
- * routing is text-block-driven; event-driven and world-snapshot-driven
- * rules are added in later phases when ADR-163 §12's `ChannelRule.when`
- * grows event predicates.
+ * `world` is accepted for forward compatibility — Phase 1 routing is
+ * text-block-driven, Phase 2 adds event routing for media channels;
+ * world-snapshot-driven rules are added when ADR-163 §12's
+ * `ChannelRule.when` grows world predicates in a later phase.
  */
 export interface ProduceTurnPacketInput {
   readonly textBlocks: ReadonlyArray<ITextBlock>;
@@ -85,7 +100,8 @@ export function produceTurnPacket(input: ProduceTurnPacketInput): TurnPacket {
 
   const channels = indexChannelsById(getChannelRegistry());
   const rules = _getRulesInDispatchOrder();
-  const contributions = collectContributions(input.textBlocks, rules, channels);
+  const events = input.events ?? [];
+  const contributions = collectContributions(input.textBlocks, events, rules, channels);
   const payload = buildPayload(channels, contributions, input.prevValues);
 
   return {
@@ -98,7 +114,7 @@ export function produceTurnPacket(input: ProduceTurnPacketInput): TurnPacket {
 interface Contribution {
   readonly mode: ChannelMode;
   /**
-   * Values emitted to this channel this turn, in block-iteration order.
+   * Values emitted to this channel this turn, in iteration order.
    * For `replace` channels only the last entry is meaningful; for
    * `append` and `event` all entries matter.
    */
@@ -116,80 +132,153 @@ function indexChannelsById(
 }
 
 /**
- * Walk each block through the rule chain. For each block, dedupe per
- * channel — only the highest-priority matching rule per channel
- * contributes (AC-10).
+ * Walk each block then each event through the rule chain. For each
+ * input, dedupe per channel — only the highest-priority matching rule
+ * per channel contributes (AC-10).
+ *
+ * Blocks pass first, then events. For replace-mode channels, an event's
+ * contribution overwrites a block's contribution from the same turn.
  */
 function collectContributions(
   textBlocks: ReadonlyArray<ITextBlock>,
+  events: ReadonlyArray<ISemanticEvent>,
   rules: ReadonlyArray<ChannelRule>,
   channels: Map<string, ChannelDefinition>,
 ): Map<string, Contribution> {
   const contributions = new Map<string, Contribution>();
 
+  // Pass 1: text blocks
   for (const block of textBlocks) {
-    const emittedHere = new Set<string>();
-    for (const rule of rules) {
-      if (!matches(block, rule)) continue;
-      const channelId = rule.emit.channel;
-      if (emittedHere.has(channelId)) continue;
-      const def = channels.get(channelId);
-      if (!def) continue;
+    applyMatchingRules(block, false, rules, channels, contributions);
+  }
 
-      const value = applyExtract(block, rule.emit.extract, def.contentType);
-      if (value === null || value === undefined) continue;
-
-      emittedHere.add(channelId);
-      let contrib = contributions.get(channelId);
-      if (!contrib) {
-        contrib = { mode: def.mode, entries: [] };
-        contributions.set(channelId, contrib);
-      }
-      if (def.mode === 'replace') {
-        // last contribution within a turn wins (later block wins);
-        // multiple rules per block are already deduped above.
-        contrib.entries.length = 0;
-        contrib.entries.push(value);
-      } else {
-        contrib.entries.push(value);
-      }
-    }
+  // Pass 2: events
+  for (const event of events) {
+    applyMatchingRules(event, true, rules, channels, contributions);
   }
 
   return contributions;
 }
 
 /**
- * Predicate evaluation for `ChannelRule.when` (ADR-163 §12).
+ * Apply all matching rules for a single input (block or event) to the
+ * contribution map. Per-input dedupe ensures only the highest-priority
+ * rule per channel contributes for this input.
+ */
+function applyMatchingRules(
+  input: ChannelRuleInput,
+  isEvent: boolean,
+  rules: ReadonlyArray<ChannelRule>,
+  channels: Map<string, ChannelDefinition>,
+  contributions: Map<string, Contribution>,
+): void {
+  const emittedHere = new Set<string>();
+  for (const rule of rules) {
+    // Source filter: block rules only see blocks; event rules only see events.
+    if (isEvent ? !isEventRule(rule) : !isBlockRule(rule)) continue;
+    if (!matches(input, isEvent, rule)) continue;
+
+    const channelId = resolveChannelId(rule.emit.channel, input);
+    if (emittedHere.has(channelId)) continue;
+
+    const def = channels.get(channelId);
+    if (!def) continue;
+
+    const value = applyExtract(input, isEvent, rule.emit.extract, def.contentType);
+    // `undefined` means "extractor refused" — drop. `null` is a valid
+    // emission (ADR-163 §7 — `media.image.hide` / `media.music.stop` /
+    // `media.ambient.stop` carry `null` to signal hide/stop).
+    if (value === undefined) continue;
+
+    emittedHere.add(channelId);
+    let contrib = contributions.get(channelId);
+    if (!contrib) {
+      contrib = { mode: def.mode, entries: [] };
+      contributions.set(channelId, contrib);
+    }
+    if (def.mode === 'replace') {
+      // last contribution within a turn wins (later input wins);
+      // multiple rules per input are already deduped above.
+      contrib.entries.length = 0;
+      contrib.entries.push(value);
+    } else {
+      contrib.entries.push(value);
+    }
+  }
+}
+
+/**
+ * A rule is a block rule if any block-source predicate field is set.
+ * Used to filter rules during the block pass.
+ */
+function isBlockRule(rule: ChannelRule): boolean {
+  const w = rule.when;
+  return (
+    w.key !== undefined ||
+    w.keyPattern !== undefined ||
+    w.keyPrefix !== undefined ||
+    w.decoration !== undefined ||
+    w.custom !== undefined
+  );
+}
+
+/**
+ * A rule is an event rule if any event-source predicate field is set.
+ * Used to filter rules during the event pass. A rule with both block
+ * and event predicates is treated as an event rule (and its block
+ * fields are ignored) — but stories should not author such rules.
+ */
+function isEventRule(rule: ChannelRule): boolean {
+  const w = rule.when;
+  return (
+    w.eventType !== undefined ||
+    w.eventTypePrefix !== undefined ||
+    w.customEvent !== undefined
+  );
+}
+
+/**
+ * Predicate evaluation for `ChannelRule.when` (ADR-163 §12, §7).
  *
- * Order of precedence (only the first set field is consulted):
+ * Block-source order (only the first set field is consulted):
  *  1. `key` — exact match on `block.key`
  *  2. `keyPattern` — regex test
  *  3. `keyPrefix` — `block.key.startsWith(prefix)`
  *  4. `decoration` — any content node carries this decoration type
  *  5. `custom` — caller-supplied predicate
  *
- * A rule with none of the fields set never matches.
+ * Event-source order:
+ *  1. `eventType` — exact match on `event.type`
+ *  2. `eventTypePrefix` — `event.type.startsWith(prefix)`
+ *  3. `customEvent` — caller-supplied predicate
+ *
+ * A rule with no predicate field set never matches.
  */
-function matches(block: ITextBlock, rule: ChannelRule): boolean {
+function matches(
+  input: ChannelRuleInput,
+  isEvent: boolean,
+  rule: ChannelRule,
+): boolean {
   const w = rule.when;
-  if (w.key !== undefined) {
-    return block.key === w.key;
+  if (isEvent) {
+    const event = input as ISemanticEvent;
+    if (w.eventType !== undefined) return event.type === w.eventType;
+    if (w.eventTypePrefix !== undefined)
+      return event.type.startsWith(w.eventTypePrefix);
+    if (w.customEvent !== undefined) return Boolean(w.customEvent(event));
+    return false;
   }
+  const block = input as ITextBlock;
+  if (w.key !== undefined) return block.key === w.key;
   if (w.keyPattern !== undefined) {
     const re =
       w.keyPattern instanceof RegExp ? w.keyPattern : new RegExp(w.keyPattern);
     return re.test(block.key);
   }
-  if (w.keyPrefix !== undefined) {
-    return block.key.startsWith(w.keyPrefix);
-  }
-  if (w.decoration !== undefined) {
+  if (w.keyPrefix !== undefined) return block.key.startsWith(w.keyPrefix);
+  if (w.decoration !== undefined)
     return contentHasDecoration(block.content, w.decoration);
-  }
-  if (w.custom !== undefined) {
-    return Boolean(w.custom(block));
-  }
+  if (w.custom !== undefined) return Boolean(w.custom(block));
   return false;
 }
 
@@ -210,41 +299,70 @@ function contentHasDecoration(
 }
 
 /**
+ * Resolve the rule's target channel id from the matched input. Static
+ * string ids are returned as-is; function resolvers receive the input
+ * and return the dynamic id (e.g., `'image:' + event.data.layer`).
+ */
+function resolveChannelId(
+  resolver: ChannelRuleChannelResolver,
+  input: ChannelRuleInput,
+): string {
+  return typeof resolver === 'function' ? resolver(input) : resolver;
+}
+
+/**
  * Apply the rule's `extract` strategy to produce a channel value.
  *
  * Defaults (when `extract` is omitted):
- *  - `json` channels → `'content'` (preserve `TextContent[]`)
- *  - `text` channels → `'string'` (flatten)
- *  - `number` channels → `'number'` (flatten then parseInt)
+ *  - Block rules: `'content'` for `json`, `'string'` for `text`,
+ *    `'number'` for `number`.
+ *  - Event rules: `'payload'` regardless of channel content type.
  *
- * Returns `null` to signal "extractor refused" — the producer drops the
- * contribution rather than write a malformed value to the wire (e.g.,
- * a number extractor on a non-numeric block).
+ * Returns `undefined` to signal "extractor refused" — the producer
+ * drops the contribution rather than write a malformed value to the
+ * wire (e.g., a `'payload'` extract on a block input, or a number
+ * extractor on a non-numeric block). `null` is a valid emission and
+ * propagates to the channel value (used by ADR-163 §7 media hide/stop
+ * signals).
  */
 function applyExtract(
-  block: ITextBlock,
+  input: ChannelRuleInput,
+  isEvent: boolean,
   extract: ChannelRuleExtract | undefined,
   contentType: ChannelContentType,
 ): unknown {
-  const strategy = extract ?? defaultExtractFor(contentType);
+  const strategy = extract ?? defaultExtractFor(isEvent, contentType);
 
   if (typeof strategy === 'function') {
-    return strategy(block);
+    return strategy(input);
   }
   switch (strategy) {
     case 'content':
-      return block.content;
+      if (isEvent) return undefined;
+      return (input as ITextBlock).content;
     case 'string':
-      return flattenContent(block.content);
+      if (isEvent) return undefined;
+      return flattenContent((input as ITextBlock).content);
     case 'number': {
-      const flat = flattenContent(block.content).trim();
+      if (isEvent) return undefined;
+      const flat = flattenContent((input as ITextBlock).content).trim();
       const parsed = Number(flat);
       return Number.isFinite(parsed) ? parsed : null;
     }
+    case 'payload':
+      if (!isEvent) return undefined;
+      return (input as ISemanticEvent).data;
+    case 'eventType':
+      if (!isEvent) return undefined;
+      return (input as ISemanticEvent).type;
   }
 }
 
-function defaultExtractFor(contentType: ChannelContentType): ChannelRuleExtract {
+function defaultExtractFor(
+  isEvent: boolean,
+  contentType: ChannelContentType,
+): ChannelRuleExtract {
+  if (isEvent) return 'payload';
   switch (contentType) {
     case 'json':
       return 'content';

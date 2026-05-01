@@ -34,6 +34,7 @@
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
+    "@sharpee/story-channel-service-test": "workspace:*",
     "@types/node": "^20.8.0",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",

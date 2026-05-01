@@ -106,7 +106,7 @@ regression baseline and must not be modified as a test fixture.
 - **Cross-package**: `packages/channel-service/` extended. New `stories/channel-service-test/`
   created. Neither Dungeo nor any other real story is touched.
 - **Prerequisite**: Phase 1 complete.
-- **Status**: CURRENT
+- **Status**: DONE
 
 ---
 
@@ -145,7 +145,7 @@ regression baseline and must not be modified as a test fixture.
   turn-output wiring. This is the primary cross-cutting phase — it touches multiple packages. It
   deserves its own session.
 - **Prerequisite**: Phase 1 and Phase 2 complete.
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ---
 
