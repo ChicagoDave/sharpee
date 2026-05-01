@@ -1,0 +1,75 @@
+{
+  "name": "@sharpee/channel-service",
+  "version": "0.9.113",
+  "description": "Channel-service platform — universal channel-I/O wire producer (ADR-163)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js",
+      "esm": "./dist-esm/index.js"
+    },
+    "./wire": {
+      "types": "./dist/wire/index.d.ts",
+      "import": "./dist-esm/wire/index.js",
+      "require": "./dist/wire/index.js",
+      "esm": "./dist-esm/wire/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "lint": "eslint src --ext .ts",
+    "build:npm": "tsc --outDir dist",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "test:watch": "vitest",
+    "test:verbose": "vitest run --reporter=verbose"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist",
+    "dist-esm"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
+    "channel-service",
+    "channel-io",
+    "wire-protocol"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/channel-service"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "module": "./dist-esm/index.js"
+}

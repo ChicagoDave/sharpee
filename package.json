@@ -17,6 +17,7 @@
     "packages/parser-en-us",
     "packages/text-service",
     "packages/text-blocks",
+    "packages/channel-service",
     "packages/forge",
     "packages/zifmia",
     "packages/extensions/*",

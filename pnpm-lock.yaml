@@ -94,6 +94,37 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  packages/channel-service:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/text-blocks':
+        specifier: workspace:*
+        version: link:../text-blocks
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.8.0
+        version: 20.19.27
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.7.4
+        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^6.7.4
+        version: 6.21.0(eslint@8.57.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^8.50.0
+        version: 8.57.1
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.2.2
+        version: 5.9.3
+
   packages/character:
     dependencies:
       '@sharpee/core':
@@ -604,6 +635,9 @@ importers:
 
   packages/sharpee:
     dependencies:
+      '@sharpee/channel-service':
+        specifier: workspace:*
+        version: link:../channel-service
       '@sharpee/character':
         specifier: workspace:*
         version: link:../character

@@ -443,6 +443,7 @@ build_platform() {
         "@sharpee/parser-en-us:parser-en-us"
         "@sharpee/if-services:if-services"
         "@sharpee/text-blocks:text-blocks"
+        "@sharpee/channel-service:channel-service"
         "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
         "@sharpee/character:character"
