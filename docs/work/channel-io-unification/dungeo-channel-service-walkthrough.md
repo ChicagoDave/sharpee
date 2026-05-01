@@ -109,7 +109,7 @@ The author-controlled-UX cases (story-defined channels, custom verbs, UI-click r
 
 ## 4. References
 
-- ADR-163: Stateless Multi-User Server with Channel I/O (defines the 13 standard channels, CMGT protocol, stateless design)
-- ADR-164: Channel I/O Everywhere (universal wire across all surfaces; supersedes ADR-101)
+- ADR-163: Channel-Service Platform — Universal Wire and Author-Controlled Media (defines the channel-I/O wire, the ten engine-sourced standard channels, CMGT protocol, capability handshake, ADR-101 media folding; supersedes ADR-101)
+- ADR-164: Stateless Multi-User Server — Channel I/O on a Per-Turn Worker (downstream consumer; adds the three server-sourced channels `chat` / `presence` / `command_echo`, transcript capability, save-blob v3)
 - `sequence-diagrams-20260429.md` — full source including The Alderman author-controlled-UX walkthrough
 - `dungeo-text-service-walkthrough.md` — companion doc showing the same Dungeo turn under today's paradigm

@@ -3,7 +3,7 @@
 **Date:** 2026-04-29
 **Purpose:** Trace a Dungeo session under today's text-service architecture (ADR-096 / ADR-133). Companion to `dungeo-channel-service-walkthrough.md`, which traces the same session under the ADR-163/164 channel-service paradigm.
 
-**Scope:** This is the *as-is* picture. text-service is retired as a wire producer in ADR-164; this doc captures what the platform looks like before that change.
+**Scope:** This is the *as-is* picture. text-service is retired as a wire producer in ADR-163 (the platform decision); this doc captures what the platform looks like before that change.
 
 **Conventions:**
 
@@ -138,7 +138,7 @@ These aren't bugs in text-service. They're the consequences of the design bounda
 
 - ADR-096: Text Service Architecture
 - ADR-133: Structured TextBlocks from text-service
-- ADR-163: Stateless Multi-User Server with Channel I/O (supersedes the wire model implicitly assumed by text-service callers)
-- ADR-164: Channel I/O Everywhere — explicit retirement of text-service as a wire producer
+- ADR-163: Channel-Service Platform — the universal wire that supersedes the model implicitly assumed by text-service callers; explicit retirement of text-service as a wire producer
+- ADR-164: Stateless Multi-User Server — downstream consumer of the ADR-163 wire
 - Source: `packages/text-service/src/text-service.ts` — pipeline implementation
 - Source: `packages/engine/src/game-engine.ts:879` — engine call site

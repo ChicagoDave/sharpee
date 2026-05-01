@@ -110,8 +110,8 @@ text-service may stick around as an internal content-assembly convenience if use
 
 ## Reference
 
-- **ADR-163:** Stateless Multi-User Server with Channel I/O — `docs/architecture/adrs/adr-163-stateless-multiuser-channel-io.md`
-- **ADR-164:** Channel I/O Everywhere — `docs/architecture/adrs/adr-164-channel-io-everywhere.md`
+- **ADR-163:** Channel-Service Platform — Universal Wire and Author-Controlled Media — `docs/architecture/adrs/adr-163-channel-service-platform.md`
+- **ADR-164:** Stateless Multi-User Server — Channel I/O on a Per-Turn Worker — `docs/architecture/adrs/adr-164-stateless-multiuser-server.md`
 - **ADR-096:** Text Service Architecture (the paradigm being retired)
 - **ADR-133:** Structured TextBlocks from text-service
 - **Dungeo + text-service walkthrough:** `docs/work/channel-io-unification/dungeo-text-service-walkthrough.md`

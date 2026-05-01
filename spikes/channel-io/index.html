@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Channel-I/O Renderer Spike — The Alderman</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Mono:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f4ecd8;
+    --paper-dark: #e8d9b8;
+    --ink: #2a1810;
+    --oxblood: #6b2018;
+    --brass: #b08c4a;
+    --rule: #c4ad7c;
+    --terminal-bg: #1c1108;
+    --terminal-text: #d6c7a8;
+    --highlight: #f5e6c0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #2a2418;
+    font-family: 'Crimson Text', Georgia, serif;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 1em 0.5em;
+  }
+
+  /* === Spike controls (above the case file) === */
+  .spike-controls {
+    max-width: 1100px;
+    margin: 0 auto 1em;
+    background: #1a1a1a;
+    color: #d4d4d4;
+    padding: 0.8em 1em;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em;
+    display: flex;
+    gap: 0.7em;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .spike-controls h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1em;
+    margin: 0;
+    color: var(--brass);
+    flex: 0 0 auto;
+  }
+
+  .spike-controls button {
+    background: #333;
+    color: #d4d4d4;
+    border: 1px solid #555;
+    padding: 0.4em 0.8em;
+    font-family: inherit;
+    font-size: 0.85em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+
+  .spike-controls button:hover { background: #444; }
+  .spike-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .spike-controls .turn-counter { margin-left: auto; opacity: 0.7; }
+
+  /* === The Alderman case file === */
+  .case-file {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--paper);
+    background-image: linear-gradient(120deg, #f4ecd8 0%, #ebdfc0 100%);
+    border: 1px solid var(--rule);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    padding: 1.5em;
+  }
+
+  /* Masthead — engine emits to `info`, `location`, `turn` */
+  .masthead {
+    border-top: 4px double var(--ink);
+    border-bottom: 4px double var(--ink);
+    padding: 0.6em 0;
+    text-align: center;
+    margin-bottom: 1em;
+  }
+  .masthead h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 2em;
+    margin: 0;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+  }
+  .masthead .subtitle {
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    font-size: 0.95em;
+    color: var(--oxblood);
+    margin-top: 0.2em;
+  }
+
+  /* Case board — three columns of candidates */
+  .case-board {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1em;
+    margin: 1em 0;
+  }
+
+  .candidate-column {
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--rule);
+    padding: 0.7em;
+  }
+
+  .candidate-column h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1em;
+    margin: 0 0 0.5em;
+    color: var(--oxblood);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-align: center;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.3em;
+  }
+
+  .candidate {
+    padding: 0.3em 0.5em;
+    margin: 0.2em 0;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 3px;
+    font-size: 0.95em;
+    transition: background 0.15s;
+  }
+
+  .candidate:hover { background: rgba(176, 140, 74, 0.2); }
+
+  .candidate.suspected {
+    background: var(--highlight);
+    box-shadow: inset 0 0 0 1px var(--brass);
+    font-weight: 600;
+  }
+
+  .candidate.cleared {
+    text-decoration: line-through;
+    opacity: 0.4;
+  }
+
+  /* Evidence pile + Assertions */
+  .lower-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em;
+    margin: 1em 0;
+  }
+
+  .evidence-pile, .assertions-list {
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--rule);
+    padding: 0.7em;
+    min-height: 6em;
+  }
+
+  .evidence-pile h3, .assertions-list h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 1em;
+    margin: 0 0 0.5em;
+    color: var(--oxblood);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: center;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.3em;
+  }
+
+  .evidence-card {
+    background: var(--paper-dark);
+    padding: 0.4em 0.6em;
+    margin: 0.3em 0;
+    border-left: 3px solid var(--brass);
+    font-size: 0.9em;
+    cursor: grab;
+    border-radius: 2px;
+  }
+  .evidence-card:active { cursor: grabbing; }
+  .evidence-card.dragging { opacity: 0.5; }
+
+  .assertion {
+    font-size: 0.88em;
+    padding: 0.3em 0;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .assertion:last-child { border-bottom: none; }
+  .assertion .verb { font-weight: 600; color: var(--oxblood); text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.05em; }
+
+  /* Notebook (story-overridden `main` channel) */
+  .notebook {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid var(--rule);
+    padding: 1em 1.2em;
+    margin: 1em 0;
+    min-height: 8em;
+    max-height: 16em;
+    overflow-y: auto;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.05em;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  .notebook .turn-block { margin-bottom: 0.7em; }
+  .notebook .turn-block:last-child { margin-bottom: 0; }
+
+  /* Terminal — input + command echo */
+  .terminal {
+    background: var(--terminal-bg);
+    color: var(--terminal-text);
+    padding: 0.8em;
+    margin-top: 1em;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em;
+    border-radius: 0 0 3px 3px;
+    max-height: 10em;
+    overflow-y: auto;
+  }
+
+  .terminal .echo { opacity: 0.7; }
+  .terminal .echo::before { content: '> '; color: var(--brass); }
+
+  .input-row {
+    background: var(--terminal-bg);
+    color: var(--terminal-text);
+    padding: 0.4em 0.8em;
+    font-family: 'IBM Plex Mono', monospace;
+    border-top: 1px solid #444;
+    display: flex;
+    align-items: center;
+    border-radius: 3px 3px 0 0;
+  }
+
+  .input-row .prompt { color: var(--brass); margin-right: 0.5em; }
+  .input-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--terminal-text);
+    font-family: inherit;
+    font-size: inherit;
+    outline: none;
+  }
+
+  /* Status footer (location/score/turn) */
+  .status-footer {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Crimson Text', serif;
+    font-size: 0.9em;
+    color: var(--oxblood);
+    padding: 0.4em 0;
+    border-top: 2px solid var(--ink);
+    margin-top: 0.5em;
+  }
+  .status-footer .label { opacity: 0.7; font-size: 0.85em; }
+
+  /* Drop zones */
+  .candidate.drop-target { background: rgba(176, 140, 74, 0.3); outline: 2px dashed var(--brass); }
+
+  /* Right-click menu */
+  .ctx-menu {
+    position: absolute;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-family: 'Crimson Text', serif;
+    font-size: 0.95em;
+    z-index: 100;
+    min-width: 150px;
+  }
+  .ctx-menu button {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0.5em 0.8em;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--ink);
+  }
+  .ctx-menu button:hover { background: var(--highlight); }
+
+  /* Spike log overlay */
+  .log-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 25vh;
+    background: #0d0d0d;
+    color: #c0c0c0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78em;
+    padding: 0.6em;
+    overflow-y: auto;
+    border-top: 2px solid var(--brass);
+    z-index: 50;
+    transform: translateY(calc(100% - 1.8em));
+    transition: transform 0.2s;
+  }
+  .log-overlay.open { transform: translateY(0); }
+  .log-overlay .log-toggle {
+    position: absolute;
+    top: -1.6em;
+    right: 1em;
+    background: var(--brass);
+    color: var(--ink);
+    border: none;
+    padding: 0.2em 0.8em;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border-radius: 3px 3px 0 0;
+  }
+  .log-line { white-space: pre-wrap; padding: 0.1em 0; }
+  .log-line.cmgt { color: #6cb3ff; }
+  .log-line.turn { color: #d6c7a8; }
+  .log-line.command { color: #ffcc66; }
+  .log-line.replay { color: #ff8aa6; }
+</style>
+</head>
+<body>
+
+<div class="spike-controls">
+  <h1>Channel-I/O Spike — The Alderman</h1>
+  <button id="next-turn-btn">Next scripted turn →</button>
+  <button id="capture-replay-btn">Save &amp; Replay (verify identity)</button>
+  <button id="reset-btn">Reset spike</button>
+  <span class="turn-counter">Turn: <span id="turn-display">0</span> / 5</span>
+</div>
+
+<div class="case-file" id="case-file">
+  <!-- Masthead — story-defined slot fed by `info` + `location` + `turn` channels -->
+  <div class="masthead">
+    <h2 id="masthead-title">THE ALDERMAN</h2>
+    <div class="subtitle" id="masthead-subtitle">Awaiting CMGT…</div>
+  </div>
+
+  <!-- Case board — story-defined `case_board` channel (replace, json) -->
+  <div class="case-board" id="case-board">
+    <div class="candidate-column">
+      <h3>Suspects</h3>
+      <div class="candidate-list" data-column="suspect"></div>
+    </div>
+    <div class="candidate-column">
+      <h3>Weapons</h3>
+      <div class="candidate-list" data-column="weapon"></div>
+    </div>
+    <div class="candidate-column">
+      <h3>Locations</h3>
+      <div class="candidate-list" data-column="location"></div>
+    </div>
+  </div>
+
+  <!-- Notebook — story-overridden `main` channel renderer -->
+  <div class="notebook" id="notebook"></div>
+
+  <!-- Lower grid: evidence pile (story `evidence` channel) + assertions (story `assertions` channel) -->
+  <div class="lower-grid">
+    <div class="evidence-pile">
+      <h3>Evidence</h3>
+      <div id="evidence-list"></div>
+    </div>
+    <div class="assertions-list">
+      <h3>Assertions</h3>
+      <div id="assertions-list"></div>
+    </div>
+  </div>
+
+  <!-- Terminal — `command_echo` (multi-user; we render local echoes here) -->
+  <div class="terminal" id="terminal"></div>
+  <div class="input-row">
+    <span class="prompt" id="prompt-display">&gt;</span>
+    <input id="user-input" type="text" placeholder="type a command, or click suspects / drag evidence" autocomplete="off">
+  </div>
+
+  <!-- Status footer — `location` + `score` + `turn` -->
+  <div class="status-footer">
+    <span><span class="label">Location:</span> <span id="status-location">—</span></span>
+    <span><span class="label">Case File:</span> <span id="status-case">—</span></span>
+    <span><span class="label">Turn:</span> <span id="status-turn">0</span></span>
+  </div>
+</div>
+
+<!-- Spike log overlay -->
+<div class="log-overlay" id="log-overlay">
+  <button class="log-toggle" id="log-toggle">Show packet log ▲</button>
+  <div id="log-content"></div>
+</div>
+
+<script>
+//
+// ============================================================
+// CHANNEL-I/O RENDERER SPIKE — The Alderman
+//
+// Validates ADR-163 (Channel-Service Platform) and ADR-164
+// (Stateless Multi-User Server) against the hardest renderer
+// case: a Clue-style deduction game with custom channels,
+// story-overridden main, and synthesized commands from UI gestures.
+//
+// Throwaway code. Single file. No build step. Plain ES module-syntax
+// JavaScript — type annotations stripped (see corresponding .ts
+// shapes in findings.md).
+//
+// Findings → spikes/channel-io/findings.md
+// ============================================================
+//
+
+// ============================================================
+// 1. WIRE PROTOCOL TYPES (ADR-163 §1, §12)
+//    [shapes documented in findings.md; runtime is JS]
+// ============================================================
+
+// ChannelDefinition: { id, contentType: 'text'|'number'|'json',
+//                      mode: 'replace'|'append'|'event', emit?: 'always'|'sparse' }
+// HelloPacket:    { kind: 'hello',   capabilities }
+// CmgtPacket:     { kind: 'cmgt',    protocol_version, channels }
+// TurnPacket:     { kind: 'turn',    turn_id, payload }
+// CommandPacket:  { kind: 'command', text }
+
+// ============================================================
+// 2. ENGINE OUTPUT (ADR-163 input contract, faked for spike)
+//    ITextBlock: { key, content, decoration? }
+// ============================================================
+
+// ============================================================
+// 3. MINIMAL CHANNEL-SERVICE (ADR-163 §12)
+// ============================================================
+
+const channelService = (() => {
+  const channels = [];
+  const rules = [];
+  let helloRegistered = null;
+  let cmgtFrozen = false;
+
+  function registerChannel(def) {
+    if (cmgtFrozen) {
+      // ADR-163 AC-11(c): registration closes at cmgt
+      throw new Error(
+        `Channel '${def.id}' registered after CMGT was frozen. ` +
+        `Manifest is immutable for the session.`
+      );
+    }
+    channels.push(def);
+  }
+
+  function addRule(rule) {
+    rules.push(rule);
+  }
+
+  function registerHello(caps) {
+    helloRegistered = caps;
+  }
+
+  function produceCmgtManifest() {
+    if (!helloRegistered) {
+      // ADR-163 AC-4: throws if hello not registered
+      throw new Error('Cannot produce CMGT before hello has been registered.');
+    }
+    cmgtFrozen = true;
+    const visible = channels.filter((c) => {
+      // Capability gating: media channels only (ADR-163 §6)
+      if (c.id.startsWith('image:')) return helloRegistered.images;
+      if (c.id === 'sound' || c.id === 'music') return helloRegistered.sound;
+      // Standard + story channels are not capability-gated
+      return true;
+    });
+    return { kind: 'cmgt', protocol_version: 1, channels: visible };
+  }
+
+  function getChannelByID(id) {
+    return channels.find((c) => c.id === id);
+  }
+
+  // Sort rules by priority (higher first), then by registration order
+  function sortedRules() {
+    return [...rules].sort((a, b) => {
+      const pa = a.priority ?? 0;
+      const pb = b.priority ?? 0;
+      if (pa !== pb) return pb - pa;
+      return rules.indexOf(a) - rules.indexOf(b);
+    });
+  }
+
+  function matches(block, when) {
+    if (when.key && when.key !== block.key) return false;
+    if (when.keyPrefix && !block.key.startsWith(when.keyPrefix)) return false;
+    if (when.decoration && when.decoration !== block.decoration) return false;
+    if (when.custom && !when.custom(block)) return false;
+    return true;
+  }
+
+  function extractValue(block, extract) {
+    if (!extract || extract === 'content') return block.content;
+    if (typeof extract === 'function') return extract(block);
+    return block.content;
+  }
+
+  let turnCounter = 0;
+  let prevPayload = {};
+
+  function produceTurnPacket(input) {
+    const payload = {};
+    const appended = {};
+
+    // Apply rules to each TextBlock
+    for (const block of input.textBlocks) {
+      for (const rule of sortedRules()) {
+        if (matches(block, rule.when)) {
+          const channel = getChannelByID(rule.emit.channel);
+          if (!channel) continue;
+          const value = extractValue(block, rule.emit.extract);
+
+          if (channel.mode === 'replace') {
+            payload[channel.id] = value;
+          } else if (channel.mode === 'append') {
+            if (!appended[channel.id]) appended[channel.id] = [];
+            appended[channel.id].push(value);
+          } else if (channel.mode === 'event') {
+            payload[channel.id] = value;
+          }
+
+          // First match wins for replace; for append all rules apply
+          if (channel.mode === 'replace') break;
+        }
+      }
+    }
+
+    // Apply append accumulations
+    for (const channelId in appended) {
+      payload[channelId] = appended[channelId];
+    }
+
+    // Emit-policy filtering: 'always' channels emit every turn even if unchanged
+    for (const channel of channels) {
+      const policy = channel.emit ?? 'sparse';
+      if (policy === 'always') {
+        if (payload[channel.id] === undefined) {
+          if (channel.mode === 'replace') {
+            // Re-emit prevValue (or empty/null)
+            payload[channel.id] = prevPayload[channel.id] ?? null;
+          } else if (channel.mode === 'append') {
+            // Always-emit append → empty array on idle turns
+            payload[channel.id] = [];
+          }
+          // event channels: no emit on idle (per ADR-163 §5)
+        }
+      }
+    }
+
+    // Sparse-mode skip: remove unchanged replace values
+    for (const channel of channels) {
+      const policy = channel.emit ?? 'sparse';
+      if (policy === 'sparse' && channel.mode === 'replace') {
+        if (payload[channel.id] !== undefined &&
+            JSON.stringify(payload[channel.id]) === JSON.stringify(prevPayload[channel.id])) {
+          delete payload[channel.id];
+        }
+      }
+    }
+
+    // Update prevPayload for next turn
+    for (const k in payload) {
+      const ch = getChannelByID(k);
+      if (ch?.mode === 'replace') {
+        prevPayload[k] = payload[k];
+      }
+    }
+
+    return { kind: 'turn', turn_id: `t${++turnCounter}`, payload };
+  }
+
+  function reset() {
+    channels.length = 0;
+    rules.length = 0;
+    helloRegistered = null;
+    cmgtFrozen = false;
+    turnCounter = 0;
+    prevPayload = {};
+  }
+
+  return {
+    registerChannel,
+    addRule,
+    registerHello,
+    produceCmgtManifest,
+    produceTurnPacket,
+    reset,
+    getChannelByID,
+  };
+})();
+
+// ============================================================
+// 4. ALDERMAN STORY DEFINITION
+//    (story init: registers channels + rules, scripts 5 turns)
+// ============================================================
+
+function initAldermanStory() {
+  // ============ Standard channels (would be auto-registered by platform) ============
+  channelService.registerChannel({ id: 'main',     contentType: 'json',   mode: 'append',  emit: 'always' });
+  channelService.registerChannel({ id: 'prompt',   contentType: 'text',   mode: 'replace', emit: 'always' });
+  channelService.registerChannel({ id: 'location', contentType: 'text',   mode: 'replace', emit: 'always' });
+  channelService.registerChannel({ id: 'score',    contentType: 'json',   mode: 'replace', emit: 'always' });
+  channelService.registerChannel({ id: 'turn',     contentType: 'number', mode: 'replace', emit: 'always' });
+  channelService.registerChannel({ id: 'info',     contentType: 'json',   mode: 'replace', emit: 'always' });
+  channelService.registerChannel({ id: 'ifid',     contentType: 'text',   mode: 'replace', emit: 'always' });
+
+  // ============ Multi-user server channels (ADR-164) — included here for spike completeness ============
+  channelService.registerChannel({ id: 'command_echo', contentType: 'json', mode: 'append', emit: 'always' });
+
+  // ============ Story-defined channels ============
+  channelService.registerChannel({ id: 'evidence',   contentType: 'json', mode: 'append',  emit: 'sparse' });
+  channelService.registerChannel({ id: 'assertions', contentType: 'json', mode: 'append',  emit: 'sparse' });
+  channelService.registerChannel({ id: 'notebook',   contentType: 'json', mode: 'replace', emit: 'always' }); // story opts in to always
+  channelService.registerChannel({ id: 'case_board', contentType: 'json', mode: 'replace', emit: 'always' });
+
+  // ============ Default platform rules (subset — would normally be in @sharpee/channel-service) ============
+  channelService.addRule({ when: { keyPrefix: 'prose.' },     emit: { channel: 'main',     extract: 'content' } });
+  channelService.addRule({ when: { key: 'system.location' },  emit: { channel: 'location', extract: 'content' } });
+  channelService.addRule({ when: { key: 'system.score' },     emit: { channel: 'score',    extract: 'content' } });
+  channelService.addRule({ when: { key: 'system.turn' },      emit: { channel: 'turn',     extract: 'content' } });
+  channelService.addRule({ when: { key: 'system.info' },      emit: { channel: 'info',     extract: 'content' } });
+  channelService.addRule({ when: { key: 'system.ifid' },      emit: { channel: 'ifid',     extract: 'content' } });
+  channelService.addRule({ when: { key: 'system.prompt' },    emit: { channel: 'prompt',   extract: 'content' } });
+
+  // ============ Story-specific rules ============
+  channelService.addRule({ when: { decoration: 'evidence' },   emit: { channel: 'evidence',   extract: 'content' } });
+  channelService.addRule({ when: { decoration: 'assertion' },  emit: { channel: 'assertions', extract: 'content' } });
+  channelService.addRule({ when: { key: 'story.case_board' },  emit: { channel: 'case_board', extract: 'content' } });
+  channelService.addRule({ when: { key: 'story.notebook' },    emit: { channel: 'notebook',   extract: 'content' } });
+}
+
+// Hand-scripted turns. Each function returns the engine output that
+// channel-service routes through its rules.
+function getScriptedTurn(turnNum, playerCommand) {
+  const blocks = [];
+
+  if (turnNum === 1) {
+    // Opening: detective enters office
+    blocks.push({ key: 'system.info',  content: { title: 'The Alderman', author: 'D. Cornelson', version: '0.1' } });
+    blocks.push({ key: 'system.ifid',  content: 'ALDERMAN-2026-04-29' });
+    blocks.push({ key: 'system.location', content: 'Inspector Wickham’s office' });
+    blocks.push({ key: 'system.turn',  content: 1 });
+    blocks.push({ key: 'system.score', content: { current: 0, max: 100 } });
+    blocks.push({ key: 'system.prompt', content: '> ' });
+    blocks.push({ key: 'prose.opening', content: 'You step into Wickham’s cramped office. The case file lies open on the desk — three suspects, three weapons, three locations — and Wickham mutters: “Well, Inspector? Tell me what you make of it.”' });
+    blocks.push({ key: 'story.case_board', content: {
+      suspect:  ['Lord Wickham', 'Mrs Hale', 'Doyle'],
+      weapon:   ['poker', 'candlestick', 'service revolver'],
+      location: ['library', 'conservatory', 'study']
+    }});
+    blocks.push({ key: 'story.notebook', content: { suspected: [], cleared: [] } });
+  } else if (turnNum === 2) {
+    // Player examined the rug
+    blocks.push({ key: 'system.turn',  content: 2 });
+    blocks.push({ key: 'prose.examine', content: 'You crouch by the rug. The corner is bent back; underneath, a smear of mud, not yet dry.' });
+    blocks.push({
+      key: 'evidence.muddy_print',
+      content: { id: 'mud', kind: 'observation', source: 'rug-examination', text: 'fresh mud under the rug', salience: 'high', turn: 2 },
+      decoration: 'evidence'
+    });
+  } else if (turnNum === 3 && playerCommand?.startsWith('suspect ')) {
+    // Player right-clicked a candidate → SUSPECT
+    const target = playerCommand.replace('suspect ', '').trim();
+    blocks.push({ key: 'system.turn',  content: 3 });
+    blocks.push({ key: 'prose.suspect', content: `You make a careful note: ${target}… the muddy print would fit a tall man’s boot.` });
+    blocks.push({ key: 'story.notebook', content: { suspected: [target], cleared: [] } });
+  } else if (turnNum === 4 && playerCommand?.startsWith('contradict ')) {
+    // Player dragged evidence onto a suspect → CONTRADICT
+    const m = playerCommand.match(/^contradict (\w+(?:\s\w+)?) with (\w+)$/);
+    const target = m?.[1] ?? 'unknown';
+    const evidence = m?.[2] ?? 'unknown';
+    blocks.push({ key: 'system.turn',  content: 4 });
+    blocks.push({ key: 'prose.contradict', content: `“Interesting,” murmurs Wickham. “That would put ${target} at the scene with mud still on his boots.”` });
+    blocks.push({
+      key: 'assertion.contradict',
+      content: { verb: 'CONTRADICT', target: { kind: 'suspect', id: target }, supporting: [evidence], note: 'mud places suspect at scene' },
+      decoration: 'assertion'
+    });
+  } else if (turnNum === 5 && playerCommand?.startsWith('accuse ')) {
+    const target = playerCommand.replace('accuse ', '').trim();
+    blocks.push({ key: 'system.turn',  content: 5 });
+    blocks.push({ key: 'prose.accuse', content: `“Very well, Inspector,” Wickham says quietly. “You accuse ${target}. Let us see if Doyle’s alibi holds when we put the question to him directly.”` });
+    blocks.push({ key: 'system.score', content: { current: 75, max: 100 } });
+  }
+
+  return { textBlocks: blocks, events: [] };
+}
+
+// ============================================================
+// 5. THE RENDERER (story-supplied; replaces platform default)
+//
+//    Channel-renderer registry + dispatcher + state stores +
+//    UI gesture → CommandPacket synthesis.
+// ============================================================
+
+// ChannelRenderer shape: { onValue: (value, channelDef) => void }
+
+const renderer = (() => {
+  const registry = new Map();
+  const stateStore = {}; // replace channels: latest; append: array
+  const eventEmitter = new EventTarget();
+  let currentManifest = [];
+
+  // -------- Channel renderers (story-supplied) --------
+
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  // `info` → masthead title
+  registry.set('info', {
+    onValue: (v) => {
+      stateStore['info'] = v;
+      setText('masthead-title', (v?.title ?? 'THE ALDERMAN').toUpperCase());
+      setText('status-case', `#${v?.version ?? '?'}`);
+    },
+  });
+
+  // `location` → masthead subtitle + status footer
+  registry.set('location', {
+    onValue: (v) => {
+      stateStore['location'] = v;
+      setText('masthead-subtitle', String(v ?? ''));
+      setText('status-location', String(v ?? '—'));
+    },
+  });
+
+  registry.set('turn', {
+    onValue: (v) => {
+      stateStore['turn'] = v;
+      setText('status-turn', String(v ?? 0));
+      setText('turn-display', String(v ?? 0));
+    },
+  });
+
+  registry.set('score', {
+    onValue: (v) => { stateStore['score'] = v; /* not visible in this layout */ },
+  });
+
+  registry.set('ifid', {
+    onValue: (v) => { stateStore['ifid'] = v; },
+  });
+
+  registry.set('prompt', {
+    onValue: (v) => { setText('prompt-display', String(v ?? '>')); },
+  });
+
+  // `main` (story-overridden — Playfair Display italic in the notebook)
+  registry.set('main', {
+    onValue: (vals, def) => {
+      // append-mode: vals is array of new entries
+      if (def.mode === 'append' && Array.isArray(vals)) {
+        if (!stateStore['main']) stateStore['main'] = [];
+        const notebook = document.getElementById('notebook');
+        for (const v of vals) {
+          stateStore['main'].push(v);
+          const block = document.createElement('div');
+          block.className = 'turn-block';
+          block.textContent = String(v);
+          notebook.appendChild(block);
+        }
+        notebook.scrollTop = notebook.scrollHeight;
+      }
+    },
+  });
+
+  // `evidence` (story-defined append)
+  registry.set('evidence', {
+    onValue: (vals) => {
+      if (!stateStore['evidence']) stateStore['evidence'] = [];
+      const list = document.getElementById('evidence-list');
+      if (Array.isArray(vals)) {
+        for (const e of vals) {
+          stateStore['evidence'].push(e);
+          const card = document.createElement('div');
+          card.className = 'evidence-card';
+          card.textContent = e.text || JSON.stringify(e);
+          card.draggable = true;
+          card.dataset.evidenceId = e.id;
+          attachDragSource(card, e);
+          list.appendChild(card);
+        }
+      }
+    },
+  });
+
+  // `assertions` (story-defined append)
+  registry.set('assertions', {
+    onValue: (vals) => {
+      if (!stateStore['assertions']) stateStore['assertions'] = [];
+      const list = document.getElementById('assertions-list');
+      if (Array.isArray(vals)) {
+        for (const a of vals) {
+          stateStore['assertions'].push(a);
+          const row = document.createElement('div');
+          row.className = 'assertion';
+          row.innerHTML = `<span class="verb">${a.verb}</span> ${a.target?.id ?? ''} — <em>${a.note ?? ''}</em>`;
+          list.appendChild(row);
+        }
+      }
+    },
+  });
+
+  // `case_board` (story-defined replace)
+  registry.set('case_board', {
+    onValue: (v) => {
+      stateStore['case_board'] = v;
+      const cols = ['suspect', 'weapon', 'location'];
+      for (const col of cols) {
+        const container = document.querySelector(`[data-column="${col}"]`);
+        container.innerHTML = '';
+        for (const item of v[col] ?? []) {
+          const div = document.createElement('div');
+          div.className = 'candidate';
+          div.dataset.candidate = item;
+          div.dataset.column = col;
+          div.textContent = item;
+          // mark suspected/cleared from notebook state
+          const notebook = stateStore['notebook'];
+          if (notebook?.suspected?.includes(item)) div.classList.add('suspected');
+          if (notebook?.cleared?.includes(item)) div.classList.add('cleared');
+          attachCandidateHandlers(div);
+          container.appendChild(div);
+        }
+      }
+    },
+  });
+
+  // `notebook` (story-defined replace, emit:always)
+  registry.set('notebook', {
+    onValue: (v) => {
+      stateStore['notebook'] = v;
+      // Re-mark candidates
+      document.querySelectorAll('.candidate').forEach((el) => {
+        const c = el;
+        const item = c.dataset.candidate;
+        c.classList.toggle('suspected', !!v?.suspected?.includes(item));
+        c.classList.toggle('cleared',   !!v?.cleared?.includes(item));
+      });
+    },
+  });
+
+  // `command_echo` (multi-user; renders to terminal)
+  registry.set('command_echo', {
+    onValue: (vals) => {
+      const term = document.getElementById('terminal');
+      if (Array.isArray(vals)) {
+        for (const c of vals) {
+          const div = document.createElement('div');
+          div.className = 'echo';
+          div.textContent = String(c.text ?? c);
+          term.appendChild(div);
+        }
+        term.scrollTop = term.scrollHeight;
+      }
+    },
+  });
+
+  // -------- Phase 1: Boot (consume CMGT) --------
+  function applyCmgt(cmgt) {
+    currentManifest = cmgt.channels;
+    // Clear all rendered surfaces
+    document.getElementById('notebook').innerHTML = '';
+    document.getElementById('evidence-list').innerHTML = '';
+    document.getElementById('assertions-list').innerHTML = '';
+    document.getElementById('terminal').innerHTML = '';
+    document.querySelectorAll('.candidate-list').forEach((el) => el.innerHTML = '');
+    // Reset stateStore
+    for (const k in stateStore) delete stateStore[k];
+    log('cmgt', `CMGT received: ${cmgt.channels.length} channels (${cmgt.channels.map(c => c.id).join(', ')})`);
+  }
+
+  // -------- Phase 2: Live (consume TurnPacket) --------
+  function applyTurnPacket(packet, isReplay = false) {
+    log(isReplay ? 'replay' : 'turn',
+        `Turn ${packet.turn_id}: ${Object.keys(packet.payload).length} channels in payload`);
+    for (const channelId in packet.payload) {
+      const def = currentManifest.find((c) => c.id === channelId);
+      if (!def) {
+        log('turn', `  ! unknown channel '${channelId}' (no CMGT entry); skipping`);
+        continue;
+      }
+      const channelRenderer = registry.get(channelId);
+      if (!channelRenderer) {
+        // Fallback to JSON-tree (per ADR-163 §13)
+        log('turn', `  ! no renderer for '${channelId}'; would fall back to JSON-tree`);
+        continue;
+      }
+      channelRenderer.onValue(packet.payload[channelId], def);
+    }
+  }
+
+  // -------- Phase 3: UI input → CommandPacket --------
+  function emitCommand(text) {
+    const cmd = { kind: 'command', text };
+    log('command', `COMMAND emitted: '${text}'`);
+    eventEmitter.dispatchEvent(new CustomEvent('command', { detail: cmd }));
+  }
+
+  function attachCandidateHandlers(el) {
+    const item = el.dataset.candidate;
+    // Right-click → SUSPECT
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showContextMenu(e.pageX, e.pageY, [
+        { label: `Suspect ${item}`, command: `suspect ${item}` },
+        { label: `Clear ${item}`,   command: `clear ${item}` },
+      ]);
+    });
+    // Drop target for evidence
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      el.classList.add('drop-target');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drop-target'));
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('drop-target');
+      const evidenceId = e.dataTransfer?.getData('text/evidence-id');
+      if (evidenceId) {
+        emitCommand(`contradict ${item} with ${evidenceId}`);
+      }
+    });
+  }
+
+  function attachDragSource(el, evidence) {
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/evidence-id', evidence.id);
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  }
+
+  function showContextMenu(x, y, items) {
+    document.querySelectorAll('.ctx-menu').forEach((m) => m.remove());
+    const menu = document.createElement('div');
+    menu.className = 'ctx-menu';
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    for (const i of items) {
+      const btn = document.createElement('button');
+      btn.textContent = i.label;
+      btn.onclick = () => { emitCommand(i.command); menu.remove(); };
+      menu.appendChild(btn);
+    }
+    document.body.appendChild(menu);
+    setTimeout(() => {
+      const dismiss = () => { menu.remove(); document.removeEventListener('click', dismiss); };
+      document.addEventListener('click', dismiss);
+    }, 10);
+  }
+
+  function onCommand(cb) {
+    eventEmitter.addEventListener('command', (e) => cb(e.detail));
+  }
+
+  return { applyCmgt, applyTurnPacket, onCommand, emitCommand, getStateSnapshot: () => ({ ...stateStore }) };
+})();
+
+// ============================================================
+// 6. WIRING — boot, drive turns, capture/replay
+// ============================================================
+
+function log(kind, msg) {
+  const el = document.getElementById('log-content');
+  const line = document.createElement('div');
+  line.className = `log-line ${kind}`;
+  const ts = new Date().toLocaleTimeString().slice(-12);
+  line.textContent = `[${ts}] ${kind.toUpperCase().padEnd(7)} ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+let currentTurn = 0;
+const capturedPackets = [];
+
+function bootSpike() {
+  channelService.reset();
+  capturedPackets.length = 0;
+  currentTurn = 0;
+  document.getElementById('turn-display').textContent = '0';
+
+  // Phase 0: hello (single-bundle synthesizes locally — ADR-163 §2)
+  channelService.registerHello({
+    text: true,
+    images: false,    // intentionally false; the Alderman is text-only
+    sound: false,
+    clickableImage: true,
+    dragDrop: true,
+    splitPane: true,
+  });
+
+  // Story init (channel registration + rules)
+  initAldermanStory();
+
+  // Phase 1: CMGT
+  const cmgt = channelService.produceCmgtManifest();
+  capturedPackets.push({ kind: 'cmgt', data: cmgt });
+  renderer.applyCmgt(cmgt);
+
+  // Wire up command handler — synthesized commands feed back into the engine
+  // (in this spike, that drives the next scripted turn)
+  renderer.onCommand((cmd) => {
+    log('command', `  → received: '${cmd.text}'`);
+    // Map the command to the right scripted turn
+    if (cmd.text.startsWith('suspect ') && currentTurn < 3) {
+      stepTurn(cmd.text);
+    } else if (cmd.text.startsWith('contradict ') && currentTurn < 4) {
+      stepTurn(cmd.text);
+    } else if (cmd.text.startsWith('accuse ') && currentTurn < 5) {
+      stepTurn(cmd.text);
+    } else {
+      log('info', `  (command '${cmd.text}' did not match a scripted turn)`);
+    }
+  });
+}
+
+function stepTurn(playerCommand) {
+  if (currentTurn >= 5) {
+    log('info', 'Spike complete; all 5 turns played.');
+    return;
+  }
+  currentTurn++;
+
+  // Auto-supply commands for turns 3-5 if user just clicked "Next turn"
+  if (!playerCommand) {
+    if (currentTurn === 3) playerCommand = 'suspect Doyle';
+    else if (currentTurn === 4) playerCommand = 'contradict Doyle with mud';
+    else if (currentTurn === 5) playerCommand = 'accuse Doyle';
+  }
+
+  if (playerCommand) {
+    log('command', `  scripted player command: '${playerCommand}'`);
+  }
+
+  // Engine produces TextBlocks
+  const engineOutput = getScriptedTurn(currentTurn, playerCommand);
+
+  // channel-service produces TurnPacket
+  const turn = channelService.produceTurnPacket(engineOutput);
+  capturedPackets.push({ kind: 'turn', data: turn });
+
+  // renderer consumes
+  renderer.applyTurnPacket(turn);
+}
+
+function captureAndReplay() {
+  log('info', '─── Save & Replay test (re-emission identity, ADR-163 §14) ───');
+  const beforeState = JSON.stringify(renderer.getStateSnapshot());
+  log('info', `Captured ${capturedPackets.length} packets; resetting renderer…`);
+
+  // Reset world: re-init story, re-emit captured packets
+  channelService.reset();
+  initAldermanStory();
+  // Re-register the same hello
+  channelService.registerHello({
+    text: true, images: false, sound: false,
+    clickableImage: true, dragDrop: true, splitPane: true,
+  });
+  // Discard the new manifest; we will replay the captured CMGT to the renderer
+  // (this is what a multi-user server does when a client reconnects)
+  channelService.produceCmgtManifest(); // freeze manifest for prevValues bookkeeping
+
+  for (const p of capturedPackets) {
+    if (p.kind === 'cmgt') renderer.applyCmgt(p.data);
+    else                   renderer.applyTurnPacket(p.data, true /* isReplay */);
+  }
+
+  const afterState = JSON.stringify(renderer.getStateSnapshot());
+  if (beforeState === afterState) {
+    log('info', '✓ Re-emission identity verified: state matches exactly');
+  } else {
+    log('info', '✗ STATE DIVERGED after replay. Diff:');
+    log('info', `  before: ${beforeState.slice(0, 200)}…`);
+    log('info', `  after:  ${afterState.slice(0, 200)}…`);
+  }
+}
+
+// Hook up controls
+document.getElementById('next-turn-btn').addEventListener('click', () => stepTurn());
+document.getElementById('capture-replay-btn').addEventListener('click', captureAndReplay);
+document.getElementById('reset-btn').addEventListener('click', () => {
+  bootSpike();
+  log('info', 'Spike reset.');
+});
+
+document.getElementById('user-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const input = e.target;
+    const text = input.value.trim();
+    if (text) {
+      renderer.emitCommand(text);
+      input.value = '';
+    }
+  }
+});
+
+document.getElementById('log-toggle').addEventListener('click', () => {
+  document.getElementById('log-overlay').classList.toggle('open');
+  const t = document.getElementById('log-toggle');
+  t.textContent = t.textContent.includes('▲') ? 'Hide packet log ▼' : 'Show packet log ▲';
+});
+
+// Boot on page load
+bootSpike();
+log('info', 'Spike booted. Click "Next scripted turn" to play through 5 turns.');
+log('info', 'Or interact directly: right-click a candidate to SUSPECT, drag evidence onto a candidate to CONTRADICT, type a command in the prompt.');
+</script>
+
+</body>
+</html>

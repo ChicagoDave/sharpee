@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ADR-163 / ADR-164 — Architecture Alignment</title>
+<style>
+  :root {
+    --platform: #2b6cb0;
+    --platform-bg: #ebf4fb;
+    --multiuser: #2c7a7b;
+    --multiuser-bg: #e6f3f3;
+    --consumer: #4a5568;
+    --consumer-bg: #f0f0ee;
+    --engine: #6b46c1;
+    --engine-bg: #f0e9fb;
+    --renderer: #c05621;
+    --renderer-bg: #fbe9dd;
+    --packet: #b7791f;
+    --packet-bg: #fffbeb;
+    --persist: #2f855a;
+    --persist-bg: #e8f5ee;
+    --ink: #1a202c;
+    --rule: #cbd5e0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 1180px;
+    margin: 2em auto;
+    padding: 0 2em 4em;
+    color: var(--ink);
+    background: #faf8f3;
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-size: 1.7em;
+    margin: 0 0 0.3em;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.4em;
+  }
+
+  .subtitle {
+    color: #555;
+    margin-bottom: 2em;
+    font-size: 0.95em;
+  }
+
+  h2 {
+    font-size: 1.15em;
+    margin: 2.5em 0 0.6em;
+    color: var(--ink);
+  }
+
+  h2 .num {
+    display: inline-block;
+    width: 1.6em;
+    height: 1.6em;
+    line-height: 1.6em;
+    text-align: center;
+    background: var(--ink);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.8em;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+
+  .panel {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.5em;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .legend {
+    display: flex;
+    gap: 1.4em;
+    flex-wrap: wrap;
+    font-size: 0.83em;
+    margin: 1em 0 2em;
+    padding: 0.8em 1em;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 0.4em; }
+
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border: 2px solid;
+    border-radius: 3px;
+  }
+
+  .box {
+    border: 2px solid;
+    border-radius: 4px;
+    padding: 0.55em 0.85em;
+    background: white;
+    font-size: 0.9em;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .box small { display: block; opacity: 0.7; font-size: 0.8em; margin-top: 0.15em; }
+
+  .platform   { border-color: var(--platform);   color: var(--platform);   background: var(--platform-bg); }
+  .multiuser  { border-color: var(--multiuser);  color: var(--multiuser);  background: var(--multiuser-bg); }
+  .consumer   { border-color: var(--consumer);   color: var(--consumer);   background: var(--consumer-bg); }
+  .engine     { border-color: var(--engine);     color: var(--engine);     background: var(--engine-bg); }
+  .renderer   { border-color: var(--renderer);   color: var(--renderer);   background: var(--renderer-bg); }
+  .packet     { border-color: var(--packet);     color: var(--packet);     background: var(--packet-bg); font-family: 'SF Mono', Menlo, monospace; font-size: 0.8em; }
+  .persist    { border-color: var(--persist);    color: var(--persist);    background: var(--persist-bg); }
+
+  .deploy {
+    border: 2px dashed;
+    border-radius: 8px;
+    padding: 1.4em 1em 1em;
+    background: white;
+    position: relative;
+  }
+
+  .deploy-label {
+    position: absolute;
+    top: -0.75em;
+    left: 1em;
+    background: white;
+    padding: 0 0.6em;
+    font-weight: 600;
+    font-size: 0.85em;
+    letter-spacing: 0.02em;
+  }
+
+  .deploy-tag {
+    position: absolute;
+    top: 0.6em;
+    right: 0.8em;
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 0.15em 0.5em;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .tag-default { background: #ebf4fb; color: var(--platform); border: 1px solid var(--platform); }
+  .tag-exception { background: #e6f3f3; color: var(--multiuser); border: 1px solid var(--multiuser); }
+
+  .stack { display: flex; flex-direction: column; gap: 0.4em; }
+  .row   { display: flex; gap: 0.5em; align-items: stretch; }
+  .row > * { flex: 1; }
+
+  .down::after, .up::after {
+    content: '↓'; display: block; text-align: center;
+    color: #888; font-size: 1.3em; line-height: 1; margin: 0.05em 0;
+  }
+  .up::after { content: '↑'; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; }
+
+  .nb {
+    background: #fffbeb;
+    border-left: 4px solid var(--packet);
+    padding: 0.7em 1em;
+    margin-top: 1em;
+    font-size: 0.92em;
+  }
+
+  .nb strong { color: var(--packet); }
+
+  code, .mono { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.86em; background: #f1f1ec; padding: 0.1em 0.35em; border-radius: 3px; }
+
+  .arrow-h {
+    align-self: center;
+    flex: 0 0 auto;
+    color: #888;
+    font-weight: bold;
+    font-size: 1.1em;
+    padding: 0 0.3em;
+  }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 0.3em; font-size: 0.92em; }
+  th, td { padding: 0.55em 0.7em; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+  th { background: #f5f5f0; font-weight: 600; }
+
+  .pill {
+    display: inline-block;
+    font-size: 0.72em;
+    font-weight: 600;
+    padding: 0.1em 0.5em;
+    border-radius: 999px;
+    margin-right: 0.3em;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pill-platform  { background: var(--platform);  color: white; }
+  .pill-multiuser { background: var(--multiuser); color: white; }
+  .pill-consumer  { background: var(--consumer);  color: white; }
+
+  .ws-arrow {
+    text-align: center;
+    color: var(--multiuser);
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 0.85em;
+    padding: 0.5em;
+    border-top: 1px dashed var(--multiuser);
+    border-bottom: 1px dashed var(--multiuser);
+    margin: 0.6em 0;
+    background: var(--multiuser-bg);
+  }
+</style>
+</head>
+<body>
+
+<h1>ADR-163 / ADR-164 — Architecture Alignment</h1>
+<p class="subtitle">Four panels. Each shows one structural fact we've converged on. If a panel is wrong, that's where we're not aligned.</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--platform); background: var(--platform-bg)"></div>Platform (ADR-163)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--multiuser); background: var(--multiuser-bg)"></div>Multi-user (ADR-164)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--engine); background: var(--engine-bg)"></div>Engine</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--renderer); background: var(--renderer-bg)"></div>Renderer</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--packet); background: var(--packet-bg)"></div>Packet shapes</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--persist); background: var(--persist-bg)"></div>Persistence</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--consumer); background: var(--consumer-bg)"></div>Consumer-specific</div>
+</div>
+
+<!-- ============================================================
+     PANEL 1 — Two deployment patterns
+     ============================================================ -->
+<h2><span class="num">1</span>Two deployment patterns</h2>
+<div class="panel">
+  <div class="grid-2">
+
+    <!-- LEFT: SINGLE-BUNDLE -->
+    <div class="deploy" style="border-color: var(--platform);">
+      <span class="deploy-label" style="color: var(--platform);">Single-bundle deployment</span>
+      <span class="deploy-tag tag-default">default</span>
+      <p style="margin: 0.2em 0 1em; font-size: 0.85em; color: #555;">
+        CLI binary, platform-browser bundle, zifmia desktop app.
+        Engine, channel-service, story, and renderer all ship in one build artifact.
+        <strong>No wire.</strong>
+      </p>
+      <div class="stack">
+        <div class="box engine">Engine + Story <small>turn execution</small></div>
+        <div class="down"></div>
+        <div class="box platform">channel-service <small>produceTurnPacket()</small></div>
+        <div class="down"></div>
+        <div class="box packet">HelloPacket / CmgtPacket / TurnPacket / CommandPacket<br><small>JS/TS objects, in-process</small></div>
+        <div class="down"></div>
+        <div class="box renderer">Renderer <small>function call</small></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: MULTI-USER -->
+    <div class="deploy" style="border-color: var(--multiuser);">
+      <span class="deploy-label" style="color: var(--multiuser);">Multi-user deployment</span>
+      <span class="deploy-tag tag-exception">exception</span>
+      <p style="margin: 0.2em 0 1em; font-size: 0.85em; color: #555;">
+        Server hosts engine + channel-service. Browser hosts renderer.
+        <strong>Producer and consumer are split across a network transport.</strong>
+        Same packet shapes, JSON-serialized.
+      </p>
+      <div class="stack">
+        <div class="box engine">Engine + Story <small>(server-side)</small></div>
+        <div class="down"></div>
+        <div class="box platform">channel-service <small>produceTurnPacket()</small></div>
+        <div class="down"></div>
+        <div class="box packet">HelloPacket / CmgtPacket / TurnPacket / CommandPacket<br><small>JSON-encoded</small></div>
+        <div class="ws-arrow">↕ &nbsp;WebSocket transport &nbsp;↕</div>
+        <div class="box packet">same packet shapes (deserialized)</div>
+        <div class="down"></div>
+        <div class="box renderer">Renderer <small>(browser)</small></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="nb"><strong>Single fact:</strong> the wire shape is identical in both patterns. The only difference is whether <span class="mono">produceTurnPacket()</span>'s return value is consumed in-process or serialized over a transport.</div>
+</div>
+
+<!-- ============================================================
+     PANEL 2 — What ADR-163 covers vs what ADR-164 adds
+     ============================================================ -->
+<h2><span class="num">2</span>ADR-163 vs ADR-164 — what each owns</h2>
+<div class="panel">
+  <table>
+    <tr>
+      <th style="width: 38%;">Concern</th>
+      <th>Owner</th>
+      <th>Notes</th>
+    </tr>
+    <tr><td>Wire shapes (Hello, CMGT, Turn, Command)</td><td><span class="pill pill-platform">ADR-163</span></td><td>Universal across deployments.</td></tr>
+    <tr><td><span class="mono">@sharpee/channel-service</span> package + API</td><td><span class="pill pill-platform">ADR-163</span></td><td><span class="mono">registerChannel</span>, <span class="mono">addRule</span>, <span class="mono">produceCmgtManifest</span>, <span class="mono">produceTurnPacket</span>.</td></tr>
+    <tr><td>10 standard channels (engine-sourced)</td><td><span class="pill pill-platform">ADR-163</span></td><td><span class="mono">main</span>, <span class="mono">prompt</span>, <span class="mono">location</span>, <span class="mono">score</span>, <span class="mono">turn</span>, <span class="mono">death</span>, <span class="mono">endgame</span>, <span class="mono">score_notify</span>, <span class="mono">info</span>, <span class="mono">ifid</span>.</td></tr>
+    <tr><td>Capability handshake (<span class="mono">hello</span>) + per-client CMGT filtering</td><td><span class="pill pill-platform">ADR-163</span></td><td>Hello = capabilities only. Identity / room id are transport-layer concerns.</td></tr>
+    <tr><td>ADR-101 media folding</td><td><span class="pill pill-platform">ADR-163</span></td><td>Media events become channels.</td></tr>
+    <tr><td>Per-channel emit policy (<span class="mono">always</span> / <span class="mono">sparse</span>)</td><td><span class="pill pill-platform">ADR-163</span></td><td>Standard channels = <span class="mono">always</span>. Story channels default <span class="mono">sparse</span>.</td></tr>
+    <tr><td>"Repaint from game start" requirement</td><td><span class="pill pill-platform">ADR-163</span></td><td>Every consumer must support it. See Panel 3.</td></tr>
+    <tr><td>3 server-sourced channels (<span class="mono">chat</span>, <span class="mono">presence</span>, <span class="mono">command_echo</span>)</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Registered alongside platform standards. Populated via merge-after.</td></tr>
+    <tr><td>Stateless per-turn workers, in-process Node engine</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>No engine state between turns.</td></tr>
+    <tr><td>Save = world state + transcript capability</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Multi-user's specific implementation of the platform repaint requirement.</td></tr>
+    <tr><td>Mid-session join replay</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Replay = same code path as live.</td></tr>
+    <tr><td>WebSocket transport, identity, room routing</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Plus auth header / URL path conventions.</td></tr>
+    <tr><td>Where each consumer physically persists turn packets</td><td><span class="pill pill-consumer">consumer</span></td><td>CLI: file. platform-browser: IndexedDB. zifmia: user save. Multi-user: world capability.</td></tr>
+    <tr><td>Renderer choice / theme / story override</td><td><span class="pill pill-consumer">consumer</span></td><td>Author-overridable per ADR-163 §13.</td></tr>
+  </table>
+  <div class="nb"><strong>Single fact:</strong> ADR-163 is the contract. ADR-164 is one consumer of that contract. Once ADR-163 is fully shipped, ADR-164 can be implemented without touching the platform.</div>
+</div>
+
+<!-- ============================================================
+     PANEL 3 — Three repaint policies
+     ============================================================ -->
+<h2><span class="num">3</span>Session continuity — three repaint policies</h2>
+<div class="panel">
+  <p style="margin-top: 0; font-size: 0.92em;">
+    The platform guarantees one thing: <strong>re-emission identity</strong> — a captured <span class="mono">TurnPacket</span>
+    fed back through the renderer produces output identical to its original live emission.
+    Each consumer chooses which restore policy to use based on whether its renderer state survives a restore.
+  </p>
+
+  <table style="margin: 1em 0;">
+    <tr>
+      <th style="width: 22%;">Policy</th>
+      <th style="width: 22%;">Used by</th>
+      <th style="width: 22%;">Why</th>
+      <th>What happens on restore</th>
+    </tr>
+    <tr>
+      <td><strong>No-repaint</strong></td>
+      <td>CLI</td>
+      <td>Terminal owns scrollback; renderer state survives the process boundary</td>
+      <td>Resume live turns. No packet re-emission. Persistence may be world state only.</td>
+    </tr>
+    <tr>
+      <td><strong>Local repaint</strong></td>
+      <td>zifmia, platform-browser</td>
+      <td>DOM is empty on app reopen / page refresh; renderer state lost</td>
+      <td>Consumer persists per-turn artifacts locally; on restore, replays them through its own renderer before resuming live.</td>
+    </tr>
+    <tr>
+      <td><strong>Network repaint</strong></td>
+      <td>multi-user (ADR-164)</td>
+      <td>Each connecting client has a fresh DOM; renderer state never lived on the server</td>
+      <td>Server persists packets in the world-model transcript capability; replays to client on every connect (first join, reconnect, refresh, new joiner).</td>
+    </tr>
+  </table>
+
+  <div class="grid-2" style="margin-top: 1.2em;">
+
+    <!-- LIVE -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--engine);">Live turn (every consumer)</h3>
+      <div class="stack">
+        <div class="box engine">Engine processes command</div>
+        <div class="down"></div>
+        <div class="box platform"><span class="mono">produceTurnPacket()</span></div>
+        <div class="down"></div>
+        <div class="box packet">TurnPacket</div>
+        <div class="down"></div>
+        <div class="row">
+          <div class="box renderer">Renderer<br><small>renders to screen</small></div>
+          <div class="arrow-h">+</div>
+          <div class="box persist">Local-repaint &amp; network-repaint consumers persist<br><small>(no-repaint consumers may skip)</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPAINT -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--persist);">Reopen / connect (repaint consumers only)</h3>
+      <div class="stack">
+        <div class="box persist">Consumer reads stored artifacts in turn order</div>
+        <div class="down"></div>
+        <div class="box platform"><span class="mono">produceCmgtManifest(capabilities)</span> <small>(story init re-run; channels re-register)</small></div>
+        <div class="down"></div>
+        <div class="box packet">CmgtPacket</div>
+        <div class="down"></div>
+        <div class="box packet">… stored TurnPacket #1, #2, #3, … #N</div>
+        <div class="down"></div>
+        <div class="box renderer">Same renderer, same code path<br><small>indistinguishable from live</small></div>
+        <div class="down"></div>
+        <div class="box engine" style="opacity: 0.5;">Engine resumes producing live turns<br><small>(or, in multi-user, server produces; client just receives)</small></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nb">
+    <strong>Why it works without a <span class="mono">replay</span> flag:</strong><br>
+    • Event-mode channels (<span class="mono">death</span>, <span class="mono">score_notify</span>, <span class="mono">sound</span>, <span class="mono">animation</span>) are <strong>not persisted</strong> per ADR-163 §4 → don't refire.<br>
+    • Replace-mode channels converge to the final value through any sequence.<br>
+    • Append-mode channels accumulate identically, including <span class="mono">clear</span> events at original positions.
+  </div>
+
+  <div class="nb" style="border-left-color: var(--persist); background: var(--persist-bg);">
+    <strong style="color: var(--persist);">Persistence-unit sub-choice (local repaint only):</strong>
+    A local-repaint consumer may persist <span class="mono">TurnPacket</span> values and replay them through the renderer
+    <em>(renderer-version-independent, slower on long sessions)</em>, or persist the renderer's output directly —
+    markup, DOM fragments, captured XAML — and re-inject on restore <em>(faster, but tied to the renderer that produced it)</em>.
+    Both produce the same visual result. Hybrid is also valid.
+    The <strong>Secret Letter (OpenSilver)</strong> project shipped using rendered-output persistence;
+    zifmia and platform-browser may pick either.
+    Network repaint cannot use rendered output because rendered output isn't portable across clients with different renderers.
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 4 — produceTurnPacket signature & merge-after
+     ============================================================ -->
+<h2><span class="num">4</span>The platform API & how multi-user adds its three channels</h2>
+<div class="panel">
+  <div class="grid-2">
+
+    <!-- API -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--platform);">ADR-163 — <span class="mono">produceTurnPacket</span></h3>
+<pre style="background: #f7f7f3; border: 1px solid var(--rule); border-radius: 4px; padding: 0.9em; font-size: 0.82em; overflow-x: auto; margin: 0;"><code>function produceTurnPacket(input: {
+  textBlocks: ITextBlock[];
+  events:     DomainEvent[];
+  world:      WorldModel;
+  prevValues?: Record&lt;string, unknown&gt;;
+}): {
+  turn_id: string;
+  payload: Record&lt;string, unknown&gt;;
+};</code></pre>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Plain inputs in, plain payload out. No knowledge of <span class="mono">chat</span> / <span class="mono">presence</span> / <span class="mono">command_echo</span>.
+        No knowledge of transport or persistence.
+      </p>
+    </div>
+
+    <!-- MERGE-AFTER -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--multiuser);">ADR-164 — merge-after pattern</h3>
+<pre style="background: #f7f7f3; border: 1px solid var(--rule); border-radius: 4px; padding: 0.9em; font-size: 0.82em; overflow-x: auto; margin: 0;"><code>const platformPacket = produceTurnPacket({
+  textBlocks, events, world, prevValues
+});
+
+const turnPacket = {
+  ...platformPacket,
+  payload: {
+    ...platformPacket.payload,
+    chat:         newChatEntries,
+    presence:     currentRoster,
+    command_echo: commandsThisTurn,
+  },
+};</code></pre>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Multi-user server populates its own three channels by merging into the payload
+        after the platform produces it. No platform extension needed.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="nb">
+    <strong>Single fact:</strong> the platform API knows nothing about multi-user. Server-sourced channels are a downstream-consumer concern, populated by the consumer with a one-line merge.
+  </div>
+</div>
+
+<!-- FOOTER -->
+<p style="margin-top: 3em; font-size: 0.83em; color: #777; text-align: center;">
+  ADR-163: Channel-Service Platform · ADR-164: Stateless Multi-User Server · 2026-04-29
+</p>
+
+</body>
+</html>

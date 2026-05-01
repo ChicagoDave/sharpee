@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sharpee Renderer Architecture — How the Consumer Side Works</title>
+<style>
+  :root {
+    --platform: #2b6cb0;
+    --platform-bg: #ebf4fb;
+    --multiuser: #2c7a7b;
+    --multiuser-bg: #e6f3f3;
+    --consumer: #4a5568;
+    --consumer-bg: #f0f0ee;
+    --engine: #6b46c1;
+    --engine-bg: #f0e9fb;
+    --renderer: #c05621;
+    --renderer-bg: #fbe9dd;
+    --packet: #b7791f;
+    --packet-bg: #fffbeb;
+    --persist: #2f855a;
+    --persist-bg: #e8f5ee;
+    --story: #b83280;
+    --story-bg: #fbecf4;
+    --open: #b7791f;
+    --ink: #1a202c;
+    --rule: #cbd5e0;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 1180px;
+    margin: 2em auto;
+    padding: 0 2em 4em;
+    color: var(--ink);
+    background: #faf8f3;
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-size: 1.7em;
+    margin: 0 0 0.3em;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.4em;
+  }
+
+  .subtitle {
+    color: #555;
+    margin-bottom: 2em;
+    font-size: 0.95em;
+  }
+
+  h2 {
+    font-size: 1.15em;
+    margin: 2.5em 0 0.6em;
+    color: var(--ink);
+  }
+
+  h2 .num {
+    display: inline-block;
+    width: 1.6em;
+    height: 1.6em;
+    line-height: 1.6em;
+    text-align: center;
+    background: var(--ink);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.8em;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+
+  .panel {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.5em;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .legend {
+    display: flex;
+    gap: 1.4em;
+    flex-wrap: wrap;
+    font-size: 0.83em;
+    margin: 1em 0 2em;
+    padding: 0.8em 1em;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 0.4em; }
+
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border: 2px solid;
+    border-radius: 3px;
+  }
+
+  .box {
+    border: 2px solid;
+    border-radius: 4px;
+    padding: 0.55em 0.85em;
+    background: white;
+    font-size: 0.9em;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .box small { display: block; opacity: 0.7; font-size: 0.8em; margin-top: 0.15em; }
+
+  .platform   { border-color: var(--platform);   color: var(--platform);   background: var(--platform-bg); }
+  .multiuser  { border-color: var(--multiuser);  color: var(--multiuser);  background: var(--multiuser-bg); }
+  .consumer   { border-color: var(--consumer);   color: var(--consumer);   background: var(--consumer-bg); }
+  .engine     { border-color: var(--engine);     color: var(--engine);     background: var(--engine-bg); }
+  .renderer   { border-color: var(--renderer);   color: var(--renderer);   background: var(--renderer-bg); }
+  .packet     { border-color: var(--packet);     color: var(--packet);     background: var(--packet-bg); font-family: 'SF Mono', Menlo, monospace; font-size: 0.8em; }
+  .persist    { border-color: var(--persist);    color: var(--persist);    background: var(--persist-bg); }
+  .story      { border-color: var(--story);      color: var(--story);      background: var(--story-bg); }
+
+  .stack { display: flex; flex-direction: column; gap: 0.4em; }
+  .row   { display: flex; gap: 0.5em; align-items: stretch; }
+  .row > * { flex: 1; }
+
+  .down::after, .up::after {
+    content: '↓'; display: block; text-align: center;
+    color: #888; font-size: 1.3em; line-height: 1; margin: 0.05em 0;
+  }
+  .up::after { content: '↑'; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; }
+
+  .nb {
+    background: #fffbeb;
+    border-left: 4px solid var(--packet);
+    padding: 0.7em 1em;
+    margin-top: 1em;
+    font-size: 0.92em;
+  }
+
+  .nb strong { color: var(--packet); }
+
+  .open {
+    background: #fef3c7;
+    border-left: 4px solid var(--open);
+    padding: 0.7em 1em;
+    margin-top: 1em;
+    font-size: 0.92em;
+  }
+
+  code, .mono { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.86em; background: #f1f1ec; padding: 0.1em 0.35em; border-radius: 3px; }
+
+  pre { background: #f7f7f3; border: 1px solid var(--rule); border-radius: 4px; padding: 0.9em; font-size: 0.82em; overflow-x: auto; margin: 0; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  .arrow-h {
+    align-self: center;
+    flex: 0 0 auto;
+    color: #888;
+    font-weight: bold;
+    font-size: 1.1em;
+    padding: 0 0.3em;
+  }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 0.3em; font-size: 0.92em; }
+  th, td { padding: 0.55em 0.7em; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+  th { background: #f5f5f0; font-weight: 600; }
+
+  .pill {
+    display: inline-block;
+    font-size: 0.72em;
+    font-weight: 600;
+    padding: 0.1em 0.5em;
+    border-radius: 999px;
+    margin-right: 0.3em;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pill-platform  { background: var(--platform);  color: white; }
+  .pill-story     { background: var(--story);     color: white; }
+  .pill-fallback  { background: var(--consumer);  color: white; }
+  .pill-open      { background: var(--open);      color: white; }
+
+  .frame {
+    border: 2px dashed;
+    border-radius: 8px;
+    padding: 1.4em 1em 1em;
+    background: white;
+    position: relative;
+  }
+
+  .frame-label {
+    position: absolute;
+    top: -0.75em;
+    left: 1em;
+    background: white;
+    padding: 0 0.6em;
+    font-weight: 600;
+    font-size: 0.85em;
+    letter-spacing: 0.02em;
+  }
+
+  .screen {
+    border: 2px solid var(--renderer);
+    background: #fdfaf6;
+    border-radius: 6px;
+    padding: 0.8em;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr 200px;
+    gap: 0.5em;
+    min-height: 280px;
+  }
+  .screen-status { grid-column: 1 / 3; padding: 0.4em 0.6em; background: #f0e9fb; border-radius: 3px; font-size: 0.8em; color: var(--engine); }
+  .screen-main   { background: white; padding: 0.6em; border: 1px solid var(--rule); border-radius: 3px; font-size: 0.82em; line-height: 1.4; }
+  .screen-side   { background: white; padding: 0.5em; border: 1px solid var(--rule); border-radius: 3px; font-size: 0.78em; }
+  .screen-input  { grid-column: 1 / 3; padding: 0.4em 0.6em; background: #fbe9dd; border-radius: 3px; font-size: 0.8em; font-family: monospace; }
+
+  .slot-label { font-size: 0.7em; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2em; }
+
+  ul.tight { margin: 0.3em 0; padding-left: 1.3em; }
+  ul.tight li { margin: 0.15em 0; }
+</style>
+</head>
+<body>
+
+<h1>Sharpee Renderer Architecture</h1>
+<p class="subtitle">
+  How the consumer side of channel-I/O works.
+  Companion to <span class="mono">adr-163-164-architecture.html</span>: that diagram covered the wire / packet model;
+  this one covers what happens after a packet reaches the renderer.
+</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--renderer); background: var(--renderer-bg)"></div>Renderer surface (DOM, terminal, canvas)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--platform); background: var(--platform-bg)"></div>Platform-shipped renderer</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--story); background: var(--story-bg)"></div>Story-shipped renderer</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--packet); background: var(--packet-bg)"></div>Packet / channel value</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--open)"></div>Open question</div>
+</div>
+
+<!-- ============================================================
+     PANEL 1 — Renderer's three lifecycle phases
+     ============================================================ -->
+<h2><span class="num">1</span>Three lifecycle phases — what the renderer does, and when</h2>
+<div class="panel">
+  <p style="margin-top: 0; font-size: 0.92em;">
+    The renderer is driven entirely by the four packet kinds. It has three distinct phases.
+  </p>
+
+  <div class="grid-3" style="margin-top: 1em;">
+
+    <div class="frame" style="border-color: var(--platform);">
+      <span class="frame-label" style="color: var(--platform);">Phase 1 — Boot</span>
+      <div class="stack">
+        <div class="box packet">CmgtPacket arrives</div>
+        <div class="down"></div>
+        <div class="box renderer">For each <span class="mono">ChannelDefinition</span>:<br>look up renderer by <span class="mono">channel.id</span></div>
+        <div class="down"></div>
+        <div class="box renderer">Instantiate channel renderer; reserve its slot in the layout</div>
+        <div class="down"></div>
+        <div class="box renderer">Set up empty state stores<br><small>(for replace + append channels)</small></div>
+      </div>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Happens once per session at boot. Sets up everything before the first <span class="mono">TurnPacket</span> arrives.
+      </p>
+    </div>
+
+    <div class="frame" style="border-color: var(--renderer);">
+      <span class="frame-label" style="color: var(--renderer);">Phase 2 — Live (per turn)</span>
+      <div class="stack">
+        <div class="box packet">TurnPacket arrives</div>
+        <div class="down"></div>
+        <div class="box renderer">For each key in <span class="mono">payload</span>:<br>route to that channel's renderer</div>
+        <div class="down"></div>
+        <div class="box renderer">Channel renderer applies mode-specific update<br><small>(replace / append / event — see Panel 3)</small></div>
+        <div class="down"></div>
+        <div class="box renderer">Visual output committed to the screen</div>
+      </div>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Repeats once per turn for the lifetime of the session.
+        Re-used identically during repaint (Panel 5 of <span class="mono">adr-163-164-architecture.html</span>).
+      </p>
+    </div>
+
+    <div class="frame" style="border-color: var(--engine);">
+      <span class="frame-label" style="color: var(--engine);">Phase 3 — UI input</span>
+      <div class="stack">
+        <div class="box renderer">User gesture: keypress, click, drag, widget</div>
+        <div class="down"></div>
+        <div class="box renderer">Renderer maps gesture to canonical command string<br><small>(hotspot's <span class="mono">command</span> field, story-defined verb, free-text input)</small></div>
+        <div class="down"></div>
+        <div class="box packet">CommandPacket emitted upward</div>
+        <div class="down"></div>
+        <div class="box engine" style="opacity: 0.6;">Engine processes, next turn fires</div>
+      </div>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Fires whenever the user interacts. Gesture → command is the renderer's responsibility;
+        the engine sees only the command string.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="nb">
+    <strong>Single fact:</strong> the renderer is stateless across phases except for the per-channel state stores
+    populated by replace/append channels. There is no "engine state mirror" — the renderer sees only what the producer emits.
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 2 — Channel renderer registry
+     ============================================================ -->
+<h2><span class="num">2</span>Channel renderer registry — three sources, in precedence order</h2>
+<div class="panel">
+  <p style="margin-top: 0; font-size: 0.92em;">
+    For each channel id, the renderer needs a function/component that knows how to draw values of that channel's type.
+    The registry consults three sources in order.
+  </p>
+
+  <table>
+    <tr>
+      <th style="width: 18%;">Precedence</th>
+      <th style="width: 24%;">Source</th>
+      <th style="width: 22%;">Examples</th>
+      <th>When it applies</th>
+    </tr>
+    <tr>
+      <td><span class="pill pill-story">1</span> story override</td>
+      <td>Story bundle ships a renderer for a channel id that the platform also has a default for.</td>
+      <td>The Alderman restyles <span class="mono">main</span> as Playfair Display italic on cream paper.</td>
+      <td>Story takes full control of how a standard channel renders. Platform default is bypassed.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-story">2</span> story custom</td>
+      <td>Story bundle ships a renderer for a channel id the story itself registered.</td>
+      <td>The Alderman's <span class="mono">evidence</span>, <span class="mono">assertions</span>, <span class="mono">notebook</span> renderers.</td>
+      <td>Channel only exists because the story registered it. No platform default could exist.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-platform">3</span> platform default</td>
+      <td>Platform-shipped renderer for one of the standard or media channels.</td>
+      <td><span class="mono">main</span> → scrolling prose. <span class="mono">location</span>/<span class="mono">score</span>/<span class="mono">turn</span> → status line. <span class="mono">image:*</span> → <span class="mono">&lt;img&gt;</span> layers. <span class="mono">sound</span> → Web Audio.</td>
+      <td>No story override or custom registered for this channel. Platform default applies.</td>
+    </tr>
+    <tr>
+      <td><span class="pill pill-fallback">4</span> generic JSON-tree</td>
+      <td>Last-resort fallback. CMGT advertised a channel but neither story nor platform supplied a renderer.</td>
+      <td>An unknown <span class="mono">json</span> channel renders as a collapsible JSON tree.</td>
+      <td>Degraded but functional. Logged as a renderer-warning.</td>
+    </tr>
+  </table>
+
+  <div class="open">
+    <strong style="color: var(--open);">Open question — registration API.</strong>
+    How does a story bundle register its renderers?
+    Inline TS module export? Manifest file? Global window-attached registry?
+    The <em>asset-pipeline ADR</em> (forthcoming, deferred from ADR-163 §13) is the natural home for this decision —
+    it's coupled to how renderer assets physically ship inside <span class="mono">.sharpee</span> bundles.
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 3 — Mode-specific behavior
+     ============================================================ -->
+<h2><span class="num">3</span>Mode-specific behavior — what a channel renderer does with each value</h2>
+<div class="panel">
+  <p style="margin-top: 0; font-size: 0.92em;">
+    A channel's <span class="mono">mode</span> tells the renderer how to handle each new value. Three modes, three update rules.
+  </p>
+
+  <div class="grid-3" style="margin-top: 1em;">
+
+    <div class="frame" style="border-color: var(--platform);">
+      <span class="frame-label" style="color: var(--platform);">replace</span>
+      <p style="font-size: 0.88em; margin: 0 0 0.6em;">
+        Newest value supersedes prior. Renderer keeps a single "current" value per channel.
+      </p>
+      <div class="stack">
+        <div class="box packet">value₁</div>
+        <div class="down"></div>
+        <div class="box renderer">store = value₁ <small>render</small></div>
+        <div class="down"></div>
+        <div class="box packet">value₂</div>
+        <div class="down"></div>
+        <div class="box renderer">store = value₂ <small>render</small></div>
+      </div>
+      <p style="font-size: 0.82em; color: #555; margin-top: 0.7em;">
+        <strong>Examples:</strong> <span class="mono">location</span>, <span class="mono">score</span>, <span class="mono">turn</span>, <span class="mono">prompt</span>, <span class="mono">info</span>, <span class="mono">ifid</span>, <span class="mono">presence</span>, <span class="mono">image:&lt;layer&gt;</span>, <span class="mono">music</span>, <span class="mono">layout</span>.<br>
+        <strong>Repaint:</strong> sequence of values produces same final state regardless of intermediate steps.
+      </p>
+    </div>
+
+    <div class="frame" style="border-color: var(--multiuser);">
+      <span class="frame-label" style="color: var(--multiuser);">append</span>
+      <p style="font-size: 0.88em; margin: 0 0 0.6em;">
+        Each value added to a chronological list. Renderer accumulates.
+      </p>
+      <div class="stack">
+        <div class="box packet">value₁</div>
+        <div class="down"></div>
+        <div class="box renderer">list = [value₁] <small>render entry</small></div>
+        <div class="down"></div>
+        <div class="box packet">value₂</div>
+        <div class="down"></div>
+        <div class="box renderer">list = [v₁, v₂] <small>render entry</small></div>
+      </div>
+      <p style="font-size: 0.82em; color: #555; margin-top: 0.7em;">
+        <strong>Examples:</strong> <span class="mono">main</span> (prose), <span class="mono">chat</span>, <span class="mono">command_echo</span>, story-defined transcripts.<br>
+        <strong>Clear:</strong> a <span class="mono">clear</span> event with matching <span class="mono">target</span> resets the accumulated list.<br>
+        <strong>Repaint:</strong> accumulates identically including clears at original positions.
+      </p>
+    </div>
+
+    <div class="frame" style="border-color: var(--story);">
+      <span class="frame-label" style="color: var(--story);">event</span>
+      <p style="font-size: 0.88em; margin: 0 0 0.6em;">
+        Transient signal. Render once and discard. No state stored.
+      </p>
+      <div class="stack">
+        <div class="box packet">fire</div>
+        <div class="down"></div>
+        <div class="box renderer">trigger side effect <small>(toast / sound / animation)</small></div>
+        <div class="down"></div>
+        <div class="box packet">(silent turns)</div>
+        <div class="down"></div>
+        <div class="box renderer">nothing happens</div>
+      </div>
+      <p style="font-size: 0.82em; color: #555; margin-top: 0.7em;">
+        <strong>Examples:</strong> <span class="mono">death</span>, <span class="mono">endgame</span>, <span class="mono">score_notify</span>, <span class="mono">sound</span>, <span class="mono">animation</span>, <span class="mono">transition</span>, <span class="mono">clear</span>.<br>
+        <strong>Persistence:</strong> <strong>not persisted</strong> (per ADR-163 §4) — they don't refire on repaint or join.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="nb">
+    <strong>Single fact:</strong> mode lives on the channel definition, not on the renderer.
+    A channel always behaves the same way regardless of which renderer happens to draw it.
+    The renderer reads <span class="mono">mode</span> from the channel definition (received via CMGT) and applies the matching update rule.
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 4 — Layout & composition
+     ============================================================ -->
+<h2><span class="num">4</span>Layout & composition — how channel renderers compose into a screen</h2>
+<div class="panel">
+  <p style="margin-top: 0; font-size: 0.92em;">
+    The renderer's screen is a layout of <em>slots</em>. Each slot hosts one or more channel renderers.
+    Standard slots are platform-shipped; story-defined channels can declare new slots or target existing ones.
+  </p>
+
+  <div class="grid-2" style="margin-top: 1em;">
+
+    <!-- LEFT: Default platform-browser layout -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--platform);">Platform-browser default layout</h3>
+      <div class="screen">
+        <div class="screen-status">
+          <div class="slot-label">status slot</div>
+          <span style="font-weight: 600;">West of House</span> · Score 0/350 · Turn 1
+          <small style="display: block; opacity: 0.7;">channels: location, score, turn</small>
+        </div>
+        <div class="screen-main">
+          <div class="slot-label">main slot</div>
+          You are standing in an open field…<br><br>
+          &gt; <em>look</em><br>
+          You stand at the edge of a forest…
+          <small style="display: block; color: #999; margin-top: 0.5em;">channels: main (append) + command_echo (append, multi-user)</small>
+        </div>
+        <div class="screen-side">
+          <div class="slot-label">sidebar slot</div>
+          <strong>Players</strong><br>
+          • alice<br>
+          • bob<br><br>
+          <strong>Chat</strong><br>
+          alice: nice find!<br>
+          <small style="display: block; color: #999; margin-top: 0.5em;">channels: presence, chat</small>
+        </div>
+        <div class="screen-input">
+          <div class="slot-label">input slot</div>
+          &gt; _
+          <small style="display: block; color: #999; margin-top: 0.3em; font-family: -apple-system;">channel: prompt; emits CommandPacket on Enter</small>
+        </div>
+      </div>
+      <p style="font-size: 0.82em; color: #555; margin-top: 0.7em;">
+        The platform ships sensible defaults: status / main / sidebar / input slots.
+        Renders any well-behaved story out of the box.
+      </p>
+    </div>
+
+    <!-- RIGHT: Story-overridden layout -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--story);">The Alderman's story-overridden layout</h3>
+      <div class="screen" style="grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr auto auto; background: #faf3e8;">
+        <div class="screen-status" style="grid-column: 1 / 3; background: #f5e8d0; color: #5c2a14;">
+          <div class="slot-label">masthead (story slot)</div>
+          <span style="font-weight: 600; font-family: serif;">THE ALDERMAN</span> · Case File 47 · Day 3
+        </div>
+        <div class="screen-main" style="background: #f9f1e1; font-family: serif; font-style: italic; color: #3a2418;">
+          <div class="slot-label">notebook (story override of main)</div>
+          The corner of the rug is bent…
+        </div>
+        <div class="screen-side" style="background: #fdf8ed;">
+          <div class="slot-label">case board (story slot)</div>
+          <strong style="font-family: serif;">Suspects</strong><br>
+          Wickham · <s>Mrs Hale</s> · Doyle<br>
+          <strong style="font-family: serif;">Weapons</strong><br>
+          poker · <s>candlestick</s>
+          <small style="display: block; color: #999; margin-top: 0.5em;">channel: case_board (story-defined)</small>
+        </div>
+        <div class="screen-side" style="grid-column: 1 / 3; background: #fdf8ed;">
+          <div class="slot-label">evidence pile (story slot)</div>
+          🔍 footprint at window · 🔍 letter dated 1887 · 🔍 contradiction in Doyle's alibi
+          <small style="display: block; color: #999; margin-top: 0.3em;">channel: evidence (story-defined, append)</small>
+        </div>
+        <div class="screen-input" style="background: #2c1810; color: #d6c7a8; font-family: 'Courier New', monospace;">
+          &gt; identify gap doyle alibi
+        </div>
+      </div>
+      <p style="font-size: 0.82em; color: #555; margin-top: 0.7em;">
+        The Alderman replaces the default layout entirely.
+        Same wire content (<span class="mono">main</span>, <span class="mono">prompt</span>, etc.) — completely different screen.
+        Adds story slots for <span class="mono">case_board</span> and <span class="mono">evidence</span>.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="open">
+    <strong style="color: var(--open);">Open question — slot system specifics.</strong>
+    What does "slot" mean concretely? CSS grid template areas? React component slots?
+    Free-form layout the story controls? Hybrid where platform defines a default grid and stories override?
+    This is part of the renderer-extension surface that the asset-pipeline ADR will need to nail down.
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 5 — UI input loop
+     ============================================================ -->
+<h2><span class="num">5</span>UI input → CommandPacket — the only path back to the engine</h2>
+<div class="panel">
+  <p style="margin-top: 0; font-size: 0.92em;">
+    Every UI gesture that affects game state goes through one path: synthesize a command string,
+    emit a <span class="mono">CommandPacket</span>, let the parser process it.
+    The engine cannot tell the difference between a typed command and a UI-synthesized one.
+  </p>
+
+  <div class="grid-2" style="margin-top: 1em;">
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--renderer);">Sources of synthesized commands</h3>
+      <ul class="tight" style="font-size: 0.92em;">
+        <li><strong>Hotspot click</strong> — <span class="mono">image:*</span> payload's <span class="mono">hotspots[].command</span> field carries the canonical string.</li>
+        <li><strong>Action button</strong> — story renderer attaches a click handler that emits a fixed command.</li>
+        <li><strong>Drag-drop</strong> — renderer maps source/target pair to a story-defined verb (e.g., drag evidence card onto suspect → <span class="mono">accuse doyle with footprint</span>).</li>
+        <li><strong>Right-click context menu</strong> — pre-defined verb list per entity.</li>
+        <li><strong>Free-text input</strong> — the standard parser path; user types directly.</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--engine);">What the engine sees</h3>
+<pre><code>{ kind: 'command', text: 'turn dial 1' }
+{ kind: 'command', text: 'identify gap doyle alibi' }
+{ kind: 'command', text: 'north' }</code></pre>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Indistinguishable. The parser tokenises and grammar-matches the same way regardless of how the string was produced.
+        Stories add custom verbs by extending the parser's grammar (per ADR-087); the renderer just emits matching strings.
+      </p>
+    </div>
+  </div>
+
+  <div class="nb">
+    <strong>Single fact:</strong> there is no separate "callback" or "event-from-UI" packet kind.
+    UI input is collapsed onto the same <span class="mono">CommandPacket</span> shape used for typed commands.
+    This drops ADR-101's <span class="mono">onComplete</span> animation callback entirely (per ADR-163 §10).
+  </div>
+</div>
+
+<!-- ============================================================
+     PANEL 6 — How repaint reuses the same renderer
+     ============================================================ -->
+<h2><span class="num">6</span>Repaint reuses the live render path — no replay mode</h2>
+<div class="panel">
+  <p style="margin-top: 0; font-size: 0.92em;">
+    The renderer has no notion of "live" vs "historical" packets.
+    Re-emission identity (ADR-163 invariant) means feeding stored packets through Phase 2 produces the same screen as feeding live packets.
+  </p>
+
+  <div class="row" style="margin-top: 1em;">
+    <div class="box renderer">Phase 2 dispatcher (Panel 1)</div>
+  </div>
+
+  <div class="grid-2" style="margin-top: 0.6em;">
+    <div>
+      <p style="font-size: 0.88em; text-align: center; margin: 0;">
+        ↑ fed by live <span class="mono">TurnPacket</span>s from the producer
+      </p>
+    </div>
+    <div>
+      <p style="font-size: 0.88em; text-align: center; margin: 0;">
+        ↑ also fed by stored <span class="mono">TurnPacket</span>s during local repaint or network repaint
+      </p>
+    </div>
+  </div>
+
+  <div class="nb">
+    <strong>Why this works:</strong>
+    <ul class="tight">
+      <li>Replace channels: any sequence converges to the final value. Replaying 1000 status updates = displaying the last one.</li>
+      <li>Append channels: accumulate identically. Replaying yields the same scrollback.</li>
+      <li>Event channels: not persisted (ADR-163 §4) → can't replay → can't refire wrongly.</li>
+      <li>Renderer state stores rebuild from packet stream — no special "import historical state" entry point.</li>
+    </ul>
+  </div>
+
+  <div class="open">
+    <strong style="color: var(--open);">Open question — local-state-store ownership.</strong>
+    Are the per-channel state stores (current replace value, accumulated append list) part of the renderer itself,
+    or held in a separate consumer-side cache that the renderer reads from?
+    For local-repaint consumers using rendered-output persistence (Secret Letter pattern),
+    the answer affects whether the cache survives a render-skip optimisation.
+    Resolve when implementing platform-browser's renderer.
+  </div>
+</div>
+
+<!-- FOOTER -->
+<p style="margin-top: 3em; font-size: 0.83em; color: #777; text-align: center;">
+  Renderer architecture · companion to ADR-163 / ADR-164 · 2026-04-29
+</p>
+
+</body>
+</html>
