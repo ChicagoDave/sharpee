@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>ADR-163 / ADR-164 — Architecture Alignment</title>
+<title>Channel-Service — Platform-Browser &amp; Multi-User</title>
 <style>
   :root {
     --platform: #2b6cb0;
@@ -13,12 +13,16 @@
     --consumer-bg: #f0f0ee;
     --engine: #6b46c1;
     --engine-bg: #f0e9fb;
+    --stdlib: #b83280;
+    --stdlib-bg: #fbe8f3;
     --renderer: #c05621;
     --renderer-bg: #fbe9dd;
     --packet: #b7791f;
     --packet-bg: #fffbeb;
     --persist: #2f855a;
     --persist-bg: #e8f5ee;
+    --closure: #2b6cb0;
+    --closure-bg: #f7fafc;
     --ink: #1a202c;
     --rule: #cbd5e0;
   }
@@ -113,6 +117,7 @@
   .multiuser  { border-color: var(--multiuser);  color: var(--multiuser);  background: var(--multiuser-bg); }
   .consumer   { border-color: var(--consumer);   color: var(--consumer);   background: var(--consumer-bg); }
   .engine     { border-color: var(--engine);     color: var(--engine);     background: var(--engine-bg); }
+  .stdlib     { border-color: var(--stdlib);     color: var(--stdlib);     background: var(--stdlib-bg); }
   .renderer   { border-color: var(--renderer);   color: var(--renderer);   background: var(--renderer-bg); }
   .packet     { border-color: var(--packet);     color: var(--packet);     background: var(--packet-bg); font-family: 'SF Mono', Menlo, monospace; font-size: 0.8em; }
   .persist    { border-color: var(--persist);    color: var(--persist);    background: var(--persist-bg); }
@@ -176,6 +181,19 @@
 
   code, .mono { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 0.86em; background: #f1f1ec; padding: 0.1em 0.35em; border-radius: 3px; }
 
+  pre {
+    background: #f7f7f3;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 0.9em;
+    font-size: 0.82em;
+    overflow-x: auto;
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  pre code { background: transparent; padding: 0; }
+
   .arrow-h {
     align-self: center;
     flex: 0 0 auto;
@@ -203,6 +221,8 @@
   .pill-platform  { background: var(--platform);  color: white; }
   .pill-multiuser { background: var(--multiuser); color: white; }
   .pill-consumer  { background: var(--consumer);  color: white; }
+  .pill-stdlib    { background: var(--stdlib);    color: white; }
+  .pill-renderer  { background: var(--renderer);  color: white; }
 
   .ws-arrow {
     text-align: center;
@@ -215,114 +235,274 @@
     margin: 0.6em 0;
     background: var(--multiuser-bg);
   }
+
+  .step-label {
+    font-size: 0.72em;
+    color: #888;
+    text-align: center;
+    margin: 0.1em 0;
+  }
 </style>
 </head>
 <body>
 
-<h1>ADR-163 / ADR-164 — Architecture Alignment</h1>
-<p class="subtitle">Four panels. Each shows one structural fact we've converged on. If a panel is wrong, that's where we're not aligned.</p>
+<h1>Channel-Service — Platform-Browser &amp; Multi-User</h1>
+<p class="subtitle">How the same engine, the same channel definitions, and the same wire packets flow through two deployments. Updated 2026-05-03 — types in <span class="mono">if-domain</span>, ChannelService class in <span class="mono">channel-service</span>, registry in <span class="mono">stdlib</span>, composition in <span class="mono">engine</span>.</p>
 
 <div class="legend">
-  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--platform); background: var(--platform-bg)"></div>Platform (ADR-163)</div>
-  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--multiuser); background: var(--multiuser-bg)"></div>Multi-user (ADR-164)</div>
-  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--engine); background: var(--engine-bg)"></div>Engine</div>
-  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--renderer); background: var(--renderer-bg)"></div>Renderer</div>
-  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--packet); background: var(--packet-bg)"></div>Packet shapes</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--engine); background: var(--engine-bg)"></div>engine (composition)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--stdlib); background: var(--stdlib-bg)"></div>stdlib (registry + standards)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--platform); background: var(--platform-bg)"></div>channel-service (ChannelService class)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--renderer); background: var(--renderer-bg)"></div>Renderer (ADR-165)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--packet); background: var(--packet-bg)"></div>if-domain types + wire packets</div>
   <div class="legend-item"><div class="legend-swatch" style="border-color: var(--persist); background: var(--persist-bg)"></div>Persistence</div>
-  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--consumer); background: var(--consumer-bg)"></div>Consumer-specific</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color: var(--multiuser); background: var(--multiuser-bg)"></div>Multi-user only</div>
 </div>
 
 <!-- ============================================================
-     PANEL 1 — Two deployment patterns
+     PANEL 1 — Channel definitions are self-contained
      ============================================================ -->
-<h2><span class="num">1</span>Two deployment patterns</h2>
+<h2><span class="num">1</span>Channels are <span class="mono">IOChannel</span> instances</h2>
+<div class="panel">
+  <p style="margin-top: 0;">
+    An <span class="mono">IOChannel</span> is a typed object with id, mode, emit policy, content type, optional capability gating, and a <span class="mono">produce</span> closure. The type lives in <span class="mono">@sharpee/if-domain</span>. Platform code creates <span class="mono">IOChannel</span>s; authors create <span class="mono">IOChannel</span>s; same construction. They go into <span class="mono">stdlib</span>'s registry through the same <span class="mono">registry.add(channel)</span> call.
+  </p>
+
+  <div class="grid-2" style="margin-top: 1em;">
+
+    <!-- LEFT: standard channel -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--stdlib);">stdlib defines a standard <span class="mono">IOChannel</span></h3>
+<pre><code><span style="color:#888">// packages/stdlib/src/channels/score.ts</span>
+import type { IOChannel } from '@sharpee/if-domain';
+
+export const scoreChannel: IOChannel&lt;{
+  current: number; max: number | null
+}&gt; = {
+  id: 'score',
+  contentType: 'json',
+  mode: 'replace',
+  emit: 'always',
+  produce: ({ world }) =&gt; {
+    const cap = world.getCapability('scoring');
+    return cap
+      ? { current: cap.scoreValue, max: cap.maxScore ?? null }
+      : undefined;
+  },
+};</code></pre>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Co-located with the scoring capability. Reads <span class="mono">world</span> directly; no intermediary block. Returns <span class="mono">undefined</span> on idle turns; <span class="mono">always</span> emit re-emits the prev value.
+      </p>
+    </div>
+
+    <!-- RIGHT: story channel -->
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--renderer);">A story registers its own <span class="mono">IOChannel</span></h3>
+<pre><code><span style="color:#888">// stories/the-alderman/src/channels.ts</span>
+import type { IOChannel } from '@sharpee/if-domain';
+
+const evidenceChannel: IOChannel = {
+  id: 'evidence',
+  contentType: 'json',
+  mode: 'append',
+  emit: 'sparse',
+  produce: ({ events }) =&gt; {
+    const found = events
+      .filter((e) =&gt; e.type === 'alderman.evidence_found')
+      .map((e) =&gt; e.data);
+    return found.length ? found : undefined;
+  },
+};
+
+story.registerChannels = (registry) =&gt; {
+  registry.add(evidenceChannel);
+};</code></pre>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        Same type, same registry, same <span class="mono">add</span> call. The story's hook receives stdlib's <span class="mono">IChannelRegistry</span> and adds an <span class="mono">IOChannel</span> to it.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="nb"><strong>Single fact:</strong> there is no "platform-privileged" registration path. Standard <span class="mono">IOChannel</span>s and story <span class="mono">IOChannel</span>s go into the same registry through the same call. Last-write-wins on id lets stories override any standard channel.</div>
+</div>
+
+<!-- ============================================================
+     PANEL 2 — Two deployment patterns
+     ============================================================ -->
+<h2><span class="num">2</span>Two deployment patterns</h2>
 <div class="panel">
   <div class="grid-2">
 
-    <!-- LEFT: SINGLE-BUNDLE -->
+    <!-- LEFT: platform-browser -->
     <div class="deploy" style="border-color: var(--platform);">
-      <span class="deploy-label" style="color: var(--platform);">Single-bundle deployment</span>
+      <span class="deploy-label" style="color: var(--platform);">platform-browser (single bundle)</span>
       <span class="deploy-tag tag-default">default</span>
       <p style="margin: 0.2em 0 1em; font-size: 0.85em; color: #555;">
-        CLI binary, platform-browser bundle, zifmia desktop app.
-        Engine, channel-service, story, and renderer all ship in one build artifact.
-        <strong>No wire.</strong>
+        Engine, stdlib, channel-service, story, and renderer all ship in <span class="mono">dist/web/&lt;story&gt;/game.js</span>. <strong>No transport.</strong> The wire packets are JS objects passed through events.
       </p>
       <div class="stack">
-        <div class="box engine">Engine + Story <small>turn execution</small></div>
+        <div class="box stdlib">stdlib's channelRegistry<br><small>(standard IOChannels at module init)</small></div>
         <div class="down"></div>
-        <div class="box platform">channel-service <small>produceTurnPacket()</small></div>
+        <div class="box engine">Engine + Story<br><small>start(): story.registerChannels?(registry)<br>then new ChannelService(registry, caps)</small></div>
         <div class="down"></div>
-        <div class="box packet">HelloPacket / CmgtPacket / TurnPacket / CommandPacket<br><small>JS/TS objects, in-process</small></div>
+        <div class="box platform">channelService.buildManifest()<br>channelService.build(ctx) per turn</div>
         <div class="down"></div>
-        <div class="box renderer">Renderer <small>function call</small></div>
+        <div class="box packet">CmgtPacket (once)<br>TurnPacket (per turn)<br><small>JS objects, in-process<br>typed against if-domain</small></div>
+        <div class="step-label">engine.on('channel:packet', …)</div>
+        <div class="box renderer">Renderer (ADR-165)<br><small>BrowserClient feeds Renderer<br>ChannelRenderers write to DOM slots</small></div>
       </div>
     </div>
 
-    <!-- RIGHT: MULTI-USER -->
+    <!-- RIGHT: multi-user -->
     <div class="deploy" style="border-color: var(--multiuser);">
-      <span class="deploy-label" style="color: var(--multiuser);">Multi-user deployment</span>
-      <span class="deploy-tag tag-exception">exception</span>
+      <span class="deploy-label" style="color: var(--multiuser);">multi-user (split across WebSocket)</span>
+      <span class="deploy-tag tag-exception">ADR-164</span>
       <p style="margin: 0.2em 0 1em; font-size: 0.85em; color: #555;">
-        Server hosts engine + channel-service. Browser hosts renderer.
-        <strong>Producer and consumer are split across a network transport.</strong>
-        Same packet shapes, JSON-serialized.
+        Server hosts engine + stdlib + channel-service. Browser hosts renderer. Same wire packets, JSON-encoded over WebSocket. Server's engine.start defers until the client's <span class="mono">hello</span> arrives. Server merges <span class="mono">chat</span> / <span class="mono">presence</span> / <span class="mono">command_echo</span> into the payload after engine produces it.
       </p>
       <div class="stack">
-        <div class="box engine">Engine + Story <small>(server-side)</small></div>
+        <div class="box stdlib">stdlib's channelRegistry<br><small>(server-side; standards + story extensions)</small></div>
         <div class="down"></div>
-        <div class="box platform">channel-service <small>produceTurnPacket()</small></div>
+        <div class="box engine">Engine + Story<br><small>(server-side, stateless per turn;<br>engine.start({capabilities}) when hello arrives)</small></div>
         <div class="down"></div>
-        <div class="box packet">HelloPacket / CmgtPacket / TurnPacket / CommandPacket<br><small>JSON-encoded</small></div>
+        <div class="box platform">channelService.build()<br><small>(server-side)</small></div>
+        <div class="step-label">server-side listener merges chat / presence / command_echo</div>
+        <div class="box packet">CmgtPacket / TurnPacket<br><small>JSON-encoded</small></div>
         <div class="ws-arrow">↕ &nbsp;WebSocket transport &nbsp;↕</div>
-        <div class="box packet">same packet shapes (deserialized)</div>
+        <div class="box packet">same packets (deserialized)<br><small>typed against if-domain</small></div>
         <div class="down"></div>
-        <div class="box renderer">Renderer <small>(browser)</small></div>
+        <div class="box renderer">Renderer (ADR-165)<br><small>web-client decodes packets<br>ChannelRenderers write to DOM slots</small></div>
       </div>
     </div>
 
   </div>
-  <div class="nb"><strong>Single fact:</strong> the wire shape is identical in both patterns. The only difference is whether <span class="mono">produceTurnPacket()</span>'s return value is consumed in-process or serialized over a transport.</div>
+  <div class="nb"><strong>Single fact:</strong> the wire is identical. The producer side (engine + stdlib + channel-service) is identical. The only difference is whether <span class="mono">channel:packet</span> events fire in-process or get serialized over a transport. The renderer doesn't know or care which deployment it's in.</div>
 </div>
 
 <!-- ============================================================
-     PANEL 2 — What ADR-163 covers vs what ADR-164 adds
+     PANEL 3 — Bootstrap order
      ============================================================ -->
-<h2><span class="num">2</span>ADR-163 vs ADR-164 — what each owns</h2>
+<h2><span class="num">3</span>Bootstrap — engine has-a <span class="mono">ChannelService</span></h2>
+<div class="panel">
+  <p style="margin-top: 0;">
+    Standard composition. The engine constructs a <span class="mono">ChannelService</span> instance during <span class="mono">engine.start()</span>, passing it stdlib's registry and the consumer's capabilities. Per turn, the engine calls <span class="mono">channelService.build(ctx)</span> and emits the packet.
+  </p>
+
+  <div class="grid-2" style="margin-top: 1em;">
+
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--engine);">Inside the engine</h3>
+<pre><code><span style="color:#888">// @sharpee/engine/src/game-engine.ts</span>
+import { ChannelService } from '@sharpee/channel-service';
+import { channelRegistry } from '@sharpee/stdlib';
+
+class GameEngine {
+  private channelService!: ChannelService;
+
+  async start(opts: { capabilities: ClientCapabilities }) {
+    this.world = …;        <span style="color:#888">// build world</span>
+    await this.story.init?.();
+
+    <span style="color:#888">// stdlib's registry already holds standard IOChannels.</span>
+    <span style="color:#888">// Story extends it through registerChannels?:</span>
+    this.story.registerChannels?.(channelRegistry);
+
+    <span style="color:#888">// Compose ChannelService. Captures the registry's contents</span>
+    <span style="color:#888">// as the channel set for this session.</span>
+    this.channelService = new ChannelService(
+      channelRegistry, opts.capabilities,
+    );
+
+    this.emit('channel:manifest', this.channelService.buildManifest());
+  }
+
+  async executeTurn(input: string) {
+    const events = …;       <span style="color:#888">// existing turn execution</span>
+    const blocks = this.textService.processTurn(events);
+
+    const packet = this.channelService.build({
+      world: this.world, events, blocks,
+      turn: this.context.currentTurn,
+    });
+    this.emit('channel:packet', packet);
+    this.emit('text:output', blocks, turn); <span style="color:#888">// legacy</span>
+  }
+}</code></pre>
+    </div>
+
+    <div>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--consumer);">Consumer (BrowserClient) just listens</h3>
+<pre><code><span style="color:#888">// platform-browser BrowserClient.connectEngine()</span>
+const renderer = new Renderer();
+mountDefaultBrowserLayout(renderer);
+registerDefaultBrowserRenderers(renderer);
+
+engine.on('channel:manifest', (cmgt) =&gt; {
+  renderer.applyCmgt(cmgt);
+});
+
+engine.on('channel:packet', (packet) =&gt; {
+  renderer.applyTurnPacket(packet);
+});
+
+renderer.onCommand((cmd) =&gt; {
+  engine.executeTurn(cmd.text);
+});
+
+await engine.start({
+  capabilities: BROWSER_CAPABILITIES,
+});</code></pre>
+      <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
+        The consumer hands capabilities to <span class="mono">start()</span>, listens to two events, routes commands. It does not import <span class="mono">channel-service</span> or instantiate <span class="mono">ChannelService</span> itself.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="nb"><strong>Single fact:</strong> consumers are passive. The same listener pattern works for <span class="mono">platform-browser</span> (in-process events) and the multi-user web-client (WebSocket-decoded events). The multi-user server defers <span class="mono">engine.start({capabilities})</span> until the client's <span class="mono">hello</span> packet arrives over the wire and supplies the capabilities.</div>
+</div>
+
+<!-- ============================================================
+     PANEL 4 — Ownership grid
+     ============================================================ -->
+<h2><span class="num">4</span>Who owns what</h2>
 <div class="panel">
   <table>
     <tr>
-      <th style="width: 38%;">Concern</th>
-      <th>Owner</th>
+      <th style="width: 40%;">Concern</th>
+      <th>Owner package</th>
       <th>Notes</th>
     </tr>
-    <tr><td>Wire shapes (Hello, CMGT, Turn, Command)</td><td><span class="pill pill-platform">ADR-163</span></td><td>Universal across deployments.</td></tr>
-    <tr><td><span class="mono">@sharpee/channel-service</span> package + API</td><td><span class="pill pill-platform">ADR-163</span></td><td><span class="mono">registerChannel</span>, <span class="mono">addRule</span>, <span class="mono">produceCmgtManifest</span>, <span class="mono">produceTurnPacket</span>.</td></tr>
-    <tr><td>10 standard channels (engine-sourced)</td><td><span class="pill pill-platform">ADR-163</span></td><td><span class="mono">main</span>, <span class="mono">prompt</span>, <span class="mono">location</span>, <span class="mono">score</span>, <span class="mono">turn</span>, <span class="mono">death</span>, <span class="mono">endgame</span>, <span class="mono">score_notify</span>, <span class="mono">info</span>, <span class="mono">ifid</span>.</td></tr>
-    <tr><td>Capability handshake (<span class="mono">hello</span>) + per-client CMGT filtering</td><td><span class="pill pill-platform">ADR-163</span></td><td>Hello = capabilities only. Identity / room id are transport-layer concerns.</td></tr>
-    <tr><td>ADR-101 media folding</td><td><span class="pill pill-platform">ADR-163</span></td><td>Media events become channels.</td></tr>
-    <tr><td>Per-channel emit policy (<span class="mono">always</span> / <span class="mono">sparse</span>)</td><td><span class="pill pill-platform">ADR-163</span></td><td>Standard channels = <span class="mono">always</span>. Story channels default <span class="mono">sparse</span>.</td></tr>
-    <tr><td>"Repaint from game start" requirement</td><td><span class="pill pill-platform">ADR-163</span></td><td>Every consumer must support it. See Panel 3.</td></tr>
-    <tr><td>3 server-sourced channels (<span class="mono">chat</span>, <span class="mono">presence</span>, <span class="mono">command_echo</span>)</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Registered alongside platform standards. Populated via merge-after.</td></tr>
-    <tr><td>Stateless per-turn workers, in-process Node engine</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>No engine state between turns.</td></tr>
-    <tr><td>Save = world state + transcript capability</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Multi-user's specific implementation of the platform repaint requirement.</td></tr>
-    <tr><td>Mid-session join replay</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Replay = same code path as live.</td></tr>
-    <tr><td>WebSocket transport, identity, room routing</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Plus auth header / URL path conventions.</td></tr>
-    <tr><td>Where each consumer physically persists turn packets</td><td><span class="pill pill-consumer">consumer</span></td><td>CLI: file. platform-browser: IndexedDB. zifmia: user save. Multi-user: world capability.</td></tr>
-    <tr><td>Renderer choice / theme / story override</td><td><span class="pill pill-consumer">consumer</span></td><td>Author-overridable per ADR-163 §13.</td></tr>
+    <tr><td><span class="mono">IOChannel</span>, <span class="mono">IChannelRegistry</span> types</td><td><span class="mono">@sharpee/if-domain</span></td><td>Foundational. Imported by channel-service, stdlib, engine, browser, multi-user.</td></tr>
+    <tr><td>Wire packet types (Hello, CMGT, Turn, Command)</td><td><span class="mono">@sharpee/if-domain</span></td><td>Universal across deployments. Identical on both sides of the wire.</td></tr>
+    <tr><td><span class="mono">ChannelContentType</span>, <span class="mono">ChannelMode</span>, <span class="mono">ChannelEmitPolicy</span>, <span class="mono">ClientCapabilities</span>, <span class="mono">ChannelProduceContext</span></td><td><span class="mono">@sharpee/if-domain</span></td><td>Plain types, no implementation.</td></tr>
+    <tr><td><span class="mono">ChannelService</span> class</td><td><span class="mono">@sharpee/channel-service</span></td><td>Concrete runtime: <span class="mono">build()</span> walks the registry and produces a <span class="mono">TurnPacket</span>; <span class="mono">buildManifest()</span> filters by capability and produces a <span class="mono">CmgtPacket</span>. Domain-agnostic. Imports types from if-domain.</td></tr>
+    <tr><td><span class="mono">channelRegistry</span> instance + standard <span class="mono">IOChannel</span>s</td><td><span class="mono">@sharpee/stdlib</span></td><td><span class="mono">main</span>, <span class="mono">prompt</span>, <span class="mono">location</span>, <span class="mono">score</span>, <span class="mono">turn</span>, <span class="mono">death</span>, <span class="mono">endgame</span>, <span class="mono">score_notify</span>, <span class="mono">info</span>, <span class="mono">ifid</span> + media. Each is an <span class="mono">IOChannel</span> co-located with its data source. Added to the registry at module init.</td></tr>
+    <tr><td>Engine composes <span class="mono">ChannelService</span></td><td><span class="mono">@sharpee/engine</span></td><td>Has-a relationship: instantiates <span class="mono">new ChannelService(registry, capabilities)</span> in <span class="mono">start()</span>; calls <span class="mono">build(ctx)</span> per turn; emits <span class="mono">channel:packet</span> + <span class="mono">channel:manifest</span> events.</td></tr>
+    <tr><td><span class="mono">Story.registerChannels?(registry)</span> hook</td><td><span class="pill pill-platform">ADR-163</span></td><td>Engine invokes this on the loaded story before constructing <span class="mono">ChannelService</span>. Stories add <span class="mono">IOChannel</span>s to the same registry stdlib seeded.</td></tr>
+    <tr><td>Capability handshake + per-client CMGT filtering</td><td><span class="pill pill-platform">ADR-163</span></td><td>Caps passed to <span class="mono">engine.start({capabilities})</span> → <span class="mono">ChannelService</span> constructor → <span class="mono">buildManifest</span> filters gated channels.</td></tr>
+    <tr><td>ADR-101 media folding (image:*, sound, music, etc.)</td><td><span class="pill pill-stdlib">stdlib</span></td><td>Each media channel is an <span class="mono">IOChannel</span> whose closure reads events for <span class="mono">media.image.show</span>, <span class="mono">media.sound.play</span>, etc., and emits to its gated channel.</td></tr>
+    <tr><td>Per-channel emit policy (<span class="mono">always</span> / <span class="mono">sparse</span>)</td><td><span class="pill pill-stdlib">stdlib + author</span></td><td>Standard channels generally <span class="mono">always</span>; story channels default <span class="mono">sparse</span>.</td></tr>
+    <tr><td>Re-emission identity guarantee</td><td><span class="pill pill-platform">ADR-163</span></td><td>Captured turn packet replayed through a fresh <span class="mono">ChannelService</span> + same renderer = identical visual state. See Panel 5.</td></tr>
+    <tr><td>3 server-sourced channels (<span class="mono">chat</span>, <span class="mono">presence</span>, <span class="mono">command_echo</span>)</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Server-side listener merges them into the payload after the engine emits <span class="mono">channel:packet</span>. No platform extension needed.</td></tr>
+    <tr><td>Stateless per-turn workers, in-process Node engine</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Each turn rebuilds engine state from the world capability; <span class="mono">ChannelService</span> is reconstructed alongside.</td></tr>
+    <tr><td>Save = world state + transcript capability</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Multi-user's repaint store is server-side; clients receive replays on connect.</td></tr>
+    <tr><td>WebSocket transport, identity, room routing</td><td><span class="pill pill-multiuser">ADR-164</span></td><td>Plus auth headers, URL conventions.</td></tr>
+    <tr><td><span class="mono">ChannelRenderer</span> + <span class="mono">Renderer</span> + slot system</td><td><span class="pill pill-renderer">ADR-165</span></td><td>Consumer-side contract. Same on platform-browser and the multi-user web-client.</td></tr>
+    <tr><td>Default DOM <span class="mono">ChannelRenderer</span>s for the standard channels</td><td><span class="pill pill-renderer">ADR-165</span></td><td>platform-browser ships them; the multi-user web-client can re-use them or override.</td></tr>
+    <tr><td>Where each consumer persists turn packets</td><td><span class="pill pill-consumer">consumer</span></td><td>CLI: file. platform-browser: <span class="mono">BrowserSaveEnvelope</span> + transcript HTML. web-client: server-side world capability.</td></tr>
+    <tr><td>Story renderer override / theme</td><td><span class="pill pill-consumer">consumer + author</span></td><td>Last-write-wins via <span class="mono">registerRenderer</span> (ADR-165). Authors override per-channel or replace the whole layout.</td></tr>
   </table>
-  <div class="nb"><strong>Single fact:</strong> ADR-163 is the contract. ADR-164 is one consumer of that contract. Once ADR-163 is fully shipped, ADR-164 can be implemented without touching the platform.</div>
 </div>
 
 <!-- ============================================================
-     PANEL 3 — Three repaint policies
+     PANEL 5 — Three repaint policies
      ============================================================ -->
-<h2><span class="num">3</span>Session continuity — three repaint policies</h2>
+<h2><span class="num">5</span>Session continuity — three repaint policies</h2>
 <div class="panel">
   <p style="margin-top: 0; font-size: 0.92em;">
-    The platform guarantees one thing: <strong>re-emission identity</strong> — a captured <span class="mono">TurnPacket</span>
-    fed back through the renderer produces output identical to its original live emission.
-    Each consumer chooses which restore policy to use based on whether its renderer state survives a restore.
+    The platform guarantees one thing: <strong>re-emission identity</strong> — a captured <span class="mono">TurnPacket</span> fed back through the renderer produces output identical to the original live emission. Each consumer chooses a restore policy based on whether its renderer state survives a process / page boundary.
   </p>
 
   <table style="margin: 1em 0;">
@@ -336,16 +516,16 @@
       <td><strong>No-repaint</strong></td>
       <td>CLI</td>
       <td>Terminal owns scrollback; renderer state survives the process boundary</td>
-      <td>Resume live turns. No packet re-emission. Persistence may be world state only.</td>
+      <td>Resume live turns. No packet re-emission. Persistence may be world-state only.</td>
     </tr>
     <tr>
-      <td><strong>Local repaint</strong></td>
-      <td>zifmia, platform-browser</td>
-      <td>DOM is empty on app reopen / page refresh; renderer state lost</td>
-      <td>Consumer persists per-turn artifacts locally; on restore, replays them through its own renderer before resuming live.</td>
+      <td><strong>Local-repaint</strong></td>
+      <td><strong>platform-browser</strong>, zifmia</td>
+      <td>DOM is empty on page refresh; renderer state lost</td>
+      <td>Phase 4 keeps <span class="mono">BrowserSaveEnvelope</span> + transcript-HTML autosave (the existing path). A future enhancement can persist packets and replay them through the renderer.</td>
     </tr>
     <tr>
-      <td><strong>Network repaint</strong></td>
+      <td><strong>Network-repaint</strong></td>
       <td>multi-user (ADR-164)</td>
       <td>Each connecting client has a fresh DOM; renderer state never lived on the server</td>
       <td>Server persists packets in the world-model transcript capability; replays to client on every connect (first join, reconnect, refresh, new joiner).</td>
@@ -360,14 +540,14 @@
       <div class="stack">
         <div class="box engine">Engine processes command</div>
         <div class="down"></div>
-        <div class="box platform"><span class="mono">produceTurnPacket()</span></div>
+        <div class="box platform">channel-service walks registry,<br>calls each closure</div>
         <div class="down"></div>
-        <div class="box packet">TurnPacket</div>
+        <div class="box packet">TurnPacket emitted as <span class="mono">channel:packet</span></div>
         <div class="down"></div>
         <div class="row">
-          <div class="box renderer">Renderer<br><small>renders to screen</small></div>
+          <div class="box renderer">Renderer dispatches to<br>ChannelRenderers; DOM updates</div>
           <div class="arrow-h">+</div>
-          <div class="box persist">Local-repaint &amp; network-repaint consumers persist<br><small>(no-repaint consumers may skip)</small></div>
+          <div class="box persist">Local- &amp; network-repaint consumers persist<br><small>(no-repaint may skip)</small></div>
         </div>
       </div>
     </div>
@@ -378,11 +558,11 @@
       <div class="stack">
         <div class="box persist">Consumer reads stored artifacts in turn order</div>
         <div class="down"></div>
-        <div class="box platform"><span class="mono">produceCmgtManifest(capabilities)</span> <small>(story init re-run; channels re-register)</small></div>
+        <div class="box engine"><span class="mono">engine.start()</span> re-runs bootstrap<br><small>standard channels + story.registerChannels<br>+ produceCmgtManifest</small></div>
         <div class="down"></div>
-        <div class="box packet">CmgtPacket</div>
+        <div class="box packet">CmgtPacket → renderer.applyCmgt()<br><small>renderer state store reset</small></div>
         <div class="down"></div>
-        <div class="box packet">… stored TurnPacket #1, #2, #3, … #N</div>
+        <div class="box packet">stored TurnPacket #1, #2, … #N<br><small>fed through renderer.applyTurnPacket()</small></div>
         <div class="down"></div>
         <div class="box renderer">Same renderer, same code path<br><small>indistinguishable from live</small></div>
         <div class="down"></div>
@@ -394,80 +574,74 @@
 
   <div class="nb">
     <strong>Why it works without a <span class="mono">replay</span> flag:</strong><br>
-    • Event-mode channels (<span class="mono">death</span>, <span class="mono">score_notify</span>, <span class="mono">sound</span>, <span class="mono">animation</span>) are <strong>not persisted</strong> per ADR-163 §4 → don't refire.<br>
-    • Replace-mode channels converge to the final value through any sequence.<br>
-    • Append-mode channels accumulate identically, including <span class="mono">clear</span> events at original positions.
-  </div>
-
-  <div class="nb" style="border-left-color: var(--persist); background: var(--persist-bg);">
-    <strong style="color: var(--persist);">Persistence-unit sub-choice (local repaint only):</strong>
-    A local-repaint consumer may persist <span class="mono">TurnPacket</span> values and replay them through the renderer
-    <em>(renderer-version-independent, slower on long sessions)</em>, or persist the renderer's output directly —
-    markup, DOM fragments, captured XAML — and re-inject on restore <em>(faster, but tied to the renderer that produced it)</em>.
-    Both produce the same visual result. Hybrid is also valid.
-    The <strong>Secret Letter (OpenSilver)</strong> project shipped using rendered-output persistence;
-    zifmia and platform-browser may pick either.
-    Network repaint cannot use rendered output because rendered output isn't portable across clients with different renderers.
+    • Closures returning <span class="mono">undefined</span> on idle turns — sparse channels stay quiet; always channels re-emit prevValue from the registry's per-session state.<br>
+    • Replace-mode channels converge to the final value through any sequence of stored packets.<br>
+    • Append-mode channels accumulate in the renderer's state store, including <span class="mono">clear</span> events at original positions truncating the buffer.
   </div>
 </div>
 
 <!-- ============================================================
-     PANEL 4 — produceTurnPacket signature & merge-after
+     PANEL 6 — produceTurnPacket signature & merge-after
      ============================================================ -->
-<h2><span class="num">4</span>The platform API & how multi-user adds its three channels</h2>
+<h2><span class="num">6</span>The platform API &amp; how multi-user adds its three channels</h2>
 <div class="panel">
   <div class="grid-2">
 
     <!-- API -->
     <div>
-      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--platform);">ADR-163 — <span class="mono">produceTurnPacket</span></h3>
-<pre style="background: #f7f7f3; border: 1px solid var(--rule); border-radius: 4px; padding: 0.9em; font-size: 0.82em; overflow-x: auto; margin: 0;"><code>function produceTurnPacket(input: {
-  textBlocks: ITextBlock[];
-  events:     DomainEvent[];
-  world:      WorldModel;
-  prevValues?: Record&lt;string, unknown&gt;;
-}): {
-  turn_id: string;
-  payload: Record&lt;string, unknown&gt;;
-};</code></pre>
+      <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--platform);">ADR-163 — <span class="mono">ChannelService</span> class</h3>
+<pre><code>class ChannelService {
+  constructor(
+    registry: IChannelRegistry,
+    capabilities: ClientCapabilities,
+  );
+
+  buildManifest(): CmgtPacket;
+
+  build(ctx: {
+    world:  IWorldModel;
+    events: readonly ISemanticEvent[];
+    blocks: readonly ITextBlock[];
+    turn:   number;
+  }): TurnPacket;
+}</code></pre>
       <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
-        Plain inputs in, plain payload out. No knowledge of <span class="mono">chat</span> / <span class="mono">presence</span> / <span class="mono">command_echo</span>.
-        No knowledge of transport or persistence.
+        <strong>Engine has-a ChannelService.</strong> Engine instantiates one in <span class="mono">start()</span>, calls <span class="mono">buildManifest()</span> once, calls <span class="mono">build(ctx)</span> per turn. Walks the registry, calls each <span class="mono">IOChannel.produce(ctx)</span>, applies mode + emit policy.
       </p>
     </div>
 
     <!-- MERGE-AFTER -->
     <div>
       <h3 style="font-size: 1em; margin: 0 0 0.5em; color: var(--multiuser);">ADR-164 — merge-after pattern</h3>
-<pre style="background: #f7f7f3; border: 1px solid var(--rule); border-radius: 4px; padding: 0.9em; font-size: 0.82em; overflow-x: auto; margin: 0;"><code>const platformPacket = produceTurnPacket({
-  textBlocks, events, world, prevValues
-});
-
-const turnPacket = {
-  ...platformPacket,
-  payload: {
-    ...platformPacket.payload,
-    chat:         newChatEntries,
-    presence:     currentRoster,
-    command_echo: commandsThisTurn,
-  },
-};</code></pre>
+<pre><code><span style="color:#888">// server-side, after the engine emits channel:packet</span>
+engine.on('channel:packet', (packet) =&gt; {
+  const turnPacket = {
+    ...packet,
+    payload: {
+      ...packet.payload,
+      chat:         newChatEntries,
+      presence:     currentRoster,
+      command_echo: commandsThisTurn,
+    },
+  };
+  ws.send(JSON.stringify(turnPacket));
+  transcript.append(turnPacket);
+});</code></pre>
       <p style="font-size: 0.85em; color: #555; margin-top: 0.7em;">
-        Multi-user server populates its own three channels by merging into the payload
-        after the platform produces it. No platform extension needed.
+        Multi-user server populates its own three channels by merging into the payload after the engine's listener fires. <span class="mono">ChannelService</span> has no idea about <span class="mono">chat</span>; the channel registry stays domain-pure.
       </p>
     </div>
 
   </div>
 
   <div class="nb">
-    <strong>Single fact:</strong> the platform API knows nothing about multi-user. Server-sourced channels are a downstream-consumer concern, populated by the consumer with a one-line merge.
+    <strong>Single fact:</strong> the platform API knows nothing about multi-user. Server-sourced channels are a downstream-consumer concern, populated by a server-side listener with a few lines of merge code before the packet hits the wire.
   </div>
 </div>
 
 <!-- FOOTER -->
 <p style="margin-top: 3em; font-size: 0.83em; color: #777; text-align: center;">
-  ADR-163: Channel-Service Platform · ADR-164: Stateless Multi-User Server · 2026-04-29
+  ADR-163: Channel-Service Platform · ADR-164: Stateless Multi-User Server · ADR-165: Renderer Architecture · 2026-05-03
 </p>
 
 </body>

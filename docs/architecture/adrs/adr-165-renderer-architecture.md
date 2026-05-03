@@ -7,10 +7,11 @@
 ## Builds on
 
 - **ADR-163** (Channel-Service Platform) — defines the wire shapes,
-  the producer-side `@sharpee/channel-service` API, the standard
-  channel set, capability handshake, and the session-continuity
-  guarantee. ADR-163 settles **what** flows. This ADR settles
-  **how the consumer renders it.**
+  the producer-side `@sharpee/channel-service` API, the
+  closure-per-channel definition model, the platform vocabulary
+  (sourced from stdlib), capability handshake, and the
+  session-continuity guarantee. ADR-163 settles **what** flows.
+  This ADR settles **how the consumer renders it.**
 - **ADR-164** (Stateless Multi-User Server) — one downstream
   consumer of the renderer contract defined here. The multi-user
   web client uses the same renderer architecture as single-bundle
@@ -20,7 +21,7 @@
 
 - Wire shapes, packet ordering, capability handshake, emit policy,
   session continuity (re-emission identity) — all from ADR-163.
-- Renderer-local-vs-channel-driven boundary rule from ADR-163 §9:
+- Renderer-local-vs-channel-driven boundary rule from ADR-163 §10:
   *"If the action would change what the engine sees on the next
   turn, it is a `CommandPacket`. Otherwise it is renderer-local
   and never reaches the wire."*
@@ -28,13 +29,13 @@
 ## Context
 
 ADR-163 defines the producer-side contract — `produceCmgtManifest`,
-`produceTurnPacket`, `registerChannel`, `addRule` — and the wire
-shapes consumers receive (`CmgtPacket`, `TurnPacket`,
-`CommandPacket`). It does not specify the consumer-side
-architecture: how a renderer dispatches packets to per-channel
-rendering logic, how stories register their own channel renderers,
-how layouts compose, or how renderer-local UI state is held
-separate from channel-driven state.
+`produceTurnPacket`, `registerChannel` (with embedded `produce`
+closure per channel definition) — and the wire shapes consumers
+receive (`CmgtPacket`, `TurnPacket`, `CommandPacket`). It does not
+specify the consumer-side architecture: how a renderer dispatches
+packets to per-channel rendering logic, how stories register their
+own channel renderers, how layouts compose, or how renderer-local
+UI state is held separate from channel-driven state.
 
 The spike at `spikes/channel-io/` validated the producer contract
 against the Alderman case (custom channels, story-overridden `main`,
@@ -77,7 +78,7 @@ interface ChannelRenderer {
   // Required. Called once per emission of this channel in a turn
   // packet. `value` is shaped per the channel's contentType:
   //   replace-mode: the latest value
-  //   append-mode:  array of new entries this turn (ADR-163 §5)
+  //   append-mode:  array of new entries this turn (ADR-163 §4)
   //   event-mode:   the event payload
   onValue(value: unknown, channel: ChannelDefinition): void;
 
@@ -150,7 +151,7 @@ interface Renderer {
 
   // Emit a CommandPacket. Called by ChannelRenderer
   // implementations when a UI gesture should advance the engine
-  // (per ADR-163 §9).
+  // (per ADR-163 §10).
   emitCommand(text: string): void;
 
   // Optional. Snapshot of the channel state store for testing
@@ -326,9 +327,9 @@ state, tooltip visibility, in-progress animation flags — is held
   resets renderer-local state to defaults. (A story that wants
   modal visibility to persist must route it through a story
   channel, which makes it channel-driven state.)
-- **Never round-trips through `CommandPacket`** (per ADR-163 §9).
+- **Never round-trips through `CommandPacket`** (per ADR-163 §10).
 
-The boundary rule (from ADR-163 §9):
+The boundary rule (from ADR-163 §10):
 
 > If the action would change what the engine sees on the next
 > turn, it is a `CommandPacket`. Otherwise it is renderer-local
@@ -423,7 +424,7 @@ story-supplied main-renderer could write to a story-defined
 
 The browser-default and CLI-default renderers ship with
 implementations for all ten standard engine-sourced channels
-(ADR-163 §4) and the media channels (ADR-163 §7) at full
+(ADR-163 §7) and the media channels (ADR-163 §9) at full
 capability:
 
 | Channel              | Default renderer behavior                                                                       |
@@ -602,7 +603,7 @@ across surfaces. Land progressively.
 
 - **Two state surfaces in the renderer.** Channel state store +
   renderer-local state. Implementations must be disciplined
-  about which is which. The boundary rule (from ADR-163 §9)
+  about which is which. The boundary rule (from ADR-163 §10)
   helps, but it is a discipline cost.
 - **No deregistration.** A story that wants to swap renderers
   mid-session must encode the swap inside a single renderer's
@@ -713,7 +714,7 @@ across surfaces. Land progressively.
 - `spikes/channel-io/index.html` — runnable validation of the
   renderer architecture against the Alderman case.
 - `spikes/channel-io/findings.md` — eight gaps from the spike;
-  six are resolved here, two are resolved in ADR-163 §5 and §14.
+  six are resolved here, two are resolved in ADR-163 §4 and §17.
 - `docs/work/channel-io-unification/diagrams/renderer-architecture.html`
   — six-panel sketch of the consumer side. Visual companion to
   this ADR.
@@ -729,9 +730,17 @@ across surfaces. Land progressively.
 2026-05-01 main — derived from the renderer spike at
 `spikes/channel-io/`, which validated the platform contract
 against the Alderman case and surfaced eight gaps. Two gaps
-were absorbed into ADR-163 (§5 append-mode payload value shape;
-§14 standard repaint sequence) plus one boundary rule into
-ADR-163 §9 (renderer-local UI state). The remaining six gaps are
+were absorbed into ADR-163 (append-mode payload value shape;
+standard repaint sequence) plus one boundary rule into ADR-163
+on renderer-local UI state.
+
+2026-05-02 main — section references updated to track the
+ADR-163 rewrite (closure-per-channel model). The producer-side
+`addRule` API mentioned in the original Context section is gone;
+rule semantics are now closures embedded in `ChannelDefinition`.
+Consumer-side contract is unchanged — `ChannelRenderer`,
+`Renderer`, registry, dispatch, state store, and slot system all
+remain as specified. The remaining six gaps are
 resolved by this ADR's eight decisions: `ChannelRenderer`
 interface, `Renderer` interface, registry with last-write-wins,
 dispatch contract, state-store ownership, renderer-local state

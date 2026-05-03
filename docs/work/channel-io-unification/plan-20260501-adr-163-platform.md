@@ -1,5 +1,15 @@
 # Plan: ADR-163 Channel-Service Platform — Implementation
 
+> **SUPERSEDED 2026-05-02** — ADR-163 was rewritten on 2026-05-02 to a
+> closure-per-channel model (channel definitions carry embedded `produce`
+> closures; standard channel vocabulary moves from channel-service to
+> stdlib; engine hosts evaluation symmetric with text-service). The rule
+> schema this plan was built around no longer exists. Phases 1–3 of this
+> plan landed; their implementation is partially reworked by the new plan.
+>
+> See the new master plan:
+> `plan-20260502-adr-163-rewrite-master.md`
+
 **Created**: 2026-05-01
 **Overall scope**: Implement the `@sharpee/channel-service` package (the universal channel-I/O wire
 producer), migrate the CLI consumer to channel-I/O, and replace text-service's wire-producing role.
