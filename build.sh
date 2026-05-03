@@ -544,6 +544,7 @@ build_bundle() {
       --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
       --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
+      --alias:@sharpee/channel-service=./packages/channel-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
       --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
       --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
@@ -565,6 +566,7 @@ export * from '../packages/lang-en-us/dist/index';
 export * from '../packages/event-processor/dist/index';
 export * from '../packages/text-blocks/dist/index';
 export * from '../packages/text-service/dist/index';
+export * from '../packages/channel-service/dist/index';
 EOF
 
     # Report size
@@ -615,6 +617,7 @@ build_test_bundle() {
       --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
       --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
+      --alias:@sharpee/channel-service=./packages/channel-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
       --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
       --alias:@sharpee/plugins=./packages/plugins/dist/index.js \

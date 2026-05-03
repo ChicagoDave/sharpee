@@ -11,7 +11,24 @@
  *
  * Inspired by FyreVM channel I/O (2009).
  *
+ * **ADR-163 Phase 3 status (2026-05-01):** text-service still produces
+ * `ITextBlock[]` per turn (engine still calls `TextService.processTurn`).
+ * Its **wire-producing** role is **deprecated for the CLI consumer**:
+ * `dist/cli/sharpee.js` no longer calls `renderToString` to emit the
+ * consumer-facing event stream. Instead, the CLI bundle wraps each
+ * turn's blocks through `@sharpee/channel-service`'s `produceTurnPacket`
+ * and renders the `main` channel.
+ *
+ * `renderToString` and `renderStatusLine` remain in the public API and
+ * are still consumed by:
+ *  - `packages/transcript-tester/` (internal test harness)
+ *  - `packages/platform-browser/` (browser surface — Phase 4 will migrate)
+ *
+ * Phase 4 retires those remaining consumers; at that point this
+ * exporting module collapses to block-production only.
+ *
  * @see ADR-096 Text Service Architecture
+ * @see ADR-163 Channel-Service Platform — Phase 3 (CLI migration)
  */
 
 // Text service

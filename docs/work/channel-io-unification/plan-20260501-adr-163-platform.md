@@ -145,7 +145,8 @@ regression baseline and must not be modified as a test fixture.
   turn-output wiring. This is the primary cross-cutting phase — it touches multiple packages. It
   deserves its own session.
 - **Prerequisite**: Phase 1 and Phase 2 complete.
-- **Status**: CURRENT
+- **Status**: DONE (2026-05-02)
+- **Execution plan**: `plan-20260501-adr-163-phase-3-cli-migration.md`
 
 ---
 
@@ -188,7 +189,7 @@ regression baseline and must not be modified as a test fixture.
 - **Cross-package**: `packages/platform-browser/`, `packages/text-service/` (final audit/retire),
   stories (test story extended or new one created). Heaviest cross-cutting phase.
 - **Prerequisite**: Phase 3 complete.
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ---
 

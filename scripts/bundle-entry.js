@@ -25,6 +25,7 @@ const exports = {
   ...require('../packages/event-processor/dist/index.js'),
   ...require('../packages/text-blocks/dist/index.js'),
   ...require('../packages/text-service/dist/index.js'),
+  ...require('../packages/channel-service/dist/index.js'),
   ...require('../packages/if-services/dist/index.js'),
   // Testing extension (ADR-109/110)
   ...require('../packages/extensions/testing/dist/index.js')
@@ -236,18 +237,57 @@ Examples:
     engine.setStory(story);
     engine.start();
 
+    // === channel-service setup (ADR-163 Phase 3) ===
+    // CLI consumer migrates off text-service.renderToString for wire
+    // production. Engine still calls text-service to produce blocks; this
+    // CLI consumer wraps each turn's output through produceTurnPacket and
+    // writes the flattened `main` channel to outputBuffer.
+    const CLI_CAPABILITIES = {
+      text: true,
+      images: false, animations: false, video: false,
+      sound: false, music: false, speech: false,
+      splitPane: false, statusBar: false, sidebar: false,
+      clickableText: false, clickableImage: false, dragDrop: false,
+      transitions: false, layers: false, customFonts: false,
+    };
+    exports.resetSession();
+    exports.registerHello(CLI_CAPABILITIES);
+    exports.registerStandardChannels();
+    exports.registerPlatformRules();
+    exports.produceCmgtManifest();
+
     // Create testing extension for $commands in transcripts
     const testingExtension = TestingExtension ? new TestingExtension() : null;
 
     let lastOutput = '';
     let outputBuffer = [];
     let lastEvents = [];
+    let eventBuffer = [];
 
+    // text:output fires for both normal and meta-command paths after the
+    // engine has emitted all turn events. eventBuffer (populated below)
+    // carries the events that accompany the blocks for this emit.
     engine.on('text:output', (blocks) => {
-      outputBuffer.push(exports.renderToString(blocks));
+      const packet = exports.produceTurnPacket({
+        textBlocks: blocks,
+        events: eventBuffer,
+      });
+      const mainEntries = packet.payload.main;
+      if (Array.isArray(mainEntries) && mainEntries.length > 0) {
+        // Each entry is a TextContent[] (one block's content). Flatten
+        // each, then join with double newline (matches renderToString's
+        // default block separator). Decorations stripped — CLI is plain
+        // text in Phase 3; ANSI is a future Phase 4 terminal-only concern.
+        const flattened = mainEntries
+          .map((entry) => exports.flattenContent(entry))
+          .filter((s) => s.trim().length > 0)
+          .join('\n\n');
+        if (flattened) {
+          outputBuffer.push(flattened);
+        }
+      }
     });
 
-    let eventBuffer = [];
     engine.on('event', (event) => {
       eventBuffer.push(event);
     });
