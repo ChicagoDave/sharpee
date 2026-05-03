@@ -27,6 +27,7 @@
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/if-services": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {

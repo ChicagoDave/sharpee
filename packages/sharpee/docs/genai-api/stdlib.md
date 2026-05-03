@@ -3242,6 +3242,369 @@ import { IFEntity } from '@sharpee/world-model';
 export declare function entityInfoFrom(entity: IFEntity): EntityInfo;
 ```
 
+### channels/registry
+
+```typescript
+/**
+ * @sharpee/stdlib/channels — channel registry instance.
+ *
+ * Owner context: stdlib language layer. Hosts the canonical
+ * `IChannelRegistry` instance for Sharpee's channel-I/O system.
+ * Engine bootstrap imports this instance, lets stories register their
+ * channels onto it (`Story.registerChannels?.(registry)`), then hands
+ * it to a fresh `ChannelService` (per ADR-163 §13, §14).
+ *
+ * The instance is populated at module init with the ten standard
+ * channels and the eleven static media channels. The `Story.registerChannels`
+ * hook may add story-specific channels or override standards by
+ * re-registering with the same id (last-write-wins per ADR-163 §6).
+ *
+ * Lifecycle: a fresh `ChannelService` is created per session
+ * (engine restart, RESTART command). The registry itself is reused —
+ * stdlib's standard channels stay registered across sessions, and the
+ * `ChannelService`'s per-session `prevValues` map provides the
+ * isolation. The Story.registerChannels hook is invoked once per
+ * engine bootstrap; if a story overrides a standard channel, that
+ * override persists for the lifetime of the engine instance.
+ *
+ * Tests can construct their own `IChannelRegistry` instance for
+ * isolation (unit tests should not depend on this singleton's
+ * pre-populated state for behavior-specific assertions).
+ *
+ * @see ADR-163 — Channel-Service Platform — §6, §7, §13, §14
+ */
+import type { IChannelRegistry, IOChannel } from '@sharpee/if-domain';
+/**
+ * In-memory `IChannelRegistry` implementation. Last-write-wins on
+ * `add(channel)` by `channel.id` — which is how stories override
+ * platform standards (ADR-163 §6).
+ */
+export declare class StdlibChannelRegistry implements IChannelRegistry {
+    private readonly channels;
+    add(channel: IOChannel): void;
+    get(id: string): IOChannel | undefined;
+    all(): readonly IOChannel[];
+    /**
+     * Test-only helper: snapshot the current channel ids. Stable
+     * iteration order matches insertion order (Map semantics).
+     */
+    ids(): readonly string[];
+}
+/**
+ * The canonical channel registry instance for Sharpee. Pre-populated
+ * with ten standard channels (`main`, `prompt`, `score`, `turn`,
+ * `location`, `info`, `ifid`, `death`, `endgame`, `score_notify`)
+ * plus eleven static media channels (`image:preload`,
+ * `image:background`, `image:main`, `image:overlay`, `sound`,
+ * `music`, `animation`, `animate`, `transition`, `layout`, `clear`).
+ *
+ * Engine bootstrap consumes this directly; stories extend through
+ * the `Story.registerChannels?(registry)` hook.
+ */
+export declare const channelRegistry: IChannelRegistry;
+```
+
+### channels/standard
+
+```typescript
+/**
+ * @sharpee/stdlib/channels — standard `IOChannel` definitions.
+ *
+ * Owner context: stdlib language layer. The ten platform-vocabulary
+ * channels from ADR-163 §4 — co-located with stdlib because their
+ * closures read stdlib data sources (capabilities, blocks the
+ * text-service produces, world projections).
+ *
+ * Per ADR-163 §6, channels are self-contained: each `IOChannel`
+ * carries its identity, configuration, and a closure that computes
+ * the channel's value for the current turn from the
+ * `ChannelProduceContext`. There is no separate rule schema or
+ * routing layer; closures are the routing.
+ *
+ * **Standard channels are NOT capability-gated** (per §6 — they exist
+ * on every surface). Media channels gate; standards do not.
+ *
+ * @see ADR-163 — Channel-Service Platform — §4, §5, §6
+ */
+import type { IOChannel } from '@sharpee/if-domain';
+import type { TextContent } from '@sharpee/text-blocks';
+/**
+ * Event types the standard channels listen for. Stories or extensions
+ * that want to populate `death`, `endgame`, or `score_notify` emit
+ * events of these types; stdlib does not emit them itself.
+ *
+ * The values match the `if.event.*` namespacing convention. An event
+ * carries its message in `event.data.message` (string).
+ */
+export declare const STANDARD_CHANNEL_EVENTS: {
+    readonly PLAYER_DIED: "if.event.player_died";
+    readonly GAME_WON: "if.event.game_won";
+    readonly GAME_LOST: "if.event.game_lost";
+    readonly SCORE_CHANGED: "if.event.score_changed";
+};
+/**
+ * `main` — append-mode prose transcript. Carries `TextContent[]`
+ * arrays so renderers can preserve decorations. Closure projects every
+ * block whose key is in `MAIN_KEYS` into the channel's append stream.
+ */
+export declare const mainChannel: IOChannel<TextContent[]>;
+/**
+ * `prompt` — replace-mode input prompt. Defaults to `'> '` when no
+ * prompt block is emitted, so the renderer always has a sensible
+ * placeholder. Closure flattens the prompt block's content to plain
+ * string (decorations stripped).
+ */
+export declare const promptChannel: IOChannel<string>;
+/**
+ * `location` — replace-mode status-line location name. Closure reads
+ * the player's containing room from the world and returns its display
+ * name. Returns `undefined` (the channel re-emits its prevValue) if
+ * the world has no player or the room cannot be resolved.
+ */
+export declare const locationChannel: IOChannel<string>;
+/**
+ * `score` — replace-mode `{current, max}` payload. Closure reads the
+ * `scoring` capability from the world. Emits `undefined` (re-emits
+ * prev) when the capability is absent.
+ *
+ * `max: null` (not `0`) signals an unbounded score per ADR-163 §4
+ * commentary; `maxScore: 0` in the capability is treated as null since
+ * a 0-cap scoring system has no usable progress fraction.
+ */
+export declare const scoreChannel: IOChannel<{
+    current: number;
+    max: number | null;
+}>;
+/**
+ * `turn` — replace-mode turn count. Closure returns `ctx.turn`
+ * directly. Always emits because the turn counter changes every turn.
+ */
+export declare const turnChannel: IOChannel<number>;
+/**
+ * `info` — replace-mode story metadata `{title, author, version}`.
+ * Closure reads the `storyInfo` capability. Stories or the engine
+ * register and populate this capability at startup.
+ */
+export declare const infoChannel: IOChannel<{
+    title?: string;
+    author?: string;
+    version?: string;
+}>;
+/**
+ * `ifid` — replace-mode IFID string. Closure reads `storyInfo.ifid`.
+ */
+export declare const ifidChannel: IOChannel<string>;
+/**
+ * `death` — event-mode death notification. Closure looks for an
+ * `if.event.player_died` event in this turn's events and projects its
+ * `data.message` field. Stories that want different death handling
+ * register a replacement `IOChannel` with id `'death'` (last-write-wins
+ * per ADR-163 §6).
+ */
+export declare const deathChannel: IOChannel<string>;
+/**
+ * `endgame` — event-mode endgame notification (game won OR game lost
+ * — the closure folds both into one channel since renderers typically
+ * present them similarly). Closure scans for either event type and
+ * returns the message of the first match.
+ */
+export declare const endgameChannel: IOChannel<string>;
+/**
+ * `score_notify` — event-mode transient score-change announcement.
+ * Closure scans for `if.event.score_changed` and emits its message.
+ */
+export declare const scoreNotifyChannel: IOChannel<string>;
+/**
+ * The ten platform-standard channels in iteration order. Order is
+ * preserved for stable diffing in tests and manifests; the
+ * `ChannelService` itself does not depend on ordering.
+ */
+export declare const STANDARD_CHANNELS: ReadonlyArray<IOChannel>;
+/**
+ * Channel id literals for the platform-standard set. Used by tests
+ * and consumers that need string-literal types.
+ */
+export declare const STANDARD_CHANNEL_IDS: {
+    readonly MAIN: "main";
+    readonly PROMPT: "prompt";
+    readonly LOCATION: "location";
+    readonly SCORE: "score";
+    readonly TURN: "turn";
+    readonly INFO: "info";
+    readonly IFID: "ifid";
+    readonly DEATH: "death";
+    readonly ENDGAME: "endgame";
+    readonly SCORE_NOTIFY: "score_notify";
+};
+export type StandardChannelId = (typeof STANDARD_CHANNEL_IDS)[keyof typeof STANDARD_CHANNEL_IDS];
+```
+
+### channels/media
+
+```typescript
+/**
+ * @sharpee/stdlib/channels — media `IOChannel` definitions.
+ *
+ * Owner context: stdlib language layer. The platform media-channel
+ * vocabulary from ADR-163 §7. Each channel is capability-gated; the
+ * `ChannelService` filters gated channels out of the per-client
+ * manifest using `IOChannel.gatedBy`.
+ *
+ * Closures listen for the corresponding `media.*` event type on the
+ * turn's `events` array and project the event's payload (with the two
+ * ADR-163 §7 renames: `media.sound.play` `channel?` → `bus?`;
+ * `media.image.show` hotspots `action` → `command`; and the §9 drop
+ * of `media.animation.play.onComplete`).
+ *
+ * Hide/stop events (`media.image.hide`, `media.music.stop`,
+ * `media.ambient.stop`) emit `null` on the corresponding replace-mode
+ * media channel — the renderer interprets `null` as "hide / stop".
+ *
+ * **Dynamic channels** — `image:<layer>` (custom layer beyond
+ * `image:background`/`image:main`/`image:overlay`) and `ambient:<id>`
+ * are NOT registered here. Stories register them through their own
+ * `Story.registerChannels` hook; `createAmbientChannel(id)` and
+ * `createImageChannel(layer)` are convenience builders.
+ *
+ * @see ADR-163 — Channel-Service Platform — §6, §7, §9
+ */
+import type { IOChannel } from '@sharpee/if-domain';
+import type { ISemanticEvent } from '@sharpee/core';
+/**
+ * Media event types from ADR-101 (folded into channel emissions per
+ * ADR-163 §7).
+ */
+export declare const MEDIA_EVENT_TYPES: {
+    readonly IMAGE_SHOW: "media.image.show";
+    readonly IMAGE_HIDE: "media.image.hide";
+    readonly IMAGE_PRELOAD: "media.image.preload";
+    readonly SOUND_PLAY: "media.sound.play";
+    readonly MUSIC_PLAY: "media.music.play";
+    readonly MUSIC_STOP: "media.music.stop";
+    readonly AMBIENT_PLAY: "media.ambient.play";
+    readonly AMBIENT_STOP: "media.ambient.stop";
+    readonly ANIMATION_PLAY: "media.animation.play";
+    readonly ANIMATE: "media.animate";
+    readonly TRANSITION: "media.transition";
+    readonly LAYOUT_CONFIGURE: "media.layout.configure";
+    readonly CLEAR: "media.clear";
+};
+export type MediaEventType = (typeof MEDIA_EVENT_TYPES)[keyof typeof MEDIA_EVENT_TYPES];
+/**
+ * Resolve the `image:<layer>` channel id from a `media.image.show` /
+ * `media.image.hide` event payload. Defaults to `image:main`.
+ */
+export declare function imageChannelIdFromEvent(event: ISemanticEvent): string;
+/**
+ * Construct an `image:<layer>` `IOChannel`. Standard layers
+ * (`background`, `main`, `overlay`) are pre-registered; stories add
+ * additional layers via this builder.
+ */
+export declare function createImageChannel(layer: string): IOChannel;
+export declare const imageBackgroundChannel: IOChannel;
+export declare const imageMainChannel: IOChannel;
+export declare const imageOverlayChannel: IOChannel;
+/**
+ * `image:preload` — event-mode preload trigger. Renderers download
+ * the asset; not displayed.
+ */
+export declare const imagePreloadChannel: IOChannel;
+/**
+ * `sound` — event-mode sound effect.
+ */
+export declare const soundChannel: IOChannel;
+/**
+ * `music` — replace-mode music track. `null` emission (from
+ * `media.music.stop`) signals "stop".
+ */
+export declare const musicChannel: IOChannel;
+/**
+ * Construct an `ambient:<id>` `IOChannel`. Ambient channels are
+ * inherently story-defined (ADR-163 §7) — the platform has no
+ * predetermined ambient ids. Stories call this once per ambient
+ * layer they need.
+ *
+ * @param ambientId — suffix portion (e.g., `'wind'` registers
+ *   `ambient:wind`).
+ */
+export declare function createAmbientChannel(ambientId: string): IOChannel;
+/**
+ * `animation` — event-mode CSS-style animation. Drops `onComplete`
+ * per ADR-163 §9.
+ */
+export declare const animationChannel: IOChannel;
+/**
+ * `animate` — event-mode generic animation directive.
+ */
+export declare const animateChannel: IOChannel;
+/**
+ * `transition` — event-mode scene transition.
+ */
+export declare const transitionChannel: IOChannel;
+/**
+ * `layout` — replace-mode layout configuration. Persistent across
+ * mid-session joins so a late-joining renderer sees the current
+ * layout without waiting for a re-emission.
+ */
+export declare const layoutChannel: IOChannel;
+/**
+ * `clear` — event-mode truncation signal. Operates on append-mode
+ * channels (notably `main`); ungated because every renderer needs to
+ * be able to reset accumulated prose.
+ */
+export declare const clearChannel: IOChannel;
+/**
+ * Static media channels in iteration order — the ones the platform
+ * pre-registers regardless of story. Dynamic image layers (beyond
+ * the three above) and ambient channels are story-registered.
+ */
+export declare const MEDIA_CHANNELS: ReadonlyArray<IOChannel>;
+/**
+ * Channel id literals for the static media set.
+ */
+export declare const MEDIA_CHANNEL_IDS: {
+    readonly IMAGE_PRELOAD: "image:preload";
+    readonly IMAGE_BACKGROUND: "image:background";
+    readonly IMAGE_MAIN: "image:main";
+    readonly IMAGE_OVERLAY: "image:overlay";
+    readonly SOUND: "sound";
+    readonly MUSIC: "music";
+    readonly ANIMATION: "animation";
+    readonly ANIMATE: "animate";
+    readonly TRANSITION: "transition";
+    readonly LAYOUT: "layout";
+    readonly CLEAR: "clear";
+};
+export type MediaChannelId = (typeof MEDIA_CHANNEL_IDS)[keyof typeof MEDIA_CHANNEL_IDS];
+```
+
+### channels/keys
+
+```typescript
+/**
+ * @sharpee/stdlib/channels — block-key sets used by standard channels.
+ *
+ * Owner context: stdlib language layer. The standard `main` channel's
+ * closure routes prose-shaped blocks (room descriptions, action
+ * results, banners, etc.) into the append-mode main transcript.
+ * `MAIN_KEYS` names every `CORE_BLOCK_KEYS` entry that should land in
+ * the main channel.
+ *
+ * Block keys not in this set are NOT routed to main automatically —
+ * stories override or extend by registering their own `IOChannel`
+ * (last-write-wins on channel id) per ADR-163 §6.
+ *
+ * @see ADR-163 — Channel-Service Platform — §6, §7, §14
+ */
+/**
+ * Block keys whose content flows into the `main` channel (append mode,
+ * decoration-preserving). Status blocks (`status.score`, `status.turns`,
+ * `status.room`) are intentionally absent — those values are now read
+ * from world state directly by the score/turn/location channels.
+ */
+export declare const MAIN_KEYS: ReadonlySet<string>;
+```
+
 ### index
 
 ```typescript
@@ -3272,4 +3635,5 @@ export * from './combat';
 export * from './chains';
 export * from './inference';
 export * from './utils';
+export * from './channels';
 ```

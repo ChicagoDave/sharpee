@@ -24,6 +24,7 @@
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
+    "@sharpee/channel-service": "workspace:*",
     "@sharpee/core": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
     "@sharpee/plugins": "workspace:*",

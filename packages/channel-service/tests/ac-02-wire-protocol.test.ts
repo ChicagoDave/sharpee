@@ -171,8 +171,7 @@ describe('AC-2 — module is runtime-agnostic', () => {
     // module evaluated rather than was tree-shaken away.
     const mod = await import('../src');
     expect(mod.PROTOCOL_VERSION).toBe(1);
-    expect(Array.isArray(mod.STANDARD_CHANNELS)).toBe(true);
-    expect(Array.isArray(mod.platformRules)).toBe(true);
+    expect(typeof mod.ChannelService).toBe('function');
   });
 });
 

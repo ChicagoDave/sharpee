@@ -19,7 +19,8 @@
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
-    "@sharpee/core": "workspace:*"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

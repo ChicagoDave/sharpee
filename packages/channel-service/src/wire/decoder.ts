@@ -17,7 +17,7 @@
  * @see ADR-163 §11 — bootstrap order invariants
  */
 
-import type { CmgtPacket, TurnPacket, WirePacket } from './types';
+import type { CmgtPacket, TurnPacket, WirePacket } from '@sharpee/if-domain';
 
 /**
  * State exposed by the decoder after each `ingest` call.

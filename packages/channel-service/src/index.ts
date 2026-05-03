@@ -1,102 +1,73 @@
 /**
  * @sharpee/channel-service
  *
- * Universal channel-I/O wire producer for Sharpee surfaces.
+ * Channel-I/O wire producer for Sharpee surfaces (ADR-163,
+ * closure-per-channel model — 2026-05-02 rewrite + 2026-05-03 refinement).
  *
- * Owner context: platform package — runs in-process wherever the engine runs
- * (Node CLI, multi-user server, browser zifmia, platform-browser).
+ * Owner context: platform package — runs in-process wherever the engine
+ * runs (Node CLI, multi-user server, browser zifmia, platform-browser).
  *
- * Public interface (per ADR-163 decision 12):
- * - Wire-protocol types — `HelloPacket`, `CmgtPacket`, `TurnPacket`,
- *   `CommandPacket`, `ChannelDefinition`, `ChannelContentType`,
- *   `ClientCapabilities`. Re-exported from `./wire`.
- * - Registry functions — `registerChannel`, `getChannelRegistry`,
- *   `getCapabilities`, `addRule`, `addRules`, `registerHello`. (pending)
- * - Producers — `produceCmgtManifest`, `produceTurnPacket`. (pending)
+ * Public interface:
+ *
+ * - **`ChannelService`** — concrete runtime class. Constructor takes an
+ *   `IChannelRegistry` plus the client's `ClientCapabilities`.
+ *   - `buildManifest()` returns a `CmgtPacket` (capability-filtered).
+ *   - `build({ world, events, blocks, turn })` walks the registry,
+ *     calls each `IOChannel.produce`, and returns a `TurnPacket`.
+ * - **Channel + wire types** are re-exported from `@sharpee/if-domain`
+ *   for caller convenience. `if-domain` is the single canonical home
+ *   for these contracts (CLAUDE.md rule 7b).
+ * - **Wire decoder** ships here (`createDecoder`, `Decoder`,
+ *   `DecoderState`) for clients that receive packets and need
+ *   bootstrap-order enforcement.
+ * - **`flattenContent`** utility for projecting `TextContent` arrays
+ *   to plain strings (used by closures and renderers).
+ *
+ * Standard channel definitions (`main`, `prompt`, `score`, `turn`,
+ * `location`, media channels, etc.) live in `@sharpee/stdlib` per
+ * ADR-163 §7, §14. This package is domain-agnostic — it does not know
+ * what `scoring` means or what `room.name` means.
  *
  * @see ADR-163 — Channel-Service Platform
+ * @see ADR-165 — Renderer Architecture (consumer side)
  */
 
-// Wire-protocol types (AC-2)
+export { ChannelService, PROTOCOL_VERSION } from './channel-service';
+export type { BuildInput } from './channel-service';
+
 export type {
+  IOChannel,
+  IChannelRegistry,
+  ChannelProduceContext,
+  ChannelContentType,
+  ChannelMode,
+  ChannelEmitPolicy,
+  ClientCapabilities,
+  CapabilityFlag,
+  ChannelDefinition,
   HelloPacket,
   CmgtPacket,
   TurnPacket,
   CommandPacket,
   WirePacket,
-  ChannelDefinition,
-  ChannelContentType,
-  ChannelMode,
-  ChannelEmitPolicy,
-  ClientCapabilities,
-  Decoder,
-  DecoderState,
-} from './wire';
-export { createDecoder } from './wire';
+} from '@sharpee/if-domain';
 
-// Producer-side rule types (decision 12, §7)
+export { createDecoder, type Decoder, type DecoderState } from './wire';
+
+export { flattenContent } from './utils/flatten';
+
+// Consumer-side renderer (ADR-165) — see ./renderer.
+export {
+  Renderer,
+  createRenderer,
+  createJsonTreeFallbackFactory,
+  type RendererOptions,
+  type FallbackOutputSink,
+  type FallbackWarningSink,
+} from './renderer';
 export type {
-  ChannelRule,
-  ChannelRuleWhen,
-  ChannelRuleEmit,
-  ChannelRuleExtract,
-  ChannelRuleInput,
-  ChannelRuleChannelResolver,
-} from './types';
-
-// Registry (decision 12, AC-11)
-export {
-  registerHello,
-  getCapabilities,
-  registerChannel,
-  getChannelRegistry,
-  addRule,
-  addRules,
-  resetSession,
-  type RegisterChannelOptions,
-  type CapabilityFlag,
-} from './registry';
-
-// CMGT producer (decisions 6, 11, AC-4, AC-5, AC-11)
-export {
-  produceCmgtManifest,
-  PROTOCOL_VERSION,
-} from './produce-cmgt';
-
-// Turn producer (decisions 1, 5, 10, 12, AC-3, AC-9, AC-10, AC-11)
-export {
-  produceTurnPacket,
-  type ProduceTurnPacketInput,
-} from './produce-turn';
-
-// Standard channels (decision 4, AC-1)
-export {
-  STANDARD_CHANNEL_IDS,
-  STANDARD_CHANNELS,
-  registerStandardChannels,
-  type StandardChannelId,
-} from './standard-channels';
-
-// Platform default rules (decision 12, AC-1)
-export {
-  platformRules,
-  registerPlatformRules,
-  flattenContent,
-} from './platform-rules';
-
-// Media channels (decisions 6, 7, AC-6)
-export {
-  MEDIA_CHANNEL_IDS,
-  MEDIA_CHANNELS,
-  registerMediaChannels,
-  registerAmbientChannel,
-  type MediaChannelId,
-} from './media-channels';
-
-// Media routing rules (decisions 7, 9, AC-6)
-export {
-  MEDIA_EVENT_TYPES,
-  mediaRules,
-  registerMediaRules,
-  type MediaEventType,
-} from './media-rules';
+  ChannelRenderer,
+  IRenderer,
+  ChannelStateStore,
+  SlotHandle,
+} from './renderer';

@@ -399,7 +399,7 @@ export declare function buildNarrativeSettings(config?: NarrativeConfig): Narrat
  * Story configuration and interfaces
  */
 import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
-import { LanguageProvider } from '@sharpee/if-domain';
+import { LanguageProvider, IChannelRegistry } from '@sharpee/if-domain';
 import { Parser } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import type { GameEngine } from './game-engine';
@@ -582,6 +582,23 @@ export interface Story {
      * @param engine - The fully initialized game engine
      */
     onEngineReady?(engine: GameEngine): void;
+    /**
+     * Register or override channels on the platform's channel registry
+     * (ADR-163 §6, §7, §14). Invoked by `engine.start()` before the
+     * `ChannelService` is constructed.
+     *
+     * Stories use this hook to:
+     *  - Add story-specific channels (e.g., a `debug-stats` JSON channel
+     *    for renderer overlays).
+     *  - Override a standard channel by re-registering an `IOChannel`
+     *    with the same id (last-write-wins per ADR-163 §6).
+     *  - Register dynamic image / ambient channels via stdlib's
+     *    `createImageChannel` / `createAmbientChannel` builders.
+     *
+     * The registry passed in is the same instance for the lifetime of
+     * the engine. Re-registrations persist across the session.
+     */
+    registerChannels?(registry: IChannelRegistry): void;
 }
 /**
  * Extended story class with event handling capabilities
@@ -970,7 +987,7 @@ export interface EngineSharedData {
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
-import { LanguageProvider } from '@sharpee/if-domain';
+import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
 import { ITextService } from '@sharpee/text-service';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
@@ -990,9 +1007,33 @@ export interface GameEngineEvents {
     'state:changed': (context: GameContext) => void;
     'game:over': (context: GameContext) => void;
     'text:output': (blocks: ITextBlock[], turn: number) => void;
+    /**
+     * CMGT manifest emission (ADR-163 §11). Fires once per session
+     * during `start()` after `Story.registerChannels?` has run and the
+     * `ChannelService` is constructed. Carries the capability-filtered
+     * channel definitions for this client.
+     */
+    'channel:manifest': (cmgt: CmgtPacket) => void;
+    /**
+     * Per-turn channel packet emission (ADR-163 §1, §5). Fires after
+     * `text-service.processTurn` produces the turn's blocks; carries
+     * payload entries for every standard, story, and media channel that
+     * had something to emit this turn.
+     */
+    'channel:packet': (packet: TurnPacket, turn: number) => void;
 }
 type GameEngineEventName = keyof GameEngineEvents;
 type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K];
+/**
+ * Conservative client-capability profile used when `start()` is called
+ * without an explicit `capabilities` option. Mirrors a CLI / text-only
+ * surface — every media flag is `false`, so capability-gated channels
+ * (`image:*`, `sound`, `music`, `animation`, etc.) are filtered out of
+ * the manifest. Single-user CLI bundles and existing test harnesses
+ * use this profile by default; graphical surfaces pass their own
+ * capabilities through.
+ */
+export declare const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities;
 /**
  * Main game engine
  */
@@ -1028,6 +1069,18 @@ export declare class GameEngine {
     private turnEventProcessor;
     private platformOpHandler?;
     private hasEmittedInitialized;
+    /**
+     * Channel-I/O service (ADR-163 §13, §14). Constructed in `start()`
+     * once `Story.registerChannels?` has populated the registry and the
+     * client capabilities are known. Optional — engines started without
+     * a `capabilities` argument default to a text-only profile.
+     */
+    private channelService?;
+    /**
+     * Negotiated client capabilities for this session. Populated by
+     * `start({ capabilities })`; defaults to text-only when omitted.
+     */
+    private clientCapabilities?;
     constructor(options: {
         world: WorldModel;
         player: IFEntity;
@@ -1057,9 +1110,28 @@ export declare class GameEngine {
      */
     introspect(): EngineIntrospection;
     /**
-     * Start the game engine
+     * Start the game engine.
+     *
+     * @param options.capabilities — client capabilities for the channel-I/O
+     *   subsystem (ADR-163 §2). When provided, `start()` invokes
+     *   `Story.registerChannels?` to let the story extend or override
+     *   channels, constructs a `ChannelService`, and emits
+     *   `channel:manifest` plus a `channel:packet` per turn. When
+     *   omitted, the engine uses `DEFAULT_TEXT_CAPABILITIES` so
+     *   single-bundle and legacy callers receive packets without an
+     *   explicit declaration.
      */
-    start(): void;
+    start(options?: {
+        capabilities?: ClientCapabilities;
+    }): void;
+    /**
+     * Build and emit a `channel:packet` for the turn just processed.
+     * Co-fires with `text:output` at every block-emission site so
+     * channel consumers and legacy text-service consumers see the same
+     * turn boundary. No-op when the engine has no channel service yet
+     * (`start()` has not run).
+     */
+    private emitChannelPacket;
     /**
      * Stop the game engine
      */

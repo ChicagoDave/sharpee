@@ -10,7 +10,8 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import type { ISaveRestoreHooks, ISaveData, IRestartContext } from '@sharpee/core';
-import { renderToString } from '@sharpee/text-service';
+import type { ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
+import { Renderer, type IRenderer } from '@sharpee/channel-service';
 
 import type {
   BrowserClientConfig,
@@ -28,6 +29,35 @@ import { InputManager } from './managers/InputManager';
 import { TextDisplay } from './display/TextDisplay';
 import { StatusLine } from './display/StatusLine';
 import { AudioManager } from './audio/AudioManager';
+import {
+  registerDefaultBrowserRenderers,
+  type BrowserDefaultLayout,
+} from './channels';
+
+/**
+ * Default `ClientCapabilities` profile for the browser surface — full
+ * graphical capabilities so every standard + media channel appears in
+ * the per-client manifest. Authors override per `BrowserClientConfig.
+ * clientCapabilities` for specialized surfaces (text-only kiosks, etc.).
+ */
+export const BROWSER_CAPABILITIES: ClientCapabilities = {
+  text: true,
+  images: true,
+  animations: true,
+  video: true,
+  sound: true,
+  music: true,
+  speech: false,
+  splitPane: true,
+  statusBar: true,
+  sidebar: true,
+  clickableText: true,
+  clickableImage: true,
+  dragDrop: true,
+  transitions: true,
+  layers: true,
+  customFonts: true,
+};
 
 export class BrowserClient implements BrowserClientInterface {
   // Configuration
@@ -63,6 +93,14 @@ export class BrowserClient implements BrowserClientInterface {
 
   // DOM elements reference
   private elements!: DOMElements;
+
+  /**
+   * ADR-165 channel renderer host. Constructed in `connectEngine()`
+   * to drive the visible DOM via channel:manifest / channel:packet
+   * (R5-C — primary rendering path).
+   */
+  private channelRenderer?: IRenderer;
+  private channelLayout?: BrowserDefaultLayout;
 
   constructor(config: BrowserClientConfig) {
     this.config = {
@@ -170,6 +208,9 @@ export class BrowserClient implements BrowserClientInterface {
     // Set up event handlers on engine
     this.setupEngineHandlers();
 
+    // ADR-165 channel renderer — primary rendering path (R5-C).
+    this.setupChannelRenderer();
+
     // Set up all manager handlers
     this.dialogManager.setupHandlers();
     this.menuManager.setupHandlers();
@@ -184,40 +225,14 @@ export class BrowserClient implements BrowserClientInterface {
   }
 
   /**
-   * Set up event handlers on the game engine
+   * Set up event handlers on the game engine.
+   *
+   * R5-C cutover: the legacy `text:output` listener no longer writes
+   * to the DOM — channel renderers own that path now. The listener is
+   * retained only as a no-op anchor; auto-save migrated to the
+   * `channel:packet` event in `setupChannelRenderer`.
    */
   private setupEngineHandlers(): void {
-    // Handle text output (ADR-137: extract prompt block for input field)
-    this.engine.on('text:output', (blocks, turn) => {
-      // Extract prompt block and set on input field
-      const promptBlock = blocks.find((b: any) => b.key === 'prompt');
-      if (promptBlock && promptBlock.content.length > 0) {
-        const promptText = promptBlock.content[0];
-        if (typeof promptText === 'string') {
-          this.inputManager.setPrompt(promptText);
-        }
-      }
-
-      // Display non-prompt blocks as narrative text
-      const displayBlocks = blocks.filter((b: any) => b.key !== 'prompt');
-      const text = renderToString(displayBlocks);
-      console.log('[text:output]', { text, turn, turnOffset: this.turnOffset });
-      this.textDisplay.displayText(text);
-
-      // Apply turn offset (set after restore to maintain correct turn count)
-      this.currentTurn = turn + this.turnOffset;
-      this.updateStatusLine();
-
-      // Auto-save after each turn (if enabled). The engine produces a
-      // complete `ISaveData` via the same path the user-driven save
-      // uses; `SaveManager` wraps it in a `BrowserSaveEnvelope` and
-      // writes the autosave slot.
-      if (this.config.autoSave && turn > 0) {
-        const engineSave = this.engineCreateSave();
-        this.saveManager.performAutoSave(engineSave, this.getSaveContext());
-      }
-    });
-
     // Handle game events
     this.engine.on('event', (event: ISemanticEvent) => {
       console.log('[event]', event.type, event.data);
@@ -273,6 +288,166 @@ export class BrowserClient implements BrowserClientInterface {
   }
 
   /**
+   * Build the ADR-165 channel renderer wired to the host page's
+   * existing DOM elements (R5-C cutover).
+   *
+   * The host page provides three slots directly (`textContent`,
+   * `statusLocation`, `statusScore`, `commandInput`). The remaining
+   * slots needed by the platform-default renderers (notify, media,
+   * meta, separate prompt label, separate turn element) are mounted
+   * as hidden children of the existing main window.
+   *
+   * Score / turn override: the host page typically has a single
+   * combined `Score: X | Turns: Y` element. After
+   * `registerDefaultBrowserRenderers` we replace the platform-default
+   * `score` and `turn` renderers with composites that update the
+   * combined element. Stories that supply two separate elements get
+   * the platform default by overriding back.
+   *
+   * Hotspot commands route through `engine.executeTurn` so UI
+   * gestures synthesize typed-equivalent commands per ADR-163 §10.
+   *
+   * Auto-save migrates here from the legacy `text:output` listener:
+   * `channel:packet` fires on every turn boundary (including idle
+   * turns), so this is the single dependable signal.
+   */
+  private setupChannelRenderer(): void {
+    const doc = document;
+    const layout = this.adaptHostLayout();
+    this.channelLayout = layout;
+    this.channelRenderer = new Renderer({
+      // Suppress JSON-tree fallback warnings — story channels may
+      // legitimately register their renderers later (R7).
+      fallbackWarn: () => undefined,
+    });
+    registerDefaultBrowserRenderers(this.channelRenderer, layout, {
+      audio: this.audioManager,
+      onMainAfterAppend: (slot) => {
+        const win = this.elements?.mainWindow ?? slot.parentElement;
+        if (win) win.scrollTop = win.scrollHeight;
+      },
+      onHotspotCommand: (command) => {
+        this.engine.executeTurn(command);
+      },
+    });
+
+    // Score+turn composite override — host page combines them in one
+    // element. The override renderers maintain local caches so each
+    // emission updates the combined string without losing the other
+    // axis.
+    const combined = this.elements?.statusScore ?? null;
+    if (combined) {
+      this.channelRenderer.registerRenderer('score', {
+        onValue: (value) => {
+          if (!value || typeof value !== 'object') return;
+          const data = value as { current?: number; max?: number | null };
+          if (typeof data.current === 'number') {
+            this.currentScore = data.current;
+          }
+          this.renderCombinedStatus();
+        },
+      });
+      this.channelRenderer.registerRenderer('turn', {
+        onValue: (value) => {
+          if (typeof value !== 'number') return;
+          this.currentTurn = value + this.turnOffset;
+          this.renderCombinedStatus();
+        },
+      });
+    }
+
+    this.engine.on('channel:manifest', (cmgt: CmgtPacket) => {
+      this.channelRenderer?.applyCmgt(cmgt);
+    });
+    this.engine.on('channel:packet', (packet: TurnPacket, turn: number) => {
+      this.channelRenderer?.applyTurnPacket(packet);
+
+      // Auto-save piggy-backs on the per-turn channel packet. ADR-163
+      // §1: channel:packet fires every turn after text-service runs,
+      // so it's the single dependable signal regardless of whether
+      // any blocks were emitted that turn.
+      if (this.config.autoSave && turn > 0) {
+        const engineSave = this.engineCreateSave();
+        this.saveManager.performAutoSave(engineSave, this.getSaveContext());
+      }
+    });
+    void doc; // Suppresses unused-var lint when the doc reference is removed.
+  }
+
+  /**
+   * Build a `BrowserDefaultLayout` from the existing host elements,
+   * synthesizing hidden children for slots the host page doesn't
+   * provide. Lets the platform-default renderers run against the
+   * same DOM the legacy path used.
+   */
+  private adaptHostLayout(): BrowserDefaultLayout {
+    const els = this.elements;
+    const doc = document;
+    const ensureHidden = (id: string, parent: HTMLElement, tag = 'div'): HTMLElement => {
+      let el = doc.getElementById(id);
+      if (!el) {
+        el = doc.createElement(tag);
+        el.id = id;
+        el.hidden = true;
+        parent.appendChild(el);
+      }
+      return el;
+    };
+
+    const root =
+      els.mainWindow?.parentElement ?? els.textContent?.parentElement ?? doc.body;
+    const mainWindow = els.mainWindow ?? doc.body;
+    const main = els.textContent ?? ensureHidden('sharpee-main', mainWindow);
+    const status = els.statusLocation?.parentElement ?? ensureHidden('sharpee-status', mainWindow);
+    const statusLocation = els.statusLocation ?? ensureHidden('sharpee-status-location', status, 'span');
+    const statusScore = els.statusScore ?? ensureHidden('sharpee-status-score', status, 'span');
+    const statusTurn = ensureHidden('sharpee-status-turn', status, 'span');
+    const sidebar = ensureHidden('sharpee-sidebar', mainWindow, 'aside');
+    const inputContainer = els.commandInput?.parentElement ?? ensureHidden('sharpee-input', mainWindow);
+    const inputPromptLabel = ensureHidden('sharpee-input-prompt', inputContainer, 'span');
+    if (!inputPromptLabel.textContent) inputPromptLabel.textContent = '> ';
+    const input = (els.commandInput ?? (() => {
+      const i = doc.createElement('input');
+      i.type = 'text';
+      i.id = 'sharpee-input-field';
+      i.hidden = true;
+      inputContainer.appendChild(i);
+      return i;
+    })()) as HTMLInputElement;
+    const media = ensureHidden('sharpee-media', mainWindow);
+    if (!media.style.position) media.style.position = 'relative';
+    const notify = ensureHidden('sharpee-notify', mainWindow);
+    const meta = ensureHidden('sharpee-meta', mainWindow);
+
+    return {
+      root,
+      status,
+      statusLocation,
+      statusScore,
+      statusTurn,
+      main,
+      sidebar,
+      input,
+      inputPromptLabel,
+      media,
+      notify,
+      meta,
+    };
+  }
+
+  /**
+   * Render the combined `Score: X | Turns: Y` string into the host
+   * page's combined status element. The host's traditional layout
+   * uses one element; the score and turn channel renderers feed this
+   * function rather than writing directly.
+   */
+  private renderCombinedStatus(): void {
+    const el = this.elements?.statusScore;
+    if (!el) return;
+    el.textContent = `Score: ${this.currentScore} | Turns: ${this.currentTurn}`;
+  }
+
+  /**
    * Start the game (check for autosave, show initial look)
    */
   async start(): Promise<void> {
@@ -288,8 +463,12 @@ export class BrowserClient implements BrowserClientInterface {
         }
       }
 
-      // Start the engine first (builds the world)
-      await this.engine.start();
+      // Start the engine first (builds the world). ADR-163 channel
+      // capabilities are passed so the engine constructs the
+      // ChannelService for this surface before emitting the manifest.
+      await this.engine.start({
+        capabilities: this.config.clientCapabilities ?? BROWSER_CAPABILITIES,
+      });
 
       // Sync localStorage saves to world
       this.saveManager.syncSavesToWorld();

@@ -33,11 +33,13 @@ import {
   MetaCommandRegistry,
   IPerceptionService,
   registerStandardChains,
-  createScopeResolver
+  createScopeResolver,
+  channelRegistry,
 } from '@sharpee/stdlib';
-import { LanguageProvider, IEventProcessorWiring } from '@sharpee/if-domain';
+import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
 import { ITextService, createTextService } from '@sharpee/text-service';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
+import { ChannelService } from '@sharpee/channel-service';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
@@ -82,10 +84,52 @@ export interface GameEngineEvents {
   'state:changed': (context: GameContext) => void;
   'game:over': (context: GameContext) => void;
   'text:output': (blocks: ITextBlock[], turn: number) => void;
+  /**
+   * CMGT manifest emission (ADR-163 §11). Fires once per session
+   * during `start()` after `Story.registerChannels?` has run and the
+   * `ChannelService` is constructed. Carries the capability-filtered
+   * channel definitions for this client.
+   */
+  'channel:manifest': (cmgt: CmgtPacket) => void;
+  /**
+   * Per-turn channel packet emission (ADR-163 §1, §5). Fires after
+   * `text-service.processTurn` produces the turn's blocks; carries
+   * payload entries for every standard, story, and media channel that
+   * had something to emit this turn.
+   */
+  'channel:packet': (packet: TurnPacket, turn: number) => void;
 }
 
 type GameEngineEventName = keyof GameEngineEvents;
 type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K];
+
+/**
+ * Conservative client-capability profile used when `start()` is called
+ * without an explicit `capabilities` option. Mirrors a CLI / text-only
+ * surface — every media flag is `false`, so capability-gated channels
+ * (`image:*`, `sound`, `music`, `animation`, etc.) are filtered out of
+ * the manifest. Single-user CLI bundles and existing test harnesses
+ * use this profile by default; graphical surfaces pass their own
+ * capabilities through.
+ */
+export const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities = {
+  text: true,
+  images: false,
+  animations: false,
+  video: false,
+  sound: false,
+  music: false,
+  speech: false,
+  splitPane: false,
+  statusBar: false,
+  sidebar: false,
+  clickableText: false,
+  clickableImage: false,
+  dragDrop: false,
+  transitions: false,
+  layers: false,
+  customFonts: false,
+};
 
 /**
  * Main game engine
@@ -128,6 +172,19 @@ export class GameEngine {
 
   // Phase 5: Track if initialized event has been emitted
   private hasEmittedInitialized = false;
+
+  /**
+   * Channel-I/O service (ADR-163 §13, §14). Constructed in `start()`
+   * once `Story.registerChannels?` has populated the registry and the
+   * client capabilities are known. Optional — engines started without
+   * a `capabilities` argument default to a text-only profile.
+   */
+  private channelService?: ChannelService;
+  /**
+   * Negotiated client capabilities for this session. Populated by
+   * `start({ capabilities })`; defaults to text-only when omitted.
+   */
+  private clientCapabilities?: ClientCapabilities;
 
   constructor(options: {
     world: WorldModel;
@@ -477,9 +534,18 @@ export class GameEngine {
   }
 
   /**
-   * Start the game engine
+   * Start the game engine.
+   *
+   * @param options.capabilities — client capabilities for the channel-I/O
+   *   subsystem (ADR-163 §2). When provided, `start()` invokes
+   *   `Story.registerChannels?` to let the story extend or override
+   *   channels, constructs a `ChannelService`, and emits
+   *   `channel:manifest` plus a `channel:packet` per turn. When
+   *   omitted, the engine uses `DEFAULT_TEXT_CAPABILITIES` so
+   *   single-bundle and legacy callers receive packets without an
+   *   explicit declaration.
    */
-  start(): void {
+  start(options?: { capabilities?: ClientCapabilities }): void {
     if (this.running) {
       throw new Error('Engine is already running');
     }
@@ -499,6 +565,17 @@ export class GameEngine {
     if (!this.commandExecutor) {
       throw new Error('Engine must have a command executor before starting');
     }
+
+    // Channel-I/O bootstrap (ADR-163 §13, §14):
+    //  1. Story registers / overrides channels on the shared registry.
+    //  2. Engine constructs a fresh ChannelService bound to the
+    //     negotiated capabilities.
+    //  3. Manifest fires before the first turn — bootstrap-order
+    //     invariant from §11.
+    this.clientCapabilities = options?.capabilities ?? DEFAULT_TEXT_CAPABILITIES;
+    this.story?.registerChannels?.(channelRegistry);
+    this.channelService = new ChannelService(channelRegistry, this.clientCapabilities);
+    this.emit('channel:manifest', this.channelService.buildManifest());
 
     // Emit initialized event once (Phase 5 - moved from constructor to avoid race condition)
     if (!this.hasEmittedInitialized) {
@@ -521,7 +598,7 @@ export class GameEngine {
     this.sessionTurns = 0;
     this.sessionMoves = 0;
     // Keep currentTurn as is (already 1 from constructor)
-    
+
     // Get version info from StoryInfoTrait
     const storyInfoEntities = this.world.findByTrait(TraitType.STORY_INFO);
     const storyInfoTrait = storyInfoEntities[0]?.get(StoryInfoTrait);
@@ -539,6 +616,28 @@ export class GameEngine {
     this.emitGameEvent(startedEvent);
 
     this.emit('state:changed', this.context);
+  }
+
+  /**
+   * Build and emit a `channel:packet` for the turn just processed.
+   * Co-fires with `text:output` at every block-emission site so
+   * channel consumers and legacy text-service consumers see the same
+   * turn boundary. No-op when the engine has no channel service yet
+   * (`start()` has not run).
+   */
+  private emitChannelPacket(
+    events: readonly ISemanticEvent[],
+    blocks: readonly ITextBlock[],
+    turn: number,
+  ): void {
+    if (!this.channelService) return;
+    const packet = this.channelService.build({
+      world: this.world,
+      events,
+      blocks,
+      turn,
+    });
+    this.emit('channel:packet', packet, turn);
   }
 
   /**
@@ -887,6 +986,11 @@ export class GameEngine {
         if (blocks.length > 0) {
           this.emit('text:output', blocks, turn);
         }
+        // ADR-163 channel packet co-emits with text:output so the new
+        // and legacy paths see the same turn boundary. Fires every
+        // turn (including blocks.length === 0 idle turns) so 'always'
+        // channels still re-emit.
+        this.emitChannelPacket(turnEvents, blocks, turn);
       }
 
       // Clear turn events after processing to prevent accumulation on same turn (meta commands)
@@ -1107,6 +1211,8 @@ export class GameEngine {
     if (blocks.length > 0) {
       this.emit('text:output', blocks, this.context.currentTurn);
     }
+    // ADR-163: meta commands also produce a channel packet.
+    this.emitChannelPacket(events, blocks, this.context.currentTurn);
   }
 
   /**
@@ -1442,6 +1548,8 @@ export class GameEngine {
       if (blocks.length > 0) {
         this.emit('text:output', blocks, turn);
       }
+      // ADR-163: alternate input modes also fire channel packets.
+      this.emitChannelPacket(events, blocks, turn);
     }
 
     // Advance turn only if the mode says to

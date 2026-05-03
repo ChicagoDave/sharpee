@@ -3,7 +3,7 @@
  */
 
 import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
-import { LanguageProvider } from '@sharpee/if-domain';
+import { LanguageProvider, IChannelRegistry } from '@sharpee/if-domain';
 import { Parser } from '@sharpee/stdlib';
 import { EventEmitter } from './events/event-emitter';
 import { ISemanticEvent } from '@sharpee/core';
@@ -216,6 +216,24 @@ export interface Story {
    * @param engine - The fully initialized game engine
    */
   onEngineReady?(engine: GameEngine): void;
+
+  /**
+   * Register or override channels on the platform's channel registry
+   * (ADR-163 §6, §7, §14). Invoked by `engine.start()` before the
+   * `ChannelService` is constructed.
+   *
+   * Stories use this hook to:
+   *  - Add story-specific channels (e.g., a `debug-stats` JSON channel
+   *    for renderer overlays).
+   *  - Override a standard channel by re-registering an `IOChannel`
+   *    with the same id (last-write-wins per ADR-163 §6).
+   *  - Register dynamic image / ambient channels via stdlib's
+   *    `createImageChannel` / `createAmbientChannel` builders.
+   *
+   * The registry passed in is the same instance for the lifetime of
+   * the engine. Re-registrations persist across the session.
+   */
+  registerChannels?(registry: IChannelRegistry): void;
 }
 
 /**

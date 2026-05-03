@@ -29,3 +29,6 @@ export * from './grammar';
 
 // Prompt types (ADR-137)
 export * from './prompt';
+
+// Channel-I/O type contracts (ADR-163)
+export * from './channels';

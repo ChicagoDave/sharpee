@@ -80,6 +80,14 @@ export interface BrowserClientConfig {
 
   /** Story-specific callbacks */
   callbacks?: BrowserClientCallbacks;
+
+  /**
+   * Client capabilities passed to `engine.start({ capabilities })`.
+   * Defaults to `BROWSER_CAPABILITIES` (full graphical profile) when
+   * omitted. Authors override per surface — e.g., a text-only kiosk
+   * mode that suppresses media channels.
+   */
+  clientCapabilities?: import('@sharpee/if-domain').ClientCapabilities;
 }
 
 /**

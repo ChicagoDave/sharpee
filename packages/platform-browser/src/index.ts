@@ -6,7 +6,7 @@
  */
 
 // Main client
-export { BrowserClient } from './BrowserClient';
+export { BrowserClient, BROWSER_CAPABILITIES } from './BrowserClient';
 
 // Types
 export type {
@@ -37,3 +37,6 @@ export { StatusLine } from './display/StatusLine';
 
 // Audio
 export { AudioManager } from './audio/AudioManager';
+
+// ADR-165 channel renderers + default layout
+export * from './channels';
