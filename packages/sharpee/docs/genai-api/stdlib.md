@@ -3453,6 +3453,44 @@ export declare const endgameChannel: IOChannel<string>;
  */
 export declare const scoreNotifyChannel: IOChannel<string>;
 /**
+ * Discriminator values for `LifecyclePayload`.
+ *
+ * - `save_failed` — save handler reported failure or threw.
+ * - `restore_failed` — restore handler returned no data, threw, or
+ *   was not registered.
+ * - `restore_completed` — restore succeeded; renderers should refresh
+ *   any cached UI derived from world state.
+ */
+export type LifecycleEventKind = 'save_failed' | 'restore_failed' | 'restore_completed';
+/**
+ * Wire shape for the `lifecycle` channel. `message` is populated for
+ * the failure kinds and copied verbatim from the platform event's
+ * `payload.error` field. Successful kinds (`restore_completed`) carry
+ * no message — they are pure signals.
+ */
+export interface LifecyclePayload {
+    kind: LifecycleEventKind;
+    message?: string;
+}
+/**
+ * `lifecycle` — event-mode save/restore signals. Projects the trio of
+ * platform completion events (`platform.save_failed`,
+ * `platform.restore_failed`, `platform.restore_completed`) into a
+ * single sparse channel.
+ *
+ * Renderers branch on `payload.kind`: failures display `payload.message`
+ * (or a fallback string), `restore_completed` triggers UI refresh
+ * without text. Sparse-emit semantics mean turns without a lifecycle
+ * event suppress emission entirely — the channel value retains its
+ * prior state on quiet turns.
+ *
+ * If multiple lifecycle events appear in one turn, the **last** one
+ * wins. In practice this is unobservable since each save/restore
+ * operation produces exactly one completion event, but the rule is
+ * documented so test authors don't expect first-wins semantics.
+ */
+export declare const lifecycleChannel: IOChannel<LifecyclePayload>;
+/**
  * The ten platform-standard channels in iteration order. Order is
  * preserved for stable diffing in tests and manifests; the
  * `ChannelService` itself does not depend on ordering.
@@ -3473,6 +3511,7 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly DEATH: "death";
     readonly ENDGAME: "endgame";
     readonly SCORE_NOTIFY: "score_notify";
+    readonly LIFECYCLE: "lifecycle";
 };
 export type StandardChannelId = (typeof STANDARD_CHANNEL_IDS)[keyof typeof STANDARD_CHANNEL_IDS];
 ```
