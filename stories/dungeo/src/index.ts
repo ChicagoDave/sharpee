@@ -70,7 +70,11 @@ import { createRoyalPuzzleRegion, connectRoyalPuzzleToTreasureRoom, RoyalPuzzleR
 import { createEndgameRegion, createEndgameObjects, EndgameRoomIds } from './regions/endgame';
 
 // Import audio setup
-import { initializeAudio, registerAudioHandler } from './audio/audio-setup';
+import {
+  initializeAudio,
+  registerAudioHandler,
+  registerStoryAmbientChannels,
+} from './audio/audio-setup';
 
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
@@ -777,6 +781,16 @@ export class DungeoStory implements Story {
     }));
 
     return player;
+  }
+
+  /**
+   * Register the story's dynamic channels on the shared registry
+   * (ADR-163 hook). Called by the engine before constructing the
+   * `ChannelService` — see `engine.start()`. Story uses this to
+   * register the `ambient:<id>` channels its audio handler emits to.
+   */
+  registerChannels(registry: import('@sharpee/if-domain').IChannelRegistry): void {
+    registerStoryAmbientChannels(registry);
   }
 
   /**

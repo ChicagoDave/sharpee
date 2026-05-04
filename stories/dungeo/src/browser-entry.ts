@@ -15,8 +15,10 @@ import {
   BrowserClient,
   ThemeManager,
   BrowserClientInterface,
+  createAmbientChannelRenderer,
 } from '@sharpee/platform-browser';
 import { story, config } from './index';
+import { DUNGEO_AMBIENT_CHANNEL_IDS } from './audio/audio-setup';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
 
 // Storage key for theme
@@ -207,8 +209,22 @@ async function start(): Promise<void> {
     perceptionService,
   });
 
-  // Connect client to engine
+  // Connect client to engine — defaults are registered now.
   client.connectEngine(engine, world);
+
+  // Register story-specific ambient renderers on the channel renderer.
+  // The story-side `media.ambient.*` events flow:
+  //   audio-setup.ts emits → stdlib's `ambient:<id>` channel produce →
+  //   this renderer → the shared AudioManager.
+  // Must run before `client.start()` so the first packet is rendered.
+  const channelRenderer = client.getChannelRenderer();
+  const audioManager = client.getAudioManager();
+  for (const ambientId of DUNGEO_AMBIENT_CHANNEL_IDS) {
+    channelRenderer.registerRenderer(
+      `ambient:${ambientId}`,
+      createAmbientChannelRenderer(audioManager, ambientId),
+    );
+  }
 
   // Set the story and register save/restore hooks
   engine.setStory(story);

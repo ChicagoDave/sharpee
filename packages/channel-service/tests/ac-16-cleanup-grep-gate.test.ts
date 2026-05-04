@@ -60,6 +60,13 @@ const ALLOW_LIST_PREFIXES = [
   'packages/channel-service/tests/',
   'stories/channel-service-test/',
   'packages/sharpee/docs/genai-api/', // auto-generated API docs
+  // Phase 3 of channel-io-event-retirement: dungeo's audio handler
+  // emits canonical `media.*` events on `if.event.actor_moved` so
+  // they project through stdlib's ambient/music channels. Long-term
+  // (ADR-B candidate) this translation could move into stdlib so
+  // stories stay in the consumer role; for now the emission is
+  // story-side and explicitly allow-listed.
+  'stories/dungeo/src/audio/',
 ];
 
 /**

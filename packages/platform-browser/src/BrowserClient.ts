@@ -235,23 +235,16 @@ export class BrowserClient implements BrowserClientInterface {
   private setupEngineHandlers(): void {
     const debugChannels = this.shouldDebugChannels();
     // Handle game events. Per ADR-163, the SOLE display path is
-    // channel:packet — every job done here is something that doesn't
-    // fit the channel model:
-    //  - audio.* routing → AudioManager (legacy event vocabulary;
-    //    Tier C migration to media.* events deferred)
-    //  - story-defined custom events → handleStoryEvent callback
+    // channel:packet. The single remaining responsibility here is the
+    // story-defined custom event hook (`handleStoryEvent`), retained
+    // for stories that haven't yet migrated their custom events to
+    // story-defined channels (Phase 4 of channel-io-event-retirement).
     this.engine.on('event', (event: ISemanticEvent) => {
       // Console debug-log for every event — gated on the same toggle
       // as channel:packet logs to keep the console clean by default.
       if (debugChannels) {
         // eslint-disable-next-line no-console
         console.log('[event]', event.type, event.data);
-      }
-
-      // Forward audio events to the audio manager
-      if (event.type.startsWith('audio.')) {
-        this.audioManager.handleAudioEvent(event as { type: string; data: any });
-        return;
       }
 
       // Let story handle custom events first
@@ -758,6 +751,39 @@ export class BrowserClient implements BrowserClientInterface {
 
   getCurrentScore(): number {
     return this.currentScore;
+  }
+
+  /**
+   * The ADR-165 channel renderer this client drives. Stories register
+   * additional renderers (typically for story-defined channels like
+   * `ambient:<id>` or custom event channels) by calling
+   * `renderer.registerRenderer(...)` on the returned instance.
+   *
+   * Available after `connectEngine()` returns and before
+   * `start()` is called — that window is when the default platform
+   * renderers are registered but no `channel:packet` has fired yet.
+   * Throws if called before `connectEngine()` (the renderer doesn't
+   * exist yet).
+   */
+  getChannelRenderer(): IRenderer {
+    if (!this.channelRenderer) {
+      throw new Error(
+        'BrowserClient.getChannelRenderer(): renderer not yet constructed. ' +
+          'Call connectEngine(engine, world) first.',
+      );
+    }
+    return this.channelRenderer;
+  }
+
+  /**
+   * The shared `AudioManager` instance the platform-default audio
+   * renderers (`sound`, `music`, `ambient:*`) delegate to. Stories
+   * registering a custom `ambient:<id>` renderer pass this instance
+   * to `createAmbientChannelRenderer(audio, id)` so playback shares
+   * one Web Audio context.
+   */
+  getAudioManager(): AudioManager {
+    return this.audioManager;
   }
 
   // === Private helpers ===
