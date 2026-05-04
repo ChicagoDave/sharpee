@@ -75,6 +75,7 @@ import {
   registerAudioHandler,
   registerStoryAmbientChannels,
 } from './audio/audio-setup';
+import { registerStoryEventChannels } from './channels';
 
 // Import handlers
 import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandTransformer, PuzzleHandlerMessages } from './handlers/royal-puzzle';
@@ -787,10 +788,16 @@ export class DungeoStory implements Story {
    * Register the story's dynamic channels on the shared registry
    * (ADR-163 hook). Called by the engine before constructing the
    * `ChannelService` — see `engine.start()`. Story uses this to
-   * register the `ambient:<id>` channels its audio handler emits to.
+   * register:
+   *  - `ambient:<id>` channels for room-atmosphere audio
+   *    (Phase 3 of channel-io-event-retirement).
+   *  - `dungeo.rname` / `dungeo.objects` channels for the
+   *    GDT-flavoured RNAME / OBJECTS commands (Phase 4 — replaces
+   *    the deleted `handleStoryEvent` callback bypass).
    */
   registerChannels(registry: import('@sharpee/if-domain').IChannelRegistry): void {
     registerStoryAmbientChannels(registry);
+    registerStoryEventChannels(registry);
   }
 
   /**

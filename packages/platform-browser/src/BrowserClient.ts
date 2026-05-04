@@ -6,7 +6,6 @@
  */
 
 import type { GameEngine } from '@sharpee/engine';
-import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import type { ISaveRestoreHooks, ISaveData, IRestartContext } from '@sharpee/core';
@@ -205,10 +204,10 @@ export class BrowserClient implements BrowserClientInterface {
       isDialogOpen: () => this.dialogManager.isDialogOpen(),
     });
 
-    // Set up event handlers on engine
-    this.setupEngineHandlers();
-
     // ADR-165 channel renderer — primary rendering path (R5-C).
+    // After Phase 4 of channel-io-event-retirement, channel:manifest
+    // and channel:packet are the only engine subscriptions. There is
+    // no raw `engine.on('event', ...)` listener.
     this.setupChannelRenderer();
 
     // Set up all manager handlers
@@ -222,36 +221,6 @@ export class BrowserClient implements BrowserClientInterface {
 
     // Sync existing saves to world
     this.saveManager.syncSavesToWorld();
-  }
-
-  /**
-   * Set up event handlers on the game engine.
-   *
-   * R5-C cutover: the legacy `text:output` listener no longer writes
-   * to the DOM — channel renderers own that path now. The listener is
-   * retained only as a no-op anchor; auto-save migrated to the
-   * `channel:packet` event in `setupChannelRenderer`.
-   */
-  private setupEngineHandlers(): void {
-    const debugChannels = this.shouldDebugChannels();
-    // Handle game events. Per ADR-163, the SOLE display path is
-    // channel:packet. The single remaining responsibility here is the
-    // story-defined custom event hook (`handleStoryEvent`), retained
-    // for stories that haven't yet migrated their custom events to
-    // story-defined channels (Phase 4 of channel-io-event-retirement).
-    this.engine.on('event', (event: ISemanticEvent) => {
-      // Console debug-log for every event — gated on the same toggle
-      // as channel:packet logs to keep the console clean by default.
-      if (debugChannels) {
-        // eslint-disable-next-line no-console
-        console.log('[event]', event.type, event.data);
-      }
-
-      // Let story handle custom events first
-      if (this.config.callbacks?.handleStoryEvent?.(event, this)) {
-        return; // Story handled it
-      }
-    });
   }
 
   /**
@@ -376,14 +345,12 @@ export class BrowserClient implements BrowserClientInterface {
     }
 
     const debugChannels = this.shouldDebugChannels();
-    if (debugChannels) {
-      this.engine.on('channel:manifest', (cmgt: CmgtPacket) => {
-        // eslint-disable-next-line no-console
-        console.log('[channel:manifest]', cmgt);
-      });
-    }
 
     this.engine.on('channel:manifest', (cmgt: CmgtPacket) => {
+      if (debugChannels) {
+        // eslint-disable-next-line no-console
+        console.log('[channel:manifest]', cmgt);
+      }
       this.channelRenderer?.applyCmgt(cmgt);
     });
     this.engine.on('channel:packet', (packet: TurnPacket, turn: number) => {

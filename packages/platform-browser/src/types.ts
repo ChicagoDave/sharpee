@@ -2,7 +2,7 @@
  * Types and interfaces for @sharpee/platform-browser
  */
 
-import type { ISaveData, ISemanticEvent } from '@sharpee/core';
+import type { ISaveData } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 
 /**
@@ -36,15 +36,22 @@ export interface StoryInfo {
 }
 
 /**
- * Story-specific callbacks for customizing behavior
+ * Story-specific callbacks for customizing behavior. Reserved for
+ * future hooks; the Phase 4 retirement of `handleStoryEvent`
+ * (channel-io-event-retirement) leaves this interface empty.
+ *
+ * Stories that need to react to engine signals should define
+ * `IOChannel`s via `Story.registerChannels` and register browser-side
+ * renderers in their entry point — channels are the universal UI
+ * surface (per ADR-163 and the project's channel-IO commitment).
+ *
+ * `getHelpText` / `getAboutText` are accepted by `BrowserClientConfig`
+ * via index signatures on the consuming menus and dialogs; they are
+ * not declared here yet — that surface still ships ad-hoc and is a
+ * separate cleanup target.
  */
-export interface BrowserClientCallbacks {
-  /**
-   * Event handler for story-specific events.
-   * Return true if handled, false to use default handling.
-   */
-  handleStoryEvent?: (event: ISemanticEvent, client: BrowserClientInterface) => boolean;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface BrowserClientCallbacks {}
 
 /**
  * Interface for BrowserClient that callbacks receive

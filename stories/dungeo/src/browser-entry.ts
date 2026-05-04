@@ -6,7 +6,6 @@
  */
 
 import { GameEngine } from '@sharpee/engine';
-import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
@@ -14,11 +13,14 @@ import { PerceptionService } from '@sharpee/stdlib';
 import {
   BrowserClient,
   ThemeManager,
-  BrowserClientInterface,
   createAmbientChannelRenderer,
 } from '@sharpee/platform-browser';
 import { story, config } from './index';
 import { DUNGEO_AMBIENT_CHANNEL_IDS } from './audio/audio-setup';
+import {
+  DUNGEO_RNAME_CHANNEL_ID,
+  DUNGEO_OBJECTS_CHANNEL_ID,
+} from './channels';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
 
 // Storage key for theme
@@ -74,61 +76,6 @@ function getAboutText(): string {
   ].filter(Boolean).join('\n');
 }
 
-/**
- * Format OBJECTS output
- */
-function formatObjects(data: Record<string, unknown>): string {
-  const hasItems = data.hasItems as boolean | undefined;
-  const items = data.items as Array<{ name: string }> | undefined;
-  const containerContents = data.containerContents as Array<{
-    containerName: string;
-    preposition: string;
-    items: Array<{ name: string }>;
-  }> | undefined;
-
-  if (!hasItems || !items || items.length === 0) {
-    return 'There is nothing here.';
-  }
-
-  const lines: string[] = [];
-
-  // List items directly in room
-  for (const item of items) {
-    lines.push(`There is a ${item.name} here.`);
-  }
-
-  // List contents of open containers
-  if (containerContents) {
-    for (const container of containerContents) {
-      const itemNames = container.items.map(i => i.name).join(', ');
-      const prep = container.preposition === 'in' ? 'In' : 'On';
-      lines.push(`${prep} the ${container.containerName}: ${itemNames}`);
-    }
-  }
-
-  return lines.join('\n');
-}
-
-/**
- * Handle story-specific events
- */
-function handleStoryEvent(event: ISemanticEvent, client: BrowserClientInterface): boolean {
-  // Handle RNAME command (room name only)
-  if (event.type === 'dungeo.event.rname') {
-    const roomName = (event.data as Record<string, unknown>)?.roomName as string | undefined;
-    client.displayText(roomName || 'Unknown');
-    return true;
-  }
-
-  // Handle OBJECTS command
-  if (event.type === 'dungeo.event.objects') {
-    client.displayText(formatObjects(event.data as Record<string, unknown>));
-    return true;
-  }
-
-  return false; // Not handled
-}
-
 // Create browser client with story configuration
 const client = new BrowserClient({
   storagePrefix: 'dungeo-',
@@ -151,7 +98,6 @@ const client = new BrowserClient({
   callbacks: {
     getHelpText,
     getAboutText,
-    handleStoryEvent,
   },
 });
 
@@ -212,11 +158,17 @@ async function start(): Promise<void> {
   // Connect client to engine — defaults are registered now.
   client.connectEngine(engine, world);
 
-  // Register story-specific ambient renderers on the channel renderer.
-  // The story-side `media.ambient.*` events flow:
-  //   audio-setup.ts emits → stdlib's `ambient:<id>` channel produce →
-  //   this renderer → the shared AudioManager.
-  // Must run before `client.start()` so the first packet is rendered.
+  // Register story-specific renderers on the channel renderer.
+  // Two groups, all flowing through the channel surface (replacing
+  // the legacy handleStoryEvent + audio.* event-listener bypasses):
+  //  1. ambient:<id> — audio-setup.ts emits media.ambient.* events;
+  //     stdlib's `ambient:<id>` channel projects them; this renderer
+  //     forwards to the shared AudioManager.
+  //  2. dungeo.rname / dungeo.objects — actions emit
+  //     dungeo.event.rname / dungeo.event.objects; story-defined
+  //     channels in ./channels.ts project them as text strings; these
+  //     renderers push the strings to client.displayText.
+  // Must run before client.start() so the first packet is rendered.
   const channelRenderer = client.getChannelRenderer();
   const audioManager = client.getAudioManager();
   for (const ambientId of DUNGEO_AMBIENT_CHANNEL_IDS) {
@@ -225,6 +177,16 @@ async function start(): Promise<void> {
       createAmbientChannelRenderer(audioManager, ambientId),
     );
   }
+  channelRenderer.registerRenderer(DUNGEO_RNAME_CHANNEL_ID, {
+    onValue(value: unknown): void {
+      if (typeof value === 'string') client.displayText(value);
+    },
+  });
+  channelRenderer.registerRenderer(DUNGEO_OBJECTS_CHANNEL_ID, {
+    onValue(value: unknown): void {
+      if (typeof value === 'string') client.displayText(value);
+    },
+  });
 
   // Set the story and register save/restore hooks
   engine.setStory(story);
