@@ -1,34 +1,42 @@
 /**
  * @sharpee/text-service
  *
- * Single text service for Sharpee that:
+ * Block-production service for Sharpee that:
  * - Receives semantic events
  * - Resolves templates via LanguageProvider
  * - Parses decorations into structured IDecoration tree
- * - Outputs ITextBlock[]
- *
- * Includes CLI renderer for testing and CLI clients.
+ * - Outputs `ITextBlock[]` consumed by `@sharpee/channel-service`'s
+ *   `mainChannel.produce` closure (per ADR-163 §6) and by downstream
+ *   consumers that still drive `renderToString` directly.
  *
  * Inspired by FyreVM channel I/O (2009).
  *
- * **ADR-163 Phase 3 status (2026-05-01):** text-service still produces
- * `ITextBlock[]` per turn (engine still calls `TextService.processTurn`).
- * Its **wire-producing** role is **deprecated for the CLI consumer**:
- * `dist/cli/sharpee.js` no longer calls `renderToString` to emit the
- * consumer-facing event stream. Instead, the CLI bundle wraps each
- * turn's blocks through `@sharpee/channel-service`'s `produceTurnPacket`
- * and renders the `main` channel.
+ * **ADR-163 post-rewrite status (2026-05-03):** the engine still calls
+ * `TextService.processTurn` per turn to produce blocks; those blocks
+ * feed both the legacy `text:output` event AND the new
+ * `channel:packet` event. text-service's **block-production** role is
+ * permanent.
  *
- * `renderToString` and `renderStatusLine` remain in the public API and
- * are still consumed by:
- *  - `packages/transcript-tester/` (internal test harness)
- *  - `packages/platform-browser/` (browser surface — Phase 4 will migrate)
+ * The **wire-production** role (`renderToString`, `renderStatusLine`,
+ * `CLIRenderOptions`) is **retired for first-party platform consumers** —
+ * `dist/cli/sharpee.js` (R6) and `@sharpee/platform-browser` (R5-C)
+ * both consume `channel:packet` events through ADR-165 renderers. The
+ * exports remain in the public API for downstream consumers that still
+ * use them:
+ *  - `@sharpee/transcript-tester` — internal test harness
+ *  - `@sharpee/zifmia` — story-author runtime UI
+ *  - `@sharpee/bridge`, `@sharpee/runtime` — story scaffolding
+ *  - `@sharpee/sharpee` package re-exports
  *
- * Phase 4 retires those remaining consumers; at that point this
- * exporting module collapses to block-production only.
+ * Removing them now would break those consumers without a migration
+ * path. They are deprecated rather than deleted.
+ *
+ * See `docs/work/channel-io-unification/text-service-disposition-20260503.md`
+ * for the export-by-export disposition table.
  *
  * @see ADR-096 Text Service Architecture
- * @see ADR-163 Channel-Service Platform — Phase 3 (CLI migration)
+ * @see ADR-163 Channel-Service Platform
+ * @see ADR-165 Renderer Architecture
  */
 
 // Text service

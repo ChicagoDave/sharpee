@@ -596,7 +596,7 @@ is the final cleanup.
   `packages/platforms/*`. User reviews disposition decision before
   deletion.
 - **Prerequisite**: Phase R7 complete.
-- **Status**: CURRENT
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -672,8 +672,8 @@ Less urgent (can be answered later):
 
 ## Status
 
-- **Status**: IN PROGRESS — Phase R8 is CURRENT (R1–R7 DONE as of 2026-05-03)
+- **Status**: COMPLETE — R1–R8 all done (2026-05-03). All acceptance criteria GREEN.
 - **Prerequisites met**: ADR rewrite complete (2026-05-02 + 2026-05-03
   refinement). Architecture diagram aligned. Open questions on package
-  shape resolved. R1–R7 delivered; AC-13, AC-14, AC-15 GREEN.
+  shape resolved. R1–R8 delivered; AC-13, AC-14, AC-15, AC-16 GREEN.
 - **Commit**: Local commits across session; push deferred (token expired)
