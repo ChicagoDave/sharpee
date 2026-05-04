@@ -337,6 +337,27 @@ export class GameEngine {
       : story.config.author;
     this.context.metadata.version = story.config.version;
 
+    // Seed the `storyInfo` capability for ADR-163 `infoChannel` /
+    // `ifidChannel` to project. Channels read from the world via
+    // `world.getCapability('storyInfo')`; this is the single
+    // population point. Story authors that need extra info-fields can
+    // call `world.updateCapability('storyInfo', { ... })` from
+    // `initialize()`.
+    this.world.registerCapability('storyInfo', {
+      schema: {
+        title: { type: 'string', default: '' },
+        author: { type: 'string', default: '' },
+        version: { type: 'string', default: '' },
+        ifid: { type: 'string', default: '' },
+      },
+      initialData: {
+        title: story.config.title,
+        author: this.context.metadata.author,
+        version: story.config.version,
+        ...(story.config.ifid ? { ifid: story.config.ifid } : {}),
+      },
+    });
+
     // Copy implicit actions config to context (ADR-104)
     this.context.implicitActions = story.config.implicitActions;
 

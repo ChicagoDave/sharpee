@@ -36,12 +36,10 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
-    "@sharpee/story-channel-service-test": "workspace:*",
     "@types/node": "^20.8.0",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "eslint": "^8.50.0",
-    "happy-dom": "^15.7.4",
     "playwright": "^1.48.0",
     "rimraf": "^5.0.5",
     "typescript": "^5.2.2"

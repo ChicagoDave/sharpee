@@ -237,6 +237,22 @@ describe('GameEngine — channel:packet emission', () => {
     const last = packets[packets.length - 1];
     expect(last.packet.turn_id).toMatch(/^turn-\d+$/);
   });
+
+  it('infoChannel emits {title, author, version} from Story.config', async () => {
+    const { engine } = setupTestEngine();
+    engine.setStory(new StoryWithoutChannel());
+    const packets = capturePackets(engine);
+    engine.start({ capabilities: FULL_CAPABILITIES });
+
+    await engine.executeTurn('look');
+    const infoPayload = packets[0].packet.payload['info'];
+    // MinimalTestStory's config: { title: 'Minimal Test Story', author: 'Test Suite', version: '1.0.0', ... }
+    expect(infoPayload).toEqual({
+      title: 'Minimal Test Story',
+      author: 'Test Suite',
+      version: '1.0.0',
+    });
+  });
 });
 
 describe('GameEngine — bootstrap order (AC-11)', () => {

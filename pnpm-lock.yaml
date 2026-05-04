@@ -112,9 +112,6 @@ importers:
       '@playwright/test':
         specifier: ^1.48.0
         version: 1.59.1
-      '@sharpee/story-channel-service-test':
-        specifier: workspace:*
-        version: link:../../stories/channel-service-test
       '@types/node':
         specifier: ^20.8.0
         version: 20.19.27
@@ -127,9 +124,6 @@ importers:
       eslint:
         specifier: ^8.50.0
         version: 8.57.1
-      happy-dom:
-        specifier: ^15.7.4
-        version: 15.11.7
       playwright:
         specifier: ^1.48.0
         version: 1.59.1
@@ -996,12 +990,18 @@ importers:
         specifier: workspace:*
         version: link:../../packages/world-model
     devDependencies:
+      happy-dom:
+        specifier: ^15.7.4
+        version: 15.11.7
       rimraf:
         specifier: ^5.0.5
         version: 5.0.10
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   stories/dungeo:
     dependencies:

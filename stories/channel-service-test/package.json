@@ -1,13 +1,15 @@
 {
   "name": "@sharpee/story-channel-service-test",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
-  "description": "AC-15 fixture story for ADR-163. Minimal playable Sharpee story (one room, one item, one custom verb 'stat') with a story-supplied IOChannel + ChannelRenderer. Drives parity tests across CLI and browser surfaces.",
+  "description": "AC-15 fixture story for ADR-163. Minimal playable Sharpee story (one room, one beacon item) with a story-supplied IOChannel + ChannelRenderer. Drives parity tests across CLI and browser surfaces; hosts the AC-15 wire-equivalence + renderer-parity test suite.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "vitest",
+    "test:ci": "vitest run"
   },
   "files": ["dist", "src"],
   "dependencies": {
@@ -22,7 +24,9 @@
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
+    "happy-dom": "^15.7.4",
     "rimraf": "^5.0.5",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
   }
 }

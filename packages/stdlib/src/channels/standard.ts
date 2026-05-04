@@ -46,14 +46,26 @@ function flattenContent(content: ReadonlyArray<TextContent>): string {
  * that want to populate `death`, `endgame`, or `score_notify` emit
  * events of these types; stdlib does not emit them itself.
  *
- * The values match the `if.event.*` namespacing convention. An event
- * carries its message in `event.data.message` (string).
+ * The values align with what the engine and stdlib extensions actually
+ * emit today:
+ *
+ * - `game.won` / `game.lost` — engine emits these from `engine.stop()`
+ *   via `createGameWonEvent` / `createGameLostEvent` (core/events).
+ * - `combat.player_died` — emitted by the `@sharpee/ext-basic-combat`
+ *   extension. Stories not using basic-combat that want a death
+ *   channel emission must either fire `combat.player_died` themselves
+ *   or override `deathChannel` with their own closure.
+ * - `game.score_changed` — no production emitter today. The channel
+ *   listens for it, but it stays silent until a story or extension
+ *   adopts the convention. Listed for forward-compatibility.
+ *
+ * Each event carries its message in `event.data.message` (string).
  */
 export const STANDARD_CHANNEL_EVENTS = {
-  PLAYER_DIED: 'if.event.player_died',
-  GAME_WON: 'if.event.game_won',
-  GAME_LOST: 'if.event.game_lost',
-  SCORE_CHANGED: 'if.event.score_changed',
+  PLAYER_DIED: 'combat.player_died',
+  GAME_WON: 'game.won',
+  GAME_LOST: 'game.lost',
+  SCORE_CHANGED: 'game.score_changed',
 } as const;
 
 /**
