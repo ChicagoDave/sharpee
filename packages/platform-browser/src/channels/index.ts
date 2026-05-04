@@ -47,6 +47,10 @@ import {
   createLayoutChannelRenderer,
   createClearChannelRenderer,
 } from './animation';
+import {
+  createLifecycleChannelRenderer,
+  type LifecycleChannelRendererOptions,
+} from './lifecycle';
 import { mountDefaultLayout, type BrowserDefaultLayout } from './layout';
 
 export {
@@ -69,9 +73,10 @@ export {
   createTransitionChannelRenderer,
   createLayoutChannelRenderer,
   createClearChannelRenderer,
+  createLifecycleChannelRenderer,
   mountDefaultLayout,
 };
-export type { BrowserDefaultLayout, AudioManagerLike };
+export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
 export { createAmbientChannelRenderer } from './audio';
 export { renderTextContent, flattenTextContent } from './text-content';
 
@@ -99,6 +104,14 @@ export interface RegisterDefaultBrowserRenderersOptions {
    * `Renderer.emitCommand` so the engine sees a typed command.
    */
   onHotspotCommand?(command: string): void;
+  /**
+   * Wiring for the `lifecycle` channel renderer. Pass the browser
+   * client's `appendSystemMessage` and a refresh callback (typically
+   * `renderCombinedStatus`) so save/restore signals project to the
+   * same DOM regions the legacy raw-event path used. Omit to skip
+   * registering a lifecycle renderer (CLI / test scenarios).
+   */
+  lifecycle?: LifecycleChannelRendererOptions;
 }
 
 /**
@@ -178,4 +191,9 @@ export function registerDefaultBrowserRenderers(
   renderer.registerRenderer('transition', createTransitionChannelRenderer(layout.root));
   renderer.registerRenderer('layout', createLayoutChannelRenderer(layout.root));
   renderer.registerRenderer('clear', createClearChannelRenderer(layout.root));
+
+  // ── Lifecycle (save/restore signals) ─────────────────────────────
+  if (opts.lifecycle) {
+    renderer.registerRenderer('lifecycle', createLifecycleChannelRenderer(opts.lifecycle));
+  }
 }

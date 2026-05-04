@@ -350,6 +350,93 @@ export const scoreNotifyChannel: IOChannel<string> = {
 };
 
 /**
+ * Discriminator values for `LifecyclePayload`.
+ *
+ * - `save_failed` — save handler reported failure or threw.
+ * - `restore_failed` — restore handler returned no data, threw, or
+ *   was not registered.
+ * - `restore_completed` — restore succeeded; renderers should refresh
+ *   any cached UI derived from world state.
+ */
+export type LifecycleEventKind =
+  | 'save_failed'
+  | 'restore_failed'
+  | 'restore_completed';
+
+/**
+ * Wire shape for the `lifecycle` channel. `message` is populated for
+ * the failure kinds and copied verbatim from the platform event's
+ * `payload.error` field. Successful kinds (`restore_completed`) carry
+ * no message — they are pure signals.
+ */
+export interface LifecyclePayload {
+  kind: LifecycleEventKind;
+  message?: string;
+}
+
+/**
+ * Map a platform event's type to the lifecycle channel's discriminator.
+ * Returns `undefined` for non-lifecycle events so the channel closure
+ * can ignore them.
+ */
+function lifecycleKind(eventType: string): LifecycleEventKind | undefined {
+  if (eventType === 'platform.save_failed') return 'save_failed';
+  if (eventType === 'platform.restore_failed') return 'restore_failed';
+  if (eventType === 'platform.restore_completed') return 'restore_completed';
+  return undefined;
+}
+
+/**
+ * Read `payload.error` from a platform-event-shaped object. Platform
+ * events store completion data on `payload`, not on the
+ * `ISemanticEvent.data` field that stdlib's other channels use, so
+ * lifecycle has its own reader. Returns `undefined` for non-string or
+ * absent values.
+ */
+function platformEventError(event: unknown): string | undefined {
+  const payload = (event as { payload?: unknown }).payload as
+    | { error?: unknown }
+    | undefined;
+  if (!payload) return undefined;
+  if (typeof payload.error !== 'string') return undefined;
+  return payload.error;
+}
+
+/**
+ * `lifecycle` — event-mode save/restore signals. Projects the trio of
+ * platform completion events (`platform.save_failed`,
+ * `platform.restore_failed`, `platform.restore_completed`) into a
+ * single sparse channel.
+ *
+ * Renderers branch on `payload.kind`: failures display `payload.message`
+ * (or a fallback string), `restore_completed` triggers UI refresh
+ * without text. Sparse-emit semantics mean turns without a lifecycle
+ * event suppress emission entirely — the channel value retains its
+ * prior state on quiet turns.
+ *
+ * If multiple lifecycle events appear in one turn, the **last** one
+ * wins. In practice this is unobservable since each save/restore
+ * operation produces exactly one completion event, but the rule is
+ * documented so test authors don't expect first-wins semantics.
+ */
+export const lifecycleChannel: IOChannel<LifecyclePayload> = {
+  id: 'lifecycle',
+  contentType: 'json',
+  mode: 'event',
+  emit: 'sparse',
+  produce: (ctx) => {
+    let result: LifecyclePayload | undefined;
+    for (const event of ctx.events) {
+      const kind = lifecycleKind(event.type);
+      if (!kind) continue;
+      const message = platformEventError(event);
+      result = message !== undefined ? { kind, message } : { kind };
+    }
+    return result;
+  },
+};
+
+/**
  * The ten platform-standard channels in iteration order. Order is
  * preserved for stable diffing in tests and manifests; the
  * `ChannelService` itself does not depend on ordering.
@@ -365,6 +452,7 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
+  lifecycleChannel,
 ];
 
 /**
@@ -382,6 +470,7 @@ export const STANDARD_CHANNEL_IDS = {
   DEATH: 'death',
   ENDGAME: 'endgame',
   SCORE_NOTIFY: 'score_notify',
+  LIFECYCLE: 'lifecycle',
 } as const;
 
 export type StandardChannelId =

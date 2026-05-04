@@ -240,10 +240,6 @@ export class BrowserClient implements BrowserClientInterface {
     //  - audio.* routing → AudioManager (legacy event vocabulary;
     //    Tier C migration to media.* events deferred)
     //  - story-defined custom events → handleStoryEvent callback
-    //  - save/restore platform events → lifecycle signals; user-
-    //    facing text is now routed through `appendSystemMessage`
-    //    which writes to the main slot via the same DOM the channel
-    //    renderer uses
     this.engine.on('event', (event: ISemanticEvent) => {
       // Console debug-log for every event — gated on the same toggle
       // as channel:packet logs to keep the console clean by default.
@@ -261,26 +257,6 @@ export class BrowserClient implements BrowserClientInterface {
       // Let story handle custom events first
       if (this.config.callbacks?.handleStoryEvent?.(event, this)) {
         return; // Story handled it
-      }
-
-      // Handle platform events for save/restore. The user-visible
-      // text routes through `appendSystemMessage` — it lands in the
-      // same main slot the channel renderer writes into, with a
-      // distinguishing `system-message` class so themes can style it.
-      if (event.type === 'platform.save_failed') {
-        const errorData = event.data as { error?: string } | undefined;
-        this.appendSystemMessage(`[Save failed: ${errorData?.error || 'Unknown error'}]`);
-      } else if (event.type === 'platform.restore_failed') {
-        const errorData = event.data as { error?: string } | undefined;
-        this.appendSystemMessage(
-          `[Restore failed: ${errorData?.error || 'No saved game found'}]`,
-        );
-      } else if (event.type === 'platform.restore_completed') {
-        const restoreData = event.data as { turnCount?: number } | undefined;
-        if (restoreData?.turnCount !== undefined) {
-          this.currentTurn = restoreData.turnCount;
-        }
-        this.renderCombinedStatus();
       }
     });
   }
@@ -349,6 +325,15 @@ export class BrowserClient implements BrowserClientInterface {
       },
       onHotspotCommand: (command) => {
         this.engine.executeTurn(command);
+      },
+      lifecycle: {
+        appendSystemMessage: (text) => this.appendSystemMessage(text),
+        onRestoreCompleted: () => {
+          // The standard `turn` channel's renderer already syncs
+          // `currentTurn` on every packet, so `restore_completed`
+          // only needs to refresh the combined status display.
+          this.renderCombinedStatus();
+        },
       },
     });
 

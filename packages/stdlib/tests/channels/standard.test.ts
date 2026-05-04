@@ -20,6 +20,7 @@ import {
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
+  lifecycleChannel,
   STANDARD_CHANNEL_EVENTS,
 } from '../../src/channels';
 
@@ -295,5 +296,105 @@ describe('scoreNotifyChannel.produce', () => {
 
   it('returns undefined when no score event fired', () => {
     expect(scoreNotifyChannel.produce(makeCtx())).toBeUndefined();
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────
+//  lifecycle (save/restore signals — Phase 2 of channel-io-event-retirement)
+// ────────────────────────────────────────────────────────────────────
+
+// Platform events store completion data on `payload`, not `data`.
+// Build a stub matching the IPlatformEvent shape from
+// packages/core/src/events/platform-events.ts.
+function makePlatformEvent(
+  type: string,
+  payload: Record<string, unknown> = {},
+) {
+  return {
+    id: `pe-${type}`,
+    type,
+    timestamp: 0,
+    requiresClientAction: true as const,
+    entities: {},
+    payload,
+  };
+}
+
+describe('lifecycleChannel.produce', () => {
+  it('returns undefined when no lifecycle event fired', () => {
+    expect(lifecycleChannel.produce(makeCtx())).toBeUndefined();
+  });
+
+  it('emits save_failed with the payload error message', () => {
+    const result = lifecycleChannel.produce(
+      makeCtx({
+        events: [
+          makePlatformEvent('platform.save_failed', {
+            success: false,
+            error: 'Disk full',
+          }),
+        ],
+      }),
+    );
+    expect(result).toEqual({ kind: 'save_failed', message: 'Disk full' });
+  });
+
+  it('emits save_failed with no message when payload has no error string', () => {
+    const result = lifecycleChannel.produce(
+      makeCtx({
+        events: [makePlatformEvent('platform.save_failed', { success: false })],
+      }),
+    );
+    expect(result).toEqual({ kind: 'save_failed' });
+  });
+
+  it('emits restore_failed with the payload error message', () => {
+    const result = lifecycleChannel.produce(
+      makeCtx({
+        events: [
+          makePlatformEvent('platform.restore_failed', {
+            success: false,
+            error: 'No save data available',
+          }),
+        ],
+      }),
+    );
+    expect(result).toEqual({
+      kind: 'restore_failed',
+      message: 'No save data available',
+    });
+  });
+
+  it('emits restore_completed with no message', () => {
+    const result = lifecycleChannel.produce(
+      makeCtx({
+        events: [makePlatformEvent('platform.restore_completed', { success: true })],
+      }),
+    );
+    expect(result).toEqual({ kind: 'restore_completed' });
+  });
+
+  it('ignores non-lifecycle events', () => {
+    const result = lifecycleChannel.produce(
+      makeCtx({
+        events: [
+          makePlatformEvent('platform.save_requested', {}),
+          makeEvent('if.event.command_error', { reason: 'unrelated' }),
+        ],
+      }),
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it('uses last-wins when multiple lifecycle events appear in one turn', () => {
+    const result = lifecycleChannel.produce(
+      makeCtx({
+        events: [
+          makePlatformEvent('platform.save_failed', { error: 'first' }),
+          makePlatformEvent('platform.restore_completed', { success: true }),
+        ],
+      }),
+    );
+    expect(result).toEqual({ kind: 'restore_completed' });
   });
 });

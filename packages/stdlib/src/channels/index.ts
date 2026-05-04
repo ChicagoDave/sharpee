@@ -46,12 +46,15 @@ export {
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
+  lifecycleChannel,
   // Sets
   STANDARD_CHANNELS,
   STANDARD_CHANNEL_IDS,
   STANDARD_CHANNEL_EVENTS,
-  // Type
+  // Types
   type StandardChannelId,
+  type LifecycleEventKind,
+  type LifecyclePayload,
 } from './standard';
 
 export {
