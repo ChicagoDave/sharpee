@@ -127,6 +127,9 @@ importers:
       eslint:
         specifier: ^8.50.0
         version: 8.57.1
+      happy-dom:
+        specifier: ^15.7.4
+        version: 15.11.7
       playwright:
         specifier: ^1.48.0
         version: 1.59.1
@@ -965,12 +968,40 @@ importers:
 
   stories/channel-service-test:
     dependencies:
+      '@sharpee/channel-service':
+        specifier: workspace:*
+        version: link:../../packages/channel-service
       '@sharpee/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../../packages/if-domain
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../../packages/lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../../packages/parser-en-us
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../../packages/stdlib
       '@sharpee/text-blocks':
         specifier: workspace:*
         version: link:../../packages/text-blocks
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../../packages/world-model
+    devDependencies:
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
 
   stories/dungeo:
     dependencies:

@@ -178,7 +178,7 @@ is the final cleanup.
   `packages/if-domain/` (new types module). Workspace config:
   `if-domain` may need to add an export entry for the channels module.
 - **Prerequisite**: ADR-163 rewrite + 2026-05-03 refinement (done).
-- **Status**: PENDING
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -244,7 +244,7 @@ is the final cleanup.
   `packages/channel-service/` (NOT a stdlib dep — stdlib doesn't need
   the `ChannelService` class).
 - **Prerequisite**: Phase R1 complete.
-- **Status**: PENDING
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -308,7 +308,7 @@ is the final cleanup.
 - **Platform-change flag**: Modifies `packages/engine/`. Per CLAUDE.md
   major directions, discuss with user before implementation.
 - **Prerequisite**: Phase R2 complete.
-- **Status**: PENDING
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -355,7 +355,7 @@ is the final cleanup.
   new package (Option B).
 - **Prerequisite**: Phase R3 complete (so the wire shapes the renderer
   consumes are stable).
-- **Status**: PENDING
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -437,7 +437,7 @@ is the final cleanup.
   `build.sh`. Discuss with user before implementation.
 - **Prerequisite**: Phase R3 (engine integration) AND Phase R4
   (renderer scaffolding) complete.
-- **Status**: PENDING
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -491,7 +491,7 @@ is the final cleanup.
   `packages/channel-service/` (or wherever Renderer lives).
 - **Prerequisite**: Phase R3 + R4 complete. Can run in parallel with
   R5 if separate sessions; not interdependent.
-- **Status**: PENDING
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -538,7 +538,7 @@ is the final cleanup.
 - **Cross-package**: `stories/channel-service-test/` (extended),
   `packages/channel-service/` (test added).
 - **Prerequisite**: Phase R5 + R6 complete.
-- **Status**: PENDING
+- **Status**: DONE (2026-05-03)
 
 ---
 
@@ -596,7 +596,7 @@ is the final cleanup.
   `packages/platforms/*`. User reviews disposition decision before
   deletion.
 - **Prerequisite**: Phase R7 complete.
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ---
 
@@ -672,8 +672,8 @@ Less urgent (can be answered later):
 
 ## Status
 
-- **Status**: PLANNING COMPLETE — Phase R1 is CURRENT
+- **Status**: IN PROGRESS — Phase R8 is CURRENT (R1–R7 DONE as of 2026-05-03)
 - **Prerequisites met**: ADR rewrite complete (2026-05-02 + 2026-05-03
   refinement). Architecture diagram aligned. Open questions on package
-  shape resolved.
-- **Ready to start**: Phase R1 can begin on user approval.
+  shape resolved. R1–R7 delivered; AC-13, AC-14, AC-15 GREEN.
+- **Commit**: Local commits across session; push deferred (token expired)

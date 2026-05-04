@@ -1,0 +1,39 @@
+title: AC-15 — debug-stats sparse emission
+story: channel-service-test
+description: Drives the channel-service-test story through stdlib actions (look / take / drop) so the debug-stats channel exercises sparse-emit suppression on unchanged inventory.
+---
+
+# ============================================================================
+# GOAL: validate the playable story works through the CLI bundle
+# AC-15 sparse-emission semantics are validated separately by the
+# in-process renderer-parity test in
+# packages/channel-service/tests/ac-15-story-renderer-parity.test.ts
+# ============================================================================
+
+# Initial look — establishes the lab and the beacon.
+> look
+[OK: contains "The Lab"]
+[OK: contains "beacon"]
+
+# Re-look — same content, exercises sparse-emit suppression on the
+# debug-stats channel (no inventory change between turns).
+> look
+[OK: contains "The Lab"]
+
+# Take the beacon — inventory grows from 0 → 1.
+> take beacon
+[OK: contains "Taken"]
+
+# Look again — the lab no longer lists the beacon among visible items
+# (it's now in the player's inventory).
+> look
+[OK: contains "The Lab"]
+[OK: not contains "see beacon here"]
+
+# Drop the beacon — inventory shrinks from 1 → 0.
+> drop beacon
+[OK: contains "Dropped"]
+
+# Final look — beacon visible again in the lab.
+> look
+[OK: contains "beacon"]

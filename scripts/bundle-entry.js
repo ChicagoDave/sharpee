@@ -235,13 +235,14 @@ Examples:
     });
 
     engine.setStory(story);
-    engine.start();
 
-    // === channel-service setup (ADR-163 Phase 3) ===
-    // CLI consumer migrates off text-service.renderToString for wire
-    // production. Engine still calls text-service to produce blocks; this
-    // CLI consumer wraps each turn's output through produceTurnPacket and
-    // writes the flattened `main` channel to outputBuffer.
+    // === ADR-163 channel-I/O setup (Phase R6) ===
+    // CLI consumer subscribes to engine `channel:packet` events. The
+    // engine constructs a ChannelService internally during start() based
+    // on the supplied capabilities; no rule-registration / hello dance.
+    // Per ADR-165 §8 CLI defaults, only the `main` channel produces
+    // visible output in test mode — status / prompt / info / etc. are
+    // available to interactive mode but ignored here.
     const CLI_CAPABILITIES = {
       text: true,
       images: false, animations: false, video: false,
@@ -250,11 +251,7 @@ Examples:
       clickableText: false, clickableImage: false, dragDrop: false,
       transitions: false, layers: false, customFonts: false,
     };
-    exports.resetSession();
-    exports.registerHello(CLI_CAPABILITIES);
-    exports.registerStandardChannels();
-    exports.registerPlatformRules();
-    exports.produceCmgtManifest();
+    engine.start({ capabilities: CLI_CAPABILITIES });
 
     // Create testing extension for $commands in transcripts
     const testingExtension = TestingExtension ? new TestingExtension() : null;
@@ -264,20 +261,22 @@ Examples:
     let lastEvents = [];
     let eventBuffer = [];
 
-    // text:output fires for both normal and meta-command paths after the
-    // engine has emitted all turn events. eventBuffer (populated below)
-    // carries the events that accompany the blocks for this emit.
-    engine.on('text:output', (blocks) => {
-      const packet = exports.produceTurnPacket({
-        textBlocks: blocks,
-        events: eventBuffer,
-      });
-      const mainEntries = packet.payload.main;
+    // Manifest fires once during engine.start() and is not used by the
+    // CLI's plain-text output path — listed for completeness (and so a
+    // future REPL-status implementation has the channel definitions on
+    // hand). Signals the start of a new session.
+    engine.on('channel:manifest', () => {
+      // No-op in CLI test mode.
+    });
+
+    // channel:packet fires per turn. Flatten the `main` channel's
+    // entries (each entry is a TextContent[] — one block's content) to
+    // plain strings and push to outputBuffer. Other channels' payloads
+    // (location/score/turn/...) are available in packet.payload for
+    // interactive mode if needed but ignored in test mode.
+    engine.on('channel:packet', (packet) => {
+      const mainEntries = packet?.payload?.main;
       if (Array.isArray(mainEntries) && mainEntries.length > 0) {
-        // Each entry is a TextContent[] (one block's content). Flatten
-        // each, then join with double newline (matches renderToString's
-        // default block separator). Decorations stripped — CLI is plain
-        // text in Phase 3; ANSI is a future Phase 4 terminal-only concern.
         const flattened = mainEntries
           .map((entry) => exports.flattenContent(entry))
           .filter((s) => s.trim().length > 0)
