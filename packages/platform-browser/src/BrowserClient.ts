@@ -240,8 +240,6 @@ export class BrowserClient implements BrowserClientInterface {
     //  - audio.* routing → AudioManager (legacy event vocabulary;
     //    Tier C migration to media.* events deferred)
     //  - story-defined custom events → handleStoryEvent callback
-    //  - error beep (`command.failed`, `action.blocked`) → platform-
-    //    signal feedback, not display data
     //  - save/restore platform events → lifecycle signals; user-
     //    facing text is now routed through `appendSystemMessage`
     //    which writes to the main slot via the same DOM the channel
@@ -265,14 +263,6 @@ export class BrowserClient implements BrowserClientInterface {
         return; // Story handled it
       }
 
-      // Beep on errors/failures (classic Infocom style)
-      if (event.type === 'command.failed' ||
-          event.type === 'action.blocked' ||
-          event.type.includes('.blocked') ||
-          event.type === 'game.player_death') {
-        this.beep();
-      }
-
       // Handle platform events for save/restore. The user-visible
       // text routes through `appendSystemMessage` — it lands in the
       // same main slot the channel renderer writes into, with a
@@ -280,13 +270,11 @@ export class BrowserClient implements BrowserClientInterface {
       if (event.type === 'platform.save_failed') {
         const errorData = event.data as { error?: string } | undefined;
         this.appendSystemMessage(`[Save failed: ${errorData?.error || 'Unknown error'}]`);
-        this.beep();
       } else if (event.type === 'platform.restore_failed') {
         const errorData = event.data as { error?: string } | undefined;
         this.appendSystemMessage(
           `[Restore failed: ${errorData?.error || 'No saved game found'}]`,
         );
-        this.beep();
       } else if (event.type === 'platform.restore_completed') {
         const restoreData = event.data as { turnCount?: number } | undefined;
         if (restoreData?.turnCount !== undefined) {
@@ -721,7 +709,6 @@ export class BrowserClient implements BrowserClientInterface {
     const envelope = this.saveManager.loadEnvelope(slotName);
     if (!envelope) {
       this.textDisplay.displayText(`[No saved game found: ${slotName}]`);
-      this.beep();
       return false;
     }
 
@@ -772,10 +759,6 @@ export class BrowserClient implements BrowserClientInterface {
 
   clearScreen(): void {
     this.textDisplay.clearScreen();
-  }
-
-  beep(frequency = 800, duration = 100): void {
-    this.audioManager.beep(frequency, duration);
   }
 
   // === Public getters (for story callbacks) ===
@@ -834,7 +817,6 @@ export class BrowserClient implements BrowserClientInterface {
       this.textDisplay.displayText(`[Game saved as "${slotName}"]`);
     } else {
       this.textDisplay.displayText(`[Save failed: ${result.error}]`);
-      this.beep();
     }
   }
 

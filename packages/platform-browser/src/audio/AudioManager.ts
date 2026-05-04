@@ -1,16 +1,14 @@
 /**
  * AudioManager — handles all audio playback for the browser client.
  *
- * Public interface: beep(), handleAudioEvent(), dispose().
- * Manages ambient loops, music tracks, and PC speaker beeps via
- * Web Audio API and HTMLAudioElement.
+ * Public interface: handleAudioEvent(), dispose().
+ * Manages ambient loops and music tracks via Web Audio API and
+ * HTMLAudioElement.
  *
  * Owner context: @sharpee/platform-browser
  */
 
 export class AudioManager {
-  private audioContext: AudioContext | null = null;
-
   /** Active ambient audio channels — keyed by channel name */
   private ambientChannels: Map<string, HTMLAudioElement> = new Map();
   /** Active music track */
@@ -27,11 +25,6 @@ export class AudioManager {
   unlock(): void {
     if (this.unlocked) return;
     this.unlocked = true;
-
-    // Resume AudioContext if it was created in suspended state
-    if (this.audioContext?.state === 'suspended') {
-      this.audioContext.resume();
-    }
 
     // Replay any queued events
     const pending = this.pendingEvents.splice(0);
@@ -125,36 +118,6 @@ export class AudioManager {
   }
 
   /**
-   * Play classic Infocom PC speaker beep.
-   * ~800Hz square wave, short duration.
-   *
-   * @param frequency - Frequency in Hz (default 800)
-   * @param duration - Duration in milliseconds (default 100)
-   */
-  beep(frequency = 800, duration = 100): void {
-    try {
-      if (!this.audioContext) {
-        this.audioContext = new AudioContext();
-      }
-
-      const oscillator = this.audioContext.createOscillator();
-      const gainNode = this.audioContext.createGain();
-
-      oscillator.type = 'square';
-      oscillator.frequency.value = frequency;
-      gainNode.gain.value = 0.1;
-
-      oscillator.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
-
-      oscillator.start();
-      oscillator.stop(this.audioContext.currentTime + duration / 1000);
-    } catch {
-      // Audio not available, silently ignore
-    }
-  }
-
-  /**
    * Close audio context and stop all audio
    */
   dispose(): void {
@@ -166,11 +129,6 @@ export class AudioManager {
     if (this.musicTrack) {
       this.musicTrack.pause();
       this.musicTrack = null;
-    }
-
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
     }
   }
 }

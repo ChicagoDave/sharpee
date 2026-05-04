@@ -53,7 +53,6 @@ export interface BrowserClientInterface {
   displayText(text: string): void;
   displayCommand(command: string): void;
   clearScreen(): void;
-  beep(frequency?: number, duration?: number): void;
   getWorld(): WorldModel;
   getCurrentTurn(): number;
   getCurrentScore(): number;
