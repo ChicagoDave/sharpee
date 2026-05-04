@@ -238,7 +238,7 @@ describe('GameEngine — channel:packet emission', () => {
     expect(last.packet.turn_id).toMatch(/^turn-\d+$/);
   });
 
-  it('infoChannel emits {title, author, version} from Story.config', async () => {
+  it('infoChannel emits non-empty fields from Story.config (+ StoryInfoTrait when set)', async () => {
     const { engine } = setupTestEngine();
     engine.setStory(new StoryWithoutChannel());
     const packets = capturePackets(engine);
@@ -246,11 +246,14 @@ describe('GameEngine — channel:packet emission', () => {
 
     await engine.executeTurn('look');
     const infoPayload = packets[0].packet.payload['info'];
-    // MinimalTestStory's config: { title: 'Minimal Test Story', author: 'Test Suite', version: '1.0.0', ... }
+    // MinimalTestStory's config carries title/author/version/description.
+    // No StoryInfoTrait is set by this fixture, so build-pipeline
+    // fields (engineVersion / clientVersion / buildDate) stay absent.
     expect(infoPayload).toEqual({
       title: 'Minimal Test Story',
       author: 'Test Suite',
       version: '1.0.0',
+      description: 'A minimal story for testing basic engine functionality',
     });
   });
 });

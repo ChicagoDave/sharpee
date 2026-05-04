@@ -70,14 +70,28 @@ export const STANDARD_CHANNEL_EVENTS = {
 
 /**
  * Story-info capability shape consumed by `infoChannel` and
- * `ifidChannel`. Stories populate this capability at start; engine
- * bootstrap also populates it from the loaded story metadata.
+ * `ifidChannel`. Engine bootstrap populates this from the merged
+ * `StoryConfig` + `StoryInfoTrait` payload; stories may override
+ * specific fields after start.
+ *
+ * Field provenance:
+ *  - title / author / version — `StoryConfig` (fallback to
+ *    `StoryInfoTrait` if config omits)
+ *  - ifid — `StoryConfig.ifid`
+ *  - description — `StoryConfig.description` or `StoryInfoTrait.description`
+ *  - buildDate — `StoryConfig.buildDate` or `StoryInfoTrait.buildDate`
+ *  - engineVersion / clientVersion — `StoryInfoTrait` (set by build
+ *    pipelines)
  */
 interface StoryInfoData {
   title?: string;
   author?: string;
   version?: string;
   ifid?: string;
+  description?: string;
+  buildDate?: string;
+  engineVersion?: string;
+  clientVersion?: string;
 }
 
 /**
@@ -149,13 +163,21 @@ export const locationChannel: IOChannel<string> = {
 };
 
 /**
- * `score` — replace-mode `{current, max}` payload. Closure reads the
- * `scoring` capability from the world. Emits `undefined` (re-emits
- * prev) when the capability is absent.
+ * `score` — replace-mode `{current, max}` payload.
+ *
+ * Reads the canonical ADR-129 score ledger first (`world.getScore()`
+ * and `world.getMaxScore()`); falls back to the legacy `scoring`
+ * capability's `scoreValue`/`maxScore` for older worlds that haven't
+ * adopted the ledger. The fallback path also serves stories that
+ * track score outside the ledger (rare; ADR-129 is the recommended
+ * pattern).
  *
  * `max: null` (not `0`) signals an unbounded score per ADR-163 §4
- * commentary; `maxScore: 0` in the capability is treated as null since
- * a 0-cap scoring system has no usable progress fraction.
+ * commentary; `maxScore: 0` is treated as null since a 0-cap scoring
+ * system has no usable progress fraction.
+ *
+ * Returns `undefined` only when the world is missing entirely (test
+ * harness with a stub) — `always`-mode then re-emits prev.
  */
 export const scoreChannel: IOChannel<{ current: number; max: number | null }> = {
   id: 'score',
@@ -163,6 +185,20 @@ export const scoreChannel: IOChannel<{ current: number; max: number | null }> = 
   mode: 'replace',
   emit: 'always',
   produce: (ctx) => {
+    // Try the ADR-129 ledger first.
+    const world = ctx.world as
+      | {
+          getScore?: () => number;
+          getMaxScore?: () => number;
+        }
+      | undefined;
+    if (world && typeof world.getScore === 'function') {
+      const current = world.getScore();
+      const maxRaw = typeof world.getMaxScore === 'function' ? world.getMaxScore() : 0;
+      const max = typeof maxRaw === 'number' && maxRaw > 0 ? maxRaw : null;
+      return { current, max };
+    }
+    // Fall back to the legacy `scoring` capability.
     const cap = readCapability<ScoringData>(ctx, 'scoring');
     if (!cap) return undefined;
     const current = typeof cap.scoreValue === 'number' ? cap.scoreValue : 0;
@@ -184,11 +220,31 @@ export const turnChannel: IOChannel<number> = {
 };
 
 /**
- * `info` — replace-mode story metadata `{title, author, version}`.
- * Closure reads the `storyInfo` capability. Stories or the engine
- * register and populate this capability at startup.
+ * Wire shape for the `info` channel — full story metadata.
+ *
+ * Optional fields are omitted from the emitted payload when empty so
+ * renderers can branch cleanly on presence. The engine populates the
+ * underlying `storyInfo` capability from `StoryConfig` + `StoryInfoTrait`
+ * during `setStory()`.
  */
-export const infoChannel: IOChannel<{ title?: string; author?: string; version?: string }> = {
+export interface StoryInfoPayload {
+  title?: string;
+  author?: string;
+  version?: string;
+  description?: string;
+  buildDate?: string;
+  engineVersion?: string;
+  clientVersion?: string;
+}
+
+/**
+ * `info` — replace-mode story metadata. Closure projects every
+ * non-empty field from the `storyInfo` capability into a single
+ * payload object. The same payload is consumed by the browser
+ * `info` renderer (sets `document.title` + `data-*` attributes) and
+ * by any author-supplied dashboards.
+ */
+export const infoChannel: IOChannel<StoryInfoPayload> = {
   id: 'info',
   contentType: 'json',
   mode: 'replace',
@@ -196,16 +252,23 @@ export const infoChannel: IOChannel<{ title?: string; author?: string; version?:
   produce: (ctx) => {
     const cap = readCapability<StoryInfoData>(ctx, 'storyInfo');
     if (!cap) return undefined;
-    return {
-      title: cap.title,
-      author: cap.author,
-      version: cap.version,
-    };
+    const payload: StoryInfoPayload = {};
+    if (cap.title) payload.title = cap.title;
+    if (cap.author) payload.author = cap.author;
+    if (cap.version) payload.version = cap.version;
+    if (cap.description) payload.description = cap.description;
+    if (cap.buildDate) payload.buildDate = cap.buildDate;
+    if (cap.engineVersion) payload.engineVersion = cap.engineVersion;
+    if (cap.clientVersion) payload.clientVersion = cap.clientVersion;
+    return payload;
   },
 };
 
 /**
- * `ifid` — replace-mode IFID string. Closure reads `storyInfo.ifid`.
+ * `ifid` — replace-mode IFID string. Closure reads `storyInfo.ifid`
+ * and skips emission when the value is empty (sparse-suppress style),
+ * so stories without an IFID don't emit empty strings into the
+ * channel state.
  */
 export const ifidChannel: IOChannel<string> = {
   id: 'ifid',
@@ -214,7 +277,9 @@ export const ifidChannel: IOChannel<string> = {
   emit: 'always',
   produce: (ctx) => {
     const cap = readCapability<StoryInfoData>(ctx, 'storyInfo');
-    if (!cap || typeof cap.ifid !== 'string') return undefined;
+    if (!cap || typeof cap.ifid !== 'string' || cap.ifid.length === 0) {
+      return undefined;
+    }
     return cap.ifid;
   },
 };

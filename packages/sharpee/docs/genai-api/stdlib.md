@@ -3333,14 +3333,26 @@ import type { TextContent } from '@sharpee/text-blocks';
  * that want to populate `death`, `endgame`, or `score_notify` emit
  * events of these types; stdlib does not emit them itself.
  *
- * The values match the `if.event.*` namespacing convention. An event
- * carries its message in `event.data.message` (string).
+ * The values align with what the engine and stdlib extensions actually
+ * emit today:
+ *
+ * - `game.won` / `game.lost` — engine emits these from `engine.stop()`
+ *   via `createGameWonEvent` / `createGameLostEvent` (core/events).
+ * - `combat.player_died` — emitted by the `@sharpee/ext-basic-combat`
+ *   extension. Stories not using basic-combat that want a death
+ *   channel emission must either fire `combat.player_died` themselves
+ *   or override `deathChannel` with their own closure.
+ * - `game.score_changed` — no production emitter today. The channel
+ *   listens for it, but it stays silent until a story or extension
+ *   adopts the convention. Listed for forward-compatibility.
+ *
+ * Each event carries its message in `event.data.message` (string).
  */
 export declare const STANDARD_CHANNEL_EVENTS: {
-    readonly PLAYER_DIED: "if.event.player_died";
-    readonly GAME_WON: "if.event.game_won";
-    readonly GAME_LOST: "if.event.game_lost";
-    readonly SCORE_CHANGED: "if.event.score_changed";
+    readonly PLAYER_DIED: "combat.player_died";
+    readonly GAME_WON: "game.won";
+    readonly GAME_LOST: "game.lost";
+    readonly SCORE_CHANGED: "game.score_changed";
 };
 /**
  * `main` — append-mode prose transcript. Carries `TextContent[]`
@@ -3363,13 +3375,21 @@ export declare const promptChannel: IOChannel<string>;
  */
 export declare const locationChannel: IOChannel<string>;
 /**
- * `score` — replace-mode `{current, max}` payload. Closure reads the
- * `scoring` capability from the world. Emits `undefined` (re-emits
- * prev) when the capability is absent.
+ * `score` — replace-mode `{current, max}` payload.
+ *
+ * Reads the canonical ADR-129 score ledger first (`world.getScore()`
+ * and `world.getMaxScore()`); falls back to the legacy `scoring`
+ * capability's `scoreValue`/`maxScore` for older worlds that haven't
+ * adopted the ledger. The fallback path also serves stories that
+ * track score outside the ledger (rare; ADR-129 is the recommended
+ * pattern).
  *
  * `max: null` (not `0`) signals an unbounded score per ADR-163 §4
- * commentary; `maxScore: 0` in the capability is treated as null since
- * a 0-cap scoring system has no usable progress fraction.
+ * commentary; `maxScore: 0` is treated as null since a 0-cap scoring
+ * system has no usable progress fraction.
+ *
+ * Returns `undefined` only when the world is missing entirely (test
+ * harness with a stub) — `always`-mode then re-emits prev.
  */
 export declare const scoreChannel: IOChannel<{
     current: number;
@@ -3381,17 +3401,35 @@ export declare const scoreChannel: IOChannel<{
  */
 export declare const turnChannel: IOChannel<number>;
 /**
- * `info` — replace-mode story metadata `{title, author, version}`.
- * Closure reads the `storyInfo` capability. Stories or the engine
- * register and populate this capability at startup.
+ * Wire shape for the `info` channel — full story metadata.
+ *
+ * Optional fields are omitted from the emitted payload when empty so
+ * renderers can branch cleanly on presence. The engine populates the
+ * underlying `storyInfo` capability from `StoryConfig` + `StoryInfoTrait`
+ * during `setStory()`.
  */
-export declare const infoChannel: IOChannel<{
+export interface StoryInfoPayload {
     title?: string;
     author?: string;
     version?: string;
-}>;
+    description?: string;
+    buildDate?: string;
+    engineVersion?: string;
+    clientVersion?: string;
+}
 /**
- * `ifid` — replace-mode IFID string. Closure reads `storyInfo.ifid`.
+ * `info` — replace-mode story metadata. Closure projects every
+ * non-empty field from the `storyInfo` capability into a single
+ * payload object. The same payload is consumed by the browser
+ * `info` renderer (sets `document.title` + `data-*` attributes) and
+ * by any author-supplied dashboards.
+ */
+export declare const infoChannel: IOChannel<StoryInfoPayload>;
+/**
+ * `ifid` — replace-mode IFID string. Closure reads `storyInfo.ifid`
+ * and skips emission when the value is empty (sparse-suppress style),
+ * so stories without an IFID don't emit empty strings into the
+ * channel state.
  */
 export declare const ifidChannel: IOChannel<string>;
 /**

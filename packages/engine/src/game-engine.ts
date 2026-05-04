@@ -340,22 +340,45 @@ export class GameEngine {
     // Seed the `storyInfo` capability for ADR-163 `infoChannel` /
     // `ifidChannel` to project. Channels read from the world via
     // `world.getCapability('storyInfo')`; this is the single
-    // population point. Story authors that need extra info-fields can
-    // call `world.updateCapability('storyInfo', { ... })` from
-    // `initialize()`.
+    // population point. Two sources merge:
+    //   - `StoryConfig` — authoritative for title/author/version/ifid
+    //     and the description / buildDate when set there.
+    //   - `StoryInfoTrait` (populated by the story during
+    //     `initializeWorld`) — carries build-pipeline metadata
+    //     (`engineVersion`, `clientVersion`, sometimes `buildDate` /
+    //     `description` set by the story rather than the config).
+    // Config values win on conflict; trait values fill in the gaps.
+    const storyInfoEntities = this.world.findByTrait(TraitType.STORY_INFO);
+    const trait = storyInfoEntities[0]?.get<StoryInfoTrait>(TraitType.STORY_INFO);
+    const initialStoryInfo: Record<string, string> = {
+      title: story.config.title,
+      author: this.context.metadata.author,
+      version: story.config.version,
+    };
+    if (story.config.ifid) initialStoryInfo.ifid = story.config.ifid;
+    if (story.config.description) initialStoryInfo.description = story.config.description;
+    if (story.config.buildDate) initialStoryInfo.buildDate = story.config.buildDate;
+    // Trait values fill in fields the config didn't set.
+    if (trait?.description && !initialStoryInfo.description) {
+      initialStoryInfo.description = trait.description;
+    }
+    if (trait?.buildDate && !initialStoryInfo.buildDate) {
+      initialStoryInfo.buildDate = trait.buildDate;
+    }
+    if (trait?.engineVersion) initialStoryInfo.engineVersion = trait.engineVersion;
+    if (trait?.clientVersion) initialStoryInfo.clientVersion = trait.clientVersion;
     this.world.registerCapability('storyInfo', {
       schema: {
         title: { type: 'string', default: '' },
         author: { type: 'string', default: '' },
         version: { type: 'string', default: '' },
         ifid: { type: 'string', default: '' },
+        description: { type: 'string', default: '' },
+        buildDate: { type: 'string', default: '' },
+        engineVersion: { type: 'string', default: '' },
+        clientVersion: { type: 'string', default: '' },
       },
-      initialData: {
-        title: story.config.title,
-        author: this.context.metadata.author,
-        version: story.config.version,
-        ...(story.config.ifid ? { ifid: story.config.ifid } : {}),
-      },
+      initialData: initialStoryInfo,
     });
 
     // Copy implicit actions config to context (ADR-104)
@@ -588,11 +611,17 @@ export class GameEngine {
     }
 
     // Channel-I/O bootstrap (ADR-163 §13, §14):
-    //  1. Story registers / overrides channels on the shared registry.
-    //  2. Engine constructs a fresh ChannelService bound to the
+    //  1. Refresh `storyInfo` from `StoryInfoTrait` — pulls in the
+    //     build-pipeline metadata (engineVersion / clientVersion /
+    //     buildDate) that may have been patched onto the trait
+    //     between `setStory()` and here (e.g., `BrowserClient.start()`
+    //     sets clientVersion just before calling `engine.start()`).
+    //  2. Story registers / overrides channels on the shared registry.
+    //  3. Engine constructs a fresh ChannelService bound to the
     //     negotiated capabilities.
-    //  3. Manifest fires before the first turn — bootstrap-order
+    //  4. Manifest fires before the first turn — bootstrap-order
     //     invariant from §11.
+    this.refreshStoryInfoCapability();
     this.clientCapabilities = options?.capabilities ?? DEFAULT_TEXT_CAPABILITIES;
     this.story?.registerChannels?.(channelRegistry);
     this.channelService = new ChannelService(channelRegistry, this.clientCapabilities);
@@ -637,6 +666,32 @@ export class GameEngine {
     this.emitGameEvent(startedEvent);
 
     this.emit('state:changed', this.context);
+  }
+
+  /**
+   * Refresh the `storyInfo` capability from the current
+   * `StoryInfoTrait`. Called once during `start()` (before the
+   * `ChannelService` is constructed) so `infoChannel` / `ifidChannel`
+   * project the trait's late-stage values (`engineVersion`,
+   * `clientVersion`, `buildDate`) that consumers may have patched
+   * after `setStory()`.
+   *
+   * No-op when no `StoryInfoTrait` is found (legacy stories that
+   * don't use the trait still get the `StoryConfig`-only values from
+   * the initial `setStory()` registration).
+   */
+  private refreshStoryInfoCapability(): void {
+    const entities = this.world.findByTrait(TraitType.STORY_INFO);
+    const trait = entities[0]?.get<StoryInfoTrait>(TraitType.STORY_INFO);
+    if (!trait) return;
+    const update: Record<string, string> = {};
+    if (trait.engineVersion) update.engineVersion = trait.engineVersion;
+    if (trait.clientVersion) update.clientVersion = trait.clientVersion;
+    if (trait.buildDate) update.buildDate = trait.buildDate;
+    if (trait.description) update.description = trait.description;
+    if (Object.keys(update).length > 0) {
+      this.world.updateCapability('storyInfo', update);
+    }
   }
 
   /**

@@ -43,6 +43,12 @@ export function createMainChannelRenderer(
         if (!Array.isArray(entry)) continue;
         const p = doc.createElement('p');
         p.classList.add('main-entry');
+        // Preserve newlines inside string nodes — text-service blocks
+        // commonly carry `\n\n`-separated banners or multi-line prose
+        // in a single block. Without `pre-line`, the browser collapses
+        // those to single spaces. Mirrors the legacy `TextDisplay`
+        // behavior R5-C replaced.
+        p.style.whiteSpace = 'pre-line';
         p.appendChild(renderTextContent(doc, entry as ReadonlyArray<TextContent>));
         slot.appendChild(p);
       }

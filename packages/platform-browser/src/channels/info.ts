@@ -20,11 +20,25 @@ export interface InfoChannelRendererOptions {
 }
 
 /**
- * `info` channel — replace, json `{ title, author, version }`.
+ * `info` channel — replace, json. Full story metadata.
  *
- * The renderer sets `document.title` from `value.title`. Author /
- * version are stored as `data-` attributes on the slot for stories
- * that want to surface them.
+ * The renderer sets `document.title` from `value.title` and projects
+ * every non-empty payload field as a `data-<field>` attribute on the
+ * slot. Stories or author scripts query the slot for the fields they
+ * want to display (about dialog, footer credits, etc.).
+ *
+ * Fields handled:
+ *  - `title` → `document.title` and `data-title`
+ *  - `author` → `data-author`
+ *  - `version` → `data-version`
+ *  - `description` → `data-description`
+ *  - `buildDate` → `data-build-date`
+ *  - `engineVersion` → `data-engine-version`
+ *  - `clientVersion` → `data-client-version`
+ *
+ * Empty fields are skipped (the channel closure already filters
+ * empties); the renderer does not clear stale attributes between
+ * emissions because story info is stable across a session.
  */
 export function createInfoChannelRenderer(
   slot: HTMLElement,
@@ -34,7 +48,15 @@ export function createInfoChannelRenderer(
   return {
     onValue(value: unknown): void {
       if (!value || typeof value !== 'object') return;
-      const data = value as { title?: string; author?: string; version?: string };
+      const data = value as {
+        title?: string;
+        author?: string;
+        version?: string;
+        description?: string;
+        buildDate?: string;
+        engineVersion?: string;
+        clientVersion?: string;
+      };
       if (typeof data.title === 'string') {
         doc.title = data.title;
         slot.setAttribute('data-title', data.title);
@@ -44,6 +66,18 @@ export function createInfoChannelRenderer(
       }
       if (typeof data.version === 'string') {
         slot.setAttribute('data-version', data.version);
+      }
+      if (typeof data.description === 'string') {
+        slot.setAttribute('data-description', data.description);
+      }
+      if (typeof data.buildDate === 'string') {
+        slot.setAttribute('data-build-date', data.buildDate);
+      }
+      if (typeof data.engineVersion === 'string') {
+        slot.setAttribute('data-engine-version', data.engineVersion);
+      }
+      if (typeof data.clientVersion === 'string') {
+        slot.setAttribute('data-client-version', data.clientVersion);
       }
     },
   };

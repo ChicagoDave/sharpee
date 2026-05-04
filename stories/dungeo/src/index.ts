@@ -161,6 +161,10 @@ export const config: StoryConfig = {
   version: VERSION_INFO.version,
   buildDate: VERSION_INFO.buildDate,
   description: "A port of Mainframe Zork (1981)",
+  // IFID per Treaty of Babel — minted 2026-05-04 with
+  // `generateIfid()` from @sharpee/core. STABLE: do not regenerate;
+  // saves and IFDB cataloguing depend on this value never changing.
+  ifid: "4AEC2636-8CF1-4BC7-A6C4-BFB956B8EC1F",
   custom: {
     portedBy: "David Cornelson"
   }

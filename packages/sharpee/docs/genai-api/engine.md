@@ -1125,6 +1125,19 @@ export declare class GameEngine {
         capabilities?: ClientCapabilities;
     }): void;
     /**
+     * Refresh the `storyInfo` capability from the current
+     * `StoryInfoTrait`. Called once during `start()` (before the
+     * `ChannelService` is constructed) so `infoChannel` / `ifidChannel`
+     * project the trait's late-stage values (`engineVersion`,
+     * `clientVersion`, `buildDate`) that consumers may have patched
+     * after `setStory()`.
+     *
+     * No-op when no `StoryInfoTrait` is found (legacy stories that
+     * don't use the trait still get the `StoryConfig`-only values from
+     * the initial `setStory()` registration).
+     */
+    private refreshStoryInfoCapability;
+    /**
      * Build and emit a `channel:packet` for the turn just processed.
      * Co-fires with `text:output` at every block-emission site so
      * channel consumers and legacy text-service consumers see the same

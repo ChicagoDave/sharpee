@@ -88,6 +88,20 @@ export interface BrowserClientConfig {
    * mode that suppresses media channels.
    */
   clientCapabilities?: import('@sharpee/if-domain').ClientCapabilities;
+
+  /**
+   * Log every `channel:packet` payload to the browser console for
+   * debugging. Each turn emits one `console.log('[channel:packet
+   * turn=X]', payload)` line; DevTools renders the payload as an
+   * expandable JSON tree.
+   *
+   * Off by default. Authors can also enable at runtime without
+   * rebuilding via either:
+   *  - URL query: `?debug-channels=1`
+   *  - localStorage: `localStorage.setItem('sharpee-debug-channels', '1')`
+   * Any of the three (config flag, query, localStorage) turns it on.
+   */
+  debugChannels?: boolean;
 }
 
 /**

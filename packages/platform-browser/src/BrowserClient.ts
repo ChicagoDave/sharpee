@@ -331,6 +331,26 @@ export class BrowserClient implements BrowserClientInterface {
       },
     });
 
+    // Prompt override — when the host page provides its own visible
+    // prompt label (`.prompt` span etc.), only update that element.
+    // The platform-default renderer ALSO sets `input.placeholder`,
+    // which would render a second visible `> ` inside the empty
+    // input field. Suppress the placeholder set when the label is
+    // adopted from the host.
+    if (
+      this.channelLayout &&
+      !this.channelLayout.inputPromptLabel.hidden &&
+      this.channelLayout.inputPromptLabel.id !== 'sharpee-input-prompt'
+    ) {
+      const label = this.channelLayout.inputPromptLabel;
+      this.channelRenderer.registerRenderer('prompt', {
+        onValue: (value) => {
+          if (typeof value !== 'string') return;
+          label.textContent = value;
+        },
+      });
+    }
+
     // Score+turn composite override — host page combines them in one
     // element. The override renderers maintain local caches so each
     // emission updates the combined string without losing the other
@@ -356,11 +376,24 @@ export class BrowserClient implements BrowserClientInterface {
       });
     }
 
+    const debugChannels = this.shouldDebugChannels();
+    if (debugChannels) {
+      this.engine.on('channel:manifest', (cmgt: CmgtPacket) => {
+        // eslint-disable-next-line no-console
+        console.log('[channel:manifest]', cmgt);
+      });
+    }
+
     this.engine.on('channel:manifest', (cmgt: CmgtPacket) => {
       this.channelRenderer?.applyCmgt(cmgt);
     });
     this.engine.on('channel:packet', (packet: TurnPacket, turn: number) => {
       this.channelRenderer?.applyTurnPacket(packet);
+
+      if (debugChannels) {
+        // eslint-disable-next-line no-console
+        console.log(`[channel:packet ${packet.turn_id}]`, packet.payload);
+      }
 
       // Auto-save piggy-backs on the per-turn channel packet. ADR-163
       // §1: channel:packet fires every turn after text-service runs,
@@ -404,7 +437,16 @@ export class BrowserClient implements BrowserClientInterface {
     const statusTurn = ensureHidden('sharpee-status-turn', status, 'span');
     const sidebar = ensureHidden('sharpee-sidebar', mainWindow, 'aside');
     const inputContainer = els.commandInput?.parentElement ?? ensureHidden('sharpee-input', mainWindow);
-    const inputPromptLabel = ensureHidden('sharpee-input-prompt', inputContainer, 'span');
+    // Host pages commonly include a static `<span class="prompt">>` /
+    // similar visible prompt label in the input row. Adopt it as the
+    // prompt slot so the channel renderer updates the existing visible
+    // element instead of a hidden synthetic span. Falls back to the
+    // hidden synthesized span when the host doesn't supply one.
+    const existingPromptLabel = inputContainer.querySelector(
+      '.prompt, [data-role="prompt"], #sharpee-input-prompt',
+    ) as HTMLElement | null;
+    const inputPromptLabel =
+      existingPromptLabel ?? ensureHidden('sharpee-input-prompt', inputContainer, 'span');
     if (!inputPromptLabel.textContent) inputPromptLabel.textContent = '> ';
     const input = (els.commandInput ?? (() => {
       const i = doc.createElement('input');
@@ -433,6 +475,34 @@ export class BrowserClient implements BrowserClientInterface {
       notify,
       meta,
     };
+  }
+
+  /**
+   * True when channel-debug logging is enabled. Three opt-in paths
+   * (any one is sufficient):
+   *  1. `BrowserClientConfig.debugChannels: true`
+   *  2. URL query string `?debug-channels=1` (or any truthy value)
+   *  3. `localStorage['sharpee-debug-channels']` set to a truthy value
+   *
+   * Lets authors flip on/off without rebuilding — useful when
+   * inspecting an installed bundle's per-turn channel emissions.
+   */
+  private shouldDebugChannels(): boolean {
+    if (this.config.debugChannels) return true;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('debug-channels');
+      if (q && q !== '0' && q !== 'false') return true;
+    } catch {
+      // window.location not available — non-browser host.
+    }
+    try {
+      const ls = window.localStorage?.getItem('sharpee-debug-channels');
+      if (ls && ls !== '0' && ls !== 'false') return true;
+    } catch {
+      // localStorage blocked or unavailable.
+    }
+    return false;
   }
 
   /**
