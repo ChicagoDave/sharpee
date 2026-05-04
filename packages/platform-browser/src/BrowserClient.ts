@@ -233,9 +233,26 @@ export class BrowserClient implements BrowserClientInterface {
    * `channel:packet` event in `setupChannelRenderer`.
    */
   private setupEngineHandlers(): void {
-    // Handle game events
+    const debugChannels = this.shouldDebugChannels();
+    // Handle game events. Per ADR-163, the SOLE display path is
+    // channel:packet — every job done here is something that doesn't
+    // fit the channel model:
+    //  - audio.* routing → AudioManager (legacy event vocabulary;
+    //    Tier C migration to media.* events deferred)
+    //  - story-defined custom events → handleStoryEvent callback
+    //  - error beep (`command.failed`, `action.blocked`) → platform-
+    //    signal feedback, not display data
+    //  - save/restore platform events → lifecycle signals; user-
+    //    facing text is now routed through `appendSystemMessage`
+    //    which writes to the main slot via the same DOM the channel
+    //    renderer uses
     this.engine.on('event', (event: ISemanticEvent) => {
-      console.log('[event]', event.type, event.data);
+      // Console debug-log for every event — gated on the same toggle
+      // as channel:packet logs to keep the console clean by default.
+      if (debugChannels) {
+        // eslint-disable-next-line no-console
+        console.log('[event]', event.type, event.data);
+      }
 
       // Forward audio events to the audio manager
       if (event.type.startsWith('audio.')) {
@@ -256,35 +273,51 @@ export class BrowserClient implements BrowserClientInterface {
         this.beep();
       }
 
-      // Track score changes
-      if (event.type === 'game.score_changed' && event.data) {
-        const scoreData = event.data as { newScore?: number; oldScore?: number };
-        this.currentScore = scoreData.newScore ?? this.currentScore;
-        this.updateStatusLine();
-        // Celebratory beep on score increase
-        if ((scoreData.newScore ?? 0) > (scoreData.oldScore ?? 0)) {
-          this.beep(1000, 50); // Higher, shorter beep for points
-        }
-      }
-
-      // Handle platform events for save/restore
+      // Handle platform events for save/restore. The user-visible
+      // text routes through `appendSystemMessage` — it lands in the
+      // same main slot the channel renderer writes into, with a
+      // distinguishing `system-message` class so themes can style it.
       if (event.type === 'platform.save_failed') {
         const errorData = event.data as { error?: string } | undefined;
-        this.textDisplay.displayText(`[Save failed: ${errorData?.error || 'Unknown error'}]`);
+        this.appendSystemMessage(`[Save failed: ${errorData?.error || 'Unknown error'}]`);
         this.beep();
       } else if (event.type === 'platform.restore_failed') {
         const errorData = event.data as { error?: string } | undefined;
-        this.textDisplay.displayText(`[Restore failed: ${errorData?.error || 'No saved game found'}]`);
+        this.appendSystemMessage(
+          `[Restore failed: ${errorData?.error || 'No saved game found'}]`,
+        );
         this.beep();
       } else if (event.type === 'platform.restore_completed') {
         const restoreData = event.data as { turnCount?: number } | undefined;
         if (restoreData?.turnCount !== undefined) {
           this.currentTurn = restoreData.turnCount;
         }
-        this.updateStatusLine();
+        this.renderCombinedStatus();
       }
-
     });
+  }
+
+  /**
+   * Append a platform-signal message to the main slot. Mirrors the
+   * `mainChannelRenderer`'s DOM shape (`<p class="main-entry">` with
+   * `pre-line` whitespace) plus a `system-message` class for theme
+   * styling. Used for save/restore feedback strings that aren't
+   * routed through the engine's text-service block production.
+   *
+   * Falls back to no-op if the channel layout hasn't been initialized
+   * (engine not yet started).
+   */
+  private appendSystemMessage(text: string): void {
+    const slot = this.channelLayout?.main;
+    if (!slot) return;
+    const doc = slot.ownerDocument;
+    const p = doc.createElement('p');
+    p.classList.add('main-entry', 'system-message');
+    p.style.whiteSpace = 'pre-line';
+    p.textContent = text;
+    slot.appendChild(p);
+    const win = this.elements?.mainWindow ?? slot.parentElement;
+    if (win) win.scrollTop = win.scrollHeight;
   }
 
   /**
