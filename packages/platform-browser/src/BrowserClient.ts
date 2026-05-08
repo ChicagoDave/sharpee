@@ -153,7 +153,6 @@ export class BrowserClient implements BrowserClientInterface {
     // Create dialog manager
     this.dialogManager = new DialogManager({
       elements: {
-        modalOverlay: this.elements.modalOverlay,
         saveDialog: this.elements.saveDialog,
         restoreDialog: this.elements.restoreDialog,
         startupDialog: this.elements.startupDialog,
@@ -409,7 +408,7 @@ export class BrowserClient implements BrowserClientInterface {
     // element instead of a hidden synthetic span. Falls back to the
     // hidden synthesized span when the host doesn't supply one.
     const existingPromptLabel = inputContainer.querySelector(
-      '.prompt, [data-role="prompt"], #sharpee-input-prompt',
+      '.sharpee-input-prompt, [data-role="prompt"], #sharpee-input-prompt',
     ) as HTMLElement | null;
     const inputPromptLabel =
       existingPromptLabel ?? ensureHidden('sharpee-input-prompt', inputContainer, 'span');

@@ -4,111 +4,112 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sharpee</title>
+  <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="game-container">
-    <!-- Menu Bar -->
-    <div id="menu-bar">
-      <span id="menu-title">Sharpee</span>
-      <div id="menu-items">
-        <div class="menu-item">
-          <button class="menu-button" id="file-menu-btn">File</button>
-          <div class="menu-dropdown" id="file-menu">
-            <div class="menu-option" id="menu-save">Save Game...</div>
-            <div class="menu-option" id="menu-restore">Restore Game...</div>
-            <div class="menu-separator"></div>
-            <div class="menu-option" id="menu-restart">Restart</div>
-            <div class="menu-option" id="menu-quit">Quit</div>
-          </div>
-        </div>
-        <div class="menu-item">
-          <button class="menu-button" id="settings-menu-btn">Settings</button>
-          <div class="menu-dropdown" id="settings-menu">
-            <div class="menu-submenu">
-              <div class="menu-option menu-has-submenu">Theme &#9656;</div>
-              <div class="menu-dropdown submenu" id="theme-menu">
-                <div class="menu-option theme-option" data-theme="dos-classic">DOS Classic</div>
-                <div class="menu-option theme-option" data-theme="modern-dark">Modern Dark</div>
-                <div class="menu-option theme-option" data-theme="retro-terminal">Retro Terminal</div>
-                <div class="menu-option theme-option" data-theme="paper">Paper</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="menu-item">
-          <button class="menu-button" id="help-menu-btn">Help</button>
-          <div class="menu-dropdown" id="help-menu">
-            <div class="menu-option" id="menu-help">Commands...</div>
-            <div class="menu-separator"></div>
-            <div class="menu-option" id="menu-about">About...</div>
-          </div>
-        </div>
-      </div>
+  <div class="sharpee-window">
+    <div class="sharpee-window-title-bar">
+      <span id="menu-title" class="sharpee-window-title">Sharpee</span>
+      <div class="sharpee-window-title-bar-controls" aria-hidden="true"></div>
     </div>
 
-    <div id="status-line">
+    <menu role="menubar" id="menu-bar" class="sharpee-menu-bar">
+      <li role="none" class="sharpee-menu-bar-item">
+        <button role="menuitem" id="file-menu-btn" class="sharpee-menu-bar-trigger" aria-haspopup="menu" aria-expanded="false">File</button>
+        <ul role="menu" id="file-menu" class="sharpee-menu-dropdown">
+          <li role="menuitem" id="menu-save" class="sharpee-menu-option">Save Game...</li>
+          <li role="menuitem" id="menu-restore" class="sharpee-menu-option">Restore Game...</li>
+          <li role="separator" class="sharpee-menu-separator"></li>
+          <li role="menuitem" id="menu-restart" class="sharpee-menu-option">Restart</li>
+          <li role="menuitem" id="menu-quit" class="sharpee-menu-option">Quit</li>
+        </ul>
+      </li>
+      <li role="none" class="sharpee-menu-bar-item">
+        <button role="menuitem" id="settings-menu-btn" class="sharpee-menu-bar-trigger" aria-haspopup="menu" aria-expanded="false">Settings</button>
+        <ul role="menu" id="settings-menu" class="sharpee-menu-dropdown">
+          <li role="menuitem" class="sharpee-menu-option" aria-haspopup="menu">
+            <span>Theme</span>
+            <span class="sharpee-menu-submenu-indicator" aria-hidden="true">&#9656;</span>
+            <ul role="menu" id="theme-menu" class="sharpee-menu-dropdown">
+              <li role="menuitemradio" class="sharpee-menu-option" data-theme="dos-classic">DOS Classic</li>
+              <li role="menuitemradio" class="sharpee-menu-option" data-theme="modern-dark">Modern Dark</li>
+              <li role="menuitemradio" class="sharpee-menu-option" data-theme="retro-terminal">Retro Terminal</li>
+              <li role="menuitemradio" class="sharpee-menu-option" data-theme="paper">Paper</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li role="none" class="sharpee-menu-bar-item">
+        <button role="menuitem" id="help-menu-btn" class="sharpee-menu-bar-trigger" aria-haspopup="menu" aria-expanded="false">Help</button>
+        <ul role="menu" id="help-menu" class="sharpee-menu-dropdown">
+          <li role="menuitem" id="menu-help" class="sharpee-menu-option">Commands...</li>
+          <li role="separator" class="sharpee-menu-separator"></li>
+          <li role="menuitem" id="menu-about" class="sharpee-menu-option">About...</li>
+        </ul>
+      </li>
+    </menu>
+
+    <div id="status-line" class="sharpee-status-bar">
       <span id="location-name"></span>
       <span id="score-turns">Score: 0 | Turns: 0</span>
     </div>
-    <div id="main-window">
+
+    <div id="main-window" class="sharpee-prose-pane">
       <div id="text-content"></div>
+      <div class="sharpee-prose-overlay" aria-hidden="true"></div>
     </div>
-    <div id="input-area">
-      <span class="prompt">&gt;</span>
-      <input id="command-input" type="text"
+
+    <div id="input-area" class="sharpee-input-bar">
+      <span class="sharpee-input-prompt">&gt;</span>
+      <input id="command-input" class="sharpee-input-field" type="text"
              autocomplete="off" autocapitalize="none"
              spellcheck="false" autofocus>
     </div>
   </div>
 
-  <!-- Save/Restore Modal Dialogs -->
-  <div id="modal-overlay" class="modal-hidden">
-    <!-- Save Dialog -->
-    <div id="save-dialog" class="modal-dialog modal-hidden">
-      <div class="modal-title">SAVE GAME</div>
-      <div class="modal-content">
-        <div class="save-input-row">
-          <label for="save-name-input">Save name:</label>
-          <input type="text" id="save-name-input" maxlength="30"
-                 autocomplete="off" spellcheck="false">
-        </div>
-        <div class="saves-list-label">Existing saves (click to overwrite):</div>
-        <div id="save-slots-list" class="saves-list"></div>
+  <dialog id="save-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">SAVE GAME</h2>
+    <div class="sharpee-dialog-body">
+      <div class="save-input-row">
+        <label for="save-name-input">Save name:</label>
+        <input type="text" id="save-name-input" class="sharpee-input-field" maxlength="30"
+               autocomplete="off" spellcheck="false">
       </div>
-      <div class="modal-buttons">
-        <button id="save-confirm-btn" class="modal-btn">Save</button>
-        <button id="save-cancel-btn" class="modal-btn">Cancel</button>
-      </div>
+      <div class="saves-list-label">Existing saves (click to overwrite):</div>
+      <div id="save-slots-list" class="saves-list"></div>
     </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="save-confirm-btn" class="sharpee-dialog-button">Save</button>
+      <button id="save-cancel-btn" class="sharpee-dialog-button">Cancel</button>
+    </div>
+  </dialog>
 
-    <!-- Restore Dialog -->
-    <div id="restore-dialog" class="modal-dialog modal-hidden">
-      <div class="modal-title">RESTORE GAME</div>
-      <div class="modal-content">
-        <div class="saves-list-label">Select a saved game:</div>
-        <div id="restore-slots-list" class="saves-list"></div>
-        <div id="no-saves-message" class="no-saves-message modal-hidden">No saved games found.</div>
-      </div>
-      <div class="modal-buttons">
-        <button id="restore-confirm-btn" class="modal-btn">Restore</button>
-        <button id="restore-cancel-btn" class="modal-btn">Cancel</button>
-      </div>
+  <dialog id="restore-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">RESTORE GAME</h2>
+    <div class="sharpee-dialog-body">
+      <div class="saves-list-label">Select a saved game:</div>
+      <div id="restore-slots-list" class="saves-list"></div>
+      <div id="no-saves-message" class="no-saves-message" hidden>No saved games found.</div>
     </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="restore-confirm-btn" class="sharpee-dialog-button" disabled>Restore</button>
+      <button id="restore-cancel-btn" class="sharpee-dialog-button">Cancel</button>
+    </div>
+  </dialog>
 
-    <!-- Startup Dialog (continue saved game?) -->
-    <div id="startup-dialog" class="modal-dialog modal-hidden">
-      <div class="modal-title">CONTINUE GAME?</div>
-      <div class="modal-content">
-        <p id="startup-save-info" class="startup-info"></p>
-        <p class="startup-question">Continue where you left off?</p>
-      </div>
-      <div class="modal-buttons">
-        <button id="startup-continue-btn" class="modal-btn">Continue</button>
-        <button id="startup-new-btn" class="modal-btn">New Game</button>
-      </div>
+  <dialog id="startup-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">CONTINUE GAME?</h2>
+    <div class="sharpee-dialog-body">
+      <p id="startup-save-info" class="startup-info"></p>
+      <p class="startup-question">Continue where you left off?</p>
     </div>
-  </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="startup-continue-btn" class="sharpee-dialog-button">Continue</button>
+      <button id="startup-new-btn" class="sharpee-dialog-button">New Game</button>
+    </div>
+  </dialog>
+
   <script src="game.js"></script>
 </body>
 </html>

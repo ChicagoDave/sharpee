@@ -833,7 +833,12 @@ build_browser_client() {
         log_ok "html"
     fi
 
-    # Copy CSS
+    # Copy CSS — base.css carries structural rules (ADR-170), infocom.css
+    # carries themes; index.html links base.css before styles.css.
+    if [ -f "templates/browser/base.css" ]; then
+        cp templates/browser/base.css "$OUTDIR/base.css"
+        log_ok "base.css"
+    fi
     if [ -f "templates/browser/infocom.css" ]; then
         cp templates/browser/infocom.css "$OUTDIR/styles.css"
         log_ok "css"
@@ -852,6 +857,7 @@ build_browser_client() {
         mkdir -p "$WEBSITE_DIR"
         cp "$OUTDIR/game.js" "$WEBSITE_DIR/"
         cp "$OUTDIR/index.html" "$WEBSITE_DIR/"
+        cp "$OUTDIR/base.css" "$WEBSITE_DIR/" 2>/dev/null || true
         cp "$OUTDIR/styles.css" "$WEBSITE_DIR/"
         log_ok "website"
     fi

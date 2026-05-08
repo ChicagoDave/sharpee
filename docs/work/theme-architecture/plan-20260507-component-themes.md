@@ -114,7 +114,7 @@ This keeps the architectural change isolated and risk-bounded. If a theme looks 
 
 ---
 
-## Phase 0 — ADR + Contract Sign-off (no code)
+## Phase 0 — ADR + Contract Sign-off (no code) — COMPLETE 2026-05-07
 
 **Behavior Statement.**
 - DOES: produces an ADR and a finalized component vocabulary; gets David's sign-off before any DOM or CSS is touched.
@@ -124,19 +124,19 @@ This keeps the architectural change isolated and risk-bounded. If a theme looks 
 
 **Steps:**
 
-1. Write **ADR-170: Component-Based Theming for the Browser Client**.
+1. Write **ADR-170: Component-Based Theming for the Browser Client**. ✓ Written 2026-05-07.
    - Context: today's variable-swap themes can't express structurally distinct kits; system.css integration forced the question; long-running architectural direction is author-customizable UI (`feedback_web_client_author_customizable`, ADR-163 channels-as-universal-UI-surface, the 2026-04-29 author-enabled-client blog post).
    - Decision: published component vocabulary + per-theme CSS kits + base layer.
    - Consequences: contract becomes a stable platform commitment; each theme is bigger to author than before; system.css and future story-shipped themes drop in naturally; theme files become independently shippable artifacts.
    - Acceptance criteria for the ADR itself: per-component class list with rationale; decoration-slot decisions; semantic-HTML decisions; explicit migration commitment ("ported, not redesigned").
 
-2. Run `/adr-review 170` — must reach READY FOR IMPLEMENTATION before Phase 1.
+2. Run `/adr-review 170`. ✓ Result: 15/15 PASS — READY FOR IMPLEMENTATION (2026-05-07). Three non-blocking observations recorded in session summary; addressed during implementation, not as ADR amendments.
 
-3. Capture **baseline screenshots** of all four current themes at three states (idle, menu open, save dialog open). Stored in `docs/work/theme-architecture/baseline-screenshots/`. These are the visual-regression gate for Phase 2.
+3. ~~Capture baseline screenshots of all four current themes at three states.~~ **Skipped** by David's call (2026-05-07). Without an automated visual-diff tool in the project, screenshots become an informal memory aid; `git checkout` of `infocom.css` during Phase 2 gives a live A/B comparison with exact font/scrollbar match. If a single ambiguous state arises during Phase 2, capture *that state* then.
 
-**Deliverables**: `docs/architecture/adrs/adr-170-component-based-theming.md` reaching READY; baseline screenshot set committed.
+**Deliverables**: `docs/architecture/adrs/adr-170-component-based-theming.md` at READY FOR IMPLEMENTATION. ✓
 
-**Gate to Phase 1**: David approves the ADR.
+**Gate to Phase 1**: David approves the ADR. ✓ Approved by proceeding from Phase 0 (2026-05-07).
 
 ---
 

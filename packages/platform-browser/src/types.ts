@@ -123,11 +123,10 @@ export interface DOMElements {
   mainWindow: HTMLElement | null;
   commandInput: HTMLInputElement | null;
 
-  // Modal elements
-  modalOverlay: HTMLElement | null;
-  saveDialog: HTMLElement | null;
-  restoreDialog: HTMLElement | null;
-  startupDialog: HTMLElement | null;
+  // Modal elements (native HTML <dialog> per ADR-170)
+  saveDialog: HTMLDialogElement | null;
+  restoreDialog: HTMLDialogElement | null;
+  startupDialog: HTMLDialogElement | null;
   saveNameInput: HTMLInputElement | null;
   saveSlotsListEl: HTMLElement | null;
   restoreSlotsListEl: HTMLElement | null;
@@ -200,13 +199,12 @@ export interface MenuHandlers {
 }
 
 /**
- * Dialog elements subset
+ * Dialog elements subset (native HTML <dialog> per ADR-170)
  */
 export interface DialogElements {
-  modalOverlay: HTMLElement | null;
-  saveDialog: HTMLElement | null;
-  restoreDialog: HTMLElement | null;
-  startupDialog: HTMLElement | null;
+  saveDialog: HTMLDialogElement | null;
+  restoreDialog: HTMLDialogElement | null;
+  startupDialog: HTMLDialogElement | null;
   saveNameInput: HTMLInputElement | null;
   saveSlotsListEl: HTMLElement | null;
   restoreSlotsListEl: HTMLElement | null;

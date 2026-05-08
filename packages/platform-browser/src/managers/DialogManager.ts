@@ -1,25 +1,28 @@
 /**
- * DialogManager - handles modal dialogs (save, restore, startup)
+ * DialogManager - handles modal dialogs (save, restore, startup).
+ *
+ * Per ADR-170, dialogs are native HTML <dialog> elements. Visibility
+ * is controlled by `showModal()` / `close()`; ESC and backdrop-click
+ * are handled by the browser. The manager attaches a `close` event
+ * listener on each dialog so that any close (button, ESC, backdrop)
+ * resolves the pending promise consistently. Buttons set the dialog's
+ * `returnValue` before closing to communicate intent.
  */
 
 import type { DialogElements, SaveSlotMeta } from '../types';
 import { AUTOSAVE_SLOT } from '../types';
 import type { SaveManager } from './SaveManager';
 
+const RESULT_CONFIRM = 'confirm';
+const RESULT_CANCEL = 'cancel';
+
 export interface DialogManagerConfig {
-  /** DOM element references for dialogs */
   elements: DialogElements;
-  /** SaveManager reference for save operations */
   saveManager: SaveManager;
-  /** Callback when dialog opens (to disable game input) */
   onDialogOpen?: () => void;
-  /** Callback when dialog closes (to re-enable game input) */
   onDialogClose?: () => void;
-  /** Generate suggested save name */
   generateSaveName: () => string;
-  /** Sanitize save name */
   sanitizeSaveName: (name: string) => string;
-  /** Perform save operation */
   performSave: (slotName: string) => void;
 }
 
@@ -32,11 +35,9 @@ export class DialogManager {
   private sanitizeSaveName: (name: string) => string;
   private performSave: (slotName: string) => void;
 
-  // Dialog state
   private _isDialogOpen = false;
   private selectedSaveSlot: string | null = null;
 
-  // Pending promise resolvers
   private pendingSaveResolve: ((saved: boolean) => void) | null = null;
   private pendingRestoreResolve: ((slotName: string | null) => void) | null = null;
   private pendingStartupResolve: ((shouldContinue: boolean) => void) | null = null;
@@ -51,24 +52,15 @@ export class DialogManager {
     this.performSave = config.performSave;
   }
 
-  /**
-   * Check if any dialog is currently open
-   */
   isDialogOpen(): boolean {
     return this._isDialogOpen;
   }
 
-  /**
-   * Show the save dialog
-   */
   showSaveDialog(): Promise<boolean> {
     return new Promise((resolve) => {
-      console.log('[save-dialog] Opening save dialog...');
-
-      const { modalOverlay, saveDialog, saveNameInput, saveSlotsListEl } = this.elements;
-
-      if (!modalOverlay || !saveDialog) {
-        console.error('[save-dialog] Modal elements not found!');
+      const { saveDialog, saveNameInput, saveSlotsListEl } = this.elements;
+      if (!saveDialog) {
+        console.error('[save-dialog] saveDialog element not found');
         resolve(false);
         return;
       }
@@ -78,52 +70,24 @@ export class DialogManager {
       this.selectedSaveSlot = null;
       this.onDialogOpen?.();
 
-      // Populate save slots list
       this.populateSaveSlotsList(saveSlotsListEl, true);
 
-      // Set suggested save name
       if (saveNameInput) {
         saveNameInput.value = this.generateSaveName();
         saveNameInput.select();
       }
 
-      // Show dialog
-      modalOverlay.classList.remove('modal-hidden');
-      saveDialog.classList.remove('modal-hidden');
-
-      // Focus name input
+      saveDialog.returnValue = '';
+      saveDialog.showModal();
       saveNameInput?.focus();
     });
   }
 
-  /**
-   * Hide the save dialog
-   */
-  hideSaveDialog(saved: boolean): void {
-    const { modalOverlay, saveDialog } = this.elements;
-
-    modalOverlay?.classList.add('modal-hidden');
-    saveDialog?.classList.add('modal-hidden');
-    this._isDialogOpen = false;
-    this.onDialogClose?.();
-
-    if (this.pendingSaveResolve) {
-      this.pendingSaveResolve(saved);
-      this.pendingSaveResolve = null;
-    }
-  }
-
-  /**
-   * Show the restore dialog
-   */
   showRestoreDialog(): Promise<string | null> {
     return new Promise((resolve) => {
-      console.log('[restore-dialog] Opening restore dialog...');
-
-      const { modalOverlay, restoreDialog, restoreSlotsListEl, noSavesMessage } = this.elements;
-
-      if (!modalOverlay || !restoreDialog) {
-        console.error('[restore-dialog] Modal elements not found!');
+      const { restoreDialog, restoreSlotsListEl, noSavesMessage } = this.elements;
+      if (!restoreDialog) {
+        console.error('[restore-dialog] restoreDialog element not found');
         resolve(null);
         return;
       }
@@ -133,68 +97,32 @@ export class DialogManager {
       this.selectedSaveSlot = null;
       this.onDialogOpen?.();
 
-      // Get user saves (excluding autosave)
       const userSaves = this.saveManager.getUserSaves();
-      console.log('[restore-dialog] Available saves:', userSaves);
-
-      // Populate restore slots list
       this.populateSaveSlotsList(restoreSlotsListEl, false);
 
-      // Show/hide no saves message
-      if (noSavesMessage) {
-        if (userSaves.length === 0) {
-          noSavesMessage.classList.remove('modal-hidden');
-          restoreSlotsListEl?.classList.add('modal-hidden');
-        } else {
-          noSavesMessage.classList.add('modal-hidden');
-          restoreSlotsListEl?.classList.remove('modal-hidden');
-        }
+      if (noSavesMessage && restoreSlotsListEl) {
+        const empty = userSaves.length === 0;
+        noSavesMessage.hidden = !empty;
+        restoreSlotsListEl.hidden = empty;
       }
 
-      // Restore button disabled until a slot is selected
-      const restoreBtn = document.getElementById('restore-confirm-btn') as HTMLButtonElement;
-      if (restoreBtn) {
-        restoreBtn.disabled = true;
-      }
+      const restoreBtn = document.getElementById('restore-confirm-btn') as HTMLButtonElement | null;
+      if (restoreBtn) restoreBtn.disabled = true;
 
-      // Show dialog
-      modalOverlay.classList.remove('modal-hidden');
-      restoreDialog.classList.remove('modal-hidden');
+      restoreDialog.returnValue = '';
+      restoreDialog.showModal();
 
-      // Focus first save slot or cancel button
       if (userSaves.length > 0) {
-        const firstSlot = restoreSlotsListEl?.querySelector('.save-slot') as HTMLElement;
+        const firstSlot = restoreSlotsListEl?.querySelector('.save-slot') as HTMLElement | null;
         firstSlot?.focus();
       }
     });
   }
 
-  /**
-   * Hide the restore dialog
-   */
-  hideRestoreDialog(slotName: string | null): void {
-    const { modalOverlay, restoreDialog } = this.elements;
-
-    modalOverlay?.classList.add('modal-hidden');
-    restoreDialog?.classList.add('modal-hidden');
-    this._isDialogOpen = false;
-    this.onDialogClose?.();
-
-    if (this.pendingRestoreResolve) {
-      this.pendingRestoreResolve(slotName);
-      this.pendingRestoreResolve = null;
-    }
-  }
-
-  /**
-   * Show the startup dialog (continue saved game or start new?)
-   */
   showStartupDialog(meta: SaveSlotMeta): Promise<boolean> {
     return new Promise((resolve) => {
-      const { modalOverlay, startupDialog, startupSaveInfo } = this.elements;
-
-      if (!modalOverlay || !startupDialog) {
-        // Fall back to starting new game if dialog not available
+      const { startupDialog, startupSaveInfo } = this.elements;
+      if (!startupDialog) {
         resolve(false);
         return;
       }
@@ -202,7 +130,6 @@ export class DialogManager {
       this.pendingStartupResolve = resolve;
       this._isDialogOpen = true;
 
-      // Populate save info
       if (startupSaveInfo) {
         const date = new Date(meta.timestamp);
         const dateStr = date.toLocaleDateString();
@@ -210,39 +137,20 @@ export class DialogManager {
         startupSaveInfo.textContent = `Found "${meta.name}" from ${dateStr} ${timeStr} (Turn ${meta.turnCount}, ${meta.location})`;
       }
 
-      // Show dialog
-      modalOverlay.classList.remove('modal-hidden');
-      startupDialog.classList.remove('modal-hidden');
+      startupDialog.returnValue = '';
+      startupDialog.showModal();
 
-      // Focus continue button
       const continueBtn = document.getElementById('startup-continue-btn');
       continueBtn?.focus();
     });
   }
 
   /**
-   * Hide the startup dialog
-   */
-  hideStartupDialog(shouldContinue: boolean): void {
-    const { modalOverlay, startupDialog } = this.elements;
-
-    modalOverlay?.classList.add('modal-hidden');
-    startupDialog?.classList.add('modal-hidden');
-    this._isDialogOpen = false;
-
-    if (this.pendingStartupResolve) {
-      this.pendingStartupResolve(shouldContinue);
-      this.pendingStartupResolve = null;
-    }
-  }
-
-  /**
-   * Populate a save slots list element
+   * Build a save-slot row element with click and keyboard wiring.
    */
   private populateSaveSlotsList(listEl: HTMLElement | null, forSave: boolean): void {
     if (!listEl) return;
 
-    // Get saves, filtering out autosave for restore dialog
     const allSaves = this.saveManager.getSaveIndex();
     const saves = forSave ? allSaves : allSaves.filter(s => s.name !== AUTOSAVE_SLOT);
     listEl.innerHTML = '';
@@ -275,37 +183,29 @@ export class DialogManager {
       slot.appendChild(nameSpan);
       slot.appendChild(infoSpan);
 
-      // Click handler
       slot.addEventListener('click', () => {
         this.selectSaveSlot(listEl, save.name, forSave);
       });
 
-      // Double-click for quick restore
       if (!forSave) {
         slot.addEventListener('dblclick', () => {
-          this.hideRestoreDialog(save.name);
+          this.elements.restoreDialog?.close(RESULT_CONFIRM);
         });
       }
 
-      // Keyboard handler
       slot.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           this.selectSaveSlot(listEl, save.name, forSave);
-          if (!forSave) {
-            // For restore, Enter on selected slot confirms
-            if (this.selectedSaveSlot === save.name) {
-              this.hideRestoreDialog(save.name);
-            }
+          if (!forSave && this.selectedSaveSlot === save.name) {
+            this.elements.restoreDialog?.close(RESULT_CONFIRM);
           }
         } else if (e.key === 'ArrowDown') {
           e.preventDefault();
-          const next = slot.nextElementSibling as HTMLElement;
-          next?.focus();
+          (slot.nextElementSibling as HTMLElement | null)?.focus();
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
-          const prev = slot.previousElementSibling as HTMLElement;
-          prev?.focus();
+          (slot.previousElementSibling as HTMLElement | null)?.focus();
         }
       });
 
@@ -313,118 +213,106 @@ export class DialogManager {
     }
   }
 
-  /**
-   * Select a save slot
-   */
   private selectSaveSlot(listEl: HTMLElement, slotName: string, forSave: boolean): void {
-    // Remove selection from all slots
     listEl.querySelectorAll('.save-slot').forEach(el => el.classList.remove('selected'));
-
-    // Select clicked slot
-    const slot = listEl.querySelector(`[data-slot-name="${slotName}"]`);
-    slot?.classList.add('selected');
+    listEl.querySelector(`[data-slot-name="${slotName}"]`)?.classList.add('selected');
 
     this.selectedSaveSlot = slotName;
 
-    // For save dialog, also update the name input
     if (forSave && this.elements.saveNameInput) {
       this.elements.saveNameInput.value = slotName;
     }
 
-    // For restore dialog, enable the restore button
     if (!forSave) {
-      const restoreBtn = document.getElementById('restore-confirm-btn') as HTMLButtonElement;
-      if (restoreBtn) {
-        restoreBtn.disabled = false;
-      }
+      const restoreBtn = document.getElementById('restore-confirm-btn') as HTMLButtonElement | null;
+      if (restoreBtn) restoreBtn.disabled = false;
     }
   }
 
-  /**
-   * Set up modal dialog event handlers
-   */
   setupHandlers(): void {
-    const { saveNameInput, saveDialog, restoreDialog, startupDialog, modalOverlay } = this.elements;
+    const { saveNameInput, saveDialog, restoreDialog, startupDialog } = this.elements;
 
-    // Save dialog buttons
-    const saveConfirmBtn = document.getElementById('save-confirm-btn');
-    const saveCancelBtn = document.getElementById('save-cancel-btn');
-
-    saveConfirmBtn?.addEventListener('click', () => {
+    // ----- Save dialog -----
+    document.getElementById('save-confirm-btn')?.addEventListener('click', () => {
       const name = this.sanitizeSaveName(saveNameInput?.value || this.generateSaveName());
       if (name) {
         this.performSave(name);
-        this.hideSaveDialog(true);
+        saveDialog?.close(RESULT_CONFIRM);
       }
     });
 
-    saveCancelBtn?.addEventListener('click', () => {
-      this.hideSaveDialog(false);
+    document.getElementById('save-cancel-btn')?.addEventListener('click', () => {
+      saveDialog?.close(RESULT_CANCEL);
     });
 
-    // Restore dialog buttons
-    const restoreConfirmBtn = document.getElementById('restore-confirm-btn');
-    const restoreCancelBtn = document.getElementById('restore-cancel-btn');
-
-    restoreConfirmBtn?.addEventListener('click', () => {
-      if (this.selectedSaveSlot) {
-        this.hideRestoreDialog(this.selectedSaveSlot);
-      }
-    });
-
-    restoreCancelBtn?.addEventListener('click', () => {
-      this.hideRestoreDialog(null);
-    });
-
-    // Startup dialog buttons
-    const startupContinueBtn = document.getElementById('startup-continue-btn');
-    const startupNewBtn = document.getElementById('startup-new-btn');
-
-    startupContinueBtn?.addEventListener('click', () => {
-      this.hideStartupDialog(true);
-    });
-
-    startupNewBtn?.addEventListener('click', () => {
-      this.hideStartupDialog(false);
-    });
-
-    // Enter key in save name input
     saveNameInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        const name = this.sanitizeSaveName(saveNameInput?.value || this.generateSaveName());
+        const name = this.sanitizeSaveName(saveNameInput.value || this.generateSaveName());
         if (name) {
           this.performSave(name);
-          this.hideSaveDialog(true);
-        }
-      } else if (e.key === 'Escape') {
-        this.hideSaveDialog(false);
-      }
-    });
-
-    // Escape key closes dialogs
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this._isDialogOpen) {
-        if (saveDialog && !saveDialog.classList.contains('modal-hidden')) {
-          this.hideSaveDialog(false);
-        } else if (restoreDialog && !restoreDialog.classList.contains('modal-hidden')) {
-          this.hideRestoreDialog(null);
-        } else if (startupDialog && !startupDialog.classList.contains('modal-hidden')) {
-          this.hideStartupDialog(false);
+          saveDialog?.close(RESULT_CONFIRM);
         }
       }
     });
 
-    // Click overlay to close
-    modalOverlay?.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) {
-        if (saveDialog && !saveDialog.classList.contains('modal-hidden')) {
-          this.hideSaveDialog(false);
-        } else if (restoreDialog && !restoreDialog.classList.contains('modal-hidden')) {
-          this.hideRestoreDialog(null);
-        } else if (startupDialog && !startupDialog.classList.contains('modal-hidden')) {
-          this.hideStartupDialog(false);
-        }
+    saveDialog?.addEventListener('click', (e) => {
+      if (e.target === saveDialog) saveDialog.close(RESULT_CANCEL);
+    });
+
+    saveDialog?.addEventListener('close', () => {
+      const saved = saveDialog.returnValue === RESULT_CONFIRM;
+      this._isDialogOpen = false;
+      this.onDialogClose?.();
+      if (this.pendingSaveResolve) {
+        this.pendingSaveResolve(saved);
+        this.pendingSaveResolve = null;
+      }
+    });
+
+    // ----- Restore dialog -----
+    document.getElementById('restore-confirm-btn')?.addEventListener('click', () => {
+      if (this.selectedSaveSlot) restoreDialog?.close(RESULT_CONFIRM);
+    });
+
+    document.getElementById('restore-cancel-btn')?.addEventListener('click', () => {
+      restoreDialog?.close(RESULT_CANCEL);
+    });
+
+    restoreDialog?.addEventListener('click', (e) => {
+      if (e.target === restoreDialog) restoreDialog.close(RESULT_CANCEL);
+    });
+
+    restoreDialog?.addEventListener('close', () => {
+      const slotName = restoreDialog.returnValue === RESULT_CONFIRM ? this.selectedSaveSlot : null;
+      this._isDialogOpen = false;
+      this.onDialogClose?.();
+      if (this.pendingRestoreResolve) {
+        this.pendingRestoreResolve(slotName);
+        this.pendingRestoreResolve = null;
+      }
+    });
+
+    // ----- Startup dialog -----
+    document.getElementById('startup-continue-btn')?.addEventListener('click', () => {
+      startupDialog?.close(RESULT_CONFIRM);
+    });
+
+    document.getElementById('startup-new-btn')?.addEventListener('click', () => {
+      startupDialog?.close(RESULT_CANCEL);
+    });
+
+    startupDialog?.addEventListener('click', (e) => {
+      if (e.target === startupDialog) startupDialog.close(RESULT_CANCEL);
+    });
+
+    startupDialog?.addEventListener('close', () => {
+      const shouldContinue = startupDialog.returnValue === RESULT_CONFIRM;
+      this._isDialogOpen = false;
+      // Startup dialog doesn't toggle input enable/disable — game hasn't started yet.
+      if (this.pendingStartupResolve) {
+        this.pendingStartupResolve(shouldContinue);
+        this.pendingStartupResolve = null;
       }
     });
   }

@@ -1,15 +1,20 @@
 /**
- * MenuManager - handles menu bar interactions
+ * MenuManager - handles menu bar interactions.
+ *
+ * Queries DOM by stable ids for individual controls and by .sharpee-*
+ * classes for generic affordances (per ADR-170 component contract).
+ * State is expressed via the `--open` modifier on .sharpee-menu-bar-item
+ * and the native `aria-expanded` attribute on the trigger button.
  */
 
 import type { MenuHandlers } from '../types';
 
 export interface MenuManagerConfig {
-  /** Menu bar element */
   menuBar: HTMLElement | null;
-  /** Menu action handlers */
   handlers: MenuHandlers;
 }
+
+const ITEM_OPEN_CLASS = 'sharpee-menu-bar-item--open';
 
 export class MenuManager {
   private handlers: MenuHandlers;
@@ -19,72 +24,67 @@ export class MenuManager {
   }
 
   /**
-   * Close all menu dropdowns
+   * Close every open menu and clear all aria-expanded flags.
    */
   closeAllMenus(): void {
-    document.querySelectorAll('.menu-dropdown').forEach(menu => {
-      menu.classList.remove('show');
+    document.querySelectorAll('.sharpee-menu-bar-item').forEach(item => {
+      item.classList.remove(ITEM_OPEN_CLASS);
     });
-    document.querySelectorAll('.menu-button').forEach(btn => {
-      btn.classList.remove('active');
+    document.querySelectorAll('.sharpee-menu-bar-trigger').forEach(btn => {
+      btn.setAttribute('aria-expanded', 'false');
     });
   }
 
   /**
-   * Toggle a menu dropdown
+   * Toggle the menu owned by the given trigger button. The trigger's
+   * parent .sharpee-menu-bar-item carries the --open state modifier
+   * that theme CSS reacts to.
    */
-  toggleMenu(menuBtn: HTMLElement, dropdown: HTMLElement): void {
-    const isOpen = dropdown.classList.contains('show');
+  toggleMenu(triggerEl: HTMLElement): void {
+    const item = triggerEl.closest('.sharpee-menu-bar-item') as HTMLElement | null;
+    if (!item) return;
+
+    const isOpen = item.classList.contains(ITEM_OPEN_CLASS);
     this.closeAllMenus();
     if (!isOpen) {
-      dropdown.classList.add('show');
-      menuBtn.classList.add('active');
+      item.classList.add(ITEM_OPEN_CLASS);
+      triggerEl.setAttribute('aria-expanded', 'true');
     }
   }
 
-  /**
-   * Set up menu bar event handlers
-   */
   setupHandlers(): void {
     const fileMenuBtn = document.getElementById('file-menu-btn');
-    const fileMenu = document.getElementById('file-menu');
     const settingsMenuBtn = document.getElementById('settings-menu-btn');
-    const settingsMenu = document.getElementById('settings-menu');
     const helpMenuBtn = document.getElementById('help-menu-btn');
-    const helpMenu = document.getElementById('help-menu');
 
-    // Menu button clicks
     fileMenuBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (fileMenu) this.toggleMenu(fileMenuBtn, fileMenu);
+      this.toggleMenu(fileMenuBtn);
     });
 
     settingsMenuBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (settingsMenu) this.toggleMenu(settingsMenuBtn, settingsMenu);
+      this.toggleMenu(settingsMenuBtn);
     });
 
     helpMenuBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (helpMenu) this.toggleMenu(helpMenuBtn, helpMenu);
+      this.toggleMenu(helpMenuBtn);
     });
 
-    // Close menus on outside click
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.menu-item')) {
+      if (!target.closest('.sharpee-menu-bar-item')) {
         this.closeAllMenus();
       }
     });
 
-    // Close menus on Escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.closeAllMenus();
       }
     });
 
-    // File menu actions
     document.getElementById('menu-save')?.addEventListener('click', async () => {
       this.closeAllMenus();
       await this.handlers.onSave();
@@ -105,8 +105,7 @@ export class MenuManager {
       this.handlers.onQuit();
     });
 
-    // Theme selection
-    document.querySelectorAll('.theme-option').forEach(opt => {
+    document.querySelectorAll('.sharpee-menu-option[data-theme]').forEach(opt => {
       opt.addEventListener('click', () => {
         const theme = (opt as HTMLElement).dataset.theme;
         if (theme) {
@@ -116,7 +115,6 @@ export class MenuManager {
       });
     });
 
-    // Help menu actions
     document.getElementById('menu-help')?.addEventListener('click', () => {
       this.closeAllMenus();
       this.handlers.onHelp();

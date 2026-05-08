@@ -50,7 +50,7 @@ export class InputManager {
       if (this.commandInput && !this.commandInput.disabled && !this.isDialogOpen()) {
         // Don't steal focus from dialog elements
         const target = e.target as HTMLElement;
-        if (!target.closest('.modal-dialog')) {
+        if (!target.closest('.sharpee-dialog')) {
           this.commandInput.focus();
         }
       }
@@ -142,7 +142,7 @@ export class InputManager {
    */
   setPrompt(text: string): void {
     if (!this.commandInput) return;
-    const promptSpan = this.commandInput.parentElement?.querySelector('.prompt');
+    const promptSpan = this.commandInput.parentElement?.querySelector('.sharpee-input-prompt');
     if (promptSpan) {
       promptSpan.textContent = text;
     }

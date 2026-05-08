@@ -77,15 +77,17 @@ export class ThemeManager {
   }
 
   /**
-   * Update theme option checkmarks in the menu
+   * Update theme option checkmarks in the menu. Per ADR-170, the
+   * theme picker uses `.sharpee-menu-option[data-theme]` items and the
+   * `--checked` state modifier marks the active selection.
    */
   updateMenuCheckmarks(activeTheme: string): void {
-    document.querySelectorAll('.theme-option').forEach(opt => {
+    document.querySelectorAll('.sharpee-menu-option[data-theme]').forEach(opt => {
       const optTheme = (opt as HTMLElement).dataset.theme;
       if (optTheme === activeTheme) {
-        opt.classList.add('active');
+        opt.classList.add('sharpee-menu-option--checked');
       } else {
-        opt.classList.remove('active');
+        opt.classList.remove('sharpee-menu-option--checked');
       }
     });
   }
