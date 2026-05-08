@@ -211,6 +211,28 @@ node dist/cli/sharpee.js --test --chain \
 
 ---
 
+## In-Scope Debt: Republish Bundled Author Starter
+
+The npm package's `packages/sharpee/templates/browser/` directory previously
+shipped a stale author starter (Jan 31 `index.html` + `styles.css` using
+the pre-ADR-170 `modal-overlay` contract and dead `--dos-*` variables, plus
+a `browser-entry.ts.template` referencing the same dead contract). All three
+were deleted during cleanup on 2026-05-08 (commit TBD) on the explicit
+condition that this plan rebuilds them.
+
+**Phase 3 (or a dedicated mini-phase) MUST republish the bundled starter:**
+- A current `index.html` matching the `<dialog>` + `.sharpee-*` component vocabulary
+- A current `base.css` (structural)
+- The default theme(s) — at minimum DOS Classic
+- An updated `browser-entry.ts.template` matching the current Dungeo browser-entry pattern (no `modalOverlay`, no callbacks: { getHelpText, getAboutText }, channel-renderer registration shown)
+
+A new author doing `pnpm install @sharpee/sharpee` and copying from
+`node_modules/@sharpee/sharpee/templates/browser/` MUST get a working,
+current-contract starter. Until this lands, the bundled starter directory
+does not exist.
+
+---
+
 ## Out of Scope
 
 - **Theme hot-reload during development.** A nice-to-have, not a requirement.

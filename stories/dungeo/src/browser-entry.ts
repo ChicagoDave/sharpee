@@ -35,47 +35,6 @@ const GAME_DESCRIPTION = config.description || '';
 const GAME_AUTHORS = Array.isArray(config.author) ? config.author.join(', ') : config.author;
 const PORTED_BY = config.custom?.portedBy || '';
 
-/**
- * Get the HELP text (1981 Fortran-style)
- */
-function getHelpText(): string {
-  return `Commands to DUNGEO are simple sentences: <verb>, <verb> <object>,
-and <verb> <object> <indirect object> are examples.
-
-Some useful commands are:
-
-<direction>     Walk in that direction. Common directions
-                are N, S, E, W, NE, NW, SE, SW, U(p), and D(own).
-AGAIN (G)       Repeat the last command.
-LOOK (L)        Describe the surroundings.
-ROOM            Print the verbose room description without objects.
-RNAME           Print the short room name.
-OBJECTS         Print the objects in the room.
-INVENTORY (I)   Describe your possessions.
-DIAGNOSE        Describe your state of health.
-WAIT (Z)        Causes "time" to pass.
-SCORE           Print your score and number of moves.
-SAVE            Save the game to a named slot.
-RESTORE         Restore a saved game.
-RESTART         Start the game over.
-QUIT (Q)        Leave the game.`;
-}
-
-/**
- * Get the ABOUT text
- */
-function getAboutText(): string {
-  return [
-    GAME_TITLE,
-    GAME_DESCRIPTION,
-    `By ${GAME_AUTHORS}`,
-    `Ported by ${PORTED_BY}`,
-    '',
-    `Sharpee v${ENGINE_VERSION} | Game v${STORY_VERSION}`,
-    `Built: ${BUILD_DATE}`,
-  ].filter(Boolean).join('\n');
-}
-
 // Create browser client with story configuration
 const client = new BrowserClient({
   storagePrefix: 'dungeo-',
@@ -95,10 +54,6 @@ const client = new BrowserClient({
     version: STORY_VERSION,
     engineVersion: ENGINE_VERSION,
     buildDate: BUILD_DATE,
-  },
-  callbacks: {
-    getHelpText,
-    getAboutText,
   },
 });
 
