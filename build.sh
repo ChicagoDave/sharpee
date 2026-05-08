@@ -846,7 +846,10 @@ build_browser_client() {
 
     # Copy theme assets (per-theme bundled webfonts, e.g. system-6).
     # CSS @font-face rules reference paths under themes/<theme-id>/fonts/.
+    # rm -rf first because cp -r SRC DST nests SRC inside DST when DST exists,
+    # which compounds nesting on every rebuild.
     if [ -d "templates/browser/themes" ]; then
+        rm -rf "$OUTDIR/themes"
         cp -r templates/browser/themes "$OUTDIR/themes"
         log_ok "theme-assets"
     fi
