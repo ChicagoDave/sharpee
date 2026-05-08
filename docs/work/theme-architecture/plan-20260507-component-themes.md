@@ -30,19 +30,21 @@ These are the named pieces of the browser client UI. Every theme must style ever
 | Component | Class | Purpose |
 |-----------|-------|---------|
 | Window shell | `.sharpee-window` | The whole-game outer container |
-| Window titlebar | `.sharpee-window-titlebar` | Title strip at top of the shell (carries story title; theme may add chrome) |
-| Menubar | `.sharpee-menubar` | The horizontal menu bar |
-| Menubar item | `.sharpee-menubar-item` | A top-level entry (File, Settings, Help) |
-| Menu button | `.sharpee-menubar-trigger` | The clickable button inside an item |
+| Window title bar | `.sharpee-window-title-bar` | Title strip at top of the shell (carries story title; theme may add chrome) |
+| Window title bar controls | `.sharpee-window-title-bar-controls` | Decoration slot inside the title bar (close box, version stamp, etc.) |
+| Menu bar | `.sharpee-menu-bar` | The horizontal menu bar |
+| Menu bar item | `.sharpee-menu-bar-item` | A top-level entry (File, Settings, Help) |
+| Menu bar trigger | `.sharpee-menu-bar-trigger` | The clickable button inside an item |
 | Menu dropdown | `.sharpee-menu-dropdown` | The popup panel that appears on click |
 | Menu option | `.sharpee-menu-option` | A row in a dropdown |
 | Menu separator | `.sharpee-menu-separator` | The horizontal rule between groups |
-| Menu submenu indicator | `.sharpee-menu-submenu` | Carat marker for nested submenus |
-| Status strip | `.sharpee-status` | The location/score row |
-| Prose pane | `.sharpee-prose` | The main scrolling text region |
+| Menu submenu indicator | `.sharpee-menu-submenu-indicator` | Caret marker for nested submenus |
+| Status bar | `.sharpee-status-bar` | The location/score row |
+| Prose pane | `.sharpee-prose-pane` | The main scrolling text region |
+| Prose overlay | `.sharpee-prose-overlay` | Decoration slot above the prose (CRT scanlines, paper grain, etc.) |
 | Input bar | `.sharpee-input-bar` | The bottom command line |
-| Input prompt | `.sharpee-prompt` | The `>` glyph |
-| Input field | `.sharpee-input` | The actual `<input>` |
+| Input prompt | `.sharpee-input-prompt` | The `>` glyph |
+| Input field | `.sharpee-input-field` | The actual `<input>` |
 | Dialog overlay | `.sharpee-dialog-overlay` | Modal backdrop |
 | Dialog | `.sharpee-dialog` | The modal frame itself |
 | Dialog title | `.sharpee-dialog-title` | Header strip of a dialog |
@@ -50,20 +52,29 @@ These are the named pieces of the browser client UI. Every theme must style ever
 | Dialog buttons | `.sharpee-dialog-buttons` | Row of action buttons |
 | Dialog button | `.sharpee-dialog-button` | An individual button |
 
-That's ~20 classes for a contract that covers everything in `templates/browser/index.html`. Comparable in scope to system.css's own component set.
+That's ~22 classes for a contract that covers everything in `templates/browser/index.html`. Comparable in scope to system.css's own component set.
+
+**Naming convention:** identifiers are fully spelled out — `title-bar` not `titlebar`, `menu-bar` not `menubar`, `prose-pane` not `prose`. Minimal name set, but no compressed tokens within names.
 
 **State modifiers** (BEM-style suffix):
 
-- `.sharpee-menubar-item--open` — submenu is showing
+- `.sharpee-menu-bar-item--open` — submenu is showing
 - `.sharpee-menu-option--checked` — has a leading checkmark
 - `.sharpee-menu-option--disabled` — non-interactive
 - `.sharpee-dialog-overlay--hidden`, `.sharpee-dialog--hidden` — visibility (today's `.modal-hidden`)
 - `.sharpee-input-bar--system-message` — for echoed system text styling
 
-**Two open contract questions** (Phase 0 to resolve):
+**Decoration slots — RESOLVED:**
 
-1. **Decoration slots.** Should the contract include explicit empty `<div>`s where themes can add ornament without JS? (e.g. `.sharpee-window-titlebar-controls` for system.css's close box, or `.sharpee-prose-decoration` for retro CRT bezel overlays.) Recommendation: yes, two slots — `.sharpee-window-titlebar-controls` (system-6 close-box, dos-classic version stamp, etc.) and `.sharpee-prose-overlay` (CRT scanlines, paper grain). Keep the list small.
-2. **Semantic HTML overlays.** Should the menubar use `<menu role="menubar">` natively (web standard) and dialog use `<dialog>` (HTML5)? Recommendation: yes for menubar (improves a11y and slots into system.css for free); deferred for `<dialog>` because focus / ESC handling diverges from current `MenuManager` behavior.
+Two slots are in the contract: `.sharpee-window-title-bar-controls` (decoration inside the title bar — close boxes, version stamps, theme-author chrome) and `.sharpee-prose-overlay` (decoration over the prose pane — CRT scanlines, paper grain). Themes that use neither leave them empty; themes that use them populate via CSS pseudo-elements or theme-side HTML if needed (a future-Phase-5 concern).
+
+**Semantic HTML — RESOLVED:**
+
+Adopt both:
+- Menu bar uses `<menu role="menubar">` containing `<li role="menuitem">` entries.
+- Modal dialogs use `<dialog>` (HTML5), not generic `<div>`.
+
+Adopting `<dialog>` brings native focus management, ESC-to-close handling, and accessibility for free, but means `DialogManager` rewires its open/close logic to use `dialog.showModal()` / `dialog.close()` instead of toggling a hidden class. Phase 1 takes this on; details in Phase 1's deliverables list.
 
 ---
 
@@ -285,18 +296,9 @@ Must match prior-session baseline (48 passing minimum for wt-01 + wt-02; full ch
 
 ---
 
-## Phase 5 (optional / follow-up) — Per-theme CSS files for author-customization
+## Phase 5 — split as follow-up plan
 
-This was originally part of the plan; pulling it out as explicit follow-up.
-
-If theme files become independently shippable artifacts:
-
-- Each theme moves to `templates/browser/themes/<id>.css`
-- `BrowserClient` config gains `cssPath` and `fontAssets[]` per theme
-- `ThemeManager` dynamically loads/unloads the active theme's stylesheet (`<link rel="stylesheet">` swap)
-- Stories can register custom themes by adding a `cssPath` pointing into their own assets
-
-This is the architectural feature that makes themes story-shippable. Worth doing eventually; not blocking Phase 4. Decide at Phase 4 whether to fold it in or split it into a follow-up plan.
+Confirmed split. Dynamic per-theme CSS loading and story-shippable themes are tracked in `docs/work/theme-architecture/plan-20260507-dynamic-theme-loading.md` with its own ADR (ADR-171). That plan **depends on this one landing first** — without component classes, there's nothing self-contained to ship per theme.
 
 ---
 
@@ -327,13 +329,18 @@ This is the architectural feature that makes themes story-shippable. Worth doing
 
 ## Open Questions for David
 
-1. **Component vocabulary** — does the proposed 20-class list look right? Anything missing? Anything that should be merged or split?
-2. **Decoration slots** — agree to include `.sharpee-window-titlebar-controls` and `.sharpee-prose-overlay`? Other slots needed?
-3. **Semantic HTML** — adopt `<menu role="menubar">` natively (recommended). Defer `<dialog>` migration (recommended).
-4. **System 6 CSS sourcing** — vendor system.css verbatim and rewrite selectors, or write fresh CSS targeting `sharpee-*` directly? Recommendation: fresh CSS — smaller, no vendoring license headaches, easier to maintain.
-5. **Phase 5 sequencing** — fold per-theme CSS files into this plan, or split as follow-up? Recommendation: split. This plan is already a multi-session move; Phase 5 wants its own ADR for the dynamic-loading pattern.
-6. **ADR-170 vs piggyback on ADR-163** — does this deserve a fresh ADR, or is it an amendment to the channels-as-universal-UI-surface ADR? Recommendation: fresh — different concern (UI chrome) than channel data flow, even if both serve the author-customizable goal.
-7. **Sequencing vs ADR-169 implementation** — do this before, after, or interleaved with the Web Audio / fade-in-out implementation?
+**Resolved (2026-05-07):**
+
+1. ~~Component vocabulary~~ — David deferred to my judgment on naming; the 22-class vocabulary above stands, applying the no-abbreviations rule throughout.
+2. ~~Decoration slots~~ — confirmed: `.sharpee-window-title-bar-controls` and `.sharpee-prose-overlay`. Minimal but present.
+3. ~~Semantic HTML~~ — confirmed: adopt both `<menu role="menubar">` *and* `<dialog>`. Phase 1 takes on the `DialogManager` rewire.
+
+**Resolved (2026-05-07, second pass):**
+
+4. ~~System 6 CSS sourcing~~ — confirmed: write fresh CSS targeting `.sharpee-*` selectors directly. No vendored system.css.
+5. ~~Phase 5 sequencing~~ — confirmed: split as follow-up. Dynamic per-theme CSS loading lives in `docs/work/theme-architecture/plan-20260507-dynamic-theme-loading.md` and gets its own ADR (ADR-171).
+6. ~~ADR-170 fresh~~ — confirmed: fresh ADR-170 for UI chrome (component theming). ADR-163 stays scoped to data flow.
+7. ~~Sequencing vs ADR-169 implementation~~ — confirmed: ADR-169 first. ADR-169 implementation lands as a single-session task; this plan's Phase 0 starts after it commits.
 
 ---
 

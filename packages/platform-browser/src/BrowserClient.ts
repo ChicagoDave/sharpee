@@ -563,8 +563,10 @@ export class BrowserClient implements BrowserClientInterface {
    * Execute a command
    */
   async executeCommand(command: string): Promise<void> {
-    // Unlock audio on first user command (browsers block autoplay)
-    this.audioManager.unlock();
+    // Unlock audio on first user command (browsers block autoplay).
+    // ADR-169: unlock() is async — must await so AudioContext.resume()
+    // completes before any queued events fire into a still-suspended context.
+    await this.audioManager.unlock();
 
     // Display command echo
     this.textDisplay.displayCommand(command);
