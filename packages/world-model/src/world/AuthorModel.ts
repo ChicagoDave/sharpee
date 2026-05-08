@@ -10,6 +10,7 @@
  */
 
 import { IFEntity } from '../entities/if-entity';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
 import { TraitType } from '../traits/trait-types';
 import { SpatialIndex } from './SpatialIndex';
 import { ITrait } from '../traits/trait';
@@ -289,6 +290,15 @@ export class AuthorModel implements IWorldModel {
     keyId?: string;
   }): IFEntity {
     return this.worldModel.createDoor(displayName, opts);
+  }
+
+  // Wall Adjacency (ADR-173)
+  createWall(spec: IWallSpec): WallEntity {
+    return this.worldModel.createWall(spec);
+  }
+
+  createWalls(spec: IWallsSpec): WallEntity[] {
+    return this.worldModel.createWalls(spec);
   }
 
   // Region Management (ADR-149)

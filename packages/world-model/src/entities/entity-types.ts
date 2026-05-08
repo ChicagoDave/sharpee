@@ -28,7 +28,10 @@ export const EntityType = {
   
   /** A directional exit (rarely used as entity) */
   EXIT: 'exit',
-  
+
+  /** A physical adjacency between two rooms (ADR-173) */
+  WALL: 'wall',
+
   /** A geographic grouping of rooms (ADR-149) */
   REGION: 'region',
 
@@ -65,6 +68,7 @@ export function getEntityTypePrefix(type: EntityType): string {
     [EntityType.SUPPORTER]: 's',
     [EntityType.SCENERY]: 'y',
     [EntityType.EXIT]: 'e',
+    [EntityType.WALL]: 'w',
     [EntityType.REGION]: 'rg',
     [EntityType.SCENE]: 'sc',
     [EntityType.OBJECT]: 'o'

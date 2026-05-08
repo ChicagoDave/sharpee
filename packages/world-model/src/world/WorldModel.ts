@@ -2,6 +2,8 @@
 
 import { IFEntity } from '../entities/if-entity';
 import { EntityType, isEntityType } from '../entities/entity-types';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
+import { createWall as createWallImpl, createWalls as createWallsImpl } from './wall-creation';
 import { TraitType } from '../traits/trait-types';
 import { RoomTrait } from '../traits/room';
 import { RoomBehavior } from '../traits/room/roomBehavior';
@@ -181,6 +183,10 @@ export interface IWorldModel {
     keyId?: string;
   }): IFEntity;
 
+  // Wall Adjacency (ADR-173)
+  createWall(spec: IWallSpec): WallEntity;
+  createWalls(spec: IWallsSpec): WallEntity[];
+
   // Region Management (ADR-149)
   createRegion(id: string, options: RegionOptions): IFEntity;
   assignRoom(roomId: string, regionId: string): void;
@@ -266,6 +272,7 @@ const TYPE_PREFIXES: Record<string, string> = {
   'supporter': 's',
   'scenery': 'y',
   'exit': 'e',
+  'wall': 'w',
   'object': 'o'  // default
 };
 
@@ -1253,6 +1260,44 @@ export class WorldModel implements IWorldModel {
     this.moveEntity(door.id, opts.room1Id);
 
     return door;
+  }
+
+  // ── Wall Adjacency (ADR-173) ─────────────────────────────────────
+
+  /**
+   * Creates a single wall between exactly two distinct rooms.
+   * Validates cardinality, per-side adjective presence, per-room
+   * adjective uniqueness, and `obstructedBy` resolution before
+   * registering the wall and updating both rooms' `walls` collections.
+   *
+   * @throws Error on any validation failure (per ADR-173 §"Rejection rules").
+   */
+  createWall(spec: IWallSpec): WallEntity {
+    return createWallImpl(this.wallCreationSurface(), spec);
+  }
+
+  /**
+   * Creates N walls between `from` and each room in `to` (ADR-173
+   * §Authoring API). Each wall is independently validated; a failure
+   * on the K-th pair leaves walls 0..K-1 in the world.
+   */
+  createWalls(spec: IWallsSpec): WallEntity[] {
+    return createWallsImpl(this.wallCreationSurface(), spec);
+  }
+
+  /**
+   * Adapter exposing the narrow surface `wall-creation` requires
+   * without coupling it to the full `WorldModel` API.
+   */
+  private wallCreationSurface() {
+    return {
+      getEntity: (id: string) => this.getEntity(id),
+      getLocation: (entityId: string) => this.getLocation(entityId),
+      generateWallId: () => this.generateId(EntityType.WALL),
+      registerWall: (wall: WallEntity) => {
+        this.entities.set(wall.id, wall);
+      },
+    };
   }
 
   // ── Region Management (ADR-149) ──────────────────────────────────

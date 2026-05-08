@@ -37,6 +37,12 @@ export { SpatialIndex } from './SpatialIndex';
 export { VisibilityBehavior } from './VisibilityBehavior';
 export { AuthorModel, IDataStore, IItemSpec } from './AuthorModel';
 
+// Wall Adjacency (ADR-173)
+export { createWall, createWalls } from './wall-creation';
+export type { IWallCreationWorld } from './wall-creation';
+export { validateWallSpec } from './wall-validation';
+export type { IWallValidationWorld } from './wall-validation';
+
 // Export capability types
 export {
   ICapabilityData,

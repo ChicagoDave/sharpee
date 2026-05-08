@@ -66,7 +66,14 @@ export interface IRoomData {
   
   /** ID of the region entity this room belongs to (ADR-149) */
   regionId?: string;
-  
+
+  /**
+   * Wall entities this room borders (ADR-173).
+   * Maintained automatically by `WorldModel.createWall` —
+   * authors do not append directly.
+   */
+  walls?: string[];
+
   /** Tags for categorizing rooms */
   tags?: string[];
   
@@ -114,6 +121,7 @@ export class RoomTrait implements ITrait, IRoomData {
   ambientSound?: string;
   ambientSmell?: string;
   regionId?: string;
+  walls: string[];
   tags: string[];
   
   // Container functionality
@@ -143,6 +151,7 @@ export class RoomTrait implements ITrait, IRoomData {
     this.ambientSound = data.ambientSound;
     this.ambientSmell = data.ambientSmell;
     this.regionId = data.regionId;
+    this.walls = data.walls ?? [];
     this.tags = data.tags ?? [];
     
     // Container properties

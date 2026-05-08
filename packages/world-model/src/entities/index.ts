@@ -4,3 +4,5 @@ export { IFEntity } from './if-entity';
 export { EntityStore } from './entity-store';
 export { EntityType, isEntityType, getEntityTypePrefix } from './entity-types';
 export type { EntityType as EntityTypeValue } from './entity-types';
+export { WallEntity } from './wall-entity';
+export type { IWallEntity, IWallSideData, IWallSpec, IWallsSpec } from './wall-entity';
