@@ -1,8 +1,24 @@
-/* Sharpee IF Browser Client - Multi-theme support */
+/*
+ * Sharpee IF Browser Client — Component-based theme kits (ADR-170)
+ *
+ * Per-theme kits target the `.sharpee-*` component vocabulary published by
+ * the platform DOM. Visual rules are scoped under [data-theme="<id>"];
+ * structural rules (layout, scroll, positioning) live in base.css.
+ *
+ * Kits ported in Phase 2 of plan-20260507-component-themes:
+ *   - dos-classic   ✓ (this commit)
+ *   - modern-dark   pending
+ *   - retro-terminal pending
+ *   - paper         pending
+ *
+ * Themes without a kit fall back only to base.css structural rules and
+ * will appear visually unstyled until their kit lands.
+ */
 
 /* ============================================
-   Theme: DOS Classic (default)
+   Theme palettes (CSS variable definitions)
    ============================================ */
+
 :root,
 [data-theme="dos-classic"] {
   --theme-bg: #0000aa;
@@ -20,9 +36,6 @@
   --theme-line-height: 1.4;
 }
 
-/* ============================================
-   Theme: Modern Dark (Catppuccin Mocha)
-   ============================================ */
 [data-theme="modern-dark"] {
   --theme-bg: #1e1e2e;
   --theme-bg-alt: #181825;
@@ -39,9 +52,6 @@
   --theme-line-height: 1.6;
 }
 
-/* ============================================
-   Theme: Retro Terminal (Green Phosphor)
-   ============================================ */
 [data-theme="retro-terminal"] {
   --theme-bg: #0a0a0a;
   --theme-bg-alt: #0f0f0f;
@@ -58,20 +68,6 @@
   --theme-line-height: 1.5;
 }
 
-[data-theme="retro-terminal"] body {
-  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-  background-image: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-/* ============================================
-   Theme: Paper (High Contrast Book Style)
-   ============================================ */
 [data-theme="paper"] {
   --theme-bg: #f5f5f0;
   --theme-bg-alt: #eaeae5;
@@ -88,27 +84,11 @@
   --theme-line-height: 1.7;
 }
 
-/* Legacy DOS variable aliases for compatibility */
-:root {
-  --dos-blue: var(--theme-bg);
-  --dos-cyan: var(--theme-accent);
-  --dos-white: var(--theme-text-muted);
-  --dos-bright-white: var(--theme-text);
-  --dos-black: var(--theme-accent-text);
-}
+/* ============================================
+   Theme kit: DOS Classic
+   ============================================ */
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
-
-body {
+[data-theme="dos-classic"] body {
   background: var(--theme-bg);
   color: var(--theme-text);
   font-family: var(--theme-font);
@@ -116,228 +96,92 @@ body {
   line-height: var(--theme-line-height);
 }
 
-/* ============================================
-   Menu Bar
-   ============================================ */
+/* Window chrome */
 
-#menu-bar {
-  display: flex;
-  align-items: center;
+[data-theme="dos-classic"] .sharpee-window-title-bar {
   background: var(--theme-bg-alt);
-  border-bottom: 1px solid var(--theme-border);
-  padding: 0 8px;
   height: 28px;
-  flex-shrink: 0;
+  padding: 0 8px;
   font-size: 14px;
 }
 
-#menu-title {
+[data-theme="dos-classic"] .sharpee-window-title {
   font-weight: bold;
   margin-right: 16px;
   text-transform: uppercase;
 }
 
-#menu-items {
-  display: flex;
-  gap: 2px;
+/* Menu bar */
+
+[data-theme="dos-classic"] .sharpee-menu-bar {
+  background: var(--theme-bg-alt);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
 }
 
-.menu-item {
-  position: relative;
-}
-
-.menu-button {
-  background: transparent;
-  border: none;
+[data-theme="dos-classic"] .sharpee-menu-bar-trigger {
   color: var(--theme-text);
-  font-family: inherit;
-  font-size: inherit;
-  padding: 4px 10px;
-  cursor: pointer;
   border-radius: 2px;
 }
 
-.menu-button:hover,
-.menu-button.active {
+[data-theme="dos-classic"] .sharpee-menu-bar-trigger:hover,
+[data-theme="dos-classic"] .sharpee-menu-bar-item--open > .sharpee-menu-bar-trigger {
   background: var(--theme-accent);
   color: var(--theme-accent-text);
 }
 
-.menu-dropdown {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  min-width: 160px;
+[data-theme="dos-classic"] .sharpee-menu-dropdown {
   background: var(--theme-menu-bg);
   border: 1px solid var(--theme-border);
-  z-index: 1000;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
 }
 
-.menu-item:hover .menu-dropdown,
-.menu-dropdown.show {
-  display: block;
+[data-theme="dos-classic"] .sharpee-menu-option {
+  color: var(--theme-text);
 }
 
-.menu-option {
-  padding: 6px 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.menu-option:hover {
+[data-theme="dos-classic"] .sharpee-menu-option:hover {
   background: var(--theme-accent);
   color: var(--theme-accent-text);
 }
 
-.menu-option.checked::before {
-  content: "\2713";
-  margin-right: 8px;
-}
-
-.menu-separator {
-  height: 1px;
+[data-theme="dos-classic"] .sharpee-menu-separator {
   background: var(--theme-border);
-  margin: 4px 8px;
 }
 
-.menu-submenu {
-  position: relative;
-}
+/* Status bar */
 
-.menu-has-submenu::after {
-  content: "";
-}
-
-.menu-submenu .submenu {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 100%;
-}
-
-.menu-submenu:hover .submenu {
-  display: block;
-}
-
-.theme-option.active {
+[data-theme="dos-classic"] .sharpee-status-bar {
   background: var(--theme-accent);
   color: var(--theme-accent-text);
-}
-
-.theme-option.active::before {
-  content: "\2713 ";
-}
-
-#game-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-width: 80ch;
-  margin: 0 auto;
-  padding: 0;
-}
-
-/* Status Line */
-#status-line {
-  background: var(--theme-accent);
-  color: var(--theme-accent-text);
-  padding: 4px 8px;
-  display: flex;
-  justify-content: space-between;
   font-weight: bold;
-  flex-shrink: 0;
 }
 
-#location-name {
+[data-theme="dos-classic"] #location-name {
   text-transform: uppercase;
 }
 
-/* Main Text Window */
-#main-window {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-  padding-bottom: 1em;
-}
+/* Prose pane */
 
-#text-content p {
+[data-theme="dos-classic"] .sharpee-prose-pane p {
   margin-bottom: 0.8em;
 }
 
-#text-content p:last-child {
+[data-theme="dos-classic"] .sharpee-prose-pane p:last-child {
   margin-bottom: 0;
 }
 
-/* Command echo styling */
-.command-echo {
+[data-theme="dos-classic"] .sharpee-prose-pane .command-echo {
   color: var(--theme-text-muted);
   margin-top: 1em;
   margin-bottom: 0.5em;
 }
 
-/* Input Area */
-#input-area {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px;
-  border-top: 2px solid var(--theme-border);
-  flex-shrink: 0;
-  background: var(--theme-bg);
-}
-
-.prompt {
-  color: var(--theme-text);
-  margin-right: 4px;
-}
-
-#command-input {
-  flex: 1;
-  background: var(--theme-input-bg);
-  border: none;
-  color: var(--theme-text);
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  outline: none;
-  caret-color: var(--theme-text);
-}
-
-#command-input::placeholder {
-  color: var(--theme-text-muted);
-  opacity: 0.5;
-}
-
-/* Hide scrollbar but allow scrolling (Webkit) */
-#main-window::-webkit-scrollbar {
-  width: 8px;
-}
-
-#main-window::-webkit-scrollbar-track {
-  background: var(--theme-bg);
-}
-
-#main-window::-webkit-scrollbar-thumb {
-  background: var(--theme-accent);
-}
-
-/* Firefox scrollbar */
-#main-window {
-  scrollbar-width: thin;
-  scrollbar-color: var(--theme-accent) var(--theme-bg);
-}
-
-/* System messages */
-.system-message {
+[data-theme="dos-classic"] .sharpee-prose-pane .system-message {
   color: var(--theme-accent);
 }
 
-/* Game over / victory */
-.game-status {
-  color: var(--theme-text);
+[data-theme="dos-classic"] .sharpee-prose-pane .game-status {
   text-align: center;
   font-weight: bold;
   margin: 1em 0;
@@ -345,227 +189,130 @@ body {
   border: 1px solid var(--theme-border);
 }
 
-/* Mobile adjustments */
-@media (max-width: 600px) {
-  body {
-    font-size: 14px;
-  }
-
-  #game-container {
-    max-width: 100%;
-    padding: 0;
-  }
-
-  #status-line {
-    font-size: 12px;
-    padding: 6px 12px;
-    /* Safe area for notched phones */
-    padding-top: max(6px, env(safe-area-inset-top));
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
-  }
-
-  #main-window {
-    padding: 12px;
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
-  }
-
-  #input-area {
-    padding: 8px 12px;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
-    /* Larger touch target */
-    min-height: 48px;
-  }
-
-  #command-input {
-    font-size: 16px; /* Prevents iOS zoom on focus */
-    padding: 8px 0;
-  }
-
-  .prompt {
-    font-size: 16px;
-  }
+[data-theme="dos-classic"] .sharpee-prose-pane {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
 }
 
-/* Small phones */
-@media (max-width: 380px) {
-  body {
-    font-size: 13px;
-  }
-
-  #status-line {
-    font-size: 11px;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-
-  #location-name {
-    flex: 1 1 100%;
-    text-align: center;
-  }
-
-  #score-turns {
-    flex: 1 1 100%;
-    text-align: center;
-  }
+[data-theme="dos-classic"] .sharpee-prose-pane::-webkit-scrollbar {
+  width: 8px;
 }
 
-/* Landscape phone */
-@media (max-height: 500px) and (orientation: landscape) {
-  body {
-    font-size: 13px;
-    line-height: 1.3;
-  }
-
-  #status-line {
-    padding: 2px 8px;
-    padding-left: max(8px, env(safe-area-inset-left));
-    padding-right: max(8px, env(safe-area-inset-right));
-  }
-
-  #main-window {
-    padding: 4px 8px;
-    padding-left: max(8px, env(safe-area-inset-left));
-    padding-right: max(8px, env(safe-area-inset-right));
-  }
-
-  #text-content p {
-    margin-bottom: 0.5em;
-  }
-
-  #input-area {
-    padding: 4px 8px;
-    padding-left: max(8px, env(safe-area-inset-left));
-    padding-right: max(8px, env(safe-area-inset-right));
-    min-height: 36px;
-  }
+[data-theme="dos-classic"] .sharpee-prose-pane::-webkit-scrollbar-track {
+  background: var(--theme-bg);
 }
 
-/* When virtual keyboard is likely open - use dvh for dynamic viewport */
-@supports (height: 100dvh) {
-  #game-container {
-    height: 100dvh;
-  }
+[data-theme="dos-classic"] .sharpee-prose-pane::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
 }
 
-/* Touch-specific: larger tap targets, no hover effects */
-@media (pointer: coarse) {
-  #command-input {
-    padding: 12px 0;
-  }
+/* Input bar */
 
-  #input-area {
-    min-height: 52px;
-  }
-
-  /* Ensure scrollbar is visible on touch */
-  #main-window {
-    scrollbar-width: auto;
-  }
-
-  #main-window::-webkit-scrollbar {
-    width: 12px;
-  }
+[data-theme="dos-classic"] .sharpee-input-bar {
+  background: var(--theme-bg);
+  border-top: 2px solid var(--theme-border);
 }
 
-/* Blinking cursor effect */
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+[data-theme="dos-classic"] .sharpee-input-prompt {
+  color: var(--theme-text);
 }
 
-#command-input:focus {
+[data-theme="dos-classic"] .sharpee-input-field {
+  background: var(--theme-input-bg);
+  color: var(--theme-text);
   caret-color: var(--theme-text);
 }
 
-/* ============================================
-   Save/Restore Modal Dialogs
-   ============================================ */
-
-.modal-hidden {
-  display: none !important;
+[data-theme="dos-classic"] .sharpee-input-field::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.5;
 }
 
-#modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
+/* Dialogs */
 
-.modal-dialog {
+[data-theme="dos-classic"] .sharpee-dialog {
   background: var(--theme-bg);
+  color: var(--theme-text);
   border: 2px solid var(--theme-border);
-  min-width: 300px;
-  max-width: 90vw;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
 }
 
-.modal-title {
+[data-theme="dos-classic"] .sharpee-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dos-classic"] .sharpee-dialog-title {
   background: var(--theme-accent);
   color: var(--theme-accent-text);
-  padding: 4px 8px;
-  font-weight: bold;
-  text-align: center;
 }
 
-.modal-content {
-  padding: 12px;
-  flex: 1;
-  overflow-y: auto;
+[data-theme="dos-classic"] .sharpee-dialog-buttons {
+  border-top: 1px solid var(--theme-border);
 }
 
-.save-input-row {
+[data-theme="dos-classic"] .sharpee-dialog-button {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+[data-theme="dos-classic"] .sharpee-dialog-button:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+[data-theme="dos-classic"] .sharpee-dialog-button:focus {
+  outline: 1px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+[data-theme="dos-classic"] .sharpee-dialog-button:disabled {
+  color: var(--theme-text-muted);
+}
+
+/* Dialog body internals (save/restore UX, not part of contract) */
+
+[data-theme="dos-classic"] .save-input-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.save-input-row label {
+[data-theme="dos-classic"] .save-input-row label {
   white-space: nowrap;
 }
 
-#save-name-input {
-  flex: 1;
+[data-theme="dos-classic"] #save-name-input {
   background: var(--theme-bg-alt);
   border: 1px solid var(--theme-border);
   color: var(--theme-text);
-  font-family: inherit;
-  font-size: inherit;
   padding: 4px 6px;
-  outline: none;
 }
 
-#save-name-input:focus {
+[data-theme="dos-classic"] #save-name-input:focus {
   border-color: var(--theme-accent);
 }
 
-.saves-list-label {
+[data-theme="dos-classic"] .saves-list-label {
   color: var(--theme-text-muted);
   margin-bottom: 8px;
   font-size: 0.9em;
 }
 
-.saves-list {
+[data-theme="dos-classic"] .saves-list {
   background: var(--theme-bg-alt);
   border: 1px solid var(--theme-border);
   max-height: 200px;
   overflow-y: auto;
 }
 
-.save-slot {
+[data-theme="dos-classic"] .save-slot {
   padding: 6px 8px;
   cursor: pointer;
   display: flex;
@@ -574,20 +321,20 @@ body {
   border-bottom: 1px solid #333;
 }
 
-.save-slot:last-child {
+[data-theme="dos-classic"] .save-slot:last-child {
   border-bottom: none;
 }
 
-.save-slot:hover {
+[data-theme="dos-classic"] .save-slot:hover {
   background: var(--theme-menu-hover);
 }
 
-.save-slot.selected {
+[data-theme="dos-classic"] .save-slot.selected {
   background: var(--theme-accent);
   color: var(--theme-accent-text);
 }
 
-.save-slot-name {
+[data-theme="dos-classic"] .save-slot-name {
   font-weight: bold;
   flex: 1;
   overflow: hidden;
@@ -595,106 +342,1192 @@ body {
   white-space: nowrap;
 }
 
-.save-slot-info {
+[data-theme="dos-classic"] .save-slot-info {
   color: var(--theme-text-muted);
   font-size: 0.85em;
   white-space: nowrap;
 }
 
-.save-slot.selected .save-slot-info {
+[data-theme="dos-classic"] .save-slot.selected .save-slot-info {
   color: var(--theme-accent-text);
 }
 
-.no-saves-message {
+[data-theme="dos-classic"] .no-saves-message {
   color: var(--theme-text-muted);
   font-style: italic;
   padding: 12px;
   text-align: center;
 }
 
-.modal-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  padding: 12px;
-  border-top: 1px solid var(--theme-border);
-}
-
-.modal-btn {
-  background: var(--theme-bg-alt);
-  border: 1px solid var(--theme-border);
-  color: var(--theme-text);
-  font-family: inherit;
-  font-size: inherit;
-  padding: 6px 20px;
-  cursor: pointer;
-  min-width: 80px;
-}
-
-.modal-btn:hover {
-  background: var(--theme-accent);
-  color: var(--theme-accent-text);
-  border-color: var(--theme-accent);
-}
-
-.modal-btn:focus {
-  outline: 1px solid var(--theme-accent);
-  outline-offset: 2px;
-}
-
-.modal-btn:disabled {
-  color: var(--theme-text-muted);
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Startup dialog */
-.startup-info {
+[data-theme="dos-classic"] .startup-info {
   color: var(--theme-accent);
   margin: 0 0 12px 0;
   line-height: 1.4;
 }
 
-.startup-question {
+[data-theme="dos-classic"] .startup-question {
   color: var(--theme-text);
   margin: 0;
 }
 
-/* Modal scrollbar styling */
-.saves-list::-webkit-scrollbar,
-.modal-content::-webkit-scrollbar {
+[data-theme="dos-classic"] .saves-list::-webkit-scrollbar,
+[data-theme="dos-classic"] .sharpee-dialog-body::-webkit-scrollbar {
   width: 8px;
 }
 
-.saves-list::-webkit-scrollbar-track,
-.modal-content::-webkit-scrollbar-track {
+[data-theme="dos-classic"] .saves-list::-webkit-scrollbar-track,
+[data-theme="dos-classic"] .sharpee-dialog-body::-webkit-scrollbar-track {
   background: var(--theme-bg-alt);
 }
 
-.saves-list::-webkit-scrollbar-thumb,
-.modal-content::-webkit-scrollbar-thumb {
+[data-theme="dos-classic"] .saves-list::-webkit-scrollbar-thumb,
+[data-theme="dos-classic"] .sharpee-dialog-body::-webkit-scrollbar-thumb {
   background: var(--theme-accent);
 }
 
-/* Mobile modal adjustments */
+/* Mobile */
+
 @media (max-width: 600px) {
-  .modal-dialog {
+  [data-theme="dos-classic"] body {
+    font-size: 14px;
+  }
+  [data-theme="dos-classic"] .sharpee-status-bar {
+    font-size: 12px;
+  }
+  [data-theme="dos-classic"] .sharpee-input-prompt {
+    font-size: 16px;
+  }
+  [data-theme="dos-classic"] .sharpee-dialog {
     min-width: 280px;
     margin: 12px;
   }
-
-  .save-input-row {
+  [data-theme="dos-classic"] .save-input-row {
     flex-direction: column;
     align-items: stretch;
     gap: 4px;
   }
-
-  .modal-buttons {
+  [data-theme="dos-classic"] .sharpee-dialog-buttons {
     gap: 12px;
   }
-
-  .modal-btn {
+  [data-theme="dos-classic"] .sharpee-dialog-button {
     flex: 1;
     padding: 10px 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  [data-theme="dos-classic"] body {
+    font-size: 13px;
+  }
+  [data-theme="dos-classic"] .sharpee-status-bar {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  [data-theme="dos-classic"] #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+  [data-theme="dos-classic"] #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  [data-theme="dos-classic"] body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  [data-theme="dos-classic"] .sharpee-prose-pane p {
+    margin-bottom: 0.5em;
+  }
+}
+
+/* ============================================
+   Theme kit: Modern Dark (Catppuccin Mocha)
+   ============================================ */
+
+[data-theme="modern-dark"] body {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+/* Window chrome */
+
+[data-theme="modern-dark"] .sharpee-window-title-bar {
+  background: var(--theme-bg-alt);
+  height: 28px;
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+[data-theme="modern-dark"] .sharpee-window-title {
+  font-weight: bold;
+  margin-right: 16px;
+  text-transform: uppercase;
+}
+
+/* Menu bar */
+
+[data-theme="modern-dark"] .sharpee-menu-bar {
+  background: var(--theme-bg-alt);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
+}
+
+[data-theme="modern-dark"] .sharpee-menu-bar-trigger {
+  color: var(--theme-text);
+  border-radius: 2px;
+}
+
+[data-theme="modern-dark"] .sharpee-menu-bar-trigger:hover,
+[data-theme="modern-dark"] .sharpee-menu-bar-item--open > .sharpee-menu-bar-trigger {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="modern-dark"] .sharpee-menu-dropdown {
+  background: var(--theme-menu-bg);
+  border: 1px solid var(--theme-border);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="modern-dark"] .sharpee-menu-option {
+  color: var(--theme-text);
+}
+
+[data-theme="modern-dark"] .sharpee-menu-option:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="modern-dark"] .sharpee-menu-separator {
+  background: var(--theme-border);
+}
+
+/* Status bar */
+
+[data-theme="modern-dark"] .sharpee-status-bar {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  font-weight: bold;
+}
+
+[data-theme="modern-dark"] #location-name {
+  text-transform: uppercase;
+}
+
+/* Prose pane */
+
+[data-theme="modern-dark"] .sharpee-prose-pane p {
+  margin-bottom: 0.8em;
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane p:last-child {
+  margin-bottom: 0;
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane .command-echo {
+  color: var(--theme-text-muted);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane .system-message {
+  color: var(--theme-accent);
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane .game-status {
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--theme-border);
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane::-webkit-scrollbar-track {
+  background: var(--theme-bg);
+}
+
+[data-theme="modern-dark"] .sharpee-prose-pane::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Input bar */
+
+[data-theme="modern-dark"] .sharpee-input-bar {
+  background: var(--theme-bg);
+  border-top: 2px solid var(--theme-border);
+}
+
+[data-theme="modern-dark"] .sharpee-input-prompt {
+  color: var(--theme-text);
+}
+
+[data-theme="modern-dark"] .sharpee-input-field {
+  background: var(--theme-input-bg);
+  color: var(--theme-text);
+  caret-color: var(--theme-text);
+}
+
+[data-theme="modern-dark"] .sharpee-input-field::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.5;
+}
+
+/* Dialogs */
+
+[data-theme="modern-dark"] .sharpee-dialog {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border: 2px solid var(--theme-border);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+[data-theme="modern-dark"] .sharpee-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="modern-dark"] .sharpee-dialog-title {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="modern-dark"] .sharpee-dialog-buttons {
+  border-top: 1px solid var(--theme-border);
+}
+
+[data-theme="modern-dark"] .sharpee-dialog-button {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+[data-theme="modern-dark"] .sharpee-dialog-button:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+[data-theme="modern-dark"] .sharpee-dialog-button:focus {
+  outline: 1px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+[data-theme="modern-dark"] .sharpee-dialog-button:disabled {
+  color: var(--theme-text-muted);
+}
+
+/* Dialog body internals */
+
+[data-theme="modern-dark"] .save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+[data-theme="modern-dark"] .save-input-row label {
+  white-space: nowrap;
+}
+
+[data-theme="modern-dark"] #save-name-input {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  padding: 4px 6px;
+}
+
+[data-theme="modern-dark"] #save-name-input:focus {
+  border-color: var(--theme-accent);
+}
+
+[data-theme="modern-dark"] .saves-list-label {
+  color: var(--theme-text-muted);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+[data-theme="modern-dark"] .saves-list {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+[data-theme="modern-dark"] .save-slot {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+[data-theme="modern-dark"] .save-slot:last-child {
+  border-bottom: none;
+}
+
+[data-theme="modern-dark"] .save-slot:hover {
+  background: var(--theme-menu-hover);
+}
+
+[data-theme="modern-dark"] .save-slot.selected {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="modern-dark"] .save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="modern-dark"] .save-slot-info {
+  color: var(--theme-text-muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+[data-theme="modern-dark"] .save-slot.selected .save-slot-info {
+  color: var(--theme-accent-text);
+}
+
+[data-theme="modern-dark"] .no-saves-message {
+  color: var(--theme-text-muted);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+[data-theme="modern-dark"] .startup-info {
+  color: var(--theme-accent);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+[data-theme="modern-dark"] .startup-question {
+  color: var(--theme-text);
+  margin: 0;
+}
+
+[data-theme="modern-dark"] .saves-list::-webkit-scrollbar,
+[data-theme="modern-dark"] .sharpee-dialog-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="modern-dark"] .saves-list::-webkit-scrollbar-track,
+[data-theme="modern-dark"] .sharpee-dialog-body::-webkit-scrollbar-track {
+  background: var(--theme-bg-alt);
+}
+
+[data-theme="modern-dark"] .saves-list::-webkit-scrollbar-thumb,
+[data-theme="modern-dark"] .sharpee-dialog-body::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  [data-theme="modern-dark"] body {
+    font-size: 14px;
+  }
+  [data-theme="modern-dark"] .sharpee-status-bar {
+    font-size: 12px;
+  }
+  [data-theme="modern-dark"] .sharpee-input-prompt {
+    font-size: 16px;
+  }
+  [data-theme="modern-dark"] .sharpee-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+  [data-theme="modern-dark"] .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  [data-theme="modern-dark"] .sharpee-dialog-buttons {
+    gap: 12px;
+  }
+  [data-theme="modern-dark"] .sharpee-dialog-button {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  [data-theme="modern-dark"] body {
+    font-size: 13px;
+  }
+  [data-theme="modern-dark"] .sharpee-status-bar {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  [data-theme="modern-dark"] #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+  [data-theme="modern-dark"] #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  [data-theme="modern-dark"] body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  [data-theme="modern-dark"] .sharpee-prose-pane p {
+    margin-bottom: 0.5em;
+  }
+}
+
+/* ============================================
+   Theme kit: Retro Terminal (Green Phosphor)
+   ============================================ */
+
+[data-theme="retro-terminal"] body {
+  background-color: var(--theme-bg);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+/* Window chrome */
+
+[data-theme="retro-terminal"] .sharpee-window-title-bar {
+  background: var(--theme-bg-alt);
+  height: 28px;
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+[data-theme="retro-terminal"] .sharpee-window-title {
+  font-weight: bold;
+  margin-right: 16px;
+  text-transform: uppercase;
+}
+
+/* Menu bar */
+
+[data-theme="retro-terminal"] .sharpee-menu-bar {
+  background: var(--theme-bg-alt);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
+}
+
+[data-theme="retro-terminal"] .sharpee-menu-bar-trigger {
+  color: var(--theme-text);
+  border-radius: 2px;
+}
+
+[data-theme="retro-terminal"] .sharpee-menu-bar-trigger:hover,
+[data-theme="retro-terminal"] .sharpee-menu-bar-item--open > .sharpee-menu-bar-trigger {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="retro-terminal"] .sharpee-menu-dropdown {
+  background: var(--theme-menu-bg);
+  border: 1px solid var(--theme-border);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="retro-terminal"] .sharpee-menu-option {
+  color: var(--theme-text);
+}
+
+[data-theme="retro-terminal"] .sharpee-menu-option:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="retro-terminal"] .sharpee-menu-separator {
+  background: var(--theme-border);
+}
+
+/* Status bar */
+
+[data-theme="retro-terminal"] .sharpee-status-bar {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  font-weight: bold;
+}
+
+[data-theme="retro-terminal"] #location-name {
+  text-transform: uppercase;
+}
+
+/* Prose pane */
+
+[data-theme="retro-terminal"] .sharpee-prose-pane p {
+  margin-bottom: 0.8em;
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane p:last-child {
+  margin-bottom: 0;
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane .command-echo {
+  color: var(--theme-text-muted);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane .system-message {
+  color: var(--theme-accent);
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane .game-status {
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--theme-border);
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane::-webkit-scrollbar-track {
+  background: var(--theme-bg);
+}
+
+[data-theme="retro-terminal"] .sharpee-prose-pane::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Input bar */
+
+[data-theme="retro-terminal"] .sharpee-input-bar {
+  background: var(--theme-bg);
+  border-top: 2px solid var(--theme-border);
+}
+
+[data-theme="retro-terminal"] .sharpee-input-prompt {
+  color: var(--theme-text);
+}
+
+[data-theme="retro-terminal"] .sharpee-input-field {
+  background: var(--theme-input-bg);
+  color: var(--theme-text);
+  caret-color: var(--theme-text);
+}
+
+[data-theme="retro-terminal"] .sharpee-input-field::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.5;
+}
+
+/* Dialogs */
+
+[data-theme="retro-terminal"] .sharpee-dialog {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border: 2px solid var(--theme-border);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+[data-theme="retro-terminal"] .sharpee-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="retro-terminal"] .sharpee-dialog-title {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="retro-terminal"] .sharpee-dialog-buttons {
+  border-top: 1px solid var(--theme-border);
+}
+
+[data-theme="retro-terminal"] .sharpee-dialog-button {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+[data-theme="retro-terminal"] .sharpee-dialog-button:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+[data-theme="retro-terminal"] .sharpee-dialog-button:focus {
+  outline: 1px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+[data-theme="retro-terminal"] .sharpee-dialog-button:disabled {
+  color: var(--theme-text-muted);
+}
+
+/* Dialog body internals */
+
+[data-theme="retro-terminal"] .save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+[data-theme="retro-terminal"] .save-input-row label {
+  white-space: nowrap;
+}
+
+[data-theme="retro-terminal"] #save-name-input {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  padding: 4px 6px;
+}
+
+[data-theme="retro-terminal"] #save-name-input:focus {
+  border-color: var(--theme-accent);
+}
+
+[data-theme="retro-terminal"] .saves-list-label {
+  color: var(--theme-text-muted);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+[data-theme="retro-terminal"] .saves-list {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+[data-theme="retro-terminal"] .save-slot {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+[data-theme="retro-terminal"] .save-slot:last-child {
+  border-bottom: none;
+}
+
+[data-theme="retro-terminal"] .save-slot:hover {
+  background: var(--theme-menu-hover);
+}
+
+[data-theme="retro-terminal"] .save-slot.selected {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="retro-terminal"] .save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="retro-terminal"] .save-slot-info {
+  color: var(--theme-text-muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+[data-theme="retro-terminal"] .save-slot.selected .save-slot-info {
+  color: var(--theme-accent-text);
+}
+
+[data-theme="retro-terminal"] .no-saves-message {
+  color: var(--theme-text-muted);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+[data-theme="retro-terminal"] .startup-info {
+  color: var(--theme-accent);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+[data-theme="retro-terminal"] .startup-question {
+  color: var(--theme-text);
+  margin: 0;
+}
+
+[data-theme="retro-terminal"] .saves-list::-webkit-scrollbar,
+[data-theme="retro-terminal"] .sharpee-dialog-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="retro-terminal"] .saves-list::-webkit-scrollbar-track,
+[data-theme="retro-terminal"] .sharpee-dialog-body::-webkit-scrollbar-track {
+  background: var(--theme-bg-alt);
+}
+
+[data-theme="retro-terminal"] .saves-list::-webkit-scrollbar-thumb,
+[data-theme="retro-terminal"] .sharpee-dialog-body::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  [data-theme="retro-terminal"] body {
+    font-size: 14px;
+  }
+  [data-theme="retro-terminal"] .sharpee-status-bar {
+    font-size: 12px;
+  }
+  [data-theme="retro-terminal"] .sharpee-input-prompt {
+    font-size: 16px;
+  }
+  [data-theme="retro-terminal"] .sharpee-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+  [data-theme="retro-terminal"] .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  [data-theme="retro-terminal"] .sharpee-dialog-buttons {
+    gap: 12px;
+  }
+  [data-theme="retro-terminal"] .sharpee-dialog-button {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  [data-theme="retro-terminal"] body {
+    font-size: 13px;
+  }
+  [data-theme="retro-terminal"] .sharpee-status-bar {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  [data-theme="retro-terminal"] #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+  [data-theme="retro-terminal"] #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  [data-theme="retro-terminal"] body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  [data-theme="retro-terminal"] .sharpee-prose-pane p {
+    margin-bottom: 0.5em;
+  }
+}
+
+/* ============================================
+   Theme kit: Paper (High Contrast Book Style)
+   ============================================ */
+
+[data-theme="paper"] body {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+/* Window chrome */
+
+[data-theme="paper"] .sharpee-window-title-bar {
+  background: var(--theme-bg-alt);
+  height: 28px;
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+[data-theme="paper"] .sharpee-window-title {
+  font-weight: bold;
+  margin-right: 16px;
+  text-transform: uppercase;
+}
+
+/* Menu bar */
+
+[data-theme="paper"] .sharpee-menu-bar {
+  background: var(--theme-bg-alt);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
+}
+
+[data-theme="paper"] .sharpee-menu-bar-trigger {
+  color: var(--theme-text);
+  border-radius: 2px;
+}
+
+[data-theme="paper"] .sharpee-menu-bar-trigger:hover,
+[data-theme="paper"] .sharpee-menu-bar-item--open > .sharpee-menu-bar-trigger {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="paper"] .sharpee-menu-dropdown {
+  background: var(--theme-menu-bg);
+  border: 1px solid var(--theme-border);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="paper"] .sharpee-menu-option {
+  color: var(--theme-text);
+}
+
+[data-theme="paper"] .sharpee-menu-option:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="paper"] .sharpee-menu-separator {
+  background: var(--theme-border);
+}
+
+/* Status bar */
+
+[data-theme="paper"] .sharpee-status-bar {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  font-weight: bold;
+}
+
+[data-theme="paper"] #location-name {
+  text-transform: uppercase;
+}
+
+/* Prose pane */
+
+[data-theme="paper"] .sharpee-prose-pane p {
+  margin-bottom: 0.8em;
+}
+
+[data-theme="paper"] .sharpee-prose-pane p:last-child {
+  margin-bottom: 0;
+}
+
+[data-theme="paper"] .sharpee-prose-pane .command-echo {
+  color: var(--theme-text-muted);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+[data-theme="paper"] .sharpee-prose-pane .system-message {
+  color: var(--theme-accent);
+}
+
+[data-theme="paper"] .sharpee-prose-pane .game-status {
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--theme-border);
+}
+
+[data-theme="paper"] .sharpee-prose-pane {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
+}
+
+[data-theme="paper"] .sharpee-prose-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="paper"] .sharpee-prose-pane::-webkit-scrollbar-track {
+  background: var(--theme-bg);
+}
+
+[data-theme="paper"] .sharpee-prose-pane::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Input bar */
+
+[data-theme="paper"] .sharpee-input-bar {
+  background: var(--theme-bg);
+  border-top: 2px solid var(--theme-border);
+}
+
+[data-theme="paper"] .sharpee-input-prompt {
+  color: var(--theme-text);
+}
+
+[data-theme="paper"] .sharpee-input-field {
+  background: var(--theme-input-bg);
+  color: var(--theme-text);
+  caret-color: var(--theme-text);
+}
+
+[data-theme="paper"] .sharpee-input-field::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.5;
+}
+
+/* Dialogs */
+
+[data-theme="paper"] .sharpee-dialog {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border: 2px solid var(--theme-border);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+[data-theme="paper"] .sharpee-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="paper"] .sharpee-dialog-title {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="paper"] .sharpee-dialog-buttons {
+  border-top: 1px solid var(--theme-border);
+}
+
+[data-theme="paper"] .sharpee-dialog-button {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+[data-theme="paper"] .sharpee-dialog-button:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+[data-theme="paper"] .sharpee-dialog-button:focus {
+  outline: 1px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+[data-theme="paper"] .sharpee-dialog-button:disabled {
+  color: var(--theme-text-muted);
+}
+
+/* Dialog body internals */
+
+[data-theme="paper"] .save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+[data-theme="paper"] .save-input-row label {
+  white-space: nowrap;
+}
+
+[data-theme="paper"] #save-name-input {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  padding: 4px 6px;
+}
+
+[data-theme="paper"] #save-name-input:focus {
+  border-color: var(--theme-accent);
+}
+
+[data-theme="paper"] .saves-list-label {
+  color: var(--theme-text-muted);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+[data-theme="paper"] .saves-list {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+[data-theme="paper"] .save-slot {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+[data-theme="paper"] .save-slot:last-child {
+  border-bottom: none;
+}
+
+[data-theme="paper"] .save-slot:hover {
+  background: var(--theme-menu-hover);
+}
+
+[data-theme="paper"] .save-slot.selected {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="paper"] .save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="paper"] .save-slot-info {
+  color: var(--theme-text-muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+[data-theme="paper"] .save-slot.selected .save-slot-info {
+  color: var(--theme-accent-text);
+}
+
+[data-theme="paper"] .no-saves-message {
+  color: var(--theme-text-muted);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+[data-theme="paper"] .startup-info {
+  color: var(--theme-accent);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+[data-theme="paper"] .startup-question {
+  color: var(--theme-text);
+  margin: 0;
+}
+
+[data-theme="paper"] .saves-list::-webkit-scrollbar,
+[data-theme="paper"] .sharpee-dialog-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="paper"] .saves-list::-webkit-scrollbar-track,
+[data-theme="paper"] .sharpee-dialog-body::-webkit-scrollbar-track {
+  background: var(--theme-bg-alt);
+}
+
+[data-theme="paper"] .saves-list::-webkit-scrollbar-thumb,
+[data-theme="paper"] .sharpee-dialog-body::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  [data-theme="paper"] body {
+    font-size: 14px;
+  }
+  [data-theme="paper"] .sharpee-status-bar {
+    font-size: 12px;
+  }
+  [data-theme="paper"] .sharpee-input-prompt {
+    font-size: 16px;
+  }
+  [data-theme="paper"] .sharpee-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+  [data-theme="paper"] .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  [data-theme="paper"] .sharpee-dialog-buttons {
+    gap: 12px;
+  }
+  [data-theme="paper"] .sharpee-dialog-button {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  [data-theme="paper"] body {
+    font-size: 13px;
+  }
+  [data-theme="paper"] .sharpee-status-bar {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  [data-theme="paper"] #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+  [data-theme="paper"] #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  [data-theme="paper"] body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  [data-theme="paper"] .sharpee-prose-pane p {
+    margin-bottom: 0.5em;
   }
 }
