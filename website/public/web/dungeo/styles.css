@@ -23,7 +23,7 @@
    ============================================ */
 
 :root,
-[data-theme="dos-classic"] {
+:root[data-theme="dos-classic"] {
   --theme-bg: #0000aa;
   --theme-bg-alt: #000088;
   --theme-text: #ffffff;
@@ -39,7 +39,7 @@
   --theme-line-height: 1.4;
 }
 
-[data-theme="modern-dark"] {
+:root[data-theme="modern-dark"] {
   --theme-bg: #1e1e2e;
   --theme-bg-alt: #181825;
   --theme-text: #cdd6f4;
@@ -55,7 +55,7 @@
   --theme-line-height: 1.6;
 }
 
-[data-theme="retro-terminal"] {
+:root[data-theme="retro-terminal"] {
   --theme-bg: #0a0a0a;
   --theme-bg-alt: #0f0f0f;
   --theme-text: #00ff00;
@@ -71,7 +71,7 @@
   --theme-line-height: 1.5;
 }
 
-[data-theme="paper"] {
+:root[data-theme="paper"] {
   --theme-bg: #f5f5f0;
   --theme-bg-alt: #eaeae5;
   --theme-text: #1a1a1a;
@@ -87,7 +87,7 @@
   --theme-line-height: 1.7;
 }
 
-[data-theme="system-6"] {
+:root[data-theme="system-6"] {
   --theme-bg: #ffffff;
   --theme-bg-alt: #ffffff;
   --theme-text: #000000;
