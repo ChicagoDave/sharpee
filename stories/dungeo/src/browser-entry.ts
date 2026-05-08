@@ -85,6 +85,7 @@ const client = new BrowserClient({
     { id: 'modern-dark', name: 'Modern Dark' },
     { id: 'retro-terminal', name: 'Retro Terminal' },
     { id: 'paper', name: 'Paper' },
+    { id: 'system-6', name: 'System 6' },
   ],
   storyInfo: {
     title: GAME_TITLE,

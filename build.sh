@@ -844,6 +844,13 @@ build_browser_client() {
         log_ok "css"
     fi
 
+    # Copy theme assets (per-theme bundled webfonts, e.g. system-6).
+    # CSS @font-face rules reference paths under themes/<theme-id>/fonts/.
+    if [ -d "templates/browser/themes" ]; then
+        cp -r templates/browser/themes "$OUTDIR/themes"
+        log_ok "theme-assets"
+    fi
+
     # Copy story assets (audio, images, etc.)
     local ASSETS_DIR="${STORY_DIR}/assets"
     if [ -d "$ASSETS_DIR" ]; then
@@ -859,6 +866,10 @@ build_browser_client() {
         cp "$OUTDIR/index.html" "$WEBSITE_DIR/"
         cp "$OUTDIR/base.css" "$WEBSITE_DIR/" 2>/dev/null || true
         cp "$OUTDIR/styles.css" "$WEBSITE_DIR/"
+        if [ -d "$OUTDIR/themes" ]; then
+            rm -rf "$WEBSITE_DIR/themes"
+            cp -r "$OUTDIR/themes" "$WEBSITE_DIR/themes"
+        fi
         log_ok "website"
     fi
 

@@ -5,11 +5,14 @@
  * the platform DOM. Visual rules are scoped under [data-theme="<id>"];
  * structural rules (layout, scroll, positioning) live in base.css.
  *
- * Kits ported in Phase 2 of plan-20260507-component-themes:
- *   - dos-classic   ✓ (this commit)
- *   - modern-dark   pending
- *   - retro-terminal pending
- *   - paper         pending
+ * Phase 2 (component-theme migration):
+ *   - dos-classic      ✓
+ *   - modern-dark      ✓
+ *   - retro-terminal   ✓
+ *   - paper            ✓
+ *
+ * Phase 3 (System 6 fifth kit, plan-20260507-component-themes):
+ *   - system-6         ✓ (Macintosh System 6 — bundled webfonts)
  *
  * Themes without a kit fall back only to base.css structural rules and
  * will appear visually unstyled until their kit lands.
@@ -20,7 +23,7 @@
    ============================================ */
 
 :root,
-[data-theme="dos-classic"] {
+:root[data-theme="dos-classic"] {
   --theme-bg: #0000aa;
   --theme-bg-alt: #000088;
   --theme-text: #ffffff;
@@ -36,7 +39,7 @@
   --theme-line-height: 1.4;
 }
 
-[data-theme="modern-dark"] {
+:root[data-theme="modern-dark"] {
   --theme-bg: #1e1e2e;
   --theme-bg-alt: #181825;
   --theme-text: #cdd6f4;
@@ -52,7 +55,7 @@
   --theme-line-height: 1.6;
 }
 
-[data-theme="retro-terminal"] {
+:root[data-theme="retro-terminal"] {
   --theme-bg: #0a0a0a;
   --theme-bg-alt: #0f0f0f;
   --theme-text: #00ff00;
@@ -68,7 +71,7 @@
   --theme-line-height: 1.5;
 }
 
-[data-theme="paper"] {
+:root[data-theme="paper"] {
   --theme-bg: #f5f5f0;
   --theme-bg-alt: #eaeae5;
   --theme-text: #1a1a1a;
@@ -82,6 +85,25 @@
   --theme-font: "Crimson Text", Georgia, serif;
   --theme-font-size: 17px;
   --theme-line-height: 1.7;
+}
+
+:root[data-theme="system-6"] {
+  --theme-bg: #ffffff;
+  --theme-bg-alt: #ffffff;
+  --theme-text: #000000;
+  --theme-text-muted: #555555;
+  --theme-accent: #000000;
+  --theme-accent-text: #ffffff;
+  --theme-border: #000000;
+  --theme-input-bg: #ffffff;
+  --theme-menu-bg: #ffffff;
+  --theme-menu-hover: #000000;
+  --theme-desktop-bg: #aaaaaa;
+  --theme-font-chrome: "ChicagoFLF", "Charcoal", "Chicago", system-ui, sans-serif;
+  --theme-font-body: "FindersKeepers", "Geneva", system-ui, sans-serif;
+  --theme-font: var(--theme-font-body);
+  --theme-font-size: 24px;
+  --theme-line-height: 1.5;
 }
 
 /* ============================================
@@ -1529,5 +1551,432 @@
   }
   [data-theme="paper"] .sharpee-prose-pane p {
     margin-bottom: 0.5em;
+  }
+}
+
+/* ============================================
+   Theme kit: System 6 (Macintosh System 6)
+   ============================================ */
+
+/* Webfonts bundled under templates/browser/themes/system-6/fonts/.
+   Build copies the directory alongside styles.css.
+   ChicagoFLF + FindersKeepers provenance: sakofchit/system.css (MIT, 2022). */
+
+@font-face {
+  font-family: "ChicagoFLF";
+  src: url("themes/system-6/fonts/ChicagoFLF.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FindersKeepers";
+  src: url("themes/system-6/fonts/FindersKeepers.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+[data-theme="system-6"] body {
+  background-color: var(--theme-desktop-bg);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+[data-theme="system-6"] .sharpee-window {
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+}
+
+/* Window chrome — striped active title bar with white "punch-out" title label */
+
+[data-theme="system-6"] .sharpee-window-title-bar {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #000000 0, #000000 1px, #ffffff 1px, #ffffff 3px
+    );
+  border-bottom: 1px solid var(--theme-border);
+  height: 26px;
+  padding: 0 8px;
+  font-family: var(--theme-font-chrome);
+  font-size: 16px;
+}
+
+[data-theme="system-6"] .sharpee-window-title {
+  background: var(--theme-bg);
+  padding: 0 8px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Menu bar */
+
+[data-theme="system-6"] .sharpee-menu-bar {
+  background: var(--theme-menu-bg);
+  border-bottom: 1px solid var(--theme-border);
+  font-family: var(--theme-font-chrome);
+  font-size: 16px;
+}
+
+[data-theme="system-6"] .sharpee-menu-bar-trigger {
+  color: var(--theme-text);
+  padding: 4px 12px;
+}
+
+[data-theme="system-6"] .sharpee-menu-bar-trigger:hover,
+[data-theme="system-6"] .sharpee-menu-bar-item--open > .sharpee-menu-bar-trigger {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="system-6"] .sharpee-menu-dropdown {
+  background: var(--theme-menu-bg);
+  border: 1px solid var(--theme-border);
+  box-shadow: 1px 1px 0 var(--theme-border);
+  font-family: var(--theme-font-chrome);
+  font-size: 16px;
+  padding: 2px 0;
+}
+
+[data-theme="system-6"] .sharpee-menu-option {
+  color: var(--theme-text);
+  padding: 3px 16px;
+}
+
+[data-theme="system-6"] .sharpee-menu-option:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="system-6"] .sharpee-menu-separator {
+  background: var(--theme-border);
+  height: 1px;
+  margin: 2px 0;
+}
+
+/* Status bar */
+
+[data-theme="system-6"] .sharpee-status-bar {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border-bottom: 1px solid var(--theme-border);
+  font-family: var(--theme-font-chrome);
+  font-size: 15px;
+  font-weight: bold;
+}
+
+/* Prose pane */
+
+[data-theme="system-6"] .sharpee-prose-pane {
+  background: var(--theme-bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
+}
+
+[data-theme="system-6"] .sharpee-prose-pane p {
+  margin-bottom: 0.6em;
+}
+
+[data-theme="system-6"] .sharpee-prose-pane p:last-child {
+  margin-bottom: 0;
+}
+
+[data-theme="system-6"] .sharpee-prose-pane .command-echo {
+  color: var(--theme-text-muted);
+  margin-top: 0.8em;
+  margin-bottom: 0.4em;
+}
+
+[data-theme="system-6"] .sharpee-prose-pane .system-message {
+  color: var(--theme-text);
+  font-weight: bold;
+}
+
+[data-theme="system-6"] .sharpee-prose-pane .game-status {
+  text-align: center;
+  font-family: var(--theme-font-chrome);
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--theme-border);
+}
+
+[data-theme="system-6"] .sharpee-prose-pane::-webkit-scrollbar {
+  width: 16px;
+}
+
+[data-theme="system-6"] .sharpee-prose-pane::-webkit-scrollbar-track {
+  background: var(--theme-bg);
+  border-left: 1px solid var(--theme-border);
+}
+
+[data-theme="system-6"] .sharpee-prose-pane::-webkit-scrollbar-thumb {
+  background:
+    repeating-linear-gradient(45deg, #000000 0, #000000 1px, #ffffff 1px, #ffffff 2px);
+  border: 1px solid var(--theme-border);
+}
+
+/* Input bar */
+
+[data-theme="system-6"] .sharpee-input-bar {
+  background: var(--theme-bg);
+  border-top: 1px solid var(--theme-border);
+}
+
+[data-theme="system-6"] .sharpee-input-prompt {
+  color: var(--theme-text);
+  font-family: var(--theme-font-chrome);
+  font-weight: bold;
+}
+
+[data-theme="system-6"] .sharpee-input-field {
+  background: transparent;
+  color: var(--theme-text);
+  caret-color: var(--theme-text);
+}
+
+[data-theme="system-6"] .sharpee-input-field::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.7;
+}
+
+/* Dialogs */
+
+[data-theme="system-6"] .sharpee-dialog {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border: 1px solid var(--theme-border);
+  box-shadow: 1px 1px 0 var(--theme-border);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+[data-theme="system-6"] .sharpee-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="system-6"] .sharpee-dialog-title {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #000000 0, #000000 1px, #ffffff 1px, #ffffff 3px
+    );
+  border-bottom: 1px solid var(--theme-border);
+  font-family: var(--theme-font-chrome);
+  font-size: 16px;
+  padding: 4px 8px;
+  text-align: center;
+  font-weight: bold;
+}
+
+[data-theme="system-6"] .sharpee-dialog-buttons {
+  border-top: 1px solid var(--theme-border);
+}
+
+[data-theme="system-6"] .sharpee-dialog-button {
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+  border-radius: 4px;
+  color: var(--theme-text);
+  font-family: var(--theme-font-chrome);
+  font-size: 16px;
+  padding: 4px 16px;
+}
+
+[data-theme="system-6"] .sharpee-dialog-button:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="system-6"] .sharpee-dialog-button:focus {
+  outline: 1px solid var(--theme-border);
+  outline-offset: 2px;
+}
+
+[data-theme="system-6"] .sharpee-dialog-button:disabled {
+  color: var(--theme-text-muted);
+}
+
+/* Dialog body internals */
+
+[data-theme="system-6"] .save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+[data-theme="system-6"] .save-input-row label {
+  white-space: nowrap;
+}
+
+[data-theme="system-6"] #save-name-input {
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  padding: 3px 6px;
+}
+
+[data-theme="system-6"] #save-name-input:focus {
+  outline: 1px solid var(--theme-border);
+  outline-offset: 1px;
+}
+
+[data-theme="system-6"] .saves-list-label {
+  color: var(--theme-text-muted);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+[data-theme="system-6"] .saves-list {
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+[data-theme="system-6"] .save-slot {
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px dotted #aaaaaa;
+}
+
+[data-theme="system-6"] .save-slot:last-child {
+  border-bottom: none;
+}
+
+[data-theme="system-6"] .save-slot:hover {
+  background: #dddddd;
+}
+
+[data-theme="system-6"] .save-slot.selected {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="system-6"] .save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="system-6"] .save-slot-info {
+  color: var(--theme-text-muted);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+[data-theme="system-6"] .save-slot.selected .save-slot-info {
+  color: var(--theme-accent-text);
+}
+
+[data-theme="system-6"] .no-saves-message {
+  color: var(--theme-text-muted);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+[data-theme="system-6"] .startup-info {
+  color: var(--theme-text);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+[data-theme="system-6"] .startup-question {
+  color: var(--theme-text);
+  font-weight: bold;
+  margin: 0;
+}
+
+[data-theme="system-6"] .saves-list::-webkit-scrollbar,
+[data-theme="system-6"] .sharpee-dialog-body::-webkit-scrollbar {
+  width: 12px;
+}
+
+[data-theme="system-6"] .saves-list::-webkit-scrollbar-track,
+[data-theme="system-6"] .sharpee-dialog-body::-webkit-scrollbar-track {
+  background: var(--theme-bg);
+  border-left: 1px solid var(--theme-border);
+}
+
+[data-theme="system-6"] .saves-list::-webkit-scrollbar-thumb,
+[data-theme="system-6"] .sharpee-dialog-body::-webkit-scrollbar-thumb {
+  background:
+    repeating-linear-gradient(45deg, #000000 0, #000000 1px, #ffffff 1px, #ffffff 2px);
+  border: 1px solid var(--theme-border);
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  [data-theme="system-6"] body {
+    background-color: var(--theme-bg);
+    font-size: 13px;
+  }
+  [data-theme="system-6"] .sharpee-window {
+    border: 0;
+  }
+  [data-theme="system-6"] .sharpee-status-bar {
+    font-size: 11px;
+  }
+  [data-theme="system-6"] .sharpee-input-prompt {
+    font-size: 14px;
+  }
+  [data-theme="system-6"] .sharpee-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+  [data-theme="system-6"] .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  [data-theme="system-6"] .sharpee-dialog-buttons {
+    gap: 12px;
+  }
+  [data-theme="system-6"] .sharpee-dialog-button {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  [data-theme="system-6"] body {
+    font-size: 12px;
+  }
+  [data-theme="system-6"] .sharpee-status-bar {
+    font-size: 10px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  [data-theme="system-6"] #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+  [data-theme="system-6"] #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  [data-theme="system-6"] body {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  [data-theme="system-6"] .sharpee-prose-pane p {
+    margin-bottom: 0.4em;
   }
 }
