@@ -11,6 +11,7 @@ enum Theme {
     static let editorBackground   = NSColor(srgb: 0x1E1F26)
     static let playBackground     = NSColor(srgb: 0x13141A)
     static let border             = NSColor(srgb: 0x3A3C48)
+    static let foreground         = NSColor(srgb: 0xD8D9E0)
     static let foregroundDim      = NSColor(srgb: 0x8E90A0)
     static let foregroundFaint    = NSColor(srgb: 0x5C5F6D)
     static let accent             = NSColor(srgb: 0x89B4FA)

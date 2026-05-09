@@ -1,7 +1,8 @@
 // MainWindow.swift
-// Main window shell for Sharpee IDE: a 4-pane horizontal split (Rail | Project | Editor | Play) with a status bar footer.
-// Public interface: MainWindowController constructs and presents the window; internal types are scaffolding only.
-// Owner context: tools/ide — App shell. Phase 0 placeholder; panes carry no behaviour.
+// Main window shell for Sharpee: a 4-pane horizontal split (Rail | Project | Editor | Play) with a status bar footer.
+// Public interface: MainWindowController constructs and presents the window, and forwards
+// project-load calls down the view-controller chain to the project tree.
+// Owner context: tools/ide — App shell.
 
 import AppKit
 
@@ -28,32 +29,38 @@ final class MainWindowController: NSWindowController {
 
         self.init(window: window)
     }
+
+    /// Replaces the project displayed in the Project pane.
+    func loadProject(_ project: Project) {
+        (window?.contentViewController as? RootViewController)?.loadProject(project)
+    }
 }
 
 // MARK: - Root view controller (split + status bar)
 
 private final class RootViewController: NSViewController {
 
+    private let splitViewController = MainSplitViewController()
+
     override func loadView() {
-        let split = MainSplitViewController()
         let statusBar = StatusBarView()
 
-        addChild(split)
+        addChild(splitViewController)
 
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
-        split.view.translatesAutoresizingMaskIntoConstraints = false
+        splitViewController.view.translatesAutoresizingMaskIntoConstraints = false
         statusBar.translatesAutoresizingMaskIntoConstraints = false
 
-        container.addSubview(split.view)
+        container.addSubview(splitViewController.view)
         container.addSubview(statusBar)
 
         NSLayoutConstraint.activate([
-            split.view.topAnchor.constraint(equalTo: container.topAnchor),
-            split.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            split.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            split.view.bottomAnchor.constraint(equalTo: statusBar.topAnchor),
+            splitViewController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            splitViewController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            splitViewController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            splitViewController.view.bottomAnchor.constraint(equalTo: statusBar.topAnchor),
 
             statusBar.heightAnchor.constraint(equalToConstant: 22),
             statusBar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -63,17 +70,24 @@ private final class RootViewController: NSViewController {
 
         view = container
     }
+
+    func loadProject(_ project: Project) {
+        splitViewController.loadProject(project)
+    }
 }
 
 // MARK: - Main horizontal split (4 panes)
 
-private final class MainSplitViewController: NSSplitViewController {
+private final class MainSplitViewController: NSSplitViewController, ProjectTreeDelegate {
 
     private static let railWidth: CGFloat = 40
     private static let projectWidth: CGFloat = 260
     private static let projectMinWidth: CGFloat = 200
     private static let editorMinWidth: CGFloat = 320
     private static let playMinWidth: CGFloat = 240
+
+    private let projectTreeViewController = ProjectTreeViewController()
+    private let editorViewController = EditorViewController()
 
     private var didApplyInitialLayout = false
 
@@ -82,19 +96,25 @@ private final class MainSplitViewController: NSSplitViewController {
         splitView.dividerStyle = .thin
         splitView.autosaveName = "SharpeeIDEMainSplit"
 
+        projectTreeViewController.delegate = self
+
         addSplitViewItem(makeRailItem())
-        addSplitViewItem(makePaneItem(label: "Project",
-                                      color: Theme.projectBackground,
-                                      minWidth: Self.projectMinWidth,
-                                      holding: .defaultHigh))
-        addSplitViewItem(makePaneItem(label: "Editor",
-                                      color: Theme.editorBackground,
-                                      minWidth: Self.editorMinWidth,
-                                      holding: .defaultLow))
+        addSplitViewItem(makeProjectItem())
+        addSplitViewItem(makeEditorItem())
         addSplitViewItem(makePaneItem(label: "Play",
                                       color: Theme.playBackground,
                                       minWidth: Self.playMinWidth,
                                       holding: .defaultLow))
+    }
+
+    func loadProject(_ project: Project) {
+        projectTreeViewController.setProject(project)
+    }
+
+    // MARK: - ProjectTreeDelegate
+
+    func projectTree(_ controller: ProjectTreeViewController, didActivate node: FileNode) {
+        editorViewController.openDocument(at: node.url)
     }
 
     override func viewDidAppear() {
@@ -127,6 +147,20 @@ private final class MainSplitViewController: NSSplitViewController {
         item.maximumThickness = Self.railWidth
         item.canCollapse = false
         item.holdingPriority = .required
+        return item
+    }
+
+    private func makeProjectItem() -> NSSplitViewItem {
+        let item = NSSplitViewItem(viewController: projectTreeViewController)
+        item.minimumThickness = Self.projectMinWidth
+        item.holdingPriority = .defaultHigh
+        return item
+    }
+
+    private func makeEditorItem() -> NSSplitViewItem {
+        let item = NSSplitViewItem(viewController: editorViewController)
+        item.minimumThickness = Self.editorMinWidth
+        item.holdingPriority = .defaultLow
         return item
     }
 
