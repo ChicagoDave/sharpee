@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait, WallEntity } from '@sharpee/world-model';
 import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior } from '@sharpee/world-model';
 import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { ExaminedEventData } from './examining-events';
@@ -53,9 +53,31 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     eventData.self = true;
     return eventData; // No trait checking for self-examination
   }
-  
+
+  // Walls (ADR-173 Phase 4): per-side description rendering. The wall entity
+  // is symmetric, but the *description* the player sees depends on which side
+  // they're standing on. We pull `wall.getSide(playerRoom)?.description` and
+  // emit `examined_wall` with that as the description param.
+  //
+  // The actor's current location resolves the side. If the actor is not in
+  // either of the wall's two rooms, no per-side description is available —
+  // the message falls through to `nothing_special` in `buildExaminingMessageParams`.
+  // (In practice this branch is unreachable because the validator's scope
+  // filter only admits walls when the actor is in a connecting room, but the
+  // data builder stays safe regardless.)
+  if (noun instanceof WallEntity) {
+    const playerRoom = context.world.getLocation(actor.id);
+    const side = playerRoom ? noun.getSide(playerRoom) : undefined;
+    eventData.isWall = true;
+    if (side?.description) {
+      eventData.hasDescription = true;
+      eventData.wallDescription = side.description;
+    }
+    return eventData;
+  }
+
   // Add trait-specific information
-  
+
   // Description and brief (description uses computed getter for trait-aware text)
   eventData.hasDescription = !!noun.description;
   if (noun.has(TraitType.IDENTITY)) {
@@ -171,6 +193,19 @@ export function buildExaminingMessageParams(
     // Add description text if available (uses computed getter for trait-aware text)
     if (eventData.hasDescription && noun.description) {
       params.description = noun.description;
+    }
+
+    // Wall-specific message (ADR-173 Phase 4) — checked first because walls
+    // do not carry IdentityTrait, so the trait branches below are no-ops.
+    if (eventData.isWall) {
+      if (eventData.wallDescription) {
+        params.description = eventData.wallDescription;
+        messageId = 'examined_wall';
+      } else {
+        params.item = entityInfoFrom(noun);
+        messageId = 'nothing_special';
+      }
+      return { messageId, params, contentsMessage };
     }
 
     // Container-specific message

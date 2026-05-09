@@ -58,6 +58,9 @@ export * from './concealment';
 // System traits
 export * from './story-info';
 
+// Wall obstructor protocol (ADR-173 Phase 5)
+export * from './obstructor-protocol';
+
 // Register function
 export * from './register-all';
 

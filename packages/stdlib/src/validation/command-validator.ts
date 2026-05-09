@@ -20,7 +20,7 @@ import type {
   WorldModel,
   IFEntity
 } from '@sharpee/world-model';
-import { IdentityTrait } from '@sharpee/world-model';
+import { IdentityTrait, WallEntity } from '@sharpee/world-model';
 
 import type { ValidatedCommand, ScopeInfo } from './types';
 import type { SenseType } from '../scope/types';
@@ -1052,6 +1052,18 @@ export class CommandValidator implements CommandValidator {
       const adjectives = this.getEntityAdjectives(entity).map(a => a.toLowerCase());
       const synonyms = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
 
+      // ADR-173: walls require strict modifier match. When the user specifies
+      // modifiers, a wall whose current-side adjective doesn't match at least
+      // one of them is removed from candidacy entirely — falling back on the
+      // bare 'wall' type match would silently resolve `OAK WALL` from the
+      // library to the library/parlor wall whose library side is 'brick'.
+      if (entity instanceof WallEntity && modifiers.length > 0) {
+        const anyMatch = modifiers.some(m => adjectives.includes(m.toLowerCase()));
+        if (!anyMatch) {
+          continue;
+        }
+      }
+
       // Full text match scores highest (maximal munch — longer match = more specific)
       if (fullText && fullText !== headNoun) {
         if (name === fullText) {
@@ -1393,9 +1405,29 @@ export class CommandValidator implements CommandValidator {
   }
 
   /**
-   * Get entity adjectives
+   * Get entity adjectives.
+   *
+   * For walls (ADR-173), adjectives are per-side: the wall entity carries
+   * an adjective for each of its two connecting rooms, and the parser
+   * resolves against the side facing the player's current room. The same
+   * wall entity therefore matches different adjectives from each side
+   * (e.g. 'oak' from the parlor, 'brick' from the library). When the
+   * player is not in either connecting room, the wall contributes no
+   * adjectives.
+   *
+   * For all other entities, adjectives come from `IdentityTrait.adjectives`.
    */
   private getEntityAdjectives(entity: IFEntity): string[] {
+    if (entity instanceof WallEntity) {
+      const player = this.world.getPlayer();
+      const playerRoom = player ? this.world.getLocation(player.id) : undefined;
+      if (playerRoom && (playerRoom === entity.between[0] || playerRoom === entity.between[1])) {
+        const adjective = entity.getSide(playerRoom)?.adjective;
+        return adjective ? [adjective] : [];
+      }
+      return [];
+    }
+
     const adjectives: string[] = [];
 
     // Get identity trait

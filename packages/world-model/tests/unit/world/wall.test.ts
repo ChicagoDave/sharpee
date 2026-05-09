@@ -376,6 +376,39 @@ describe('WorldModel.createWall — AC-4 reciprocal room references', () => {
     expect(trait?.profile).toBe('thick');
   });
 
+  // ADR-173 Phase 3: walls have no spatial containment, so createWall sets
+  // a per-room minimum scope of VISIBLE (numeric 2) on each connecting room
+  // so the validator's scope filter accepts the wall when the actor is in
+  // either room. See packages/stdlib/tests/unit/validation/wall-resolution.test.ts
+  // for the integration-level coverage of this scope contract.
+  it('sets per-room minimum scope of VISIBLE (2) for both connecting rooms', () => {
+    const wall = world.createWall({
+      between: [parlor, library],
+      sides: {
+        [parlor.id]: side('oak'),
+        [library.id]: side('brick'),
+      },
+    });
+
+    expect(wall.getMinimumScope(parlor.id)).toBe(2);
+    expect(wall.getMinimumScope(library.id)).toBe(2);
+  });
+
+  it('does not raise minimum scope for unrelated rooms', () => {
+    const study = makeRoom(world, 'Study');
+    const wall = world.createWall({
+      between: [parlor, library],
+      sides: {
+        [parlor.id]: side('oak'),
+        [library.id]: side('brick'),
+      },
+    });
+
+    // The wall borders parlor and library only — its visibility is not
+    // raised in any third room.
+    expect(wall.getMinimumScope(study.id)).toBe(0);
+  });
+
   it('records the wall as exactly two distinct room ids in `between`', () => {
     const wall = world.createWall({
       between: [parlor, library],

@@ -81,6 +81,12 @@ export function createWall(
   wall.sides.set(roomAId, { ...spec.sides[roomAId] });
   wall.sides.set(roomBId, { ...spec.sides[roomBId] });
 
+  // ADR-173 Phase 3 — make the wall reachable for parser/validator scope from
+  // either connecting room. Walls have no spatial containment, so the default
+  // scope rules (room contents + the room itself) do not include them. Numeric
+  // 2 corresponds to ScopeLevel.VISIBLE (see if-entity.ts setMinimumScope).
+  wall.setMinimumScope(2, [roomAId, roomBId]);
+
   world.registerWall(wall);
 
   pushWallId(roomA, wallId);

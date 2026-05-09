@@ -18,6 +18,7 @@ export const ExaminingMessages = {
   EXAMINED_SWITCHABLE: 'examined_switchable',
   EXAMINED_WEARABLE: 'examined_wearable',
   EXAMINED_DOOR: 'examined_door',
+  EXAMINED_WALL: 'examined_wall',
   NOTHING_SPECIAL: 'nothing_special',
   DESCRIPTION: 'description',
   BRIEF_DESCRIPTION: 'brief_description',

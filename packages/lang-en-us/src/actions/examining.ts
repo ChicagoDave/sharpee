@@ -29,6 +29,7 @@ export const examiningLanguage = {
     'examined_switchable': "{description}",
     'examined_wearable': "{description}",
     'examined_door': "{description}",
+    'examined_wall': "{description}",
     'nothing_special': "{You} {see} nothing special about {the:item}.",
     'description': "{description}",
     'brief_description': "{description}",

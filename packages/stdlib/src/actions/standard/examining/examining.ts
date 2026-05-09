@@ -44,6 +44,7 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     'examined_switchable',
     'examined_wearable',
     'examined_door',
+    'examined_wall',
     'nothing_special',
     'description',
     'brief_description'
