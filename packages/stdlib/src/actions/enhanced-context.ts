@@ -294,7 +294,24 @@ class InternalActionContext implements ActionContext {
   event(type: string, data: any): ISemanticEvent {
     return this.createEventInternal(type, data);
   }
-  
+
+  /**
+   * Sound emission (ADR-172 Phase 6).
+   *
+   * The stdlib-side context has no sound buffer — that lives in the
+   * engine's per-turn pipeline. Production action execution flows
+   * through the engine's `createActionContext` factory, which wires a
+   * real buffer; this stdlib factory is used by capability interceptor
+   * binding and unit tests, where sound emissions are intentionally
+   * dropped (no per-turn dispatch loop is present to consume them).
+   *
+   * Per ADR-172 §Rejection rules: emissions without a route are dropped
+   * silently.
+   */
+  emitSound(_sound: import('@sharpee/if-domain').ISound | Omit<import('@sharpee/if-domain').ISound, 'sourceEntity' | 'sourceLocation'>): void {
+    // no-op
+  }
+
   /**
    * Internal event creation logic
    * This wraps the core createEvent to match our event pattern

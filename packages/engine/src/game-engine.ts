@@ -37,7 +37,7 @@ import {
   createScopeResolver,
   channelRegistry,
 } from '@sharpee/stdlib';
-import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
+import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
 import { ITextService, createTextService } from '@sharpee/text-service';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
@@ -66,6 +66,7 @@ import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
 import { createActionContext } from './action-context-factory';
+import { SoundDispatcher } from './sound';
 import { processEvent } from './turn-event-processor';
 import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
 import { hasNarrativeSettings } from './language-provider-interface';
@@ -159,6 +160,23 @@ export class GameEngine {
   private pendingPlatformOps: IPlatformEvent[] = [];
   private perceptionService?: IPerceptionService;
   private pluginRegistry: PluginRegistry;
+
+  /**
+   * Per-turn sound buffer (ADR-172 Phase 6). Cleared at the start of every
+   * `executeTurn()`; populated as actions call `context.emitSound`;
+   * dispatched once after the plugin tick by `soundDispatcher.dispatch`.
+   * Engine-internal — never serialized into save/restore snapshots
+   * because sounds do not survive turn boundaries.
+   */
+  private soundBuffer: ISound[] = [];
+
+  /**
+   * Per-turn sound dispatcher (ADR-172 Phase 6). Stateless — owns no
+   * per-turn data; the buffer is passed in. Held as a field to leave
+   * room for future extension seams (e.g., custom propagate injection
+   * via `setSoundDispatcher` in tests).
+   */
+  private soundDispatcher: SoundDispatcher = new SoundDispatcher();
   private random: SeededRandom;
   private narrativeSettings: NarrativeSettings;
 
@@ -807,6 +825,7 @@ export class GameEngine {
     // Clear engine bookkeeping
     this.turnEvents.clear();
     this.pendingPlatformOps = [];
+    this.soundBuffer.length = 0;
     this.saveRestoreService.clearUndoSnapshots();
     this.hasEmittedInitialized = false;
 
@@ -931,12 +950,18 @@ export class GameEngine {
       }
 
       // Regular command path - full turn processing
+      // Reset the per-turn sound buffer (ADR-172 Phase 6). Sounds emitted
+      // during this turn's report phase live here until the dispatcher
+      // fans them out to listeners after the plugin tick.
+      this.soundBuffer.length = 0;
+
       // Execute the command
       const result = await this.commandExecutor.execute(
         input,
         this.world,
         this.context,
-        this.config
+        this.config,
+        this.soundBuffer,
       );
 
       // Get context for event enrichment
@@ -1040,6 +1065,38 @@ export class GameEngine {
           if (pluginEvents.length > 0) {
             this.processPluginEvents(pluginEvents, turn, playerLocation);
           }
+        }
+      }
+
+      // Sound dispatch (ADR-172 Phase 6). Fan out every buffered sound
+      // to every `ListenerTrait` entity, producing one
+      // `sound.audibility.heard` event per (sound × listener) pair the
+      // propagation function delivers (non-null). Runs after the plugin
+      // tick so any sounds emitted by NPC actions in a future plugin
+      // extension would also land in the buffer; runs before
+      // `textService.processTurn()` so the audibility channel and
+      // text-rendering see the events in this turn's packet.
+      if (this.soundBuffer.length > 0) {
+        const audibilityEvents = this.soundDispatcher.dispatch(
+          this.soundBuffer,
+          this.world,
+          turn,
+        );
+        if (audibilityEvents.length > 0) {
+          const existing = this.turnEvents.get(turn) ?? [];
+          this.turnEvents.set(turn, [...existing, ...audibilityEvents]);
+          for (const e of audibilityEvents) {
+            this.eventSource.emit(e);
+            // Make the events visible to onEvent subscribers and the
+            // engine's 'event' emitter, mirroring the action-event path.
+            if (this.config.onEvent) this.config.onEvent(e);
+            this.emit('event', e);
+          }
+          // Mirror the audibility events into result.events so callers
+          // that read TurnResult directly (tests, downstream renderers)
+          // see them alongside the action's events. Matches the pattern
+          // used after platform-op processing further below.
+          result.events = [...result.events, ...audibilityEvents];
         }
       }
 

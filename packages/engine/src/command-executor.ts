@@ -12,6 +12,7 @@
 
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType, Result } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
+import { ISound } from '@sharpee/if-domain';
 import { hasWorldContext } from './parser-interface';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
 import { WorldModel } from '@sharpee/world-model';
@@ -163,7 +164,8 @@ export class CommandExecutor {
     input: string,
     world: WorldModel,
     context: GameContext,
-    config?: EngineConfig
+    config?: EngineConfig,
+    soundBuffer?: ISound[],
   ): Promise<TurnResult> {
     const turn = context.currentTurn;
 
@@ -249,7 +251,7 @@ export class CommandExecutor {
       if (!this.scopeResolver) {
         this.scopeResolver = createScopeResolver(world);
       }
-      const actionContext = createActionContext(world, context, command, action, this.scopeResolver);
+      const actionContext = createActionContext(world, context, command, action, this.scopeResolver, soundBuffer);
 
       // Pre-action hook (ADR-148): listeners can modify world state before validation
       this.emitBeforeAction({
@@ -324,7 +326,8 @@ export class CommandExecutor {
               context,
               inferredCommand,
               action,
-              this.scopeResolver!
+              this.scopeResolver!,
+              soundBuffer,
             );
 
             // Mark that inference occurred (for "(the leaflet)" message)

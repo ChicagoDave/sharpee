@@ -5,6 +5,7 @@
 import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel, ScopeCheckResult, ScopeErrors, ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { ISemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
+import { ISound } from '@sharpee/if-domain';
 import { GameContext } from './types';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
 
@@ -53,14 +54,22 @@ function getScopeError(
 }
 
 /**
- * Create an ActionContext for action execution
+ * Create an ActionContext for action execution.
+ *
+ * @param soundBuffer Optional per-turn sound buffer (ADR-172 Phase 6).
+ *                    When provided, `context.emitSound(...)` appends to it;
+ *                    when absent, `emitSound` is a silent no-op. The engine
+ *                    passes its turn-scoped buffer here; recursive
+ *                    sub-contexts (implicit take) inherit the same buffer
+ *                    so a nested action's sounds also reach the dispatcher.
  */
 export function createActionContext(
   world: WorldModel,
   gameContext: GameContext,
   command: ValidatedCommand,
   action: Action,
-  scopeResolver: ScopeResolver
+  scopeResolver: ScopeResolver,
+  soundBuffer?: ISound[]
 ): ActionContext {
   const player = gameContext.player;
   const currentLocation = world.getLocation(player.id)
@@ -249,13 +258,16 @@ export function createActionContext(
         }
       };
 
-      // Create a sub-context for the taking action
+      // Create a sub-context for the taking action — inherit the same
+      // sound buffer so any sounds emitted during an implicit take still
+      // reach the per-turn dispatcher.
       const takeContext = createActionContext(
         world,
         gameContext,
         takeCommand,
         takingAction,
-        scopeResolver
+        scopeResolver,
+        soundBuffer
       );
 
       // Run the taking action's validate phase
@@ -304,6 +316,21 @@ export function createActionContext(
     },
 
     // Event creation
-    event
+    event,
+
+    // Sound emission (ADR-172 Phase 6) — fills sourceEntity from the
+    // actor (player) and sourceLocation from the actor's current room,
+    // then appends to the engine's per-turn sound buffer. When no
+    // buffer was wired (test mocks, recursive contexts without one),
+    // this is a silent no-op per ADR-172's "emission dropped silently"
+    // rejection rule for unrouted emissions.
+    emitSound: (partial) => {
+      if (!soundBuffer) return;
+      soundBuffer.push({
+        ...partial,
+        sourceEntity: player.id,
+        sourceLocation: currentLocation?.id ?? player.id,
+      });
+    }
   };
 }

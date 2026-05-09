@@ -8,6 +8,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
+import { ISound } from '@sharpee/if-domain';
 import { ScopeResolver, ScopeLevel } from '../scope/types';
 import { ValidatedCommand } from '../validation/types';
 
@@ -326,7 +327,7 @@ export interface ActionContext {
    *   messageId: 'no_target' 
    * })]
    * 
-   * @example  
+   * @example
    * // Success with typed data
    * const eventData: TakenEventData = { item: noun.name, messageId: 'taken' }
    * return [
@@ -334,6 +335,41 @@ export interface ActionContext {
    * ]
    */
   event(type: string, data: any): ISemanticEvent;
+
+  /**
+   * Emit a sound from the actor's current location for this turn (ADR-172
+   * Phase 6).
+   *
+   * Buffers an `ISound` for the per-turn sound dispatcher to propagate to
+   * every `ListenerTrait` entity. The context auto-fills `sourceEntity`
+   * (from `context.player.id`) and `sourceLocation` (from
+   * `context.currentLocation.id`) so callers only supply the semantic
+   * payload: kind, volumeTier, and optional content.
+   *
+   * Sounds buffered in this turn's report or execute phase are dispatched
+   * once after action resolution and before text rendering. Sounds do NOT
+   * survive the turn boundary.
+   *
+   * If the action context was created without a sound buffer wired (the
+   * recursive implicit-take path, or a hand-built test mock), this is a
+   * silent no-op — emission is dropped without error.
+   *
+   * @param sound A partial `ISound` omitting `sourceEntity` and
+   *              `sourceLocation`; the context fills both from the actor.
+   *
+   * @example
+   * // Speech sound with content (in an action's report phase)
+   * context.emitSound({
+   *   kind: 'speech',
+   *   volumeTier: 'normal',
+   *   content: { messageId: 'herve.greeting' },
+   * });
+   *
+   * @example
+   * // Ambient sound, no content
+   * context.emitSound({ kind: 'glass-break', volumeTier: 'raised' });
+   */
+  emitSound(sound: Omit<ISound, 'sourceEntity' | 'sourceLocation'>): void;
 }
 
 /**

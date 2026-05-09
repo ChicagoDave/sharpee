@@ -1,8 +1,8 @@
 # ADR-172: Spatial Sound Propagation Model
 
-## Status: PROPOSED (revised 2026-05-08 after multi-ADR seam review with ADR-173, then again to introduce per-side acoustic modifiers and forecast acoustic conduits + visual cross-room observation)
+## Status: ACCEPTED
 
-## Date: 2026-05-08
+## Date: 2026-05-08 (Proposed), 2026-05-09 (Accepted — L1 Phases 1–6 implemented)
 
 ## Builds on
 
@@ -792,6 +792,64 @@ The ADR was revised twice in the same session:
    revision adds `AcousticDampenerTrait`, the per-side acoustic
    modifier formula, and forecasts the four future ADRs in the
    deferred section.
+
+### Implementation history
+
+L1 was implemented across two sessions in 2026-05:
+
+- `session-20260508-1902-main` — Phases 1–5 (domain types in
+  `@sharpee/if-domain`; `AcousticTrait` / `AcousticDampenerTrait` /
+  `ListenerTrait` in `@sharpee/world-model`; `propagate()` Dijkstra
+  edge-graph in `@sharpee/engine`; player Listener-trait auto-attach
+  in `setStory()`; `audibility` channel + 12 lang-en-us prose
+  templates). Landed in commit `d465251c`. **+87 tests, 0
+  regressions** across `if-domain` (16), `world-model` (18),
+  `engine` (29), `stdlib` (13), `lang-en-us` (11).
+- `session-20260509-1635-main` — Phase 6 (action integration).
+  `ActionContext.emitSound` authoring API in stdlib + engine factory;
+  `SoundDispatcher` with constructor-injectable `propagate`;
+  per-turn buffer + dispatch wired into `GameEngine.executeTurn()`
+  between the plugin tick and `textService.processTurn()`;
+  audibility events threaded into `turnEvents`, `eventSource`, the
+  engine's `'event'` emitter, the `onEvent` callback, AND
+  `result.events`. Tapestry §End-to-end scenario pinned by a
+  self-contained engine integration test. **+22 tests** (Step 6.1: 5,
+  Step 6.2: 9, Step 6.3: 4, Step 6.4: 4); 0 regressions.
+
+Notable decisions during implementation:
+
+- **`audibility` channel id, not `sound`** — ADR-163 had already
+  claimed `'sound'` for the media-cue channel (`media.sound.play`).
+  ADR-172's channel was renamed to `audibility` rather than displace
+  the existing one; §Channel routing was updated in Phase 5.
+- **The `AUDIBILITY_HEARD_EVENT_TYPE` string is duplicated** between
+  `@sharpee/engine/sound/dispatcher.ts` and
+  `@sharpee/stdlib/channels/sound-events.ts` (both literal
+  `'sound.audibility.heard'`). The duplication is intentional — the
+  engine package must not depend on stdlib (engine → stdlib is the
+  one-way dependency direction). Both sides agree on the string;
+  drift would surface immediately because the audibility channel's
+  `produce` filter matches the same literal.
+- **The sound buffer lives as a private field on `GameEngine`**, not
+  in `GameContext`. Sounds do not survive turn boundaries and are
+  not part of the serializable game state; the buffer is cleared at
+  the start of every `executeTurn()` and again in `restartGame()`.
+- **NPC plugin-tick sounds are deferred to L2** — Phase 6 only
+  handles sounds emitted from player-turn actions. The plugin tick
+  uses `TurnPluginContext`, not `ActionContext`, so it has no
+  `emitSound` API today. The integration test puts Hervé's analogue
+  (a "shout" action) on the player turn, with a Bystander NPC
+  carrying `ListenerTrait` in another room.
+- **Phase 3 surfaced two latent barrel bugs** in `@sharpee/world-model`:
+  the root `src/index.ts` enumerates each trait subdirectory rather
+  than re-exporting `traits/` wholesale, and missing entries in
+  `TRAIT_IMPLEMENTATIONS`. Both fixed in `d465251c`. A memory note
+  was saved so future trait additions don't trip on this pattern.
+- **Issue #109 filed** during Step 6.3 — the engine declares
+  `Story.extendParser?(parser)` but never invokes it from
+  `setStory()`. Phase 6's engine-wiring test sidesteps the gap by
+  calling `parser.addVerb` directly. Out of scope for ADR-172;
+  tracked separately.
 
 ## Implementation phasing (not a migration plan)
 
