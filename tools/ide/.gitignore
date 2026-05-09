@@ -1,5 +1,6 @@
 # XcodeGen output — regenerate via `xcodegen generate`
 SharpeeIDE.xcodeproj/
+SharpeeIDE/Info.plist
 
 # Xcode build artifacts
 build/
