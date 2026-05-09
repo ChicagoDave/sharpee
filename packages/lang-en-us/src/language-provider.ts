@@ -10,6 +10,7 @@ import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { standardActionLanguage } from './actions';
 import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc';
+import { soundMessages } from './sound-messages';
 import {
   NarrativeContext,
   DEFAULT_NARRATIVE_CONTEXT,
@@ -57,6 +58,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     this.loadNpcMessages();
     // Load character system messages (ADR-142, 144, 146)
     this.loadCharacterMessages();
+    // Load spatial sound prose defaults (ADR-172 Phase 5)
+    this.loadSoundMessages();
   }
 
   /**
@@ -136,6 +139,20 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
           this.messages.set(key, value);
         }
       }
+    }
+  }
+
+  /**
+   * Load spatial-sound prose defaults (ADR-172 Phase 5).
+   *
+   * Per-`(kind, audibility_tier)` defaults the sound dispatcher (Phase
+   * 6) resolves when rendering an `AudibilityEvent` for a listener.
+   * Story authors override per kind via the standard message-override
+   * mechanism.
+   */
+  private loadSoundMessages(): void {
+    for (const [key, value] of Object.entries(soundMessages)) {
+      this.messages.set(key, value);
     }
   }
 

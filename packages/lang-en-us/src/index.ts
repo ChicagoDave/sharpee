@@ -43,3 +43,12 @@ export {
 
 // Export parser error messages (Phase 1.2 recommendations)
 export { parserErrors, getParserErrorMessage } from './data/messages';
+
+// Export spatial sound prose defaults (ADR-172)
+export {
+  soundMessages,
+  soundMessageId,
+  soundFallbackMessageId,
+  type SoundMessageId,
+  type RenderableAudibilityTier,
+} from './sound-messages';

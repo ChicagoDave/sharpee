@@ -83,6 +83,16 @@ export {
   type MediaEventType,
 } from './media';
 
+// Spatial sound channel (ADR-172)
+export {
+  audibilityChannel,
+  SOUND_CHANNELS,
+  SOUND_CHANNEL_IDS,
+  SOUND_EVENT_TYPES,
+  type SoundChannelId,
+  type SoundEventType,
+} from './sound-events';
+
 export { MAIN_KEYS } from './keys';
 
 // Re-export the registry/channel types from if-domain for author

@@ -46,6 +46,9 @@ export * from './traits/vehicle';
 export * from './traits/story-info';
 export * from './traits/character-model';
 export * from './traits/concealment';
+export * from './traits/acoustic';
+export * from './traits/listener';
+export * from './traits/obstructor-protocol';
 
 // Extension system
 export * from './extensions';

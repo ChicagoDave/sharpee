@@ -10,6 +10,7 @@ import {
   IdentityTrait,
   ActorTrait,
   ContainerTrait,
+  ListenerTrait,
   StandardCapabilities,
   ITrait,
   TraitType,
@@ -323,6 +324,16 @@ export class GameEngine {
     const newPlayer = story.createPlayer(this.world);
     this.context.player = newPlayer;
     this.world.setPlayer(newPlayer.id);
+
+    // ADR-172 Phase 4 — every engine-initialized player is a Listener for
+    // spatial sound propagation. Stories opt NPCs / devices in by adding
+    // the trait themselves (see ADR-172 §Multi-listener dispatch). The
+    // `has` check leaves any story-applied ListenerTrait untouched (the
+    // story may have already configured a custom subclass or future
+    // per-listener data fields).
+    if (!newPlayer.has(TraitType.LISTENER)) {
+      newPlayer.add(new ListenerTrait());
+    }
 
     // Initialize story-specific world content (player must exist first)
     story.initializeWorld(this.world);

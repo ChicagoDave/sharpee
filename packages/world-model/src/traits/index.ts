@@ -61,6 +61,10 @@ export * from './story-info';
 // Wall obstructor protocol (ADR-173 Phase 5)
 export * from './obstructor-protocol';
 
+// Spatial sound traits (ADR-172 Phase 2)
+export * from './acoustic';
+export * from './listener';
+
 // Register function
 export * from './register-all';
 

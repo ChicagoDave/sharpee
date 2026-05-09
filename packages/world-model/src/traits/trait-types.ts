@@ -68,6 +68,11 @@ export const TraitType = {
   CONCEALMENT: 'if.trait.concealment',
   CONCEALED_STATE: 'if.trait.concealed_state',
 
+  // Acoustic / sound traits (ADR-172)
+  ACOUSTIC: 'if.trait.acoustic',
+  ACOUSTIC_DAMPENER: 'if.trait.acoustic_dampener',
+  LISTENER: 'if.trait.listener',
+
   // System traits
   STORY_INFO: 'storyInfo'
 } as const;
@@ -152,6 +157,11 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: TraitCategory.INTERACTIVE,
   [TraitType.CONCEALED_STATE]: TraitCategory.INTERACTIVE,
+
+  // Acoustic / sound traits (ADR-172)
+  [TraitType.ACOUSTIC]: TraitCategory.STANDARD,
+  [TraitType.ACOUSTIC_DAMPENER]: TraitCategory.STANDARD,
+  [TraitType.LISTENER]: TraitCategory.STANDARD,
 
   // System traits
   [TraitType.STORY_INFO]: TraitCategory.STANDARD

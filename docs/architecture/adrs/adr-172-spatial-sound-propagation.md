@@ -397,22 +397,32 @@ contract — additions to it require a future ADR.
 ### Channel routing
 
 Sound events flow through the channel system per ADR-163. A new
-channel kind, **`sound`**, is reserved for this purpose. Each emitted
-sound, after propagation, becomes a sound-channel event delivered to
-the listener with the `AudibilityEvent` payload defined above.
+channel kind, **`audibility`**, is reserved for this purpose. Each
+emitted sound, after propagation, becomes an audibility-channel event
+delivered to the listener with the `AudibilityEvent` payload defined
+above.
 
-Renderers consume the sound channel per their capability:
+> **Note (resolved during Phase 5 implementation, 2026-05-09):** the
+> channel id is `audibility`, not `sound`. The `sound` id is owned by
+> ADR-163 for the media-cue channel (`media.sound.play` payloads).
+> The original ADR-172 draft reserved `sound` without spotting that
+> collision; the rename to `audibility` keeps both subsystems intact
+> and was the option David chose in implementation.
+
+Renderers consume the audibility channel per their capability:
 
 - **Text-only clients** (terminal, plain-text web): the language layer
   renders descriptive prose ("you hear hushed voices to the north")
-  and the sound channel data feeds the prose channel.
+  and the audibility channel data feeds the prose channel. The
+  audibility channel is **not** capability-gated for this reason —
+  every surface renders sound prose.
 - **Audio-capable clients** (browser, with the existing Web Audio
-  infrastructure from ADR-169): the sound channel can additionally
-  carry an audio cue identifier; the client plays the cue at a
-  computed playback volume mapped from the audibility tier. The
-  client may also render the prose, or suppress prose for ambient
-  sounds where the audio is sufficient — that choice is per-client
-  and per-story configuration, not platform-decided.
+  infrastructure from ADR-169): the audibility channel can
+  additionally carry an audio cue identifier; the client plays the
+  cue at a computed playback volume mapped from the audibility tier.
+  The client may also render the prose, or suppress prose for
+  ambient sounds where the audio is sufficient — that choice is
+  per-client and per-story configuration, not platform-decided.
 
 The wire shape is the `AudibilityEvent`; clients render what they
 can. This honors ADR-163's "wire is data-only, never assume locked-in
@@ -561,7 +571,7 @@ The following packages and files own each piece of the decision:
 | Propagation function | `@sharpee/engine` | `src/sound/propagation.ts` (new) |
 | `Listener` trait + automatic player attachment | `@sharpee/world-model` (trait), `@sharpee/engine` (player init) | `src/traits/listener/listener-trait.ts` (new); engine player-init extension |
 | `context.emitSound` on `ActionContext` | `@sharpee/stdlib` | `src/actions/types.ts` (extend) |
-| `sound` channel kind registration | `@sharpee/engine` (channel infrastructure per ADR-163) | channel registry (existing) |
+| `audibility` channel kind registration (`audibilityChannel`) | `@sharpee/stdlib` (channel infrastructure per ADR-163) | `src/channels/sound-events.ts` (new) |
 | Sound message defaults (per-`(kind, tier)` prose) | `@sharpee/lang-en-us` | `src/sound-messages.ts` (new) |
 | Web Audio cue mapping | `@sharpee/platform-browser` | extends ADR-169 audio infrastructure |
 
@@ -641,7 +651,7 @@ in CLAUDE.md.
   per ADR-173. Two rooms with no exit, no declared wall, and no
   declared conduit are acoustically isolated regardless of geometric
   "closeness."
-- The channel system gains a `sound` channel kind. Clients that
+- The channel system gains an `audibility` channel kind. Clients that
   render sound (audio cues, distance-aware prose styling) consume it;
   others ignore it without breaking.
 - Capability dispatch gains a side-effect path for `emitSound`,
@@ -801,15 +811,19 @@ L1 ships in phases that each deliver standalone value:
 4. **Player Listener trait wiring** in engine player initialization —
    tests verify a freshly-initialized player has the trait without
    story authoring.
-5. **Channel integration** — `sound` channel kind registered;
-   `AudibilityEvent`s flow through ADR-163's routing; lang-en-us
-   ships per-`(kind, tier)` defaults.
+5. **Channel integration** — `audibility` channel kind registered (in
+   `@sharpee/stdlib` alongside the standard / media channel kits per
+   ADR-163 §7); `AudibilityEvent`s flow through ADR-163's routing
+   carried by the `sound.audibility.heard` semantic event; lang-en-us
+   ships per-`(kind, tier)` defaults under `sound.heard.<kind>.<tier>`
+   message ids.
 6. **Action integration** — `context.emitSound` exposed; capability
    dispatch wired; integration tests exercise emission → propagation
    → channel → rendering with real worlds, including a tapestry-
    removal puzzle scenario.
-7. **Audio-channel rendering in the browser client** — sound channel
-   events trigger Web Audio cues per ADR-169's playback infrastructure.
+7. **Audio-channel rendering in the browser client** — audibility
+   channel events trigger Web Audio cues per ADR-169's playback
+   infrastructure.
 
 Each phase has a real-path test (per the integration-reality discipline
 in CLAUDE.md): propagation tests use real room graphs, channel tests

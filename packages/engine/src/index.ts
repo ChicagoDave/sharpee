@@ -43,6 +43,9 @@ export * from './save-restore-service';
 export * from './turn-event-processor';
 export * from './platform-operations';
 
+// Spatial sound propagation (ADR-172)
+export * from './sound';
+
 // Re-export commonly used items
 export {
   GameEngine

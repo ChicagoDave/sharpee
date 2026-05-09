@@ -9,8 +9,10 @@ import {
   StdlibChannelRegistry,
   STANDARD_CHANNEL_IDS,
   MEDIA_CHANNEL_IDS,
+  SOUND_CHANNEL_IDS,
   STANDARD_CHANNELS,
   MEDIA_CHANNELS,
+  SOUND_CHANNELS,
 } from '../../src/channels';
 
 describe('channelRegistry', () => {
@@ -26,10 +28,17 @@ describe('channelRegistry', () => {
     }
   });
 
-  it('lists exactly the standard + media channels initially', () => {
+  it('pre-registers the sound subsystem channels at module init (ADR-172)', () => {
+    for (const id of Object.values(SOUND_CHANNEL_IDS)) {
+      expect(channelRegistry.get(id), `expected ${id}`).toBeDefined();
+    }
+  });
+
+  it('lists exactly the standard + media + sound channels initially', () => {
     const expected = new Set<string>([
       ...Object.values(STANDARD_CHANNEL_IDS),
       ...Object.values(MEDIA_CHANNEL_IDS),
+      ...Object.values(SOUND_CHANNEL_IDS),
     ]);
     const actual = new Set(channelRegistry.all().map((c) => c.id));
     expect(actual).toEqual(expected);
@@ -43,6 +52,12 @@ describe('channelRegistry', () => {
 
   it('MEDIA_CHANNELS array matches the channels stored under the media ids', () => {
     for (const channel of MEDIA_CHANNELS) {
+      expect(channelRegistry.get(channel.id)).toBe(channel);
+    }
+  });
+
+  it('SOUND_CHANNELS array matches the channels stored under the sound ids (ADR-172)', () => {
+    for (const channel of SOUND_CHANNELS) {
       expect(channelRegistry.get(channel.id)).toBe(channel);
     }
   });

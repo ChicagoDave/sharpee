@@ -30,6 +30,7 @@
 import type { IChannelRegistry, IOChannel } from '@sharpee/if-domain';
 import { STANDARD_CHANNELS } from './standard';
 import { MEDIA_CHANNELS } from './media';
+import { SOUND_CHANNELS } from './sound-events';
 
 /**
  * In-memory `IChannelRegistry` implementation. Last-write-wins on
@@ -77,6 +78,9 @@ export const channelRegistry: IChannelRegistry = (() => {
     registry.add(channel);
   }
   for (const channel of MEDIA_CHANNELS) {
+    registry.add(channel);
+  }
+  for (const channel of SOUND_CHANNELS) {
     registry.add(channel);
   }
   return registry;

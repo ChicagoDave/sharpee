@@ -64,6 +64,11 @@ import { EnterableTrait } from './enterable/enterableTrait';
 import { ConcealmentTrait } from './concealment/concealmentTrait';
 import { ConcealedStateTrait } from './concealment/concealedStateTrait';
 
+// Spatial sound traits (ADR-172)
+import { AcousticTrait } from './acoustic/acousticTrait';
+import { AcousticDampenerTrait } from './acoustic/acousticDampenerTrait';
+import { ListenerTrait } from './listener/listenerTrait';
+
 // System traits
 import { StoryInfoTrait } from './story-info/storyInfoTrait';
 
@@ -128,6 +133,11 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: ConcealmentTrait as unknown as ITraitConstructor,
   [TraitType.CONCEALED_STATE]: ConcealedStateTrait as unknown as ITraitConstructor,
+
+  // Spatial sound traits (ADR-172)
+  [TraitType.ACOUSTIC]: AcousticTrait as unknown as ITraitConstructor,
+  [TraitType.ACOUSTIC_DAMPENER]: AcousticDampenerTrait as unknown as ITraitConstructor,
+  [TraitType.LISTENER]: ListenerTrait,
 
   // System traits
   [TraitType.STORY_INFO]: StoryInfoTrait,

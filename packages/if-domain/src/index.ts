@@ -32,3 +32,6 @@ export * from './prompt';
 
 // Channel-I/O type contracts (ADR-163)
 export * from './channels';
+
+// Spatial sound propagation contracts (ADR-172)
+export * from './sound';
