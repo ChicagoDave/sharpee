@@ -1,8 +1,8 @@
 # ADR-173: Wall Adjacency Primitive
 
-## Status: PROPOSED (revised 2026-05-08 across two passes: generalized obstructor protocol + multi-mode review fixes — Implementation Modules, Acceptance Criteria, Rejection Rules, End-to-end Scenario)
+## Status: ACCEPTED
 
-## Date: 2026-05-08
+## Date: 2026-05-08 (Proposed), 2026-05-09 (Accepted — L0 Phases 1–5 implemented)
 
 ## Builds on
 
@@ -676,6 +676,47 @@ Specific decisions captured during the session:
 - Per-side adjective requirement with per-room uniqueness — chosen
   to force disambiguation thinking at world-authoring time rather
   than playtesting time.
+
+### Implementation history
+
+L0 was implemented in two sessions in 2026-05:
+
+- `session-20260508-1229-main` — Phases 1+2 (wall entity primitive,
+  validation, `createWall` API, reciprocal `walls` collections on
+  rooms). Landed in commit `867b6948`. 29 tests in
+  `packages/world-model/tests/unit/world/wall.test.ts` covering
+  AC-1..AC-4 and AC-8.
+- `session-20260508-1902-main` — Phases 3+4+5 (per-side adjective
+  parser resolution; examining action renders per-side description;
+  generalized obstructor-protocol query helpers). Landed in commit
+  `68ab177b`. 29 additional tests across
+  `packages/stdlib/tests/unit/validation/wall-resolution.test.ts`
+  (AC-5..AC-7 + cross-room scope, 8 tests),
+  `packages/stdlib/tests/unit/actions/examining-walls.test.ts`
+  (per-side description rendering, 6 tests), and
+  `packages/world-model/tests/unit/traits/obstructor-protocol.test.ts`
+  (AC-9..AC-10 + runtime location lift, 15 tests). Two
+  mutation-verification tests for the `setMinimumScope` call were
+  added to `wall.test.ts`, bringing it to 31 tests.
+
+Notable decisions during implementation:
+
+- **Phase 3 actually landed in `@sharpee/stdlib`**, not
+  `@sharpee/parser-en-us` as the Implementation Modules table
+  initially suggested. Entity-resolution lives in stdlib's
+  `command-validator.ts`; the parser produces noun phrases but does
+  not own scoring or scope filtering.
+- **`scoreEntities` enforces strict modifier matching for walls**:
+  when modifiers were specified but none match the per-side
+  adjective, the wall is dropped from candidacy. Without this,
+  `OAK WALL` from the library would silently resolve to the
+  parlor↔library wall (whose library-side adjective is `brick`)
+  via the bare `wall` type-match path. ADR-173 §End-to-end
+  scenario explicitly requires "no match" in that case.
+- **Walls reach scope via `setMinimumScope(2, [roomA, roomB])`**
+  inside `createWall`, since walls have no spatial containment.
+  The standard scope rules (room contents + the room itself)
+  would otherwise miss them entirely.
 
 ## Implementation phasing
 
