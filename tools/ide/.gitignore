@@ -1,0 +1,16 @@
+# XcodeGen output — regenerate via `xcodegen generate`
+SharpeeIDE.xcodeproj/
+
+# Xcode build artifacts
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
