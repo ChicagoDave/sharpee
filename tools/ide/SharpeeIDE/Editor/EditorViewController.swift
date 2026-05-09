@@ -1,36 +1,53 @@
 // EditorViewController.swift
-// Owns the Editor pane: an NSTextView in an NSScrollView, configured for code editing,
-// displaying at most one Document at a time. (Tabs land in step 1.4.)
-// Public interface: openDocument(at:) loads a file into the editor; closeDocument() clears it.
+// Owns the Editor pane: a tab strip plus an NSTextView, configured for code editing.
+// Public interface: openDocument(at:) opens a file in a new or existing tab;
+// closeDocument(at:) closes a tab; switchTo(index:) activates a tab.
 // Owner context: tools/ide — Editor pane.
 
 import AppKit
 
-final class EditorViewController: NSViewController {
+final class EditorViewController: NSViewController, NSTextViewDelegate {
 
+    private let tabBar = TabBarView()
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
     private let placeholder = NSTextField(labelWithString: "Open a file from the project pane")
 
-    private(set) var currentDocument: Document?
+    private var documents: [Document] = []
+    private var activeIndex: Int?
+    /// Guards `textDidChange` while we replace the text view's contents programmatically.
+    private var isSwappingContent = false
+
+    var activeDocument: Document? {
+        guard let i = activeIndex, documents.indices.contains(i) else { return nil }
+        return documents[i]
+    }
 
     override func loadView() {
         let pane = NSView()
         pane.wantsLayer = true
         pane.layer?.backgroundColor = Theme.editorBackground.cgColor
 
+        configureTabBar()
         configureTextView()
         configureScrollView()
         configurePlaceholder()
 
+        tabBar.translatesAutoresizingMaskIntoConstraints = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         placeholder.translatesAutoresizingMaskIntoConstraints = false
 
+        pane.addSubview(tabBar)
         pane.addSubview(scrollView)
         pane.addSubview(placeholder)
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: pane.topAnchor),
+            tabBar.topAnchor.constraint(equalTo: pane.topAnchor),
+            tabBar.leadingAnchor.constraint(equalTo: pane.leadingAnchor),
+            tabBar.trailingAnchor.constraint(equalTo: pane.trailingAnchor),
+            tabBar.heightAnchor.constraint(equalToConstant: TabBarView.height),
+
+            scrollView.topAnchor.constraint(equalTo: tabBar.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: pane.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: pane.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: pane.bottomAnchor),
@@ -40,20 +57,22 @@ final class EditorViewController: NSViewController {
         ])
 
         view = pane
-        updateEmptyState()
+        refreshUI()
     }
 
-    /// Loads a file into the editor and replaces the previous document.
+    // MARK: - Tab operations
+
+    /// Opens a file in a new tab, or focuses the existing tab if the file is already open.
     /// Shows a modal alert if the file cannot be read as UTF-8 text.
     func openDocument(at url: URL) {
+        if let existing = documents.firstIndex(where: { $0.url == url }) {
+            switchTo(index: existing)
+            return
+        }
         do {
             let document = try Document.load(from: url)
-            currentDocument = document
-            textView.string = document.content
-            textView.isEditable = true
-            textView.undoManager?.removeAllActions()
-            textView.scroll(.zero)
-            updateEmptyState()
+            documents.append(document)
+            switchTo(index: documents.count - 1)
         } catch {
             let alert = NSAlert(error: error)
             alert.alertStyle = .warning
@@ -61,16 +80,130 @@ final class EditorViewController: NSViewController {
         }
     }
 
-    /// Clears the editor.
-    func closeDocument() {
-        currentDocument = nil
-        textView.string = ""
-        textView.isEditable = false
+    /// Closes the tab at `index`. If it was the active tab, advances to the next (or previous)
+    /// tab. If `documents` becomes empty, the editor returns to its placeholder state.
+    func closeDocument(at index: Int) {
+        guard documents.indices.contains(index) else { return }
+
+        let wasActive = (activeIndex == index)
+        documents.remove(at: index)
+
+        if documents.isEmpty {
+            activeIndex = nil
+        } else if wasActive {
+            activeIndex = min(index, documents.count - 1)
+        } else if let active = activeIndex, active > index {
+            activeIndex = active - 1
+        }
+
+        loadActiveDocumentIntoTextView()
+        refreshUI()
+    }
+
+    /// Activates the tab at `index`. Persists the text view's edits to the previously-active
+    /// document before swapping in the new one.
+    func switchTo(index: Int) {
+        guard documents.indices.contains(index) else { return }
+        if activeIndex == index {
+            refreshUI()
+            return
+        }
+        persistTextViewToActiveDocument()
+        activeIndex = index
+        loadActiveDocumentIntoTextView()
+        refreshUI()
+    }
+
+    /// Clears all open documents and returns to the placeholder state.
+    func closeAllDocuments() {
+        documents.removeAll()
+        activeIndex = nil
+        loadActiveDocumentIntoTextView()
+        refreshUI()
+    }
+
+    // MARK: - UI sync
+
+    private func refreshUI() {
+        let titles = Self.makeDisplayTitles(for: documents.map { $0.url })
+        let models = titles.map { TabModel(title: $0) }
+        tabBar.setTabs(models, activeIndex: activeIndex)
+
+        let hasDocuments = !documents.isEmpty
+        tabBar.isHidden = !hasDocuments
+        scrollView.isHidden = !hasDocuments
+        placeholder.isHidden = hasDocuments
+        textView.isEditable = hasDocuments
+    }
+
+    /// Smart-disambiguates a list of file URLs into display titles.
+    /// Files with unique names render as the file name alone. Collisions are walked up
+    /// the parent hierarchy by the minimum depth needed to make each member of the group unique
+    /// — e.g. `traits/index.ts` vs `actions/index.ts`, lengthening to `src/traits/index.ts` only
+    /// when the immediate parents also collide.
+    static func makeDisplayTitles(for urls: [URL]) -> [String] {
+        let components = urls.map { $0.pathComponents }
+        var titles = urls.map { $0.lastPathComponent }
+
+        var groups: [String: [Int]] = [:]
+        for (i, t) in titles.enumerated() {
+            groups[t, default: []].append(i)
+        }
+
+        for (_, indices) in groups where indices.count > 1 {
+            let maxDepth = (indices.map { components[$0].count }.max() ?? 1)
+            var depth = 2
+            while depth <= maxDepth {
+                let suffixes = indices.map { i -> String in
+                    let comps = components[i]
+                    return comps.suffix(min(depth, comps.count)).joined(separator: "/")
+                }
+                if Set(suffixes).count == indices.count {
+                    for (k, i) in indices.enumerated() {
+                        titles[i] = suffixes[k]
+                    }
+                    break
+                }
+                depth += 1
+            }
+            // Defensive: if we exited the loop without disambiguating (paths were genuinely
+            // identical, which shouldn't happen on a real filesystem), fall back to full paths.
+            if depth > maxDepth {
+                for i in indices {
+                    titles[i] = components[i].joined(separator: "/")
+                }
+            }
+        }
+
+        return titles
+    }
+
+    private func loadActiveDocumentIntoTextView() {
+        isSwappingContent = true
+        defer { isSwappingContent = false }
+        textView.string = activeDocument?.content ?? ""
         textView.undoManager?.removeAllActions()
-        updateEmptyState()
+        textView.scroll(.zero)
+    }
+
+    private func persistTextViewToActiveDocument() {
+        guard let doc = activeDocument else { return }
+        doc.content = textView.string
+    }
+
+    // MARK: - NSTextViewDelegate
+
+    func textDidChange(_ notification: Notification) {
+        guard !isSwappingContent, let doc = activeDocument else { return }
+        doc.content = textView.string
     }
 
     // MARK: - Setup
+
+    private func configureTabBar() {
+        tabBar.onSelect = { [weak self] index in self?.switchTo(index: index) }
+        tabBar.onClose = { [weak self] index in self?.closeDocument(at: index) }
+    }
 
     private func configureTextView() {
         textView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
@@ -94,6 +227,7 @@ final class EditorViewController: NSViewController {
         textView.isIncrementalSearchingEnabled = true
         textView.isEditable = false
         textView.textContainerInset = NSSize(width: 8, height: 12)
+        textView.delegate = self
 
         // Code-editor sizing: container is wide enough for any line, view scrolls horizontally.
         let huge = CGFloat.greatestFiniteMagnitude
@@ -119,11 +253,5 @@ final class EditorViewController: NSViewController {
         placeholder.font = NSFont.systemFont(ofSize: 11)
         placeholder.textColor = Theme.foregroundFaint
         placeholder.isHidden = true
-    }
-
-    private func updateEmptyState() {
-        let empty = currentDocument == nil
-        scrollView.isHidden = empty
-        placeholder.isHidden = !empty
     }
 }
