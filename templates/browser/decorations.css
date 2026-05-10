@@ -1,0 +1,114 @@
+/*
+ * decorations.css — platform prose decoration vocabulary.
+ *
+ * Per ADR-174, every in-prose decoration on the wire is an
+ * IDecoration { className, content }. Platform-vocabulary names are
+ * resolved at parse time to `sharpee-{name}`; author names pass
+ * through verbatim. This file ships the default style for every
+ * platform name. Stories override by re-declaring `.sharpee-*` rules
+ * in their own theme CSS, or by attaching their own author classes
+ * (which the platform never styles).
+ *
+ * Loaded after base.css and before styles.css (theme), so theme rules
+ * can adjust decoration colors as desired.
+ *
+ * Closed enumeration matches
+ * `packages/engine/src/prose-pipeline/decorations/platform-vocabulary.ts`.
+ *
+ * @see ADR-174 §Closed platform vocabulary
+ */
+
+/* ----- Switches ----- */
+
+.sharpee-em {
+  font-style: italic;
+}
+
+.sharpee-strong {
+  font-weight: bold;
+}
+
+.sharpee-u {
+  text-decoration: underline;
+}
+
+.sharpee-st {
+  text-decoration: line-through;
+}
+
+.sharpee-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.sharpee-super {
+  vertical-align: super;
+  font-size: 0.83em;
+}
+
+.sharpee-sub {
+  vertical-align: sub;
+  font-size: 0.83em;
+}
+
+/* ----- IF-semantic classes ----- */
+/* Subtle defaults — themes should override colors to match. */
+
+.sharpee-item {
+  font-style: italic;
+}
+
+.sharpee-npc {
+  font-style: italic;
+}
+
+.sharpee-room {
+  font-weight: bold;
+}
+
+.sharpee-direction {
+  text-transform: lowercase;
+  font-variant: small-caps;
+}
+
+.sharpee-command {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.sharpee-quote {
+  font-style: italic;
+}
+
+/* ----- Color palette (foreground) ----- */
+
+.sharpee-color-red     { color: #c0392b; }
+.sharpee-color-blue    { color: #2980b9; }
+.sharpee-color-green   { color: #27ae60; }
+.sharpee-color-yellow  { color: #b58900; }
+.sharpee-color-magenta { color: #9b59b6; }
+.sharpee-color-cyan    { color: #16a2a8; }
+.sharpee-color-white   { color: #fefefe; }
+.sharpee-color-grey    { color: #7f8c8d; }
+.sharpee-color-black   { color: #111111; }
+
+/* ----- Color palette (background) ----- */
+
+.sharpee-bgcolor-red     { background-color: #c0392b; color: #fff; }
+.sharpee-bgcolor-blue    { background-color: #2980b9; color: #fff; }
+.sharpee-bgcolor-green   { background-color: #27ae60; color: #fff; }
+.sharpee-bgcolor-yellow  { background-color: #b58900; color: #fff; }
+.sharpee-bgcolor-magenta { background-color: #9b59b6; color: #fff; }
+.sharpee-bgcolor-cyan    { background-color: #16a2a8; color: #fff; }
+.sharpee-bgcolor-white   { background-color: #fefefe; color: #111; }
+.sharpee-bgcolor-grey    { background-color: #7f8c8d; color: #fff; }
+.sharpee-bgcolor-black   { background-color: #111111; color: #fff; }
+
+/* ----- Sizes ----- */
+
+.sharpee-size-small { font-size: 0.85em; }
+.sharpee-size-large { font-size: 1.15em; }
+
+/* ----- Fonts ----- */
+
+.sharpee-font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
