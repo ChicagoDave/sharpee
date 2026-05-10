@@ -12,37 +12,45 @@ import {
 } from '../../../src/prose-pipeline/decorations/platform-vocabulary';
 
 describe('resolveClassName', () => {
-  it('R1: prefixes platform Switch names with sharpee-', () => {
-    expect(resolveClassName('em')).toBe('sharpee-em');
-    expect(resolveClassName('strong')).toBe('sharpee-strong');
-    expect(resolveClassName('u')).toBe('sharpee-u');
-    expect(resolveClassName('st')).toBe('sharpee-st');
-    expect(resolveClassName('code')).toBe('sharpee-code');
-    expect(resolveClassName('super')).toBe('sharpee-super');
-    expect(resolveClassName('sub')).toBe('sharpee-sub');
+  it.each([
+    ['em', 'sharpee-em'],
+    ['strong', 'sharpee-strong'],
+    ['u', 'sharpee-u'],
+    ['st', 'sharpee-st'],
+    ['code', 'sharpee-code'],
+    ['super', 'sharpee-super'],
+    ['sub', 'sharpee-sub'],
+  ])('R1 (platform Switch): %s → %s', (input, expected) => {
+    expect(resolveClassName(input)).toBe(expected);
   });
 
-  it('R2: passes author names through verbatim (no prefix)', () => {
-    expect(resolveClassName('thief-taunt')).toBe('thief-taunt');
-    expect(resolveClassName('blink')).toBe('blink');
-    expect(resolveClassName('story-glow')).toBe('story-glow');
-    expect(resolveClassName('color-stripey')).toBe('color-stripey');
+  it.each([
+    ['thief-taunt', 'thief-taunt'],
+    ['blink', 'blink'],
+    ['story-glow', 'story-glow'],
+    ['color-stripey', 'color-stripey'],
+  ])('R2 (author passthrough): %s → %s', (input, expected) => {
+    expect(resolveClassName(input)).toBe(expected);
   });
 
-  it('R3: prefixes IF-semantic names with sharpee-', () => {
-    expect(resolveClassName('item')).toBe('sharpee-item');
-    expect(resolveClassName('npc')).toBe('sharpee-npc');
-    expect(resolveClassName('room')).toBe('sharpee-room');
-    expect(resolveClassName('direction')).toBe('sharpee-direction');
-    expect(resolveClassName('command')).toBe('sharpee-command');
-    expect(resolveClassName('quote')).toBe('sharpee-quote');
+  it.each([
+    ['item', 'sharpee-item'],
+    ['npc', 'sharpee-npc'],
+    ['room', 'sharpee-room'],
+    ['direction', 'sharpee-direction'],
+    ['command', 'sharpee-command'],
+    ['quote', 'sharpee-quote'],
+  ])('R3 (IF-semantic): %s → %s', (input, expected) => {
+    expect(resolveClassName(input)).toBe(expected);
   });
 
-  it('R4: prefixes class-vocabulary names (color/bgcolor/size/font) with sharpee-', () => {
-    expect(resolveClassName('color-red')).toBe('sharpee-color-red');
-    expect(resolveClassName('bgcolor-cyan')).toBe('sharpee-bgcolor-cyan');
-    expect(resolveClassName('size-small')).toBe('sharpee-size-small');
-    expect(resolveClassName('font-mono')).toBe('sharpee-font-mono');
+  it.each([
+    ['color-red', 'sharpee-color-red'],
+    ['bgcolor-cyan', 'sharpee-bgcolor-cyan'],
+    ['size-small', 'sharpee-size-small'],
+    ['font-mono', 'sharpee-font-mono'],
+  ])('R4 (class-vocabulary color/bgcolor/size/font): %s → %s', (input, expected) => {
+    expect(resolveClassName(input)).toBe(expected);
   });
 
   it('every entry in PLATFORM_VOCABULARY_NAMES resolves to its prefixed form', () => {

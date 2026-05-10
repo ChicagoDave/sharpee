@@ -20,86 +20,55 @@ function makeEvent(type: string, data?: unknown): ISemanticEvent {
 }
 
 describe('filterEvents', () => {
-  it('should drop system.* events', () => {
-    const events = [
-      makeEvent('system.tick'),
-      makeEvent('system.turn.start'),
-      makeEvent('system.turn.end'),
-    ];
-
-    const result = filterEvents(events);
-
-    expect(result).toHaveLength(0);
-  });
-
-  it('should drop platform.* events', () => {
-    const events = [
-      makeEvent('platform.save_requested'),
-      makeEvent('platform.restore_completed'),
-      makeEvent('platform.quit'),
-    ];
-
-    const result = filterEvents(events);
-
-    expect(result).toHaveLength(0);
-  });
-
-  it('should pass through domain events', () => {
-    const events = [
-      makeEvent('if.event.room.description'),
-      makeEvent('if.event.revealed'),
-      makeEvent('action.success'),
-    ];
-
-    const result = filterEvents(events);
-
-    expect(result).toHaveLength(3);
-    expect(result.map((e) => e.type)).toEqual([
-      'if.event.room.description',
-      'if.event.revealed',
-      'action.success',
-    ]);
-  });
-
-  it('should pass through game.* events', () => {
-    const events = [makeEvent('game.started'), makeEvent('game.message')];
-
-    const result = filterEvents(events);
-
-    expect(result).toHaveLength(2);
-  });
-
-  it('should filter a mixed array correctly', () => {
-    const events = [
-      makeEvent('system.tick'),
-      makeEvent('if.event.room.description'),
-      makeEvent('platform.save_requested'),
-      makeEvent('action.success'),
-      makeEvent('system.turn.end'),
-      makeEvent('game.message'),
-    ];
-
-    const result = filterEvents(events);
-
-    expect(result).toHaveLength(3);
-    expect(result.map((e) => e.type)).toEqual([
-      'if.event.room.description',
-      'action.success',
-      'game.message',
-    ]);
-  });
-
-  it('should return empty array for empty input', () => {
-    const result = filterEvents([]);
-
-    expect(result).toHaveLength(0);
-  });
-
-  it('should return empty array when all events are filtered', () => {
-    const events = [makeEvent('system.tick'), makeEvent('platform.quit')];
-
-    const result = filterEvents(events);
-
-    expect(result).toHaveLength(0);
+  it.each<{
+    name: string;
+    inputTypes: string[];
+    expectedTypes: string[];
+  }>([
+    {
+      name: 'drops system.* events',
+      inputTypes: ['system.tick', 'system.turn.start', 'system.turn.end'],
+      expectedTypes: [],
+    },
+    {
+      name: 'drops platform.* events',
+      inputTypes: ['platform.save_requested', 'platform.restore_completed', 'platform.quit'],
+      expectedTypes: [],
+    },
+    {
+      name: 'passes through domain events',
+      inputTypes: ['if.event.room.description', 'if.event.revealed', 'action.success'],
+      expectedTypes: ['if.event.room.description', 'if.event.revealed', 'action.success'],
+    },
+    {
+      name: 'passes through game.* events',
+      inputTypes: ['game.started', 'game.message'],
+      expectedTypes: ['game.started', 'game.message'],
+    },
+    {
+      name: 'filters a mixed array correctly (preserves passthrough order)',
+      inputTypes: [
+        'system.tick',
+        'if.event.room.description',
+        'platform.save_requested',
+        'action.success',
+        'system.turn.end',
+        'game.message',
+      ],
+      expectedTypes: ['if.event.room.description', 'action.success', 'game.message'],
+    },
+    {
+      name: 'returns empty array for empty input',
+      inputTypes: [],
+      expectedTypes: [],
+    },
+    {
+      name: 'returns empty array when all events are filtered',
+      inputTypes: ['system.tick', 'platform.quit'],
+      expectedTypes: [],
+    },
+  ])('$name', ({ inputTypes, expectedTypes }) => {
+    const result = filterEvents(inputTypes.map((t) => makeEvent(t)));
+    expect(result.map((e) => e.type)).toEqual(expectedTypes);
   });
 });

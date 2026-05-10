@@ -35,78 +35,86 @@ function makeDecoratedBlock(
   return { key, content: parts };
 }
 
+/** Each test in `renderToString` is `blocks → expected string` ± options. */
+type RenderCase = {
+  name: string;
+  blocks: ITextBlock[];
+  expected: string;
+  options?: Parameters<typeof renderToString>[1];
+};
+
 describe('renderToString', () => {
   describe('basic rendering', () => {
-    it('should return empty string for empty array', () => {
-      expect(renderToString([])).toBe('');
-    });
-
-    it('should render a single block', () => {
-      expect(renderToString([makeBlock('action.result', 'You open the chest.')])).toBe(
-        'You open the chest.',
-      );
+    it.each<RenderCase>([
+      { name: 'empty array → empty string', blocks: [], expected: '' },
+      {
+        name: 'single block → its text',
+        blocks: [makeBlock('action.result', 'You open the chest.')],
+        expected: 'You open the chest.',
+      },
+    ])('$name', ({ blocks, expected, options }) => {
+      expect(renderToString(blocks, options)).toBe(expected);
     });
   });
 
   describe('smart joining', () => {
-    it('should join consecutive same-key blocks with single newline', () => {
-      const blocks = [
-        makeBlock('action.result', 'Taken.'),
-        makeBlock('action.result', 'Taken.'),
-      ];
-      expect(renderToString(blocks)).toBe('Taken.\nTaken.');
-    });
-
-    it('should join different-key blocks with double newline', () => {
-      const blocks = [
-        makeBlock('room.name', 'West of House'),
-        makeBlock('room.description', 'You are standing in an open field.'),
-      ];
-      expect(renderToString(blocks)).toBe(
-        'West of House\n\nYou are standing in an open field.',
-      );
-    });
-
-    it('should respect custom blockSeparator', () => {
-      const blocks = [
-        makeBlock('room.name', 'Cellar'),
-        makeBlock('room.description', 'A damp cellar.'),
-      ];
-      expect(renderToString(blocks, { blockSeparator: '\n---\n' })).toBe(
-        'Cellar\n---\nA damp cellar.',
-      );
-    });
-
-    it('should use smart joining for mixed block types', () => {
-      const blocks = [
-        makeBlock('action.result', 'You open the chest.'),
-        makeBlock('action.result', 'Inside you see a sword.'),
-        makeBlock('room.description', 'The room is dimly lit.'),
-      ];
-      expect(renderToString(blocks)).toBe(
-        'You open the chest.\nInside you see a sword.\n\nThe room is dimly lit.',
-      );
+    it.each<RenderCase>([
+      {
+        name: 'consecutive same-key blocks join with single newline',
+        blocks: [makeBlock('action.result', 'Taken.'), makeBlock('action.result', 'Taken.')],
+        expected: 'Taken.\nTaken.',
+      },
+      {
+        name: 'different-key blocks join with double newline',
+        blocks: [
+          makeBlock('room.name', 'West of House'),
+          makeBlock('room.description', 'You are standing in an open field.'),
+        ],
+        expected: 'West of House\n\nYou are standing in an open field.',
+      },
+      {
+        name: 'custom blockSeparator overrides the default',
+        blocks: [makeBlock('room.name', 'Cellar'), makeBlock('room.description', 'A damp cellar.')],
+        options: { blockSeparator: '\n---\n' },
+        expected: 'Cellar\n---\nA damp cellar.',
+      },
+      {
+        name: 'mixed block types use smart joining',
+        blocks: [
+          makeBlock('action.result', 'You open the chest.'),
+          makeBlock('action.result', 'Inside you see a sword.'),
+          makeBlock('room.description', 'The room is dimly lit.'),
+        ],
+        expected: 'You open the chest.\nInside you see a sword.\n\nThe room is dimly lit.',
+      },
+    ])('$name', ({ blocks, expected, options }) => {
+      expect(renderToString(blocks, options)).toBe(expected);
     });
   });
 
   describe('whitespace filtering', () => {
-    it('should exclude blocks with whitespace-only content', () => {
-      const blocks = [
-        makeBlock('action.result', 'Hello.'),
-        makeBlock('action.result', '   '),
-        makeBlock('action.result', 'World.'),
-      ];
-      expect(renderToString(blocks)).toBe('Hello.\nWorld.');
-    });
-
-    it('should return empty string when all blocks are whitespace', () => {
-      const blocks = [makeBlock('action.result', '  '), makeBlock('action.result', '\n')];
-      expect(renderToString(blocks)).toBe('');
+    it.each<RenderCase>([
+      {
+        name: 'excludes blocks with whitespace-only content',
+        blocks: [
+          makeBlock('action.result', 'Hello.'),
+          makeBlock('action.result', '   '),
+          makeBlock('action.result', 'World.'),
+        ],
+        expected: 'Hello.\nWorld.',
+      },
+      {
+        name: 'returns empty string when all blocks are whitespace',
+        blocks: [makeBlock('action.result', '  '), makeBlock('action.result', '\n')],
+        expected: '',
+      },
+    ])('$name', ({ blocks, expected }) => {
+      expect(renderToString(blocks)).toBe(expected);
     });
   });
 
   describe('status block filtering', () => {
-    it('should exclude status blocks by default', () => {
+    it('excludes status blocks by default', () => {
       const blocks = [
         makeBlock('action.result', 'You go north.'),
         makeBlock('status.room', 'Kitchen'),
@@ -115,7 +123,7 @@ describe('renderToString', () => {
       expect(renderToString(blocks)).toBe('You go north.');
     });
 
-    it('should include status blocks when includeStatus is true', () => {
+    it('includes status blocks when includeStatus is true', () => {
       const blocks = [
         makeBlock('action.result', 'You go north.'),
         makeBlock('status.room', 'Kitchen'),
@@ -199,52 +207,59 @@ describe('renderToString', () => {
 });
 
 describe('renderStatusLine', () => {
-  it('should return empty string when no status blocks', () => {
-    expect(renderStatusLine([makeBlock('action.result', 'You go north.')])).toBe('');
-  });
-
-  it('should render room name only', () => {
-    expect(renderStatusLine([makeBlock('status.room', 'West of House')])).toBe('West of House');
-  });
-
-  it('should render all three standard status blocks in order', () => {
-    const blocks = [
-      makeBlock('status.room', 'Kitchen'),
-      makeBlock('status.score', '5'),
-      makeBlock('status.turns', '3'),
-    ];
-    expect(renderStatusLine(blocks)).toBe('Kitchen | Score: 5 | Turns: 3');
-  });
-
-  it('should maintain fixed order regardless of input order', () => {
-    const blocks = [
-      makeBlock('status.turns', '10'),
-      makeBlock('status.score', '25'),
-      makeBlock('status.room', 'Cellar'),
-    ];
-    expect(renderStatusLine(blocks)).toBe('Cellar | Score: 25 | Turns: 10');
-  });
-
-  it('should omit missing standard blocks', () => {
-    const blocks = [makeBlock('status.room', 'Attic'), makeBlock('status.turns', '7')];
-    expect(renderStatusLine(blocks)).toBe('Attic | Turns: 7');
-  });
-
-  it('should append custom status blocks after standard ones', () => {
-    const blocks = [
-      makeBlock('status.room', 'Forest'),
-      makeBlock('status.score', '0'),
-      makeBlock('status.health', '100 HP'),
-    ];
-    expect(renderStatusLine(blocks)).toBe('Forest | Score: 0 | 100 HP');
-  });
-
-  it('should ignore non-status blocks', () => {
-    const blocks = [
-      makeBlock('action.result', 'You go north.'),
-      makeBlock('status.room', 'Kitchen'),
-      makeBlock('room.description', 'A warm kitchen.'),
-    ];
-    expect(renderStatusLine(blocks)).toBe('Kitchen');
+  it.each<{ name: string; blocks: ITextBlock[]; expected: string }>([
+    {
+      name: 'returns empty string when no status blocks',
+      blocks: [makeBlock('action.result', 'You go north.')],
+      expected: '',
+    },
+    {
+      name: 'renders room name only',
+      blocks: [makeBlock('status.room', 'West of House')],
+      expected: 'West of House',
+    },
+    {
+      name: 'renders all three standard status blocks in order',
+      blocks: [
+        makeBlock('status.room', 'Kitchen'),
+        makeBlock('status.score', '5'),
+        makeBlock('status.turns', '3'),
+      ],
+      expected: 'Kitchen | Score: 5 | Turns: 3',
+    },
+    {
+      name: 'maintains fixed order regardless of input order',
+      blocks: [
+        makeBlock('status.turns', '10'),
+        makeBlock('status.score', '25'),
+        makeBlock('status.room', 'Cellar'),
+      ],
+      expected: 'Cellar | Score: 25 | Turns: 10',
+    },
+    {
+      name: 'omits missing standard blocks',
+      blocks: [makeBlock('status.room', 'Attic'), makeBlock('status.turns', '7')],
+      expected: 'Attic | Turns: 7',
+    },
+    {
+      name: 'appends custom status blocks after standard ones',
+      blocks: [
+        makeBlock('status.room', 'Forest'),
+        makeBlock('status.score', '0'),
+        makeBlock('status.health', '100 HP'),
+      ],
+      expected: 'Forest | Score: 0 | 100 HP',
+    },
+    {
+      name: 'ignores non-status blocks',
+      blocks: [
+        makeBlock('action.result', 'You go north.'),
+        makeBlock('status.room', 'Kitchen'),
+        makeBlock('room.description', 'A warm kitchen.'),
+      ],
+      expected: 'Kitchen',
+    },
+  ])('$name', ({ blocks, expected }) => {
+    expect(renderStatusLine(blocks)).toBe(expected);
   });
 });

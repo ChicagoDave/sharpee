@@ -17,40 +17,48 @@ function isDecoration(item: TextContent): item is IDecoration {
   return typeof item === 'object' && item !== null && 'className' in item;
 }
 
+/**
+ * Assert `item` is a decoration with the given `className` and (when
+ * provided) the given flat `content`. Centralizes the
+ * `if (!isDecoration(...)) return;` narrowing dance and the two
+ * follow-up assertions; without it every parser test repeats five
+ * lines of boilerplate.
+ */
+function expectDecoration(
+  item: TextContent,
+  className: string,
+  content?: TextContent[],
+): asserts item is IDecoration {
+  expect(isDecoration(item)).toBe(true);
+  if (!isDecoration(item)) throw new Error('unreachable: assertion above failed');
+  expect(item.className).toBe(className);
+  if (content !== undefined) {
+    expect(item.content).toEqual(content);
+  }
+}
+
 describe('parseDecorations', () => {
   describe('platform-vocabulary brackets (AC-1)', () => {
     it('P1: [em:Zork] → one IDecoration { className: sharpee-em, content: [Zork] }', () => {
       const result = parseDecorations('[em:Zork]');
       expect(result).toHaveLength(1);
-      const dec = result[0];
-      expect(isDecoration(dec)).toBe(true);
-      if (!isDecoration(dec)) return;
-      expect(dec.className).toBe('sharpee-em');
-      expect(dec.content).toEqual(['Zork']);
+      expectDecoration(result[0], 'sharpee-em', ['Zork']);
     });
 
     it('preserves surrounding text alongside platform brackets', () => {
       const result = parseDecorations('This is [em:Zork] center.');
       expect(result).toHaveLength(3);
       expect(result[0]).toBe('This is ');
-      const dec = result[1];
-      expect(isDecoration(dec)).toBe(true);
-      if (!isDecoration(dec)) return;
-      expect(dec.className).toBe('sharpee-em');
-      expect(dec.content).toEqual(['Zork']);
+      expectDecoration(result[1], 'sharpee-em', ['Zork']);
       expect(result[2]).toBe(' center.');
     });
   });
 
   describe('author-vocabulary brackets (AC-2)', () => {
     it('P2: [thief-taunt:hi] → IDecoration with bare className', () => {
-      const result = parseDecorations("[thief-taunt:hi]");
+      const result = parseDecorations('[thief-taunt:hi]');
       expect(result).toHaveLength(1);
-      const dec = result[0];
-      expect(isDecoration(dec)).toBe(true);
-      if (!isDecoration(dec)) return;
-      expect(dec.className).toBe('thief-taunt');
-      expect(dec.content).toEqual(['hi']);
+      expectDecoration(result[0], 'thief-taunt', ['hi']);
     });
   });
 
@@ -58,33 +66,22 @@ describe('parseDecorations', () => {
     it('P3: [em:[strong:bold italic]] → outer sharpee-em containing inner sharpee-strong', () => {
       const result = parseDecorations('[em:[strong:bold italic]]');
       expect(result).toHaveLength(1);
-      const outer = result[0];
-      expect(isDecoration(outer)).toBe(true);
-      if (!isDecoration(outer)) return;
-      expect(outer.className).toBe('sharpee-em');
+      expectDecoration(result[0], 'sharpee-em');
+      expect(result[0]).toBeDefined();
+      const outer = result[0] as IDecoration;
       expect(outer.content).toHaveLength(1);
-      const inner = outer.content[0];
-      expect(isDecoration(inner)).toBe(true);
-      if (!isDecoration(inner)) return;
-      expect(inner.className).toBe('sharpee-strong');
-      expect(inner.content).toEqual(['bold italic']);
+      expectDecoration(outer.content[0], 'sharpee-strong', ['bold italic']);
     });
 
     it('mixes plain text with nested decorations', () => {
       const result = parseDecorations('see [item:the [em:brass] lantern]');
       expect(result).toHaveLength(2);
       expect(result[0]).toBe('see ');
-      const item = result[1];
-      expect(isDecoration(item)).toBe(true);
-      if (!isDecoration(item)) return;
-      expect(item.className).toBe('sharpee-item');
+      expectDecoration(result[1], 'sharpee-item');
+      const item = result[1] as IDecoration;
       expect(item.content).toHaveLength(3);
       expect(item.content[0]).toBe('the ');
-      const em = item.content[1];
-      expect(isDecoration(em)).toBe(true);
-      if (!isDecoration(em)) return;
-      expect(em.className).toBe('sharpee-em');
-      expect(em.content).toEqual(['brass']);
+      expectDecoration(item.content[1], 'sharpee-em', ['brass']);
       expect(item.content[2]).toBe(' lantern');
     });
   });
@@ -104,11 +101,7 @@ describe('parseDecorations', () => {
       // \\[ inside the inner content should be a literal [
       const result = parseDecorations('[em:open \\[bracket]');
       expect(result).toHaveLength(1);
-      const dec = result[0];
-      expect(isDecoration(dec)).toBe(true);
-      if (!isDecoration(dec)) return;
-      expect(dec.className).toBe('sharpee-em');
-      expect(dec.content).toEqual(['open [bracket']);
+      expectDecoration(result[0], 'sharpee-em', ['open [bracket']);
     });
   });
 
@@ -145,11 +138,7 @@ describe('parseDecorations', () => {
       //   parseDecorations('plain [em:em-bit]') → ['plain ', { className: 'sharpee-em', content: ['em-bit'] }]
       expect(result).toHaveLength(2);
       expect(result[0]).toBe('plain ');
-      const inner = result[1];
-      expect(isDecoration(inner)).toBe(true);
-      if (!isDecoration(inner)) return;
-      expect(inner.className).toBe('sharpee-em');
-      expect(inner.content).toEqual(['em-bit']);
+      expectDecoration(result[1], 'sharpee-em', ['em-bit']);
     });
   });
 
@@ -157,21 +146,15 @@ describe('parseDecorations', () => {
     it('multiple sibling brackets in one template', () => {
       const result = parseDecorations('[em:a] and [strong:b]');
       expect(result).toHaveLength(3);
-      const a = result[0];
-      const b = result[2];
-      expect(isDecoration(a) && a.className).toBe('sharpee-em');
+      expectDecoration(result[0], 'sharpee-em');
       expect(result[1]).toBe(' and ');
-      expect(isDecoration(b) && b.className).toBe('sharpee-strong');
+      expectDecoration(result[2], 'sharpee-strong');
     });
 
     it('bracket with empty content yields a decoration with no content', () => {
       const result = parseDecorations('[em:]');
       expect(result).toHaveLength(1);
-      const dec = result[0];
-      expect(isDecoration(dec)).toBe(true);
-      if (!isDecoration(dec)) return;
-      expect(dec.className).toBe('sharpee-em');
-      expect(dec.content).toEqual([]);
+      expectDecoration(result[0], 'sharpee-em', []);
     });
 
     it('asterisk syntax is no longer markup — plain * passes through literally', () => {
