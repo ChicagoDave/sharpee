@@ -2,7 +2,7 @@
 
 ## Status: ACCEPTED
 
-## Date: 2026-05-09 (proposed) / 2026-05-10 (Phase 1 ACCEPTED)
+## Date: 2026-05-09 (proposed) / 2026-05-10 (Phase 1 + Phase 2 ACCEPTED)
 
 ## Phase 1 — Engine-internal prose pipeline (complete)
 
@@ -25,7 +25,54 @@ Acceptance criteria deferred:
 - AC-9: Phase 3 (`@sharpee/text-service` package deletion).
 
 Phase 2 and Phase 3 each get their own implementation plan in
-`docs/work/text-service-removal/` before work starts.
+`docs/work/adr-174-prose-pipeline/` before work starts.
+
+## Phase 2 — Wire-production consumer migration (complete)
+
+Phase 2 landed on the same branch (`adr-174-phase1-prose-pipeline`),
+four sub-phases (2.1 through 2.4) plus an AC-16 grep-gate interlude
+fixed in 2.1.
+
+Plan: `docs/work/adr-174-prose-pipeline/plan-20260510-phase2.md`.
+
+OQ-1 resolution (recorded in §Open Questions OQ-1): the
+`renderToString` replacement helper ships from
+**`@sharpee/channel-service`** as `src/render-to-string.ts`. Channel-
+service is downstream of engine, upstream of clients — the right
+dependency position for a block-flattening helper consumed by
+transcript tooling and dev scripts.
+
+AC-8 satisfied with two intentional carve-outs:
+- **`packages/zifmia/`** — hard-deferred. Platform-browser is the
+  primary release mechanism; zifmia is parked. If revived, it gets
+  a redesign rather than a port.
+- **`stories/cloak-of-darkness/`** — deferred during 2.2 entry after
+  discovering cloak is not in `pnpm-workspace.yaml`, has manually-
+  maintained `@sharpee/*` symlinks, and was already in pre-existing
+  build-broken state with errors unrelated to this ADR (DOM lib
+  missing in tsconfig; EngineConfig API drift).
+
+Both carve-outs fall out of build at Phase 3 — accepted collateral.
+
+Sub-phase summary:
+- **2.1**: ported `cli-renderer.ts` → `channel-service/src/render-to-string.ts` (filename corrected — not CLI-specific). 20 tests parity-ported (29 leaves after `it.each` expansion). Interlude: AC-16 grep gate had two false-positive doc-comment matches in audibility handlers (`packages/text-service/src/handlers/audibility.ts`, `packages/engine/src/prose-pipeline/handlers/audibility.ts`) — added per-file allow-list to the gate; comments left intact (they document the channel vocabulary correctly).
+- **2.2**: migrated `packages/transcript-tester/src/story-loader.ts` to channel-service. Cloak deferred during entry (see above).
+- **2.3**: re-routed bridge / runtime / sharpee re-exports to channel-service; dropped dead `ITextService` / `createTextService` / `TextService` re-exports. Cleaned `scripts/bundle-entry.js` and `scripts/test-bundle-template.js` so the platform bundle no longer spreads text-service into `dist/cli/sharpee.js`. Discovered and rebuilt three Phase-1-stale `dist-esm/` directories (sharpee, transcript-tester) — the platform-browser one is older still (Feb 19) and doesn't affect the CLI bundle, deferred to Phase 3.
+- **2.4**: final regression — engine 398/0/7-skipped, channel-service 94/0, text-service 147/0, platform-browser 68/0, Dungeo walkthrough chain 930/0 (after one RNG re-run per `feedback_flakey_walkthroughs.md`), CLI + browser bundles green, AC-8 grep zero matches outside the carve-outs.
+
+Acceptance criteria satisfied:
+- **AC-8**: After Phase 2, no `*.ts` / `*.tsx` / `*.js` source file
+  outside `packages/text-service/`, `packages/zifmia/`, and
+  `stories/cloak-of-darkness/` imports anything from
+  `@sharpee/text-service`. Verified by grep over `packages/`,
+  `stories/`, and `scripts/`. The grep also catches relative-path
+  requires (`../packages/text-service/dist/index.js`) — the original
+  Phase 2 plan grep pattern only matched `@sharpee/`-form imports
+  and would have missed bundle-entry.js; the broader pattern is
+  correct.
+
+Acceptance criteria deferred:
+- AC-9: Phase 3 (`@sharpee/text-service` package deletion).
 
 ## Builds on
 

@@ -4,6 +4,18 @@
 **Phase**: R8 — ADR-101 cleanup + text-service final disposition
 **Plan reference**: `plan-20260502-adr-163-rewrite-master.md`
 
+> **2026-05-10 superseded by ADR-174.** ADR-174's Phase 2 (ACCEPTED
+> 2026-05-10) reverses this doc's central recommendation. The
+> wire-production helpers (`renderToString`, `renderStatusLine`)
+> migrated from `@sharpee/text-service` to
+> `@sharpee/channel-service/src/render-to-string.ts`; all first-party
+> consumers and the platform bundle now pull them from there. The
+> remaining text-service importers are zifmia (hard-deferred) and
+> cloak-of-darkness (deferred); both fall out of build at Phase 3.
+> This doc is preserved as a transitional-state snapshot, not as a
+> live recommendation. See
+> `docs/work/adr-174-prose-pipeline/plan-20260510-phase2.md`.
+
 ## Summary
 
 `@sharpee/text-service` has two roles. After R5–R7 migrated all
