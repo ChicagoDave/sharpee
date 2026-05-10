@@ -70,6 +70,21 @@ const ALLOW_LIST_PREFIXES = [
 ];
 
 /**
+ * Specific files whose ADR-101 references are doc-comment citations of
+ * channel ids (naming-discipline tables that name `media.sound.play`
+ * for documentation purposes), not real emissions or consumptions.
+ *
+ * Both audibility handlers actually handle `sound.audibility.heard`
+ * (perception, not a media cue) — they cite `media.sound.play` only
+ * to disambiguate the codebase's "audio" vs "sound" vs "audibility"
+ * vocabulary in their header docs.
+ */
+const ALLOW_LIST_FILES = [
+  'packages/text-service/src/handlers/audibility.ts',
+  'packages/engine/src/prose-pipeline/handlers/audibility.ts',
+];
+
+/**
  * Build artifact directories — exclude entirely.
  */
 const ARTIFACT_INFIX = ['/dist/', '/dist-esm/', '/coverage/', '/node_modules/', '/.archived/'];
@@ -118,7 +133,8 @@ function runGrep(): Match[] {
 
 function isAllowed(match: Match): boolean {
   if (ARTIFACT_INFIX.some((infix) => match.path.includes(infix))) return true;
-  return ALLOW_LIST_PREFIXES.some((prefix) => match.path.startsWith(prefix));
+  if (ALLOW_LIST_PREFIXES.some((prefix) => match.path.startsWith(prefix))) return true;
+  return ALLOW_LIST_FILES.includes(match.path);
 }
 
 describe('AC-16 — ADR-101 emission cleanup grep gate', () => {

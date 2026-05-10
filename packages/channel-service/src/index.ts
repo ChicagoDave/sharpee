@@ -56,6 +56,15 @@ export { createDecoder, type Decoder, type DecoderState } from './wire';
 
 export { flattenContent } from './utils/flatten';
 
+// Display flatteners (ADR-174 Phase 2 — `renderToString` / `renderStatusLine`
+// migrated here from `@sharpee/text-service` per OQ-1 resolution).
+// Used by transcript tooling, dev scripts, and chat overlays that need a
+// single string projection of an `ITextBlock[]`. `flattenContent` (above)
+// is the lower-level helper used inside producer closures; `renderToString`
+// adds smart block-joining, ANSI translation, and status-block filtering.
+export { renderToString, renderStatusLine } from './render-to-string';
+export type { CLIRenderOptions } from './render-to-string';
+
 // Consumer-side renderer (ADR-165) — see ./renderer.
 export {
   Renderer,
