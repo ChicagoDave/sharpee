@@ -1,8 +1,31 @@
 # ADR-174: Decoration Architecture and Engine-Internal Prose Pipeline
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
-## Date: 2026-05-09
+## Date: 2026-05-09 (proposed) / 2026-05-10 (Phase 1 ACCEPTED)
+
+## Phase 1 — Engine-internal prose pipeline (complete)
+
+Phase 1 landed on branch `adr-174-phase1-prose-pipeline`, eight
+sub-phases (1.1 through 1.8) plus an interlude commit deleting the
+deprecated `ReadOnlyActionContext` that surfaced as a build blocker.
+
+Acceptance criteria satisfied:
+- AC-1: `[em:Zork]` → `IDecoration { className: 'sharpee-em', content: ['Zork'] }`. Verified `parser.test.ts` test P1.
+- AC-2: `[thief-taunt:'…']` → bare `className: 'thief-taunt'`. Verified `parser.test.ts` test P2.
+- AC-3: Nested `[em:[strong:bold italic]]` → nested `IDecoration` nodes. Verified `parser.test.ts` test P3 plus the AC-7 visual smoke test.
+- AC-4: Escaped `\[ literal \]` produces a plain `[`. Verified `parser.test.ts` test P4.
+- AC-5: Plain templates (no markers) produce single-string content. Verified `parser.test.ts` test P5 plus walkthrough chain regression.
+- AC-6: `@sharpee/engine` has no import of `@sharpee/text-service`; full Dungeo walkthrough chain passes. Verified post-1.6 (`grep` clean, walkthrough chain 857/0; post-1.7 walkthrough chain 961/0 first run).
+- AC-7: Platform CSS ships with the platform-vocabulary classes; browser smoke test renders italic/bold/colors. Verified visually by user against `docs/work/adr-174-prose-pipeline/ac7-smoke-test.html`.
+- AC-10/11/12: Forgiving parser rules (unclosed bracket, no-colon, empty-class) emit literal text or no-op wrap. Verified `parser.test.ts` tests P6/P7/P8.
+
+Acceptance criteria deferred:
+- AC-8: Phase 2 (`renderToString` removal across downstream consumers).
+- AC-9: Phase 3 (`@sharpee/text-service` package deletion).
+
+Phase 2 and Phase 3 each get their own implementation plan in
+`docs/work/text-service-removal/` before work starts.
 
 ## Builds on
 
