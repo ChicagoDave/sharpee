@@ -5,11 +5,11 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "vitest",
     "test:ci": "vitest run",
     "test:verbose": "vitest run --reporter=verbose",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist dist-esm",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {

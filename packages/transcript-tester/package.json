@@ -8,9 +8,9 @@
     "transcript-test": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist dist-esm",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {

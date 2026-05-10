@@ -14,12 +14,12 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && tsc -p tsconfig.esm.json",
     "test": "vitest",
     "test:ci": "CI=true vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "clean": "rimraf dist coverage",
+    "clean": "rimraf dist dist-esm coverage",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {

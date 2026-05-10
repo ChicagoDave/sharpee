@@ -14,11 +14,11 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "vitest",
     "test:ci": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist dist-esm",
     "lint": "eslint src --ext .ts",
     "build:npm": "tsc --outDir dist"
   },
