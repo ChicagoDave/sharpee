@@ -433,6 +433,7 @@ build_platform() {
     # Package build order (based on dependencies)
     local PACKAGES=(
         "@sharpee/core:core"
+        "@sharpee/text-blocks:text-blocks"
         "@sharpee/if-domain:if-domain"
         "@sharpee/media:media"
         "@sharpee/world-model:world-model"
@@ -442,7 +443,6 @@ build_platform() {
         "@sharpee/lang-en-us:lang-en-us"
         "@sharpee/parser-en-us:parser-en-us"
         "@sharpee/if-services:if-services"
-        "@sharpee/text-blocks:text-blocks"
         "@sharpee/channel-service:channel-service"
         "@sharpee/stdlib:stdlib"
         "@sharpee/character:character"

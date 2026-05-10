@@ -30,6 +30,7 @@ jobs:
       run: |
         # Build in dependency order (matches build.sh PACKAGES array)
         pnpm --filter '@sharpee/core' run build
+        pnpm --filter '@sharpee/text-blocks' run build
         pnpm --filter '@sharpee/if-domain' run build
         pnpm --filter '@sharpee/media' run build
         pnpm --filter '@sharpee/world-model' run build
@@ -38,8 +39,7 @@ jobs:
         pnpm --filter '@sharpee/lang-en-us' run build
         pnpm --filter '@sharpee/parser-en-us' run build
         pnpm --filter '@sharpee/if-services' run build
-        pnpm --filter '@sharpee/text-blocks' run build
-        pnpm --filter '@sharpee/text-service' run build
+        pnpm --filter '@sharpee/channel-service' run build
         pnpm --filter '@sharpee/stdlib' run build
         pnpm --filter '@sharpee/character' run build
         pnpm --filter '@sharpee/ext-basic-combat' run build
@@ -64,7 +64,7 @@ jobs:
         pnpm --filter '@sharpee/parser-en-us' test
         pnpm --filter '@sharpee/lang-en-us' test
         pnpm --filter '@sharpee/if-services' test
-        pnpm --filter '@sharpee/text-service' test
+        pnpm --filter '@sharpee/channel-service' test
         pnpm --filter '@sharpee/stdlib' test
         pnpm --filter '@sharpee/character' test
         pnpm --filter '@sharpee/engine' test
@@ -73,7 +73,7 @@ jobs:
     - name: Create release artifacts
       run: |
         mkdir -p release-artifacts
-        for pkg in core if-domain world-model engine stdlib parser-en-us lang-en-us character text-service sharpee; do
+        for pkg in core if-domain world-model engine stdlib parser-en-us lang-en-us character sharpee; do
           if [ -d "packages/$pkg/dist" ]; then
             tar -czvf "release-artifacts/sharpee-$pkg.tar.gz" -C "packages/$pkg" dist package.json
           fi
