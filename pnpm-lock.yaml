@@ -38,6 +38,9 @@ importers:
 
   packages/bridge:
     dependencies:
+      '@sharpee/channel-service':
+        specifier: workspace:*
+        version: link:../channel-service
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
@@ -77,9 +80,6 @@ importers:
       '@sharpee/text-blocks':
         specifier: workspace:*
         version: link:../text-blocks
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
@@ -604,6 +604,9 @@ importers:
 
   packages/runtime:
     dependencies:
+      '@sharpee/channel-service':
+        specifier: workspace:*
+        version: link:../channel-service
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
@@ -643,9 +646,6 @@ importers:
       '@sharpee/text-blocks':
         specifier: workspace:*
         version: link:../text-blocks
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
@@ -713,9 +713,6 @@ importers:
       '@sharpee/text-blocks':
         specifier: workspace:*
         version: link:../text-blocks
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../text-service
       '@sharpee/transcript-tester':
         specifier: workspace:*
         version: link:../transcript-tester

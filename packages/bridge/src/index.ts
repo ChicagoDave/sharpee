@@ -99,12 +99,13 @@ export {
   isActionBlock,
 } from '@sharpee/text-blocks';
 
-export {
-  type ITextService,
-  createTextService,
-  renderToString,
-  renderStatusLine,
-} from '@sharpee/text-service';
+// ADR-174 Phase 2 — wire-production helpers re-exported from
+// @sharpee/channel-service (per OQ-1 resolution). The
+// dead ITextService / createTextService re-exports were dropped:
+// engine has its own engine-private ITextService and no first-party
+// consumer instantiates a text-service post-Phase-1.
+export { renderToString, renderStatusLine } from '@sharpee/channel-service';
+export type { CLIRenderOptions } from '@sharpee/channel-service';
 
 // ─── Plugins ─────────────────────────────────────────────────────
 export {

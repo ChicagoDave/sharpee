@@ -21,8 +21,8 @@
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
+    "@sharpee/channel-service": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
-    "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
