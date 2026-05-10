@@ -12,6 +12,8 @@
     { "path": "../core" },
     { "path": "../engine" },
     { "path": "../event-processor" },
+    { "path": "../if-domain" },
+    { "path": "../if-services" },
     { "path": "../lang-en-us" },
     { "path": "../media" },
     { "path": "../parser-en-us" },

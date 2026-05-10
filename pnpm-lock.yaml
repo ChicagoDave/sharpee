@@ -74,6 +74,9 @@ importers:
       '@sharpee/plugins':
         specifier: workspace:*
         version: link:../plugins
+      '@sharpee/sharpee':
+        specifier: workspace:*
+        version: link:../sharpee
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib
@@ -643,6 +646,9 @@ importers:
       '@sharpee/plugins':
         specifier: workspace:*
         version: link:../plugins
+      '@sharpee/sharpee':
+        specifier: workspace:*
+        version: link:../sharpee
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib

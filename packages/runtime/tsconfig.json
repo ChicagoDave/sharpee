@@ -4,7 +4,11 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sharpee/sharpee/runtime-surface": ["../sharpee/dist/runtime-surface"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
@@ -20,6 +24,7 @@
     { "path": "../plugin-npc" },
     { "path": "../plugin-scheduler" },
     { "path": "../plugin-state-machine" },
+    { "path": "../sharpee" },
     { "path": "../stdlib" },
     { "path": "../text-blocks" },
     { "path": "../world-model" }
