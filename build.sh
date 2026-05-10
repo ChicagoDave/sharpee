@@ -444,7 +444,6 @@ build_platform() {
         "@sharpee/if-services:if-services"
         "@sharpee/text-blocks:text-blocks"
         "@sharpee/channel-service:channel-service"
-        "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
         "@sharpee/character:character"
         "@sharpee/ext-basic-combat:extensions/basic-combat"
@@ -543,7 +542,6 @@ build_bundle() {
       --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
       --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-      --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
       --alias:@sharpee/channel-service=./packages/channel-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
       --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
@@ -565,7 +563,6 @@ export * from '../packages/parser-en-us/dist/index';
 export * from '../packages/lang-en-us/dist/index';
 export * from '../packages/event-processor/dist/index';
 export * from '../packages/text-blocks/dist/index';
-export * from '../packages/text-service/dist/index';
 export * from '../packages/channel-service/dist/index';
 EOF
 
@@ -616,7 +613,6 @@ build_test_bundle() {
       --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
       --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-      --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
       --alias:@sharpee/channel-service=./packages/channel-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
       --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
@@ -947,7 +943,6 @@ ENTRY
         --alias:@sharpee/lang-en-us=$REPO_ROOT/packages/lang-en-us/dist-esm/index.js \
         --alias:@sharpee/event-processor=$REPO_ROOT/packages/event-processor/dist-esm/index.js \
         --alias:@sharpee/text-blocks=$REPO_ROOT/packages/text-blocks/dist-esm/index.js \
-        --alias:@sharpee/text-service=$REPO_ROOT/packages/text-service/dist-esm/index.js \
         --alias:@sharpee/if-services=$REPO_ROOT/packages/if-services/dist-esm/index.js \
         --alias:@sharpee/plugins=$REPO_ROOT/packages/plugins/dist-esm/index.js \
         --alias:@sharpee/plugin-npc=$REPO_ROOT/packages/plugin-npc/dist-esm/index.js \
@@ -977,7 +972,6 @@ ENTRY
         --alias:@sharpee/lang-en-us=$REPO_ROOT/packages/lang-en-us/dist-esm/index.js \
         --alias:@sharpee/event-processor=$REPO_ROOT/packages/event-processor/dist-esm/index.js \
         --alias:@sharpee/text-blocks=$REPO_ROOT/packages/text-blocks/dist-esm/index.js \
-        --alias:@sharpee/text-service=$REPO_ROOT/packages/text-service/dist-esm/index.js \
         --alias:@sharpee/if-services=$REPO_ROOT/packages/if-services/dist-esm/index.js \
         --alias:@sharpee/plugins=$REPO_ROOT/packages/plugins/dist-esm/index.js \
         --alias:@sharpee/plugin-npc=$REPO_ROOT/packages/plugin-npc/dist-esm/index.js \
@@ -1083,7 +1077,6 @@ build_runtime() {
         --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
         --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
         --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-        --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
         --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
         --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
         --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
@@ -1139,7 +1132,6 @@ build_bridge() {
         --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
         --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
         --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-        --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
         --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
         --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
         --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \

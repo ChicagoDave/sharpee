@@ -794,43 +794,6 @@ importers:
         specifier: ^5.2.2
         version: 5.9.3
 
-  packages/text-service:
-    dependencies:
-      '@sharpee/core':
-        specifier: workspace:*
-        version: link:../core
-      '@sharpee/if-domain':
-        specifier: workspace:*
-        version: link:../if-domain
-      '@sharpee/if-services':
-        specifier: workspace:*
-        version: link:../if-services
-      '@sharpee/text-blocks':
-        specifier: workspace:*
-        version: link:../text-blocks
-    devDependencies:
-      '@types/node':
-        specifier: ^18.0.0
-        version: 18.19.130
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^5.59.0
-        version: 5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
-      '@typescript-eslint/parser':
-        specifier: ^5.59.0
-        version: 5.62.0(eslint@8.57.1)(typescript@5.9.3)
-      eslint:
-        specifier: ^8.38.0
-        version: 8.57.1
-      rimraf:
-        specifier: ^5.0.0
-        version: 5.0.10
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
-      vitest:
-        specifier: ^1.6.0
-        version: 1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
-
   packages/transcript-tester:
     dependencies:
       '@sharpee/channel-service':
@@ -903,55 +866,6 @@ importers:
         version: 5.0.10
       typescript:
         specifier: ^5.2.2
-        version: 5.9.3
-
-  packages/zifmia:
-    dependencies:
-      '@sharpee/core':
-        specifier: workspace:*
-        version: link:../core
-      '@sharpee/engine':
-        specifier: workspace:*
-        version: link:../engine
-      '@sharpee/lang-en-us':
-        specifier: workspace:*
-        version: link:../lang-en-us
-      '@sharpee/parser-en-us':
-        specifier: workspace:*
-        version: link:../parser-en-us
-      '@sharpee/stdlib':
-        specifier: workspace:*
-        version: link:../stdlib
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../text-service
-      '@sharpee/world-model':
-        specifier: workspace:*
-        version: link:../world-model
-      fflate:
-        specifier: ^0.8.0
-        version: 0.8.2
-      lz-string:
-        specifier: ^1.5.0
-        version: 1.5.0
-    devDependencies:
-      '@types/lz-string':
-        specifier: ^1.5.0
-        version: 1.5.0
-      '@types/react':
-        specifier: ^18.2.0
-        version: 18.3.27
-      '@types/react-dom':
-        specifier: ^18.2.0
-        version: 18.3.7(@types/react@18.3.27)
-      react:
-        specifier: ^18.2.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@18.3.1)
-      typescript:
-        specifier: ^5.3.0
         version: 5.9.3
 
   stories/channel-service-test:
@@ -1038,9 +952,6 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../packages/stdlib
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../../packages/text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../packages/world-model
@@ -1099,9 +1010,6 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../packages/stdlib
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../../packages/text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../packages/world-model
@@ -1976,17 +1884,6 @@ packages:
   '@types/node@24.10.9':
     resolution: {integrity: sha512-ne4A0IpG3+2ETuREInjPNhUGis1SFjv1d5asp8MzEAGtOZeTeHVDOYqOgqfhvseqg/iXty2hjBf1zAOb7RNiNw==}
 
-  '@types/prop-types@15.7.15':
-    resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
-
-  '@types/react-dom@18.3.7':
-    resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
-    peerDependencies:
-      '@types/react': ^18.0.0
-
-  '@types/react@18.3.27':
-    resolution: {integrity: sha512-cisd7gxkzjBKU2GgdYrTdtQx1SORymWyaAFhaxQPK9bYO9ot3Y5OikQRvY0VYQtvwjeQnizCINJAenh/V7MK2w==}
-
   '@types/semver@7.7.1':
     resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
@@ -2342,9 +2239,6 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
-
-  csstype@3.2.3:
-    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -2884,10 +2778,6 @@ packages:
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
 
-  loose-envify@1.4.0:
-    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
-    hasBin: true
-
   loupe@2.3.7:
     resolution: {integrity: sha512-zSMINGVYkdpYSOBmLi0D1Uo7JU9nVdQKrHxC8eYlV+9YKK9WePqAlL7lSlorG/U2Fw1w0hTBmaa/jrQ3UbPHtA==}
 
@@ -3142,17 +3032,8 @@ packages:
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
-  react-dom@18.3.1:
-    resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
-    peerDependencies:
-      react: ^18.3.1
-
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
-
-  react@18.3.1:
-    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
-    engines: {node: '>=0.10.0'}
 
   require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
@@ -3193,9 +3074,6 @@ packages:
 
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
-
-  scheduler@0.23.2:
-    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -4385,17 +4263,6 @@ snapshots:
       undici-types: 7.16.0
     optional: true
 
-  '@types/prop-types@15.7.15': {}
-
-  '@types/react-dom@18.3.7(@types/react@18.3.27)':
-    dependencies:
-      '@types/react': 18.3.27
-
-  '@types/react@18.3.27':
-    dependencies:
-      '@types/prop-types': 15.7.15
-      csstype: 3.2.3
-
   '@types/semver@7.7.1': {}
 
   '@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)':
@@ -4834,8 +4701,6 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
-
-  csstype@3.2.3: {}
 
   debug@4.4.3:
     dependencies:
@@ -5406,10 +5271,6 @@ snapshots:
 
   lodash.merge@4.6.2: {}
 
-  loose-envify@1.4.0:
-    dependencies:
-      js-tokens: 4.0.0
-
   loupe@2.3.7:
     dependencies:
       get-func-name: 2.0.2
@@ -5629,17 +5490,7 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  react-dom@18.3.1(react@18.3.1):
-    dependencies:
-      loose-envify: 1.4.0
-      react: 18.3.1
-      scheduler: 0.23.2
-
   react-is@18.3.1: {}
-
-  react@18.3.1:
-    dependencies:
-      loose-envify: 1.4.0
 
   require-from-string@2.0.2: {}
 
@@ -5696,10 +5547,6 @@ snapshots:
       tslib: 2.8.1
 
   safer-buffer@2.1.2: {}
-
-  scheduler@0.23.2:
-    dependencies:
-      loose-envify: 1.4.0
 
   semver@6.3.1: {}
 
@@ -5934,24 +5781,6 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  vite-node@1.6.1(@types/node@18.19.130)(lightningcss@1.30.2)(terser@5.44.1):
-    dependencies:
-      cac: 6.7.14
-      debug: 4.4.3
-      pathe: 1.1.2
-      picocolors: 1.1.1
-      vite: 5.4.21(@types/node@18.19.130)(lightningcss@1.30.2)(terser@5.44.1)
-    transitivePeerDependencies:
-      - '@types/node'
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-
   vite-node@1.6.1(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1):
     dependencies:
       cac: 6.7.14
@@ -6006,17 +5835,6 @@ snapshots:
       - supports-color
       - terser
 
-  vite@5.4.21(@types/node@18.19.130)(lightningcss@1.30.2)(terser@5.44.1):
-    dependencies:
-      esbuild: 0.21.5
-      postcss: 8.5.6
-      rollup: 4.54.0
-    optionalDependencies:
-      '@types/node': 18.19.130
-      fsevents: 2.3.3
-      lightningcss: 1.30.2
-      terser: 5.44.1
-
   vite@5.4.21(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1):
     dependencies:
       esbuild: 0.21.5
@@ -6038,42 +5856,6 @@ snapshots:
       fsevents: 2.3.3
       lightningcss: 1.30.2
       terser: 5.44.1
-
-  vitest@1.6.1(@types/node@18.19.130)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1):
-    dependencies:
-      '@vitest/expect': 1.6.1
-      '@vitest/runner': 1.6.1
-      '@vitest/snapshot': 1.6.1
-      '@vitest/spy': 1.6.1
-      '@vitest/utils': 1.6.1
-      acorn-walk: 8.3.4
-      chai: 4.5.0
-      debug: 4.4.3
-      execa: 8.0.1
-      local-pkg: 0.5.1
-      magic-string: 0.30.21
-      pathe: 1.1.2
-      picocolors: 1.1.1
-      std-env: 3.10.0
-      strip-literal: 2.1.1
-      tinybench: 2.9.0
-      tinypool: 0.8.4
-      vite: 5.4.21(@types/node@18.19.130)(lightningcss@1.30.2)(terser@5.44.1)
-      vite-node: 1.6.1(@types/node@18.19.130)(lightningcss@1.30.2)(terser@5.44.1)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 18.19.130
-      '@vitest/ui': 3.2.4(vitest@3.2.4)
-      happy-dom: 15.11.7
-    transitivePeerDependencies:
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
 
   vitest@1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1):
     dependencies:

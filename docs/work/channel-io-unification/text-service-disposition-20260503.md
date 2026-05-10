@@ -15,6 +15,17 @@
 > This doc is preserved as a transitional-state snapshot, not as a
 > live recommendation. See
 > `docs/work/adr-174-prose-pipeline/plan-20260510-phase2.md`.
+>
+> **2026-05-10 final**: ADR-174 Phase 3 (ACCEPTED 2026-05-10) deleted
+> `packages/text-service/` outright. Both block-production and
+> wire-production roles described below are now historical. Engine has
+> its own engine-private `ITextService` (Phase 1); wire production
+> ships from channel-service (Phase 2); the package itself is gone
+> (Phase 3). Zifmia removed from workspace via
+> `pnpm-workspace.yaml`'s `!packages/zifmia` exclude. Cloak-of-darkness
+> source files left in pre-existing build-broken state (outside
+> workspace; future workspace integration is the right next step).
+> See `docs/work/adr-174-prose-pipeline/plan-20260510-phase3.md`.
 
 ## Summary
 

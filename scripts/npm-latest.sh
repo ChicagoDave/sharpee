@@ -41,7 +41,6 @@ PACKAGES=(
   world-model
   event-processor
   text-blocks
-  text-service
   lang-en-us
   parser-en-us
   if-services

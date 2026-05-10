@@ -2,7 +2,7 @@
 
 ## Status: ACCEPTED
 
-## Date: 2026-05-09 (proposed) / 2026-05-10 (Phase 1 + Phase 2 ACCEPTED)
+## Date: 2026-05-09 (proposed) / 2026-05-10 (Phase 1 + Phase 2 + Phase 3 ACCEPTED)
 
 ## Phase 1 — Engine-internal prose pipeline (complete)
 
@@ -73,6 +73,79 @@ Acceptance criteria satisfied:
 
 Acceptance criteria deferred:
 - AC-9: Phase 3 (`@sharpee/text-service` package deletion).
+
+## Phase 3 — `@sharpee/text-service` package deletion (complete)
+
+Phase 3 landed on the same branch (`adr-174-phase1-prose-pipeline`),
+four sub-phases (3.1 through 3.4).
+
+Plan: `docs/work/adr-174-prose-pipeline/plan-20260510-phase3.md`.
+
+OQ-4 resolved during planning to **option B** (remove `packages/zifmia`
+from the workspace via `pnpm-workspace.yaml`'s `!packages/zifmia`
+exclude). This is the consistent signal that zifmia is parked and
+matches the Phase 2 disposition.
+
+Sub-phase summary:
+- **3.1**: pre-flight grep matched the planned inventory. The plan's
+  scope (source imports + a hand-listed config-file set) was incomplete
+  — it missed `packages/transcript-tester/tsconfig.json`,
+  `stories/dungeo/tsconfig*.json`, `stories/dungeo/package.json`, and
+  `tutorials/familyzoo/package.json`. These surfaced during 3.3 and
+  were patched mid-flight. Recurrence-prevention note in §Open
+  Questions OQ-5.
+- **3.2**: stripped text-service from `package.json` (workspaces +
+  build:all + publish:beta), `build.sh` (8 alias/export lines), four
+  tsconfig project-reference lists (`bridge`, `runtime`, `engine`,
+  `sharpee`), `scripts/npm-latest.sh`, and `scripts/generate-genai-api.js`.
+  Removed `packages/zifmia` from `pnpm-workspace.yaml` per OQ-4 option B
+  (the package.json `workspaces[]` field is overridden by
+  `pnpm-workspace.yaml` for pnpm — discovered mid-3.2). Deleted stale
+  `packages/platform-browser/dist-esm/` (Feb-19 artifact). The plan
+  called for rebuilding via `tsc -p tsconfig.esm.json`, but
+  platform-browser has no `tsconfig.esm.json` and no current build
+  pipeline produces dist-esm; deletion was the plan-listed alternative.
+- **3.3**: deleted `packages/text-service/`. First `pnpm install`
+  errored on `stories/dungeo/package.json` declaring
+  `@sharpee/text-service` as a workspace dep. Found four additional
+  `package.json` files with the same dead dep declaration (zifmia,
+  concealment-test, cloak-of-darkness — all already outside the
+  workspace; only dungeo and familyzoo were in-workspace and required
+  fixing). Patched the two in-workspace files. Also fixed the
+  `text-service` typo (plural form `text-services`) in
+  `stories/dungeo/tsconfig.json` and `stories/dungeo/tsconfig.esm.json`
+  paths mappings — never-resolved dead config but caught by the
+  AC-9b standard.
+- **3.4**: final regression — engine 398/0/7-skipped, channel-service
+  94/0, platform-browser 68/0. CLI bundle 2.3M (+ 33ms load test);
+  browser bundle 1.2M; both clean. Dungeo walkthrough chain 872/0
+  (after one RNG cascade where stale baseline-built saves caused 554
+  cascade failures; deleting `stories/dungeo/saves/` and re-running
+  with Phase-3-built saves resolved it. Pre-existing thief-RNG noise
+  per `feedback_flakey_walkthroughs.md`). AC-9 grep zero source-import
+  matches outside accepted-collateral surfaces; zero config-file
+  matches.
+
+Acceptance criteria satisfied:
+- **AC-9**: `packages/text-service/` does not exist on disk; `pnpm
+  install` succeeds (30 workspace projects, down from 32 — text-service
+  removed by deletion, zifmia removed by `!packages/zifmia` exclude);
+  full repo regression passes.
+- **AC-9a**: Repo-wide grep for `@sharpee/text-service` source imports
+  returns 5 matches, all in accepted-collateral surfaces (zifmia ×2,
+  cloak-of-darkness ×3). Zero outside collateral.
+- **AC-9b**: All config-file references removed across `package.json`,
+  `pnpm-workspace.yaml`, `build.sh` (8 aliases + 1 .d.ts heredoc), 5
+  tsconfigs (bridge, runtime, engine, sharpee, transcript-tester), 2
+  scripts (npm-latest.sh, generate-genai-api.js), 2 story
+  package.jsons (dungeo, familyzoo), 2 dungeo tsconfig path-mapping
+  typos.
+- **AC-9c**: `packages/platform-browser/dist-esm/` deleted (the plan's
+  alternative path, since no build pipeline produces it). Existing
+  consumers resolve through `dist/` per `build.sh` line 824.
+- **AC-9d**: Dungeo walkthrough chain 872/0 — Phase 2 baseline (930/0)
+  is RNG-noisy on test count, but failure count of 0 is the
+  load-bearing signal.
 
 ## Builds on
 
@@ -723,6 +796,48 @@ component vocabulary (`.sharpee-app`, `.sharpee-titlebar`, etc.).
 The prose CSS likely follows the same pattern — verify the existing
 ADR-170 mechanism's exact location and shipping rule during Phase 1
 implementation, and place the prose CSS alongside it.
+
+### OQ-5 — Pre-flight grep scope for package deletions (resolved during Phase 3)
+
+**Status**: Resolved 2026-05-10 — recorded for future package-deletion phases.
+
+The Phase 3 plan's pre-flight grep scope was incomplete. It searched
+source imports across the repo but only checked a hand-listed set of
+config files. Five additional files were missed and surfaced as
+breakage during 3.3:
+
+- `packages/transcript-tester/tsconfig.json` — `../text-service`
+  project reference (broke `tsc` build of transcript-tester)
+- `stories/dungeo/tsconfig.json` and `tsconfig.esm.json` — `text-services`
+  paths mapping (typo, never resolved, but matched grep)
+- `stories/dungeo/package.json` and `tutorials/familyzoo/package.json`
+  — `@sharpee/text-service: workspace:*` dep declarations (broke
+  `pnpm install` after directory deletion)
+- Also: `pnpm-workspace.yaml` overrides `package.json workspaces[]` —
+  the package.json edit alone does not affect pnpm's resolution graph.
+  Use `!packages/<name>` excludes in `pnpm-workspace.yaml` to remove
+  packages from the workspace.
+
+**For future package-deletion phases**, the pre-flight grep scope
+must be:
+
+```bash
+# Config files that can break a build
+grep -rln "<package-name>" \
+  --include='package.json' \
+  --include='tsconfig*.json' \
+  --include='*.sh' \
+  --include='*.js' \
+  --include='*.yaml' \
+  --include='*.yml' \
+  packages/ stories/ scripts/ tutorials/ \
+  | grep -v node_modules
+```
+
+Source-import grep is necessary but not sufficient. Config-file
+references are load-bearing for build and install steps, and missing
+them produces failures during deletion that are recoverable but waste
+budget.
 
 ## Session
 

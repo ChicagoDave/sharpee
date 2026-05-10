@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.
 
-Generated: 2026-05-10 17:44:44 UTC
+Generated: 2026-05-10 18:28:17 UTC
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ Generated: 2026-05-10 17:44:44 UTC
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~407 lines) |
 | [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (17 files, ~2537 lines) |
 | [plugins.md](plugins.md) | Plugins | Plugin system, NPC plugin, scheduler (daemons/fuses), state machine. (12 files, ~569 lines) |
-| [text.md](text.md) | Text System | Text blocks, decorations, text service, rendering. (13 files, ~621 lines) |
+| [text.md](text.md) | Text System | Text blocks, decorations, rendering. (3 files, ~245 lines) |
 | [if-services.md](if-services.md) | @sharpee/if-services | Runtime service interfaces (perception). (1 files, ~78 lines) |
 | [event-processor.md](event-processor.md) | @sharpee/event-processor | Event sequencing and effect processing. (6 files, ~366 lines) |
 | [combat.md](combat.md) | @sharpee/ext-basic-combat | Basic combat extension — attack/defend mechanics. (5 files, ~254 lines) |

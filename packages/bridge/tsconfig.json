@@ -24,7 +24,6 @@
     { "path": "../plugin-state-machine" },
     { "path": "../stdlib" },
     { "path": "../text-blocks" },
-    { "path": "../text-service" },
     { "path": "../world-model" }
   ]
 }

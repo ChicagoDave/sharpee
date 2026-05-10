@@ -18,7 +18,6 @@
     { "path": "../stdlib" },
     { "path": "../character" },
     { "path": "../text-blocks" },
-    { "path": "../text-service" },
     { "path": "../world-model" },
     { "path": "../plugins" },
     { "path": "../plugin-npc" },
