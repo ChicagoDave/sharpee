@@ -100,24 +100,31 @@ const DECORATION_ANSI: Record<string, string> = {
 };
 
 /**
- * Approximate hex colors to ANSI
+ * Approximate hex colors to ANSI by extracting the dominant channel
+ * (or detecting a balanced mix) and mapping to the closest ANSI hue.
  */
 function hexToAnsi(hex: string): string {
-  // Simple approximation - extract dominant color
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  const r = Number.parseInt(hex.slice(1, 3), 16);
+  const g = Number.parseInt(hex.slice(3, 5), 16);
+  const b = Number.parseInt(hex.slice(5, 7), 16);
+  return pickPrimaryAnsi(r, g, b) ?? pickMixedAnsi(r, g, b) ?? ANSI.WHITE;
+}
 
-  // Find closest ANSI color
+/** One channel dominates the other two — return its hue, or null. */
+function pickPrimaryAnsi(r: number, g: number, b: number): string | null {
   if (r > g && r > b) return r > 180 ? ANSI.BRIGHT_RED : ANSI.RED;
   if (g > r && g > b) return g > 180 ? ANSI.BRIGHT_GREEN : ANSI.GREEN;
   if (b > r && b > g) return b > 180 ? ANSI.BRIGHT_BLUE : ANSI.BLUE;
+  return null;
+}
+
+/** Two or three channels are roughly equal and bright — pick the mix. */
+function pickMixedAnsi(r: number, g: number, b: number): string | null {
   if (r > 200 && g > 200) return ANSI.BRIGHT_YELLOW;
   if (r > 200 && b > 200) return ANSI.BRIGHT_MAGENTA;
   if (g > 200 && b > 200) return ANSI.BRIGHT_CYAN;
   if (r > 180 && g > 180 && b > 180) return ANSI.BRIGHT_WHITE;
-
-  return ANSI.WHITE;
+  return null;
 }
 
 /**
@@ -270,8 +277,8 @@ export function renderStatusLine(
   }
 
   // Add any custom status blocks
-  const knownKeys = ['status.room', 'status.score', 'status.turns'];
-  const customBlocks = statusBlocks.filter((b) => !knownKeys.includes(b.key));
+  const knownKeys = new Set(['status.room', 'status.score', 'status.turns']);
+  const customBlocks = statusBlocks.filter((b) => !knownKeys.has(b.key));
   for (const block of customBlocks) {
     parts.push(renderContent(block.content, options));
   }

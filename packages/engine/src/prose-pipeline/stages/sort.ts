@@ -26,13 +26,13 @@ interface ChainMetadata {
   _chainSourceId?: string;
 }
 
-const LIFECYCLE_EVENTS = [
+const LIFECYCLE_EVENTS = new Set([
   'game.started',
   'game.starting',
   'game.loading',
   'game.loaded',
   'game.initialized',
-];
+]);
 
 /**
  * Sort events for correct prose order within transactions.
@@ -51,8 +51,8 @@ export function sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[] {
     // Game lifecycle events come first, before everything.
     // Ensures the banner displays before the first room description.
     // Note: matches specific lifecycle events only, NOT game.message.
-    const aIsGameLifecycle = LIFECYCLE_EVENTS.includes(a.type);
-    const bIsGameLifecycle = LIFECYCLE_EVENTS.includes(b.type);
+    const aIsGameLifecycle = LIFECYCLE_EVENTS.has(a.type);
+    const bIsGameLifecycle = LIFECYCLE_EVENTS.has(b.type);
     if (aIsGameLifecycle && !bIsGameLifecycle) return -1;
     if (!aIsGameLifecycle && bIsGameLifecycle) return 1;
 

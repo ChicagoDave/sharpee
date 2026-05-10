@@ -26,7 +26,7 @@ export class MockProsePipeline implements ITextService {
       if (event.type === 'action.error') {
         blocks.push({
           key: 'error',
-          content: [String(data?.message ?? 'Error occurred')],
+          content: [typeof data?.message === 'string' ? data.message : 'Error occurred'],
         });
       } else if (data && typeof data.messageId === 'string') {
         blocks.push({
@@ -36,7 +36,7 @@ export class MockProsePipeline implements ITextService {
       } else if (event.type === 'room.described') {
         blocks.push({
           key: 'room.description',
-          content: [String(data?.description ?? 'You are in a room.')],
+          content: [typeof data?.description === 'string' ? data.description : 'You are in a room.'],
         });
       }
     }

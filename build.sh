@@ -832,15 +832,15 @@ build_browser_client() {
     # Copy CSS — base.css carries structural rules (ADR-170), decorations.css
     # carries the platform prose decoration vocabulary (ADR-174), infocom.css
     # carries themes; index.html links them in order: base, decorations, styles.
-    if [ -f "templates/browser/base.css" ]; then
+    if [[ -f "templates/browser/base.css" ]]; then
         cp templates/browser/base.css "$OUTDIR/base.css"
         log_ok "base.css"
     fi
-    if [ -f "templates/browser/decorations.css" ]; then
+    if [[ -f "templates/browser/decorations.css" ]]; then
         cp templates/browser/decorations.css "$OUTDIR/decorations.css"
         log_ok "decorations.css"
     fi
-    if [ -f "templates/browser/infocom.css" ]; then
+    if [[ -f "templates/browser/infocom.css" ]]; then
         cp templates/browser/infocom.css "$OUTDIR/styles.css"
         log_ok "css"
     fi

@@ -50,55 +50,27 @@ export function parseDecorations(template: string): TextContent[] {
   while (i < template.length) {
     const char = template[i];
 
-    if (char === '\\' && i + 1 < template.length) {
-      const next = template[i + 1];
-      if (next === '[' || next === ']' || next === '\\') {
-        current += next;
-        i += 2;
-        continue;
-      }
+    const escapeChar = consumeEscape(template, i);
+    if (escapeChar !== null) {
+      current += escapeChar;
+      i += 2;
+      continue;
     }
 
     if (char === '[') {
-      const closeIndex = findMatchingBracket(template, i);
-      if (closeIndex === -1) {
-        // AC-10: unclosed bracket → literal text from here on.
-        current += char;
-        i++;
+      const bracket = parseBracketAt(template, i);
+      if (bracket.kind === 'literal') {
+        current += bracket.text;
+        i = bracket.nextIndex;
         continue;
       }
-
-      const inner = template.slice(i + 1, closeIndex);
-      const colonIndex = indexOfUnescapedColon(inner);
-
-      if (colonIndex === -1) {
-        // AC-11: no colon → entire `[...]` segment is literal text.
-        current += template.slice(i, closeIndex + 1);
-        i = closeIndex + 1;
-        continue;
-      }
-
-      const rawName = inner.slice(0, colonIndex);
-      const innerContent = inner.slice(colonIndex + 1);
-
       flush();
-
-      if (rawName === '') {
-        // AC-12: empty class name → emit inner content as plain
-        // entries with no wrapping decoration.
-        const innerParsed = parseDecorations(innerContent);
-        for (const piece of innerParsed) {
-          result.push(piece);
-        }
+      if (bracket.kind === 'children') {
+        result.push(...bracket.children);
       } else {
-        const decoration: IDecoration = {
-          className: resolveClassName(rawName),
-          content: parseDecorations(innerContent),
-        };
-        result.push(decoration);
+        result.push(bracket.decoration);
       }
-
-      i = closeIndex + 1;
+      i = bracket.nextIndex;
       continue;
     }
 
@@ -109,6 +81,66 @@ export function parseDecorations(template: string): TextContent[] {
   flush();
 
   return result;
+}
+
+/**
+ * Inspect `template[i..i+1]` for an escape sequence (`\[`, `\]`,
+ * `\\`). Returns the literal character to emit, or null if no escape
+ * applies.
+ */
+function consumeEscape(template: string, i: number): string | null {
+  if (template[i] !== '\\' || i + 1 >= template.length) return null;
+  const next = template[i + 1];
+  if (next !== '[' && next !== ']' && next !== '\\') return null;
+  return next;
+}
+
+type BracketResult =
+  | { kind: 'literal'; text: string; nextIndex: number }
+  | { kind: 'children'; children: TextContent[]; nextIndex: number }
+  | { kind: 'decoration'; decoration: IDecoration; nextIndex: number };
+
+/**
+ * Parse the `[...]` segment starting at `openIndex`. Caller has
+ * already verified `template[openIndex] === '['`.
+ *
+ * Outcomes (per ADR-174 AC-10..AC-12):
+ *  - `literal` — unclosed bracket or bracket without `:` (the whole
+ *    segment is treated as plain text).
+ *  - `children` — empty class name (`[:content]`); inner content is
+ *    parsed and inlined without a wrapping decoration.
+ *  - `decoration` — well-formed `[name:content]`; produces a
+ *    structured `IDecoration`.
+ */
+function parseBracketAt(template: string, openIndex: number): BracketResult {
+  const closeIndex = findMatchingBracket(template, openIndex);
+  if (closeIndex === -1) {
+    // AC-10: unclosed bracket → emit the `[` literal, advance one char.
+    return { kind: 'literal', text: template[openIndex], nextIndex: openIndex + 1 };
+  }
+
+  const inner = template.slice(openIndex + 1, closeIndex);
+  const colonIndex = indexOfUnescapedColon(inner);
+  const nextIndex = closeIndex + 1;
+
+  if (colonIndex === -1) {
+    // AC-11: no colon → whole `[...]` segment is literal text.
+    return { kind: 'literal', text: template.slice(openIndex, nextIndex), nextIndex };
+  }
+
+  const rawName = inner.slice(0, colonIndex);
+  const innerContent = inner.slice(colonIndex + 1);
+
+  if (rawName === '') {
+    // AC-12: empty class name → emit inner content as plain entries.
+    return { kind: 'children', children: parseDecorations(innerContent), nextIndex };
+  }
+
+  return {
+    kind: 'decoration',
+    decoration: { className: resolveClassName(rawName), content: parseDecorations(innerContent) },
+    nextIndex,
+  };
 }
 
 /**

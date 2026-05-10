@@ -92,14 +92,16 @@
 
 /* ----- Color palette (background) ----- */
 
+/* Background colors paired with text color that meets WCAG AA (4.5:1).
+   Lighter hues use #111 text; darker hues use #fff. */
 .sharpee-bgcolor-red     { background-color: #c0392b; color: #fff; }
-.sharpee-bgcolor-blue    { background-color: #2980b9; color: #fff; }
-.sharpee-bgcolor-green   { background-color: #27ae60; color: #fff; }
-.sharpee-bgcolor-yellow  { background-color: #b58900; color: #fff; }
+.sharpee-bgcolor-blue    { background-color: #1f5f8b; color: #fff; }
+.sharpee-bgcolor-green   { background-color: #1a7c44; color: #fff; }
+.sharpee-bgcolor-yellow  { background-color: #b58900; color: #111; }
 .sharpee-bgcolor-magenta { background-color: #9b59b6; color: #fff; }
-.sharpee-bgcolor-cyan    { background-color: #16a2a8; color: #fff; }
+.sharpee-bgcolor-cyan    { background-color: #0e6b6f; color: #fff; }
 .sharpee-bgcolor-white   { background-color: #fefefe; color: #111; }
-.sharpee-bgcolor-grey    { background-color: #7f8c8d; color: #fff; }
+.sharpee-bgcolor-grey    { background-color: #5a6166; color: #fff; }
 .sharpee-bgcolor-black   { background-color: #111111; color: #fff; }
 
 /* ----- Sizes ----- */
