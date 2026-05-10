@@ -476,6 +476,9 @@ importers:
       '@sharpee/if-domain':
         specifier: workspace:*
         version: link:../if-domain
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
       '@sharpee/text-blocks':
         specifier: workspace:*
         version: link:../text-blocks

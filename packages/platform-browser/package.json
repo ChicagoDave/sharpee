@@ -25,6 +25,7 @@
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@sharpee/channel-service": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@types/lz-string": "^1.5.0",
     "happy-dom": "^15.7.4",
