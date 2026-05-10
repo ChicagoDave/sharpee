@@ -25,43 +25,48 @@ Text blocks, decorations, text service, rendering.
  * // Plain text
  * const plain: TextContent = "You take the sword.";
  *
- * // Decorated content
+ * // Decorated content (post ADR-174)
  * const decorated: TextContent = {
- *   type: 'item',
+ *   className: 'sharpee-item',
  *   content: ['brass lantern']
  * };
  */
 export type TextContent = string | IDecoration;
 /**
- * Decorated content with semantic type.
+ * Decorated content with a final, fully-resolved CSS class name.
  *
- * The `type` field is an open string to support:
- * - Core types: 'em', 'strong', 'item', 'room', 'npc', 'command', 'direction'
- * - Presentational: 'underline', 'strikethrough', 'super', 'sub'
- * - Story-defined: 'photopia.red', 'dungeo.thief', etc.
+ * Per ADR-174, the bracket parser resolves bracketed names against a
+ * closed platform vocabulary at parse time:
+ *  - Platform names (e.g. `em`, `item`, `color-red`) become
+ *    `sharpee-{name}` and are styled by the platform CSS bundle.
+ *  - Author names pass through verbatim and the story owns their CSS.
+ *
+ * Renderers translate `IDecoration` to their target output (HTML span
+ * for browser, ANSI for terminal, ignored for audio).
  *
  * @example
- * // Emphasis
- * { type: 'em', content: ['carefully'] }
+ * // Platform emphasis (resolved from `[em:carefully]`)
+ * { className: 'sharpee-em', content: ['carefully'] }
  *
- * // Item name
- * { type: 'item', content: ['brass lantern'] }
+ * // Platform item name
+ * { className: 'sharpee-item', content: ['brass lantern'] }
+ *
+ * // Author class
+ * { className: 'thief-taunt', content: ["You'll regret this."] }
  *
  * // Nested decorations
- * { type: 'item', content: [
- *   { type: 'em', content: ['glowing'] },
+ * { className: 'sharpee-item', content: [
+ *   { className: 'sharpee-em', content: ['glowing'] },
  *   ' lantern'
  * ]}
- *
- * // Story-defined color (Photopia pattern)
- * { type: 'photopia.red', content: ['The light was red, like always.'] }
  */
 export interface IDecoration {
     /**
-     * Semantic type of the decoration.
-     * Open string to allow story extensions.
+     * Final, fully-resolved CSS class name. Already prefixed with
+     * `sharpee-` for platform-vocabulary names; bare for author names.
+     * @see ADR-174 §Wire shape
      */
-    readonly type: string;
+    readonly className: string;
     /**
      * Content within the decoration.
      * Can contain nested decorations or plain strings.
@@ -88,7 +93,7 @@ export interface IDecoration {
  * // Room name block
  * {
  *   key: 'room.name',
- *   content: [{ type: 'room', content: ['West of House'] }]
+ *   content: [{ className: 'sharpee-room', content: ['West of House'] }]
  * }
  *
  * // Action result with decorated item
@@ -96,7 +101,7 @@ export interface IDecoration {
  *   key: 'action.result',
  *   content: [
  *     'You take ',
- *     { type: 'item', content: ['the brass lantern'] },
+ *     { className: 'sharpee-item', content: ['the brass lantern'] },
  *     '.'
  *   ]
  * }
@@ -118,34 +123,6 @@ export interface ITextBlock {
      */
     readonly content: ReadonlyArray<TextContent>;
 }
-/**
- * Core decoration types defined by the platform.
- * Stories can extend with custom types.
- */
-export declare const CORE_DECORATION_TYPES: {
-    /** Emphasis (typically italic) */
-    readonly EM: "em";
-    /** Strong emphasis (typically bold) */
-    readonly STRONG: "strong";
-    /** Item/object name */
-    readonly ITEM: "item";
-    /** Room/location name */
-    readonly ROOM: "room";
-    /** NPC/character name */
-    readonly NPC: "npc";
-    /** Suggested command */
-    readonly COMMAND: "command";
-    /** Exit direction */
-    readonly DIRECTION: "direction";
-    /** Underlined text */
-    readonly UNDERLINE: "underline";
-    /** Struck-through text */
-    readonly STRIKETHROUGH: "strikethrough";
-    /** Superscript */
-    readonly SUPER: "super";
-    /** Subscript */
-    readonly SUB: "sub";
-};
 /**
  * Core block keys defined by the platform.
  * Stories can emit custom keys.
@@ -193,7 +170,7 @@ import type { TextContent, IDecoration, ITextBlock } from './types';
  * @example
  * const content: TextContent = getContent();
  * if (isDecoration(content)) {
- *   console.log(content.type); // TypeScript knows this is IDecoration
+ *   console.log(content.className); // TypeScript knows this is IDecoration
  * }
  */
 export declare function isDecoration(content: TextContent): content is IDecoration;
@@ -233,7 +210,7 @@ export declare function isActionBlock(block: ITextBlock): boolean;
  * @example
  * const text = extractPlainText([
  *   'You take ',
- *   { type: 'item', content: ['the sword'] },
+ *   { className: 'sharpee-item', content: ['the sword'] },
  *   '.'
  * ]);
  * // Returns: "You take the sword."
@@ -258,7 +235,7 @@ export declare function extractPlainText(content: ReadonlyArray<TextContent>): s
  * @see ADR-091: Text Decorations
  */
 export type { TextContent, IDecoration, ITextBlock } from './types.js';
-export { CORE_DECORATION_TYPES, CORE_BLOCK_KEYS } from './types.js';
+export { CORE_BLOCK_KEYS } from './types.js';
 export { CORE_BLOCK_KEYS as BLOCK_KEYS } from './types.js';
 export { isDecoration, isTextBlock, hasKeyPrefix, isStatusBlock, isRoomBlock, isActionBlock, extractPlainText, } from './guards.js';
 export declare const BLOCK_KEY_PREFIXES: {
@@ -560,35 +537,39 @@ export declare function handleGenericEvent(event: ISemanticEvent, context: Handl
 
 ```typescript
 /**
- * Decoration Parser
+ * Decoration Parser — no-op passthrough.
  *
- * Parses decoration syntax from resolved templates into IDecoration structures.
+ * Per ADR-174, decoration parsing now lives in
+ * `@sharpee/engine/src/prose-pipeline/decorations/parser.ts`. The
+ * `text-service` package is in the process of being removed
+ * (Phase 2 retires its remaining wire-production exports;
+ * Phase 3 deletes the package). The block-production path inside
+ * `text-service` no longer parses decorations — templates pass
+ * through as a single plain-text `TextContent` entry.
  *
- * Supports:
- * - [type:content] - semantic decorations
- * - *emphasis* - emphasis
- * - **strong** - strong emphasis
- * - Nested decorations
- * - Escaped characters: \*, \[, \]
+ * This shim exists so callers within `text-service.ts` and the
+ * handler files keep compiling until Phase 1 sub-phase 1.4 ports
+ * the handlers to engine. After Phase 1, no first-party caller
+ * imports this function.
  *
- * @see ADR-091 Text Decorations
+ * Public interface: `parseDecorations(text)` returns `[text]` (or
+ * `[]` for empty input). `hasDecorations(text)` returns `false`.
+ *
+ * Owner context: `@sharpee/text-service` — deprecated package.
+ *
+ * @see ADR-174 §Migration phasing
  */
 import type { TextContent } from '@sharpee/text-blocks';
 /**
- * Parse decorated text into TextContent array.
- *
- * @example
- * parseDecorations('You take [item:the sword].')
- * // Returns: ['You take ', { type: 'item', content: ['the sword'] }, '.']
- *
- * parseDecorations('The lantern glows *brightly*.')
- * // Returns: ['The lantern glows ', { type: 'em', content: ['brightly'] }, '.']
+ * No-op passthrough — wraps the input string as a single TextContent
+ * entry. Bracket markup is no longer parsed here.
  */
 export declare function parseDecorations(text: string): TextContent[];
 /**
- * Check if text contains any decoration markers.
+ * Always `false` post-ADR-174. Kept to preserve the export surface
+ * during Phase 1; will be removed alongside the package in Phase 3.
  */
-export declare function hasDecorations(text: string): boolean;
+export declare function hasDecorations(_text: string): boolean;
 ```
 
 ### cli-renderer

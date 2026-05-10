@@ -416,6 +416,8 @@ export declare const EntityType: {
     readonly SCENERY: "scenery";
     /** A directional exit (rarely used as entity) */
     readonly EXIT: "exit";
+    /** A physical adjacency between two rooms (ADR-173) */
+    readonly WALL: "wall";
     /** A geographic grouping of rooms (ADR-149) */
     readonly REGION: "region";
     /** A temporal phase of the story (ADR-149) */
@@ -436,6 +438,122 @@ export declare function isEntityType(type: string): type is EntityType;
  * Used for generating consistent entity IDs
  */
 export declare function getEntityTypePrefix(type: EntityType): string;
+```
+
+### entities/wall-entity
+
+```typescript
+/**
+ * Wall entity primitive (ADR-173).
+ *
+ * A wall is an IFEntity-derived entity expressing a physical adjacency
+ * between exactly two distinct rooms. It carries whole-wall traits (the
+ * entity's regular trait map — symmetric properties of the wall as a
+ * physical object) and per-side data (asymmetric interface properties
+ * keyed by the room id you encounter the wall from).
+ *
+ * Public interface: `IWallSideData`, `IWallSpec`, `WallEntity`. Authors
+ * do not instantiate `WallEntity` directly — they use `WorldModel.createWall`,
+ * which constructs the entity, runs validation, and maintains reciprocal
+ * references on both rooms.
+ *
+ * Owner context: `@sharpee/world-model` — entities / spatial primitives.
+ */
+import { EntityId, IEntityCreationParams } from '@sharpee/core';
+import { IFEntity } from './if-entity';
+import { ITrait } from '../traits/trait';
+/**
+ * Per-side data for a wall (ADR-173).
+ *
+ * Keyed by the room id the player is in when looking at the wall.
+ */
+export interface IWallSideData {
+    /**
+     * The adjective the parser uses to disambiguate this wall from other
+     * walls visible from the same room (e.g. 'oak', 'brick'). Required.
+     * Must be unique within any single room across all walls visible
+     * from that room.
+     */
+    adjective: string;
+    /**
+     * Optional per-side description, rendered when the player examines
+     * the wall from this side.
+     */
+    description?: string;
+    /**
+     * Optional reference to an entity that obstructs capability access
+     * to this side of the wall (e.g. a bookcase against the parlor side).
+     * Per ADR-173, the obstructor's own traits declare which capabilities
+     * it modifies (the "generalized obstructor protocol"). Must reference
+     * an entity that exists and is located in the appropriate room at
+     * world-load time; runtime evaluation re-checks the obstructor's
+     * current location.
+     */
+    obstructedBy?: EntityId;
+}
+/**
+ * Author-supplied specification for `WorldModel.createWall` (ADR-173).
+ *
+ * `between` is two distinct rooms (passed as either entities or ids).
+ * `whole` carries traits applied to the wall as a single object —
+ * symmetric properties (acoustic cost, structural material). `sides`
+ * carries the per-side data, keyed by each room's id.
+ */
+export interface IWallSpec {
+    between: [IFEntity | EntityId, IFEntity | EntityId];
+    whole?: ITrait[];
+    sides: Record<EntityId, IWallSideData>;
+}
+/**
+ * Author-supplied specification for `WorldModel.createWalls` (ADR-173).
+ *
+ * Fans out into one wall entity per element of `to`. `sides` is a
+ * function called once per pair to produce that side's data; the
+ * caller is given the room id and may produce per-room-distinct
+ * adjectives or descriptions.
+ */
+export interface IWallsSpec {
+    from: IFEntity | EntityId;
+    to: ReadonlyArray<IFEntity | EntityId>;
+    whole?: ITrait[];
+    sides: (roomId: EntityId) => IWallSideData;
+}
+/**
+ * IFEntity subclass for walls. Adds the `between` relation and the
+ * per-side data map. Whole-wall traits live on the entity's existing
+ * trait map (`entity.add(trait)`); per-side state is held here because
+ * it is keyed by room id rather than trait type.
+ */
+export declare class WallEntity extends IFEntity {
+    /**
+     * The two rooms this wall borders. Exactly two distinct room ids.
+     * Invariant established by `WorldModel.createWall` and held for the
+     * wall's lifetime — there is no API to mutate `between`.
+     */
+    readonly between: [EntityId, EntityId];
+    /**
+     * Per-side data keyed by room id. Always has exactly the two keys in
+     * `between`; populated by `WorldModel.createWall`.
+     */
+    readonly sides: Map<EntityId, IWallSideData>;
+    constructor(id: string, between: [EntityId, EntityId], params?: Partial<IEntityCreationParams>);
+    /**
+     * Returns the per-side data for the side facing `roomId`, or undefined
+     * if `roomId` is not one of the wall's two rooms.
+     */
+    getSide(roomId: EntityId): IWallSideData | undefined;
+    /**
+     * Returns the id of the room on the other side of the wall from
+     * `roomId`, or undefined if `roomId` is not one of the wall's two
+     * rooms.
+     */
+    otherRoom(roomId: EntityId): EntityId | undefined;
+}
+/**
+ * `IWallEntity` is the structural shape consumers code against.
+ * `WallEntity` is the concrete class produced by `WorldModel.createWall`.
+ */
+export type IWallEntity = WallEntity;
 ```
 
 ### behaviors/behavior
@@ -1925,6 +2043,9 @@ export declare const TraitType: {
     readonly ENTERABLE: "enterable";
     readonly CONCEALMENT: "if.trait.concealment";
     readonly CONCEALED_STATE: "if.trait.concealed_state";
+    readonly ACOUSTIC: "if.trait.acoustic";
+    readonly ACOUSTIC_DAMPENER: "if.trait.acoustic_dampener";
+    readonly LISTENER: "if.trait.listener";
     readonly STORY_INFO: "storyInfo";
 };
 /**
@@ -2318,6 +2439,12 @@ export interface IRoomData {
     ambientSmell?: string;
     /** ID of the region entity this room belongs to (ADR-149) */
     regionId?: string;
+    /**
+     * Wall entities this room borders (ADR-173).
+     * Maintained automatically by `WorldModel.createWall` —
+     * authors do not append directly.
+     */
+    walls?: string[];
     /** Tags for categorizing rooms */
     tags?: string[];
     /** Capacity constraints for the room (optional) */
@@ -2356,6 +2483,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     ambientSound?: string;
     ambientSmell?: string;
     regionId?: string;
+    walls: string[];
     tags: string[];
     capacity?: {
         maxWeight?: number;
@@ -4893,6 +5021,283 @@ export declare const ConcealedVisibilityBehavior: CapabilityBehavior;
 export declare function registerConcealedVisibilityBehavior(): void;
 ```
 
+### traits/acoustic/acousticTrait
+
+```typescript
+/**
+ * Acoustic trait — wall-intrinsic sound-cost data (ADR-172).
+ *
+ * Per ADR-173's whole-wall-vs-per-side trait taxonomy, a wall's *base*
+ * acoustic cost (the contribution of its material — plaster vs masonry
+ * vs soundproof panel) is symmetric from both sides. It lives in the
+ * whole-wall slot: attached to the wall entity itself, not to either
+ * side's per-side data.
+ *
+ * Per-side dampening (a tapestry covering one face, a peephole drilled
+ * through one face) lives on the *obstructor* entity and uses
+ * `AcousticDampenerTrait` (the per-side capability-specific obstructor
+ * trait per ADR-173's generalized obstructor protocol).
+ *
+ * Phase 2 ships only the trait shape and its tier→cost table. The
+ * propagation algorithm in `@sharpee/engine` (Phase 3) consumes
+ * `ACOUSTIC_TIER_COSTS`.
+ *
+ * Owner context: `@sharpee/world-model` — wall / spatial primitives.
+ *
+ * @see ADR-172 — Spatial Sound Propagation
+ * @see ADR-173 — Wall Adjacency Primitive (taxonomy)
+ */
+import { ITrait } from '../trait';
+/**
+ * The four discrete acoustic tiers a wall material may have. Authored
+ * qualitatively at world-load time; the propagation algorithm reads the
+ * cost via `ACOUSTIC_TIER_COSTS`.
+ */
+export type AcousticTier = 'thin' | 'default' | 'thick' | 'soundproof';
+/**
+ * Platform-default acoustic costs per wall tier, in path-cost units
+ * (ADR-172). Walls without an explicit `AcousticTrait` resolve to
+ * `default`.
+ *
+ * `Infinity` for `soundproof` collapses to `silent` audibility through
+ * the standard clarity formula (`clarity = budget − cost`) without the
+ * propagation algorithm needing a special case.
+ */
+export declare const ACOUSTIC_TIER_COSTS: Readonly<Record<AcousticTier, number>>;
+/**
+ * Acoustic trait — attaches to wall entities to declare their intrinsic
+ * acoustic cost tier. Whole-wall (symmetric) per ADR-173 taxonomy.
+ *
+ * @example
+ * world.createWall({
+ *   between: [parlor, library],
+ *   whole: [new AcousticTrait('thick')],
+ *   sides: { ... }
+ * });
+ */
+export declare class AcousticTrait implements ITrait {
+    readonly tier: AcousticTier;
+    static readonly type: "if.trait.acoustic";
+    /**
+     * Per ADR-173 taxonomy. Documentation only — not enforced; the wall
+     * creation API simply attaches whole-wall traits via `wall.add()`
+     * and per-side data via `wall.sides`.
+     */
+    static readonly slot = "whole-wall";
+    readonly type: "if.trait.acoustic";
+    constructor(tier: AcousticTier);
+}
+```
+
+### traits/acoustic/acousticDampenerTrait
+
+```typescript
+/**
+ * Acoustic dampener trait — obstructor-side sound-cost contribution
+ * (ADR-172). Attaches to entities (tapestries, peepholes, foam panels,
+ * heavy curtains) that, when referenced as a wall side's obstructor
+ * (via `IWallSideData.obstructedBy` per ADR-173), modify the wall's
+ * effective acoustic cost.
+ *
+ * Per ADR-173's generalized obstructor protocol, the wall does *not*
+ * hardcode rules about what obstructors do; the obstructor's own
+ * traits declare which capabilities it modifies. `AcousticDampenerTrait`
+ * is the first capability-specific obstructor trait (ADR-172); future
+ * capabilities (visual line-of-sight, olfactory, thermal) ship sibling
+ * traits via the same protocol without changes to wall-substrate code.
+ *
+ * Sign convention:
+ *   - **Positive** `contribution` adds to the wall's effective cost
+ *     (dampens — tapestry, foam panel, heavy curtain).
+ *   - **Negative** `contribution` subtracts from the wall's effective
+ *     cost (more permeable — peephole, hole, vent opening).
+ *
+ * Phase 2 ships only the trait shape. The wall's effective acoustic
+ * cost is computed by the propagation algorithm in `@sharpee/engine`
+ * (Phase 3), which consults this trait via the obstructor-protocol
+ * helpers shipped in ADR-173 Phase 5.
+ *
+ * Owner context: `@sharpee/world-model` — wall / spatial primitives.
+ *
+ * @see ADR-172 — Spatial Sound Propagation
+ * @see ADR-173 — Wall Adjacency Primitive (obstructor protocol)
+ */
+import { ITrait } from '../trait';
+/**
+ * Acoustic dampener trait — attaches to obstructor entities (tapestry,
+ * peephole, foam panel, heavy curtain).
+ *
+ * @example
+ * const tapestry = author.createEntity('tapestry', EntityType.OBJECT);
+ * tapestry.add(new AcousticDampenerTrait(2));   // +2 dampening
+ * author.moveEntity(tapestry.id, parlor.id);
+ *
+ * world.createWall({
+ *   between: [parlor, library],
+ *   sides: {
+ *     [parlor.id]: { adjective: 'oak', obstructedBy: tapestry.id },
+ *     [library.id]: { adjective: 'brick' },
+ *   },
+ * });
+ */
+export declare class AcousticDampenerTrait implements ITrait {
+    readonly contribution: number;
+    static readonly type: "if.trait.acoustic_dampener";
+    /**
+     * Per ADR-173 taxonomy. Documentation only — not enforced; obstructors
+     * are referenced by the wall's per-side `obstructedBy` and located by
+     * room at query time per the ADR-173 obstructor protocol.
+     */
+    static readonly slot = "obstructor";
+    readonly type: "if.trait.acoustic_dampener";
+    constructor(contribution: number);
+}
+```
+
+### traits/listener/listenerTrait
+
+```typescript
+/**
+ * Listener trait — marks an entity as eligible to receive
+ * `AudibilityEvent`s from the propagation function (ADR-172).
+ *
+ * Per ADR-172 §Multi-listener dispatch:
+ *  - The **player** gets this trait automatically during engine
+ *    initialization (Phase 4 wires this); story authors do not add it
+ *    manually.
+ *  - **NPCs** opt in by attaching the trait (used by L2+ for NPC
+ *    reactivity — e.g., an NPC hears a scream and runs toward it).
+ *  - **Devices** may also be Listeners (an intercom microphone, a
+ *    phone receiver, a recorder); see ADR-172 §Active acoustic
+ *    devices (deferred composition pattern).
+ *
+ * Phase 2 ships the trait as a presence flag — no data fields. Future
+ * fields (per-listener sensitivity, deafness, kind filters) require a
+ * future ADR.
+ *
+ * Owner context: `@sharpee/world-model` — sensory primitives.
+ *
+ * @see ADR-172 — Spatial Sound Propagation
+ */
+import { ITrait } from '../trait';
+/**
+ * Listener trait — presence flag. Entities carrying it are enumerated
+ * by the propagation function and receive `AudibilityEvent`s.
+ *
+ * @example
+ * // Engine player init (Phase 4) attaches automatically:
+ * player.add(new ListenerTrait());
+ *
+ * // Story-side NPC opt-in:
+ * const guard = author.createEntity('guard', EntityType.ACTOR);
+ * guard.add(new ListenerTrait());
+ */
+export declare class ListenerTrait implements ITrait {
+    static readonly type: "if.trait.listener";
+    readonly type: "if.trait.listener";
+}
+```
+
+### traits/obstructor-protocol
+
+```typescript
+/**
+ * Generalized obstructor-protocol query helpers (ADR-173).
+ *
+ * A wall side may declare an `obstructedBy` reference to another entity in
+ * the same room. That obstructor's *own traits* declare the capabilities it
+ * modifies — `AcousticDampenerTrait` for sound (ADR-172), future
+ * `BreachBlockerTrait` for breaching, future `VisualConduitTrait` for
+ * line-of-sight, and so on. The wall is the aggregator: capability consumers
+ * call into this module to ask "is there a contribution from this side's
+ * obstructor for this capability?", and the wall walks both sides for the
+ * cross-side sum AC-9 + AC-10 in ADR-173 require.
+ *
+ * Per ADR-173 §"obstruction is automatically lifted when the obstructor
+ * moves", the obstructor's *current* location is re-checked at query time —
+ * the wall does not store an obstruction flag. Move the bookcase aside and
+ * the obstruction lifts without explicit event handling. Authors who want
+ * custom side-effects on movement use ADR-052 event handlers in the usual
+ * way; the default protocol behavior is purely query-time.
+ *
+ * Public interface: `getCurrentObstructor`, `findTraitOnObstructor`,
+ * `findTraitsOnObstructors`. The latter two implement the obstructor-trait
+ * protocol; the first is the underlying location-aware lookup useful for
+ * non-trait queries (e.g. a future BREACH action rendering "the bookcase
+ * blocks your access" without consulting any trait).
+ *
+ * Owner context: `@sharpee/world-model` — wall / spatial primitives.
+ */
+import type { EntityId } from '@sharpee/core';
+import type { IFEntity } from '../entities/if-entity';
+import type { WallEntity } from '../entities/wall-entity';
+import type { ITrait } from './trait';
+/**
+ * Narrow world-model surface required to evaluate obstructors. Implemented
+ * by `WorldModel`; passed in by callers so the helper has no implicit
+ * dependency on the full world API.
+ */
+export interface IObstructorQueryWorld {
+    getEntity(id: string): IFEntity | undefined;
+    getLocation(id: string): string | undefined;
+}
+/**
+ * Returns the entity currently obstructing a wall side, or undefined when
+ * no obstructor is in effect.
+ *
+ * Returns undefined when:
+ *  - the side has no `obstructedBy` declared
+ *  - the obstructor entity no longer exists in the world
+ *  - the obstructor is not currently located in the side's room (it was
+ *    moved aside, taken into inventory, etc.)
+ *
+ * The runtime location check is the load-bearing semantics: ADR-173 keeps
+ * obstruction state implicit so that PUSH BOOKCASE / TAKE TAPESTRY lift
+ * obstruction without further bookkeeping.
+ */
+export declare function getCurrentObstructor(wall: WallEntity, side: EntityId, world: IObstructorQueryWorld): IFEntity | undefined;
+/**
+ * Returns the capability-specific trait carried by the given side's current
+ * obstructor, or undefined if no contribution applies.
+ *
+ * Returns undefined when:
+ *  - no obstructor is currently present on this side
+ *    (per `getCurrentObstructor`)
+ *  - the obstructor lacks the requested trait
+ *
+ * AC-10 (ADR-173): an obstructor lacking the trait contributes zero to that
+ * capability — callers that sum contributions treat undefined as 0.
+ */
+export declare function findTraitOnObstructor<T extends ITrait>(wall: WallEntity, side: EntityId, traitType: string, world: IObstructorQueryWorld): T | undefined;
+/**
+ * Result of a cross-side obstructor-trait scan: one entry per side that has
+ * a current obstructor carrying the requested trait. The `side` field is
+ * the room id of the obstructed side (i.e. the room the obstructor sits
+ * in); the `obstructor` is the resolved entity; `trait` is the matching
+ * trait instance.
+ */
+export interface IObstructorTraitMatch<T extends ITrait> {
+    side: EntityId;
+    obstructor: IFEntity;
+    trait: T;
+}
+/**
+ * Walks both sides of the wall and returns the matching capability-specific
+ * trait for each side that has one.
+ *
+ * Returns an empty array when neither side has an obstructor with the
+ * requested trait — the AC-10 zero-contribution case for the cross-side
+ * aggregation pattern.
+ *
+ * This is the helper ADR-172's acoustic-cost formula consults to sum
+ * `AcousticDampenerTrait.acousticCostModifier` across both sides
+ * (AC-9 in ADR-173, AC-7 in ADR-172). Future capabilities follow the same
+ * shape — pass the trait type the capability declares, sum contributions
+ * the way that capability cares about.
+ */
+export declare function findTraitsOnObstructors<T extends ITrait>(wall: WallEntity, traitType: string, world: IObstructorQueryWorld): IObstructorTraitMatch<T>[];
+```
+
 ### extensions/types
 
 ```typescript
@@ -5287,6 +5692,7 @@ export declare const extensionLoader: ExtensionLoader;
 
 ```typescript
 import { IFEntity } from '../entities/if-entity';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
 import { TraitType } from '../traits/trait-types';
 import { DirectionType } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
@@ -5387,6 +5793,8 @@ export interface IWorldModel {
         isLocked?: boolean;
         keyId?: string;
     }): IFEntity;
+    createWall(spec: IWallSpec): WallEntity;
+    createWalls(spec: IWallsSpec): WallEntity[];
     createRegion(id: string, options: RegionOptions): IFEntity;
     assignRoom(roomId: string, regionId: string): void;
     isInRegion(entityId: string, regionId: string): boolean;
@@ -5593,6 +6001,26 @@ export declare class WorldModel implements IWorldModel {
         isLocked?: boolean;
         keyId?: string;
     }): IFEntity;
+    /**
+     * Creates a single wall between exactly two distinct rooms.
+     * Validates cardinality, per-side adjective presence, per-room
+     * adjective uniqueness, and `obstructedBy` resolution before
+     * registering the wall and updating both rooms' `walls` collections.
+     *
+     * @throws Error on any validation failure (per ADR-173 §"Rejection rules").
+     */
+    createWall(spec: IWallSpec): WallEntity;
+    /**
+     * Creates N walls between `from` and each room in `to` (ADR-173
+     * §Authoring API). Each wall is independently validated; a failure
+     * on the K-th pair leaves walls 0..K-1 in the world.
+     */
+    createWalls(spec: IWallsSpec): WallEntity[];
+    /**
+     * Adapter exposing the narrow surface `wall-creation` requires
+     * without coupling it to the full `WorldModel` API.
+     */
+    private wallCreationSurface;
     /**
      * Creates a region entity with RegionTrait atomically.
      *
@@ -5820,6 +6248,7 @@ export declare class VisibilityBehavior extends Behavior {
  * containers, etc.).
  */
 import { IFEntity } from '../entities/if-entity';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
 import { TraitType } from '../traits/trait-types';
 import { SpatialIndex } from './SpatialIndex';
 import { ITrait } from '../traits/trait';
@@ -5931,6 +6360,8 @@ export declare class AuthorModel implements IWorldModel {
         isLocked?: boolean;
         keyId?: string;
     }): IFEntity;
+    createWall(spec: IWallSpec): WallEntity;
+    createWalls(spec: IWallsSpec): WallEntity[];
     createRegion(id: string, options: RegionOptions): IFEntity;
     assignRoom(roomId: string, regionId: string): void;
     isInRegion(entityId: string, regionId: string): boolean;
@@ -5986,6 +6417,97 @@ export declare class AuthorModel implements IWorldModel {
     removeTrait(entityId: string, traitType: TraitType): void;
     private generateId;
 }
+```
+
+### world/wall-creation
+
+```typescript
+import { IFEntity } from '../entities/if-entity';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
+/**
+ * The narrow world surface required for wall creation. Implemented by
+ * `WorldModel`; not part of the public IWorldModel interface.
+ */
+export interface IWallCreationWorld {
+    getEntity(id: string): IFEntity | undefined;
+    getLocation(entityId: string): string | undefined;
+    generateWallId(): string;
+    registerWall(wall: WallEntity): void;
+}
+/**
+ * Creates a single wall between exactly two distinct rooms (ADR-173).
+ *
+ * Validates the spec (cardinality, per-side adjectives, per-room
+ * adjective uniqueness, obstructor resolution), builds a `WallEntity`
+ * carrying any whole-wall traits and per-side data, registers it in
+ * the world, and pushes its id into both rooms' `RoomTrait.walls`
+ * collections.
+ *
+ * @throws Error on any validation failure (see `validateWallSpec`).
+ */
+export declare function createWall(world: IWallCreationWorld, spec: IWallSpec): WallEntity;
+/**
+ * Convenience helper that fans out into N walls between `from` and
+ * each room in `to` (ADR-173 §Authoring API). Each underlying wall is
+ * created with the supplied whole-wall traits (cloned per call to
+ * avoid sharing trait instances across walls) and per-side data
+ * produced by the `sides` callback.
+ *
+ * Walls are created sequentially. If validation fails on the K-th
+ * pair, walls 0..K-1 are already in the world — author is expected
+ * to fix the offending pair and re-run only the bad declaration, in
+ * keeping with ADR-173's load-time-failure model.
+ */
+export declare function createWalls(world: IWallCreationWorld, spec: IWallsSpec): WallEntity[];
+```
+
+### world/wall-validation
+
+```typescript
+/**
+ * World-load validation for wall specifications (ADR-173).
+ *
+ * Implements the Rejection rules from ADR-173 §"Rejection rules":
+ * cardinality (exactly two distinct rooms), per-side adjective
+ * presence/non-emptiness, per-room adjective uniqueness, and
+ * `obstructedBy` resolution against the world's current entity map.
+ *
+ * Public interface: `validateWallSpec`. Pure validation — no mutation.
+ * Throws `Error` with a descriptive message on the first violation
+ * detected; never returns a structured error object (the validator is
+ * a precondition gate at the createWall boundary, not a recoverable
+ * subsystem).
+ *
+ * Owner context: `@sharpee/world-model` — world / spatial primitives.
+ */
+import { EntityId } from '@sharpee/core';
+import { IFEntity } from '../entities/if-entity';
+import { IWallSpec } from '../entities/wall-entity';
+/**
+ * Read-only world surface this validator depends on. Limited to the
+ * methods required so the validator can be invoked from tests with a
+ * minimal stand-in if desired (and so it does not creep into mutation
+ * APIs by accident).
+ */
+export interface IWallValidationWorld {
+    getEntity(id: string): IFEntity | undefined;
+    getLocation(entityId: string): string | undefined;
+}
+/**
+ * Validates a wall specification before mutation.
+ *
+ * @param spec - The author-supplied wall specification.
+ * @param world - Read-only view of the world for entity/location lookups.
+ * @throws Error if cardinality, adjective presence, per-room adjective
+ *   uniqueness, or `obstructedBy` resolution fails. The first failure
+ *   detected aborts validation; no partial state escapes.
+ */
+export declare function validateWallSpec(spec: IWallSpec, world: IWallValidationWorld): {
+    roomAId: EntityId;
+    roomBId: EntityId;
+    roomA: IFEntity;
+    roomB: IFEntity;
+};
 ```
 
 ### world/capabilities

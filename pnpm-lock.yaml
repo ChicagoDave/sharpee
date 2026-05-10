@@ -219,9 +219,6 @@ importers:
       '@sharpee/text-blocks':
         specifier: workspace:*
         version: link:../text-blocks
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model

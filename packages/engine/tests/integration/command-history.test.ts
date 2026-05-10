@@ -7,7 +7,7 @@ import { GameEngine } from '../../src/game-engine';
 import { WorldModel, StandardCapabilities, EntityType } from '@sharpee/world-model';
 import { CommandHistoryData, IFActions } from '@sharpee/stdlib';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
-import { createMockTextService } from '../../src/test-helpers/mock-text-service';
+import { createMockProsePipeline as createMockTextService } from '../../src/test-helpers/mock-prose-pipeline';
 
 describe('Command History Integration', () => {
   let engine: GameEngine;

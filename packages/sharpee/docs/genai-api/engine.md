@@ -645,6 +645,7 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  */
 import { ISystemEvent, IGenericEventSource, Result } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
+import { ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { ActionRegistry } from '@sharpee/stdlib';
@@ -723,7 +724,7 @@ export declare class CommandExecutor {
      * Emit the pre-action hook to all registered listeners.
      */
     private emitBeforeAction;
-    execute(input: string, world: WorldModel, context: GameContext, config?: EngineConfig): Promise<TurnResult>;
+    execute(input: string, world: WorldModel, context: GameContext, config?: EngineConfig, soundBuffer?: ISound[]): Promise<TurnResult>;
 }
 export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>): CommandExecutor;
 ```
@@ -988,7 +989,7 @@ import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
-import { ITextService } from '@sharpee/text-service';
+import { ITextService } from './prose-pipeline';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
@@ -1061,6 +1062,21 @@ export declare class GameEngine {
     private pendingPlatformOps;
     private perceptionService?;
     private pluginRegistry;
+    /**
+     * Per-turn sound buffer (ADR-172 Phase 6). Cleared at the start of every
+     * `executeTurn()`; populated as actions call `context.emitSound`;
+     * dispatched once after the plugin tick by `soundDispatcher.dispatch`.
+     * Engine-internal — never serialized into save/restore snapshots
+     * because sounds do not survive turn boundaries.
+     */
+    private soundBuffer;
+    /**
+     * Per-turn sound dispatcher (ADR-172 Phase 6). Stateless — owns no
+     * per-turn data; the buffer is passed in. Held as a field to leave
+     * room for future extension seams (e.g., custom propagate injection
+     * via `setSoundDispatcher` in tests).
+     */
+    private soundDispatcher;
     private random;
     private narrativeSettings;
     private inputModeHandlers;
@@ -1797,4 +1813,156 @@ export declare class PlatformOperationHandler {
  * Create a platform operation handler instance
  */
 export declare function createPlatformOperationHandler(saveRestoreHooks: ISaveRestoreHooks | undefined, saveRestoreService: SaveRestoreService, stateProvider: ISaveRestoreStateProvider, vocabularyManager: VocabularyManager): PlatformOperationHandler;
+```
+
+### sound/propagation
+
+```typescript
+/**
+ * Spatial sound propagation function (ADR-172 Phase 3).
+ *
+ * Pure logic: given a `Sound` emission, a listener entity-id, and the
+ * world-model, returns the `AudibilityEvent` the listener perceives —
+ * or `null` if the sound is silent at the listener's location.
+ *
+ * The function is structured around three pieces:
+ *
+ *  1. **Edge-graph construction** (`getAcousticEdges`) — for any room,
+ *     enumerate the rooms it's acoustically connected to, with each
+ *     edge's cost. Today's edge sources are exits-with-doors and walls
+ *     (per ADR-173). Future acoustic conduits ride on the same shape
+ *     without changes here.
+ *
+ *  2. **Path search** (`findShortestAcousticPath`) — Dijkstra from
+ *     source room to listener's room. Path cost = sum of edge costs +
+ *     1 unit per intermediate room. Wall edges traversed are recorded
+ *     so the resulting `AudibilityEvent` can name a wall when the path
+ *     crosses exactly one.
+ *
+ *  3. **Clarity → tier mapping** (`clarityToTier`) — the ADR-172
+ *     audibility-tier table.
+ *
+ * The propagation function does *not* enumerate listeners — that is
+ * Phase 5/6's dispatcher. This file is `propagate(sound, listenerId,
+ * world, timestamp) → event | null`, intended to be called per
+ * listener.
+ *
+ * Owner context: `@sharpee/engine` — runtime / sound subsystem.
+ *
+ * @see ADR-172 — Spatial Sound Propagation
+ * @see ADR-173 — Wall Adjacency Primitive (substrate)
+ */
+import type { EntityId } from '@sharpee/core';
+import { type AudibilityTier, type IAudibilityEvent, type ISound } from '@sharpee/if-domain';
+import { WorldModel } from '@sharpee/world-model';
+/**
+ * Propagate a sound emission to a single listener.
+ *
+ * Returns an `AudibilityEvent` for the listener if the sound reaches
+ * them at any tier above `silent`; returns `null` if the sound is
+ * silent at the listener's location (no reachable path, cost too high
+ * for the volume budget, or the listener has no resolvable room).
+ *
+ * Same-room emissions short-circuit to `full` audibility regardless of
+ * intervening boundaries (degenerate case from ADR-172 §Propagation
+ * function step 5).
+ *
+ * @param sound        The emission shape.
+ * @param listenerId   The entity id of the listener.
+ * @param world        The world-model carrying rooms, walls, doors,
+ *                     and obstructors.
+ * @param timestamp    Engine-provided turn-sequence integer for event
+ *                     ordering. Phase 6's dispatcher threads this from
+ *                     the turn manager.
+ */
+export declare function propagate(sound: ISound, listenerId: EntityId, world: WorldModel, timestamp: number): IAudibilityEvent | null;
+/**
+ * Map a clarity value (volume budget − accumulated path cost) to the
+ * ADR-172 audibility tier table.
+ *
+ * Exposed for testability and so that future composition layers can
+ * reuse the mapping (e.g., a conversation-choreography layer that
+ * wants to show a "what would the audibility be at this volume from
+ * here?" debug overlay).
+ */
+export declare function clarityToTier(clarity: number): AudibilityTier;
+```
+
+### sound/dispatcher
+
+```typescript
+/**
+ * Per-turn audibility dispatcher (ADR-172 Phase 6).
+ *
+ * Closes the loop between `emitSound` (authoring API; Step 6.1) and the
+ * `audibility` channel (Phase 5). For each `ISound` buffered during a
+ * turn, the dispatcher walks every entity carrying `ListenerTrait`,
+ * calls `propagate(sound, listenerId, world, timestamp)`, and emits one
+ * `sound.audibility.heard` `ISemanticEvent` per (sound × listener) pair
+ * that produced a non-null `IAudibilityEvent`.
+ *
+ * The dispatcher is pure: same buffer + same world state + same
+ * timestamp → same event array. Listeners are processed in entity-id
+ * sort order for deterministic event ordering across turns and runs.
+ *
+ * Owner context: `@sharpee/engine` — runtime / sound subsystem.
+ *
+ * Public interface:
+ *   - `class SoundDispatcher` — the dispatcher itself.
+ *   - `SoundDispatcher.dispatch(buffer, world, timestamp)` — produces
+ *     the `sound.audibility.heard` events for the turn.
+ *
+ * @see ADR-172 — Spatial Sound Propagation
+ * @see ADR-163 — Channel-Service Platform (audibility channel)
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+import type { IAudibilityEvent, ISound } from '@sharpee/if-domain';
+import { type WorldModel } from '@sharpee/world-model';
+/**
+ * Semantic-event type fired by the dispatcher when a listener perceives
+ * a propagated sound. Mirrors `SOUND_EVENT_TYPES.AUDIBILITY_HEARD` in
+ * `@sharpee/stdlib/channels/sound-events`. The constant is duplicated
+ * here as a string literal so the engine package does not depend on
+ * stdlib at compile time (engine → stdlib is the existing dependency
+ * direction; the inverse would be a cycle). The string value is the
+ * contract — both sides must agree.
+ */
+export declare const AUDIBILITY_HEARD_EVENT_TYPE = "sound.audibility.heard";
+/**
+ * Per-turn audibility dispatcher.
+ *
+ * The class shape (rather than a free function) leaves room for a
+ * future propagate-injection point in tests and for caching listener
+ * lookups across multi-action turns. For Phase 6 the dispatcher is a
+ * thin wrapper around `propagate()`; the class structure is the
+ * extension seam for L2's "NPC voice profile" layer.
+ */
+export declare class SoundDispatcher {
+    /**
+     * The propagation function the dispatcher uses. Defaulted to the
+     * production `propagate` from `./propagation`; tests may inject a
+     * fake to isolate dispatcher behavior from edge-graph + Dijkstra
+     * complexity.
+     */
+    private readonly propagate;
+    constructor(propagateFn?: (sound: ISound, listenerId: string, world: WorldModel, timestamp: number) => IAudibilityEvent | null);
+    /**
+     * Dispatch every buffered sound to every listener.
+     *
+     * @param buffer    The per-turn sound buffer; iterated in insertion
+     *                  order. May be empty (quiet turn).
+     * @param world     The world model the propagation function reads
+     *                  from. Must be the same instance the actions
+     *                  mutated during the turn.
+     * @param timestamp The turn-sequence integer the engine assigns to
+     *                  this turn. Used as the `IAudibilityEvent.timestamp`
+     *                  for ordering across multi-emission turns.
+     * @returns         Array of `sound.audibility.heard` events, one per
+     *                  (sound × listener) where `propagate()` returned
+     *                  non-null. Order: outer iteration over the buffer in
+     *                  emission order, inner iteration over listeners
+     *                  sorted by entity id ascending.
+     */
+    dispatch(buffer: readonly ISound[], world: WorldModel, timestamp: number): ISemanticEvent[];
+}
 ```
