@@ -11,7 +11,6 @@ export { MetaAction } from './meta-action';
 export { MetaCommandRegistry } from './meta-registry';
 
 // Implementation
-export * from './context';
 export * from './registry';
 export * from './constants';
 
