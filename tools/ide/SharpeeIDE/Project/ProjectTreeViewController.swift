@@ -9,6 +9,10 @@ import AppKit
 protocol ProjectTreeDelegate: AnyObject {
     /// Called when the user activates (double-clicks or presses Return on) a leaf file node.
     func projectTree(_ controller: ProjectTreeViewController, didActivate node: FileNode)
+
+    /// Called whenever the user toggles a directory's expansion state.
+    /// Suppressed during programmatic restoration to avoid notification spam.
+    func projectTreeDidChangeExpansion(_ controller: ProjectTreeViewController)
 }
 
 final class ProjectTreeViewController: NSViewController {
@@ -20,6 +24,9 @@ final class ProjectTreeViewController: NSViewController {
     private let placeholder = NSTextField(labelWithString: "No project open")
 
     private var project: Project?
+    /// Suppresses delegate notifications while we apply expansion programmatically
+    /// (e.g. during session restoration).
+    private var isApplyingProgrammaticExpansion = false
 
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("FileCell")
 
@@ -53,17 +60,55 @@ final class ProjectTreeViewController: NSViewController {
     }
 
     /// Replace the tree with a new project's contents. Pass nil to clear.
-    func setProject(_ project: Project?) {
+    /// If `expandedFolderURLs` is non-empty, recursively re-expands directories whose URLs match
+    /// (parents are expanded first so child matches resolve). Otherwise leaves the tree collapsed.
+    func setProject(_ project: Project?, expandedFolderURLs: [URL] = []) {
         self.project = project
         outlineView.reloadData()
-        if let project = project {
-            // Auto-expand root.
-            outlineView.expandItem(nil, expandChildren: false)
+        guard let project = project else {
+            updateEmptyState()
+            return
+        }
+
+        outlineView.expandItem(nil, expandChildren: false)
+
+        isApplyingProgrammaticExpansion = true
+        defer { isApplyingProgrammaticExpansion = false }
+
+        if expandedFolderURLs.isEmpty {
             for child in project.rootNode.children where child.isDirectory {
                 outlineView.collapseItem(child)
             }
+        } else {
+            let urlSet = Set(expandedFolderURLs)
+            applyExpansion(below: project.rootNode, matching: urlSet)
         }
+
         updateEmptyState()
+    }
+
+    /// URLs of every currently-expanded directory in the displayed tree.
+    var expandedFolderURLs: [URL] {
+        guard let project = project else { return [] }
+        var result: [URL] = []
+        collectExpanded(below: project.rootNode, into: &result)
+        return result
+    }
+
+    private func collectExpanded(below parent: FileNode, into result: inout [URL]) {
+        for child in parent.children where child.isDirectory && outlineView.isItemExpanded(child) {
+            result.append(child.url)
+            collectExpanded(below: child, into: &result)
+        }
+    }
+
+    private func applyExpansion(below parent: FileNode, matching urls: Set<URL>) {
+        for child in parent.children where child.isDirectory {
+            if urls.contains(child.url) {
+                outlineView.expandItem(child)
+                applyExpansion(below: child, matching: urls)
+            }
+        }
     }
 
     // MARK: - Setup
@@ -152,6 +197,16 @@ extension ProjectTreeViewController: NSOutlineViewDataSource {
 // MARK: - Delegate
 
 extension ProjectTreeViewController: NSOutlineViewDelegate {
+
+    func outlineViewItemDidExpand(_ notification: Notification) {
+        guard !isApplyingProgrammaticExpansion else { return }
+        delegate?.projectTreeDidChangeExpansion(self)
+    }
+
+    func outlineViewItemDidCollapse(_ notification: Notification) {
+        guard !isApplyingProgrammaticExpansion else { return }
+        delegate?.projectTreeDidChangeExpansion(self)
+    }
 
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
         guard let node = item as? FileNode else { return nil }

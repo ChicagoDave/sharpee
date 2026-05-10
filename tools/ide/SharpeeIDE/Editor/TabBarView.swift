@@ -8,6 +8,7 @@ import AppKit
 
 struct TabModel {
     let title: String
+    let isDirty: Bool
 }
 
 final class TabBarView: NSView {
@@ -74,7 +75,9 @@ final class TabBarView: NSView {
         }
 
         for (index, tab) in newTabs.enumerated() {
-            let cell = TabCellView(title: tab.title, isActive: index == activeIndex)
+            let cell = TabCellView(title: tab.title,
+                                   isActive: index == activeIndex,
+                                   isDirty: tab.isDirty)
             cell.onSelect = { [weak self] in self?.onSelect?(index) }
             cell.onClose = { [weak self] in self?.onClose?(index) }
             stackView.addArrangedSubview(cell)
@@ -93,7 +96,7 @@ private final class TabCellView: NSView {
     private let closeButton = NSButton()
     private let separator = NSView()
 
-    init(title: String, isActive: Bool) {
+    init(title: String, isActive: Bool, isDirty: Bool) {
         super.init(frame: .zero)
 
         wantsLayer = true
@@ -127,11 +130,11 @@ private final class TabCellView: NSView {
         addSubview(closeButton)
         addSubview(separator)
 
-        // Cell height matches the bar minus its bottom border.
+        // Common constraints: cell height, label vertical centering and trailing edge,
+        // close button on the right, separator at the right edge.
         NSLayoutConstraint.activate([
             heightAnchor.constraint(equalToConstant: TabBarView.height - 1),
 
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
             label.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -4),
 
@@ -145,6 +148,26 @@ private final class TabCellView: NSView {
             separator.bottomAnchor.constraint(equalTo: bottomAnchor),
             separator.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
+
+        // Leading edge: a dirty marker dot (when applicable) precedes the label.
+        if isDirty {
+            let dot = NSView()
+            dot.wantsLayer = true
+            dot.layer?.backgroundColor = (isActive ? Theme.foreground : Theme.foregroundDim).cgColor
+            dot.layer?.cornerRadius = 3
+            dot.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(dot)
+
+            NSLayoutConstraint.activate([
+                dot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+                dot.centerYAnchor.constraint(equalTo: centerYAnchor),
+                dot.widthAnchor.constraint(equalToConstant: 6),
+                dot.heightAnchor.constraint(equalToConstant: 6),
+                label.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 6),
+            ])
+        } else {
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12).isActive = true
+        }
     }
 
     required init?(coder: NSCoder) {

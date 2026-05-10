@@ -69,6 +69,13 @@ enum MenuBuilder {
         menu.addItem(open)
         menu.addItem(NSMenuItem.separator())
 
+        let save = NSMenuItem(title: "Save",
+                              action: #selector(AppDelegate.saveDocument(_:)),
+                              keyEquivalent: "s")
+        save.target = target
+        menu.addItem(save)
+        menu.addItem(NSMenuItem.separator())
+
         menu.addItem(withTitle: "Close",
                      action: #selector(NSWindow.performClose(_:)),
                      keyEquivalent: "w")

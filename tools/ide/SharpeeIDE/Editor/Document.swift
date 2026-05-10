@@ -26,6 +26,13 @@ final class Document {
         }
         return Document(url: url, content: text)
     }
+
+    /// Persists `content` to `url` as UTF-8 with atomic replace, then clears the dirty flag.
+    /// Throws the underlying error on failure; `isDirty` remains true on failure.
+    func save() throws {
+        try content.write(to: url, atomically: true, encoding: .utf8)
+        isDirty = false
+    }
 }
 
 enum DocumentError: LocalizedError {

@@ -23,6 +23,16 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         return documents[i]
     }
 
+    /// Read-only view of the open documents' URLs, in tab order. Used for session persistence.
+    var openDocumentURLs: [URL] { documents.map { $0.url } }
+
+    /// Read-only view of the active tab index. Used for session persistence.
+    var activeDocumentIndex: Int? { activeIndex }
+
+    /// Fired whenever the open-document set or active index changes (open, close, switch).
+    /// Not fired on dirty-flag toggles or content edits — those don't affect persistable state.
+    var onStateChanged: (() -> Void)?
+
     override func loadView() {
         let pane = NSView()
         pane.wantsLayer = true
@@ -73,6 +83,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             let document = try Document.load(from: url)
             documents.append(document)
             switchTo(index: documents.count - 1)
+            // switchTo already fires onStateChanged. The append is part of the same logical
+            // change so a single notification is correct.
         } catch {
             let alert = NSAlert(error: error)
             alert.alertStyle = .warning
@@ -80,9 +92,69 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         }
     }
 
-    /// Closes the tab at `index`. If it was the active tab, advances to the next (or previous)
-    /// tab. If `documents` becomes empty, the editor returns to its placeholder state.
+    /// Closes the tab at `index`. If the document is dirty, prompts the user with a
+    /// Save / Cancel / Don't Save sheet and only proceeds based on their choice. If clean,
+    /// removes immediately. If it was the active tab, advances to the next (or previous) tab.
+    /// If `documents` becomes empty, the editor returns to its placeholder state.
     func closeDocument(at index: Int) {
+        guard documents.indices.contains(index) else { return }
+        // Make sure the active doc's content reflects the latest textView state before
+        // we read its dirty flag.
+        persistTextViewToActiveDocument()
+
+        if documents[index].isDirty {
+            promptCloseDirty(at: index)
+            return
+        }
+        performClose(at: index)
+    }
+
+    private func promptCloseDirty(at index: Int) {
+        let doc = documents[index]
+        let alert = NSAlert()
+        alert.messageText = "Do you want to save the changes to \(doc.url.lastPathComponent)?"
+        alert.informativeText = "Your changes will be lost if you don't save them."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Save")          // .alertFirstButtonReturn (default, rightmost)
+        alert.addButton(withTitle: "Cancel")        // .alertSecondButtonReturn (Esc)
+        alert.addButton(withTitle: "Don't Save")    // .alertThirdButtonReturn (⌘D)
+        alert.buttons[2].keyEquivalent = "d"
+        alert.buttons[2].keyEquivalentModifierMask = [.command]
+
+        let handle: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            self?.handleCloseAlert(response: response, index: index)
+        }
+
+        if let window = view.window {
+            alert.beginSheetModal(for: window, completionHandler: handle)
+        } else {
+            handle(alert.runModal())
+        }
+    }
+
+    private func handleCloseAlert(response: NSApplication.ModalResponse, index: Int) {
+        guard documents.indices.contains(index) else { return }
+        switch response {
+        case .alertFirstButtonReturn: // Save
+            let doc = documents[index]
+            do {
+                try doc.save()
+                performClose(at: index)
+            } catch {
+                let alert = NSAlert(error: error)
+                alert.alertStyle = .warning
+                alert.runModal()
+                // Save failed — leave the tab open so the user can retry.
+                refreshUI()
+            }
+        case .alertThirdButtonReturn: // Don't Save
+            performClose(at: index)
+        default: // Cancel (.alertSecondButtonReturn)
+            break
+        }
+    }
+
+    private func performClose(at index: Int) {
         guard documents.indices.contains(index) else { return }
 
         let wasActive = (activeIndex == index)
@@ -98,6 +170,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
 
         loadActiveDocumentIntoTextView()
         refreshUI()
+        onStateChanged?()
     }
 
     /// Activates the tab at `index`. Persists the text view's edits to the previously-active
@@ -112,6 +185,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         activeIndex = index
         loadActiveDocumentIntoTextView()
         refreshUI()
+        onStateChanged?()
     }
 
     /// Clears all open documents and returns to the placeholder state.
@@ -120,13 +194,30 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         activeIndex = nil
         loadActiveDocumentIntoTextView()
         refreshUI()
+        onStateChanged?()
+    }
+
+    /// Writes the active document to disk as UTF-8 and clears its dirty flag.
+    /// No-op when there is no active document. Presents a modal alert if the write fails.
+    func saveActiveDocument() {
+        guard let doc = activeDocument else { return }
+        do {
+            try doc.save()
+            refreshUI()
+        } catch {
+            let alert = NSAlert(error: error)
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
     }
 
     // MARK: - UI sync
 
     private func refreshUI() {
         let titles = Self.makeDisplayTitles(for: documents.map { $0.url })
-        let models = titles.map { TabModel(title: $0) }
+        let models = titles.enumerated().map { index, title in
+            TabModel(title: title, isDirty: documents[index].isDirty)
+        }
         tabBar.setTabs(models, activeIndex: activeIndex)
 
         let hasDocuments = !documents.isEmpty
@@ -196,6 +287,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
         guard !isSwappingContent, let doc = activeDocument else { return }
         doc.content = textView.string
+        if !doc.isDirty {
+            doc.isDirty = true
+            refreshUI()
+        }
     }
 
     // MARK: - Setup

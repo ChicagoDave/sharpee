@@ -30,9 +30,26 @@ final class MainWindowController: NSWindowController {
         self.init(window: window)
     }
 
-    /// Replaces the project displayed in the Project pane.
-    func loadProject(_ project: Project) {
-        (window?.contentViewController as? RootViewController)?.loadProject(project)
+    /// Replaces the project displayed in the Project pane. Optional `expandedFolderURLs`
+    /// re-applies a prior expansion state (used by session restoration).
+    func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
+        (window?.contentViewController as? RootViewController)?
+            .loadProject(project, expandedFolderURLs: expandedFolderURLs)
+    }
+
+    /// Forwards a Save action from the menu down to the editor.
+    func saveActiveDocument() {
+        (window?.contentViewController as? RootViewController)?.saveActiveDocument()
+    }
+
+    /// Opens a document URL in the editor — used by session restoration.
+    func openDocument(at url: URL) {
+        (window?.contentViewController as? RootViewController)?.openDocument(at: url)
+    }
+
+    /// Activates the tab at `index` — used by session restoration.
+    func switchToDocument(at index: Int) {
+        (window?.contentViewController as? RootViewController)?.switchToDocument(at: index)
     }
 }
 
@@ -71,8 +88,20 @@ private final class RootViewController: NSViewController {
         view = container
     }
 
-    func loadProject(_ project: Project) {
-        splitViewController.loadProject(project)
+    func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
+        splitViewController.loadProject(project, expandedFolderURLs: expandedFolderURLs)
+    }
+
+    func saveActiveDocument() {
+        splitViewController.saveActiveDocument()
+    }
+
+    func openDocument(at url: URL) {
+        splitViewController.openDocument(at: url)
+    }
+
+    func switchToDocument(at index: Int) {
+        splitViewController.switchToDocument(at: index)
     }
 }
 
@@ -89,6 +118,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     private let projectTreeViewController = ProjectTreeViewController()
     private let editorViewController = EditorViewController()
 
+    private var currentProject: Project?
     private var didApplyInitialLayout = false
 
     override func viewDidLoad() {
@@ -97,6 +127,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         splitView.autosaveName = "SharpeeIDEMainSplit"
 
         projectTreeViewController.delegate = self
+        editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
 
         addSplitViewItem(makeRailItem())
         addSplitViewItem(makeProjectItem())
@@ -107,14 +138,42 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
                                       holding: .defaultLow))
     }
 
-    func loadProject(_ project: Project) {
-        projectTreeViewController.setProject(project)
+    func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
+        currentProject = project
+        projectTreeViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
+        persistSession()
+    }
+
+    func saveActiveDocument() {
+        editorViewController.saveActiveDocument()
+    }
+
+    func openDocument(at url: URL) {
+        editorViewController.openDocument(at: url)
+    }
+
+    func switchToDocument(at index: Int) {
+        editorViewController.switchTo(index: index)
+    }
+
+    private func persistSession() {
+        let state = SessionState(
+            projectURL: currentProject?.rootURL,
+            openDocumentURLs: editorViewController.openDocumentURLs,
+            activeIndex: editorViewController.activeDocumentIndex,
+            expandedFolderURLs: projectTreeViewController.expandedFolderURLs
+        )
+        SessionStateStore.save(state)
     }
 
     // MARK: - ProjectTreeDelegate
 
     func projectTree(_ controller: ProjectTreeViewController, didActivate node: FileNode) {
         editorViewController.openDocument(at: node.url)
+    }
+
+    func projectTreeDidChangeExpansion(_ controller: ProjectTreeViewController) {
+        persistSession()
     }
 
     override func viewDidAppear() {
