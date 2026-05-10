@@ -31,6 +31,7 @@ import { handleGameMessage, handleGenericEvent } from './handlers/generic.js';
 import { handleGameStarted } from './handlers/game.js';
 import { handleHelpDisplayed } from './handlers/help.js';
 import { handleAboutDisplayed } from './handlers/about.js';
+import { handleAudibilityHeard } from './handlers/audibility.js';
 
 /**
  * Text service interface (ADR-096)
@@ -109,6 +110,9 @@ export class TextService implements ITextService {
 
       case 'if.event.about_displayed':
         return handleAboutDisplayed(event, context);
+
+      case 'sound.audibility.heard':
+        return handleAudibilityHeard(event, context);
 
       case 'if.event.implicit_take':
         return this.handleImplicitTake(event, context);

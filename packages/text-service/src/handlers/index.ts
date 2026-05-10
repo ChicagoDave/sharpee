@@ -12,3 +12,4 @@ export { handleRoomDescription } from './room.js';
 export { handleRevealed } from './revealed.js';
 export { handleGameMessage, handleGenericEvent } from './generic.js';
 export { handleGameStarted } from './game.js';
+export { handleAudibilityHeard } from './audibility.js';
