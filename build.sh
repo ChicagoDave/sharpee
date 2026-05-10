@@ -342,10 +342,10 @@ EOF
 
     # Update Zifmia version files
     if [ "$UPDATE_ZIFMIA" = true ]; then
-        local ZIFMIA_PKG="packages/zifmia/package.json"
-        local ZIFMIA_VERSION_TS="packages/zifmia/src/version.ts"
-        local ZIFMIA_TAURI_CONF="packages/zifmia/src-tauri/tauri.conf.json"
-        local ZIFMIA_CARGO="packages/zifmia/src-tauri/Cargo.toml"
+        local ZIFMIA_PKG="packages/interpreter/package.json"
+        local ZIFMIA_VERSION_TS="packages/interpreter/src/version.ts"
+        local ZIFMIA_TAURI_CONF="packages/interpreter/src-tauri/tauri.conf.json"
+        local ZIFMIA_CARGO="packages/interpreter/src-tauri/Cargo.toml"
         # Strip pre-release suffix for native manifests (Cargo.toml, tauri.conf.json)
         local NATIVE_VER=$(echo "$SHARPEE_VERSION" | sed 's/-.*//')
 
@@ -889,8 +889,8 @@ build_browser_client() {
 build_runner() {
     local OUTDIR="dist/runner"
     local MODULES_DIR="$OUTDIR/modules"
-    local RUNNER_ENTRY="packages/zifmia/src/runner/runner-entry.tsx"
-    local THEMES_FILE="packages/zifmia/src/styles/themes.css"
+    local RUNNER_ENTRY="packages/interpreter/src/runner/runner-entry.tsx"
+    local THEMES_FILE="packages/interpreter/src/styles/themes.css"
 
     log_step "Building Zifmia Runner"
 

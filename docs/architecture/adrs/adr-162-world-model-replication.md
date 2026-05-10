@@ -29,7 +29,7 @@ map / inventory panels, "X (held)" / "X (worn)" disambiguation — every
 one of these dips into `world.getEntity(...)`, capabilities, traits, or
 relationship data. The engine emits narrative *deltas* via events; the
 world model is the queryable state. This is visible in
-`packages/zifmia/src/context/GameContext.tsx:289` where
+`packages/interpreter/src/context/GameContext.tsx:289` where
 `extractCurrentRoom(world, roomId)` is called on every `actor_moved`
 event because the event itself only carries an id — the human-readable
 name lives on the world model.
@@ -374,7 +374,7 @@ effects.
 - ADR-160: Engine-State Continuity (independent; world *what*, not *how delivered*)
 - Architecture diagram: `~/public_html/sharpee-world-replication.html`
 - `packages/world-model/src/world/WorldModel.ts:208` — `toJSON()` declaration
-- `packages/zifmia/src/context/GameContext.tsx:289` — example renderer
+- `packages/interpreter/src/context/GameContext.tsx:289` — example renderer
   pattern this ADR brings to the multiuser stack
 - `tools/server/src/wire/server-sandbox.ts:52-57` — `Output` wire type
   to be extended; new `STATUS_REQUEST` / `STATUS` frames to be added

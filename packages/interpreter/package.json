@@ -1,7 +1,7 @@
 {
-  "name": "@sharpee/zifmia",
+  "name": "@sharpee/interpreter",
   "version": "0.9.113",
-  "description": "Zifmia - Sharpee story runner",
+  "description": "Sharpee story interpreter (legacy Tauri runner; the `zifmia` name is reserved for the multi-user web product)",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",

@@ -5,24 +5,24 @@
 Files are ordered by dependency — each step only depends on prior steps.
 
 ### Step 1: TranscriptEntry annotation field
-**Modify** `packages/zifmia/src/types/game-state.ts`
+**Modify** `packages/interpreter/src/types/game-state.ts`
 - Add optional `annotation` field to `TranscriptEntry`
 - No other changes to reducer or state
 
 ### Step 2: StorageProvider interface + browser implementation
-**Create** `packages/zifmia/src/storage/storage-provider.ts`
+**Create** `packages/interpreter/src/storage/storage-provider.ts`
 - `StorageProvider` interface (async methods: listSlots, save, restore, deleteSlot, autoSave, loadAutoSave)
 - `SaveSlotInfo` type
 
-**Create** `packages/zifmia/src/storage/browser-storage-provider.ts`
+**Create** `packages/interpreter/src/storage/browser-storage-provider.ts`
 - localStorage with story-scoped keys: `zifmia-{storyId}-save-{slot}`, `zifmia-{storyId}-saves-index`
 - lz-string compression for save data
-- Add `lz-string` to `packages/zifmia/package.json`
+- Add `lz-string` to `packages/interpreter/package.json`
 
-**Create** `packages/zifmia/src/storage/index.ts` — barrel
+**Create** `packages/interpreter/src/storage/index.ts` — barrel
 
 ### Step 3: Save/restore integration
-**Create** `packages/zifmia/src/runner/save-integration.ts`
+**Create** `packages/interpreter/src/runner/save-integration.ts`
 - `SaveData` type: locations, traits, transcript (TranscriptEntry[]), turnCount, score, timestamp
 - `SaveRestoreManager` class:
   - Constructor takes WorldModel ref + storyId
@@ -32,31 +32,31 @@ Files are ordered by dependency — each step only depends on prior steps.
 - Delta logic follows SaveManager pattern: iterate `world.getAllEntities()`, compare locations/traits against baseline
 
 ### Step 4: Transcript export
-**Create** `packages/zifmia/src/runner/transcript-export.ts`
+**Create** `packages/interpreter/src/runner/transcript-export.ts`
 - `exportTranscriptMarkdown(entries, storyTitle?)` — full readable transcript with `>` command prompts, output text, annotations as bracketed notes
 - `exportWalkthrough(entries)` — commands only in `.transcript` format, annotations as `# ` comments
 - `downloadFile(content, filename, mimeType)` — trigger browser download via blob URL + click
 
 ### Step 5: Save/Restore dialogs
-**Create** `packages/zifmia/src/runner/SaveDialog.tsx`
+**Create** `packages/interpreter/src/runner/SaveDialog.tsx`
 - Modal overlay with name input, existing slots list, Save/Cancel
 - Takes `storageProvider`, `storyId`, `onSave(slotName)`, `onCancel`
 
-**Create** `packages/zifmia/src/runner/RestoreDialog.tsx`
+**Create** `packages/interpreter/src/runner/RestoreDialog.tsx`
 - Modal overlay with slot list (name, date, turn, location), Restore/Delete/Cancel
 - Takes `storageProvider`, `storyId`, `onRestore(slotName)`, `onCancel`
 
 ### Step 6: GameShell + MenuBar updates
-**Modify** `packages/zifmia/src/components/GameShell.tsx`
+**Modify** `packages/interpreter/src/components/GameShell.tsx`
 - Add props: `storyTitle`, `onSave`, `onRestore`, `onQuit`, `onExportTranscript`, `onExportWalkthrough`, `onThemeChange`
 - Render `<MenuBar>` with these callbacks
 
-**Modify** `packages/zifmia/src/components/menu/MenuBar.tsx`
+**Modify** `packages/interpreter/src/components/menu/MenuBar.tsx`
 - Add `onExportTranscript` and `onExportWalkthrough` props
 - Add "Save Transcript…" and "Export Walkthrough…" items to File menu
 
 ### Step 7: ZifmiaRunner — wire everything
-**Modify** `packages/zifmia/src/runner/index.tsx`
+**Modify** `packages/interpreter/src/runner/index.tsx`
 - Accept `bundleData?: ArrayBuffer` as alternative to `bundleUrl`
 - Accept `onClose?: () => void` callback
 - After engine boots: create `SaveRestoreManager`, create `BrowserStorageProvider`, capture baseline
@@ -67,7 +67,7 @@ Files are ordered by dependency — each step only depends on prior steps.
 - Pass all callbacks through to GameShell
 
 ### Step 8: Story Library + runner entry
-**Create** `packages/zifmia/src/runner/StoryLibrary.tsx`
+**Create** `packages/interpreter/src/runner/StoryLibrary.tsx`
 - File picker (`<input type="file" accept=".sharpee">`)
 - URL text input
 - Drag-and-drop zone
@@ -75,7 +75,7 @@ Files are ordered by dependency — each step only depends on prior steps.
 - Each entry: title, author, storyId, lastPlayed, source ('file'|'url'), url?
 - Actions: Play, Continue (if autosave exists — check via StorageProvider), Remove
 
-**Modify** `packages/zifmia/src/runner/runner-entry.tsx`
+**Modify** `packages/interpreter/src/runner/runner-entry.tsx`
 - State machine: library | loading | playing | error
 - `?bundle=` param → skip to loading
 - Library renders StoryLibrary; on select → set bundleUrl or bundleData → loading
@@ -83,8 +83,8 @@ Files are ordered by dependency — each step only depends on prior steps.
 - Error shows message + "Back to Library" button
 
 ### Step 9: Package exports
-**Modify** `packages/zifmia/src/index.ts` — export storage module
-**Add** `lz-string` to `packages/zifmia/package.json` dependencies
+**Modify** `packages/interpreter/src/index.ts` — export storage module
+**Add** `lz-string` to `packages/interpreter/package.json` dependencies
 
 ## Verification
 

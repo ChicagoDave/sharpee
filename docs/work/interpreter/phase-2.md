@@ -48,14 +48,14 @@ This produces true ESM with `import` statements for `@sharpee/*` without changin
 
 ### Step 3: Add fflate to Zifmia
 
-**File**: `packages/zifmia/package.json`
+**File**: `packages/interpreter/package.json`
 - Add `"fflate": "^0.8.0"` to dependencies
 
 Run `pnpm install` after.
 
 ### Step 4: Create bundle loader module
 
-**New file**: `packages/zifmia/src/loader/bundle-loader.ts`
+**New file**: `packages/interpreter/src/loader/bundle-loader.ts`
 
 ```typescript
 import { unzipSync } from 'fflate';
@@ -127,7 +127,7 @@ function guessMimeType(path: string): string {
 
 ### Step 5: Create runner entry point
 
-**New file**: `packages/zifmia/src/runner/index.tsx`
+**New file**: `packages/interpreter/src/runner/index.tsx`
 
 Minimal runner that:
 1. Accepts a bundle URL (from query param or file input)
@@ -191,10 +191,10 @@ New flag: `--runner`
 ## Files Modified
 
 1. `build.sh` — Update `build_story_bundle()` entry point (src/index.ts instead of dist/index.js), add `build_runner()`, add `--runner` flag
-2. `packages/zifmia/package.json` — Add fflate dependency
-3. **New**: `packages/zifmia/src/loader/bundle-loader.ts` — Bundle extraction
-4. **New**: `packages/zifmia/src/runner/index.tsx` — Runner entry point
-5. `packages/zifmia/src/index.ts` — Export loader
+2. `packages/interpreter/package.json` — Add fflate dependency
+3. **New**: `packages/interpreter/src/loader/bundle-loader.ts` — Bundle extraction
+4. **New**: `packages/interpreter/src/runner/index.tsx` — Runner entry point
+5. `packages/interpreter/src/index.ts` — Export loader
 
 ## Verification
 

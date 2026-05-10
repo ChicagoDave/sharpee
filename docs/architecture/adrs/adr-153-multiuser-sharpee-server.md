@@ -203,7 +203,7 @@ The multiuser server is a new top-level package (`packages/multiuser-server/`) t
 | `@sharpee/world-model` | Inside the sandbox only (transitive via engine) | Never imported by server code. The server treats world state as opaque. |
 | `@sharpee/stdlib` | Inside the sandbox only (transitive via engine) | Same — server has no standard-action awareness. |
 | `@sharpee/parser-en-us`, `@sharpee/lang-en-us` | Inside the sandbox only (transitive via the story's `.sharpee` bundle) | Bundled into the story at build time; the sandbox loads what the story includes. |
-| `@sharpee/zifmia` | **Not** a dependency | The multiuser server is not built on Zifmia. Zifmia remains the desktop/browser single-player runtime; the multiuser server is a distinct product with its own HTTP/WebSocket surface. Code sharing, if any, happens through `@sharpee/core` or a future extraction. |
+| `@sharpee/interpreter` | **Not** a dependency | The multiuser server is not built on Zifmia. Zifmia remains the desktop/browser single-player runtime; the multiuser server is a distinct product with its own HTTP/WebSocket surface. Code sharing, if any, happens through `@sharpee/core` or a future extraction. |
 
 **Sandbox entry point.** The Deno subprocess loads a small TypeScript entry module that:
 1. Receives the `.sharpee` bundle path from the server via the INIT message.

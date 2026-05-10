@@ -221,7 +221,7 @@ No specific approach is recommended at this stage. The decision depends on targe
 
 ## References
 
-- Existing Zifmia client: `packages/zifmia/` — web-based bridge pattern
+- Existing Zifmia client: `packages/interpreter/` — web-based bridge pattern
 - `--world-json` output: `scripts/bundle-entry.js`, `packages/transcript-tester/src/fast-cli.ts`
 - `GameEngine.introspect()`: `packages/engine/src/game-engine.ts`
 - Semantic event types: `packages/core/src/` event definitions

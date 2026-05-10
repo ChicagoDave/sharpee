@@ -6,12 +6,12 @@ Companion to `overview.md`. Records the technical decisions, the alternatives co
 
 ## Framework — React 18
 
-- Match house style. `packages/zifmia` is React 18/19; its GameShell, menu, overlays, status, and transcript components are a working precedent.
+- Match house style. `packages/interpreter` is React 18/19; its GameShell, menu, overlays, status, and transcript components are a working precedent.
 - Lets us cherry-pick Zifmia's `themes.css` and any transferable pure-UI components instead of reimplementing.
 
 ## Theming — All 4 Zifmia themes + per-user picker
 
-Ship with all four Zifmia themes from day one: **classic-light**, **modern-dark**, **retro-terminal**, **paper**. Port the CSS variables out of `packages/zifmia/src/styles/themes.css` into the client's own `styles/themes.css` — no live dependency on Zifmia.
+Ship with all four Zifmia themes from day one: **classic-light**, **modern-dark**, **retro-terminal**, **paper**. Port the CSS variables out of `packages/interpreter/src/styles/themes.css` into the client's own `styles/themes.css` — no live dependency on Zifmia.
 
 - **Scope**: global per-user preference. One theme choice applies to the landing page and every room the user visits. No per-room theming — would fragment muscle memory and adds state for no win.
 - **Persistence**: localStorage key `sharpee.theme` = `classic-light | modern-dark | retro-terminal | paper`. Read at app boot; default to `modern-dark` if absent.
@@ -24,7 +24,7 @@ Ship with all four Zifmia themes from day one: **classic-light**, **modern-dark*
 
 ## Location — `tools/server/client/`
 
-Not `packages/multiuser-client/`, not a fork of `packages/zifmia`, not an extension of `packages/platform-browser`.
+Not `packages/multiuser-client/`, not a fork of `packages/interpreter`, not an extension of `packages/platform-browser`.
 
 - `pnpm-workspace.yaml` covers `packages/*` but **not** `tools/*`. `tools/server/` already runs as a standalone npm project (the Dockerfile confirms this — `npm install` inside `tools/server`).
 - `packages/` is for reusable Sharpee libraries (engine, stdlib, world-model, zifmia, map-editor). This client is product-coupled to this one server — shares its WebSocket protocol, its auth model, its lifecycle. It is a tool, not a library.

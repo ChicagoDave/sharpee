@@ -43,7 +43,7 @@ dependency position for a block-flattening helper consumed by
 transcript tooling and dev scripts.
 
 AC-8 satisfied with two intentional carve-outs:
-- **`packages/zifmia/`** — hard-deferred. Platform-browser is the
+- **`packages/interpreter/`** — hard-deferred. Platform-browser is the
   primary release mechanism; zifmia is parked. If revived, it gets
   a redesign rather than a port.
 - **`stories/cloak-of-darkness/`** — deferred during 2.2 entry after
@@ -62,7 +62,7 @@ Sub-phase summary:
 
 Acceptance criteria satisfied:
 - **AC-8**: After Phase 2, no `*.ts` / `*.tsx` / `*.js` source file
-  outside `packages/text-service/`, `packages/zifmia/`, and
+  outside `packages/text-service/`, `packages/interpreter/`, and
   `stories/cloak-of-darkness/` imports anything from
   `@sharpee/text-service`. Verified by grep over `packages/`,
   `stories/`, and `scripts/`. The grep also catches relative-path
@@ -81,8 +81,8 @@ four sub-phases (3.1 through 3.4).
 
 Plan: `docs/work/adr-174-prose-pipeline/plan-20260510-phase3.md`.
 
-OQ-4 resolved during planning to **option B** (remove `packages/zifmia`
-from the workspace via `pnpm-workspace.yaml`'s `!packages/zifmia`
+OQ-4 resolved during planning to **option B** (remove `packages/interpreter`
+from the workspace via `pnpm-workspace.yaml`'s `!packages/interpreter`
 exclude). This is the consistent signal that zifmia is parked and
 matches the Phase 2 disposition.
 
@@ -98,7 +98,7 @@ Sub-phase summary:
   build:all + publish:beta), `build.sh` (8 alias/export lines), four
   tsconfig project-reference lists (`bridge`, `runtime`, `engine`,
   `sharpee`), `scripts/npm-latest.sh`, and `scripts/generate-genai-api.js`.
-  Removed `packages/zifmia` from `pnpm-workspace.yaml` per OQ-4 option B
+  Removed `packages/interpreter` from `pnpm-workspace.yaml` per OQ-4 option B
   (the package.json `workspaces[]` field is overridden by
   `pnpm-workspace.yaml` for pnpm — discovered mid-3.2). Deleted stale
   `packages/platform-browser/dist-esm/` (Feb-19 artifact). The plan
@@ -129,7 +129,7 @@ Sub-phase summary:
 Acceptance criteria satisfied:
 - **AC-9**: `packages/text-service/` does not exist on disk; `pnpm
   install` succeeds (30 workspace projects, down from 32 — text-service
-  removed by deletion, zifmia removed by `!packages/zifmia` exclude);
+  removed by deletion, zifmia removed by `!packages/interpreter` exclude);
   full repo regression passes.
 - **AC-9a**: Repo-wide grep for `@sharpee/text-service` source imports
   returns 5 matches, all in accepted-collateral surfaces (zifmia ×2,
@@ -580,7 +580,7 @@ deletion targets.
   color/size starter classes. The browser smoke test renders an
   `[em:emphasized]` template with visible italic in a default theme.
 - **AC-8**: After Phase 2, no `*.ts` / `*.tsx` / `*.js` source file
-  outside `packages/text-service/`, `packages/zifmia/`, and
+  outside `packages/text-service/`, `packages/interpreter/`, and
   `stories/cloak-of-darkness/` imports anything from
   `@sharpee/text-service`. The zifmia and cloak carve-outs are
   intentional — both are deferred and will be allowed to fall out

@@ -30,7 +30,7 @@ NC='\033[0m'
 
 PROFILE_NAME="ledga-notarize"
 BUILDS_DIR="$REPO_ROOT/macos-builds"
-DMG_SOURCE="packages/zifmia/src-tauri/target/release/bundle/dmg"
+DMG_SOURCE="packages/interpreter/src-tauri/target/release/bundle/dmg"
 SKIP_NOTARIZE=false
 SETUP_ONLY=false
 
@@ -111,7 +111,7 @@ echo -e "${BLUE}Zifmia macOS Release${NC}"
 echo "===================="
 echo ""
 
-VERSION=$(node -p "require('./packages/zifmia/src-tauri/tauri.conf.json').version" 2>/dev/null || echo "0.9.0")
+VERSION=$(node -p "require('./packages/interpreter/src-tauri/tauri.conf.json').version" 2>/dev/null || echo "0.9.0")
 DMG_NAME="Zifmia_${VERSION}_aarch64.dmg"
 DMG_FILE="$DMG_SOURCE/$DMG_NAME"
 

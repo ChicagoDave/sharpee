@@ -165,7 +165,7 @@ build_zifmia() {
 
     echo ""
     echo "Running cargo tauri build..."
-    cd "$REPO_ROOT/packages/zifmia/src-tauri"
+    cd "$REPO_ROOT/packages/interpreter/src-tauri"
     cargo tauri build
     cd "$REPO_ROOT"
 
@@ -175,20 +175,20 @@ build_zifmia() {
     echo ""
     echo "Output:"
 
-    if [ -d "packages/zifmia/src-tauri/target/release/bundle/deb" ]; then
+    if [ -d "packages/interpreter/src-tauri/target/release/bundle/deb" ]; then
         echo "  .deb:"
-        for f in packages/zifmia/src-tauri/target/release/bundle/deb/*.deb; do
+        for f in packages/interpreter/src-tauri/target/release/bundle/deb/*.deb; do
             [ -f "$f" ] && echo "    $(basename "$f") ($(du -h "$f" | cut -f1))"
         done
     fi
-    if [ -d "packages/zifmia/src-tauri/target/release/bundle/appimage" ]; then
+    if [ -d "packages/interpreter/src-tauri/target/release/bundle/appimage" ]; then
         echo "  AppImage:"
-        for f in packages/zifmia/src-tauri/target/release/bundle/appimage/*.AppImage; do
+        for f in packages/interpreter/src-tauri/target/release/bundle/appimage/*.AppImage; do
             [ -f "$f" ] && echo "    $(basename "$f") ($(du -h "$f" | cut -f1))"
         done
     fi
-    if [ -f "packages/zifmia/src-tauri/target/release/sharpee" ]; then
-        echo "  binary: packages/zifmia/src-tauri/target/release/sharpee ($(du -h packages/zifmia/src-tauri/target/release/sharpee | cut -f1))"
+    if [ -f "packages/interpreter/src-tauri/target/release/sharpee" ]; then
+        echo "  binary: packages/interpreter/src-tauri/target/release/sharpee ($(du -h packages/interpreter/src-tauri/target/release/sharpee | cut -f1))"
     fi
     echo ""
 }

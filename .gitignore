@@ -79,8 +79,8 @@ packages/clients/electron/release/
 packages/clients/electron/app/dist/
 
 # Tauri build artifacts
-packages/zifmia/src-tauri/target/
-packages/zifmia/src-tauri/Cargo.lock
+packages/interpreter/src-tauri/target/
+packages/interpreter/src-tauri/Cargo.lock
 
 # Generated code
 **/*.generated.*

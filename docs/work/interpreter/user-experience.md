@@ -217,14 +217,14 @@ Examining action calls `emitIllustrations(target, 'on-examine', textEvent.id, co
 ### Phase 3: Asset Map Plumbing (Zifmia)
 
 **Files:**
-- `packages/zifmia/src/context/GameContext.tsx` — add `assetMap: Map<string, string>` to context
-- `packages/zifmia/src/runner/index.tsx` — pass `bundle.assets` into GameContext
+- `packages/interpreter/src/context/GameContext.tsx` — add `assetMap: Map<string, string>` to context
+- `packages/interpreter/src/runner/index.tsx` — pass `bundle.assets` into GameContext
 
 ### Phase 4: Client Illustration Rendering (Zifmia)
 
 **Files:**
-- `packages/zifmia/src/components/transcript/Transcript.tsx` — handle `if.event.illustrated`
-- `packages/zifmia/src/styles/themes.css` — illustration CSS classes
+- `packages/interpreter/src/components/transcript/Transcript.tsx` — handle `if.event.illustrated`
+- `packages/interpreter/src/styles/themes.css` — illustration CSS classes
 
 Transcript renderer:
 1. Receives turn events (text + illustration)
@@ -243,17 +243,17 @@ Player toggle: "Show illustrations" in Settings menu → localStorage, skip rend
 ### Phase 5: Story CSS Scoping (Zifmia)
 
 **Files:**
-- `packages/zifmia/src/components/GameShell.tsx` — inject scoped story CSS, wrap content in `#story-content`
-- `packages/zifmia/src/runner/index.tsx` — pass `themeCSS` from bundle
+- `packages/interpreter/src/components/GameShell.tsx` — inject scoped story CSS, wrap content in `#story-content`
+- `packages/interpreter/src/runner/index.tsx` — pass `themeCSS` from bundle
 
 Scoping via CSS `@scope (#story-content) { ... }`. Authors can override anything inside the story content area. Runner chrome (menus, dialogs) lives outside `#story-content`.
 
 ### Phase 6: Player Preferences (Zifmia)
 
 **Files:**
-- `packages/zifmia/src/hooks/useTheme.ts` — respect `metadata.preferredTheme`
-- `packages/zifmia/src/components/menu/MenuBar.tsx` — Settings menu additions
-- `packages/zifmia/src/types/story-metadata.ts` — add `preferredTheme?: string`
+- `packages/interpreter/src/hooks/useTheme.ts` — respect `metadata.preferredTheme`
+- `packages/interpreter/src/components/menu/MenuBar.tsx` — Settings menu additions
+- `packages/interpreter/src/types/story-metadata.ts` — add `preferredTheme?: string`
 
 Settings:
 - Show illustrations toggle

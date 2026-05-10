@@ -166,7 +166,7 @@ The browser client essentially renders everything as monochrome plain text parag
 
 ### 3.2 Zifmia Client (`Transcript`)
 
-**File**: `packages/zifmia/src/components/transcript/Transcript.tsx`
+**File**: `packages/interpreter/src/components/transcript/Transcript.tsx`
 
 ```typescript
 function formatText(text: string): string {
@@ -496,8 +496,8 @@ the transcript tester still works correctly.
 | `packages/text-service/src/handlers/generic.ts` | 97 | Fallback handling | Good |
 | `packages/engine/src/game-engine.ts` | ~1200 | Engine (text emit site) | **String bottleneck here** |
 | `packages/platform-browser/src/display/TextDisplay.ts` | 89 | Browser text rendering | Minimal |
-| `packages/zifmia/src/components/transcript/Transcript.tsx` | 104 | React transcript rendering | Needs rework |
-| `packages/zifmia/src/styles/themes.css` | ~800 | Theme definitions | Dead heuristic selectors |
+| `packages/interpreter/src/components/transcript/Transcript.tsx` | 104 | React transcript rendering | Needs rework |
+| `packages/interpreter/src/styles/themes.css` | ~800 | Theme definitions | Dead heuristic selectors |
 
 ---
 

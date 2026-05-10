@@ -4,7 +4,7 @@ Based on ADR-121 (Story Runner Architecture) and ADR-122 (Rich Media and Story S
 
 ## Current State
 
-The `packages/zifmia/` package exists as a simplified React client (migrated from `client-react`). It has:
+The `packages/interpreter/` package exists as a simplified React client (migrated from `client-react`). It has:
 
 - GameShell, StatusLine, Transcript, CommandInput components
 - GameContext, useTranscript, useCommandHistory, useTheme hooks
@@ -32,7 +32,7 @@ Transform Zifmia from a component library into a **standalone story runner** tha
 
 - Create TypeScript interface for `StoryMetadata`
 - Fields: format, formatVersion, title, author, version, description, sharpeeVersion, ifid, hasAssets, hasTheme, preferredTheme
-- Location: `packages/zifmia/src/types/story-metadata.ts`
+- Location: `packages/interpreter/src/types/story-metadata.ts`
 
 #### 1.2 Story Bundle Build Command
 
@@ -92,7 +92,7 @@ Transform Zifmia from a component library into a **standalone story runner** tha
 
 #### 3.1 Runner Entry Point
 
-- New entry: `packages/zifmia/src/runner/index.tsx`
+- New entry: `packages/interpreter/src/runner/index.tsx`
 - Renders: story picker → game session → back to picker
 - States: `idle` (no story loaded), `loading`, `playing`, `error`
 
@@ -187,9 +187,9 @@ Transform Zifmia from a component library into a **standalone story runner** tha
 
 #### 6.1 Tauri Project Setup
 
-- Add Tauri v2 config to `packages/zifmia/` (src-tauri/ directory)
+- Add Tauri v2 config to `packages/interpreter/` (src-tauri/ directory)
 - Rust backend + webview frontend
-- Frontend loads the runner from `packages/zifmia/dist/`
+- Frontend loads the runner from `packages/interpreter/dist/`
 
 #### 6.2 Native File Operations
 
@@ -235,13 +235,13 @@ These phases touch `packages/` (platform code) and require discussion:
 
 | Phase | Package                                | Change                           |
 | ----- | -------------------------------------- | -------------------------------- |
-| 1     | `packages/zifmia`                      | StoryMetadata type               |
-| 2     | `packages/zifmia`                      | Bundle loader, platform provider |
-| 3     | `packages/zifmia`                      | Runner shell, StorageProvider    |
+| 1     | `packages/interpreter`                      | StoryMetadata type               |
+| 2     | `packages/interpreter`                      | Bundle loader, platform provider |
+| 3     | `packages/interpreter`                      | Runner shell, StorageProvider    |
 | 4     | `packages/world-model`                 | IllustrationTrait                |
 | 4     | `packages/engine` or `packages/stdlib` | Illustration event emission      |
-| 5     | `packages/zifmia`                      | CSS scoping, theme cascade       |
-| 6     | `packages/zifmia` (src-tauri/)         | Tauri shell                      |
+| 5     | `packages/interpreter`                      | CSS scoping, theme cascade       |
+| 6     | `packages/interpreter` (src-tauri/)         | Tauri shell                      |
 
 ## Note: Daemon Serialization (ADR-123, Jan 2026)
 
@@ -255,7 +255,7 @@ ADR-123 added `getRunnerState()`/`restoreRunnerState()` to the `Daemon` interfac
 
 2. **Zip library**: **fflate** (~8KB). Lightweight, fast, no dependencies.
 
-3. **Tauri build output**: Goes in `packages/zifmia/dist/` — not a separate package. The Tauri project config lives in `packages/zifmia/` alongside the web runner, and builds to its `dist/` directory.
+3. **Tauri build output**: Goes in `packages/interpreter/dist/` — not a separate package. The Tauri project config lives in `packages/interpreter/` alongside the web runner, and builds to its `dist/` directory.
 
 4. **Illustration emission**: **Author-controlled**. Stories decide when to emit illustration events. The text service provides the mechanism; authors wire it to their content. No auto-emission from stdlib looking/examining actions.
 

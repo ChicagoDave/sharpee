@@ -559,7 +559,7 @@ text-service exposes two role surfaces; they have different futures:
 - Phase 4D will resolve: legacy platforms (`packages/platforms/cli-en-us/`,
   `packages/platforms/browser-en-us/`) — both confirmed dead paths.
 - **Surviving consumers post-Phase-4D**:
-  - `packages/zifmia/` (`ChatOverlay.tsx:141,171`, `GameContext.tsx:218`) —
+  - `packages/interpreter/` (`ChatOverlay.tsx:141,171`, `GameContext.tsx:218`) —
     Zifmia migration is **out of scope** per master plan. Zifmia retains
     `renderToString` until a separate Zifmia-channel-service migration ADR.
   - `packages/sharpee/templates/browser/browser-entry.ts.template` — story

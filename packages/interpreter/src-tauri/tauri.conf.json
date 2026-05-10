@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicedoc/tauri/main/crates/tauri-utils/schema.json",
-  "productName": "Zifmia",
+  "productName": "Interpreter",
   "version": "0.9.92",
-  "identifier": "com.sharpee.zifmia",
+  "identifier": "com.sharpee.interpreter",
   "build": {
     "frontendDist": "../../../dist/runner"
   },
@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Zifmia",
+        "title": "Interpreter",
         "width": 900,
         "height": 700,
         "minWidth": 600,

@@ -134,7 +134,7 @@ build_zifmia() {
     # Override bundle targets for macOS (tauri.conf.json may have "deb")
     echo ""
     echo "Running cargo tauri build (dmg)..."
-    cd "$REPO_ROOT/packages/zifmia/src-tauri"
+    cd "$REPO_ROOT/packages/interpreter/src-tauri"
     cargo tauri build --bundles dmg
     cd "$REPO_ROOT"
 
@@ -144,11 +144,11 @@ build_zifmia() {
     echo ""
     echo "Output:"
 
-    if [ -d "packages/zifmia/src-tauri/target/release/bundle/macos" ]; then
-        for f in packages/zifmia/src-tauri/target/release/bundle/macos/*.dmg; do
+    if [ -d "packages/interpreter/src-tauri/target/release/bundle/macos" ]; then
+        for f in packages/interpreter/src-tauri/target/release/bundle/macos/*.dmg; do
             [ -f "$f" ] && echo "  .dmg: $(basename "$f") ($(du -h "$f" | cut -f1))"
         done
-        for f in packages/zifmia/src-tauri/target/release/bundle/macos/*.app; do
+        for f in packages/interpreter/src-tauri/target/release/bundle/macos/*.app; do
             [ -d "$f" ] && echo "  .app: $(basename "$f")"
         done
     fi

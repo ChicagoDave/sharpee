@@ -25,7 +25,7 @@ Started: 2026-04-22. Companion to the server brainstorm at `docs/brainstorm/mult
 
 Six open questions surfaced from reading ADR-153 against the current repo state:
 
-1. **Framework** — React / Svelte / Preact / vanilla? Existing clients (`packages/zifmia`) are React 18/19.
+1. **Framework** — React / Svelte / Preact / vanilla? Existing clients (`packages/interpreter`) are React 18/19.
 2. **Package location** — new `packages/multiuser-client/`, extend `platform-browser`, fork Zifmia?
 3. **Hosting** — serve static assets from the Node server (closes `/` → 404 gap, one process) vs separate deploy (CDN, separate origin, CORS).
 4. **MVP cut points** — ADR-153 describes many features; what is v0.1 must-have vs defer-to-later?
@@ -34,7 +34,7 @@ Six open questions surfaced from reading ADR-153 against the current repo state:
 
 ## Existing Assets
 
-- **`packages/zifmia`** — React single-player runtime. Has `GameShell.tsx`, menu/overlays/status/transcript components, `themes.css`, loader/runner/storage layers. Precedent for house style.
+- **`packages/interpreter`** — React single-player runtime. Has `GameShell.tsx`, menu/overlays/status/transcript components, `themes.css`, loader/runner/storage layers. Precedent for house style.
 - **`packages/platform-browser`** — `BrowserClient.ts`, audio, display, managers. Lower-level browser integration.
 - **`packages/map-editor`** — another client in the repo; not directly relevant.
 

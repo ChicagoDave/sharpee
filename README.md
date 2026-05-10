@@ -60,7 +60,7 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 | `@sharpee/text-service` | Text rendering and status line |
 | `@sharpee/transcript-tester` | Transcript-based testing framework |
 | `@sharpee/world-model` | Entity system with traits and behaviors |
-| `@sharpee/zifmia` | Zifmia desktop client integration |
+| `@sharpee/interpreter` | Zifmia desktop client integration |
 
 ## Features
 

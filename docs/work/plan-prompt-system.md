@@ -77,7 +77,7 @@ const GDTPrompt: GamePrompt = { messageId: 'dungeo.gdt.prompt' };
 **`packages/platforms/browser-en-us/src/browser-platform.ts`**
 - Extract `PROMPT` block, update input placeholder/label
 
-**`packages/zifmia/src/types/game-state.ts`**
+**`packages/interpreter/src/types/game-state.ts`**
 - Add `prompt?: string` to `GameState`; runner extracts from PROMPT block
 
 ### Phase 5: GDT Prompt Hookup

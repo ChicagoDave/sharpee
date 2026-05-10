@@ -54,7 +54,7 @@ At the end of this plan, `play.sharpee.net` returns a usable page (not 404), AC1
 - ADR-153 is the architectural source of truth for the protocol (`ClientMsg` / `ServerMsg` at `tools/server/src/wire/browser-server.ts`). The client imports these types directly.
 - Server WS handler: `tools/server/src/ws/server.ts` is the landing point for all client messages; do not modify its contract in this plan.
 - `tools/server/src/http/routes/` has `create-room.ts`, `join-room.ts`, `list-stories.ts`, `resolve-code.ts` — no `list-rooms.ts` yet. Phase 2 adds it.
-- **Zifmia cherry-pick**: `packages/zifmia/src/styles/themes.css` is the intended visual starting point. The client copies the single selected theme's variables into its own `styles/` in Phase 1. No live dependency on Zifmia.
+- **Zifmia cherry-pick**: `packages/interpreter/src/styles/themes.css` is the intended visual starting point. The client copies the single selected theme's variables into its own `styles/` in Phase 1. No live dependency on Zifmia.
 - **Public-listing surface ADR question**: the landing-page room list is a mild deviation from ADR-153's original "rooms are private to whoever has the code" framing. Treat it as covered by ADR-153 (code-gated joining preserves the privacy boundary; listing is a discovery signal, not a join affordance). If a reviewer pushes back during Phase 2 or Phase 3, add a short ADR-153 addendum. Do not block the plan on it.
 
 ---

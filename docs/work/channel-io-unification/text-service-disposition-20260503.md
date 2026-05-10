@@ -22,7 +22,7 @@
 > its own engine-private `ITextService` (Phase 1); wire production
 > ships from channel-service (Phase 2); the package itself is gone
 > (Phase 3). Zifmia removed from workspace via
-> `pnpm-workspace.yaml`'s `!packages/zifmia` exclude. Cloak-of-darkness
+> `pnpm-workspace.yaml`'s `!packages/interpreter` exclude. Cloak-of-darkness
 > source files left in pre-existing build-broken state (outside
 > workspace; future workspace integration is the right next step).
 > See `docs/work/adr-174-prose-pipeline/plan-20260510-phase3.md`.
@@ -72,7 +72,7 @@ a migration path. They are deprecated, not deleted.
 
 | Export | Role | Disposition | Consumers |
 |--------|------|-------------|-----------|
-| `renderToString` | Block list → string | DEPRECATED, KEEP | `@sharpee/transcript-tester`, `@sharpee/zifmia`, `@sharpee/bridge`, `@sharpee/runtime`, `@sharpee/sharpee` |
+| `renderToString` | Block list → string | DEPRECATED, KEEP | `@sharpee/transcript-tester`, `@sharpee/interpreter`, `@sharpee/bridge`, `@sharpee/runtime`, `@sharpee/sharpee` |
 | `renderStatusLine` | Status line formatter | DEPRECATED, KEEP | Same set |
 | `CLIRenderOptions` (type) | Render options | DEPRECATED, KEEP | Wire-production consumers |
 
@@ -93,7 +93,7 @@ a migration path. They are deprecated, not deleted.
 │   └── @sharpee/engine — TextService instantiation, processTurn
 ├── PRODUCTION wire-production (deprecated for first-party)
 │   ├── @sharpee/transcript-tester — story-loader.ts (test harness)
-│   ├── @sharpee/zifmia — GameContext.tsx, ChatOverlay.tsx
+│   ├── @sharpee/interpreter — GameContext.tsx, ChatOverlay.tsx
 │   ├── @sharpee/bridge — index.ts (story scaffolding)
 │   ├── @sharpee/runtime — index.ts (story scaffolding)
 │   ├── @sharpee/sharpee — src/index.ts (re-export to authors)

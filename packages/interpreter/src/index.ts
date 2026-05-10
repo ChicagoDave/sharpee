@@ -1,7 +1,8 @@
 /**
- * @sharpee/zifmia
+ * @sharpee/interpreter
  *
- * Zifmia - Sharpee story runner
+ * Sharpee story interpreter (legacy Tauri runner; the `zifmia` name
+ * is reserved for the multi-user web product).
  */
 
 // Context and providers

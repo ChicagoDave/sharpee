@@ -27,4 +27,4 @@
 | @sharpee/bridge | Native engine bridge — Node.js subprocess with JSON over stdin/stdout |
 | @sharpee/runtime | Headless engine runtime for embedding via postMessage |
 | @sharpee/platform-browser | Browser client infrastructure |
-| @sharpee/zifmia | Zifmia story runner — bundled web client |
+| @sharpee/interpreter | Zifmia story runner — bundled web client |

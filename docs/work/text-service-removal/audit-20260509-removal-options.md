@@ -33,8 +33,8 @@ Both must be addressed for full removal. They are independent — wire-productio
 
 | Consumer | File | Symbols imported | Notes |
 |---|---|---|---|
-| `@sharpee/zifmia` | `src/components/overlays/ChatOverlay.tsx` | `renderToString` | 2 calls (lines 141, 171) — chat history rendering |
-| `@sharpee/zifmia` | `src/context/GameContext.tsx` | `renderToString` | 1 call (line 218) — display block rendering |
+| `@sharpee/interpreter` | `src/components/overlays/ChatOverlay.tsx` | `renderToString` | 2 calls (lines 141, 171) — chat history rendering |
+| `@sharpee/interpreter` | `src/context/GameContext.tsx` | `renderToString` | 1 call (line 218) — display block rendering |
 | `@sharpee/transcript-tester` | `src/story-loader.ts` | `renderToString` | 1 call (line 115) — test transcript output |
 | `@sharpee/bridge` | `src/index.ts` | `ITextService`, `createTextService`, `renderToString`, `renderStatusLine` | Re-export only |
 | `@sharpee/runtime` | `src/index.ts` | same set | Re-export only |

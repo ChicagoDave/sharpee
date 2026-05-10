@@ -27,7 +27,7 @@ Four decisions qualify as load-bearing. Everything else is implementation.
 
 ### 1. Client lives at `tools/server/client/`, not as a workspace package
 
-The multiuser browser client is a React 18 + Vite + TypeScript project located at `tools/server/client/`. It is **not** a workspace package under `packages/`, **not** a fork of `packages/zifmia`, **not** an extension of `packages/platform-browser`.
+The multiuser browser client is a React 18 + Vite + TypeScript project located at `tools/server/client/`. It is **not** a workspace package under `packages/`, **not** a fork of `packages/interpreter`, **not** an extension of `packages/platform-browser`.
 
 The decisive rationale:
 

@@ -24,7 +24,7 @@ Transform the runner entry point from a single-bundle URL launcher into a standa
 
 ### 3.1 StorageProvider Interface
 
-**File**: `packages/zifmia/src/storage/storage-provider.ts`
+**File**: `packages/interpreter/src/storage/storage-provider.ts`
 
 ```typescript
 export interface SaveSlotInfo {
@@ -58,11 +58,11 @@ export interface StorageProvider {
 
 All methods are async to support both localStorage (sync, wrapped) and Tauri IPC (async).
 
-**File**: `packages/zifmia/src/storage/index.ts` — barrel export
+**File**: `packages/interpreter/src/storage/index.ts` — barrel export
 
 ### 3.2 Browser StorageProvider
 
-**File**: `packages/zifmia/src/storage/browser-storage-provider.ts`
+**File**: `packages/interpreter/src/storage/browser-storage-provider.ts`
 
 Adapts the delta-save approach from `platform-browser/SaveManager`:
 
@@ -75,7 +75,7 @@ Key difference from SaveManager: the `StorageProvider` is a pure storage abstrac
 
 ### 3.3 Save/Restore Integration
 
-**File**: `packages/zifmia/src/runner/save-integration.ts`
+**File**: `packages/interpreter/src/runner/save-integration.ts`
 
 Bridge between StorageProvider and the running game:
 
@@ -96,7 +96,7 @@ This is the layer that calls `StorageProvider.save()` with the captured data, an
 
 ### 3.4 Story Library UI
 
-**File**: `packages/zifmia/src/runner/StoryLibrary.tsx`
+**File**: `packages/interpreter/src/runner/StoryLibrary.tsx`
 
 A React component shown when no story is loaded (the "home screen").
 
@@ -120,7 +120,7 @@ For file-based bundles, the runner needs a slightly different path than URL-base
 
 ### 3.5 Runner App Shell
 
-**File**: Modify `packages/zifmia/src/runner/runner-entry.tsx`
+**File**: Modify `packages/interpreter/src/runner/runner-entry.tsx`
 
 Replace the current `?bundle=` single-path with a state machine:
 
@@ -143,7 +143,7 @@ The `?bundle=` query param still works — if present, skip library and go strai
 
 ### 3.6 Wire MenuBar Callbacks
 
-**Modify**: `packages/zifmia/src/runner/index.tsx` (ZifmiaRunner)
+**Modify**: `packages/interpreter/src/runner/index.tsx` (ZifmiaRunner)
 
 Currently renders `<GameShell>` without save/restore props. After Phase 3:
 
@@ -158,7 +158,7 @@ This requires `GameShell` to pass these through to `MenuBar`. Check if it alread
 
 ### 3.7 Save/Restore Dialogs
 
-**File**: `packages/zifmia/src/runner/SaveDialog.tsx` and `RestoreDialog.tsx`
+**File**: `packages/interpreter/src/runner/SaveDialog.tsx` and `RestoreDialog.tsx`
 
 React modal components (replacing platform-browser's DOM-based `DialogManager`):
 
@@ -188,7 +188,7 @@ Both use `StorageProvider` for data and render as modal overlays.
 | Modify | `src/runner/index.tsx` | Wire save/restore into ZifmiaRunner |
 | Modify | `src/components/GameShell.tsx` | Thread save/restore/quit props to MenuBar |
 
-All paths relative to `packages/zifmia/`.
+All paths relative to `packages/interpreter/`.
 
 ## Dependencies
 
@@ -214,7 +214,7 @@ All paths relative to `packages/zifmia/`.
 
 ### 3.8 Transcript Export
 
-**File**: `packages/zifmia/src/runner/transcript-export.ts`
+**File**: `packages/interpreter/src/runner/transcript-export.ts`
 
 Utility functions for the two export formats:
 
@@ -265,7 +265,7 @@ Annotations are first-class transcript entries — they appear inline in the ses
 | Modify | `src/components/GameShell.tsx` | Thread save/restore/quit/export props to MenuBar |
 | Modify | `src/components/menu/MenuBar.tsx` | Add transcript export menu items |
 
-All paths relative to `packages/zifmia/`.
+All paths relative to `packages/interpreter/`.
 
 ## Dependencies
 

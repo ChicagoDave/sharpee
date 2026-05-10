@@ -125,7 +125,7 @@ No further work in this sub-phase. Gate is ready; rest of the plan drives it gre
   - Cache dir: `process.env.STORIES_COMPILED_DIR ?? '/data/stories-compiled'`.
 - `tools/server/src/sandbox/deno-entry.ts` (REWRITE, ~250 lines)
   - Source of truth for the host logic. Still a standalone `.ts` (still Deno-runtime file), but now imports from `@sharpee/engine` / `@sharpee/world-model` / `@sharpee/stdlib` / `@sharpee/parser-en-us` / `@sharpee/lang-en-us`. The bundler resolves those imports; Deno executes the bundled output, not this file directly.
-  - On INIT: read the embedded story module, bootstrap engine (modeled on `packages/zifmia/src/runner/index.tsx:1-180`), emit READY with real `story_metadata` from the story config.
+  - On INIT: read the embedded story module, bootstrap engine (modeled on `packages/interpreter/src/runner/index.tsx:1-180`), emit READY with real `story_metadata` from the story config.
   - On COMMAND: `await engine.executeTurn(input)` inside try/catch. On success, emit OUTPUT with `text_blocks` from the text service and `events` from the turn result. On throw, emit ERROR with `phase: 'turn', turn_id, detail`.
   - On SAVE: `engine.createSaveData()` → `JSON.stringify` → base64 → emit SAVED.
   - On RESTORE: base64-decode → `JSON.parse` → `engine.loadSaveData(...)` → emit RESTORED with the `text_blocks` from the restored state's opening view.
