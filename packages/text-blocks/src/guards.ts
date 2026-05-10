@@ -12,11 +12,11 @@ import type { TextContent, IDecoration, ITextBlock } from './types';
  * @example
  * const content: TextContent = getContent();
  * if (isDecoration(content)) {
- *   console.log(content.type); // TypeScript knows this is IDecoration
+ *   console.log(content.className); // TypeScript knows this is IDecoration
  * }
  */
 export function isDecoration(content: TextContent): content is IDecoration {
-  return typeof content === 'object' && content !== null && 'type' in content && 'content' in content;
+  return typeof content === 'object' && content !== null && 'className' in content && 'content' in content;
 }
 
 /**
@@ -77,7 +77,7 @@ export function isActionBlock(block: ITextBlock): boolean {
  * @example
  * const text = extractPlainText([
  *   'You take ',
- *   { type: 'item', content: ['the sword'] },
+ *   { className: 'sharpee-item', content: ['the sword'] },
  *   '.'
  * ]);
  * // Returns: "You take the sword."

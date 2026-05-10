@@ -62,6 +62,9 @@ export type { CLIRenderOptions } from './cli-renderer.js';
 export { renderToString, renderStatusLine } from './cli-renderer.js';
 
 // Re-export text-blocks types for convenience
+// `CORE_DECORATION_TYPES` removed per ADR-174 — the closed vocabulary
+// now lives in `@sharpee/engine/src/prose-pipeline/decorations/platform-vocabulary.ts`
+// and is engine-internal.
 export type { ITextBlock, IDecoration, TextContent } from '@sharpee/text-blocks';
 export {
   isDecoration,
@@ -72,5 +75,4 @@ export {
   extractPlainText,
   BLOCK_KEYS,
   BLOCK_KEY_PREFIXES,
-  CORE_DECORATION_TYPES,
 } from '@sharpee/text-blocks';

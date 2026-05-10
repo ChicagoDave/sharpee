@@ -58,18 +58,22 @@ const ANSI = {
 };
 
 /**
- * Map decoration types to ANSI codes
+ * Map decoration class names to ANSI codes. Keys are the final
+ * `IDecoration.className` strings emitted by the parser — the
+ * `sharpee-`-prefixed platform vocabulary names plus a couple of
+ * legacy bare names retained for transitional safety.
  */
 const DECORATION_ANSI: Record<string, string> = {
-  em: ANSI.ITALIC,
-  strong: ANSI.BOLD,
-  item: ANSI.CYAN,
-  room: ANSI.YELLOW,
-  npc: ANSI.MAGENTA,
-  command: ANSI.GREEN,
-  direction: ANSI.WHITE,
-  underline: ANSI.UNDERLINE,
-  strikethrough: ANSI.STRIKETHROUGH,
+  'sharpee-em': ANSI.ITALIC,
+  'sharpee-strong': ANSI.BOLD,
+  'sharpee-item': ANSI.CYAN,
+  'sharpee-room': ANSI.YELLOW,
+  'sharpee-npc': ANSI.MAGENTA,
+  'sharpee-command': ANSI.GREEN,
+  'sharpee-direction': ANSI.WHITE,
+  'sharpee-u': ANSI.UNDERLINE,
+  'sharpee-st': ANSI.STRIKETHROUGH,
+  'sharpee-code': ANSI.WHITE,
 };
 
 /**
@@ -120,17 +124,17 @@ function renderDecoration(decoration: IDecoration, options: CLIRenderOptions): s
 
   if (!options.ansi) {
     // Plain text fallback
-    if (decoration.type === 'em') return `*${innerText}*`;
-    if (decoration.type === 'strong') return `**${innerText}**`;
+    if (decoration.className === 'sharpee-em') return `*${innerText}*`;
+    if (decoration.className === 'sharpee-strong') return `**${innerText}**`;
     return innerText;
   }
 
   // ANSI rendering
-  let ansiCode = DECORATION_ANSI[decoration.type];
+  let ansiCode = DECORATION_ANSI[decoration.className];
 
-  // Check for story-defined color
-  if (!ansiCode && options.colors?.[decoration.type]) {
-    const hex = options.colors[decoration.type];
+  // Check for story-defined color, keyed on the final class name.
+  if (!ansiCode && options.colors?.[decoration.className]) {
+    const hex = options.colors[decoration.className];
     if (hex.startsWith('#')) {
       ansiCode = hexToAnsi(hex);
     }
@@ -140,7 +144,7 @@ function renderDecoration(decoration: IDecoration, options: CLIRenderOptions): s
     return `${ansiCode}${innerText}${ANSI.RESET}`;
   }
 
-  // Unknown decoration type - render without styling
+  // Unknown decoration class name - render without styling
   return innerText;
 }
 

@@ -90,9 +90,10 @@ export { EnglishParser } from '@sharpee/parser-en-us';
 export { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
 // ─── Text system ──────────────────────────────────────────────────
+// `CORE_DECORATION_TYPES` removed per ADR-174 — vocabulary is now
+// engine-internal in `@sharpee/engine/src/prose-pipeline/decorations/`.
 export type { ITextBlock, IDecoration, TextContent } from '@sharpee/text-blocks';
 export {
-  CORE_DECORATION_TYPES,
   CORE_BLOCK_KEYS,
   extractPlainText,
   isStatusBlock,

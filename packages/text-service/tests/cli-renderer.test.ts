@@ -114,25 +114,34 @@ describe('renderToString', () => {
 
   describe('plain-text decoration rendering (ansi: false)', () => {
     it.each([
-      ['em', 'brightly', '*brightly*'],
-      ['strong', 'important', '**important**'],
-      ['item', 'the sword', 'the sword'],
-    ])('should render %s decoration as %j in plain text', (type, text, expected) => {
-      const blocks = [makeDecoratedBlock('action.result', [{ type, content: [text] }])];
+      ['sharpee-em', 'brightly', '*brightly*'],
+      ['sharpee-strong', 'important', '**important**'],
+      ['sharpee-item', 'the sword', 'the sword'],
+    ])('should render %s decoration as %j in plain text', (className, text, expected) => {
+      const blocks = [
+        makeDecoratedBlock('action.result', [{ className, content: [text] }]),
+      ];
       expect(renderToString(blocks)).toBe(expected);
     });
   });
 
   describe('ANSI decoration rendering', () => {
     it.each([
-      ['em', 'emphasis', ANSI.ITALIC],
-      ['strong', 'bold text', ANSI.BOLD],
-      ['item', 'the sword', ANSI.CYAN],
-      ['npc', 'the troll', ANSI.MAGENTA],
-    ])('should render %s decoration with correct ANSI code', (type, text, code) => {
-      const blocks = [makeDecoratedBlock('action.result', [{ type, content: [text] }])];
-      expect(renderToString(blocks, { ansi: true })).toBe(`${code}${text}${ANSI.RESET}`);
-    });
+      ['sharpee-em', 'emphasis', ANSI.ITALIC],
+      ['sharpee-strong', 'bold text', ANSI.BOLD],
+      ['sharpee-item', 'the sword', ANSI.CYAN],
+      ['sharpee-npc', 'the troll', ANSI.MAGENTA],
+    ])(
+      'should render %s decoration with correct ANSI code',
+      (className, text, code) => {
+        const blocks = [
+          makeDecoratedBlock('action.result', [{ className, content: [text] }]),
+        ];
+        expect(renderToString(blocks, { ansi: true })).toBe(
+          `${code}${text}${ANSI.RESET}`,
+        );
+      },
+    );
 
     it('should wrap room.name block in bold yellow', () => {
       expect(renderToString([makeBlock('room.name', 'West of House')], { ansi: true })).toBe(
@@ -149,14 +158,25 @@ describe('renderToString', () => {
       },
     );
 
-    it('should render unknown decoration type without styling', () => {
-      const blocks = [makeDecoratedBlock('action.result', [{ type: 'custom-unknown', content: ['some text'] }])];
+    it('should render unknown decoration class without styling', () => {
+      const blocks = [
+        makeDecoratedBlock('action.result', [
+          { className: 'custom-unknown', content: ['some text'] },
+        ]),
+      ];
       expect(renderToString(blocks, { ansi: true })).toBe('some text');
     });
 
-    it('should use story-defined hex color for custom decoration type', () => {
-      const blocks = [makeDecoratedBlock('action.result', [{ type: 'magic', content: ['sparkles'] }])];
-      const result = renderToString(blocks, { ansi: true, colors: { magic: '#0000FF' } });
+    it('should use story-defined hex color for custom decoration class', () => {
+      const blocks = [
+        makeDecoratedBlock('action.result', [
+          { className: 'magic', content: ['sparkles'] },
+        ]),
+      ];
+      const result = renderToString(blocks, {
+        ansi: true,
+        colors: { magic: '#0000FF' },
+      });
       expect(result).toContain('sparkles');
       expect(result).toContain(ANSI.RESET);
       expect(result.length).toBeGreaterThan('sparkles'.length);

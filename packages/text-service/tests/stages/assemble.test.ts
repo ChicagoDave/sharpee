@@ -19,26 +19,25 @@ describe('createBlock', () => {
     expect(block.content).toEqual(['You open the chest.']);
   });
 
-  it('should parse decorations when bracket markers are present', () => {
+  it('passes bracket markers through as plain text (decoration parsing moved to engine prose pipeline per ADR-174)', () => {
     const block = createBlock('action.result', 'You take [item:the sword].');
 
     expect(block.key).toBe('action.result');
-    expect(block.content.length).toBeGreaterThan(1);
-    // The content should contain at least one decoration object
+    expect(block.content).toEqual(['You take [item:the sword].']);
     const hasDecoration = block.content.some(
-      (c) => typeof c === 'object' && c !== null && 'type' in c,
+      (c) => typeof c === 'object' && c !== null,
     );
-    expect(hasDecoration).toBe(true);
+    expect(hasDecoration).toBe(false);
   });
 
-  it('should parse decorations when asterisk markers are present', () => {
+  it('passes asterisk markers through as plain text (legacy syntax retired per ADR-174)', () => {
     const block = createBlock('action.result', 'This is *important*.');
 
-    expect(block.content.length).toBeGreaterThan(1);
+    expect(block.content).toEqual(['This is *important*.']);
     const hasDecoration = block.content.some(
-      (c) => typeof c === 'object' && c !== null && 'type' in c,
+      (c) => typeof c === 'object' && c !== null,
     );
-    expect(hasDecoration).toBe(true);
+    expect(hasDecoration).toBe(false);
   });
 
   it('should handle empty string', () => {

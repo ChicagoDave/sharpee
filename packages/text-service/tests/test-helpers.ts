@@ -57,11 +57,11 @@ export function makeBlock(key: string, text: string): ITextBlock {
 }
 
 /**
- * Create a block with decoration objects
+ * Create a block with decoration objects (post-ADR-174 shape).
  */
 export function makeDecoratedBlock(
   key: string,
-  parts: Array<string | { type: string; content: string[] }>,
+  parts: Array<string | { className: string; content: string[] }>,
 ): ITextBlock {
   return { key, content: parts };
 }
