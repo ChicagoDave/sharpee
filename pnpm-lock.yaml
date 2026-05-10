@@ -836,6 +836,9 @@ importers:
 
   packages/transcript-tester:
     dependencies:
+      '@sharpee/channel-service':
+        specifier: workspace:*
+        version: link:../channel-service
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
@@ -851,9 +854,6 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib
-      '@sharpee/text-service':
-        specifier: workspace:*
-        version: link:../text-service
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model

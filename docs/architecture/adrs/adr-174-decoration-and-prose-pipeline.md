@@ -362,11 +362,17 @@ Per OQ-1 resolution, the helpers move to `@sharpee/channel-service`.
   scratch rather than ported. Zifmia retains its
   `@sharpee/text-service` import and workspace dep through Phase 2,
   and is allowed to fall out of build at Phase 3.
+- **Cloak-of-darkness (`test-runner.ts`, `run-platform.js`,
+  `test-parser-events.js`) — DEFERRED.** Discovered during Phase 2
+  sub-phase 2.2 to be outside `pnpm-workspace.yaml`, with
+  manually-maintained `@sharpee/*` symlinks and pre-existing build
+  errors (DOM lib + EngineConfig drift) unrelated to this ADR.
+  Joins zifmia in deferred status; allowed to fall out at Phase 3.
 
 After Phase 2: no active-release consumer imports
 `@sharpee/text-service`. The package stays alive and compilable
-through Phase 2 only because zifmia still imports it; Phase 3 cuts
-that cord.
+through Phase 2 only because zifmia and cloak still import it;
+Phase 3 cuts that cord.
 
 **Phase 3 — Delete `@sharpee/text-service`.** Remove the package
 directory and the workspace entry. Zifmia falls out of build at this
@@ -454,10 +460,11 @@ deletion targets.
   color/size starter classes. The browser smoke test renders an
   `[em:emphasized]` template with visible italic in a default theme.
 - **AC-8**: After Phase 2, no `*.ts` / `*.tsx` / `*.js` source file
-  outside `packages/text-service/` and `packages/zifmia/` imports
-  anything from `@sharpee/text-service`. The zifmia carve-out is
-  intentional — zifmia is hard-deferred and will be allowed to fall
-  out of build at Phase 3. Verified by grep.
+  outside `packages/text-service/`, `packages/zifmia/`, and
+  `stories/cloak-of-darkness/` imports anything from
+  `@sharpee/text-service`. The zifmia and cloak carve-outs are
+  intentional — both are deferred and will be allowed to fall out
+  of build at Phase 3. Verified by grep.
 - **AC-9**: After Phase 3, `@sharpee/text-service` does not exist on
   disk. `pnpm install` succeeds; full repo test pass; full Dungeo
   walkthrough chain passes.
