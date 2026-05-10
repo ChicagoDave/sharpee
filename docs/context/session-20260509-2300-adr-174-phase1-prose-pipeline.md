@@ -67,7 +67,7 @@ First run post-1.6 showed 1039 failures cascading from thief RNG. Second run: 85
 
 ### Short Term
 
-- **OQ-1 (blocks Phase 2)**: Where does the `renderToString`-replacement helper live? Options are engine, a new shared package, or kept in text-service until deletion. Must be resolved before Phase 2 implementation starts.
+- **OQ-1 (RESOLVED 2026-05-10)**: `renderToString` replacement helper lands in `@sharpee/channel-service/src/render-to-string.ts`. ADR-174 §Open Questions OQ-1 records the rationale; Phase 1 plan note reflects the resolution. Phase 2 entry unblocked.
 - Branch `adr-174-phase1-prose-pipeline` is local only — push and open PR when David is ready.
 
 ### Long Term

@@ -348,22 +348,31 @@ After Phase 1: engine is text-service-free; mainChannel still receives
 the same shape of blocks; existing tests pass.
 
 **Phase 2 — Migrate wire-production consumers off `renderToString`.**
-- Zifmia (`ChatOverlay.tsx`, `GameContext.tsx`) — consume `channel:packet`'s `main` channel directly.
-- transcript-tester (`story-loader.ts`) — same.
+Per OQ-1 resolution, the helpers move to `@sharpee/channel-service`.
+- transcript-tester (`story-loader.ts`) — import path swap.
 - Story scaffolding (`stories/cloak-of-darkness/run-platform.js`,
   `test-runner.ts`, `test-parser-events.js`) — same.
 - bridge / runtime / sharpee re-exports of `renderToString` /
-  `renderStatusLine` / `ITextService` / `createTextService` — removed.
+  `renderStatusLine` re-routed to channel-service; dead
+  `ITextService` / `createTextService` re-exports dropped (engine has
+  its own engine-private `ITextService`).
+- **Zifmia (`ChatOverlay.tsx`, `GameContext.tsx`) — HARD-DEFERRED.**
+  `@sharpee/platform-browser` is the primary release mechanism.
+  Zifmia is parked; if it ever revives, it will be redesigned from
+  scratch rather than ported. Zifmia retains its
+  `@sharpee/text-service` import and workspace dep through Phase 2,
+  and is allowed to fall out of build at Phase 3.
 
-After Phase 2: no first-party or downstream consumer imports
-`@sharpee/text-service` for any reason.
+After Phase 2: no active-release consumer imports
+`@sharpee/text-service`. The package stays alive and compilable
+through Phase 2 only because zifmia still imports it; Phase 3 cuts
+that cord.
 
 **Phase 3 — Delete `@sharpee/text-service`.** Remove the package
-directory. Remove the workspace entry. Final dependency-graph
-cleanup. A small CSS asset shipping decision lands here too — where
-the platform's `sharpee-*` prose CSS file is published (likely via
-`@sharpee/platform-browser` or a sibling assets package; details
-in the implementation plan).
+directory and the workspace entry. Zifmia falls out of build at this
+point — accepted collateral per the hard-defer policy. The platform
+is not held hostage to a parked product; any future zifmia revival
+starts from a clean modern foundation.
 
 Each phase has its own implementation plan in
 `docs/work/text-service-removal/`.
@@ -391,9 +400,9 @@ deletion targets.
 | Mock pipeline (test helper) | `@sharpee/engine` | `src/test-helpers/mock-prose-pipeline.ts` | new (replaces `mock-text-service.ts`, deleted) |
 | Revised `IDecoration` shape (`type` → `className`) | `@sharpee/text-blocks` | `src/types.ts` | modified — `IDecoration { className, content }`; `CORE_DECORATION_TYPES` constants removed (vocabulary lives in engine) |
 | Browser renderer translation of `IDecoration` | `@sharpee/platform-browser` | (browser renderer files — exact path settled during implementation) | modified — emit `<span class="...">` from `IDecoration` nodes |
-| Terminal renderer translation of `IDecoration` | TBD — see Open Questions OQ-1 | TBD | new or modified |
-| Platform `.sharpee-*` prose CSS file | TBD — see Open Questions OQ-2 | TBD | new |
-| `renderToString` replacement helper | TBD — see Open Questions OQ-1 | TBD | new |
+| Terminal renderer translation of `IDecoration` | `@sharpee/channel-service` | `src/render-to-string.ts` (mode: 'plain' \| 'ansi') | new — see Open Questions OQ-1 (RESOLVED) |
+| Platform `.sharpee-*` prose CSS file | `templates/browser/decorations.css` | shipped via `build.sh` browser path | RESOLVED in Phase 1 sub-phase 1.7 (see OQ-2) |
+| `renderToString` replacement helper | `@sharpee/channel-service` | `src/render-to-string.ts` | new — see Open Questions OQ-1 (RESOLVED) |
 | Wire-production exports removal | `@sharpee/text-service` | `src/index.ts` and call sites in `bridge`/`runtime`/`sharpee` re-exports | deleted in Phase 2 |
 | Whole package deletion | `@sharpee/text-service` | (entire package directory + workspace entry) | deleted in Phase 3 |
 
@@ -444,9 +453,11 @@ deletion targets.
   `.sharpee-super`, `.sharpee-sub`, and the IF-semantic and
   color/size starter classes. The browser smoke test renders an
   `[em:emphasized]` template with visible italic in a default theme.
-- **AC-8**: After Phase 2, no `*.ts` or `*.tsx` source file (excluding
-  `@sharpee/text-service` itself) imports `renderToString` or
-  `renderStatusLine`. Verified by grep.
+- **AC-8**: After Phase 2, no `*.ts` / `*.tsx` / `*.js` source file
+  outside `packages/text-service/` and `packages/zifmia/` imports
+  anything from `@sharpee/text-service`. The zifmia carve-out is
+  intentional — zifmia is hard-deferred and will be allowed to fall
+  out of build at Phase 3. Verified by grep.
 - **AC-9**: After Phase 3, `@sharpee/text-service` does not exist on
   disk. `pnpm install` succeeds; full repo test pass; full Dungeo
   walkthrough chain passes.
@@ -584,32 +595,49 @@ implementation plan for that phase before work starts.
 
 ### OQ-1 — Where does the `renderToString` replacement helper live?
 
-**Blocks**: Phase 2 (consumer migration off `renderToString`).
+**Status**: RESOLVED 2026-05-10.
 
-After `@sharpee/text-service` is deleted, downstream consumers
-(`@sharpee/zifmia` chat overlay, `@sharpee/transcript-tester`,
-`stories/cloak-of-darkness/run-cli.js` and `test-runner.ts`) all need
-a way to flatten a `channel:packet`'s `main`-channel `TextContent[][]`
-output to a string for display in chat bubbles, transcripts, or
-terminal output. The flattening must walk the `TextContent` tree,
-strip or translate `IDecoration` nodes per target (terminal would
-strip; chat overlay might translate to React fragments), and join
-with newlines.
+**Resolution**: ship the helper in **`@sharpee/channel-service`** as
+`src/render-to-string.ts`, exporting `renderToString` and
+`renderStatusLine` with the same signatures `@sharpee/text-service`
+exposes today. The mode parameter (`ansi: boolean`, plus the existing
+`CLIRenderOptions` shape) carries terminal-vs-plain selection.
 
-Candidates:
+**Why channel-service**:
 
-- **`@sharpee/channel-service`** — owns the packet shape; closest to
-  the data being flattened. Recommended unless there's a reason not.
-- **New `@sharpee/wire-utils` package** — small, focused; good if the
-  helper grows beyond a single function.
-- **Per-consumer reimplementation** — rejected; three near-identical
-  copies invite drift.
+- **Right dependency position.** Channel-service sits downstream of
+  the engine and upstream of clients. Renderers, chat overlays, and
+  transcript tooling already import it; the engine never does. Adding
+  the flattening helper here doesn't push imports in a wrong direction.
+- **Owns the data being flattened.** Channel-service defines the
+  `channel:packet` shape that wraps the `ITextBlock[]` consumers want
+  to flatten. The helper that consumes that shape lives with the shape.
+- **No new package warranted.** Two functions don't justify a new
+  workspace, build target, or version line. Phase 1 already added one
+  new module (engine prose-pipeline); a second new package would be
+  premature. If the helper outgrows two functions later, splitting
+  into a new package is reversible.
+- **Phase 3 deletion stays mechanical.** Once consumers are migrated,
+  deleting `@sharpee/text-service` is a directory removal plus a
+  workspace edit. No re-routing of imports through new packages.
 
-If terminal vs browser-DOM rendering of decorations needs to live in
-the same place, the helper takes a renderer-mode parameter
-(`flattenMain(packet, mode: 'plain' | 'ansi'): string`). The terminal
-renderer translation question (Implementation Modules row) overlaps
-with this — both might land in the same package.
+**Rejected candidates**:
+
+- `@sharpee/engine` (or its prose-pipeline subdirectory) — violates
+  dependency direction. Zifmia, transcript-tester, and chat overlays
+  must not need the engine just to flatten blocks for display.
+- New `@sharpee/wire-utils` package — over-engineering for two
+  functions; revisit if the helper set grows.
+- Per-consumer reimplementation — three near-identical copies invite
+  drift, which is exactly what this ADR set out to fix.
+
+**Phase 2 plan implication**: Phase 2 begins by copying
+`renderToString`, `renderStatusLine`, and `CLIRenderOptions` from
+`packages/text-service/src/cli-renderer.ts` into
+`packages/channel-service/src/render-to-string.ts`, re-exporting from
+`@sharpee/channel-service/src/index.ts`, and migrating the four call
+sites plus bridge/runtime/sharpee re-exports. The original stays in
+`@sharpee/text-service` until Phase 3 deletes the package.
 
 ### OQ-2 — Where is the platform `.sharpee-*` prose CSS file shipped from?
 
