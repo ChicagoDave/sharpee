@@ -32,7 +32,9 @@ const {
   ...require('__REPO_ROOT__/packages/lang-en-us/dist/index.js'),
   ...require('__REPO_ROOT__/packages/event-processor/dist/index.js'),
   ...require('__REPO_ROOT__/packages/text-blocks/dist/index.js'),
-  ...require('__REPO_ROOT__/packages/text-service/dist/index.js'),
+  // ADR-174 Phase 2: text-service no longer spread; channel-service ships
+  // the wire-production helpers (renderToString, renderStatusLine).
+  ...require('__REPO_ROOT__/packages/channel-service/dist/index.js'),
   ...require('__REPO_ROOT__/packages/if-services/dist/index.js'),
   ...require('__REPO_ROOT__/packages/extensions/testing/dist/index.js')
 };

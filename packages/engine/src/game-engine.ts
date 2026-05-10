@@ -38,7 +38,7 @@ import {
   channelRegistry,
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
-import { ITextService, createTextService } from '@sharpee/text-service';
+import { ITextService, ProsePipeline } from './prose-pipeline';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
@@ -297,7 +297,7 @@ export class GameEngine {
     // Set provided dependencies
     this.languageProvider = options.language;
     this.parser = options.parser;
-    this.textService = createTextService(this.languageProvider);
+    this.textService = new ProsePipeline(this.languageProvider);
     
     // Update action registry with language provider
     this.actionRegistry.setLanguageProvider(this.languageProvider);

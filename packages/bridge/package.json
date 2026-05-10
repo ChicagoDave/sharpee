@@ -20,9 +20,10 @@
     "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
+    "@sharpee/sharpee": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
+    "@sharpee/channel-service": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
-    "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "fflate": "^0.8.2"
   },

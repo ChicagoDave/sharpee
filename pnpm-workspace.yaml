@@ -5,6 +5,7 @@ packages:
   - '!packages/map-editor'
   - '!packages/cli'
   - '!packages/dev-tools'
+  - '!packages/zifmia'
   - stories/dungeo
   - stories/entropy
   - stories/channel-service-test

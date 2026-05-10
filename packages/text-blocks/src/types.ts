@@ -15,44 +15,49 @@
  * // Plain text
  * const plain: TextContent = "You take the sword.";
  *
- * // Decorated content
+ * // Decorated content (post ADR-174)
  * const decorated: TextContent = {
- *   type: 'item',
+ *   className: 'sharpee-item',
  *   content: ['brass lantern']
  * };
  */
 export type TextContent = string | IDecoration;
 
 /**
- * Decorated content with semantic type.
+ * Decorated content with a final, fully-resolved CSS class name.
  *
- * The `type` field is an open string to support:
- * - Core types: 'em', 'strong', 'item', 'room', 'npc', 'command', 'direction'
- * - Presentational: 'underline', 'strikethrough', 'super', 'sub'
- * - Story-defined: 'photopia.red', 'dungeo.thief', etc.
+ * Per ADR-174, the bracket parser resolves bracketed names against a
+ * closed platform vocabulary at parse time:
+ *  - Platform names (e.g. `em`, `item`, `color-red`) become
+ *    `sharpee-{name}` and are styled by the platform CSS bundle.
+ *  - Author names pass through verbatim and the story owns their CSS.
+ *
+ * Renderers translate `IDecoration` to their target output (HTML span
+ * for browser, ANSI for terminal, ignored for audio).
  *
  * @example
- * // Emphasis
- * { type: 'em', content: ['carefully'] }
+ * // Platform emphasis (resolved from `[em:carefully]`)
+ * { className: 'sharpee-em', content: ['carefully'] }
  *
- * // Item name
- * { type: 'item', content: ['brass lantern'] }
+ * // Platform item name
+ * { className: 'sharpee-item', content: ['brass lantern'] }
+ *
+ * // Author class
+ * { className: 'thief-taunt', content: ["You'll regret this."] }
  *
  * // Nested decorations
- * { type: 'item', content: [
- *   { type: 'em', content: ['glowing'] },
+ * { className: 'sharpee-item', content: [
+ *   { className: 'sharpee-em', content: ['glowing'] },
  *   ' lantern'
  * ]}
- *
- * // Story-defined color (Photopia pattern)
- * { type: 'photopia.red', content: ['The light was red, like always.'] }
  */
 export interface IDecoration {
   /**
-   * Semantic type of the decoration.
-   * Open string to allow story extensions.
+   * Final, fully-resolved CSS class name. Already prefixed with
+   * `sharpee-` for platform-vocabulary names; bare for author names.
+   * @see ADR-174 §Wire shape
    */
-  readonly type: string;
+  readonly className: string;
 
   /**
    * Content within the decoration.
@@ -81,7 +86,7 @@ export interface IDecoration {
  * // Room name block
  * {
  *   key: 'room.name',
- *   content: [{ type: 'room', content: ['West of House'] }]
+ *   content: [{ className: 'sharpee-room', content: ['West of House'] }]
  * }
  *
  * // Action result with decorated item
@@ -89,7 +94,7 @@ export interface IDecoration {
  *   key: 'action.result',
  *   content: [
  *     'You take ',
- *     { type: 'item', content: ['the brass lantern'] },
+ *     { className: 'sharpee-item', content: ['the brass lantern'] },
  *     '.'
  *   ]
  * }
@@ -112,35 +117,6 @@ export interface ITextBlock {
    */
   readonly content: ReadonlyArray<TextContent>;
 }
-
-/**
- * Core decoration types defined by the platform.
- * Stories can extend with custom types.
- */
-export const CORE_DECORATION_TYPES = {
-  /** Emphasis (typically italic) */
-  EM: 'em',
-  /** Strong emphasis (typically bold) */
-  STRONG: 'strong',
-  /** Item/object name */
-  ITEM: 'item',
-  /** Room/location name */
-  ROOM: 'room',
-  /** NPC/character name */
-  NPC: 'npc',
-  /** Suggested command */
-  COMMAND: 'command',
-  /** Exit direction */
-  DIRECTION: 'direction',
-  /** Underlined text */
-  UNDERLINE: 'underline',
-  /** Struck-through text */
-  STRIKETHROUGH: 'strikethrough',
-  /** Superscript */
-  SUPER: 'super',
-  /** Subscript */
-  SUB: 'sub',
-} as const;
 
 /**
  * Core block keys defined by the platform.

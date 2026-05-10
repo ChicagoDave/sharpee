@@ -14,13 +14,13 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "test": "vitest",
     "test:ci": "vitest run",
     "test:verbose": "vitest run --reporter=verbose",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist dist-esm",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
@@ -34,7 +34,6 @@
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
-    "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "fflate": "^0.8.2"
   },

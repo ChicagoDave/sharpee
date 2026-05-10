@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ADR-174 AC-7 — Platform Decoration CSS Smoke Test</title>
+  <link rel="stylesheet" href="../../../templates/browser/decorations.css">
+  <style>
+    body {
+      font-family: Georgia, serif;
+      max-width: 60ch;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.6;
+      color: #222;
+      background: #fafafa;
+    }
+    h1, h2 {
+      font-family: -apple-system, sans-serif;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 0.25rem;
+    }
+    h2 { margin-top: 2rem; font-size: 1.1rem; }
+    section { margin-bottom: 1.5rem; }
+    .row {
+      display: flex;
+      gap: 1rem;
+      margin: 0.4rem 0;
+      align-items: baseline;
+    }
+    .label {
+      font-family: monospace;
+      font-size: 0.85em;
+      color: #666;
+      flex: 0 0 16rem;
+    }
+    .check {
+      font-family: monospace;
+      font-size: 0.75em;
+      color: #888;
+      margin-left: 0.5rem;
+    }
+    .pass-criteria {
+      background: #fff8dc;
+      padding: 0.75rem 1rem;
+      border-left: 4px solid #b58900;
+      margin: 1rem 0;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>ADR-174 AC-7 — Platform Decoration CSS Smoke Test</h1>
+
+  <p>
+    This page links the same <code>templates/browser/decorations.css</code>
+    that ships in <code>dist/web/&lt;story&gt;/decorations.css</code>.
+    Each row exercises one entry from the platform vocabulary by emitting
+    the same <code>&lt;span class="sharpee-..."&gt;</code> markup the
+    bracket parser produces for that name.
+  </p>
+
+  <div class="pass-criteria">
+    <strong>AC-7 passes if</strong>: every row shows the labeled style
+    (italic, bold, color, etc.) without any unstyled "naked" text where
+    a styled span should be.
+  </div>
+
+  <section>
+    <h2>Switches</h2>
+    <div class="row">
+      <span class="label">[em:emphasized]</span>
+      <span><span class="sharpee-em">emphasized</span></span>
+      <span class="check">expect: italic</span>
+    </div>
+    <div class="row">
+      <span class="label">[strong:bold]</span>
+      <span><span class="sharpee-strong">bold</span></span>
+      <span class="check">expect: bold</span>
+    </div>
+    <div class="row">
+      <span class="label">[u:underlined]</span>
+      <span><span class="sharpee-u">underlined</span></span>
+      <span class="check">expect: underline</span>
+    </div>
+    <div class="row">
+      <span class="label">[st:struck]</span>
+      <span><span class="sharpee-st">struck</span></span>
+      <span class="check">expect: line-through</span>
+    </div>
+    <div class="row">
+      <span class="label">[code:LOOK]</span>
+      <span><span class="sharpee-code">LOOK</span></span>
+      <span class="check">expect: monospace</span>
+    </div>
+    <div class="row">
+      <span class="label">x[super:2]</span>
+      <span>x<span class="sharpee-super">2</span></span>
+      <span class="check">expect: superscript</span>
+    </div>
+    <div class="row">
+      <span class="label">H[sub:2]O</span>
+      <span>H<span class="sharpee-sub">2</span>O</span>
+      <span class="check">expect: subscript</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>IF-semantic classes</h2>
+    <div class="row">
+      <span class="label">[item:brass lantern]</span>
+      <span>You see <span class="sharpee-item">a brass lantern</span> here.</span>
+    </div>
+    <div class="row">
+      <span class="label">[npc:the troll]</span>
+      <span><span class="sharpee-npc">The troll</span> guards the bridge.</span>
+    </div>
+    <div class="row">
+      <span class="label">[room:West of House]</span>
+      <span><span class="sharpee-room">West of House</span></span>
+    </div>
+    <div class="row">
+      <span class="label">[direction:north]</span>
+      <span>You go <span class="sharpee-direction">north</span>.</span>
+    </div>
+    <div class="row">
+      <span class="label">[command:LOOK]</span>
+      <span>Type <span class="sharpee-command">LOOK</span> to look around.</span>
+    </div>
+    <div class="row">
+      <span class="label">[quote:said the cat]</span>
+      <span><span class="sharpee-quote">"You'll regret this,"</span> said the cat.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Color palette</h2>
+    <div class="row">
+      <span class="label">[color-red:red text]</span>
+      <span><span class="sharpee-color-red">red text</span></span>
+    </div>
+    <div class="row">
+      <span class="label">[color-blue:blue]</span>
+      <span><span class="sharpee-color-blue">blue text</span></span>
+    </div>
+    <div class="row">
+      <span class="label">[color-green:green]</span>
+      <span><span class="sharpee-color-green">green text</span></span>
+    </div>
+    <div class="row">
+      <span class="label">[color-magenta:magenta]</span>
+      <span><span class="sharpee-color-magenta">magenta text</span></span>
+    </div>
+    <div class="row">
+      <span class="label">[bgcolor-yellow:highlight]</span>
+      <span><span class="sharpee-bgcolor-yellow">highlighted</span></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sizes &amp; fonts</h2>
+    <div class="row">
+      <span class="label">[size-small:fine print]</span>
+      <span><span class="sharpee-size-small">fine print</span></span>
+    </div>
+    <div class="row">
+      <span class="label">[size-large:big]</span>
+      <span><span class="sharpee-size-large">big</span></span>
+    </div>
+    <div class="row">
+      <span class="label">[font-mono:type-this]</span>
+      <span><span class="sharpee-font-mono">type-this</span></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Nesting (AC-3)</h2>
+    <div class="row">
+      <span class="label">[em:[strong:bold italic]]</span>
+      <span><span class="sharpee-em"><span class="sharpee-strong">bold italic</span></span></span>
+      <span class="check">expect: both</span>
+    </div>
+    <div class="row">
+      <span class="label">[item:the [em:glowing] lantern]</span>
+      <span><span class="sharpee-item">the <span class="sharpee-em">glowing</span> lantern</span></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Author class (no <code>sharpee-</code> prefix)</h2>
+    <div class="row">
+      <span class="label">[thief-taunt:literal]</span>
+      <span><span class="thief-taunt">unstyled (no platform default)</span></span>
+      <span class="check">expect: plain (story owns CSS)</span>
+    </div>
+  </section>
+
+</body>
+</html>

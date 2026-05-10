@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameEngine } from '../src/game-engine';
 import { MinimalTestStory } from './stories/minimal-test-story';
 import { createMockAction } from './fixtures/index';
-import { createMockTextService } from '../src/test-helpers/mock-text-service';
+import { createMockProsePipeline as createMockTextService } from '../src/test-helpers/mock-prose-pipeline';
 import { EntityType, WorldModel, IFEntity } from '@sharpee/world-model';
 import { ISaveData } from '@sharpee/core';
 import { EngineConfig } from '../src/types';

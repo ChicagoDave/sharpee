@@ -24,7 +24,11 @@ const exports = {
   ...require('../packages/lang-en-us/dist/index.js'),
   ...require('../packages/event-processor/dist/index.js'),
   ...require('../packages/text-blocks/dist/index.js'),
-  ...require('../packages/text-service/dist/index.js'),
+  // ADR-174 Phase 2: text-service no longer spread into the bundle.
+  // Wire-production helpers (renderToString, renderStatusLine) ship from
+  // channel-service below. Block-production exports (TextService,
+  // createTextService, ITextService) are dead — no first-party consumer
+  // instantiates a text-service post-Phase-1.
   ...require('../packages/channel-service/dist/index.js'),
   ...require('../packages/if-services/dist/index.js'),
   // Testing extension (ADR-109/110)

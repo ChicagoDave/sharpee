@@ -7,7 +7,7 @@
 import * as path from 'path';
 import { GameEngine, TurnResult } from '@sharpee/engine';
 import { ISemanticEvent } from '@sharpee/core';
-import { renderToString } from '@sharpee/text-service';
+import { renderToString } from '@sharpee/channel-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';

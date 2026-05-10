@@ -27,33 +27,42 @@ describe('mainChannelRenderer', () => {
     expect(ps[1].textContent).toBe('Second line.');
   });
 
-  it('preserves decorations as nested elements', () => {
-    const r = createMainChannelRenderer(slot);
-    r.onValue(
-      [['You see ', { type: 'item', content: ['a brass lamp'] }, '.']],
-      MAIN_DEF,
-    );
-    const p = slot.querySelector('p')!;
-    expect(p.textContent).toBe('You see a brass lamp.');
-    const item = p.querySelector('[data-deco="item"]');
-    expect(item).not.toBeNull();
-    expect(item?.classList.contains('deco-item')).toBe(true);
-  });
-
-  it('maps em/strong to semantic tags', () => {
+  it('preserves decorations as <span class="..."> elements (post-ADR-174)', () => {
     const r = createMainChannelRenderer(slot);
     r.onValue(
       [
         [
-          { type: 'em', content: ['italic'] },
-          ' ',
-          { type: 'strong', content: ['bold'] },
+          'You see ',
+          { className: 'sharpee-item', content: ['a brass lamp'] },
+          '.',
         ],
       ],
       MAIN_DEF,
     );
-    expect(slot.querySelector('em')?.textContent).toBe('italic');
-    expect(slot.querySelector('strong')?.textContent).toBe('bold');
+    const p = slot.querySelector('p')!;
+    expect(p.textContent).toBe('You see a brass lamp.');
+    const item = p.querySelector('span.sharpee-item');
+    expect(item).not.toBeNull();
+    expect(item?.textContent).toBe('a brass lamp');
+  });
+
+  it('renders em/strong as <span class="sharpee-em|sharpee-strong"> (no semantic tags on the wire)', () => {
+    const r = createMainChannelRenderer(slot);
+    r.onValue(
+      [
+        [
+          { className: 'sharpee-em', content: ['italic'] },
+          ' ',
+          { className: 'sharpee-strong', content: ['bold'] },
+        ],
+      ],
+      MAIN_DEF,
+    );
+    expect(slot.querySelector('span.sharpee-em')?.textContent).toBe('italic');
+    expect(slot.querySelector('span.sharpee-strong')?.textContent).toBe('bold');
+    // No semantic tags — ADR-174 mandates span+class only.
+    expect(slot.querySelector('em')).toBeNull();
+    expect(slot.querySelector('strong')).toBeNull();
   });
 
   it('ignores empty arrays without erroring', () => {

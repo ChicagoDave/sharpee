@@ -1,8 +1,151 @@
 # ADR-174: Decoration Architecture and Engine-Internal Prose Pipeline
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
-## Date: 2026-05-09
+## Date: 2026-05-09 (proposed) / 2026-05-10 (Phase 1 + Phase 2 + Phase 3 ACCEPTED)
+
+## Phase 1 — Engine-internal prose pipeline (complete)
+
+Phase 1 landed on branch `adr-174-phase1-prose-pipeline`, eight
+sub-phases (1.1 through 1.8) plus an interlude commit deleting the
+deprecated `ReadOnlyActionContext` that surfaced as a build blocker.
+
+Acceptance criteria satisfied:
+- AC-1: `[em:Zork]` → `IDecoration { className: 'sharpee-em', content: ['Zork'] }`. Verified `parser.test.ts` test P1.
+- AC-2: `[thief-taunt:'…']` → bare `className: 'thief-taunt'`. Verified `parser.test.ts` test P2.
+- AC-3: Nested `[em:[strong:bold italic]]` → nested `IDecoration` nodes. Verified `parser.test.ts` test P3 plus the AC-7 visual smoke test.
+- AC-4: Escaped `\[ literal \]` produces a plain `[`. Verified `parser.test.ts` test P4.
+- AC-5: Plain templates (no markers) produce single-string content. Verified `parser.test.ts` test P5 plus walkthrough chain regression.
+- AC-6: `@sharpee/engine` has no import of `@sharpee/text-service`; full Dungeo walkthrough chain passes. Verified post-1.6 (`grep` clean, walkthrough chain 857/0; post-1.7 walkthrough chain 961/0 first run).
+- AC-7: Platform CSS ships with the platform-vocabulary classes; browser smoke test renders italic/bold/colors. Verified visually by user against `docs/work/adr-174-prose-pipeline/ac7-smoke-test.html`.
+- AC-10/11/12: Forgiving parser rules (unclosed bracket, no-colon, empty-class) emit literal text or no-op wrap. Verified `parser.test.ts` tests P6/P7/P8.
+
+Acceptance criteria deferred:
+- AC-8: Phase 2 (`renderToString` removal across downstream consumers).
+- AC-9: Phase 3 (`@sharpee/text-service` package deletion).
+
+Phase 2 and Phase 3 each get their own implementation plan in
+`docs/work/adr-174-prose-pipeline/` before work starts.
+
+## Phase 2 — Wire-production consumer migration (complete)
+
+Phase 2 landed on the same branch (`adr-174-phase1-prose-pipeline`),
+four sub-phases (2.1 through 2.4) plus an AC-16 grep-gate interlude
+fixed in 2.1.
+
+Plan: `docs/work/adr-174-prose-pipeline/plan-20260510-phase2.md`.
+
+OQ-1 resolution (recorded in §Open Questions OQ-1): the
+`renderToString` replacement helper ships from
+**`@sharpee/channel-service`** as `src/render-to-string.ts`. Channel-
+service is downstream of engine, upstream of clients — the right
+dependency position for a block-flattening helper consumed by
+transcript tooling and dev scripts.
+
+AC-8 satisfied with two intentional carve-outs:
+- **`packages/zifmia/`** — hard-deferred. Platform-browser is the
+  primary release mechanism; zifmia is parked. If revived, it gets
+  a redesign rather than a port.
+- **`stories/cloak-of-darkness/`** — deferred during 2.2 entry after
+  discovering cloak is not in `pnpm-workspace.yaml`, has manually-
+  maintained `@sharpee/*` symlinks, and was already in pre-existing
+  build-broken state with errors unrelated to this ADR (DOM lib
+  missing in tsconfig; EngineConfig API drift).
+
+Both carve-outs fall out of build at Phase 3 — accepted collateral.
+
+Sub-phase summary:
+- **2.1**: ported `cli-renderer.ts` → `channel-service/src/render-to-string.ts` (filename corrected — not CLI-specific). 20 tests parity-ported (29 leaves after `it.each` expansion). Interlude: AC-16 grep gate had two false-positive doc-comment matches in audibility handlers (`packages/text-service/src/handlers/audibility.ts`, `packages/engine/src/prose-pipeline/handlers/audibility.ts`) — added per-file allow-list to the gate; comments left intact (they document the channel vocabulary correctly).
+- **2.2**: migrated `packages/transcript-tester/src/story-loader.ts` to channel-service. Cloak deferred during entry (see above).
+- **2.3**: re-routed bridge / runtime / sharpee re-exports to channel-service; dropped dead `ITextService` / `createTextService` / `TextService` re-exports. Cleaned `scripts/bundle-entry.js` and `scripts/test-bundle-template.js` so the platform bundle no longer spreads text-service into `dist/cli/sharpee.js`. Discovered and rebuilt three Phase-1-stale `dist-esm/` directories (sharpee, transcript-tester) — the platform-browser one is older still (Feb 19) and doesn't affect the CLI bundle, deferred to Phase 3.
+- **2.4**: final regression — engine 398/0/7-skipped, channel-service 94/0, text-service 147/0, platform-browser 68/0, Dungeo walkthrough chain 930/0 (after one RNG re-run per `feedback_flakey_walkthroughs.md`), CLI + browser bundles green, AC-8 grep zero matches outside the carve-outs.
+
+Acceptance criteria satisfied:
+- **AC-8**: After Phase 2, no `*.ts` / `*.tsx` / `*.js` source file
+  outside `packages/text-service/`, `packages/zifmia/`, and
+  `stories/cloak-of-darkness/` imports anything from
+  `@sharpee/text-service`. Verified by grep over `packages/`,
+  `stories/`, and `scripts/`. The grep also catches relative-path
+  requires (`../packages/text-service/dist/index.js`) — the original
+  Phase 2 plan grep pattern only matched `@sharpee/`-form imports
+  and would have missed bundle-entry.js; the broader pattern is
+  correct.
+
+Acceptance criteria deferred:
+- AC-9: Phase 3 (`@sharpee/text-service` package deletion).
+
+## Phase 3 — `@sharpee/text-service` package deletion (complete)
+
+Phase 3 landed on the same branch (`adr-174-phase1-prose-pipeline`),
+four sub-phases (3.1 through 3.4).
+
+Plan: `docs/work/adr-174-prose-pipeline/plan-20260510-phase3.md`.
+
+OQ-4 resolved during planning to **option B** (remove `packages/zifmia`
+from the workspace via `pnpm-workspace.yaml`'s `!packages/zifmia`
+exclude). This is the consistent signal that zifmia is parked and
+matches the Phase 2 disposition.
+
+Sub-phase summary:
+- **3.1**: pre-flight grep matched the planned inventory. The plan's
+  scope (source imports + a hand-listed config-file set) was incomplete
+  — it missed `packages/transcript-tester/tsconfig.json`,
+  `stories/dungeo/tsconfig*.json`, `stories/dungeo/package.json`, and
+  `tutorials/familyzoo/package.json`. These surfaced during 3.3 and
+  were patched mid-flight. Recurrence-prevention note in §Open
+  Questions OQ-5.
+- **3.2**: stripped text-service from `package.json` (workspaces +
+  build:all + publish:beta), `build.sh` (8 alias/export lines), four
+  tsconfig project-reference lists (`bridge`, `runtime`, `engine`,
+  `sharpee`), `scripts/npm-latest.sh`, and `scripts/generate-genai-api.js`.
+  Removed `packages/zifmia` from `pnpm-workspace.yaml` per OQ-4 option B
+  (the package.json `workspaces[]` field is overridden by
+  `pnpm-workspace.yaml` for pnpm — discovered mid-3.2). Deleted stale
+  `packages/platform-browser/dist-esm/` (Feb-19 artifact). The plan
+  called for rebuilding via `tsc -p tsconfig.esm.json`, but
+  platform-browser has no `tsconfig.esm.json` and no current build
+  pipeline produces dist-esm; deletion was the plan-listed alternative.
+- **3.3**: deleted `packages/text-service/`. First `pnpm install`
+  errored on `stories/dungeo/package.json` declaring
+  `@sharpee/text-service` as a workspace dep. Found four additional
+  `package.json` files with the same dead dep declaration (zifmia,
+  concealment-test, cloak-of-darkness — all already outside the
+  workspace; only dungeo and familyzoo were in-workspace and required
+  fixing). Patched the two in-workspace files. Also fixed the
+  `text-service` typo (plural form `text-services`) in
+  `stories/dungeo/tsconfig.json` and `stories/dungeo/tsconfig.esm.json`
+  paths mappings — never-resolved dead config but caught by the
+  AC-9b standard.
+- **3.4**: final regression — engine 398/0/7-skipped, channel-service
+  94/0, platform-browser 68/0. CLI bundle 2.3M (+ 33ms load test);
+  browser bundle 1.2M; both clean. Dungeo walkthrough chain 872/0
+  (after one RNG cascade where stale baseline-built saves caused 554
+  cascade failures; deleting `stories/dungeo/saves/` and re-running
+  with Phase-3-built saves resolved it. Pre-existing thief-RNG noise
+  per `feedback_flakey_walkthroughs.md`). AC-9 grep zero source-import
+  matches outside accepted-collateral surfaces; zero config-file
+  matches.
+
+Acceptance criteria satisfied:
+- **AC-9**: `packages/text-service/` does not exist on disk; `pnpm
+  install` succeeds (30 workspace projects, down from 32 — text-service
+  removed by deletion, zifmia removed by `!packages/zifmia` exclude);
+  full repo regression passes.
+- **AC-9a**: Repo-wide grep for `@sharpee/text-service` source imports
+  returns 5 matches, all in accepted-collateral surfaces (zifmia ×2,
+  cloak-of-darkness ×3). Zero outside collateral.
+- **AC-9b**: All config-file references removed across `package.json`,
+  `pnpm-workspace.yaml`, `build.sh` (8 aliases + 1 .d.ts heredoc), 5
+  tsconfigs (bridge, runtime, engine, sharpee, transcript-tester), 2
+  scripts (npm-latest.sh, generate-genai-api.js), 2 story
+  package.jsons (dungeo, familyzoo), 2 dungeo tsconfig path-mapping
+  typos.
+- **AC-9c**: `packages/platform-browser/dist-esm/` deleted (the plan's
+  alternative path, since no build pipeline produces it). Existing
+  consumers resolve through `dist/` per `build.sh` line 824.
+- **AC-9d**: Dungeo walkthrough chain 872/0 — Phase 2 baseline (930/0)
+  is RNG-noisy on test count, but failure count of 0 is the
+  load-bearing signal.
 
 ## Builds on
 
@@ -325,22 +468,37 @@ After Phase 1: engine is text-service-free; mainChannel still receives
 the same shape of blocks; existing tests pass.
 
 **Phase 2 — Migrate wire-production consumers off `renderToString`.**
-- Zifmia (`ChatOverlay.tsx`, `GameContext.tsx`) — consume `channel:packet`'s `main` channel directly.
-- transcript-tester (`story-loader.ts`) — same.
+Per OQ-1 resolution, the helpers move to `@sharpee/channel-service`.
+- transcript-tester (`story-loader.ts`) — import path swap.
 - Story scaffolding (`stories/cloak-of-darkness/run-platform.js`,
   `test-runner.ts`, `test-parser-events.js`) — same.
 - bridge / runtime / sharpee re-exports of `renderToString` /
-  `renderStatusLine` / `ITextService` / `createTextService` — removed.
+  `renderStatusLine` re-routed to channel-service; dead
+  `ITextService` / `createTextService` re-exports dropped (engine has
+  its own engine-private `ITextService`).
+- **Zifmia (`ChatOverlay.tsx`, `GameContext.tsx`) — HARD-DEFERRED.**
+  `@sharpee/platform-browser` is the primary release mechanism.
+  Zifmia is parked; if it ever revives, it will be redesigned from
+  scratch rather than ported. Zifmia retains its
+  `@sharpee/text-service` import and workspace dep through Phase 2,
+  and is allowed to fall out of build at Phase 3.
+- **Cloak-of-darkness (`test-runner.ts`, `run-platform.js`,
+  `test-parser-events.js`) — DEFERRED.** Discovered during Phase 2
+  sub-phase 2.2 to be outside `pnpm-workspace.yaml`, with
+  manually-maintained `@sharpee/*` symlinks and pre-existing build
+  errors (DOM lib + EngineConfig drift) unrelated to this ADR.
+  Joins zifmia in deferred status; allowed to fall out at Phase 3.
 
-After Phase 2: no first-party or downstream consumer imports
-`@sharpee/text-service` for any reason.
+After Phase 2: no active-release consumer imports
+`@sharpee/text-service`. The package stays alive and compilable
+through Phase 2 only because zifmia and cloak still import it;
+Phase 3 cuts that cord.
 
 **Phase 3 — Delete `@sharpee/text-service`.** Remove the package
-directory. Remove the workspace entry. Final dependency-graph
-cleanup. A small CSS asset shipping decision lands here too — where
-the platform's `sharpee-*` prose CSS file is published (likely via
-`@sharpee/platform-browser` or a sibling assets package; details
-in the implementation plan).
+directory and the workspace entry. Zifmia falls out of build at this
+point — accepted collateral per the hard-defer policy. The platform
+is not held hostage to a parked product; any future zifmia revival
+starts from a clean modern foundation.
 
 Each phase has its own implementation plan in
 `docs/work/text-service-removal/`.
@@ -368,9 +526,9 @@ deletion targets.
 | Mock pipeline (test helper) | `@sharpee/engine` | `src/test-helpers/mock-prose-pipeline.ts` | new (replaces `mock-text-service.ts`, deleted) |
 | Revised `IDecoration` shape (`type` → `className`) | `@sharpee/text-blocks` | `src/types.ts` | modified — `IDecoration { className, content }`; `CORE_DECORATION_TYPES` constants removed (vocabulary lives in engine) |
 | Browser renderer translation of `IDecoration` | `@sharpee/platform-browser` | (browser renderer files — exact path settled during implementation) | modified — emit `<span class="...">` from `IDecoration` nodes |
-| Terminal renderer translation of `IDecoration` | TBD — see Open Questions OQ-1 | TBD | new or modified |
-| Platform `.sharpee-*` prose CSS file | TBD — see Open Questions OQ-2 | TBD | new |
-| `renderToString` replacement helper | TBD — see Open Questions OQ-1 | TBD | new |
+| Terminal renderer translation of `IDecoration` | `@sharpee/channel-service` | `src/render-to-string.ts` (mode: 'plain' \| 'ansi') | new — see Open Questions OQ-1 (RESOLVED) |
+| Platform `.sharpee-*` prose CSS file | `templates/browser/decorations.css` | shipped via `build.sh` browser path | RESOLVED in Phase 1 sub-phase 1.7 (see OQ-2) |
+| `renderToString` replacement helper | `@sharpee/channel-service` | `src/render-to-string.ts` | new — see Open Questions OQ-1 (RESOLVED) |
 | Wire-production exports removal | `@sharpee/text-service` | `src/index.ts` and call sites in `bridge`/`runtime`/`sharpee` re-exports | deleted in Phase 2 |
 | Whole package deletion | `@sharpee/text-service` | (entire package directory + workspace entry) | deleted in Phase 3 |
 
@@ -421,9 +579,12 @@ deletion targets.
   `.sharpee-super`, `.sharpee-sub`, and the IF-semantic and
   color/size starter classes. The browser smoke test renders an
   `[em:emphasized]` template with visible italic in a default theme.
-- **AC-8**: After Phase 2, no `*.ts` or `*.tsx` source file (excluding
-  `@sharpee/text-service` itself) imports `renderToString` or
-  `renderStatusLine`. Verified by grep.
+- **AC-8**: After Phase 2, no `*.ts` / `*.tsx` / `*.js` source file
+  outside `packages/text-service/`, `packages/zifmia/`, and
+  `stories/cloak-of-darkness/` imports anything from
+  `@sharpee/text-service`. The zifmia and cloak carve-outs are
+  intentional — both are deferred and will be allowed to fall out
+  of build at Phase 3. Verified by grep.
 - **AC-9**: After Phase 3, `@sharpee/text-service` does not exist on
   disk. `pnpm install` succeeds; full repo test pass; full Dungeo
   walkthrough chain passes.
@@ -561,32 +722,49 @@ implementation plan for that phase before work starts.
 
 ### OQ-1 — Where does the `renderToString` replacement helper live?
 
-**Blocks**: Phase 2 (consumer migration off `renderToString`).
+**Status**: RESOLVED 2026-05-10.
 
-After `@sharpee/text-service` is deleted, downstream consumers
-(`@sharpee/zifmia` chat overlay, `@sharpee/transcript-tester`,
-`stories/cloak-of-darkness/run-cli.js` and `test-runner.ts`) all need
-a way to flatten a `channel:packet`'s `main`-channel `TextContent[][]`
-output to a string for display in chat bubbles, transcripts, or
-terminal output. The flattening must walk the `TextContent` tree,
-strip or translate `IDecoration` nodes per target (terminal would
-strip; chat overlay might translate to React fragments), and join
-with newlines.
+**Resolution**: ship the helper in **`@sharpee/channel-service`** as
+`src/render-to-string.ts`, exporting `renderToString` and
+`renderStatusLine` with the same signatures `@sharpee/text-service`
+exposes today. The mode parameter (`ansi: boolean`, plus the existing
+`CLIRenderOptions` shape) carries terminal-vs-plain selection.
 
-Candidates:
+**Why channel-service**:
 
-- **`@sharpee/channel-service`** — owns the packet shape; closest to
-  the data being flattened. Recommended unless there's a reason not.
-- **New `@sharpee/wire-utils` package** — small, focused; good if the
-  helper grows beyond a single function.
-- **Per-consumer reimplementation** — rejected; three near-identical
-  copies invite drift.
+- **Right dependency position.** Channel-service sits downstream of
+  the engine and upstream of clients. Renderers, chat overlays, and
+  transcript tooling already import it; the engine never does. Adding
+  the flattening helper here doesn't push imports in a wrong direction.
+- **Owns the data being flattened.** Channel-service defines the
+  `channel:packet` shape that wraps the `ITextBlock[]` consumers want
+  to flatten. The helper that consumes that shape lives with the shape.
+- **No new package warranted.** Two functions don't justify a new
+  workspace, build target, or version line. Phase 1 already added one
+  new module (engine prose-pipeline); a second new package would be
+  premature. If the helper outgrows two functions later, splitting
+  into a new package is reversible.
+- **Phase 3 deletion stays mechanical.** Once consumers are migrated,
+  deleting `@sharpee/text-service` is a directory removal plus a
+  workspace edit. No re-routing of imports through new packages.
 
-If terminal vs browser-DOM rendering of decorations needs to live in
-the same place, the helper takes a renderer-mode parameter
-(`flattenMain(packet, mode: 'plain' | 'ansi'): string`). The terminal
-renderer translation question (Implementation Modules row) overlaps
-with this — both might land in the same package.
+**Rejected candidates**:
+
+- `@sharpee/engine` (or its prose-pipeline subdirectory) — violates
+  dependency direction. Zifmia, transcript-tester, and chat overlays
+  must not need the engine just to flatten blocks for display.
+- New `@sharpee/wire-utils` package — over-engineering for two
+  functions; revisit if the helper set grows.
+- Per-consumer reimplementation — three near-identical copies invite
+  drift, which is exactly what this ADR set out to fix.
+
+**Phase 2 plan implication**: Phase 2 begins by copying
+`renderToString`, `renderStatusLine`, and `CLIRenderOptions` from
+`packages/text-service/src/cli-renderer.ts` into
+`packages/channel-service/src/render-to-string.ts`, re-exporting from
+`@sharpee/channel-service/src/index.ts`, and migrating the four call
+sites plus bridge/runtime/sharpee re-exports. The original stays in
+`@sharpee/text-service` until Phase 3 deletes the package.
 
 ### OQ-2 — Where is the platform `.sharpee-*` prose CSS file shipped from?
 
@@ -618,6 +796,48 @@ component vocabulary (`.sharpee-app`, `.sharpee-titlebar`, etc.).
 The prose CSS likely follows the same pattern — verify the existing
 ADR-170 mechanism's exact location and shipping rule during Phase 1
 implementation, and place the prose CSS alongside it.
+
+### OQ-5 — Pre-flight grep scope for package deletions (resolved during Phase 3)
+
+**Status**: Resolved 2026-05-10 — recorded for future package-deletion phases.
+
+The Phase 3 plan's pre-flight grep scope was incomplete. It searched
+source imports across the repo but only checked a hand-listed set of
+config files. Five additional files were missed and surfaced as
+breakage during 3.3:
+
+- `packages/transcript-tester/tsconfig.json` — `../text-service`
+  project reference (broke `tsc` build of transcript-tester)
+- `stories/dungeo/tsconfig.json` and `tsconfig.esm.json` — `text-services`
+  paths mapping (typo, never resolved, but matched grep)
+- `stories/dungeo/package.json` and `tutorials/familyzoo/package.json`
+  — `@sharpee/text-service: workspace:*` dep declarations (broke
+  `pnpm install` after directory deletion)
+- Also: `pnpm-workspace.yaml` overrides `package.json workspaces[]` —
+  the package.json edit alone does not affect pnpm's resolution graph.
+  Use `!packages/<name>` excludes in `pnpm-workspace.yaml` to remove
+  packages from the workspace.
+
+**For future package-deletion phases**, the pre-flight grep scope
+must be:
+
+```bash
+# Config files that can break a build
+grep -rln "<package-name>" \
+  --include='package.json' \
+  --include='tsconfig*.json' \
+  --include='*.sh' \
+  --include='*.js' \
+  --include='*.yaml' \
+  --include='*.yml' \
+  packages/ stories/ scripts/ tutorials/ \
+  | grep -v node_modules
+```
+
+Source-import grep is necessary but not sufficient. Config-file
+references are load-bearing for build and install steps, and missing
+them produces failures during deletion that are recoverable but waste
+budget.
 
 ## Session
 

@@ -433,6 +433,7 @@ build_platform() {
     # Package build order (based on dependencies)
     local PACKAGES=(
         "@sharpee/core:core"
+        "@sharpee/text-blocks:text-blocks"
         "@sharpee/if-domain:if-domain"
         "@sharpee/media:media"
         "@sharpee/world-model:world-model"
@@ -442,9 +443,7 @@ build_platform() {
         "@sharpee/lang-en-us:lang-en-us"
         "@sharpee/parser-en-us:parser-en-us"
         "@sharpee/if-services:if-services"
-        "@sharpee/text-blocks:text-blocks"
         "@sharpee/channel-service:channel-service"
-        "@sharpee/text-service:text-service"
         "@sharpee/stdlib:stdlib"
         "@sharpee/character:character"
         "@sharpee/ext-basic-combat:extensions/basic-combat"
@@ -543,7 +542,6 @@ build_bundle() {
       --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
       --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-      --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
       --alias:@sharpee/channel-service=./packages/channel-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
       --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
@@ -565,7 +563,6 @@ export * from '../packages/parser-en-us/dist/index';
 export * from '../packages/lang-en-us/dist/index';
 export * from '../packages/event-processor/dist/index';
 export * from '../packages/text-blocks/dist/index';
-export * from '../packages/text-service/dist/index';
 export * from '../packages/channel-service/dist/index';
 EOF
 
@@ -616,7 +613,6 @@ build_test_bundle() {
       --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
       --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
       --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-      --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
       --alias:@sharpee/channel-service=./packages/channel-service/dist/index.js \
       --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
       --alias:@sharpee/ext-basic-combat=./packages/extensions/basic-combat/dist/index.js \
@@ -833,13 +829,18 @@ build_browser_client() {
         log_ok "html"
     fi
 
-    # Copy CSS — base.css carries structural rules (ADR-170), infocom.css
-    # carries themes; index.html links base.css before styles.css.
-    if [ -f "templates/browser/base.css" ]; then
+    # Copy CSS — base.css carries structural rules (ADR-170), decorations.css
+    # carries the platform prose decoration vocabulary (ADR-174), infocom.css
+    # carries themes; index.html links them in order: base, decorations, styles.
+    if [[ -f "templates/browser/base.css" ]]; then
         cp templates/browser/base.css "$OUTDIR/base.css"
         log_ok "base.css"
     fi
-    if [ -f "templates/browser/infocom.css" ]; then
+    if [[ -f "templates/browser/decorations.css" ]]; then
+        cp templates/browser/decorations.css "$OUTDIR/decorations.css"
+        log_ok "decorations.css"
+    fi
+    if [[ -f "templates/browser/infocom.css" ]]; then
         cp templates/browser/infocom.css "$OUTDIR/styles.css"
         log_ok "css"
     fi
@@ -942,7 +943,6 @@ ENTRY
         --alias:@sharpee/lang-en-us=$REPO_ROOT/packages/lang-en-us/dist-esm/index.js \
         --alias:@sharpee/event-processor=$REPO_ROOT/packages/event-processor/dist-esm/index.js \
         --alias:@sharpee/text-blocks=$REPO_ROOT/packages/text-blocks/dist-esm/index.js \
-        --alias:@sharpee/text-service=$REPO_ROOT/packages/text-service/dist-esm/index.js \
         --alias:@sharpee/if-services=$REPO_ROOT/packages/if-services/dist-esm/index.js \
         --alias:@sharpee/plugins=$REPO_ROOT/packages/plugins/dist-esm/index.js \
         --alias:@sharpee/plugin-npc=$REPO_ROOT/packages/plugin-npc/dist-esm/index.js \
@@ -972,7 +972,6 @@ ENTRY
         --alias:@sharpee/lang-en-us=$REPO_ROOT/packages/lang-en-us/dist-esm/index.js \
         --alias:@sharpee/event-processor=$REPO_ROOT/packages/event-processor/dist-esm/index.js \
         --alias:@sharpee/text-blocks=$REPO_ROOT/packages/text-blocks/dist-esm/index.js \
-        --alias:@sharpee/text-service=$REPO_ROOT/packages/text-service/dist-esm/index.js \
         --alias:@sharpee/if-services=$REPO_ROOT/packages/if-services/dist-esm/index.js \
         --alias:@sharpee/plugins=$REPO_ROOT/packages/plugins/dist-esm/index.js \
         --alias:@sharpee/plugin-npc=$REPO_ROOT/packages/plugin-npc/dist-esm/index.js \
@@ -1078,7 +1077,6 @@ build_runtime() {
         --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
         --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
         --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-        --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
         --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
         --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
         --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
@@ -1134,7 +1132,6 @@ build_bridge() {
         --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
         --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
         --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-        --alias:@sharpee/text-service=./packages/text-service/dist/index.js \
         --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
         --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
         --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \

@@ -20,7 +20,6 @@
       "@sharpee/stdlib": ["./node_modules/@sharpee/stdlib"],
       "@sharpee/lang-en-us": ["./node_modules/@sharpee/lang-en-us"],
       "@sharpee/parser-en-us": ["./node_modules/@sharpee/parser-en-us"],
-      "@sharpee/text-services": ["./node_modules/@sharpee/text-services"],
       "@sharpee/engine": ["./node_modules/@sharpee/engine"],
       "@sharpee/plugin-scheduler": ["./node_modules/@sharpee/plugin-scheduler"],
       "@sharpee/plugin-npc": ["./node_modules/@sharpee/plugin-npc"],

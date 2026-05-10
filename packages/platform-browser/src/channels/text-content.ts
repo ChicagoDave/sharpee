@@ -6,32 +6,22 @@
  * append entry) into a flat `<span>`-based fragment that preserves
  * decorations as nested elements.
  *
- * Decorations recognized: `em`, `strong`, `item`, `room`, `npc`,
- * `command`, `direction`, `underline`, `strikethrough`, `super`, `sub`
- * (per `@sharpee/text-blocks` `CORE_DECORATION_TYPES`). Unknown
- * decoration types render as `<span class="deco-{type}">` so stories
- * can style custom types via CSS.
- *
- * The function returns a `DocumentFragment` so the caller (the main
- * channel renderer) can append directly without an extra wrapper.
+ * Per ADR-174, every decoration on the wire is `IDecoration { className,
+ * content }` — the bracket parser already resolved platform-vocabulary
+ * names to their `sharpee-`-prefixed final form. The renderer's job is
+ * to wrap the content in a `<span>` carrying that class verbatim;
+ * styling is supplied by the platform's prose CSS bundle (see Phase 1
+ * sub-phase 1.7). Author classes (no `sharpee-` prefix) flow through
+ * unchanged so stories own their own CSS.
  */
 
-import type { TextContent } from '@sharpee/text-blocks';
-
-const DECORATION_TAG_MAP: Record<string, string> = {
-  em: 'em',
-  strong: 'strong',
-  underline: 'u',
-  strikethrough: 's',
-  super: 'sup',
-  sub: 'sub',
-};
+import type { TextContent, IDecoration } from '@sharpee/text-blocks';
 
 /**
  * Render a `TextContent[]` array into a `DocumentFragment`. String
- * nodes become text nodes; decoration nodes become tagged elements
- * with `data-deco` and a CSS class (`deco-em`, `deco-item`, etc.) so
- * authors can style them.
+ * nodes become text nodes; decoration nodes become `<span>` elements
+ * whose `class` is the final, fully-resolved CSS class name from the
+ * decoration node.
  */
 export function renderTextContent(
   doc: Document,
@@ -48,11 +38,19 @@ function renderNode(doc: Document, node: TextContent): Node {
   if (typeof node === 'string') {
     return doc.createTextNode(node);
   }
-  const tag = DECORATION_TAG_MAP[node.type] ?? 'span';
-  const el = doc.createElement(tag);
-  el.setAttribute('data-deco', node.type);
-  el.classList.add(`deco-${node.type}`);
-  el.appendChild(renderTextContent(doc, node.content));
+  return renderDecoration(doc, node);
+}
+
+function renderDecoration(doc: Document, node: IDecoration): Node {
+  const inner = renderTextContent(doc, node.content);
+  if (node.className === '') {
+    // Defensive: parser shouldn't emit empty className per AC-12, but
+    // if one slips through, render the inner content without wrapping.
+    return inner;
+  }
+  const el = doc.createElement('span');
+  el.className = node.className;
+  el.appendChild(inner);
   return el;
 }
 

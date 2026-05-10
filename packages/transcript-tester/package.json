@@ -8,9 +8,9 @@
     "transcript-test": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist dist-esm",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
@@ -20,7 +20,7 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/text-service": "workspace:*",
+    "@sharpee/channel-service": "workspace:*",
     "chalk": "^4.1.2",
     "glob": "^10.3.10"
   },

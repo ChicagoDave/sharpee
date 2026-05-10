@@ -31,7 +31,6 @@ export default defineConfig({
       '@sharpee/lang-en-us': resolve(__dirname, '../lang-en-us/src'),
       '@sharpee/parser-en-us': resolve(__dirname, '../parser-en-us/src'),
       '@sharpee/text-blocks': resolve(__dirname, '../text-blocks/src'),
-      '@sharpee/text-service': resolve(__dirname, '../text-service/src'),
       '@sharpee/channel-service': resolve(__dirname, '../channel-service/src'),
       '@sharpee/if-services': resolve(__dirname, '../if-services/src'),
       '@sharpee/plugins': resolve(__dirname, '../plugins/src'),

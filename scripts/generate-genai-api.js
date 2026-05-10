@@ -81,10 +81,9 @@ const PACKAGE_GROUPS = [
   {
     output: 'text.md',
     title: 'Text System',
-    description: 'Text blocks, decorations, text service, rendering.',
+    description: 'Text blocks, decorations, rendering.',
     packages: [
       { name: 'text-blocks', dir: 'packages/text-blocks' },
-      { name: 'text-service', dir: 'packages/text-service' },
     ],
   },
   {
