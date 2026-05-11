@@ -2,7 +2,7 @@
 
 > Scoped to `packages/stdlib/`. See the root `CLAUDE.md` for project-wide policy.
 
-Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-051. Each action lives in `src/actions/standard/<name>/` with `action.ts`, `action-events.ts`, `action-data.ts`.
+Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-051. Each action lives in `src/actions/standard/<name>/` with `<name>.ts`, `<name>-data.ts`, `<name>-events.ts`, `<name>-messages.ts`, and `<name>-types.ts` (e.g., `taking/taking.ts`, `taking/taking-data.ts`).
 
 ## Language Layer Separation (stdlib side)
 
@@ -181,4 +181,4 @@ test('should actually move item to player inventory', () => {
 - `expectTraitValue(entity, traitType, prop, value)` — Assert trait property
 - `captureEntityState(world, entityId)` — Snapshot for debugging
 
-**See**: `docs/work/stdlib-testing/mitigation-plan.md` for full details.
+**See**: `docs/work/test-review/plan-20260406-testing-mitigation.md` for full details.

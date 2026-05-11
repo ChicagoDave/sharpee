@@ -235,7 +235,7 @@ If stuck or have questions during autonomous work:
 - **API Reference**: `packages/sharpee/docs/genai-api/` — auto-generated from `.d.ts` files, shipped in the npm package. Read these first instead of exploring packages. See `packages/sharpee/docs/genai-api/index.md` for navigation.
 - Traits: `packages/world-model/src/traits/`
 - Behaviors: `packages/world-model/src/behaviors/`
-- Actions: `packages/stdlib/src/actions/standard/` (each action has `action.ts`, `action-events.ts`, `action-data.ts`)
+- Actions: `packages/stdlib/src/actions/standard/` (each action `<name>/` has `<name>.ts`, `<name>-data.ts`, `<name>-events.ts`, `<name>-messages.ts`, `<name>-types.ts`)
 - ADRs: `docs/architecture/adrs/`
 - Work tracking: `docs/work/`
 
