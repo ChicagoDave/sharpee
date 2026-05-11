@@ -59,6 +59,8 @@ The right approach: Sharpee already has **Capability Dispatch (ADR-090)** where 
 
 If all four are "no," then discuss a platform change. Usually the architecture already supports what you need.
 
+> Full Capability Dispatch (ADR-090) pattern reference — decision tree, verb tables, behavior shape, story-action and event-handler patterns — lives in `packages/stdlib/CLAUDE.md`.
+
 ## Core Concepts Reference
 
 Read `/docs/reference/core-concepts.md` at the start of each session for:
@@ -184,7 +186,6 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
 - Session summaries: `docs/context/` (progressive, project-level)
 - **Plans**: Write plans to the current work target (NOT to `~/.claude/plans/`).
 - Logs: `logs/`
-- Current branch `dungeo` → work in `docs/work/dungeo/`.
 
 ## Autonomous Work Flow
 
