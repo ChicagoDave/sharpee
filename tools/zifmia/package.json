@@ -1,0 +1,42 @@
+{
+  "name": "@sharpee/zifmia",
+  "version": "0.1.0",
+  "description": "Zifmia — multi-user Sharpee web product (ADR-175). Single-container Docker deployment serving the stateless multi-user runtime defined by ADR-164.",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "zifmia": "./dist/cli.js",
+    "zifmia-migrate": "./dist/storage/migrate-cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@sharpee/channel-service": "workspace:*",
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/sharpee": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "better-sqlite3": "^11.3.0",
+    "fastify": "^4.28.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.8.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

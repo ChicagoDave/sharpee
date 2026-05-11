@@ -24,7 +24,8 @@
     "packages/web-client",
     "packages/dev-tools",
     "packages/platforms/*",
-    "stories/*"
+    "stories/*",
+    "tools/zifmia"
   ],
   "scripts": {
     "clean": "turbo run clean",

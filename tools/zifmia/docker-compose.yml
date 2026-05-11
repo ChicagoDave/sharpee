@@ -1,0 +1,40 @@
+# Zifmia single-container compose file (ADR-175 §AC-1).
+#
+# Operator workflow:
+#   1. Copy `.env.example` to `.env`, fill in secrets.
+#   2. `docker compose up` from this directory (or from the repo root
+#      using `-f tools/zifmia/docker-compose.yml`).
+#   3. `curl http://localhost:3000/health` returns
+#      `{ ok: true, db: "sqlite", ... }` within 30s on a 2-vCPU host.
+#
+# For Postgres, set `ZIFMIA_DB_URL` in `.env`. The image's CMD calls
+# `node dist/cli.js`; run `zifmia-migrate` once before first boot:
+#   docker compose run --rm zifmia node dist/storage/migrate-cli.js
+
+services:
+  zifmia:
+    build:
+      # Build context is the repo root so the workspace is visible.
+      context: ../..
+      dockerfile: tools/zifmia/Dockerfile
+    image: sharpee/zifmia:dev
+    ports:
+      - "${ZIFMIA_PORT:-3000}:3000"
+    environment:
+      ZIFMIA_PORT: "3000"
+      ZIFMIA_HOST: "0.0.0.0"
+      ZIFMIA_SQLITE_PATH: "/data/zifmia.db"
+      # Set ZIFMIA_DB_URL to switch to Postgres.
+      # ZIFMIA_DB_URL: "${ZIFMIA_DB_URL:-}"
+    volumes:
+      - zifmia-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  zifmia-data:
