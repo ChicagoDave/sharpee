@@ -14,6 +14,7 @@ export type {
   NamedSave,
   Room,
   SaveBlob,
+  Session,
   StoryLibraryEntry
 } from './types';
 

@@ -79,6 +79,75 @@ export function runAdapterContract(
       });
     });
 
+    // ── Session ─────────────────────────────────────────────────
+
+    describe('session', () => {
+      it('persists a session and reads it back by token', async () => {
+        const id = (
+          await adapter.createIdentity({ handle: 'sess-a', passcodeHash: PASSCODE })
+        ).id;
+        const session = await adapter.createSession({
+          token: 'tok-abc',
+          identityId: id,
+          expiresAt: Date.now() + 1_000_000
+        });
+        expect(session.token).toBe('tok-abc');
+        expect(session.identityId).toBe(id);
+        expect(session.createdAt).toBeGreaterThan(0);
+
+        const fetched = await adapter.getSessionByToken('tok-abc');
+        expect(fetched).toEqual(session);
+      });
+
+      it('returns null for unknown token', async () => {
+        expect(await adapter.getSessionByToken('not-a-token')).toBeNull();
+      });
+
+      it('rejects createSession when identityId does not exist (FK)', async () => {
+        await expect(
+          adapter.createSession({
+            token: 'tok-orphan',
+            identityId: 'ghost',
+            expiresAt: Date.now() + 1_000_000
+          })
+        ).rejects.toThrow();
+      });
+
+      it('deleteSession removes the row; idempotent', async () => {
+        const id = (
+          await adapter.createIdentity({ handle: 'sess-b', passcodeHash: PASSCODE })
+        ).id;
+        await adapter.createSession({
+          token: 'tok-del',
+          identityId: id,
+          expiresAt: Date.now() + 1_000_000
+        });
+        await adapter.deleteSession('tok-del');
+        expect(await adapter.getSessionByToken('tok-del')).toBeNull();
+        // Second call is a no-op.
+        await expect(adapter.deleteSession('tok-del')).resolves.toBeUndefined();
+      });
+
+      it('deleteExpiredSessions removes only rows past their expiry', async () => {
+        const id = (
+          await adapter.createIdentity({ handle: 'sess-c', passcodeHash: PASSCODE })
+        ).id;
+        const past = await adapter.createSession({
+          token: 'tok-past',
+          identityId: id,
+          expiresAt: 1000
+        });
+        const future = await adapter.createSession({
+          token: 'tok-future',
+          identityId: id,
+          expiresAt: Date.now() + 1_000_000
+        });
+        await adapter.deleteExpiredSessions(2000);
+        expect(await adapter.getSessionByToken(past.token)).toBeNull();
+        expect(await adapter.getSessionByToken(future.token)).not.toBeNull();
+      });
+    });
+
     // ── Room ────────────────────────────────────────────────────
 
     describe('room', () => {

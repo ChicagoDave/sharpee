@@ -21,6 +21,7 @@ import type {
   NamedSave,
   Room,
   SaveBlob,
+  Session,
   StoryLibraryEntry
 } from '../types';
 import type { RoomLease, StorageAdapter } from '../adapter';
@@ -70,6 +71,23 @@ export class PostgresAdapter implements StorageAdapter {
     _passcodeHash: string
   ): Promise<void> {
     unimplemented('updateIdentityPasscode');
+  }
+
+  async createSession(_input: {
+    token: string;
+    identityId: string;
+    expiresAt: number;
+  }): Promise<Session> {
+    unimplemented('createSession');
+  }
+  async getSessionByToken(_token: string): Promise<Session | null> {
+    unimplemented('getSessionByToken');
+  }
+  async deleteSession(_token: string): Promise<void> {
+    unimplemented('deleteSession');
+  }
+  async deleteExpiredSessions(_now: number): Promise<void> {
+    unimplemented('deleteExpiredSessions');
   }
 
   async createRoom(_input: {

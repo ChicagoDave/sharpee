@@ -17,6 +17,17 @@ CREATE TABLE IF NOT EXISTS identities (
   created_at    INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS sessions (
+  token       TEXT PRIMARY KEY,
+  identity_id TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  expires_at  INTEGER NOT NULL,
+  FOREIGN KEY (identity_id) REFERENCES identities(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_identity ON sessions(identity_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+
 CREATE TABLE IF NOT EXISTS rooms (
   id             TEXT PRIMARY KEY,
   story_id       TEXT NOT NULL,

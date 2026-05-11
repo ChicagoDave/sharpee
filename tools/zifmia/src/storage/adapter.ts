@@ -32,6 +32,7 @@ import type {
   NamedSave,
   Room,
   SaveBlob,
+  Session,
   StoryLibraryEntry
 } from './types';
 
@@ -49,6 +50,22 @@ export interface StorageAdapter {
   getIdentityByHandle(handle: string): Promise<Identity | null>;
   getIdentityById(id: string): Promise<Identity | null>;
   updateIdentityPasscode(id: string, passcodeHash: string): Promise<void>;
+
+  // ── Session ───────────────────────────────────────────────────
+  /** Insert a session row. Throws if `identityId` does not exist. */
+  createSession(input: {
+    token: string;
+    identityId: string;
+    expiresAt: number;
+  }): Promise<Session>;
+  /** Return the row or `null`. The middleware checks `expiresAt`
+   * against the current clock; the adapter does not. */
+  getSessionByToken(token: string): Promise<Session | null>;
+  /** Remove the row by token. Idempotent — no-op if absent. */
+  deleteSession(token: string): Promise<void>;
+  /** Remove every session whose `expiresAt < now`. Used by a periodic
+   * sweep; safe to call from any context. */
+  deleteExpiredSessions(now: number): Promise<void>;
 
   // ── Room ──────────────────────────────────────────────────────
   createRoom(input: {

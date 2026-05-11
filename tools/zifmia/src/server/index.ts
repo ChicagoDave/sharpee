@@ -19,6 +19,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type { StorageAdapter } from '../storage/adapter';
 import { resolveAdapterFromEnv } from '../storage/resolve';
 import { registerHealthRoute } from './health';
+import { registerIdentityRoutes } from './identity';
 
 export interface ZifmiaServerOptions {
   /** Override the adapter (tests inject a fixture). Default: resolved
@@ -65,6 +66,7 @@ export async function startServer(
 
   const app = Fastify({ logger: false });
   registerHealthRoute(app, { adapter, packageVersion });
+  registerIdentityRoutes(app, { adapter });
 
   const address = await app.listen({ host, port });
   const resolvedPort = resolvePortFromServer(app, port);

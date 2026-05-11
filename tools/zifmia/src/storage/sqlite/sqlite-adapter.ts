@@ -29,6 +29,7 @@ import type {
   NamedSave,
   Room,
   SaveBlob,
+  Session,
   StoryLibraryEntry
 } from '../types';
 import type { RoomLease, StorageAdapter } from '../adapter';
@@ -130,6 +131,46 @@ export class SqliteAdapter implements StorageAdapter {
     this.db
       .prepare(`UPDATE identities SET passcode_hash = ? WHERE id = ?`)
       .run(passcodeHash, id);
+  }
+
+  // ── Session ───────────────────────────────────────────────────
+
+  async createSession(input: {
+    token: string;
+    identityId: string;
+    expiresAt: number;
+  }): Promise<Session> {
+    const session: Session = {
+      token: input.token,
+      identityId: input.identityId,
+      createdAt: this.now(),
+      expiresAt: input.expiresAt
+    };
+    this.db
+      .prepare(
+        `INSERT INTO sessions (token, identity_id, created_at, expires_at)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run(session.token, session.identityId, session.createdAt, session.expiresAt);
+    return session;
+  }
+
+  async getSessionByToken(token: string): Promise<Session | null> {
+    const r = this.db
+      .prepare<[string], SessionRow>(
+        `SELECT token, identity_id, created_at, expires_at
+         FROM sessions WHERE token = ?`
+      )
+      .get(token);
+    return r ? sessionFromRow(r) : null;
+  }
+
+  async deleteSession(token: string): Promise<void> {
+    this.db.prepare(`DELETE FROM sessions WHERE token = ?`).run(token);
+  }
+
+  async deleteExpiredSessions(now: number): Promise<void> {
+    this.db.prepare(`DELETE FROM sessions WHERE expires_at < ?`).run(now);
   }
 
   // ── Room ──────────────────────────────────────────────────────
@@ -567,6 +608,21 @@ function identityFromRow(r: IdentityRow): Identity {
     handle: r.handle,
     passcodeHash: r.passcode_hash,
     createdAt: r.created_at
+  };
+}
+
+interface SessionRow {
+  token: string;
+  identity_id: string;
+  created_at: number;
+  expires_at: number;
+}
+function sessionFromRow(r: SessionRow): Session {
+  return {
+    token: r.token,
+    identityId: r.identity_id,
+    createdAt: r.created_at,
+    expiresAt: r.expires_at
   };
 }
 

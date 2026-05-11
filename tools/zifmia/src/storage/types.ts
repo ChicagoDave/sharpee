@@ -104,6 +104,14 @@ export interface AuditEntry {
   detail: string;
 }
 
+/** ADR-175 §Decision 9 — session row tying a bearer token to an identity. */
+export interface Session {
+  token: string;
+  identityId: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
 /** Adapter self-description used by `/health` and operator diagnostics. */
 export interface AdapterDescription {
   kind: 'sqlite' | 'postgres';
