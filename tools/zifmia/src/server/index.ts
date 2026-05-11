@@ -18,6 +18,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 
 import type { StorageAdapter } from '../storage/adapter';
 import { resolveAdapterFromEnv } from '../storage/resolve';
+import { registerCommandRoute } from './command';
 import { registerHealthRoute } from './health';
 import { registerIdentityRoutes } from './identity';
 import { registerRoomRoutes } from './rooms';
@@ -69,6 +70,7 @@ export async function startServer(
   registerHealthRoute(app, { adapter, packageVersion });
   registerIdentityRoutes(app, { adapter });
   registerRoomRoutes(app, { adapter });
+  registerCommandRoute(app, { adapter });
 
   const address = await app.listen({ host, port });
   const resolvedPort = resolvePortFromServer(app, port);

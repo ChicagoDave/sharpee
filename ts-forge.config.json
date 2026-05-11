@@ -42,6 +42,7 @@
       "module": "es2022",
       "outDir": "dist-esm",
       "imports": "preserve",
+      "esmExtensions": true,
       "declarations": true,
       "condition": "esm"
     },

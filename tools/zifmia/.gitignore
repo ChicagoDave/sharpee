@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-perf/
 *.tsbuildinfo
 *.log
 .env
@@ -7,3 +8,4 @@ dist/
 data/
 *.db
 *.db-journal
+.bundle-cache/

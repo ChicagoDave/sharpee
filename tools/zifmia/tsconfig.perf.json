@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist-perf",
+    "rootDir": "./",
+    "declaration": false,
+    "declarationMap": false,
+    "composite": false,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*", "perf/**/*", "tests/fixtures/**/*"]
+}

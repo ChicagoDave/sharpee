@@ -16,23 +16,35 @@
     "dev": "tsc --watch",
     "test": "vitest",
     "test:ci": "vitest run",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "perf:baseline": "tsc -p tsconfig.perf.json && node dist-perf/perf/baseline-look.js"
   },
   "dependencies": {
     "@sharpee/channel-service": "workspace:*",
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
+    "@sharpee/if-services": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/media": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/plugin-npc": "workspace:*",
+    "@sharpee/plugin-scheduler": "workspace:*",
+    "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/sharpee": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "better-sqlite3": "^11.3.0",
-    "fastify": "^4.28.0"
+    "fastify": "^4.28.0",
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.8.0",
+    "esbuild": "^0.21.5",
     "rimraf": "^5.0.5",
+    "tsx": "^4.16.2",
     "typescript": "^5.2.2",
     "vitest": "^1.6.0"
   },
