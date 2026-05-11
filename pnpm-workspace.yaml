@@ -3,11 +3,8 @@ packages:
   - packages/extensions/testing
   - packages/extensions/basic-combat
   - '!packages/map-editor'
-  - '!packages/cli'
-  - '!packages/dev-tools'
   - '!packages/interpreter'
   - stories/dungeo
-  - stories/entropy
   - stories/channel-service-test
   - tutorials/familyzoo
 
