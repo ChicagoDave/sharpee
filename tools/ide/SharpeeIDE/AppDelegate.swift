@@ -8,9 +8,14 @@
 import AppKit
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemValidation {
 
     private var mainWindowController: MainWindowController?
+
+    /// Workspace root for the currently loaded project — the directory containing `build.sh`.
+    /// Nil when no project is loaded, or when the loaded project has no ancestor with a `build.sh`.
+    /// Drives Build menu enablement via `validateUserInterfaceItem(_:)`.
+    private var currentRepoRoot: URL?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
@@ -40,9 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let project = Project(rootURL: projectURL)
-        controller.loadProject(project, expandedFolderURLs: state.expandedFolderURLs)
-        controller.window?.title = "Sharpee — \(project.name)"
+        loadProject(at: projectURL, expandedFolderURLs: state.expandedFolderURLs)
 
         var survivingURLs: [URL] = []
         for url in state.openDocumentURLs where fm.fileExists(atPath: url.path) {
@@ -86,13 +89,143 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func handleProjectSelection(response: NSApplication.ModalResponse, url: URL?) {
         guard response == .OK, let url = url else { return }
-        let project = Project(rootURL: url)
-        mainWindowController?.loadProject(project)
-        mainWindowController?.window?.title = "Sharpee — \(project.name)"
+        loadProject(at: url)
     }
 
     /// File → Save (⌘S). Forwards to the active editor; no-op when no document is open.
     @objc func saveDocument(_ sender: Any?) {
         mainWindowController?.saveActiveDocument()
+    }
+
+    // MARK: - Recent Projects
+
+    /// Opens the project rooted at `url` and sets the window title. Centralized so that
+    /// the Open Project panel, restore-session, and Open Recent all share the same path.
+    /// `expandedFolderURLs` is honoured by restore-session; the menu paths leave it empty.
+    private func loadProject(at url: URL, expandedFolderURLs: [URL] = []) {
+        let project = Project(rootURL: url)
+        mainWindowController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
+        mainWindowController?.window?.title = "Sharpee — \(project.name)"
+        currentRepoRoot = WorkspaceRoot.find(from: url)
+    }
+
+    /// File → Open Recent → <project>. Loads the chosen folder. If the folder is no longer
+    /// on disk (race between menu rebuild and click), shows an alert and removes the entry.
+    @objc func openRecentProject(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+
+        var isDir: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
+        if !exists || !isDir.boolValue {
+            RecentProjectsStore.remove(url)
+            presentMissingProjectAlert(url: url)
+            return
+        }
+
+        loadProject(at: url)
+    }
+
+    /// File → Open Recent → Clear Menu.
+    @objc func clearRecentProjects(_ sender: Any?) {
+        RecentProjectsStore.clear()
+    }
+
+    private func presentMissingProjectAlert(url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "Project Not Found"
+        alert.informativeText = "The folder “\(url.lastPathComponent)” no longer exists at:\n\(url.path)"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        if let window = mainWindowController?.window {
+            alert.beginSheetModal(for: window, completionHandler: nil)
+        } else {
+            alert.runModal()
+        }
+    }
+
+    // MARK: - Build menu actions
+
+    /// Build → Build (⌘B). Stub — wired to a runner in step 4.6.
+    @objc func buildProject(_ sender: Any?) {
+        // No-op until step 4.6.
+    }
+
+    /// Build → Build Settings…. Stub — opens a sheet in step 4.3.
+    @objc func openBuildSettings(_ sender: Any?) {
+        // No-op until step 4.3.
+    }
+
+    /// Build → Cancel Build. Stub — wired to the runner in step 4.6.
+    @objc func cancelBuild(_ sender: Any?) {
+        // No-op until step 4.6.
+    }
+
+    // MARK: - NSUserInterfaceValidations (menu enable/disable)
+
+    /// AppKit calls this when a menu containing one of our actions is about to display.
+    /// Build / Build Settings… require a workspace root. Cancel Build is permanently disabled
+    /// until step 4.6 wires it to runner state.
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        switch menuItem.action {
+        case #selector(buildProject(_:)),
+             #selector(openBuildSettings(_:)):
+            return currentRepoRoot != nil
+        case #selector(cancelBuild(_:)):
+            return false
+        default:
+            return true
+        }
+    }
+
+    // MARK: - NSMenuDelegate (Open Recent)
+
+    /// Rebuilds the Open Recent submenu when the user reveals it. Filters out folders
+    /// that no longer exist; inserts a disabled placeholder when the list is empty.
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu.identifier == MenuBuilder.openRecentMenuIdentifier else { return }
+
+        menu.removeAllItems()
+
+        let stored = RecentProjectsStore.load()
+        let fm = FileManager.default
+        let surviving = stored.filter { url in
+            var isDir: ObjCBool = false
+            return fm.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
+        }
+
+        if surviving.isEmpty {
+            let placeholder = NSMenuItem(title: "No Recent Projects",
+                                         action: nil,
+                                         keyEquivalent: "")
+            placeholder.isEnabled = false
+            menu.addItem(placeholder)
+            menu.addItem(NSMenuItem.separator())
+
+            let clear = NSMenuItem(title: "Clear Menu",
+                                   action: #selector(clearRecentProjects(_:)),
+                                   keyEquivalent: "")
+            clear.target = self
+            clear.isEnabled = false
+            menu.addItem(clear)
+            return
+        }
+
+        for url in surviving {
+            let item = NSMenuItem(title: url.lastPathComponent,
+                                  action: #selector(openRecentProject(_:)),
+                                  keyEquivalent: "")
+            item.target = self
+            item.representedObject = url
+            item.toolTip = url.path
+            menu.addItem(item)
+        }
+
+        menu.addItem(NSMenuItem.separator())
+
+        let clear = NSMenuItem(title: "Clear Menu",
+                               action: #selector(clearRecentProjects(_:)),
+                               keyEquivalent: "")
+        clear.target = self
+        menu.addItem(clear)
     }
 }

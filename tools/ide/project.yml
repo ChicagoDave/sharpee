@@ -50,3 +50,31 @@ targets:
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  SharpeeIDETests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: SharpeeIDETests
+    dependencies:
+      - target: SharpeeIDE
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.sharpee.ide.tests
+        PRODUCT_NAME: SharpeeIDETests
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/SharpeeIDE.app/Contents/MacOS/SharpeeIDE"
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  SharpeeIDE:
+    build:
+      targets:
+        SharpeeIDE: all
+        SharpeeIDETests: [test]
+    test:
+      targets:
+        - SharpeeIDETests
+      gatherCoverageData: false

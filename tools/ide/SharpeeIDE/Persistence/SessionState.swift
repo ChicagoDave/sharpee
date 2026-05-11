@@ -34,22 +34,22 @@ struct SessionState: Codable {
 
 enum SessionStateStore {
 
-    private static let key = "SharpeeSessionState"
+    static let key = "SharpeeSessionState"
 
     /// Reads the persisted session, or nil on first launch / corrupt entry.
-    static func load() -> SessionState? {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+    static func load(from defaults: UserDefaults = .standard) -> SessionState? {
+        guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(SessionState.self, from: data)
     }
 
     /// Writes the state as JSON to UserDefaults. Silent on encoding failure.
-    static func save(_ state: SessionState) {
+    static func save(_ state: SessionState, to defaults: UserDefaults = .standard) {
         guard let data = try? JSONEncoder().encode(state) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        defaults.set(data, forKey: key)
     }
 
     /// Removes the persisted entry. Used when the prior project no longer exists.
-    static func clear() {
-        UserDefaults.standard.removeObject(forKey: key)
+    static func clear(from defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: key)
     }
 }

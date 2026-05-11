@@ -141,6 +141,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
         currentProject = project
         projectTreeViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
+        RecentProjectsStore.push(project.rootURL)
         persistSession()
     }
 

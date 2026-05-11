@@ -12,6 +12,7 @@ enum MenuBuilder {
         mainMenu.addItem(makeAppMenuItem())
         mainMenu.addItem(makeFileMenuItem(target: target))
         mainMenu.addItem(makeEditMenuItem())
+        mainMenu.addItem(makeBuildMenuItem(target: target))
         mainMenu.addItem(makeWindowMenuItem())
         return mainMenu
     }
@@ -59,6 +60,10 @@ enum MenuBuilder {
 
     // MARK: - File menu
 
+    /// Identifier assigned to the Open Recent submenu so AppDelegate can recognize it
+    /// in `menuNeedsUpdate(_:)` (and ignore unrelated menus, should any be added later).
+    static let openRecentMenuIdentifier = NSUserInterfaceItemIdentifier("SharpeeOpenRecentMenu")
+
     private static func makeFileMenuItem(target: AnyObject) -> NSMenuItem {
         let menu = NSMenu(title: "File")
 
@@ -67,6 +72,14 @@ enum MenuBuilder {
                               keyEquivalent: "o")
         open.target = target
         menu.addItem(open)
+
+        let recentItem = NSMenuItem(title: "Open Recent", action: nil, keyEquivalent: "")
+        let recentSubmenu = NSMenu(title: "Open Recent")
+        recentSubmenu.identifier = openRecentMenuIdentifier
+        recentSubmenu.delegate = target as? NSMenuDelegate
+        recentItem.submenu = recentSubmenu
+        menu.addItem(recentItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let save = NSMenuItem(title: "Save",
@@ -79,6 +92,36 @@ enum MenuBuilder {
         menu.addItem(withTitle: "Close",
                      action: #selector(NSWindow.performClose(_:)),
                      keyEquivalent: "w")
+
+        let item = NSMenuItem()
+        item.submenu = menu
+        return item
+    }
+
+    // MARK: - Build menu
+
+    private static func makeBuildMenuItem(target: AnyObject) -> NSMenuItem {
+        let menu = NSMenu(title: "Build")
+
+        let build = NSMenuItem(title: "Build",
+                               action: #selector(AppDelegate.buildProject(_:)),
+                               keyEquivalent: "b")
+        build.target = target
+        menu.addItem(build)
+
+        let settings = NSMenuItem(title: "Build Settings…",
+                                  action: #selector(AppDelegate.openBuildSettings(_:)),
+                                  keyEquivalent: "")
+        settings.target = target
+        menu.addItem(settings)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let cancel = NSMenuItem(title: "Cancel Build",
+                                action: #selector(AppDelegate.cancelBuild(_:)),
+                                keyEquivalent: ".")
+        cancel.target = target
+        menu.addItem(cancel)
 
         let item = NSMenuItem()
         item.submenu = menu
