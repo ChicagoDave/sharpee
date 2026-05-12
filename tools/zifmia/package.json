@@ -17,7 +17,8 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "lint": "eslint src --ext .ts",
-    "perf:baseline": "tsc -p tsconfig.perf.json && node dist-perf/perf/baseline-look.js"
+    "perf:baseline": "tsc -p tsconfig.perf.json && node dist-perf/perf/baseline-look.js",
+    "perf:concurrent": "tsc -p tsconfig.perf.json && node dist-perf/perf/baseline-concurrent.js"
   },
   "dependencies": {
     "@sharpee/channel-service": "workspace:*",

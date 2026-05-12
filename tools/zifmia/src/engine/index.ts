@@ -13,3 +13,13 @@ export {
 export type { TurnExecutorInput } from './turn-executor';
 export type { TurnEvent, TurnPacket } from './types';
 export { loadStoryFromBundle, clearStoryCacheForTests } from './bundle-loader';
+export {
+  TRANSCRIPT_WINDOW,
+  appendAndTruncate,
+  decodeEnvelope,
+  encodeEnvelope,
+} from './save-envelope';
+export type {
+  TranscriptEntry,
+  ZifmiaSaveEnvelope,
+} from './save-envelope';

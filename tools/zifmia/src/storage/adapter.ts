@@ -110,6 +110,43 @@ export interface StorageAdapter {
   getNamedSave(saveId: string): Promise<NamedSave | null>;
   deleteNamedSave(saveId: string): Promise<void>;
 
+  // ── Destructive truncation (ADR-175 §4 — restore rollback) ────
+  /**
+   * Roll back a room's persistent history to `keepThroughTurn`. Used
+   * exclusively by `POST /rooms/:id/restore` under the per-room
+   * lease. Deletes (atomically in one transaction):
+   *  - every `named_saves` row with `atTurn > keepThroughTurn` (must
+   *    precede save_blob delete because of the FK).
+   *  - every `save_blobs` row with `turn > keepThroughTurn`.
+   *
+   * Idempotent: if no rows match, no-op. Does not touch chat
+   * messages, audit entries, identities, sessions, or rooms — those
+   * outlive the engine state per ADR-175.
+   */
+  truncateRoomHistory(input: {
+    roomId: string;
+    keepThroughTurn: number;
+  }): Promise<void>;
+
+  // ── Compaction (Phase 4d — periodic GC) ──────────────────────
+  /**
+   * Reclaim unreachable per-turn snapshots for a single room. Deletes
+   * `save_blobs` rows that are NOT (a) the room's latest turn AND
+   * NOT (b) referenced by any `named_saves` row.
+   *
+   * Atomic: the latest-turn lookup and the deletes run in a single
+   * transaction so a concurrent `appendSaveBlob` cannot leave the
+   * room with no recoverable blob.
+   *
+   * Does NOT acquire the per-room lease — `appendSaveBlob` and this
+   * method are both atomic at the storage layer, so they serialize
+   * naturally without forcing turn execution to wait on maintenance.
+   *
+   * Returns the count of `save_blobs` rows deleted. Idempotent: a
+   * room with only its latest blob plus named-save targets returns 0.
+   */
+  compactRoomSaveBlobs(roomId: string): Promise<{ deleted: number }>;
+
   // ── Chat ──────────────────────────────────────────────────────
   appendChatMessage(input: {
     roomId: string;

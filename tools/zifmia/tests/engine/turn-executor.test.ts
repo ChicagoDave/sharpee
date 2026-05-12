@@ -26,11 +26,24 @@ import type { ISaveData } from '@sharpee/core';
 
 import { SqliteAdapter } from '../../src/storage/sqlite/sqlite-adapter';
 import { executeTurnStatelessly } from '../../src/engine/turn-executor';
+import { decodeEnvelope } from '../../src/engine/save-envelope';
 import {
   buildTinyFixtureBundle,
   tinyFixtureConfig,
 } from '../fixtures/build-bundle';
 import { clearStoryCacheForTests } from '../../src/engine/bundle-loader';
+
+const STUB_SUBMITTER = { identityId: 'test-identity', handle: 'tester' } as const;
+
+/**
+ * Helper that fills the new required `submitter` field (Phase 4a). The
+ * test suites in this file don't care which identity submitted a turn —
+ * they're validating engine + storage integration — so a fixed stub
+ * keeps every call site terse.
+ */
+function exec(input: Omit<Parameters<typeof executeTurnStatelessly>[0], 'submitter'>) {
+  return executeTurnStatelessly({ ...input, submitter: STUB_SUBMITTER });
+}
 
 interface TestCtx {
   adapter: SqliteAdapter;
@@ -68,8 +81,14 @@ async function setup(): Promise<TestCtx> {
   return { adapter, roomId: room.id, identityId: identity.id };
 }
 
+/**
+ * Phase 4a: `save_blobs.payload` is now a `ZifmiaSaveEnvelope` (a JSON
+ * wrapper around the engine's `ISaveData` plus the in-blob transcript
+ * window). Tests that previously decoded the payload as raw
+ * `ISaveData` use this helper to reach the embedded `saveData`.
+ */
 function decodePayload(payload: Uint8Array): ISaveData {
-  return JSON.parse(strFromU8(gunzipSync(payload))) as ISaveData;
+  return decodeEnvelope(payload).saveData;
 }
 
 /**
@@ -134,7 +153,7 @@ describe('executeTurnStatelessly — happy path', () => {
   });
 
   it('appends a save_blobs row at turn 1 with non-empty payload', async () => {
-    const packet = await executeTurnStatelessly({
+    const packet = await exec({
       adapter: ctx.adapter,
       roomId: ctx.roomId,
       command: 'look',
@@ -153,7 +172,7 @@ describe('executeTurnStatelessly — happy path', () => {
   });
 
   it('returns text blocks emitted only during the executed command', async () => {
-    const packet = await executeTurnStatelessly({
+    const packet = await exec({
       adapter: ctx.adapter,
       roomId: ctx.roomId,
       command: 'look',
@@ -169,7 +188,7 @@ describe('executeTurnStatelessly — happy path', () => {
     // the player. If the executor restored prior state on turn 2, the
     // marker stays with the player; if it cold-started from `setStory`
     // alone, the marker would be back in the room and this test fails.
-    await executeTurnStatelessly({
+    await exec({
       adapter: ctx.adapter,
       roomId: ctx.roomId,
       command: 'take marker stone',
@@ -183,7 +202,7 @@ describe('executeTurnStatelessly — happy path', () => {
     expect(markerId).toBeDefined();
     expect(findParentOf(turn1Snapshot, markerId!)).toBe(turn1Snapshot.playerId);
 
-    const second = await executeTurnStatelessly({
+    const second = await exec({
       adapter: ctx.adapter,
       roomId: ctx.roomId,
       command: 'look',
@@ -208,12 +227,12 @@ describe('executeTurnStatelessly — happy path', () => {
     // Two sequential invocations succeed only if the lease was released
     // between them. If the executor leaked the lease in the success path,
     // the second `acquireRoomLease` would hang on the in-process FIFO.
-    await executeTurnStatelessly({
+    await exec({
       adapter: ctx.adapter,
       roomId: ctx.roomId,
       command: 'look',
     });
-    const next = await executeTurnStatelessly({
+    const next = await exec({
       adapter: ctx.adapter,
       roomId: ctx.roomId,
       command: 'look',
@@ -232,7 +251,7 @@ describe('executeTurnStatelessly — rejections', () => {
 
   it('throws when the room id is unknown', async () => {
     await expect(
-      executeTurnStatelessly({
+      exec({
         adapter: ctx.adapter,
         roomId: 'no-such-room',
         command: 'look',
@@ -243,7 +262,7 @@ describe('executeTurnStatelessly — rejections', () => {
   it('throws when the room is closed', async () => {
     await ctx.adapter.closeRoom(ctx.roomId);
     await expect(
-      executeTurnStatelessly({
+      exec({
         adapter: ctx.adapter,
         roomId: ctx.roomId,
         command: 'look',
@@ -261,7 +280,7 @@ describe('executeTurnStatelessly — rejections', () => {
       createdBy: ctx.identityId,
     });
     await expect(
-      executeTurnStatelessly({
+      exec({
         adapter: ctx.adapter,
         roomId: ghost.id,
         command: 'look',

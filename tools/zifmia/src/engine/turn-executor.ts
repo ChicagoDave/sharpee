@@ -19,8 +19,6 @@
  *    no row is written.
  */
 
-import { gzipSync, gunzipSync, strFromU8 } from 'fflate';
-
 import type { GameEngine, Story } from '@sharpee/engine';
 import type { WorldModel } from '@sharpee/world-model';
 import type { Parser } from '@sharpee/parser-en-us';
@@ -28,6 +26,15 @@ import type { LanguageProvider } from '@sharpee/lang-en-us';
 import type { IPerceptionService } from '@sharpee/if-services';
 import type { ISaveData, ISemanticEvent } from '@sharpee/core';
 import type { ITextBlock } from '@sharpee/text-blocks';
+
+import {
+  TRANSCRIPT_WINDOW,
+  appendAndTruncate,
+  decodeEnvelope,
+  encodeEnvelope,
+  type TranscriptEntry,
+  type ZifmiaSaveEnvelope,
+} from './save-envelope';
 
 /**
  * Engine-runtime classes are loaded via `createRequire` rather than
@@ -72,6 +79,24 @@ export interface TurnExecutorInput {
   adapter: StorageAdapter;
   roomId: string;
   command: string;
+  /**
+   * Identity that submitted this turn. Captured into the new
+   * `TranscriptEntry` so rejoining clients can attribute the turn
+   * without a separate identity lookup. The route layer fills this
+   * from `request.identity` — tests that drive the executor directly
+   * supply a stub.
+   */
+  submitter: {
+    identityId: string;
+    handle: string;
+  };
+  /**
+   * Override the per-room transcript window. Production code uses
+   * the default ({@link TRANSCRIPT_WINDOW} = 1000); tests inject a
+   * small value to exercise the truncation path without running a
+   * thousand turns.
+   */
+  transcriptWindow?: number;
 }
 
 /**
@@ -83,24 +108,9 @@ function shouldForwardEvent(type: string): boolean {
   return type.startsWith('if.event.') || type.startsWith('platform.');
 }
 
-/**
- * Wire payload encoded for the `save_blobs` row. The engine's `ISaveData`
- * already gzips the heavy world-snapshot field internally, so the outer
- * envelope is JSON gzipped once more to compress the un-gzipped fields
- * (event source, turn history). Result: a single Uint8Array suitable
- * for the BLOB column.
- */
-function encodeSaveData(saveData: ISaveData): Uint8Array {
-  return gzipSync(new TextEncoder().encode(JSON.stringify(saveData)));
-}
-
-/**
- * Inverse of {@link encodeSaveData}. Throws if the blob is not a valid
- * gzipped JSON-encoded `ISaveData`.
- */
-function decodeSaveData(blob: Uint8Array): ISaveData {
-  return JSON.parse(strFromU8(gunzipSync(blob))) as ISaveData;
-}
+// Save payload encoding lives in `./save-envelope`. The executor
+// composes the envelope (engine ISaveData + per-room transcript
+// window) and delegates encode/decode to that module.
 
 /**
  * Typed precondition failures. The route layer distinguishes these
@@ -220,11 +230,16 @@ function buildEngine(story: Story): BuiltEngine {
   };
 }
 
+/**
+ * Decode the saved envelope and feed the embedded `ISaveData` to the
+ * engine. Returns the envelope so the caller has access to the prior
+ * transcript window for the next append.
+ */
 async function restoreFromBlob(
   engine: GameEngine,
   blob: SaveBlob,
-): Promise<void> {
-  const saveData = decodeSaveData(blob.payload);
+): Promise<ZifmiaSaveEnvelope> {
+  const envelope = decodeEnvelope(blob.payload);
   // The engine's public restore() path pulls save data from a hook and
   // calls the private loadSaveData() with it. Registering a one-shot
   // hook is the official re-hydration entry point — see
@@ -233,7 +248,7 @@ async function restoreFromBlob(
     onSaveRequested: async () => {
       /* no-op; replaced below */
     },
-    onRestoreRequested: async () => saveData,
+    onRestoreRequested: async () => envelope.saveData,
   });
   const ok = await engine.restore();
   if (!ok) {
@@ -241,6 +256,7 @@ async function restoreFromBlob(
       `turn-executor: engine.restore() returned false for room blob`,
     );
   }
+  return envelope;
 }
 
 async function captureSaveData(engine: GameEngine): Promise<ISaveData> {
@@ -292,7 +308,7 @@ async function captureSaveData(engine: GameEngine): Promise<ISaveData> {
 export async function executeTurnStatelessly(
   input: TurnExecutorInput,
 ): Promise<TurnPacket> {
-  const { adapter, roomId, command } = input;
+  const { adapter, roomId, command, submitter, transcriptWindow } = input;
   const { room, story } = await resolveRoomAndStory(adapter, roomId);
 
   const lease = await adapter.acquireRoomLease(roomId);
@@ -302,8 +318,10 @@ export async function executeTurnStatelessly(
     const built = buildEngine(story);
     built.engine.start();
 
+    let priorTranscript: TranscriptEntry[] = [];
     if (priorBlob) {
-      await restoreFromBlob(built.engine, priorBlob);
+      const priorEnvelope = await restoreFromBlob(built.engine, priorBlob);
+      priorTranscript = priorEnvelope.transcript;
     }
 
     // Begin capturing only the user-command turn. Everything emitted
@@ -316,12 +334,34 @@ export async function executeTurnStatelessly(
     const saveData = await captureSaveData(built.engine);
     const turn = saveData.metadata.turnCount;
 
+    const newEntry: TranscriptEntry = {
+      turn,
+      command,
+      submitter: {
+        identityId: submitter.identityId,
+        handle: submitter.handle,
+      },
+      blocks: built.capturedBlocks,
+      events: built.capturedEvents,
+    };
+    const transcript = appendAndTruncate(
+      priorTranscript,
+      newEntry,
+      transcriptWindow ?? TRANSCRIPT_WINDOW,
+    );
+
+    const envelope: ZifmiaSaveEnvelope = {
+      envelopeVersion: 1,
+      saveData,
+      transcript,
+    };
+
     await adapter.appendSaveBlob({
       roomId,
       turn,
       formatVersion: parseSemverMajor(saveData.version),
       bundleVersion: room.bundleVersion,
-      payload: encodeSaveData(saveData),
+      payload: encodeEnvelope(envelope),
     });
 
     return {

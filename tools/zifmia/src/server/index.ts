@@ -19,9 +19,18 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type { StorageAdapter } from '../storage/adapter';
 import { resolveAdapterFromEnv } from '../storage/resolve';
 import { registerCommandRoute } from './command';
+import {
+  parseCompactionEnabled,
+  parseCompactionInterval,
+  startCompactionWorker,
+  type CompactionWorkerHandle,
+} from './compaction';
 import { registerHealthRoute } from './health';
 import { registerIdentityRoutes } from './identity';
+import { registerRestoreRoute } from './restore';
 import { registerRoomRoutes } from './rooms';
+import { registerSavesRoutes } from './saves';
+import { createPool, parseWorkerCount, type WorkerPool } from './worker-pool';
 import { registerWebSocketRoute } from './ws';
 
 export interface ZifmiaServerOptions {
@@ -36,6 +45,25 @@ export interface ZifmiaServerOptions {
   packageVersion?: string;
   /** Skip the startup adapter migration. Used by tests that pre-migrate. */
   skipMigrate?: boolean;
+  /**
+   * Inject a pre-built turn-execution worker pool. When omitted, the
+   * server constructs one from `ZIFMIA_WORKER_COUNT` (or the
+   * `max(1, cpus - 1)` default). Tests use this to assert
+   * pool-capacity behavior with a fixed, small cap.
+   */
+  workerPool?: WorkerPool;
+  /**
+   * Compaction override (Phase 4d). When omitted, derived from
+   * `ZIFMIA_COMPACTION_ENABLED` (default `false`) and
+   * `ZIFMIA_COMPACTION_INTERVAL_MS` (default 5 minutes). Tests pass
+   * `{enabled: false}` to keep timers out of the suite, or
+   * `{enabled: true, intervalMs}` with a small interval + injected
+   * `scheduler` to drive ticks deterministically.
+   */
+  compaction?: {
+    enabled?: boolean;
+    intervalMs?: number;
+  };
 }
 
 export interface ZifmiaServerHandle {
@@ -43,6 +71,8 @@ export interface ZifmiaServerHandle {
   address: string;
   port: number;
   adapter: StorageAdapter;
+  workerPool: WorkerPool;
+  compaction: CompactionWorkerHandle;
   close(): Promise<void>;
 }
 
@@ -67,12 +97,42 @@ export async function startServer(
     await adapter.migrate();
   }
 
+  const workerPool =
+    options.workerPool ??
+    createPool(
+      parseWorkerCount({
+        envValue: process.env.ZIFMIA_WORKER_COUNT,
+        warn: (msg) => {
+          // Single startup warning; logger isn't built yet, so we
+          // route this through stderr rather than the Fastify log.
+          process.stderr.write(`[zifmia] ${msg}\n`);
+        },
+      }),
+    );
+
   const app = Fastify({ logger: false });
   registerHealthRoute(app, { adapter, packageVersion });
   registerIdentityRoutes(app, { adapter });
   registerRoomRoutes(app, { adapter });
-  registerCommandRoute(app, { adapter });
+  registerCommandRoute(app, { adapter, workerPool });
+  registerSavesRoutes(app, { adapter });
+  registerRestoreRoute(app, { adapter });
   await registerWebSocketRoute(app, { adapter });
+
+  const compactionEnabled =
+    options.compaction?.enabled ??
+    parseCompactionEnabled(process.env.ZIFMIA_COMPACTION_ENABLED);
+  const compactionInterval =
+    options.compaction?.intervalMs ??
+    parseCompactionInterval(
+      process.env.ZIFMIA_COMPACTION_INTERVAL_MS,
+      (msg) => process.stderr.write(`[zifmia] ${msg}\n`),
+    );
+  const compaction = startCompactionWorker({
+    adapter,
+    enabled: compactionEnabled,
+    intervalMs: compactionInterval,
+  });
 
   const address = await app.listen({ host, port });
   const resolvedPort = resolvePortFromServer(app, port);
@@ -82,7 +142,10 @@ export async function startServer(
     address,
     port: resolvedPort,
     adapter,
+    workerPool,
+    compaction,
     close: async () => {
+      await compaction.stop();
       await app.close();
       await adapter.close();
     }

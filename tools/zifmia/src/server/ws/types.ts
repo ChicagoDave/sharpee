@@ -116,6 +116,7 @@ export type OutboundMessage =
   | LockStateMessage
   | TurnBroadcastMessage
   | CommandEchoMessage
+  | RoomRestoredMessage
   | ErrorMessage;
 
 /**
@@ -225,6 +226,30 @@ export interface CommandEchoMessage {
   turn: number;
   submitter: { identityId: string; handle: string };
   command: string;
+}
+
+/**
+ * Broadcast by the HTTP `POST /rooms/:id/restore` route to every
+ * subscriber whose identity is NOT the submitter (mirrors the
+ * `turn:broadcast` identity-exclusion: the submitter has the HTTP
+ * response, so echoing here would duplicate). Tells observers the
+ * room's authoritative state was rolled back — they should refetch
+ * `GET /rooms/:id/state` to repopulate their transcript window.
+ *
+ * The lock is force-released via the usual `lock:state {holder:
+ * null}` broadcast that follows; observers don't have to special-case
+ * restore for input enablement.
+ */
+export interface RoomRestoredMessage {
+  type: 'room:restored';
+  roomId: string;
+  /** Turn the room rewound to — the new latest save_blob turn. */
+  atTurn: number;
+  /** Identity that issued the restore. Carried so clients can render
+   * "<handle> restored the room to <save label>" prelude. */
+  by: { identityId: string; handle: string };
+  /** Optional human-readable label of the named save that was used. */
+  savedLabel: string;
 }
 
 export interface RoomSubscribedMessage {

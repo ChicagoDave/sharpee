@@ -16,6 +16,7 @@
 import type { FastifyInstance } from 'fastify';
 
 import { authMiddleware } from './auth-middleware';
+import { decodeEnvelope, type TranscriptEntry } from '../engine';
 import type { StorageAdapter } from '../storage/adapter';
 import type { Room } from '../storage/types';
 
@@ -32,15 +33,19 @@ interface CreateRoomBody {
 const TITLE_PATTERN = /^.{1,80}$/;
 const STORY_ID_PATTERN = /^[A-Za-z0-9._-]{1,80}$/;
 
-interface RoomStateStubBody {
+/**
+ * Wire shape of `GET /rooms/:id/state`. CMGT manifest and
+ * `currentValues` are placeholders until the web-client phase wires
+ * the channel-service Manifest into the state route — Phase 4a only
+ * lands the transcript replay (ADR-175 §AC-7).
+ */
+interface RoomStateBody {
   cmgt: null;
-  transcript: never[];
+  transcript: TranscriptEntry[];
   currentValues: Record<string, never>;
 }
 
-/** Phase 3b stub. Phase 3c rewires this to populate from the latest
- * `save_blob` row, decoded via the engine's `SaveRestoreService`. */
-function emptyRoomStateBody(): RoomStateStubBody {
+function emptyRoomStateBody(): RoomStateBody {
   return { cmgt: null, transcript: [], currentValues: {} };
 }
 
@@ -117,6 +122,10 @@ export function registerRoomRoutes(
   });
 
   // ── GET /rooms/:id/state ───────────────────────────────────────
+  // Phase 4a (ADR-175 §AC-7): the transcript field is populated from
+  // the latest `save_blob` row's envelope. CMGT manifest and
+  // `currentValues` remain `null` / `{}` until the channel-service
+  // Manifest is wired into the state path (Phase 6).
   app.get(
     '/rooms/:id/state',
     { preHandler: auth },
@@ -126,7 +135,17 @@ export function registerRoomRoutes(
       if (!room) {
         return reply.code(404).send({ error: 'room_not_found' });
       }
-      return reply.send(emptyRoomStateBody());
+      const latest = await options.adapter.getLatestSaveBlob(id);
+      if (!latest) {
+        return reply.send(emptyRoomStateBody());
+      }
+      const envelope = decodeEnvelope(latest.payload);
+      const body: RoomStateBody = {
+        cmgt: null,
+        transcript: envelope.transcript,
+        currentValues: {},
+      };
+      return reply.send(body);
     }
   );
 }

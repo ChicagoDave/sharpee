@@ -150,6 +150,7 @@ async function measureDirect(fixture: FixtureSelection): Promise<Stats> {
       adapter,
       roomId: room.id,
       command: 'look',
+      submitter: { identityId: 'perf-runner', handle: 'perf-runner' },
     });
   }
 
@@ -166,6 +167,7 @@ async function measureDirect(fixture: FixtureSelection): Promise<Stats> {
       adapter,
       roomId: room.id,
       command: 'look',
+      submitter: { identityId: 'perf-runner', handle: 'perf-runner' },
     });
     latencies.push(performance.now() - start);
   }
@@ -287,6 +289,7 @@ async function resolveFixture(): Promise<{
         adapter: probeAdapter,
         roomId: room.id,
         command: 'look',
+        submitter: { identityId: 'perf-probe', handle: 'perf-probe' },
       });
       await probeAdapter.close();
       return {

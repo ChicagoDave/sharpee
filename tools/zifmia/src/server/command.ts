@@ -48,6 +48,7 @@ import {
 import type { TurnPacket } from '../engine';
 import type { StorageAdapter } from '../storage/adapter';
 import type { Identity } from '../storage/types';
+import type { WorkerPool } from './worker-pool';
 import {
   getActiveLockRegistry,
   getActiveSubscriptionRegistry,
@@ -57,6 +58,14 @@ import type { OutboundMessage } from './ws/types';
 
 export interface CommandRouteOptions {
   adapter: StorageAdapter;
+  /**
+   * Concurrency cap for `executeTurnStatelessly`. Required — the
+   * server bootstrap is responsible for sizing this from
+   * `ZIFMIA_WORKER_COUNT`. Phase 3e: every turn execution runs inside
+   * `workerPool.run(...)`. Lease acquisition stays inside the slot so
+   * a busy room never burns capacity for another room's turn.
+   */
+  workerPool: WorkerPool;
 }
 
 interface CommandRequestBody {
@@ -82,6 +91,7 @@ export function registerCommandRoute(
   options: CommandRouteOptions,
 ): void {
   const auth = authMiddleware({ adapter: options.adapter });
+  const pool = options.workerPool;
 
   app.post(
     '/rooms/:id/command',
@@ -98,11 +108,17 @@ export function registerCommandRoute(
       const submitter = request.identity!;
 
       try {
-        const packet = await executeTurnStatelessly({
-          adapter: options.adapter,
-          roomId: id,
-          command,
-        });
+        const packet = await pool.run(() =>
+          executeTurnStatelessly({
+            adapter: options.adapter,
+            roomId: id,
+            command,
+            submitter: {
+              identityId: submitter.id,
+              handle: submitter.handle,
+            },
+          }),
+        );
         fanOutSuccess(id, command, packet, submitter);
         return reply.code(200).send(packet);
       } catch (err) {

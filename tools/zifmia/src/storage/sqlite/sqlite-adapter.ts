@@ -357,6 +357,56 @@ export class SqliteAdapter implements StorageAdapter {
     this.db.prepare(`DELETE FROM named_saves WHERE save_id = ?`).run(saveId);
   }
 
+  async compactRoomSaveBlobs(roomId: string): Promise<{ deleted: number }> {
+    // Atomic compaction. The subquery `MAX(turn)` and the DELETE run
+    // in the same transaction so a concurrent `appendSaveBlob` can't
+    // make the new latest turn eligible for deletion mid-statement.
+    //
+    // Preserved rows: (a) the latest-turn row, and (b) any turn that
+    // a `named_saves` row points at. Everything else is unreachable —
+    // intermediate per-turn snapshots are read only by restore, and
+    // restore goes through a named save.
+    let deleted = 0;
+    const tx = this.db.transaction(() => {
+      const result = this.db
+        .prepare(
+          `DELETE FROM save_blobs
+           WHERE room_id = ?
+             AND turn != (
+               SELECT MAX(turn) FROM save_blobs WHERE room_id = ?
+             )
+             AND turn NOT IN (
+               SELECT at_turn FROM named_saves WHERE room_id = ?
+             )`,
+        )
+        .run(roomId, roomId, roomId);
+      deleted = Number(result.changes ?? 0);
+    });
+    tx();
+    return { deleted };
+  }
+
+  async truncateRoomHistory(input: {
+    roomId: string;
+    keepThroughTurn: number;
+  }): Promise<void> {
+    const { roomId, keepThroughTurn } = input;
+    // Single transaction so a partial run can't leave dangling
+    // named_saves rows whose target save_blob has already been
+    // deleted (or, in the opposite order, FK-violate the delete).
+    const tx = this.db.transaction(() => {
+      this.db
+        .prepare(
+          `DELETE FROM named_saves WHERE room_id = ? AND at_turn > ?`,
+        )
+        .run(roomId, keepThroughTurn);
+      this.db
+        .prepare(`DELETE FROM save_blobs WHERE room_id = ? AND turn > ?`)
+        .run(roomId, keepThroughTurn);
+    });
+    tx();
+  }
+
   // ── Chat ──────────────────────────────────────────────────────
 
   async appendChatMessage(input: {

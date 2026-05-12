@@ -359,6 +359,193 @@ export function runAdapterContract(
       });
     });
 
+    // ── Destructive truncation (restore rollback) ───────────────
+
+    describe('truncateRoomHistory', () => {
+      it('removes save_blobs and named_saves past keepThroughTurn', async () => {
+        const room = await makeRoom(adapter);
+        const owner = await adapter.createIdentity({
+          handle: 'isaac',
+          passcodeHash: PASSCODE
+        });
+        for (let turn = 1; turn <= 5; turn++) {
+          await adapter.appendSaveBlob({
+            roomId: room.id,
+            turn,
+            formatVersion: 3,
+            bundleVersion: '1.0.0',
+            payload: new Uint8Array([turn])
+          });
+        }
+        const early = await adapter.createNamedSave({
+          roomId: room.id,
+          atTurn: 1,
+          label: 'early',
+          createdBy: owner.id
+        });
+        const target = await adapter.createNamedSave({
+          roomId: room.id,
+          atTurn: 3,
+          label: 'target',
+          createdBy: owner.id
+        });
+        const future = await adapter.createNamedSave({
+          roomId: room.id,
+          atTurn: 5,
+          label: 'future',
+          createdBy: owner.id
+        });
+
+        await adapter.truncateRoomHistory({
+          roomId: room.id,
+          keepThroughTurn: 3
+        });
+
+        expect(await adapter.listSaveBlobTurns(room.id)).toEqual([1, 2, 3]);
+        const remainingNamed = await adapter.listNamedSaves(room.id);
+        const ids = remainingNamed.map((s) => s.saveId).sort();
+        expect(ids).toEqual([early.saveId, target.saveId].sort());
+        expect(await adapter.getNamedSave(future.saveId)).toBeNull();
+      });
+
+      it('is idempotent when no rows are past the cutoff', async () => {
+        const room = await makeRoom(adapter);
+        await adapter.appendSaveBlob({
+          roomId: room.id,
+          turn: 1,
+          formatVersion: 3,
+          bundleVersion: '1.0.0',
+          payload: new Uint8Array([0])
+        });
+        await adapter.truncateRoomHistory({
+          roomId: room.id,
+          keepThroughTurn: 10
+        });
+        expect(await adapter.listSaveBlobTurns(room.id)).toEqual([1]);
+      });
+
+      it('does not touch other rooms', async () => {
+        const a = await makeRoom(adapter, 'truncate-a');
+        const b = await makeRoom(adapter, 'truncate-b');
+        for (let turn = 1; turn <= 3; turn++) {
+          await adapter.appendSaveBlob({
+            roomId: a.id,
+            turn,
+            formatVersion: 3,
+            bundleVersion: '1.0.0',
+            payload: new Uint8Array([turn])
+          });
+          await adapter.appendSaveBlob({
+            roomId: b.id,
+            turn,
+            formatVersion: 3,
+            bundleVersion: '1.0.0',
+            payload: new Uint8Array([turn])
+          });
+        }
+        await adapter.truncateRoomHistory({
+          roomId: a.id,
+          keepThroughTurn: 1
+        });
+        expect(await adapter.listSaveBlobTurns(a.id)).toEqual([1]);
+        expect(await adapter.listSaveBlobTurns(b.id)).toEqual([1, 2, 3]);
+      });
+    });
+
+    // ── Compaction GC (Phase 4d) ────────────────────────────────
+
+    describe('compactRoomSaveBlobs', () => {
+      it('deletes save_blobs that are neither latest nor named-save targets', async () => {
+        const room = await makeRoom(adapter, 'compact-a');
+        const owner = await adapter.createIdentity({
+          handle: 'compact-owner',
+          passcodeHash: PASSCODE
+        });
+        for (let turn = 1; turn <= 5; turn++) {
+          await adapter.appendSaveBlob({
+            roomId: room.id,
+            turn,
+            formatVersion: 3,
+            bundleVersion: '1.0.0',
+            payload: new Uint8Array([turn])
+          });
+        }
+        await adapter.createNamedSave({
+          roomId: room.id,
+          atTurn: 2,
+          label: 'midpoint',
+          createdBy: owner.id
+        });
+
+        const result = await adapter.compactRoomSaveBlobs(room.id);
+        // Turns 1, 3, 4 deleted; turn 2 preserved (named save); turn 5 preserved (latest).
+        expect(result.deleted).toBe(3);
+        expect(await adapter.listSaveBlobTurns(room.id)).toEqual([2, 5]);
+      });
+
+      it('preserves the only save_blob when no others exist', async () => {
+        const room = await makeRoom(adapter, 'compact-b');
+        await adapter.appendSaveBlob({
+          roomId: room.id,
+          turn: 1,
+          formatVersion: 3,
+          bundleVersion: '1.0.0',
+          payload: new Uint8Array([1])
+        });
+        const result = await adapter.compactRoomSaveBlobs(room.id);
+        expect(result.deleted).toBe(0);
+        expect(await adapter.listSaveBlobTurns(room.id)).toEqual([1]);
+      });
+
+      it('is idempotent — second call deletes nothing', async () => {
+        const room = await makeRoom(adapter, 'compact-c');
+        for (let turn = 1; turn <= 4; turn++) {
+          await adapter.appendSaveBlob({
+            roomId: room.id,
+            turn,
+            formatVersion: 3,
+            bundleVersion: '1.0.0',
+            payload: new Uint8Array([turn])
+          });
+        }
+        const first = await adapter.compactRoomSaveBlobs(room.id);
+        expect(first.deleted).toBe(3); // turns 1,2,3
+        const second = await adapter.compactRoomSaveBlobs(room.id);
+        expect(second.deleted).toBe(0);
+        expect(await adapter.listSaveBlobTurns(room.id)).toEqual([4]);
+      });
+
+      it('returns {deleted: 0} for a room with no save_blobs', async () => {
+        const room = await makeRoom(adapter, 'compact-d');
+        const result = await adapter.compactRoomSaveBlobs(room.id);
+        expect(result.deleted).toBe(0);
+      });
+
+      it('does not touch other rooms', async () => {
+        const a = await makeRoom(adapter, 'compact-iso-a');
+        const b = await makeRoom(adapter, 'compact-iso-b');
+        for (let turn = 1; turn <= 3; turn++) {
+          await adapter.appendSaveBlob({
+            roomId: a.id,
+            turn,
+            formatVersion: 3,
+            bundleVersion: '1.0.0',
+            payload: new Uint8Array([turn])
+          });
+          await adapter.appendSaveBlob({
+            roomId: b.id,
+            turn,
+            formatVersion: 3,
+            bundleVersion: '1.0.0',
+            payload: new Uint8Array([turn])
+          });
+        }
+        await adapter.compactRoomSaveBlobs(a.id);
+        expect(await adapter.listSaveBlobTurns(a.id)).toEqual([3]);
+        expect(await adapter.listSaveBlobTurns(b.id)).toEqual([1, 2, 3]);
+      });
+    });
+
     // ── Chat ────────────────────────────────────────────────────
 
     describe('chat', () => {

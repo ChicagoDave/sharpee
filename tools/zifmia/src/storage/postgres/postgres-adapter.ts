@@ -151,6 +151,15 @@ export class PostgresAdapter implements StorageAdapter {
   async deleteNamedSave(_saveId: string): Promise<void> {
     unimplemented('deleteNamedSave');
   }
+  async truncateRoomHistory(_input: {
+    roomId: string;
+    keepThroughTurn: number;
+  }): Promise<void> {
+    unimplemented('truncateRoomHistory');
+  }
+  async compactRoomSaveBlobs(_roomId: string): Promise<{ deleted: number }> {
+    unimplemented('compactRoomSaveBlobs');
+  }
 
   async appendChatMessage(_input: {
     roomId: string;
