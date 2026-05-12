@@ -53,7 +53,9 @@ describe('handleRoomDescription', () => {
 
       expect(blocks).toHaveLength(2);
       expect(blocks[0].key).toBe('room.name');
-      expect(blocks[0].content).toEqual(['West of House']);
+      expect(blocks[0].content).toEqual([
+        { className: 'sharpee-room', content: ['West of House'] },
+      ]);
       expect(blocks[1].key).toBe('room.description');
       expect(blocks[1].content).toEqual(['You are standing in an open field.']);
     });
@@ -71,7 +73,9 @@ describe('handleRoomDescription', () => {
       const blocks = handleRoomDescription(event, makeContext());
 
       expect(blocks).toHaveLength(2);
-      expect(blocks[0].content).toEqual(['West of House']);
+      expect(blocks[0].content).toEqual([
+        { className: 'sharpee-room', content: ['West of House'] },
+      ]);
       expect(blocks[1].content).toEqual(['You are standing in an open field.']);
     });
   });
@@ -123,7 +127,9 @@ describe('handleRoomDescription', () => {
       const blocks = handleRoomDescription(event, makeContext(provider));
 
       expect(blocks).toHaveLength(2);
-      expect(blocks[0].content).toEqual(['The Crystal Cave']);
+      expect(blocks[0].content).toEqual([
+        { className: 'sharpee-room', content: ['The Crystal Cave'] },
+      ]);
       expect(blocks[1].content).toEqual(['Sparkling crystals line the walls.']);
     });
 

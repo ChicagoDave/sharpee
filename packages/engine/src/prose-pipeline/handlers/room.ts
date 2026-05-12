@@ -75,7 +75,9 @@ export function handleRoomDescription(
     if (name) {
       const resolvedName = extractValue(name);
       if (resolvedName) {
-        blocks.push(createBlock(BLOCK_KEYS.ROOM_NAME, resolvedName));
+        blocks.push(
+          createBlock(BLOCK_KEYS.ROOM_NAME, `[room:${resolvedName}]`),
+        );
       }
     }
   }

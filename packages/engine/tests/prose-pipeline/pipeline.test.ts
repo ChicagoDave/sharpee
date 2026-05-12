@@ -100,7 +100,9 @@ describe('ProsePipeline.processTurn (full pipeline)', () => {
 
     expect(blocks).toHaveLength(3);
     expect(blocks[0].key).toBe('room.name');
-    expect(blocks[0].content).toEqual(['Kitchen']);
+    expect(blocks[0].content).toEqual([
+      { className: 'sharpee-room', content: ['Kitchen'] },
+    ]);
     expect(blocks[1].key).toBe('room.description');
     expect(blocks[2].key).toBe('action.result');
     expect(blocks[2].content).toEqual(['On the table you see a knife.']);
