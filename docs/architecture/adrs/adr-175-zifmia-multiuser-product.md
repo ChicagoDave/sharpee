@@ -702,6 +702,97 @@ are breaking.
   room kills are likely. Player commands are out (privacy + log
   size). Detail belongs to the implementation plan.
 
+## Resolved Open Questions (2026-05-11)
+
+These resolutions were taken before Phase 5 implementation began.
+They supersede the recommendations in the Open Questions section
+above. OQ-2 (worker pool sizing) and OQ-4 (web client framework)
+remain resolved by their phases (3e and 2 respectively).
+
+### OQ-1 — Story upload UX → **direct install (one POST)**
+
+Single `POST /admin/stories` validates and installs atomically.
+The validation sequence — structure → signature → IFID → format
+version — short-circuits on first failure; on any failure, no
+library row is written and no blob is stored. 422 response with
+a `{ error, detail }` body discriminates the failure mode.
+
+This departs from the ADR's "staging gate" recommendation. The
+trade-off: a staging step lets an admin review a bundle before
+players can join rooms pinned to it, but with admin-installed
+stories (no user uploads in v1, per the trust boundary below),
+the staging review buys little — the admin is the same person at
+both steps. Direct install is the simpler surface and fewer
+states for the route layer to model.
+
+If user uploads ever reopen (currently locked by "No
+user-uploaded stories in v1" below), revisit OQ-1 — a public
+upload path likely needs staging.
+
+### OQ-3 — Admin UI surface → **bundled, role-gated**
+
+One Fastify app, one port. Admin routes (`/admin/*`) are guarded
+by an `isAdmin` middleware that checks an `identities.is_admin`
+column (added in this phase). Operators trusting the role check
+is acceptable for v1; a separate admin port remains a v2
+hardening option if blast-radius isolation becomes important.
+
+### OQ-5 — Save migration on bundle upgrade → **v2-only**
+
+Rooms stay pinned to their original bundle for life. Upgrading
+the story library installs a new version that NEW rooms use;
+existing rooms continue on the old version until participants
+leave. No "migrate this room's saves" admin button in v1. This
+preserves the AC-5 invariant exactly and avoids the version-
+reading concern that a migration button would introduce into the
+save-data path.
+
+### OQ-6 — Audit log scope → **all four event classes, including full command text**
+
+The audit log captures:
+
+1. **Story library events**: `story.install`, `story.upgrade`,
+   `story.remove`. Actor = installing admin. Target = story.
+2. **Room lifecycle events**: `room.create` (actor = room
+   creator), `room.kill` (actor = admin).
+3. **Identity security events**: `identity.passcode_reset` (actor
+   = the identity itself for self-reset, or admin for admin-
+   initiated reset).
+4. **Player commands**: `command.submit` for every successful
+   `POST /rooms/:id/command`. The audit row's `detail` JSON
+   carries the **full command text**, the turn number, and the
+   submitter identity. Engine-throw paths (AC-13) do NOT emit a
+   `command.submit` audit row — only successful turns are
+   recorded.
+
+This is a deliberate departure from the ADR's original
+"commands are out" recommendation. The trade-offs are real:
+
+- **Privacy**: narrative input may contain player-authored
+  content the player did not intend to log permanently. The
+  audit log is admin-visible. Operators should treat it as
+  containing potentially-sensitive content and gate retention
+  accordingly.
+- **Log volume**: an active room may generate hundreds of audit
+  rows per session. Compaction of audit log rows is out of v1
+  scope; Phase 5 surfaces audit rows via `GET /admin/audit` with
+  pagination but does not GC them. Operators wanting volume
+  control can drop rows manually via SQL.
+
+The decision is recorded here because the privacy +
+retention semantics are operator-visible and changing them later
+would be backwards-incompatible with the audit log's promise.
+
+### Where this lives
+
+- Implementation lives in Phase 5 of
+  `docs/work/zifmia/plan-20260511-adr-175.md`.
+- The `is_admin` column on `identities` is added as part of
+  Phase 5's schema work. Existing identities default to
+  `is_admin = 0`; the first admin is bootstrapped via a one-shot
+  CLI command (`zifmia grant-admin <handle>`) documented in the
+  deploy guide.
+
 ## Constrains Future Sessions
 
 - **"Zifmia" is the multi-user product brand.** Don't reuse it
