@@ -36,7 +36,7 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { IAudibilityEvent } from '@sharpee/if-domain';
 import type { HandlerContext } from './types';
-import { createBlock } from '../assemble';
+import { createBlocks } from '../assemble';
 
 const AUDIBILITY_TEMPLATE_PREFIX = 'sound.heard';
 
@@ -84,5 +84,5 @@ export function handleAudibilityHeard(
     }
   }
 
-  return [createBlock(BLOCK_KEYS.ACTION_RESULT, message)];
+  return createBlocks(BLOCK_KEYS.ACTION_RESULT, message);
 }

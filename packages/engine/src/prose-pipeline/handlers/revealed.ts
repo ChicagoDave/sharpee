@@ -19,7 +19,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext, ChainableEventData } from './types';
-import { createBlock } from '../assemble';
+import { createBlocks } from '../assemble';
 
 interface RevealedEventData extends ChainableEventData {
   containerId?: string;
@@ -45,7 +45,7 @@ export function handleRevealed(
   if (data.message || data.text) {
     const text = data.message ?? data.text ?? '';
     if (text) {
-      return [createBlock(BLOCK_KEYS.ACTION_RESULT, text)];
+      return createBlocks(BLOCK_KEYS.ACTION_RESULT, text);
     }
   }
 
@@ -58,7 +58,7 @@ export function handleRevealed(
     });
 
     if (message && message !== event.type) {
-      return [createBlock(BLOCK_KEYS.ACTION_RESULT, message)];
+      return createBlocks(BLOCK_KEYS.ACTION_RESULT, message);
     }
   }
 
@@ -69,7 +69,7 @@ export function handleRevealed(
 
     const container = data.containerName ?? 'it';
     const text = `Inside the ${container} you see ${itemNames}.`;
-    return [createBlock(BLOCK_KEYS.ACTION_RESULT, text)];
+    return createBlocks(BLOCK_KEYS.ACTION_RESULT, text);
   }
 
   return [];

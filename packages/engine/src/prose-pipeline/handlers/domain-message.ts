@@ -21,7 +21,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
-import { createBlock } from '../assemble';
+import { createBlocks } from '../assemble';
 
 interface DomainMessageData {
   messageId?: string;
@@ -69,7 +69,7 @@ export function tryProcessDomainEventMessage(
   if (message === data.messageId || !message) {
     const fallback = data.message ?? data.text;
     if (typeof fallback === 'string' && fallback) {
-      return [createBlock(BLOCK_KEYS.ACTION_RESULT, fallback)];
+      return createBlocks(BLOCK_KEYS.ACTION_RESULT, fallback);
     }
     // No inline text — skip silently rather than showing an error.
     // Domain events (if.event.*) carry messageId for semantic
@@ -84,5 +84,5 @@ export function tryProcessDomainEventMessage(
       ? BLOCK_KEYS.ACTION_BLOCKED
       : BLOCK_KEYS.ACTION_RESULT;
 
-  return [createBlock(blockKey, message)];
+  return createBlocks(blockKey, message);
 }

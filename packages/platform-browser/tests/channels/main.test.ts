@@ -93,4 +93,32 @@ describe('mainChannelRenderer', () => {
     r.onValue([['x']], MAIN_DEF);
     expect(calls).toEqual([slot]);
   });
+
+  it('accepts MainEntry-object entries (new shape)', () => {
+    const r = createMainChannelRenderer(slot);
+    r.onValue(
+      [
+        { content: ['Header'] },
+        { content: ['Body line one'], tight: true },
+        { content: ['Body line two'], tight: true },
+      ],
+      MAIN_DEF,
+    );
+    const ps = slot.querySelectorAll('p');
+    expect(ps.length).toBe(3);
+    expect(ps[0].textContent).toBe('Header');
+    expect(ps[0].classList.contains('main-entry--tight')).toBe(false);
+    expect(ps[1].textContent).toBe('Body line one');
+    expect(ps[1].classList.contains('main-entry--tight')).toBe(true);
+    expect(ps[2].classList.contains('main-entry--tight')).toBe(true);
+  });
+
+  it('accepts the legacy TextContent[] array shape (backward compat)', () => {
+    const r = createMainChannelRenderer(slot);
+    r.onValue([['Legacy entry']], MAIN_DEF);
+    const ps = slot.querySelectorAll('p');
+    expect(ps.length).toBe(1);
+    expect(ps[0].textContent).toBe('Legacy entry');
+    expect(ps[0].classList.contains('main-entry--tight')).toBe(false);
+  });
 });

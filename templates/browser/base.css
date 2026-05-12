@@ -160,6 +160,16 @@ ul, ol, menu {
   pointer-events: none;
 }
 
+/* Continuation entries — emitted by the main channel renderer when a
+   block carries `tight: true`. Collapses the inter-paragraph margin so
+   the line stacks flush against its predecessor. Used where a former
+   intra-block `\n` was lifted to a block boundary (book text under its
+   prefix, banner lines under a title). */
+.sharpee-prose-pane p.main-entry--tight {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 /* ----- Input bar ----- */
 
 .sharpee-input-bar {

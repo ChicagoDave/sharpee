@@ -28,6 +28,7 @@ export type {
   ChannelProduceContext,
   IOChannel,
   IChannelRegistry,
+  MainEntry,
 } from './types';
 
 export type {

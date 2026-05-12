@@ -20,7 +20,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
-import { createBlock, extractValue } from '../assemble';
+import { createBlock, createBlocks, extractValue } from '../assemble';
 
 /**
  * Room description event data.
@@ -100,7 +100,7 @@ export function handleRoomDescription(
   if (description) {
     const resolvedDesc = extractValue(description);
     if (resolvedDesc) {
-      blocks.push(createBlock(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc));
+      blocks.push(...createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc));
     }
   }
 

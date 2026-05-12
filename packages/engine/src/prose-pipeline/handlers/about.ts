@@ -16,7 +16,7 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
-import { createBlock } from '../assemble';
+import { createBlock, createBlocks } from '../assemble';
 
 /**
  * Handle `if.event.about_displayed` by showing the story banner.
@@ -55,8 +55,11 @@ export function handleAboutDisplayed(
   if (!message || message === 'game.started.banner') {
     const title = params.title || 'Unknown';
     const author = params.author || 'Unknown';
-    return [createBlock('about.text', `${title}\nBy ${author}`)];
+    return [
+      createBlock('about.text', title),
+      createBlock('about.text', `By ${author}`, { tight: true }),
+    ];
   }
 
-  return [createBlock('about.text', message)];
+  return createBlocks('about.text', message);
 }

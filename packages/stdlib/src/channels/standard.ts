@@ -18,7 +18,7 @@
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
 
-import type { IOChannel } from '@sharpee/if-domain';
+import type { IOChannel, MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ScoringData } from '../capabilities/scoring';
@@ -107,20 +107,25 @@ function eventMessage(event: { data?: unknown }): string | undefined {
 }
 
 /**
- * `main` — append-mode prose transcript. Carries `TextContent[]`
- * arrays so renderers can preserve decorations. Closure projects every
- * block whose key is in `MAIN_KEYS` into the channel's append stream.
+ * `main` — append-mode prose transcript. Carries `MainEntry` objects
+ * (`{ content, tight? }`) so renderers can preserve decorations *and*
+ * the per-entry visual-continuation hint introduced by the pre-line
+ * removal (session 2026-05-12). Closure projects every block whose key
+ * is in `MAIN_KEYS` into the channel's append stream.
  */
-export const mainChannel: IOChannel<TextContent[]> = {
+export const mainChannel: IOChannel<MainEntry> = {
   id: 'main',
   contentType: 'json',
   mode: 'append',
   emit: 'always',
   produce: (ctx) => {
-    const entries: TextContent[][] = [];
+    const entries: MainEntry[] = [];
     for (const block of ctx.blocks) {
       if (MAIN_KEYS.has(block.key)) {
-        entries.push([...block.content]);
+        entries.push({
+          content: [...block.content],
+          ...(block.tight ? { tight: true } : {}),
+        });
       }
     }
     return entries;

@@ -35,8 +35,8 @@ function makeCtx(over: Partial<ChannelProduceContext> = {}): ChannelProduceConte
   };
 }
 
-function makeBlock(key: string, text: string) {
-  return { key, content: [text] };
+function makeBlock(key: string, text: string, opts?: { tight?: boolean }) {
+  return { key, content: [text], ...(opts?.tight ? { tight: true } : {}) };
 }
 
 function makeEvent(type: string, data: Record<string, unknown> = {}) {
@@ -88,7 +88,10 @@ describe('mainChannel.produce', () => {
         ],
       }),
     );
-    expect(result).toEqual([['A dark cave.'], ['You take the lamp.']]);
+    expect(result).toEqual([
+      { content: ['A dark cave.'] },
+      { content: ['You take the lamp.'] },
+    ]);
   });
 
   it('skips status blocks (status.score, status.turns, status.room)', () => {
@@ -102,7 +105,24 @@ describe('mainChannel.produce', () => {
         ],
       }),
     );
-    expect(result).toEqual([['Welcome.']]);
+    expect(result).toEqual([{ content: ['Welcome.'] }]);
+  });
+
+  it('threads `tight: true` from blocks to entries', () => {
+    const result = mainChannel.produce(
+      makeCtx({
+        blocks: [
+          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'Cave'),
+          makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'It is dark.', {
+            tight: true,
+          }),
+        ],
+      }),
+    );
+    expect(result).toEqual([
+      { content: ['Cave'] },
+      { content: ['It is dark.'], tight: true },
+    ]);
   });
 
   it('returns an empty array when no blocks match', () => {

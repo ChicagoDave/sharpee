@@ -14,7 +14,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext, GenericEventData } from './types';
-import { createBlock } from '../assemble';
+import { createBlocks } from '../assemble';
 
 interface GameMessageData {
   text?: string;
@@ -38,13 +38,13 @@ export function handleGameMessage(
       data.params,
     );
     if (message && message !== data.messageId) {
-      return [createBlock(BLOCK_KEYS.GAME_MESSAGE, message)];
+      return createBlocks(BLOCK_KEYS.GAME_MESSAGE, message);
     }
   }
 
   const text = data.text ?? data.message;
   if (text) {
-    return [createBlock(BLOCK_KEYS.GAME_MESSAGE, text)];
+    return createBlocks(BLOCK_KEYS.GAME_MESSAGE, text);
   }
 
   return [];
@@ -70,7 +70,7 @@ export function handleGenericEvent(
   if (data.message || data.text) {
     const text = data.message ?? data.text ?? '';
     if (text) {
-      return [createBlock(BLOCK_KEYS.ACTION_RESULT, text)];
+      return createBlocks(BLOCK_KEYS.ACTION_RESULT, text);
     }
   }
 
@@ -78,7 +78,7 @@ export function handleGenericEvent(
     const message = context.languageProvider.getMessage(event.type, data);
 
     if (message && message !== event.type) {
-      return [createBlock(BLOCK_KEYS.ACTION_RESULT, message)];
+      return createBlocks(BLOCK_KEYS.ACTION_RESULT, message);
     }
 
     if (data.messageId) {
@@ -87,7 +87,7 @@ export function handleGenericEvent(
         data,
       );
       if (msgFromId && msgFromId !== data.messageId) {
-        return [createBlock(BLOCK_KEYS.ACTION_RESULT, msgFromId)];
+        return createBlocks(BLOCK_KEYS.ACTION_RESULT, msgFromId);
       }
     }
   }

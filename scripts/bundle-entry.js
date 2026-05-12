@@ -274,21 +274,35 @@ Examples:
     });
 
     // channel:packet fires per turn. Flatten the `main` channel's
-    // entries (each entry is a TextContent[] — one block's content) to
-    // plain strings and push to outputBuffer. Other channels' payloads
-    // (location/score/turn/...) are available in packet.payload for
-    // interactive mode if needed but ignored in test mode.
+    // entries to plain strings and push to outputBuffer. Other channels'
+    // payloads (location/score/turn/...) are available in packet.payload
+    // for interactive mode if needed but ignored in test mode.
+    //
+    // Two entry shapes are accepted: the legacy `TextContent[]` array
+    // and the new `MainEntry { content, tight? }` object (post pre-line
+    // removal — session 2026-05-12). Tight entries continue the prior
+    // line, so they join with `\n` instead of `\n\n`.
     engine.on('channel:packet', (packet) => {
       const mainEntries = packet?.payload?.main;
-      if (Array.isArray(mainEntries) && mainEntries.length > 0) {
-        const flattened = mainEntries
-          .map((entry) => exports.flattenContent(entry))
-          .filter((s) => s.trim().length > 0)
-          .join('\n\n');
-        if (flattened) {
-          outputBuffer.push(flattened);
+      if (!Array.isArray(mainEntries) || mainEntries.length === 0) return;
+      let out = '';
+      for (const raw of mainEntries) {
+        let content;
+        let tight = false;
+        if (Array.isArray(raw)) {
+          content = raw;
+        } else if (raw && typeof raw === 'object' && Array.isArray(raw.content)) {
+          content = raw.content;
+          tight = Boolean(raw.tight);
+        } else {
+          continue;
         }
+        const text = exports.flattenContent(content);
+        if (!text.trim()) continue;
+        if (out) out += tight ? '\n' : '\n\n';
+        out += text;
       }
+      if (out) outputBuffer.push(out);
     });
 
     engine.on('event', (event) => {

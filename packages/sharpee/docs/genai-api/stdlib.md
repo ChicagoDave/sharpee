@@ -3272,8 +3272,7 @@ export declare const channelRegistry: IChannelRegistry;
  *
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
-import type { IOChannel } from '@sharpee/if-domain';
-import type { TextContent } from '@sharpee/text-blocks';
+import type { IOChannel, MainEntry } from '@sharpee/if-domain';
 /**
  * Event types the standard channels listen for. Stories or extensions
  * that want to populate `death`, `endgame`, or `score_notify` emit
@@ -3301,11 +3300,13 @@ export declare const STANDARD_CHANNEL_EVENTS: {
     readonly SCORE_CHANGED: "game.score_changed";
 };
 /**
- * `main` — append-mode prose transcript. Carries `TextContent[]`
- * arrays so renderers can preserve decorations. Closure projects every
- * block whose key is in `MAIN_KEYS` into the channel's append stream.
+ * `main` — append-mode prose transcript. Carries `MainEntry` objects
+ * (`{ content, tight? }`) so renderers can preserve decorations *and*
+ * the per-entry visual-continuation hint introduced by the pre-line
+ * removal (session 2026-05-12). Closure projects every block whose key
+ * is in `MAIN_KEYS` into the channel's append stream.
  */
-export declare const mainChannel: IOChannel<TextContent[]>;
+export declare const mainChannel: IOChannel<MainEntry>;
 /**
  * `prompt` — replace-mode input prompt. Defaults to `'> '` when no
  * prompt block is emitted, so the renderer always has a sensible

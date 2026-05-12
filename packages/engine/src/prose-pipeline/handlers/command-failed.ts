@@ -22,7 +22,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
-import { createBlock } from '../assemble';
+import { createBlocks } from '../assemble';
 
 interface CommandFailedData {
   reason?: string;
@@ -44,7 +44,7 @@ export function handleCommandFailed(
       const message =
         provider?.getMessage('core.entity_not_found') ??
         "I don't see that here.";
-      return [createBlock(BLOCK_KEYS.ERROR, message)];
+      return createBlocks(BLOCK_KEYS.ERROR, message);
     }
 
     // AMBIGUOUS_ENTITY now uses client.query event, not command.failed.
@@ -53,12 +53,12 @@ export function handleCommandFailed(
       const message =
         provider?.getMessage('core.command_not_understood') ??
         "I don't understand that.";
-      return [createBlock(BLOCK_KEYS.ERROR, message)];
+      return createBlocks(BLOCK_KEYS.ERROR, message);
     }
   }
 
   const message =
     provider?.getMessage('core.command_failed') ??
     "I don't understand that.";
-  return [createBlock(BLOCK_KEYS.ERROR, message)];
+  return createBlocks(BLOCK_KEYS.ERROR, message);
 }

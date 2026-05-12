@@ -41,7 +41,7 @@ describe('handleAboutDisplayed', () => {
     expect(blocks[0].content[0]).toContain('(engine=)');
   });
 
-  it('should fall back to title/author format when provider echoes key', () => {
+  it('should fall back to title/author as two blocks (tight) when provider echoes key', () => {
     const provider = makeProvider({});
     const event = makeEvent('if.event.about_displayed', {
       params: { title: 'My Game', author: 'An Author' },
@@ -49,26 +49,36 @@ describe('handleAboutDisplayed', () => {
 
     const blocks = handleAboutDisplayed(event, makeContext(provider));
 
-    expect(blocks).toHaveLength(1);
+    expect(blocks).toHaveLength(2);
     expect(blocks[0].key).toBe('about.text');
-    expect(blocks[0].content).toEqual(['My Game\nBy An Author']);
+    expect(blocks[0].content).toEqual(['My Game']);
+    expect(blocks[0].tight).toBeUndefined();
+    expect(blocks[1].key).toBe('about.text');
+    expect(blocks[1].content).toEqual(['By An Author']);
+    expect(blocks[1].tight).toBe(true);
   });
 
-  it('should fall back to title/author format when no provider', () => {
+  it('should fall back to title/author as two blocks when no provider', () => {
     const event = makeEvent('if.event.about_displayed', {
       params: { title: 'My Game', author: 'An Author' },
     });
 
     const blocks = handleAboutDisplayed(event, makeContext());
 
-    expect(blocks[0].content).toEqual(['My Game\nBy An Author']);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].content).toEqual(['My Game']);
+    expect(blocks[1].content).toEqual(['By An Author']);
+    expect(blocks[1].tight).toBe(true);
   });
 
-  it('should use Unknown defaults when params are empty', () => {
+  it('should use Unknown defaults as two blocks when params are empty', () => {
     const event = makeEvent('if.event.about_displayed', {});
 
     const blocks = handleAboutDisplayed(event, makeContext());
 
-    expect(blocks[0].content).toEqual(['Unknown\nBy Unknown']);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].content).toEqual(['Unknown']);
+    expect(blocks[1].content).toEqual(['By Unknown']);
+    expect(blocks[1].tight).toBe(true);
   });
 });

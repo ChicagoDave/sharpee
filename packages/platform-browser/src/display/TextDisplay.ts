@@ -15,21 +15,30 @@ export class TextDisplay {
 
   /**
    * Display text in the main window.
-   * Double newlines create paragraph breaks, single newlines preserved with pre-line.
+   *
+   * `\n\n+` separates paragraphs (each gets a normal `<p>`); single
+   * `\n` within a paragraph creates continuation lines, each rendered
+   * as a `<p class="main-entry main-entry--tight">` so the inter-line
+   * margin collapses to match the legacy `pre-line` visual. This is
+   * the platform-browser counterpart of `engine`'s `createBlocks`.
    */
   displayText(text: string): void {
     if (!this.textContent) return;
 
-    // Split on double newlines to get paragraphs
-    const paragraphs = text.split(/\n\n+/);
+    const trimmed = text.trim();
+    if (!trimmed) {
+      this.scrollToBottom();
+      return;
+    }
 
+    const paragraphs = trimmed.split(/\n\n+/).filter((p) => p.length > 0);
     for (const para of paragraphs) {
-      const trimmed = para.trim();
-      if (trimmed) {
+      const lines = para.split('\n');
+      for (let i = 0; i < lines.length; i++) {
         const p = document.createElement('p');
-        // Use pre-line to preserve single newlines within paragraph
-        p.style.whiteSpace = 'pre-line';
-        p.textContent = trimmed;
+        p.classList.add('main-entry');
+        if (i > 0) p.classList.add('main-entry--tight');
+        p.textContent = lines[i];
         this.textContent.appendChild(p);
       }
     }

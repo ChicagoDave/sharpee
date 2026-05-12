@@ -2265,16 +2265,40 @@ export declare const PROMPT_STATE_KEY = "if.prompt";
  * @see ADR-163 — Channel-Service Platform — §6, §7, §14
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
 /**
  * Channel content types (ADR-163 §3).
  *
  * - `text` — plain string. Renderer writes verbatim or styles.
  * - `number` — integer or float. Producer emits the number; client formats.
  * - `json` — structured object. Escape hatch for author-defined surfaces
- *   and for the platform's `main` channel which carries `TextContent[]`.
+ *   and for the platform's `main` channel which carries `MainEntry[]`.
  */
 export type ChannelContentType = 'text' | 'number' | 'json';
+/**
+ * A single entry in the `main` channel's append-mode value array.
+ *
+ * Each entry corresponds to one `<p>`-equivalent surface in a text
+ * renderer. The wire value of the `main` channel is `MainEntry[]` (the
+ * new entries produced this turn).
+ *
+ * Per the prose-pipeline pre-line removal (session 2026-05-12), every
+ * intra-block `\n` was lifted to a block boundary. Where the former
+ * `\n` was inside a paragraph (book text under its prefix, banner
+ * lines under a title), the second-and-later block carries
+ * `tight: true` and the renderer collapses the inter-paragraph margin
+ * so the lines stack flush.
+ *
+ * Invariant: a `tight` entry must not appear first in a packet — the
+ * renderer relies on a non-tight predecessor in the same packet or in
+ * an already-rendered prior packet.
+ */
+export interface MainEntry {
+    /** Content of this entry — strings and decorations, no `\n` in any string. */
+    readonly content: ReadonlyArray<TextContent>;
+    /** Visual continuation hint. See type-level doc above. */
+    readonly tight?: boolean;
+}
 /**
  * Channel update modes (ADR-163 §4).
  *

@@ -35,7 +35,7 @@ export {
   sortEventsForProse,
   getChainMetadata,
 } from './stages/sort';
-export { createBlock, extractValue } from './assemble';
+export { createBlock, createBlocks, extractValue } from './assemble';
 
 // Handler families.
 export type {

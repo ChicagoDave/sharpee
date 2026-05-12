@@ -5,14 +5,17 @@
  * behavior: append a `<p>` per entry to the `main` slot, with
  * decorations preserved.
  *
- * The `main` channel is append-mode; `value` is a `TextContent[][]`
+ * The `main` channel is append-mode; `value` is a `MainEntry[]`
  * (array of new entries this turn). Each entry becomes one `<p>`.
+ * Entries with `tight: true` get a `main-entry--tight` class so CSS
+ * can collapse the inter-paragraph margin against the previous entry.
  *
  * `onClear(target)` empties the slot when a `clear` event with a
  * matching target arrives (ADR-165 §4 step 2).
  */
 
 import type { ChannelRenderer } from '@sharpee/channel-service';
+import type { MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { renderTextContent } from './text-content';
 
@@ -39,17 +42,17 @@ export function createMainChannelRenderer(
   return {
     onValue(value: unknown): void {
       if (!Array.isArray(value)) return;
-      for (const entry of value) {
-        if (!Array.isArray(entry)) continue;
+      for (const raw of value) {
+        const entry = normalizeEntry(raw);
+        if (!entry) continue;
         const p = doc.createElement('p');
         p.classList.add('main-entry');
-        // Preserve newlines inside string nodes — text-service blocks
-        // commonly carry `\n\n`-separated banners or multi-line prose
-        // in a single block. Without `pre-line`, the browser collapses
-        // those to single spaces. Mirrors the legacy `TextDisplay`
-        // behavior R5-C replaced.
-        p.style.whiteSpace = 'pre-line';
-        p.appendChild(renderTextContent(doc, entry as ReadonlyArray<TextContent>));
+        if (entry.tight) p.classList.add('main-entry--tight');
+        // No `white-space: pre-line`. Engine handlers split `\n` into
+        // block boundaries via `createBlocks`; entries marked `tight`
+        // get the `main-entry--tight` class so the inter-paragraph
+        // margin collapses and continuation lines stack flush.
+        p.appendChild(renderTextContent(doc, entry.content));
         slot.appendChild(p);
       }
       opts.onAfterAppend?.(slot);
@@ -59,4 +62,24 @@ export function createMainChannelRenderer(
       while (slot.firstChild) slot.removeChild(slot.firstChild);
     },
   };
+}
+
+/**
+ * Accept either the new `MainEntry` shape or the legacy `TextContent[]`
+ * array shape (saves and pre-refactor packets in flight). Returns null
+ * for anything that doesn't look like an entry.
+ */
+function normalizeEntry(raw: unknown): MainEntry | null {
+  if (Array.isArray(raw)) {
+    return { content: raw as ReadonlyArray<TextContent> };
+  }
+  if (raw && typeof raw === 'object' && 'content' in raw) {
+    const obj = raw as { content: unknown; tight?: unknown };
+    if (!Array.isArray(obj.content)) return null;
+    return {
+      content: obj.content as ReadonlyArray<TextContent>,
+      ...(obj.tight ? { tight: true } : {}),
+    };
+  }
+  return null;
 }

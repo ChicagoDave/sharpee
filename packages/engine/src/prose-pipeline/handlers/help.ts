@@ -15,7 +15,7 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
-import { createBlock } from '../assemble';
+import { createBlocks } from '../assemble';
 
 const HELP_TEXT = `HOW TO PLAY INTERACTIVE FICTION
 
@@ -69,5 +69,5 @@ export function handleHelpDisplayed(
   _event: ISemanticEvent,
   _context: HandlerContext,
 ): ITextBlock[] {
-  return [createBlock('help.text', HELP_TEXT)];
+  return createBlocks('help.text', HELP_TEXT);
 }

@@ -20,7 +20,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
-import { createBlock } from '../assemble';
+import { createBlocks } from '../assemble';
 
 interface ClientQueryData {
   source?: string;
@@ -47,7 +47,7 @@ export function handleClientQuery(
       options,
     }) ?? `Which do you mean: ${options}?`;
 
-  return [createBlock(BLOCK_KEYS.ERROR, message)];
+  return createBlocks(BLOCK_KEYS.ERROR, message);
 }
 
 /**

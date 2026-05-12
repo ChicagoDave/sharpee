@@ -120,6 +120,18 @@ export interface ITextBlock {
      * Block content - array of plain strings and decorations.
      */
     readonly content: ReadonlyArray<TextContent>;
+    /**
+     * Visual continuation hint. When `true`, the renderer must collapse
+     * the paragraph margin between this block and its predecessor so the
+     * two lines appear flush (no inter-line gap beyond `line-height`).
+     *
+     * Used to express multi-line content where every line is its own
+     * block (so blocks carry no intra-content `\n`), while preserving
+     * the tight visual stacking that single-block-with-newlines used to
+     * provide. Invariant: a `tight` block must not appear first in a
+     * packet — the renderer relies on a predecessor to collapse against.
+     */
+    readonly tight?: boolean;
 }
 /**
  * Core block keys defined by the platform.
