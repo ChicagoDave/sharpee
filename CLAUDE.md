@@ -89,16 +89,14 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 # Common workflows
 ./build.sh -s dungeo                          # Build platform + story
 ./build.sh -s dungeo -c browser               # Build single-player browser client
-./build.sh -c zifmia                          # Build Zifmia multi-user web app (server + browser bundle)
-./build.sh -s dungeo -c zifmia                # Same, plus bundle the story for install via admin
-./build.sh -s dungeo -c browser -c zifmia     # Both clients
+./build.sh -c shite                           # Build the Phase-6 parts-bin web app (abandoned)
 ./build.sh --runner -t modern-dark            # Legacy interpreter runner (will be renamed)
 ./build.sh --skip stdlib -s dungeo            # Resume from stdlib package
 ```
 
-**`-c zifmia` (Phase 6)**: builds the multi-user web app at `tools/zifmia/` by delegating to `pnpm --filter @sharpee/zifmia build`. Output: `tools/zifmia/dist/`. Story bundle is optional — Zifmia installs stories at runtime via `POST /admin/stories`.
+**Multi-user product status (2026-05-12)**: the `tools/zifmia/` Phase-6 build diverged from the design intent (ADR-175) and is renamed `tools/shite/` as a parts bin. The corrected multi-user architecture is specified in **ADR-177** and will live in a new package; the `-c zifmia` build.sh flag is reserved for that build. For now, `-c shite` builds the parts bin at `tools/shite/` for reference only; do not extend it.
 
-**Available Themes** (for the legacy `--runner` path only — multi-user Zifmia owns its own theming):
+**Available Themes** (for the legacy `--runner` path only):
 - `classic-light` — Literata font, warm light tones (default)
 - `modern-dark` — Inter font, Catppuccin Mocha colors
 - `retro-terminal` — JetBrains Mono, green phosphor
@@ -106,7 +104,7 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 
 **Outputs**:
 - `dist/cli/sharpee.js` — Platform bundle (CLI, testing)
-- `tools/zifmia/dist/` — Zifmia multi-user web app (with `-c zifmia`)
+- `tools/shite/dist/` — abandoned Phase-6 parts bin (with `-c shite`)
 - `dist/web/{story}/` — Single-player browser client (with `-c browser`)
 - `dist/runner/` — Legacy interpreter runner (with `--runner`)
 

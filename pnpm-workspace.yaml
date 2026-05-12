@@ -7,7 +7,7 @@ packages:
   - stories/dungeo
   - stories/channel-service-test
   - tutorials/familyzoo
-  - tools/zifmia
+  - tools/shite
 
 ignoredBuiltDependencies:
   - electron

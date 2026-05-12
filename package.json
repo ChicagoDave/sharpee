@@ -25,7 +25,7 @@
     "packages/dev-tools",
     "packages/platforms/*",
     "stories/*",
-    "tools/zifmia"
+    "tools/shite"
   ],
   "scripts": {
     "clean": "turbo run clean",

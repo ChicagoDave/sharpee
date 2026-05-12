@@ -75,11 +75,15 @@ Usage: ./build.sh [options]
 
 Options:
   -s, --story NAME     Build a story (dungeo, reflections, etc.)
-  -c, --client TYPE    Build client (browser, zifmia) - can specify multiple
+  -c, --client TYPE    Build client (browser, shite) - can specify multiple
                        browser = single-player static web client per story
-                       zifmia  = multi-user web app at tools/zifmia/
+                       shite   = the abandoned Phase-6 'Zifmia' build at
+                                 tools/shite/ (parts bin pending ADR-177).
+                                 Build it manually if you need it; the
+                                 corrected design lives in a new package
+                                 specified by ADR-177.
   -t, --theme NAME     Theme for the legacy --runner path (default: classic-light)
-                       No effect with -c zifmia (the multi-user product
+                       No effect with -c shite (the parts-bin product
                        handles its own theming in the web client).
       --skip PKG       Resume platform build from package
       --version VER    Set version explicitly (e.g., 0.9.90) for all outputs
@@ -103,9 +107,9 @@ Available Themes (legacy --runner only):
 Examples:
   ./build.sh -s dungeo                       Build platform + dungeo story
   ./build.sh -s dungeo -c browser            Build single-player browser client
-  ./build.sh -c zifmia                       Build the Zifmia multi-user web app
-  ./build.sh -s dungeo -c zifmia             Build Zifmia + bundle dungeo for install
-  ./build.sh -s dungeo -c browser -c zifmia  Build both clients
+  ./build.sh -c shite                        Build the abandoned shite parts bin
+  ./build.sh -s dungeo -c shite              Build shite + bundle dungeo for install
+  ./build.sh -s dungeo -c browser -c shite   Build both clients
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
   ./build.sh -s dungeo --test                Build fast test bundle
   ./build.sh --runner -t modern-dark         Build legacy interpreter runner
@@ -116,8 +120,8 @@ Examples:
 Output:
   dist/cli/sharpee.js          Platform bundle (CLI, testing)
   dist/cli/{story}-test.js     Fast test bundle (with --test)
-  dist/stories/{story}.sharpee  Story bundle (with -b or with -s -c zifmia)
-  tools/zifmia/dist/           Zifmia multi-user web app (with -c zifmia)
+  dist/stories/{story}.sharpee  Story bundle (with -b or with -s -c shite)
+  tools/shite/dist/             Abandoned shite parts bin (with -c shite)
   dist/runner/                  Legacy interpreter runner (with --runner)
   dist/runtime/sharpee-runtime.js  Headless runtime (with --runtime)
   dist/bridge/node_bridge.js    Native engine bridge (with --bridge)
@@ -215,18 +219,18 @@ if [ "$BUILD_TEST" = true ] && [ -z "$STORY" ]; then
 fi
 
 # Validate: -c browser requires -s (the single-player browser client
-# bakes a specific story bundle in). -c zifmia does NOT require -s —
-# the multi-user web app installs stories at runtime via the admin route.
-NON_ZIFMIA_CLIENTS=()
+# bakes a specific story bundle in). -c shite does NOT require -s —
+# the parts-bin web app installs stories at runtime via the admin route.
+NON_SHITE_CLIENTS=()
 for CLIENT in "${CLIENTS[@]}"; do
-    if [ "$CLIENT" != "zifmia" ]; then
-        NON_ZIFMIA_CLIENTS+=("$CLIENT")
+    if [ "$CLIENT" != "shite" ]; then
+        NON_SHITE_CLIENTS+=("$CLIENT")
     fi
 done
-if [ ${#NON_ZIFMIA_CLIENTS[@]} -gt 0 ] && [ -z "$STORY" ]; then
-    echo -e "${RED}Error: --client ${NON_ZIFMIA_CLIENTS[*]} requires --story${NC}"
+if [ ${#NON_SHITE_CLIENTS[@]} -gt 0 ] && [ -z "$STORY" ]; then
+    echo -e "${RED}Error: --client ${NON_SHITE_CLIENTS[*]} requires --story${NC}"
     echo "Example: ./build.sh -s dungeo -c browser"
-    echo "(--client zifmia does NOT require --story — Zifmia installs stories at runtime)"
+    echo "(--client shite does NOT require --story — shite installs stories at runtime)"
     exit 1
 fi
 
@@ -345,25 +349,25 @@ EOF
         fi
     fi
 
-    # `-c zifmia` (new, post-Phase-6): multi-user web app at tools/zifmia.
-    # Updates the tools/zifmia/package.json version so the built bundle
+    # `-c shite` (the renamed Phase-6 parts bin): web app at tools/shite.
+    # Updates tools/shite/package.json version so the built bundle
     # carries the platform's SHARPEE_VERSION.
-    local UPDATE_ZIFMIA_WEB=false
+    local UPDATE_SHITE_WEB=false
     for CLIENT in "${CLIENTS[@]}"; do
-        if [ "$CLIENT" = "zifmia" ]; then
-            UPDATE_ZIFMIA_WEB=true
+        if [ "$CLIENT" = "shite" ]; then
+            UPDATE_SHITE_WEB=true
         fi
     done
-    if [ "$UPDATE_ZIFMIA_WEB" = true ]; then
-        local ZIFMIA_WEB_PKG="tools/zifmia/package.json"
-        if [ -f "$ZIFMIA_WEB_PKG" ]; then
+    if [ "$UPDATE_SHITE_WEB" = true ]; then
+        local SHITE_WEB_PKG="tools/shite/package.json"
+        if [ -f "$SHITE_WEB_PKG" ]; then
             node -e "
               const fs = require('fs');
-              const pkg = require('./$ZIFMIA_WEB_PKG');
+              const pkg = require('./$SHITE_WEB_PKG');
               pkg.version = '$SHARPEE_VERSION';
-              fs.writeFileSync('$ZIFMIA_WEB_PKG', JSON.stringify(pkg, null, 2) + '\n');
+              fs.writeFileSync('$SHITE_WEB_PKG', JSON.stringify(pkg, null, 2) + '\n');
             "
-            log_ok "@sharpee/zifmia $SHARPEE_VERSION"
+            log_ok "@sharpee/shite $SHARPEE_VERSION"
         fi
     fi
 
@@ -417,9 +421,9 @@ EOF
         log_ok "runner $SHARPEE_VERSION (native: $NATIVE_VER)"
     fi
 
-    # Update non-zifmia client packages
+    # Update non-shite client packages
     for CLIENT in "${CLIENTS[@]}"; do
-        if [ "$CLIENT" = "zifmia" ]; then
+        if [ "$CLIENT" = "shite" ]; then
             continue  # Already handled above
         fi
 
@@ -913,49 +917,45 @@ build_browser_client() {
 }
 
 # ============================================================================
-# Zifmia (multi-user web app) Build — Phase 6 product at tools/zifmia/
+# Shite (parts-bin web app) Build — abandoned Phase-6 'Zifmia' build
+# at tools/shite/, renamed 2026-05-12. Corrected design lives in ADR-177.
 # ============================================================================
 #
-# `-c zifmia` builds the multi-user web app: Fastify server + browser
-# client (vite-built static assets) at `tools/zifmia/`. The story bundle
-# is NOT baked in — Zifmia installs bundles via its admin route at
-# runtime. The story argument is therefore optional with `-c zifmia`,
-# but when present we still build the story bundle so an operator can
-# install it via `POST /admin/stories` after starting the server.
+# `-c shite` builds the parts-bin web app: Fastify server + browser
+# client (vite-built static assets) at `tools/shite/`. Story bundle is
+# NOT baked in. Kept for parts-reference only; do not extend this code.
 
-build_zifmia_web() {
-    log_step "Building Zifmia (multi-user web)"
+build_shite_web() {
+    log_step "Building shite (Phase-6 parts bin)"
 
-    if [ ! -d "tools/zifmia" ]; then
-        echo -e "${RED}Error: tools/zifmia not found${NC}" >&2
+    if [ ! -d "tools/shite" ]; then
+        echo -e "${RED}Error: tools/shite not found${NC}" >&2
         return 1
     fi
 
-    # Delegate to the package's own scripts: build:server (tsc) +
-    # build:web (vite). The package owns its own typecheck + bundle
-    # config; build.sh stays a thin orchestrator.
-    if ! pnpm --filter '@sharpee/zifmia' build 2>&1; then
-        echo -e "${RED}Error: Zifmia build failed${NC}" >&2
+    if ! pnpm --filter '@sharpee/shite' build 2>&1; then
+        echo -e "${RED}Error: shite build failed${NC}" >&2
         return 1
     fi
 
-    local WEB_BUNDLE="tools/zifmia/dist/web/assets"
+    local WEB_BUNDLE="tools/shite/dist/web/assets"
     if [ -d "$WEB_BUNDLE" ]; then
         local JS_SIZE
         JS_SIZE=$(du -sh "$WEB_BUNDLE" | cut -f1)
-        echo "Output: tools/zifmia/dist/   (web bundle ~$JS_SIZE)"
+        echo "Output: tools/shite/dist/   (web bundle ~$JS_SIZE)"
     else
-        echo "Output: tools/zifmia/dist/"
+        echo "Output: tools/shite/dist/"
     fi
     echo ""
 }
 
 # ============================================================================
 # Interpreter Runner (legacy; pre-Phase-6 single-player Tauri browser
-# runner). Triggered by `--runner` only. The `-c zifmia` flag no longer
-# routes here as of Phase 6 — `-c zifmia` now builds the multi-user web
-# app above. When this path is redone, it will be renamed to
-# `--interpreter` (not planned).
+# runner). Triggered by `--runner` only. The `-c shite` flag routes
+# to the renamed Phase-6 parts bin (formerly `-c zifmia`); the
+# `-c zifmia` flag is reserved for the corrected multi-user product
+# specified by ADR-177. When this legacy runner is redone, it will
+# be renamed to `--interpreter` (not planned).
 # ============================================================================
 
 build_runner() {
@@ -1250,8 +1250,8 @@ if [ "$BUILD_BRIDGE" = true ]; then
     echo "  6. Build native engine bridge (ADR-135)"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
-    if [ "$CLIENT" = "zifmia" ]; then
-        echo "  5. Build Zifmia multi-user web app (tools/zifmia/)"
+    if [ "$CLIENT" = "shite" ]; then
+        echo "  5. Build shite parts bin (tools/shite/)"
     else
         echo "  5. Build $CLIENT client"
     fi
@@ -1294,16 +1294,15 @@ for CLIENT in "${CLIENTS[@]}"; do
         browser)
             build_browser_client "$STORY"
             ;;
-        zifmia)
-            # `-c zifmia` (post-Phase-6) builds the multi-user web app
-            # in tools/zifmia/. Story bundle is optional — when -s was
-            # supplied earlier in the run, build_story_bundle already
-            # ran and produced dist/stories/{story}.sharpee, which an
-            # operator can install via Zifmia's admin route.
+        shite)
+            # `-c shite` builds the Phase-6 parts-bin web app at
+            # tools/shite/. The corrected multi-user product lives in
+            # a new package per ADR-177; this path is kept for
+            # parts-reference only. Story bundle is optional.
             if [ -n "$STORY" ] && [ "$STORY_BUNDLE" != true ]; then
                 build_story_bundle "$STORY"
             fi
-            build_zifmia_web
+            build_shite_web
             ;;
         *)
             echo -e "${RED}Unknown client type: $CLIENT${NC}"
@@ -1339,8 +1338,8 @@ if [ "$BUILD_BRIDGE" = true ]; then
 fi
 
 for CLIENT in "${CLIENTS[@]}"; do
-    if [ "$CLIENT" = "zifmia" ]; then
-        echo "  tools/zifmia/dist/ - Zifmia multi-user web app"
+    if [ "$CLIENT" = "shite" ]; then
+        echo "  tools/shite/dist/ - shite parts-bin web app (Phase-6, abandoned)"
         if [ -n "$STORY" ]; then
             echo "  dist/stories/${STORY}.sharpee - Story bundle (install via POST /admin/stories)"
         fi
@@ -1362,8 +1361,8 @@ if [ "$BUILD_BRIDGE" = true ]; then
     echo "  Test Bridge:  echo '{\"method\":\"start\",\"bundle\":\"dist/stories/dungeo.sharpee\"}' | node dist/bridge/node_bridge.js"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
-    if [ "$CLIENT" = "zifmia" ]; then
-        echo "  Test Zifmia:  node tools/zifmia/dist/index.js  (server on :3000)"
+    if [ "$CLIENT" = "shite" ]; then
+        echo "  Test shite:   node tools/shite/dist/index.js  (server on :3000)"
     elif [ -n "$STORY" ]; then
         echo "  Test Browser: npx serve dist/web/${STORY}"
     fi
