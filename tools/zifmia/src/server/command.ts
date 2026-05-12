@@ -3,7 +3,9 @@
  * @purpose `POST /rooms/:id/command` — wraps the stateless turn
  *   executor in an auth-gated HTTP route. The route's job is to
  *   validate the body, dispatch to `executeTurnStatelessly`, and map
- *   precondition failures + engine throws to HTTP status codes.
+ *   precondition failures + engine throws to HTTP status codes. After
+ *   the turn lands, the route fans out side-channel events to the
+ *   WebSocket subscribers of the room.
  * @owner Zifmia server (tools/zifmia/server).
  *
  * Error mapping (ADR-175 §3c, §AC-13):
@@ -18,8 +20,20 @@
  *   | Engine throws during executeTurn         | 500  | `{ error: 'turn_failed' }`          |
  *   | Any other unexpected throw               | 500  | `{ error: 'turn_failed' }`          |
  *
- * Phase 3d will add the WS `lock:state {holder: null}` broadcast on
- * the engine-throw path; for 3c.ii the route only does the HTTP side.
+ * WebSocket fan-out (Phase 3d.iii):
+ *
+ *   On success: `command_echo` then `turn:broadcast` to every
+ *   subscriber EXCEPT the submitter's identity (the submitter has the
+ *   TurnPacket as their HTTP response body, so echoing it back to
+ *   their socket would duplicate). Lock is force-released and
+ *   `lock:state { holder: null }` broadcast to every subscriber so
+ *   inputs unlock for the room.
+ *
+ *   On engine throw (AC-13): no `turn:broadcast`, no `command_echo`.
+ *   Lock is still force-released and `lock:state { holder: null }` is
+ *   broadcast — otherwise observer clients would be stuck with their
+ *   inputs read-only forever waiting for a release the server already
+ *   processed.
  */
 
 import type { FastifyInstance } from 'fastify';
@@ -31,7 +45,15 @@ import {
   RoomNotFoundError,
   executeTurnStatelessly,
 } from '../engine';
+import type { TurnPacket } from '../engine';
 import type { StorageAdapter } from '../storage/adapter';
+import type { Identity } from '../storage/types';
+import {
+  getActiveLockRegistry,
+  getActiveSubscriptionRegistry,
+} from './ws';
+import type { ClientConnection } from './ws/connection';
+import type { OutboundMessage } from './ws/types';
 
 export interface CommandRouteOptions {
   adapter: StorageAdapter;
@@ -73,12 +95,15 @@ export function registerCommandRoute(
           .send({ error: 'invalid_body', detail: 'malformed_command' });
       }
 
+      const submitter = request.identity!;
+
       try {
         const packet = await executeTurnStatelessly({
           adapter: options.adapter,
           roomId: id,
           command,
         });
+        fanOutSuccess(id, command, packet, submitter);
         return reply.code(200).send(packet);
       } catch (err) {
         if (err instanceof RoomNotFoundError) {
@@ -95,16 +120,105 @@ export function registerCommandRoute(
             { err, roomId: id, storyId: err.storyId, version: err.version },
             'command: bundle_not_installed',
           );
+          // AC-13 — even for this server-internal failure, we still
+          // unlock the room so other clients aren't stuck waiting.
+          fanOutLockReleaseOnly(id);
           return reply.code(500).send({ error: 'bundle_not_installed' });
         }
         // Engine throw or any other unexpected error: AC-13 — no
         // save_blob was written (the executor never reached
         // appendSaveBlob), the lease is already released by the
-        // executor's finally block, and the wire response is the
-        // generic `turn_failed`.
+        // executor's finally block. The wire response is the generic
+        // `turn_failed`. We still force-release the lock and broadcast
+        // `lock:state { holder: null }` so observer clients re-enable
+        // their inputs.
         request.log.error({ err, roomId: id }, 'command: turn_failed');
+        fanOutLockReleaseOnly(id);
         return reply.code(500).send({ error: 'turn_failed' });
       }
     },
   );
+}
+
+// ── WebSocket fan-out (3d.iii) ────────────────────────────────────
+
+/**
+ * Broadcast `command_echo` + `turn:broadcast` to every subscriber
+ * whose identity is NOT the submitter, then force-release the lock
+ * and broadcast `lock:state { holder: null }` to everyone (submitter
+ * included, since the submitter's WS still needs to know the
+ * room-wide state changed).
+ */
+function fanOutSuccess(
+  roomId: string,
+  command: string,
+  packet: TurnPacket,
+  submitter: Identity,
+): void {
+  const subscriptions = getActiveSubscriptionRegistry();
+  if (!subscriptions) {
+    // WebSocket route not registered — common in unit tests that
+    // exercise only the HTTP layer. Nothing to fan out to.
+    fanOutLockReleaseOnly(roomId);
+    return;
+  }
+
+  const submitterInfo = {
+    identityId: submitter.id,
+    handle: submitter.handle,
+  };
+
+  // Echo first, then turn:broadcast. Order matters for observer
+  // clients that render an in-progress "> look" hint before the
+  // resulting block of text scrolls in.
+  broadcastExceptIdentity(subscriptions, roomId, submitter.id, {
+    type: 'command_echo',
+    roomId,
+    turn: packet.turn,
+    submitter: submitterInfo,
+    command,
+  });
+  broadcastExceptIdentity(subscriptions, roomId, submitter.id, {
+    type: 'turn:broadcast',
+    roomId,
+    turn: packet.turn,
+    blocks: packet.blocks,
+    events: packet.events,
+    submitter: submitterInfo,
+  });
+
+  fanOutLockReleaseOnly(roomId);
+}
+
+/** Force-release the room lock and broadcast `lock:state { holder:
+ * null }` to every subscriber. Idempotent — does nothing if no one
+ * holds the lock. */
+function fanOutLockReleaseOnly(roomId: string): void {
+  const subscriptions = getActiveSubscriptionRegistry();
+  const locks = getActiveLockRegistry();
+  if (!subscriptions || !locks) return;
+
+  const previous = locks.forceRelease(roomId);
+  if (!previous) return;
+
+  for (const conn of subscriptions.subscribersOf(roomId)) {
+    conn.send({ type: 'lock:state', roomId, holder: null });
+  }
+}
+
+function broadcastExceptIdentity(
+  registry: ReturnType<typeof getActiveSubscriptionRegistry>,
+  roomId: string,
+  excludeIdentityId: string,
+  message: OutboundMessage,
+): void {
+  if (!registry) return;
+  for (const conn of registry.subscribersOf(roomId)) {
+    if (conn.identity.id === excludeIdentityId) continue;
+    sendIfOpen(conn, message);
+  }
+}
+
+function sendIfOpen(conn: ClientConnection, message: OutboundMessage): void {
+  conn.send(message);
 }

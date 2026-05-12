@@ -22,6 +22,7 @@ import { registerCommandRoute } from './command';
 import { registerHealthRoute } from './health';
 import { registerIdentityRoutes } from './identity';
 import { registerRoomRoutes } from './rooms';
+import { registerWebSocketRoute } from './ws';
 
 export interface ZifmiaServerOptions {
   /** Override the adapter (tests inject a fixture). Default: resolved
@@ -71,6 +72,7 @@ export async function startServer(
   registerIdentityRoutes(app, { adapter });
   registerRoomRoutes(app, { adapter });
   registerCommandRoute(app, { adapter });
+  await registerWebSocketRoute(app, { adapter });
 
   const address = await app.listen({ host, port });
   const resolvedPort = resolvePortFromServer(app, port);
