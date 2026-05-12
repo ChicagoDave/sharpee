@@ -154,6 +154,81 @@ describe('POST /rooms', () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it('Phase 5b: appends a room.create audit row on successful create', async () => {
+    await seedStory(ctx.handle, ctx.identityId, 'story-audit', '2.0.0');
+
+    const res = await fetch(`${ctx.baseUrl}/rooms`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${ctx.sessionToken}`
+      },
+      body: JSON.stringify({
+        storyId: 'story-audit',
+        title: 'Audited Room',
+        public: false
+      })
+    });
+    expect(res.status).toBe(201);
+    const room = (await res.json()) as Room;
+
+    const entries = await ctx.handle.adapter.listAuditEntries({ limit: 100 });
+    const creates = entries.filter((e) => e.action === 'room.create');
+    expect(creates).toHaveLength(1);
+
+    const entry = creates[0]!;
+    expect(entry.actorId).toBe(ctx.identityId);
+    expect(entry.targetKind).toBe('room');
+    expect(entry.targetId).toBe(room.id);
+
+    const detail = JSON.parse(entry.detail) as {
+      roomId: string;
+      storyId: string;
+      bundleVersion: string;
+      title: string;
+      public: boolean;
+    };
+    expect(detail).toEqual({
+      roomId: room.id,
+      storyId: 'story-audit',
+      bundleVersion: '2.0.0',
+      title: 'Audited Room',
+      public: false
+    });
+  });
+
+  it('Phase 5b: writes no audit row on validation 400 (no room created)', async () => {
+    const res = await fetch(`${ctx.baseUrl}/rooms`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${ctx.sessionToken}`
+      },
+      body: JSON.stringify({ storyId: '', title: '', public: true })
+    });
+    expect(res.status).toBe(400);
+    const entries = await ctx.handle.adapter.listAuditEntries({ limit: 100 });
+    expect(entries.filter((e) => e.action === 'room.create')).toEqual([]);
+  });
+
+  it('Phase 5b: writes no audit row on story_not_found 404', async () => {
+    const res = await fetch(`${ctx.baseUrl}/rooms`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${ctx.sessionToken}`
+      },
+      body: JSON.stringify({
+        storyId: 'no-such-story',
+        title: 'Doomed Room',
+        public: true
+      })
+    });
+    expect(res.status).toBe(404);
+    const entries = await ctx.handle.adapter.listAuditEntries({ limit: 100 });
+    expect(entries.filter((e) => e.action === 'room.create')).toEqual([]);
+  });
 });
 
 describe('GET /rooms', () => {

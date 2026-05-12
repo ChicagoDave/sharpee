@@ -760,6 +760,7 @@ build_story_bundle() {
       const meta = {
         format: 'sharpee-story',
         formatVersion: 1,
+        id: '${STORY_NAME}',
         title: s.title || pkg.name,
         author: s.author || 'Unknown',
         version: pkg.version,

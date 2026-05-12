@@ -18,6 +18,10 @@ import Fastify, { type FastifyInstance } from 'fastify';
 
 import type { StorageAdapter } from '../storage/adapter';
 import { resolveAdapterFromEnv } from '../storage/resolve';
+import { registerAdminAuditRoute } from './admin-audit';
+import { registerAdminIdentityRoutes } from './admin-identities';
+import { registerAdminRoomRoutes } from './admin-rooms';
+import { registerAdminStoryRoutes } from './admin-stories';
 import { registerCommandRoute } from './command';
 import {
   parseCompactionEnabled,
@@ -117,6 +121,10 @@ export async function startServer(
   registerCommandRoute(app, { adapter, workerPool });
   registerSavesRoutes(app, { adapter });
   registerRestoreRoute(app, { adapter });
+  registerAdminAuditRoute(app, { adapter });
+  registerAdminStoryRoutes(app, { adapter });
+  registerAdminRoomRoutes(app, { adapter });
+  registerAdminIdentityRoutes(app, { adapter });
   await registerWebSocketRoute(app, { adapter });
 
   const compactionEnabled =

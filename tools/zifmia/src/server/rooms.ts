@@ -112,6 +112,29 @@ export function registerRoomRoutes(
         createdBy: identity.id
       });
 
+      // Phase 5b — audit room creation per ADR-175 §Resolved OQ-6.
+      // Failure-mode policy: log + continue; the room already exists.
+      try {
+        await options.adapter.appendAuditEntry({
+          actorId: identity.id,
+          action: 'room.create',
+          targetKind: 'room',
+          targetId: room.id,
+          detail: JSON.stringify({
+            roomId: room.id,
+            storyId: room.storyId,
+            bundleVersion: room.bundleVersion,
+            title: room.title,
+            public: room.public
+          })
+        });
+      } catch (auditErr) {
+        request.log.error(
+          { err: auditErr, roomId: room.id },
+          'rooms: audit_write_failed'
+        );
+      }
+
       return reply.code(201).send(room);
     }
   );

@@ -80,6 +80,26 @@ export class SqliteAdapter implements StorageAdapter {
 
   async migrate(): Promise<void> {
     this.db.exec(SQLITE_SCHEMA);
+    this.applyIdentityIsAdminColumn();
+  }
+
+  /**
+   * Phase 5a additive migration: add `is_admin` to `identities` on
+   * pre-Phase-5 databases. The schema's `CREATE TABLE IF NOT EXISTS`
+   * is a no-op on a populated DB, so the column needs an explicit
+   * `ALTER TABLE`. New deployments hit the CREATE branch with the
+   * column already present and the probe is a no-op.
+   */
+  private applyIdentityIsAdminColumn(): void {
+    const columns = this.db
+      .prepare<unknown[], { name: string }>('PRAGMA table_info(identities)')
+      .all();
+    const hasColumn = columns.some((c) => c.name === 'is_admin');
+    if (!hasColumn) {
+      this.db.exec(
+        'ALTER TABLE identities ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0'
+      );
+    }
   }
 
   async close(): Promise<void> {
@@ -96,12 +116,13 @@ export class SqliteAdapter implements StorageAdapter {
       id: this.idFactory(),
       handle: input.handle,
       passcodeHash: input.passcodeHash,
-      createdAt: this.now()
+      createdAt: this.now(),
+      isAdmin: false
     };
     this.db
       .prepare(
-        `INSERT INTO identities (id, handle, passcode_hash, created_at)
-         VALUES (?, ?, ?, ?)`
+        `INSERT INTO identities (id, handle, passcode_hash, created_at, is_admin)
+         VALUES (?, ?, ?, ?, 0)`
       )
       .run(row.id, row.handle, row.passcodeHash, row.createdAt);
     return row;
@@ -110,7 +131,7 @@ export class SqliteAdapter implements StorageAdapter {
   async getIdentityByHandle(handle: string): Promise<Identity | null> {
     const r = this.db
       .prepare<[string], IdentityRow>(
-        `SELECT id, handle, passcode_hash, created_at
+        `SELECT id, handle, passcode_hash, created_at, is_admin
          FROM identities WHERE handle = ?`
       )
       .get(handle);
@@ -120,7 +141,7 @@ export class SqliteAdapter implements StorageAdapter {
   async getIdentityById(id: string): Promise<Identity | null> {
     const r = this.db
       .prepare<[string], IdentityRow>(
-        `SELECT id, handle, passcode_hash, created_at
+        `SELECT id, handle, passcode_hash, created_at, is_admin
          FROM identities WHERE id = ?`
       )
       .get(id);
@@ -131,6 +152,12 @@ export class SqliteAdapter implements StorageAdapter {
     this.db
       .prepare(`UPDATE identities SET passcode_hash = ? WHERE id = ?`)
       .run(passcodeHash, id);
+  }
+
+  async setIdentityAdmin(id: string, isAdmin: boolean): Promise<void> {
+    this.db
+      .prepare(`UPDATE identities SET is_admin = ? WHERE id = ?`)
+      .run(isAdmin ? 1 : 0, id);
   }
 
   // ── Session ───────────────────────────────────────────────────
@@ -171,6 +198,12 @@ export class SqliteAdapter implements StorageAdapter {
 
   async deleteExpiredSessions(now: number): Promise<void> {
     this.db.prepare(`DELETE FROM sessions WHERE expires_at < ?`).run(now);
+  }
+
+  async deleteSessionsForIdentity(identityId: string): Promise<void> {
+    this.db
+      .prepare(`DELETE FROM sessions WHERE identity_id = ?`)
+      .run(identityId);
   }
 
   // ── Room ──────────────────────────────────────────────────────
@@ -651,13 +684,15 @@ interface IdentityRow {
   handle: string;
   passcode_hash: string;
   created_at: number;
+  is_admin: number;
 }
 function identityFromRow(r: IdentityRow): Identity {
   return {
     id: r.id,
     handle: r.handle,
     passcodeHash: r.passcode_hash,
-    createdAt: r.created_at
+    createdAt: r.created_at,
+    isAdmin: r.is_admin === 1
   };
 }
 

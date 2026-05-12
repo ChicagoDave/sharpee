@@ -50,6 +50,10 @@ export interface StorageAdapter {
   getIdentityByHandle(handle: string): Promise<Identity | null>;
   getIdentityById(id: string): Promise<Identity | null>;
   updateIdentityPasscode(id: string, passcodeHash: string): Promise<void>;
+  /** Flip the `is_admin` bit on an existing identity. Silent if the id
+   * does not match any row — the bootstrap CLI validates the handle
+   * before calling. Per ADR-175 §Resolved OQ-3 (2026-05-11). */
+  setIdentityAdmin(id: string, isAdmin: boolean): Promise<void>;
 
   // ── Session ───────────────────────────────────────────────────
   /** Insert a session row. Throws if `identityId` does not exist. */
@@ -66,6 +70,10 @@ export interface StorageAdapter {
   /** Remove every session whose `expiresAt < now`. Used by a periodic
    * sweep; safe to call from any context. */
   deleteExpiredSessions(now: number): Promise<void>;
+  /** Remove every session belonging to an identity. Used by the
+   * passcode-reset path so prior tokens stop authenticating
+   * immediately. Idempotent. */
+  deleteSessionsForIdentity(identityId: string): Promise<void>;
 
   // ── Room ──────────────────────────────────────────────────────
   createRoom(input: {

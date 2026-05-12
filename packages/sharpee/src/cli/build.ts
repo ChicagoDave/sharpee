@@ -123,6 +123,7 @@ export async function runBuildCommand(args: string[]): Promise<void> {
   const meta = {
     format: 'sharpee-story',
     formatVersion: 1,
+    id: pkg.name,
     title: config.title || pkg.name,
     author: config.author || 'Unknown',
     version: pkg.version,

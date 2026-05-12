@@ -72,6 +72,9 @@ export class PostgresAdapter implements StorageAdapter {
   ): Promise<void> {
     unimplemented('updateIdentityPasscode');
   }
+  async setIdentityAdmin(_id: string, _isAdmin: boolean): Promise<void> {
+    unimplemented('setIdentityAdmin');
+  }
 
   async createSession(_input: {
     token: string;
@@ -88,6 +91,9 @@ export class PostgresAdapter implements StorageAdapter {
   }
   async deleteExpiredSessions(_now: number): Promise<void> {
     unimplemented('deleteExpiredSessions');
+  }
+  async deleteSessionsForIdentity(_identityId: string): Promise<void> {
+    unimplemented('deleteSessionsForIdentity');
   }
 
   async createRoom(_input: {

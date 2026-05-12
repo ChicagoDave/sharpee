@@ -15,6 +15,10 @@ export interface Identity {
   handle: string;
   passcodeHash: string;
   createdAt: number;
+  /** True for accounts allowed to call `/admin/*` routes. Mutated only
+   * by `setIdentityAdmin`; bootstrap CLI is the documented entry point.
+   * Per ADR-175 §Resolved OQ-3 (2026-05-11): bundled admin, role-gated. */
+  isAdmin: boolean;
 }
 
 /** A `(storyId, version)` pair pinning a room to the bundle version that

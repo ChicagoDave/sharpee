@@ -275,4 +275,79 @@ describe('POST /rooms/:id/command — AC-13 engine-throw recovery', () => {
     const res = await postCommand(ctx, ctx.tinyRoomId, { command: 'look' });
     expect(res.status).toBe(200);
   });
+
+  it('writes no audit row when the engine throws (AC-13 + ADR-175 §OQ-6)', async () => {
+    const res = await postCommand(ctx, crashRoomId, { command: 'look' });
+    expect(res.status).toBe(500);
+    const entries = await ctx.handle.adapter.listAuditEntries({ limit: 100 });
+    const commandSubmits = entries.filter((e) => e.action === 'command.submit');
+    expect(commandSubmits).toEqual([]);
+  });
+});
+
+describe('POST /rooms/:id/command — Phase 5b audit emission', () => {
+  let ctx: TestCtx;
+
+  beforeEach(async () => {
+    clearTinyFixtureCacheForTests();
+    ctx = await setup();
+  });
+
+  afterEach(async () => {
+    await ctx.handle.close();
+  });
+
+  it('appends a command.submit audit row on success with the full detail JSON', async () => {
+    const res = await postCommand(ctx, ctx.tinyRoomId, { command: 'look' });
+    expect(res.status).toBe(200);
+
+    const entries = await ctx.handle.adapter.listAuditEntries({ limit: 100 });
+    const commandSubmits = entries.filter((e) => e.action === 'command.submit');
+    expect(commandSubmits).toHaveLength(1);
+
+    const entry = commandSubmits[0]!;
+    expect(entry.actorId).toBe(ctx.identityId);
+    expect(entry.targetKind).toBe('room');
+    expect(entry.targetId).toBe(ctx.tinyRoomId);
+    expect(entry.ts).toBeGreaterThan(0);
+
+    const detail = JSON.parse(entry.detail) as {
+      roomId: string;
+      turn: number;
+      command: string;
+      submitter: { identityId: string; handle: string };
+    };
+    expect(detail.roomId).toBe(ctx.tinyRoomId);
+    expect(detail.turn).toBe(1);
+    expect(detail.command).toBe('look');
+    expect(detail.submitter).toEqual({
+      identityId: ctx.identityId,
+      handle: 'commander',
+    });
+  });
+
+  it('records distinct audit rows for back-to-back successful commands', async () => {
+    await postCommand(ctx, ctx.tinyRoomId, { command: 'look' });
+    await postCommand(ctx, ctx.tinyRoomId, { command: 'wait' });
+
+    const entries = await ctx.handle.adapter.listAuditEntries({ limit: 100 });
+    const commandSubmits = entries
+      .filter((e) => e.action === 'command.submit')
+      .sort((a, b) => a.ts - b.ts);
+    expect(commandSubmits).toHaveLength(2);
+    const detail0 = JSON.parse(commandSubmits[0]!.detail) as { command: string; turn: number };
+    const detail1 = JSON.parse(commandSubmits[1]!.detail) as { command: string; turn: number };
+    expect(detail0.command).toBe('look');
+    expect(detail0.turn).toBe(1);
+    expect(detail1.command).toBe('wait');
+    expect(detail1.turn).toBe(2);
+  });
+
+  it('does NOT audit on body validation 400 (no turn ran)', async () => {
+    const res = await postCommand(ctx, ctx.tinyRoomId, { command: '' });
+    expect(res.status).toBe(400);
+    const entries = await ctx.handle.adapter.listAuditEntries({ limit: 100 });
+    const commandSubmits = entries.filter((e) => e.action === 'command.submit');
+    expect(commandSubmits).toEqual([]);
+  });
 });

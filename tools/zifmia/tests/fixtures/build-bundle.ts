@@ -81,6 +81,7 @@ async function buildFixture(spec: FixtureSpec): Promise<Uint8Array> {
     JSON.stringify({
       format: 'sharpee-story',
       formatVersion: 1,
+      id: spec.config.id,
       title: spec.config.title,
       author: spec.config.author,
       version: spec.config.version,

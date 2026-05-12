@@ -61,6 +61,7 @@ const hasTheme = fs.existsSync(path.join(storyDir, 'theme.css'));
 const meta = {
   format: 'sharpee-story',
   formatVersion: 1,
+  id: storyName,
   title: config.title,
   author: config.author,
   version: config.version,

@@ -77,6 +77,60 @@ export function runAdapterContract(
         const after = await adapter.getIdentityById(id);
         expect(after?.passcodeHash).toBe('new');
       });
+
+      it('createIdentity returns isAdmin=false by default', async () => {
+        const created = await adapter.createIdentity({
+          handle: 'newcomer',
+          passcodeHash: PASSCODE
+        });
+        expect(created.isAdmin).toBe(false);
+
+        const byHandle = await adapter.getIdentityByHandle('newcomer');
+        expect(byHandle?.isAdmin).toBe(false);
+        const byId = await adapter.getIdentityById(created.id);
+        expect(byId?.isAdmin).toBe(false);
+      });
+
+      it('setIdentityAdmin flips the bit, both directions are durable', async () => {
+        const id = (
+          await adapter.createIdentity({
+            handle: 'will-be-admin',
+            passcodeHash: PASSCODE
+          })
+        ).id;
+
+        await adapter.setIdentityAdmin(id, true);
+        const granted = await adapter.getIdentityById(id);
+        expect(granted?.isAdmin).toBe(true);
+        const grantedByHandle = await adapter.getIdentityByHandle('will-be-admin');
+        expect(grantedByHandle?.isAdmin).toBe(true);
+
+        await adapter.setIdentityAdmin(id, false);
+        const revoked = await adapter.getIdentityById(id);
+        expect(revoked?.isAdmin).toBe(false);
+      });
+
+      it('setIdentityAdmin is silent (no throw) for unknown id', async () => {
+        await expect(
+          adapter.setIdentityAdmin('not-a-real-id', true)
+        ).resolves.toBeUndefined();
+      });
+
+      it('setIdentityAdmin only affects the targeted identity', async () => {
+        const a = await adapter.createIdentity({
+          handle: 'admin-iso-a',
+          passcodeHash: PASSCODE
+        });
+        const b = await adapter.createIdentity({
+          handle: 'admin-iso-b',
+          passcodeHash: PASSCODE
+        });
+        await adapter.setIdentityAdmin(a.id, true);
+        const aAfter = await adapter.getIdentityById(a.id);
+        const bAfter = await adapter.getIdentityById(b.id);
+        expect(aAfter?.isAdmin).toBe(true);
+        expect(bAfter?.isAdmin).toBe(false);
+      });
     });
 
     // ── Session ─────────────────────────────────────────────────
@@ -145,6 +199,54 @@ export function runAdapterContract(
         await adapter.deleteExpiredSessions(2000);
         expect(await adapter.getSessionByToken(past.token)).toBeNull();
         expect(await adapter.getSessionByToken(future.token)).not.toBeNull();
+      });
+
+      it('deleteSessionsForIdentity removes all rows for one identity, leaves others alone', async () => {
+        const target = (
+          await adapter.createIdentity({
+            handle: 'sess-target',
+            passcodeHash: PASSCODE
+          })
+        ).id;
+        const other = (
+          await adapter.createIdentity({
+            handle: 'sess-other',
+            passcodeHash: PASSCODE
+          })
+        ).id;
+        await adapter.createSession({
+          token: 'tok-t1',
+          identityId: target,
+          expiresAt: Date.now() + 1_000_000
+        });
+        await adapter.createSession({
+          token: 'tok-t2',
+          identityId: target,
+          expiresAt: Date.now() + 1_000_000
+        });
+        await adapter.createSession({
+          token: 'tok-o1',
+          identityId: other,
+          expiresAt: Date.now() + 1_000_000
+        });
+
+        await adapter.deleteSessionsForIdentity(target);
+
+        expect(await adapter.getSessionByToken('tok-t1')).toBeNull();
+        expect(await adapter.getSessionByToken('tok-t2')).toBeNull();
+        expect(await adapter.getSessionByToken('tok-o1')).not.toBeNull();
+      });
+
+      it('deleteSessionsForIdentity is idempotent on an identity with no sessions', async () => {
+        const id = (
+          await adapter.createIdentity({
+            handle: 'sess-empty',
+            passcodeHash: PASSCODE
+          })
+        ).id;
+        await expect(
+          adapter.deleteSessionsForIdentity(id)
+        ).resolves.toBeUndefined();
       });
     });
 

@@ -120,6 +120,35 @@ export function registerCommandRoute(
           }),
         );
         fanOutSuccess(id, command, packet, submitter);
+        // Phase 5b — audit only on success per ADR-175 §Resolved OQ-6.
+        // Engine-throw paths intentionally produce no audit row so a
+        // failed turn doesn't leave a misleading entry behind.
+        try {
+          await options.adapter.appendAuditEntry({
+            actorId: submitter.id,
+            action: 'command.submit',
+            targetKind: 'room',
+            targetId: id,
+            detail: JSON.stringify({
+              roomId: id,
+              turn: packet.turn,
+              command,
+              submitter: {
+                identityId: submitter.id,
+                handle: submitter.handle,
+              },
+            }),
+          });
+        } catch (auditErr) {
+          // Audit write failed AFTER the turn already committed.
+          // Failing the player here would be wrong — log loudly and
+          // continue. An admin investigating later sees the absent
+          // row in the audit log itself.
+          request.log.error(
+            { err: auditErr, roomId: id, turn: packet.turn },
+            'command: audit_write_failed',
+          );
+        }
         return reply.code(200).send(packet);
       } catch (err) {
         if (err instanceof RoomNotFoundError) {
