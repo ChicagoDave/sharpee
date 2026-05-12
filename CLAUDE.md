@@ -88,14 +88,17 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 
 # Common workflows
 ./build.sh -s dungeo                          # Build platform + story
-./build.sh -s dungeo -c browser               # Build for web browser
-./build.sh -s dungeo -c zifmia                # Build Zifmia client (bundle + runner)
-./build.sh -s dungeo -c zifmia -t modern-dark # Zifmia with dark theme
-./build.sh -s dungeo -c browser -c zifmia     # Build both clients
+./build.sh -s dungeo -c browser               # Build single-player browser client
+./build.sh -c zifmia                          # Build Zifmia multi-user web app (server + browser bundle)
+./build.sh -s dungeo -c zifmia                # Same, plus bundle the story for install via admin
+./build.sh -s dungeo -c browser -c zifmia     # Both clients
+./build.sh --runner -t modern-dark            # Legacy interpreter runner (will be renamed)
 ./build.sh --skip stdlib -s dungeo            # Resume from stdlib package
 ```
 
-**Available Themes** (for `-t` flag):
+**`-c zifmia` (Phase 6)**: builds the multi-user web app at `tools/zifmia/` by delegating to `pnpm --filter @sharpee/zifmia build`. Output: `tools/zifmia/dist/`. Story bundle is optional — Zifmia installs stories at runtime via `POST /admin/stories`.
+
+**Available Themes** (for the legacy `--runner` path only — multi-user Zifmia owns its own theming):
 - `classic-light` — Literata font, warm light tones (default)
 - `modern-dark` — Inter font, Catppuccin Mocha colors
 - `retro-terminal` — JetBrains Mono, green phosphor
@@ -103,8 +106,9 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 
 **Outputs**:
 - `dist/cli/sharpee.js` — Platform bundle (CLI, testing)
-- `dist/web/{story}/` — Browser client
-- `dist/web/{story}-react/` — React client
+- `tools/zifmia/dist/` — Zifmia multi-user web app (with `-c zifmia`)
+- `dist/web/{story}/` — Single-player browser client (with `-c browser`)
+- `dist/runner/` — Legacy interpreter runner (with `--runner`)
 
 **Version System**:
 - Versions use format `X.Y.Z-beta` (no timestamp)

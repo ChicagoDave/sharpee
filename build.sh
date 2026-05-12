@@ -76,19 +76,25 @@ Usage: ./build.sh [options]
 Options:
   -s, --story NAME     Build a story (dungeo, reflections, etc.)
   -c, --client TYPE    Build client (browser, zifmia) - can specify multiple
-  -t, --theme NAME     Zifmia theme (default: classic-light)
+                       browser = single-player static web client per story
+                       zifmia  = multi-user web app at tools/zifmia/
+  -t, --theme NAME     Theme for the legacy --runner path (default: classic-light)
+                       No effect with -c zifmia (the multi-user product
+                       handles its own theming in the web client).
       --skip PKG       Resume platform build from package
       --version VER    Set version explicitly (e.g., 0.9.90) for all outputs
       --no-version     Skip version updates
   -b, --story-bundle   Create .sharpee story bundle (requires -s)
       --test           Build fast test bundle (requires -s)
-      --runner         Build Zifmia runner (loads .sharpee bundles in browser)
+      --runner         Build the legacy interpreter runner (dormant; will
+                       be renamed when redone). Loads .sharpee bundles in
+                       a Tauri-wrappable React shell. NOT Zifmia anymore.
       --runtime        Build headless runtime for Lantern (postMessage bridge)
       --bridge         Build native engine bridge (Node.js subprocess, ADR-135)
   -v, --verbose        Show build details
   -h, --help           Show this help
 
-Available Themes:
+Available Themes (legacy --runner only):
   classic-light        Literata font, warm light tones (recommended)
   modern-dark          Inter font, Catppuccin Mocha colors
   retro-terminal       JetBrains Mono, green phosphor terminal
@@ -96,13 +102,13 @@ Available Themes:
 
 Examples:
   ./build.sh -s dungeo                       Build platform + dungeo story
-  ./build.sh -s dungeo -c browser            Build for web browser
-  ./build.sh -s dungeo -c zifmia             Build Zifmia client (bundle + runner)
-  ./build.sh -s dungeo -c zifmia -t modern-dark  Zifmia with dark theme
+  ./build.sh -s dungeo -c browser            Build single-player browser client
+  ./build.sh -c zifmia                       Build the Zifmia multi-user web app
+  ./build.sh -s dungeo -c zifmia             Build Zifmia + bundle dungeo for install
   ./build.sh -s dungeo -c browser -c zifmia  Build both clients
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
   ./build.sh -s dungeo --test                Build fast test bundle
-  ./build.sh --runner                        Build Zifmia runner
+  ./build.sh --runner -t modern-dark         Build legacy interpreter runner
   ./build.sh --runtime                       Build headless runtime for Lantern
   ./build.sh --bridge                        Build native engine bridge (ADR-135)
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
@@ -110,11 +116,12 @@ Examples:
 Output:
   dist/cli/sharpee.js          Platform bundle (CLI, testing)
   dist/cli/{story}-test.js     Fast test bundle (with --test)
-  dist/stories/{story}.sharpee  Story bundle (with -b)
-  dist/runner/                       Zifmia client (with -c zifmia or --runner)
+  dist/stories/{story}.sharpee  Story bundle (with -b or with -s -c zifmia)
+  tools/zifmia/dist/           Zifmia multi-user web app (with -c zifmia)
+  dist/runner/                  Legacy interpreter runner (with --runner)
   dist/runtime/sharpee-runtime.js  Headless runtime (with --runtime)
   dist/bridge/node_bridge.js    Native engine bridge (with --bridge)
-  dist/web/{story}/             Browser client
+  dist/web/{story}/             Single-player browser client (with -c browser)
 
 For more information, see docs/reference/building.md
 
@@ -207,10 +214,19 @@ if [ "$BUILD_TEST" = true ] && [ -z "$STORY" ]; then
     exit 1
 fi
 
-# Validate: client requires story
-if [ ${#CLIENTS[@]} -gt 0 ] && [ -z "$STORY" ]; then
-    echo -e "${RED}Error: --client requires --story${NC}"
+# Validate: -c browser requires -s (the single-player browser client
+# bakes a specific story bundle in). -c zifmia does NOT require -s —
+# the multi-user web app installs stories at runtime via the admin route.
+NON_ZIFMIA_CLIENTS=()
+for CLIENT in "${CLIENTS[@]}"; do
+    if [ "$CLIENT" != "zifmia" ]; then
+        NON_ZIFMIA_CLIENTS+=("$CLIENT")
+    fi
+done
+if [ ${#NON_ZIFMIA_CLIENTS[@]} -gt 0 ] && [ -z "$STORY" ]; then
+    echo -e "${RED}Error: --client ${NON_ZIFMIA_CLIENTS[*]} requires --story${NC}"
     echo "Example: ./build.sh -s dungeo -c browser"
+    echo "(--client zifmia does NOT require --story — Zifmia installs stories at runtime)"
     exit 1
 fi
 
@@ -329,39 +345,52 @@ EOF
         fi
     fi
 
-    # Determine if Zifmia needs version updates (either -c zifmia or --runner)
-    local UPDATE_ZIFMIA=false
-    if [ "$BUILD_RUNNER" = true ]; then
-        UPDATE_ZIFMIA=true
-    fi
+    # `-c zifmia` (new, post-Phase-6): multi-user web app at tools/zifmia.
+    # Updates the tools/zifmia/package.json version so the built bundle
+    # carries the platform's SHARPEE_VERSION.
+    local UPDATE_ZIFMIA_WEB=false
     for CLIENT in "${CLIENTS[@]}"; do
         if [ "$CLIENT" = "zifmia" ]; then
-            UPDATE_ZIFMIA=true
+            UPDATE_ZIFMIA_WEB=true
         fi
     done
+    if [ "$UPDATE_ZIFMIA_WEB" = true ]; then
+        local ZIFMIA_WEB_PKG="tools/zifmia/package.json"
+        if [ -f "$ZIFMIA_WEB_PKG" ]; then
+            node -e "
+              const fs = require('fs');
+              const pkg = require('./$ZIFMIA_WEB_PKG');
+              pkg.version = '$SHARPEE_VERSION';
+              fs.writeFileSync('$ZIFMIA_WEB_PKG', JSON.stringify(pkg, null, 2) + '\n');
+            "
+            log_ok "@sharpee/zifmia $SHARPEE_VERSION"
+        fi
+    fi
 
-    # Update Zifmia version files
-    if [ "$UPDATE_ZIFMIA" = true ]; then
-        local ZIFMIA_PKG="packages/interpreter/package.json"
-        local ZIFMIA_VERSION_TS="packages/interpreter/src/version.ts"
-        local ZIFMIA_TAURI_CONF="packages/interpreter/src-tauri/tauri.conf.json"
-        local ZIFMIA_CARGO="packages/interpreter/src-tauri/Cargo.toml"
+    # `--runner` (legacy, dormant): the packages/interpreter Tauri runner.
+    # Will be renamed to "interpreter" when redone; until then the flag
+    # stays available for any existing tooling.
+    if [ "$BUILD_RUNNER" = true ]; then
+        local RUNNER_PKG="packages/interpreter/package.json"
+        local RUNNER_VERSION_TS="packages/interpreter/src/version.ts"
+        local RUNNER_TAURI_CONF="packages/interpreter/src-tauri/tauri.conf.json"
+        local RUNNER_CARGO="packages/interpreter/src-tauri/Cargo.toml"
         # Strip pre-release suffix for native manifests (Cargo.toml, tauri.conf.json)
         local NATIVE_VER=$(echo "$SHARPEE_VERSION" | sed 's/-.*//')
 
-        if [ -f "$ZIFMIA_PKG" ]; then
+        if [ -f "$RUNNER_PKG" ]; then
             node -e "
               const fs = require('fs');
-              const pkg = require('./$ZIFMIA_PKG');
+              const pkg = require('./$RUNNER_PKG');
               pkg.version = '$SHARPEE_VERSION';
-              fs.writeFileSync('$ZIFMIA_PKG', JSON.stringify(pkg, null, 2) + '\n');
+              fs.writeFileSync('$RUNNER_PKG', JSON.stringify(pkg, null, 2) + '\n');
             "
         fi
 
-        mkdir -p "$(dirname "$ZIFMIA_VERSION_TS")"
-        cat > "$ZIFMIA_VERSION_TS" << EOF
+        mkdir -p "$(dirname "$RUNNER_VERSION_TS")"
+        cat > "$RUNNER_VERSION_TS" << EOF
 /**
- * Version information for zifmia client
+ * Version information for interpreter runner (legacy; pre-Phase-6 Zifmia)
  * Auto-generated by build.sh - DO NOT EDIT
  */
 export const CLIENT_VERSION = '${SHARPEE_VERSION}';
@@ -371,21 +400,21 @@ export const VERSION_INFO = { version: CLIENT_VERSION, buildDate: BUILD_DATE, en
 EOF
 
         # Update tauri.conf.json
-        if [ -f "$ZIFMIA_TAURI_CONF" ]; then
+        if [ -f "$RUNNER_TAURI_CONF" ]; then
             node -e "
               const fs = require('fs');
-              const conf = JSON.parse(fs.readFileSync('$ZIFMIA_TAURI_CONF', 'utf8'));
+              const conf = JSON.parse(fs.readFileSync('$RUNNER_TAURI_CONF', 'utf8'));
               conf.version = '$NATIVE_VER';
-              fs.writeFileSync('$ZIFMIA_TAURI_CONF', JSON.stringify(conf, null, 2) + '\n');
+              fs.writeFileSync('$RUNNER_TAURI_CONF', JSON.stringify(conf, null, 2) + '\n');
             "
         fi
 
         # Update Cargo.toml version line
-        if [ -f "$ZIFMIA_CARGO" ]; then
-            sed -i '' "s/^version = \".*\"/version = \"$NATIVE_VER\"/" "$ZIFMIA_CARGO"
+        if [ -f "$RUNNER_CARGO" ]; then
+            sed -i '' "s/^version = \".*\"/version = \"$NATIVE_VER\"/" "$RUNNER_CARGO"
         fi
 
-        log_ok "zifmia $SHARPEE_VERSION (native: $NATIVE_VER)"
+        log_ok "runner $SHARPEE_VERSION (native: $NATIVE_VER)"
     fi
 
     # Update non-zifmia client packages
@@ -884,7 +913,49 @@ build_browser_client() {
 }
 
 # ============================================================================
-# Zifmia Runner Build
+# Zifmia (multi-user web app) Build — Phase 6 product at tools/zifmia/
+# ============================================================================
+#
+# `-c zifmia` builds the multi-user web app: Fastify server + browser
+# client (vite-built static assets) at `tools/zifmia/`. The story bundle
+# is NOT baked in — Zifmia installs bundles via its admin route at
+# runtime. The story argument is therefore optional with `-c zifmia`,
+# but when present we still build the story bundle so an operator can
+# install it via `POST /admin/stories` after starting the server.
+
+build_zifmia_web() {
+    log_step "Building Zifmia (multi-user web)"
+
+    if [ ! -d "tools/zifmia" ]; then
+        echo -e "${RED}Error: tools/zifmia not found${NC}" >&2
+        return 1
+    fi
+
+    # Delegate to the package's own scripts: build:server (tsc) +
+    # build:web (vite). The package owns its own typecheck + bundle
+    # config; build.sh stays a thin orchestrator.
+    if ! pnpm --filter '@sharpee/zifmia' build 2>&1; then
+        echo -e "${RED}Error: Zifmia build failed${NC}" >&2
+        return 1
+    fi
+
+    local WEB_BUNDLE="tools/zifmia/dist/web/assets"
+    if [ -d "$WEB_BUNDLE" ]; then
+        local JS_SIZE
+        JS_SIZE=$(du -sh "$WEB_BUNDLE" | cut -f1)
+        echo "Output: tools/zifmia/dist/   (web bundle ~$JS_SIZE)"
+    else
+        echo "Output: tools/zifmia/dist/"
+    fi
+    echo ""
+}
+
+# ============================================================================
+# Interpreter Runner (legacy; pre-Phase-6 single-player Tauri browser
+# runner). Triggered by `--runner` only. The `-c zifmia` flag no longer
+# routes here as of Phase 6 — `-c zifmia` now builds the multi-user web
+# app above. When this path is redone, it will be renamed to
+# `--interpreter` (not planned).
 # ============================================================================
 
 build_runner() {
@@ -1170,7 +1241,7 @@ if [ "$STORY_BUNDLE" = true ]; then
     echo "  5. Bundle story: ${STORY}.sharpee"
 fi
 if [ "$BUILD_RUNNER" = true ]; then
-    echo "  6. Build Zifmia runner"
+    echo "  6. Build legacy interpreter runner"
 fi
 if [ "$BUILD_RUNTIME" = true ]; then
     echo "  6. Build headless runtime (Lantern)"
@@ -1180,7 +1251,7 @@ if [ "$BUILD_BRIDGE" = true ]; then
 fi
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "zifmia" ]; then
-        echo "  5. Build Zifmia client (theme: $THEME)"
+        echo "  5. Build Zifmia multi-user web app (tools/zifmia/)"
     else
         echo "  5. Build $CLIENT client"
     fi
@@ -1224,8 +1295,15 @@ for CLIENT in "${CLIENTS[@]}"; do
             build_browser_client "$STORY"
             ;;
         zifmia)
-            build_story_bundle "$STORY"
-            build_runner
+            # `-c zifmia` (post-Phase-6) builds the multi-user web app
+            # in tools/zifmia/. Story bundle is optional — when -s was
+            # supplied earlier in the run, build_story_bundle already
+            # ran and produced dist/stories/{story}.sharpee, which an
+            # operator can install via Zifmia's admin route.
+            if [ -n "$STORY" ] && [ "$STORY_BUNDLE" != true ]; then
+                build_story_bundle "$STORY"
+            fi
+            build_zifmia_web
             ;;
         *)
             echo -e "${RED}Unknown client type: $CLIENT${NC}"
@@ -1251,7 +1329,7 @@ if [ "$STORY_BUNDLE" = true ]; then
     echo "  dist/stories/${STORY}.sharpee - Story bundle"
 fi
 if [ "$BUILD_RUNNER" = true ]; then
-    echo "  dist/runner/ - Zifmia runner"
+    echo "  dist/runner/ - Legacy interpreter runner"
 fi
 if [ "$BUILD_RUNTIME" = true ]; then
     echo "  dist/runtime/sharpee-runtime.js - Headless runtime (Lantern)"
@@ -1260,15 +1338,16 @@ if [ "$BUILD_BRIDGE" = true ]; then
     echo "  dist/bridge/node_bridge.js - Native engine bridge (ADR-135)"
 fi
 
-if [ -n "$STORY" ]; then
-    for CLIENT in "${CLIENTS[@]}"; do
-        if [ "$CLIENT" = "zifmia" ]; then
-            echo "  dist/runner/ - Zifmia client"
-        else
-            echo "  dist/web/${STORY}/ - Browser client"
+for CLIENT in "${CLIENTS[@]}"; do
+    if [ "$CLIENT" = "zifmia" ]; then
+        echo "  tools/zifmia/dist/ - Zifmia multi-user web app"
+        if [ -n "$STORY" ]; then
+            echo "  dist/stories/${STORY}.sharpee - Story bundle (install via POST /admin/stories)"
         fi
-    done
-fi
+    elif [ -n "$STORY" ]; then
+        echo "  dist/web/${STORY}/ - Browser client"
+    fi
+done
 
 echo ""
 echo "Next steps:"
@@ -1282,13 +1361,11 @@ fi
 if [ "$BUILD_BRIDGE" = true ]; then
     echo "  Test Bridge:  echo '{\"method\":\"start\",\"bundle\":\"dist/stories/dungeo.sharpee\"}' | node dist/bridge/node_bridge.js"
 fi
-if [ -n "$STORY" ]; then
-    for CLIENT in "${CLIENTS[@]}"; do
-        if [ "$CLIENT" = "zifmia" ]; then
-            echo "  Test Zifmia:  npx serve dist/runner"
-        else
-            echo "  Test Browser: npx serve dist/web/${STORY}"
-        fi
-    done
-fi
+for CLIENT in "${CLIENTS[@]}"; do
+    if [ "$CLIENT" = "zifmia" ]; then
+        echo "  Test Zifmia:  node tools/zifmia/dist/index.js  (server on :3000)"
+    elif [ -n "$STORY" ]; then
+        echo "  Test Browser: npx serve dist/web/${STORY}"
+    fi
+done
 echo ""
