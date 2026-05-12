@@ -1,6 +1,11 @@
 /**
- * Tests for `handleAboutDisplayed` — ported from text-service.
+ * Tests for `handleAboutDisplayed`.
  *
+ * Post-refactor (session 2026-05-12): ABOUT emits the structured
+ * banner via the shared `buildBannerBlocks` helper — one block per
+ * semantically-classed piece, no `\n` in any block's content.
+ *
+ * @see packages/engine/src/prose-pipeline/handlers/banner.ts
  * @see ADR-174 §Engine-internal prose pipeline
  */
 
@@ -9,76 +14,87 @@ import { handleAboutDisplayed } from '../../../src/prose-pipeline/handlers/about
 import { makeEvent, makeProvider, makeContext } from '../test-helpers';
 
 describe('handleAboutDisplayed', () => {
-  it('should resolve banner template with story params', () => {
-    const provider = makeProvider({
-      'game.started.banner': '{title} by {author}',
-    });
+  it('emits the structured banner: game-title, story-version, platform-version, sub-title, author-list, banner-spacer', () => {
     const event = makeEvent('if.event.about_displayed', {
-      params: { title: 'Dungeon', author: 'Dave Lebling' },
-    });
-
-    const blocks = handleAboutDisplayed(event, makeContext(provider));
-
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0].key).toBe('about.text');
-    expect(blocks[0].content).toEqual(['Dungeon by Dave Lebling']);
-  });
-
-  it('should supply default empty strings for engine/build params', () => {
-    const provider = makeProvider({
-      'game.started.banner': (params) => {
-        const p = params as Record<string, string>;
-        return `${p?.title} (engine=${p?.engineVersion})`;
+      params: {
+        title: 'Dungeon',
+        version: '1.0.0',
+        buildDate: '2026-05-12T00:00:00Z',
+        description: 'A port of Mainframe Zork (1981)',
+        author: 'Dave Lebling',
+        engineVersion: '0.9.113',
       },
-    });
-    const event = makeEvent('if.event.about_displayed', {
-      params: { title: 'Test Game' },
-    });
-
-    const blocks = handleAboutDisplayed(event, makeContext(provider));
-
-    expect(blocks[0].content[0]).toContain('Test Game');
-    expect(blocks[0].content[0]).toContain('(engine=)');
-  });
-
-  it('should fall back to title/author as two blocks (tight) when provider echoes key', () => {
-    const provider = makeProvider({});
-    const event = makeEvent('if.event.about_displayed', {
-      params: { title: 'My Game', author: 'An Author' },
-    });
-
-    const blocks = handleAboutDisplayed(event, makeContext(provider));
-
-    expect(blocks).toHaveLength(2);
-    expect(blocks[0].key).toBe('about.text');
-    expect(blocks[0].content).toEqual(['My Game']);
-    expect(blocks[0].tight).toBeUndefined();
-    expect(blocks[1].key).toBe('about.text');
-    expect(blocks[1].content).toEqual(['By An Author']);
-    expect(blocks[1].tight).toBe(true);
-  });
-
-  it('should fall back to title/author as two blocks when no provider', () => {
-    const event = makeEvent('if.event.about_displayed', {
-      params: { title: 'My Game', author: 'An Author' },
     });
 
     const blocks = handleAboutDisplayed(event, makeContext());
 
-    expect(blocks).toHaveLength(2);
-    expect(blocks[0].content).toEqual(['My Game']);
-    expect(blocks[1].content).toEqual(['By An Author']);
-    expect(blocks[1].tight).toBe(true);
+    const classes = blocks.map((b) => b.className);
+    expect(classes).toEqual([
+      'game-title',
+      'story-version',
+      'platform-version',
+      'sub-title',
+      'author-list',
+      'banner-spacer',
+    ]);
+    expect(blocks.every((b) => b.key === 'about.text')).toBe(true);
   });
 
-  it('should use Unknown defaults as two blocks when params are empty', () => {
+  it('uses `credits` array when provided, one author-list block per entry', () => {
+    const event = makeEvent('if.event.about_displayed', {
+      params: {
+        title: 'Dungeon',
+        version: '1.0.0',
+        engineVersion: '0.9.113',
+        credits: [
+          'By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling',
+          'Ported by David Cornelson',
+        ],
+      },
+    });
+
+    const blocks = handleAboutDisplayed(event, makeContext());
+
+    const authorBlocks = blocks.filter((b) => b.className === 'author-list');
+    expect(authorBlocks).toHaveLength(2);
+    expect(authorBlocks[0].content).toEqual([
+      'By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling',
+    ]);
+    expect(authorBlocks[1].content).toEqual(['Ported by David Cornelson']);
+  });
+
+  it('falls back to `By {author}` when credits are absent', () => {
+    const event = makeEvent('if.event.about_displayed', {
+      params: { title: 'Game', author: 'Author Name', version: '1.0.0' },
+    });
+
+    const blocks = handleAboutDisplayed(event, makeContext());
+
+    const authorBlocks = blocks.filter((b) => b.className === 'author-list');
+    expect(authorBlocks).toHaveLength(1);
+    expect(authorBlocks[0].content).toEqual(['By Author Name']);
+  });
+
+  it('appends `game.banner.story-tail` template when registered', () => {
+    const provider = makeProvider({
+      'game.banner.story-tail': 'Type HELP for instructions.',
+    });
+    const event = makeEvent('if.event.about_displayed', {
+      params: { title: 'Dungeon', version: '1.0.0' },
+    });
+
+    const blocks = handleAboutDisplayed(event, makeContext(provider));
+
+    const last = blocks[blocks.length - 1];
+    expect(last.content).toEqual(['Type HELP for instructions.']);
+    expect(last.className).toBeUndefined();
+  });
+
+  it('returns an empty array when params are empty', () => {
     const event = makeEvent('if.event.about_displayed', {});
 
     const blocks = handleAboutDisplayed(event, makeContext());
 
-    expect(blocks).toHaveLength(2);
-    expect(blocks[0].content).toEqual(['Unknown']);
-    expect(blocks[1].content).toEqual(['By Unknown']);
-    expect(blocks[1].tight).toBe(true);
+    expect(blocks).toEqual([]);
   });
 });

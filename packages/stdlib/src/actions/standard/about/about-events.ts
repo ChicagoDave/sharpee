@@ -19,6 +19,8 @@ export interface AboutDisplayedEventData {
     buildDate?: string;
     clientVersion?: string;
     portedBy?: string;
+    /** Banner author-list lines (one block per entry). */
+    credits?: string[];
   };
   /** Whether this is a blocked/error case */
   blocked?: boolean;

@@ -63,23 +63,19 @@ function registerGameMessages(language: LanguageProvider): void {
   // Mainframe Zork always says "Taken." regardless of source (room, container, supporter)
   language.addMessage('if.action.taking.taken_from', 'Taken.');
 
-  // Opening banner - displayed when game starts
-  // Uses story config params: {title}, {author}, {version}, {buildDate}, {engineVersion}, {clientVersion}
-  language.addMessage('game.started.banner',
-    `{title}
-
-Story v{version} (built {buildDate})
-Sharpee v{engineVersion}
-
-A port of Mainframe Zork (1981)
-By {author}
-Ported by David Cornelson
-
-Type HELP for instructions, ABOUT for credits.`
+  // Opening banner — handled by the engine's `handleGameStarted` from
+  // structured story config (title, version, engineVersion, description,
+  // credits[]). This template fills the story-specific tail that
+  // follows the banner spacer.
+  language.addMessage(
+    'game.banner.story-tail',
+    'Type HELP for instructions, ABOUT for credits.',
   );
 
-  // VERSION command - same format as banner for consistency
-  language.addMessage('if.action.version',
+  // VERSION command — keeps the legacy single-string format for now.
+  // Splits into one block per line via `createBlocks` downstream.
+  language.addMessage(
+    'if.action.version',
     `{title}
 
 Story v{version} (built {buildDate})
@@ -89,6 +85,6 @@ A port of Mainframe Zork (1981)
 By {author}
 Ported by David Cornelson
 
-Type HELP for instructions, ABOUT for credits.`
+Type HELP for instructions, ABOUT for credits.`,
   );
 }

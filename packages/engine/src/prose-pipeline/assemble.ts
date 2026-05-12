@@ -28,6 +28,13 @@ export interface CreateBlockOptions {
    * invariant that a tight block must not appear first in a packet.
    */
   tight?: boolean;
+
+  /**
+   * Optional semantic CSS class the browser renderer applies to the
+   * rendered element in addition to `main-entry`. See
+   * `ITextBlock.className`.
+   */
+  className?: string;
 }
 
 /**
@@ -53,6 +60,7 @@ export function createBlock(
     key,
     content: content.length === 0 ? [''] : content,
     ...(opts?.tight ? { tight: true } : {}),
+    ...(opts?.className ? { className: opts.className } : {}),
   };
   return block;
 }

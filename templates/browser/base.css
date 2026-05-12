@@ -170,6 +170,35 @@ ul, ol, menu {
   margin-bottom: 0;
 }
 
+/* ----- Opening banner (structured pieces) ----- */
+/* Each piece below is a `<p class="main-entry {name}">` emitted by the
+   engine's `buildBannerBlocks`. Defaults keep them flush; themes may
+   override font weight, size, alignment. The `banner-spacer` is the
+   only piece that occupies vertical space — it's an empty `<p>` whose
+   height supplies the visual gap between the credits and any
+   story-defined tail (instructions / tagline). */
+
+.sharpee-prose-pane p.game-title,
+.sharpee-prose-pane p.story-version,
+.sharpee-prose-pane p.platform-version,
+.sharpee-prose-pane p.sub-title,
+.sharpee-prose-pane p.author-list {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.sharpee-prose-pane p.banner-spacer {
+  margin-top: 0;
+  margin-bottom: 0;
+  /* Empty <p> — render its line-height as the visual gap. */
+  min-height: 1em;
+}
+
+/* Game title default — bold, slightly larger. Themes may override. */
+.sharpee-prose-pane p.game-title {
+  font-weight: bold;
+}
+
 /* ----- Input bar ----- */
 
 .sharpee-input-bar {

@@ -685,12 +685,15 @@ export class GameEngine {
     const clientVersion = storyInfoTrait?.clientVersion;
 
     // Emit game started event
+    const cfg = this.story?.config;
     const startedEvent = createGameStartedEvent({
-      id: this.story?.config.id,
+      id: cfg?.id,
       title: this.context.metadata.title,
       author: this.context.metadata.author,
       version: this.context.metadata.version,
-      buildDate: this.story?.config.buildDate
+      buildDate: cfg?.buildDate,
+      description: cfg?.description,
+      credits: cfg?.credits,
     }, this.sessionStartTime, engineVersion, clientVersion);
     this.emitGameEvent(startedEvent);
 

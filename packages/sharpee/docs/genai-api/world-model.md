@@ -4428,6 +4428,12 @@ export declare class StoryInfoTrait implements ITrait {
     engineVersion?: string;
     clientVersion?: string;
     portedBy?: string;
+    /**
+     * Distinct credit lines for the banner's `author-list` section.
+     * One block per entry. When unset, the banner falls back to a
+     * single `By {author}` line.
+     */
+    credits?: string[];
     constructor(data?: Partial<StoryInfoTrait>);
 }
 ```

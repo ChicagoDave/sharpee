@@ -48,10 +48,13 @@ export function createMainChannelRenderer(
         const p = doc.createElement('p');
         p.classList.add('main-entry');
         if (entry.tight) p.classList.add('main-entry--tight');
+        if (entry.className) p.classList.add(entry.className);
         // No `white-space: pre-line`. Engine handlers split `\n` into
         // block boundaries via `createBlocks`; entries marked `tight`
         // get the `main-entry--tight` class so the inter-paragraph
         // margin collapses and continuation lines stack flush.
+        // `entry.className` carries semantic identity (game-title,
+        // story-version, etc.) for per-piece CSS styling.
         p.appendChild(renderTextContent(doc, entry.content));
         slot.appendChild(p);
       }
@@ -74,11 +77,14 @@ function normalizeEntry(raw: unknown): MainEntry | null {
     return { content: raw as ReadonlyArray<TextContent> };
   }
   if (raw && typeof raw === 'object' && 'content' in raw) {
-    const obj = raw as { content: unknown; tight?: unknown };
+    const obj = raw as { content: unknown; tight?: unknown; className?: unknown };
     if (!Array.isArray(obj.content)) return null;
     return {
       content: obj.content as ReadonlyArray<TextContent>,
       ...(obj.tight ? { tight: true } : {}),
+      ...(typeof obj.className === 'string' && obj.className
+        ? { className: obj.className }
+        : {}),
     };
   }
   return null;

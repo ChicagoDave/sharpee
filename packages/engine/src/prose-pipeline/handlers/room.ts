@@ -100,7 +100,15 @@ export function handleRoomDescription(
   if (description) {
     const resolvedDesc = extractValue(description);
     if (resolvedDesc) {
-      blocks.push(...createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc));
+      const descBlocks = createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc);
+      // When the room name was emitted in this packet, the description's
+      // first block continues the room "heading" visually — mark it tight
+      // so the renderer collapses the inter-paragraph margin and the
+      // description sits flush under the bold room name.
+      if (descBlocks.length > 0 && blocks.length > 0) {
+        descBlocks[0] = { ...descBlocks[0], tight: true };
+      }
+      blocks.push(...descBlocks);
     }
   }
 

@@ -2298,6 +2298,13 @@ export interface MainEntry {
     readonly content: ReadonlyArray<TextContent>;
     /** Visual continuation hint. See type-level doc above. */
     readonly tight?: boolean;
+    /**
+     * Optional semantic CSS class the renderer applies to the rendered
+     * element in addition to `main-entry`. Mirrors `ITextBlock.className`
+     * — used by the prose pipeline to flow per-piece visual identity
+     * through the channel wire to the browser renderer.
+     */
+    readonly className?: string;
 }
 /**
  * Channel update modes (ADR-163 §4).

@@ -1,9 +1,11 @@
 /**
  * About event handler — `if.event.about_displayed`.
  *
- * Re-uses the `game.started.banner` template to produce a one-block
- * about screen. Falls back to a hand-built `Title\nBy Author` line
- * when the template isn't registered.
+ * Produces the same structured banner as `handleGameStarted`, via the
+ * shared `buildBannerBlocks` helper. The ABOUT action gives us a
+ * flat `params: Record<string, string>` that mirrors `event.data.story`
+ * — we project it into the `BannerStoryInfo` shape and reuse the
+ * builder.
  *
  * Public interface: `handleAboutDisplayed`. Used by the pipeline's
  * event-type dispatch.
@@ -16,50 +18,43 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
-import { createBlock, createBlocks } from '../assemble';
+import { buildBannerBlocks, type BannerStoryInfo } from './banner';
 
 /**
- * Handle `if.event.about_displayed` by showing the story banner.
+ * Handle `if.event.about_displayed` by showing the structured banner.
  *
- * The about action puts story metadata (title, author, version,
- * description) in `event.data.params`. We use the same banner
- * template as game.started.
+ * Reads the about action's `params` payload (title, author, version,
+ * description, engineVersion, buildDate, portedBy). The ABOUT action
+ * does not currently pass `credits` directly; when present, the
+ * builder falls back to `By {author}` for a single author-list line.
+ * Stories that want richer ABOUT credit blocks should propagate
+ * `credits` through the about action's params.
  */
 export function handleAboutDisplayed(
   event: ISemanticEvent,
   context: HandlerContext,
 ): ITextBlock[] {
-  const data = event.data as
-    | {
-        params?: Record<string, string>;
-      }
-    | undefined;
+  const data = event.data as { params?: Record<string, unknown> } | undefined;
+  const params = (data?.params ?? {}) as Record<string, unknown>;
 
-  const params = data?.params || {};
-
-  // Defaults for template params the about action doesn't provide
-  // (the banner template may reference engineVersion, buildDate, etc.).
-  const templateParams: Record<string, string> = {
-    engineVersion: '',
-    buildDate: '',
-    clientVersion: '',
-    id: '',
-    ...params,
+  const story: BannerStoryInfo = {
+    title: stringOrUndef(params.title),
+    version: stringOrUndef(params.version),
+    buildDate: stringOrUndef(params.buildDate),
+    description: stringOrUndef(params.description),
+    author: stringOrUndef(params.author),
+    credits: Array.isArray(params.credits)
+      ? (params.credits as unknown[]).filter(
+          (s): s is string => typeof s === 'string' && s.length > 0,
+        )
+      : undefined,
   };
 
-  const message = context.languageProvider?.getMessage(
-    'game.started.banner',
-    templateParams,
-  );
+  const engineVersion = stringOrUndef(params.engineVersion);
 
-  if (!message || message === 'game.started.banner') {
-    const title = params.title || 'Unknown';
-    const author = params.author || 'Unknown';
-    return [
-      createBlock('about.text', title),
-      createBlock('about.text', `By ${author}`, { tight: true }),
-    ];
-  }
+  return buildBannerBlocks('about.text', story, engineVersion, context);
+}
 
-  return createBlocks('about.text', message);
+function stringOrUndef(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
 }

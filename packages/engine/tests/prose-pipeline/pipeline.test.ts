@@ -79,9 +79,15 @@ describe('ProsePipeline.processTurn (full pipeline)', () => {
 
     const blocks = pipeline.processTurn(events);
 
+    // The structured banner now emits multiple `game.banner` blocks
+    // (one per semantic piece) before the room description.
     expect(blocks.length).toBeGreaterThanOrEqual(2);
     expect(blocks[0].key).toBe('game.banner');
-    expect(blocks[1].key).toBe('room.description');
+    const lastBanner = blocks
+      .map((b, i) => ({ b, i }))
+      .filter((x) => x.b.key === 'game.banner')
+      .pop()!;
+    expect(blocks[lastBanner.i + 1].key).toBe('room.description');
   });
 
   it('PP1: should route events to correct handlers and concatenate blocks', () => {

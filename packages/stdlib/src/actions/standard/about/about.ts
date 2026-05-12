@@ -59,7 +59,10 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
         engineVersion: storyConfig.engineVersion || '',
         buildDate: storyConfig.buildDate || '',
         clientVersion: storyConfig.clientVersion || '',
-        portedBy: storyConfig.portedBy || ''
+        portedBy: storyConfig.portedBy || '',
+        ...(storyConfig.credits && storyConfig.credits.length > 0
+          ? { credits: storyConfig.credits }
+          : {}),
       }
     };
 

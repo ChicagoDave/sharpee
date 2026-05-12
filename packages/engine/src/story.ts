@@ -28,6 +28,17 @@ export interface StoryConfig {
    * Story author(s)
    */
   author: string | string[];
+
+  /**
+   * Credit lines for the opening banner's `author-list` section. Each
+   * string becomes one `author-list`-classed paragraph. Use this when
+   * the banner needs distinct credit lines (e.g., a primary author
+   * line plus a "Ported by …" line, or multiple separate roles).
+   *
+   * When omitted, the engine falls back to a single `author-list`
+   * entry built from `author` (joined with ", " if it's an array).
+   */
+  credits?: string[];
   
   /**
    * Story version (semantic version, e.g., "1.0.0" or "1.0.0-beta")

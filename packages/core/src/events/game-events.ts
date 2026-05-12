@@ -16,6 +16,14 @@ export interface GameEventStoryData {
   author?: string;
   version?: string;
   buildDate?: string;
+  /** Short prose description used as the banner sub-title. */
+  description?: string;
+  /**
+   * Credit lines for the banner's `author-list` section. One block
+   * per entry. Stories use this for distinct lines like
+   * `["By Author A, Author B", "Ported by Author C"]`.
+   */
+  credits?: string[];
 }
 
 /** Session tracking data */

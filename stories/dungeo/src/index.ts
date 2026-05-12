@@ -163,6 +163,10 @@ export const config: StoryConfig = {
   id: "dungeon",
   title: "DUNGEON",
   author: "Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
+  credits: [
+    "By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
+    "Ported by David Cornelson",
+  ],
   version: VERSION_INFO.version,
   buildDate: VERSION_INFO.buildDate,
   description: "A port of Mainframe Zork (1981)",
@@ -212,6 +216,7 @@ export class DungeoStory implements Story {
     storyInfoEntity.add(new StoryInfoTrait({
       title: config.title,
       author: Array.isArray(config.author) ? config.author.join(', ') : config.author,
+      credits: config.credits,
       version: config.version,
       description: config.description,
       buildDate: VERSION_INFO.buildDate,

@@ -132,6 +132,16 @@ export interface ITextBlock {
      * packet — the renderer relies on a predecessor to collapse against.
      */
     readonly tight?: boolean;
+    /**
+     * Optional semantic CSS class applied to the rendered element by the
+     * browser main-channel renderer (in addition to `main-entry`). Used
+     * for content with its own visual identity — game banner pieces
+     * (`game-title`, `story-version`, `platform-version`, `sub-title`,
+     * `author-list`, `banner-spacer`), and similar future categories.
+     * Author classes (no `sharpee-` prefix) flow through unchanged so
+     * stories can define their own.
+     */
+    readonly className?: string;
 }
 /**
  * Core block keys defined by the platform.

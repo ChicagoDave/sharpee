@@ -125,6 +125,7 @@ export const mainChannel: IOChannel<MainEntry> = {
         entries.push({
           content: [...block.content],
           ...(block.tight ? { tight: true } : {}),
+          ...(block.className ? { className: block.className } : {}),
         });
       }
     }
