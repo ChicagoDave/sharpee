@@ -1,9 +1,14 @@
 /**
  * @module @sharpee/zifmia/server/admin-identities
- * @purpose `POST /admin/identities/:id/passcode_reset` — admin
- *   passcode reset. Generates a fresh random passcode, persists its
- *   scrypt hash, invalidates every live session for the identity, and
- *   emits an `identity.passcode_reset` audit row.
+ * @purpose Admin identity routes:
+ *   - `GET /admin/identities?handle=...` — exact-match handle lookup
+ *     used by the admin UI's passcode-reset search (Phase 6f-admin).
+ *     Returns `{identities: PublicIdentity[]}` (0 or 1 entries);
+ *     `passcodeHash` is never serialized.
+ *   - `POST /admin/identities/:id/passcode_reset` — admin
+ *     passcode reset. Generates a fresh random passcode, persists its
+ *     scrypt hash, invalidates every live session for the identity, and
+ *     emits an `identity.passcode_reset` audit row.
  * @owner Zifmia server (tools/zifmia/server).
  *
  * Per ADR-175 §Resolved OQ-6 (2026-05-11): `identity.passcode_reset`
@@ -63,6 +68,40 @@ export function registerAdminIdentityRoutes(
   const auth = authMiddleware({ adapter: options.adapter });
   const admin = adminMiddleware();
   const preHandler = [auth, admin];
+
+  // ── GET /admin/identities ───────────────────────────────────────
+  // Exact-match handle lookup. The v1 UX is "admin types a handle to
+  // resolve an identityId, then resets the passcode". A full list
+  // endpoint is intentionally not supported — handle is the natural
+  // key the admin will know, and a missing-handle request returns 400
+  // rather than dumping every identity row to the wire.
+  app.get(
+    '/admin/identities',
+    { preHandler },
+    async (request, reply) => {
+      const query = request.query as { handle?: unknown } | undefined;
+      const handle = typeof query?.handle === 'string' ? query.handle : null;
+      if (!handle || handle.length === 0) {
+        return reply
+          .code(400)
+          .send({ error: 'invalid_query', detail: 'missing_handle' });
+      }
+      const identity = await options.adapter.getIdentityByHandle(handle);
+      if (!identity) {
+        return reply.code(200).send({ identities: [] });
+      }
+      return reply.code(200).send({
+        identities: [
+          {
+            id: identity.id,
+            handle: identity.handle,
+            isAdmin: identity.isAdmin,
+            createdAt: identity.createdAt,
+          },
+        ],
+      });
+    },
+  );
 
   app.post(
     '/admin/identities/:id/passcode_reset',

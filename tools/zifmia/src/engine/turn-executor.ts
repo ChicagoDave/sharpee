@@ -73,7 +73,12 @@ const PerceptionServiceRuntime: new () => IPerceptionService =
 import type { StorageAdapter } from '../storage/adapter';
 import type { Room, SaveBlob } from '../storage/types';
 import { loadStoryFromBundle } from './bundle-loader';
-import type { TurnEvent, TurnPacket } from './types';
+import type {
+  ChannelCmgtPacket,
+  ChannelTurnPacket,
+  TurnEvent,
+  TurnPacket
+} from './types';
 
 export interface TurnExecutorInput {
   adapter: StorageAdapter;
@@ -150,6 +155,60 @@ export class BundleNotInstalledError extends Error {
   }
 }
 
+/**
+ * In-memory cache of channel manifests keyed by `(storyId, version)`.
+ * The manifest is immutable for a bundle version under fixed
+ * `ClientCapabilities`, so we capture once per bundle and re-use.
+ *
+ * Reset is intentional — `clearStoryCacheForTests()` exists for bundle
+ * cache; the manifest cache piggy-backs on the same export below.
+ */
+const manifestCache = new Map<string, ChannelCmgtPacket>();
+
+function manifestCacheKey(storyId: string, version: string): string {
+  return `${storyId}@${version}`;
+}
+
+/**
+ * Capture (or read from cache) the CMGT manifest for a `(storyId,
+ * bundleVersion)` pair. Builds a throwaway engine, calls `start()`
+ * to trigger the engine's `'channel:manifest'` emit, and caches the
+ * result. The world state of the engine is fresh; the manifest is
+ * a function of the bundle's channel registry and `ClientCapabilities`
+ * only, so a fresh world is sufficient.
+ *
+ * DOES: returns a `ChannelCmgtPacket` populated from the bundle's
+ * channel registry, capability-filtered.
+ * WHEN: called by `GET /rooms/:id/state` (room-entry / WS-reconnect).
+ * REJECTS WHEN: the engine never fires `channel:manifest` (defensive)
+ *   → returns a stub `{kind: 'cmgt', protocol_version: 1, channels: []}`.
+ */
+export async function captureRoomManifest(
+  storyId: string,
+  version: string,
+  story: Story,
+): Promise<ChannelCmgtPacket> {
+  const key = manifestCacheKey(storyId, version);
+  const cached = manifestCache.get(key);
+  if (cached) return cached;
+
+  const built = buildEngine(story);
+  built.engine.start();
+  const manifest = built.capturedManifest ?? {
+    kind: 'cmgt' as const,
+    protocol_version: 1,
+    channels: [],
+  };
+  manifestCache.set(key, manifest);
+  return manifest;
+}
+
+/** Drop the manifest cache. Used by tests that mutate the channel
+ * registry between cases. */
+export function clearManifestCacheForTests(): void {
+  manifestCache.clear();
+}
+
 async function resolveRoomAndStory(
   adapter: StorageAdapter,
   roomId: string,
@@ -177,6 +236,21 @@ interface BuiltEngine {
   engine: GameEngine;
   capturedBlocks: ITextBlock[];
   capturedEvents: TurnEvent[];
+  /**
+   * Channel-typed `TurnPacket`s captured from the engine's
+   * `'channel:packet'` emissions during the capture window. Production
+   * engine emits exactly one per `executeTurn(...)`, so this array
+   * normally has length 1 after a single user turn. Multiple emissions
+   * are accumulated in order; the executor takes the last one as the
+   * wire packet for the turn.
+   */
+  capturedChannelPackets: ChannelTurnPacket[];
+  /**
+   * CMGT manifest captured from the engine's `'channel:manifest'`
+   * emission inside `engine.start()`. `null` only if the engine never
+   * fires the event (defensive — production engines always do).
+   */
+  capturedManifest: ChannelCmgtPacket | null;
   /** Called by the executor to begin accumulating blocks/events from the
    * very next emission. Used to drop everything emitted during restore
    * and start (which are not part of the user's turn). */
@@ -203,6 +277,8 @@ function buildEngine(story: Story): BuiltEngine {
   let capturing = false;
   const capturedBlocks: ITextBlock[] = [];
   const capturedEvents: TurnEvent[] = [];
+  const capturedChannelPackets: ChannelTurnPacket[] = [];
+  let capturedManifest: ChannelCmgtPacket | null = null;
 
   engine.on('text:output', (blocks: ITextBlock[]) => {
     if (capturing) capturedBlocks.push(...blocks);
@@ -215,6 +291,17 @@ function buildEngine(story: Story): BuiltEngine {
       data: (event.data as Record<string, unknown>) ?? {},
     });
   });
+  // Channel-I/O capture (ADR-163/165). `channel:manifest` fires once
+  // inside `engine.start()` before any turn — captured unconditionally
+  // so callers can read it back via `capturedManifest`. `channel:packet`
+  // fires per turn; gated by the same `capturing` flag the raw-block
+  // capture uses so emissions from start/restore are discarded.
+  engine.on('channel:manifest', (cmgt: ChannelCmgtPacket) => {
+    capturedManifest = cmgt;
+  });
+  engine.on('channel:packet', (packet: ChannelTurnPacket) => {
+    if (capturing) capturedChannelPackets.push(packet);
+  });
 
   engine.setStory(story);
   if (story.extendParser) story.extendParser(parser);
@@ -224,10 +311,14 @@ function buildEngine(story: Story): BuiltEngine {
     engine,
     capturedBlocks,
     capturedEvents,
+    capturedChannelPackets,
+    get capturedManifest() {
+      return capturedManifest;
+    },
     startCapture: () => {
       capturing = true;
     },
-  };
+  } as BuiltEngine;
 }
 
 /**
@@ -334,6 +425,19 @@ export async function executeTurnStatelessly(
     const saveData = await captureSaveData(built.engine);
     const turn = saveData.metadata.turnCount;
 
+    // Channel-typed packet for this turn. Take the last capture (the
+    // engine fires exactly one `channel:packet` per `executeTurn`, but
+    // accumulating defensively lets future engine work add staging
+    // events without breaking the wire). On the unexpected zero-capture
+    // path, synthesize an empty packet so the wire shape stays stable
+    // and clients don't crash trying to dispatch `undefined`.
+    const channelPacket: ChannelTurnPacket =
+      built.capturedChannelPackets[built.capturedChannelPackets.length - 1] ?? {
+        kind: 'turn',
+        turn_id: String(turn),
+        payload: {},
+      };
+
     const newEntry: TranscriptEntry = {
       turn,
       command,
@@ -343,6 +447,7 @@ export async function executeTurnStatelessly(
       },
       blocks: built.capturedBlocks,
       events: built.capturedEvents,
+      channelPacket,
     };
     const transcript = appendAndTruncate(
       priorTranscript,
@@ -368,6 +473,7 @@ export async function executeTurnStatelessly(
       turn,
       blocks: built.capturedBlocks,
       events: built.capturedEvents,
+      channelPacket,
     };
   } finally {
     await lease.release();

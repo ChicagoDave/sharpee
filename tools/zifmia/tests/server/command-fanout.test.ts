@@ -220,11 +220,15 @@ describe('POST /rooms/:id/command — fan-out on success', () => {
       roomId: string;
       turn: number;
       blocks: unknown[];
+      channelPacket: { kind: string; turn_id: string };
       submitter: { identityId: string };
     };
     expect(turnBroadcast.type).toBe('turn:broadcast');
     expect(turnBroadcast.turn).toBe(1);
     expect(turnBroadcast.blocks.length).toBeGreaterThan(0);
+    // Phase 6c-server: turn:broadcast carries the channel-typed packet.
+    expect(turnBroadcast.channelPacket).toBeDefined();
+    expect(turnBroadcast.channelPacket.kind).toBe('turn');
     expect(turnBroadcast.submitter.identityId).toBe(ctx.submitterId);
 
     await observer.close();

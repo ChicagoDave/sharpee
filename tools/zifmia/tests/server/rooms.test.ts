@@ -12,6 +12,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { startServer, type ZifmiaServerHandle } from '../../src/server';
 import { SqliteAdapter } from '../../src/storage/sqlite/sqlite-adapter';
 import type { Room } from '../../src/storage/types';
+import {
+  buildTinyFixtureBundle,
+  tinyFixtureConfig
+} from '../fixtures/build-bundle';
+import {
+  clearStoryCacheForTests,
+  clearManifestCacheForTests
+} from '../../src/engine';
 
 interface TestContext {
   handle: ZifmiaServerHandle;
@@ -303,11 +311,24 @@ describe('GET /rooms/:id/state (stub for Phase 3b)', () => {
     await ctx.handle.close();
   });
 
-  it('returns the stub shape for an existing room', async () => {
-    await seedStory(ctx.handle, ctx.identityId, 'story-E');
+  it('returns cmgt + empty transcript for an existing room with a real bundle', async () => {
+    // Phase 6c-server: state route now loads the bundle to capture
+    // the engine's `channel:manifest` emit, so the test needs a real
+    // (zip-parseable) fixture rather than the `Uint8Array([0])` stub
+    // the other rooms tests use.
+    clearStoryCacheForTests();
+    clearManifestCacheForTests();
+    await ctx.handle.adapter.installStoryBundle({
+      storyId: tinyFixtureConfig.id,
+      version: tinyFixtureConfig.version,
+      ifid: 'IFID-STATE-TEST',
+      title: tinyFixtureConfig.title,
+      installedBy: ctx.identityId,
+      bundle: await buildTinyFixtureBundle()
+    });
     const room = await ctx.handle.adapter.createRoom({
-      storyId: 'story-E',
-      bundleVersion: '1.0.0',
+      storyId: tinyFixtureConfig.id,
+      bundleVersion: tinyFixtureConfig.version,
       title: 'State Test',
       public: true,
       createdBy: ctx.identityId
@@ -317,11 +338,42 @@ describe('GET /rooms/:id/state (stub for Phase 3b)', () => {
       headers: { authorization: `Bearer ${ctx.sessionToken}` }
     });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
-      cmgt: null,
-      transcript: [],
-      currentValues: {}
+    const body = (await res.json()) as {
+      cmgt: { kind: string; protocol_version: number; channels: unknown[] };
+      transcript: unknown[];
+      currentValues: Record<string, unknown>;
+    };
+    expect(body.cmgt.kind).toBe('cmgt');
+    expect(body.cmgt.protocol_version).toBe(1);
+    expect(Array.isArray(body.cmgt.channels)).toBe(true);
+    expect(body.cmgt.channels.length).toBeGreaterThan(0);
+    expect(body.transcript).toEqual([]);
+    expect(body.currentValues).toEqual({});
+
+    // captureRoomManifest caches per (storyId, version). A second call
+    // on the same room must return an identical manifest; a third call
+    // on a SEPARATE room pinned to the same bundle must reuse the
+    // cached entry (no cache-key crosstalk).
+    const res2 = await fetch(`${ctx.baseUrl}/rooms/${room.id}/state`, {
+      headers: { authorization: `Bearer ${ctx.sessionToken}` }
     });
+    expect(res2.status).toBe(200);
+    const body2 = (await res2.json()) as { cmgt: unknown };
+    expect(body2.cmgt).toEqual(body.cmgt);
+
+    const sibling = await ctx.handle.adapter.createRoom({
+      storyId: tinyFixtureConfig.id,
+      bundleVersion: tinyFixtureConfig.version,
+      title: 'Sibling Room',
+      public: true,
+      createdBy: ctx.identityId
+    });
+    const res3 = await fetch(`${ctx.baseUrl}/rooms/${sibling.id}/state`, {
+      headers: { authorization: `Bearer ${ctx.sessionToken}` }
+    });
+    expect(res3.status).toBe(200);
+    const body3 = (await res3.json()) as { cmgt: unknown };
+    expect(body3.cmgt).toEqual(body.cmgt);
   });
 
   it('returns 404 room_not_found for unknown room', async () => {

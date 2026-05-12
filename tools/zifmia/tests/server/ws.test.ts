@@ -528,13 +528,83 @@ describe('GET /ws — presence', () => {
     expect(ack.type).toBe('room:subscribed');
     const roster = (await sock.next()) as {
       type: string;
-      participants: Array<{ identityId: string; handle: string }>;
+      participants: Array<{ identityId: string; handle: string; isAdmin: boolean }>;
     };
     expect(roster.type).toBe('presence:roster');
     expect(roster.participants.length).toBe(1);
     expect(roster.participants[0].identityId).toBe(ctx.identityId);
     expect(roster.participants[0].handle).toBe('ws-user');
+    // Phase 6d: roster carries isAdmin so the joiner's PresenceManager
+    // can apply the `--admin` ADR-176 modifier without an extra round trip.
+    expect(roster.participants[0].isAdmin).toBe(false);
     await sock.close();
+  });
+
+  it('presence:roster reports isAdmin=true for admin-flagged identities', async () => {
+    // Promote the ws-user identity to admin before subscribing.
+    await ctx.handle.adapter.setIdentityAdmin(ctx.identityId, true);
+    const sock = await openSocket(`${ctx.wsBase}?token=${ctx.sessionToken}`);
+    sock.send({ type: 'room:subscribe', roomId: ctx.roomA });
+    await sock.next(); // ack
+    const roster = (await sock.next()) as {
+      participants: Array<{ identityId: string; isAdmin: boolean }>;
+    };
+    expect(roster.participants[0].isAdmin).toBe(true);
+    await sock.close();
+  });
+
+  it('presence:joined carries isAdmin for the joining identity', async () => {
+    const a = await openSocket(`${ctx.wsBase}?token=${ctx.sessionToken}`);
+    a.send({ type: 'room:subscribe', roomId: ctx.roomA });
+    await a.next();
+    await a.next();
+
+    const listener = await asListener();
+    await ctx.handle.adapter.setIdentityAdmin(listener.identityId, true);
+    const bSock = await openSocket(`${ctx.wsBase}?token=${listener.token}`);
+    bSock.send({ type: 'room:subscribe', roomId: ctx.roomA });
+    await bSock.next();
+    await bSock.next();
+
+    const joined = (await a.next()) as {
+      type: string;
+      identityId: string;
+      isAdmin: boolean;
+    };
+    expect(joined.type).toBe('presence:joined');
+    expect(joined.identityId).toBe(listener.identityId);
+    expect(joined.isAdmin).toBe(true);
+
+    await a.close();
+    await bSock.close();
+  });
+
+  it('isAdmin is cached at WS connect — flipping admin after the socket opens does NOT affect a later subscribe', async () => {
+    // Invariant: `client.identity` is captured by `authenticateUpgrade`
+    // during the HTTP-upgrade handshake. Changes to the identity row
+    // after that point are NOT visible to the subscription handler.
+    // This locks the cache-at-connect design choice — if a future
+    // change re-reads identity per subscribe, this test must be
+    // updated in the same commit.
+    const a = await openSocket(`${ctx.wsBase}?token=${ctx.sessionToken}`);
+    a.send({ type: 'room:subscribe', roomId: ctx.roomA });
+    await a.next();
+    await a.next();
+
+    const listener = await asListener();
+    const bSock = await openSocket(`${ctx.wsBase}?token=${listener.token}`);
+    // Promote AFTER bSock connected, BEFORE it subscribes.
+    await ctx.handle.adapter.setIdentityAdmin(listener.identityId, true);
+    bSock.send({ type: 'room:subscribe', roomId: ctx.roomA });
+    await bSock.next();
+    await bSock.next();
+
+    const joined = (await a.next()) as { type: string; isAdmin: boolean };
+    expect(joined.type).toBe('presence:joined');
+    expect(joined.isAdmin).toBe(false);
+
+    await a.close();
+    await bSock.close();
   });
 
   it('broadcasts presence:joined to other subscribers on first-connection subscribe', async () => {

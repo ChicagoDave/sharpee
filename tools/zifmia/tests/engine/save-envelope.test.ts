@@ -155,4 +155,48 @@ describe('encodeEnvelope / decodeEnvelope', () => {
     const raw = gzipSync(new TextEncoder().encode(JSON.stringify(makeSaveData(1))));
     expect(() => decodeEnvelope(raw)).toThrow(/unsupported envelopeVersion/);
   });
+
+  it('round-trips channelPacket on transcript entries written by Phase 6c-server', () => {
+    const entry: TranscriptEntry = {
+      ...makeEntry(7),
+      channelPacket: {
+        kind: 'turn',
+        turn_id: '7',
+        payload: { main: [[{ kind: 'text', text: 'hello' }]] }
+      },
+    };
+    const envelope: ZifmiaSaveEnvelope = {
+      envelopeVersion: 1,
+      saveData: makeSaveData(7),
+      transcript: [entry],
+    };
+    const decoded = decodeEnvelope(encodeEnvelope(envelope));
+    expect(decoded.transcript[0].channelPacket).toEqual(entry.channelPacket);
+  });
+
+  it('decodes pre-6c-server entries (no channelPacket field) with channelPacket undefined', () => {
+    // Simulate a v1 transcript entry written before Phase 6c-server —
+    // every other field present, channelPacket absent. The decoder
+    // must accept it and leave channelPacket undefined so the wire
+    // layer can ship the entry as-is.
+    const legacyEntryJson = {
+      turn: 3,
+      command: 'look',
+      submitter: { identityId: 'id-3', handle: 'handle-3' },
+      blocks: [{ kind: 'paragraph', text: 'block 3' }],
+      events: [{ type: 'if.event.test', data: { turn: 3 } }],
+      // No channelPacket field.
+    };
+    const envelopeJson = {
+      envelopeVersion: 1,
+      saveData: makeSaveData(3),
+      transcript: [legacyEntryJson],
+    };
+    const payload = gzipSync(
+      new TextEncoder().encode(JSON.stringify(envelopeJson)),
+    );
+    const decoded = decodeEnvelope(payload);
+    expect(decoded.transcript[0].channelPacket).toBeUndefined();
+    expect(decoded.transcript[0].command).toBe('look');
+  });
 });

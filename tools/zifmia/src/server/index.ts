@@ -34,6 +34,7 @@ import { registerIdentityRoutes } from './identity';
 import { registerRestoreRoute } from './restore';
 import { registerRoomRoutes } from './rooms';
 import { registerSavesRoutes } from './saves';
+import { registerStoriesRoute } from './stories';
 import { registerWebRoutes } from './web';
 import { createPool, parseWorkerCount, type WorkerPool } from './worker-pool';
 import { registerWebSocketRoute } from './ws';
@@ -127,6 +128,7 @@ export async function startServer(
   registerHealthRoute(app, { adapter, packageVersion });
   registerIdentityRoutes(app, { adapter });
   registerRoomRoutes(app, { adapter });
+  registerStoriesRoute(app, { adapter });
   registerCommandRoute(app, { adapter, workerPool });
   registerSavesRoutes(app, { adapter });
   registerRestoreRoute(app, { adapter });

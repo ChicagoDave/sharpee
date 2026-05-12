@@ -323,6 +323,7 @@ async function handleRoomSubscribe(
       roomId,
       identityId: client.identity.id,
       handle: client.identity.handle,
+      isAdmin: client.identity.isAdmin,
     });
   }
 }

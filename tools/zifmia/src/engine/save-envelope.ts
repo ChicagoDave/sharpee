@@ -27,7 +27,7 @@ import { gunzipSync, gzipSync, strFromU8 } from 'fflate';
 import type { ISaveData } from '@sharpee/core';
 import type { ITextBlock } from '@sharpee/text-blocks';
 
-import type { TurnEvent } from './types';
+import type { ChannelTurnPacket, TurnEvent } from './types';
 
 /**
  * Maximum number of `TranscriptEntry` rows retained inside the save
@@ -56,6 +56,21 @@ export interface TranscriptEntry {
   blocks: ITextBlock[];
   /** Forwardable events emitted during this turn. */
   events: TurnEvent[];
+  /**
+   * Channel-typed `TurnPacket` (ADR-163 wire form) for this turn.
+   *
+   * Optional for backwards readability: envelopes written before Phase
+   * 6c-server have no `channelPacket` on their transcript entries. The
+   * decoder (this module's `decodeEnvelope`) returns those entries with
+   * `channelPacket: undefined` and the wire layer (`GET
+   * /rooms/:id/state`) ships them as-is — the client falls back to
+   * plain-text rendering of `blocks` for legacy entries.
+   *
+   * All envelopes produced by Phase 6c-server or later carry this
+   * field on every entry. Per the envelope contract ("New optional
+   * fields do not require a bump") the `envelopeVersion` remains `1`.
+   */
+  channelPacket?: ChannelTurnPacket;
 }
 
 /**

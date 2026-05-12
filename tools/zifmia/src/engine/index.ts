@@ -6,12 +6,19 @@
 
 export {
   executeTurnStatelessly,
+  captureRoomManifest,
+  clearManifestCacheForTests,
   RoomNotFoundError,
   RoomClosedError,
   BundleNotInstalledError,
 } from './turn-executor';
 export type { TurnExecutorInput } from './turn-executor';
-export type { TurnEvent, TurnPacket } from './types';
+export type {
+  ChannelCmgtPacket,
+  ChannelTurnPacket,
+  TurnEvent,
+  TurnPacket
+} from './types';
 export { loadStoryFromBundle, clearStoryCacheForTests } from './bundle-loader';
 export {
   TRANSCRIPT_WINDOW,

@@ -16,7 +16,13 @@
 import type { FastifyInstance } from 'fastify';
 
 import { authMiddleware } from './auth-middleware';
-import { decodeEnvelope, type TranscriptEntry } from '../engine';
+import {
+  captureRoomManifest,
+  decodeEnvelope,
+  type ChannelCmgtPacket,
+  type TranscriptEntry
+} from '../engine';
+import { loadStoryFromBundle } from '../engine';
 import type { StorageAdapter } from '../storage/adapter';
 import type { Room } from '../storage/types';
 
@@ -34,13 +40,18 @@ const TITLE_PATTERN = /^.{1,80}$/;
 const STORY_ID_PATTERN = /^[A-Za-z0-9._-]{1,80}$/;
 
 /**
- * Wire shape of `GET /rooms/:id/state`. CMGT manifest and
- * `currentValues` are placeholders until the web-client phase wires
- * the channel-service Manifest into the state route — Phase 4a only
- * lands the transcript replay (ADR-175 §AC-7).
+ * Wire shape of `GET /rooms/:id/state`. `cmgt` carries the
+ * channel-typed `CmgtPacket` (ADR-163/165) produced by capturing the
+ * engine's `'channel:manifest'` emission for the room's pinned bundle.
+ * `transcript` is the per-room transcript window from the latest
+ * `save_blob`'s envelope, each entry optionally carrying a typed
+ * `channelPacket` for clients to replay through their `Renderer`.
+ * `currentValues` is reserved for future channel-state snapshots —
+ * for now the client computes accumulated state by replaying transcript
+ * `channelPacket`s through its `Renderer`.
  */
 interface RoomStateBody {
-  cmgt: null;
+  cmgt: ChannelCmgtPacket | null;
   transcript: TranscriptEntry[];
   currentValues: Record<string, never>;
 }
@@ -158,13 +169,38 @@ export function registerRoomRoutes(
       if (!room) {
         return reply.code(404).send({ error: 'room_not_found' });
       }
+      // Capture the CMGT manifest for the room's pinned bundle.
+      // Missing bundle is a server-state inconsistency; surface as 500
+      // matching the command-route precedent (`bundle_not_installed`).
+      const bundle = await options.adapter.getStoryBundle(
+        room.storyId,
+        room.bundleVersion
+      );
+      if (!bundle) {
+        request.log.error(
+          { roomId: id, storyId: room.storyId, version: room.bundleVersion },
+          'rooms/state: bundle_not_installed'
+        );
+        return reply.code(500).send({ error: 'bundle_not_installed' });
+      }
+      const story = await loadStoryFromBundle({
+        storyId: room.storyId,
+        version: room.bundleVersion,
+        bundle
+      });
+      const cmgt = await captureRoomManifest(
+        room.storyId,
+        room.bundleVersion,
+        story
+      );
+
       const latest = await options.adapter.getLatestSaveBlob(id);
       if (!latest) {
-        return reply.send(emptyRoomStateBody());
+        return reply.send({ ...emptyRoomStateBody(), cmgt });
       }
       const envelope = decodeEnvelope(latest.payload);
       const body: RoomStateBody = {
-        cmgt: null,
+        cmgt,
         transcript: envelope.transcript,
         currentValues: {},
       };

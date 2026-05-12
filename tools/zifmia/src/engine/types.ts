@@ -7,6 +7,12 @@
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
+import type {
+  TurnPacket as ChannelTurnPacket,
+  CmgtPacket as ChannelCmgtPacket
+} from '@sharpee/if-domain';
+
+export type { ChannelTurnPacket, ChannelCmgtPacket };
 
 /**
  * Forwarded subset of the engine's semantic events. Only the type and the
@@ -31,4 +37,17 @@ export interface TurnPacket {
   blocks: ITextBlock[];
   /** Forwardable events emitted during this turn. */
   events: TurnEvent[];
+  /**
+   * Channel-typed `TurnPacket` produced by the engine's per-turn
+   * `ChannelService` (ADR-163/165). The client side renders this via
+   * `@sharpee/channel-service`'s `Renderer`, dispatching per-channel
+   * payloads to the registered `ChannelRenderer` plug-ins (e.g.
+   * `createMainChannelRenderer` from `@sharpee/platform-browser`).
+   *
+   * Always present on turns produced by Phase 6c-server or later. On
+   * pre-6c-server transcript entries decoded from old save_blobs the
+   * field is `undefined` — clients fall back to plain-text rendering
+   * of `blocks` in that case.
+   */
+  channelPacket: ChannelTurnPacket;
 }

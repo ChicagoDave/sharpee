@@ -134,6 +134,19 @@ describe('POST /rooms/:id/command — happy path', () => {
     expect(blob).not.toBeNull();
     expect(blob!.payload.byteLength).toBeGreaterThan(0);
   });
+
+  it('TurnPacket carries a channelPacket (ADR-163/165) on the wire', async () => {
+    const res = await postCommand(ctx, ctx.tinyRoomId, { command: 'look' });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      turn: number;
+      channelPacket: { kind: string; turn_id: string; payload: unknown };
+    };
+    expect(body.channelPacket).toBeDefined();
+    expect(body.channelPacket.kind).toBe('turn');
+    expect(typeof body.channelPacket.turn_id).toBe('string');
+    expect(body.channelPacket.payload).toBeDefined();
+  });
 });
 
 describe('POST /rooms/:id/command — body and auth', () => {

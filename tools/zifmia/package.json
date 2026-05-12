@@ -19,6 +19,7 @@
     "dev:web": "vite --config web/vite.config.ts",
     "test": "vitest",
     "test:ci": "vitest run",
+    "test:e2e": "playwright test",
     "lint": "eslint src --ext .ts",
     "perf:baseline": "tsc -p tsconfig.perf.json && node dist-perf/perf/baseline-look.js",
     "perf:concurrent": "tsc -p tsconfig.perf.json && node dist-perf/perf/baseline-concurrent.js"
@@ -34,6 +35,7 @@
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/media": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/platform-browser": "workspace:*",
     "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
@@ -51,6 +53,7 @@
     "@types/ws": "^8.5.10",
     "esbuild": "^0.21.5",
     "happy-dom": "^15.7.4",
+    "@playwright/test": "^1.49.0",
     "rimraf": "^5.0.5",
     "tsx": "^4.16.2",
     "typescript": "^5.2.2",

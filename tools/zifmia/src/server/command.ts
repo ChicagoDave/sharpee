@@ -229,6 +229,7 @@ function fanOutSuccess(
     turn: packet.turn,
     blocks: packet.blocks,
     events: packet.events,
+    channelPacket: packet.channelPacket,
     submitter: submitterInfo,
   });
 

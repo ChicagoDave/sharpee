@@ -147,6 +147,9 @@ export interface PresenceJoinedMessage {
   roomId: string;
   identityId: string;
   handle: string;
+  /** Admin bit from the joining identity. Drives the ADR-176 `--admin`
+   * modifier on `.sharpee-presence-item`. */
+  isAdmin: boolean;
 }
 
 /**
@@ -173,7 +176,9 @@ export interface PresenceLeftMessage {
 export interface PresenceRosterMessage {
   type: 'presence:roster';
   roomId: string;
-  participants: Array<{ identityId: string; handle: string }>;
+  /** Each entry carries `isAdmin` so the joiner can apply the ADR-176
+   * `--admin` modifier without an extra round trip. */
+  participants: Array<{ identityId: string; handle: string; isAdmin: boolean }>;
 }
 
 /**
@@ -210,6 +215,13 @@ export interface TurnBroadcastMessage {
   turn: number;
   blocks: import('@sharpee/text-blocks').ITextBlock[];
   events: import('../../engine/types').TurnEvent[];
+  /**
+   * Channel-typed `TurnPacket` (ADR-163 wire form) produced by the
+   * engine's per-turn `ChannelService`. Clients dispatch via the
+   * `@sharpee/channel-service` `Renderer`. Mirrors the field of the
+   * same name on the HTTP response from `POST /rooms/:id/command`.
+   */
+  channelPacket: import('@sharpee/if-domain').TurnPacket;
   submitter: { identityId: string; handle: string };
 }
 

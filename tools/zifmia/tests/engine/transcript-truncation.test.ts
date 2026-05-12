@@ -225,22 +225,29 @@ describe('GET /rooms/:id/state — transcript hydration', () => {
     if (serverHandle) await serverHandle.close();
   });
 
-  it('returns the empty stub when no save_blob exists yet', async () => {
+  it('returns the empty transcript with a populated CMGT manifest when no save_blob exists yet', async () => {
     const res = await fetch(`${baseUrl}/rooms/${roomNoTurnsId}/state`, {
       headers: { authorization: `Bearer ${token}` },
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      cmgt: null;
+      cmgt: { kind: string; protocol_version: number; channels: unknown[] };
       transcript: unknown[];
       currentValues: Record<string, unknown>;
     };
-    expect(body.cmgt).toBeNull();
+    // Phase 6c-server: GET /rooms/:id/state now ships the channel-typed
+    // CMGT manifest captured from the engine's `channel:manifest` emit.
+    expect(body.cmgt).not.toBeNull();
+    expect(body.cmgt.kind).toBe('cmgt');
+    expect(body.cmgt.protocol_version).toBe(1);
+    expect(Array.isArray(body.cmgt.channels)).toBe(true);
+    // A populated manifest distinguishes a real capture from a stub.
+    expect(body.cmgt.channels.length).toBeGreaterThan(0);
     expect(body.transcript).toEqual([]);
     expect(body.currentValues).toEqual({});
   });
 
-  it('returns the in-blob transcript window after turns have been run', async () => {
+  it('returns the in-blob transcript window with channelPacket on each entry after turns', async () => {
     // Drive 4 turns through the HTTP route so the executor writes envelopes.
     for (let i = 0; i < 4; i++) {
       const res = await fetch(`${baseUrl}/rooms/${roomId}/command`, {
@@ -260,13 +267,24 @@ describe('GET /rooms/:id/state — transcript hydration', () => {
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      cmgt: null;
-      transcript: Array<{ turn: number; command: string; submitter: { identityId: string; handle: string } }>;
+      cmgt: { kind: string; channels: unknown[] };
+      transcript: Array<{
+        turn: number;
+        command: string;
+        submitter: { identityId: string; handle: string };
+        channelPacket?: { kind: string; turn_id: string };
+      }>;
       currentValues: Record<string, unknown>;
     };
-    expect(body.cmgt).toBeNull();
+    expect(body.cmgt.kind).toBe('cmgt');
     expect(body.transcript).toHaveLength(4);
     expect(body.transcript.map((e) => e.turn)).toEqual([1, 2, 3, 4]);
+    // Phase 6c-server: every freshly-written transcript entry now carries
+    // its channel-typed turn packet.
+    for (const entry of body.transcript) {
+      expect(entry.channelPacket).toBeDefined();
+      expect(entry.channelPacket?.kind).toBe('turn');
+    }
     for (const entry of body.transcript) {
       expect(entry.command).toBe('look');
       expect(entry.submitter.identityId).toBe(identityId);

@@ -87,6 +87,62 @@ async function reset(
   });
 }
 
+describe('GET /admin/identities (Phase 6f-admin)', () => {
+  let ctx: Ctx;
+
+  beforeEach(async () => {
+    ctx = await setup();
+  });
+
+  afterEach(async () => {
+    await ctx.handle.close();
+  });
+
+  it('returns 200 with the identity when handle is found', async () => {
+    const res = await fetch(
+      `${ctx.baseUrl}/admin/identities?handle=${encodeURIComponent(ctx.victimHandle)}`,
+      { headers: { authorization: `Bearer ${ctx.admin.sessionToken}` } }
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      identities: Array<{ id: string; handle: string; isAdmin: boolean }>;
+    };
+    expect(body.identities).toHaveLength(1);
+    expect(body.identities[0].id).toBe(ctx.victim.identityId);
+    expect(body.identities[0].handle).toBe(ctx.victimHandle);
+    expect(body.identities[0].isAdmin).toBe(false);
+    // passcodeHash must never appear on the wire.
+    expect(Object.keys(body.identities[0])).not.toContain('passcodeHash');
+  });
+
+  it('returns 200 with empty array when handle is unknown', async () => {
+    const res = await fetch(
+      `${ctx.baseUrl}/admin/identities?handle=ghost-handle`,
+      { headers: { authorization: `Bearer ${ctx.admin.sessionToken}` } }
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { identities: unknown[] };
+    expect(body.identities).toEqual([]);
+  });
+
+  it('returns 400 when handle query param is missing', async () => {
+    const res = await fetch(`${ctx.baseUrl}/admin/identities`, {
+      headers: { authorization: `Bearer ${ctx.admin.sessionToken}` }
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe('invalid_query');
+  });
+
+  it('returns 403 for a non-admin caller', async () => {
+    const res = await fetch(
+      `${ctx.baseUrl}/admin/identities?handle=${encodeURIComponent(ctx.victimHandle)}`,
+      { headers: { authorization: `Bearer ${ctx.mortal.sessionToken}` } }
+    );
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('POST /admin/identities/:id/passcode_reset', () => {
   let ctx: Ctx;
 

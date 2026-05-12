@@ -144,20 +144,25 @@ export class SubscriptionRegistry {
    * Used to build the `presence:roster` payload delivered to a joiner.
    * Order is insertion-order of the underlying `Set<ClientConnection>` —
    * not a stable contract, but deterministic enough for tests.
+   *
+   * Each entry carries the identity's `isAdmin` flag so the joiner's
+   * `PresenceManager` can apply the ADR-176 `--admin` modifier without
+   * a per-identity HTTP round trip.
    */
   participantsOf(
     roomId: string,
-  ): Array<{ identityId: string; handle: string }> {
+  ): Array<{ identityId: string; handle: string; isAdmin: boolean }> {
     const subs = this.roomSubscribers.get(roomId);
     if (!subs) return [];
     const seen = new Set<string>();
-    const out: Array<{ identityId: string; handle: string }> = [];
+    const out: Array<{ identityId: string; handle: string; isAdmin: boolean }> = [];
     for (const conn of subs) {
       if (seen.has(conn.identity.id)) continue;
       seen.add(conn.identity.id);
       out.push({
         identityId: conn.identity.id,
         handle: conn.identity.handle,
+        isAdmin: conn.identity.isAdmin,
       });
     }
     return out;
