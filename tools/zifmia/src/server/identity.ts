@@ -1,11 +1,14 @@
 /**
  * @module @sharpee/zifmia/server/identity
- * @purpose `POST /identity/register` + `POST /identity/login` routes.
- *   Identity creation accepts an author-supplied passcode (ADR-175
- *   simplifies ADR-161's auto-generated-passcode flow for v1 — see
- *   "Variance from ADR-161" note below). Login returns a session
- *   token; AC-11 demands identical 401 body for "no such handle" and
- *   "wrong passcode."
+ * @purpose Identity routes:
+ *   - `POST /identity/register` — register a (handle, passcode) and
+ *     mint a session token.
+ *   - `POST /identity/login` — exchange (handle, passcode) for a
+ *     session token. AC-11 demands an identical 401 body for "no such
+ *     handle" and "wrong passcode."
+ *   - `GET /identity/me` — auth-gated session-bootstrap endpoint used
+ *     by the web client to recover identity from a stored bearer
+ *     token across page loads. Returns `{id, handle, isAdmin}` or 401.
  * @owner Zifmia server (tools/zifmia/server).
  *
  * Variance from ADR-161: ADR-161 specifies server-generated
@@ -25,6 +28,7 @@ import {
   SESSION_TTL_MS
 } from '../auth/session-token';
 import type { StorageAdapter } from '../storage/adapter';
+import { authMiddleware } from './auth-middleware';
 
 export interface IdentityRouteOptions {
   adapter: StorageAdapter;
@@ -43,6 +47,17 @@ interface LoginSuccess {
   id: string;
   handle: string;
   sessionToken: string;
+}
+
+/**
+ * Wire shape of `GET /identity/me`. Subset of `Identity` — excludes
+ * `passcodeHash` and `createdAt`, which the client has no use for and
+ * which are not part of the wire contract.
+ */
+interface IdentityMeBody {
+  id: string;
+  handle: string;
+  isAdmin: boolean;
 }
 
 const HANDLE_PATTERN = /^[A-Za-z0-9._-]{3,40}$/;
@@ -78,6 +93,7 @@ export function registerIdentityRoutes(
 ): void {
   const now = options.now ?? Date.now;
   const ttlMs = options.sessionTtlMs ?? SESSION_TTL_MS;
+  const auth = authMiddleware({ adapter: options.adapter, now });
 
   app.post('/identity/register', async (request, reply) => {
     const creds = parseCredentials(request.body);
@@ -148,4 +164,23 @@ export function registerIdentityRoutes(
     };
     return reply.send(body);
   });
+
+  // ── GET /identity/me ───────────────────────────────────────────
+  // Session-bootstrap endpoint for the web client. The auth
+  // preHandler enforces a valid bearer token and populates
+  // `request.identity`; the handler simply projects the identity row
+  // to the wire shape.
+  app.get(
+    '/identity/me',
+    { preHandler: auth },
+    async (request) => {
+      const identity = request.identity!;
+      const body: IdentityMeBody = {
+        id: identity.id,
+        handle: identity.handle,
+        isAdmin: identity.isAdmin
+      };
+      return body;
+    }
+  );
 }

@@ -157,3 +157,103 @@ describe('POST /identity/login (AC-11)', () => {
     expect(await res.json()).toEqual({ error: 'invalid_credentials' });
   });
 });
+
+describe('GET /identity/me', () => {
+  let handle: ZifmiaServerHandle;
+  const base = (): string => `http://127.0.0.1:${handle.port}`;
+
+  beforeEach(async () => {
+    handle = await startServer({
+      adapter: new SqliteAdapter({ filename: ':memory:' }),
+      port: 0,
+      host: '127.0.0.1',
+      packageVersion: '0.1.0-test'
+    });
+  });
+
+  afterEach(async () => {
+    await handle.close();
+  });
+
+  it('returns {id, handle, isAdmin: false} for a valid bearer token', async () => {
+    const reg = await fetch(`${base()}/identity/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'alice', passcode: 'correct horse' })
+    });
+    const { id, sessionToken } = (await reg.json()) as {
+      id: string;
+      sessionToken: string;
+    };
+
+    const me = await fetch(`${base()}/identity/me`, {
+      headers: { authorization: `Bearer ${sessionToken}` }
+    });
+    expect(me.status).toBe(200);
+    expect(await me.json()).toEqual({
+      id,
+      handle: 'alice',
+      isAdmin: false
+    });
+  });
+
+  it('returns isAdmin: true after grant', async () => {
+    const reg = await fetch(`${base()}/identity/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'admin', passcode: 'correct horse' })
+    });
+    const { id, sessionToken } = (await reg.json()) as {
+      id: string;
+      sessionToken: string;
+    };
+    await handle.adapter.setIdentityAdmin(id, true);
+
+    const me = await fetch(`${base()}/identity/me`, {
+      headers: { authorization: `Bearer ${sessionToken}` }
+    });
+    expect(me.status).toBe(200);
+    expect((await me.json()) as { isAdmin: boolean }).toMatchObject({
+      isAdmin: true
+    });
+  });
+
+  it('returns 401 with no auth header', async () => {
+    const res = await fetch(`${base()}/identity/me`);
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: 'unauthenticated' });
+  });
+
+  it('returns 401 with unknown bearer token', async () => {
+    const res = await fetch(`${base()}/identity/me`, {
+      headers: { authorization: 'Bearer not-a-real-token' }
+    });
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: 'unauthenticated' });
+  });
+
+  it('returns 401 with malformed Authorization header', async () => {
+    const res = await fetch(`${base()}/identity/me`, {
+      headers: { authorization: 'something-without-bearer-prefix' }
+    });
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: 'unauthenticated' });
+  });
+
+  it('does not leak passcodeHash or createdAt', async () => {
+    const reg = await fetch(`${base()}/identity/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ handle: 'bob', passcode: 'correct horse' })
+    });
+    const { sessionToken } = (await reg.json()) as { sessionToken: string };
+
+    const me = await fetch(`${base()}/identity/me`, {
+      headers: { authorization: `Bearer ${sessionToken}` }
+    });
+    const body = (await me.json()) as Record<string, unknown>;
+    expect(body).not.toHaveProperty('passcodeHash');
+    expect(body).not.toHaveProperty('createdAt');
+    expect(Object.keys(body).sort()).toEqual(['handle', 'id', 'isAdmin']);
+  });
+});

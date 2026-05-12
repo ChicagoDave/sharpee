@@ -41,7 +41,7 @@
  *   - 401 / 403  via the [auth, admin] preHandler chain.
  */
 
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { unzipSync } from 'fflate';
 
 import { adminMiddleware } from './admin-middleware';
@@ -206,7 +206,7 @@ export function registerAdminStoryRoutes(
   app.addContentTypeParser(
     'application/octet-stream',
     { parseAs: 'buffer', bodyLimit: MAX_BUNDLE_BYTES },
-    async (_req, body) => body,
+    async (_req: FastifyRequest, body: Buffer) => body,
   );
 
   app.post(

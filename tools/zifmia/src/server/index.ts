@@ -34,6 +34,7 @@ import { registerIdentityRoutes } from './identity';
 import { registerRestoreRoute } from './restore';
 import { registerRoomRoutes } from './rooms';
 import { registerSavesRoutes } from './saves';
+import { registerWebRoutes } from './web';
 import { createPool, parseWorkerCount, type WorkerPool } from './worker-pool';
 import { registerWebSocketRoute } from './ws';
 
@@ -68,6 +69,14 @@ export interface ZifmiaServerOptions {
     enabled?: boolean;
     intervalMs?: number;
   };
+  /**
+   * Web bundle override (Phase 6a). When omitted, defaults to
+   * `<dist>/web` next to the running server. Tests that need to
+   * assert static-asset serving pass an absolute path; tests that
+   * don't care leave it unset and the static plugin no-ops on a
+   * missing directory.
+   */
+  webRoot?: string;
 }
 
 export interface ZifmiaServerHandle {
@@ -126,6 +135,7 @@ export async function startServer(
   registerAdminRoomRoutes(app, { adapter });
   registerAdminIdentityRoutes(app, { adapter });
   await registerWebSocketRoute(app, { adapter });
+  await registerWebRoutes(app, { webRoot: options.webRoot });
 
   const compactionEnabled =
     options.compaction?.enabled ??

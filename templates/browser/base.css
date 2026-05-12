@@ -228,6 +228,163 @@ ul, ol, menu {
   opacity: 0.5;
 }
 
+/* ----- Multi-user surfaces (ADR-176) ----- */
+
+/* Presence */
+
+.sharpee-presence-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.sharpee-presence-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sharpee-presence-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+}
+
+.sharpee-presence-avatar {
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+/* Chat */
+
+.sharpee-chat-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sharpee-chat-history {
+  flex: 1;
+  overflow-y: auto;
+  overflow-anchor: auto; /* scroll-pin to bottom on new content */
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sharpee-chat-message {
+  padding: 2px 0;
+  display: block;
+}
+
+.sharpee-chat-message-author {
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+.sharpee-chat-message-text {
+  display: inline;
+}
+
+.sharpee-chat-input {
+  flex-shrink: 0;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 4px 8px;
+}
+
+/* Lock-on-typing */
+
+.sharpee-lock-banner {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  font-style: italic;
+}
+
+.sharpee-lock-banner--hidden {
+  display: none;
+  pointer-events: none;
+}
+
+.sharpee-input-bar--locked .sharpee-input-field {
+  pointer-events: none;
+}
+
+.sharpee-input-bar--locked .sharpee-input-field:read-only,
+.sharpee-input-bar--locked .sharpee-input-field[readonly] {
+  cursor: not-allowed;
+}
+
+/* Lobby */
+
+.sharpee-lobby {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.sharpee-lobby--hidden {
+  display: none;
+  pointer-events: none;
+}
+
+.sharpee-lobby-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sharpee-lobby-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+/* Named saves */
+
+.sharpee-saves-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sharpee-saves-panel--hidden {
+  display: none;
+  pointer-events: none;
+}
+
+.sharpee-saves-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sharpee-saves-item {
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+/* Identity form */
+
+.sharpee-identity-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+  margin: 32px auto;
+  padding: 16px;
+}
+
+/* Transient-panel --hidden modifier (shared semantics with ADR-170) */
+
+.sharpee-presence-panel--hidden,
+.sharpee-chat-panel--hidden {
+  display: none;
+  pointer-events: none;
+}
+
 /* ----- Mobile structural adjustments ----- */
 
 @media (max-width: 600px) {
