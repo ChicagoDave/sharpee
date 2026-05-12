@@ -103,7 +103,13 @@
   --theme-font-body: "FindersKeepers", "Geneva", system-ui, sans-serif;
   --theme-font: var(--theme-font-body);
   --theme-font-size: 24px;
-  --theme-line-height: 1.5;
+  /* FindersKeepers has WinAscent+WinDescent ≈ 0.79em (USE_TYPO_METRICS not
+     set), so the browser uses ~19px as the intrinsic line-box floor at 24px.
+     1.0 gives a 24px line box (~5px leading on 19px glyphs) — the tightest
+     usable spacing without overriding @font-face metrics. ChicagoFLF
+     (chrome/dialog) has intrinsic metrics ≈ 1.19em, so its line boxes are
+     governed by the font, not this value. */
+  --theme-line-height: 1.0;
 }
 
 /* ============================================
