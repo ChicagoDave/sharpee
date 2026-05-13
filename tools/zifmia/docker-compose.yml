@@ -1,0 +1,44 @@
+# Zifmia single-container compose file (ADR-177).
+#
+# From the repo root:    docker compose -f tools/zifmia/docker-compose.yml up
+# From tools/zifmia/:    docker compose up
+#
+# State persists in two named volumes:
+#   zifmia-data    — SQLite database (rooms, identities, sessions, saves)
+#   zifmia-stories — operator-managed `*.sharpee` bundles. Drop a file in
+#                    and signal the container with `docker kill -s HUP`
+#                    to make it appear in GET /api/stories without restart.
+
+services:
+  zifmia:
+    build:
+      # Build context is the repo root so the workspace is visible to
+      # the Dockerfile's `COPY packages/`, `COPY tools/zifmia/`, etc.
+      context: ../..
+      dockerfile: tools/zifmia/Dockerfile
+    image: sharpee/zifmia:dev
+    container_name: zifmia
+    ports:
+      - "${ZIFMIA_PORT:-3000}:3000"
+    environment:
+      ZIFMIA_PORT: "3000"
+      ZIFMIA_HOST: "0.0.0.0"
+      ZIFMIA_DB: "/data/zifmia.db"
+      ZIFMIA_STORIES: "/stories"
+      # Optional overrides — uncomment to use.
+      # ZIFMIA_RECORDING_NOTICE: "${ZIFMIA_RECORDING_NOTICE:-}"
+      # ZIFMIA_GRACE_MS: "${ZIFMIA_GRACE_MS:-30000}"
+    volumes:
+      - zifmia-data:/data
+      - zifmia-stories:/stories
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/stories').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  zifmia-data:
+  zifmia-stories:

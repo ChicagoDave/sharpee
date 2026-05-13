@@ -1,26 +1,33 @@
 # Sharpee Multiuser Server — Docker build context filter.
 #
-# The build context is the repo root (the Dockerfile reaches into
-# ../../packages/core). This file keeps the context minimal: only the two
-# trees that `tools/server/Dockerfile` COPYs are shipped to the daemon.
+# The build context is the repo root (tools/zifmia/Dockerfile reaches
+# into packages/* via the workspace). This file keeps the context
+# minimal: only the trees the Dockerfile COPYs are shipped to the
+# daemon.
 #
-# Pattern: ignore everything, then re-include packages/core and tools/server,
-# then prune dev/build artifacts inside those trees.
+# Pattern: ignore everything, then re-include packages/ and the
+# relevant tools/ subtrees, then prune dev/build artifacts inside.
 
 # Ignore everything by default.
 **
 
-# Re-include the two trees the Dockerfile copies.
+# Re-include workspace manifests + root package + root tsconfigs.
 !package.json
 !pnpm-workspace.yaml
 !pnpm-lock.yaml
+!tsconfig.json
+!tsconfig.base.json
+!tsconfig.base-esm.json
+!tsconfig.package.json
+!tsconfig.dev.json
+!turbo.json
 
 !packages
 !packages/**
 
 !tools
-!tools/server
-!tools/server/**
+!tools/zifmia
+!tools/zifmia/**
 
 # Prune dev/build artifacts inside the included trees.
 **/node_modules
