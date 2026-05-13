@@ -11,6 +11,30 @@
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js",
       "esm": "./dist-esm/index.js"
+    },
+    "./channels": {
+      "types": "./dist/channels/index.d.ts",
+      "import": "./dist-esm/channels/index.js",
+      "require": "./dist/channels/index.js",
+      "esm": "./dist-esm/channels/index.js"
+    },
+    "./channels/text-content": {
+      "types": "./dist/channels/text-content.d.ts",
+      "import": "./dist-esm/channels/text-content.js",
+      "require": "./dist/channels/text-content.js",
+      "esm": "./dist-esm/channels/text-content.js"
+    },
+    "./channels/main": {
+      "types": "./dist/channels/main.d.ts",
+      "import": "./dist-esm/channels/main.js",
+      "require": "./dist/channels/main.js",
+      "esm": "./dist-esm/channels/main.js"
+    },
+    "./channels/status": {
+      "types": "./dist/channels/status.d.ts",
+      "import": "./dist-esm/channels/status.js",
+      "require": "./dist/channels/status.js",
+      "esm": "./dist-esm/channels/status.js"
     }
   },
   "scripts": {

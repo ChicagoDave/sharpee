@@ -95,6 +95,10 @@ export interface TurnFrame {
   roomId: string;
   turnId: string;
   submitter: { id: string; handle: string };
+  /** Raw command text the submitter typed. Echoed in the renderer. */
+  text: string;
+  /** Server-side wall-clock at broadcast (ms since epoch). */
+  ts: number;
   packet: TurnPacket;
 }
 

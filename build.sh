@@ -565,7 +565,10 @@ build_platform() {
 
             local pkg_dir="packages/$name"
             if [ -f "$pkg_dir/tsconfig.esm.json" ]; then
-                run_build "$name (esm)" "pnpm --filter '$pkg' exec tsc -p tsconfig.esm.json"
+                # tsf drives the esm target so esmExtensions post-processing
+                # runs (appends .js to relative imports). Raw tsc here would
+                # emit extensionless imports that native Node ESM rejects.
+                run_build "$name (esm)" "tsf build --condition esm --filter '$pkg'"
             fi
         done
     fi
@@ -780,7 +783,9 @@ build_story() {
     # ESM build for story (needed by .sharpee bundle and runner)
     if [ "$BUILD_RUNNER" = true ] || [ "$STORY_BUNDLE" = true ] || [ ${#CLIENTS[@]} -gt 0 ]; then
         if [ -f "$STORY_DIR/tsconfig.esm.json" ]; then
-            run_build "$STORY_NAME (esm)" "pnpm --filter '$STORY_PKG' exec tsc -p tsconfig.esm.json"
+            # tsf drives the esm target so esmExtensions post-processing
+            # runs (appends .js to relative imports).
+            run_build "$STORY_NAME (esm)" "tsf build --condition esm --filter '$STORY_PKG'"
         fi
     fi
 

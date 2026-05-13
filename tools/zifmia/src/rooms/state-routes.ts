@@ -57,6 +57,12 @@ interface StateQuery { handle?: string; }
 
 interface TurnPacketPayload {
   turnId: string;
+  /** Wall-clock at the time the engine produced the output (ms epoch). */
+  ts: number;
+  /** Submitter handle for the player command. Empty string when unknown. */
+  submitter: { id: string; handle: string } | null;
+  /** Raw command text the submitter typed (echoed in the client). */
+  text: string;
   channels: Record<string, unknown[]>;
 }
 
@@ -113,11 +119,36 @@ export function registerRoomStateRoute(app: FastifyInstance, deps: RoomStateRout
         kinds: ['command', 'output'],
         limit: TRANSCRIPT_BACKLOG_LIMIT
       });
-      const transcript_backlog: TurnPacketPayload[] = transcriptEvents.flatMap((ev) => {
-        const payload = ev.payload as { turnId?: string; channels?: Record<string, unknown[]> } | null;
-        if (!payload || typeof payload.turnId !== 'string') return [];
-        return [{ turnId: payload.turnId, channels: payload.channels ?? {} }];
-      });
+      // Pair `command` (text + submitter) with the matching `output`
+      // (channels) by turnId. Replay order follows the `output` event so
+      // empty turns are dropped from the backlog (the wire packet's
+      // submitter/text/ts ride on the broadcast frame; backlog has to
+      // reconstruct them from the event log).
+      const commandByTurn = new Map<string, { ts: number; text: string; submitter: { id: string; handle: string } | null }>();
+      const transcript_backlog: TurnPacketPayload[] = [];
+      for (const ev of transcriptEvents) {
+        const payload = ev.payload as
+          | { turnId?: string; channels?: Record<string, unknown[]>; text?: string; handle?: string }
+          | null;
+        if (!payload || typeof payload.turnId !== 'string') continue;
+        if (ev.kind === 'command') {
+          const handle = typeof payload.handle === 'string' ? payload.handle : '';
+          const submitter = ev.participant_id && handle
+            ? { id: ev.participant_id, handle }
+            : null;
+          const text = typeof payload.text === 'string' ? payload.text : '';
+          commandByTurn.set(payload.turnId, { ts: ev.ts, text, submitter });
+        } else if (ev.kind === 'output') {
+          const cmd = commandByTurn.get(payload.turnId);
+          transcript_backlog.push({
+            turnId: payload.turnId,
+            ts: cmd?.ts ?? ev.ts,
+            submitter: cmd?.submitter ?? null,
+            text: cmd?.text ?? '',
+            channels: payload.channels ?? {}
+          });
+        }
+      }
 
       // Grace state: surface only when this room currently has a
       // pending grace timer.

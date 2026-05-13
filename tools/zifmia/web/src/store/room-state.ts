@@ -40,6 +40,10 @@ export interface DmLine extends ChatLine {}
 export interface TurnLine {
   readonly turnId: string;
   readonly submitter?: { id: string; handle: string };
+  /** Raw command text the submitter typed. Empty for backlog turns predating the field. */
+  readonly text?: string;
+  /** Wall-clock at the time the engine produced the output (ms epoch). */
+  readonly ts?: number;
   readonly channels: Record<string, unknown[]>;
 }
 
@@ -138,6 +142,8 @@ export function createRoomStateStore(): RoomStateStore {
     const line: TurnLine = {
       turnId: frame.turnId,
       submitter: frame.submitter,
+      text: frame.text,
+      ts: frame.ts,
       channels: frame.packet.channels
     };
     update({ transcript: [...state.transcript, line] });
@@ -184,6 +190,9 @@ export function createRoomStateStore(): RoomStateStore {
     hydrate(response) {
       const transcript: TurnLine[] = response.transcript_backlog.map((t) => ({
         turnId: t.turnId,
+        submitter: t.submitter ?? undefined,
+        text: t.text,
+        ts: t.ts,
         channels: t.channels
       }));
       update({

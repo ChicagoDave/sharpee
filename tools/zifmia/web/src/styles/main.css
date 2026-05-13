@@ -70,21 +70,48 @@ button.sharpee-danger { background: var(--sharpee-error); color: #fff; }
 .sharpee-lobby-room.sharpee-pinned { border-color: var(--sharpee-accent); }
 .sharpee-lobby-room-meta { color: var(--sharpee-muted); font-size: 0.85em; }
 
+/* ── Create-room dialog ────────────────────────────────────────── */
+.sharpee-create-dialog { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.sharpee-create-dialog-card { background: var(--sharpee-panel-bg); border: 1px solid var(--sharpee-border); border-radius: 6px; padding: 1.25rem; min-width: 22rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.sharpee-create-dialog-card h2 { margin: 0; font-size: 1.1rem; }
+.sharpee-create-dialog-row { display: flex; flex-direction: column; gap: 0.25rem; }
+.sharpee-create-dialog-row > span { color: var(--sharpee-muted); font-size: 0.85em; }
+.sharpee-create-dialog-row select, .sharpee-create-dialog-row input { padding: 0.4rem 0.5rem; border: 1px solid var(--sharpee-border); border-radius: 4px; background: var(--sharpee-bg); color: var(--sharpee-fg); font: inherit; }
+.sharpee-create-dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem; }
+
 /* ── Room layout ────────────────────────────────────────────────── */
-.sharpee-room { display: grid; grid-template-columns: 1fr 18rem; grid-template-rows: auto 1fr auto; gap: 1rem; height: calc(100vh - 2rem); }
+.sharpee-room-layout { display: grid; grid-template-columns: 1fr 18rem; grid-template-rows: auto 1fr auto; gap: 1rem; height: calc(100vh - 2rem); }
 .sharpee-room-header { grid-column: 1 / span 2; display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--sharpee-border); }
 .sharpee-room-main { grid-column: 1; overflow-y: auto; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.sharpee-room-side { grid-column: 2; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+.sharpee-room-side { grid-column: 2; display: flex; flex-direction: column; min-height: 0; }
+.sharpee-room-header-actions { display: flex; gap: 0.5rem; align-items: center; }
+.sharpee-header-participants { position: relative; }
+.sharpee-header-participants-dropdown { position: absolute; top: calc(100% + 0.25rem); right: 0; min-width: 18rem; max-height: 24rem; overflow-y: auto; background: var(--sharpee-panel-bg); border: 1px solid var(--sharpee-border); border-radius: 4px; padding: 0.5rem; z-index: 40; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+.sharpee-header-participants-dropdown .sharpee-participant-roster { border: 0; padding: 0; background: transparent; }
+.sharpee-header-participants-dropdown .sharpee-participant-roster h2 { margin-top: 0; }
 .sharpee-room-command { grid-column: 1 / span 2; display: flex; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--sharpee-border); }
 .sharpee-room-command input { flex: 1; }
 
 /* ── Channel renderer output ────────────────────────────────────── */
-.sharpee-channel { padding: 0.25rem 0; }
-.sharpee-channel-main { white-space: pre-wrap; }
-.sharpee-channel-prompt { color: var(--sharpee-muted); }
-.sharpee-turn-block { padding: 0.5rem 0; border-bottom: 1px dashed var(--sharpee-border); }
-.sharpee-turn-block:last-child { border-bottom: 0; }
-.sharpee-turn-submitter { color: var(--sharpee-accent); margin-right: 0.5rem; }
+.sharpee-channel-renderer-host { display: flex; flex-direction: column; gap: 0; }
+.sharpee-channel-renderer-host .main-entry { margin: 0.5em 0; line-height: 1.4; }
+.sharpee-channel-renderer-host .main-entry--tight { margin-top: 0; }
+.sharpee-channel-renderer-host .main-entry.game-title { font-size: 1.4em; font-weight: 700; margin-top: 0.75em; margin-bottom: 0.1em; }
+.sharpee-channel-renderer-host .main-entry.story-version,
+.sharpee-channel-renderer-host .main-entry.platform-version,
+.sharpee-channel-renderer-host .main-entry.sub-title,
+.sharpee-channel-renderer-host .main-entry.author-list { color: var(--sharpee-muted); margin: 0; font-size: 0.9em; }
+.sharpee-channel-renderer-host .main-entry.banner-spacer { margin: 0.5em 0; }
+.sharpee-channel-renderer-host .sharpee-room { color: var(--sharpee-accent); font-weight: 600; }
+.sharpee-turn-submitter { margin: 0.75em 0 0.1em; display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; font-family: inherit; color: var(--sharpee-fg); }
+.sharpee-turn-submitter .sharpee-turn-command { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; letter-spacing: 0.02em; }
+.sharpee-turn-submitter .sharpee-turn-meta { color: var(--sharpee-accent); font-size: 0.9em; font-variant-numeric: tabular-nums; }
+
+/* ── Status bar ─────────────────────────────────────────────────── */
+.sharpee-status-bar { display: flex; gap: 1.5rem; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--sharpee-border); background: var(--sharpee-panel-bg); font-size: 0.9em; color: var(--sharpee-muted); }
+.sharpee-status-bar .sharpee-status-location { color: var(--sharpee-fg); flex: 1; }
+.sharpee-status-bar .sharpee-status-score,
+.sharpee-status-bar .sharpee-status-turn { white-space: nowrap; }
 
 /* ── Side panels ────────────────────────────────────────────────── */
 .sharpee-panel { background: var(--sharpee-panel-bg); border: 1px solid var(--sharpee-border); border-radius: 4px; padding: 0.75rem; }
@@ -97,9 +124,11 @@ button.sharpee-danger { background: var(--sharpee-error); color: #fff; }
 .sharpee-participant-row.sharpee-successor::before { content: "★ "; color: var(--sharpee-accent); }
 .sharpee-tier-badge { color: var(--sharpee-muted); font-size: 0.8em; }
 
-.sharpee-chat-panel .sharpee-chat-log { display: flex; flex-direction: column; gap: 0.25rem; max-height: 12rem; overflow-y: auto; margin-bottom: 0.5rem; }
+.sharpee-chat-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.sharpee-chat-panel h2 { flex: 0 0 auto; }
+.sharpee-chat-panel .sharpee-chat-log { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; overflow-y: auto; margin-bottom: 0.5rem; min-height: 0; }
 .sharpee-chat-message .sharpee-chat-from { color: var(--sharpee-accent); margin-right: 0.4rem; }
-.sharpee-chat-form { display: flex; gap: 0.25rem; }
+.sharpee-chat-form { flex: 0 0 auto; display: flex; gap: 0.25rem; }
 .sharpee-chat-form input { flex: 1; }
 
 .sharpee-dm-panel { border-color: var(--sharpee-warn); }
@@ -109,6 +138,12 @@ button.sharpee-danger { background: var(--sharpee-error); color: #fff; }
 .sharpee-settings-panel button { width: 100%; text-align: left; }
 .sharpee-settings-row { display: flex; gap: 0.25rem; align-items: center; }
 .sharpee-settings-row input, .sharpee-settings-row select { flex: 1; }
+
+/* ── Settings modal ─────────────────────────────────────────────── */
+.sharpee-settings-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.sharpee-settings-modal-card { background: var(--sharpee-panel-bg); border: 1px solid var(--sharpee-border); border-radius: 6px; padding: 1rem 1.25rem; min-width: 24rem; max-width: 36rem; max-height: 80vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+.sharpee-settings-modal-close { align-self: flex-end; }
+.sharpee-settings-modal .sharpee-settings-panel { border: 0; padding: 0; background: transparent; }
 
 /* ── Status banners + overlays ──────────────────────────────────── */
 .sharpee-grace-banner { background: var(--sharpee-warn); color: #000; padding: 0.5rem 1rem; border-radius: 4px; text-align: center; margin-bottom: 0.5rem; }

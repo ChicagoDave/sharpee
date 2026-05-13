@@ -56,6 +56,9 @@ export interface RoomStateResponse {
   readonly cmgt: unknown;
   readonly transcript_backlog: ReadonlyArray<{
     readonly turnId: string;
+    readonly ts: number;
+    readonly submitter: { readonly id: string; readonly handle: string } | null;
+    readonly text: string;
     readonly channels: Record<string, unknown[]>;
   }>;
   readonly roster: ReadonlyArray<RosterRow>;

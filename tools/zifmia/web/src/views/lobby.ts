@@ -106,28 +106,95 @@ export function mountLobbyPanel(parent: HTMLElement, http: HttpClient, handlers:
 
   async function openCreateDialog(): Promise<void> {
     if (!identity) return;
+
+    if (document.querySelector('.sharpee-create-dialog')) return;
+
     const stories = await http.listStories();
     if (stories.stories.length === 0) {
       alert('No stories are installed on this server.');
       return;
     }
-    const slug = prompt(
-      `Available stories: ${stories.stories.map((s) => s.slug).join(', ')}\n\nEnter slug:`,
-      stories.stories[0].slug
-    );
-    if (!slug) return;
-    const title = prompt('Room title (1-80 chars):');
-    if (!title) return;
-    try {
-      const result = await http.createRoom({ handle: identity.handle, story_slug: slug, title });
-      handlers.onEnterRoom(result.room.id);
-    } catch (err) {
-      if (err instanceof HttpError) {
-        alert(`Create failed: ${JSON.stringify(err.body)}`);
-      } else {
-        alert('Create failed.');
-      }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'sharpee-create-dialog';
+
+    const card = document.createElement('form');
+    card.className = 'sharpee-create-dialog-card';
+    overlay.appendChild(card);
+
+    const heading = document.createElement('h2');
+    heading.textContent = 'Create room';
+    card.appendChild(heading);
+
+    const slugRow = document.createElement('label');
+    slugRow.className = 'sharpee-create-dialog-row';
+    const slugLabel = document.createElement('span');
+    slugLabel.textContent = 'Story';
+    const slugSelect = document.createElement('select');
+    for (const story of stories.stories) {
+      const option = document.createElement('option');
+      option.value = story.slug;
+      option.textContent = story.slug;
+      slugSelect.appendChild(option);
     }
+    slugSelect.value = stories.stories[0].slug;
+    slugRow.append(slugLabel, slugSelect);
+    card.appendChild(slugRow);
+
+    const titleRow = document.createElement('label');
+    titleRow.className = 'sharpee-create-dialog-row';
+    const titleLabel = document.createElement('span');
+    titleLabel.textContent = 'Room title';
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.maxLength = 80;
+    titleInput.required = true;
+    titleInput.placeholder = '1–80 characters';
+    titleRow.append(titleLabel, titleInput);
+    card.appendChild(titleRow);
+
+    const actions = document.createElement('div');
+    actions.className = 'sharpee-create-dialog-actions';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'sharpee-secondary';
+    cancel.textContent = 'Cancel';
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.textContent = 'Create';
+    actions.append(cancel, submit);
+    card.appendChild(actions);
+
+    const close = (): void => {
+      overlay.remove();
+    };
+    cancel.addEventListener('click', close);
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) close();
+    });
+
+    card.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const slug = slugSelect.value;
+      const title = titleInput.value.trim();
+      if (!slug || !title) return;
+      submit.disabled = true;
+      try {
+        const result = await http.createRoom({ handle: identity.handle, story_slug: slug, title });
+        close();
+        handlers.onEnterRoom(result.room.id);
+      } catch (err) {
+        submit.disabled = false;
+        if (err instanceof HttpError) {
+          alert(`Create failed: ${JSON.stringify(err.body)}`);
+        } else {
+          alert('Create failed.');
+        }
+      }
+    });
+
+    document.body.appendChild(overlay);
+    titleInput.focus();
   }
 
   function renderRoomRow(room: RoomLobbyRow): HTMLElement {

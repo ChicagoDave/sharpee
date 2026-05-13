@@ -113,6 +113,8 @@ export function registerTurnRoutes(app: FastifyInstance, deps: TurnRoutesDeps): 
         roomId: request.params.id,
         turnId: result.turnId,
         submitter: { id: gate.identity.id, handle: gate.identity.handle },
+        text,
+        ts: Date.now(),
         packet: result.packet
       };
       hub.broadcast(request.params.id, frame);
