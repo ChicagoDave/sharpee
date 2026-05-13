@@ -7,9 +7,12 @@ and operating it.
 
 > **Status (2026-05-13):** Phase 8 complete. The full HTTP + WS surface
 > covered by [ADR-177] is implemented and validated by a real-path
-> Playwright suite (31 specs, all green).
+> Playwright suite (33 specs, all green). The Story Runtime Baseline
+> contract — which packages a `.sharpee` bundle may import — is
+> defined in [ADR-178]; every image ships baseline v1.
 
 [ADR-177]: ../../docs/architecture/adrs/adr-177-multiuser-corrected.md
+[ADR-178]: ../../docs/architecture/adrs/adr-178-story-runtime-baseline.md
 
 ---
 
@@ -20,13 +23,14 @@ and operating it.
 3. [Build the image](#build-the-image)
 4. [Run with docker compose](#run-with-docker-compose)
 5. [Run with docker run](#run-with-docker-run)
-6. [Configuration](#configuration)
-7. [Persistent state](#persistent-state)
-8. [Operating the instance](#operating-the-instance)
-9. [TLS + reverse proxy](#tls--reverse-proxy)
-10. [Updates](#updates)
-11. [Backup / restore](#backup--restore)
-12. [Troubleshooting](#troubleshooting)
+6. [Running on a Linux host (Ubuntu)](#running-on-a-linux-host-ubuntu)
+7. [Configuration](#configuration)
+8. [Persistent state](#persistent-state)
+9. [Operating the instance](#operating-the-instance)
+10. [TLS + reverse proxy](#tls--reverse-proxy)
+11. [Updates](#updates)
+12. [Backup / restore](#backup--restore)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -59,8 +63,12 @@ When the healthcheck flips to `healthy`:
 
 ```bash
 curl http://localhost:3000/api/stories
-# → {"stories":[]}   (no bundles dropped in yet)
+# → {"baseline_version":1,"stories":[]}   (no bundles dropped in yet)
 ```
+
+The `baseline_version` field reports the Story Runtime Baseline ([ADR-178])
+this image ships. Story authors target it; story bundles importing
+packages outside the baseline are rejected at boot.
 
 Open `http://localhost:3000/` in a browser to load the web client.
 
@@ -86,6 +94,24 @@ docker tag sharpee/zifmia:latest registry.example.com/sharpee/zifmia:1.0.0
 docker push registry.example.com/sharpee/zifmia:1.0.0
 ```
 
+### Image labels
+
+Every image carries the Story Runtime Baseline version it ships
+([ADR-178] §AC-3):
+
+```bash
+docker inspect sharpee/zifmia:latest \
+    --format '{{ index .Config.Labels "org.sharpee.story-runtime-baseline" }}'
+# → 1
+```
+
+Story authors compare this number against the `BASELINE_VERSION` they
+built against to know an image is compatible with their bundle. The
+label is sourced from `@sharpee/story-runtime-baseline` at build time
+via `--build-arg BASELINE_VERSION=<n>`; the bundled `docker-compose.yml`
+passes this automatically, and the `Dockerfile` defaults to `1` if the
+arg is omitted.
+
 ---
 
 ## Run with docker compose
@@ -107,7 +133,7 @@ To drop a story bundle into the running instance:
 docker cp my-game.sharpee zifmia:/stories/my-game.sharpee
 docker kill -s HUP zifmia  # SIGHUP triggers a rescan
 curl http://localhost:3000/api/stories
-# → {"stories":[{"slug":"my-game"}]}
+# → {"baseline_version":1,"stories":[{"slug":"my-game"}]}
 ```
 
 Removing a bundle:
@@ -158,6 +184,99 @@ docker run -d --name zifmia \
 
 The `:ro` flag is safe — Zifmia never writes to the stories directory
 at runtime; operators manage it externally.
+
+---
+
+## Running on a Linux host (Ubuntu)
+
+The Docker compose workflow above runs unchanged on Ubuntu. This
+section covers the bits that *only* matter on a Linux host: bringing
+Zifmia up at boot, firewalling, and bind-mount permissions.
+
+### Bind-mount uid
+
+The container runs as user `node` (uid 1000). If you bind-mount host
+directories instead of named volumes (e.g. you keep stories under
+`/srv/sharpee/stories` so they're easy to rsync), the paths must be
+writable by uid 1000:
+
+```bash
+sudo install -d -o 1000 -g 1000 /srv/sharpee/data /srv/sharpee/stories
+```
+
+Then point the compose volumes at the host paths:
+
+```yaml
+volumes:
+  - /srv/sharpee/data:/data
+  - /srv/sharpee/stories:/stories
+```
+
+Named volumes (`zifmia-data`, `zifmia-stories`) skip this step
+entirely — Docker creates them with the right ownership.
+
+### systemd unit (start at boot)
+
+The compose file's `restart: unless-stopped` handles container crashes,
+but systemd is needed to bring the stack back up after a host reboot.
+Create `/etc/systemd/system/zifmia.service`:
+
+```ini
+[Unit]
+Description=Zifmia multi-user Sharpee server
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/srv/sharpee/repo/tools/zifmia
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now zifmia
+sudo systemctl status zifmia
+journalctl -u zifmia -f       # follow boot-time logs
+```
+
+`Type=oneshot` plus `RemainAfterExit=yes` is the right shape for a
+`docker compose` orchestrator — the unit itself exits when compose
+returns; the containers stay up.
+
+### Firewall (ufw)
+
+Close port 3000 to the outside world and let only the reverse proxy
+talk to it. Assuming Apache/nginx terminates TLS on the same host:
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow OpenSSH
+sudo ufw allow 'Apache Full'      # 80 + 443
+sudo ufw enable
+sudo ufw status verbose
+```
+
+Port 3000 stays bound to `0.0.0.0` *inside* the container, but Docker
+publishes it on the host's loopback when you use `-p 127.0.0.1:3000:3000`
+(recommended on a Linux host with a local proxy). Update the compose
+file's port stanza:
+
+```yaml
+ports:
+  - "127.0.0.1:${ZIFMIA_PORT:-3000}:3000"
+```
+
+This makes the port unreachable from outside the host even with ufw
+off, which is the right default when something else fronts it.
 
 ---
 
@@ -218,8 +337,9 @@ their participants leave.
 curl -f http://localhost:3000/api/stories
 ```
 
-Returns `200 OK` with `{"stories":[...]}` when ready. The container's
-built-in `HEALTHCHECK` hits the same endpoint every 30 s.
+Returns `200 OK` with `{"baseline_version":1,"stories":[...]}` when
+ready. The container's built-in `HEALTHCHECK` hits the same endpoint
+every 30 s.
 
 ### Logs
 
@@ -273,6 +393,62 @@ zifmia.example.com {
 ```
 
 Caddy forwards `Upgrade: websocket` automatically.
+
+### Apache (httpd)
+
+Apache needs `mod_proxy`, `mod_proxy_http`, and `mod_proxy_wstunnel`.
+The WebSocket upgrade goes through a `RewriteRule [P]` because Apache
+won't proxy an `Upgrade: websocket` request via `ProxyPass` alone.
+
+```bash
+sudo a2enmod proxy proxy_http proxy_wstunnel rewrite ssl headers
+```
+
+`/etc/apache2/sites-available/zifmia.conf`:
+
+```apache
+<VirtualHost *:443>
+    ServerName zifmia.example.com
+
+    SSLEngine on
+    SSLCertificateFile     /etc/letsencrypt/live/zifmia.example.com/fullchain.pem
+    SSLCertificateKeyFile  /etc/letsencrypt/live/zifmia.example.com/privkey.pem
+
+    ProxyPreserveHost On
+    ProxyRequests Off
+
+    # WebSocket upgrade. The RewriteRule [P] is required — ProxyPass
+    # alone won't carry `Upgrade: websocket` through.
+    RewriteEngine On
+    RewriteCond %{HTTP:Upgrade} =websocket [NC]
+    RewriteRule ^/(.*)$ ws://127.0.0.1:3000/$1 [P,L]
+
+    # Plain HTTP (everything that isn't an upgrade).
+    ProxyPass         /  http://127.0.0.1:3000/
+    ProxyPassReverse  /  http://127.0.0.1:3000/
+
+    RequestHeader set X-Forwarded-Proto "https"
+
+    # Idle WS connections — lock heartbeats are 200 ms; this is a
+    # comfortable upper bound that won't churn established sockets.
+    ProxyTimeout 300
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerName zifmia.example.com
+    Redirect permanent / https://zifmia.example.com/
+</VirtualHost>
+```
+
+```bash
+sudo a2ensite zifmia
+sudo apachectl configtest
+sudo systemctl reload apache2
+```
+
+If you use certbot's Apache plugin, run `sudo certbot --apache -d
+zifmia.example.com` first and let it generate the `:443` VirtualHost
+skeleton, then merge the proxy + rewrite directives above into it.
 
 ### nginx
 
@@ -399,6 +575,31 @@ non-empty:
 ```bash
 docker exec zifmia ls -la /stories
 ```
+
+### Story is on disk but excluded from `/api/stories`
+
+Every bundle is health-checked at boot ([ADR-178] §AC-6). If the
+bundle imports a package outside the Story Runtime Baseline, Zifmia
+logs the offender on stderr and silently excludes the story from the
+public listing:
+
+```bash
+docker logs zifmia 2>&1 | grep 'failed health check'
+# → [zifmia] story 'my-game' failed health check — missing package: @some/plugin; excluded from GET /api/stories
+```
+
+Fixes, in order of likelihood:
+
+1. **Rebuild the bundle against the current baseline.** `build.sh -s
+   <story> -b` runs a pre-flight `validate-bundle-baseline.js` pass
+   that fails early with the same error.
+2. **Bundle is built against a newer baseline than the image.**
+   Compare `docker inspect … --format '{{ index .Config.Labels
+   "org.sharpee.story-runtime-baseline" }}'` with the `BASELINE_VERSION`
+   the bundle expects. Either pull a newer image or rebuild the bundle
+   for the older baseline.
+3. **Story really does need a non-baseline package.** That's an
+   ADR-178 amendment proposal — see the ADR.
 
 ### WebSocket connection fails behind a proxy
 

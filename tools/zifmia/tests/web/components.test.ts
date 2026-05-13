@@ -204,15 +204,26 @@ describe('channel-renderer-host', () => {
   let host: HTMLElement;
   beforeEach(() => { host = document.createElement('div'); document.body.appendChild(host); });
 
-  it('appends a turn-block per new turn frame', () => {
+  it('appends a turn-submitter header and renders the main channel per new turn frame', () => {
+    // Phase 7 rewrite: channel-renderer-host adds a `.sharpee-turn-submitter`
+    // header in front of each new turn (carrying submitter handle and
+    // optional command echo + timestamp); main-channel content is rendered
+    // by `@sharpee/platform-browser`'s `createMainChannelRenderer` rather
+    // than wrapped in a host-owned turn-block.
     const store = createRoomStateStore();
     store.hydrate(freshResponse());
     mountChannelRendererHost(host, store);
     store.applyFrame({
       type: 'turn', roomId: 'r1', turnId: 't1', submitter: { id: 'i1', handle: 'alice' },
-      packet: { turnId: 't1', channels: { main: [{ text: 'you look around' }] } }
+      // `main` entries are `MainEntry` (`{ content: TextContent[] }`).
+      // A `TextContent` is either a string or a decoration node — strings
+      // render as text nodes.
+      packet: {
+        turnId: 't1',
+        channels: { main: [{ content: ['you look around'] }] }
+      }
     });
-    expect(host.querySelectorAll('.sharpee-turn-block')).toHaveLength(1);
+    expect(host.querySelectorAll('.sharpee-turn-submitter')).toHaveLength(1);
     expect(host.textContent).toContain('alice');
     expect(host.textContent).toContain('you look around');
   });

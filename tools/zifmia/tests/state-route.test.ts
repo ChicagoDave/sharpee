@@ -85,11 +85,23 @@ describe('GET /api/rooms/:id/state', () => {
       method: 'GET',
       url: `/api/rooms/${room.id}/state?handle=alice`
     });
-    const body = res.json() as { transcript_backlog: Array<{ turnId: string }> };
-    // Each turn appends 2 rows: kind=command (input) + kind=output (engine packet).
-    // The state assembly includes both kinds; 5 commands → 10 backlog entries.
-    expect(body.transcript_backlog).toHaveLength(10);
+    const body = res.json() as {
+      transcript_backlog: Array<{
+        turnId: string;
+        text: string;
+        submitter: { id: string; handle: string } | null;
+      }>;
+    };
+    // Phase 7 rewrite: state-routes pairs `command` + `output` rows by
+    // turnId into a single merged backlog entry per turn (replay anchored
+    // on `output`). 5 commands → 5 backlog entries, each carrying the
+    // submitter handle + command text from the paired `command` row.
+    expect(body.transcript_backlog).toHaveLength(5);
     expect(body.transcript_backlog.every((t) => typeof t.turnId === 'string')).toBe(true);
+    expect(body.transcript_backlog.map((t) => t.text)).toEqual([
+      'cmd 0', 'cmd 1', 'cmd 2', 'cmd 3', 'cmd 4'
+    ]);
+    expect(body.transcript_backlog.every((t) => t.submitter?.handle === 'alice')).toBe(true);
   });
 
   it('roster.connected reflects current WS subscriptions', async () => {
