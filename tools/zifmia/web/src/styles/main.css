@@ -1,0 +1,125 @@
+/* Sharpee multi-user — framework-free CSS skeleton. Author overrides
+   should target the `.sharpee-*` classnames below; nothing here is
+   meant to be visually opinionated, just structural. */
+
+:root {
+  --sharpee-bg: #1a1a1a;
+  --sharpee-fg: #e8e8e8;
+  --sharpee-muted: #8b8b8b;
+  --sharpee-accent: #6aa6ff;
+  --sharpee-border: #333;
+  --sharpee-warn: #d9a02b;
+  --sharpee-error: #d94f4f;
+  --sharpee-panel-bg: #222;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--sharpee-bg);
+  color: var(--sharpee-fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+button, input, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input, textarea {
+  background: #111;
+  border: 1px solid var(--sharpee-border);
+  padding: 0.4rem 0.6rem;
+  border-radius: 3px;
+}
+
+button {
+  background: var(--sharpee-accent);
+  color: #000;
+  border: 0;
+  padding: 0.4rem 0.8rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.sharpee-secondary { background: #444; color: var(--sharpee-fg); }
+button.sharpee-danger { background: var(--sharpee-error); color: #fff; }
+
+#app { min-height: 100vh; padding: 1rem; }
+
+/* ── Identity panel ─────────────────────────────────────────────── */
+.sharpee-identity-panel { max-width: 28rem; margin: 4rem auto; padding: 1.5rem; border: 1px solid var(--sharpee-border); border-radius: 6px; background: var(--sharpee-panel-bg); }
+.sharpee-identity-panel h1 { margin-top: 0; }
+.sharpee-identity-panel .sharpee-error { color: var(--sharpee-error); margin-top: 0.5rem; min-height: 1.4em; }
+.sharpee-identity-panel form { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.sharpee-identity-panel form input { flex: 1; }
+
+/* ── Lobby ──────────────────────────────────────────────────────── */
+.sharpee-lobby { max-width: 60rem; margin: 0 auto; }
+.sharpee-lobby-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.sharpee-lobby-identity-strip { color: var(--sharpee-muted); }
+.sharpee-lobby-identity-strip button.sharpee-secondary { margin-left: 0.5rem; }
+.sharpee-lobby-actions { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+.sharpee-lobby-rooms { display: flex; flex-direction: column; gap: 0.5rem; }
+.sharpee-lobby-room { padding: 0.75rem; border: 1px solid var(--sharpee-border); border-radius: 4px; background: var(--sharpee-panel-bg); display: flex; justify-content: space-between; align-items: center; }
+.sharpee-lobby-room.sharpee-pinned { border-color: var(--sharpee-accent); }
+.sharpee-lobby-room-meta { color: var(--sharpee-muted); font-size: 0.85em; }
+
+/* ── Room layout ────────────────────────────────────────────────── */
+.sharpee-room { display: grid; grid-template-columns: 1fr 18rem; grid-template-rows: auto 1fr auto; gap: 1rem; height: calc(100vh - 2rem); }
+.sharpee-room-header { grid-column: 1 / span 2; display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid var(--sharpee-border); }
+.sharpee-room-main { grid-column: 1; overflow-y: auto; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.sharpee-room-side { grid-column: 2; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+.sharpee-room-command { grid-column: 1 / span 2; display: flex; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--sharpee-border); }
+.sharpee-room-command input { flex: 1; }
+
+/* ── Channel renderer output ────────────────────────────────────── */
+.sharpee-channel { padding: 0.25rem 0; }
+.sharpee-channel-main { white-space: pre-wrap; }
+.sharpee-channel-prompt { color: var(--sharpee-muted); }
+.sharpee-turn-block { padding: 0.5rem 0; border-bottom: 1px dashed var(--sharpee-border); }
+.sharpee-turn-block:last-child { border-bottom: 0; }
+.sharpee-turn-submitter { color: var(--sharpee-accent); margin-right: 0.5rem; }
+
+/* ── Side panels ────────────────────────────────────────────────── */
+.sharpee-panel { background: var(--sharpee-panel-bg); border: 1px solid var(--sharpee-border); border-radius: 4px; padding: 0.75rem; }
+.sharpee-panel h2 { margin: 0 0 0.5rem; font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sharpee-muted); }
+
+.sharpee-participant-roster ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.sharpee-participant-row { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 3px; }
+.sharpee-participant-row.sharpee-disconnected { color: var(--sharpee-muted); }
+.sharpee-participant-row.sharpee-muted { text-decoration: line-through; }
+.sharpee-participant-row.sharpee-successor::before { content: "★ "; color: var(--sharpee-accent); }
+.sharpee-tier-badge { color: var(--sharpee-muted); font-size: 0.8em; }
+
+.sharpee-chat-panel .sharpee-chat-log { display: flex; flex-direction: column; gap: 0.25rem; max-height: 12rem; overflow-y: auto; margin-bottom: 0.5rem; }
+.sharpee-chat-message .sharpee-chat-from { color: var(--sharpee-accent); margin-right: 0.4rem; }
+.sharpee-chat-form { display: flex; gap: 0.25rem; }
+.sharpee-chat-form input { flex: 1; }
+
+.sharpee-dm-panel { border-color: var(--sharpee-warn); }
+.sharpee-dm-message .sharpee-dm-from { color: var(--sharpee-warn); margin-right: 0.4rem; }
+
+.sharpee-settings-panel .sharpee-settings-actions { display: flex; flex-direction: column; gap: 0.25rem; }
+.sharpee-settings-panel button { width: 100%; text-align: left; }
+.sharpee-settings-row { display: flex; gap: 0.25rem; align-items: center; }
+.sharpee-settings-row input, .sharpee-settings-row select { flex: 1; }
+
+/* ── Status banners + overlays ──────────────────────────────────── */
+.sharpee-grace-banner { background: var(--sharpee-warn); color: #000; padding: 0.5rem 1rem; border-radius: 4px; text-align: center; margin-bottom: 0.5rem; }
+.sharpee-room-closed-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; z-index: 100; }
+.sharpee-room-closed-overlay .sharpee-overlay-reason { color: var(--sharpee-error); font-size: 1.2em; }
+
+/* Persistent recording indicator (ADR-177 §8). */
+.sharpee-window-rec-indicator { position: fixed; top: 0.5rem; right: 0.5rem; background: var(--sharpee-error); color: #fff; font-size: 0.75em; padding: 0.15rem 0.5rem; border-radius: 3px; pointer-events: none; z-index: 50; opacity: 0.9; }
+.sharpee-window-rec-indicator-hidden { display: none; }
+
+/* ── Lock indicator ─────────────────────────────────────────────── */
+.sharpee-lock-indicator { color: var(--sharpee-muted); font-size: 0.85em; padding: 0.15rem 0.4rem; }
+.sharpee-lock-indicator.sharpee-lock-held-by-me { color: var(--sharpee-accent); }
+.sharpee-lock-indicator.sharpee-lock-held-by-other { color: var(--sharpee-warn); }

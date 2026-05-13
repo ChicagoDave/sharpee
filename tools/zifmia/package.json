@@ -1,0 +1,50 @@
+{
+  "name": "@sharpee/zifmia",
+  "version": "0.9.113",
+  "description": "Multi-user web product (corrected) — ADR-177. Room-governed Sharpee server: HTTP for the process, WebSocket for chat + command-line sharing, stateless per-turn engine, SQLite durability. Reclaims the tools/zifmia path after the Phase-6 build was renamed tools/shite/. See docs/architecture/adrs/adr-177-multiuser-corrected.md.",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm clean && pnpm build:server && pnpm build:web",
+    "build:server": "tsc",
+    "build:web": "vite build --config web/vite.config.ts",
+    "clean": "rimraf dist",
+    "dev": "tsc --watch",
+    "dev:web": "vite --config web/vite.config.ts",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@fastify/static": "^7.0.4",
+    "@fastify/websocket": "^10.0.1",
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/if-services": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/media": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "better-sqlite3": "^11.3.0",
+    "fastify": "^4.28.0",
+    "fflate": "^0.8.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^20.8.0",
+    "@types/ws": "^8.5.10",
+    "happy-dom": "^15.7.4",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2",
+    "vite": "^5.4.21",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

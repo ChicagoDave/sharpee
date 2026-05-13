@@ -1087,6 +1087,82 @@ importers:
         specifier: ^8.18.0
         version: 8.20.0
 
+  tools/zifmia:
+    dependencies:
+      '@fastify/static':
+        specifier: ^7.0.4
+        version: 7.0.4
+      '@fastify/websocket':
+        specifier: ^10.0.1
+        version: 10.0.1
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../../packages/if-domain
+      '@sharpee/if-services':
+        specifier: workspace:*
+        version: link:../../packages/if-services
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../../packages/lang-en-us
+      '@sharpee/media':
+        specifier: workspace:*
+        version: link:../../packages/media
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../../packages/parser-en-us
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../../packages/stdlib
+      '@sharpee/text-blocks':
+        specifier: workspace:*
+        version: link:../../packages/text-blocks
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../../packages/world-model
+      better-sqlite3:
+        specifier: ^11.3.0
+        version: 11.10.0
+      fastify:
+        specifier: ^4.28.0
+        version: 4.29.1
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.2
+      ws:
+        specifier: ^8.18.0
+        version: 8.20.0
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.13
+      '@types/node':
+        specifier: ^20.8.0
+        version: 20.19.27
+      '@types/ws':
+        specifier: ^8.5.10
+        version: 8.18.1
+      happy-dom:
+        specifier: ^15.7.4
+        version: 15.11.7
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.2.2
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.21
+        version: 5.4.21(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1)
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
   tutorials/familyzoo:
     dependencies:
       '@sharpee/core':

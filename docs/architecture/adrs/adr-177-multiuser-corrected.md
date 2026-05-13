@@ -327,7 +327,11 @@ lobby view.
 - `identities (id, handle, is_admin, created_at)` — handle unique
   (case-insensitive).
 - `rooms (id, join_code, title, story_slug, pinned, last_activity_at,
-  created_at, primary_host_id, deleted_at?)`.
+  created_at, primary_host_id, deleted_at?)`. `primary_host_id`
+  references `identities.id` — PH-ness is held on the room row and
+  survives the PH disconnecting (the row stays sticky until
+  succession or grace-window auto-promote explicitly replaces it;
+  see §Invariants).
 - `participants (id, room_id, identity_id, tier, muted, connected,
   is_successor, joined_at)`. FK CASCADE on identity erase and room
   delete.
@@ -373,6 +377,13 @@ Every room carries a static recording-notice string per the operator's
 recorded for audit and replay."). The notice is part of the
 `GET /api/rooms/:id/state` response; client renders it once on
 first join and shows a persistent indicator inside the room view.
+
+**Source of truth.** The notice is operator-scoped (live, read from
+`config.recording_notice` at the moment `GET /state` is served), not
+room-scoped (frozen at create). The `rooms` table does not store a
+per-room copy. An operator who changes the `config` value sees the
+new notice on every subsequent room state hydration; existing
+rendered indicators update on next reconnect / refresh.
 
 ### 9. Implementation location
 
@@ -480,26 +491,44 @@ not.
   attached to the erased handle is closed by the server with code
   `4007 identity_erased` before the HTTP response returns to the
   caller.
-- **AC-10: lock-on-typing (200ms heartbeat)**. Two browsers A and B
-  are in the same room. A sends `lock:acquire`; both browsers receive
-  `lock:state { holder: A, expiresAt: now+200ms }`. While A continues
-  typing, the client re-emits `lock:acquire` every 150ms to refresh
-  the expiry; the server rebroadcasts `lock:state` only when the
-  holder or expiry meaningfully changes. After 200ms of no
-  `lock:acquire` from A, the server auto-releases and broadcasts
-  `lock:state { holder: null, expiresAt: null }`. B's `lock:acquire`
-  is rejected while `holder=A`; accepted once `holder=null`. A's
-  explicit `lock:release` collapses the lock immediately.
+- **AC-10: lock-on-typing (400ms expiry, 200ms heartbeat)**. Two
+  browsers A and B are in the same room. A sends `lock:acquire`; both
+  browsers receive `lock:state { holder: A, expiresAt: now+400ms }`.
+  While A continues typing, the client re-emits `lock:acquire` every
+  200ms to refresh the expiry; the server rebroadcasts `lock:state`
+  only when the holder or expiry meaningfully changes. After 400ms
+  of no `lock:acquire` from A, the server auto-releases and
+  broadcasts `lock:state { holder: null, expiresAt: null }`. B's
+  `lock:acquire` is rejected while `holder=A`; accepted once
+  `holder=null`. A's explicit `lock:release` collapses the lock
+  immediately. The 2× expiry-over-heartbeat margin tolerates a
+  single missed heartbeat on a flaky connection without the typing
+  user losing the seat mid-keystroke.
 - **AC-11: reconnect idempotency**. A browser disconnects mid-session
-  and rejoins. The server's WS layer matches the `hello { roomId,
-  handle }` to the existing `participants` row (same `participant_id`)
-  rather than allocating a new one. The rejoining browser fetches
+  and rejoins. The server's WS layer resolves the incoming `hello {
+  roomId, handle }` by looking up the identity for `handle` and then
+  the unique `(room_id, identity_id)` row in `participants` — the
+  same `participant_id` as before, not a new allocation. The rejoining browser fetches
   `GET /api/rooms/:id/state` and resumes the live feed; observers
   see exactly one `presence { connected: false }` followed by exactly
   one `presence { connected: true }` for that `participant_id`
   across the disconnect/reconnect cycle — no duplicates, no
   cross-talk with other identities sharing the same handle (which
   is impossible per ADR-161 uniqueness).
+- **AC-12: mute enforcement**. A PH or Co-Host sends `POST
+  /api/rooms/:id/mute { handle, target, muted: true }` against a
+  participant P. The `participants` row for P is updated; a
+  `role_change` (or dedicated `mute_state`) WS broadcast carries the
+  new state to the room. P's subsequent `chat:send` frames are
+  dropped server-side (no broadcast); P's `lock:acquire` is rejected
+  while muted. Setting `muted: false` restores both abilities.
+- **AC-13: DM scope (PH↔Co-Host only)**. A PH and Co-Host can
+  exchange DMs (delivered as `session_events.kind = 'dm'`, surfaced
+  to only those two participants' clients). A `participant` or
+  `command_entrant` attempting to send a DM gets 403. Tier changes
+  that demote a Co-Host stop further DM access immediately; prior
+  DMs remain in the session-event log but no longer surface in the
+  demoted participant's view.
 
 ## Constrains Future Sessions
 

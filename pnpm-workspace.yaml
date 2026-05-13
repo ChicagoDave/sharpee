@@ -8,6 +8,7 @@ packages:
   - stories/channel-service-test
   - tutorials/familyzoo
   - tools/shite
+  - tools/zifmia
 
 ignoredBuiltDependencies:
   - electron
