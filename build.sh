@@ -512,6 +512,7 @@ build_platform() {
         "@sharpee/plugin-npc:plugin-npc"
         "@sharpee/plugin-scheduler:plugin-scheduler"
         "@sharpee/plugin-state-machine:plugin-state-machine"
+        "@sharpee/story-runtime-baseline:story-runtime-baseline"
         "@sharpee/ext-testing:extensions/testing"
         "@sharpee/engine:engine"
         "@sharpee/platform-browser:platform-browser"
@@ -859,7 +860,18 @@ build_story_bundle() {
     (cd "$STAGING" && zip -r "$REPO_ROOT/$OUT_FILE" . -q)
     log_ok "zip"
 
-    # 6. Report
+    # 6. ADR-178 §AC-5: validate the bundle's external module references
+    # against STORY_RUNTIME_BASELINE. Fails the build if the bundle pulls
+    # in a package outside the platform's declared peer set.
+    if ! node "$REPO_ROOT/scripts/validate-bundle-baseline.js" "$OUT_FILE" >/dev/null 2>"$STAGING/baseline-check.err"; then
+        log_fail "baseline-check"
+        cat "$STAGING/baseline-check.err" >&2
+        rm -rf "$STAGING"
+        exit 1
+    fi
+    log_ok "baseline-check"
+
+    # 7. Report
     local BUNDLE_SIZE=$(ls -lh "$OUT_FILE" | awk '{print $5}')
     echo "Output: $OUT_FILE ($BUNDLE_SIZE)"
 
@@ -1002,6 +1014,20 @@ build_zifmia_server() {
     if ! pnpm --filter '@sharpee/zifmia' build 2>&1; then
         echo -e "${RED}Error: zifmia build failed${NC}" >&2
         return 1
+    fi
+
+    # ADR-178 §AC-3: surface the Story Runtime Baseline version sourced
+    # from the manifest, so operators running `docker build` can pass it
+    # as `--build-arg BASELINE_VERSION=<n>`. Output only — Docker is
+    # built by the operator per DEPLOYMENT.md, not by this script.
+    local BASELINE_MOD="$REPO_ROOT/packages/story-runtime-baseline/dist/index.js"
+    if [ -f "$BASELINE_MOD" ]; then
+        local BASELINE_VER
+        BASELINE_VER=$(node -p "require('$BASELINE_MOD').BASELINE_VERSION" 2>/dev/null)
+        if [ -n "$BASELINE_VER" ]; then
+            echo "Story Runtime Baseline: v${BASELINE_VER}"
+            echo "  (docker build expects --build-arg BASELINE_VERSION=${BASELINE_VER}; docker-compose.yml does this automatically)"
+        fi
     fi
 
     local SERVER_DIST="tools/zifmia/dist"

@@ -25,6 +25,7 @@
     { "path": "../plugin-npc" },
     { "path": "../plugin-scheduler" },
     { "path": "../plugin-state-machine" },
+    { "path": "../story-runtime-baseline" },
     { "path": "../extensions/testing" }
   ]
 }

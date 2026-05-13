@@ -1,6 +1,7 @@
 {
   "projects": [
     "packages/interpreter/tsconfig.json",
+    "packages/story-runtime-baseline/tsconfig.json",
     "packages/world-model/tsconfig.json",
     "packages/transcript-tester/tsconfig.json",
     "packages/text-service/tsconfig.json",

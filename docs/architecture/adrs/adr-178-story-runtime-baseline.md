@@ -1,8 +1,8 @@
 # ADR-178: Story Runtime Baseline — Platform-Declared Peer Set
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
-## Date: 2026-05-13
+## Date: 2026-05-13 (accepted 2026-05-13)
 
 ## Context
 

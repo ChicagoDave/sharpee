@@ -1,38 +1,27 @@
 {
-  "name": "@sharpee/sharpee",
+  "name": "@sharpee/story-runtime-baseline",
   "version": "0.9.113",
-  "description": "Sharpee - Interactive Fiction Engine for TypeScript",
+  "description": "Story Runtime Baseline manifest (ADR-178). Declares the canonical set of packages a .sharpee story bundle may import. Used by Zifmia to install the baseline transitively and by the story build to validate bundles against the contract.",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "sharpee": "./dist/cli/index.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js",
       "esm": "./dist-esm/index.js"
-    },
-    "./runtime-surface": {
-      "types": "./dist/runtime-surface.d.ts",
-      "import": "./dist-esm/runtime-surface.js",
-      "require": "./dist/runtime-surface.js",
-      "esm": "./dist-esm/runtime-surface.js"
     }
   },
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "clean": "rimraf dist dist-esm",
-    "build:npm": "tsc --outDir dist"
+    "test": "vitest run"
   },
   "dependencies": {
-    "@sharpee/channel-service": "workspace:*",
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
-    "@sharpee/ext-testing": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/if-services": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
@@ -42,51 +31,37 @@
     "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
-    "@sharpee/plugins": "workspace:*",
-    "@sharpee/character": "workspace:*",
-    "@sharpee/story-runtime-baseline": "workspace:*",
+    "@sharpee/queries": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/world-model": "workspace:*",
-    "@sharpee/transcript-tester": "workspace:*",
-    "fflate": "^0.8.2"
+    "lz-string": "^1.5.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist",
-    "docs",
-    "templates"
+    "dist-esm"
   ],
   "keywords": [
-    "interactive-fiction",
-    "if",
-    "text-adventure",
     "sharpee",
-    "game-engine",
-    "parser",
-    "zork"
+    "interactive-fiction",
+    "manifest",
+    "baseline"
   ],
   "author": "Sharpee Team",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ChicagoDave/sharpee.git",
-    "directory": "packages/sharpee"
-  },
-  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
-  "bugs": {
-    "url": "https://github.com/ChicagoDave/sharpee/issues"
+    "directory": "packages/story-runtime-baseline"
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "genai": {
-    "entry": "./GENAI.md",
-    "docs": "./docs/genai-api/"
   },
   "publishConfig": {
     "access": "public"

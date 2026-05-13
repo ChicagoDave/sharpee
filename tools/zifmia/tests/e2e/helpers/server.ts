@@ -29,6 +29,19 @@ const ZIFMIA_DIST_MAIN = resolve(__dirname, '..', '..', '..', 'dist', 'main.js')
 const ZIFMIA_DIST_WEB = resolve(__dirname, '..', '..', '..', 'dist', 'web');
 const REPO_STORIES_DIR = join(REPO_ROOT, 'dist', 'stories');
 
+/**
+ * A custom-sourced seed lets a spec drop a synthetic `.sharpee` bundle
+ * (e.g., one that imports a non-baseline package, for ADR-178 §AC-6
+ * coverage) into the per-server stories dir without having to first
+ * stage it in the repo's `dist/stories/` tree.
+ */
+export interface CustomStorySeed {
+  /** Filename the bundle will be written as inside the stories dir. */
+  readonly name: string;
+  /** Absolute path to the source bundle. */
+  readonly sourcePath: string;
+}
+
 export interface SpawnZifmiaOptions {
   /** Override recording notice text (default: 'E2E recording notice'). */
   recordingNotice?: string;
@@ -36,12 +49,20 @@ export interface SpawnZifmiaOptions {
    * Stories to seed into the per-server temp stories dir. Defaults to
    * the entire repo `dist/stories/` content (currently `dungeo.sharpee`).
    * Specs that exercise AC-7 SIGHUP pass `[]` and drop files later.
+   * String entries resolve against the repo `dist/stories/` dir;
+   * `CustomStorySeed` entries copy from arbitrary paths.
    */
-  seedStories?: 'all' | readonly string[];
+  seedStories?: 'all' | ReadonlyArray<string | CustomStorySeed>;
   /** Override the PH-disconnect grace window (ms). Default: server default (30s). */
   graceMs?: number;
   /** Extra env vars to set on the child. */
   env?: Record<string, string>;
+  /**
+   * When true, the harness captures the spawned server's stderr into a
+   * buffer reachable from {@link ZifmiaProcess.stderrLog}. Useful for
+   * asserting that the boot log named an unhealthy story.
+   */
+  captureStderr?: boolean;
 }
 
 export interface ZifmiaProcess {
@@ -50,6 +71,12 @@ export interface ZifmiaProcess {
   readonly storiesDir: string;
   readonly tempDir: string;
   readonly child: ChildProcess;
+  /**
+   * Accumulated stderr from the spawned server when
+   * `spawnZifmiaServer({ captureStderr: true })` is used. Empty string
+   * otherwise. Read after `waitForReady` to assert on boot-time logs.
+   */
+  readonly stderrLog: () => string;
   stop(): Promise<void>;
 }
 
@@ -70,14 +97,24 @@ function pickFreePort(): Promise<number> {
   });
 }
 
-function seedStoriesInto(dir: string, mode: 'all' | readonly string[]): void {
+function seedStoriesInto(
+  dir: string,
+  mode: 'all' | ReadonlyArray<string | CustomStorySeed>
+): void {
   if (Array.isArray(mode)) {
-    for (const file of mode) {
-      const src = join(REPO_STORIES_DIR, file);
-      if (!existsSync(src)) {
-        throw new Error(`seed story not found: ${src}`);
+    for (const entry of mode) {
+      if (typeof entry === 'string') {
+        const src = join(REPO_STORIES_DIR, entry);
+        if (!existsSync(src)) {
+          throw new Error(`seed story not found: ${src}`);
+        }
+        copyFileSync(src, join(dir, entry));
+      } else {
+        if (!existsSync(entry.sourcePath)) {
+          throw new Error(`custom seed source not found: ${entry.sourcePath}`);
+        }
+        copyFileSync(entry.sourcePath, join(dir, entry.name));
       }
-      copyFileSync(src, join(dir, file));
     }
     return;
   }
@@ -148,10 +185,13 @@ export async function spawnZifmiaServer(opts: SpawnZifmiaOptions = {}): Promise<
   child.stdout?.setEncoding('utf8');
   child.stderr?.setEncoding('utf8');
   const logTag = `[zifmia:${port}]`;
+  const stderrChunks: string[] = [];
+  const captureStderr = opts.captureStderr ?? false;
   child.stdout?.on('data', (chunk: string) => {
     if (process.env.ZIFMIA_E2E_VERBOSE) process.stdout.write(`${logTag} ${chunk}`);
   });
   child.stderr?.on('data', (chunk: string) => {
+    if (captureStderr) stderrChunks.push(chunk);
     if (process.env.ZIFMIA_E2E_VERBOSE) process.stderr.write(`${logTag} ${chunk}`);
   });
 
@@ -181,7 +221,15 @@ export async function spawnZifmiaServer(opts: SpawnZifmiaOptions = {}): Promise<
     rmSync(tempDir, { recursive: true, force: true });
   };
 
-  return { baseURL, port, storiesDir, tempDir, child, stop };
+  return {
+    baseURL,
+    port,
+    storiesDir,
+    tempDir,
+    child,
+    stderrLog: () => (captureStderr ? stderrChunks.join('') : ''),
+    stop,
+  };
 }
 
 export async function stopZifmiaServer(p: ZifmiaProcess | undefined): Promise<void> {

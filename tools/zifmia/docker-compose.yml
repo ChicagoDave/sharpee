@@ -16,6 +16,15 @@ services:
       # the Dockerfile's `COPY packages/`, `COPY tools/zifmia/`, etc.
       context: ../..
       dockerfile: tools/zifmia/Dockerfile
+      args:
+        # ADR-178 §AC-3: tag the image with the Story Runtime Baseline
+        # version it ships. Override at build time from the manifest:
+        #   docker compose build \
+        #     --build-arg BASELINE_VERSION=$(node -p \
+        #       "require('./packages/story-runtime-baseline/dist/index.js').BASELINE_VERSION")
+        # The Dockerfile defaults to 1 if the arg is not provided; bumping
+        # the baseline is an ADR-178 amendment that bumps this value.
+        BASELINE_VERSION: "${BASELINE_VERSION:-1}"
     image: sharpee/zifmia:dev
     container_name: zifmia
     ports:

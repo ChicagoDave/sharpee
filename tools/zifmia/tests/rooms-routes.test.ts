@@ -419,6 +419,14 @@ describe('rooms routes (REAL-PATH SQLite + Fastify)', () => {
   it('GET /api/stories lists scanner entries by slug', async () => {
     const res = await server.app.inject({ method: 'GET', url: '/api/stories' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ stories: [{ slug: 'dungeo' }, { slug: 'familyzoo' }] });
+    const body = res.json();
+    expect(body.stories).toEqual([{ slug: 'dungeo' }, { slug: 'familyzoo' }]);
+    // ADR-178 §AC-4: top-level baseline_version, NOT on per-story rows.
+    expect(typeof body.baseline_version).toBe('number');
+    expect(Number.isInteger(body.baseline_version)).toBe(true);
+    expect(body.baseline_version).toBeGreaterThan(0);
+    for (const story of body.stories) {
+      expect(story).not.toHaveProperty('baseline_version');
+    }
   });
 });

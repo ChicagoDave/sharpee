@@ -46,7 +46,13 @@ import { createSavesRepository, type SavesRepository } from './engine/saves-repo
 import { createEngineCommandRouter } from './engine/engine-router.js';
 import { registerSavesRoutes } from './engine/saves-routes.js';
 import { createManifestCache, type ManifestCache } from './engine/manifest-cache.js';
-import { createStoryHealthChecker, type StoryHealthChecker } from './engine/story-health.js';
+import {
+  createStoryHealthChecker,
+  formatReason,
+  validateScannerEntries,
+  withHealthFilter,
+  type StoryHealthChecker,
+} from './engine/story-health.js';
 import { createConfigRepository, type ConfigRepository } from './config/repo.js';
 
 export interface BuildServerOptions {
@@ -173,6 +179,28 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Zif
     });
   }
 
+  // ADR-178 §AC-6: in production-style boot (useEngineRouter), validate
+  // every scanned story with a one-shot engine boot. Stories whose
+  // bundles can't load — e.g., importing a non-baseline package — are
+  // logged with the offending package name and hidden from
+  // `GET /api/stories`. Skipped in test/echo-router mode where many
+  // tests seed scanner entries with fake paths.
+  const unhealthySlugs = new Set<string>();
+  if (useEngineRouter) {
+    const reports = await validateScannerEntries(scanner, storyHealth);
+    for (const report of reports) {
+      if (report.ok) continue;
+      unhealthySlugs.add(report.slug);
+      const reasonText = report.reason ? formatReason(report.reason) : 'unknown failure';
+      // eslint-disable-next-line no-console
+      console.error(
+        `[zifmia] story '${report.slug}' failed health check — ${reasonText}; excluded from GET /api/stories`
+      );
+    }
+  }
+  const publicScanner =
+    unhealthySlugs.size > 0 ? withHealthFilter(scanner, unhealthySlugs) : scanner;
+
   registerIdentityRoutes(app, identityRepo, { hub });
   registerRoomRoutes(app, {
     identities: identityRepo,
@@ -182,7 +210,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Zif
     hub,
     sessionEvents
   });
-  registerStoriesRoutes(app, scanner);
+  registerStoriesRoutes(app, publicScanner);
   registerTurnRoutes(app, {
     identities: identityRepo,
     rooms: roomsRepo,

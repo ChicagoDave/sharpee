@@ -110,3 +110,8 @@ export { TurnPlugin, TurnPluginContext, TurnPluginActionResult, PluginRegistry }
 export { NpcPlugin } from '@sharpee/plugin-npc';
 export { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 export { StateMachinePlugin } from '@sharpee/plugin-state-machine';
+
+// Story Runtime Baseline (ADR-178) — manifest-only package.
+// Declared as a dep so the workspace builds it, but the constants
+// (STORY_RUNTIME_BASELINE, BASELINE_VERSION) are infrastructure, not story
+// API, and are intentionally not re-exported through the umbrella package.
