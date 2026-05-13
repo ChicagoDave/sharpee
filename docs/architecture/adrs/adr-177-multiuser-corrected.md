@@ -1,8 +1,8 @@
 # ADR-177: Multi-User Web Product — Corrected Architecture
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
-## Date: 2026-05-12
+## Date: 2026-05-12 (PROPOSED), 2026-05-12 (ACCEPTED — 6 findings resolved)
 
 ## Supersedes
 
@@ -111,8 +111,11 @@ ACCEPTED) replaced; the corrected build does not bring them back:
 - **Admin upload of stories** (`POST /admin/stories` +
   `story_library` + `story_bundles` tables). Out of scope; stories
   live in a directory the server scans.
-- **`is_admin` role on identities + `/admin/*` route family**.
-  Out of scope; admin actions run against the SQLite DB via a CLI.
+- **`/admin/*` HTTP route family** (the routes Phase-6 zifmia introduced
+  for admin upload, story listing, identity admin). Out of scope; admin
+  actions run against the SQLite DB via a CLI tool. The `is_admin`
+  *column* on `identities` is kept (see §5 / §6) — what's discarded is
+  the HTTP surface that exposed it, not the column itself.
 - **Multi-tenant flat-room model** (any-identified-user creates
   a room against any installed story). Replaced by the
   room-governance model above.
@@ -166,6 +169,22 @@ WS carries exactly two concerns: real-time chat between
 participants, and command-line sharing — i.e., broadcasting the
 channel-io package that resulted from someone's submitted command
 to every browser in the room.
+
+**Hello handshake** — the first frame on every WS connection.
+- Client → Server: `hello { roomId, handle }` — MUST be the first
+  frame after `open`. No other frame is accepted from the client
+  until `hello:ack` has been sent. The handle here is the same
+  in-band credential used on HTTP per ADR-161 amended.
+- Server → Client: `hello:ack { participantId, tier, lockHolder }`
+  — confirms attachment to the room's broadcast group.
+- Server-side close codes on hello rejection:
+  - `4001 unknown_handle` — handle does not resolve to an identity.
+  - `4003 not_in_room` — identity exists but is not a participant
+    of `roomId`. Caller must `POST /api/rooms/:id/join` first.
+  - `4004 room_not_found` — `roomId` does not exist or is deleted.
+  - `4005 hello_required` — any frame other than `hello` arrived
+    first.
+  - `4006 hello_timeout` — no `hello` within 5s of connection open.
 
 **Chat** — real-time user-to-user messages:
 - Client → Server: `chat:send { roomId, text }`
@@ -230,13 +249,39 @@ GET).
   - `POST /api/rooms/:id/force-release { handle, target }` — PH/CoHost
 - **Rooms** (the process — submit + state hydration):
   - `GET /api/rooms/:id/state?handle=` — initial-state fetch on
-    room entry and on WS reconnect. Returns
-    `{ cmgt, transcript_backlog, roster, recording_notice,
-    pending_lock_holder? }` — everything a fresh browser needs to
+    room entry and on WS reconnect. Returns a `RoomStateResponse`
+    (typed shape below) carrying everything a fresh browser needs to
     seed its renderer before the live WS stream takes over.
     Transcript backlog is a sequence of past `TurnPacket`s capped
     at the in-blob transcript window (ADR-164 carry-forward,
     1000 turns).
+
+    ```ts
+    interface RoomStateResponse {
+      room: {
+        id: string;
+        title: string;
+        join_code: string;
+        story_slug: string;
+        pinned: boolean;
+        primary_host_id: string;
+        recording_notice: string;
+      };
+      cmgt: CmgtPacket;                    // channel manifest (ADR-163)
+      transcript_backlog: TurnPacket[];    // capped at 1000
+      roster: Array<{
+        participant_id: string;
+        identity_id: string;
+        handle: string;
+        tier: 'primary_host' | 'co_host' | 'command_entrant' | 'participant';
+        muted: boolean;
+        connected: boolean;
+        is_successor: boolean;
+      }>;
+      lock: { holder: string | null; expiresAt: number | null };
+      grace?: { ph_disconnected_at: number; deadline: number };
+    }
+    ```
   - `POST /api/rooms/:id/command { handle, text }` → 200 `{ turnId }`.
     Runs the turn server-side. The channel-io package broadcasts
     over WS to every participant (submitter included) per §1/§3.
@@ -266,6 +311,17 @@ Client localStorage key `sharpee:identity` holds `{id, handle}`.
 There is **no admin HTTP surface in v1**. Admin-only operations
 (rare) run via `sharpee-admin <command>` against the DB file.
 
+**Erase teardown.** A successful `POST /api/identities/erase
+{ handle }` hard-deletes the `identities` row; CASCADE removes the
+corresponding `participants` rows across every room. Any open WS
+connections attached to that handle are closed by the server with
+code **`4007 identity_erased`** immediately after the DB write
+commits, and a `presence { connected: false }` is broadcast for
+each affected room. The client erases its `sharpee:identity`
+localStorage entry on receiving 4007 (or on its own erase request's
+HTTP 200, whichever it sees first) and returns to the unidentified
+lobby view.
+
 ### 6. Persistence
 
 - `identities (id, handle, is_admin, created_at)` — handle unique
@@ -288,6 +344,15 @@ There is **no admin HTTP surface in v1**. Admin-only operations
 
 NO `sessions` table. NO bearer tokens. NO `story_library` /
 `story_bundles` tables — stories live on disk.
+
+**Greenfield — no migration.** The schema above is the v1 schema,
+taken on first boot of the corrected build. There is no data
+migration from `tools/shite/` or from the prior `tools/server/`;
+both lived in separate SQLite files and neither contains data the
+new build owes a forward path to. Operators starting the new build
+get a fresh DB file. Schema changes after v1 follow the project's
+no-backcompat policy — one-shot cutover, operator owns lifecycle
+— rather than online migrations.
 
 ### 7. Story installation: directory scan
 
@@ -343,7 +408,17 @@ not.
   returns `{ turnId }` and nothing more. The resulting `TurnPacket`
   comes back over the same WS broadcast that every other browser
   in the room receives. All browsers (submitter included) render
-  identically off identical inputs.
+  identically off identical inputs. **Do not add a fallback that
+  also returns the `TurnPacket` in the HTTP body**: it would
+  reintroduce an asymmetric submitter path and, more importantly,
+  imply that WS delivery is the authoritative copy. It is not. The
+  authoritative copy is the persisted save blob + `session_events`
+  row; every browser — submitter, observer, or a fresh joiner —
+  recovers the same way via `GET /state` and the transcript backlog.
+  A "flaky WS" is identical in kind to "a new browser opening the
+  room": reconnect → hydrate → resume. The prior Deno design lost
+  state because state lived in a process; the corrected design
+  lives in SQLite, and WS is purely live delivery on top of that.
 - **HTTP `GET /state` is for hydration, not for live updates.**
   Called once on room entry to seed CMGT + transcript backlog +
   roster + recording notice. Called again only on reconnect (after
@@ -401,7 +476,30 @@ not.
   unchanged.
 - **AC-9: erase frees the handle**. `POST /api/identities/erase
   { handle }` hard-deletes the row; subsequent `POST /api/identities
-  { handle: <same> }` succeeds with a new `id`.
+  { handle: <same> }` succeeds with a new `id`. Any WS connection
+  attached to the erased handle is closed by the server with code
+  `4007 identity_erased` before the HTTP response returns to the
+  caller.
+- **AC-10: lock-on-typing (200ms heartbeat)**. Two browsers A and B
+  are in the same room. A sends `lock:acquire`; both browsers receive
+  `lock:state { holder: A, expiresAt: now+200ms }`. While A continues
+  typing, the client re-emits `lock:acquire` every 150ms to refresh
+  the expiry; the server rebroadcasts `lock:state` only when the
+  holder or expiry meaningfully changes. After 200ms of no
+  `lock:acquire` from A, the server auto-releases and broadcasts
+  `lock:state { holder: null, expiresAt: null }`. B's `lock:acquire`
+  is rejected while `holder=A`; accepted once `holder=null`. A's
+  explicit `lock:release` collapses the lock immediately.
+- **AC-11: reconnect idempotency**. A browser disconnects mid-session
+  and rejoins. The server's WS layer matches the `hello { roomId,
+  handle }` to the existing `participants` row (same `participant_id`)
+  rather than allocating a new one. The rejoining browser fetches
+  `GET /api/rooms/:id/state` and resumes the live feed; observers
+  see exactly one `presence { connected: false }` followed by exactly
+  one `presence { connected: true }` for that `participant_id`
+  across the disconnect/reconnect cycle — no duplicates, no
+  cross-talk with other identities sharing the same handle (which
+  is impossible per ADR-161 uniqueness).
 
 ## Constrains Future Sessions
 
@@ -442,6 +540,97 @@ not.
 - OAuth / 3rd-party auth.
 - Internationalization of the recording-notice / UI labels (v1 is
   English; the operator can override the notice string).
+
+## Prior Art
+
+Multi-user / shared-IF systems have been built before. Sketching
+the shape of each clarifies what ADR-177 takes from them and what
+it leaves on the table.
+
+- **ifMUD + integrated interpreter (perlMud, Club Floyd).**
+  Stateful long-running daemon hosting chat, identity, presence,
+  room, AND an embedded IF interpreter. **One game at a time**
+  across the whole MUD instance — Floyd uses that slot for its
+  weekly session. State held in process memory; crash recovery is
+  "reload + `restore` from a save." Works because the product is
+  bounded: one shared game, scheduled events, finite session
+  length. Doesn't generalize to "many concurrent rooms each running
+  a different story" — and that's what makes ADR-177 not-ifMUD.
+
+- **ADR-153 Deno-subprocess-per-room (Sharpee's own first cut,
+  2025).** Many concurrent rooms, each room's engine running in its
+  own Deno subprocess, talking to the main server over a wire
+  protocol. Statefulness in the subprocess was the failure mode —
+  subprocess crash = state loss = room dead. ADR-164 retired this
+  in favor of stateless-per-turn; ADR-177 carries that decision
+  forward.
+
+- **Parchment / iplayif.com / Lectrote.** Engine in the browser; no
+  shared state; single-user. The "engine fully client-side"
+  extreme. Putting the engine in the browser makes shared-state-
+  across-browsers a separate infrastructure problem — which
+  amounts to "build a MUD on top." ADR-177's choice to put the
+  engine server-side is what makes shared rooms possible without
+  re-solving distributed state.
+
+- **Twitch Plays / chat-driven game streams.** One game instance,
+  many viewers, chat → input pipeline. Almost exactly ADR-177's
+  shape minus the per-room concept: one engine, broadcast output
+  (video in their case, channel-io in ours), chat-driven input
+  (voted commands in theirs, direct submission by the typing-seat
+  holder in ours). Validates the social pattern: observers +
+  driver, with chat layered over a shared game, works at scale.
+
+- **MUD frameworks with web clients (Evennia, Ranvier).**
+  Long-running stateful server, web UI as a thin terminal-in-
+  browser layer. Architecturally indistinguishable from ifMUD —
+  the browser is just a transport reskin over a MUD daemon. Not a
+  separate architecture so much as a UI choice on top of one.
+
+- **Cloud gaming (GeForce Now, Stadia, etc.).** Extreme stateful:
+  engine + scene graph + frame buffer all server-side, video
+  streamed to a dumb client. Not directly applicable to text IF,
+  but it's the architectural ceiling — "engine state lives in
+  server, client is presentation only." ADR-177 lands closer to
+  this end of the spectrum than to "engine in browser," with the
+  wrinkle that durability is per-turn rather than per-frame and
+  the wire is channel-io rather than video.
+
+### What ADR-177 takes from each
+
+- **From ifMUD**: chat + identity + presence + room is the right
+  substrate model for multi-user IF. Implemented as the WS layer
+  in §3.
+- **From ADR-153 (Deno)**: the failure mode taught the design.
+  Statefulness in a per-room process is the bug; moving state to
+  durable storage every turn is the fix.
+- **From Parchment**: nothing directly — ADR-177's engine is
+  server-side. But Parchment's renderer-in-browser pattern is what
+  ADR-165 (Renderer Architecture) carries forward: the browser
+  renders, it doesn't interpret.
+- **From Twitch Plays**: validation that "one engine, many
+  observers, chat layered over it" is a known-working social
+  pattern. ADR-177 just gives each group its own room and lets
+  the typing seat rotate rather than picking commands by majority
+  vote.
+- **From cloud gaming**: the principle that thinness on the
+  client side is fine when the server emits a renderable stream.
+  ADR-163's `TurnPacket` is the text-IF equivalent of a frame.
+
+### Where ADR-177 sits on the curve
+
+```
+  engine in browser ─── stateless per-turn ─── stateful long-running ─── streamed frames
+  (Parchment)          (ADR-177)              (ifMUD, Evennia,             (cloud gaming)
+                                              Deno-per-room)
+```
+
+The "stateful long-running" middle has the most prior art for
+multi-user IF (ifMUD has run since the 90s; Floyd has used it for
+20+ years). ADR-177 picks the unusual middle-left position because
+the IF turn model — quiescent between commands — makes per-turn
+durability essentially free, and that durability is what removes
+the failure mode that killed the Deno design.
 
 ## Consequences
 

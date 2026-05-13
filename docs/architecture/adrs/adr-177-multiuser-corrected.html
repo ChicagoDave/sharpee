@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ADR-177 — Multi-User Web Product: Corrected Architecture</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #14171c;
+    --panel: #1c2128;
+    --panel-2: #232a34;
+    --text: #e6edf3;
+    --muted: #9aa5b1;
+    --accent: #7ee787;
+    --accent-2: #79c0ff;
+    --warn: #f0883e;
+    --danger: #ff7b72;
+    --border: #30363d;
+    --code-bg: #0d1117;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  header {
+    padding: 32px 48px 24px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #1a1f27, var(--bg));
+  }
+  header h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -0.01em; }
+  header .sub { color: var(--muted); font-size: 14px; }
+  header .badges { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .badge.accepted { background: rgba(126,231,135,0.12); color: var(--accent); border: 1px solid rgba(126,231,135,0.3); }
+  .badge.supersedes { background: rgba(240,136,62,0.1); color: var(--warn); border: 1px solid rgba(240,136,62,0.3); }
+  .badge.builds-on { background: rgba(121,192,255,0.1); color: var(--accent-2); border: 1px solid rgba(121,192,255,0.3); }
+  main { padding: 32px 48px 80px; max-width: 1200px; margin: 0 auto; }
+  section { margin-bottom: 36px; }
+  h2 { font-size: 19px; margin: 0 0 14px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  h3 { font-size: 15px; margin: 18px 0 8px; color: var(--accent-2); }
+  p { margin: 8px 0; }
+  code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 13px; font-family: "JetBrains Mono", Menlo, Consolas, monospace; color: #d2a8ff; }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .card h3 { margin-top: 0; }
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); border: 1px solid var(--border); display: inline-block; margin-right: 4px; }
+  .pill.http { color: var(--accent); border-color: rgba(126,231,135,0.3); }
+  .pill.ws { color: var(--accent-2); border-color: rgba(121,192,255,0.3); }
+  .pill.shared { color: var(--warn); border-color: rgba(240,136,62,0.3); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td code { font-size: 12px; }
+  .diagram { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin: 12px 0; overflow-x: auto; }
+  .diagram .mermaid { background: transparent !important; min-height: 200px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 12px; height: 4px; display: inline-block; border-radius: 2px; }
+  .ws-line { background: var(--accent-2); }
+  .http-line { background: var(--accent); }
+  .shared-line { background: var(--warn); }
+  .danger { background: rgba(255,123,114,0.08); border: 1px solid rgba(255,123,114,0.3); border-radius: 6px; padding: 10px 14px; color: #ffb3a7; }
+  .ok { background: rgba(126,231,135,0.06); border: 1px solid rgba(126,231,135,0.25); border-radius: 6px; padding: 10px 14px; color: var(--accent); }
+  footer { padding: 24px 48px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; max-width: 1200px; margin: 0 auto; }
+  a { color: var(--accent-2); }
+</style>
+</head>
+<body>
+<header>
+  <h1>ADR-177 — Multi-User Web Product: Corrected Architecture</h1>
+  <div class="sub">Sharpee · 2026-05-12 · supersedes ADR-175 / replaces ADR-153, 153a, 156 · builds on ADR-161, 163, 164, 165</div>
+  <div class="badges">
+    <span class="badge accepted">ACCEPTED</span>
+    <span class="badge supersedes">Supersedes ADR-175 (zifmia / shite)</span>
+    <span class="badge builds-on">Engine: ADR-164 carry-forward</span>
+    <span class="badge builds-on">Wire: ADR-163 channel-io</span>
+    <span class="badge builds-on">Identity: ADR-161 amended</span>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>The picture</h2>
+  <p>Two browsers, one room, one engine. <strong>The process is HTTP. WebSocket is the live-broadcast rail.</strong> The submitter is just another subscriber — every browser in the room (including the one that typed) receives the same <code>TurnPacket</code> over the same WS broadcast.</p>
+
+  <div class="diagram">
+    <div class="mermaid">
+flowchart LR
+  subgraph Clients["Browsers (per room)"]
+    direction TB
+    B1["Browser A<br/>(submitter)"]
+    B2["Browser B"]
+    B3["Browser C"]
+  end
+
+  subgraph Server["Sharpee multi-user server (Node)"]
+    direction TB
+    HTTP["HTTP API<br/>process routes"]
+    WS["WebSocket fan-out<br/>chat + command-line sharing"]
+    ENG["In-process engine<br/>load → executeTurn → save<br/>(no subprocess)"]
+    CHAN["ChannelService<br/>(ADR-163) → TurnPacket"]
+    HTTP --> ENG
+    ENG --> CHAN
+    CHAN --> WS
+  end
+
+  subgraph Store["SQLite"]
+    direction TB
+    DB[("identities · rooms<br/>participants · saves<br/>session_events · config")]
+  end
+
+  B1 -- "POST /command {handle, text}" --> HTTP
+  B2 -- "GET /state ?handle (on entry)" --> HTTP
+  B3 -- "POST /rooms/:id/join" --> HTTP
+  HTTP <--> DB
+
+  WS == "turn { TurnPacket }<br/>chat:message · lock:state<br/>role_change · presence" ==> B1
+  WS == "turn { TurnPacket }<br/>chat:message · lock:state<br/>role_change · presence" ==> B2
+  WS == "turn { TurnPacket }<br/>chat:message · lock:state<br/>role_change · presence" ==> B3
+
+  B1 -. "hello · chat:send<br/>lock:acquire/release" .-> WS
+  B2 -. "hello · chat:send<br/>lock:acquire/release" .-> WS
+  B3 -. "hello · chat:send<br/>lock:acquire/release" .-> WS
+
+  classDef http fill:#1c2128,stroke:#7ee787,stroke-width:1.5px,color:#e6edf3;
+  classDef ws fill:#1c2128,stroke:#79c0ff,stroke-width:1.5px,color:#e6edf3;
+  classDef eng fill:#232a34,stroke:#d2a8ff,stroke-width:1.5px,color:#e6edf3;
+  classDef store fill:#232a34,stroke:#f0883e,stroke-width:1.5px,color:#e6edf3;
+  classDef client fill:#1c2128,stroke:#9aa5b1,stroke-width:1.5px,color:#e6edf3;
+  class HTTP http;
+  class WS ws;
+  class ENG,CHAN eng;
+  class DB store;
+  class B1,B2,B3 client;
+    </div>
+    <div class="legend">
+      <span><i class="http-line"></i> HTTP: process (CRUD, identity, command submit, hydration)</span>
+      <span><i class="ws-line"></i> WebSocket: live (turn broadcast, chat, awareness)</span>
+      <span><i class="shared-line"></i> Storage: SQLite (greenfield, no migration)</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Turn submission — sequence</h2>
+  <p>A submits a command. HTTP carries the <em>process</em>; WS carries the <em>render</em>. The submitter receives the result over the same WS broadcast as every other participant.</p>
+  <div class="diagram">
+    <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant A as Browser A (submitter)
+  participant B as Browser B (observer)
+  participant H as HTTP server
+  participant E as Engine (in-process)
+  participant W as WS fan-out
+  participant D as SQLite
+
+  Note over A,W: Both A and B already attached via WS<br/>hello { roomId, handle } → hello:ack
+  A->>H: POST /api/rooms/:id/command { handle, text }
+  H->>D: load room save blob
+  H->>E: engine.executeTurn(text)
+  E-->>H: TurnPacket (channel-io)
+  H->>D: persist new save + session_event row
+  H-->>A: 200 { turnId }
+  par broadcast to room
+    H->>W: publish turn { roomId, turnId, packet }
+    W-->>A: turn { TurnPacket }
+    W-->>B: turn { TurnPacket }
+  end
+  Note over A,B: Each browser hands TurnPacket to its<br/>Renderer (ADR-165) for channel-by-channel dispatch
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Transport split</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3><span class="pill http">HTTP</span> the process</h3>
+      <ul>
+        <li><code>POST /api/identities</code> · claim · 409 on collision</li>
+        <li><code>POST /api/identities/erase</code> · hard-delete + WS close 4007</li>
+        <li><code>GET /api/rooms</code> · public lobby list (unauth OK)</li>
+        <li><code>POST /api/rooms</code> · create as PH</li>
+        <li><code>POST /api/rooms/:id/join</code></li>
+        <li><code>POST /api/rooms/:id/{rename,pin,delete,nominate-successor,promote,demote,mute,force-release}</code></li>
+        <li><code>GET /api/rooms/:id/state?handle=</code> · hydration (CMGT + transcript + roster + recording notice)</li>
+        <li><code>POST /api/rooms/:id/command</code> → 200 <code>{turnId}</code> only</li>
+        <li><code>GET/POST /api/rooms/:id/saves</code> · <code>POST /restore</code></li>
+        <li><code>GET /api/stories</code> · directory-scanned</li>
+        <li><code>GET /api/code/:join_code</code> · resolve shareable</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><span class="pill ws">WebSocket</span> the live rail</h3>
+      <p><strong>Client → Server</strong> (3 kinds):</p>
+      <ul>
+        <li><code>hello { roomId, handle }</code> · required first frame</li>
+        <li><code>chat:send { roomId, text }</code></li>
+        <li><code>lock:acquire</code> / <code>lock:release</code></li>
+      </ul>
+      <p><strong>Server → Client</strong> (7 kinds):</p>
+      <ul>
+        <li><code>hello:ack { participantId, tier, lockHolder }</code></li>
+        <li><code>chat:message</code> · broadcast incl. sender</li>
+        <li><code>lock:state { holder, expiresAt }</code></li>
+        <li><code>turn { roomId, turnId, submitter, packet }</code> · the channel-io <code>TurnPacket</code></li>
+        <li><code>role_change { participantId, tier, actorId? }</code></li>
+        <li><code>presence { participantId, connected, graceDeadline? }</code></li>
+        <li><code>room_restored { atSaveId, byHandle }</code> · client re-fetches <code>/state</code></li>
+      </ul>
+      <p><strong>Close codes:</strong> <code>4001</code> unknown_handle · <code>4003</code> not_in_room · <code>4004</code> room_not_found · <code>4005</code> hello_required · <code>4006</code> hello_timeout · <code>4007</code> identity_erased</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Decisions in brief</h2>
+  <div class="grid-3">
+    <div class="card">
+      <h3>1. Engine in-process</h3>
+      <p>One turn = one HTTP submission. Load save blob → <code>executeTurn</code> → capture channel packets → persist new blob + session_event → broadcast over WS. <strong>No subprocess. No engine state between turns.</strong></p>
+    </div>
+    <div class="card">
+      <h3>2. Channel-io is the shape</h3>
+      <p><code>TurnPacket</code> per ADR-163. <code>CmgtPacket</code> rides initial <code>GET /state</code>. The <code>TurnPacket</code> never rides an HTTP body outside the <code>transcript_backlog</code> field.</p>
+    </div>
+    <div class="card">
+      <h3>3. WS = chat + command-line sharing</h3>
+      <p>Three C→S frames, seven S→C frames. Nothing else. New WS frame ⇒ new ADR amending this one.</p>
+    </div>
+    <div class="card">
+      <h3>4. HTTP is the process</h3>
+      <p>Every state-changing request carries <code>handle</code> in-band (ADR-161 amended). Response is a small ack; render arrives over WS.</p>
+    </div>
+    <div class="card">
+      <h3>5. Identity is the handle</h3>
+      <p><code>{id, handle, is_admin, created_at}</code>. No passcode. No bearer token. No sessions table. Anyone who claims a handle <em>is</em> that identity. Threat model: small IF community.</p>
+    </div>
+    <div class="card">
+      <h3>6. Persistence (greenfield)</h3>
+      <p>SQLite. v1 schema is taken on first boot. No migration from <code>tools/shite/</code> or <code>tools/server/</code>. Future changes follow no-backcompat policy.</p>
+    </div>
+    <div class="card">
+      <h3>7. Stories by directory scan</h3>
+      <p><code>StoryScanner</code> + <code>StoryHealth.validate()</code> on boot and SIGHUP. <strong>No upload route. No <code>story_library</code> table.</strong> Operator drops files into <code>stories/</code>.</p>
+    </div>
+    <div class="card">
+      <h3>8. Recording notice</h3>
+      <p>Static room-metadata constant. Carried in <code>GET /state</code>. Client renders once on first join, plus a persistent indicator.</p>
+    </div>
+    <div class="card">
+      <h3>9. Admin is CLI-only</h3>
+      <p><code>is_admin</code> column is set via <code>sharpee-admin</code> against the SQLite file. <strong>No <code>/admin/*</code> HTTP routes in v1.</strong></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Room governance — what comes back from <code>tools/server/</code></h2>
+  <table>
+    <thead><tr><th>Concept</th><th>Description</th><th>Gated by</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Primary Host (PH)</strong></td><td>First joiner; sticky bit on the room row</td><td>—</td></tr>
+      <tr><td><strong>Co-Host</strong></td><td>Promoted by PH; shares moderation hammer</td><td>PH</td></tr>
+      <tr><td><strong>Command Entrant</strong></td><td>Allowed to type commands</td><td>PH / Co-Host</td></tr>
+      <tr><td><strong>Participant</strong></td><td>Default tier on join; observer + chat</td><td>—</td></tr>
+      <tr><td>Cascading succession</td><td>PH disconnect → grace timer → auto-promote nominated successor; chains</td><td>system</td></tr>
+      <tr><td>Pin / unpin</td><td>Surfaces room to public lobby</td><td>PH</td></tr>
+      <tr><td>Delete room</td><td>Title-confirmation gate; CASCADE on participants/saves</td><td>PH</td></tr>
+      <tr><td>Mute</td><td>The moderation hammer (no kick, by design)</td><td>PH / Co-Host</td></tr>
+      <tr><td>DMs</td><td>PH ↔ Co-Host only (per ADR-153 D8)</td><td>PH / Co-Host</td></tr>
+      <tr><td>14-day idle recycle</td><td>Sweeper drops rooms inactive past threshold</td><td>system</td></tr>
+      <tr><td><code>session_events</code></td><td>Append-only log; chat/command/output/lifecycle; welcome backlog source</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Persistence (SQLite, v1)</h2>
+  <div class="card" style="font-family: 'JetBrains Mono', Menlo, monospace; font-size: 13px; white-space: pre; overflow-x: auto;">identities      (id, handle UNIQUE CI, is_admin, created_at)
+rooms           (id, join_code, title, story_slug, pinned, last_activity_at,
+                 created_at, primary_host_id, deleted_at?)
+participants    (id, room_id FK, identity_id FK, tier, muted, connected,
+                 is_successor, joined_at)                  -- CASCADE on erase/delete
+session_events  (event_id, room_id, participant_id?, ts, kind, payload JSON)
+                 kind ∈ {chat, dm, command, output, role_change, mute_state,
+                         pin, unpin, save_created, restored, nominated_successor,
+                         join, disconnect, lifecycle, recording_notice}
+saves           (save_id, room_id, actor_id, name, blob, created_at)
+config          (key, value)                               -- operator settings</div>
+  <p style="margin-top: 8px;"><strong>Not present:</strong> <code>sessions</code>, bearer tokens, <code>story_library</code>, <code>story_bundles</code>, <code>/admin/*</code> route family.</p>
+</section>
+
+<section>
+  <h2>What changed vs. <code>tools/shite/</code> (the parts bin)</h2>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Discarded from <code>tools/shite/</code></h3>
+      <ul>
+        <li>Admin upload of stories (<code>POST /admin/stories</code> + <code>story_library</code> + <code>story_bundles</code>)</li>
+        <li><code>/admin/*</code> route family (column kept; surface gone)</li>
+        <li>Flat-room multi-tenant model (any-identified-user creates a room against any story)</li>
+        <li>Bearer session tokens, <code>/identity/register|login|me</code>, <code>sessions</code> table</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Restored from <code>tools/server/</code> @ 899653cf</h3>
+      <ul>
+        <li>Rooms as the primitive (not accounts)</li>
+        <li>Join code (Crockford-32, per-room)</li>
+        <li>PH + four-tier hierarchy + cascading succession</li>
+        <li>Pin / delete / mute / DMs / 14-day recycle</li>
+        <li><code>session_events</code> append-only log</li>
+        <li>Story installation by directory scan</li>
+        <li>Recording notice (now in <code>/state</code>, not per-welcome)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top: 16px;">
+    <div class="card">
+      <h3>Discarded from <code>tools/server/</code></h3>
+      <ul>
+        <li>Deno subprocess per room (replaced by ADR-164 in-process)</li>
+        <li>Server ↔ sandbox wire (<code>Init/Ready/Command/Output/…</code>)</li>
+        <li>World-Model Replication (ADR-162) — replaced by channel-io</li>
+        <li><code>recording_notice</code> as a per-welcome string (now static room metadata)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Constrains future sessions</h3>
+      <ul>
+        <li>New state change ⇒ new HTTP route with handle in-band. <strong>Never a new WS frame.</strong></li>
+        <li><code>TurnPacket</code> rides WS, not HTTP (except backlog).</li>
+        <li>Identity is <code>{id, handle}</code>. Sessions/bearer/passcode return only via a new ADR.</li>
+        <li>Stories live on disk. No upload endpoint.</li>
+        <li><code>is_admin</code> has no HTTP surface in v1.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Acceptance criteria (AC-1 → AC-11)</h2>
+  <table>
+    <thead><tr><th>#</th><th>Scenario</th><th>Pass condition</th></tr></thead>
+    <tbody>
+      <tr><td>AC-1</td><td>Identity claim</td><td><code>POST /api/identities</code> 201 → repeat 409 <code>handle_taken</code>; localStorage persists</td></tr>
+      <tr><td>AC-2</td><td>Lobby unauth view</td><td><code>GET /api/rooms</code> returns list w/ handles; Create/Join gated client-side</td></tr>
+      <tr><td>AC-3</td><td>PH room creation</td><td>Caller becomes <code>primary_host</code>; response carries id + join code</td></tr>
+      <tr><td>AC-4</td><td>Tier-gated abilities</td><td><code>participant</code> pin → 403; PH pin → 200</td></tr>
+      <tr><td>AC-5</td><td>Cascading succession</td><td>PH disconnect → grace expires → successor promoted; every browser receives <code>role_change</code></td></tr>
+      <tr><td>AC-6</td><td>Transport split</td><td>Network capture matches WS = 3 C→S / 7 S→C kinds; HTTP carries everything else</td></tr>
+      <tr><td>AC-7</td><td>Directory-scanned stories</td><td>Drop file + SIGHUP → appears in <code>/api/stories</code>; remove → gone</td></tr>
+      <tr><td>AC-8</td><td>Recording notice persistence</td><td>Carried in <code>/state</code>; client renders once + indicator</td></tr>
+      <tr><td>AC-9</td><td>Erase frees handle + WS teardown</td><td>Erase → 200; same-handle claim succeeds with new <code>id</code>; live WS gets close <code>4007</code></td></tr>
+      <tr><td>AC-10</td><td>Lock-on-typing 200ms</td><td>Holder re-emits <code>lock:acquire</code> @150ms; auto-release after 200ms silence; <code>lock:release</code> collapses immediately</td></tr>
+      <tr><td>AC-11</td><td>Reconnect idempotency</td><td>Same <code>participant_id</code> on rejoin; exactly one <code>presence:false</code> + one <code>presence:true</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Prior art &mdash; where ADR-177 sits on the curve</h2>
+  <p>Multi-user / shared-IF systems have been built before. Sketching the shape of each clarifies what ADR-177 takes from them and what it leaves on the table.</p>
+  <table>
+    <thead><tr><th>System</th><th>Shape</th><th>Property worth noting</th></tr></thead>
+    <tbody>
+      <tr><td><strong>ifMUD + integrated interp</strong> (perlMud, Club Floyd)</td><td>Stateful daemon hosting chat + identity + presence + room <em>and</em> an embedded IF interpreter</td><td><strong>Singleton game</strong> — one game at a time across the whole MUD. Works because the product is bounded; doesn't generalize to many concurrent rooms each running a different story.</td></tr>
+      <tr><td><strong>ADR-153 Deno-subprocess-per-room</strong></td><td>Many concurrent rooms; each room's engine in its own Deno subprocess</td><td>Statefulness in the subprocess was the failure mode &mdash; crash = state loss. ADR-164 retired this; ADR-177 inherits the lesson.</td></tr>
+      <tr><td><strong>Parchment / iplayif.com / Lectrote</strong></td><td>Engine entirely in the browser, single-user</td><td>The "engine in client" extreme. Putting the engine in-browser makes shared rooms a separate infrastructure problem &mdash; effectively "build a MUD on top."</td></tr>
+      <tr><td><strong>Twitch Plays / chat-driven streams</strong></td><td>One game, many viewers, chat &rarr; input pipeline</td><td>Almost exactly ADR-177's shape minus per-room. Validates "observers + driver + chat over shared game" as a social pattern.</td></tr>
+      <tr><td><strong>MUD frameworks w/ web clients</strong> (Evennia, Ranvier)</td><td>Long-running stateful server, web UI as a thin terminal</td><td>Architecturally indistinguishable from ifMUD &mdash; the browser is just a transport reskin.</td></tr>
+      <tr><td><strong>Cloud gaming</strong> (GeForce Now, Stadia)</td><td>Engine + scene graph + frame buffer server-side, video streamed</td><td>The extreme-stateful ceiling. ADR-177's <code>TurnPacket</code> is the text-IF analogue of a frame, with per-turn durability instead of per-frame.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card" style="margin-top: 16px;">
+    <h3>What ADR-177 takes from each</h3>
+    <ul>
+      <li><strong>From ifMUD</strong> &mdash; chat + identity + presence + room as the substrate model. Implemented as the WS layer (&sect;3).</li>
+      <li><strong>From ADR-153 (Deno)</strong> &mdash; the failure mode taught the design. Statefulness in a per-room process is the bug; per-turn durable storage is the fix.</li>
+      <li><strong>From Parchment</strong> &mdash; nothing directly (engine is server-side here), but Parchment's renderer-in-browser pattern is what ADR-165 carries forward: the browser renders, it doesn't interpret.</li>
+      <li><strong>From Twitch Plays</strong> &mdash; validation that "one engine, many observers, chat layered over it" works socially. ADR-177 just gives each group its own room and rotates the typing seat instead of voting commands.</li>
+      <li><strong>From cloud gaming</strong> &mdash; thinness on the client side is fine when the server emits a renderable stream. ADR-163's <code>TurnPacket</code> is the text-IF equivalent of a frame.</li>
+    </ul>
+  </div>
+
+  <div class="diagram" style="margin-top: 16px;">
+    <div class="mermaid">
+flowchart LR
+  A["engine in browser<br/>(Parchment / iplayif)"] --- B["stateless per-turn<br/>ADR-177"]
+  B --- C["stateful long-running<br/>(ifMUD, Evennia, Deno-per-room)"]
+  C --- D["streamed frames<br/>(cloud gaming)"]
+  classDef pick fill:#1c2128,stroke:#7ee787,stroke-width:2.5px,color:#7ee787;
+  classDef other fill:#232a34,stroke:#9aa5b1,stroke-width:1px,color:#e6edf3;
+  class B pick;
+  class A,C,D other;
+    </div>
+    <div class="legend"><span><i class="http-line"></i> ADR-177 picks the unusual middle-left position &mdash; IF's quiescence between turns makes per-turn durability essentially free, and that durability removes the failure mode that killed the Deno design.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Invariants</h2>
+  <div class="ok">
+    <ul>
+      <li><strong>The process is HTTP.</strong> Governance, identity, saves, story listing, state reads, command submission — all request/response.</li>
+      <li><strong>WebSocket is the live-broadcast rail.</strong> Chat + command-line sharing only.</li>
+      <li><strong>The submitter is just another subscriber.</strong> <code>POST /command</code> returns <code>{turnId}</code>; the <code>TurnPacket</code> comes back over the same WS broadcast. <em>Do not</em> add an HTTP-body fallback — WS is not the authoritative copy. SQLite is. A flaky WS recovers via the same <code>GET /state</code> path a fresh browser uses. The Deno design lost state because state lived in a process; here state lives in the save blob, and WS is purely live delivery.</li>
+      <li><strong><code>GET /state</code> is for hydration, not live updates.</strong> Called on entry/reconnect; WS authoritative between hydrations.</li>
+      <li><strong>Handle is the entire credential.</strong> No tokens, no hashes.</li>
+      <li><strong>No engine state survives between turns in memory.</strong></li>
+      <li><strong>PH is sticky on the room row.</strong> Succession promotes a different participant <em>to</em> PH; the old PH's row is demoted.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Out of scope (named so they don't drift in)</h2>
+  <div class="danger">
+    <ul>
+      <li>DMs between arbitrary tiers (PH ↔ Co-Host only per ADR-153 D8)</li>
+      <li>User-uploaded story bundles</li>
+      <li>Federation across server instances</li>
+      <li>MPIF (each participant controls a separate PC) — separate product, separate engine</li>
+      <li>OAuth / 3rd-party auth</li>
+      <li>I18n of recording-notice / UI labels (operator can override the notice string)</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Implementation phases (deferred to a plan doc)</h2>
+  <ol>
+    <li><strong>Phase 0</strong> — location decision (<code>tools/zifmia/</code> reclaimed? <code>tools/sharpee-server/</code>? <code>tools/multiuser/</code>?) + scaffold</li>
+    <li><strong>Phase 1</strong> — identity (claim + erase + localStorage + lobby unauth view)</li>
+    <li><strong>Phase 2</strong> — room CRUD + participants + tier enforcement + join-code resolver</li>
+    <li><strong>Phase 3</strong> — WS handshake + chat + lock-on-typing + command-shared notification</li>
+    <li><strong>Phase 4</strong> — succession + grace timer + recycle sweeper</li>
+    <li><strong>Phase 5</strong> — saves + restore + session-event log + transcript backlog</li>
+    <li><strong>Phase 6</strong> — pin/delete/mute/DMs + recording notice</li>
+    <li><strong>Phase 7</strong> — full client UI (carried from <code>tools/server/client/</code>)</li>
+    <li><strong>Phase 8</strong> — Playwright two-user E2E covering AC-3 through AC-11</li>
+  </ol>
+</section>
+
+</main>
+
+<footer>
+  Source: <code>docs/architecture/adrs/adr-177-multiuser-corrected.md</code> · Sharpee · ACCEPTED 2026-05-12 · diagram rendered via Mermaid 11
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      background: '#1c2128',
+      primaryColor: '#232a34',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#79c0ff',
+      lineColor: '#9aa5b1',
+      secondaryColor: '#1c2128',
+      tertiaryColor: '#1c2128',
+      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'
+    },
+    flowchart: { curve: 'basis', padding: 16 },
+    sequence: { actorMargin: 60, mirrorActors: false }
+  });
+</script>
+</body>
+</html>
