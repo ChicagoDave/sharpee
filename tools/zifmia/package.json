@@ -9,11 +9,13 @@
     "build": "pnpm clean && pnpm build:server && pnpm build:web",
     "build:server": "tsc",
     "build:web": "vite build --config web/vite.config.ts",
-    "clean": "rimraf dist",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
     "dev": "tsc --watch",
     "dev:web": "vite --config web/vite.config.ts",
     "test": "vitest",
     "test:ci": "vitest run",
+    "test:e2e": "playwright test --config tests/e2e/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config tests/e2e/playwright.config.ts --ui",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
@@ -36,6 +38,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.8.0",
     "@types/ws": "^8.5.10",
