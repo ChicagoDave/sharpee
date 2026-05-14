@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/zifmia",
-  "version": "0.9.113",
+  "version": "1.0.0",
   "description": "Multi-user web product (corrected) — ADR-177. Room-governed Sharpee server: HTTP for the process, WebSocket for chat + command-line sharing, stateless per-turn engine, SQLite durability. Reclaims the tools/zifmia path after the Phase-6 build was renamed tools/shite/. See docs/architecture/adrs/adr-177-multiuser-corrected.md.",
   "private": true,
   "main": "./dist/index.js",

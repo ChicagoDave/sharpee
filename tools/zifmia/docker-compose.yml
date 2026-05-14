@@ -1,7 +1,16 @@
-# Zifmia single-container compose file (ADR-177).
+# Zifmia single-container compose file (ADR-177 / ADR-179).
 #
-# From the repo root:    docker compose -f tools/zifmia/docker-compose.yml up
-# From tools/zifmia/:    docker compose up
+# Pulls the published image from GitHub Container Registry — no repo
+# checkout or build toolchain required. To run from a source build
+# instead (contributors, fork operators), use docker-compose.build.yml.
+#
+# From the repo root:    docker compose -f tools/zifmia/docker-compose.yml up -d
+# From tools/zifmia/:    docker compose up -d
+#
+# Tag selection (ADR-179): pin to an immutable `:X.Y.Z` in production.
+# `:1.0`, `:1`, `:latest` advance only when a newer release is the
+# highest on that pin; a hotfix to an older major never regresses
+# `:latest`. Override the tag with the ZIFMIA_IMAGE env var.
 #
 # State persists in two named volumes:
 #   zifmia-data    — SQLite database (rooms, identities, sessions, saves)
@@ -11,21 +20,7 @@
 
 services:
   zifmia:
-    build:
-      # Build context is the repo root so the workspace is visible to
-      # the Dockerfile's `COPY packages/`, `COPY tools/zifmia/`, etc.
-      context: ../..
-      dockerfile: tools/zifmia/Dockerfile
-      args:
-        # ADR-178 §AC-3: tag the image with the Story Runtime Baseline
-        # version it ships. Override at build time from the manifest:
-        #   docker compose build \
-        #     --build-arg BASELINE_VERSION=$(node -p \
-        #       "require('./packages/story-runtime-baseline/dist/index.js').BASELINE_VERSION")
-        # The Dockerfile defaults to 1 if the arg is not provided; bumping
-        # the baseline is an ADR-178 amendment that bumps this value.
-        BASELINE_VERSION: "${BASELINE_VERSION:-1}"
-    image: sharpee/zifmia:dev
+    image: "${ZIFMIA_IMAGE:-ghcr.io/chicagodave/zifmia:1.0.0}"
     container_name: zifmia
     ports:
       - "${ZIFMIA_PORT:-3000}:3000"

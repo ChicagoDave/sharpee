@@ -5,14 +5,18 @@ as a **self-contained Docker container** so anyone can run their own
 instance. This guide walks through building the image, configuring it,
 and operating it.
 
-> **Status (2026-05-13):** Phase 8 complete. The full HTTP + WS surface
+> **Status (2026-05-14):** Phase 8 complete. The full HTTP + WS surface
 > covered by [ADR-177] is implemented and validated by a real-path
 > Playwright suite (33 specs, all green). The Story Runtime Baseline
 > contract — which packages a `.sharpee` bundle may import — is
-> defined in [ADR-178]; every image ships baseline v1.
+> defined in [ADR-178]; every image ships baseline v1. Per [ADR-179]
+> the image is the release: production deployments **pull**
+> `ghcr.io/chicagodave/zifmia:1.0.0` (or `:1.0`, `:1`, `:latest`)
+> rather than building from source.
 
 [ADR-177]: ../../docs/architecture/adrs/adr-177-multiuser-corrected.md
 [ADR-178]: ../../docs/architecture/adrs/adr-178-story-runtime-baseline.md
+[ADR-179]: ../../docs/architecture/adrs/adr-179-zifmia-published-image.md
 
 ---
 
@@ -20,9 +24,9 @@ and operating it.
 
 1. [Prerequisites](#prerequisites)
 2. [Quick start](#quick-start)
-3. [Build the image](#build-the-image)
-4. [Run with docker compose](#run-with-docker-compose)
-5. [Run with docker run](#run-with-docker-run)
+3. [Run with docker compose](#run-with-docker-compose)
+4. [Run with docker run](#run-with-docker-run)
+5. [Build from source (contributors and forks)](#build-from-source-contributors-and-forks)
 6. [Running on a Linux host (Ubuntu)](#running-on-a-linux-host-ubuntu)
 7. [Configuration](#configuration)
 8. [Persistent state](#persistent-state)
@@ -40,59 +44,68 @@ and operating it.
 - ~2 GB RAM available to the container for comfortable headroom; the
   steady-state process is small (single-digit MB) but the engine
   manifest cache and SQLite page cache grow with active rooms.
-- A directory of `.sharpee` story bundles (or the included `dungeo`
-  bundle, copied in by the Quick start path).
-- Outbound HTTPS for the build only (pnpm pulls deps). The running
-  container needs no internet.
+- A directory of `.sharpee` story bundles. The image ships none — drop
+  your own into the `/stories` volume. ([ADR-177] §7 forbids bundling
+  stories in the image.)
+- Outbound HTTPS for the initial `docker pull` (and for updates).
+  The running container needs no internet.
 
 ---
 
 ## Quick start
 
+Pull the published image and run it. No clone, no build, no
+toolchain on the host.
+
 ```bash
-# From the repo root:
-cd tools/zifmia
-docker compose up --build
+docker pull ghcr.io/chicagodave/zifmia:1.0.0
+
+docker volume create zifmia-data
+docker volume create zifmia-stories
+
+docker run -d --name zifmia \
+    -p 3000:3000 \
+    -v zifmia-data:/data \
+    -v zifmia-stories:/stories \
+    --restart unless-stopped \
+    ghcr.io/chicagodave/zifmia:1.0.0
 ```
 
-The first build takes 3–8 minutes (npm registry + pnpm install +
-TypeScript compile + vite bundle). Subsequent rebuilds reuse cached
-layers.
-
-When the healthcheck flips to `healthy`:
+When the healthcheck flips to `healthy` (a few seconds), reach the API:
 
 ```bash
 curl http://localhost:3000/api/stories
 # → {"baseline_version":1,"stories":[]}   (no bundles dropped in yet)
 ```
 
-The `baseline_version` field reports the Story Runtime Baseline ([ADR-178])
-this image ships. Story authors target it; story bundles importing
-packages outside the baseline are rejected at boot.
+The `baseline_version` field reports the Story Runtime Baseline
+([ADR-178]) this image ships. Story authors target it; story bundles
+importing packages outside the baseline are rejected at boot.
 
 Open `http://localhost:3000/` in a browser to load the web client.
-
----
-
-## Build the image
+Drop a `.sharpee` bundle in to start playing:
 
 ```bash
-# From the repo root.
-docker build -f tools/zifmia/Dockerfile -t sharpee/zifmia:latest .
+docker cp my-game.sharpee zifmia:/stories/my-game.sharpee
+docker kill -s HUP zifmia  # SIGHUP triggers a rescan
 ```
 
-The build context is the **repo root** because the Dockerfile reaches
-into `packages/` to compile the workspace dependencies (`@sharpee/core`,
-`@sharpee/engine`, `@sharpee/world-model`, etc.). The repo-root
-`.dockerignore` keeps the context minimal — only `packages/` and
-`tools/zifmia/` are shipped to the daemon.
+### Image tags
 
-To tag for a registry:
+Per [ADR-179] every release publishes immutable plus floating tags:
 
-```bash
-docker tag sharpee/zifmia:latest registry.example.com/sharpee/zifmia:1.0.0
-docker push registry.example.com/sharpee/zifmia:1.0.0
-```
+| Tag                                          | Use                                                 |
+| -------------------------------------------- | --------------------------------------------------- |
+| `ghcr.io/chicagodave/zifmia:1.0.0`           | Immutable pin. **Recommended for production**.     |
+| `ghcr.io/chicagodave/zifmia:1.0`             | Latest 1.0 patch.                                   |
+| `ghcr.io/chicagodave/zifmia:1`               | Latest 1.x release.                                 |
+| `ghcr.io/chicagodave/zifmia:latest`          | Highest published version overall. Discouraged.    |
+| `ghcr.io/chicagodave/zifmia:edge`            | Latest `main` build. Not a release.                |
+
+Floating tags (`:1.0`, `:1`, `:latest`) advance only when a newly
+published version is the highest on that pin — a hotfix to an older
+major never regresses `:latest`. See [ADR-179] §Invariants for the
+precise rules.
 
 ### Image labels
 
@@ -100,29 +113,44 @@ Every image carries the Story Runtime Baseline version it ships
 ([ADR-178] §AC-3):
 
 ```bash
-docker inspect sharpee/zifmia:latest \
+docker inspect ghcr.io/chicagodave/zifmia:1.0.0 \
     --format '{{ index .Config.Labels "org.sharpee.story-runtime-baseline" }}'
 # → 1
 ```
 
 Story authors compare this number against the `BASELINE_VERSION` they
-built against to know an image is compatible with their bundle. The
-label is sourced from `@sharpee/story-runtime-baseline` at build time
-via `--build-arg BASELINE_VERSION=<n>`; the bundled `docker-compose.yml`
-passes this automatically, and the `Dockerfile` defaults to `1` if the
-arg is omitted.
+built against to know an image is compatible with their bundle.
 
 ---
 
 ## Run with docker compose
 
-The bundled `docker-compose.yml` provisions named volumes for the
-SQLite database and the stories directory, restarts on failure, and
-configures a healthcheck.
+For operators who prefer a compose file, drop the following next to
+your `.env` (or copy [`docker-compose.yml`](./docker-compose.yml) from
+the repo — it pins the published image). The named volumes carry your
+DB and story bundles; the `restart: unless-stopped` policy and
+healthcheck handle host reboots and crashes.
+
+```yaml
+services:
+  zifmia:
+    image: ghcr.io/chicagodave/zifmia:1.0.0
+    container_name: zifmia
+    ports:
+      - "${ZIFMIA_PORT:-3000}:3000"
+    volumes:
+      - zifmia-data:/data
+      - zifmia-stories:/stories
+    restart: unless-stopped
+
+volumes:
+  zifmia-data:
+  zifmia-stories:
+```
+
+Then:
 
 ```bash
-cd tools/zifmia
-cp .env.example .env       # optional — edit to tune
 docker compose up -d
 docker compose logs -f zifmia
 ```
@@ -158,32 +186,55 @@ docker compose down -v    # also deletes the named volumes (DESTRUCTIVE)
 
 ## Run with docker run
 
-For setups that don't use compose:
-
-```bash
-docker volume create zifmia-data
-docker volume create zifmia-stories
-
-docker run -d --name zifmia \
-  -p 3000:3000 \
-  -v zifmia-data:/data \
-  -v zifmia-stories:/stories \
-  --restart unless-stopped \
-  sharpee/zifmia:latest
-```
-
-Bind-mount a host directory of stories instead of using a named volume:
+The Quick start above is the typical `docker run` invocation. To
+bind-mount a host directory of stories instead of using a named
+volume:
 
 ```bash
 docker run -d --name zifmia \
   -p 3000:3000 \
   -v zifmia-data:/data \
   -v /srv/sharpee/stories:/stories:ro \
-  sharpee/zifmia:latest
+  --restart unless-stopped \
+  ghcr.io/chicagodave/zifmia:1.0.0
 ```
 
 The `:ro` flag is safe — Zifmia never writes to the stories directory
 at runtime; operators manage it externally.
+
+---
+
+## Build from source (contributors and forks)
+
+The repo build path is for contributors changing Zifmia or running a
+fork; operators should `docker pull` the published image instead (see
+[Quick start](#quick-start)).
+
+```bash
+# From the repo root.
+docker build -f tools/zifmia/Dockerfile -t sharpee/zifmia:dev .
+```
+
+The build context is the **repo root** because the Dockerfile reaches
+into `packages/` to compile the workspace dependencies (`@sharpee/core`,
+`@sharpee/engine`, `@sharpee/world-model`, etc.). The repo-root
+`.dockerignore` keeps the context minimal — only `packages/` and
+`tools/zifmia/` are shipped to the daemon. The first build takes 3–8
+minutes; subsequent rebuilds reuse cached layers.
+
+To run a compose file that builds from source rather than pulling, use
+the contributor variant ([`docker-compose.build.yml`](./docker-compose.build.yml)):
+
+```bash
+cd tools/zifmia
+docker compose -f docker-compose.build.yml up --build
+```
+
+The `BASELINE_VERSION` label is sourced from
+`@sharpee/story-runtime-baseline` at build time via
+`--build-arg BASELINE_VERSION=<n>`; the compose files pass this
+automatically, and the `Dockerfile` defaults to `1` if the arg is
+omitted.
 
 ---
 
@@ -494,13 +545,26 @@ labels:
 
 ## Updates
 
-To pull a new Zifmia version:
+To pull a new Zifmia version, bump the tag in your compose file (or
+`docker run` invocation) and recreate the container:
 
 ```bash
-cd tools/zifmia
-git pull
-docker compose build --pull
+# If you pinned a specific version, change 1.0.0 → 1.0.1 in compose.yml first.
+docker compose pull
 docker compose up -d
+```
+
+With `docker run`:
+
+```bash
+docker pull ghcr.io/chicagodave/zifmia:1.0.1
+docker stop zifmia && docker rm zifmia
+docker run -d --name zifmia \
+    -p 3000:3000 \
+    -v zifmia-data:/data \
+    -v zifmia-stories:/stories \
+    --restart unless-stopped \
+    ghcr.io/chicagodave/zifmia:1.0.1
 ```
 
 The named volumes `zifmia-data` and `zifmia-stories` persist across
@@ -510,7 +574,10 @@ schema changes are one-shot cutovers, and the DB layer creates any
 missing tables on boot. If a release explicitly breaks schema, the
 release notes will say so.
 
-Rolling back is symmetric: `git checkout <prev-sha>`, rebuild, restart.
+Rolling back is symmetric: pull the previous tag, recreate the
+container. Pin to immutable `<X.Y.Z>` tags in production so rollback
+is just a tag change; floating tags (`:1.0`, `:1`, `:latest`) move
+forward only.
 
 ---
 

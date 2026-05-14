@@ -1,0 +1,216 @@
+# Zifmia Publish — ADR-179
+#
+# Dual-trigger publish pipeline for ghcr.io/chicagodave/zifmia:
+#   • `zifmia-v*` git-tag push → release path. Mints `<X.Y.Z>` plus
+#     conditional floating tags (`:<X.Y>`, `:<X>`, `:latest`) per
+#     Invariant 5. Fails fast if the tag's semver does not equal
+#     `tools/zifmia/package.json#version` (AC-2).
+#   • `main` push touching `tools/zifmia/**` or `packages/**` → edge
+#     path. Mints only `:edge`. Never touches version-shaped tags
+#     (Invariant 1).
+#   • `workflow_dispatch` → manual path. Useful for sandbox runs
+#     against an alternate image (e.g. `zifmia-test`); skips floating
+#     advancement.
+#
+# Multi-arch (linux/amd64, linux/arm64) via QEMU. arm64 builds run
+# ~25–45 min per release because better-sqlite3 compiles inside an
+# emulated arm64 userspace — ADR-179 §Multi-arch accepts the cost on
+# free runners. Switch to native ARM runners with a one-line
+# `runs-on:` change if cadence makes the wait painful.
+#
+# Owner: tools/zifmia release pipeline.
+
+name: Zifmia Publish
+
+on:
+  push:
+    tags:
+      - 'zifmia-v*'
+    branches:
+      - main
+    paths:
+      - 'tools/zifmia/**'
+      - 'packages/**'
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: 'Image name (use ghcr.io/chicagodave/zifmia-test for sandbox)'
+        default: 'ghcr.io/chicagodave/zifmia'
+        required: false
+      version:
+        description: 'Override semver for manual publish (no zifmia-v prefix). Required.'
+        required: true
+
+concurrency:
+  group: zifmia-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # arm64 via QEMU + better-sqlite3 native compile dominates wall
+    # time. Headroom for slow builds; aborting a partial multi-arch
+    # push leaves no half-state because buildx pushes the manifest
+    # list atomically after both arches finish.
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine release context
+        id: ctx
+        env:
+          INPUT_IMAGE: ${{ github.event.inputs.image_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          IMAGE="${INPUT_IMAGE:-ghcr.io/chicagodave/zifmia}"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE=manual
+            VERSION="${INPUT_VERSION}"
+          elif [[ "${GITHUB_REF}" == refs/tags/zifmia-v* ]]; then
+            MODE=release
+            VERSION="${GITHUB_REF#refs/tags/zifmia-v}"
+          elif [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            MODE=edge
+            VERSION=edge
+          else
+            echo "::error::Unsupported ref: ${GITHUB_REF}"
+            exit 1
+          fi
+
+          if [ "${MODE}" != "edge" ]; then
+            if ! [[ "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]]; then
+              echo "::error::Version '${VERSION}' is not a valid semver (X.Y.Z[-suffix])."
+              exit 1
+            fi
+          fi
+
+          echo "image_name=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE}"        >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}"  >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches tools/zifmia/package.json version (AC-2)
+        if: steps.ctx.outputs.mode == 'release'
+        run: |
+          PKG_VERSION=$(node -p "require('./tools/zifmia/package.json').version")
+          TAG_VERSION="${{ steps.ctx.outputs.version }}"
+          if [ "${PKG_VERSION}" != "${TAG_VERSION}" ]; then
+            echo "::error::Tag version '${TAG_VERSION}' does not match tools/zifmia/package.json '${PKG_VERSION}'. Bump package.json and re-tag."
+            exit 1
+          fi
+          echo "Tag and package.json agree: ${TAG_VERSION}"
+
+      - name: Read BASELINE_VERSION from manifest (AC-4)
+        id: baseline
+        run: |
+          BASELINE=$(grep -oP 'export const BASELINE_VERSION\s*=\s*\K\d+' packages/story-runtime-baseline/src/index.ts | head -1)
+          if [ -z "${BASELINE}" ]; then
+            echo "::error::Could not extract BASELINE_VERSION from packages/story-runtime-baseline/src/index.ts"
+            exit 1
+          fi
+          echo "version=${BASELINE}" >> "$GITHUB_OUTPUT"
+          echo "Story Runtime Baseline: v${BASELINE}"
+
+      - name: Compute Docker tags (AC-1, AC-5)
+        id: tags
+        env:
+          IMAGE_NAME: ${{ steps.ctx.outputs.image_name }}
+          MODE: ${{ steps.ctx.outputs.mode }}
+          VERSION: ${{ steps.ctx.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${MODE}" = "edge" ]; then
+            echo "Edge build — :edge tag only."
+            TAGS="${IMAGE_NAME}:edge"
+          else
+            TAGS=$(node .github/workflows/scripts/compute-zifmia-tags.mjs \
+              --image   "${IMAGE_NAME}" \
+              --version "${VERSION}" \
+              --mode    "${MODE}")
+          fi
+          echo "Resolved tags:"
+          echo "${TAGS}"
+          {
+            echo 'list<<TAGS_EOF'
+            echo "${TAGS}"
+            echo 'TAGS_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (AC-3 multi-arch, AC-4 baseline label)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: tools/zifmia/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+          build-args: |
+            BASELINE_VERSION=${{ steps.baseline.outputs.version }}
+          cache-from: type=gha,scope=zifmia
+          cache-to: type=gha,mode=max,scope=zifmia
+          provenance: false
+
+      - name: Verify multi-arch + baseline label (AC-3, AC-4)
+        if: steps.ctx.outputs.mode == 'release'
+        env:
+          IMAGE: ${{ steps.ctx.outputs.image_name }}:${{ steps.ctx.outputs.version }}
+          EXPECTED_BASELINE: ${{ steps.baseline.outputs.version }}
+        run: |
+          docker buildx imagetools inspect "${IMAGE}"
+
+          # AC-3: confirm both arches are present in the manifest list.
+          RAW=$(docker buildx imagetools inspect "${IMAGE}" --raw)
+          for arch in amd64 arm64; do
+            if ! echo "${RAW}" | grep -q "\"architecture\":\"${arch}\""; then
+              echo "::error::Image ${IMAGE} is missing linux/${arch} manifest."
+              exit 1
+            fi
+          done
+
+          # AC-4: pull the amd64 image and read the label out of its
+          # config. Labels live on per-platform image configs, not on
+          # the OCI index, so `docker inspect` is the simplest path.
+          docker pull --platform linux/amd64 "${IMAGE}"
+          ACTUAL=$(docker inspect "${IMAGE}" \
+            --format '{{ index .Config.Labels "org.sharpee.story-runtime-baseline" }}')
+          if [ "${ACTUAL}" != "${EXPECTED_BASELINE}" ]; then
+            echo "::error::Baseline label on ${IMAGE}: got '${ACTUAL}', expected '${EXPECTED_BASELINE}'."
+            exit 1
+          fi
+          echo "Baseline label verified: ${ACTUAL}"
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Zifmia publish — ${{ steps.ctx.outputs.mode }}"
+            echo ""
+            echo "- Version: \`${{ steps.ctx.outputs.version }}\`"
+            echo "- Baseline: \`${{ steps.baseline.outputs.version }}\`"
+            echo "- Image:    \`${{ steps.ctx.outputs.image_name }}\`"
+            echo ""
+            echo "### Tags pushed"
+            echo ""
+            echo '```'
+            echo "${{ steps.tags.outputs.list }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

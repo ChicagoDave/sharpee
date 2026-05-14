@@ -21,7 +21,11 @@
 # ────────────────────────────────────────────────────────────────
 # Stage 1 — install workspace deps
 # ────────────────────────────────────────────────────────────────
-FROM node:20-bookworm-slim AS deps
+# Base image is pinned by sha256 digest (ADR-179 AC-8). The digest
+# covers both linux/amd64 and linux/arm64 manifests. Update on every
+# Node 20 / Debian security release; both FROM lines must move
+# together.
+FROM node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS deps
 WORKDIR /workspace
 
 RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
@@ -102,7 +106,10 @@ RUN pnpm --filter @sharpee/zifmia --prod --legacy deploy /deploy
 # ────────────────────────────────────────────────────────────────
 # Stage 3 — slim runtime
 # ────────────────────────────────────────────────────────────────
-FROM node:20-bookworm-slim AS runtime
+# Same digest as the deps stage — keeps the runtime layer's libc /
+# OpenSSL / system Node identical to the one the native modules were
+# compiled against. Move both pins together (ADR-179 AC-8).
+FROM node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS runtime
 
 # ADR-178 §AC-3: every Zifmia image records the Story Runtime Baseline
 # version it ships in this label. The default fallback (1) matches the
