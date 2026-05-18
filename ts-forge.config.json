@@ -4,8 +4,8 @@
     "packages/story-runtime-baseline/tsconfig.json",
     "packages/world-model/tsconfig.json",
     "packages/transcript-tester/tsconfig.json",
-    "packages/text-service/tsconfig.json",
     "packages/text-blocks/tsconfig.json",
+    "packages/channel-service/tsconfig.json",
     "packages/stdlib/tsconfig.json",
     "packages/character/tsconfig.json",
     "packages/sharpee/tsconfig.json",
@@ -27,7 +27,6 @@
     "packages/extensions/testing/tsconfig.json",
     "packages/extensions/basic-combat/tsconfig.json",
     "stories/dungeo/tsconfig.json",
-    "stories/entropy/tsconfig.json",
     "tutorials/familyzoo/tsconfig.json"
   ],
   "targets": {
