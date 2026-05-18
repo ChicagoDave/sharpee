@@ -1,0 +1,395 @@
+Starting Task 1 — patch tsconfig.base-esm.json.
+
+● Update(tsconfig.base-esm.json)
+  ⎿  File must be read first
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(tsconfig.base-esm.json)
+  ⎿  Added 2 lines, removed 1 line
+      14      "noImplicitReturns": true,
+      15      "noFallthroughCasesInSwitch": true,
+      16      "skipLibCheck": true,
+      17 -    "composite": true                                                                                  
+      17 +    "composite": true,                                                                                 
+      18 +    "types": ["node"]                                                                                  
+      19    }
+      20  }
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(package.json)
+  ⎿  Added 1 line
+      55      "publish:beta": "pnpm --filter @sharpee/core publish --access public --tag beta && pnpm --filter @s
+          harpee/if-domain publish --access public --tag beta && pnpm --filter @sharpee/world-model publish --acc
+          ess public --tag beta && pnpm --filter @sharpee/if-services publish --access public --tag beta && pnpm 
+          --filter @sharpee/text-blocks publish --access public --tag beta && pnpm --filter @sharpee/lang-en-us p
+          ublish --access public --tag beta && pnpm --filter @sharpee/parser-en-us publish --access public --tag 
+          beta && pnpm --filter @sharpee/event-processor publish --access public --tag beta && pnpm --filter @sha
+          rpee/stdlib publish --access public --tag beta && pnpm --filter @sharpee/engine publish --access public
+           --tag beta && pnpm --filter @sharpee/sharpee publish --access public --tag beta"
+      56    },
+      57    "devDependencies": {
+      58 +    "@davidcornelson/tsf": "^1.0.0",                                                                   
+      59      "@stryker-mutator/core": "^9.6.0",
+      60      "@stryker-mutator/vitest-runner": "^9.6.0",
+      61      "@vitest/coverage-v8": "^3.2.4",
+
+● Bash(pnpm install 2>&1 | tail -40)
+  ⎿  Scope: all 33 workspace projects
+     Progress: resolved 0, reused 1, downloaded 0, added 0
+     packages/channel-service                 |  WARN  deprecated eslint@8.57.1
+     … +20 lines (ctrl+o to expand)
+  ⎿  (timeout 3m)
+     
+● Bash(ls node_modules/@davidcornelson/tsf/ 2>&1 | head; echo "---"; node_modules/.bin/tsf --version 2>&1)
+  ⎿  dist
+     LICENSE
+     node_modules
+     … +4 lines (ctrl+o to expand)
+     
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Installed correctly. Task 2 done.
+
+  Listed 1 directory (ctrl+o to expand)
+
+● Write(packages/interpreter/ts-forge.json)
+  ⎿  Wrote 5 lines to packages/interpreter/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(packages/text-service/ts-forge.json)
+  ⎿  Wrote 5 lines to packages/text-service/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(packages/character/ts-forge.json)
+  ⎿  Wrote 5 lines to packages/character/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(packages/helpers/ts-forge.json)
+  ⎿  Wrote 5 lines to packages/helpers/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(packages/queries/ts-forge.json)
+  ⎿  Wrote 5 lines to packages/queries/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(packages/extensions/testing/ts-forge.json)
+  ⎿  Wrote 5 lines to packages/extensions/testing/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(packages/extensions/basic-combat/ts-forge.json)
+  ⎿  Wrote 5 lines to packages/extensions/basic-combat/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(stories/dungeo/ts-forge.json)
+  ⎿  Wrote 5 lines to stories/dungeo/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Write(tutorials/familyzoo/ts-forge.json)
+  ⎿  Wrote 5 lines to tutorials/familyzoo/ts-forge.json
+      1 {
+      2   "targets": {
+      3     "esm": { "skip": true }
+      4   }
+      5 }
+     
+● Bash(pnpm exec tsf info 2>&1 | head -80)
+  ⎿  ts-forge Build Plan
+     ===================
+     … +20 lines (ctrl+o to expand)
+
+● Task 3 done. Moving to Task 4 — host tsf build.
+
+● Bash(pnpm exec tsf build --condition esm 2>&1 | tail -80)
+  ⎿  ✗ packages/extensions/testing/src/checkpoints/store.ts(17,27): error TS2307: Cannot find module 'path' or its
+     corresponding type declarations.
+     ✗ packages/extensions/testing/src/checkpoints/store.ts(21,25): error TS2307: Cannot find module 'fs' or its co
+     … +101 lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+     
+  Read 1 file, listed 1 directory (ctrl+o to expand)
+
+● Bash(cd packages/parser-en-us && npx tsc -p tsconfig.esm.json --noEmit 2>&1 | head -20)
+  ⎿  (No output)
+
+● Bash(pnpm exec tsf build --condition esm 2>&1 | grep -E "(Cannot find name 'process'|Cannot find module 'fs'|Build
+      completed|✗ Build|^Building|^✓)" | head -30)
+  ⎿  (No output)
+  ⎿  (timeout 5m)
+
+● Bash(pnpm exec tsf build --condition esm 2>&1 | tail -30)
+  ⎿  ⚠ No tsconfig files matched by projects: packages/*/tsconfig.json
+     ✗ No packages found matching project globs
+
+● Bash(pwd; echo "---"; cd /home/dave/repos/sharpee && pnpm exec tsf build --condition esm 2>&1 | tail -30)
+  ⎿  /home/dave/repos/sharpee/packages/parser-en-us
+     ---
+     ✗ packages/sharpee/src/cli/init-browser.ts(8,23): error TS2307: Cannot find module 'path' or its corresponding
+     … +33 lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+● Bash(grep '"@types/node"' packages/sharpee/package.json packages/stdlib/package.json
+      packages/extensions/testing/package.json 2>&1; echo "---"; pnpm exec tsf build -…)
+  ⎿  packages/sharpee/package.json:    "@types/node": "^20.11.0",
+     packages/stdlib/package.json:    "@types/node": "^20.11.19",
+     packages/extensions/testing/package.json:    "@types/node": "^20.0.0",
+     … +8 lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+     
+● Bash(pnpm exec tsf build --condition esm 2>&1 | grep -E "^(→|Building|Skipping|skip)" | head -30)
+  ⎿  Building esm across 27 package(s)
+  ⎿  (timeout 5m)
+
+  Searched for 3 patterns, read 2 files (ctrl+o to expand)
+
+● Bash(pnpm exec tsf build --condition esm --verbose 2>&1 | grep -E "(extensions/testing|ext-testing|Skipping)" | head
+      -20)
+  ⎿  [@sharpee/ext-testing:esm]   Skipping (per-package override)
+     [@sharpee/helpers:esm]   Skipping (per-package override)
+     [@sharpee/queries:esm]   Skipping (per-package override)
+     … +17 lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+     
+
+  Searched for 2 patterns (ctrl+o to expand)
+
+● Bash(pnpm exec tsf build --condition esm 2>&1 | grep -E "^✗" | head -50; echo "---total errors:"; pnpm exec tsf build
+      --condition esm 2>&1 | grep -cE "^✗")
+  ⎿  ✗ packages/core/src/events/event-source.ts(36,9): error TS2584: Cannot find name 'console'. Do you need to cha
+     nge your target library? Try changing the 'lib' compiler option to include 'dom'.
+     ✗ packages/core/src/events/semantic-event-source.ts(184,11): error TS2584: Cannot find name 'console'. Do you
+     … +84 lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+  Searched for 1 pattern, read 1 file, listed 1 directory (ctrl+o to expand)
+
+● Bash(pnpm exec tsf build --condition esm --verbose 2>&1 | grep -B1 "parser-en-us/src" | head -40)
+  ⎿  [@sharpee/parser-en-us:esm]   Compiling with module=ES2022, outDir=/home/dave/repos/sharpee/packages/parser-en
+     -us/dist-esm
+     [@sharpee/parser-en-us:esm]   Flattened output from packages/parser-en-us/src/ to outDir root
+     … +67 lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+● Adding @types/node to root so tsf's tsc lookup finds it from the widened rootDir.
+
+● Update(package.json)
+  ⎿  Added 1 line
+      57    "devDependencies": {
+      58      "@davidcornelson/tsf": "^1.0.0",
+      59      "@stryker-mutator/core": "^9.6.0",
+      60 +    "@types/node": "^20.8.0",                                                                          
+      61      "@stryker-mutator/vitest-runner": "^9.6.0",
+      62      "@vitest/coverage-v8": "^3.2.4",
+      63      "cross-env": "^7.0.3",
+
+● Bash(pnpm install 2>&1 | tail -10; echo "---"; ls node_modules/@types/ 2>&1 | head)
+  ⎿   WARN  Failed to create bin at /home/dave/repos/sharpee/node_modules/.bin/shite-migrate. ENOENT: no such file
+     or directory, open '/home/dave/repos/sharpee/node_modules/@sharpee/shite/dist/storage/migrate-cli.js'
+      WARN  Issues with peer dependencies found
+     … +10 lines (ctrl+o to expand)
+  ⎿  (timeout 2m)
+
+● Bash(pnpm exec tsf build --condition esm 2>&1 | grep -cE "^✗"; echo "---tail:"; pnpm exec tsf build --condition esm
+      2>&1 | tail -20)
+  ⎿  0
+     ---tail:
+     [@sharpee/core:esm] Cached, skipping
+     … +19 lines (ctrl+o to expand)
+  ⎿  (timeout 5m)
+
+● ESM build succeeds — 0 errors, 19 packages built. Let me verify the dist-esm output and that extensions are properly
+  added.
+     
+  Listed 1 directory (ctrl+o to expand)
+
+● Bash(grep -l '"build"' packages/core/package.json packages/parser-en-us/package.json packages/world-model/package.json
+       packages/engine/package.json | xargs -I{} sh -…)
+  ⎿  === packages/core/package.json ===
+         "build": "tsc && tsc -p tsconfig.esm.json",
+     === packages/world-model/package.json ===
+     … +5 lines (ctrl+o to expand)
+     
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Task 4 done — host tsf build is clean. Moving to Task 5 (Dockerfile).
+
+● Min-disruption Dockerfile change: COPY ts-forge.config.json, replace the 40-line inline rewrite with tsf build 
+  --condition esm (keeps per-package tsc -p tsconfig.esm.json running — tsf overwrites it with extensioned output;
+  future cleanup could drop the per-package esm step).
+     
+● Update(tools/zifmia/Dockerfile)
+  ⎿  Added 1 line, removed 1 line
+      38  COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+      39  # Root tsconfigs that workspace packages extend (`extends: ../../tsconfig.base.json`).
+      40  COPY tsconfig.json tsconfig.base.json tsconfig.base-esm.json tsconfig.package.json ./
+      41 -COPY turbo.json ./                                                                                     
+      41 +COPY turbo.json ts-forge.config.json ./                                                                
+      42  COPY packages ./packages
+      43  COPY tools/zifmia ./tools/zifmia
+      44  
+
+● Update(tools/zifmia/Dockerfile)
+  ⎿  Added 8 lines, removed 45 lines
+       50  FROM deps AS build
+       51  WORKDIR /workspace
+       52  
+       53 -# `...` builds the package and all its workspace dependencies.                                        
+       53 +# `...` builds the package and all its workspace dependencies. This                                   
+       54 +# produces CJS dist/ (used by zifmia's Node server) and an interim                                    
+       55 +# extensionless ESM dist-esm/ via each package's `tsc -p tsconfig.esm.json`.                          
+       56  RUN pnpm --filter '@sharpee/zifmia...' run build
+       57  
+       56 -# ESM extension fixup. Each package's `tsconfig.esm.json` uses                                        
+       57 -# `moduleResolution: "bundler"`, so `tsc -p tsconfig.esm.json` emits                                  
+       58 -# extensionless relative imports — invalid for Node ESM. Host builds                                  
+       59 -# fix this via the external `tsf` tool; inside Docker we mirror that                                  
+       60 -# transform by rewriting `from './x'` / `from '../x'` to add `.js` or                                 
+       61 -# `/index.js` when the target exists.                                                                 
+       62 -RUN node -e '\                                                                                        
+       63 -const fs = require("fs");\                                                                            
+       64 -const path = require("path");\                                                                        
+       65 -function walk(dir, out) {\                                                                            
+       66 -  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {\                                    
+       67 -    const p = path.join(dir, e.name);\                                                                
+       68 -    if (e.isDirectory()) walk(p, out);\                                                               
+       69 -    else if (e.name.endsWith(".js")) out.push(p);\                                                    
+       70 -  }\                                                                                                  
+       71 -}\                                                                                                    
+       72 -function findEsmDirs(root) {\                                                                         
+       73 -  const out = [];\                                                                                    
+       74 -  for (const e of fs.readdirSync(root, { withFileTypes: true })) {\                                   
+       75 -    if (!e.isDirectory()) continue;\                                                                  
+       76 -    const sub = path.join(root, e.name, "dist-esm");\                                                 
+       77 -    if (fs.existsSync(sub)) out.push(sub);\                                                           
+       78 -  }\                                                                                                  
+       79 -  return out;\                                                                                        
+       80 -}\                                                                                                    
+       81 -const dirs = findEsmDirs("/workspace/packages");\                                                     
+       82 -const re = /(from\s+|import\s*\()\s*(["\x27])(\.\.?\/[^"\x27]+)(["\x27])/g;\                          
+       83 -let touched = 0;\                                                                                     
+       84 -for (const d of dirs) {\                                                                              
+       85 -  const files = []; walk(d, files);\                                                                  
+       86 -  for (const file of files) {\                                                                        
+       87 -    const orig = fs.readFileSync(file, "utf8");\                                                      
+       88 -    const next = orig.replace(re, (m, kw, q1, spec, q2) => {\                                         
+       89 -      if (/\.(m?js|json)$/i.test(spec)) return m;\                                                    
+       90 -      const base = path.resolve(path.dirname(file), spec);\                                           
+       91 -      if (fs.existsSync(base + ".js")) return `${kw}${q1}${spec}.js${q2}`;\                           
+       92 -      if (fs.existsSync(path.join(base, "index.js"))) return `${kw}${q1}${spec}/index.js${q2}`;\      
+       93 -      return m;\                                                                                      
+       94 -    });\                                                                                              
+       95 -    if (next !== orig) { fs.writeFileSync(file, next); touched++; }\                                  
+       96 -  }\                                                                                                  
+       97 -}\                                                                                                    
+       98 -console.log(`[esm-fix] rewrote ${touched} file(s) across ${dirs.length} dist-esm tree(s)`);\          
+       99 -'                                                                                                     
+       58 +# Re-emit dist-esm/ via @davidcornelson/tsf so relative imports get the                               
+       59 +# `.js` / `/index.js` extensions Node ESM requires. tsf overwrites the                                
+       60 +# extensionless output left by `tsc -p tsconfig.esm.json`. Per-package                                
+       61 +# `ts-forge.json` files opt out packages outside zifmia's ESM closure.                                
+       62 +RUN pnpm exec tsf build --condition esm                                                               
+       63  
+       64  # Materialise a self-contained deployable for @sharpee/zifmia.
+       65  # `pnpm deploy` rewrites workspace:* deps into real copies and
+
+● Running Docker build now — this will be a few minutes. I'll watch it in the background.
+
+● Bash(docker build -f tools/zifmia/Dockerfile --target build -t sharpee/zifmia:tsf-test . 2>&1 | tail -200)
+  ⎿  #0 building with "default" instance using docker driver
+     
+     #1 [internal] load build definition from Dockerfile
+     … +37 lines (ctrl+o to expand)
+  ⎿  (timeout 10m)
+     
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Update(.dockerignore)
+  ⎿  File must be read first
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(.dockerignore)
+  ⎿  Added 1 line
+      21  !tsconfig.package.json
+      22  !tsconfig.dev.json
+      23  !turbo.json
+      24 +!ts-forge.config.json                                                                                  
+      25  
+      26  !packages
+      27  !packages/**
+     
+● Bash(docker build -f tools/zifmia/Dockerfile --target build -t sharpee/zifmia:tsf-test . 2>&1 | tail -120)
+  ⎿  #18 56.66 packages/plugin-npc build: Done
+     #18 57.26 packages/engine build: Done
+     #18 57.26 packages/platform-browser build$ tsc
+     … +60 lines (ctrl+o to expand)
+  ⎿  (timeout 10m)
+     
+● Docker build succeeded — tsf produced ESM output for 19 packages with proper extensions, image tagged
+  sharpee/zifmia:tsf-test.
+     
+● Bash(docker run --rm --entrypoint sh sharpee/zifmia:tsf-test -c 'head -3
+      /app/node_modules/@sharpee/core/dist-esm/index.js && echo "---" && grep -E "from .*\\.\\./"…)
+  ⎿  Error: Exit code 1
+     head: cannot open '/app/node_modules/@sharpee/core/dist-esm/index.js' for reading: No such file or directory
+
+● Bash(docker run --rm --entrypoint sh sharpee/zifmia:tsf-test -c 'head -3 /workspace/packages/core/dist-esm/index.js &&
+       echo "---parser:" && grep -E "from " /workspac…)
+  ⎿  // packages/core/src/index.ts
+     // Core data structures
+     export * from "./types/index.js";
+     … +5 lines (ctrl+o to expand)
+     
+● All six tasks done. Summary:
+
+  Changes landed:
+  - tsconfig.base-esm.json — added "types": ["node"]
+  - package.json — added @davidcornelson/tsf@^1.0.0 and @types/node@^20.8.0 to root devDeps (root @types/node needed
+  because tsf widens rootDir; tsc's typeRoots lookup happens from the workspace root)
+  - ts-forge.json files in 9 gap packages (interpreter, text-service, character, helpers, queries, extensions/testing,
+  extensions/basic-combat, stories/dungeo, tutorials/familyzoo) — {targets: {esm: {skip: true}}} to opt out of ESM
+  without removing them from the projects list (publish path preserved)
+  - tools/zifmia/Dockerfile — COPY ts-forge.config.json, replaced the 40-line inline ESM rewrite with RUN pnpm exec tsf 
+  build --condition esm
+  - .dockerignore — re-included ts-forge.config.json
+  
+  Verification: docker build -f tools/zifmia/Dockerfile --target build . succeeded (~6 min). tsf compiled ESM for 19
+  packages with correct .js extensions on relative imports.
+
+  Open optimization (not done — minimum-disruption stopped short): per-package build scripts still run tsc && tsc -p 
+  tsconfig.esm.json, so the per-package ESM compile runs and then tsf re-compiles. Cutting the second tsc -p 
+  tsconfig.esm.json from each package's build script would save ~75s in Docker. Want me to do that next, or land this
+  and stop?
