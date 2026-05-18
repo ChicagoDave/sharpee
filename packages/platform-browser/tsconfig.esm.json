@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base-esm.json",
+  "compilerOptions": {
+    "outDir": "./dist-esm",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "dist-esm", "**/*.test.ts", "**/*.spec.ts"]
+}

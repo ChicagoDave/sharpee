@@ -38,7 +38,7 @@ RUN apt-get update \
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 # Root tsconfigs that workspace packages extend (`extends: ../../tsconfig.base.json`).
 COPY tsconfig.json tsconfig.base.json tsconfig.base-esm.json tsconfig.package.json ./
-COPY turbo.json ./
+COPY turbo.json ts-forge.config.json ./
 COPY packages ./packages
 COPY tools/zifmia ./tools/zifmia
 
@@ -50,53 +50,16 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS build
 WORKDIR /workspace
 
-# `...` builds the package and all its workspace dependencies.
+# `...` builds the package and all its workspace dependencies. This
+# produces CJS dist/ (used by zifmia's Node server) and an interim
+# extensionless ESM dist-esm/ via each package's `tsc -p tsconfig.esm.json`.
 RUN pnpm --filter '@sharpee/zifmia...' run build
 
-# ESM extension fixup. Each package's `tsconfig.esm.json` uses
-# `moduleResolution: "bundler"`, so `tsc -p tsconfig.esm.json` emits
-# extensionless relative imports — invalid for Node ESM. Host builds
-# fix this via the external `tsf` tool; inside Docker we mirror that
-# transform by rewriting `from './x'` / `from '../x'` to add `.js` or
-# `/index.js` when the target exists.
-RUN node -e '\
-const fs = require("fs");\
-const path = require("path");\
-function walk(dir, out) {\
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {\
-    const p = path.join(dir, e.name);\
-    if (e.isDirectory()) walk(p, out);\
-    else if (e.name.endsWith(".js")) out.push(p);\
-  }\
-}\
-function findEsmDirs(root) {\
-  const out = [];\
-  for (const e of fs.readdirSync(root, { withFileTypes: true })) {\
-    if (!e.isDirectory()) continue;\
-    const sub = path.join(root, e.name, "dist-esm");\
-    if (fs.existsSync(sub)) out.push(sub);\
-  }\
-  return out;\
-}\
-const dirs = findEsmDirs("/workspace/packages");\
-const re = /(from\s+|import\s*\()\s*(["\x27])(\.\.?\/[^"\x27]+)(["\x27])/g;\
-let touched = 0;\
-for (const d of dirs) {\
-  const files = []; walk(d, files);\
-  for (const file of files) {\
-    const orig = fs.readFileSync(file, "utf8");\
-    const next = orig.replace(re, (m, kw, q1, spec, q2) => {\
-      if (/\.(m?js|json)$/i.test(spec)) return m;\
-      const base = path.resolve(path.dirname(file), spec);\
-      if (fs.existsSync(base + ".js")) return `${kw}${q1}${spec}.js${q2}`;\
-      if (fs.existsSync(path.join(base, "index.js"))) return `${kw}${q1}${spec}/index.js${q2}`;\
-      return m;\
-    });\
-    if (next !== orig) { fs.writeFileSync(file, next); touched++; }\
-  }\
-}\
-console.log(`[esm-fix] rewrote ${touched} file(s) across ${dirs.length} dist-esm tree(s)`);\
-'
+# Re-emit dist-esm/ via @davidcornelson/tsf so relative imports get the
+# `.js` / `/index.js` extensions Node ESM requires. tsf overwrites the
+# extensionless output left by `tsc -p tsconfig.esm.json`. Per-package
+# `ts-forge.json` files opt out packages outside zifmia's ESM closure.
+RUN pnpm exec tsf build --condition esm
 
 # Materialise a self-contained deployable for @sharpee/zifmia.
 # `pnpm deploy` rewrites workspace:* deps into real copies and

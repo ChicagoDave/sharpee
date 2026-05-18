@@ -55,7 +55,9 @@
     "publish:beta": "pnpm --filter @sharpee/core publish --access public --tag beta && pnpm --filter @sharpee/if-domain publish --access public --tag beta && pnpm --filter @sharpee/world-model publish --access public --tag beta && pnpm --filter @sharpee/if-services publish --access public --tag beta && pnpm --filter @sharpee/text-blocks publish --access public --tag beta && pnpm --filter @sharpee/lang-en-us publish --access public --tag beta && pnpm --filter @sharpee/parser-en-us publish --access public --tag beta && pnpm --filter @sharpee/event-processor publish --access public --tag beta && pnpm --filter @sharpee/stdlib publish --access public --tag beta && pnpm --filter @sharpee/engine publish --access public --tag beta && pnpm --filter @sharpee/sharpee publish --access public --tag beta"
   },
   "devDependencies": {
+    "@davidcornelson/tsf": "^1.0.0",
     "@stryker-mutator/core": "^9.6.0",
+    "@types/node": "^20.8.0",
     "@stryker-mutator/vitest-runner": "^9.6.0",
     "@vitest/coverage-v8": "^3.2.4",
     "cross-env": "^7.0.3",

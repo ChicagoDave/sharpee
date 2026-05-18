@@ -28,9 +28,7 @@ VERBOSE=false
 SHOW_HELP=false
 STORY_BUNDLE=false
 BUILD_RUNNER=false
-BUILD_RUNTIME=false
 BUILD_TEST=false
-BUILD_BRIDGE=false
 VERSION_OVERRIDE=""
 
 # ============================================================================
@@ -97,8 +95,6 @@ Options:
       --runner         Build the legacy interpreter runner (dormant; will
                        be renamed when redone). Loads .sharpee bundles in
                        a Tauri-wrappable React shell. NOT Zifmia anymore.
-      --runtime        Build headless runtime for Lantern (postMessage bridge)
-      --bridge         Build native engine bridge (Node.js subprocess, ADR-135)
   -v, --verbose        Show build details
   -h, --help           Show this help
 
@@ -118,8 +114,6 @@ Examples:
   ./build.sh -s dungeo -b                    Create .sharpee story bundle
   ./build.sh -s dungeo --test                Build fast test bundle
   ./build.sh --runner -t modern-dark         Build legacy interpreter runner
-  ./build.sh --runtime                       Build headless runtime for Lantern
-  ./build.sh --bridge                        Build native engine bridge (ADR-135)
   ./build.sh --skip stdlib -s dungeo         Resume from stdlib package
 
 Output:
@@ -129,8 +123,6 @@ Output:
   tools/shite/dist/             Abandoned shite parts bin (with -c shite)
   tools/zifmia/dist/            Corrected multi-user server (with -c zifmia)
   dist/runner/                  Legacy interpreter runner (with --runner)
-  dist/runtime/sharpee-runtime.js  Headless runtime (with --runtime)
-  dist/bridge/node_bridge.js    Native engine bridge (with --bridge)
   dist/web/{story}/             Single-player browser client (with -c browser)
 
 For more information, see docs/reference/building.md
@@ -176,14 +168,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --runner)
             BUILD_RUNNER=true
-            shift
-            ;;
-        --runtime)
-            BUILD_RUNTIME=true
-            shift
-            ;;
-        --bridge)
-            BUILD_BRIDGE=true
             shift
             ;;
         --version)
@@ -1203,107 +1187,6 @@ HTMLEOF
 }
 
 # ============================================================================
-# Headless Runtime Build (for Lantern)
-# ============================================================================
-
-build_runtime() {
-    local OUTDIR="dist/runtime"
-    local ENTRY="packages/runtime/src/runtime-entry.ts"
-
-    log_step "Building Headless Runtime"
-
-    if [ ! -f "$ENTRY" ]; then
-        echo -e "${RED}Error: Runtime entry not found: $ENTRY${NC}"
-        exit 1
-    fi
-
-    mkdir -p "$OUTDIR"
-
-    # Bundle everything into a single IIFE that exposes window.Sharpee
-    run_build "sharpee-runtime.js" "npx esbuild '$ENTRY' \
-        --bundle --platform=browser --target=es2020 \
-        --format=iife --global-name=SharpeeRuntime \
-        --outfile='$OUTDIR/sharpee-runtime.js' \
-        --sourcemap --minify \
-        --define:process.env.PARSER_DEBUG=undefined \
-        --define:process.env.DEBUG_PRONOUNS=undefined \
-        --define:process.env.NODE_ENV=\\\"production\\\" \
-        --alias:@sharpee/core=./packages/core/dist/index.js \
-        --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
-        --alias:@sharpee/world-model=./packages/world-model/dist/index.js \
-        --alias:@sharpee/stdlib=./packages/stdlib/dist/index.js \
-        --alias:@sharpee/engine=./packages/engine/dist/index.js \
-        --alias:@sharpee/parser-en-us=./packages/parser-en-us/dist/index.js \
-        --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
-        --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
-        --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-        --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
-        --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
-        --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
-        --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
-        --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js"
-
-    # Copy runtime frame HTML and test harness
-    cp packages/runtime/runtime-frame.html "$OUTDIR/"
-    log_ok "runtime-frame.html"
-
-    cp packages/runtime/test-harness.html "$OUTDIR/"
-    log_ok "test-harness.html"
-
-    local BUNDLE_SIZE=$(ls -lh "$OUTDIR/sharpee-runtime.js" | awk '{print $5}')
-    echo "Output: $OUTDIR/sharpee-runtime.js ($BUNDLE_SIZE)"
-    echo ""
-}
-
-# ============================================================================
-# Native Engine Bridge (ADR-135)
-# ============================================================================
-
-build_bridge() {
-    local OUTDIR="dist/bridge"
-    local ENTRY="packages/bridge/src/bridge-entry.ts"
-
-    log_step "Building Native Engine Bridge (ADR-135)"
-
-    if [ ! -f "$ENTRY" ]; then
-        echo -e "${RED}Error: Bridge entry not found: $ENTRY${NC}"
-        exit 1
-    fi
-
-    mkdir -p "$OUTDIR"
-
-    # Bundle everything into a single CJS file for Node.js subprocess use
-    # esbuild is external — required at runtime for storyPath authoring mode
-    run_build "node_bridge.js" "npx esbuild '$ENTRY' \
-        --bundle --platform=node --target=node18 \
-        --format=cjs \
-        --outfile='$OUTDIR/node_bridge.js' \
-        --sourcemap \
-        --define:process.env.PARSER_DEBUG=undefined \
-        --define:process.env.DEBUG_PRONOUNS=undefined \
-        --define:process.env.NODE_ENV=\\\"production\\\" \
-        --external:esbuild \
-        --alias:@sharpee/core=./packages/core/dist/index.js \
-        --alias:@sharpee/if-domain=./packages/if-domain/dist/index.js \
-        --alias:@sharpee/world-model=./packages/world-model/dist/index.js \
-        --alias:@sharpee/stdlib=./packages/stdlib/dist/index.js \
-        --alias:@sharpee/engine=./packages/engine/dist/index.js \
-        --alias:@sharpee/parser-en-us=./packages/parser-en-us/dist/index.js \
-        --alias:@sharpee/lang-en-us=./packages/lang-en-us/dist/index.js \
-        --alias:@sharpee/event-processor=./packages/event-processor/dist/index.js \
-        --alias:@sharpee/text-blocks=./packages/text-blocks/dist/index.js \
-        --alias:@sharpee/if-services=./packages/if-services/dist/index.js \
-        --alias:@sharpee/plugins=./packages/plugins/dist/index.js \
-        --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
-        --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
-        --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js"
-
-    local BUNDLE_SIZE=$(ls -lh "$OUTDIR/node_bridge.js" | awk '{print $5}')
-    echo "Output: $OUTDIR/node_bridge.js ($BUNDLE_SIZE)"
-    echo ""
-}
-
-# ============================================================================
 # Main Build Flow
 # ============================================================================
 
@@ -1330,12 +1213,6 @@ if [ "$STORY_BUNDLE" = true ]; then
 fi
 if [ "$BUILD_RUNNER" = true ]; then
     echo "  6. Build legacy interpreter runner"
-fi
-if [ "$BUILD_RUNTIME" = true ]; then
-    echo "  6. Build headless runtime (Lantern)"
-fi
-if [ "$BUILD_BRIDGE" = true ]; then
-    echo "  6. Build native engine bridge (ADR-135)"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "shite" ]; then
@@ -1369,14 +1246,6 @@ fi
 
 if [ "$BUILD_RUNNER" = true ]; then
     build_runner
-fi
-
-if [ "$BUILD_RUNTIME" = true ]; then
-    build_runtime
-fi
-
-if [ "$BUILD_BRIDGE" = true ]; then
-    build_bridge
 fi
 
 for CLIENT in "${CLIENTS[@]}"; do
@@ -1429,13 +1298,6 @@ fi
 if [ "$BUILD_RUNNER" = true ]; then
     echo "  dist/runner/ - Legacy interpreter runner"
 fi
-if [ "$BUILD_RUNTIME" = true ]; then
-    echo "  dist/runtime/sharpee-runtime.js - Headless runtime (Lantern)"
-fi
-if [ "$BUILD_BRIDGE" = true ]; then
-    echo "  dist/bridge/node_bridge.js - Native engine bridge (ADR-135)"
-fi
-
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "shite" ]; then
         echo "  tools/shite/dist/ - shite parts-bin web app (Phase-6, abandoned)"
@@ -1457,12 +1319,6 @@ echo "Next steps:"
 echo "  Test CLI:     node dist/cli/sharpee.js --play"
 if [ "$BUILD_TEST" = true ]; then
     echo "  Fast tests:   node dist/cli/${STORY}-test.js --chain stories/${STORY}/walkthroughs/wt-*.transcript"
-fi
-if [ "$BUILD_RUNTIME" = true ]; then
-    echo "  Test Runtime: npx serve dist/runtime  (open test-harness.html)"
-fi
-if [ "$BUILD_BRIDGE" = true ]; then
-    echo "  Test Bridge:  echo '{\"method\":\"start\",\"bundle\":\"dist/stories/dungeo.sharpee\"}' | node dist/bridge/node_bridge.js"
 fi
 for CLIENT in "${CLIENTS[@]}"; do
     if [ "$CLIENT" = "shite" ]; then

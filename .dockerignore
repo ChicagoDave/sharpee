@@ -21,6 +21,7 @@
 !tsconfig.package.json
 !tsconfig.dev.json
 !turbo.json
+!ts-forge.config.json
 
 !packages
 !packages/**
