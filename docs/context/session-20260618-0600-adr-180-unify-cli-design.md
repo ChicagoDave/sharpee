@@ -48,6 +48,19 @@ U2** (atomic), and **U1 is the non-breaking repo-ergonomics increment**:
 - No bin rename, no `@sharpee/sharpee` bin change, no website-docs change yet (U2).
 
 ## Status
-- **Status**: IN PROGRESS — design complete + plan-reviewed; U1 (non-breaking repo entry)
-  starting on `feat/adr-180-u1-sharpee-cli`. U2 = bin handoff + command absorption + standalone
-  mode + amendment; U3 = register/list.
+- **U1** merged (PR #126): `./sharpee` wrapper + path-based build + umbrella-dep removal + repo doc sweep.
+- **U2** implemented on `feat/adr-180-u2-unify-cli`:
+  - Bin handoff: `@sharpee/devkit` bin `devkit`→`sharpee`; `@sharpee/sharpee` CLI bin dropped
+    (pure library now; builds clean). No bin collision (verified install).
+  - Absorbed the sharpee CLI: `packages/sharpee/src/cli/*` → `packages/devkit/src/standalone/*`
+    (git-mv; init/init-browser/build/build-browser/ifid), old dispatcher deleted. devkit deps
+    += `@sharpee/core`, `@sharpee/transcript-tester`, `fflate` (one-way; no cycle).
+  - Unified `cli.ts` dispatcher: location-aware `build` (`detectMode` = pnpm-workspace.yaml +
+    packages/core → monorepo, else standalone), `build-browser`, `init`/`init-browser`/`ifid`.
+  - **ADR-180 Amendment 1** appended (Decision-1 reversal etc.) + 3 inline clause tags.
+  - Website + web-save docs: `npx @sharpee/sharpee …` → global `sharpee` (+ `npm i -g @sharpee/devkit`).
+  - Tests: +detectMode (25 passing, 1 skipped). Smoked: `sharpee help`/`ifid generate`; standalone
+    routing from an out-of-repo dir → standalone build path.
+  - **Remaining real-path gap (flagged):** a full standalone `sharpee build` e2e (out-of-repo
+    project → `.sharpee`) not yet run; the moved code is the previously-shipped sharpee CLI.
+- **Status**: U2 COMPLETE pending standalone e2e; U3 (register/list + `bundle:story` verb) next.

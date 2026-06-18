@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stampVersions } from './build';
-import { findRepoRoot, resolveStoryDir, resolveStory } from '../repo';
+import { findRepoRoot, resolveStoryDir, resolveStory, detectMode } from '../repo';
 
 describe('stampVersions', () => {
   let root: string;
@@ -64,13 +64,28 @@ export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, eng
 });
 
 describe('repo helpers', () => {
-  it('findRepoRoot walks up to the pnpm-workspace.yaml', () => {
+  it('findRepoRoot walks up to the Sharpee monorepo (pnpm-workspace.yaml + packages/core)', () => {
     const root = mkdtempSync(join(tmpdir(), 'devkit-root-'));
     writeFileSync(join(root, 'pnpm-workspace.yaml'), 'packages:\n');
+    mkdirSync(join(root, 'packages', 'core'), { recursive: true }); // monorepo signature
     const nested = join(root, 'packages', 'x', 'src');
     mkdirSync(nested, { recursive: true });
     expect(findRepoRoot(nested)).toBe(root);
     rmSync(root, { recursive: true, force: true });
+  });
+
+  it('detectMode: monorepo only when pnpm-workspace.yaml + packages/core both present', () => {
+    const mono = mkdtempSync(join(tmpdir(), 'devkit-mono-'));
+    writeFileSync(join(mono, 'pnpm-workspace.yaml'), 'packages:\n');
+    mkdirSync(join(mono, 'packages', 'core'), { recursive: true });
+    expect(detectMode(mono)).toBe('monorepo');
+
+    const standalone = mkdtempSync(join(tmpdir(), 'devkit-standalone-'));
+    writeFileSync(join(standalone, 'pnpm-workspace.yaml'), 'packages:\n'); // workspace but no packages/core
+    expect(detectMode(standalone)).toBe('standalone');
+
+    rmSync(mono, { recursive: true, force: true });
+    rmSync(standalone, { recursive: true, force: true });
   });
 
   it('resolveStoryDir prefers stories/ then tutorials/', () => {

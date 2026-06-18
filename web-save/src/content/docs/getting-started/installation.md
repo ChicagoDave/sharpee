@@ -14,7 +14,7 @@ description: "Install Sharpee and set up your development environment"
 The fastest way to get started is with the CLI:
 
 ```bash
-npx @sharpee/sharpee init my-adventure
+sharpee init my-adventure
 cd my-adventure
 npm install
 ```
@@ -24,7 +24,7 @@ This scaffolds a complete story project with a starting room, build scripts, and
 For non-interactive setup (CI or scripting):
 
 ```bash
-npx @sharpee/sharpee init my-adventure -y
+sharpee init my-adventure -y
 ```
 
 ## Add to an Existing Project

@@ -1,8 +1,41 @@
 # ADR-180: Build/Test devkit and `@sharpee/bootstrap`
 
-## Status: ACCEPTED
+## Status: ACCEPTED (amended — see Amendment 1)
 
 ## Date: 2026-06-18 (accepted 2026-06-18, session 90c6c2)
+
+## Amendment 1 (2026-06-18, session 5a7f09) — unify under the `sharpee` command
+
+Implemented in the ADR-180 "U" phases. This amendment **supersedes** the clauses
+tagged `(amended — see Amendment 1)` below. New state:
+
+- **One command, two depths.** The installed author and the repo maintainer run the
+  **same** CLI; the maintainer just has extra steps. The user-facing command is
+  **`sharpee`** (subcommands), location-aware: inside the monorepo it builds platform +
+  bundle + in-repo stories; in a standalone author project it builds *that* project's
+  story via its own toolchain (+ `.sharpee` + browser).
+- **Delivery = a distinct, globally-installed CLI (the Claude Code model).** `@sharpee/devkit`
+  (the engine) exposes bin **`sharpee`**; authors `npm i -g @sharpee/devkit` (and/or an
+  installer) and run bare `sharpee` — **not** `npx @sharpee/sharpee …`. This **reverses**
+  Decision 1's "ships via the `@sharpee/sharpee` dependency / bin on local install": the
+  CLI is installed separately, NOT a transitive bin of the library. `@sharpee/sharpee` is a
+  **pure library** (its CLI bin is dropped; `src/cli/*` moved into `@sharpee/devkit`).
+  Package-name ≠ command (like `claude-code`→`claude`). devkit must not depend on
+  `@sharpee/sharpee` (one-way; no cycle). In-repo, a committed `./sharpee` wrapper is the entry.
+- **`init` = scaffold a project** (from the absorbed sharpee CLI). The name→path location
+  registry verb is **`register`** (+ `list`) — *not* `init`.
+- **Command surface:** `sharpee build [story|path] | build-browser | bundle:story | bundle |
+  test | test:npm | play | clean | verify | init | init-browser | ifid | register | list`.
+- **Open Q1 (tsf ↔ arbitrary locations) RESOLVED:** standalone project → run the story's own
+  build (`tsc`/`npm run build`) + devkit bundling; monorepo → `pnpm --filter`; mode detected
+  from workspace context (`pnpm-workspace.yaml` + `packages/core`).
+- **`.sharpee` (Decision 5) un-deferred:** restored via the standalone `build` (and a
+  `bundle:story` verb); the format is no longer indefinitely deferred.
+- **Self-update** (`sharpee update`, Claude-style) — deferred, out of scope.
+- Invariants still hold: one story loader (`@sharpee/bootstrap`); standalone test/play loads
+  via bootstrap; the `./sharpee` wrapper is a thin shim (no logic in bash).
+
+Plan + checklist: `docs/work/sharpee-devkit/plan-20260618-unify-sharpee-cli.md`.
 
 ## Context
 
@@ -38,7 +71,7 @@ compiles**.
 
 Six decisions (resolved during the spec walkthrough):
 
-1. **`@sharpee/devkit` at `packages/devkit`** (published), CLI bin `devkit`.
+1. **`@sharpee/devkit` at `packages/devkit`** (published), CLI bin `devkit`. *(amended — see Amendment 1: bin is `sharpee`; distinct global install, not shipped via the SDK dependency.)*
    **Shipped as part of the npm install:** `@sharpee/sharpee` (the authoring SDK
    umbrella) depends on `@sharpee/devkit`, so `npm install @sharpee/sharpee`
    places the `devkit` bin in `node_modules/.bin` — a story author building their
@@ -64,6 +97,7 @@ Six decisions (resolved during the spec walkthrough):
    downward on runtime libs; transcript-tester, the bundle, and devkit all depend
    on it (no cycle). This closes the long-standing `entry:` gap.
 4. **A story is a location; no committed config; no directory convention.**
+   *(amended — see Amendment 1: the registry verb is `register`, not `init`; `init` scaffolds a project.)*
    devkit targets a path (`devkit test <path>`). `devkit init <location>`
    optionally registers a name→path mapping in a **user-level memory at
    `~/.sharpee/devkit`** (machine-level, not committed; stories may live
@@ -101,6 +135,8 @@ transcript-tester   bundle(--play/--test)   @sharpee/devkit (packages/, publishe
 ```
 
 ### CLI surface (initial)
+
+*(amended — see Amendment 1: command is `sharpee`; `init` = scaffold, registry verb is `register`.)*
 
 `devkit build|bundle|test|test:npm|verify|clean|init|list` — plus `play` and
 `watch` as needed. `test`/`play` take a location or a registered name.

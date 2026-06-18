@@ -85,17 +85,39 @@ export * from '../packages/channel-service/dist/index';
 `;
 
 /**
- * Walk up from `start` to the monorepo root (the dir holding pnpm-workspace.yaml).
- * @throws if no workspace root is found.
+ * Walk up from `start` to the Sharpee monorepo root (the dir holding
+ * pnpm-workspace.yaml AND packages/core — the monorepo signature, so an author's
+ * coincidental pnpm workspace is not mistaken for it). Returns null if not found.
  */
-export function findRepoRoot(start: string = process.cwd()): string {
+export function findMonorepoRoot(start: string = process.cwd()): string | null {
   let dir = resolve(start);
   for (;;) {
-    if (existsSync(join(dir, 'pnpm-workspace.yaml'))) return dir;
+    if (existsSync(join(dir, 'pnpm-workspace.yaml')) && existsSync(join(dir, 'packages', 'core'))) {
+      return dir;
+    }
     const parent = dirname(dir);
-    if (parent === dir) throw new Error(`not inside a Sharpee workspace (no pnpm-workspace.yaml above ${start})`);
+    if (parent === dir) return null;
     dir = parent;
   }
+}
+
+/**
+ * The monorepo root, or throw. Use when an operation is monorepo-only.
+ * @throws if not inside the Sharpee monorepo.
+ */
+export function findRepoRoot(start: string = process.cwd()): string {
+  const root = findMonorepoRoot(start);
+  if (!root) throw new Error(`not inside the Sharpee monorepo (no pnpm-workspace.yaml + packages/core above ${start})`);
+  return root;
+}
+
+/**
+ * 'monorepo' when run inside the Sharpee monorepo (build platform + bundle + in-repo
+ * stories); 'standalone' when run in an author's own project (build their story via its
+ * own toolchain). The location-aware split behind `sharpee build` (ADR-180 unify).
+ */
+export function detectMode(start: string = process.cwd()): 'monorepo' | 'standalone' {
+  return findMonorepoRoot(start) ? 'monorepo' : 'standalone';
 }
 
 /**

@@ -5,9 +5,6 @@
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "sharpee": "./dist/cli/index.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -47,9 +44,7 @@
     "@sharpee/story-runtime-baseline": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
-    "@sharpee/world-model": "workspace:*",
-    "@sharpee/transcript-tester": "workspace:*",
-    "fflate": "^0.8.2"
+    "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

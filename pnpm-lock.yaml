@@ -243,6 +243,16 @@ importers:
         version: 5.9.3
 
   packages/devkit:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/transcript-tester':
+        specifier: workspace:*
+        version: link:../transcript-tester
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.2
     devDependencies:
       '@types/node':
         specifier: ^20.11.19
@@ -792,15 +802,9 @@ importers:
       '@sharpee/text-blocks':
         specifier: workspace:*
         version: link:../text-blocks
-      '@sharpee/transcript-tester':
-        specifier: workspace:*
-        version: link:../transcript-tester
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.2
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
