@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
-    "clean": "rimraf dist dist-esm",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "lint": "eslint src --ext .ts",
     "build:npm": "tsc --outDir dist",
     "test": "vitest",

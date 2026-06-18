@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
-    "clean": "rimraf dist dist-esm",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {

@@ -9,7 +9,7 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "test:verbose": "vitest run --reporter=verbose",
-    "clean": "rimraf dist dist-esm",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {

@@ -21,7 +21,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
-    "clean": "rimraf dist dist-esm",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist"
   },
   "devDependencies": {

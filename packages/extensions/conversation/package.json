@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*"
