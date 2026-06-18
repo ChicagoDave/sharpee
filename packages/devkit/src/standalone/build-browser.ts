@@ -61,14 +61,14 @@ function processTemplate(content: string, info: ProjectInfo): string {
 /**
  * Run the build-browser command
  */
-export async function runBuildBrowserCommand(args: string[]): Promise<void> {
+export async function runBuildBrowserCommand(args: string[], projectDirArg?: string): Promise<void> {
   // Check for help
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
     return;
   }
 
-  const projectDir = process.cwd();
+  const projectDir = projectDirArg || process.cwd();
   const minify = !args.includes('--no-minify');
   const sourcemap = !args.includes('--no-sourcemap');
 
