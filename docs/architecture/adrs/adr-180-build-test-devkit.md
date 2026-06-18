@@ -1,8 +1,8 @@
 # ADR-180: Build/Test devkit and `@sharpee/bootstrap`
 
-## Status: PROPOSED
+## Status: ACCEPTED
 
-## Date: 2026-06-18
+## Date: 2026-06-18 (accepted 2026-06-18, session 90c6c2)
 
 ## Context
 

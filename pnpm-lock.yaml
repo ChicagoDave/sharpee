@@ -45,6 +45,49 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
+  packages/bootstrap:
+    dependencies:
+      '@sharpee/channel-service':
+        specifier: workspace:*
+        version: link:../channel-service
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@sharpee/ext-testing':
+        specifier: workspace:*
+        version: link:../extensions/testing
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../if-domain
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../parser-en-us
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
   packages/bridge:
     dependencies:
       '@sharpee/channel-service':
@@ -884,6 +927,9 @@ importers:
 
   packages/transcript-tester:
     dependencies:
+      '@sharpee/bootstrap':
+        specifier: workspace:*
+        version: link:../bootstrap
       '@sharpee/channel-service':
         specifier: workspace:*
         version: link:../channel-service

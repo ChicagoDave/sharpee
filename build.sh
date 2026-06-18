@@ -499,6 +499,7 @@ build_platform() {
         "@sharpee/story-runtime-baseline:story-runtime-baseline"
         "@sharpee/ext-testing:extensions/testing"
         "@sharpee/engine:engine"
+        "@sharpee/bootstrap:bootstrap"
         "@sharpee/platform-browser:platform-browser"
         "@sharpee/sharpee:sharpee"
         "@sharpee/transcript-tester:transcript-tester"
@@ -598,6 +599,7 @@ build_bundle() {
       --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
       --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
       --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js \
+      --alias:@sharpee/bootstrap=./packages/bootstrap/dist/index.js \
       --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js"
 
     # Generate type declarations
@@ -669,6 +671,7 @@ build_test_bundle() {
       --alias:@sharpee/plugin-npc=./packages/plugin-npc/dist/index.js \
       --alias:@sharpee/plugin-scheduler=./packages/plugin-scheduler/dist/index.js \
       --alias:@sharpee/plugin-state-machine=./packages/plugin-state-machine/dist/index.js \
+      --alias:@sharpee/bootstrap=./packages/bootstrap/dist/index.js \
       --alias:@sharpee/transcript-tester=./packages/transcript-tester/dist/index.js"
 
     rm -f "$TEST_ENTRY"

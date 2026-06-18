@@ -174,3 +174,37 @@ Artifacts: `docs/work/sharpee-devkit/spec-20260617-build-test-devkit.md`,
 (entry: design, superseded by/folded into ADR-180 Phase 1). Ran adr-review →
 NEEDS WORK → folded six contract/AC tightenings → READY. **Not yet accepted; no
 implementation started.** Next: accept ADR-180, then Phase 1 (`@sharpee/bootstrap`).
+
+---
+
+## Addendum 3 — ADR-180 ACCEPTED + Phase 1 in progress, 2026-06-18
+
+ADR-180 accepted (after merging PR #115 with the Decision-A correction: devkit is
+published and shipped via `@sharpee/sharpee`). Phase 1 started on branch
+`feat/adr-180-phase1-bootstrap` (WIP, not merged):
+
+- **Increment 1** (`f3bb2783`): new published package `@sharpee/bootstrap` — single
+  entry-aware loader (`dist/<entry>.js` → `dist/<entry>/index.js` → default),
+  canonical ADR-163 channel-packet output capture, dual-output. Smoke-validated.
+- **Increment 2** (`683c598e`): `cli.ts` (transcript-test bin) routed through
+  bootstrap; `entry:` header threaded; `TranscriptHeader.entry` added;
+  registration (build.sh PACKAGES + both bundle aliases, ts-forge projects,
+  transcript-tester dep + reference). Validated: familyzoo v01–v15 pass through
+  the flipped `text:output → channel:packet` pipeline (no regression); `entry:`
+  honored (v16 loads, score "out of 75").
+
+**Atomic contract NOT yet complete** — `bundle-entry.js` and `fast-cli.ts` still
+carry their own loaders. Remaining Phase 1: route those two, bootstrap unit
+tests, dungeo-walkthrough validation via the bundle.
+
+**v16-scoring regression found & filed (issue #116):** chasing v16-scoring's
+"perfect score" failure led to the discovery that it's a **regression of the
+2026-03-24 fix** (commit `10025364`, session-20260324-1909): the petting
+capability-dispatch award (5 pts) is lost **only via the transcript runner**
+(70/75), while direct play scores 75/75. The story fix is still intact in
+`v16.ts:196`; the regression is at the platform layer (capability dispatch /
+ADR-174 channel migration suspects). Orthogonal to ADR-180. Filed as #116 with
+full provenance; not fixed here.
+
+**Status**: Phase 1 INCOMPLETE (WIP branch pushed). Build-hygiene + devkit
+spec/ADR + Phase-1 increments 1–2 done.

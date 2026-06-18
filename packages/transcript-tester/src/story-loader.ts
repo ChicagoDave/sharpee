@@ -1,170 +1,47 @@
 /**
- * Story Loader
+ * Story Loader — thin facade over @sharpee/bootstrap (ADR-180).
  *
- * Dynamically loads and initializes a story for testing.
+ * Story loading/assembly now lives in @sharpee/bootstrap — the single loader
+ * shared by transcript-tester, the CLI bundle, and devkit. This module keeps
+ * the historical export surface (loadStory / createTestableGame / TestableGame /
+ * findTranscripts) and threads the optional `entry:` sub-entry through.
+ *
+ * Owner context: transcript-tester (test harness).
  */
 
 import * as path from 'path';
-import { GameEngine, TurnResult } from '@sharpee/engine';
-import { ISemanticEvent } from '@sharpee/core';
-import { renderToString } from '@sharpee/channel-service';
-import { WorldModel, EntityType } from '@sharpee/world-model';
-import { Parser } from '@sharpee/parser-en-us';
-import { PerceptionService } from '@sharpee/stdlib';
-// @ts-ignore
-import { LanguageProvider } from '@sharpee/lang-en-us';
+import {
+  loadStory as bootstrapLoadStory,
+  assembleGame,
+  type LoadedGame,
+} from '@sharpee/bootstrap';
+
+/** A loaded, runnable game — now provided by @sharpee/bootstrap. */
+export type TestableGame = LoadedGame;
 
 /**
- * Interface for a story module
+ * Load a story from a path (entry-aware) and create a testable game instance.
+ *
+ * @param storyPath story directory (resolved against cwd if relative)
+ * @param entry     optional story sub-entry from the transcript `entry:` header
  */
-interface StoryModule {
-  story?: any;
-  default?: any;
+export async function loadStory(storyPath: string, entry?: string): Promise<TestableGame> {
+  return bootstrapLoadStory(storyPath, { entry });
 }
 
 /**
- * A testable game instance
- */
-export interface TestableGame {
-  engine: GameEngine;
-  world: WorldModel;
-  lastOutput: string;
-  lastEvents: ISemanticEvent[];
-  lastTurnResult: TurnResult | null;
-  executeCommand(input: string): Promise<string>;
-}
-
-/**
- * Load a story from a path and create a testable game instance
- */
-export async function loadStory(storyPath: string): Promise<TestableGame> {
-  // Resolve the story path
-  const resolvedPath = path.isAbsolute(storyPath)
-    ? storyPath
-    : path.resolve(process.cwd(), storyPath);
-
-  // Try to load the story module
-  let storyModule: StoryModule;
-  try {
-    // Try loading the compiled dist version first
-    const distPath = path.join(resolvedPath, 'dist', 'index.js');
-    storyModule = require(distPath);
-  } catch (e) {
-    try {
-      // Fall back to src (for ts-node environments)
-      const srcPath = path.join(resolvedPath, 'src', 'index.ts');
-      storyModule = require(srcPath);
-    } catch (e2) {
-      throw new Error(`Could not load story from ${storyPath}: ${e}`);
-    }
-  }
-
-  const story = storyModule.story || storyModule.default;
-  if (!story) {
-    throw new Error(`Story module at ${storyPath} does not export 'story' or 'default'`);
-  }
-
-  // Create the game instance
-  return createTestableGame(story);
-}
-
-/**
- * Create a testable game from a story instance
+ * Assemble a testable game from an already-loaded story instance.
  */
 export function createTestableGame(story: any): TestableGame {
-  // Create world and player
-  const world = new WorldModel();
-  const player = world.createEntity('player', EntityType.ACTOR);
-  world.setPlayer(player.id);
-
-  // Create parser and language
-  const language = new LanguageProvider();
-  const parser = new Parser(language);
-
-  // Extend parser and language with story-specific vocabulary
-  if (story.extendParser) {
-    story.extendParser(parser);
-  }
-  if (story.extendLanguage) {
-    story.extendLanguage(language);
-  }
-
-  // Create perception service
-  const perceptionService = new PerceptionService();
-
-  // Create engine (TextService created internally from language provider)
-  const engine = new GameEngine({
-    world,
-    player,
-    parser,
-    language,
-    perceptionService,
-  });
-
-  // Set the story and start
-  engine.setStory(story);
-  engine.start();
-
-  // Capture text output and events
-  let lastOutput = '';
-  let outputBuffer: string[] = [];
-  let lastEvents: ISemanticEvent[] = [];
-  let lastTurnResult: TurnResult | null = null;
-
-  engine.on('text:output', (blocks) => {
-    outputBuffer.push(renderToString(blocks));
-  });
-
-  // Capture ALL events through the event emitter (includes scheduler/NPC events)
-  let eventBuffer: ISemanticEvent[] = [];
-  engine.on('event', (event: ISemanticEvent) => {
-    eventBuffer.push(event);
-  });
-
-  // Create the testable game interface
-  const testableGame: TestableGame = {
-    engine,
-    world,
-    lastOutput: '',
-    lastEvents: [],
-    lastTurnResult: null,
-
-    async executeCommand(input: string): Promise<string> {
-      outputBuffer = [];
-      eventBuffer = []; // Reset event buffer for this command
-      lastEvents = [];
-      lastTurnResult = null;
-
-      try {
-        const result = await engine.executeTurn(input);
-        if (result) {
-          lastTurnResult = result;
-          // Use eventBuffer which captures ALL events (action + NPC + scheduler)
-          lastEvents = eventBuffer;
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        outputBuffer.push(`Error: ${errorMessage}`);
-      }
-
-      lastOutput = outputBuffer.join('\n');
-      testableGame.lastOutput = lastOutput;
-      testableGame.lastEvents = lastEvents;
-      testableGame.lastTurnResult = lastTurnResult;
-      return lastOutput;
-    },
-  };
-
-  return testableGame;
+  return assembleGame(story);
 }
 
 /**
- * Find all transcript files in a directory
+ * Find all transcript files in a directory.
  */
 export function findTranscripts(dir: string, pattern: string = '*.transcript'): string[] {
   const glob = require('glob');
   const resolvedDir = path.isAbsolute(dir) ? dir : path.resolve(process.cwd(), dir);
-
   const files = glob.sync(path.join(resolvedDir, '**', pattern));
   return files;
 }
