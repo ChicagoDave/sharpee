@@ -144,3 +144,31 @@ After PR #113 merged, added a pre-publish regression harness: `npm-test-familyzo
 ---
 
 **Progressive update**: Session completed 2026-06-17 21:08 CST; addendum 2026-06-17 22:40 CST (familyzoo npm local-build test)
+
+---
+
+## Addendum 2 — build/test productization (devkit + bootstrap), 2026-06-18
+
+The familyzoo `v16-scoring` research traced to an unimplemented `entry:`
+transcript header, which exposed three hand-copied story loaders and a broader
+truth: the build half is productized (tsf) but the test/bundle/verify half is
+accreted bash + copy-paste. Stepped back from patching to design a productized,
+self-tested build/test devtool (the "hard app like DevArch" framing).
+
+Outcome — a converged spec and **ADR-180 (PROPOSED, READY after adr-review)**:
+- `@sharpee/devkit` (`tools/devkit`, internal) orchestrates; **tsf compiles**.
+- `@sharpee/bootstrap` (`packages/bootstrap`, published) — the single
+  entry-aware story loader; kills the 3-loader duplication and ships the `entry:`
+  fix. transcript-tester, the bundle, and devkit all depend on it (no cycle).
+- A story is a **location** (no committed config, no directory convention);
+  `devkit init` registers name→path in user-level `~/.sharpee/devkit` memory.
+- **Full replacement** of build.sh (parity-gated). Targets: CLI bundle +
+  browser + zifmia; **dropped** shite + `--runner`; deferred `.sharpee`.
+- Bundle kept as devkit's internal fast engine; `devkit` is the front door.
+
+Artifacts: `docs/work/sharpee-devkit/spec-20260617-build-test-devkit.md`,
+`docs/architecture/adrs/adr-180-build-test-devkit.md`,
+`docs/work/transcript-entry-support/plan-20260617-entry-header-support.md`
+(entry: design, superseded by/folded into ADR-180 Phase 1). Ran adr-review →
+NEEDS WORK → folded six contract/AC tightenings → READY. **Not yet accepted; no
+implementation started.** Next: accept ADR-180, then Phase 1 (`@sharpee/bootstrap`).
