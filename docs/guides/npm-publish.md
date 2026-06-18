@@ -76,11 +76,18 @@ npm view @sharpee/sharpee version
 
 ## Running the Regression Test
 
-After publishing, run the npm regression test to verify the packages work in isolation:
+After publishing, run the npm consumer test to verify the packages work in isolation
+(ADR-180 `devkit test:npm`, which replaced the old `npm-test*/` harnesses):
 
 ```bash
-cd npm-test
-./run.sh
+# Post-publish: install the published packages from the registry
+node packages/devkit/dist/cli.js test:npm packages/devkit/fixtures/basic-story --registry
+
+# Pre-publish: test the local `tsf build --npm` staging before you publish
+node packages/devkit/dist/cli.js test:npm packages/devkit/fixtures/basic-story --local
 ```
 
-This creates a temp directory, installs the published packages from the registry, compiles a test story, and runs 15 transcript tests covering all platform features. See `npm-test/README.md` for details.
+This creates a temp directory, installs the requested `@sharpee/*` closure (registry
+versions or local-staging tarballs), compiles the fixture story, and runs its transcript
+suite covering all platform features. Point `test:npm` at any story location to verify a
+real story — e.g. `test:npm tutorials/familyzoo --local`.

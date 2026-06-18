@@ -1,0 +1,19 @@
+{
+  "name": "sharpee-devkit-fixture-basic-story",
+  "version": "1.0.0",
+  "private": true,
+  "description": "devkit test:npm validation fixture — 'The Maintenance Facility', a story exercising every platform feature in minimal space (ADR-180 AC-7). Originally npm-test/.",
+  "main": "dist/index.js",
+  "dependencies": {
+    "@sharpee/core": "latest",
+    "@sharpee/engine": "latest",
+    "@sharpee/ext-basic-combat": "latest",
+    "@sharpee/lang-en-us": "latest",
+    "@sharpee/parser-en-us": "latest",
+    "@sharpee/plugin-npc": "latest",
+    "@sharpee/plugin-scheduler": "latest",
+    "@sharpee/plugin-state-machine": "latest",
+    "@sharpee/stdlib": "latest",
+    "@sharpee/world-model": "latest"
+  }
+}

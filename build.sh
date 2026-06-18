@@ -503,6 +503,7 @@ build_platform() {
         "@sharpee/platform-browser:platform-browser"
         "@sharpee/sharpee:sharpee"
         "@sharpee/transcript-tester:transcript-tester"
+        "@sharpee/devkit:devkit"
     )
 
     local SKIPPING=true

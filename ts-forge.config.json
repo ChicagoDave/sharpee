@@ -1,6 +1,7 @@
 {
   "projects": [
     "packages/bootstrap/tsconfig.json",
+    "packages/devkit/tsconfig.json",
     "packages/interpreter/tsconfig.json",
     "packages/story-runtime-baseline/tsconfig.json",
     "packages/world-model/tsconfig.json",

@@ -1,0 +1,46 @@
+{
+  "name": "@sharpee/devkit",
+  "version": "0.9.113",
+  "description": "Sharpee build/test/verify orchestration CLI — devkit orchestrates, tsf compiles (ADR-180). Phase 2: `devkit test:npm` consumer-test over any story location.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "devkit": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5",
+    "vitest": "^1.6.0"
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "sharpee",
+    "devkit",
+    "build-tool"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/devkit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
