@@ -18,6 +18,9 @@ export { buildZifmiaServer } from './commands/zifmia';
 export type { ZifmiaBuildOptions } from './commands/zifmia';
 export { runClean } from './commands/clean';
 export type { CleanOptions } from './commands/clean';
+export { runRegister, runList } from './commands/register';
+export { registryPath, readRegistry, registerStory, listStories, lookupStory } from './registry';
+export type { Registry, RegistryEntry } from './registry';
 export { runVerify } from './commands/verify';
 export type { VerifyOptions } from './commands/verify';
 export {

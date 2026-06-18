@@ -21,6 +21,9 @@ import { runBuildBrowserCommand } from './standalone/build-browser';
 import { runInitCommand } from './standalone/init';
 import { runInitBrowserCommand } from './standalone/init-browser';
 import { runIfidCommand } from './standalone/ifid';
+import { runRegister, runList } from './commands/register';
+import { lookupStory } from './registry';
+import { existsSync } from 'node:fs';
 
 const USAGE = `sharpee — Interactive Fiction build/test/scaffold CLI (ADR-180)
 
@@ -33,7 +36,9 @@ Usage:
   sharpee bundle                         (monorepo) Assemble dist/cli/sharpee.js
   sharpee clean                          Remove build artifacts (dist, dist-esm, tsbuildinfo)
   sharpee verify                         tsf build --npm + publish dry-run
-  sharpee test:npm <location> [options]  Stand up an npm consumer for a story and run its transcripts
+  sharpee test:npm <loc|name> [options]  Stand up an npm consumer for a story and run its transcripts
+  sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
+  sharpee list                           List registered stories
 
 build (monorepo) options:
   [story|path]            In-repo story name or path (stories/<n>, tutorials/<n>, or a directory)
@@ -49,7 +54,7 @@ test:npm options:
   --local [default] | --registry | --version <range> | --staging <dir>
   --transcripts <glob> | --chain | --quick | --keep
 
-Reserved (later): test, play, register, list`;
+Reserved (later): test, play, bundle:story`;
 
 /** Parse the monorepo `build` flags (positional [story] + options). */
 function parseBuild(args: string[]): BuildOptions {
@@ -108,11 +113,22 @@ async function main(argv: string[]): Promise<number> {
     case 'build': {
       if (detectMode() === 'monorepo') {
         runBuild(parseBuild(rest));
-      } else if (rest.includes('--browser')) {
-        await runBuildBrowserCommand(rest.filter((a) => a !== '--browser'));
-      } else {
-        await runBuildCommand(rest); // standalone: compile + .sharpee + browser (+ --test)
+        return 0;
       }
+      // Standalone: build the cwd project, or a registered story by name.
+      const positional = rest.find((a) => !a.startsWith('-'));
+      const flags = rest.filter((a) => a !== positional);
+      let dir: string | undefined;
+      if (positional) {
+        dir = lookupStory(positional) ?? undefined; // throws if registered-but-stale
+        if (!dir) {
+          throw new Error(
+            `'${positional}' is not a registered story — run \`sharpee register <location>\`, or run \`sharpee build\` from the project directory`,
+          );
+        }
+      }
+      if (flags.includes('--browser')) await runBuildBrowserCommand(flags.filter((a) => a !== '--browser'), dir);
+      else await runBuildCommand(flags, dir);
       return 0;
     }
     case 'build-browser': {
@@ -139,7 +155,10 @@ async function main(argv: string[]): Promise<number> {
       runVerify({});
       return 0;
     case 'test:npm': {
-      const r = runTestNpm(parseTestNpm(rest));
+      const opts = parseTestNpm(rest);
+      // Resolve a registered story name → its path (so `test:npm <name>` works; ADR AC-3).
+      if (!existsSync(opts.location)) opts.location = lookupStory(opts.location) ?? opts.location;
+      const r = runTestNpm(opts);
       if (!r.ran) return 0;
       console.log('===========================================');
       console.log(`  RESULTS: ${r.passed} passing, ${r.failed} failures`);
@@ -150,10 +169,14 @@ async function main(argv: string[]): Promise<number> {
       }
       return 0;
     }
+    case 'register':
+      runRegister(rest);
+      return 0;
+    case 'list':
+      runList();
+      return 0;
     case 'test':
     case 'play':
-    case 'register':
-    case 'list':
       console.error(`sharpee ${command}: not yet implemented`);
       return 2;
     default:

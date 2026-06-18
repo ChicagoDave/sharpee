@@ -52,7 +52,7 @@ function findTranscriptFiles(dir: string, pattern: string): string[] {
   return files.sort();
 }
 
-export async function runBuildCommand(args: string[]): Promise<void> {
+export async function runBuildCommand(args: string[], projectDirArg?: string): Promise<void> {
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
     return;
@@ -61,7 +61,8 @@ export async function runBuildCommand(args: string[]): Promise<void> {
   const runTests = args.includes('--test');
   const verbose = args.includes('--verbose') || args.includes('-v');
   const stopOnFailure = args.includes('--stop-on-failure');
-  const projectDir = process.cwd();
+  // Default to cwd (author in their project); a registered story name resolves to its dir.
+  const projectDir = projectDirArg || process.cwd();
   const packagePath = path.join(projectDir, 'package.json');
 
   if (!fs.existsSync(packagePath)) {
@@ -170,7 +171,10 @@ export async function runBuildCommand(args: string[]): Promise<void> {
 
   const browserEntry = path.join(projectDir, 'src', 'browser-entry.ts');
   if (fs.existsSync(browserEntry)) {
-    await runBuildBrowserCommand(args.filter(a => a !== '--help' && a !== '-h' && a !== '--test' && a !== '--verbose' && a !== '-v' && a !== '--stop-on-failure'));
+    await runBuildBrowserCommand(
+      args.filter(a => a !== '--help' && a !== '-h' && a !== '--test' && a !== '--verbose' && a !== '-v' && a !== '--stop-on-failure'),
+      projectDir,
+    );
   } else {
     console.log('  Skipped (no src/browser-entry.ts)\n');
     console.log('  Run "sharpee init-browser" to add browser support.\n');

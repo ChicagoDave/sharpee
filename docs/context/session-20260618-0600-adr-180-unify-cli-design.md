@@ -63,4 +63,20 @@ U2** (atomic), and **U1 is the non-breaking repo-ergonomics increment**:
     routing from an out-of-repo dir → standalone build path.
   - **Remaining real-path gap (flagged):** a full standalone `sharpee build` e2e (out-of-repo
     project → `.sharpee`) not yet run; the moved code is the previously-shipped sharpee CLI.
-- **Status**: U2 COMPLETE pending standalone e2e; U3 (register/list + `bundle:story` verb) next.
+- **U2** merged (PR #127).
+- **Standalone harness** (closes the U2 real-path gap): gated `standalone-build.test.ts` stands
+  up an out-of-repo consumer (local-staging tarballs) and runs the production `node dist/cli.js
+  build` in standalone mode. **Executed (DEVKIT_INTEGRATION=1): PASS** — compiled + emitted
+  `dist/*.sharpee` (8.1 KB). Standalone path proven e2e.
+- **U3** implemented on `feat/adr-180-u3-register-and-harness`:
+  - `registry.ts` — the `~/.sharpee/devkit` location registry (ADR format
+    `{stories:{<name>:{path}}}`; `SHARPEE_DEVKIT_REGISTRY` override for tests). read/register/
+    list/lookup; stale paths throw on lookup (never silently skipped), flagged by `list`.
+  - `sharpee register <location> [--name]` + `sharpee list` (commands/register.ts), wired.
+  - Registered-name resolution: standalone `sharpee build <name>` builds at the registered
+    path (standalone build/build-browser gained a `projectDir` param); `sharpee test:npm <name>`
+    resolves a registered name → path (closes ADR AC-3 "test <name> after register").
+  - +6 registry unit tests (30 passing, 2 gated-skipped). Smoked register/list via the CLI.
+  - **Deferred:** a dedicated `bundle:story` verb (`.sharpee` already produced by standalone
+    `build`); `sharpee update` self-update.
+- **Status**: U1/U2/U3 + standalone harness COMPLETE. ADR-180 unify track delivered.
