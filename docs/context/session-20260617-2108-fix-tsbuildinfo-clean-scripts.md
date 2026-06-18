@@ -156,7 +156,9 @@ accreted bash + copy-paste. Stepped back from patching to design a productized,
 self-tested build/test devtool (the "hard app like DevArch" framing).
 
 Outcome — a converged spec and **ADR-180 (PROPOSED, READY after adr-review)**:
-- `@sharpee/devkit` (`tools/devkit`, internal) orchestrates; **tsf compiles**.
+- `@sharpee/devkit` (`packages/devkit`, **published**, shipped via the
+  `@sharpee/sharpee` authoring SDK so authors get the CLI on `npm install`)
+  orchestrates; **tsf compiles**.
 - `@sharpee/bootstrap` (`packages/bootstrap`, published) — the single
   entry-aware story loader; kills the 3-loader duplication and ships the `entry:`
   fix. transcript-tester, the bundle, and devkit all depend on it (no cycle).

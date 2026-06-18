@@ -30,16 +30,29 @@ exploration and per-decision rationale: `docs/work/sharpee-devkit/spec-20260617-
 
 ## Decision
 
-Build a **Sharpee-internal, self-tested devtool** (`@sharpee/devkit`) that owns
+Build a **published, Sharpee-specific, self-tested devtool** (`@sharpee/devkit`)
+shipped via the `@sharpee/sharpee` authoring SDK, that owns
 build/test/verify orchestration, and extract story loading into its own
 published package. tsf stays the compiler/publisher; **devkit orchestrates, tsf
 compiles**.
 
 Six decisions (resolved during the spec walkthrough):
 
-1. **`@sharpee/devkit` at `tools/devkit`**, CLI bin `devkit`. Tooling, not a
-   runtime library — kept out of the publishable `packages/` graph (no accidental
-   publish, no dep-graph contamination); mirrors `tools/zifmia`.
+1. **`@sharpee/devkit` at `packages/devkit`** (published), CLI bin `devkit`.
+   **Shipped as part of the npm install:** `@sharpee/sharpee` (the authoring SDK
+   umbrella) depends on `@sharpee/devkit`, so `npm install @sharpee/sharpee`
+   places the `devkit` bin in `node_modules/.bin` — a story author building their
+   game in any repo gets the tool without a separate install. This is required by
+   Decision 4 (a story is a location *anywhere*, including outside this
+   monorepo): an unpublished `tools/` tool could not reach external authors.
+   devkit is published and Sharpee-specific — *not* a generic standalone product.
+   It must live in `packages/` (not `tools/`) because the published
+   `packages/sharpee` depends on it. **Assumption:** `@sharpee/sharpee` is the
+   *authoring-time* SDK (authors install it to build/test; runtime ships built
+   bundles / the ADR-178 Story Runtime Baseline, not the umbrella), so devkit's
+   build-only transitive deps (tsf, bundler) do not bloat a story's runtime. If
+   that assumption breaks (stories runtime-depend on `@sharpee/sharpee`),
+   revisit — devkit would otherwise drag build tooling into runtime.
 2. **Full replacement of `build.sh`.** devkit fully owns the build; build.sh is
    **deleted at cutover** (no shim, no delegation). A **one-time parity check** —
    devkit outputs vs build.sh outputs — must pass before deletion, so no behavior
@@ -75,8 +88,9 @@ engine + world-model + parser + lang  (runtime libs, published)
 @sharpee/bootstrap   (published; entry-aware load + game assembly)
         ↑
    ┌────┼───────────────────────────┐
-transcript-tester   bundle(--play/--test)   @sharpee/devkit (tools/, internal)
+transcript-tester   bundle(--play/--test)   @sharpee/devkit (packages/, published)
                                                    ↑ orchestrates tsf (compile) + transcript-tester (run)
+                                                   ↑ shipped via @sharpee/sharpee (authoring SDK) → bin on npm install
 ```
 
 ### CLI surface (initial)
@@ -206,7 +220,7 @@ re-running `init` — losing it costs only the name shortcuts, never a build.
 
 ## Out of Scope
 
-- Publishing devkit (internal tool).
+- Making devkit a generic standalone product (it is published, but Sharpee-specific).
 - Rewriting tsf (devkit delegates compile/publish to it).
 - `shite`, `--runner`, the `.sharpee` bundle format (dropped/deferred).
 - Deleting `tools/shite/` / `dist/runner/` source (separate cleanup, to confirm).

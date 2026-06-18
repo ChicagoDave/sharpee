@@ -3,8 +3,10 @@
 **Date**: 2026-06-17
 **Status**: DRAFT SPEC — convergence doc, pre-ADR. Decisions in §7 must be
 resolved before this becomes an ADR and any code is written.
-**Scope decision (set)**: a **Sharpee-internal, tested devtool package** — not a
-published product. Owns build/test/verify orchestration.
+**Scope decision (set, corrected 2026-06-18)**: a **published, Sharpee-specific,
+tested devtool** — shipped via the `@sharpee/sharpee` authoring SDK so authors
+get the `devkit` CLI on `npm install`. Sharpee-specific, not a generic standalone
+product. Owns build/test/verify orchestration.
 **Origin**: session 90c6c2. A string of build/test fixes (tsbuildinfo no-op,
 clean drift, dead `publish:beta`/`npm-latest.sh`, the unimplemented `entry:`
 header) revealed the tooling is accreted bash + copy-paste, not a product.
@@ -38,7 +40,7 @@ and tests everything.
 
 ## 2. Goal
 
-A single Sharpee-internal devtool package (**working name `@sharpee/devkit`**)
+A single published, Sharpee-specific devtool package (**`@sharpee/devkit`**)
 that owns build/test/verify orchestration with **one** story loader, is
 config-driven, and is **tested in its own right** — the same "hard app" shape as
 DevArch (single entry, declarative config, own validation harness, versioned).
@@ -81,7 +83,7 @@ copy.
 
 ## 5. Architecture sketch
 
-- Package at `packages/devkit` (or `tools/devkit` — §7).
+- Package at `packages/devkit` (published; shipped via `@sharpee/sharpee`).
 - A single `StoryLoader` module, entry-aware (resolves `dist/<entry>.js` →
   `dist/<entry>/index.js` → default `dist/index.js`). cli.ts, fast-cli.ts, and
   `bundle-entry.js` all import it — no hand-copies.
@@ -106,11 +108,16 @@ copy.
 
 ## 7. Decisions needed (resolve before ADR)
 
-1. **Package location/name** — RESOLVED (2026-06-17): `tools/devkit`, package
-   `@sharpee/devkit`, CLI bin `devkit`. Rationale: it's tooling not a runtime
-   library; `tools/` keeps it out of the publishable graph (no accidental npm
-   publish, no dep-graph contamination) and mirrors `tools/zifmia`; still a
-   normal pnpm workspace member.
+1. **Package location/name** — RESOLVED (2026-06-17; **corrected 2026-06-18**):
+   `packages/devkit`, package `@sharpee/devkit`, CLI bin `devkit`, **published**.
+   Shipped as part of the npm install — `@sharpee/sharpee` (authoring SDK) depends
+   on it, so `npm install @sharpee/sharpee` places the `devkit` bin in
+   `node_modules/.bin`. Must be `packages/` (not the earlier `tools/devkit`)
+   because published `packages/sharpee` depends on it, and because Decision 4
+   (story = location anywhere) requires external authors to get devkit via npm.
+   Assumption: `@sharpee/sharpee` is the authoring-time SDK, so devkit's
+   build-only deps don't bloat a story's runtime. (Superseded the initial
+   "internal `tools/devkit`, not published" call after the cross-wire was caught.)
 2. **build.sh disposition** — RESOLVED (2026-06-17): **full replacement.** devkit
    fully owns the build pipeline; build.sh is deleted at cutover (no shim, no
    delegation to it). Safeguard: a one-time parity check (devkit outputs vs
@@ -163,7 +170,7 @@ copy.
 
 ## 8. Non-goals
 
-- Not a published/standalone product (scope decision: internal).
+- Not a generic standalone product (it is published, but Sharpee-specific).
 - Not a rewrite of tsf — devkit orchestrates, tsf compiles.
 - Not changing story/game logic or runtime package boundaries.
 
