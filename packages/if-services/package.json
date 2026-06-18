@@ -6,7 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
-    "clean": "rimraf dist dist-esm",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {

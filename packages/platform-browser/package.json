@@ -40,7 +40,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist dist-esm tsconfig.tsbuildinfo",
     "test": "vitest",
     "test:ci": "vitest run"
   },

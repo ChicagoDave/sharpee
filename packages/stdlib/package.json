@@ -19,7 +19,7 @@
     "test:ci": "CI=true vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "clean": "rimraf dist dist-esm coverage",
+    "clean": "rimraf dist dist-esm coverage tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist"
   },
   "dependencies": {
