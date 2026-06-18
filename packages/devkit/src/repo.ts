@@ -99,6 +99,16 @@ export function findRepoRoot(start: string = process.cwd()): string {
 }
 
 /**
+ * Resolve the `tsf` executable. Prefers the workspace-local `node_modules/.bin/tsf`
+ * (a bare `tsf` fails when tsf is only a shell alias / not on a non-interactive PATH);
+ * falls back to `tsf` on PATH. Produces identical compiler output either way.
+ */
+export function tsfBin(root: string): string {
+  const local = join(root, 'node_modules', '.bin', 'tsf');
+  return existsSync(local) ? local : 'tsf';
+}
+
+/**
  * Resolve a story name to its directory (build.sh resolve_story_dir, 39-48):
  * `stories/<name>` then `tutorials/<name>`. Returns absolute path or null.
  */

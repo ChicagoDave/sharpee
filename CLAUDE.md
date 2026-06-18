@@ -78,42 +78,36 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 - **DO NOT** use `2>&1` with pnpm commands — they don't work together properly.
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`.
 
-### Build Script
+### Build (devkit)
 
-**IMPORTANT**: Use `./build.sh` instead of manual `pnpm build` commands to avoid issues.
+**IMPORTANT**: Use `devkit build` (the `@sharpee/devkit` CLI, ADR-180) instead of manual `pnpm build` commands. devkit orchestrates the build; tsf compiles. In-repo, invoke via `node packages/devkit/dist/cli.js`; once `@sharpee/sharpee` is installed the `devkit` bin is on PATH (`devkit build …`).
 
 ```bash
-# Run without arguments to see help
-./build.sh
+# Show help
+node packages/devkit/dist/cli.js
 
 # Common workflows
-./build.sh -s dungeo                          # Build platform + story
-./build.sh -s dungeo -c browser               # Build single-player browser client
-./build.sh -c shite                           # Build the Phase-6 parts-bin web app (abandoned)
-./build.sh --runner -t modern-dark            # Legacy interpreter runner (will be renamed)
-./build.sh --skip stdlib -s dungeo            # Resume from stdlib package
+node packages/devkit/dist/cli.js build dungeo               # Build platform + story, then bundle
+node packages/devkit/dist/cli.js build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
+node packages/devkit/dist/cli.js build --zifmia             # + zifmia multi-user server (tools/zifmia/dist/)
+node packages/devkit/dist/cli.js build dungeo --skip stdlib # Resume the platform build from stdlib
+node packages/devkit/dist/cli.js clean                      # Remove dist/, dist-esm/, tsbuildinfo
+node packages/devkit/dist/cli.js verify                     # tsf build --npm + publish dry-run
 ```
 
-**Multi-user product status (2026-05-12)**: the `tools/zifmia/` Phase-6 build diverged from the design intent (ADR-175) and is renamed `tools/shite/` as a parts bin. The corrected multi-user architecture is specified in **ADR-177** and will live in a new package; the `-c zifmia` build.sh flag is reserved for that build. For now, `-c shite` builds the parts bin at `tools/shite/` for reference only; do not extend it.
-
-**Available Themes** (for the legacy `--runner` path only):
-- `classic-light` — Literata font, warm light tones (default)
-- `modern-dark` — Inter font, Catppuccin Mocha colors
-- `retro-terminal` — JetBrains Mono, green phosphor
-- `paper` — Crimson Text, high contrast
+**Multi-user (zifmia)**: the corrected multi-user server (ADR-177) is built with `devkit build --zifmia` → `tools/zifmia/dist/`. The abandoned `shite` parts bin and the legacy Tauri `--runner` are no longer built (ADR-180 dropped them); their source remains for reference only.
 
 **Outputs**:
 - `dist/cli/sharpee.js` — Platform bundle (CLI, testing)
-- `tools/shite/dist/` — abandoned Phase-6 parts bin (with `-c shite`)
-- `dist/web/{story}/` — Single-player browser client (with `-c browser`)
-- `dist/runner/` — Legacy interpreter runner (with `--runner`)
+- `dist/web/{story}/` — Self-contained single-player browser client (`--browser`)
+- `tools/zifmia/dist/` — zifmia multi-user server (`--zifmia`)
 
 **Version System**:
 - Versions use format `X.Y.Z-beta` (no timestamp)
-- Version update runs FIRST, before any compilation
+- Version stamping runs FIRST, before any compilation
 
 **IMPORTANT**:
-- Always use `--skip` when possible to avoid slow full rebuilds.
+- Use `--skip <pkg>` to resume a platform build and avoid slow full rebuilds.
 - Always use `dist/cli/sharpee.js` for testing — much faster than loading individual packages.
 
 ### Transcript Testing — ALWAYS USE THE BUNDLE

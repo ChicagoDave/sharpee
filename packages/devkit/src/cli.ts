@@ -10,12 +10,16 @@
 import { runTestNpm, TestNpmOptions } from './commands/test-npm';
 import { runBuild, BuildOptions } from './commands/build';
 import { runBundle } from './commands/bundle';
+import { runClean } from './commands/clean';
+import { runVerify } from './commands/verify';
 
 const USAGE = `devkit — Sharpee build/test/verify orchestration (ADR-180)
 
 Usage:
   devkit build [story] [options]         Build platform packages + (optional) story, then bundle
   devkit bundle                          Assemble dist/cli/sharpee.js (assumes packages built)
+  devkit clean                           Remove build artifacts (dist, dist-esm, tsbuildinfo)
+  devkit verify                          tsf build --npm + publish dry-run
   devkit test:npm <location> [options]   Stand up an npm consumer for a story and run its transcripts
 
 build options:
@@ -40,7 +44,7 @@ test:npm options:
   --quick                 Compile only; skip transcript execution
   --keep                  Keep the temp consumer dir for debugging
 
-Reserved (Phase 3): test, play, verify, clean, init, list`;
+Reserved (later): test, play, init, list`;
 
 /** Parse the `build` flags (positional [story] + options). */
 function parseBuild(args: string[]): BuildOptions {
@@ -117,13 +121,19 @@ function main(argv: string[]): number {
       runBundle({});
       return 0;
     }
+    case 'clean': {
+      runClean({});
+      return 0;
+    }
+    case 'verify': {
+      runVerify({});
+      return 0;
+    }
     case 'test':
     case 'play':
-    case 'verify':
-    case 'clean':
     case 'init':
     case 'list':
-      console.error(`devkit ${command}: not yet implemented (ADR-180 Phase 3)`);
+      console.error(`devkit ${command}: not yet implemented`);
       return 2;
     default:
       console.error(`unknown command: ${command}\n`);

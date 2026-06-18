@@ -290,16 +290,17 @@ packages:
   # ... existing entries
 ```
 
-### Register in build.sh
+### Register in the devkit platform build
 
-Add to the `PACKAGES` array in `build_platform()`:
+Add to the `PLATFORM_PACKAGES` array in `packages/devkit/src/repo.ts` (the ordered
+list `devkit build` compiles), plus `ts-forge.config.json`:
 
-```bash
-"@sharpee/lang-es:lang-es"
-"@sharpee/parser-es:parser-es"
+```ts
+['@sharpee/lang-es', 'lang-es'],
+['@sharpee/parser-es', 'parser-es'],
 ```
 
-Place them after `parser-en-us` in the dependency order.
+Place them after `parser-en-us` in the dependency order, then rebuild devkit.
 
 ## Step 4: Wire It Up
 

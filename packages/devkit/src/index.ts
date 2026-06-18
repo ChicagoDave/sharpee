@@ -16,6 +16,10 @@ export { buildBrowserClient } from './commands/browser';
 export type { BrowserBuildOptions } from './commands/browser';
 export { buildZifmiaServer } from './commands/zifmia';
 export type { ZifmiaBuildOptions } from './commands/zifmia';
+export { runClean } from './commands/clean';
+export type { CleanOptions } from './commands/clean';
+export { runVerify } from './commands/verify';
+export type { VerifyOptions } from './commands/verify';
 export {
   findRepoRoot,
   resolveStoryDir,

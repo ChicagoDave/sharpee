@@ -17,6 +17,7 @@ import {
   findRepoRoot,
   resolveStoryDir,
   storyVersionFile,
+  tsfBin,
 } from '../repo';
 import { runBundle } from './bundle';
 import { buildBrowserClient } from './browser';
@@ -55,16 +56,6 @@ export interface BuildOptions {
 
 function nowStamp(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-}
-
-/**
- * Resolve the `tsf` executable. Prefers the workspace-local `node_modules/.bin/tsf`
- * (build.sh relies on a bare `tsf`, which fails when tsf is only a shell alias);
- * falls back to `tsf` on PATH. Produces identical compiler output either way.
- */
-function tsfBin(root: string): string {
-  const local = join(root, 'node_modules', '.bin', 'tsf');
-  return existsSync(local) ? local : 'tsf';
 }
 
 /** Rewrite a package.json's version, preserving key order + 2-space indent + trailing newline. */

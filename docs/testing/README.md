@@ -35,7 +35,7 @@ When working on Sharpee itself, the pre-built bundle is faster (~170ms load vs m
 
 ```bash
 # Build the platform + story first
-./build.sh -s dungeo
+node packages/devkit/dist/cli.js build dungeo
 
 # Run a single unit test
 node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/basket-elevator.transcript
