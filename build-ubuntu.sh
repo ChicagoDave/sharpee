@@ -2,14 +2,14 @@
 #
 # Sharpee Build System (Ubuntu)
 # =============================
-# Wrapper that sources nvm before running build.sh, and can also build
-# the Zifmia Tauri desktop app (requires Rust + system libs).
+# Wrapper that sources nvm before running `devkit build`, and can also build
+# the legacy Zifmia Tauri desktop app (requires Rust + system libs).
 #
 # Usage:
-#   ./build-ubuntu.sh -s dungeo            # Same as build.sh (sources nvm)
-#   ./build-ubuntu.sh --zifmia             # Build Zifmia Tauri app
-#   ./build-ubuntu.sh --zifmia-deps        # Only install Zifmia dependencies
-#   ./build-ubuntu.sh -s dungeo --zifmia   # Full build + Zifmia
+#   ./build-ubuntu.sh dungeo               # devkit build dungeo (sources nvm)
+#   ./build-ubuntu.sh dungeo --browser     # + browser client
+#   ./build-ubuntu.sh --zifmia-deps        # Only install Tauri build dependencies
+#   ./build-ubuntu.sh --zifmia             # Build legacy Zifmia Tauri app (needs dist/runner)
 #
 
 set -e
@@ -43,7 +43,7 @@ if ! command -v pnpm &> /dev/null; then
 fi
 
 # ============================================================================
-# Parse our flags (--zifmia, --zifmia-deps), pass the rest to build.sh
+# Parse our flags (--zifmia, --zifmia-deps), pass the rest to `devkit build`
 # ============================================================================
 
 BUILD_ZIFMIA=false
@@ -156,9 +156,8 @@ build_zifmia() {
     # Check frontend exists
     if [ ! -f "$REPO_ROOT/dist/runner/index.html" ] || [ ! -f "$REPO_ROOT/dist/runner/runner.js" ]; then
         echo -e "${RED}Error: dist/runner/ not found${NC}"
-        echo "Build the frontend first:"
-        echo "  ./build-ubuntu.sh --runner -s dungeo --zifmia"
-        echo "  (or run ./build.sh --runner -s dungeo separately)"
+        echo "The legacy Tauri runner (dist/runner) is no longer built by devkit (ADR-180 dropped --runner)."
+        echo "  Build dist/runner via the legacy interpreter toolchain before packaging."
         exit 1
     fi
     echo -e "  frontend: ${GREEN}dist/runner/ exists${NC}"
@@ -211,7 +210,7 @@ fi
 
 # Run the main build script if there are args for it
 if [ ${#BUILD_SH_ARGS[@]} -gt 0 ]; then
-    bash "$REPO_ROOT/build.sh" "${BUILD_SH_ARGS[@]}"
+    node "$REPO_ROOT/packages/devkit/dist/cli.js" build "${BUILD_SH_ARGS[@]}"
 fi
 
 # Build Zifmia Tauri app
@@ -225,17 +224,17 @@ if [ "$BUILD_ZIFMIA" = false ] && [ ${#BUILD_SH_ARGS[@]} -eq 0 ]; then
     echo "Sharpee Build System (Ubuntu)"
     echo "============================="
     echo ""
-    echo "Usage: ./build-ubuntu.sh [build.sh options] [zifmia options]"
+    echo "Usage: ./build-ubuntu.sh [devkit build options] [zifmia options]"
     echo ""
-    echo "Zifmia options:"
-    echo "  --zifmia           Build Zifmia Tauri desktop app"
-    echo "  --zifmia-deps      Only install Zifmia dependencies (Rust, system libs)"
+    echo "Zifmia (legacy Tauri) options:"
+    echo "  --zifmia           Build legacy Zifmia Tauri desktop app (needs dist/runner)"
+    echo "  --zifmia-deps      Only install Tauri build dependencies (Rust, system libs)"
     echo ""
-    echo "All other options are passed to build.sh. Run ./build.sh --help for details."
+    echo "All other options are passed to 'devkit build'. Run 'node packages/devkit/dist/cli.js' for details."
     echo ""
     echo "Examples:"
-    echo "  ./build-ubuntu.sh -s dungeo                  # Normal build (same as build.sh)"
+    echo "  ./build-ubuntu.sh dungeo                     # devkit build dungeo (sources nvm)"
+    echo "  ./build-ubuntu.sh dungeo --browser           # + browser client"
     echo "  ./build-ubuntu.sh --zifmia-deps              # Install Rust + Tauri deps"
-    echo "  ./build-ubuntu.sh --runner -s dungeo --zifmia # Full build + Tauri app"
     echo ""
 fi

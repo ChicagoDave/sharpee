@@ -1,7 +1,7 @@
 /**
  * Build & Play integration for Sharpee stories.
  *
- * Provides a VS Code task provider for building stories via ./build.sh,
+ * Provides a VS Code task provider for building stories via devkit (ADR-180),
  * commands for playing in terminal and browser, and story ID detection
  * from the workspace.
  *
@@ -84,10 +84,10 @@ export async function resolveStoryId(): Promise<string | undefined> {
  * @param workspaceRoot - The workspace root directory
  * @returns Absolute path to the build script
  */
-function resolveBuildScript(workspaceRoot: string): string {
+function resolveBuildScript(): string {
   const config = vscode.workspace.getConfiguration('sharpee');
-  const relativePath = config.get<string>('buildScript', './build.sh');
-  return path.join(workspaceRoot, relativePath);
+  // A command run from the workspace root (devkit; ADR-180), not a path.
+  return config.get<string>('buildScript', 'node packages/devkit/dist/cli.js build');
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ export function onBuildDone(callback: (success: boolean, storyId: string) => voi
 }
 
 /**
- * Handles the "Build Story" command. Runs ./build.sh -s <story-id>
+ * Handles the "Build Story" command. Runs `devkit build <story-id>`
  * as a VS Code task.
  */
 export async function handleBuildStory(): Promise<void> {
@@ -182,7 +182,7 @@ export async function handleBuildStory(): Promise<void> {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) return;
 
-  const buildScript = resolveBuildScript(workspaceFolder.uri.fsPath);
+  const buildScript = resolveBuildScript();
 
   const definition: vscode.TaskDefinition = {
     type: SharpeeTaskProvider.type,
@@ -190,9 +190,9 @@ export async function handleBuildStory(): Promise<void> {
     storyId,
   };
 
+  // devkit takes the story as a positional argument (not -s).
   const execution = new vscode.ShellExecution(
-    buildScript,
-    ['-s', storyId],
+    `${buildScript} ${storyId}`,
     { cwd: workspaceFolder.uri.fsPath },
   );
 

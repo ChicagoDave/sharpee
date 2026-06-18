@@ -24,10 +24,11 @@ import { buildBrowserClient } from './browser';
 import { buildZifmiaServer } from './zifmia';
 
 /**
- * The generator name written into stamped version.ts files. Verbatim "build.sh" so
- * the parity gate is byte-identical; flips to "devkit" at the build.sh cutover (3d).
+ * The generator name written into stamped version.ts files. build.sh was retired at
+ * the ADR-180 Phase 3d cutover (parity verified byte-identical first), so devkit now
+ * names itself as the generator.
  */
-const GENERATOR = 'build.sh';
+const GENERATOR = 'devkit';
 
 export interface BuildOptions {
   root?: string;

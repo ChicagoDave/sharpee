@@ -216,8 +216,8 @@ git clone https://github.com/ChicagoDave/sharpee.git
 cd sharpee
 pnpm install
 
-# Build everything
-./build.sh -s dungeo
+# Build everything (devkit; ADR-180)
+node packages/devkit/dist/cli.js build dungeo
 
 # Run tests
 pnpm test

@@ -657,9 +657,10 @@ docker logs zifmia 2>&1 | grep 'failed health check'
 
 Fixes, in order of likelihood:
 
-1. **Rebuild the bundle against the current baseline.** `build.sh -s
-   <story> -b` runs a pre-flight `validate-bundle-baseline.js` pass
-   that fails early with the same error.
+1. **Rebuild the bundle against the current baseline.** The `.sharpee`
+   story-bundle builder (with its `validate-bundle-baseline.js` pre-flight) is
+   being re-homed into devkit (ADR-180 deferred it); until `devkit bundle:story`
+   lands, rebuild from a checkout that still has the legacy bundle builder.
 2. **Bundle is built against a newer baseline than the image.**
    Compare `docker inspect … --format '{{ index .Config.Labels
    "org.sharpee.story-runtime-baseline" }}'` with the `BASELINE_VERSION`

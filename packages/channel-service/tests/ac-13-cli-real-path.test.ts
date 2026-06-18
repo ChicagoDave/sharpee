@@ -12,8 +12,8 @@
  * No stubs. Per CLAUDE.md rule 12a, this is the acceptance gate for R6.
  *
  * Skips gracefully when:
- *  - `dist/cli/sharpee.js` is not built. Run `./build.sh -s dungeo` to
- *    build.
+ *  - `dist/cli/sharpee.js` is not built. Run
+ *    `node packages/devkit/dist/cli.js build dungeo` to build.
  *  - The Dungeo walkthrough fixture is not present.
  *
  * The test pipes output through Node's `child_process.spawnSync` so
@@ -37,7 +37,7 @@ const BUNDLE_PRESENT = existsSync(CLI_BUNDLE);
 const WALKTHROUGH_PRESENT = existsSync(WALKTHROUGH);
 
 const skipReason = !BUNDLE_PRESENT
-  ? 'dist/cli/sharpee.js missing — run ./build.sh -s dungeo'
+  ? 'dist/cli/sharpee.js missing — run node packages/devkit/dist/cli.js build dungeo'
   : !WALKTHROUGH_PRESENT
     ? `walkthrough fixture missing: ${WALKTHROUGH}`
     : '';

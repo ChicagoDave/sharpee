@@ -235,7 +235,7 @@ export function runTranscriptTest(document: vscode.TextDocument): Promise<TestRe
         durationMs: 0,
         rawOutput: '',
         success: false,
-        error: `Failed to start CLI: ${err.message}. Run ./build.sh -s <story-id> first.`,
+        error: `Failed to start CLI: ${err.message}. Run node packages/devkit/dist/cli.js build <story-id> first.`,
       });
     });
   });

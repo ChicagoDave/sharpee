@@ -105,7 +105,7 @@ mkdir -p stories
 
 Drop one or more `.sharpee` story files into it. The server lists exactly these at `GET /api/stories`.
 
-Where do `.sharpee` files come from? They are built by the Sharpee authoring toolchain (`./build.sh -s <story-name>` produces `dist/stories/<story-name>.sharpee` from a repo with the full pnpm dev environment). For a server-only host, the simplest path is to build elsewhere and copy the artifact:
+Where do `.sharpee` files come from? They are produced by the Sharpee authoring toolchain. **Note:** the `.sharpee` bundle builder was retired with `build.sh` and is being re-homed into `devkit` (ADR-180 deferred it); until a `devkit bundle:story` command lands, use a previously built `.sharpee` artifact (e.g. a `dungeo.sharpee` from an earlier dev build). zifmia can also load stories directly from its `stories/` scanner without a `.sharpee` bundle. To copy an existing artifact to a server-only host:
 
 ```bash
 # Run this from a dev machine that has already built the story:

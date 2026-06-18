@@ -16,8 +16,8 @@ git clone https://github.com/ChicagoDave/sharpee.git
 cd sharpee
 pnpm install
 
-# Build everything (platform + Dungeon story)
-./build.sh -s dungeo
+# Build everything (platform + Dungeon story) — devkit (ADR-180)
+node packages/devkit/dist/cli.js build dungeo
 
 # Run unit tests
 pnpm test
@@ -32,15 +32,15 @@ node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcr
 node dist/cli/sharpee.js --play
 ```
 
-### Build Script
+### Build (devkit)
 
-Always use `./build.sh` instead of manual `pnpm build` commands.
+Use `devkit build` (the `@sharpee/devkit` CLI, ADR-180) instead of manual `pnpm build` commands. In-repo, invoke via `node packages/devkit/dist/cli.js`.
 
 ```bash
-./build.sh                    # Show help
-./build.sh -s dungeo          # Build platform + story
-./build.sh -s dungeo -c browser   # Include browser client
-./build.sh --skip stdlib -s dungeo # Resume from stdlib (faster)
+node packages/devkit/dist/cli.js                       # Show help
+node packages/devkit/dist/cli.js build dungeo          # Build platform + story
+node packages/devkit/dist/cli.js build dungeo --browser   # Include browser client
+node packages/devkit/dist/cli.js build dungeo --skip stdlib # Resume from stdlib (faster)
 ```
 
 ## Repository Structure
