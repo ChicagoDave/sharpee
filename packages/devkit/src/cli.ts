@@ -28,6 +28,7 @@ build options:
   --no-bundle             Build packages/story but skip the CLI bundle step
   --esm                   Also run the ESM build pass (browser/story-bundle targets)
   --browser               Also build the self-contained browser client (dist/web/<story>/; requires a story)
+  --zifmia                Also build the zifmia multi-user server (tools/zifmia/dist/)
 
 test:npm options:
   --local                 Install the @sharpee closure from local staging (~/.tsf-publish) [default]
@@ -55,6 +56,7 @@ function parseBuild(args: string[]): BuildOptions {
     else if (a === '--no-bundle') opts.bundle = false;
     else if (a === '--esm') opts.esm = true;
     else if (a === '--browser') opts.browser = true;
+    else if (a === '--zifmia') opts.zifmia = true;
     else if (a.startsWith('-')) throw new Error(`unknown option: ${a}`);
     else if (!opts.story) opts.story = a;
     else throw new Error(`unexpected argument: ${a}`);
