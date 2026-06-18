@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+  "references": [
+    { "path": "../core" },
+    { "path": "../if-domain" },
+    { "path": "../world-model" },
+    { "path": "../parser-en-us" },
+    { "path": "../lang-en-us" },
+    { "path": "../stdlib" },
+    { "path": "../channel-service" },
+    { "path": "../engine" },
+    { "path": "../extensions/testing" }
+  ]
+}
