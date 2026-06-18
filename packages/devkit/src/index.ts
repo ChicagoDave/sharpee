@@ -12,6 +12,8 @@ export { runBuild, stampVersions, buildPlatform, generateGenaiApi, buildStory } 
 export type { BuildOptions } from './commands/build';
 export { runBundle } from './commands/bundle';
 export type { BundleOptions } from './commands/bundle';
+export { buildBrowserClient } from './commands/browser';
+export type { BrowserBuildOptions } from './commands/browser';
 export {
   findRepoRoot,
   resolveStoryDir,

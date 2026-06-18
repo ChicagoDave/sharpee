@@ -19,6 +19,7 @@ import {
   storyVersionFile,
 } from '../repo';
 import { runBundle } from './bundle';
+import { buildBrowserClient } from './browser';
 
 /**
  * The generator name written into stamped version.ts files. Verbatim "build.sh" so
@@ -44,11 +45,23 @@ export interface BuildOptions {
   esm?: boolean;
   /** Run the bundle step at the end (default true — the full build.sh pipeline). */
   bundle?: boolean;
+  /** Also build the browser client (dist/web/<story>/). Implies --esm; requires a story. */
+  browser?: boolean;
   quiet?: boolean;
 }
 
 function nowStamp(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+/**
+ * Resolve the `tsf` executable. Prefers the workspace-local `node_modules/.bin/tsf`
+ * (build.sh relies on a bare `tsf`, which fails when tsf is only a shell alias);
+ * falls back to `tsf` on PATH. Produces identical compiler output either way.
+ */
+function tsfBin(root: string): string {
+  const local = join(root, 'node_modules', '.bin', 'tsf');
+  return existsSync(local) ? local : 'tsf';
 }
 
 /** Rewrite a package.json's version, preserving key order + 2-space indent + trailing newline. */
@@ -123,7 +136,7 @@ export function buildPlatform(root: string, opts: BuildOptions): void {
       }
       if (existsSync(join(root, 'packages', dir, 'tsconfig.esm.json'))) {
         // tsf drives the esm target so esmExtensions post-processing runs (build.sh comment 555-557).
-        run('tsf', ['build', '--condition', 'esm', '--filter', pkg]);
+        run(tsfBin(root), ['build', '--condition', 'esm', '--filter', pkg]);
       }
     }
   }
@@ -147,7 +160,7 @@ export function buildStory(root: string, story: string, opts: BuildOptions): voi
     stdio: opts.quiet ? 'ignore' : 'inherit',
   });
   if (opts.esm && existsSync(join(dir, 'tsconfig.esm.json'))) {
-    execFileSync('tsf', ['build', '--condition', 'esm', '--filter', pkg], {
+    execFileSync(tsfBin(root), ['build', '--condition', 'esm', '--filter', pkg], {
       cwd: root,
       stdio: opts.quiet ? 'ignore' : 'inherit',
     });
@@ -159,12 +172,17 @@ export function runBuild(opts: BuildOptions = {}): void {
   const root = opts.root ?? findRepoRoot();
   const log = (m: string) => !opts.quiet && console.log(m);
 
+  // The browser client target needs the ESM build pass (build.sh runs it when a client is requested).
+  const effective: BuildOptions = opts.browser ? { ...opts, esm: true } : opts;
+  if (effective.browser && !effective.story) throw new Error('--browser requires a story');
+
   log('=== devkit build ===');
-  const version = stampVersions(root, opts);
-  log(`version: ${version}${opts.story ? ` · story: ${opts.story}` : ''}`);
-  buildPlatform(root, opts);
-  if (!opts.noGenai) generateGenaiApi(root, opts);
-  if (opts.story) buildStory(root, opts.story, opts);
-  if (opts.bundle !== false) runBundle({ root, quiet: opts.quiet });
+  const version = stampVersions(root, effective);
+  log(`version: ${version}${effective.story ? ` · story: ${effective.story}` : ''}`);
+  buildPlatform(root, effective);
+  if (!effective.noGenai) generateGenaiApi(root, effective);
+  if (effective.story) buildStory(root, effective.story, effective);
+  if (effective.bundle !== false) runBundle({ root, quiet: effective.quiet });
+  if (effective.browser) buildBrowserClient(root, effective.story!, { quiet: effective.quiet });
   log('=== build complete ===');
 }
