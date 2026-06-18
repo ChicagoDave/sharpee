@@ -96,6 +96,7 @@ if (require.main === module) {
   const fs = require('fs');
   const readline = require('readline');
   const transcriptTester = require('../packages/transcript-tester/dist/index.js');
+  const bootstrap = require('@sharpee/bootstrap');
 
   const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService, TestingExtension } = exports;
 
@@ -201,148 +202,17 @@ Examples:
 `);
   }
 
-  function loadStoryAndCreateGame(storyPath) {
-    const resolvedPath = path.isAbsolute(storyPath)
-      ? storyPath
-      : path.resolve(process.cwd(), storyPath);
-
-    const distPath = path.join(resolvedPath, 'dist', 'index.js');
-    const storyModule = require(distPath);
+  // Single loader (ADR-180): resolve the story module (entry-aware) and assemble
+  // the game via @sharpee/bootstrap. Replaces the former inline copy; the
+  // channel-packet assembly now lives once in bootstrap.assembleGame.
+  function loadStoryAndCreateGame(storyPath, entry) {
+    const modulePath = bootstrap.resolveStoryModulePath(storyPath, entry);
+    const storyModule = require(modulePath);
     const story = storyModule.story || storyModule.default;
-
     if (!story) {
       throw new Error(`Story module at ${storyPath} does not export 'story' or 'default'`);
     }
-
-    const world = new WorldModel();
-    const player = world.createEntity('player', EntityType.ACTOR);
-    world.setPlayer(player.id);
-
-    const language = new LanguageProvider();
-    const parser = new Parser(language);
-
-    if (story.extendParser) {
-      story.extendParser(parser);
-    }
-    if (story.extendLanguage) {
-      story.extendLanguage(language);
-    }
-
-    const perceptionService = new PerceptionService();
-
-    const engine = new GameEngine({
-      world,
-      player,
-      parser,
-      language,
-      perceptionService,
-    });
-
-    engine.setStory(story);
-
-    // === ADR-163 channel-I/O setup (Phase R6) ===
-    // CLI consumer subscribes to engine `channel:packet` events. The
-    // engine constructs a ChannelService internally during start() based
-    // on the supplied capabilities; no rule-registration / hello dance.
-    // Per ADR-165 §8 CLI defaults, only the `main` channel produces
-    // visible output in test mode — status / prompt / info / etc. are
-    // available to interactive mode but ignored here.
-    const CLI_CAPABILITIES = {
-      text: true,
-      images: false, animations: false, video: false,
-      sound: false, music: false, speech: false,
-      splitPane: false, statusBar: false, sidebar: false,
-      clickableText: false, clickableImage: false, dragDrop: false,
-      transitions: false, layers: false, customFonts: false,
-    };
-    engine.start({ capabilities: CLI_CAPABILITIES });
-
-    // Create testing extension for $commands in transcripts
-    const testingExtension = TestingExtension ? new TestingExtension() : null;
-
-    let lastOutput = '';
-    let outputBuffer = [];
-    let lastEvents = [];
-    let eventBuffer = [];
-
-    // Manifest fires once during engine.start() and is not used by the
-    // CLI's plain-text output path — listed for completeness (and so a
-    // future REPL-status implementation has the channel definitions on
-    // hand). Signals the start of a new session.
-    engine.on('channel:manifest', () => {
-      // No-op in CLI test mode.
-    });
-
-    // channel:packet fires per turn. Flatten the `main` channel's
-    // entries to plain strings and push to outputBuffer. Other channels'
-    // payloads (location/score/turn/...) are available in packet.payload
-    // for interactive mode if needed but ignored in test mode.
-    //
-    // Two entry shapes are accepted: the legacy `TextContent[]` array
-    // and the new `MainEntry { content, tight? }` object (post pre-line
-    // removal — session 2026-05-12). Tight entries continue the prior
-    // line, so they join with `\n` instead of `\n\n`.
-    engine.on('channel:packet', (packet) => {
-      const mainEntries = packet?.payload?.main;
-      if (!Array.isArray(mainEntries) || mainEntries.length === 0) return;
-      let out = '';
-      for (const raw of mainEntries) {
-        let content;
-        let tight = false;
-        if (Array.isArray(raw)) {
-          content = raw;
-        } else if (raw && typeof raw === 'object' && Array.isArray(raw.content)) {
-          content = raw.content;
-          tight = Boolean(raw.tight);
-        } else {
-          continue;
-        }
-        const text = exports.flattenContent(content);
-        if (!text.trim()) continue;
-        if (out) out += tight ? '\n' : '\n\n';
-        out += text;
-      }
-      if (out) outputBuffer.push(out);
-    });
-
-    engine.on('event', (event) => {
-      eventBuffer.push(event);
-    });
-
-    let lastTurnResult = null;
-
-    const testableGame = {
-      engine,
-      world,
-      testingExtension,
-      lastOutput: '',
-      lastEvents: [],
-      lastTurnResult: null,
-      // Proxy for runner save/restore plugin state
-      getPluginRegistry() { return engine.getPluginRegistry(); },
-
-      async executeCommand(input) {
-        outputBuffer = [];
-        eventBuffer = [];
-        lastTurnResult = null;
-
-        try {
-          const result = await engine.executeTurn(input);
-          lastEvents = eventBuffer;
-          lastTurnResult = result;
-        } catch (error) {
-          outputBuffer.push(`Error: ${error.message || error}`);
-        }
-
-        lastOutput = outputBuffer.join('\n');
-        testableGame.lastOutput = lastOutput;
-        testableGame.lastEvents = lastEvents;
-        testableGame.lastTurnResult = lastTurnResult;
-        return lastOutput;
-      },
-    };
-
-    return testableGame;
+    return bootstrap.assembleGame(story);
   }
 
   async function runInteractiveMode(game) {
@@ -715,7 +585,7 @@ Examples:
         }
 
         if (!options.chain) {
-          game = loadStoryAndCreateGame(options.storyPath);
+          game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry);
         }
 
         const savesDirectory = path.join(options.storyPath, 'saves');
