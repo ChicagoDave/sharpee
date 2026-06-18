@@ -37,5 +37,5 @@ The room-governance layer is greenfield.
 
 ## Build
 
-Built by devkit (ADR-180): `node packages/devkit/dist/cli.js build --zifmia`
+Built by devkit (ADR-180): `./sharpee build --zifmia`
 → `tools/zifmia/dist/`. (Replaces the reserved `-c zifmia` build.sh flag.)

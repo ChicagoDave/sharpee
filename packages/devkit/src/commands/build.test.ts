@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stampVersions } from './build';
-import { findRepoRoot, resolveStoryDir } from '../repo';
+import { findRepoRoot, resolveStoryDir, resolveStory } from '../repo';
 
 describe('stampVersions', () => {
   let root: string;
@@ -79,5 +79,48 @@ describe('repo helpers', () => {
     expect(resolveStoryDir(root, 'fz')).toBe(join(root, 'tutorials', 'fz'));
     expect(resolveStoryDir(root, 'nope')).toBeNull();
     rmSync(root, { recursive: true, force: true });
+  });
+});
+
+describe('resolveStory (path or name)', () => {
+  let root: string;
+  const mkStory = (rel: string) => {
+    const dir = join(root, rel);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0' }));
+    return dir;
+  };
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'devkit-resolve-'));
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  it('resolves a bare stories/ name → story package, in-repo, underStories', () => {
+    mkStory('stories/dungeo');
+    const r = resolveStory(root, 'dungeo')!;
+    expect(r).toMatchObject({ name: 'dungeo', pkg: '@sharpee/story-dungeo', inRepo: true, underStories: true });
+  });
+
+  it('resolves an in-repo PATH the same as the name', () => {
+    mkStory('stories/dungeo');
+    const r = resolveStory(root, 'stories/dungeo')!;
+    expect(r).toMatchObject({ name: 'dungeo', pkg: '@sharpee/story-dungeo', inRepo: true, underStories: true });
+  });
+
+  it('classifies a tutorials story (in-repo, NOT underStories)', () => {
+    mkStory('tutorials/familyzoo');
+    const r = resolveStory(root, 'familyzoo')!;
+    expect(r).toMatchObject({ pkg: '@sharpee/tutorial-familyzoo', inRepo: true, underStories: false });
+  });
+
+  it('a path to a non-story location is not in-repo (no workspace pkg)', () => {
+    const dir = mkStory('somewhere/else');
+    const r = resolveStory(root, dir)!;
+    expect(r).toMatchObject({ inRepo: false, pkg: null, underStories: false });
+  });
+
+  it('returns null when nothing resolves', () => {
+    expect(resolveStory(root, 'ghost')).toBeNull();
   });
 });

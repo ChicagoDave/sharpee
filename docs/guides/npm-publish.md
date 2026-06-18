@@ -81,10 +81,10 @@ After publishing, run the npm consumer test to verify the packages work in isola
 
 ```bash
 # Post-publish: install the published packages from the registry
-node packages/devkit/dist/cli.js test:npm packages/devkit/fixtures/basic-story --registry
+./sharpee test:npm packages/devkit/fixtures/basic-story --registry
 
 # Pre-publish: test the local `tsf build --npm` staging before you publish
-node packages/devkit/dist/cli.js test:npm packages/devkit/fixtures/basic-story --local
+./sharpee test:npm packages/devkit/fixtures/basic-story --local
 ```
 
 This creates a temp directory, installs the requested `@sharpee/*` closure (registry

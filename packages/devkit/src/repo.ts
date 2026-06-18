@@ -9,7 +9,7 @@
  * storyVersionFile(), resolveStoryDir().
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 /**
  * Ordered platform build list (build.sh PACKAGES, 479-507): `[pkgName, dirUnderPackages]`.
@@ -123,6 +123,47 @@ export function resolveStoryDir(root: string, name: string): string | null {
 /** The story version.ts path build.sh stamps (stories/<name> only — tutorials are NOT stamped). */
 export function storyVersionFile(root: string, name: string): string {
   return join(root, 'stories', name, 'src', 'version.ts');
+}
+
+export interface ResolvedStory {
+  /** Story slug (directory basename). */
+  name: string;
+  /** Absolute story directory. */
+  dir: string;
+  /** Workspace package name if the story is an in-repo workspace story; else null. */
+  pkg: string | null;
+  /** True iff dir is a direct child of <root>/stories or <root>/tutorials. */
+  inRepo: boolean;
+  /** True iff dir is under <root>/stories (build.sh stamps version.ts only for these). */
+  underStories: boolean;
+}
+
+function classifyStory(root: string, dir: string): ResolvedStory {
+  const name = basename(dir);
+  const parent = dirname(dir);
+  const underStories = parent === join(root, 'stories');
+  const underTutorials = parent === join(root, 'tutorials');
+  const inRepo = underStories || underTutorials;
+  const pkg = underStories
+    ? `@sharpee/story-${name}`
+    : underTutorials
+      ? `@sharpee/tutorial-${name}`
+      : null;
+  return { name, dir, pkg, inRepo, underStories };
+}
+
+/**
+ * Resolve a story given either a **path** (a directory with a package.json, tried
+ * relative to cwd then to root) or a bare **name** (stories/<name> then tutorials/<name>).
+ * Returns null if neither resolves. This is the single resolver `build` + `stampVersions`
+ * share, so path and name forms behave identically (ADR-180 Decision 4: a story is a location).
+ */
+export function resolveStory(root: string, nameOrPath: string): ResolvedStory | null {
+  for (const dir of [resolve(nameOrPath), resolve(root, nameOrPath)]) {
+    if (existsSync(dir) && existsSync(join(dir, 'package.json'))) return classifyStory(root, dir);
+  }
+  const byName = resolveStoryDir(root, nameOrPath);
+  return byName ? classifyStory(root, byName) : null;
 }
 
 /** Read a package.json's `version` field. */

@@ -274,10 +274,10 @@ Actions follow the four-phase pattern:
 
 ```bash
 # Build platform + story
-node packages/devkit/dist/cli.js build dungeo
+./sharpee build dungeo
 
 # Build with browser client
-node packages/devkit/dist/cli.js build dungeo --browser
+./sharpee build dungeo --browser
 
 # Interactive play
 node dist/cli/sharpee.js --play
@@ -298,7 +298,7 @@ node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcr
 5. [ ] Create at least one region with rooms
 6. [ ] Add `extendParser()` for any custom verbs
 7. [ ] Write a basic transcript test
-8. [ ] Build and test: `node packages/devkit/dist/cli.js build mystory && node dist/cli/sharpee.js --play`
+8. [ ] Build and test: `./sharpee build mystory && node dist/cli/sharpee.js --play`
 
 ## Further Reading
 

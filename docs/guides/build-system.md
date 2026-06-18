@@ -2,23 +2,23 @@
 
 This guide explains how to build Sharpee platform packages, stories, and client
 bundles with **`@sharpee/devkit`** (ADR-180). devkit orchestrates the build; `tsf`
-compiles. In-repo, invoke it with `node packages/devkit/dist/cli.js`; once
+compiles. In-repo, invoke it with `./sharpee`; once
 `@sharpee/sharpee` is installed, the `devkit` bin is on PATH (`devkit build …`).
 
 ## Quick Start
 
 ```bash
 # Build platform + story, then bundle (most common)
-node packages/devkit/dist/cli.js build dungeo
+./sharpee build dungeo
 
 # + self-contained browser client (dist/web/dungeo/)
-node packages/devkit/dist/cli.js build dungeo --browser
+./sharpee build dungeo --browser
 
 # + zifmia multi-user server (tools/zifmia/dist/)
-node packages/devkit/dist/cli.js build --zifmia
+./sharpee build --zifmia
 
 # Show all options
-node packages/devkit/dist/cli.js
+./sharpee
 ```
 
 ## Build Options (`devkit build`)
@@ -77,14 +77,14 @@ export const ENGINE_VERSION = '0.9.113';
 ### Story development (fastest iteration)
 
 ```bash
-node packages/devkit/dist/cli.js build dungeo --no-version --skip transcript-tester
+./sharpee build dungeo --no-version --skip transcript-tester
 node dist/cli/sharpee.js --play
 ```
 
 ### Platform development — resume from the changed package
 
 ```bash
-node packages/devkit/dist/cli.js build dungeo --skip stdlib
+./sharpee build dungeo --skip stdlib
 ```
 
 ### Running tests (after any build)
@@ -99,7 +99,7 @@ node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcr
 ### Web deployment
 
 ```bash
-node packages/devkit/dist/cli.js build dungeo --browser
+./sharpee build dungeo --browser
 npx serve dist/web/dungeo
 ```
 

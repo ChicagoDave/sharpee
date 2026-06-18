@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------------
+# sharpee — repo-local entry to the Sharpee build/test CLI (ADR-180).
+#
+# A thin shim over the devkit engine (`packages/devkit/dist/cli.js`). The
+# installed/global `sharpee` command (Claude-CLI model) is delivered separately
+# in ADR-180 Phase U2; in-repo, this wrapper IS the entry point.
+#
+#   ./sharpee build <story|path>
+#   ./sharpee test:npm <location>
+#   ./sharpee clean | verify
+# -------------------------------------------------------------------
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLI="$ROOT/packages/devkit/dist/cli.js"
+
+if [ ! -f "$CLI" ]; then
+  echo "sharpee: engine not built ($CLI missing)." >&2
+  echo "  run: pnpm --filter @sharpee/devkit build" >&2
+  exit 1
+fi
+
+exec node "$CLI" "$@"

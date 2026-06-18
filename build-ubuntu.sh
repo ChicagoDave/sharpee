@@ -210,7 +210,7 @@ fi
 
 # Run the main build script if there are args for it
 if [ ${#BUILD_SH_ARGS[@]} -gt 0 ]; then
-    node "$REPO_ROOT/packages/devkit/dist/cli.js" build "${BUILD_SH_ARGS[@]}"
+    "$REPO_ROOT/sharpee" build "${BUILD_SH_ARGS[@]}"
 fi
 
 # Build Zifmia Tauri app
