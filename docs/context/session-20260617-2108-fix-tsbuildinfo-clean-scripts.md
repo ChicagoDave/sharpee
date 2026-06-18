@@ -131,4 +131,16 @@ No source code changed. No tests added.
 
 ---
 
-**Progressive update**: Session completed 2026-06-17 21:08 CST
+## Addendum — npm local-build consumer test (familyzoo)
+
+After PR #113 merged, added a pre-publish regression harness: `npm-test-familyzoo/`. It compiles and runs the familyzoo tutorial against the **locally built** npm packages in `~/.tsf-publish` (the `tsf build --npm` output), not the registry — the pre-publish sibling of the registry-based `npm-test-dungeo/`.
+
+- `gen-consumer.mjs` computes familyzoo's transitive `@sharpee/*` closure over the staged packages, `npm pack`s each into tarballs, and emits a consumer `package.json` with `file:` refs (third-party deps still resolve from the registry).
+- `run.sh` copies familyzoo `src/` + transcripts into a temp dir, `npm install`s the local tarballs, compiles with `tsc`, and runs all 16 transcripts. `--build` runs `tsf build --npm` first.
+- **Validated**: 15/16 transcripts pass against the local npm build. The one failure (`v16-scoring`) reproduces **identically in the workspace** build (walkthrough scores 75/100, transcript asserts "perfect score") — a pre-existing story-content issue, not a packaging defect. This confirms the local npm build is consumer-valid.
+
+**New open item (familyzoo content, low priority):** `v16-scoring` walkthrough reaches only 75/100 but asserts "perfect score" — either the walkthrough is incomplete or the assertion is aspirational.
+
+---
+
+**Progressive update**: Session completed 2026-06-17 21:08 CST; addendum 2026-06-17 22:40 CST (familyzoo npm local-build test)
