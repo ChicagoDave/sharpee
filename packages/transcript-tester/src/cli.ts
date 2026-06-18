@@ -332,9 +332,10 @@ async function main(): Promise<void> {
       continue;
     }
 
-    // Reload story for each transcript to reset state (unless chaining)
+    // Reload story for each transcript to reset state (unless chaining).
+    // Honor the transcript's optional `entry:` header (ADR-180).
     if (!options.chain) {
-      game = await loadStory(options.storyPath);
+      game = await loadStory(options.storyPath, transcript.header.entry);
     }
 
     // Run the transcript

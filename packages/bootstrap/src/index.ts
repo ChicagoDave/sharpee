@@ -56,7 +56,10 @@ export interface LoadedGame {
   lastEvents: ISemanticEvent[];
   lastTurnResult: TurnResult | null;
   /** Proxy for runner save/restore plugin state. */
-  getPluginRegistry(): unknown;
+  getPluginRegistry(): {
+    getStates(): Record<string, unknown>;
+    setStates(states: Record<string, unknown>): void;
+  };
   /** Execute one command; returns the captured `main`-channel text. */
   executeCommand(input: string): Promise<string>;
 }
@@ -192,7 +195,10 @@ export function assembleGame(story: any): LoadedGame {
     lastTurnResult: null,
 
     getPluginRegistry() {
-      return (engine as any).getPluginRegistry();
+      return (engine as any).getPluginRegistry() as {
+        getStates(): Record<string, unknown>;
+        setStates(states: Record<string, unknown>): void;
+      };
     },
 
     async executeCommand(input: string): Promise<string> {

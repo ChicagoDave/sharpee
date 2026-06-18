@@ -10,6 +10,7 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
   "references": [
+    { "path": "../bootstrap" },
     { "path": "../core" },
     { "path": "../engine" },
     { "path": "../lang-en-us" },

@@ -114,6 +114,8 @@ export interface TranscriptItem {
 export interface TranscriptHeader {
   title?: string;
   story?: string;
+  /** Optional story sub-entry to load (e.g. `v16` → dist/v16.js). ADR-180. */
+  entry?: string;
   author?: string;
   description?: string;
   [key: string]: string | undefined;
