@@ -290,8 +290,10 @@ update_versions() {
 
     log_step "Updating Versions"
 
-    # Generate build date for version.ts files
-    BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    # Generate build date for version.ts files.
+    # BUILD_DATE_OVERRIDE lets the devkit parity harness (ADR-180 Phase 3) freeze the
+    # timestamp so build.sh and `devkit build` produce byte-identical version.ts.
+    BUILD_DATE="${BUILD_DATE_OVERRIDE:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}"
 
     # Determine version: --version flag takes priority, else read from package.json
     if [ -n "$VERSION_OVERRIDE" ]; then

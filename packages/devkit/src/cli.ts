@@ -8,11 +8,25 @@
  * Public interface: process argv -> subcommand dispatch -> process exit code.
  */
 import { runTestNpm, TestNpmOptions } from './commands/test-npm';
+import { runBuild, BuildOptions } from './commands/build';
+import { runBundle } from './commands/bundle';
 
 const USAGE = `devkit — Sharpee build/test/verify orchestration (ADR-180)
 
 Usage:
+  devkit build [story] [options]         Build platform packages + (optional) story, then bundle
+  devkit bundle                          Assemble dist/cli/sharpee.js (assumes packages built)
   devkit test:npm <location> [options]   Stand up an npm consumer for a story and run its transcripts
+
+build options:
+  [story]                 Story name to build (stories/<name> or tutorials/<name>)
+  --skip <pkg>            Resume the platform build from this package short-name
+  --version <v>           Version to stamp (default: packages/sharpee/package.json)
+  --build-date <iso>      Frozen build date (parity determinism)
+  --no-version            Skip version stamping
+  --no-genai              Skip genai-api generation
+  --no-bundle             Build packages/story but skip the CLI bundle step
+  --esm                   Also run the ESM build pass (browser/story-bundle targets)
 
 test:npm options:
   --local                 Install the @sharpee closure from local staging (~/.tsf-publish) [default]
@@ -24,7 +38,28 @@ test:npm options:
   --quick                 Compile only; skip transcript execution
   --keep                  Keep the temp consumer dir for debugging
 
-Reserved (Phase 3): build, bundle, test, play, verify, clean, init, list`;
+Reserved (Phase 3): test, play, verify, clean, init, list`;
+
+/** Parse the `build` flags (positional [story] + options). */
+function parseBuild(args: string[]): BuildOptions {
+  const opts: BuildOptions = {};
+  let i = 0;
+  while (i < args.length) {
+    const a = args[i];
+    if (a === '--skip') opts.skipTo = args[++i];
+    else if (a === '--version') opts.version = args[++i];
+    else if (a === '--build-date') opts.buildDate = args[++i];
+    else if (a === '--no-version') opts.noVersion = true;
+    else if (a === '--no-genai') opts.noGenai = true;
+    else if (a === '--no-bundle') opts.bundle = false;
+    else if (a === '--esm') opts.esm = true;
+    else if (a.startsWith('-')) throw new Error(`unknown option: ${a}`);
+    else if (!opts.story) opts.story = a;
+    else throw new Error(`unexpected argument: ${a}`);
+    i++;
+  }
+  return opts;
+}
 
 /** Parse the `test:npm` flags after the positional <location>. */
 function parseTestNpm(args: string[]): TestNpmOptions {
@@ -70,8 +105,14 @@ function main(argv: string[]): number {
       }
       return 0;
     }
-    case 'build':
-    case 'bundle':
+    case 'build': {
+      runBuild(parseBuild(rest));
+      return 0;
+    }
+    case 'bundle': {
+      runBundle({});
+      return 0;
+    }
     case 'test':
     case 'play':
     case 'verify':

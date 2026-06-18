@@ -8,6 +8,17 @@
 export { runTestNpm } from './commands/test-npm';
 export type { TestNpmOptions, TestNpmResult } from './commands/test-npm';
 export { DEFAULT_STAGING } from './commands/test-npm';
+export { runBuild, stampVersions, buildPlatform, generateGenaiApi, buildStory } from './commands/build';
+export type { BuildOptions } from './commands/build';
+export { runBundle } from './commands/bundle';
+export type { BundleOptions } from './commands/bundle';
+export {
+  findRepoRoot,
+  resolveStoryDir,
+  PLATFORM_PACKAGES,
+  BUNDLE_ALIASES,
+  BUNDLE_DTS,
+} from './repo';
 export {
   generateConsumer,
   scanStaging,
