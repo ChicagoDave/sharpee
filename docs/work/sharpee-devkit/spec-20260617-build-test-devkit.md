@@ -149,8 +149,12 @@ copy.
    against tsf's project list); mirrors `~/.devarch` tooling pattern. Nothing is
    bolted onto `ts-forge.config.json`.
 5. **Client builds / targets** — RESOLVED (2026-06-17): devkit covers only the
-   **three live targets** — CLI platform bundle, `browser` (single-player static
-   client), `zifmia` (ADR-177 multi-user server). **Dropped:** `shite` (abandoned
+   **three live targets** — CLI platform bundle, `browser`, `zifmia` (ADR-177
+   multi-user server). The **`browser`** target is the author's player-facing
+   deliverable: a **fully self-contained, encapsulated** web app
+   (`dist/web/{story}/`) bundling the framework-free platform-browser runtime +
+   the compiled story into one optimized payload that boots without piecemeal
+   platform fetches — fast page load for players, portable to any static host. **Dropped:** `shite` (abandoned
    parts bin) and `--runner` (dormant legacy interpreter) — devkit will not build
    them; their build entry points die with build.sh. **Deferred:** the `.sharpee`
    story-bundle format — reconstructable later, out of initial scope. (Dropping

@@ -69,11 +69,18 @@ Six decisions (resolved during the spec walkthrough):
    `~/.sharpee/devkit`** (machine-level, not committed; stories may live
    anywhere, including other repos). The memory is pure convenience over the
    location — never a source of truth; nothing requires `init`.
-5. **Targets: CLI bundle, `browser`, `zifmia`.** `shite` (abandoned parts bin)
-   and `--runner` (dormant legacy interpreter) are **dropped** — devkit does not
-   build them; their entry points die with build.sh. The `.sharpee` story-bundle
-   format is **deferred** (reconstructable later). Dropping from the build ≠
-   deleting `tools/shite/` / `dist/runner/` source (separate cleanup).
+5. **Targets: CLI bundle, `browser`, `zifmia`.** The **`browser`** target is the
+   author's player-facing deliverable: `devkit build <story> --browser` produces
+   a **fully self-contained, encapsulated web app** at `dist/web/{story}/` — the
+   framework-free platform-browser runtime (ADR-170) and the compiled story
+   bundled into a single optimized payload that **boots without fetching the
+   platform piecemeal**, so players get a fast page load. An author can build a
+   complete, fast, self-contained browser version of their story and ship it
+   anywhere static files are served. `shite` (abandoned parts bin) and `--runner`
+   (dormant legacy interpreter) are **dropped** — devkit does not build them;
+   their entry points die with build.sh. The `.sharpee` story-bundle format is
+   **deferred** (reconstructable later). Dropping from the build ≠ deleting
+   `tools/shite/` / `dist/runner/` source (separate cleanup).
 6. **Keep the platform bundle (`dist/cli/sharpee.js`)** as devkit's **internal
    fast engine** (~170ms load). `devkit` is the single user-facing front door
    (`devkit test/play <loc>`); raw `node dist/cli/sharpee.js` survives as a
@@ -201,6 +208,12 @@ re-running `init` — losing it costs only the name shortcuts, never a build.
   flags (`-c shite`, `--runner`) in `CLAUDE.md`, package CLAUDE.md files, and
   `docs/` is updated to the `devkit` equivalents — no doc describes a deleted
   command.
+- **AC-9:** `devkit build <story> --browser` emits a self-contained
+  `dist/web/{story}/` bundle (platform + story in one optimized payload). Served
+  as static files with no app server and an empty network cache, it boots and
+  reaches the story's first turn with a **single fast load** — no piecemeal
+  platform module fetches. The directory is portable (copy it anywhere static
+  files are served and it runs).
 
 ## Tests required for AC closure
 
