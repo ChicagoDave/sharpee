@@ -173,7 +173,7 @@ fi
 # Run the main build (devkit; ADR-180) if there are args for it.
 # Pass-through args are devkit-style, e.g. `dungeo --browser`.
 if [ ${#BUILD_SH_ARGS[@]} -gt 0 ]; then
-    node "$REPO_ROOT/packages/devkit/dist/cli.js" build "${BUILD_SH_ARGS[@]}"
+    "$REPO_ROOT/sharpee" build "${BUILD_SH_ARGS[@]}"
 fi
 
 # Build Zifmia Tauri app

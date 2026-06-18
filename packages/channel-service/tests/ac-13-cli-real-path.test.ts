@@ -13,7 +13,7 @@
  *
  * Skips gracefully when:
  *  - `dist/cli/sharpee.js` is not built. Run
- *    `node packages/devkit/dist/cli.js build dungeo` to build.
+ *    `./sharpee build dungeo` to build.
  *  - The Dungeo walkthrough fixture is not present.
  *
  * The test pipes output through Node's `child_process.spawnSync` so
@@ -37,7 +37,7 @@ const BUNDLE_PRESENT = existsSync(CLI_BUNDLE);
 const WALKTHROUGH_PRESENT = existsSync(WALKTHROUGH);
 
 const skipReason = !BUNDLE_PRESENT
-  ? 'dist/cli/sharpee.js missing — run node packages/devkit/dist/cli.js build dungeo'
+  ? 'dist/cli/sharpee.js missing — run ./sharpee build dungeo'
   : !WALKTHROUGH_PRESENT
     ? `walkthrough fixture missing: ${WALKTHROUGH}`
     : '';

@@ -49,7 +49,6 @@
     "@sharpee/text-blocks": "workspace:*",
     "@sharpee/world-model": "workspace:*",
     "@sharpee/transcript-tester": "workspace:*",
-    "@sharpee/devkit": "workspace:*",
     "fflate": "^0.8.2"
   },
   "devDependencies": {

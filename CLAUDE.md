@@ -78,21 +78,21 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 - **DO NOT** use `2>&1` with pnpm commands — they don't work together properly.
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`.
 
-### Build (devkit)
+### Build (`./sharpee`)
 
-**IMPORTANT**: Use `devkit build` (the `@sharpee/devkit` CLI, ADR-180) instead of manual `pnpm build` commands. devkit orchestrates the build; tsf compiles. In-repo, invoke via `node packages/devkit/dist/cli.js`; once `@sharpee/sharpee` is installed the `devkit` bin is on PATH (`devkit build …`).
+**IMPORTANT**: Use `./sharpee build` (the Sharpee build CLI — the `@sharpee/devkit` engine, ADR-180) instead of manual `pnpm build` commands. It orchestrates the build; tsf compiles. In-repo, invoke via the repo-root `./sharpee` wrapper. (A globally-installed `sharpee` command for standalone authors lands in ADR-180 Phase U2.)
 
 ```bash
 # Show help
-node packages/devkit/dist/cli.js
+./sharpee
 
 # Common workflows
-node packages/devkit/dist/cli.js build dungeo               # Build platform + story, then bundle
-node packages/devkit/dist/cli.js build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
-node packages/devkit/dist/cli.js build --zifmia             # + zifmia multi-user server (tools/zifmia/dist/)
-node packages/devkit/dist/cli.js build dungeo --skip stdlib # Resume the platform build from stdlib
-node packages/devkit/dist/cli.js clean                      # Remove dist/, dist-esm/, tsbuildinfo
-node packages/devkit/dist/cli.js verify                     # tsf build --npm + publish dry-run
+./sharpee build dungeo               # Build platform + story, then bundle
+./sharpee build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
+./sharpee build --zifmia             # + zifmia multi-user server (tools/zifmia/dist/)
+./sharpee build dungeo --skip stdlib # Resume the platform build from stdlib
+./sharpee clean                      # Remove dist/, dist-esm/, tsbuildinfo
+./sharpee verify                     # tsf build --npm + publish dry-run
 ```
 
 **Multi-user (zifmia)**: the corrected multi-user server (ADR-177) is built with `devkit build --zifmia` → `tools/zifmia/dist/`. The abandoned `shite` parts bin and the legacy Tauri `--runner` are no longer built (ADR-180 dropped them); their source remains for reference only.

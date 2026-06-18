@@ -52,7 +52,7 @@ build_and_deploy() {
   local URL_PATH="$2"
 
   log "Building $STORY_NAME for browser..."
-  node packages/devkit/dist/cli.js build "$STORY_NAME" --browser --no-version
+  ./sharpee build "$STORY_NAME" --browser --no-version
 
   local BUILD_OUTPUT="dist/web/$STORY_NAME"
   if [ ! -d "$BUILD_OUTPUT" ]; then

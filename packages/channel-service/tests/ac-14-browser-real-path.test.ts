@@ -13,7 +13,7 @@
  *
  * Skips gracefully when:
  *  - The bundle is not built (`dist/web/dungeo/index.html` missing).
- *    Run `node packages/devkit/dist/cli.js build dungeo --browser` to build.
+ *    Run `./sharpee build dungeo --browser` to build.
  *  - The Playwright Chromium binary is not installed. Run
  *    `npx playwright install chromium` to install.
  *
@@ -32,7 +32,7 @@ const BUNDLE_HTML = resolve(REPO_ROOT, 'dist/web/dungeo/index.html');
 const BUNDLE_PRESENT = existsSync(BUNDLE_HTML);
 
 const skipReason = !BUNDLE_PRESENT
-  ? 'dist/web/dungeo/index.html missing — run node packages/devkit/dist/cli.js build dungeo --browser'
+  ? 'dist/web/dungeo/index.html missing — run ./sharpee build dungeo --browser'
   : '';
 
 describe.skipIf(!BUNDLE_PRESENT)(
@@ -74,14 +74,14 @@ describe.skipIf(!BUNDLE_PRESENT)(
         // `TextDisplay.displayText` path emitted unclassed `<p>`
         // elements only. If this assertion fails, the bundle was built
         // before the R5-C cutover — run
-        // `node packages/devkit/dist/cli.js build dungeo --browser` to rebuild.
+        // `./sharpee build dungeo --browser` to rebuild.
         const mainEntryCount = await page.evaluate(() => {
           return document.querySelectorAll('#text-content p.main-entry').length;
         });
         expect(
           mainEntryCount,
           'No <p class="main-entry"> elements found — the bundle predates R5-C. ' +
-            'Run `node packages/devkit/dist/cli.js build dungeo --browser` to rebuild against the ' +
+            'Run `./sharpee build dungeo --browser` to rebuild against the ' +
             'channel-driven BrowserClient.',
         ).toBeGreaterThan(0);
 

@@ -23,6 +23,7 @@ export type { VerifyOptions } from './commands/verify';
 export {
   findRepoRoot,
   resolveStoryDir,
+  resolveStory,
   PLATFORM_PACKAGES,
   BUNDLE_ALIASES,
   BUNDLE_DTS,

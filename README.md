@@ -217,7 +217,7 @@ cd sharpee
 pnpm install
 
 # Build everything (devkit; ADR-180)
-node packages/devkit/dist/cli.js build dungeo
+./sharpee build dungeo
 
 # Run tests
 pnpm test
