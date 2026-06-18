@@ -206,5 +206,26 @@ capability-dispatch award (5 pts) is lost **only via the transcript runner**
 ADR-174 channel migration suspects). Orthogonal to ADR-180. Filed as #116 with
 full provenance; not fixed here.
 
-**Status**: Phase 1 INCOMPLETE (WIP branch pushed). Build-hygiene + devkit
-spec/ADR + Phase-1 increments 1–2 done.
+**Status**: Phase 1 COMPLETE — merged to main (PR #117, merge `d29699a7`).
+
+---
+
+## Addendum 4 — Phase 1 merged + session close, 2026-06-18
+
+ADR-180 Phase 1 shipped to main. Three hand-copied story loaders unified into one
+published package `@sharpee/bootstrap` (entry-aware resolution + canonical
+channel-packet assembly, 10/10 resolver tests); `cli.ts` and `bundle-entry.js`
+routed through it; the dead duplicate `fast-cli.ts` deleted; the `entry:`
+transcript header is now honored. Validated: dungeo walkthrough clean via the
+bootstrap-routed bundle (RNG-allowed); familyzoo v01–v15 + `entry:` via cli.ts.
+
+**PRs merged this session**: #113 (clean-script tsbuildinfo/dist-esm fix),
+#114 (npm-test-familyzoo), #115 (ADR-180 spec/ADR), #117 (Phase 1 bootstrap).
+**Issues filed**: #116 (v16 scoring 70/75 — petting capability-dispatch
+regression of 2026-03-24, runner-only), #118 (familyzoo via bundle crashes on
+`world.helpers()` — `@sharpee/helpers` not bundled). Both pre-existing, orthogonal
+to ADR-180.
+
+**Next**: ADR-180 Phase 2 (collapse the three `npm-test-*` harnesses into
+`devkit test:npm`), Phase 3 (`@sharpee/devkit` + full build.sh replacement +
+parity gate); then #116 / #118.
