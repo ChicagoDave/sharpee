@@ -20,6 +20,7 @@ import {
 } from '../repo';
 import { runBundle } from './bundle';
 import { buildBrowserClient } from './browser';
+import { buildZifmiaServer } from './zifmia';
 
 /**
  * The generator name written into stamped version.ts files. Verbatim "build.sh" so
@@ -47,6 +48,8 @@ export interface BuildOptions {
   bundle?: boolean;
   /** Also build the browser client (dist/web/<story>/). Implies --esm; requires a story. */
   browser?: boolean;
+  /** Also build the zifmia multi-user server (tools/zifmia/dist/). Implies --esm. */
+  zifmia?: boolean;
   quiet?: boolean;
 }
 
@@ -104,6 +107,12 @@ export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, eng
 `,
       );
     }
+  }
+
+  // zifmia package.json version (build.sh update_versions stamps it for -c zifmia).
+  if (opts.zifmia) {
+    const zifmiaPkg = join(root, 'tools', 'zifmia', 'package.json');
+    if (existsSync(zifmiaPkg)) writePkgVersion(zifmiaPkg, sharpeeVersion);
   }
   return sharpeeVersion;
 }
@@ -172,8 +181,8 @@ export function runBuild(opts: BuildOptions = {}): void {
   const root = opts.root ?? findRepoRoot();
   const log = (m: string) => !opts.quiet && console.log(m);
 
-  // The browser client target needs the ESM build pass (build.sh runs it when a client is requested).
-  const effective: BuildOptions = opts.browser ? { ...opts, esm: true } : opts;
+  // Client targets (browser/zifmia) need the ESM build pass (build.sh runs it when a client is requested).
+  const effective: BuildOptions = opts.browser || opts.zifmia ? { ...opts, esm: true } : opts;
   if (effective.browser && !effective.story) throw new Error('--browser requires a story');
 
   log('=== devkit build ===');
@@ -184,5 +193,6 @@ export function runBuild(opts: BuildOptions = {}): void {
   if (effective.story) buildStory(root, effective.story, effective);
   if (effective.bundle !== false) runBundle({ root, quiet: effective.quiet });
   if (effective.browser) buildBrowserClient(root, effective.story!, { quiet: effective.quiet });
+  if (effective.zifmia) buildZifmiaServer(root, { quiet: effective.quiet });
   log('=== build complete ===');
 }

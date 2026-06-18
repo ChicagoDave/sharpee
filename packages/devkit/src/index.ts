@@ -14,6 +14,8 @@ export { runBundle } from './commands/bundle';
 export type { BundleOptions } from './commands/bundle';
 export { buildBrowserClient } from './commands/browser';
 export type { BrowserBuildOptions } from './commands/browser';
+export { buildZifmiaServer } from './commands/zifmia';
+export type { ZifmiaBuildOptions } from './commands/zifmia';
 export {
   findRepoRoot,
   resolveStoryDir,
