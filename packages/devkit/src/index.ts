@@ -24,6 +24,8 @@ export {
   findRepoRoot,
   resolveStoryDir,
   resolveStory,
+  findMonorepoRoot,
+  detectMode,
   PLATFORM_PACKAGES,
   BUNDLE_ALIASES,
   BUNDLE_DTS,

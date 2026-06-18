@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
- * cli.ts — `devkit` command-line entry (ADR-180).
+ * cli.ts — the `sharpee` command (ADR-180; engine package @sharpee/devkit).
  *
- * Owner context: @sharpee/devkit. Phase 2 implements `test:npm`; build/bundle/test/
- * verify/clean/init/list are reserved (Phase 3) and report "not yet implemented".
+ * Owner context: the single Sharpee build/test/scaffold CLI. `build` is
+ * **location-aware** — inside the monorepo it builds platform + bundle + in-repo
+ * stories; in a standalone author project it builds that project's story via its
+ * own toolchain (+ .sharpee + browser).
  *
  * Public interface: process argv -> subcommand dispatch -> process exit code.
  */
@@ -12,41 +14,44 @@ import { runBuild, BuildOptions } from './commands/build';
 import { runBundle } from './commands/bundle';
 import { runClean } from './commands/clean';
 import { runVerify } from './commands/verify';
+import { detectMode } from './repo';
+// Standalone (author-project) commands, absorbed from the former @sharpee/sharpee CLI.
+import { runBuildCommand } from './standalone/build';
+import { runBuildBrowserCommand } from './standalone/build-browser';
+import { runInitCommand } from './standalone/init';
+import { runInitBrowserCommand } from './standalone/init-browser';
+import { runIfidCommand } from './standalone/ifid';
 
-const USAGE = `devkit — Sharpee build/test/verify orchestration (ADR-180)
+const USAGE = `sharpee — Interactive Fiction build/test/scaffold CLI (ADR-180)
 
 Usage:
-  devkit build [story] [options]         Build platform packages + (optional) story, then bundle
-  devkit bundle                          Assemble dist/cli/sharpee.js (assumes packages built)
-  devkit clean                           Remove build artifacts (dist, dist-esm, tsbuildinfo)
-  devkit verify                          tsf build --npm + publish dry-run
-  devkit test:npm <location> [options]   Stand up an npm consumer for a story and run its transcripts
+  sharpee build [story|path] [options]   Build a story (location-aware: monorepo vs standalone)
+  sharpee build-browser [options]        Build the browser client only
+  sharpee init <name>                    Scaffold a new story project
+  sharpee init-browser                   Add a browser client to the current project
+  sharpee ifid                           IFID utilities (generate, validate)
+  sharpee bundle                         (monorepo) Assemble dist/cli/sharpee.js
+  sharpee clean                          Remove build artifacts (dist, dist-esm, tsbuildinfo)
+  sharpee verify                         tsf build --npm + publish dry-run
+  sharpee test:npm <location> [options]  Stand up an npm consumer for a story and run its transcripts
 
-build options:
-  [story]                 Story name to build (stories/<name> or tutorials/<name>)
-  --skip <pkg>            Resume the platform build from this package short-name
-  --version <v>           Version to stamp (default: packages/sharpee/package.json)
-  --build-date <iso>      Frozen build date (parity determinism)
-  --no-version            Skip version stamping
-  --no-genai              Skip genai-api generation
-  --no-bundle             Build packages/story but skip the CLI bundle step
-  --esm                   Also run the ESM build pass (browser/story-bundle targets)
-  --browser               Also build the self-contained browser client (dist/web/<story>/; requires a story)
+build (monorepo) options:
+  [story|path]            In-repo story name or path (stories/<n>, tutorials/<n>, or a directory)
+  --browser               Also build the self-contained browser client (dist/web/<story>/)
   --zifmia                Also build the zifmia multi-user server (tools/zifmia/dist/)
+  --skip <pkg>            Resume the platform build from this package short-name
+  --version <v> | --build-date <iso> | --no-version | --no-genai | --no-bundle | --esm
+
+build (standalone, in an author project): compiles src/ + emits the .sharpee bundle and
+  browser client. --test also runs the project's transcripts.
 
 test:npm options:
-  --local                 Install the @sharpee closure from local staging (~/.tsf-publish) [default]
-  --registry              Install published @sharpee packages from the npm registry
-  --version <range>       Registry version/range for @sharpee deps (default: latest)
-  --staging <dir>         Override the local staging dir
-  --transcripts <glob>    Transcripts relative to <location> (default: tests/transcripts/*.transcript)
-  --chain                 Run transcripts as one stateful chain (e.g. dungeo walkthroughs)
-  --quick                 Compile only; skip transcript execution
-  --keep                  Keep the temp consumer dir for debugging
+  --local [default] | --registry | --version <range> | --staging <dir>
+  --transcripts <glob> | --chain | --quick | --keep
 
-Reserved (later): test, play, init, list`;
+Reserved (later): test, play, register, list`;
 
-/** Parse the `build` flags (positional [story] + options). */
+/** Parse the monorepo `build` flags (positional [story] + options). */
 function parseBuild(args: string[]): BuildOptions {
   const opts: BuildOptions = {};
   let i = 0;
@@ -92,17 +97,49 @@ function parseTestNpm(args: string[]): TestNpmOptions {
   return opts;
 }
 
-function main(argv: string[]): number {
+async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
-  if (!command || command === '--help' || command === '-h') {
+  if (!command || command === '--help' || command === '-h' || command === 'help') {
     console.log(USAGE);
-    return command ? 0 : 1;
+    return command && command !== 'help' ? 1 : 0;
   }
 
   switch (command) {
+    case 'build': {
+      if (detectMode() === 'monorepo') {
+        runBuild(parseBuild(rest));
+      } else if (rest.includes('--browser')) {
+        await runBuildBrowserCommand(rest.filter((a) => a !== '--browser'));
+      } else {
+        await runBuildCommand(rest); // standalone: compile + .sharpee + browser (+ --test)
+      }
+      return 0;
+    }
+    case 'build-browser': {
+      if (detectMode() === 'monorepo') runBuild({ ...parseBuild(rest), browser: true });
+      else await runBuildBrowserCommand(rest);
+      return 0;
+    }
+    case 'init':
+      await runInitCommand(rest);
+      return 0;
+    case 'init-browser':
+      await runInitBrowserCommand(rest);
+      return 0;
+    case 'ifid':
+      runIfidCommand(rest);
+      return 0;
+    case 'bundle':
+      runBundle({});
+      return 0;
+    case 'clean':
+      runClean({});
+      return 0;
+    case 'verify':
+      runVerify({});
+      return 0;
     case 'test:npm': {
-      const opts = parseTestNpm(rest);
-      const r = runTestNpm(opts);
+      const r = runTestNpm(parseTestNpm(rest));
       if (!r.ran) return 0;
       console.log('===========================================');
       console.log(`  RESULTS: ${r.passed} passing, ${r.failed} failures`);
@@ -113,27 +150,11 @@ function main(argv: string[]): number {
       }
       return 0;
     }
-    case 'build': {
-      runBuild(parseBuild(rest));
-      return 0;
-    }
-    case 'bundle': {
-      runBundle({});
-      return 0;
-    }
-    case 'clean': {
-      runClean({});
-      return 0;
-    }
-    case 'verify': {
-      runVerify({});
-      return 0;
-    }
     case 'test':
     case 'play':
-    case 'init':
+    case 'register':
     case 'list':
-      console.error(`devkit ${command}: not yet implemented`);
+      console.error(`sharpee ${command}: not yet implemented`);
       return 2;
     default:
       console.error(`unknown command: ${command}\n`);
@@ -142,9 +163,9 @@ function main(argv: string[]): number {
   }
 }
 
-try {
-  process.exit(main(process.argv.slice(2)));
-} catch (err) {
-  console.error('devkit: ' + (err instanceof Error ? err.message : String(err)));
-  process.exit(2);
-}
+main(process.argv.slice(2))
+  .then((code) => process.exit(code))
+  .catch((err) => {
+    console.error('sharpee: ' + (err instanceof Error ? err.message : String(err)));
+    process.exit(2);
+  });

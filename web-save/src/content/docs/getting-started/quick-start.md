@@ -6,7 +6,7 @@ description: "Create your first interactive fiction story with Sharpee"
 ## Create Your Project
 
 ```bash
-npx @sharpee/sharpee init my-adventure
+sharpee init my-adventure
 cd my-adventure
 npm install
 ```
