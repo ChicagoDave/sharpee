@@ -52,7 +52,7 @@
     "lint": "pnpm -r run lint",
     "watch": "pnpm -r --parallel run watch",
     "sharpee": "node packages/sharpee/dist/cli/index.js",
-    "publish:beta": "pnpm --filter @sharpee/core publish --access public --tag beta && pnpm --filter @sharpee/if-domain publish --access public --tag beta && pnpm --filter @sharpee/world-model publish --access public --tag beta && pnpm --filter @sharpee/if-services publish --access public --tag beta && pnpm --filter @sharpee/text-blocks publish --access public --tag beta && pnpm --filter @sharpee/lang-en-us publish --access public --tag beta && pnpm --filter @sharpee/parser-en-us publish --access public --tag beta && pnpm --filter @sharpee/event-processor publish --access public --tag beta && pnpm --filter @sharpee/stdlib publish --access public --tag beta && pnpm --filter @sharpee/engine publish --access public --tag beta && pnpm --filter @sharpee/sharpee publish --access public --tag beta"
+    "publish:beta": "tsf build --npm && tsf publish --tag beta"
   },
   "devDependencies": {
     "@davidcornelson/tsf": "^1.0.0",
