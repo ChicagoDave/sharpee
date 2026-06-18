@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/interpreter",
-  "version": "0.9.113",
+  "version": "1.0.0",
   "description": "Sharpee story interpreter (legacy Tauri runner; the `zifmia` name is reserved for the multi-user web product)",
   "type": "module",
   "main": "./dist/index.js",
