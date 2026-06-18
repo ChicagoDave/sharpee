@@ -37,5 +37,5 @@ The room-governance layer is greenfield.
 
 ## Build
 
-Not yet wired into `build.sh`. The `-c zifmia` flag is reserved per
-CLAUDE.md; wiring lands when there is runnable server code (Phase 2+).
+Built by devkit (ADR-180): `node packages/devkit/dist/cli.js build --zifmia`
+→ `tools/zifmia/dist/`. (Replaces the reserved `-c zifmia` build.sh flag.)

@@ -17,7 +17,7 @@ cd "$REPO_ROOT"
 
 DEPLOY_DIR="/var/www/sharpee-demos"
 
-# Stories to build for demos (name as build.sh knows it → URL path)
+# Stories to build for demos (story name → URL path)
 # Add new demos here.
 declare -A DEMOS=(
   [dungeo]="dungeo"
@@ -52,7 +52,7 @@ build_and_deploy() {
   local URL_PATH="$2"
 
   log "Building $STORY_NAME for browser..."
-  ./build.sh --no-version -s "$STORY_NAME" -c browser
+  node packages/devkit/dist/cli.js build "$STORY_NAME" --browser --no-version
 
   local BUILD_OUTPUT="dist/web/$STORY_NAME"
   if [ ! -d "$BUILD_OUTPUT" ]; then

@@ -17,16 +17,18 @@ import {
   findRepoRoot,
   resolveStoryDir,
   storyVersionFile,
+  tsfBin,
 } from '../repo';
 import { runBundle } from './bundle';
 import { buildBrowserClient } from './browser';
 import { buildZifmiaServer } from './zifmia';
 
 /**
- * The generator name written into stamped version.ts files. Verbatim "build.sh" so
- * the parity gate is byte-identical; flips to "devkit" at the build.sh cutover (3d).
+ * The generator name written into stamped version.ts files. build.sh was retired at
+ * the ADR-180 Phase 3d cutover (parity verified byte-identical first), so devkit now
+ * names itself as the generator.
  */
-const GENERATOR = 'build.sh';
+const GENERATOR = 'devkit';
 
 export interface BuildOptions {
   root?: string;
@@ -55,16 +57,6 @@ export interface BuildOptions {
 
 function nowStamp(): string {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-}
-
-/**
- * Resolve the `tsf` executable. Prefers the workspace-local `node_modules/.bin/tsf`
- * (build.sh relies on a bare `tsf`, which fails when tsf is only a shell alias);
- * falls back to `tsf` on PATH. Produces identical compiler output either way.
- */
-function tsfBin(root: string): string {
-  const local = join(root, 'node_modules', '.bin', 'tsf');
-  return existsSync(local) ? local : 'tsf';
 }
 
 /** Rewrite a package.json's version, preserving key order + 2-space indent + trailing newline. */

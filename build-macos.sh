@@ -2,14 +2,14 @@
 #
 # Sharpee Build System (macOS)
 # ============================
-# Wrapper that handles macOS-specific concerns before running build.sh,
-# and can also build the Zifmia Tauri desktop app (.dmg).
+# Wrapper that handles macOS-specific concerns before running `devkit build`,
+# and can also build the legacy Zifmia Tauri desktop app (.dmg).
 #
 # Usage:
-#   ./build-macos.sh -s dungeo            # Same as build.sh
-#   ./build-macos.sh --zifmia             # Build Zifmia Tauri app (.dmg)
-#   ./build-macos.sh --zifmia-deps        # Only install Zifmia dependencies
-#   ./build-macos.sh -s dungeo --zifmia   # Full build + Zifmia
+#   ./build-macos.sh dungeo               # devkit build dungeo (sources nvm/cargo first)
+#   ./build-macos.sh dungeo --browser     # + browser client
+#   ./build-macos.sh --zifmia-deps        # Only install Tauri build dependencies
+#   ./build-macos.sh --zifmia             # Build legacy Zifmia Tauri app (.dmg; needs dist/runner)
 #
 
 set -e
@@ -39,7 +39,7 @@ if ! command -v pnpm &> /dev/null; then
 fi
 
 # ============================================================================
-# Parse our flags (--zifmia, --zifmia-deps), pass the rest to build.sh
+# Parse our flags (--zifmia, --zifmia-deps), pass the rest to `devkit build`
 # ============================================================================
 
 BUILD_ZIFMIA=false
@@ -124,9 +124,8 @@ build_zifmia() {
     # Check frontend exists
     if [ ! -f "$REPO_ROOT/dist/runner/index.html" ] || [ ! -f "$REPO_ROOT/dist/runner/runner.js" ]; then
         echo -e "${RED}Error: dist/runner/ not found${NC}"
-        echo "Build the frontend first:"
-        echo "  ./build-macos.sh --runner -s dungeo --zifmia"
-        echo "  (or run ./build.sh --runner -s dungeo separately)"
+        echo "The legacy Tauri runner (dist/runner) is no longer built by devkit (ADR-180 dropped --runner)."
+        echo "  Build dist/runner via the legacy interpreter toolchain before packaging the .dmg."
         exit 1
     fi
     echo -e "  frontend: ${GREEN}dist/runner/ exists${NC}"
@@ -171,9 +170,10 @@ if [ "$BUILD_ZIFMIA" = true ]; then
     ensure_zifmia_deps
 fi
 
-# Run the main build script if there are args for it
+# Run the main build (devkit; ADR-180) if there are args for it.
+# Pass-through args are devkit-style, e.g. `dungeo --browser`.
 if [ ${#BUILD_SH_ARGS[@]} -gt 0 ]; then
-    bash "$REPO_ROOT/build.sh" "${BUILD_SH_ARGS[@]}"
+    node "$REPO_ROOT/packages/devkit/dist/cli.js" build "${BUILD_SH_ARGS[@]}"
 fi
 
 # Build Zifmia Tauri app
@@ -187,17 +187,17 @@ if [ "$BUILD_ZIFMIA" = false ] && [ ${#BUILD_SH_ARGS[@]} -eq 0 ]; then
     echo "Sharpee Build System (macOS)"
     echo "============================"
     echo ""
-    echo "Usage: ./build-macos.sh [build.sh options] [zifmia options]"
+    echo "Usage: ./build-macos.sh [devkit build options] [zifmia options]"
     echo ""
-    echo "Zifmia options:"
-    echo "  --zifmia           Build Zifmia Tauri desktop app (.dmg)"
-    echo "  --zifmia-deps      Only install Zifmia dependencies (Rust, Xcode tools)"
+    echo "Zifmia (legacy Tauri) options:"
+    echo "  --zifmia           Build legacy Zifmia Tauri desktop app (.dmg; needs dist/runner)"
+    echo "  --zifmia-deps      Only install Tauri build dependencies (Rust, Xcode tools)"
     echo ""
-    echo "All other options are passed to build.sh. Run ./build.sh --help for details."
+    echo "All other options are passed to 'devkit build'. Run 'node packages/devkit/dist/cli.js' for details."
     echo ""
     echo "Examples:"
-    echo "  ./build-macos.sh -s dungeo                  # Normal build (same as build.sh)"
+    echo "  ./build-macos.sh dungeo                     # devkit build dungeo (sources nvm/cargo)"
+    echo "  ./build-macos.sh dungeo --browser           # + browser client"
     echo "  ./build-macos.sh --zifmia-deps              # Install Rust + Tauri CLI"
-    echo "  ./build-macos.sh --runner -s dungeo --zifmia # Full build + Tauri app (.dmg)"
     echo ""
 fi

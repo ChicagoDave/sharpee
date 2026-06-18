@@ -271,8 +271,8 @@
         },
         "sharpee.buildScript": {
           "type": "string",
-          "default": "./build.sh",
-          "description": "Path to the build script relative to the workspace root"
+          "default": "node packages/devkit/dist/cli.js build",
+          "description": "Build command relative to the workspace root (devkit; ADR-180)"
         },
         "sharpee.enableEntityAutocomplete": {
           "type": "boolean",

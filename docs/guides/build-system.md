@@ -1,203 +1,122 @@
-# Sharpee Build System
+# Sharpee Build System (devkit)
 
-This guide explains how to build Sharpee platform packages, stories, and client bundles.
+This guide explains how to build Sharpee platform packages, stories, and client
+bundles with **`@sharpee/devkit`** (ADR-180). devkit orchestrates the build; `tsf`
+compiles. In-repo, invoke it with `node packages/devkit/dist/cli.js`; once
+`@sharpee/sharpee` is installed, the `devkit` bin is on PATH (`devkit build …`).
 
 ## Quick Start
 
 ```bash
-# Build platform + story (most common)
-./build.sh -s dungeo
+# Build platform + story, then bundle (most common)
+node packages/devkit/dist/cli.js build dungeo
 
-# Build platform + story + browser client
-./build.sh -s dungeo -c browser
+# + self-contained browser client (dist/web/dungeo/)
+node packages/devkit/dist/cli.js build dungeo --browser
 
-# Build platform + story + Zifmia client (desktop runner)
-./build.sh -s dungeo -c zifmia
+# + zifmia multi-user server (tools/zifmia/dist/)
+node packages/devkit/dist/cli.js build --zifmia
 
 # Show all options
-./build.sh --help
+node packages/devkit/dist/cli.js
 ```
 
-## Build Options
+## Build Options (`devkit build`)
 
-| Flag | Long Form | Description |
-|------|-----------|-------------|
-| `-s` | `--story <name>` | Build a story (dungeo, reflections, etc.) |
-| `-c` | `--client <type>` | Build client (browser, zifmia) - can specify multiple |
-| `-t` | `--theme <name>` | Zifmia theme (default: classic-light) |
-| `-b` | `--story-bundle` | Create `.sharpee` story bundle |
-| | `--runner` | Build Zifmia runner only |
-| | `--skip <package>` | Resume platform build from package |
-| | `--no-version` | Skip version updates |
-| `-v` | `--verbose` | Show build details |
-| `-h` | `--help` | Show help |
+| Flag | Description |
+|------|-------------|
+| `[story]` | Story name to build (resolved `stories/<name>` then `tutorials/<name>`) |
+| `--browser` | Also build the self-contained browser client (`dist/web/<story>/`); requires a story |
+| `--zifmia` | Also build the zifmia multi-user server (`tools/zifmia/dist/`) |
+| `--skip <package>` | Resume the platform build from this package short-name |
+| `--version <v>` | Version to stamp (default: `packages/sharpee/package.json`) |
+| `--build-date <iso>` | Frozen build date (determinism / parity) |
+| `--no-version` | Skip version stamping |
+| `--no-genai` | Skip genai-api generation |
+| `--no-bundle` | Build packages/story but skip the CLI bundle |
+| `--esm` | Also run the ESM build pass (implied by `--browser`/`--zifmia`) |
 
-### Available Themes (for Zifmia)
-
-| Theme | Description |
-|-------|-------------|
-| `classic-light` | Literata font, warm light tones (default) |
-| `modern-dark` | Inter font, Catppuccin Mocha colors |
-| `retro-terminal` | JetBrains Mono, green phosphor |
-| `paper` | Crimson Text, high contrast |
-
-## Examples
-
-```bash
-# Platform only
-./build.sh
-
-# Platform + dungeo story
-./build.sh -s dungeo
-
-# Platform + dungeo + browser client
-./build.sh -s dungeo -c browser
-
-# Platform + dungeo + Zifmia with dark theme
-./build.sh -s dungeo -c zifmia -t modern-dark
-
-# Both clients
-./build.sh -s dungeo -c browser -c zifmia
-
-# Create .sharpee story bundle
-./build.sh -s dungeo -b
-
-# Resume from stdlib (skip earlier packages)
-./build.sh --skip stdlib -s dungeo
-
-# Skip version update (faster iteration)
-./build.sh --no-version --skip stdlib -s dungeo
-```
+Other commands: `devkit bundle` (assemble `dist/cli/sharpee.js` only),
+`devkit clean` (remove `dist`/`dist-esm`/`tsbuildinfo`), `devkit verify`
+(`tsf build --npm` + publish dry-run), `devkit test:npm <location>` (npm consumer test).
 
 ## Build Order
 
-The build system ensures correct dependency order:
-
-1. **Update versions** - Generates version files (unless `--no-version`)
-2. **Build platform** - Compiles all platform packages in order
-3. **Bundle** - Creates `dist/cli/sharpee.js`
-4. **Build story** - Compiles the specified story (if `-s`)
-5. **Build client** - Creates client bundle (if `-c`)
-
-### Platform Package Order
-
-1. core
-2. if-domain
-3. world-model
-4. event-processor
-5. lang-en-us
-6. parser-en-us
-7. if-services
-8. text-blocks
-9. text-service
-10. stdlib
-11. plugins, plugin-npc, plugin-scheduler, plugin-state-machine
-12. engine
-13. sharpee
-14. transcript-tester
+1. **Stamp versions** — writes `version.ts` + `package.json` versions (unless `--no-version`)
+2. **Build platform** — compiles all platform packages in dependency order (via `pnpm --filter`)
+3. **Generate genai-api** — refreshes `packages/sharpee/docs/genai-api/`
+4. **Build story** — compiles the story (if given)
+5. **Bundle** — assembles `dist/cli/sharpee.js`
+6. **Client targets** — `--browser` and/or `--zifmia` (if requested)
 
 ## Version System
 
-### Format
-
-Versions use a simple prerelease format:
-
-```
-X.Y.Z-beta
-```
-
-Example: `0.9.85-beta`
-
-- `X.Y.Z` - Base semantic version (from package.json)
-- `beta` - Prerelease tag
-
-### Generated Files
-
-The build generates `version.ts` files for stories and clients with:
+Versions use a simple prerelease format `X.Y.Z-beta` (e.g. `0.9.113-beta`). The build
+stamps story/client `version.ts` files:
 
 ```typescript
-export const STORY_VERSION = '1.0.0-beta';
-export const BUILD_DATE = '2026-02-04T01:00:00Z';
-export const ENGINE_VERSION = '0.9.85-beta';
+export const STORY_VERSION = '1.0.0';
+export const BUILD_DATE = '2026-06-18T00:00:00Z';
+export const ENGINE_VERSION = '0.9.113';
 ```
 
 ## Outputs
 
-| Build | Output Location | Contents |
-|-------|-----------------|----------|
-| Platform | `dist/cli/sharpee.js` | Node bundle with all platform packages |
+| Target | Output | Contents |
+|--------|--------|----------|
+| Platform bundle | `dist/cli/sharpee.js` | Node bundle with all platform packages (~170ms load) |
 | Story | `stories/{story}/dist/` | Compiled story code |
-| Story Bundle | `dist/stories/{story}.sharpee` | Portable story bundle |
-| Browser | `dist/web/{story}/` | HTML, JS bundle, CSS |
-| Zifmia | `dist/runner/` | Desktop runner + platform modules |
+| Browser (`--browser`) | `dist/web/{story}/` | Self-contained IIFE `game.js` + CSS + themes + assets (single-load) |
+| Zifmia (`--zifmia`) | `tools/zifmia/dist/` | Multi-user server (ADR-177) |
+
+> The abandoned `shite` parts bin, the legacy Tauri `--runner`, and the `.sharpee`
+> story bundle are **not** built by devkit (ADR-180 dropped/deferred them).
 
 ## Common Workflows
 
-### Story Development (Fastest Iteration)
-
-When only changing story code:
+### Story development (fastest iteration)
 
 ```bash
-./build.sh --no-version --skip transcript-tester -s dungeo
+node packages/devkit/dist/cli.js build dungeo --no-version --skip transcript-tester
 node dist/cli/sharpee.js --play
 ```
 
-### Platform Development
-
-When changing platform packages, skip to the changed package:
+### Platform development — resume from the changed package
 
 ```bash
-./build.sh --skip stdlib -s dungeo
+node packages/devkit/dist/cli.js build dungeo --skip stdlib
 ```
 
-### Running Tests
-
-After any build:
+### Running tests (after any build)
 
 ```bash
-# Interactive play
 node dist/cli/sharpee.js --play
-
-# Run single transcript test
-node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/navigation.transcript
-
-# Run walkthrough chain (state persists between files)
+node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.transcript
 node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
-
-# Stop on first failure
-node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/*.transcript --stop-on-failure
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
 ```
 
-### Web Deployment
+### Web deployment
 
 ```bash
-./build.sh -s dungeo -c browser
+node packages/devkit/dist/cli.js build dungeo --browser
 npx serve dist/web/dungeo
-```
-
-### Zifmia (Desktop) Deployment
-
-```bash
-./build.sh -s dungeo -c zifmia -t modern-dark
-npx serve dist/runner
-# Open browser, load dist/stories/dungeo.sharpee
 ```
 
 ## Performance Tips
 
-1. **Use `--skip`** - Always skip unchanged packages
-2. **Use `--no-version`** - Skip version bumps during rapid iteration
-3. **Use the bundle** - `node dist/cli/sharpee.js` loads in ~170ms vs 5+ seconds for packages
+1. **Use `--skip <pkg>`** — resume from the changed package; skip unchanged ones.
+2. **Use `--no-version`** — skip version stamping during rapid iteration.
+3. **Use the bundle** — `node dist/cli/sharpee.js` loads in ~170ms vs 5+ seconds for packages.
 
 ## Troubleshooting
 
-### Build hangs on "Building Platform"
+### Stale / silent no-op build
 
-Could be WSL filesystem sync issue. Try again or run with `-v` for verbose output.
+`devkit build` asserts each package emits `dist/index.js` (the `.tsbuildinfo` silent-no-op
+class is precluded). If artifacts look stale, run `devkit clean` then rebuild.
 
-### Circular dependency detected
-
-Use `madge` to find cycles:
+### Circular dependency
 
 ```bash
 npx madge --circular stories/dungeo/dist/index.js
@@ -207,12 +126,4 @@ Fix by changing barrel imports to direct file imports.
 
 ### TypeScript errors
 
-Check the failing package and ensure dependencies are built first. Use `--skip` to build from a specific package.
-
-### Stale bundle
-
-Force a full rebuild without `--skip`:
-
-```bash
-./build.sh -s dungeo
-```
+Build the failing package's dependencies first, or use `--skip <pkg>` to build from it.

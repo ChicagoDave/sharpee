@@ -117,7 +117,7 @@ DMG_FILE="$DMG_SOURCE/$DMG_NAME"
 
 if [ ! -f "$DMG_FILE" ]; then
     echo -e "${RED}Error: DMG not found at $DMG_FILE${NC}"
-    echo "Build first: ./build.sh -s dungeo --runner  # legacy interpreter; -c zifmia now builds the multi-user web app"
+    echo "Build first: node packages/devkit/dist/cli.js build --zifmia  # builds the multi-user server (ADR-177)"
     exit 1
 fi
 

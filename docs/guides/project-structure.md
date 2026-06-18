@@ -41,9 +41,8 @@ sharpee/
 ├── dist/                     # Build outputs
 │   ├── cli/sharpee.js        # Platform bundle
 │   ├── web/{story}/          # Browser builds
-│   ├── runner/               # Zifmia runner
-│   └── stories/              # Story bundles (.sharpee)
-└── build.sh                  # Build script
+│   └── web/                  # Browser clients (dist/web/<story>/)
+└── packages/devkit/          # Build/test orchestration CLI (devkit; ADR-180)
 ```
 
 ## Story Structure
@@ -275,10 +274,10 @@ Actions follow the four-phase pattern:
 
 ```bash
 # Build platform + story
-./build.sh -s dungeo
+node packages/devkit/dist/cli.js build dungeo
 
 # Build with browser client
-./build.sh -s dungeo -c browser
+node packages/devkit/dist/cli.js build dungeo --browser
 
 # Interactive play
 node dist/cli/sharpee.js --play
@@ -299,7 +298,7 @@ node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcr
 5. [ ] Create at least one region with rooms
 6. [ ] Add `extendParser()` for any custom verbs
 7. [ ] Write a basic transcript test
-8. [ ] Build and test: `./build.sh -s mystory && node dist/cli/sharpee.js --play`
+8. [ ] Build and test: `node packages/devkit/dist/cli.js build mystory && node dist/cli/sharpee.js --play`
 
 ## Further Reading
 

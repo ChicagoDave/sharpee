@@ -76,7 +76,7 @@ FROM node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d
 
 # ADR-178 §AC-3: every Zifmia image records the Story Runtime Baseline
 # version it ships in this label. The default fallback (1) matches the
-# v1 baseline; `build.sh -c zifmia` reads the value from
+# v1 baseline; `devkit build --zifmia` reads the value from
 # `@sharpee/story-runtime-baseline` and overrides via --build-arg so
 # the manifest stays the single source of truth.
 ARG BASELINE_VERSION=1

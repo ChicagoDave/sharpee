@@ -311,7 +311,7 @@ export async function handleNewStory(): Promise<void> {
     await vscode.window.showTextDocument(doc);
 
     vscode.window.showInformationMessage(
-      `Story "${title}" created at stories/${storyId}/. Build with: ./build.sh -s ${storyId}`,
+      `Story "${title}" created at stories/${storyId}/. Build with: node packages/devkit/dist/cli.js build ${storyId}`,
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

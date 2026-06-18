@@ -38,7 +38,9 @@ const REQUIRED = [
   },
   {
     path: resolve(REPO_ROOT, 'dist', 'stories', 'dungeo.sharpee'),
-    fix: './build.sh -s dungeo'
+    // .sharpee bundle building is deferred (ADR-180); use an existing dungeo.sharpee
+    // until a `devkit bundle:story` command lands.
+    fix: 'provide dist/stories/dungeo.sharpee (a prebuilt bundle)'
   }
 ];
 

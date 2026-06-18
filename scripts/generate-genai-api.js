@@ -7,7 +7,7 @@
  * to reference when writing code against the platform.
  *
  * Run: node scripts/generate-genai-api.js
- * Integrated into build.sh after platform build.
+ * Invoked by `devkit build` after the platform build (ADR-180).
  * Ships with the @sharpee/sharpee npm package.
  */
 
