@@ -57,7 +57,27 @@ const VOCABULARY_NAMES = [
 
   // Class vocabulary — font-*.
   'font-mono',
+
+  // Layout macros (ADR-183). `br`/`p` are void (no content); `indent`/`center`
+  // accept an optional `=value` (level / width %); `right` is plain. All
+  // presentation lives in the platform stylesheet, author-overridable en masse.
+  'br',
+  'p',
+  'indent',
+  'center',
+  'right',
 ] as const;
+
+/**
+ * Names that take **no content** — written `[br]` / `[p]` (no colon). The
+ * parser treats a colon-less `[name]` as a void decoration iff `name` is
+ * listed here; any other colon-less bracket stays literal (ADR-174 AC-11).
+ *
+ * @see ADR-183 §1 — Vocabulary, §2 — Syntax
+ */
+export const VOID_MACROS: ReadonlySet<string> = Object.freeze(
+  new Set<string>(['br', 'p']),
+);
 
 /**
  * Frozen set of every name the platform reserves under the `sharpee-`

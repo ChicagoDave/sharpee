@@ -263,3 +263,19 @@ describe('renderStatusLine', () => {
     expect(renderStatusLine(blocks)).toBe(expected);
   });
 });
+
+describe('ADR-183 void breaks', () => {
+  it('sharpee-br renders as a single newline (terminal class→behavior)', () => {
+    const blocks: ITextBlock[] = [
+      { key: 'x', content: ['a', { className: 'sharpee-br', content: [] }, 'b'] },
+    ];
+    expect(renderToString(blocks)).toBe('a\nb');
+  });
+
+  it('sharpee-p renders as a blank-line gap', () => {
+    const blocks: ITextBlock[] = [
+      { key: 'x', content: ['a', { className: 'sharpee-p', content: [] }, 'b'] },
+    ];
+    expect(renderToString(blocks)).toBe('a\n\nb');
+  });
+});
