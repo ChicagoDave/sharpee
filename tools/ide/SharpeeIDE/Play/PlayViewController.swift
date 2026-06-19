@@ -46,8 +46,9 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// Fired when the user toggles "Play after build", so the session can persist it.
     var onPlayAfterBuildChanged: (() -> Void)?
 
-    /// Fired with each console.error / uncaught error from the running story.
-    var onConsoleError: ((String) -> Void)?
+    /// Fired with each console.error / uncaught error from the running story, symbolicated
+    /// against the bundle's source map into a navigable error.
+    var onConsoleError: ((PlayConsoleError) -> Void)?
 
     override func loadView() {
         let pane = NSView()
@@ -112,6 +113,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
             return
         }
         loaded = (repoRoot, story)
+        PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
         schemeHandler.rootDirectory = WebBundle.directory(repoRoot: repoRoot, story: story)
         placeholder.isHidden = true
         webView.isHidden = false
@@ -150,7 +152,13 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.name == Self.consoleHandlerName, let text = message.body as? String else { return }
-        onConsoleError?(text)
+        guard let loaded else {
+            onConsoleError?(PlayConsoleError(message: text, frames: [],
+                                            translation: SharpeeErrorTranslator.translate(message: text)))
+            return
+        }
+        let bundleDir = WebBundle.directory(repoRoot: loaded.repoRoot, story: loaded.story)
+        onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: bundleDir))
     }
 }
 

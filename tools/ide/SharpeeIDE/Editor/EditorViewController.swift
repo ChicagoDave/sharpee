@@ -11,6 +11,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private let tabBar = TabBarView()
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
+    private var lineNumberRuler: LineNumberRulerView?
     private let placeholder = NSTextField(labelWithString: "Open a file from the project pane")
 
     private var documents: [Document] = []
@@ -102,6 +103,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.setSelectedRange(range)
         textView.scrollRangeToVisible(range)
         view.window?.makeFirstResponder(textView)
+        lineNumberRuler?.errorLines = [line] // flag it in the gutter
     }
 
     /// The character range of the 1-based `line` in the text view, or nil if out of range.
@@ -305,6 +307,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.string = activeDocument?.content ?? ""
         textView.undoManager?.removeAllActions()
         textView.scroll(.zero)
+        lineNumberRuler?.errorLines = [] // marks are document-specific
     }
 
     private func persistTextViewToActiveDocument() {
@@ -317,6 +320,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
         guard !isSwappingContent, let doc = activeDocument else { return }
         doc.content = textView.string
+        lineNumberRuler?.errorLines = [] // editing invalidates the flagged error
         if !doc.isDirty {
             doc.isDirty = true
             refreshUI()
@@ -372,6 +376,24 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         scrollView.autohidesScrollers = false
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
+
+        let ruler = LineNumberRulerView(textView: textView, scrollView: scrollView)
+        scrollView.verticalRulerView = ruler
+        scrollView.hasVerticalRuler = true
+        scrollView.rulersVisible = true
+        lineNumberRuler = ruler
+
+        // Keep the gutter in sync with scrolling and editing.
+        scrollView.contentView.postsBoundsChangedNotifications = true
+        let center = NotificationCenter.default
+        center.addObserver(self, selector: #selector(refreshRuler),
+                           name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
+        center.addObserver(self, selector: #selector(refreshRuler),
+                           name: NSText.didChangeNotification, object: textView)
+    }
+
+    @objc private func refreshRuler() {
+        lineNumberRuler?.refresh()
     }
 
     private func configurePlaceholder() {

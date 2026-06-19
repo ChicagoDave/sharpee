@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sharpee IDE — Bottom Panel UX mock</title>
+<style>
+  /* Theme tokens mirror tools/ide/SharpeeIDE/Theme.swift */
+  :root {
+    --rail-bg: #16171d;
+    --editor-bg: #1e1f26;
+    --panel-bg: #191a21;
+    --tabstrip-bg: #15161c;
+    --border: #3a3c48;
+    --fg: #d8d9e0;
+    --fg-dim: #8e90a0;
+    --fg-faint: #5c5f6d;
+    --accent: #89b4fa;
+    --error: #f38ba8;
+    --warn: #f9e2af;
+    --gutter-bg: #1a1b22;
+    --row-hover: #23242d;
+    --row-selected: #2b2d3a;
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--editor-bg); color: var(--fg); }
+  .frame { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ---- Editor (top): per-line rows so the gutter aligns to the code ---- */
+  .editor { flex: 1; overflow: auto; background: var(--editor-bg); min-height: 220px; }
+  .row { display: flex; font: 13px/20px ui-monospace, "SF Mono", Menlo, monospace; }
+  .row .gnum {
+    width: 52px; flex: none; text-align: right; padding-right: 14px;
+    color: var(--fg-faint); background: var(--gutter-bg); user-select: none; position: relative;
+  }
+  .row .cl { padding-left: 16px; white-space: pre; color: var(--fg); }
+  .row.err { background: rgba(243,139,168,0.07); }
+  .row.err .gnum { color: var(--error); }
+  .row.err .gnum::before {
+    content: ""; position: absolute; left: 5px; top: 6px;
+    width: 9px; height: 9px; border-radius: 50%; background: var(--error);
+    box-shadow: 0 0 0 2px rgba(243,139,168,0.25);
+  }
+  .tok-key { color: #cba6f7; } .tok-fn { color: #89b4fa; } .tok-str { color: #a6e3a1; }
+  .tok-comment { color: var(--fg-faint); }
+
+  /* ---- Bottom panel ---- */
+  .bottom { display: flex; flex-direction: column; height: 240px; border-top: 1px solid var(--border); background: var(--panel-bg); }
+
+  /* Subtle VS Code-style tab strip — text labels, active gets a top accent bar; no filled pills */
+  .tabstrip {
+    display: flex; align-items: stretch; height: 30px;
+    background: var(--tabstrip-bg); border-bottom: 1px solid var(--border);
+    padding: 0 4px;
+  }
+  .tab {
+    display: flex; align-items: center; gap: 6px; padding: 0 12px;
+    font-size: 11px; letter-spacing: .02em; color: var(--fg-dim);
+    border-top: 2px solid transparent; cursor: default; user-select: none;
+  }
+  .tab:hover { color: var(--fg); }
+  .tab.active { color: var(--fg); border-top-color: var(--accent); background: var(--panel-bg); }
+  .tab .count {
+    font-size: 10px; color: var(--panel-bg); background: var(--error);
+    border-radius: 8px; padding: 0 6px; line-height: 15px; min-width: 16px; text-align: center;
+  }
+  .tab.active .count { background: var(--error); }
+
+  /* Problems list — compact, left-aligned, single-line rows that expand */
+  .panel-body { flex: 1; overflow: auto; }
+  .errlist { font-size: 12px; }
+  .err {
+    display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px;
+    white-space: nowrap; cursor: default;
+  }
+  .err:hover { background: var(--row-hover); }
+  .err.selected { background: var(--row-selected); }
+  .err .twisty { width: 12px; color: var(--fg-faint); text-align: center; flex: none; }
+  .err .icon { color: var(--error); flex: none; font-size: 11px; }
+  .err .msg { color: var(--fg); overflow: hidden; text-overflow: ellipsis; }
+  .err .loc { color: var(--fg-dim); margin-left: 6px; flex: none; }
+  /* child stack frames */
+  .frameRow {
+    display: flex; align-items: center; gap: 6px; height: 20px; padding: 0 8px 0 30px;
+    font: 11px/20px ui-monospace, "SF Mono", Menlo, monospace; white-space: nowrap; cursor: default;
+  }
+  .frameRow:hover { background: var(--row-hover); }
+  .frameRow .fn { color: var(--fg-dim); }
+  .frameRow .floc { color: var(--accent); }
+  .frameRow.unresolved .floc { color: var(--fg-faint); }
+
+  /* Sharpee-speak translation rows under an error */
+  .fix { padding: 2px 8px 4px 30px; font-size: 11.5px; color: var(--fg-dim); white-space: normal; }
+  .fix b { color: var(--fg); font-weight: 600; }
+  .fix code { font: 11px ui-monospace, Menlo, monospace; color: var(--accent); }
+  .detailHdr { padding: 4px 8px 2px 30px; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-faint); }
+  .raw { padding: 0 8px 2px 30px; font: 11px/18px ui-monospace, Menlo, monospace; color: var(--fg-faint); white-space: nowrap; }
+
+  .hint { padding: 8px 12px; color: var(--fg-faint); font-size: 11px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- Editor: per-line rows, error flag + wash on line 95 -->
+  <div class="editor">
+    <div class="row"><span class="gnum">90</span><span class="cl">  <span class="tok-key">const</span> fireplace = <span class="tok-fn">createSceneryItem</span>(world, <span class="tok-str">'fireplace'</span>, …);</span></div>
+    <div class="row"><span class="gnum">91</span><span class="cl">  SceneryIds.fireplace = fireplace.id;</span></div>
+    <div class="row"><span class="gnum">92</span><span class="cl">  world.<span class="tok-fn">moveEntity</span>(fireplace.id, RoomIds.foyer);</span></div>
+    <div class="row"><span class="gnum">93</span><span class="cl"> </span></div>
+    <div class="row"><span class="gnum">94</span><span class="cl">  <span class="tok-fn">createSceneryItem</span>(world, <span class="tok-str">'chandeliers'</span>, …);</span></div>
+    <div class="row err"><span class="gnum">95</span><span class="cl">  world.<span class="tok-fn">moveEntity</span>(world.<span class="tok-fn">getEntity</span>(world.<span class="tok-fn">getLastCreatedEntityId</span>()!)!.id, RoomIds.foyer);</span></div>
+    <div class="row"><span class="gnum">96</span><span class="cl">  <span class="tok-comment">// === RESTAURANT ===</span></span></div>
+  </div>
+
+  <!-- Bottom panel: subtle tabs + compact problems list -->
+  <div class="bottom">
+    <div class="tabstrip">
+      <div class="tab">Build</div>
+      <div class="tab active">Game Errors <span class="count">1</span></div>
+    </div>
+    <div class="panel-body">
+      <div class="errlist">
+        <!-- one error, expanded — Sharpee-speak title, then how-to-fix, then raw details -->
+        <div class="err selected">
+          <span class="twisty">▾</span>
+          <span class="icon">⊗</span>
+          <span class="msg">The world has no <code style="color:inherit;font-family:ui-monospace">getLastCreatedEntityId</code> method</span>
+          <span class="loc">objects/index.ts:95</span>
+        </div>
+        <div class="fix">
+          While building your world, <b>createScenery</b> called <code>world.getLastCreatedEntityId()</code>, which
+          isn’t part of the world model. <b>Fix:</b> capture the entity that <code>createSceneryItem(…)</code>
+          returns and move it directly — the same way the fireplace does on line&nbsp;90.
+        </div>
+        <div class="detailHdr">Stack</div>
+        <div class="frameRow"><span class="fn">createScenery</span><span class="floc">objects/index.ts:95</span></div>
+        <div class="frameRow"><span class="fn">createObjects</span><span class="floc">objects/index.ts:52</span></div>
+        <div class="frameRow"><span class="fn">initializeWorld</span><span class="floc">index.ts:62</span></div>
+        <div class="frameRow unresolved"><span class="fn">setStory</span><span class="floc">&lt;engine&gt;</span></div>
+        <div class="detailHdr">Original error</div>
+        <div class="raw">TypeError: world.getLastCreatedEntityId is not a function</div>
+      </div>
+    </div>
+    <div class="hint">Double-click a row to open it in the editor. Errors clear on the next build.</div>
+  </div>
+
+</div>
+</body>
+</html>

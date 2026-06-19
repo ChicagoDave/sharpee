@@ -109,7 +109,7 @@ final class MainWindowController: NSWindowController {
 private final class RootViewController: NSViewController {
 
     private let mainSplitViewController = MainSplitViewController()
-    private let buildPanelViewController = BuildPanelViewController()
+    private let bottomPanelViewController = BottomPanelViewController()
     private let verticalSplitViewController = NSSplitViewController()
     private let statusBar = StatusBarView()
 
@@ -128,13 +128,15 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.onBuildPanelToggle = { [weak self] in self?.toggleBuildPanel() }
         mainSplitViewController.buildPanelVisibleProvider = { [weak self] in self?.isBuildPanelVisible ?? false }
         statusBar.onPillClick = { [weak self] in self?.handlePillClick() }
-        buildPanelViewController.panel.onDiagnosticClick = { [weak self] diagnostic in
-            self?.mainSplitViewController.openDocument(at: diagnostic.file,
-                                                       line: diagnostic.line,
-                                                       column: diagnostic.column)
+        let openLocation: (SourceLocation) -> Void = { [weak self] location in
+            self?.mainSplitViewController.openDocument(at: location.file,
+                                                       line: location.line,
+                                                       column: location.column)
         }
-        mainSplitViewController.onPlayConsoleError = { [weak self] message in
-            self?.buildPanelViewController.panel.append("▶ play: \(message)\n")
+        bottomPanelViewController.buildPanel.onSourceClick = openLocation
+        bottomPanelViewController.gameErrors.onDoubleClick = openLocation
+        mainSplitViewController.onPlayConsoleError = { [weak self] error in
+            self?.bottomPanelViewController.addPlayError(error)
             self?.applyBuildPanelVisible(true)
         }
 
@@ -170,7 +172,7 @@ private final class RootViewController: NSViewController {
         top.canCollapse = false
         top.holdingPriority = .defaultLow
 
-        let bottom = NSSplitViewItem(viewController: buildPanelViewController)
+        let bottom = NSSplitViewItem(viewController: bottomPanelViewController)
         bottom.canCollapse = true
         bottom.minimumThickness = Self.buildPanelMinHeight
         bottom.holdingPriority = .defaultHigh
@@ -245,15 +247,16 @@ private final class RootViewController: NSViewController {
     }
 
     func appendBuildOutput(_ text: String) {
-        buildPanelViewController.panel.append(text)
+        bottomPanelViewController.buildPanel.append(text)
     }
 
     func clearBuildOutput() {
-        buildPanelViewController.panel.clear()
+        bottomPanelViewController.buildPanel.clear()
+        bottomPanelViewController.clearPlayErrors() // a new build supersedes prior game errors
     }
 
     func setBuildPanelRepoRoot(_ url: URL) {
-        buildPanelViewController.panel.repoRoot = url
+        bottomPanelViewController.buildPanel.repoRoot = url
     }
 
     func refreshPlay(repoRoot: URL?, story: String?) {
@@ -288,8 +291,8 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     fileprivate var onBuildPanelToggle: (() -> Void)?
     /// Reports the current build-panel visibility so it can be persisted. Set by RootViewController.
     fileprivate var buildPanelVisibleProvider: (() -> Bool)?
-    /// Invoked with each Play-runtime console error. Owned by RootViewController.
-    fileprivate var onPlayConsoleError: ((String) -> Void)?
+    /// Invoked with each symbolicated Play-runtime error. Owned by RootViewController.
+    fileprivate var onPlayConsoleError: ((PlayConsoleError) -> Void)?
 
     private var currentProject: Project?
     private var didApplyInitialLayout = false

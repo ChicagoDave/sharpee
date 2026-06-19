@@ -18,7 +18,8 @@ final class BuildPanelView: NSView {
     private let textView = BuildOutputTextView()
 
     private var lineBuffer = ""
-    private var diagnosticRanges: [(range: NSRange, diagnostic: TSCDiagnostic)] = []
+    /// Clickable ranges → resolved source locations (build diagnostics AND play-error frames).
+    private var clickableRanges: [(range: NSRange, location: SourceLocation)] = []
     /// The directory relative diagnostic paths resolve against; advances as pnpm prints
     /// each package's run header. Starts at `repoRoot`.
     private var currentBaseDir: URL?
@@ -28,8 +29,8 @@ final class BuildPanelView: NSView {
         didSet { currentBaseDir = repoRoot }
     }
 
-    /// Invoked when a diagnostic line is clicked, so the editor can open file:line:column.
-    var onDiagnosticClick: ((TSCDiagnostic) -> Void)?
+    /// Invoked when a clickable line (diagnostic or play-error frame) is clicked.
+    var onSourceClick: ((SourceLocation) -> Void)?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -83,11 +84,11 @@ final class BuildPanelView: NSView {
         textView.scrollToEndOfDocument(nil)
     }
 
-    /// Clears all output and diagnostic state (called at the start of a build).
+    /// Clears all output and clickable state (called at the start of a build).
     func clear() {
         textView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         lineBuffer = ""
-        diagnosticRanges = []
+        clickableRanges = []
         currentBaseDir = repoRoot
     }
 
@@ -107,13 +108,15 @@ final class BuildPanelView: NSView {
 
         if let diagnostic {
             let range = NSRange(location: baseLocation, length: (line as NSString).length)
-            diagnosticRanges.append((range, diagnostic))
+            clickableRanges.append((range, SourceLocation(file: diagnostic.file,
+                                                          line: diagnostic.line,
+                                                          column: diagnostic.column)))
         }
     }
 
     private func handleClick(atCharacterIndex index: Int) {
-        if let match = diagnosticRanges.first(where: { NSLocationInRange(index, $0.range) }) {
-            onDiagnosticClick?(match.diagnostic)
+        if let match = clickableRanges.first(where: { NSLocationInRange(index, $0.range) }) {
+            onSourceClick?(match.location)
         }
     }
 }
@@ -136,12 +139,3 @@ private final class BuildOutputTextView: NSTextView {
     }
 }
 
-/// Hosts a BuildPanelView as a split-view item.
-final class BuildPanelViewController: NSViewController {
-
-    let panel = BuildPanelView()
-
-    override func loadView() {
-        view = panel
-    }
-}

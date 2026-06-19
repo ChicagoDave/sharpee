@@ -9,6 +9,14 @@
 
 import Foundation
 
+/// A resolved source position the editor can open. Shared by build diagnostics (tsc)
+/// and symbolicated Play-runtime stack frames so both use one click-to-jump path.
+struct SourceLocation: Equatable {
+    let file: URL
+    let line: Int
+    let column: Int
+}
+
 struct TSCDiagnostic: Equatable {
     enum Severity: String { case error, warning }
     let file: URL

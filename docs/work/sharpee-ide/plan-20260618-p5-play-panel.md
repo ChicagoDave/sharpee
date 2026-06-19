@@ -87,6 +87,17 @@ Turn captured Play errors into a navigable list, like the tsc diagnostics (4.8).
 - Tests: SessionState +1 (default + roundtrip). Header/reload verified manually.
 - Manual: build with Browser → Play reloads automatically; Restart re-inits; toggle off suppresses auto-reload; dot reflects state. ※
 
+### Step 5.5 — Game Errors panel (tabbed, expandable list, double-click nav, editor marker)
+
+Replace the build-panel error dump with a dedicated, navigable errors surface. Reuses the
+`SourceMap` + `PlayErrorSymbolicator` engine from 5.4; changes only the presentation.
+
+- **5.5a — Tabbed bottom panel.** Wrap the bottom panel in a tab bar: **Build** (the existing `BuildPanelView` output) and **Game Errors** (new). A `BottomPanelViewController` hosts the tab bar + swaps content; the Game Errors tab shows a count badge. Build output routes to the Build tab; symbolicated play errors route to the Game Errors tab (and select/flash it). Remove `BuildPanelView.appendPlayError` (errors no longer go to build output).
+- **5.5b — Game Errors list.** An `NSOutlineView`: each top-level row is one error as a **single line** (message + primary `file:line`), **expandable** to its stack frames. **Double-click** a row → open the file in the editor with the cursor on the line (reuses `openDocument(at:line:column:)`). Clears on a new build / reload.
+- **5.5c — Editor error marker.** Mark the navigated error line in the editor — **squiggly red underline** under the line's text (custom `NSLayoutManager` drawing for a marker attribute) *or* a **gutter/right-margin error flag** (an `NSRulerView` badge). Marker clears on edit of that line.
+- Tests: `BottomPanelViewController` tab-switch state; `GameErrorsView` model (rows/children from `[PlayConsoleError]`); editor marker range mapping. UI verified manually.
+- Manual: a runtime error appears as a one-line row in Game Errors → expand → double-click → editor opens at the line with the marker. ※
+
 ### Step 5.3 — End-to-end manual verification
 1. Build `dungeo --browser` → Play pane shows the running game.
 2. Edit a room description → ⌘B → Play reloads with the change.
