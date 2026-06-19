@@ -33,14 +33,18 @@ Backward compatible with `[name:content]`; the whitespace rule is the one behavi
 
 ### 0. Newlines are explicit; source whitespace is not significant
 
-The **only** way to produce a line break is the `[br]` macro. Source whitespace — spaces, tabs,
-and literal `\n` — collapses HTML-style: any run of whitespace becomes a single space,
-leading/trailing trimmed. A literal `\n` renders as a space, never a break.
+The intended canonical model: the **only** way to produce a line break is the `[br]` macro;
+source whitespace — spaces, tabs, literal `\n` — collapses HTML-style (any run becomes a single
+space, leading/trailing trimmed). Authors wrap source however they like with identical output —
+the class of bug behind The Alderman's `.join(' ')` rooms cannot occur. Line structure is `[br]`
+/ `[p]`, not source formatting.
 
-Authors may therefore wrap source however they like (array fragments, a long string, a
-multi-line template) with identical output — the class of bug behind The Alderman's `.join(' ')`
-rooms and its mid-sentence letter break cannot occur. Line structure is expressed with `[br]` /
-`[p]`, not source formatting.
+> **STATUS (revised 2026-06-19): the explicit macros (`[br]`/`[p]`) are implemented and additive;
+> the *global whitespace-collapse* is DEFERRED — see "Whitespace-collapse rollout" below.** A
+> Dungeo audit found ~27,000 multi-space runs plus many `\n`-formatted banners/signs/tables;
+> flipping collapse globally today would wreck the reference story. Until the rollout completes,
+> source `\n`/spaces still pass through unchanged (backward compatible) and `[br]`/`[p]` are the
+> additive explicit breaks.
 
 ### 1. Vocabulary — flat names + a void subset
 
@@ -158,10 +162,10 @@ composes cleanly with §3:
 - **End-to-end:** `parseDecorations('[center=50:Notice]')` → `{ className:'sharpee-center',
   value:'50', content:['Notice'] }`; render → `<span class="sharpee-center"
   data-value="50">Notice</span>`.
-- **Void:** `[br]`/`[p]` → `<span class="sharpee-br"></span>` / `sharpee-p` (empty content). A
-  literal `\n` (and any whitespace run) collapses to one space — no break. `[notamacro]` (no
-  colon, not void) stays literal.
-- **Whitespace:** `'a\n\n  b'` → `'a b'`; leading/trailing trimmed.
+- **Void:** `[br]`/`[p]` → `<span class="sharpee-br"></span>` / `sharpee-p` (empty content).
+  `[notamacro]` (no colon, not void) stays literal.
+- **Whitespace (gated on the collapse rollout):** once enabled, `'a\n\n  b'` → `'a b'`;
+  leading/trailing trimmed. Not asserted until collapse ships.
 - **Param passthrough:** `[indent=2:x]` → `data-value="2"`; `[indent:x]` → no `data-value`.
 - **Author names (boundary):** `[mybox=3:x]` → `<span class="mybox" data-value="3">` (verbatim
   class, generic data attr); `[mybreak]` → literal text (void is platform-only).
@@ -209,10 +213,36 @@ carry — and class-driven CSS keeps the renderer trivial while still honoring n
   a platform CSS rule. Authors restyle *en masse* by shipping `.sharpee-*` overrides — there is
   no per-instance styling (consistent with no-inline-styles); fine-grained control means an
   author class.
-- **One behavior change: whitespace collapses.** Natural newlines and tab/space runs become a
-  single space; `[br]`/`[p]` are the only breaks. Text that relied on literal `\n` must convert —
-  notably The Alderman's letter and theatre program (the rooms cleanup already conforms). No
-  stored-format migration.
+- **Whitespace-collapse is the one behavior change — and it is DEFERRED** (see the rollout
+  below). When enabled, natural newlines and tab/space runs become a single space and `[br]`/`[p]`
+  are the only breaks. Not yet active globally.
+
+## Whitespace-collapse rollout (added 2026-06-19)
+
+A Dungeo audit (session `ffb3f0`) showed global collapse cannot be flipped today: ~27,000
+multi-space runs plus many `\n`-formatted death banners, signs, and GDT/score tables. The
+content buckets into:
+
+- **banners / indented blocks** (centered via space-padding) → migrate to `[center:…]` /
+  `[indent:…]` (semantic, *better* than the space hack);
+- **tabular / columnar** (GDT help, score lines) → need a **structure construct** (`[table]` /
+  columns) so the *renderer* aligns — not author-counted spaces;
+- **pictorial ASCII art / maps** → route through the **media channel** (image/SVG for rich
+  clients, text fallback for terminal) — it isn't prose.
+
+Decision: **no `[pre]` / whitespace-significant escape hatch** (an HTML artifact that just
+blesses the space-hack). Instead the model stays fully semantic via the table construct + media,
+and collapse becomes safe with *no* exception. Sequenced rollout: (1) add the table/columns
+construct; (2) route art to media; (3) migrate Dungeo to the canonical forms; (4) enable
+collapse globally. Tracked in **GitHub #132**. Until then, `\n`/spaces pass through unchanged.
+
+**Markdown considered and declined.** Markdown overlaps on generic prose (em/strong/code, tables,
+breaks) but (a) is whitespace-*significant* — the opposite of this ADR's collapse-by-default
+choice; (b) targets the semantic HTML the wire deliberately avoids (ADR-174); (c) has no
+vocabulary for IF semantics (`[item]`/`[npc]`/…) or layout (center/color/indent); and (d)
+asterisk markup was already removed in favor of brackets (ADR-174). Useful as a *concept
+inventory* (it validates tables-as-structure and code/verbatim), not as a syntax to adopt.
+Explicit bracket macros remain the canonical path.
 
 ## Session
 
