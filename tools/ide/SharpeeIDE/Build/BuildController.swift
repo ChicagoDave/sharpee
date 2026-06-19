@@ -13,6 +13,7 @@ final class BuildController: BuildRunnerDelegate {
     private let runner = BuildRunner()
     private weak var window: MainWindowController?
     private var startUptime: TimeInterval = 0
+    private var current: (settings: BuildSettings, repoRoot: URL)?
 
     init(window: MainWindowController) {
         self.window = window
@@ -26,6 +27,7 @@ final class BuildController: BuildRunnerDelegate {
     /// No-op if a build is already running.
     func build(settings: BuildSettings, repoRoot: URL) {
         guard !runner.isRunning else { return }
+        current = (settings, repoRoot)
         window?.setBuildPanelRepoRoot(repoRoot)
         window?.setBuildPanelVisible(true)
         window?.clearBuildOutput()
@@ -71,5 +73,12 @@ final class BuildController: BuildRunnerDelegate {
         }
         if !line.isEmpty { window?.appendBuildOutput(line) }
         window?.updateBuildStatus(status)
+
+        // After a successful Browser build, surface the freshly-built story in the Play pane.
+        if result.state == .success,
+           let current, current.settings.clients.contains(BuildSettings.browserClient),
+           let story = current.settings.story {
+            window?.browserBuildSucceeded(repoRoot: current.repoRoot, story: story)
+        }
     }
 }

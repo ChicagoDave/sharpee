@@ -12,17 +12,20 @@ struct SessionState: Codable {
     var activeIndex: Int?
     var expandedFolderURLs: [URL]
     var buildPanelVisible: Bool
+    var playAfterBuild: Bool
 
     init(projectURL: URL?,
          openDocumentURLs: [URL],
          activeIndex: Int?,
          expandedFolderURLs: [URL] = [],
-         buildPanelVisible: Bool = false) {
+         buildPanelVisible: Bool = false,
+         playAfterBuild: Bool = true) {
         self.projectURL = projectURL
         self.openDocumentURLs = openDocumentURLs
         self.activeIndex = activeIndex
         self.expandedFolderURLs = expandedFolderURLs
         self.buildPanelVisible = buildPanelVisible
+        self.playAfterBuild = playAfterBuild
     }
 
     // Custom decode so older persisted entries (without the newer additive fields) still load.
@@ -33,6 +36,7 @@ struct SessionState: Codable {
         activeIndex = try container.decodeIfPresent(Int.self, forKey: .activeIndex)
         expandedFolderURLs = try container.decodeIfPresent([URL].self, forKey: .expandedFolderURLs) ?? []
         buildPanelVisible = try container.decodeIfPresent(Bool.self, forKey: .buildPanelVisible) ?? false
+        playAfterBuild = try container.decodeIfPresent(Bool.self, forKey: .playAfterBuild) ?? true
     }
 }
 

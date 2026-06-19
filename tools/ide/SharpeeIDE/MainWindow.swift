@@ -78,9 +78,14 @@ final class MainWindowController: NSWindowController {
         rootViewController?.refreshPlay(repoRoot: repoRoot, story: story)
     }
 
-    /// Reloads the Play pane's current bundle (after a rebuild).
-    func reloadPlay() {
-        rootViewController?.reloadPlay()
+    /// After a successful Browser build, loads the just-built story into Play (if the toggle is on).
+    func browserBuildSucceeded(repoRoot: URL, story: String) {
+        rootViewController?.browserBuildSucceeded(repoRoot: repoRoot, story: story)
+    }
+
+    /// Applies a persisted "Play after build" value (session restore).
+    func setPlayAfterBuild(_ on: Bool) {
+        rootViewController?.applyPlayAfterBuild(on)
     }
 
     /// Updates the status-bar build pill.
@@ -127,6 +132,10 @@ private final class RootViewController: NSViewController {
             self?.mainSplitViewController.openDocument(at: diagnostic.file,
                                                        line: diagnostic.line,
                                                        column: diagnostic.column)
+        }
+        mainSplitViewController.onPlayConsoleError = { [weak self] message in
+            self?.buildPanelViewController.panel.append("▶ play: \(message)\n")
+            self?.applyBuildPanelVisible(true)
         }
 
         let container = NSView()
@@ -251,8 +260,12 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.refreshPlay(repoRoot: repoRoot, story: story)
     }
 
-    func reloadPlay() {
-        mainSplitViewController.reloadPlay()
+    func browserBuildSucceeded(repoRoot: URL, story: String) {
+        mainSplitViewController.browserBuildSucceeded(repoRoot: repoRoot, story: story)
+    }
+
+    func applyPlayAfterBuild(_ on: Bool) {
+        mainSplitViewController.setPlayAfterBuild(on)
     }
 }
 
@@ -275,6 +288,8 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     fileprivate var onBuildPanelToggle: (() -> Void)?
     /// Reports the current build-panel visibility so it can be persisted. Set by RootViewController.
     fileprivate var buildPanelVisibleProvider: (() -> Bool)?
+    /// Invoked with each Play-runtime console error. Owned by RootViewController.
+    fileprivate var onPlayConsoleError: ((String) -> Void)?
 
     private var currentProject: Project?
     private var didApplyInitialLayout = false
@@ -287,6 +302,8 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
         projectTreeViewController.delegate = self
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
+        playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
+        playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
 
         addSplitViewItem(makeRailItem())
         addSplitViewItem(makeProjectItem())
@@ -297,11 +314,6 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     /// Loads (or clears) the Play pane for the given story's web bundle.
     fileprivate func refreshPlay(repoRoot: URL?, story: String?) {
         playViewController.load(repoRoot: repoRoot, story: story)
-    }
-
-    /// Reloads the Play pane's current bundle (after a rebuild).
-    fileprivate func reloadPlay() {
-        playViewController.reload()
     }
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
@@ -338,9 +350,20 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
             openDocumentURLs: editorViewController.openDocumentURLs,
             activeIndex: editorViewController.activeDocumentIndex,
             expandedFolderURLs: projectTreeViewController.expandedFolderURLs,
-            buildPanelVisible: buildPanelVisibleProvider?() ?? false
+            buildPanelVisible: buildPanelVisibleProvider?() ?? false,
+            playAfterBuild: playViewController.playAfterBuild
         )
         SessionStateStore.save(state)
+    }
+
+    /// After a successful Browser build, load the freshly-built story (honours the toggle).
+    fileprivate func browserBuildSucceeded(repoRoot: URL, story: String) {
+        playViewController.reloadAfterBuild(repoRoot: repoRoot, story: story)
+    }
+
+    /// Applies a persisted "Play after build" value (session restore).
+    fileprivate func setPlayAfterBuild(_ on: Bool) {
+        playViewController.setPlayAfterBuild(on)
     }
 
     // MARK: - ProjectTreeDelegate

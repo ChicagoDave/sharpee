@@ -117,6 +117,22 @@ final class SessionStateTests: XCTestCase {
         XCTAssertTrue(decoded.buildPanelVisible)
     }
 
+    func testPlayAfterBuildDefaultsTrueWhenAbsent() throws {
+        let json = """
+        { "projectURL": "file:///repo/", "openDocumentURLs": [] }
+        """.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode(SessionState.self, from: json)
+        XCTAssertTrue(decoded.playAfterBuild)
+    }
+
+    func testPlayAfterBuildRoundtripsFalse() throws {
+        let original = SessionState(projectURL: nil, openDocumentURLs: [], activeIndex: nil,
+                                    playAfterBuild: false)
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(SessionState.self, from: data)
+        XCTAssertFalse(decoded.playAfterBuild)
+    }
+
     // MARK: - Store load/save/clear
 
     func testLoadReturnsNilWhenNoDataPersisted() {

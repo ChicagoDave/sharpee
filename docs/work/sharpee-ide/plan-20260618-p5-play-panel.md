@@ -70,8 +70,17 @@ The IDE should understand the `--browser` prerequisite rather than surface a raw
 - Tests: `BrowserEntryTests` — path resolution (stories vs tutorials), exists detection, template contains the story name/prefix + key imports, `create` writes a compilable file to a fixture tree.
 - Manual: select a story with no entry + Browser → ⌘B → prompt → Create → build proceeds (and surfaces the story's real errors, or produces the bundle). ※
 
-### Step 5.2 — Play header (Restart / status dot) + reload-after-build + toggle
-- `PlayHeaderView`: Restart button, status dot (green/dim), and a "Play after build" checkbox. (Log deferred — see Scope.)
+### Step 5.2 — Play header (Restart / status dot) + reload-after-build + toggle  ✅ DONE (2026-06-18) — verified
+
+Landed: `Play/PlayHeaderView.swift` (status dot, Restart, "Play after build" checkbox); `PlayViewController` header + status + `restart()` (reloadFromOrigin) + `reloadAfterBuild`; additive `SessionState.playAfterBuild` (default true) persisted/restored; `BuildController` loads the just-built story into Play on a successful Browser build. **Plus Play console capture**: an injected WKUserScript forwards `console.error` / uncaught errors / unhandled rejections to Swift (`onConsoleError`), surfaced in the Build panel as `▶ play:` — no WebView inspector needed (game pages suppress the right-click menu). Tests: SessionState +2; full suite 107. Verified end-to-end: edit → ⌘B auto-reloaded Play; capture surfaced a real `thealderman` world-init runtime throw (the `world.getLastCreatedEntityId()` non-method) with a full stack. Original spec below.
+
+### Step 5.4 — Play runtime error list (symbolicated, clickable)
+Turn captured Play errors into a navigable list, like the tsc diagnostics (4.8).
+- `SourceMap.swift`: a self-contained Swift source-map consumer (base64-VLQ + mappings decode → `originalPosition(generatedLine:generatedColumn:)`). No Node/WASM runtime dependency.
+- Parse the captured stack (`fn@sharpee-play://app/game.js:LINE:COL` frames), symbolicate each bundle frame via the story's `dist/web/<story>/game.js.map`, resolving the source path against the bundle dir → absolute `stories/<story>/src/...:line`.
+- Render in the Build panel as clickable lines (generalise 4.8's diagnostic click to a `SourceLocation{file,line,column}` target used by both tsc diagnostics and play frames) → click jumps to the editor.
+- Tests: `SourceMapTests` (VLQ decode, originalPosition against a known map), stack-frame parser tests.
+- Manual: a Play runtime error lists clickable frames → click → editor jumps to the throwing story line. ※
 - **Restart**: first try `WKWebView.reloadFromOrigin()`. **Open question to verify here:** if the web client autosaves to `localStorage` and resumes on load, a reload *resumes* rather than *restarts* — in that case Restart must invoke the client's restart via `evaluateJavaScript` (or clear the WKWebView's `localStorage`). Decide once the client's autosave behaviour is observed.
 - `BuildController` reloads the Play pane on a successful Browser build when the toggle is on.
 - Additive `SessionState.playAfterBuild` (default true) persisted + restored.

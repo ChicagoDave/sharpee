@@ -1,20 +1,53 @@
 // PlayViewController.swift
-// The Play pane: embeds the story's self-contained browser client in a WKWebView
-// (loaded from dist/web/<story>/), or shows a placeholder when no bundle is built.
-// Public interface: load(repoRoot:story:), reload().
+// The Play pane: a header (status / Restart / "Play after build") over a WKWebView that
+// embeds the story's self-contained browser client (dist/web/<story>/, served via a
+// custom scheme), or a placeholder when no bundle is built.
+// Public interface: load(repoRoot:story:), reloadAfterBuild(repoRoot:story:), restart(),
+// playAfterBuild, onPlayAfterBuildChanged.
 // Owner context: tools/ide — Play.
 
 import AppKit
 import WebKit
 
-final class PlayViewController: NSViewController {
+final class PlayViewController: NSViewController, WKScriptMessageHandler {
+
+    private static let consoleHandlerName = "playConsole"
+
+    /// Hooks the page's console.error / window.onerror / unhandledrejection and forwards
+    /// them to Swift, so Play-runtime errors are visible in the IDE (no WebView inspector
+    /// needed — game pages often suppress the right-click menu).
+    private static let consoleHookScript = """
+    (function () {
+      function send(text) {
+        try { window.webkit.messageHandlers.\(consoleHandlerName).postMessage(String(text)); } catch (e) {}
+      }
+      var origError = console.error;
+      console.error = function () { send(Array.prototype.join.call(arguments, ' ')); origError.apply(console, arguments); };
+      window.addEventListener('error', function (e) {
+        send((e.message || 'Error') + (e.filename ? ' (' + e.filename + ':' + e.lineno + ')' : ''));
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e.reason; send('Unhandled rejection: ' + (r && r.stack ? r.stack : (r && r.message ? r.message : r)));
+      });
+    })();
+    """
 
     private let schemeHandler = PlayURLSchemeHandler()
     private var webView: WKWebView!
+    private let header = PlayHeaderView()
     private let placeholder = NSTextField(labelWithString: "Build with Browser enabled to play")
 
-    /// The bundle currently loaded, so reload() can re-resolve it after a rebuild.
+    /// The bundle currently loaded, so reload after a rebuild can re-resolve it.
     private var loaded: (repoRoot: URL, story: String)?
+
+    /// Whether a successful Browser build should auto-load into the pane. Persisted in SessionState.
+    private(set) var playAfterBuild = true
+
+    /// Fired when the user toggles "Play after build", so the session can persist it.
+    var onPlayAfterBuildChanged: (() -> Void)?
+
+    /// Fired with each console.error / uncaught error from the running story.
+    var onConsoleError: ((String) -> Void)?
 
     override func loadView() {
         let pane = NSView()
@@ -25,25 +58,44 @@ final class PlayViewController: NSViewController {
         // not file:// (null origin → storage SecurityError).
         let configuration = WKWebViewConfiguration()
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: PlayURLSchemeHandler.scheme)
+        let contentController = configuration.userContentController
+        contentController.addUserScript(WKUserScript(source: Self.consoleHookScript,
+                                                     injectionTime: .atDocumentStart,
+                                                     forMainFrameOnly: true))
+        contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true // right-click → Inspect Element to debug the running story
         webView.translatesAutoresizingMaskIntoConstraints = false
+
+        header.translatesAutoresizingMaskIntoConstraints = false
+        header.onRestart = { [weak self] in self?.restart() }
+        header.onPlayAfterBuildToggle = { [weak self] on in
+            self?.playAfterBuild = on
+            self?.onPlayAfterBuildChanged?()
+        }
+        header.setPlayAfterBuild(playAfterBuild)
 
         placeholder.font = NSFont.systemFont(ofSize: 11)
         placeholder.textColor = Theme.foregroundFaint
         placeholder.translatesAutoresizingMaskIntoConstraints = false
 
+        pane.addSubview(header)
         pane.addSubview(webView)
         pane.addSubview(placeholder)
 
         NSLayoutConstraint.activate([
-            webView.topAnchor.constraint(equalTo: pane.topAnchor),
+            header.topAnchor.constraint(equalTo: pane.topAnchor),
+            header.leadingAnchor.constraint(equalTo: pane.leadingAnchor),
+            header.trailingAnchor.constraint(equalTo: pane.trailingAnchor),
+            header.heightAnchor.constraint(equalToConstant: PlayHeaderView.height),
+
+            webView.topAnchor.constraint(equalTo: header.bottomAnchor),
             webView.leadingAnchor.constraint(equalTo: pane.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: pane.trailingAnchor),
             webView.bottomAnchor.constraint(equalTo: pane.bottomAnchor),
 
-            placeholder.centerXAnchor.constraint(equalTo: pane.centerXAnchor),
-            placeholder.centerYAnchor.constraint(equalTo: pane.centerYAnchor),
+            placeholder.centerXAnchor.constraint(equalTo: webView.centerXAnchor),
+            placeholder.centerYAnchor.constraint(equalTo: webView.centerYAnchor),
         ])
 
         view = pane
@@ -63,18 +115,51 @@ final class PlayViewController: NSViewController {
         schemeHandler.rootDirectory = WebBundle.directory(repoRoot: repoRoot, story: story)
         placeholder.isHidden = true
         webView.isHidden = false
+        header.setLoaded(true)
         let url = URL(string: "\(PlayURLSchemeHandler.scheme)://\(PlayURLSchemeHandler.host)/index.html")!
         webView.load(URLRequest(url: url))
     }
 
-    /// Re-resolves and reloads the current bundle (used after a rebuild). No-op if nothing loaded.
-    func reload() {
-        guard let loaded else { return }
-        load(repoRoot: loaded.repoRoot, story: loaded.story)
+    /// Loads the just-built story after a successful Browser build, honouring the
+    /// "Play after build" toggle. No-op when the toggle is off.
+    func reloadAfterBuild(repoRoot: URL, story: String) {
+        guard playAfterBuild else { return }
+        load(repoRoot: repoRoot, story: story)
+    }
+
+    /// Restarts the running story by reloading from origin. (If the client later adds
+    /// autosave-resume on load, this should call its restart hook instead.)
+    func restart() {
+        guard loaded != nil else { return }
+        webView.reloadFromOrigin()
+    }
+
+    /// Applies a persisted "Play after build" value (session restore).
+    func setPlayAfterBuild(_ on: Bool) {
+        playAfterBuild = on
+        header.setPlayAfterBuild(on)
     }
 
     private func showPlaceholder() {
         webView.isHidden = true
         placeholder.isHidden = false
+        header.setLoaded(false)
+    }
+
+    // MARK: - WKScriptMessageHandler
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == Self.consoleHandlerName, let text = message.body as? String else { return }
+        onConsoleError?(text)
+    }
+}
+
+/// Forwards script messages to a delegate weakly — `WKUserContentController.add` retains its
+/// handler strongly, which would otherwise cycle (config → controller → handler → webView → config).
+private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
+    private weak var delegate: WKScriptMessageHandler?
+    init(_ delegate: WKScriptMessageHandler) { self.delegate = delegate }
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        delegate?.userContentController(controller, didReceive: message)
     }
 }
