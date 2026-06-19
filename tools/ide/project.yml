@@ -28,6 +28,8 @@ targets:
     platform: macOS
     sources:
       - path: SharpeeIDE
+    dependencies:
+      - sdk: WebKit.framework
     info:
       path: SharpeeIDE/Info.plist
       properties:

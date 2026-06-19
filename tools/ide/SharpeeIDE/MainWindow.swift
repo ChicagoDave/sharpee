@@ -73,6 +73,16 @@ final class MainWindowController: NSWindowController {
         rootViewController?.setBuildPanelRepoRoot(url)
     }
 
+    /// Loads (or clears) the Play pane for the given story's web bundle.
+    func refreshPlay(repoRoot: URL?, story: String?) {
+        rootViewController?.refreshPlay(repoRoot: repoRoot, story: story)
+    }
+
+    /// Reloads the Play pane's current bundle (after a rebuild).
+    func reloadPlay() {
+        rootViewController?.reloadPlay()
+    }
+
     /// Updates the status-bar build pill.
     func updateBuildStatus(_ status: BuildStatusDisplay) {
         rootViewController?.updateBuildStatus(status)
@@ -236,6 +246,14 @@ private final class RootViewController: NSViewController {
     func setBuildPanelRepoRoot(_ url: URL) {
         buildPanelViewController.panel.repoRoot = url
     }
+
+    func refreshPlay(repoRoot: URL?, story: String?) {
+        mainSplitViewController.refreshPlay(repoRoot: repoRoot, story: story)
+    }
+
+    func reloadPlay() {
+        mainSplitViewController.reloadPlay()
+    }
 }
 
 // MARK: - Main horizontal split (4 panes)
@@ -251,6 +269,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     private let railViewController = RailViewController()
     private let projectTreeViewController = ProjectTreeViewController()
     private let editorViewController = EditorViewController()
+    private let playViewController = PlayViewController()
 
     /// Invoked when the rail's Build button is clicked. Owned by RootViewController.
     fileprivate var onBuildPanelToggle: (() -> Void)?
@@ -272,10 +291,17 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         addSplitViewItem(makeRailItem())
         addSplitViewItem(makeProjectItem())
         addSplitViewItem(makeEditorItem())
-        addSplitViewItem(makePaneItem(label: "Play",
-                                      color: Theme.playBackground,
-                                      minWidth: Self.playMinWidth,
-                                      holding: .defaultLow))
+        addSplitViewItem(makePlayItem())
+    }
+
+    /// Loads (or clears) the Play pane for the given story's web bundle.
+    fileprivate func refreshPlay(repoRoot: URL?, story: String?) {
+        playViewController.load(repoRoot: repoRoot, story: story)
+    }
+
+    /// Reloads the Play pane's current bundle (after a rebuild).
+    fileprivate func reloadPlay() {
+        playViewController.reload()
     }
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
@@ -371,14 +397,10 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         return item
     }
 
-    private func makePaneItem(label: String,
-                              color: NSColor,
-                              minWidth: CGFloat,
-                              holding: NSLayoutConstraint.Priority) -> NSSplitViewItem {
-        let vc = PlaceholderPaneViewController(label: label, color: color)
-        let item = NSSplitViewItem(viewController: vc)
-        item.minimumThickness = minWidth
-        item.holdingPriority = holding
+    private func makePlayItem() -> NSSplitViewItem {
+        let item = NSSplitViewItem(viewController: playViewController)
+        item.minimumThickness = Self.playMinWidth
+        item.holdingPriority = .defaultLow
         return item
     }
 }

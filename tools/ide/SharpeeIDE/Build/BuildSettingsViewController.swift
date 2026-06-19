@@ -19,6 +19,7 @@ final class BuildSettingsViewController: NSViewController {
     private let browserCheckbox = NSButton(checkboxWithTitle: "Browser", target: nil, action: nil)
     private let zifmiaCheckbox = NSButton(checkboxWithTitle: "Zifmia", target: nil, action: nil)
     private let skipPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let browserEntryNote = NSTextField(labelWithString: "")
 
     /// First "Skip from" entry — represents "no `--skip`" (settings.skipFrom == nil).
     private static let noSkipTitle = "None"
@@ -52,6 +53,16 @@ final class BuildSettingsViewController: NSViewController {
         clients.spacing = 16
         [browserCheckbox, zifmiaCheckbox].forEach { $0.contentTintColor = Theme.foreground }
 
+        // Re-evaluate the browser-entry note when the story or Browser selection changes.
+        storyPopUp.target = self
+        storyPopUp.action = #selector(selectionChanged)
+        browserCheckbox.target = self
+        browserCheckbox.action = #selector(selectionChanged)
+
+        browserEntryNote.font = NSFont.systemFont(ofSize: 11)
+        browserEntryNote.textColor = .systemYellow
+        browserEntryNote.isHidden = true
+
         let grid = NSGridView(views: [
             [formLabel("Story"), storyPopUp],
             [formLabel("Clients"), clients],
@@ -74,7 +85,7 @@ final class BuildSettingsViewController: NSViewController {
         buttons.orientation = .horizontal
         buttons.spacing = 10
 
-        let column = NSStackView(views: [heading, grid, buttons])
+        let column = NSStackView(views: [heading, grid, browserEntryNote, buttons])
         column.orientation = .vertical
         column.alignment = .leading
         column.spacing = 18
@@ -131,6 +142,25 @@ final class BuildSettingsViewController: NSViewController {
             skipPopUp.selectItem(withTitle: skip)
         } else {
             skipPopUp.selectItem(at: 0)
+        }
+
+        updateBrowserEntryNote()
+    }
+
+    @objc private func selectionChanged() {
+        updateBrowserEntryNote()
+    }
+
+    /// Shows a note when Browser is selected for a story that has no browser entry yet.
+    private func updateBrowserEntryNote() {
+        let storyIndex = storyPopUp.indexOfSelectedItem - 1
+        let story = stories.indices.contains(storyIndex) ? stories[storyIndex].name : nil
+        if browserCheckbox.state == .on, let story,
+           !BrowserEntry.exists(repoRoot: repoRoot, story: story) {
+            browserEntryNote.stringValue = "⚠︎ ‘\(story)’ has no browser entry — Build will offer to create one."
+            browserEntryNote.isHidden = false
+        } else {
+            browserEntryNote.isHidden = true
         }
     }
 
