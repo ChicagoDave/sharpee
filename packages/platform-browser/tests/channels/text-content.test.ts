@@ -129,3 +129,33 @@ describe('flattenTextContent', () => {
     expect(flattenTextContent([])).toBe('');
   });
 });
+
+describe('renderTextContent — ADR-183 parameterized & void decorations', () => {
+  let host: HTMLElement;
+
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    host = document.createElement('div');
+    document.body.appendChild(host);
+  });
+
+  it('emits data-value for a parameterized decoration', () => {
+    const content: TextContent[] = [
+      { className: 'sharpee-center', content: ['Notice'], value: '50' },
+    ];
+    host.appendChild(renderTextContent(document, content));
+    expect(host.innerHTML).toBe('<span class="sharpee-center" data-value="50">Notice</span>');
+  });
+
+  it('omits data-value when no value is present', () => {
+    const content: TextContent[] = [{ className: 'sharpee-em', content: ['x'] }];
+    host.appendChild(renderTextContent(document, content));
+    expect(host.querySelector('span')!.hasAttribute('data-value')).toBe(false);
+  });
+
+  it('renders a void decoration as an empty span (CSS turns it into a break)', () => {
+    const content: TextContent[] = [{ className: 'sharpee-br', content: [] }];
+    host.appendChild(renderTextContent(document, content));
+    expect(host.innerHTML).toBe('<span class="sharpee-br"></span>');
+  });
+});

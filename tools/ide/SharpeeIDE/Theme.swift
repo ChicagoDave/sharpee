@@ -16,6 +16,17 @@ enum Theme {
     static let foregroundFaint    = NSColor(srgb: 0x5C5F6D)
     static let accent             = NSColor(srgb: 0x89B4FA)
     static let statusBarText      = NSColor(srgb: 0x11131A)
+
+    // Syntax token colors (P2 — tree-sitter highlighting). Catppuccin-ish on the dark editor bg.
+    static let tokenKeyword       = NSColor(srgb: 0xCBA6F7) // mauve
+    static let tokenString        = NSColor(srgb: 0xA6E3A1) // green
+    static let tokenComment       = NSColor(srgb: 0x6C7086) // overlay/grey
+    static let tokenNumber        = NSColor(srgb: 0xFAB387) // peach
+    static let tokenType          = NSColor(srgb: 0xF9E2AF) // yellow
+    static let tokenFunction      = NSColor(srgb: 0x89B4FA) // blue
+
+    // Bracket-match highlight (P2 step 2.4) — translucent accent behind the matched pair.
+    static let bracketMatchBackground = NSColor(srgbRed: 0.54, green: 0.70, blue: 0.98, alpha: 0.28)
 }
 
 private extension NSColor {

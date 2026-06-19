@@ -167,4 +167,68 @@ describe('parseDecorations', () => {
       expect(result).toEqual(['this **was** strong']);
     });
   });
+
+  describe('ADR-183 layout macros', () => {
+    it('[br] → void decoration sharpee-br with empty content', () => {
+      const result = parseDecorations('[br]');
+      expect(result).toHaveLength(1);
+      expectDecoration(result[0], 'sharpee-br', []);
+    });
+
+    it('[p] → void decoration sharpee-p with empty content', () => {
+      const result = parseDecorations('[p]');
+      expect(result).toHaveLength(1);
+      expectDecoration(result[0], 'sharpee-p', []);
+    });
+
+    it('colon-less non-void name stays literal (AC-11 unchanged)', () => {
+      expect(parseDecorations('[notvoid]')).toEqual(['[notvoid]']);
+    });
+
+    it('[center=50:Notice] → sharpee-center carrying value 50', () => {
+      const d = parseDecorations('[center=50:Notice]')[0];
+      expectDecoration(d, 'sharpee-center', ['Notice']);
+      if (!isDecoration(d)) throw new Error('unreachable');
+      expect(d.value).toBe('50');
+    });
+
+    it('[indent=2:x] carries value 2', () => {
+      const d = parseDecorations('[indent=2:x]')[0];
+      if (!isDecoration(d)) throw new Error('unreachable');
+      expect(d.className).toBe('sharpee-indent');
+      expect(d.value).toBe('2');
+    });
+
+    it('[center:Notice] without =value leaves value undefined', () => {
+      const d = parseDecorations('[center:Notice]')[0];
+      if (!isDecoration(d)) throw new Error('unreachable');
+      expect(d.className).toBe('sharpee-center');
+      expect(d.value).toBeUndefined();
+    });
+
+    it('author name carries a value verbatim (no sharpee- prefix)', () => {
+      const d = parseDecorations('[mybox=3:x]')[0];
+      if (!isDecoration(d)) throw new Error('unreachable');
+      expect(d.className).toBe('mybox');
+      expect(d.value).toBe('3');
+    });
+
+    it('value splits on the first "=" only (value may contain "=")', () => {
+      const d = parseDecorations('[a=b=c:x]')[0];
+      if (!isDecoration(d)) throw new Error('unreachable');
+      expect(d.className).toBe('a');
+      expect(d.value).toBe('b=c');
+    });
+
+    it('nesting composes a parameterized block, inline, and a void break', () => {
+      const outer = parseDecorations('[center=60:[em:Hi[br]There]]')[0];
+      if (!isDecoration(outer)) throw new Error('unreachable');
+      expect(outer.className).toBe('sharpee-center');
+      expect(outer.value).toBe('60');
+      const em = outer.content[0];
+      if (!isDecoration(em)) throw new Error('unreachable');
+      expect(em.className).toBe('sharpee-em');
+      expect(em.content).toEqual(['Hi', { className: 'sharpee-br', content: [] }, 'There']);
+    });
+  });
 });

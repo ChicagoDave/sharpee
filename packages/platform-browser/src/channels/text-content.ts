@@ -50,6 +50,11 @@ function renderDecoration(doc: Document, node: IDecoration): Node {
   }
   const el = doc.createElement('span');
   el.className = node.className;
+  if (node.value !== undefined) {
+    // ADR-183: a parameterized decoration carries its value as a data
+    // attribute — never an inline style. Platform/author CSS reads it.
+    el.setAttribute('data-value', node.value);
+  }
   el.appendChild(inner);
   return el;
 }

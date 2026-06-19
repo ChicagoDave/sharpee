@@ -150,6 +150,11 @@ function renderContent(
  * Render a decoration to string
  */
 function renderDecoration(decoration: IDecoration, options: CLIRenderOptions): string {
+  // ADR-183 void breaks map to terminal line breaks. Non-web clients have no CSS,
+  // so the renderer maps the class to behavior directly (independent of ansi).
+  if (decoration.className === 'sharpee-br') return '\n';
+  if (decoration.className === 'sharpee-p') return '\n\n';
+
   const innerText = renderContent(decoration.content, options);
 
   if (!options.ansi) {

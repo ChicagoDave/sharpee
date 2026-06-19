@@ -22,6 +22,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private let textView = NSTextView()
     private var lineNumberRuler: LineNumberRulerView?
     private let placeholder = NSTextField(labelWithString: "Open a file from the project pane")
+    private let highlighter = SyntaxHighlighter()
+    /// The two single-character ranges currently carrying the bracket-match background, so they
+    /// can be cleared before the next match is applied.
+    private var bracketRanges: [NSRange] = []
 
     private var documents: [Document] = []
     private var activeIndex: Int?
@@ -317,6 +321,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.undoManager?.removeAllActions()
         textView.scroll(.zero)
         lineNumberRuler?.errorLines = [] // marks are document-specific
+        bracketRanges = [] // match highlights belong to the previous document
+        applyHighlighting()
+    }
+
+    /// Re-runs syntax highlighting over the current text storage when the active document is a
+    /// supported language. No-op for unsupported files (they render at base foreground).
+    /// Attribute-only edits do not fire `textDidChange`/`NSText.didChangeNotification`, so this
+    /// does not recurse or churn the line-number ruler.
+    private func applyHighlighting() {
+        guard let url = activeDocument?.url, highlighter.canHighlight(url),
+              let storage = textView.textStorage else { return }
+        highlighter.highlight(storage)
     }
 
     private func persistTextViewToActiveDocument() {
@@ -330,10 +346,49 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         guard !isSwappingContent, let doc = activeDocument else { return }
         doc.content = textView.string
         lineNumberRuler?.errorLines = [] // editing invalidates the flagged error
+        applyHighlighting() // spike: full re-highlight on each edit (incremental re-parse lands with Neon)
         if !doc.isDirty {
             doc.isDirty = true
             refreshUI()
         }
+    }
+
+    /// Highlights the bracket adjacent to the caret and its balanced partner whenever the
+    /// selection moves. Uses `.backgroundColor` so it never disturbs the syntax foreground colors.
+    func textViewDidChangeSelection(_ notification: Notification) {
+        updateBracketMatch()
+    }
+
+    /// Intercepts Return to carry the current line's indentation (and add one level after an
+    /// opening bracket). Inserting via `insertText` keeps undo coherent and re-fires highlighting.
+    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard commandSelector == #selector(NSResponder.insertNewline(_:)), activeDocument != nil else {
+            return false
+        }
+        let caret = textView.selectedRange().location
+        let indent = AutoIndenter.indentOnNewline(text: textView.string, caret: caret)
+        textView.insertText("\n" + indent, replacementRange: textView.selectedRange())
+        return true
+    }
+
+    private func updateBracketMatch() {
+        guard let storage = textView.textStorage else { return }
+
+        // Clear the previous match first (guard against ranges invalidated by an edit).
+        for r in bracketRanges where NSMaxRange(r) <= storage.length {
+            storage.removeAttribute(.backgroundColor, range: r)
+        }
+        bracketRanges = []
+
+        guard activeDocument != nil else { return }
+        let caret = textView.selectedRange().location
+        guard let m = BracketMatcher.match(in: textView.string, caret: caret) else { return }
+
+        let ranges = [NSRange(location: m.bracket, length: 1), NSRange(location: m.partner, length: 1)]
+        for r in ranges where NSMaxRange(r) <= storage.length {
+            storage.addAttribute(.backgroundColor, value: Theme.bracketMatchBackground, range: r)
+        }
+        bracketRanges = ranges
     }
 
     // MARK: - Setup

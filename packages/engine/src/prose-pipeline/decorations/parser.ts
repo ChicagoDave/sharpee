@@ -12,6 +12,7 @@
  */
 
 import { resolveClassName } from './resolver';
+import { VOID_MACROS } from './platform-vocabulary';
 import type { IDecoration, TextContent } from './types';
 
 /**
@@ -124,23 +125,43 @@ function parseBracketAt(template: string, openIndex: number): BracketResult {
   const nextIndex = closeIndex + 1;
 
   if (colonIndex === -1) {
-    // AC-11: no colon → whole `[...]` segment is literal text.
+    // ADR-183: a colon-less `[name]` is a void macro (e.g. `[br]`, `[p]`) iff the
+    // name is registered; otherwise AC-11 applies and the whole segment is literal.
+    if (VOID_MACROS.has(inner)) {
+      return {
+        kind: 'decoration',
+        decoration: { className: resolveClassName(inner), content: [] },
+        nextIndex,
+      };
+    }
     return { kind: 'literal', text: template.slice(openIndex, nextIndex), nextIndex };
   }
 
-  const rawName = inner.slice(0, colonIndex);
+  const namePart = inner.slice(0, colonIndex);
   const innerContent = inner.slice(colonIndex + 1);
 
+  // ADR-183: an optional `=value` in the name segment carries a parameter
+  // (e.g. `[center=50:…]`). Split on the first `=`; the value may itself contain
+  // `=`. Content (after the colon) is unaffected.
+  let rawName = namePart;
+  let value: string | undefined;
+  const eqIndex = namePart.indexOf('=');
+  if (eqIndex !== -1) {
+    rawName = namePart.slice(0, eqIndex);
+    value = namePart.slice(eqIndex + 1);
+  }
+
   if (rawName === '') {
-    // AC-12: empty class name → emit inner content as plain entries.
+    // AC-12: empty class name → emit inner content as plain entries (value ignored).
     return { kind: 'children', children: parseDecorations(innerContent), nextIndex };
   }
 
-  return {
-    kind: 'decoration',
-    decoration: { className: resolveClassName(rawName), content: parseDecorations(innerContent) },
-    nextIndex,
-  };
+  const decoration: IDecoration =
+    value !== undefined
+      ? { className: resolveClassName(rawName), content: parseDecorations(innerContent), value }
+      : { className: resolveClassName(rawName), content: parseDecorations(innerContent) };
+
+  return { kind: 'decoration', decoration, nextIndex };
 }
 
 /**

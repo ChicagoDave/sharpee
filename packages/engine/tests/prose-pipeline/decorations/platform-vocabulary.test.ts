@@ -81,7 +81,14 @@ describe('PLATFORM_VOCABULARY', () => {
   });
 
   it('exposes a stable size matching the documented enumeration length (V1)', () => {
-    // 7 switches + 6 IF-semantic + 9 colors + 9 bgcolors + 2 sizes + 1 font = 34
-    expect(PLATFORM_VOCABULARY.size).toBe(34);
+    // 7 switches + 6 IF-semantic + 9 colors + 9 bgcolors + 2 sizes + 1 font
+    //   + 5 ADR-183 layout macros (br, p, indent, center, right) = 39
+    expect(PLATFORM_VOCABULARY.size).toBe(39);
+  });
+
+  it('includes the ADR-183 layout-macro names', () => {
+    for (const name of ['br', 'p', 'indent', 'center', 'right']) {
+      expect(PLATFORM_VOCABULARY.has(name)).toBe(true);
+    }
   });
 });
