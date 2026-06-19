@@ -91,20 +91,20 @@ function createScenery(world: WorldModel): void {
   SceneryIds.fireplace = fireplace.id;
   world.moveEntity(fireplace.id, RoomIds.foyer);
 
-  createSceneryItem(world, 'chandeliers', 'Gas-lit chandeliers cast warm light across the marble floor.', ['chandeliers', 'chandelier', 'lights']);
-  world.moveEntity(world.getEntity(world.getLastCreatedEntityId()!)!.id, RoomIds.foyer);
+  const chandeliers = createSceneryItem(world, 'chandeliers', 'Gas-lit chandeliers cast warm light across the marble floor.', ['chandeliers', 'chandelier', 'lights']);
+  world.moveEntity(chandeliers.id, RoomIds.foyer);
 
   // === RESTAURANT ===
-  createSceneryItem(world, 'dining tables', 'Round tables draped in white linen, set with silver and crystal.', ['tables', 'dining tables', 'table']);
-  world.moveEntity(world.getEntity(world.getLastCreatedEntityId()!)!.id, RoomIds.restaurant);
+  const diningTables = createSceneryItem(world, 'dining tables', 'Round tables draped in white linen, set with silver and crystal.', ['tables', 'dining tables', 'table']);
+  world.moveEntity(diningTables.id, RoomIds.restaurant);
 
   // === KITCHEN ===
   const knifeBlock = createSceneryItem(world, 'knife block', 'A wooden block holding an assortment of kitchen knives. One slot is conspicuously empty.', ['knife block', 'block']);
   SceneryIds.knifeBlock = knifeBlock.id;
   world.moveEntity(knifeBlock.id, RoomIds.kitchen);
 
-  createSceneryItem(world, 'preparation table', 'A long oak table scarred by years of chopping and slicing.', ['preparation table', 'prep table', 'table']);
-  world.moveEntity(world.getEntity(world.getLastCreatedEntityId()!)!.id, RoomIds.kitchen);
+  const preparationTable = createSceneryItem(world, 'preparation table', 'A long oak table scarred by years of chopping and slicing.', ['preparation table', 'prep table', 'table']);
+  world.moveEntity(preparationTable.id, RoomIds.kitchen);
 
   // === BAR ===
   const barCounter = createSceneryItem(world, 'bar counter', 'A long mahogany bar, polished to a mirror shine. Bottles and glasses behind it.', ['bar counter', 'counter', 'bar']);
