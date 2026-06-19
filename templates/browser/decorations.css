@@ -114,3 +114,39 @@
 .sharpee-font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
+
+/* ----- Layout macros (ADR-183) ----- */
+/* All block-level; the void br/p render as empty spans. Presentation lives
+   here so authors override en masse by re-declaring these classes. */
+
+/* An empty block between inline runs collapses to a single line break. */
+.sharpee-br {
+  display: block;
+}
+
+/* An empty block with height gives a blank-line (paragraph) gap. */
+.sharpee-p {
+  display: block;
+  height: 1em;
+}
+
+.sharpee-center {
+  display: block;
+  text-align: center;
+}
+
+.sharpee-right {
+  display: block;
+  text-align: right;
+}
+
+.sharpee-indent {
+  display: block;
+  margin-left: 2em;
+}
+
+/* `[center=N:…]` and `[indent=N:…]` carry N as `data-value`. The platform
+   default applies the unparameterized behavior (center / one indent level) so
+   markup degrades gracefully; honoring an arbitrary value (width %, indent
+   level) is left to author CSS or a client pass — the value is present on the
+   element either way. */
