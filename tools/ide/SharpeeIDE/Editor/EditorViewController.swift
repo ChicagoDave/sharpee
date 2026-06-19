@@ -22,6 +22,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private let textView = NSTextView()
     private var lineNumberRuler: LineNumberRulerView?
     private let placeholder = NSTextField(labelWithString: "Open a file from the project pane")
+    private let highlighter = SyntaxHighlighter()
 
     private var documents: [Document] = []
     private var activeIndex: Int?
@@ -317,6 +318,17 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.undoManager?.removeAllActions()
         textView.scroll(.zero)
         lineNumberRuler?.errorLines = [] // marks are document-specific
+        applyHighlighting()
+    }
+
+    /// Re-runs syntax highlighting over the current text storage when the active document is a
+    /// supported language. No-op for unsupported files (they render at base foreground).
+    /// Attribute-only edits do not fire `textDidChange`/`NSText.didChangeNotification`, so this
+    /// does not recurse or churn the line-number ruler.
+    private func applyHighlighting() {
+        guard let url = activeDocument?.url, highlighter.canHighlight(url),
+              let storage = textView.textStorage else { return }
+        highlighter.highlight(storage)
     }
 
     private func persistTextViewToActiveDocument() {
@@ -330,6 +342,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         guard !isSwappingContent, let doc = activeDocument else { return }
         doc.content = textView.string
         lineNumberRuler?.errorLines = [] // editing invalidates the flagged error
+        applyHighlighting() // spike: full re-highlight on each edit (incremental re-parse lands with Neon)
         if !doc.isDirty {
             doc.isDirty = true
             refreshUI()

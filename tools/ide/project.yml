@@ -22,6 +22,17 @@ settings:
     ENABLE_DEBUG_DYLIB: NO
     ENABLE_PREVIEWS: NO
 
+# Swift Package dependencies (P2 — TS-aware editor, tree-sitter highlighting).
+# SwiftTreeSitter: Swift binding over the tree-sitter C runtime (parse + query).
+# TreeSitterTypeScript: the vendored TS/TSX grammar (exports tree_sitter_typescript()).
+packages:
+  SwiftTreeSitter:
+    url: https://github.com/tree-sitter/swift-tree-sitter
+    exactVersion: 0.10.0
+  TreeSitterTypeScript:
+    url: https://github.com/tree-sitter/tree-sitter-typescript
+    branch: master
+
 targets:
   SharpeeIDE:
     type: application
@@ -30,6 +41,10 @@ targets:
       - path: SharpeeIDE
     dependencies:
       - sdk: WebKit.framework
+      - package: SwiftTreeSitter
+        product: SwiftTreeSitter
+      - package: TreeSitterTypeScript
+        product: TreeSitterTypeScript
     info:
       path: SharpeeIDE/Info.plist
       properties:
