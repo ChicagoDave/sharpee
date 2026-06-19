@@ -3,7 +3,10 @@ SharpeeIDE.xcodeproj/
 SharpeeIDE/Info.plist
 
 # Xcode build artifacts
+# NB: macOS git is case-insensitive (core.ignorecase), so `build/` also matches the
+# `SharpeeIDE/Build/` SOURCE group — re-include it explicitly so its .swift files track.
 build/
+!SharpeeIDE/Build/
 DerivedData/
 *.xcuserstate
 xcuserdata/

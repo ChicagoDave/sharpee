@@ -94,7 +94,10 @@ Each step ends at a build-green checkpoint. ※ marks stop-points where I'll rep
 - `AppDelegate` enables/disables the Build menu in `applicationDidFinishLaunching` and on project load (via a `currentRepoRoot: URL?` property).
 - Tests: `WorkspaceRootTests` — walks from nested dir to the signature; returns nil when no ancestor has it; requires both markers; handles `/` without looping. ※
 
-### Step 4.2 — BuildSettings model + BuildSettingsStore + tests
+### Step 4.2 — BuildSettings model + BuildSettingsStore + tests  ✅ DONE (2026-06-18)
+
+Landed: `Build/BuildSettings.swift` (story/clients/skipFrom + `toArguments()`, no theme) and `Build/BuildSettingsStore.swift` (per-project, keyed by `URL.path`, injectable UserDefaults). `BuildSettingsTests` (8) + `BuildSettingsStoreTests` (7) green; full suite 56 tests, 0 failures. Original spec below.
+
 
 - `BuildSettings` struct: `story: String?`, `clients: Set<String>` (values `"browser"`, `"zifmia"`), `skipFrom: String?`. Codable; sensible defaults. (No `theme` — dropped per ADR-180.)
 - `BuildSettings.toArguments() -> [String]` produces the `./sharpee build` argv **after** the `build` subcommand: positional story first, then flags — e.g. `["dungeo", "--browser"]`, or `["dungeo", "--browser", "--zifmia", "--skip", "stdlib"]`. The runner prepends `"build"`.
