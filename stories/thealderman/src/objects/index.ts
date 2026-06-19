@@ -157,12 +157,7 @@ function createClues(world: WorldModel): void {
     article: 'an',
   }));
   letter.add(new ReadableTrait({
-    text: [
-      'Dear Mr. Hewitt,',
-      '',
-      'I write to inform you of my decision regarding the estate. The property',
-      'deeds currently held by Mr. Margolin must be called in no later than—',
-    ].join('\n'),
+    text: 'Dear Mr. Hewitt,[p]I write to inform you of my decision regarding the estate. The property deeds currently held by Mr. Margolin must be called in no later than—',
   }));
   world.moveEntity(letter.id, RoomIds.room302);
 
@@ -180,15 +175,7 @@ function createClues(world: WorldModel): void {
     article: 'a',
   }));
   program.add(new ReadableTrait({
-    text: [
-      'McVicker\'s Theatre presents "The Heiress"',
-      'Starring Viola Wainright',
-      '',
-      'Evening Performance: 7:00 PM',
-      'Rehearsal Schedule: 2:00 PM — 5:00 PM',
-      '',
-      '(The rehearsal ended at 5:00 PM — not at 8:00 PM as Viola claims.)',
-    ].join('\n'),
+    text: 'McVicker\'s Theatre presents "The Heiress"[br]Starring Viola Wainright[p]Evening Performance: 7:00 PM[br]Rehearsal Schedule: 2:00 PM — 5:00 PM[p](The rehearsal ended at 5:00 PM — not at 8:00 PM as Viola claims.)',
   }));
   world.moveEntity(program.id, RoomIds.foyer);
 }
