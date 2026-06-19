@@ -151,9 +151,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // No-op until step 4.6.
     }
 
-    /// Build → Build Settings…. Stub — opens a sheet in step 4.3.
+    /// Build → Build Settings…. Presents the per-project build options as a sheet.
+    /// Enabled only when a workspace root is known (see validateMenuItem).
     @objc func openBuildSettings(_ sender: Any?) {
-        // No-op until step 4.3.
+        guard let repoRoot = currentRepoRoot,
+              let presenter = mainWindowController?.window?.contentViewController else { return }
+        presenter.presentAsSheet(BuildSettingsViewController(repoRoot: repoRoot))
     }
 
     /// Build → Cancel Build. Stub — wired to the runner in step 4.6.

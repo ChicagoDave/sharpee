@@ -104,7 +104,10 @@ Landed: `Build/BuildSettings.swift` (story/clients/skipFrom + `toArguments()`, n
 - `BuildSettingsStore` — per-project storage keyed by `URL.path`, injectable UserDefaults, mirrors RecentProjectsStore pattern.
 - Tests: `BuildSettingsTests` (argument generation, codable roundtrip, defaults), `BuildSettingsStoreTests` (save/load per project, isolation between projects, clear). ※
 
-### Step 4.3 — Build Settings sheet UI
+### Step 4.3 — Build Settings sheet UI  ✅ CODE COMPLETE (2026-06-18) — manual verification pending
+
+Landed: `Workspace/StoryDetector.swift` (stories/ + tutorials/, package.json-gated, stories-first sorted), `Workspace/PackageDetector.swift` (packages/* short-names for `--skip`), `Build/BuildSettingsViewController.swift` (NSGridView form: Story popup, Browser/Zifmia checkboxes, Skip-from popup; Save persists via BuildSettingsStore, Cancel discards), and `AppDelegate.openBuildSettings` presents it via `presentAsSheet`. `StoryDetectorTests` (5) + `PackageDetectorTests` (3) green against fixture trees; app target compiles; full suite 64, 0 failures. **Still needs the manual ※ check below** (open sheet, change values, reopen → persisted). Original spec below.
+
 
 - `BuildSettingsViewController` — `NSViewController` presented as a sheet from the main window.
 - Reads stories via `StoryDetector.detect(in: repoRoot) -> [Story]` (scans `stories/*/package.json`).
