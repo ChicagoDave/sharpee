@@ -92,6 +92,36 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         }
     }
 
+    /// Opens (or focuses) `url`, then scrolls to and selects the 1-based `line`. Used by
+    /// click-to-jump from a build diagnostic. `column` is reserved (the whole line is
+    /// selected for visibility). No-op if the file couldn't be opened or the line is out
+    /// of range.
+    func openDocument(at url: URL, line: Int, column: Int = 1) {
+        openDocument(at: url)
+        guard activeDocument?.url == url, let range = characterRange(ofLine: line) else { return }
+        textView.setSelectedRange(range)
+        textView.scrollRangeToVisible(range)
+        view.window?.makeFirstResponder(textView)
+    }
+
+    /// The character range of the 1-based `line` in the text view, or nil if out of range.
+    private func characterRange(ofLine line: Int) -> NSRange? {
+        guard line >= 1 else { return nil }
+        let text = textView.string as NSString
+        var start = 0
+        var current = 1
+        while current < line {
+            let newline = text.range(of: "\n", range: NSRange(location: start, length: text.length - start))
+            if newline.location == NSNotFound { return nil } // line beyond EOF
+            start = newline.location + 1
+            current += 1
+        }
+        var contentsEnd = 0
+        text.getLineStart(nil, end: nil, contentsEnd: &contentsEnd,
+                          for: NSRange(location: start, length: 0))
+        return NSRange(location: start, length: contentsEnd - start)
+    }
+
     /// Closes the tab at `index`. If the document is dirty, prompts the user with a
     /// Save / Cancel / Don't Save sheet and only proceeds based on their choice. If clean,
     /// removes immediately. If it was the active tab, advances to the next (or previous) tab.

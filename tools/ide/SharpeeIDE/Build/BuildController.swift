@@ -26,6 +26,7 @@ final class BuildController: BuildRunnerDelegate {
     /// No-op if a build is already running.
     func build(settings: BuildSettings, repoRoot: URL) {
         guard !runner.isRunning else { return }
+        window?.setBuildPanelRepoRoot(repoRoot)
         window?.setBuildPanelVisible(true)
         window?.clearBuildOutput()
         let command = (["./sharpee", "build"] + settings.toArguments()).joined(separator: " ")

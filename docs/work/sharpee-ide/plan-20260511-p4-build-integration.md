@@ -163,7 +163,10 @@ Landed: `Build/BuildStatus.swift` (`BuildStatusDisplay` enum + pure `BuildStateF
 - Tests: `BuildStateFormatterTests` for the duration formatting + label generation.
 - Manual verification: pill appearance through a full build cycle. ※
 
-### Step 4.8 — TSC error parsing + click-to-jump
+### Step 4.8 — TSC error parsing + click-to-jump  ✅ DONE (2026-06-18)
+
+Landed: `Build/TSCDiagnostic.swift` (struct + `TSCDiagnosticParser.parse` regex extraction + `packageDirectory(from:)` for pnpm run headers). `BuildPanelView` rewritten to render line-by-line: diagnostics coloured red(error)/yellow(warning) and click-tracked (a `BuildOutputTextView` subclass reports the clicked char index → hit-test against stored diagnostic ranges → `onDiagnosticClick`), with per-package cwd tracking so package-relative tsc paths resolve. `EditorViewController.openDocument(at:line:column:)` scrolls to + selects the line. Wired panel → `MainSplitViewController.openDocument(at:line:column:)`; `BuildController` seeds the panel's repoRoot. `TSCDiagnosticParserTests` (10) green; full suite 91, 0 failures. (EditorOpenAtLine left to manual per plan.) Original spec below.
+
 
 - `TSCDiagnostic` struct: `file: URL, line: Int, column: Int, severity: .error|.warning, code: String, message: String`.
 - `TSCDiagnosticParser.parse(line:relativeTo: repoRoot) -> TSCDiagnostic?` — regex extraction; resolves `file` against repo root if path is relative.

@@ -68,6 +68,11 @@ final class MainWindowController: NSWindowController {
         rootViewController?.clearBuildOutput()
     }
 
+    /// Sets the repo root the Build panel uses to resolve diagnostic paths.
+    func setBuildPanelRepoRoot(_ url: URL) {
+        rootViewController?.setBuildPanelRepoRoot(url)
+    }
+
     /// Updates the status-bar build pill.
     func updateBuildStatus(_ status: BuildStatusDisplay) {
         rootViewController?.updateBuildStatus(status)
@@ -108,6 +113,11 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.onBuildPanelToggle = { [weak self] in self?.toggleBuildPanel() }
         mainSplitViewController.buildPanelVisibleProvider = { [weak self] in self?.isBuildPanelVisible ?? false }
         statusBar.onPillClick = { [weak self] in self?.handlePillClick() }
+        buildPanelViewController.panel.onDiagnosticClick = { [weak self] diagnostic in
+            self?.mainSplitViewController.openDocument(at: diagnostic.file,
+                                                       line: diagnostic.line,
+                                                       column: diagnostic.column)
+        }
 
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
@@ -222,6 +232,10 @@ private final class RootViewController: NSViewController {
     func clearBuildOutput() {
         buildPanelViewController.panel.clear()
     }
+
+    func setBuildPanelRepoRoot(_ url: URL) {
+        buildPanelViewController.panel.repoRoot = url
+    }
 }
 
 // MARK: - Main horizontal split (4 panes)
@@ -277,6 +291,10 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
 
     func openDocument(at url: URL) {
         editorViewController.openDocument(at: url)
+    }
+
+    func openDocument(at url: URL, line: Int, column: Int) {
+        editorViewController.openDocument(at: url, line: line, column: column)
     }
 
     func switchToDocument(at index: Int) {
