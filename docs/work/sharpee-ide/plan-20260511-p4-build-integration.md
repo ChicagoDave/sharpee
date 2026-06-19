@@ -139,7 +139,12 @@ Landed: `Build/BuildPanelView.swift` (monospaced NSTextView in a scroll view, `a
 - Visibility persists in SessionState (`buildPanelVisible: Bool` — additive Codable field with default `false`).
 - Manual verification: toggle from rail, panel appears/hides, height persists across drags. ※
 
-### Step 4.6 — Wire BuildRunner to Build panel
+### Step 4.6 — Wire BuildRunner to Build panel  ✅ DONE (2026-06-18) — verified with a real build
+
+Landed: `Build/BuildController.swift` (owns BuildRunner, forwards output to the panel, auto-shows it, appends ✓/✗/■ status); `AppDelegate.buildProject` loads per-project settings → runs (or alerts "no story selected" → opens settings), `cancelBuild` cancels, validation disables Build while building / enables Cancel only while building; `MainWindow` append/clear forwarding. **Plus the GUI-PATH fix** (`Build/ShellEnvironment.swift`): a Finder-launched app inherits a minimal PATH, so `./sharpee`'s `exec node` failed with exit 127 — BuildRunner now injects the user's login-shell PATH (nvm/homebrew/volta). `ShellEnvironmentTests` (3) green; full suite 75, 0 failures. **Verified**: ⌘B streamed a full real `./sharpee build … --browser` (platform + ESM + bundle) into the panel with correct exit status. Original spec below.
+
+> Future error-UX ideas surfaced here (David: "more IDE help for errors"): Build Settings could warn/disable `--browser` for a story lacking `src/browser-entry.ts` (the failure observed during verification); devkit pre-check errors could be surfaced more prominently than the tail line. TSC compile-error navigation is step 4.8.
+
 
 - `BuildController` owns a `BuildRunner` and a reference to the `BuildPanelView`.
 - Build menu's Build action: read settings → ensure they're complete (story selected) → start runner → forward chunks to panel.

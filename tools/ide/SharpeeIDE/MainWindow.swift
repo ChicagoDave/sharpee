@@ -53,9 +53,19 @@ final class MainWindowController: NSWindowController {
         rootViewController?.switchToDocument(at: index)
     }
 
-    /// Shows or hides the bottom Build panel — used by session restoration.
+    /// Shows or hides the bottom Build panel — used by session restoration and builds.
     func setBuildPanelVisible(_ visible: Bool) {
         rootViewController?.applyBuildPanelVisible(visible)
+    }
+
+    /// Appends a chunk of build output to the Build panel.
+    func appendBuildOutput(_ text: String) {
+        rootViewController?.appendBuildOutput(text)
+    }
+
+    /// Clears the Build panel (called at the start of a build).
+    func clearBuildOutput() {
+        rootViewController?.clearBuildOutput()
     }
 
     private var rootViewController: RootViewController? {
@@ -172,6 +182,14 @@ private final class RootViewController: NSViewController {
 
     func switchToDocument(at index: Int) {
         mainSplitViewController.switchToDocument(at: index)
+    }
+
+    func appendBuildOutput(_ text: String) {
+        buildPanelViewController.panel.append(text)
+    }
+
+    func clearBuildOutput() {
+        buildPanelViewController.panel.clear()
     }
 }
 

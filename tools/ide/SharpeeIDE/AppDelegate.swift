@@ -11,6 +11,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemValidation {
 
     private var mainWindowController: MainWindowController?
+    private var buildController: BuildController?
 
     /// Monorepo root for the currently loaded project — the closest ancestor carrying the
     /// Sharpee signature (`pnpm-workspace.yaml` + `packages/core/`), home of the `./sharpee` CLI.
@@ -24,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         let controller = MainWindowController()
         mainWindowController = controller
+        buildController = BuildController(window: controller)
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
 
@@ -147,9 +149,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     // MARK: - Build menu actions
 
-    /// Build → Build (⌘B). Stub — wired to a runner in step 4.6.
+    /// Build → Build (⌘B). Runs `./sharpee build` with the project's saved settings,
+    /// streaming output into the Build panel. If no story is selected yet, opens Build
+    /// Settings instead of building.
     @objc func buildProject(_ sender: Any?) {
-        // No-op until step 4.6.
+        guard let repoRoot = currentRepoRoot else { return }
+        let settings = BuildSettingsStore.load(for: repoRoot)
+        guard settings.story != nil else {
+            presentNoStoryAlert(sender)
+            return
+        }
+        buildController?.build(settings: settings, repoRoot: repoRoot)
+    }
+
+    /// Alerts that a story must be picked, then opens Build Settings.
+    private func presentNoStoryAlert(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = "No story selected"
+        alert.informativeText = "Choose a story in Build Settings before building."
+        alert.addButton(withTitle: "Open Build Settings…")
+        alert.addButton(withTitle: "Cancel")
+        let runModal: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            if response == .alertFirstButtonReturn { self?.openBuildSettings(sender) }
+        }
+        if let window = mainWindowController?.window {
+            alert.beginSheetModal(for: window, completionHandler: runModal)
+        } else {
+            runModal(alert.runModal())
+        }
     }
 
     /// Build → Build Settings…. Presents the per-project build options as a sheet.
@@ -160,9 +187,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         presenter.presentAsSheet(BuildSettingsViewController(repoRoot: repoRoot))
     }
 
-    /// Build → Cancel Build. Stub — wired to the runner in step 4.6.
+    /// Build → Cancel Build. Cancels the running build (SIGTERM, then SIGKILL).
     @objc func cancelBuild(_ sender: Any?) {
-        // No-op until step 4.6.
+        buildController?.cancel()
     }
 
     // MARK: - NSUserInterfaceValidations (menu enable/disable)
@@ -172,11 +199,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// until step 4.6 wires it to runner state.
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
-        case #selector(buildProject(_:)),
-             #selector(openBuildSettings(_:)):
+        case #selector(buildProject(_:)):
+            return currentRepoRoot != nil && !(buildController?.isBuilding ?? false)
+        case #selector(openBuildSettings(_:)):
             return currentRepoRoot != nil
         case #selector(cancelBuild(_:)):
-            return false
+            return buildController?.isBuilding ?? false
         default:
             return true
         }

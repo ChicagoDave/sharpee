@@ -55,13 +55,17 @@ final class BuildRunner {
     func start(settings: BuildSettings, repoRoot: URL) {
         start(executable: repoRoot.appendingPathComponent("sharpee"),
               arguments: ["build"] + settings.toArguments(),
-              workingDirectory: repoRoot)
+              workingDirectory: repoRoot,
+              environment: ShellEnvironment.buildEnvironment())
     }
 
     /// Spawns an arbitrary executable. This is the production spawn path; the
     /// settings-based overload delegates here, and tests drive it directly with a
     /// fixture script so the real Process/pipe/signal machinery is exercised.
-    func start(executable: URL, arguments: [String], workingDirectory: URL) {
+    /// `environment` overrides the inherited environment when provided (the settings
+    /// path supplies the user's login-shell PATH so `node` is found).
+    func start(executable: URL, arguments: [String], workingDirectory: URL,
+               environment: [String: String]? = nil) {
         guard !isRunning else {
             assertionFailure("BuildRunner.start called while a build is already running")
             return
@@ -72,6 +76,7 @@ final class BuildRunner {
         proc.executableURL = executable
         proc.arguments = arguments
         proc.currentDirectoryURL = workingDirectory
+        if let environment { proc.environment = environment }
 
         let outPipe = Pipe()
         let errPipe = Pipe()
