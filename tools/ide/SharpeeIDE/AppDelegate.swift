@@ -12,8 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private var mainWindowController: MainWindowController?
 
-    /// Workspace root for the currently loaded project — the directory containing `build.sh`.
-    /// Nil when no project is loaded, or when the loaded project has no ancestor with a `build.sh`.
+    /// Monorepo root for the currently loaded project — the closest ancestor carrying the
+    /// Sharpee signature (`pnpm-workspace.yaml` + `packages/core/`), home of the `./sharpee` CLI.
+    /// Nil when no project is loaded, or when no ancestor carries the signature.
     /// Drives Build menu enablement via `validateUserInterfaceItem(_:)`.
     private var currentRepoRoot: URL?
 

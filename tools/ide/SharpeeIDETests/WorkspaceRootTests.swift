@@ -1,6 +1,6 @@
 // WorkspaceRootTests.swift
-// Covers WorkspaceRoot.find(from:) — direct match, nested descent, missing marker,
-// filesystem-root termination.
+// Covers WorkspaceRoot.find(from:) — direct match, nested descent, the two-marker
+// AND condition, filesystem-root termination (the case that previously hung).
 
 import XCTest
 @testable import SharpeeIDE
@@ -27,10 +27,13 @@ final class WorkspaceRootTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Writes an empty `build.sh` in the given directory.
-    private func placeBuildScript(in directory: URL) throws {
-        let script = directory.appendingPathComponent("build.sh")
-        try Data().write(to: script)
+    /// Writes the Sharpee monorepo signature (pnpm-workspace.yaml + packages/core/)
+    /// into the given directory.
+    private func placeMonorepoSignature(in directory: URL) throws {
+        try Data().write(to: directory.appendingPathComponent("pnpm-workspace.yaml"))
+        try FileManager.default.createDirectory(
+            at: directory.appendingPathComponent("packages/core", isDirectory: true),
+            withIntermediateDirectories: true)
     }
 
     /// Creates a directory at `path` relative to `tempDir`.
@@ -43,52 +46,68 @@ final class WorkspaceRootTests: XCTestCase {
 
     // MARK: - Direct match
 
-    func testReturnsDirectoryThatContainsBuildScript() throws {
-        try placeBuildScript(in: tempDir)
+    func testReturnsDirectoryThatHasSignature() throws {
+        try placeMonorepoSignature(in: tempDir)
         XCTAssertEqual(WorkspaceRoot.find(from: tempDir)?.path, tempDir.path)
     }
 
     // MARK: - Walk up
 
-    func testWalksUpFromNestedDirectoryUntilMarkerFound() throws {
-        try placeBuildScript(in: tempDir)
+    func testWalksUpFromNestedDirectoryUntilSignatureFound() throws {
+        try placeMonorepoSignature(in: tempDir)
         let deep = try mkdir("packages/stdlib/src")
 
         XCTAssertEqual(WorkspaceRoot.find(from: deep)?.path, tempDir.path)
     }
 
-    func testReturnsDeepestAncestorWhenMultipleMarkersExist() throws {
-        // Outer build.sh at tempDir; inner build.sh at tempDir/inner. From a path
-        // under inner, the inner build.sh wins because it's the closest ancestor.
-        try placeBuildScript(in: tempDir)
+    func testReturnsDeepestAncestorWhenMultipleSignaturesExist() throws {
+        // Outer signature at tempDir; inner signature at tempDir/inner. From a path
+        // under inner, the inner root wins because it's the closest ancestor.
+        try placeMonorepoSignature(in: tempDir)
         let inner = try mkdir("inner")
-        try placeBuildScript(in: inner)
+        try placeMonorepoSignature(in: inner)
         let deeper = try mkdir("inner/sub")
 
         XCTAssertEqual(WorkspaceRoot.find(from: deeper)?.path, inner.path)
     }
 
-    // MARK: - Missing marker
+    // MARK: - Missing / partial signature (must terminate, not hang)
 
-    func testReturnsNilWhenNoAncestorContainsBuildScript() throws {
-        // tempDir has no build.sh; nothing above it (inside a temp folder under
-        // /var/folders) will contain one either.
+    func testReturnsNilWhenNoAncestorHasSignature() throws {
+        // tempDir (and everything above it under /var/folders) lacks the signature.
+        // This walks all the way to "/" — the regression case that previously looped.
         let nested = try mkdir("a/b/c")
         XCTAssertNil(WorkspaceRoot.find(from: nested))
     }
 
-    func testTerminatesAtFilesystemRoot() {
-        // Calling find on / must not loop forever; / has no build.sh.
-        XCTAssertNil(WorkspaceRoot.find(from: URL(fileURLWithPath: "/")))
+    func testRequiresWorkspaceFileNotJustPackagesCore() throws {
+        // packages/core present but no pnpm-workspace.yaml — not a monorepo root.
+        try FileManager.default.createDirectory(
+            at: tempDir.appendingPathComponent("packages/core", isDirectory: true),
+            withIntermediateDirectories: true)
+        XCTAssertNil(WorkspaceRoot.find(from: tempDir))
     }
 
-    // MARK: - Edge cases
-
-    func testIgnoresDirectoryNamedBuildSh() throws {
-        // A *directory* called build.sh is not a valid marker.
-        let fakeMarker = tempDir.appendingPathComponent("build.sh", isDirectory: true)
-        try FileManager.default.createDirectory(at: fakeMarker,
-                                                withIntermediateDirectories: true)
+    func testRequiresPackagesCoreNotJustWorkspaceFile() throws {
+        // pnpm-workspace.yaml present but no packages/core — not a monorepo root
+        // (guards against a coincidental author pnpm workspace).
+        try Data().write(to: tempDir.appendingPathComponent("pnpm-workspace.yaml"))
         XCTAssertNil(WorkspaceRoot.find(from: tempDir))
+    }
+
+    func testIgnoresDirectoryNamedLikeWorkspaceFile() throws {
+        // A *directory* called pnpm-workspace.yaml is not a valid marker.
+        try FileManager.default.createDirectory(
+            at: tempDir.appendingPathComponent("pnpm-workspace.yaml", isDirectory: true),
+            withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: tempDir.appendingPathComponent("packages/core", isDirectory: true),
+            withIntermediateDirectories: true)
+        XCTAssertNil(WorkspaceRoot.find(from: tempDir))
+    }
+
+    func testTerminatesAtFilesystemRoot() {
+        // Calling find on / must not loop forever; / has no signature.
+        XCTAssertNil(WorkspaceRoot.find(from: URL(fileURLWithPath: "/")))
     }
 }

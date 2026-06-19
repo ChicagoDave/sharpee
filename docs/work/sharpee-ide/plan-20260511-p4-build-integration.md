@@ -6,6 +6,20 @@
 
 When this phase lands, the IDE can build a Sharpee story, surface its output, parse compile errors, and jump to the error site in the editor. P5 (Play) follows.
 
+> **REVISION 2026-06-18 (ADR-180 — `build.sh` retired).** `build.sh` was deleted; the
+> build entry point is now the repo-root `./sharpee` wrapper → `node packages/devkit/dist/cli.js`
+> (`@sharpee/devkit`, which loads stories via `@sharpee/bootstrap`). This phase is re-targeted:
+> - **Workspace marker** is the devkit monorepo signature — a directory holding **both**
+>   `pnpm-workspace.yaml` and `packages/core/` (mirrors `devkit/src/repo.ts:findMonorepoRoot`),
+>   not `build.sh`.
+> - **Build command** is `./sharpee build <story> [--browser] [--zifmia] [--skip <pkg>]`.
+>   There is no `-s/-c/-t` flag set and **no theme flag** — themes are a runtime concern in the
+>   browser client (`ThemeManager`/`data-theme`) / a `theme.css` in standalone projects, so
+>   **Theme is dropped from Build Settings**.
+> - **Step 4.1 is done**: `WorkspaceRoot.find` now detects the signature and terminates correctly
+>   at the filesystem root (the prior `deletingLastPathComponent()` fixpoint looped forever on
+>   trailing-slash dir URLs). Steps 4.2+ below are updated for the new CLI.
+
 ---
 
 ## Scope (locked)
@@ -14,15 +28,15 @@ From the phase doc, refined by this session's decisions:
 
 - **Build menu** (top-level): `Build` (⌘B), `Build Settings…`, `Cancel Build`.
 - **Build Settings sheet** holds every build option. No status-bar dropdown.
-  - Story (dropdown — detected from `stories/*/package.json` under repo root)
-  - Clients (checkboxes — Browser, Zifmia — multi-select)
-  - Theme (dropdown — `classic-light`, `modern-dark`, `retro-terminal`, `paper`)
-  - Skip from (dropdown — None, or a workspace package to pass as `--skip`)
+  - Story (dropdown — detected from `stories/*/package.json` + `tutorials/*/package.json`; passed as the positional `<story>` arg)
+  - Clients (checkboxes — Browser → `--browser`, Zifmia → `--zifmia`; multi-select; none = platform + bundle only)
+  - Skip from (dropdown — None, or a workspace package short-name to pass as `--skip <pkg>`)
+  - ~~Theme~~ — **removed** (ADR-180: not a build input; runtime/browser-client concern)
 - **Build panel**: bottom-docked under the editor, toggled from the rail.
 - **Status bar**: build indicator (idle / building / OK / failed).
 - **Cancel**: terminates the running build process gracefully.
 - **Error navigation**: parsed `tsc` errors render as clickable lines; clicking jumps to `file:line` in the editor.
-- **Working directory**: the repo root, detected by walking up from the loaded project URL until `build.sh` is found.
+- **Working directory**: the repo root, detected by walking up from the loaded project URL until a directory with the monorepo signature (`pnpm-workspace.yaml` + `packages/core/`) is found.
 
 **Out of scope** (deferred):
 - Incremental / watch builds.
@@ -43,13 +57,13 @@ New `BuildSettingsStore` mirrors the `RecentProjectsStore` / `SessionStateStore`
 - UserDefaults key `SharpeeBuildSettings` → JSON `[ProjectKey: BuildSettings]`
 - `ProjectKey` is `URL.path` (canonical, locale-neutral)
 - `load(for:from:)`, `save(_:for:to:)`, `clear(for:from:)` — all accept an injectable `UserDefaults`
-- Defaults: no story selected, browser client only, classic-light theme, no skip
+- Defaults: no story selected, browser client only, no skip
 
 ### Build process model
 
 A single `BuildRunner` class owns the running `Process`:
 
-- `start(settings:repoRoot:)` — spawns `Process(launchPath: "./build.sh", arguments: settings.toArguments(), currentDirectoryURL: repoRoot)`
+- `start(settings:repoRoot:)` — spawns `Process(executableURL: repoRoot/"sharpee", arguments: ["build"] + settings.toArguments(), currentDirectoryURL: repoRoot)`. The `./sharpee` wrapper requires `packages/devkit/dist/cli.js` to exist; if it doesn't, the wrapper exits non-zero with a "engine not built" message — surface it in the panel verbatim.
 - `stdout` / `stderr` pipes feed `Data` chunks to delegate callbacks on the main actor
 - Cancel sends `SIGTERM`, escalates to `SIGKILL` after 2 s
 - `state: idle | building | success | failure` is observable for status bar binding
@@ -59,7 +73,7 @@ The Process is a **one-shot** — a fresh `BuildRunner` per build, owned by the 
 
 ### Repo-root detection
 
-The Open Project panel may select any folder. `./build.sh` lives at the workspace root, and detection walks `projectURL` upward looking for `build.sh`. If absent up to filesystem root, surface an alert ("This folder is not inside a Sharpee workspace") and disable the Build menu.
+The Open Project panel may select any folder. `./sharpee` lives at the monorepo root, identified by the `pnpm-workspace.yaml` + `packages/core/` signature; detection walks `projectURL` upward looking for that signature. If absent up to filesystem root, surface an alert ("This folder is not inside a Sharpee workspace") and disable the Build menu. **The walk must terminate at the filesystem root** — `URL.deletingLastPathComponent()` does not converge on trailing-slash directory URLs (it grows `/../`), so stop explicitly when `current.path == "/"`.
 
 ### Error parsing
 
@@ -71,17 +85,19 @@ The Open Project panel may select any folder. `./build.sh` lives at the workspac
 
 Each step ends at a build-green checkpoint. ※ marks stop-points where I'll report and wait.
 
-### Step 4.1 — Repo-root detection + Build menu skeleton
+### Step 4.1 — Repo-root detection + Build menu skeleton  ✅ DONE (2026-06-18)
 
-- Add `WorkspaceRoot.find(from: projectURL) -> URL?` helper (walks up, looks for `build.sh`).
+`WorkspaceRoot.find` detects the monorepo signature and terminates at filesystem root; `WorkspaceRootTests` rewritten (7 cases: direct/walk-up/deepest/none-terminates/two AND-condition cases/dir-named-marker/fs-root). Menu skeleton + AppDelegate validation landed in the May session. Original spec below for reference.
+
+- Add `WorkspaceRoot.find(from: projectURL) -> URL?` helper (walks up, looks for the `pnpm-workspace.yaml` + `packages/core/` signature).
 - `MenuBuilder` gains a top-level Build menu with three items: Build (⌘B), Build Settings…, Cancel Build. All actions wired to no-op stubs on AppDelegate for now. Menu items disabled when no project is loaded or no repo root found.
 - `AppDelegate` enables/disables the Build menu in `applicationDidFinishLaunching` and on project load (via a `currentRepoRoot: URL?` property).
-- Tests: `WorkspaceRootTests` — walks from nested file/dir to real `build.sh`; returns nil when no `build.sh` exists; handles `/`. ※
+- Tests: `WorkspaceRootTests` — walks from nested dir to the signature; returns nil when no ancestor has it; requires both markers; handles `/` without looping. ※
 
 ### Step 4.2 — BuildSettings model + BuildSettingsStore + tests
 
-- `BuildSettings` struct: `story: String?`, `clients: Set<String>`, `theme: String`, `skipFrom: String?`. Codable; sensible defaults.
-- `BuildSettings.toArguments() -> [String]` produces the `build.sh` argv (e.g. `["-s", "dungeo", "-c", "browser", "-t", "classic-light"]`).
+- `BuildSettings` struct: `story: String?`, `clients: Set<String>` (values `"browser"`, `"zifmia"`), `skipFrom: String?`. Codable; sensible defaults. (No `theme` — dropped per ADR-180.)
+- `BuildSettings.toArguments() -> [String]` produces the `./sharpee build` argv **after** the `build` subcommand: positional story first, then flags — e.g. `["dungeo", "--browser"]`, or `["dungeo", "--browser", "--zifmia", "--skip", "stdlib"]`. The runner prepends `"build"`.
 - `BuildSettingsStore` — per-project storage keyed by `URL.path`, injectable UserDefaults, mirrors RecentProjectsStore pattern.
 - Tests: `BuildSettingsTests` (argument generation, codable roundtrip, defaults), `BuildSettingsStoreTests` (save/load per project, isolation between projects, clear). ※
 
@@ -100,7 +116,7 @@ Each step ends at a build-green checkpoint. ※ marks stop-points where I'll rep
 - `start(settings:repoRoot:)`: spawns, attaches stdout/stderr `Pipe`, reads chunks, decodes UTF-8, forwards to delegate.
 - `cancel()`: sends SIGTERM; schedules a 2 s timer to send SIGKILL if still running.
 - State machine: `.idle → .building → .success/.failure/.cancelled`.
-- No UI yet — this step verifies the runner can launch `./build.sh` and observe completion.
+- No UI yet — this step verifies the runner can launch `./sharpee build` and observe completion.
 - Tests: `BuildRunnerTests` — script that prints, exits 0; script that exits non-zero; script that sleeps + cancel terminates within budget. Test script lives in `SharpeeIDETests/Fixtures/`. ※
 
 ### Step 4.5 — Bottom-docked Build panel UI
@@ -150,10 +166,10 @@ Run the full happy-path and a couple of failure modes against the Dungeo story:
 
 ## Risks / open questions
 
-- **Apple-event signing on the spawned `Process`** — the IDE is ad-hoc signed; should be fine for spawning shell scripts, but `build.sh` calls `pnpm` which may trip system protections on first run. Mitigate by surfacing the underlying error in the panel.
+- **Apple-event signing on the spawned `Process`** — the IDE is ad-hoc signed; should be fine for spawning shell scripts, but `./sharpee` runs `node` → devkit → `pnpm`/`tsf`, which may trip system protections on first run. Mitigate by surfacing the underlying error in the panel.
 - **Performance on long output** — Dungeo builds emit thousands of lines. The `NSTextView` may bog down. If it does, batch updates per RunLoop tick (deferred until observed).
 - **Repo-root detection edge case** — symlinked repos. URL resolution uses `resolvingSymlinksInPath()` before walking.
-- **`build.sh` interactive prompts** — none today, but if any are added in the future, the build will hang silently. Out of scope for P4.
+- **`./sharpee` interactive prompts** — none today, but if any are added in the future, the build will hang silently. Out of scope for P4.
 
 ---
 
