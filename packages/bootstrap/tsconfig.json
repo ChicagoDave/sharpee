@@ -13,6 +13,7 @@
     { "path": "../core" },
     { "path": "../if-domain" },
     { "path": "../world-model" },
+    { "path": "../ide-protocol" },
     { "path": "../parser-en-us" },
     { "path": "../lang-en-us" },
     { "path": "../stdlib" },

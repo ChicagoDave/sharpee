@@ -64,6 +64,7 @@ export interface LoadedGame {
 }
 
 export { resolveStoryModulePath } from './resolve';
+export { buildManifest } from './introspect';
 
 /**
  * Load a story by location (entry-aware) and assemble a runnable game.

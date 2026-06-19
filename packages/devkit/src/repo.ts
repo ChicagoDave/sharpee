@@ -18,6 +18,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/core', 'core'],
   ['@sharpee/text-blocks', 'text-blocks'],
+  ['@sharpee/ide-protocol', 'ide-protocol'],
   ['@sharpee/if-domain', 'if-domain'],
   ['@sharpee/media', 'media'],
   ['@sharpee/world-model', 'world-model'],
@@ -59,6 +60,7 @@ export const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/lang-en-us', './packages/lang-en-us/dist/index.js'],
   ['@sharpee/event-processor', './packages/event-processor/dist/index.js'],
   ['@sharpee/text-blocks', './packages/text-blocks/dist/index.js'],
+  ['@sharpee/ide-protocol', './packages/ide-protocol/dist/index.js'],
   ['@sharpee/channel-service', './packages/channel-service/dist/index.js'],
   ['@sharpee/if-services', './packages/if-services/dist/index.js'],
   ['@sharpee/ext-basic-combat', './packages/extensions/basic-combat/dist/index.js'],

@@ -112,6 +112,7 @@ if (require.main === module) {
       chain: false,
       play: false,
       test: false,
+      introspect: false,
       exec: null,
       debug: false,
       restore: null,
@@ -136,6 +137,8 @@ if (require.main === module) {
         options.play = true;
       } else if (arg === '--world-json') {
         options.worldJson = true;
+      } else if (arg === '--introspect') {
+        options.introspect = true;
       } else if (arg === '--test' || arg === '-t') {
         options.test = true;
       } else if (arg === '--debug') {
@@ -183,6 +186,7 @@ Options:
   --play, -p           Interactive play mode (REPL)
   --exec <cmds>        Run commands non-interactively (separate with /)
   --world-json         Dump initialized world model as JSON to stdout and exit
+  --introspect         Emit the IDE project manifest (ADR-184) as JSON and exit
   --debug              Show parsed/validated/events JSON (use with --exec)
   --restore <name>     Restore from save file
   --chain, -c          Chain transcripts (don't reset game state between them)
@@ -521,6 +525,18 @@ Examples:
       process.stdout.write(jsonStr, () => {
         process.exit(0);
       });
+    }
+
+    if (options.introspect) {
+      // Emit the IDE project manifest (ADR-184). Status to stderr so stdout
+      // carries only the manifest JSON for the IDE to parse.
+      console.error(`Introspecting story: ${options.storyPath}`);
+      const game = loadStoryAndCreateGame(options.storyPath);
+      const manifest = bootstrap.buildManifest(game.world, path.basename(options.storyPath), 'cli');
+      process.stdout.write(JSON.stringify(manifest, null, 2) + '\n', () => {
+        process.exit(0);
+      });
+      return;
     }
 
     if (options.play) {

@@ -7,6 +7,7 @@
     "packages/world-model/tsconfig.json",
     "packages/transcript-tester/tsconfig.json",
     "packages/text-blocks/tsconfig.json",
+    "packages/ide-protocol/tsconfig.json",
     "packages/channel-service/tsconfig.json",
     "packages/stdlib/tsconfig.json",
     "packages/character/tsconfig.json",
