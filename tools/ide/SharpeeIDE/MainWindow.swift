@@ -53,6 +53,11 @@ final class MainWindowController: NSWindowController {
         rootViewController?.switchToDocument(at: index)
     }
 
+    /// Toggles soft word wrap in the editor.
+    func setWordWrap(_ enabled: Bool) {
+        rootViewController?.setWordWrap(enabled)
+    }
+
     /// Shows or hides the bottom Build panel — used by session restoration and builds.
     func setBuildPanelVisible(_ visible: Bool) {
         rootViewController?.applyBuildPanelVisible(visible)
@@ -246,6 +251,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.switchToDocument(at: index)
     }
 
+    func setWordWrap(_ enabled: Bool) {
+        mainSplitViewController.setWordWrap(enabled)
+    }
+
     func appendBuildOutput(_ text: String) {
         bottomPanelViewController.buildPanel.append(text)
     }
@@ -340,6 +349,10 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
 
     func switchToDocument(at index: Int) {
         editorViewController.switchTo(index: index)
+    }
+
+    func setWordWrap(_ enabled: Bool) {
+        editorViewController.setWordWrap(enabled)
     }
 
     /// Highlights the rail Build button to reflect panel visibility.

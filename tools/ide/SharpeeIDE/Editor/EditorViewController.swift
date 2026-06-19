@@ -6,6 +6,15 @@
 
 import AppKit
 
+/// Soft word-wrap preference, persisted globally (applies to all documents).
+enum WordWrapPreference {
+    private static let key = "SharpeeWordWrap"
+    static var isEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: key) }
+        set { UserDefaults.standard.set(newValue, forKey: key) }
+    }
+}
+
 final class EditorViewController: NSViewController, NSTextViewDelegate {
 
     private let tabBar = TabBarView()
@@ -358,15 +367,34 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.textContainerInset = NSSize(width: 8, height: 12)
         textView.delegate = self
 
-        // Code-editor sizing: container is wide enough for any line, view scrolls horizontally.
         let huge = CGFloat.greatestFiniteMagnitude
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: huge, height: huge)
-        textView.isHorizontallyResizable = true
         textView.isVerticallyResizable = true
         textView.autoresizingMask = [.width]
-        textView.textContainer?.widthTracksTextView = false
-        textView.textContainer?.containerSize = NSSize(width: huge, height: huge)
+        applyWordWrap() // horizontal sizing depends on the Word Wrap preference
+    }
+
+    /// Toggles soft word wrap. Off (default): the container is unbounded and the view scrolls
+    /// horizontally. On: the container tracks the view width and long lines wrap.
+    func setWordWrap(_ enabled: Bool) {
+        WordWrapPreference.isEnabled = enabled
+        applyWordWrap()
+    }
+
+    private func applyWordWrap() {
+        let huge = CGFloat.greatestFiniteMagnitude
+        if WordWrapPreference.isEnabled {
+            scrollView.hasHorizontalScroller = false
+            textView.isHorizontallyResizable = false
+            textView.textContainer?.widthTracksTextView = true
+            textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: huge)
+        } else {
+            scrollView.hasHorizontalScroller = true
+            textView.isHorizontallyResizable = true
+            textView.textContainer?.widthTracksTextView = false
+            textView.textContainer?.containerSize = NSSize(width: huge, height: huge)
+        }
     }
 
     private func configureScrollView() {

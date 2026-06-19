@@ -237,6 +237,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         buildController?.cancel()
     }
 
+    /// View → Word Wrap. Toggles soft wrap in the editor (persisted).
+    @objc func toggleWordWrap(_ sender: Any?) {
+        mainWindowController?.setWordWrap(!WordWrapPreference.isEnabled)
+    }
+
     // MARK: - NSUserInterfaceValidations (menu enable/disable)
 
     /// AppKit calls this when a menu containing one of our actions is about to display.
@@ -250,6 +255,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return currentRepoRoot != nil
         case #selector(cancelBuild(_:)):
             return buildController?.isBuilding ?? false
+        case #selector(toggleWordWrap(_:)):
+            menuItem.state = WordWrapPreference.isEnabled ? .on : .off
+            return true
         default:
             return true
         }

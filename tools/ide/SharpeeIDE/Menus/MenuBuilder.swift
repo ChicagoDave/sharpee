@@ -12,6 +12,7 @@ enum MenuBuilder {
         mainMenu.addItem(makeAppMenuItem())
         mainMenu.addItem(makeFileMenuItem(target: target))
         mainMenu.addItem(makeEditMenuItem())
+        mainMenu.addItem(makeViewMenuItem(target: target))
         mainMenu.addItem(makeBuildMenuItem(target: target))
         mainMenu.addItem(makeWindowMenuItem())
         return mainMenu
@@ -92,6 +93,22 @@ enum MenuBuilder {
         menu.addItem(withTitle: "Close",
                      action: #selector(NSWindow.performClose(_:)),
                      keyEquivalent: "w")
+
+        let item = NSMenuItem()
+        item.submenu = menu
+        return item
+    }
+
+    // MARK: - View menu
+
+    private static func makeViewMenuItem(target: AnyObject) -> NSMenuItem {
+        let menu = NSMenu(title: "View")
+
+        let wordWrap = NSMenuItem(title: "Word Wrap",
+                                  action: #selector(AppDelegate.toggleWordWrap(_:)),
+                                  keyEquivalent: "")
+        wordWrap.target = target
+        menu.addItem(wordWrap)
 
         let item = NSMenuItem()
         item.submenu = menu
