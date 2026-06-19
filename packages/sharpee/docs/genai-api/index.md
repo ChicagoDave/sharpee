@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.
 
-Generated: 2026-06-19 05:18:47 UTC
+Generated: 2026-06-19 06:55:56 UTC
 
 ## Quick Start
 
