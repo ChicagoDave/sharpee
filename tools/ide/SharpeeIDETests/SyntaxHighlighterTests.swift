@@ -68,6 +68,28 @@ final class SyntaxHighlighterTests: XCTestCase {
         XCTAssertEqual(color, Theme.foreground)
     }
 
+    func testHighlightColorsFunctionCall() {
+        let source = "doThing();\n" // call_expression function: (identifier)
+        let storage = NSTextStorage(string: source)
+
+        SyntaxHighlighter().highlight(storage)
+
+        // "doThing" starts at character 0.
+        let color = storage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
+        XCTAssertEqual(color, Theme.tokenFunction, "a called function name should be colored as a function")
+    }
+
+    func testHighlightColorsBuiltinConstant() {
+        let source = "const b = true;\n"
+        let storage = NSTextStorage(string: source)
+
+        SyntaxHighlighter().highlight(storage)
+
+        let trueLocation = (source as NSString).range(of: "true").location
+        let color = storage.attribute(.foregroundColor, at: trueLocation, effectiveRange: nil) as? NSColor
+        XCTAssertEqual(color, Theme.tokenNumber, "‘true’ should be colored as a builtin constant")
+    }
+
     // MARK: - Failure isolation / negative paths
 
     func testMalformedQueryGroupIsDroppedWhileGoodGroupsSurvive() {

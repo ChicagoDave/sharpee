@@ -55,9 +55,13 @@ so it is recorded as an ADR.
 - **Capture → color mapping** resolves dotted capture names by their head segment
   (`keyword.control` → `keyword`), against a small palette in `Theme`.
 
-Incremental re-highlighting (replacing the current per-edit full re-parse) will be layered in
-with **Neon** (ChimeHQ) in step 2.3; Neon is healthy (active `main`, last commit 2026-04) but
-untagged since 0.6.0, so it was deliberately kept out of the spike.
+Incremental re-highlighting (replacing the current per-edit full re-parse) was scoped to
+**Neon** (ChimeHQ) in step 2.3 but is **deferred (blocked)**: Neon `main` pins its
+`SwiftTreeSitter` dependency to `branch:main`, which conflicts with our `exactVersion: 0.10.0`
+pin (a package resolves to one version in the graph). Adopting Neon would force both deps onto
+branch pins — non-reproducible builds — for marginal benefit, since tree-sitter re-parses
+typical IF story files effectively instantly. Revisit only when per-edit re-parse is a
+*measured* problem **and** ChimeHQ tags a Neon release pinning a stable SwiftTreeSitter.
 
 ## Consequences
 

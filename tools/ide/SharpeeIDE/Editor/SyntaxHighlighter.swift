@@ -61,6 +61,18 @@ final class SyntaxHighlighter {
         (type_identifier) @type
         (predefined_type) @type
         """,
+        // Group 5 — functions & methods (patterns lifted from the upstream JS highlights query).
+        """
+        (function_declaration name: (identifier) @function)
+        (function_expression name: (identifier) @function)
+        (call_expression function: (identifier) @function)
+        (call_expression function: (member_expression property: (property_identifier) @function.method))
+        (method_definition name: (property_identifier) @function.method)
+        """,
+        // Group 6 — builtin constants.
+        """
+        [(true) (false) (null) (undefined)] @constant.builtin
+        """,
     ]
 
     private let parser = Parser()

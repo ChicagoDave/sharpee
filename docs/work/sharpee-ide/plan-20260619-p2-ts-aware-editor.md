@@ -48,13 +48,13 @@ Replace our `NSTextView` with the CodeEdit editor component.
 
 | Step | Work | Notes |
 |---|---|---|
-| 2.0 ✅ | Add SPM deps (`swift-tree-sitter`, `tree-sitter-typescript`); spike parse→query→color end-to-end | **DONE** — see Spike Results. Neon deferred to 2.3 |
-| 2.1 | `SyntaxHighlighter` — wires Neon to the active document's `NSTextStorage`; maps tree-sitter capture names → `Theme` colors | New file in `Editor/` |
-| 2.2 | Theme token palette — extend `Theme` with token colors (keyword, string, comment, type, number, function, punctuation) matching the dark mock | Theme-only |
-| 2.3 | Re-highlight on edit + on tab switch; tear down on close | Hook into `textDidChange` / `loadActiveDocumentIntoTextView` |
-| 2.4 | Bracket matching — highlight the partner bracket at the caret (reuse the parse tree) | tree-sitter node lookup |
-| 2.5 | Auto-indent on newline — carry leading whitespace + one level after `{`/`(`/`[` | Keep simple; not full reformat |
-| 2.6 | `.ts`/`.tsx` only for now; non-TS files render as today (plain) | Grammar selection by extension |
+| 2.0 ✅ | Add SPM deps (`swift-tree-sitter`, `tree-sitter-typescript`); spike parse→query→color end-to-end | **DONE** — see Spike Results |
+| 2.1 ✅ | `SyntaxHighlighter` + curated query; coverage widened to functions/methods/constants | **DONE** — in-code query (not Neon yet); Neon stays in 2.3 |
+| 2.2 ✅ | Theme token palette — keyword/string/comment/number/type/function + bracket-match bg | **DONE** |
+| 2.3 ◑ | Re-highlight on load/edit/tab-switch (full re-parse) | **PARTIAL** — non-Neon parts done. **Neon deferred (blocked):** Neon main pins SwiftTreeSitter `branch:main`, conflicting with our exact `0.10.0`; non-reproducible + marginal benefit on small files. Revisit only when re-parse is *measured* slow **and** ChimeHQ tags a release pinning a stable SwiftTreeSitter |
+| 2.4 ✅ | Bracket matching — partner highlight at the caret | **DONE** — `BracketMatcher` (balanced char scan); tree-aware string/comment skipping is a follow-up |
+| 2.5 ✅ | Auto-indent on newline — carry leading whitespace + one level after `{`/`(`/`[` | **DONE** — `AutoIndenter` via `doCommandBy` |
+| 2.6 ✅ | TS-family gating; non-TS files render plain | **DONE** — `canHighlight` (ts/tsx/mts/cts) |
 
 ## Out of scope (per roadmap)
 

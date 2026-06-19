@@ -24,6 +24,9 @@ enum Theme {
     static let tokenNumber        = NSColor(srgb: 0xFAB387) // peach
     static let tokenType          = NSColor(srgb: 0xF9E2AF) // yellow
     static let tokenFunction      = NSColor(srgb: 0x89B4FA) // blue
+
+    // Bracket-match highlight (P2 step 2.4) — translucent accent behind the matched pair.
+    static let bracketMatchBackground = NSColor(srgbRed: 0.54, green: 0.70, blue: 0.98, alpha: 0.28)
 }
 
 private extension NSColor {
