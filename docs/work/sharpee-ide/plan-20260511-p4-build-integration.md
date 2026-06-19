@@ -116,7 +116,10 @@ Landed: `Workspace/StoryDetector.swift` (stories/ + tutorials/, package.json-gat
 - Tests: `StoryDetectorTests`, `PackageDetectorTests` against a fixture directory tree; the view controller is verified manually.
 - Manual verification: open settings, change values, reopen — values persist. ※
 
-### Step 4.4 — BuildRunner with cancel support
+### Step 4.4 — BuildRunner with cancel support  ✅ DONE (2026-06-18)
+
+Landed: `Build/BuildRunner.swift` — `@MainActor`, single `Process`, `BuildRunnerDelegate` (didEmit/didChangeState/didExit), `State` (idle/building/success/failure/cancelled) + `Result`. `start(settings:repoRoot:)` spawns `./sharpee build`; `start(executable:arguments:workingDirectory:)` is the test seam; `cancel()` = SIGTERM then SIGKILL after 2s. `BuildRunnerTests` (6) drive real subprocesses (fixture scripts) through the production path — stdout/stderr capture, success/failure/exit-code, missing-executable, and signal cancel. Full suite 70, 0 failures. Not yet UI-wired (that's 4.6). Original spec below.
+
 
 - `BuildRunner` class on `@MainActor`. Holds a single `Process`. Delegate protocol with `runner(_:didEmit:)`, `runner(_:didChangeState:)`, `runner(_:didExit:)`.
 - `start(settings:repoRoot:)`: spawns, attaches stdout/stderr `Pipe`, reads chunks, decodes UTF-8, forwards to delegate.
