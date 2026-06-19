@@ -140,9 +140,16 @@ private final class RootViewController: NSViewController {
         }
         bottomPanelViewController.buildPanel.onSourceClick = openLocation
         bottomPanelViewController.gameErrors.onDoubleClick = openLocation
+        mainSplitViewController.setDiagnosisOpenLocation(openLocation)
+
+        bottomPanelViewController.gameErrors.onErrorFocused = { [weak self] error in
+            self?.mainSplitViewController.revealDiagnosis(error)
+        }
         mainSplitViewController.onPlayConsoleError = { [weak self] error in
-            self?.bottomPanelViewController.addPlayError(error)
-            self?.applyBuildPanelVisible(true)
+            guard let self else { return }
+            self.bottomPanelViewController.addPlayError(error)
+            self.mainSplitViewController.showDiagnosis(error, count: self.bottomPanelViewController.gameErrors.errorCount)
+            self.applyBuildPanelVisible(true)
         }
 
         let container = NSView()
@@ -262,6 +269,7 @@ private final class RootViewController: NSViewController {
     func clearBuildOutput() {
         bottomPanelViewController.buildPanel.clear()
         bottomPanelViewController.clearPlayErrors() // a new build supersedes prior game errors
+        mainSplitViewController.clearDiagnosis()
     }
 
     func setBuildPanelRepoRoot(_ url: URL) {
@@ -294,7 +302,9 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     private let railViewController = RailViewController()
     private let projectTreeViewController = ProjectTreeViewController()
     private let editorViewController = EditorViewController()
-    private let playViewController = PlayViewController()
+    private let rightPanelViewController = RightPanelViewController()
+    /// The Play tab inside the right panel — most wiring targets it directly.
+    private var playViewController: PlayViewController { rightPanelViewController.play }
 
     /// Invoked when the rail's Build button is clicked. Owned by RootViewController.
     fileprivate var onBuildPanelToggle: (() -> Void)?
@@ -382,6 +392,25 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         playViewController.setPlayAfterBuild(on)
     }
 
+    /// Updates the right-panel Diagnosis tab for a newly-arrived error (badge, no switch).
+    fileprivate func showDiagnosis(_ error: PlayConsoleError, count: Int) {
+        rightPanelViewController.showDiagnosis(error, count: count)
+    }
+
+    /// Shows an error's explanation and switches the right panel to the Diagnosis tab.
+    fileprivate func revealDiagnosis(_ error: PlayConsoleError) {
+        rightPanelViewController.revealDiagnosis(error)
+    }
+
+    /// Routes Diagnosis "open location" clicks to the editor.
+    fileprivate func setDiagnosisOpenLocation(_ handler: @escaping (SourceLocation) -> Void) {
+        rightPanelViewController.onOpenLocation = handler
+    }
+
+    fileprivate func clearDiagnosis() {
+        rightPanelViewController.clearDiagnosis()
+    }
+
     // MARK: - ProjectTreeDelegate
 
     func projectTree(_ controller: ProjectTreeViewController, didActivate node: FileNode) {
@@ -437,7 +466,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     }
 
     private func makePlayItem() -> NSSplitViewItem {
-        let item = NSSplitViewItem(viewController: playViewController)
+        let item = NSSplitViewItem(viewController: rightPanelViewController)
         item.minimumThickness = Self.playMinWidth
         item.holdingPriority = .defaultLow
         return item

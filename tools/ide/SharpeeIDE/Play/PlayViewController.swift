@@ -24,10 +24,14 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
       var origError = console.error;
       console.error = function () { send(Array.prototype.join.call(arguments, ' ')); origError.apply(console, arguments); };
       window.addEventListener('error', function (e) {
-        send((e.message || 'Error') + (e.filename ? ' (' + e.filename + ':' + e.lineno + ')' : ''));
+        var stack = (e.error && e.error.stack) ? '\\n' + e.error.stack : '';
+        send((e.message || 'Error') + stack);
       });
       window.addEventListener('unhandledrejection', function (e) {
-        var r = e.reason; send('Unhandled rejection: ' + (r && r.stack ? r.stack : (r && r.message ? r.message : r)));
+        var r = e.reason;
+        var msg = (r && r.message) ? r.message : String(r);
+        var stack = (r && r.stack) ? '\\n' + r.stack : '';
+        send(msg + stack);
       });
     })();
     """

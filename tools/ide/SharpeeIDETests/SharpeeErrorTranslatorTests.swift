@@ -11,8 +11,10 @@ final class SharpeeErrorTranslatorTests: XCTestCase {
         let t = SharpeeErrorTranslator.translate(
             message: "Unhandled rejection: world.getLastCreatedEntityId is not a function")
         XCTAssertEqual(t.title, "The world has no getLastCreatedEntityId method")
+        XCTAssertNotNil(t.explanation)
+        XCTAssertTrue(t.explanation!.contains("world model"))
         XCTAssertNotNil(t.fix)
-        XCTAssertTrue(t.fix!.contains("world model"))
+        XCTAssertTrue(t.fix!.contains("createSceneryItem"))
         XCTAssertEqual(t.raw, "Unhandled rejection: world.getLastCreatedEntityId is not a function")
     }
 

@@ -7,11 +7,16 @@
 
 import Foundation
 
-/// An error rendered for an author: a plain-language title, an optional fix hint, and the
-/// original message (always kept, shown as "Original error").
+/// An error rendered for an author — the output of the Actual Error → Sharpee Translation
+/// layer. The view just renders these fields.
 struct TranslatedError: Equatable {
+    /// Short plain-language restatement (e.g. "The world has no `getLastCreatedEntityId` method").
     let title: String
+    /// What happened, in Sharpee/IF-authoring terms (the "why").
+    let explanation: String?
+    /// How to fix it — concrete, with an example where useful.
     let fix: String?
+    /// The original message, always preserved.
     let raw: String
 }
 
@@ -26,9 +31,10 @@ enum SharpeeErrorTranslator {
             ?? notDefined(cleaned, sourceLine)
         // Always keep the true original message as `raw` (the rules see the cleaned form).
         if let matched {
-            return TranslatedError(title: matched.title, fix: matched.fix, raw: message)
+            return TranslatedError(title: matched.title, explanation: matched.explanation,
+                                   fix: matched.fix, raw: message)
         }
-        return TranslatedError(title: cleaned, fix: nil, raw: message)
+        return TranslatedError(title: cleaned, explanation: nil, fix: nil, raw: message)
     }
 
     // MARK: - Rules
@@ -43,16 +49,22 @@ enum SharpeeErrorTranslator {
             let method = parts[1]
             return TranslatedError(
                 title: "The world has no \(method) method",
-                fix: "Your story called world.\(method)(…), but that isn’t part of the world model. "
-                    + "Check the method name against the world API, or use the value returned when the "
-                    + "entity is created instead of looking it up afterwards.",
+                explanation: "While your story was building its world, it called world.\(method)(). "
+                    + "The Sharpee world model has no such method, so the call fails the moment the "
+                    + "world is set up — which is why the game won’t start.",
+                fix: "Use the entity each create-call returns instead of looking it back up. For example, "
+                    + "capture it:\n\n    const item = createSceneryItem(world, …);\n"
+                    + "    world.moveEntity(item.id, RoomIds.foyer);\n\n"
+                    + "rather than calling a world.\(method)()-style lookup afterwards.",
                 raw: message)
         }
         let name = parts.last ?? callee
         return TranslatedError(
             title: "\(name) is not a function",
-            fix: "Your story called \(callee)(…), which isn’t available here — check for a typo or a "
-                + "missing import.",
+            explanation: "Your story called \(callee)(), but \(callee) isn’t a function at that point — "
+                + "it’s undefined, or it’s a value of another kind.",
+            fix: "Check \(callee) for a typo or a missing import, and confirm it’s actually a function "
+                + "where you call it.",
             raw: message)
     }
 
@@ -66,8 +78,11 @@ enum SharpeeErrorTranslator {
         let prop = property.map { "‘\($0)’" } ?? "a property"
         return TranslatedError(
             title: "Something was undefined when reading \(prop)",
-            fix: "A value was undefined where your story expected an object. A common cause is an entity "
-                + "lookup that found nothing (wrong id), or a trait/property that wasn’t set before it was used.",
+            explanation: "Your story tried to read \(prop) from a value that was undefined. In IF terms "
+                + "this usually means an entity you expected wasn’t there — an id that didn’t match, an "
+                + "entity that was never created, or a trait that wasn’t added.",
+            fix: "Check the entity/value just before this line: make sure it was created and (if you "
+                + "looked it up) that the id is correct, and that any trait you read was added to it.",
             raw: message)
     }
 
@@ -76,7 +91,9 @@ enum SharpeeErrorTranslator {
         guard let name = firstMatch(#"^(.*?) is not defined"#, in: message) else { return nil }
         return TranslatedError(
             title: "\(name) isn’t defined",
-            fix: "\(name) isn’t in scope here — check for a missing import or a typo.",
+            explanation: "Your story used \(name), but nothing by that name is in scope here — it was "
+                + "never declared, or it lives in another file that isn’t imported.",
+            fix: "Add an import for \(name), or fix the spelling to match where it’s defined.",
             raw: message)
     }
 

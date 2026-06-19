@@ -12,6 +12,9 @@ final class GameErrorsView: NSView {
     /// Invoked when a row is double-clicked, with the resolved source location to open.
     var onDoubleClick: ((SourceLocation) -> Void)?
 
+    /// Invoked when an error row (or one of its children) is selected, with its error.
+    var onErrorFocused: ((PlayConsoleError) -> Void)?
+
     private let scrollView = NSScrollView()
     private let outlineView = NSOutlineView()
     private let emptyLabel = NSTextField(labelWithString: "No game errors")
@@ -90,9 +93,7 @@ final class GameErrorsView: NSView {
     @objc private func doubleClicked() {
         let row = outlineView.clickedRow
         guard row >= 0, let item = outlineView.item(atRow: row) else { return }
-        let location = (item as? ErrorNode)?.primaryLocation
-            ?? (item as? FrameNode)?.frame.location
-            ?? (item as? DetailNode)?.parentLocation
+        let location = (item as? ErrorNode)?.primaryLocation ?? (item as? FrameNode)?.frame.location
         if let location { onDoubleClick?(location) }
     }
 
@@ -125,19 +126,15 @@ extension GameErrorsView: NSOutlineViewDataSource {
 }
 
 extension GameErrorsView: NSOutlineViewDelegate {
-    func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
-        guard let fix = item as? DetailNode, fix.kind == .fix else { return 20 }
-        let width = max(120, outlineView.bounds.width - 44)
-        let rect = (fix.text as NSString).boundingRect(
-            with: NSSize(width: width, height: .greatestFiniteMagnitude),
-            options: [.usesLineFragmentOrigin, .usesFontLeading],
-            attributes: [.font: Self.bodyFont])
-        return ceil(rect.height) + 8
+    func outlineViewSelectionDidChange(_ notification: Notification) {
+        let row = outlineView.selectedRow
+        guard row >= 0, let item = outlineView.item(atRow: row) else { return }
+        let node = (item as? ErrorNode) ?? (outlineView.parent(forItem: item) as? ErrorNode)
+        if let node { onErrorFocused?(node.error) }
     }
 
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
         let attributed: NSAttributedString
-        var wraps = false
 
         if let node = item as? ErrorNode {
             let s = NSMutableAttributedString(string: node.error.translation.title,
@@ -153,21 +150,11 @@ extension GameErrorsView: NSOutlineViewDelegate {
                 .foregroundColor: resolved ? Theme.accent : Theme.foregroundFaint,
                 .font: Self.monoFont,
             ])
-        } else if let detail = item as? DetailNode {
-            switch detail.kind {
-            case .fix:
-                wraps = true
-                attributed = NSAttributedString(string: detail.text,
-                                                attributes: [.foregroundColor: Theme.foregroundDim, .font: Self.bodyFont])
-            case .raw:
-                attributed = NSAttributedString(string: detail.text,
-                                                attributes: [.foregroundColor: Theme.foregroundFaint, .font: Self.monoFont])
-            }
         } else {
             attributed = NSAttributedString(string: "")
         }
 
-        return makeLabel(attributed, wraps: wraps)
+        return makeLabel(attributed, wraps: false)
     }
 }
 
@@ -175,18 +162,13 @@ extension GameErrorsView: NSOutlineViewDelegate {
 
 private final class ErrorNode {
     let error: PlayConsoleError
-    let children: [Any]
+    /// The stack frames — expanding an error shows them for navigation. The fix /
+    /// original / offending-code explanation lives in the Diagnosis tab, not here.
+    let children: [FrameNode]
 
     init(_ error: PlayConsoleError) {
         self.error = error
-        let primary = error.frames.compactMap(\.location).first
-        var rows: [Any] = []
-        if let fix = error.translation.fix {
-            rows.append(DetailNode(kind: .fix, text: fix, parentLocation: primary))
-        }
-        rows.append(contentsOf: error.frames.map(FrameNode.init))
-        rows.append(DetailNode(kind: .raw, text: "Original error: \(error.translation.raw)", parentLocation: primary))
-        self.children = rows
+        self.children = error.frames.map(FrameNode.init)
     }
 
     var primaryLocation: SourceLocation? { error.frames.compactMap(\.location).first }
@@ -195,14 +177,4 @@ private final class ErrorNode {
 private final class FrameNode {
     let frame: PlayConsoleError.Frame
     init(_ frame: PlayConsoleError.Frame) { self.frame = frame }
-}
-
-private final class DetailNode {
-    enum Kind { case fix, raw }
-    let kind: Kind
-    let text: String
-    let parentLocation: SourceLocation?
-    init(kind: Kind, text: String, parentLocation: SourceLocation?) {
-        self.kind = kind; self.text = text; self.parentLocation = parentLocation
-    }
 }
