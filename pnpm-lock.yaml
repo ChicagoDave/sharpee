@@ -59,6 +59,9 @@ importers:
       '@sharpee/ext-testing':
         specifier: workspace:*
         version: link:../extensions/testing
+      '@sharpee/ide-protocol':
+        specifier: workspace:*
+        version: link:../ide-protocol
       '@sharpee/if-domain':
         specifier: workspace:*
         version: link:../if-domain

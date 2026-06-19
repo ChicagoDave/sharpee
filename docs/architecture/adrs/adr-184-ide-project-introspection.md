@@ -56,15 +56,20 @@ positions.**
 
 ### Semantics — runtime introspection (the "Node helper" is a runtime helper)
 
-- Add an **`--introspect {story}`** flag to the **platform-bundle CLI**
-  (`packages/transcript-tester/src/cli.ts` — the `dist/cli/sharpee.js` that already owns
-  `--play`/`--test`), **not** the devkit `./sharpee` build CLI (ADR-180) and **not** a new
-  engine binary. It reuses the existing `story-loader` (`loadStory`) to construct the world,
-  then walks `world.getAllEntities()` and emits an **entity/trait JSON manifest** (schema below).
+- The projection logic, **`buildManifest(world, story, generatedFrom)`**, lives in
+  **`@sharpee/bootstrap`** — the shared loader/assembly layer (ADR-180) already imported by the
+  bundle CLI, transcript-tester, and devkit. It walks `world.getAllEntities()` and emits an
+  **entity/trait JSON manifest** (schema below). bootstrap is the right home because it already
+  owns world construction (`resolveStoryModulePath` + `assembleGame`) and depends on world-model.
+- The CLI surface is an **`--introspect {story}`** flag on the **platform-bundle CLI**
+  (`scripts/bundle-entry.js`, compiled into `dist/cli/sharpee.js` — the entry that already owns
+  `--play`/`--test`/`--world-json`), **not** the devkit `./sharpee` build CLI (ADR-180) and **not**
+  a new engine binary. The flag handler loads the story via bootstrap's loader and calls
+  `bootstrap.buildManifest(...)`, writing the JSON to stdout (status to stderr).
 - **Entry-point rationale:** introspection *runs a story* — the same capability `--play`/`--test`
-  already provide from this CLI via `loadStory`. The devkit `./sharpee` CLI orchestrates *builds*;
-  it does not load a world. Co-locating with `--play`/`--test` reuses the loader and keeps "run
-  the engine" in one place.
+  already provide from this CLI. The devkit `./sharpee` CLI orchestrates *builds*; it does not load
+  a world. Keeping the projection in bootstrap (next to `assembleGame`) and the flag in the bundle
+  entry keeps "run the engine and report the world" in one place, reused by every consumer.
 - This preserves phase-plan decision #4's hybrid bridge — the helper stays Node-side and stays
   the long-running subprocess — but **reframes its job**: it *runs the engine and reports the
   world*, it does **not** statically parse trait composition. Decision #4 is hereby amended to
@@ -188,12 +193,12 @@ tree-sitter name index, joined by `displayName`.
 
 ## Consequences
 
-- **The platform gains a public introspection surface.** The `--introspect` flag on the
-  platform-bundle CLI and the equivalent bridge-exposed call become a supported, versioned output
-  — a `packages/` change (`transcript-tester` CLI + the new `@sharpee/ide-protocol` package + the
-  story `browser-entry` bridge), discussed and approved before implementation. The manifest schema
-  is now an interface the IDE depends on; changing it is a wire-contract change gated by
-  `schemaVersion`.
+- **The platform gains a public introspection surface.** `bootstrap.buildManifest`, the
+  `--introspect` flag on the platform-bundle CLI, and the equivalent bridge-exposed call become a
+  supported, versioned output — a `packages/` change (`@sharpee/bootstrap` projection + the new
+  `@sharpee/ide-protocol` wire types + `scripts/bundle-entry.js` flag + the story `browser-entry`
+  bridge), discussed and approved before implementation. The manifest schema is now an interface the
+  IDE depends on; changing it is a wire-contract change gated by `schemaVersion`.
 - **A new types-only package, `@sharpee/ide-protocol`.** Adds one workspace package (and its six
   registration points per the new-package checklist). It carries only the manifest wire types —
   no runtime deps — so both the Node emitter and the browser bridge import it cleanly.
@@ -216,17 +221,19 @@ tree-sitter name index, joined by `displayName`.
 
 ## Acceptance
 
-- `node dist/cli/sharpee.js --introspect {story}` runs the **real built story** (via the
-  existing `loadStory`) and emits a `ProjectManifest` (`schemaVersion: 1`) whose entity set and
-  per-entity trait set match what the engine constructs — verified by a real-path test that loads
-  a fixture story and asserts the manifest against `world.getAllEntities()` (no stub of the world
-  model; the system under test is the engine).
+- `node dist/cli/sharpee.js --introspect --story {story}` runs the **real built story** (via
+  bootstrap's loader → `bootstrap.buildManifest`) and emits a `ProjectManifest` (`schemaVersion: 1`)
+  whose entity set and per-entity trait set match what the engine constructs (no stub of the world
+  model; the system under test is the engine). **[VERIFIED 2026-06-19 against Dungeo — exit 0.]**
 - The manifest validates against the `@sharpee/ide-protocol` guards; `category` follows the
   derivation table (a `createRoom`-wrapped Alderman room reports `category: "room"`); unknown
-  traits pass through `TraitSummary`'s index signature without dropping the entity.
+  traits pass through `TraitSummary`'s index signature without dropping the entity. **[VERIFIED —
+  `isProjectManifest(emitted)` is true.]**
 - For Dungeo, the manifest buckets rooms, items, NPCs, and regions correctly **across**
   region-organized files (finding 4), and for The Alderman classifies wrapper-created rooms as
-  rooms (finding 3) — neither achievable by static directory/export analysis.
+  rooms (finding 3) — neither achievable by static directory/export analysis. **[Dungeo VERIFIED —
+  175 rooms / 155 objects / 15 regions / 6 npcs across per-region files; player and door/exit
+  excluded. Alderman pending a story build.]**
 - The name→location index resolves The Alderman's named objects and Dungeo's
   `createEntity('<name>', …)` sites to the correct file:line; an unresolvable name falls back to
   file/function scope without dropping the entity from the tree.
@@ -256,9 +263,16 @@ Produced 2026-06-19 (session `822214`) on `main`, following the P2 merge (PR #13
 same session after a `/adr-review` (182/183/184) flagged the manifest schema as prose-only: added
 the `## Manifest schema` section (concrete `ProjectManifest`/`EntityNode` types + category table +
 JSON example), pinned the shared wire-type home (`@sharpee/ide-protocol`, DEVARCH 8b), and fixed
-the entry point to the platform-bundle CLI (`transcript-tester`, reusing `loadStory`) rather than
-the devkit build CLI or a new engine binary. Research:
-`docs/work/sharpee-ide/research-20260619-p3-introspection-architecture.md`. Complements ADR-182
-(tree-sitter syntax foundation); amends phase-plan decision #4
-(`docs/work/sharpee-ide/plan-20260509-phases.md`). Engine `--introspect` surface is a
-`packages/` change to be planned and approved before implementation.
+the entry point to the platform-bundle CLI rather than the devkit build CLI or a new engine binary.
+Research: `docs/work/sharpee-ide/research-20260619-p3-introspection-architecture.md`.
+
+**Implemented same session.** `@sharpee/ide-protocol` shipped (wire types + guards, 11 tests).
+`buildManifest` landed in **`@sharpee/bootstrap`** (corrected from the review's "transcript-tester
+cli" placement once the ADR-180 consolidation was recalled — the shared loader/assembly layer is
+the right home, and the real bundle CLI entry is `scripts/bundle-entry.js`, not
+`transcript-tester/cli.ts`). The `--introspect` flag was wired into `scripts/bundle-entry.js`
+calling `bootstrap.buildManifest`. Verified end-to-end through `dist/cli/sharpee.js` against
+Dungeo (exit 0; 351 entities bucketed across per-region files; output passes
+`isProjectManifest`). Complements ADR-182 (tree-sitter syntax foundation); amends phase-plan
+decision #4 (`docs/work/sharpee-ide/plan-20260509-phases.md`). Source-position index (tree-sitter)
+and the WKWebView bridge path remain to implement.
