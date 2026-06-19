@@ -384,16 +384,24 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
 
     private func applyWordWrap() {
         let huge = CGFloat.greatestFiniteMagnitude
+        guard let container = textView.textContainer else { return }
         if WordWrapPreference.isEnabled {
+            // Soft-wrap the whole document: bound the text view to the visible width and let
+            // the container track it. Resetting the frame width is essential — otherwise it
+            // keeps the wide frame from no-wrap mode and almost nothing wraps.
+            let width = scrollView.contentSize.width
             scrollView.hasHorizontalScroller = false
             textView.isHorizontallyResizable = false
-            textView.textContainer?.widthTracksTextView = true
-            textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: huge)
+            textView.maxSize = NSSize(width: huge, height: huge)
+            container.widthTracksTextView = true
+            container.containerSize = NSSize(width: width, height: huge)
+            textView.setFrameSize(NSSize(width: width, height: textView.frame.height))
         } else {
             scrollView.hasHorizontalScroller = true
             textView.isHorizontallyResizable = true
-            textView.textContainer?.widthTracksTextView = false
-            textView.textContainer?.containerSize = NSSize(width: huge, height: huge)
+            textView.maxSize = NSSize(width: huge, height: huge)
+            container.widthTracksTextView = false
+            container.containerSize = NSSize(width: huge, height: huge)
         }
     }
 
