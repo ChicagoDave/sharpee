@@ -1,7 +1,9 @@
 // MainWindow.swift
-// Main window shell for Sharpee: a 4-pane horizontal split (Rail | Project | Editor | Play) with a status bar footer.
+// Main window shell for Sharpee: a vertical split of (4-pane horizontal split) over a
+// bottom-docked Build panel, with a status bar footer. The Build panel is toggled from
+// the rail and hidden by default.
 // Public interface: MainWindowController constructs and presents the window, and forwards
-// project-load calls down the view-controller chain to the project tree.
+// project-load / build-panel calls down the view-controller chain.
 // Owner context: tools/ide — App shell.
 
 import AppKit
@@ -33,51 +35,67 @@ final class MainWindowController: NSWindowController {
     /// Replaces the project displayed in the Project pane. Optional `expandedFolderURLs`
     /// re-applies a prior expansion state (used by session restoration).
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
-        (window?.contentViewController as? RootViewController)?
-            .loadProject(project, expandedFolderURLs: expandedFolderURLs)
+        rootViewController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
     }
 
     /// Forwards a Save action from the menu down to the editor.
     func saveActiveDocument() {
-        (window?.contentViewController as? RootViewController)?.saveActiveDocument()
+        rootViewController?.saveActiveDocument()
     }
 
     /// Opens a document URL in the editor — used by session restoration.
     func openDocument(at url: URL) {
-        (window?.contentViewController as? RootViewController)?.openDocument(at: url)
+        rootViewController?.openDocument(at: url)
     }
 
     /// Activates the tab at `index` — used by session restoration.
     func switchToDocument(at index: Int) {
-        (window?.contentViewController as? RootViewController)?.switchToDocument(at: index)
+        rootViewController?.switchToDocument(at: index)
+    }
+
+    /// Shows or hides the bottom Build panel — used by session restoration.
+    func setBuildPanelVisible(_ visible: Bool) {
+        rootViewController?.applyBuildPanelVisible(visible)
+    }
+
+    private var rootViewController: RootViewController? {
+        window?.contentViewController as? RootViewController
     }
 }
 
-// MARK: - Root view controller (split + status bar)
+// MARK: - Root view controller (vertical split: main split over build panel + status bar)
 
 private final class RootViewController: NSViewController {
 
-    private let splitViewController = MainSplitViewController()
+    private let mainSplitViewController = MainSplitViewController()
+    private let buildPanelViewController = BuildPanelViewController()
+    private let verticalSplitViewController = NSSplitViewController()
+
+    private static let buildPanelMinHeight: CGFloat = 120
+    private static let buildPanelInitialHeight: CGFloat = 220
+    private var didApplyInitialBuildPanelHeight = false
 
     override func loadView() {
+        configureVerticalSplit()
+        addChild(verticalSplitViewController)
+
+        mainSplitViewController.onBuildPanelToggle = { [weak self] in self?.toggleBuildPanel() }
+        mainSplitViewController.buildPanelVisibleProvider = { [weak self] in self?.isBuildPanelVisible ?? false }
+
         let statusBar = StatusBarView()
-
-        addChild(splitViewController)
-
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
-        splitViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        verticalSplitViewController.view.translatesAutoresizingMaskIntoConstraints = false
         statusBar.translatesAutoresizingMaskIntoConstraints = false
-
-        container.addSubview(splitViewController.view)
+        container.addSubview(verticalSplitViewController.view)
         container.addSubview(statusBar)
 
         NSLayoutConstraint.activate([
-            splitViewController.view.topAnchor.constraint(equalTo: container.topAnchor),
-            splitViewController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            splitViewController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            splitViewController.view.bottomAnchor.constraint(equalTo: statusBar.topAnchor),
+            verticalSplitViewController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            verticalSplitViewController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            verticalSplitViewController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            verticalSplitViewController.view.bottomAnchor.constraint(equalTo: statusBar.topAnchor),
 
             statusBar.heightAnchor.constraint(equalToConstant: 22),
             statusBar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -88,20 +106,72 @@ private final class RootViewController: NSViewController {
         view = container
     }
 
+    private func configureVerticalSplit() {
+        verticalSplitViewController.splitView.isVertical = false
+        verticalSplitViewController.splitView.dividerStyle = .thin
+        verticalSplitViewController.splitView.autosaveName = "SharpeeIDEBuildPanelSplit"
+
+        let top = NSSplitViewItem(viewController: mainSplitViewController)
+        top.canCollapse = false
+        top.holdingPriority = .defaultLow
+
+        let bottom = NSSplitViewItem(viewController: buildPanelViewController)
+        bottom.canCollapse = true
+        bottom.minimumThickness = Self.buildPanelMinHeight
+        bottom.holdingPriority = .defaultHigh
+
+        verticalSplitViewController.addSplitViewItem(top)
+        verticalSplitViewController.addSplitViewItem(bottom)
+        bottom.isCollapsed = true   // hidden by default
+    }
+
+    // MARK: Build panel visibility
+
+    fileprivate var isBuildPanelVisible: Bool {
+        !(verticalSplitViewController.splitViewItems.last?.isCollapsed ?? true)
+    }
+
+    /// Applies a visibility without persisting — used by session restore.
+    fileprivate func applyBuildPanelVisible(_ visible: Bool) {
+        guard let bottom = verticalSplitViewController.splitViewItems.last else { return }
+        bottom.isCollapsed = !visible
+        mainSplitViewController.setBuildRailActive(visible)
+        if visible { applyInitialBuildPanelHeightIfNeeded() }
+    }
+
+    private func toggleBuildPanel() {
+        applyBuildPanelVisible(!isBuildPanelVisible)
+        mainSplitViewController.persistSession()
+    }
+
+    /// First-time height for the panel when no autosaved divider exists, so its first
+    /// reveal isn't a sliver. Subsequent drags persist via the split's autosave.
+    private func applyInitialBuildPanelHeightIfNeeded() {
+        guard !didApplyInitialBuildPanelHeight else { return }
+        didApplyInitialBuildPanelHeight = true
+        let autosaveKey = "NSSplitView Subview Frames \(verticalSplitViewController.splitView.autosaveName ?? "")"
+        guard UserDefaults.standard.object(forKey: autosaveKey) == nil else { return }
+        let height = verticalSplitViewController.splitView.bounds.height
+        guard height > 0 else { return }
+        verticalSplitViewController.splitView.setPosition(height - Self.buildPanelInitialHeight, ofDividerAt: 0)
+    }
+
+    // MARK: Forwarding
+
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
-        splitViewController.loadProject(project, expandedFolderURLs: expandedFolderURLs)
+        mainSplitViewController.loadProject(project, expandedFolderURLs: expandedFolderURLs)
     }
 
     func saveActiveDocument() {
-        splitViewController.saveActiveDocument()
+        mainSplitViewController.saveActiveDocument()
     }
 
     func openDocument(at url: URL) {
-        splitViewController.openDocument(at: url)
+        mainSplitViewController.openDocument(at: url)
     }
 
     func switchToDocument(at index: Int) {
-        splitViewController.switchToDocument(at: index)
+        mainSplitViewController.switchToDocument(at: index)
     }
 }
 
@@ -115,8 +185,14 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     private static let editorMinWidth: CGFloat = 320
     private static let playMinWidth: CGFloat = 240
 
+    private let railViewController = RailViewController()
     private let projectTreeViewController = ProjectTreeViewController()
     private let editorViewController = EditorViewController()
+
+    /// Invoked when the rail's Build button is clicked. Owned by RootViewController.
+    fileprivate var onBuildPanelToggle: (() -> Void)?
+    /// Reports the current build-panel visibility so it can be persisted. Set by RootViewController.
+    fileprivate var buildPanelVisibleProvider: (() -> Bool)?
 
     private var currentProject: Project?
     private var didApplyInitialLayout = false
@@ -126,6 +202,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         splitView.dividerStyle = .thin
         splitView.autosaveName = "SharpeeIDEMainSplit"
 
+        railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
         projectTreeViewController.delegate = self
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
 
@@ -157,12 +234,18 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         editorViewController.switchTo(index: index)
     }
 
-    private func persistSession() {
+    /// Highlights the rail Build button to reflect panel visibility.
+    fileprivate func setBuildRailActive(_ active: Bool) {
+        railViewController.setBuildActive(active)
+    }
+
+    fileprivate func persistSession() {
         let state = SessionState(
             projectURL: currentProject?.rootURL,
             openDocumentURLs: editorViewController.openDocumentURLs,
             activeIndex: editorViewController.activeDocumentIndex,
-            expandedFolderURLs: projectTreeViewController.expandedFolderURLs
+            expandedFolderURLs: projectTreeViewController.expandedFolderURLs,
+            buildPanelVisible: buildPanelVisibleProvider?() ?? false
         )
         SessionStateStore.save(state)
     }
@@ -199,10 +282,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     }
 
     private func makeRailItem() -> NSSplitViewItem {
-        let vc = PlaceholderPaneViewController(label: "Rail",
-                                               color: Theme.railBackground,
-                                               showLabel: false)
-        let item = NSSplitViewItem(viewController: vc)
+        let item = NSSplitViewItem(viewController: railViewController)
         item.minimumThickness = Self.railWidth
         item.maximumThickness = Self.railWidth
         item.canCollapse = false
@@ -233,6 +313,53 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         item.minimumThickness = minWidth
         item.holdingPriority = holding
         return item
+    }
+}
+
+// MARK: - Rail (collapsed-panel entry points)
+
+private final class RailViewController: NSViewController {
+
+    /// Invoked when the Build button is clicked.
+    var onBuildToggle: (() -> Void)?
+
+    private let buildButton = NSButton()
+
+    override func loadView() {
+        let pane = NSView()
+        pane.wantsLayer = true
+        pane.layer?.backgroundColor = Theme.railBackground.cgColor
+
+        buildButton.title = ""
+        buildButton.image = NSImage(systemSymbolName: "hammer", accessibilityDescription: "Build")
+            ?? NSImage()
+        buildButton.imagePosition = .imageOnly
+        buildButton.isBordered = false
+        buildButton.bezelStyle = .regularSquare
+        buildButton.contentTintColor = Theme.foregroundDim
+        buildButton.toolTip = "Toggle Build Panel"
+        buildButton.target = self
+        buildButton.action = #selector(toggleBuild)
+        buildButton.translatesAutoresizingMaskIntoConstraints = false
+        pane.addSubview(buildButton)
+
+        NSLayoutConstraint.activate([
+            buildButton.centerXAnchor.constraint(equalTo: pane.centerXAnchor),
+            buildButton.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
+            buildButton.widthAnchor.constraint(equalToConstant: 24),
+            buildButton.heightAnchor.constraint(equalToConstant: 24),
+        ])
+
+        view = pane
+    }
+
+    /// Tints the Build button to reflect whether the Build panel is showing.
+    func setBuildActive(_ active: Bool) {
+        buildButton.contentTintColor = active ? Theme.accent : Theme.foregroundDim
+    }
+
+    @objc private func toggleBuild() {
+        onBuildToggle?()
     }
 }
 

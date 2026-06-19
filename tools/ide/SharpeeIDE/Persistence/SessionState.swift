@@ -11,24 +11,28 @@ struct SessionState: Codable {
     var openDocumentURLs: [URL]
     var activeIndex: Int?
     var expandedFolderURLs: [URL]
+    var buildPanelVisible: Bool
 
     init(projectURL: URL?,
          openDocumentURLs: [URL],
          activeIndex: Int?,
-         expandedFolderURLs: [URL] = []) {
+         expandedFolderURLs: [URL] = [],
+         buildPanelVisible: Bool = false) {
         self.projectURL = projectURL
         self.openDocumentURLs = openDocumentURLs
         self.activeIndex = activeIndex
         self.expandedFolderURLs = expandedFolderURLs
+        self.buildPanelVisible = buildPanelVisible
     }
 
-    // Custom decode so older persisted entries (without expandedFolderURLs) still load.
+    // Custom decode so older persisted entries (without the newer additive fields) still load.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         projectURL = try container.decodeIfPresent(URL.self, forKey: .projectURL)
         openDocumentURLs = try container.decodeIfPresent([URL].self, forKey: .openDocumentURLs) ?? []
         activeIndex = try container.decodeIfPresent(Int.self, forKey: .activeIndex)
         expandedFolderURLs = try container.decodeIfPresent([URL].self, forKey: .expandedFolderURLs) ?? []
+        buildPanelVisible = try container.decodeIfPresent(Bool.self, forKey: .buildPanelVisible) ?? false
     }
 }
 

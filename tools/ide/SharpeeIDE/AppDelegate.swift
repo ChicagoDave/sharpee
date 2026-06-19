@@ -47,6 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         loadProject(at: projectURL, expandedFolderURLs: state.expandedFolderURLs)
+        controller.setBuildPanelVisible(state.buildPanelVisible)
 
         var survivingURLs: [URL] = []
         for url in state.openDocumentURLs where fm.fileExists(atPath: url.path) {

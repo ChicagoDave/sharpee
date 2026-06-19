@@ -90,6 +90,31 @@ final class SessionStateTests: XCTestCase {
         XCTAssertEqual(decoded.openDocumentURLs, [])
         XCTAssertNil(decoded.activeIndex)
         XCTAssertEqual(decoded.expandedFolderURLs, [])
+        XCTAssertFalse(decoded.buildPanelVisible)
+    }
+
+    func testPayloadWithoutBuildPanelVisibleDefaultsFalse() throws {
+        // Payloads predating buildPanelVisible must decode with it defaulting to false.
+        let json = """
+        {
+            "projectURL": "file:///repo/",
+            "openDocumentURLs": [],
+            "expandedFolderURLs": []
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(SessionState.self, from: json)
+        XCTAssertFalse(decoded.buildPanelVisible)
+    }
+
+    func testBuildPanelVisibleRoundtrips() throws {
+        let original = SessionState(projectURL: URL(fileURLWithPath: "/repo"),
+                                    openDocumentURLs: [],
+                                    activeIndex: nil,
+                                    buildPanelVisible: true)
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(SessionState.self, from: data)
+        XCTAssertTrue(decoded.buildPanelVisible)
     }
 
     // MARK: - Store load/save/clear

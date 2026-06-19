@@ -128,7 +128,10 @@ Landed: `Build/BuildRunner.swift` — `@MainActor`, single `Process`, `BuildRunn
 - No UI yet — this step verifies the runner can launch `./sharpee build` and observe completion.
 - Tests: `BuildRunnerTests` — script that prints, exits 0; script that exits non-zero; script that sleeps + cancel terminates within budget. Test script lives in `SharpeeIDETests/Fixtures/`. ※
 
-### Step 4.5 — Bottom-docked Build panel UI
+### Step 4.5 — Bottom-docked Build panel UI  ✅ DONE (2026-06-18) — manually verified
+
+Landed: `Build/BuildPanelView.swift` (monospaced NSTextView in a scroll view, `append`/`clear`, + `BuildPanelViewController`); `MainWindow.swift` restructured into a vertical split (4-pane horizontal split over the build panel, collapsed by default) with a `RailViewController` Build (🔨) toggle button; visibility persisted via additive `SessionState.buildPanelVisible` (default false, decodeIfPresent) and restored in `AppDelegate.restoreSession`. Panel height persists via split autosave. SessionState tests +2 (forward-compat default, roundtrip); full suite 72, 0 failures. Toggle/dock/resize/persist manually verified. Original spec below.
+
 
 - `BuildPanelView` (`NSView`) with an `NSTextView` inside an `NSScrollView`, monospaced font, theme-coloured.
 - Toggle button in the rail (third item — placeholder gets a real button per the mock).
