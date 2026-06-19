@@ -32,7 +32,7 @@ final class SyntaxHighlighter {
     /// so a node/token name that the grammar doesn't recognize disables only its group rather than
     /// killing all highlighting. (Grammar-bundled query auto-discovery via LanguageConfiguration
     /// does NOT resolve from an app target — see plan-20260619-p2; we load our own instead.)
-    private static let querySources: [String] = [
+    static let querySources: [String] = [
         // Group 1 — core JS keywords (bedrock anonymous tokens).
         """
         [
@@ -67,12 +67,14 @@ final class SyntaxHighlighter {
     private let queries: [Query]
     private let languageReady: Bool
 
-    init() {
+    /// `querySources` is injectable so tests can exercise group-isolation and the load-failure
+    /// path; production uses the curated default.
+    init(querySources: [String] = SyntaxHighlighter.querySources) {
         // Use LanguageConfiguration only to obtain the Language; build our own queries from it.
         let config = try? LanguageConfiguration(tree_sitter_typescript(), name: "TypeScript")
         if let config {
             self.languageReady = ((try? parser.setLanguage(config.language)) != nil)
-            self.queries = Self.querySources.compactMap { source in
+            self.queries = querySources.compactMap { source in
                 guard let data = source.data(using: .utf8) else { return nil }
                 return try? Query(language: config.language, data: data)
             }
