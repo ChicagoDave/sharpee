@@ -68,6 +68,17 @@ final class MainWindowController: NSWindowController {
         rootViewController?.clearBuildOutput()
     }
 
+    /// Updates the status-bar build pill.
+    func updateBuildStatus(_ status: BuildStatusDisplay) {
+        rootViewController?.updateBuildStatus(status)
+    }
+
+    /// Sets the handler invoked when the build pill is clicked mid-build (cancel).
+    var onBuildPillCancel: (() -> Void)? {
+        get { rootViewController?.onBuildPillCancel }
+        set { rootViewController?.onBuildPillCancel = newValue }
+    }
+
     private var rootViewController: RootViewController? {
         window?.contentViewController as? RootViewController
     }
@@ -80,6 +91,11 @@ private final class RootViewController: NSViewController {
     private let mainSplitViewController = MainSplitViewController()
     private let buildPanelViewController = BuildPanelViewController()
     private let verticalSplitViewController = NSSplitViewController()
+    private let statusBar = StatusBarView()
+
+    private var currentBuildStatus: BuildStatusDisplay = .idle
+    /// Cancels the running build when the pill is clicked mid-build. Wired by AppDelegate.
+    fileprivate var onBuildPillCancel: (() -> Void)?
 
     private static let buildPanelMinHeight: CGFloat = 120
     private static let buildPanelInitialHeight: CGFloat = 220
@@ -91,8 +107,8 @@ private final class RootViewController: NSViewController {
 
         mainSplitViewController.onBuildPanelToggle = { [weak self] in self?.toggleBuildPanel() }
         mainSplitViewController.buildPanelVisibleProvider = { [weak self] in self?.isBuildPanelVisible ?? false }
+        statusBar.onPillClick = { [weak self] in self?.handlePillClick() }
 
-        let statusBar = StatusBarView()
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
@@ -152,6 +168,21 @@ private final class RootViewController: NSViewController {
     private func toggleBuildPanel() {
         applyBuildPanelVisible(!isBuildPanelVisible)
         mainSplitViewController.persistSession()
+    }
+
+    /// Reflects the current build state in the status-bar pill.
+    fileprivate func updateBuildStatus(_ status: BuildStatusDisplay) {
+        currentBuildStatus = status
+        statusBar.setBuildStatus(status)
+    }
+
+    /// Pill click: cancel while building, otherwise toggle the Build panel.
+    private func handlePillClick() {
+        if currentBuildStatus == .building {
+            onBuildPillCancel?()
+        } else {
+            toggleBuildPanel()
+        }
     }
 
     /// First-time height for the panel when no autosaved divider exists, so its first
@@ -426,6 +457,14 @@ private final class PlaceholderPaneViewController: NSViewController {
 
 private final class StatusBarView: NSView {
 
+    /// Invoked when the build pill is clicked (cancel while building, else toggle panel).
+    var onPillClick: (() -> Void)?
+
+    private let dot = NSView()
+    private let spinner = NSProgressIndicator()
+    private let pillLabel = NSTextField(labelWithString: "")
+    private let pill = NSView()
+
     init() {
         super.init(frame: .zero)
         wantsLayer = true
@@ -437,13 +476,95 @@ private final class StatusBarView: NSView {
         label.translatesAutoresizingMaskIntoConstraints = false
         addSubview(label)
 
+        configurePill()
+
         NSLayoutConstraint.activate([
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            pill.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            pill.centerYAnchor.constraint(equalTo: centerYAnchor),
+            pill.heightAnchor.constraint(equalTo: heightAnchor),
         ])
+
+        setBuildStatus(.idle)
     }
 
     required init?(coder: NSCoder) {
         fatalError("StatusBarView is not Storyboard-instantiable")
+    }
+
+    private func configurePill() {
+        pill.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(pill)
+
+        dot.wantsLayer = true
+        dot.layer?.cornerRadius = 4
+        dot.translatesAutoresizingMaskIntoConstraints = false
+
+        spinner.style = .spinning
+        spinner.controlSize = .small
+        spinner.isDisplayedWhenStopped = false
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+
+        pillLabel.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+        pillLabel.textColor = Theme.statusBarText
+        pillLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        pill.addSubview(dot)
+        pill.addSubview(spinner)
+        pill.addSubview(pillLabel)
+
+        NSLayoutConstraint.activate([
+            dot.widthAnchor.constraint(equalToConstant: 8),
+            dot.heightAnchor.constraint(equalToConstant: 8),
+            dot.leadingAnchor.constraint(equalTo: pill.leadingAnchor),
+            dot.centerYAnchor.constraint(equalTo: pill.centerYAnchor),
+
+            spinner.widthAnchor.constraint(equalToConstant: 12),
+            spinner.heightAnchor.constraint(equalToConstant: 12),
+            spinner.leadingAnchor.constraint(equalTo: pill.leadingAnchor),
+            spinner.centerYAnchor.constraint(equalTo: pill.centerYAnchor),
+
+            pillLabel.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 6),
+            pillLabel.trailingAnchor.constraint(equalTo: pill.trailingAnchor),
+            pillLabel.centerYAnchor.constraint(equalTo: pill.centerYAnchor),
+        ])
+
+        pill.addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(pillClicked)))
+    }
+
+    /// Updates the pill to reflect the current build state. Idle hides the pill.
+    func setBuildStatus(_ status: BuildStatusDisplay) {
+        pillLabel.stringValue = BuildStateFormatter.label(for: status)
+
+        switch status {
+        case .idle:
+            pill.isHidden = true
+            spinner.stopAnimation(nil)
+        case .building:
+            pill.isHidden = false
+            dot.isHidden = true
+            spinner.isHidden = false
+            spinner.startAnimation(nil)
+        case .succeeded, .failed, .cancelled:
+            pill.isHidden = false
+            spinner.stopAnimation(nil)
+            spinner.isHidden = true
+            dot.isHidden = false
+            dot.layer?.backgroundColor = Self.dotColor(for: status).cgColor
+        }
+    }
+
+    private static func dotColor(for status: BuildStatusDisplay) -> NSColor {
+        switch status {
+        case .succeeded: return .systemGreen
+        case .failed:    return .systemRed
+        default:         return Theme.statusBarText
+        }
+    }
+
+    @objc private func pillClicked() {
+        onPillClick?()
     }
 }

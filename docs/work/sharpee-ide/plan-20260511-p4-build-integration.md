@@ -152,7 +152,10 @@ Landed: `Build/BuildController.swift` (owns BuildRunner, forwards output to the 
 - Build panel auto-shows on build start (if hidden) and auto-scrolls to bottom on append.
 - Manual verification: build a story, panel fills with output, exit status visible at the end. ※
 
-### Step 4.7 — Status bar build indicator
+### Step 4.7 — Status bar build indicator  ✅ DONE (2026-06-18) — manually verified
+
+Landed: `Build/BuildStatus.swift` (`BuildStatusDisplay` enum + pure `BuildStateFormatter` for duration/label); `StatusBarView` gained a right-side pill (spinner while building, green/red dot + label on finish), clickable — cancel while building, toggle panel when finished. `BuildController` times the build (systemUptime) and pushes status; `AppDelegate` wires the pill-cancel handler. `BuildStateFormatterTests` (8) green; full suite 82, 0 failures. Pill cycle + click behaviour manually verified. Original spec below.
+
 
 - Replace the static "main · Sharpee 0.1.0" label with an HStack: branch · version · build-state pill.
 - States: `idle` (hidden), `building` (spinner + "Building…"), `success` (green dot + duration), `failure` (red dot + "Build failed").

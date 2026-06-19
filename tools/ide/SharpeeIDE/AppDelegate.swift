@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let controller = MainWindowController()
         mainWindowController = controller
         buildController = BuildController(window: controller)
+        controller.onBuildPillCancel = { [weak self] in self?.buildController?.cancel() }
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
 

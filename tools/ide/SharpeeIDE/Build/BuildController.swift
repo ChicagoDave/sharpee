@@ -12,6 +12,7 @@ final class BuildController: BuildRunnerDelegate {
 
     private let runner = BuildRunner()
     private weak var window: MainWindowController?
+    private var startUptime: TimeInterval = 0
 
     init(window: MainWindowController) {
         self.window = window
@@ -29,6 +30,7 @@ final class BuildController: BuildRunnerDelegate {
         window?.clearBuildOutput()
         let command = (["./sharpee", "build"] + settings.toArguments()).joined(separator: " ")
         window?.appendBuildOutput("$ \(command)\n\n")
+        startUptime = ProcessInfo.processInfo.systemUptime
         runner.start(settings: settings, repoRoot: repoRoot)
     }
 
@@ -44,17 +46,29 @@ final class BuildController: BuildRunnerDelegate {
     }
 
     func runner(_ runner: BuildRunner, didChangeState state: BuildRunner.State) {
-        // Status-bar pill reflects state in step 4.7.
+        if state == .building { window?.updateBuildStatus(.building) }
     }
 
     func runner(_ runner: BuildRunner, didExit result: BuildRunner.Result) {
+        let duration = ProcessInfo.processInfo.systemUptime - startUptime
+
         let line: String
+        let status: BuildStatusDisplay
         switch result.state {
-        case .success:   line = "\n✓ Build succeeded.\n"
-        case .failure:   line = "\n✗ Build failed (exit \(result.exitCode)).\n"
-        case .cancelled: line = "\n■ Build cancelled.\n"
-        case .idle, .building: line = ""
+        case .success:
+            line = "\n✓ Build succeeded.\n"
+            status = .succeeded(duration: duration)
+        case .failure:
+            line = "\n✗ Build failed (exit \(result.exitCode)).\n"
+            status = .failed(duration: duration)
+        case .cancelled:
+            line = "\n■ Build cancelled.\n"
+            status = .cancelled(duration: duration)
+        case .idle, .building:
+            line = ""
+            status = .idle
         }
         if !line.isEmpty { window?.appendBuildOutput(line) }
+        window?.updateBuildStatus(status)
     }
 }
