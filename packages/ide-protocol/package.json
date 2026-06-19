@@ -1,0 +1,62 @@
+{
+  "name": "@sharpee/ide-protocol",
+  "version": "1.0.0",
+  "description": "Wire types for the Sharpee IDE project-introspection manifest (ADR-184)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js",
+      "esm": "./dist-esm/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.esm.json",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
+    "lint": "eslint src --ext .ts",
+    "build:npm": "tsc --outDir dist",
+    "test": "vitest",
+    "test:ci": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2",
+    "vitest": "^1.6.0"
+  },
+  "files": [
+    "dist",
+    "dist-esm"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "sharpee",
+    "ide",
+    "introspection",
+    "protocol"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/ide-protocol"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "module": "./dist-esm/index.js"
+}

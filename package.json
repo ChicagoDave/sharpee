@@ -17,6 +17,7 @@
     "packages/parser-en-us",
     "packages/story-runtime-baseline",
     "packages/text-blocks",
+    "packages/ide-protocol",
     "packages/channel-service",
     "packages/forge",
     "packages/extensions/*",
