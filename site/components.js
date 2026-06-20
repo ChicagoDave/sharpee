@@ -41,10 +41,21 @@
     '</div>';
 
   var footerHTML =
-    '<span>&copy; 2025 David Cornelson. MIT License.</span>' +
+    '<span>&copy; 2025–2026 David Cornelson. MIT License.</span>' +
     '<div class="footer-links">' +
       '<a href="https://github.com/ChicagoDave/sharpee">GitHub</a>' +
     '</div>';
+
+  // Sitewide 1.0 announcement bar — prepended to every page.
+  if (!document.querySelector('.announce-bar')) {
+    var announce = document.createElement('div');
+    announce.className = 'announce-bar';
+    announce.innerHTML =
+      '<span class="announce-badge">1.0</span>' +
+      'Sharpee 1.0 is here — the first stable release, now on npm. ' +
+      '<a href="getting-started.html">Get started &rarr;</a>';
+    document.body.insertBefore(announce, document.body.firstChild);
+  }
 
   var sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.innerHTML = sidebarHTML;
