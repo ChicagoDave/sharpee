@@ -60,6 +60,15 @@ final class BuildRunner {
               environment: ShellEnvironment.buildEnvironment())
     }
 
+    /// Author housekeeping (ADR-185): runs `npm install` in the project directory to fetch the
+    /// platform + the `sharpee` bin. `npm` resolves from the login-shell PATH via `/usr/bin/env`.
+    func startInstall(projectDir: URL) {
+        start(executable: URL(fileURLWithPath: "/usr/bin/env"),
+              arguments: ["npm", "install"],
+              workingDirectory: projectDir,
+              environment: ShellEnvironment.buildEnvironment())
+    }
+
     /// Spawns an arbitrary executable. This is the production spawn path; the
     /// settings-based overload delegates here, and tests drive it directly with a
     /// fixture script so the real Process/pipe/signal machinery is exercised.

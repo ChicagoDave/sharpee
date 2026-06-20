@@ -13,8 +13,11 @@ final class BuildController: BuildRunnerDelegate {
     private let runner = BuildRunner()
     private weak var window: MainWindowController?
     private var startUptime: TimeInterval = 0
-    /// The project directory of the in-flight/last build (author mode, ADR-185).
-    private var current: URL?
+    /// What the runner is currently doing — routes the success handler.
+    private enum Operation { case build, install }
+
+    /// The project directory + operation of the in-flight/last run (author mode, ADR-185).
+    private var current: (dir: URL, op: Operation)?
 
     init(window: MainWindowController) {
         self.window = window
@@ -29,13 +32,27 @@ final class BuildController: BuildRunnerDelegate {
     /// No-op if a build is already running.
     func build(projectDir: URL) {
         guard !runner.isRunning else { return }
-        current = projectDir
+        current = (projectDir, .build)
         window?.setBuildPanelRepoRoot(projectDir)
         window?.setBuildPanelVisible(true)
         window?.clearBuildOutput()
         window?.appendBuildOutput("$ sharpee build\n\n")
         startUptime = ProcessInfo.processInfo.systemUptime
         runner.start(projectDir: projectDir)
+    }
+
+    /// Author housekeeping (ADR-185): run `npm install` in the project to fetch the platform +
+    /// the `sharpee` bin, streaming into the Build panel. Used automatically when an opened
+    /// project has a `package.json` but no installed bin. No-op if a run is already in flight.
+    func installDependencies(projectDir: URL) {
+        guard !runner.isRunning else { return }
+        current = (projectDir, .install)
+        window?.setBuildPanelRepoRoot(projectDir)
+        window?.setBuildPanelVisible(true)
+        window?.clearBuildOutput()
+        window?.appendBuildOutput("$ npm install\n\n")
+        startUptime = ProcessInfo.processInfo.systemUptime
+        runner.startInstall(projectDir: projectDir)
     }
 
     /// Requests cancellation of the running build (no-op when idle).
@@ -75,11 +92,21 @@ final class BuildController: BuildRunnerDelegate {
         if !line.isEmpty { window?.appendBuildOutput(line) }
         window?.updateBuildStatus(status)
 
-        // After a successful build, refresh the Structure view (introspect) and reload the Play
-        // pane from the freshly-built browser client (ADR-185).
-        if result.state == .success, let projectDir = current {
-            window?.introspectProject(projectRoot: projectDir)
-            window?.reloadPlayAfterBuild(projectRoot: projectDir)
+        // Route success by what just ran (ADR-185).
+        if result.state == .success, let current {
+            switch current.op {
+            case .build:
+                // Refresh the Structure view (introspect) and reload the Play pane.
+                window?.introspectProject(projectRoot: current.dir)
+                window?.reloadPlayAfterBuild(projectRoot: current.dir)
+            case .install:
+                // Deps are now installed; introspect if the project is already built (else the
+                // build-gated tree stays empty until the author builds).
+                let dist = current.dir.appendingPathComponent("dist/index.js")
+                if FileManager.default.fileExists(atPath: dist.path) {
+                    window?.introspectProject(projectRoot: current.dir)
+                }
+            }
         }
     }
 }

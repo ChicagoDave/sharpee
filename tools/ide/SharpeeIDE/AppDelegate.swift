@@ -174,9 +174,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // Show the built browser client in the Play pane (placeholder if none built).
         mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
 
-        // Author mode (ADR-185): if the opened folder is a *built* story project (installed
-        // sharpee bin + compiled dist), introspect it and populate the Structure view.
-        if Self.isBuiltAuthorProject(url) {
+        // Author housekeeping (ADR-185): a project with a package.json but no installed `sharpee`
+        // bin needs its dependencies — install them silently (`npm install`). A project that is
+        // already built introspects immediately to populate the Structure view.
+        let fm = FileManager.default
+        let hasPackageJSON = fm.fileExists(atPath: url.appendingPathComponent("package.json").path)
+        let hasBin = fm.fileExists(atPath: url.appendingPathComponent("node_modules/.bin/sharpee").path)
+        if hasPackageJSON && !hasBin {
+            buildController?.installDependencies(projectDir: url)
+        } else if Self.isBuiltAuthorProject(url) {
             mainWindowController?.introspectProject(projectRoot: url)
         }
     }
