@@ -149,6 +149,15 @@ Author projects gain introspection by `npm update @sharpee/devkit` (which pulls 
 `bootstrap` + `ide-protocol` transitively). Authors update on their own schedule; nothing forces
 it. `./sharpee verify` (tsf `--npm` + publish dry-run) gates the publish.
 
+**Done so far / sequencing note.** The first publish (ide-protocol `1.0.0`, bootstrap `1.0.1`,
+devkit `1.0.1`) shipped the `introspect` command. The scaffold rework (devkit-owned template,
+version injection, no `npx`) landed *after* devkit `1.0.1`, so it republishes as **devkit
+`1.0.2`**. Version injection uses **two ranges** because the platform and devkit are not strictly
+lockstep (sharpee `1.0.0`, devkit `1.0.2`): `@sharpee/sharpee` gets a major-line caret
+(`^1.0.0`, satisfiable by the published platform) and `@sharpee/devkit` gets its own current
+version caret (`^1.0.2`, guaranteeing an introspect-capable CLI) — both derived at `init` time
+from devkit's own version, never hardcoded.
+
 ## Consequences
 
 - **Monorepo support in the IDE is explicitly out of scope.** Platform/reference-story work

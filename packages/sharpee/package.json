@@ -53,8 +53,7 @@
   },
   "files": [
     "dist",
-    "docs",
-    "templates"
+    "docs"
   ],
   "keywords": [
     "interactive-fiction",

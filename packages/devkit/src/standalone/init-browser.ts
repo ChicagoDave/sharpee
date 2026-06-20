@@ -141,7 +141,7 @@ export async function runInitBrowserCommand(args: string[]): Promise<void> {
       // Add build:browser script
       pkg.scripts = pkg.scripts || {};
       if (!pkg.scripts['build:browser']) {
-        pkg.scripts['build:browser'] = 'npx sharpee build-browser';
+        pkg.scripts['build:browser'] = 'sharpee build-browser';
       }
 
       fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');

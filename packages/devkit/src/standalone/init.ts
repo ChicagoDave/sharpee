@@ -19,6 +19,29 @@ interface StoryOptions {
   storyTitle: string;
   author: string;
   description: string;
+  /** Injected `@sharpee/sharpee` dependency range. */
+  sharpeeRange: string;
+  /** Injected `@sharpee/devkit` dependency range. */
+  devkitRange: string;
+}
+
+/**
+ * Dependency ranges to inject into a scaffold, derived from this devkit's own
+ * version (so a project pins the platform line this CLI shipped with — never a
+ * stale literal). The platform (`@sharpee/sharpee`) is pinned to the major line
+ * (its patch may lag devkit's); `@sharpee/devkit` is pinned to its own current
+ * version so the scaffold gets an introspect-capable CLI.
+ */
+function platformRanges(): { sharpeeRange: string; devkitRange: string } {
+  let version = '1.0.0';
+  try {
+    const pkgPath = path.join(__dirname, '..', '..', 'package.json');
+    version = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || version;
+  } catch {
+    /* fall back to the major-1 line */
+  }
+  const major = version.split('.')[0];
+  return { sharpeeRange: `^${major}.0.0`, devkitRange: `^${version}` };
 }
 
 /**
@@ -58,7 +81,9 @@ function processTemplate(templatePath: string, options: StoryOptions): string {
     .replace(/\{\{STORY_ID\}\}/g, options.storyId)
     .replace(/\{\{STORY_TITLE\}\}/g, options.storyTitle)
     .replace(/\{\{AUTHOR\}\}/g, options.author)
-    .replace(/\{\{DESCRIPTION\}\}/g, options.description);
+    .replace(/\{\{DESCRIPTION\}\}/g, options.description)
+    .replace(/\{\{SHARPEE_VERSION\}\}/g, options.sharpeeRange)
+    .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange);
 }
 
 /**
@@ -98,11 +123,14 @@ export async function runInitCommand(args: string[]): Promise<void> {
   const author = useDefaults ? (process.env.USER || 'Anonymous') : await prompt('Author name', process.env.USER || 'Anonymous');
   const description = useDefaults ? 'An interactive fiction adventure' : await prompt('Description', 'An interactive fiction adventure');
 
+  const { sharpeeRange, devkitRange } = platformRanges();
   const options: StoryOptions = {
     storyId,
     storyTitle,
     author,
     description,
+    sharpeeRange,
+    devkitRange,
   };
 
   console.log('\nCreating project...\n');
@@ -149,7 +177,7 @@ dist/
   console.log('  npm run build');
   console.log('');
   console.log('To add a browser client:');
-  console.log('  npx sharpee init-browser');
+  console.log('  sharpee init-browser');
   console.log('');
 }
 

@@ -6,13 +6,15 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "build:browser": "npx sharpee build-browser",
+    "build:browser": "sharpee build-browser",
+    "introspect": "sharpee introspect",
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@sharpee/sharpee": "^0.9.61-beta"
+    "@sharpee/sharpee": "{{SHARPEE_VERSION}}"
   },
   "devDependencies": {
+    "@sharpee/devkit": "{{DEVKIT_VERSION}}",
     "typescript": "^5.0.0"
   },
   "keywords": [
