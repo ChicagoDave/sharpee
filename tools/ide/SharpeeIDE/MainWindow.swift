@@ -88,6 +88,11 @@ final class MainWindowController: NSWindowController {
         rootViewController?.browserBuildSucceeded(repoRoot: repoRoot, story: story)
     }
 
+    /// After any successful build, refresh the Structure view's manifest (ADR-184).
+    func buildSucceeded(repoRoot: URL, story: String) {
+        rootViewController?.buildSucceeded(repoRoot: repoRoot, story: story)
+    }
+
     /// Applies a persisted "Play after build" value (session restore).
     func setPlayAfterBuild(_ on: Bool) {
         rootViewController?.applyPlayAfterBuild(on)
@@ -284,6 +289,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.browserBuildSucceeded(repoRoot: repoRoot, story: story)
     }
 
+    func buildSucceeded(repoRoot: URL, story: String) {
+        mainSplitViewController.buildSucceeded(repoRoot: repoRoot, story: story)
+    }
+
     func applyPlayAfterBuild(_ on: Bool) {
         mainSplitViewController.setPlayAfterBuild(on)
     }
@@ -291,7 +300,7 @@ private final class RootViewController: NSViewController {
 
 // MARK: - Main horizontal split (4 panes)
 
-private final class MainSplitViewController: NSSplitViewController, ProjectTreeDelegate {
+private final class MainSplitViewController: NSSplitViewController {
 
     private static let railWidth: CGFloat = 40
     private static let projectWidth: CGFloat = 260
@@ -300,7 +309,8 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     private static let playMinWidth: CGFloat = 240
 
     private let railViewController = RailViewController()
-    private let projectTreeViewController = ProjectTreeViewController()
+    private let projectPaneViewController = ProjectPaneViewController()
+    private let introspectionRunner = IntrospectionRunner()
     private let editorViewController = EditorViewController()
     private let rightPanelViewController = RightPanelViewController()
     /// The Play tab inside the right panel — most wiring targets it directly.
@@ -322,7 +332,9 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         splitView.autosaveName = "SharpeeIDEMainSplit"
 
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
-        projectTreeViewController.delegate = self
+        projectPaneViewController.onActivateFile = { [weak self] url in self?.editorViewController.openDocument(at: url) }
+        projectPaneViewController.onActivateEntity = { [weak self] entity in self?.openEntitySource(entity) }
+        projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
@@ -340,7 +352,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
         currentProject = project
-        projectTreeViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
+        projectPaneViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
         RecentProjectsStore.push(project.rootURL)
         persistSession()
     }
@@ -375,7 +387,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
             projectURL: currentProject?.rootURL,
             openDocumentURLs: editorViewController.openDocumentURLs,
             activeIndex: editorViewController.activeDocumentIndex,
-            expandedFolderURLs: projectTreeViewController.expandedFolderURLs,
+            expandedFolderURLs: projectPaneViewController.expandedFolderURLs,
             buildPanelVisible: buildPanelVisibleProvider?() ?? false,
             playAfterBuild: playViewController.playAfterBuild
         )
@@ -411,14 +423,34 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
         rightPanelViewController.clearDiagnosis()
     }
 
-    // MARK: - ProjectTreeDelegate
-
-    func projectTree(_ controller: ProjectTreeViewController, didActivate node: FileNode) {
-        editorViewController.openDocument(at: node.url)
+    /// After any successful build, run `--introspect` and feed the Structure view (ADR-184).
+    /// Best-effort: introspection failure leaves the prior structure untouched.
+    fileprivate func buildSucceeded(repoRoot: URL, story: String) {
+        guard let storyDir = Self.storyDirectory(repoRoot: repoRoot, name: story) else { return }
+        introspectionRunner.introspect(storyPath: storyDir.path, repoRoot: repoRoot) { [weak self] result in
+            guard let self else { return }
+            if case .success(let manifest) = result {
+                self.projectPaneViewController.setManifest(manifest)
+            }
+        }
     }
 
-    func projectTreeDidChangeExpansion(_ controller: ProjectTreeViewController) {
-        persistSession()
+    /// Resolves a story *name* to its directory under stories/ or tutorials/.
+    private static func storyDirectory(repoRoot: URL, name: String) -> URL? {
+        let fm = FileManager.default
+        for sub in ["stories", "tutorials"] {
+            let url = repoRoot.appendingPathComponent(sub).appendingPathComponent(name)
+            if fm.fileExists(atPath: url.path) { return url }
+        }
+        return nil
+    }
+
+    /// Opens an activated entity's source location, when the manifest carries one.
+    /// CLI manifests have no source yet (added by the tree-sitter index, a later step).
+    private func openEntitySource(_ entity: EntityNode) {
+        guard let source = entity.source, let project = currentProject else { return }
+        let url = project.rootURL.appendingPathComponent(source.file)
+        editorViewController.openDocument(at: url, line: source.line, column: 0)
     }
 
     override func viewDidAppear() {
@@ -452,7 +484,7 @@ private final class MainSplitViewController: NSSplitViewController, ProjectTreeD
     }
 
     private func makeProjectItem() -> NSSplitViewItem {
-        let item = NSSplitViewItem(viewController: projectTreeViewController)
+        let item = NSSplitViewItem(viewController: projectPaneViewController)
         item.minimumThickness = Self.projectMinWidth
         item.holdingPriority = .defaultHigh
         return item
