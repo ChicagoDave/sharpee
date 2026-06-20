@@ -1,27 +1,38 @@
 /**
  * CLI: sharpee init-browser
  *
- * Adds browser client files to an existing Sharpee story project.
+ * Adds a browser client to an existing Sharpee story project: the entry-point
+ * wiring (src/browser-entry.ts), an author override stylesheet
+ * (browser/<story-id>.css), the runtime dependencies the entry point imports,
+ * and a build:browser script. The HTML and platform CSS are owned by the
+ * platform and supplied at build time by `sharpee build-browser` — never seeded.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { platformRanges } from './init';
 
-// In source: src/cli/ → ../../templates. In npm publish: cli/ → ../templates.
+// In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
 const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))
   ? path.join(__dirname, '..', 'templates', 'browser')
   : path.join(__dirname, '..', '..', 'templates', 'browser');
+
+/** Runtime packages browser-entry.ts imports that aren't already scaffold deps. */
+const BROWSER_RUNTIME_DEPS = [
+  '@sharpee/engine',
+  '@sharpee/parser-en-us',
+  '@sharpee/lang-en-us',
+  '@sharpee/stdlib',
+  '@sharpee/platform-browser',
+];
 
 interface ProjectInfo {
   storyId: string;
   storyTitle: string;
 }
 
-/**
- * Read story info from package.json or index.ts
- */
+/** Read story id/title from package.json, falling back to src/index.ts. */
 function getProjectInfo(projectDir: string): ProjectInfo | null {
-  // Try package.json first
   const packagePath = path.join(projectDir, 'package.json');
   if (fs.existsSync(packagePath)) {
     try {
@@ -31,17 +42,15 @@ function getProjectInfo(projectDir: string): ProjectInfo | null {
         storyTitle: pkg.description || pkg.name || 'My Story',
       };
     } catch {
-      // Fall through
+      // Fall through to index.ts.
     }
   }
 
-  // Try reading from src/index.ts
   const indexPath = path.join(projectDir, 'src', 'index.ts');
   if (fs.existsSync(indexPath)) {
     const content = fs.readFileSync(indexPath, 'utf-8');
     const idMatch = content.match(/id:\s*['"]([^'"]+)['"]/);
     const titleMatch = content.match(/title:\s*['"]([^'"]+)['"]/);
-
     if (idMatch || titleMatch) {
       return {
         storyId: idMatch?.[1] || 'my-story',
@@ -53,31 +62,56 @@ function getProjectInfo(projectDir: string): ProjectInfo | null {
   return null;
 }
 
-/**
- * Read template file and replace placeholders
- */
-function processTemplate(templatePath: string, info: ProjectInfo): string {
-  const content = fs.readFileSync(templatePath, 'utf-8');
+/** Substitute the story tokens a browser template file may carry. */
+function processTemplate(content: string, info: ProjectInfo): string {
   return content
     .replace(/\{\{STORY_ID\}\}/g, info.storyId)
     .replace(/\{\{STORY_TITLE\}\}/g, info.storyTitle);
 }
 
 /**
- * Run the init-browser command
+ * Add browser runtime deps + a build:browser script to the project's package.json.
+ * Deps pin to the platform major line this devkit shipped with (same source as
+ * `sharpee init`). Existing entries are left untouched.
  */
-export async function runInitBrowserCommand(args: string[]): Promise<void> {
-  // Check for help
+function updatePackageJson(projectDir: string): void {
+  const packagePath = path.join(projectDir, 'package.json');
+  if (!fs.existsSync(packagePath)) {
+    console.warn('  ⚠ No package.json — skipped dependency wiring');
+    return;
+  }
+  try {
+    const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+    const { sharpeeRange } = platformRanges();
+
+    pkg.dependencies = pkg.dependencies || {};
+    for (const dep of BROWSER_RUNTIME_DEPS) {
+      if (!pkg.dependencies[dep]) pkg.dependencies[dep] = sharpeeRange;
+    }
+
+    pkg.devDependencies = pkg.devDependencies || {};
+    if (!pkg.devDependencies.esbuild) pkg.devDependencies.esbuild = '^0.20.0';
+
+    pkg.scripts = pkg.scripts || {};
+    if (!pkg.scripts['build:browser']) pkg.scripts['build:browser'] = 'sharpee build-browser';
+
+    fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
+    console.log('  ✓ Updated package.json (deps + build:browser)');
+  } catch {
+    console.warn('  ⚠ Could not update package.json');
+  }
+}
+
+/** Run the init-browser command. */
+export async function runInitBrowserCommand(args: string[], projectDirArg?: string): Promise<void> {
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
     return;
   }
 
-  const projectDir = process.cwd();
-
+  const projectDir = projectDirArg || process.cwd();
   console.log('\n🌐 Adding browser client to your Sharpee project\n');
 
-  // Check if this is a Sharpee project
   const info = getProjectInfo(projectDir);
   if (!info) {
     console.error('Error: This does not appear to be a Sharpee project.');
@@ -88,94 +122,64 @@ export async function runInitBrowserCommand(args: string[]): Promise<void> {
 
   console.log(`  Story: ${info.storyTitle} (${info.storyId})`);
 
-  // Check if browser-entry.ts already exists
+  // Entry point — the one wiring file authors may customize.
   const browserEntryPath = path.join(projectDir, 'src', 'browser-entry.ts');
   if (fs.existsSync(browserEntryPath)) {
     console.error('\nError: src/browser-entry.ts already exists.');
     console.error('Remove it first if you want to regenerate.');
     process.exit(1);
   }
-
-  // Create browser directory for templates (optional, for customization)
-  const browserDir = path.join(projectDir, 'browser');
-  fs.mkdirSync(browserDir, { recursive: true });
-
-  // Copy browser-entry.ts template
   const browserEntryTemplate = path.join(TEMPLATES_DIR, 'browser-entry.ts.template');
-  if (fs.existsSync(browserEntryTemplate)) {
-    const content = processTemplate(browserEntryTemplate, info);
-    fs.writeFileSync(browserEntryPath, content);
-    console.log('  ✓ Created src/browser-entry.ts');
-  } else {
+  if (!fs.existsSync(browserEntryTemplate)) {
     console.error('  ✗ Template not found: browser-entry.ts.template');
     process.exit(1);
   }
+  fs.writeFileSync(browserEntryPath, processTemplate(fs.readFileSync(browserEntryTemplate, 'utf-8'), info));
+  console.log('  ✓ Created src/browser-entry.ts');
 
-  // Copy HTML template
-  const htmlTemplate = path.join(TEMPLATES_DIR, 'index.html');
-  if (fs.existsSync(htmlTemplate)) {
-    const content = processTemplate(htmlTemplate, info);
-    fs.writeFileSync(path.join(browserDir, 'index.html'), content);
-    console.log('  ✓ Created browser/index.html');
+  // Author override stylesheet — the sole CSS customization surface. The platform
+  // CSS (base/decorations/styles) and index.html are pulled fresh from devkit at build.
+  const browserDir = path.join(projectDir, 'browser');
+  fs.mkdirSync(browserDir, { recursive: true });
+  const overrideCssPath = path.join(browserDir, `${info.storyId}.css`);
+  if (!fs.existsSync(overrideCssPath)) {
+    fs.writeFileSync(
+      overrideCssPath,
+      `/* ${info.storyTitle} — author stylesheet.\n` +
+        ` * Loaded after the platform CSS, so any rule here overrides the defaults.\n` +
+        ` * Add your own styles below. */\n`,
+    );
+    console.log(`  ✓ Created browser/${info.storyId}.css`);
   }
 
-  // Copy CSS
-  const cssTemplate = path.join(TEMPLATES_DIR, 'styles.css');
-  if (fs.existsSync(cssTemplate)) {
-    fs.copyFileSync(cssTemplate, path.join(browserDir, 'styles.css'));
-    console.log('  ✓ Created browser/styles.css');
-  }
-
-  // Update package.json to add esbuild dev dependency and build script
-  const packagePath = path.join(projectDir, 'package.json');
-  if (fs.existsSync(packagePath)) {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
-
-      // Add esbuild to devDependencies
-      pkg.devDependencies = pkg.devDependencies || {};
-      if (!pkg.devDependencies.esbuild) {
-        pkg.devDependencies.esbuild = '^0.20.0';
-      }
-
-      // Add build:browser script
-      pkg.scripts = pkg.scripts || {};
-      if (!pkg.scripts['build:browser']) {
-        pkg.scripts['build:browser'] = 'sharpee build-browser';
-      }
-
-      fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
-      console.log('  ✓ Updated package.json');
-    } catch (e) {
-      console.warn('  ⚠ Could not update package.json');
-    }
-  }
+  updatePackageJson(projectDir);
 
   console.log('\n✅ Browser client added!\n');
   console.log('Next steps:');
-  console.log('  npm install          # Install esbuild');
-  console.log('  npm run build:browser  # Build web bundle');
+  console.log('  npm install            # Install the browser runtime deps');
+  console.log('  npm run build          # Build the story');
+  console.log('  npm run build:browser  # Build the web bundle → dist/web/');
   console.log('');
-  console.log('Output will be in dist/web/');
-  console.log('');
-  console.log('Customize the UI:');
-  console.log('  browser/index.html   # HTML template');
-  console.log('  browser/styles.css   # Styles');
+  console.log('Customize:');
+  console.log('  src/browser-entry.ts   # Engine + client wiring');
+  console.log(`  browser/${info.storyId}.css   # Your style overrides`);
   console.log('');
 }
 
 function showHelp(): void {
   console.log(`
-sharpee init-browser - Add browser client to a Sharpee project
+sharpee init-browser - Add a browser client to a Sharpee project
 
 Usage: sharpee init-browser
 
-This command adds the files needed to build a web browser version
-of your interactive fiction game:
+Adds the files needed to build a web version of your story:
 
-  src/browser-entry.ts   Entry point for browser bundle
-  browser/index.html     HTML template
-  browser/styles.css     Infocom-style CSS
+  src/browser-entry.ts     Engine + browser-client wiring
+  browser/<story-id>.css   Author style overrides (loaded last)
+
+Also adds the browser runtime dependencies and a build:browser script to
+package.json. The HTML page and platform CSS are supplied at build time by
+"sharpee build-browser".
 
 Run this in the root of your Sharpee project directory.
 `);

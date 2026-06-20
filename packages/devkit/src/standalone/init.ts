@@ -32,7 +32,7 @@ interface StoryOptions {
  * (its patch may lag devkit's); `@sharpee/devkit` is pinned to its own current
  * version so the scaffold gets an introspect-capable CLI.
  */
-function platformRanges(): { sharpeeRange: string; devkitRange: string } {
+export function platformRanges(): { sharpeeRange: string; devkitRange: string } {
   let version = '1.0.0';
   // devkit's package.json is one dir up in the published (flattened) package
   // (<pkg>/standalone/) and two dirs up in the monorepo (<pkg>/dist/standalone/).
