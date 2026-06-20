@@ -11,6 +11,7 @@
  */
 import { runTestNpm, TestNpmOptions } from './commands/test-npm';
 import { runBuild, BuildOptions } from './commands/build';
+import { runIntrospect } from './commands/introspect';
 import { runBundle } from './commands/bundle';
 import { runClean } from './commands/clean';
 import { runVerify } from './commands/verify';
@@ -31,6 +32,7 @@ Usage:
   sharpee build [story|path] [options]   Build a story (location-aware: monorepo vs standalone)
   sharpee build-browser [options]        Build the browser client only
   sharpee init <name>                    Scaffold a new story project
+  sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
   sharpee init-browser                   Add a browser client to the current project
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee bundle                         (monorepo) Assemble dist/cli/sharpee.js
@@ -139,6 +141,12 @@ async function main(argv: string[]): Promise<number> {
     case 'init':
       await runInitCommand(rest);
       return 0;
+    case 'introspect': {
+      // Optional positional [dir]; defaults to cwd. Manifest → stdout, status → stderr.
+      const dir = rest.find((a) => !a.startsWith('-'));
+      await runIntrospect({ dir });
+      return 0;
+    }
     case 'init-browser':
       await runInitBrowserCommand(rest);
       return 0;

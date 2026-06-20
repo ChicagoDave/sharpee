@@ -130,10 +130,12 @@ This feature ships only when these are on npm (a single coordinated publish — 
 break and no migration phase):
 
 1. **Publish `@sharpee/ide-protocol`** (first publish, `1.0.0`).
-2. **Republish `@sharpee/bootstrap`** (minor bump, e.g. `1.1.0`) — now exports `buildManifest`
-   and depends on `@sharpee/ide-protocol`.
-3. **Republish `@sharpee/devkit`** (minor bump, e.g. `1.1.0`) — new `introspect` command,
-   depends on `@sharpee/bootstrap`.
+2. **Republish `@sharpee/bootstrap`** at **`1.0.1`** — now exports `buildManifest` and depends on
+   `@sharpee/ide-protocol`.
+3. **Republish `@sharpee/devkit`** at **`1.0.1`** — new `introspect` command, depends on
+   `@sharpee/bootstrap`.
+
+(Updated packages bump to `1.0.1` — patch, not minor; new packages first-publish at `1.0.0`.)
 
 The republished `@sharpee/devkit`'s `@sharpee/bootstrap` dependency range (and `bootstrap`'s
 `@sharpee/ide-protocol` range) must resolve to the **newly published** versions, so a fresh

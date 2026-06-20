@@ -247,6 +247,9 @@ importers:
 
   packages/devkit:
     dependencies:
+      '@sharpee/bootstrap':
+        specifier: workspace:*
+        version: link:../bootstrap
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
