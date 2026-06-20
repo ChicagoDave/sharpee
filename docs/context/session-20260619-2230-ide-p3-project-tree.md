@@ -150,4 +150,24 @@ Every successful build refreshes the structure tree. Failure (bad exit, decode e
 
 ---
 
-**Progressive update**: Session finalized 2026-06-19 ~2300 CDT
+## Addendum — tree-sitter source-position index (2026-06-20)
+
+Built the source-position half of ADR-184 (was the top "remaining" item above):
+
+- **`EntitySourceIndex.swift`** — scans story `.ts` with the ADR-182 tree-sitter grammar
+  (`(arguments (string) @arg)`), mapping string-literal call arguments → `name → [file:line]`.
+  Captures both direct `createEntity('small mailbox', …)` and wrapper
+  `createRoom('West of House', …)` literals (so wrapper-created rooms resolve — the finding-3
+  gap), while strings nested in options objects (`new IdentityTrait({ name })`) are excluded.
+  `sourceRef(for:)` → `.exact` (unique) / `.scope` (ambiguous) / nil; `annotating(_:)` returns a
+  manifest with `source` populated by display-name join.
+- **Wiring** — `MainWindow.buildSucceeded` now builds the index and annotates the manifest before
+  `setManifest`; `openEntitySource` handles the index's absolute paths. The previously-inert
+  click-to-source path is now live.
+- **Tests** — 7 real-path tests (`EntitySourceIndexTests`, actual grammar parses). IDE suite 166 → **173**, 0 failures; app compiles.
+- **Still remaining:** WKWebView bridge live-refresh (`generatedFrom: 'bridge'`); interactive
+  end-to-end run of the app.
+
+---
+
+**Progressive update**: Session finalized 2026-06-19 ~2300 CDT; source-index addendum 2026-06-20
