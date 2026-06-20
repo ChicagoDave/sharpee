@@ -146,7 +146,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                                       description: "An interactive fiction adventure")
         do {
             try StoryScaffold.create(in: url, info: info)
-            loadProject(at: url)
+            // New Story (ADR-185): after the deps install, auto-add the browser client so the
+            // new project is immediately playable in the Play pane.
+            loadProject(at: url, autoInitBrowser: true)
         } catch {
             let alert = NSAlert(error: error)
             alert.alertStyle = .warning
@@ -164,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// Opens the project rooted at `url` and sets the window title. Centralized so that
     /// the Open Project panel, restore-session, and Open Recent all share the same path.
     /// `expandedFolderURLs` is honoured by restore-session; the menu paths leave it empty.
-    private func loadProject(at url: URL, expandedFolderURLs: [URL] = []) {
+    private func loadProject(at url: URL, expandedFolderURLs: [URL] = [], autoInitBrowser: Bool = false) {
         let project = Project(rootURL: url)
         mainWindowController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
         mainWindowController?.window?.title = "Sharpee — \(project.name)"
@@ -181,7 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let hasPackageJSON = fm.fileExists(atPath: url.appendingPathComponent("package.json").path)
         let hasBin = fm.fileExists(atPath: url.appendingPathComponent("node_modules/.bin/sharpee").path)
         if hasPackageJSON && !hasBin {
-            buildController?.installDependencies(projectDir: url)
+            buildController?.installDependencies(projectDir: url, thenInitBrowser: autoInitBrowser)
         } else if Self.isBuiltAuthorProject(url) {
             mainWindowController?.introspectProject(projectRoot: url)
         }

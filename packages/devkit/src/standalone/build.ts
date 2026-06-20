@@ -10,6 +10,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { zipSync, strToU8 } from 'fflate';
 import { runBuildBrowserCommand } from './build-browser';
+import { stampVersion } from './version-stamp';
 
 interface SharpeeConfig {
   title?: string;
@@ -85,6 +86,12 @@ export async function runBuildCommand(args: string[], projectDirArg?: string): P
   // --- Compile TypeScript (needed for both bundle and testing) ---
 
   console.log('--- Compiling TypeScript ---\n');
+
+  // When a browser client is present, src/browser-entry.ts imports ./version — stamp it
+  // before tsc compiles src/, or the build fails on a missing module (TS2307).
+  if (fs.existsSync(path.join(projectDir, 'src', 'browser-entry.ts'))) {
+    stampVersion(projectDir, pkg.name?.replace(/^@.*\//, '') || 'story');
+  }
 
   const tsconfigPath = path.join(projectDir, 'tsconfig.json');
   try {

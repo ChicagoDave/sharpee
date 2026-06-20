@@ -32,7 +32,11 @@ describe('runInitCommand (scaffold)', () => {
     // world-model is a direct dep so the story can import traits idiomatically.
     expect(pkg.dependencies['@sharpee/world-model']).toMatch(/^\^\d+\.\d+\.\d+$/);
     // Finding A: the injected devkit range reads devkit's real version (not the 1.0.0 fallback).
-    expect(pkg.devDependencies['@sharpee/devkit']).toBe('^1.0.4');
+    // Read it dynamically so a version bump doesn't re-break this assertion.
+    const devkitVersion = JSON.parse(
+      readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'),
+    ).version;
+    expect(pkg.devDependencies['@sharpee/devkit']).toBe(`^${devkitVersion}`);
 
     // The CLI is a local devDependency so `sharpee build`/`introspect` resolve.
     expect(pkg.devDependencies['@sharpee/devkit']).toMatch(/^\^1\./);

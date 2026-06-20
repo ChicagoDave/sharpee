@@ -77,6 +77,27 @@ final class BuildRunnerTests: XCTestCase {
         XCTAssertEqual(delegate.result?.state, .failure)
     }
 
+    // MARK: - Project-bin wrappers
+
+    func testStartInitBrowserRunsProjectBinWithInitBrowserArg() throws {
+        // Fake the installed bin at node_modules/.bin/sharpee; startInitBrowser must target it
+        // with the `init-browser` argument (the production wrapper, real spawn path).
+        let binDir = tempDir.appendingPathComponent("node_modules/.bin", isDirectory: true)
+        try FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
+        let bin = binDir.appendingPathComponent("sharpee")
+        try "#!/bin/bash\necho \"ran: $@\"\nexit 0\n".write(to: bin, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: bin.path)
+
+        let exited = expectation(description: "init-browser exits")
+        delegate = RecordingDelegate(onExit: { exited.fulfill() })
+        runner.delegate = delegate
+        runner.startInitBrowser(projectDir: tempDir)
+        wait(for: [exited], timeout: 5)
+
+        XCTAssertEqual(delegate.result?.state, .success)
+        XCTAssertTrue(delegate.output.contains("ran: init-browser"), "output was: \(delegate.output)")
+    }
+
     // MARK: - Failure
 
     func testNonZeroExitYieldsFailureWithCode() throws {

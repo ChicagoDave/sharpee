@@ -11,6 +11,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { platformRanges } from './init';
+import { stampVersion } from './version-stamp';
 
 // In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
 const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))
@@ -136,6 +137,11 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
   }
   fs.writeFileSync(browserEntryPath, processTemplate(fs.readFileSync(browserEntryTemplate, 'utf-8'), info));
   console.log('  ✓ Created src/browser-entry.ts');
+
+  // Seed src/version.ts now (browser-entry imports it) so the project compiles immediately,
+  // before any build runs. `sharpee build` / `build-browser` refresh it with current values.
+  stampVersion(projectDir, info.storyId);
+  console.log('  ✓ Created src/version.ts');
 
   // Author override stylesheet — the sole CSS customization surface. The platform
   // CSS (base/decorations/styles) and index.html are pulled fresh from devkit at build.

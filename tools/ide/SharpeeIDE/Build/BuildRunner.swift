@@ -69,6 +69,16 @@ final class BuildRunner {
               environment: ShellEnvironment.buildEnvironment())
     }
 
+    /// Author housekeeping (ADR-185): runs the project's installed `sharpee init-browser`, which
+    /// adds the browser client (`src/browser-entry.ts` + `browser/<id>.css`), the browser runtime
+    /// dependencies, and a `build:browser` script. Requires the bin, so it runs after `npm install`.
+    func startInitBrowser(projectDir: URL) {
+        start(executable: projectDir.appendingPathComponent("node_modules/.bin/sharpee"),
+              arguments: ["init-browser"],
+              workingDirectory: projectDir,
+              environment: ShellEnvironment.buildEnvironment())
+    }
+
     /// Spawns an arbitrary executable. This is the production spawn path; the
     /// settings-based overload delegates here, and tests drive it directly with a
     /// fixture script so the real Process/pipe/signal machinery is exercised.

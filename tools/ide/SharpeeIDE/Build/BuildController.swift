@@ -14,10 +14,13 @@ final class BuildController: BuildRunnerDelegate {
     private weak var window: MainWindowController?
     private var startUptime: TimeInterval = 0
     /// What the runner is currently doing — routes the success handler.
-    private enum Operation { case build, install }
+    private enum Operation { case build, install, initBrowser }
 
     /// The project directory + operation of the in-flight/last run (author mode, ADR-185).
     private var current: (dir: URL, op: Operation)?
+
+    /// When set, the next successful install chains into `sharpee init-browser` (New Story only).
+    private var autoInitBrowser = false
 
     init(window: MainWindowController) {
         self.window = window
@@ -44,8 +47,12 @@ final class BuildController: BuildRunnerDelegate {
     /// Author housekeeping (ADR-185): run `npm install` in the project to fetch the platform +
     /// the `sharpee` bin, streaming into the Build panel. Used automatically when an opened
     /// project has a `package.json` but no installed bin. No-op if a run is already in flight.
-    func installDependencies(projectDir: URL) {
+    ///
+    /// `thenInitBrowser` chains `sharpee init-browser` after the install succeeds (the New Story
+    /// flow): once the bin is installed, add the browser client, then install its runtime deps.
+    func installDependencies(projectDir: URL, thenInitBrowser: Bool = false) {
         guard !runner.isRunning else { return }
+        autoInitBrowser = thenInitBrowser
         current = (projectDir, .install)
         window?.setBuildPanelRepoRoot(projectDir)
         window?.setBuildPanelVisible(true)
@@ -53,6 +60,19 @@ final class BuildController: BuildRunnerDelegate {
         window?.appendBuildOutput("$ npm install\n\n")
         startUptime = ProcessInfo.processInfo.systemUptime
         runner.startInstall(projectDir: projectDir)
+    }
+
+    /// Author housekeeping (ADR-185): add the browser client to a freshly-scaffolded project by
+    /// running its installed `sharpee init-browser`, appending into the Build panel. Chained after
+    /// the New Story install; on success a follow-up install fetches the browser runtime deps.
+    private func initBrowser(projectDir: URL) {
+        guard !runner.isRunning else { return }
+        current = (projectDir, .initBrowser)
+        window?.setBuildPanelRepoRoot(projectDir)
+        window?.setBuildPanelVisible(true)
+        window?.appendBuildOutput("\n$ sharpee init-browser\n\n")
+        startUptime = ProcessInfo.processInfo.systemUptime
+        runner.startInitBrowser(projectDir: projectDir)
     }
 
     /// Requests cancellation of the running build (no-op when idle).
@@ -100,12 +120,21 @@ final class BuildController: BuildRunnerDelegate {
                 window?.introspectProject(projectRoot: current.dir)
                 window?.reloadPlayAfterBuild(projectRoot: current.dir)
             case .install:
-                // Deps are now installed; introspect if the project is already built (else the
-                // build-gated tree stays empty until the author builds).
-                let dist = current.dir.appendingPathComponent("dist/index.js")
-                if FileManager.default.fileExists(atPath: dist.path) {
-                    window?.introspectProject(projectRoot: current.dir)
+                if autoInitBrowser {
+                    // New Story: the bin is now installed — add the browser client.
+                    autoInitBrowser = false
+                    initBrowser(projectDir: current.dir)
+                } else {
+                    // Deps are now installed; introspect if the project is already built (else the
+                    // build-gated tree stays empty until the author builds).
+                    let dist = current.dir.appendingPathComponent("dist/index.js")
+                    if FileManager.default.fileExists(atPath: dist.path) {
+                        window?.introspectProject(projectRoot: current.dir)
+                    }
                 }
+            case .initBrowser:
+                // The browser client appended its runtime deps to package.json — install them.
+                installDependencies(projectDir: current.dir)
             }
         }
     }

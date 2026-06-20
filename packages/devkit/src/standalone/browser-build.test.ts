@@ -64,6 +64,11 @@ describe('browser scaffold (real path)', () => {
     for (const dep of ['@sharpee/engine', '@sharpee/parser-en-us', '@sharpee/lang-en-us', '@sharpee/stdlib', '@sharpee/platform-browser']) {
       expect(pkg.dependencies[dep], `${dep} missing`).toMatch(/^\^\d+\.\d+\.\d+$/);
     }
+    // version.ts is seeded NOW (at init-browser), not only at build-browser time — so
+    // `sharpee build` (tsc over src/, incl. browser-entry → ./version) compiles before any
+    // browser build. Regression guard for the TS2307 "Cannot find module './version.js'" bug.
+    const seededVersion = readFileSync(join(projectDir, 'src', 'version.ts'), 'utf-8');
+    expect(seededVersion).toContain('export const STORY_VERSION');
 
     await runBuildBrowserCommand([], projectDir);
 

@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/platform-browser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Browser client infrastructure for Sharpee interactive fiction",
   "type": "module",
   "main": "./dist/index.js",
