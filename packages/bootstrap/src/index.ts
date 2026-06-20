@@ -113,6 +113,15 @@ export function assembleGame(story: any): LoadedGame {
   // ChannelService internally from these capabilities during start().
   engine.start({ capabilities: CLI_CAPABILITIES } as any);
 
+  // engine.start() created the real player via story.createPlayer() and re-pointed
+  // world.setPlayer() at it; the placeholder above (needed only for the GameEngine
+  // constructor) is now orphaned. Remove it so it doesn't leak into world
+  // enumeration — e.g. project introspection showing a stray 'player' (ADR-184/185).
+  const activePlayer = world.getPlayer();
+  if (activePlayer && activePlayer.id !== player.id) {
+    world.removeEntity(player.id);
+  }
+
   engine.on('channel:manifest', () => {
     // No-op in test mode.
   });
