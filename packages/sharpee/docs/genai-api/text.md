@@ -70,6 +70,14 @@ export interface IDecoration {
      * Can contain nested decorations or plain strings.
      */
     readonly content: ReadonlyArray<TextContent>;
+    /**
+     * Optional value carried by a parameterized decoration (ADR-183) —
+     * e.g. the width `%` for `sharpee-center`, the level for
+     * `sharpee-indent`. Renderers emit it as a `data-value` attribute,
+     * never as an inline style. Absent for non-parameterized decorations.
+     * @see ADR-183 §3 — Wire + render
+     */
+    readonly value?: string;
 }
 /**
  * A block of text output with semantic key (channel).

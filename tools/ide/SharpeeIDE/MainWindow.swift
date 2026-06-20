@@ -430,7 +430,9 @@ private final class MainSplitViewController: NSSplitViewController {
         introspectionRunner.introspect(storyPath: storyDir.path, repoRoot: repoRoot) { [weak self] result in
             guard let self else { return }
             if case .success(let manifest) = result {
-                self.projectPaneViewController.setManifest(manifest)
+                // Join runtime entities to their source sites (ADR-184 source-position half).
+                let index = EntitySourceIndex.build(storyDirectory: storyDir)
+                self.projectPaneViewController.setManifest(index.annotating(manifest))
             }
         }
     }
@@ -448,8 +450,15 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Opens an activated entity's source location, when the manifest carries one.
     /// CLI manifests have no source yet (added by the tree-sitter index, a later step).
     private func openEntitySource(_ entity: EntityNode) {
-        guard let source = entity.source, let project = currentProject else { return }
-        let url = project.rootURL.appendingPathComponent(source.file)
+        guard let source = entity.source else { return }
+        // The index records absolute paths; a future wire/bridge source may be workspace-relative.
+        let url: URL?
+        if source.file.hasPrefix("/") {
+            url = URL(fileURLWithPath: source.file)
+        } else {
+            url = currentProject.map { $0.rootURL.appendingPathComponent(source.file) }
+        }
+        guard let url else { return }
         editorViewController.openDocument(at: url, line: source.line, column: 0)
     }
 
