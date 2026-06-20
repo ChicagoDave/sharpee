@@ -11,7 +11,8 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@sharpee/sharpee": "{{SHARPEE_VERSION}}"
+    "@sharpee/sharpee": "{{SHARPEE_VERSION}}",
+    "@sharpee/world-model": "{{SHARPEE_VERSION}}"
   },
   "devDependencies": {
     "@sharpee/devkit": "{{DEVKIT_VERSION}}",

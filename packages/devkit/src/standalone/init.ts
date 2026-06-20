@@ -34,11 +34,19 @@ interface StoryOptions {
  */
 function platformRanges(): { sharpeeRange: string; devkitRange: string } {
   let version = '1.0.0';
-  try {
-    const pkgPath = path.join(__dirname, '..', '..', 'package.json');
-    version = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version || version;
-  } catch {
-    /* fall back to the major-1 line */
+  // devkit's package.json is one dir up in the published (flattened) package
+  // (<pkg>/standalone/) and two dirs up in the monorepo (<pkg>/dist/standalone/).
+  // Probe both and accept only devkit's own manifest (not a parent package.json).
+  for (const rel of [['..', 'package.json'], ['..', '..', 'package.json']]) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, ...rel), 'utf-8'));
+      if (pkg.name === '@sharpee/devkit' && pkg.version) {
+        version = pkg.version;
+        break;
+      }
+    } catch {
+      /* try the next candidate */
+    }
   }
   const major = version.split('.')[0];
   return { sharpeeRange: `^${major}.0.0`, devkitRange: `^${version}` };
