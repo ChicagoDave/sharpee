@@ -116,7 +116,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let project = Project(rootURL: url)
         mainWindowController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
         mainWindowController?.window?.title = "Sharpee — \(project.name)"
-        currentRepoRoot = WorkspaceRoot.find(from: url)
+        // Author mode (ADR-185): the open folder *is* the story project — no monorepo lookup.
+        currentRepoRoot = url
 
         // Show the built story in the Play pane (placeholder if none built).
         let story = currentRepoRoot.map { BuildSettingsStore.load(for: $0).story } ?? nil
@@ -173,73 +174,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     // MARK: - Build menu actions
 
-    /// Build → Build (⌘B). Runs `./sharpee build` with the project's saved settings,
-    /// streaming output into the Build panel. If no story is selected yet, opens Build
-    /// Settings instead of building.
+    /// Build → Build (⌘B). Runs the open project's installed `sharpee build` (ADR-185),
+    /// streaming output into the Build panel; on success the Structure view re-introspects.
     @objc func buildProject(_ sender: Any?) {
-        guard let repoRoot = currentRepoRoot else { return }
-        let settings = BuildSettingsStore.load(for: repoRoot)
-        guard let story = settings.story, !story.isEmpty else {
-            presentNoStoryAlert(sender)
-            return
-        }
-        // A Browser build needs a browser entry — offer to scaffold one if it's missing.
-        if settings.clients.contains(BuildSettings.browserClient),
-           !BrowserEntry.exists(repoRoot: repoRoot, story: story) {
-            promptCreateBrowserEntry(repoRoot: repoRoot, story: story, then: settings)
-            return
-        }
-        buildController?.build(settings: settings, repoRoot: repoRoot)
-    }
-
-    /// Offers to generate the missing browser entry; on consent, creates it, opens it, and
-    /// continues the build.
-    private func promptCreateBrowserEntry(repoRoot: URL, story: String, then settings: BuildSettings) {
-        let alert = NSAlert()
-        alert.messageText = "'\(story)' has no browser entry"
-        alert.informativeText = "A browser entry (src/browser-entry.ts) is required to build or play "
-            + "'\(story)' in the browser. Create a starter one now?"
-        alert.addButton(withTitle: "Create Entry")
-        alert.addButton(withTitle: "Cancel")
-
-        let handle: (NSApplication.ModalResponse) -> Void = { [weak self] response in
-            guard response == .alertFirstButtonReturn else { return }
-            self?.createBrowserEntryThenBuild(repoRoot: repoRoot, story: story, settings: settings)
-        }
-        if let window = mainWindowController?.window {
-            alert.beginSheetModal(for: window, completionHandler: handle)
-        } else {
-            handle(alert.runModal())
-        }
-    }
-
-    private func createBrowserEntryThenBuild(repoRoot: URL, story: String, settings: BuildSettings) {
-        do {
-            let url = try BrowserEntry.create(repoRoot: repoRoot, story: story)
-            mainWindowController?.openDocument(at: url) // let the author see/customize it
-            buildController?.build(settings: settings, repoRoot: repoRoot)
-        } catch {
-            let alert = NSAlert(error: error)
-            alert.alertStyle = .warning
-            alert.runModal()
-        }
-    }
-
-    /// Alerts that a story must be picked, then opens Build Settings.
-    private func presentNoStoryAlert(_ sender: Any?) {
-        let alert = NSAlert()
-        alert.messageText = "No story selected"
-        alert.informativeText = "Choose a story in Build Settings before building."
-        alert.addButton(withTitle: "Open Build Settings…")
-        alert.addButton(withTitle: "Cancel")
-        let runModal: (NSApplication.ModalResponse) -> Void = { [weak self] response in
-            if response == .alertFirstButtonReturn { self?.openBuildSettings(sender) }
-        }
-        if let window = mainWindowController?.window {
-            alert.beginSheetModal(for: window, completionHandler: runModal)
-        } else {
-            runModal(alert.runModal())
-        }
+        guard let projectRoot = currentRepoRoot else { return }
+        buildController?.build(projectDir: projectRoot)
     }
 
     /// Build → Build Settings…. Presents the per-project build options as a sheet.

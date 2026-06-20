@@ -2,7 +2,7 @@
 // Bridges a BuildRunner to the window's Build panel: starts `./sharpee build`, streams
 // its output into the panel (auto-showing it), and reports the final status. Owns the
 // runner so the Build/Cancel menu actions and their validation can route through it.
-// Public interface: BuildController.build(settings:repoRoot:), cancel(), isBuilding.
+// Public interface: BuildController.build(projectDir:), cancel(), isBuilding.
 // Owner context: tools/ide — Build.
 
 import AppKit
@@ -13,7 +13,8 @@ final class BuildController: BuildRunnerDelegate {
     private let runner = BuildRunner()
     private weak var window: MainWindowController?
     private var startUptime: TimeInterval = 0
-    private var current: (settings: BuildSettings, repoRoot: URL)?
+    /// The project directory of the in-flight/last build (author mode, ADR-185).
+    private var current: URL?
 
     init(window: MainWindowController) {
         self.window = window
@@ -23,18 +24,18 @@ final class BuildController: BuildRunnerDelegate {
     /// True while a build is running — drives Cancel-menu enablement and blocks re-entry.
     var isBuilding: Bool { runner.isRunning }
 
-    /// Reveals the panel, clears prior output, echoes the command, and starts the build.
+    /// Author-mode build (ADR-185): run the project's installed `sharpee build` in the project
+    /// directory. Reveals the panel, clears prior output, echoes the command, and starts the build.
     /// No-op if a build is already running.
-    func build(settings: BuildSettings, repoRoot: URL) {
+    func build(projectDir: URL) {
         guard !runner.isRunning else { return }
-        current = (settings, repoRoot)
-        window?.setBuildPanelRepoRoot(repoRoot)
+        current = projectDir
+        window?.setBuildPanelRepoRoot(projectDir)
         window?.setBuildPanelVisible(true)
         window?.clearBuildOutput()
-        let command = (["./sharpee", "build"] + settings.toArguments()).joined(separator: " ")
-        window?.appendBuildOutput("$ \(command)\n\n")
+        window?.appendBuildOutput("$ sharpee build\n\n")
         startUptime = ProcessInfo.processInfo.systemUptime
-        runner.start(settings: settings, repoRoot: repoRoot)
+        runner.start(projectDir: projectDir)
     }
 
     /// Requests cancellation of the running build (no-op when idle).
@@ -74,14 +75,10 @@ final class BuildController: BuildRunnerDelegate {
         if !line.isEmpty { window?.appendBuildOutput(line) }
         window?.updateBuildStatus(status)
 
-        // After any successful build, refresh the Structure view from the built world (ADR-184).
-        if result.state == .success, let current, let story = current.settings.story {
-            window?.buildSucceeded(repoRoot: current.repoRoot, story: story)
-
-            // A successful Browser build additionally surfaces the story in the Play pane.
-            if current.settings.clients.contains(BuildSettings.browserClient) {
-                window?.browserBuildSucceeded(repoRoot: current.repoRoot, story: story)
-            }
+        // After a successful build, refresh the Structure view by introspecting the project (ADR-185).
+        // (Play-pane reload on a browser build is handled in the Play realignment.)
+        if result.state == .success, let projectDir = current {
+            window?.introspectProject(projectRoot: projectDir)
         }
     }
 }

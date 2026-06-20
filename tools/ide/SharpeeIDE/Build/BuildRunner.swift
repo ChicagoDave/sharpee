@@ -2,7 +2,7 @@
 // Owns a single child `./sharpee build` process: spawns it, streams stdout/stderr to
 // a delegate, tracks state (idle→building→success/failure/cancelled), and supports
 // graceful cancel (SIGTERM, escalating to SIGKILL after 2s).
-// Public interface: BuildRunner.start(settings:repoRoot:), cancel(), state, delegate.
+// Public interface: BuildRunner.start(projectDir:), cancel(), state, delegate.
 // Owner context: tools/ide — Build.
 
 import Foundation
@@ -49,13 +49,14 @@ final class BuildRunner {
 
     // MARK: - Start
 
-    /// Starts `./sharpee build <args>` in `repoRoot` (the `./sharpee` wrapper lives at the
-    /// monorepo root). The wrapper exits non-zero with a message if the devkit engine is
-    /// unbuilt — that surfaces through `didEmit` + a `failure` result.
-    func start(settings: BuildSettings, repoRoot: URL) {
-        start(executable: repoRoot.appendingPathComponent("sharpee"),
-              arguments: ["build"] + settings.toArguments(),
-              workingDirectory: repoRoot,
+    /// Author-mode build (ADR-185): runs the project's installed `sharpee build` (the
+    /// `@sharpee/devkit` bin) with the project directory as the working directory. It compiles
+    /// `src/`, emits `.sharpee`, and the browser client when `src/browser-entry.ts` is present.
+    /// A missing bin (no `npm install`) surfaces as a launch failure / `failure` result.
+    func start(projectDir: URL) {
+        start(executable: projectDir.appendingPathComponent("node_modules/.bin/sharpee"),
+              arguments: ["build"],
+              workingDirectory: projectDir,
               environment: ShellEnvironment.buildEnvironment())
     }
 
