@@ -93,6 +93,11 @@ final class MainWindowController: NSWindowController {
         rootViewController?.buildSucceeded(repoRoot: repoRoot, story: story)
     }
 
+    /// Author-mode (ADR-185): introspect the open project via its installed `sharpee` bin.
+    func introspectProject(projectRoot: URL) {
+        rootViewController?.introspectProject(projectRoot: projectRoot)
+    }
+
     /// Applies a persisted "Play after build" value (session restore).
     func setPlayAfterBuild(_ on: Bool) {
         rootViewController?.applyPlayAfterBuild(on)
@@ -293,6 +298,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.buildSucceeded(repoRoot: repoRoot, story: story)
     }
 
+    func introspectProject(projectRoot: URL) {
+        mainSplitViewController.introspectProject(projectRoot: projectRoot)
+    }
+
     func applyPlayAfterBuild(_ on: Bool) {
         mainSplitViewController.setPlayAfterBuild(on)
     }
@@ -423,15 +432,26 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.clearDiagnosis()
     }
 
-    /// After any successful build, run `--introspect` and feed the Structure view (ADR-184).
-    /// Best-effort: introspection failure leaves the prior structure untouched.
+    /// After any successful build, refresh the Structure view from the built story (ADR-184).
     fileprivate func buildSucceeded(repoRoot: URL, story: String) {
         guard let storyDir = Self.storyDirectory(repoRoot: repoRoot, name: story) else { return }
-        introspectionRunner.introspect(storyPath: storyDir.path, repoRoot: repoRoot) { [weak self] result in
+        introspectAndPopulate(projectDir: storyDir)
+    }
+
+    /// Author-mode (ADR-185): introspect an open story project via its installed `sharpee`
+    /// bin and populate the Structure view. Called on project open (when built) and after builds.
+    fileprivate func introspectProject(projectRoot: URL) {
+        introspectAndPopulate(projectDir: projectRoot)
+    }
+
+    /// Runs `sharpee introspect` for `projectDir`, joins source positions (ADR-184), and feeds
+    /// the Structure view. Best-effort: failure (not built / no installed bin) leaves the prior
+    /// structure untouched.
+    private func introspectAndPopulate(projectDir: URL) {
+        introspectionRunner.introspect(projectDir: projectDir) { [weak self] result in
             guard let self else { return }
             if case .success(let manifest) = result {
-                // Join runtime entities to their source sites (ADR-184 source-position half).
-                let index = EntitySourceIndex.build(storyDirectory: storyDir)
+                let index = EntitySourceIndex.build(storyDirectory: projectDir)
                 self.projectPaneViewController.setManifest(index.annotating(manifest))
             }
         }

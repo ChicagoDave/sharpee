@@ -121,6 +121,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // Show the built story in the Play pane (placeholder if none built).
         let story = currentRepoRoot.map { BuildSettingsStore.load(for: $0).story } ?? nil
         mainWindowController?.refreshPlay(repoRoot: currentRepoRoot, story: story)
+
+        // Author mode (ADR-185): if the opened folder is a *built* story project (installed
+        // sharpee bin + compiled dist), introspect it and populate the Structure view.
+        if Self.isBuiltAuthorProject(url) {
+            mainWindowController?.introspectProject(projectRoot: url)
+        }
+    }
+
+    /// True iff `url` is a built author story project — it has the installed `sharpee` bin and a
+    /// compiled `dist/index.js`, so `sharpee introspect` can load it.
+    private static func isBuiltAuthorProject(_ url: URL) -> Bool {
+        let fm = FileManager.default
+        return fm.fileExists(atPath: url.appendingPathComponent("node_modules/.bin/sharpee").path)
+            && fm.fileExists(atPath: url.appendingPathComponent("dist/index.js").path)
     }
 
     /// File → Open Recent → <project>. Loads the chosen folder. If the folder is no longer

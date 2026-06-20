@@ -4,7 +4,7 @@
 // Process/pipe machinery, but buffers stdout to completion (the manifest is one JSON
 // document) rather than streaming. Status text the CLI writes to stderr is captured
 // only to enrich a non-zero-exit error.
-// Public interface: IntrospectionRunner.introspect(storyPath:repoRoot:completion:).
+// Public interface: IntrospectionRunner.introspect(projectDir:completion:).
 // Owner context: tools/ide — Project.
 
 import Foundation
@@ -29,13 +29,15 @@ final class IntrospectionRunner {
     /// through `self` on the main actor rather than capturing a non-Sendable closure.
     private var pending: Completion?
 
-    /// Production entry point: `node dist/cli/sharpee.js --introspect --story <storyPath>`
-    /// in `repoRoot`. `node` is resolved from the login-shell PATH via `/usr/bin/env`
-    /// (the same PATH the build uses), so the IDE finds the user's Node install.
-    func introspect(storyPath: String, repoRoot: URL, completion: @escaping Completion) {
-        run(executable: URL(fileURLWithPath: "/usr/bin/env"),
-            arguments: ["node", "dist/cli/sharpee.js", "--introspect", "--story", storyPath],
-            workingDirectory: repoRoot,
+    /// Author-mode entry point (ADR-185): run the project's installed `sharpee introspect`
+    /// (the `@sharpee/devkit` bin) with the project directory as the working directory. The
+    /// bin loads the built story + node_modules platform and emits the manifest. `node` is on
+    /// the login-shell PATH the bin's shebang resolves against (via `ShellEnvironment`).
+    func introspect(projectDir: URL, completion: @escaping Completion) {
+        let bin = projectDir.appendingPathComponent("node_modules/.bin/sharpee")
+        run(executable: bin,
+            arguments: ["introspect"],
+            workingDirectory: projectDir,
             environment: ShellEnvironment.buildEnvironment(),
             completion: completion)
     }
