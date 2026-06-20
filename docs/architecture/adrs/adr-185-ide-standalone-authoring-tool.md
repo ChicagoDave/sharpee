@@ -81,10 +81,11 @@ project — the same prerequisite `build` already has. Verification (2026-06-20)
 **not 1.0-correct**; author mode requires fixing it first:
 
 - **The template is not shipped in the published package.** It lives in `packages/sharpee/templates/`,
-  but `@sharpee/devkit` (which owns `init`) ships only `dist` + `fixtures` in its `files`, so a
-  published devkit carries **no template** and `sharpee init` from npm cannot find it. Move the story
-  template into `@sharpee/devkit` and add it to the package's `files` so the scaffold ships with the
-  CLI.
+  but `@sharpee/devkit` (which owns `init`) carries no template, so `sharpee init` from npm cannot find
+  it. Move the story template into `@sharpee/devkit` **and declare it as a tsf asset** — a per-package
+  `ts-forge.json` with `{ "assets": ["templates/**"] }`. tsf **deletes the package.json `files` array**
+  when it stages the publish manifest and copies only `dist` + declared `assets`, so `files` alone does
+  **not** ship non-`dist` content (this is exactly how `@sharpee/sharpee` ships its templates).
 - **The platform version must be injected, not hardcoded.** `init` substitutes only
   `STORY_ID`/`TITLE`/`AUTHOR`/`DESCRIPTION`; the dependency is a stale literal (`@sharpee/sharpee`
   `^0.9.61-beta`, which the published `1.0.0` does not satisfy). Add a version placeholder filled from
@@ -114,8 +115,9 @@ authors and the IDE.
   so `bootstrap` (and thus `devkit`) resolves it in an author's `node_modules`.
 - **`tools/ide`** — realign the monorepo-shaped wiring to author mode (see Consequences). No
   change to the manifest/structure/tree/source-index types.
-- **`@sharpee/devkit` story scaffold** — own the story template inside devkit and ship it (add to
-  `files`); inject the platform version at `init` time (a placeholder replacing the hardcoded
+- **`@sharpee/devkit` story scaffold** — own the story template inside devkit and ship it via a
+  per-package `ts-forge.json` `assets` entry (tsf stages `assets`; it strips `files`); inject the
+  platform version at `init` time (a placeholder replacing the hardcoded
   `@sharpee/sharpee` literal); the template declares `@sharpee/sharpee` **and** `@sharpee/devkit` at
   the injected version; remove `npx` from the template scripts and the standalone build/init/test
   paths (1.0 decision). This makes `sharpee build`/`introspect` runnable in a freshly-scaffolded
