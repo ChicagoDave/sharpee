@@ -143,7 +143,7 @@ export interface EntityNode {
 export interface SourceRef {
   file: string;                     // workspace-relative path
   line: number;                     // 1-based; the createEntity('<name>', …) site
-  resolution: 'exact' | 'scope';    // 'scope' = fell back to enclosing function (non-unique name)
+  resolution: 'exact' | 'scope';    // 'exact' = unique match; 'scope' = name occurs at multiple sites, first reported
 }
 
 /** Only the fields the IDE renders/lints on. Sparse: a key is present only if the entity has that trait. */
@@ -214,10 +214,10 @@ tree-sitter name index, joined by `displayName`.
 - **Story-author freedom is preserved.** Because classification is runtime, authors may build
   entities however they like — wrappers, loops, data-driven factories — and the tree stays
   correct. A static classifier would have constrained authoring style to stay analyzable.
-- **The name→location join can be imperfect.** Two entities created from the same name string,
-  or a name built by concatenation, may not resolve to a unique line. The tree still lists the
-  entity (from the manifest); only the jump-to-source degrades, and the index can fall back to
-  the file scope (e.g. the `createObjects` function) when a unique line is unavailable.
+- **The name→location join can be imperfect.** Two entities created from the same name string, or a
+  name built by concatenation, may not resolve to a unique line. The tree still lists the entity (from
+  the manifest); only the jump-to-source degrades — a name with multiple matching sites reports the
+  **first** site flagged `scope` (ambiguous), and a name with none simply carries no `source`.
 
 ## Acceptance
 
@@ -235,8 +235,9 @@ tree-sitter name index, joined by `displayName`.
   175 rooms / 155 objects / 15 regions / 6 npcs across per-region files; player and door/exit
   excluded. Alderman pending a story build.]**
 - The name→location index resolves The Alderman's named objects and Dungeo's
-  `createEntity('<name>', …)` sites to the correct file:line; an unresolvable name falls back to
-  file/function scope without dropping the entity from the tree.
+  `createEntity('<name>', …)` sites to the correct file:line (`resolution: 'exact'`); a name matching
+  multiple sites resolves to the first, flagged `'scope'`; an unresolved name carries no `source` —
+  in every case the entity stays in the tree.
 - The Swift side decodes the manifest from both the CLI path and the WKWebView bridge path
   through one schema; a schema mismatch fails the type/decode check on both sides.
 - P3 project tree renders the manifest's categories; full IDE suite green.
