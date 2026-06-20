@@ -1,0 +1,19 @@
+# Findings — @sharpee/stdlib
+
+## Author-relevance
+Mixed author-facing + extension-facing: the book uses `Action`/`ActionContext`/`ValidationResult` (four-phase pattern), `ScopeLevel`/`ScopeResolver`, `IFActions`, `entityInfoFrom`, and the 43 `standardActions`; the NPC/witness/channel/capability internals are platform-internal.
+
+## Naming
+Mostly clean and spelled-out (no abbreviations). Concrete issues: `CommandValidator` is declared as BOTH an `interface` and a `class` with the identical name (duplicate concept; the inventory counts it twice). `ActionIDs` (7 verbs) and `IFActions` (~70 verbs) are two overlapping const maps of the same thing — `ActionIDs` is a confusing subset. Mixed `I`-prefix: `INpcService` but the public interfaces `Action`, `ActionContext`, `ScopeResolver`, `WitnessSystem`, `MessageRegistry` carry no `I`. Suffix discipline is otherwise consistent (`*EventData`, `*Payload`, `*Result`). `MEDIA_CHANNEL_IDS` vs `MEDIA_CHANNELS` vs `MEDIA_EVENT_TYPES` triad repeats for sound/standard channels — many near-identical const names.
+
+## Should-be-internal
+`createMockActionContext` (test helper on the public surface). The `Std libChannelRegistry` class plus the ~40 channel consts (`mainChannel`, `scoreChannel`, `lifecycleChannel`, `imageOverlayChannel`, etc.) and the `MEDIA_*`/`SOUND_*`/`STANDARD_CHANNEL_*` const families are channel-wiring internals, not author API. `StandardWitnessSystem`/`WitnessSystem` and all `Witness*Event` interfaces are perception-engine internals. `QuitQueryHandler`/`RestartQueryHandler` + their `create*` factories, `MetaCommandRegistry`, `enterLucidityWindow`/`processLucidityDecay`/`injectHallucinations`/`DECAY_RATE_TURNS` (NPC lucidity), and `registerStandard*` wiring functions are platform bootstrap, not book material.
+
+## API shape
+The 43 standard actions present a CONSISTENT shape: each exports `<verb>Action: Action & { metadata: ActionMetadata }` — good. But export style is inconsistent: most use `export *` while `taking`/`removing`/`throwing`/`wearing`/`taking_off` use named `export { xAction }` + `export type {...}`, so event-data types are unevenly surfaced. Heavy `any` in core author signatures: `ActionContext.event(type: string, data: any)`, `sharedData: Record<string, any>`, `ValidationResult.data?: Record<string, any>`, `params?: Record<string, any>`, and `StateChange.oldValue/newValue: any` — the most-used author method (`event`) is untyped. `EnhancedActionContext`, `Action.canExecute`, and `ActionContext.sharedData` are all `@deprecated` but still public. `ScopeLevelStrings` is a deprecated parallel to the `ScopeLevel` enum. `Action.report`/`blocked` are optional despite being the documented four-phase contract.
+
+## Documentation (TSDoc)
+High coverage on the author-facing surface — roughly 80%+ of sampled exported symbols have doc comments. `Action`, `ActionContext`, `ScopeLevel`, `ScopeResolver`, `CommandValidator`, `entityInfoFrom`, and channel consts are richly documented with `@example`. Thinner spots: the per-action `*EventData`/`*ErrorData` interfaces, the `STANDARD_CHANNELS`/`MEDIA_CHANNELS` const families, and NPC behavior factories (`createPatrolBehavior`, `createWandererBehavior`, `guardBehavior`) carry little or no prose.
+
+## Book highlights
+`Action` + `ActionContext` + `ValidationResult` (four-phase validate/execute/report/blocked); `ActionMetadata` and `ActionScopeRequirements`/`defaultScope`; `ScopeLevel` enum + `ScopeResolver` + `context.requireScope()`/`requireSlotScope()`/`requireCarriedOrImplicitTake()`; `IFActions` action-id constants; `entityInfoFrom` (ADR-158 message params); `standardActions` (the 43-action library the author extends/overrides); `createActionContext`. Note for the book: the scope *builder* (`scope()`/`ScopeBuilder`) lives in `@sharpee/if-domain`, not here.

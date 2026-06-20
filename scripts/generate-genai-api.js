@@ -104,6 +104,40 @@ const PACKAGE_GROUPS = [
     description: 'Basic combat extension — attack/defend mechanics.',
     packages: [{ name: 'ext-basic-combat', dir: 'packages/extensions/basic-combat' }],
   },
+  {
+    output: 'character.md',
+    title: '@sharpee/character',
+    description: 'NPC/character authoring — builders, applyCharacter, character model.',
+    packages: [{ name: 'character', dir: 'packages/character' }],
+  },
+  {
+    output: 'authoring.md',
+    title: 'Authoring Helpers',
+    description: 'Fluent entity-builder DSL (helpers) and the EntityQuery API (queries).',
+    packages: [
+      { name: 'helpers', dir: 'packages/helpers' },
+      { name: 'queries', dir: 'packages/queries' },
+    ],
+  },
+  {
+    output: 'presentation.md',
+    title: 'Presentation',
+    description: 'Browser web client, channel renderers, and media/audio.',
+    packages: [
+      { name: 'platform-browser', dir: 'packages/platform-browser' },
+      { name: 'channel-service', dir: 'packages/channel-service' },
+      { name: 'media', dir: 'packages/media' },
+    ],
+  },
+  {
+    output: 'tooling.md',
+    title: 'Tooling',
+    description: 'Build/CLI orchestration (devkit) and the transcript test engine.',
+    packages: [
+      { name: 'devkit', dir: 'packages/devkit' },
+      { name: 'transcript-tester', dir: 'packages/transcript-tester' },
+    ],
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -328,6 +362,10 @@ function generateIndex(groups, stats) {
   lines.push('3. `stdlib.md` — standard actions, validation');
   lines.push('4. `parser.md` — grammar extension for story-specific commands');
   lines.push('5. `plugins.md` — NPC, scheduler, state machine');
+  lines.push('6. `character.md` — NPC/character authoring');
+  lines.push('7. `authoring.md` — fluent entity builder + EntityQuery helpers');
+  lines.push('8. `presentation.md` — browser web client, channels, media/audio');
+  lines.push('9. `tooling.md` — build/CLI and transcript testing');
   lines.push('');
   lines.push('**Working on platform code?** Also read:');
   lines.push('- `core.md` — base types, query system');

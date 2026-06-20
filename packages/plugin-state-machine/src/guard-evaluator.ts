@@ -9,6 +9,14 @@ import {
   EntityBindings,
 } from './types';
 
+/**
+ * Evaluate a {@link GuardCondition} against current world state.
+ * @param guard The condition to test.
+ * @param world The live world model.
+ * @param bindings Role-to-entity bindings used to resolve `$` references.
+ * @param playerId The player, used as the default actor for location/inventory guards.
+ * @returns true when the condition holds.
+ */
 export function evaluateGuard(
   guard: GuardCondition,
   world: WorldModel,
@@ -72,6 +80,10 @@ function evaluateInventoryGuard(
   return world.getLocation(entityId) === actorId;
 }
 
+/**
+ * Resolve an entity reference: a `$`-prefixed role is looked up in `bindings`
+ * (throwing if unbound); any other string is returned as a literal entity id.
+ */
 export function resolveRef(ref: string, bindings: EntityBindings): EntityId {
   if (ref.startsWith('$')) {
     const bound = bindings[ref];

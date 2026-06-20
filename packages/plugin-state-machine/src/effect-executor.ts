@@ -9,6 +9,16 @@ import { resolveRef } from './guard-evaluator';
 
 let eventCounter = 0;
 
+/**
+ * Apply a list of {@link Effect}s to the world in order and collect the semantic
+ * events they emit.
+ * @param effects The effects to run.
+ * @param world The live world model to mutate.
+ * @param bindings Role-to-entity bindings used to resolve `$` references.
+ * @param playerId The player, passed to custom effects.
+ * @param machineId The owning machine's id, tagged onto emitted events.
+ * @returns The events produced by the effects.
+ */
 export function executeEffects(
   effects: Effect[],
   world: WorldModel,

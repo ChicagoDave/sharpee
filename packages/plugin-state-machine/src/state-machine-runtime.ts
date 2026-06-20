@@ -24,9 +24,20 @@ interface RegisteredMachine {
   history: string[];
 }
 
+/**
+ * Holds the running state machines for a story and advances them each turn
+ * (ADR-119). Stories obtain the registry from
+ * {@link StateMachinePlugin.getRegistry} and {@link register} their machines.
+ */
 export class StateMachineRegistry {
   private machines = new Map<string, RegisteredMachine>();
 
+  /**
+   * Register a machine and start it in its initial state.
+   * @param definition The machine to add.
+   * @param bindings Role-to-entity bindings (e.g. `{ $door: doorId }`).
+   * @throws if the id is already registered or the initial state is missing.
+   */
   register(definition: StateMachineDefinition, bindings: EntityBindings = {}): void {
     if (this.machines.has(definition.id)) {
       throw new Error(`State machine already registered: ${definition.id}`);
@@ -43,18 +54,26 @@ export class StateMachineRegistry {
     });
   }
 
+  /** Remove a machine by id; a no-op if absent. */
   unregister(id: string): void {
     this.machines.delete(id);
   }
 
+  /** The current state name of a machine, or `undefined` if not registered. */
   getMachineState(id: string): string | undefined {
     return this.machines.get(id)?.currentState;
   }
 
+  /** The ordered state history of a machine, or `undefined` if not registered. */
   getMachineHistory(id: string): string[] | undefined {
     return this.machines.get(id)?.history;
   }
 
+  /**
+   * Evaluate every non-terminal machine for this turn, firing at most one
+   * transition per machine (highest-priority matching trigger whose guard
+   * passes), and return all events the fired transitions produced.
+   */
   evaluate(ctx: EvaluationContext): ISemanticEvent[] {
     const allEvents: ISemanticEvent[] = [];
 
@@ -196,6 +215,7 @@ export class StateMachineRegistry {
 
   // ─── Serialization ──────────────────────────────────────────────────────
 
+  /** Serialize every machine instance (current state + history) for saving. */
   getState(): StateMachineRegistryState {
     const instances: StateMachineInstanceState[] = [];
     for (const machine of this.machines.values()) {
@@ -208,6 +228,7 @@ export class StateMachineRegistry {
     return { instances };
   }
 
+  /** Restore machine instances from a prior {@link getState} result on load. */
   setState(state: StateMachineRegistryState): void {
     for (const instanceState of state.instances) {
       const machine = this.machines.get(instanceState.id);
