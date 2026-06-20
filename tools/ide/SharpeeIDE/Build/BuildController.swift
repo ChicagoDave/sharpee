@@ -74,11 +74,14 @@ final class BuildController: BuildRunnerDelegate {
         if !line.isEmpty { window?.appendBuildOutput(line) }
         window?.updateBuildStatus(status)
 
-        // After a successful Browser build, surface the freshly-built story in the Play pane.
-        if result.state == .success,
-           let current, current.settings.clients.contains(BuildSettings.browserClient),
-           let story = current.settings.story {
-            window?.browserBuildSucceeded(repoRoot: current.repoRoot, story: story)
+        // After any successful build, refresh the Structure view from the built world (ADR-184).
+        if result.state == .success, let current, let story = current.settings.story {
+            window?.buildSucceeded(repoRoot: current.repoRoot, story: story)
+
+            // A successful Browser build additionally surfaces the story in the Play pane.
+            if current.settings.clients.contains(BuildSettings.browserClient) {
+                window?.browserBuildSucceeded(repoRoot: current.repoRoot, story: story)
+            }
         }
     }
 }
