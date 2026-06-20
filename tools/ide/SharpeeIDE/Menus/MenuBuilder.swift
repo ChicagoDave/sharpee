@@ -68,6 +68,12 @@ enum MenuBuilder {
     private static func makeFileMenuItem(target: AnyObject) -> NSMenuItem {
         let menu = NSMenu(title: "File")
 
+        let newStory = NSMenuItem(title: "New Story…",
+                                  action: #selector(AppDelegate.newStory(_:)),
+                                  keyEquivalent: "n")
+        newStory.target = target
+        menu.addItem(newStory)
+
         let open = NSMenuItem(title: "Open Project…",
                               action: #selector(AppDelegate.openProject(_:)),
                               keyEquivalent: "o")

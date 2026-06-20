@@ -102,6 +102,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         loadProject(at: url)
     }
 
+    /// File → New Story… (⌘N). Prompts for a title, picks/creates a folder, scaffolds the
+    /// devkit story template into it, and opens it (ADR-185).
+    @objc func newStory(_ sender: Any?) {
+        guard let title = promptStoryTitle(), !title.isEmpty else { return }
+
+        let panel = NSSavePanel()
+        panel.title = "New Sharpee Story"
+        panel.prompt = "Create"
+        panel.message = "Choose where to create the story project folder."
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = StoryScaffold.storyId(from: title)
+
+        let handle: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            guard response == .OK, let url = panel.url else { return }
+            self?.scaffoldAndOpen(at: url, title: title)
+        }
+        if let window = mainWindowController?.window {
+            panel.beginSheetModal(for: window, completionHandler: handle)
+        } else {
+            handle(panel.runModal())
+        }
+    }
+
+    /// Prompts for the new story's title with a modal alert + text field. Returns nil on cancel.
+    private func promptStoryTitle() -> String? {
+        let alert = NSAlert()
+        alert.messageText = "New Story"
+        alert.informativeText = "Enter a title for your story."
+        alert.addButton(withTitle: "Continue")
+        alert.addButton(withTitle: "Cancel")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+        field.placeholderString = "My Adventure"
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+        return field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func scaffoldAndOpen(at url: URL, title: String) {
+        let author = NSFullUserName().isEmpty ? "Anonymous" : NSFullUserName()
+        let info = StoryScaffold.Info(title: title, author: author,
+                                      description: "An interactive fiction adventure")
+        do {
+            try StoryScaffold.create(in: url, info: info)
+            loadProject(at: url)
+        } catch {
+            let alert = NSAlert(error: error)
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
+    }
+
     /// File → Save (⌘S). Forwards to the active editor; no-op when no document is open.
     @objc func saveDocument(_ sender: Any?) {
         mainWindowController?.saveActiveDocument()

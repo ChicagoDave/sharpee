@@ -39,6 +39,10 @@ targets:
     platform: macOS
     sources:
       - path: SharpeeIDE
+      # Bundle the @sharpee/devkit story template so "New Story…" can scaffold a project
+      # without a global CLI (ADR-185). StoryScaffold reads these from Bundle.main.
+      - path: ../../packages/devkit/templates/story
+        buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
       - package: SwiftTreeSitter
