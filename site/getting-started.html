@@ -13,15 +13,19 @@
   <main class="content">
     <h1>Getting Started</h1>
 
-    <p>Create a new story project with a single command:</p>
+    <p>Sharpee is a command-line tool. Install it once, globally:</p>
 
-    <pre><code>npx @sharpee/sharpee init my-adventure
+    <pre><code>npm install -g @sharpee/devkit</code></pre>
+
+    <p>That gives you the <code>sharpee</code> command. Create a new story project:</p>
+
+    <pre><code>sharpee init my-adventure
 cd my-adventure
 npm install</code></pre>
 
     <p>Build and play in your browser:</p>
 
-    <pre><code>npx @sharpee/sharpee build
+    <pre><code>sharpee build
 open dist/web/index.html</code></pre>
 
     <p>That's it. You have a running story.</p>
@@ -38,7 +42,7 @@ open dist/web/index.html</code></pre>
 
     <h2>CLI Commands</h2>
 
-    <p>Everything runs through <code>npx @sharpee/sharpee</code>:</p>
+    <p>Everything runs through the <code>sharpee</code> command:</p>
 
     <ul>
       <li><code>init &lt;name&gt;</code> — Create a new story project</li>
