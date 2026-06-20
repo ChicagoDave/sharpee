@@ -79,13 +79,13 @@ final class MainWindowController: NSWindowController {
     }
 
     /// Loads (or clears) the Play pane for the given story's web bundle.
-    func refreshPlay(repoRoot: URL?, story: String?) {
-        rootViewController?.refreshPlay(repoRoot: repoRoot, story: story)
+    func refreshPlay(projectRoot: URL?) {
+        rootViewController?.refreshPlay(projectRoot: projectRoot)
     }
 
     /// After a successful Browser build, loads the just-built story into Play (if the toggle is on).
-    func browserBuildSucceeded(repoRoot: URL, story: String) {
-        rootViewController?.browserBuildSucceeded(repoRoot: repoRoot, story: story)
+    func reloadPlayAfterBuild(projectRoot: URL) {
+        rootViewController?.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
     /// After any successful build, refresh the Structure view's manifest (ADR-184).
@@ -286,12 +286,12 @@ private final class RootViewController: NSViewController {
         bottomPanelViewController.buildPanel.repoRoot = url
     }
 
-    func refreshPlay(repoRoot: URL?, story: String?) {
-        mainSplitViewController.refreshPlay(repoRoot: repoRoot, story: story)
+    func refreshPlay(projectRoot: URL?) {
+        mainSplitViewController.refreshPlay(projectRoot: projectRoot)
     }
 
-    func browserBuildSucceeded(repoRoot: URL, story: String) {
-        mainSplitViewController.browserBuildSucceeded(repoRoot: repoRoot, story: story)
+    func reloadPlayAfterBuild(projectRoot: URL) {
+        mainSplitViewController.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
     func buildSucceeded(repoRoot: URL, story: String) {
@@ -355,8 +355,8 @@ private final class MainSplitViewController: NSSplitViewController {
     }
 
     /// Loads (or clears) the Play pane for the given story's web bundle.
-    fileprivate func refreshPlay(repoRoot: URL?, story: String?) {
-        playViewController.load(repoRoot: repoRoot, story: story)
+    fileprivate func refreshPlay(projectRoot: URL?) {
+        playViewController.load(projectRoot: projectRoot)
     }
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
@@ -404,8 +404,8 @@ private final class MainSplitViewController: NSSplitViewController {
     }
 
     /// After a successful Browser build, load the freshly-built story (honours the toggle).
-    fileprivate func browserBuildSucceeded(repoRoot: URL, story: String) {
-        playViewController.reloadAfterBuild(repoRoot: repoRoot, story: story)
+    fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
+        playViewController.reloadAfterBuild(projectRoot: projectRoot)
     }
 
     /// Applies a persisted "Play after build" value (session restore).

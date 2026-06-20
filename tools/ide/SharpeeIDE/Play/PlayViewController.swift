@@ -2,7 +2,7 @@
 // The Play pane: a header (status / Restart / "Play after build") over a WKWebView that
 // embeds the story's self-contained browser client (dist/web/<story>/, served via a
 // custom scheme), or a placeholder when no bundle is built.
-// Public interface: load(repoRoot:story:), reloadAfterBuild(repoRoot:story:), restart(),
+// Public interface: load(projectRoot:), reloadAfterBuild(projectRoot:), restart(),
 // playAfterBuild, onPlayAfterBuildChanged.
 // Owner context: tools/ide — Play.
 
@@ -41,8 +41,8 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     private let header = PlayHeaderView()
     private let placeholder = NSTextField(labelWithString: "Build with Browser enabled to play")
 
-    /// The bundle currently loaded, so reload after a rebuild can re-resolve it.
-    private var loaded: (repoRoot: URL, story: String)?
+    /// The project root currently loaded, so reload after a rebuild can re-resolve its bundle.
+    private var loaded: URL?
 
     /// Whether a successful Browser build should auto-load into the pane. Persisted in SessionState.
     private(set) var playAfterBuild = true
@@ -107,18 +107,17 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         showPlaceholder()
     }
 
-    /// Loads the story's web bundle if present, otherwise shows the placeholder.
-    /// Passing nil repoRoot/story (e.g. no project, no story chosen) shows the placeholder.
-    func load(repoRoot: URL?, story: String?) {
-        guard let repoRoot, let story, !story.isEmpty,
-              WebBundle.indexURL(repoRoot: repoRoot, story: story) != nil else {
+    /// Loads the project's web bundle (`<projectRoot>/dist/web/`) if present, otherwise shows the
+    /// placeholder. Passing nil (no project) or an unbuilt project shows the placeholder.
+    func load(projectRoot: URL?) {
+        guard let projectRoot, WebBundle.indexURL(projectRoot: projectRoot) != nil else {
             loaded = nil
             showPlaceholder()
             return
         }
-        loaded = (repoRoot, story)
+        loaded = projectRoot
         PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
-        schemeHandler.rootDirectory = WebBundle.directory(repoRoot: repoRoot, story: story)
+        schemeHandler.rootDirectory = WebBundle.directory(projectRoot: projectRoot)
         placeholder.isHidden = true
         webView.isHidden = false
         header.setLoaded(true)
@@ -126,11 +125,11 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         webView.load(URLRequest(url: url))
     }
 
-    /// Loads the just-built story after a successful Browser build, honouring the
-    /// "Play after build" toggle. No-op when the toggle is off.
-    func reloadAfterBuild(repoRoot: URL, story: String) {
+    /// Loads the just-built project after a successful build, honouring the "Play after build"
+    /// toggle. No-op when the toggle is off (or the project has no browser client).
+    func reloadAfterBuild(projectRoot: URL) {
         guard playAfterBuild else { return }
-        load(repoRoot: repoRoot, story: story)
+        load(projectRoot: projectRoot)
     }
 
     /// Restarts the running story by reloading from origin. (If the client later adds
@@ -161,7 +160,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
                                             translation: SharpeeErrorTranslator.translate(message: text)))
             return
         }
-        let bundleDir = WebBundle.directory(repoRoot: loaded.repoRoot, story: loaded.story)
+        let bundleDir = WebBundle.directory(projectRoot: loaded)
         onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: bundleDir))
     }
 }

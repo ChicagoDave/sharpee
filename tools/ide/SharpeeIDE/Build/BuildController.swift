@@ -75,10 +75,11 @@ final class BuildController: BuildRunnerDelegate {
         if !line.isEmpty { window?.appendBuildOutput(line) }
         window?.updateBuildStatus(status)
 
-        // After a successful build, refresh the Structure view by introspecting the project (ADR-185).
-        // (Play-pane reload on a browser build is handled in the Play realignment.)
+        // After a successful build, refresh the Structure view (introspect) and reload the Play
+        // pane from the freshly-built browser client (ADR-185).
         if result.state == .success, let projectDir = current {
             window?.introspectProject(projectRoot: projectDir)
+            window?.reloadPlayAfterBuild(projectRoot: projectDir)
         }
     }
 }

@@ -119,9 +119,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // Author mode (ADR-185): the open folder *is* the story project — no monorepo lookup.
         currentRepoRoot = url
 
-        // Show the built story in the Play pane (placeholder if none built).
-        let story = currentRepoRoot.map { BuildSettingsStore.load(for: $0).story } ?? nil
-        mainWindowController?.refreshPlay(repoRoot: currentRepoRoot, story: story)
+        // Show the built browser client in the Play pane (placeholder if none built).
+        mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
 
         // Author mode (ADR-185): if the opened folder is a *built* story project (installed
         // sharpee bin + compiled dist), introspect it and populate the Structure view.
