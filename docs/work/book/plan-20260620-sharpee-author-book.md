@@ -164,12 +164,12 @@ touches platform machinery gets at least one Under-the-Hood section anchored to 
 - Preface — what Sharpee is, the two perspectives, why integrated-progressive **[new, short]**
 - How to read this book — reading tracks, the Under-the-Hood legend, how the zoo grows **[new, short]**
 
-### Part I — Getting Started
+### Volume I — Getting Started
 1. Installing Sharpee & the `./sharpee` CLI **[have: getting-started, build-system]**
 2. Your first room (zoo v01) **[have: v01]**
 3. The play loop & how a turn works **[have/new: core-concepts]**
 
-### Part II — Building a World
+### Volume II — Building a World
 4. Rooms & navigation (v02) **[have]**
 5. Scenery & portable objects (v03–v04) **[have]**
 6. Containers & supporters (v05) **[have]**
@@ -177,35 +177,35 @@ touches platform machinery gets at least one Under-the-Hood section anchored to 
 8. Light & dark (v08) **[have]**
 9. The map & regions **[have: regions guide]**
 
-### Part III — Making It Interactive
+### Volume III — Making It Interactive
 10. The standard actions & the four-phase model (validate/execute/report/blocked) **[have: core-concepts; new framing]**
 11. Scope & visibility **[new: core-concepts + parser]**
 12. Readable objects & switchable devices (v09–v10) **[have]**
 
-### Part IV — Custom Behavior
+### Volume IV — Custom Behavior
 13. Event handlers (v12) **[have]**
 14. Custom actions (v13) **[have]**
 15. Capability dispatch (v14) **[have]**
 16. Custom traits & behaviors **[have: world-model patterns; new framing]**
 
-### Part V — Words
+### Volume V — Words
 17. Extending the grammar **[have: parser-en-us guide; new]**
 18. The language layer — messages & message IDs **[have: lang-en-us, event-handlers; new framing]**
 19. The formatter chain **[new]**
 
-### Part VI — Living Worlds
+### Volume VI — Living Worlds
 20. Non-player characters (v11) **[have]**
 21. Scenes **[have: scenes guide]**
 22. Turns, timed events & daemons (v15) **[have]**
 23. Scoring & endgame (v16) **[have]**
 
-### Part VII — Presentation **(largest gap)**
+### Volume VII — Presentation **(largest gap)**
 24. Channels — the universal UI surface **[new]**
 25. The web client & framework-free UI **[new]**
 26. Decoration, theming & the status line **[new: + system-css-theme work]**
 27. Media & audio **[have: audio-enablement guide]**
 
-### Part VIII — Shipping **(gap)**
+### Volume VIII — Shipping **(gap)**
 28. Putting it all together — the multi-file story (v17) **[have: zoo-17 HTML only]**
 29. Transcript testing & walkthroughs **[have: transcript-testing guide]**
 30. Saving & restoring **[new: + save-restore work]**
@@ -218,7 +218,7 @@ touches platform machinery gets at least one Under-the-Hood section anchored to 
 - C — Trait catalog **[generated from the `@sharpee/world-model` public API / genai-api]**
 - D — Message-ID reference **[generated from the `@sharpee/lang-en-us` public surface]**
 
-**Open question:** do Parts VII–VIII get new zoo versions (v18+) to demonstrate presentation &
+**Open question:** do Volumes VII–VIII get new zoo versions (v18+) to demonstrate presentation &
 shipping against the running story, or are they taught against v17? Lean: teach against v17; add small
 standalone snippets where a full new version isn't warranted. Confirm in Phase 5.
 
@@ -241,24 +241,30 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
   in PDF, present with CSS in HTML and EPUB.
 - **Toolchain installed:** `pandoc 3.10`, `weasyprint 69.0` (via brew).
 
-### Phase 2 — Migrate the existing spine (Parts I–VI) — IN PROGRESS
+### Phase 2 — Migrate the existing spine (Volumes I–VI) — IN PROGRESS
 - Decisions (David, 2026-06-20): **outline regrouping** (merge v03+v04, v06+v07, v09+v10); new
   chapters get **brief stubs now**. Migration base: the rich per-version `.md`; fold in `tutorial.md`
   "Common mistake" callouts; reconcile every code block against `familyzoo/src/v*.ts`.
-- **Batch 1 done (2026-06-20):** full 23-chapter Part I–VI skeleton scaffolded (6 part dividers,
+- **Batch 1 done (2026-06-20):** full 23-chapter Volume I–VI skeleton scaffolded (6 volume dividers,
   unnumbered; 10 new-chapter stubs; placeholders for pending migrations). `book.yaml` carries the full
   ordering. **Exemplar migrated chapter: ch4 Rooms & Navigation (v02)** — code reconciled against
   `v02.ts`, renders clean in all three formats. v01 chapter (ch2) carries the seed Under-the-Hood
   boxes; remaining chapters get their UtH layer in Phase 3.
-- **Part title pages (2026-06-20):** each part divider is a `::: part-page` div — Sharpee **sword
-  artwork** (reused from `docs/internal/images/sharpee-logo.png` → `docs/book/assets/sharpee-sword.png`)
-  centered above the part heading, with a ~100-word lorem-ipsum **blurb placeholder** (David to write
-  real blurbs). PDF centers the page vertically (flex + `100vh`).
-  - **Build gotcha (fixed):** weasyprint can't decode pandoc's base64 data-URI images, so the PDF build
-    is two-step (pandoc HTML at book root → weasyprint resolves `assets/` on disk). Also, the generic
-    `.part-page p` blurb rule collapsed the percentage-width sword to zero in weasyprint; excluded the
-    image's paragraph via `.part-page p:has(.part-sword)`.
-- **Batch 2 done (2026-06-20):** **Part II fully migrated** — ch5 Scenery & Portable Objects
+- **Volume divider pages (2026-06-20 → 2026-06-21):** each volume divider is a `::: part-page` div
+  (the `part-` CSS names are kept as internal hooks). **Terminology:** book divisions are **Volumes**
+  (I–VIII), not Parts — reader-facing label only; the `part-N/` folders and `.part-page`/`.part` classes
+  are unchanged. **Decoration deferred (2026-06-21):** the Sharpee **sword artwork** that sat above each
+  heading was pulled; all decoration (sword, chapter ornaments, title art) is parked for one holistic
+  end-of-book pass. **Epigraphs:** every divider now carries a **public-domain poem** — I Kipling
+  "If—", II Dickinson "I dwell in Possibility –", III Markham "Outwitted", IV Henley "Invictus",
+  V Carroll "Jabberwocky" (excerpt), VI Shakespeare "All the world's a stage" (excerpt). Only PD works
+  used (an in-copyright Hirshfield poem was caught and rejected). Volumes VII–VIII still need epigraphs.
+  - **Layout:** poem dividers carry a `.has-poem` class — top-aligned (not `100vh` flex-centered) so a
+    long poem can never silently clip its overflow, and sized to fit one page. PDF page margins tightened
+    to `0.5in 0.6in`; chapter/section headings reduced (h1 1.5 / h2 1.2 / h3 1.05rem).
+  - **Build gotcha (still applies):** weasyprint can't decode pandoc's base64 data-URI images, so the
+    PDF build is two-step (pandoc HTML at book root → weasyprint resolves `assets/` on disk).
+- **Batch 2 done (2026-06-20):** **Volume II fully migrated** — ch5 Scenery & Portable Objects
   (v03+v04), ch6 Containers & Supporters (v05), ch7 Openable, Locked Doors & Keys (v06+v07),
   ch8 Light & Dark (v08). All code reconciled against `v0{3..8}.ts`; "Common mistake" callouts from
   `tutorial.md` folded in as blockquote asides; renders clean in HTML/EPUB/PDF. ch9 (The map &
@@ -267,7 +273,7 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
   Switchable Devices (v09+v10), ch13 Event Handlers (v12), ch14 Custom Actions (v13), ch15 Capability
   Dispatch (v14), ch20 Non-Player Characters (v11), ch22 Turns, Timed Events & Daemons (v15), ch23
   Scoring & Endgame (v16). All code reconciled against `v0{9..16}.ts`; "Common mistake" callouts from
-  `tutorial.md` folded in as blockquote asides; part dividers (Part IV/VI) and ornaments preserved.
+  `tutorial.md` folded in as blockquote asides; volume dividers (Volumes IV/VI) and ornaments preserved.
   Renders clean in HTML/EPUB/PDF; no "pending migration" stubs remain in `parts/`.
   - **Drift corrected against source (4 places):** chain handlers use a custom event type
     (`zoo.event.goats_react`), NOT `game.message` (which the processor consumes as an override) — the
@@ -278,7 +284,7 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
     correct form for scheduler output) — chapter notes the context difference.
 - For each of the 17 steps, pick the richest of the three existing copies as the base; reconcile every
   code sample against the actual `v*.ts` ground truth; normalize into canonical chapters.
-- **Acceptance:** ✅ every Part I–VI chapter present (ch9, ch10, ch11, ch16, ch17, ch18, ch19, ch21 are
+- **Acceptance:** ✅ every Volume I–VI chapter present (ch9, ch10, ch11, ch16, ch17, ch18, ch19, ch21 are
   new-framing stubs with no version migration); migrated code blocks match their `familyzoo/src`
   version; book renders clean in all three formats.
 
@@ -295,12 +301,12 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
 - **Acceptance:** appendices generated and cross-linked; preface explains the reading tracks and the
   Under-the-Hood legend.
 
-### Phase 5 — Part VII Presentation **[new writing]**
+### Phase 5 — Volume VII Presentation **[new writing]**
 - Channels, web client, decoration/theming/status, media/audio. Fold in `audio-enablement`.
 - Resolve the v18+ vs teach-against-v17 question.
 - **Acceptance:** four chapters drafted; code samples compile against current platform.
 
-### Phase 6 — Part VIII Shipping **[new writing]**
+### Phase 6 — Volume VIII Shipping **[new writing]**
 - v17 multi-file chapter, transcript testing, save/restore, build & publish, multi-user Zifmia.
 - **Acceptance:** five chapters drafted; build/test commands verified against the real `./sharpee`.
 
@@ -324,11 +330,11 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
 **Still open (carried to their phases):**
 2. **Drift handling** for quoted API — (a) excerpt-and-verify against `.d.ts`/genai-api / (b) ref by
    API symbol / (c) manual re-sync. Lean: (a). → decide in Phase 3.
-3. **Parts VII–VIII coverage** — new zoo versions (v18+) vs teach-against-v17. Lean: v17. → Phase 5.
+3. **Volumes VII–VIII coverage** — new zoo versions (v18+) vs teach-against-v17. Lean: v17. → Phase 5.
 
 ## Definition of Done
 
-One canonical `docs/book/` source renders to EPUB + PDF + HTML; covers Parts I–VIII + appendices;
+One canonical `docs/book/` source renders to EPUB + PDF + HTML; covers Volumes I–VIII + appendices;
 carries both perspectives over the zoo spine; every Under-the-Hood section is anchored to (and
 verified against) the compiled `@sharpee/*` library API; all code samples compile against the Family
 Zoo build; the

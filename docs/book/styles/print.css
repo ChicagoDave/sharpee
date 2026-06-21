@@ -30,6 +30,10 @@ body {
 h1 { break-before: page; }
 h1:first-of-type { break-before: avoid; }
 
+/* The table of contents ends its own page, so the Preface (the first body
+   content after it) starts on a fresh page rather than running on under the TOC. */
+#TOC { break-after: page; }
+
 /* Part title page: its own page, content centered vertically. */
 .part-page {
   break-before: page;
