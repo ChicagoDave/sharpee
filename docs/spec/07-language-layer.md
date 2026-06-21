@@ -2,17 +2,17 @@
 
 **Subsystem**: Language Implementation — per-locale contract supplying parser vocabulary and text templates
 **Prerequisites**: `01-data-model.md` (semantic event envelope), `06-stdlib.md` (message-ID protocol)
-**Consumed by**: `03-parser.md` (vocabulary), `08-text-service.md` (templates + formatters)
+**Consumed by**: `03-parser.md` (vocabulary), the engine's prose pipeline (templates + formatters; see `08-text-service.md`, superseded by ADR-174)
 **Version**: 1 (derived from code as of 2026-04-16)
 
 ---
 
 ## Purpose
 
-The language layer is the single per-locale component of the Sharpee platform. Everything else — engine, world model, stdlib, parser internals, text service — is locale-neutral. A `LanguageProvider` supplies a locale's:
+The language layer is the single per-locale component of the Sharpee platform. Everything else — engine, world model, stdlib, parser internals, the prose pipeline — is locale-neutral. A `LanguageProvider` supplies a locale's:
 
 1. **Parser vocabulary** — verbs, directions, articles, prepositions, conjunctions, number words, pronouns.
-2. **Message templates** — keyed by message ID, rendered by the text service.
+2. **Message templates** — keyed by message ID, rendered by the engine's prose pipeline.
 3. **Narrative perspective** — first / second / third person configuration.
 4. **Formatters** — pluggable transforms for template placeholders (articles, lists, pluralisation).
 5. **Word helpers** — lemmatisation, abbreviation expansion, article selection, pluralisation.
@@ -20,7 +20,7 @@ The language layer is the single per-locale component of the Sharpee platform. E
 7. **Action help / documentation** — human-readable descriptions, examples.
 8. **Ignore words** — words the parser should drop during tokenisation.
 
-Because the language layer straddles parser and text service, it is a core architectural piece. Swapping it (to, say, French or German) replaces all locale-dependent behaviour without changing upstream code. If a language layer is not present, the platform has no verbs, no prose, and no player-facing text.
+Because the language layer straddles the parser and the engine's prose pipeline, it is a core architectural piece. Swapping it (to, say, French or German) replaces all locale-dependent behaviour without changing upstream code. If a language layer is not present, the platform has no verbs, no prose, and no player-facing text.
 
 ---
 
@@ -35,7 +35,7 @@ Because the language layer straddles parser and text service, it is a core archi
 7. **Narrative perspective is global.** The provider's `NarrativeContext` applies to every template expansion during the session. Placeholders (`{You}`, `{take}`) resolve uniformly.
 8. **Entity name resolution uses the world model.** The language provider resolves entity display names via `setEntityLookup(fn)` — the language layer does not own entity data.
 9. **Story extensions are additive.** `addMessage / addActionHelp / registerFormatter` add to the provider; they do not replace core-locale data silently.
-10. **Unknown message IDs produce errors visible to the player.** `getMessage(unknown)` returns a sentinel (e.g., the ID itself in brackets) that the text service surfaces as an error block. Silent empty returns are forbidden.
+10. **Unknown message IDs produce errors visible to the player.** `getMessage(unknown)` returns a sentinel (e.g., the ID itself in brackets) that the engine's prose pipeline surfaces as an error block. Silent empty returns are forbidden.
 
 ---
 
@@ -51,7 +51,7 @@ Because the language layer straddles parser and text service, it is a core archi
                  │                               │
                  ▼                               ▼
           ┌───────────┐                  ┌───────────────┐
-          │  Parser   │                  │ Text Service  │
+          │  Parser   │                  │ Prose Pipeline│
           │  (locale) │                  │  (neutral)    │
           └─────┬─────┘                  └───────┬───────┘
                 │                                │
@@ -88,7 +88,7 @@ interface LanguageProvider {
     languageName?:  String              // human-readable
     textDirection?: "ltr" | "rtl"
 
-    // Messages (consumed by text service)
+    // Messages (consumed by the prose pipeline)
     getMessage(messageId, params?) -> String
     hasMessage(messageId) -> Boolean
     getAllMessages?() -> Map<String, String>
@@ -398,7 +398,7 @@ It does NOT touch:
 - `core`, `world-model`, `if-domain` (schema)
 - `engine` (turn cycle)
 - `stdlib` (actions, message-ID definitions)
-- `text-service` (rendering pipeline)
+- the engine's prose pipeline (rendering)
 
 This is the architectural promise of the language layer.
 
@@ -452,7 +452,7 @@ This is the architectural promise of the language layer.
 
 **ADR-089 (Accepted)** — Pronoun and identity system. The language provider holds `NarrativeContext`; perspective placeholders resolve through it.
 
-**ADR-091 (Accepted)** — Text decorations. Decoration syntax `[type:content]` and `*em*` / `**strong**` live in templates; parsing happens in the text service (see `08-text-service.md`).
+**ADR-091 (Accepted)** — Text decorations. Decoration syntax `[type:content]` and `*em*` / `**strong**` live in templates; parsing happens in the engine's prose pipeline (see `08-text-service.md`, superseded by ADR-174).
 
 **ADR-093 (Accepted)** — i18n entity vocabulary. Formatters use `entityLookup` to fetch entity metadata for correct article selection.
 
@@ -460,7 +460,7 @@ This is the architectural promise of the language layer.
 
 **Divergence**. The reference English implementation (`lang-en-us`) uses a `FormatterRegistry` and supports chained formatters (`{a:item}`). Simpler locale implementations MAY omit the registry and hand-roll article selection in templates.
 
-**ParserLanguageProvider vs LanguageProvider.** The base `LanguageProvider` is what the text service strictly needs; `ParserLanguageProvider` adds vocabulary methods the parser needs. A conforming locale MUST implement `ParserLanguageProvider` if the locale drives a parser. Locales used only for rendering (e.g., a hypothetical audio-only version with no parser) could provide the base interface only.
+**ParserLanguageProvider vs LanguageProvider.** The base `LanguageProvider` is what the engine's prose pipeline strictly needs; `ParserLanguageProvider` adds vocabulary methods the parser needs. A conforming locale MUST implement `ParserLanguageProvider` if the locale drives a parser. Locales used only for rendering (e.g., a hypothetical audio-only version with no parser) could provide the base interface only.
 
 **Vocabulary contribution from the world.** Entity names and aliases flow into the parser via the `GrammarVocabularyProvider` (ADR-082) on the world model, NOT through the language provider. The language provider owns verbs and direction words; entity names come from entities.
 

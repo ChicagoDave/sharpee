@@ -138,7 +138,7 @@ A condition that MUST always hold for a valid world / saved file / turn / event 
 ## L
 
 **LanguageProvider**
-The per-locale object supplying message templates, vocabulary, grammar patterns, and formatters. Swapped wholesale to change locale. The peer subsystem consumed by both parser (3) and text service (8). [07]
+The per-locale object supplying message templates, vocabulary, grammar patterns, and formatters. Swapped wholesale to change locale. The peer subsystem consumed by both the parser (3) and the engine's prose pipeline (8). [07]
 
 **Locale**
 A BCP-47 language tag (`en-US`, `fr-FR`) identifying the natural language of the parser + language provider pair. The platform separates locale-specific code from locale-neutral contracts. [03, 07]
@@ -148,10 +148,10 @@ A BCP-47 language tag (`en-US`, `fr-FR`) identifying the natural language of the
 ## M
 
 **Message ID**
-A dotted namespaced string identifying a template in the language provider (`if.action.taking.taken`, `scope.not_reachable`, `story-id.custom-message`). Events carry message IDs; the text service resolves them to prose. [06, 07]
+A dotted namespaced string identifying a template in the language provider (`if.action.taking.taken`, `scope.not_reachable`, `story-id.custom-message`). Events carry message IDs; the engine's prose pipeline resolves them to prose. [06, 07]
 
 **Meta-command**
-A command that operates outside the turn cycle: no turn increment, no plugin phase, no undo snapshot, events processed only through the text service. SAVE, RESTORE, QUIT, UNDO, AGAIN, SCORE, HELP, VERSION, ABOUT, and similar. [05]
+A command that operates outside the turn cycle: no turn increment, no plugin phase, no undo snapshot, events processed only through the engine's prose pipeline. SAVE, RESTORE, QUIT, UNDO, AGAIN, SCORE, HELP, VERSION, ABOUT, and similar. [05]
 
 ---
 
@@ -183,7 +183,7 @@ One of `validate`, `execute`, `report`, `blocked`. [06]
 A subsystem that participates in the turn cycle's plugin phase. Ordered by priority. Canonical plugins: NPC (100), state machine (80), scene (60), scheduler (50). ADR-120. [05]
 
 **Platform event**
-An event in the `platform.*` namespace emitted by actions (or the engine) to request save, restore, quit, restart, undo, or again. Processed post-turn, pre-text-service. [01, 05]
+An event in the `platform.*` namespace emitted by actions (or the engine) to request save, restore, quit, restart, undo, or again. Processed post-turn, before the prose pipeline. [01, 05]
 
 **Pronoun context**
 Parser-local memory of recent entity references, used to resolve `it`, `them`, `him`, `her`, and neopronouns. Updated by the engine after a successful command. ADR-089. [03, 05]
@@ -237,7 +237,7 @@ An author-supplied module that provides config, world initialisation, player cre
 ## T
 
 **TextBlock**
-A structured chunk of output: `{ key: channel, content: List<TextContent> }`. Emitted by the text service, consumed by clients. ADR-133. [08]
+A structured chunk of output: `{ key: channel, content: List<TextContent> }`. Produced by the engine's prose pipeline and delivered to clients over channels. ADR-133. [08]
 
 **TextContent**
 Either a plain `String` or a `Decoration`. Nestable. [08]
@@ -246,7 +246,7 @@ Either a plain `String` or a `Decoration`. Nestable. [08]
 A message template string with placeholders: simple (`{item}`), formatted (`{a:item}`), or perspective (`{You}`, `{take}`). Stored in the language provider under a message ID. [07]
 
 **Text service**
-The subsystem that transforms a turn's events into a list of text blocks. Stateless. [08]
+*Removed (ADR-174).* Formerly the standalone `@sharpee/text-service` subsystem that transformed a turn's events into a list of text blocks. Its role is now the engine-internal **prose pipeline** (`packages/engine/src/prose-pipeline/`), which resolves each event's `messageId` against the language layer and produces `ITextBlock[]`; **channels** / the per-client **renderer** (ADR-163 / ADR-165) deliver that output to the UI. [08]
 
 **Trait**
 A typed data record attached to an entity. Pure data; no methods. Identified by a namespaced type string (`if.trait.openable`). [01, 02]
@@ -258,7 +258,7 @@ The invariant that an entity has at most one trait of any given type. [02]
 One iteration of the engine's turn cycle. A successful player action advances the turn counter by one; meta-commands and parse failures do not. [05]
 
 **Turn cycle**
-The 13-phase sequence the engine runs per input: parse → transform → meta-check → validate → before-action → four-phase execute → undo snapshot → plugins → platform ops → text service → pronoun update → counter update → lifecycle. [05]
+The 13-phase sequence the engine runs per input: parse → transform → meta-check → validate → before-action → four-phase execute → undo snapshot → plugins → platform ops → prose pipeline → pronoun update → counter update → lifecycle. [05]
 
 ---
 

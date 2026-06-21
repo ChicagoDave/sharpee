@@ -1,5 +1,7 @@
 # Sharpee Text Service Specification
 
+> **SUPERSEDED (ADR-174).** `@sharpee/text-service` has been removed. Turn-end rendering is now the engine-internal prose pipeline (`packages/engine/src/prose-pipeline/`), producing `ITextBlock[]`; channel-IO (ADR-163 / ADR-165) is the universal UI surface that delivers output to clients. The content below is retained for historical reference only.
+
 **Subsystem**: Text rendering — stateless event → TextBlock pipeline
 **Prerequisites**: `01-data-model.md` (semantic event envelope), `05-engine.md` (turn cycle), `06-stdlib.md` (message-ID protocol), `07-language-layer.md` (template source)
 **Version**: 1 (derived from code as of 2026-04-16)

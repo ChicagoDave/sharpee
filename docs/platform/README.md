@@ -50,8 +50,8 @@ const events = action.execute(command, context);
 // World model applies events
 events.forEach(event => world.applyEvent(event));
 
-// Text service processes events after turn
-textService.processEvents(events, world);
+// The engine's prose pipeline processes events after the turn
+prosePipeline.processEvents(events, world);
 ```
 
 ### Capability System

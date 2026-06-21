@@ -215,7 +215,7 @@ When a domain event is recorded:
 1. Entity-level behaviors execute
 2. Story-level handlers execute (via `registerEventHandler`)
 3. Event is written to event source
-4. At turn end, text service renders all events
+4. At turn end, the engine's prose pipeline renders all events
 
 ## Common Patterns
 

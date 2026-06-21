@@ -173,7 +173,7 @@ Packages must be built in dependency order:
 4. `@sharpee/lang-en-us`
 5. `@sharpee/parser-en-us`
 6. `@sharpee/stdlib`
-7. `@sharpee/text-services`
+7. `@sharpee/channel-service`
 8. `@sharpee/if-services`
 9. `@sharpee/engine`
 

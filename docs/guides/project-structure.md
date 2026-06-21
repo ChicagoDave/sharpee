@@ -23,7 +23,7 @@ sharpee/
 │   ├── if-services/          # Service interfaces
 │   ├── event-processor/      # Event handling pipeline
 │   ├── text-blocks/          # Text block types
-│   ├── text-service/         # Output rendering
+│   ├── channel-service/      # Channels / renderer (ADR-163/165); renderToString, renderStatusLine
 │   ├── plugins/              # Plugin system
 │   ├── plugin-npc/           # NPC system plugin
 │   ├── plugin-scheduler/     # Daemon/fuse plugin

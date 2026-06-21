@@ -10,7 +10,7 @@
 
 The engine is the runtime loop that binds all other subsystems together. It:
 
-1. **Owns the turn cycle.** It receives input, drives the parse → validate → execute → report pipeline, ticks plugins (NPCs, scheduler, scenes, state machines), runs the text service, and emits output.
+1. **Owns the turn cycle.** It receives input, drives the parse → validate → execute → report pipeline, ticks plugins (NPCs, scheduler, scenes, state machines), runs the prose pipeline, and emits output.
 2. **Dispatches commands.** It decides whether input is a standard command, a meta-command, a platform-operation trigger, or an alternate-input-mode payload.
 3. **Coordinates save/restore.** It serialises engine + world + plugin state to the client's save hook and rehydrates on restore.
 4. **Maintains game lifecycle.** It tracks the current turn number, player entity, history, event log, and session metadata.
@@ -26,8 +26,8 @@ The engine is **subsystem-agnostic**. It does not hardcode any particular action
 2. **Events are produced in phase order.** Within a turn, events are emitted in the order: action events → plugin events (NPC → scheduler → scenes → state machines, in plugin priority) → platform events → text events. The ordering is stable across runs.
 3. **The world is mutated only in execute / plugin phases.** `validate`, `report`, and `blocked` phases MUST NOT mutate the world. The engine enforces this by convention (via the four-phase contract); it does not police it at runtime.
 4. **ValidationResult flows across phases.** Data returned from `validate.data` is made available to `execute` and `report` via `ActionContext.validationResult` / `sharedData`. Phases do not re-compute what validate already resolved.
-5. **Platform events are processed post-turn.** `platform.save_requested`, `platform.restore_requested`, `platform.quit_requested`, `platform.restart_requested`, `platform.undo_requested`, `platform.again_requested` are collected during action execution and processed *after* the action's event stream, *before* the text service, in the order they were emitted.
-6. **Meta-commands do not pollute state.** A meta-command produces events that go to the text service but NOT to the event log, NOT to command history, NOT to undo snapshots.
+5. **Platform events are processed post-turn.** `platform.save_requested`, `platform.restore_requested`, `platform.quit_requested`, `platform.restart_requested`, `platform.undo_requested`, `platform.again_requested` are collected during action execution and processed *after* the action's event stream, *before* the prose pipeline, in the order they were emitted.
+6. **Meta-commands do not pollute state.** A meta-command produces events that go to the prose pipeline but NOT to the event log, NOT to command history, NOT to undo snapshots.
 7. **Undo snapshots are taken before state changes.** The engine captures a snapshot *before* each turn's execute phase, so undo returns to the state just before the last successful command.
 8. **Restore replaces the engine's view, not just the world.** A restore load re-initialises the event source, re-populates plugin state, resets the pronoun context, and rebuilds the entity vocabulary in addition to restoring world state.
 
@@ -62,8 +62,8 @@ class GameEngine {
     getWorld() -> WorldModel
     getParser() -> Parser?
     getLanguageProvider() -> LanguageProvider?
-    getTextService() -> TextService?
-    setTextService(service)
+    getTextService() -> TextService?                    // SUPERSEDED (ADR-174): text service removed; rendering is the engine-internal prose pipeline
+    setTextService(service)                              // SUPERSEDED (ADR-174): see prose pipeline + channel-IO
     getEventProcessor() -> EventProcessor
     getEventSource() -> SemanticEventSource
     getPluginRegistry() -> PluginRegistry
@@ -154,7 +154,7 @@ TurnResult {
     turn:              Integer
     input:             String
     events:            List<SemanticEvent>
-    blocks?:           List<TextBlock>          // from text service
+    blocks?:           List<TextBlock>          // from the prose pipeline
     success:           Boolean
     error?:            String
     timing?:           TimingData
@@ -475,9 +475,10 @@ The engine's turn cycle, phase by phase:
    │       - Emit completion event
    │     Restore, Restart, and Undo may mutate or replace world state.
    │
-   ├─ 10. Text service
-   │     textService.processTurn(turnEvents) → TextOutput (blocks)
-   │     See 07-text-service.md.
+   ├─ 10. Prose pipeline
+   │     prosePipeline.processTurn(turnEvents) → TextOutput (blocks)
+   │     See 08-text-service.md (superseded by ADR-174; rendering is now
+   │     the engine-internal prose pipeline + channel-IO).
    │
    ├─ 11. Pronoun context update
    │     parser.updatePronounContext(validatedCommand, turnNumber)
@@ -498,7 +499,7 @@ The engine's turn cycle, phase by phase:
    └─ RETURN TurnResult
 ```
 
-**Meta-command flow** (step 3) is a parallel, shorter path: validate → execute → text service → emit. No turn increment, no plugins, no undo, no command history.
+**Meta-command flow** (step 3) is a parallel, shorter path: validate → execute → prose pipeline → emit. No turn increment, no plugins, no undo, no command history.
 
 **Game-over detection**: Semantic events of type `game.won`, `game.lost`, `game.quit`, `game.aborted` trigger the `game:over` lifecycle event after the turn completes. The engine also accepts explicit `stop(reason, details)` calls.
 
@@ -563,7 +564,7 @@ The following commands are meta-commands. Their action IDs are reserved; stories
 | `if.action.undoing`      | undo                      | Emit `platform.undo_requested`                      |
 | `if.action.again`        | again, g                  | Emit `platform.again_requested`                     |
 
-Meta-commands run through a simplified pipeline: validate + execute + text-service. They return a `MetaCommandResult`. The turn counter does not advance; history does not record them; undo is not created.
+Meta-commands run through a simplified pipeline: validate + execute + prose pipeline. They return a `MetaCommandResult`. The turn counter does not advance; history does not record them; undo is not created.
 
 ---
 
@@ -665,7 +666,7 @@ The engine emits (or propagates) these event types in addition to those cataloge
 
 **ADR-132** — Player character switching. `engine.switchPlayer(entityId)` moves the `isPlayer` flag, rebuilds parser context, and resets pronoun state.
 
-**ADR-133** — Text blocks. `TurnResult.blocks` contains structured text output (see `07-text-service.md`). The raw `events` array is also available.
+**ADR-133** — Text blocks. `TurnResult.blocks` contains structured text output (see `08-text-service.md`, superseded by ADR-174). The raw `events` array is also available.
 
 **ADR-137 (Accepted)** — Input modes. The engine reads `world.state[INPUT_MODE_STATE_KEY]` (`"if.inputMode"`) before parsing. If set, routes input to the registered handler.
 

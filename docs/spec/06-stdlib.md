@@ -28,7 +28,7 @@ A conforming implementation MUST provide actions whose **observable behaviour** 
 4. **Report owns success events.** `report(context)` runs only after `execute` succeeded. It emits all success events with captured state snapshots.
 5. **Blocked owns failure events.** `blocked(context, result)` runs only after `validate` rejected. It emits failure events using the `error` message ID from the validation result.
 6. **ValidationResult.data flows to later phases.** Anything `validate` discovers (a trait, a target, a pre-computed answer) is returned via `ValidationResult.data` and read from `context.validationResult.data` in execute/report/blocked. Context pollution is an anti-pattern.
-7. **Events carry messageIds, never prose.** Every event payload either carries a `messageId: <namespaced-id>` or carries no text at all. English is resolved by the text service (`07-text-service.md`).
+7. **Events carry messageIds, never prose.** Every event payload either carries a `messageId: <namespaced-id>` or carries no text at all. English is resolved by the engine's prose pipeline (`08-text-service.md`, superseded by ADR-174).
 8. **Each action owns its message IDs.** An action's message IDs are namespaced under the action's ID (`if.action.taking.already_have`). Stories override by registering replacement language.
 9. **Behaviours perform mutations; actions coordinate.** The mutation that opens a door is in `OpenableBehavior`, not in `openingAction`. The action wires validation, delegates mutation, and formats events.
 10. **Capability dispatch has priority.** Before running its default logic, an action MUST check `findTraitWithCapability(target, actionId)` (ADR-090). If a trait claims the capability, the action delegates all four phases to the trait's `CapabilityBehavior`.
@@ -203,7 +203,7 @@ Actions that require the target to be held set `requiresHolding: true`. When val
 4. If reachable but not takeable (scenery, etc.) → fail with the TAKE error.
 5. If unreachable → fail with a scope error.
 
-The `implicit_take` event is prepended to the report output so text services render "(first taking the leaflet)" before the main action's response.
+The `implicit_take` event is prepended to the report output so the prose pipeline renders "(first taking the leaflet)" before the main action's response.
 
 ### Implicit inference (ADR-104)
 
@@ -408,11 +408,11 @@ event.data.messageId = `${action.id}.${messageKey}`
 // → "if.action.opening.opened"
 ```
 
-The text service looks up the full ID (`07-text-service.md`).
+The engine's prose pipeline looks up the full ID (`08-text-service.md`, superseded by ADR-174).
 
 ### Event payload shape (rendering + domain)
 
-Standard stdlib events carry both rendering data (for the text service) and domain data (for event sourcing / handlers):
+Standard stdlib events carry both rendering data (for the prose pipeline) and domain data (for event sourcing / handlers):
 
 ```
 event.data = {
@@ -428,7 +428,7 @@ event.data = {
 }
 ```
 
-Actions MAY emit multiple events: one rich domain event and one simpler backward-compatible event. The text service uses the first one carrying a `messageId`.
+Actions MAY emit multiple events: one rich domain event and one simpler backward-compatible event. The prose pipeline uses the first one carrying a `messageId`.
 
 ### Required message coverage
 

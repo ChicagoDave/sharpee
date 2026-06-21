@@ -14,7 +14,7 @@ The data model defines how a running Sharpee world is structured in memory and o
 - The **world model** stores entities, their traits, and their spatial containment.
 - The **engine** serialises the world to a save file and rehydrates it.
 - The **stdlib** actions mutate entity state and emit events recorded in the event log.
-- The **text service** reads events and renders them.
+- The engine's **prose pipeline** reads events and renders them to blocks; channels deliver the output to clients.
 
 A conforming implementation of Sharpee in another language MUST provide a data model that satisfies the contract in this document. Everything else — parsing, action semantics, rendering — depends on these shapes.
 
@@ -199,7 +199,7 @@ SemanticEvent {
     data?:      Any                     // payload; shape depends on `type`
     tags?:      List<String>            // for filtering ("success", "failure", ...)
     priority?:  Integer                 // higher = more important
-    narrate?:   Boolean                 // hint to text service
+    narrate?:   Boolean                 // hint to the prose pipeline
     metadata?:  Map<String, Any>        // engine-private annotations
 }
 ```
@@ -431,7 +431,7 @@ Events that concern the data model itself — loading, saving, lifecycle — use
 
 ### Platform events (client-action events)
 
-Emitted by actions (save, restore, quit, etc.) and processed by the engine after a turn completes but before the text service runs:
+Emitted by actions (save, restore, quit, etc.) and processed by the engine after a turn completes but before the prose pipeline runs:
 
 | Request / Completion pairs                                                        |
 |-----------------------------------------------------------------------------------|
@@ -462,7 +462,7 @@ Every platform event carries `requiresClientAction: true` and a `payload` object
 | `message.warning`  | same                                         |
 | `message.debug`    | same                                         |
 
-These are the wire format for deferring prose to the text service. Action code emits `message.success` / `message.failure` events; the text service resolves the `messageId` to a locale-specific string. See `07-text-service.md`.
+These are the wire format for deferring prose to the engine's prose pipeline. Action code emits `message.success` / `message.failure` events; the prose pipeline resolves the `messageId` to a locale-specific string. See `08-text-service.md` (superseded by ADR-174).
 
 ### Query events (disambiguation and PC communication)
 

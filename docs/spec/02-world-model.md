@@ -8,7 +8,7 @@
 
 ## Purpose
 
-The world model is the in-memory representation of game state. It sits between the raw data shapes in `01-data-model.md` and everything that consumes them: the parser (for scope), stdlib actions (for validation and mutation), the engine (for save/restore), and the text service (for rendering entity state).
+The world model is the in-memory representation of game state. It sits between the raw data shapes in `01-data-model.md` and everything that consumes them: the parser (for scope), stdlib actions (for validation and mutation), the engine (for save/restore), and the engine's prose pipeline (for rendering entity state).
 
 Responsibilities:
 
@@ -547,7 +547,7 @@ A conforming implementation MUST provide the following seams:
 
 **ADR-068 (Accepted)** — Unified darkness checking goes through `VisibilityBehavior.isDark(room, world)`. A conforming implementation MUST treat this as the single authority; scattered "am I in the dark?" checks in individual actions are an anti-pattern.
 
-**ADR-069 (Accepted)** — Perception event filtering. Not all events are perceivable by all actors; a conforming implementation SHOULD filter events through scope/visibility before delivering them to handlers that simulate NPC perception. The current implementation filters at the text-service layer; full perception-filtering may be handled per-plugin.
+**ADR-069 (Accepted)** — Perception event filtering. Not all events are perceivable by all actors; a conforming implementation SHOULD filter events through scope/visibility before delivering them to handlers that simulate NPC perception. The current implementation filters in the engine's prose pipeline; full perception-filtering may be handled per-plugin.
 
 **ADR-086 (Accepted)** — The world model exposes a `connectEventProcessor(wiring)` hook so its registered handlers become part of the engine's event-processing pipeline (see `05-engine.md`).
 

@@ -21,10 +21,10 @@ These seven documents describe the platform sufficiently for a competent enginee
 | 5 | [Engine](05-engine.md) | Turn cycle, command pipeline, scheduler, plugins, save/restore | 1–4 |
 | 6 | [Standard Library](06-stdlib.md) | Four-phase action contract, 49-action catalog, message IDs | 1–5, 7 |
 | 7 | [Language Layer](07-language-layer.md) | LanguageProvider: vocabulary, templates, narrative, formatters | 1, 6 |
-| 8 | [Text Service](08-text-service.md) | Event → TextBlock rendering pipeline | 1, 5, 6, 7 |
+| 8 | [Text Service](08-text-service.md) **(SUPERSEDED — ADR-174)** | Event → TextBlock rendering pipeline; removed and replaced by the engine-internal prose pipeline + channel-IO (ADR-163 / ADR-165) | 1, 5, 6, 7 |
 | — | [Glossary](glossary.md) | Domain terms used across specs | — |
 
-The language layer (7) is a peer subsystem consumed by both the parser (3) and the text service (8). Everything else is locale-neutral.
+The language layer (7) is a peer subsystem consumed by both the parser (3) and the engine's prose pipeline (formerly the text service, ch. 8 — superseded by ADR-174). Everything else is locale-neutral.
 
 ---
 
@@ -38,7 +38,7 @@ Read roughly in order 1 → 8. Each document establishes primitives the next one
 2. **World Model** — the operations every other subsystem needs.
 3. **Engine turn cycle** (5, skim) — the overall flow.
 4. **Standard Library contract** (6, first half) — the four-phase pattern.
-5. **Language Layer** (7) — the peer contract that parser and text-service both consume.
+5. **Language Layer** (7) — the peer contract that the parser and the engine's prose pipeline both consume.
 
 Then fill in the rest as you build each subsystem.
 
@@ -49,10 +49,10 @@ Focus on:
 1. **Language Layer** (7) — the primary target. Your `lang-<locale>` package implements the `LanguageProvider` / `ParserLanguageProvider` interface. This is where most of the work lives.
 2. **Parser** (3) — especially the Locale Boundary section. Your `parser-<locale>` package implements the same `Parser` interface using your language provider's vocabulary.
 3. **Grammar DSL** (4) — write locale grammar patterns using the same builder.
-4. **Text Service** (8) — especially the Decoration syntax and block-key conventions. You do NOT write a new text service; you supply the templates the existing service consumes through your language provider.
+4. **Text Service** (8, superseded by ADR-174 — rendering is now the engine's prose pipeline) — especially the Decoration syntax and block-key conventions. You do NOT write a new renderer; you supply the templates the prose pipeline consumes through your language provider.
 5. **Standard Library** (6) — the message-ID catalog. Every `if.action.*.<suffix>` ID needs a template in your language provider.
 
-You do **not** need to touch the engine, world model, stdlib, or text service. The locale boundary is airtight: action IDs, event types, block keys, message IDs, trait type IDs are all language-neutral.
+You do **not** need to touch the engine, world model, stdlib, or the prose pipeline (formerly the text service). The locale boundary is airtight: action IDs, event types, block keys, message IDs, trait type IDs are all language-neutral.
 
 ### For an extension / story author
 
@@ -63,7 +63,7 @@ Focus on:
 3. **Standard Library** (6) — especially Extension Points and the four-phase action contract.
 4. **Engine** (5) — especially Plugins, Before-action hook, and InputModeHandler.
 5. **Language Layer** (7) — `story.extendLanguage()`, custom messages, custom formatters.
-6. **Text Service** (8) — custom block keys and decoration types for story-specific UI routing.
+6. **Text Service** (8, superseded by ADR-174 — see the prose pipeline and channels) — custom block keys and decoration types for story-specific UI routing.
 
 Skip the parser internals; you interact with it only via grammar definitions.
 
@@ -125,10 +125,10 @@ Minimum viable implementation per subsystem. A conforming implementation MUST pr
 
 ### 5. Engine
 
-- 13-phase turn cycle (parse → validate → before-action → four-phase → plugins → platform ops → text service → pronoun update → counter)
+- 13-phase turn cycle (parse → validate → before-action → four-phase → plugins → platform ops → prose pipeline → pronoun update → counter)
 - `executeTurn(input) -> CommandResult` (turn or meta)
 - Meta-command path (SAVE, RESTORE, QUIT, UNDO, AGAIN, SCORE, HELP, VERSION, ABOUT)
-- Platform-operation dispatch (post-turn, pre-text-service)
+- Platform-operation dispatch (post-turn, before the prose pipeline)
 - Four-phase action orchestration
 - Lifecycle events (game.*, turn.*)
 - Save/restore hooks
@@ -157,6 +157,8 @@ Minimum viable implementation per subsystem. A conforming implementation MUST pr
 - Visible sentinel (no silent empty returns) for unknown message IDs
 
 ### 8. Text Service
+
+> **SUPERSEDED (ADR-174).** `@sharpee/text-service` has been removed. Turn-end rendering is now the engine-internal prose pipeline (`packages/engine/src/prose-pipeline/`), producing `ITextBlock[]`; channel-IO (ADR-163 / ADR-165) is the universal UI surface that delivers output to clients. The conformance items below are retained for historical reference only.
 
 - `processTurn(events) -> List<TextBlock>`
 - Core block keys (`room.name`, `room.description`, `room.contents`, `action.result`, `action.blocked`, `error`, `prompt`)
