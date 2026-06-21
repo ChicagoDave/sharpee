@@ -301,10 +301,18 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
 - **Acceptance:** appendices generated and cross-linked; preface explains the reading tracks and the
   Under-the-Hood legend.
 
-### Phase 5 — Volume VII Presentation **[new writing]**
+### Phase 5 — Volume VII Presentation **[new writing]** ✅ COMPLETE (2026-06-21)
 - Channels, web client, decoration/theming/status, media/audio. Fold in `audio-enablement`.
 - Resolve the v18+ vs teach-against-v17 question.
 - **Acceptance:** four chapters drafted; code samples compile against current platform.
+- **Done (2026-06-21, session 70b555):** all four Volume VII chapters written in full —
+  ch24 Channels (prior session), ch25 The Web Client & Framework-Free UI, ch26 Decoration,
+  Theming & the Status Line, ch27 Media & Audio. Grounded in verified `@sharpee/platform-browser`
+  (`BrowserClient`, `registerDefaultBrowserRenderers`), `@sharpee/channel-service`
+  (`Renderer`/`ChannelRenderer`, manifest+packet flow), and `@sharpee/media`
+  (`AudioRegistry`, audio events) APIs from `genai-api/presentation.md`, plus ADR-170
+  (component theming), ADR-174 (decoration `[name:content]` → `sharpee-` spans), ADR-169
+  (Web Audio fades). Book renders clean to HTML/EPUB/PDF.
 
 ### Phase 6 — Volume VIII Shipping **[new writing]**
 - v17 multi-file chapter, transcript testing, save/restore, build & publish, multi-user Zifmia.

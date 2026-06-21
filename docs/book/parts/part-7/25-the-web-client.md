@@ -1,10 +1,137 @@
 # The Web Client & Framework-Free UI
 
-> **Status:** to be written. Adapts `@sharpee/platform-browser` (genai-api
-> `presentation.md`) and the framework-free UI architecture (ADR-170).
+The last chapter ended with a promise: a channel emits *data*, and something on the
+other side decides how it looks. That something is the **client**. This chapter
+walks through Sharpee's reference browser client — how it connects to the engine,
+turns turn packets into a living page, and why it's built from plain HTML and CSS
+instead of a framework.
 
-This chapter will cover the browser client: how `BrowserClient` connects to the
-engine, registers per-channel renderers (ADR-165) that turn turn packets into DOM,
-and why the UI is built from plain HTML/CSS components (native `<dialog>`,
-`.sharpee-*` classes, `--modifier` states) rather than a framework — so authors can
-restyle or replace any renderer per story.
+## What the client is responsible for
+
+The engine produces signals; it knows nothing about screens. The browser client,
+`@sharpee/platform-browser`, is the piece that owns the page: it holds the DOM, runs
+the input box, draws the menus and save dialogs, and — most importantly — receives
+each turn packet and paints it. Everything visible is the client's job. The engine
+never reaches for an element; it only emits channels.
+
+The orchestrator is `BrowserClient`. A story's browser entry point creates one,
+hands it the page's elements, connects the engine, and starts:
+
+```typescript
+const client = new BrowserClient({
+  storagePrefix: 'zoo-',
+  defaultTheme: 'cozy',
+  themes: [
+    { id: 'cozy', name: 'Cozy' },
+    { id: 'dos-classic', name: 'DOS Classic' },
+  ],
+  storyInfo: {
+    title: 'Family Zoo',
+    authors: 'You',
+    version: '1.0.0',
+    engineVersion: '…',
+    buildDate: '…',
+  },
+});
+
+client.initialize(elements);          // page elements (after DOMContentLoaded)
+client.connectEngine(engine, world);  // wire the engine
+await client.start();                 // boot, restore autosave, first look
+```
+
+You rarely write this by hand — `sharpee build --browser` generates the entry point
+and the host page for you. But knowing the three calls demystifies what the bundle
+is doing: `initialize` learns the DOM, `connectEngine` subscribes to the engine, and
+`start` runs the opening turn.
+
+## How a turn reaches the screen
+
+Inside `connectEngine`, the client builds a **renderer** — the consumer-side host
+from the previous chapter — and subscribes to exactly two engine signals:
+
+```typescript
+engine.on('channel:manifest', (cmgt) => renderer.applyCmgt(cmgt));
+engine.on('channel:packet',  (packet) => renderer.applyTurnPacket(packet));
+```
+
+That's the whole rendering path. At startup the engine emits one **manifest** (the
+capability-filtered list of channels this client gets); thereafter it emits one
+**packet per turn**. The renderer dispatches each channel in the packet to the
+`ChannelRenderer` registered for it: the `main` channel's renderer appends prose,
+the `location` renderer rewrites the status line, the `score` renderer updates the
+score. There is no second path — prose and status and media all arrive the same way.
+
+The client registers a full set of platform-default renderers in one call,
+`registerDefaultBrowserRenderers`, which covers `main`, `prompt`, `location`,
+`score`, `turn`, the notification channels, and every media channel. Those defaults
+are what give you a working page with zero rendering code.
+
+## Commands flow back the same way
+
+Rendering is only half a loop; the player has to type. The input box feeds commands
+to `engine.executeTurn(command)`, and the engine runs a turn — which produces the
+next packet, which the renderer paints. UI *gestures* close the same loop: when a
+clickable hotspot or a menu item fires, it synthesizes the equivalent typed command
+and runs it through `executeTurn`, so a click and a typed verb are indistinguishable
+to the engine. The menu's **Help** and **About** entries, for instance, are wired
+straight to `engine.executeTurn('help')` and `engine.executeTurn('about')`.
+
+## Why no framework
+
+Open the reference client and you will not find React, Vue, or a web-component
+library. The UI is plain HTML elements styled by CSS classes. Dialogs are native
+`<dialog>` elements opened with `showModal()`; the menu bar is a `<nav>` with
+`.sharpee-menu-bar-item` rows; the prose window is a scrolling `<div>`. State that
+*would* be component props lives instead in `--modifier` classes and standard ARIA
+attributes — an open menu carries `--open` and `aria-expanded`, a checked theme
+carries `--checked`.
+
+This is a deliberate architecture, not an omission. A framework would put a runtime
+between the author and the page and impose its own idioms for overriding a view.
+Sharpee's bet is the opposite: the page is just HTML and CSS, so an author restyles
+it with CSS and replaces a renderer with a function. Nothing to learn but the web
+platform you already know.
+
+## Overriding a renderer
+
+Because each channel maps to one registered renderer, customizing the UI is
+*re-registering*. After the platform defaults are in place — available from
+`connectEngine` onward — a story grabs the renderer and registers its own:
+
+```typescript
+const renderer = client.getChannelRenderer();
+renderer.registerRenderer('score', {
+  onValue: (value) => {
+    const { current } = value as { current: number };
+    document.getElementById('score-badge')!.textContent = `★ ${current}`;
+  },
+});
+```
+
+Registration is last-write-wins, so a story renderer registered after the defaults
+simply replaces the platform one for that channel — without touching any other
+channel. The same hook is how a story renders a channel it *invented* in
+`registerChannels` (the `zoo.ambience` channel from the last chapter): register a
+renderer against its id and the JSON-tree fallback gives way to your own DOM.
+
+## Save, restore, and theme — for free
+
+The client ships the surrounding chrome too. Saving routes the engine's complete
+`ISaveData` into a browser envelope persisted in `localStorage`; an **autosave**
+piggy-backs on the per-turn packet, so every turn boundary is captured without any
+story code. Restore unwraps the envelope and hands the save back to the engine,
+which rebuilds the world. Theme switching is one attribute flip on the document — the
+subject of the next chapter. All of it is configured through `BrowserClientConfig`;
+none of it is something you implement.
+
+## Key takeaway
+
+The web client owns the page; the engine only emits channels. `BrowserClient` wires
+the two together with three calls — `initialize`, `connectEngine`, `start` — and
+drives the screen from exactly two engine signals: one manifest, then one packet per
+turn, dispatched to per-channel renderers. Commands (typed or gestured) flow back
+through `engine.executeTurn`. The UI is framework-free — plain HTML, CSS classes, and
+`--modifier` state — so you customize it the web-native way: restyle with CSS,
+replace a view by re-registering a `ChannelRenderer`. Save, restore, autosave, and
+theming come built in. With the data flowing and the page rendering it, the next two
+chapters turn to *how it looks*: decoration and theming, then media and audio.
