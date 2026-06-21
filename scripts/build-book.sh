@@ -129,6 +129,10 @@ build_web() {
   # pages — including the cover and the index — are styled.
   mkdir -p web/styles
   cp -f styles/book.css web/styles/book.css
+  # chunkedhtml ships only a minimal top nav; add a persistent left sidebar
+  # (collapsible volumes → chapters) and a bottom Prev/Next bar to every page.
+  command -v node >/dev/null && node "$SCRIPT_DIR/book-web-nav.cjs" || \
+    echo "  (skipping web nav injection: node not found)"
 }
 
 echo "→ art"
