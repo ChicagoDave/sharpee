@@ -124,6 +124,11 @@ build_web() {
   # only from the --include-before-body fragment (the title page's cover image).
   # Copy the optimized art so every referenced image resolves.
   cp -f art/*.jpg web/art/ 2>/dev/null || true
+  # Every page links styles/book.css relatively, but chunkedhtml neither embeds
+  # nor copies it (--embed-resources doesn't inline CSS here). Copy it so the
+  # pages — including the cover and the index — are styled.
+  mkdir -p web/styles
+  cp -f styles/book.css web/styles/book.css
 }
 
 echo "→ art"
