@@ -13,8 +13,10 @@ import { PerceptionService } from '@sharpee/stdlib';
 import {
   BrowserClient,
   ThemeManager,
+  createAmbientChannelRenderer,
 } from '@sharpee/platform-browser';
-import story from './v17';
+import story from './v18';
+import { ZOO_AMBIENCE_CHANNEL_ID } from './v18/presentation';
 
 // Storage key for theme
 const THEME_STORAGE_KEY = 'familyzoo-theme';
@@ -66,9 +68,9 @@ function getAboutText(): string {
 // Create browser client with story configuration
 const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
-  defaultTheme: 'classic-light',
+  defaultTheme: 'zoo-sunny',
   themes: [
-    { id: 'classic-light', name: 'Classic Light' },
+    { id: 'zoo-sunny', name: 'Zoo Sunny' },   // story-shipped theme (browser/familyzoo.css) — V18
     { id: 'modern-dark', name: 'Modern Dark' },
     { id: 'retro-terminal', name: 'Retro Terminal' },
     { id: 'paper', name: 'Paper' },
@@ -141,8 +143,28 @@ async function start(): Promise<void> {
     perceptionService,
   });
 
-  // Connect client to engine
+  // Connect client to engine — platform-default renderers are registered now.
   client.connectEngine(engine, world);
+
+  // Register story-specific channel renderers (NEW IN V18). Must run before
+  // client.start() so the first turn packet is painted.
+  //  1. ambient:environment — the soundscape loop. Forward to the shared
+  //     AudioManager so playback shares one Web Audio context.
+  //  2. zoo.ambience — our custom mood-line text channel. Paint it into a
+  //     #zoo-ambience element if the page provides one (authors add it in
+  //     their override); otherwise stay silent.
+  const channelRenderer = client.getChannelRenderer();
+  channelRenderer.registerRenderer(
+    'ambient:environment',
+    createAmbientChannelRenderer(client.getAudioManager(), 'environment'),
+  );
+  channelRenderer.registerRenderer(ZOO_AMBIENCE_CHANNEL_ID, {
+    onValue(value: unknown): void {
+      if (typeof value !== 'string') return;
+      const el = document.getElementById('zoo-ambience');
+      if (el) el.textContent = value;
+    },
+  });
 
   // Set the story and register save/restore hooks
   engine.setStory(story);
