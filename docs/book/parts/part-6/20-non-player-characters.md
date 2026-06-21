@@ -15,6 +15,8 @@ rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto.
 
 # Non-Player Characters
 
+![](art/parrot.jpg){.chapter-ornament}
+
 > **Status:** pending Phase 2 migration from `v11`. The migration pattern is
 > established in *Rooms & Navigation* (Part II).
 

@@ -127,3 +127,80 @@ h1.part {
   font-style: italic;
   line-height: 1.7;
 }
+
+/* Pandoc auto-generates a title block from metadata; the book uses an authored
+   title page instead (frontmatter/00-title-page.md), so hide the auto one. */
+#title-block-header { display: none; }
+
+/* ---- Title page (authored: sword + title + subtitle + author) ---- */
+.title-page {
+  text-align: center;
+}
+
+.title-sword,
+.title-art {
+  display: block;
+  margin: 0 auto 1.6em;
+}
+
+.title-sword { width: 70%; max-width: 3.6in; }
+.title-art   { width: 62%; max-width: 2.9in; }
+
+.title-page p:has(.title-sword),
+.title-page p:has(.title-art) {
+  max-width: none;
+  margin: 0;
+}
+
+.book-title {
+  display: block;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-size: 2.1rem;
+  line-height: 1.15;
+  margin: 0 auto 0.8em;
+  max-width: 9in;
+}
+
+.book-subtitle {
+  display: block;
+  font-size: 1.25rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.book-author {
+  display: block;
+  margin-top: 2.4em;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Copyright / imprint page ---- */
+.copyright-page {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.copyright-page p {
+  margin: 0.6em 0;
+}
+
+.copyright-page em {
+  font-style: italic;
+}
+
+.art-credit {
+  display: block;
+  margin-top: 1.4em;
+  font-size: 0.8em;
+}
+
+/* Chapter-opening ornament: a small artwork directly under a chapter heading. */
+.chapter-ornament {
+  display: block;
+  width: 1.9in;
+  max-width: 45%;
+  margin: 0.2em auto 1.8em;
+}

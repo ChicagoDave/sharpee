@@ -1,5 +1,7 @@
 # Scoring & Endgame
 
+![](art/phoenix.jpg){.chapter-ornament}
+
 > **Status:** pending Phase 2 migration from `v16`. The migration pattern is
 > established in *Rooms & Navigation* (Part II).
 

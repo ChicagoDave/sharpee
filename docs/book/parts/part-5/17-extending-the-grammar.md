@@ -15,6 +15,8 @@ rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto.
 
 # Extending the Grammar
 
+![](art/playing-cards.jpg){.chapter-ornament}
+
 > **Status:** to be written (new chapter). Adapts the `parser-en-us` guide.
 
 This chapter will cover adding story-specific grammar patterns so the parser

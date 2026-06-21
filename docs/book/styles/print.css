@@ -42,6 +42,28 @@ h1:first-of-type { break-before: avoid; }
 /* The heading sits inside the centered page, so suppress its own page break. */
 .part-page > h1 { break-before: avoid; }
 
+/* Title page: first page of the book, vertically centered, no page number. */
+.title-page {
+  break-after: page;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  page: blank;
+}
+.title-page > h1 { break-before: avoid; }
+
+/* Copyright/imprint page: its own page (the verso), text at the top. */
+.copyright-page {
+  break-after: page;
+  page: blank;
+}
+
+/* Suppress page numbers on the front-matter title and copyright pages. */
+@page blank {
+  @bottom-center { content: none; }
+}
+
 /* Keep boxes and code blocks from splitting awkwardly across pages. */
 .under-the-hood, pre { break-inside: avoid; }
 h1, h2, h3 { break-after: avoid; }

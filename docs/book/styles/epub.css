@@ -65,3 +65,55 @@ pre {
   color: #5a5a5a;
   margin-top: 1.2em;
 }
+
+/* ---- Title page (reflowable) ---- */
+
+.title-page { text-align: center; }
+
+.title-sword,
+.title-art {
+  display: block;
+  margin: 0 auto 1em;
+}
+
+.title-sword { width: 70%; max-width: 320px; }
+.title-art   { width: 62%; max-width: 280px; }
+
+/* EPUB requires the first (headingless) front-matter file to begin with a
+   heading, so pandoc injects an <h1>The Sharpee Book</h1> above the title page.
+   Hide the redundant authored title span here; the injected heading is the
+   EPUB title. (HTML/PDF don't inject — there the span is the title.) */
+.book-title { display: none; }
+
+.book-subtitle {
+  display: block;
+  font-style: italic;
+  color: #5a5a5a;
+}
+
+.book-author {
+  display: block;
+  margin-top: 2em;
+}
+
+/* ---- Copyright / imprint page (reflowable) ---- */
+
+.copyright-page {
+  font-size: 0.85em;
+  color: #5a5a5a;
+  line-height: 1.5;
+}
+
+.art-credit {
+  display: block;
+  margin-top: 1.2em;
+  font-size: 0.9em;
+}
+
+/* Chapter-opening ornament: a small artwork directly under a chapter heading. */
+.chapter-ornament {
+  display: block;
+  width: 180px;
+  max-width: 45%;
+  margin: 0.2em auto 1.4em;
+}

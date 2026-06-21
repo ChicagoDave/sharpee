@@ -256,8 +256,13 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
     is two-step (pandoc HTML at book root → weasyprint resolves `assets/` on disk). Also, the generic
     `.part-page p` blurb rule collapsed the percentage-width sword to zero in weasyprint; excluded the
     image's paragraph via `.part-page p:has(.part-sword)`.
-- **Remaining batches:** migrate v03–v04, v05, v06–v07, v08 (Part II); v09–v10 (Part III);
-  v12, v13, v14 (Part IV); v11, v15, v16 (Part VI) — 10 chapters.
+- **Batch 2 done (2026-06-20):** **Part II fully migrated** — ch5 Scenery & Portable Objects
+  (v03+v04), ch6 Containers & Supporters (v05), ch7 Openable, Locked Doors & Keys (v06+v07),
+  ch8 Light & Dark (v08). All code reconciled against `v0{3..8}.ts`; "Common mistake" callouts from
+  `tutorial.md` folded in as blockquote asides; renders clean in HTML/EPUB/PDF. ch9 (The map &
+  regions) remains a new-framing stub (no version migration).
+- **Remaining batches:** v09–v10 (Part III ch12); v12, v13, v14 (Part IV ch13–15); v11, v15, v16
+  (Part VI ch20, 22, 23) — 6 migration chapters left.
 - For each of the 17 steps, pick the richest of the three existing copies as the base; reconcile every
   code sample against the actual `v*.ts` ground truth; normalize into canonical chapters.
 - **Acceptance:** every Part I–VI chapter present; each code block matches its `familyzoo/src`

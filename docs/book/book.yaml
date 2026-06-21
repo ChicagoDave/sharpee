@@ -5,8 +5,11 @@
 #          per-format flags (output target, CSS, PDF engine).
 # Owner:   docs/book (authoring toolchain, ADR — Sharpee author book plan)
 #
-# To add a chapter: add its path to `input-files` in reading order. Front matter
-# first, then parts in order, then appendices.
+# To add a chapter: add its path to `input-files` in reading order (preface,
+# then parts in order, then appendices). The TITLE PAGE and COPYRIGHT PAGE are
+# NOT listed here — they live in frontmatter.yaml and are layered ahead of this
+# body so they precede the table of contents (see build-book.sh and
+# frontmatter.yaml for why).
 
 from: markdown+fenced_divs+smart
 standalone: true
@@ -14,8 +17,17 @@ toc: true
 toc-depth: 2
 number-sections: true
 
+# Suppress pandoc's auto-generated EPUB title page (= --epub-title-page=false);
+# the authored frontmatter/00-title-page.md is the single title page for all
+# three formats. (Ignored by the HTML/PDF writers, which hide their auto title
+# block via CSS instead — see #title-block-header in book.css.)
+epub-title-page: false
+
+# `metadata.title`/`author` drive the HTML <title>, PDF document properties, and
+# EPUB OPF metadata. The visible title/copyright pages are authored markdown
+# (frontmatter/00-title-page.md, 00b-copyright.md via frontmatter.yaml).
 metadata:
-  title: "The Sharpee Book"
+  title: "The Sharpee Author and Developer Manual"
   subtitle: "Authoring Interactive Fiction with Sharpee"
   author: "David Cornelson"
   lang: en-US
@@ -55,3 +67,5 @@ input-files:
   - parts/part-6/21-scenes.md                      # new (stub)
   - parts/part-6/22-timed-events-and-daemons.md    # v15 (pending)
   - parts/part-6/23-scoring-and-endgame.md         # v16 (pending)
+  # Back matter
+  - backmatter/illustration-credits.md             # Met public-domain art credits
