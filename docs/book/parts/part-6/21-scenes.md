@@ -1,6 +1,119 @@
 # Scenes
 
-> **Status:** to be written (new chapter). Adapts the `scenes` guide.
+A world that only reacts command-by-command stays flat. Stories have *phases* — a
+storm that rolls in and passes, a market that's busy by day, a tense stretch while
+an alarm blares. Sharpee models these as **scenes**: named windows of story time
+that switch on and off based on conditions you write, with the engine watching the
+clock for you.
 
-This chapter will cover scenes — staging story beats that activate under
-conditions.
+## What a scene is
+
+A scene is a phase of the story with a beginning and an end. You give it two
+conditions — when it should *begin* and when it should *end* — and the engine
+checks them every turn, flipping the scene between three states:
+
+```
+waiting ──[begin() is true]──> active ──[end() is true]──> ended
+```
+
+While a scene is **active**, you can key behavior to it; once it's **ended**, that
+behavior stops. You don't poll or schedule anything yourself — you describe the
+window, and the engine manages the lifecycle.
+
+## Creating a scene
+
+Scenes are created in `initializeWorld()` with `world.createScene()`. The `begin`
+and `end` options are predicates over the world — each returns `true` when its
+moment has come. Here's a scene that's active only while the visitor is in the
+petting zoo:
+
+```typescript
+world.createScene('scene-petting-zoo', {
+  name: 'Among the Animals',
+  begin: (w) => w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
+  end:   (w) => w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
+  recurring: true,
+});
+```
+
+`recurring: true` lets the scene reactivate — leave the petting zoo and come back,
+and it begins again. Without it (the default), a scene fires once and stays ended.
+
+## Querying a scene
+
+Anywhere in your story logic you can ask the world about a scene's state:
+
+```typescript
+if (world.isSceneActive('scene-petting-zoo')) {
+  // the player is among the animals right now
+}
+
+if (world.hasSceneHappened('scene-finale')) {
+  // the finale has run at least once
+}
+```
+
+`isSceneActive` is the common one; `hasSceneHappened` and `hasSceneEnded` let you
+check whether a phase has already played out.
+
+## Reacting to transitions
+
+The real power is reacting to the *edges* — the moment a scene begins or ends. The
+engine emits `if.event.scene_began` and `if.event.scene_ended`, and you handle them
+exactly like any event from Chapter 13:
+
+```typescript
+world.registerEventHandler('if.event.scene_began', (event, world) => {
+  if (event.data.sceneId === 'scene-petting-zoo') {
+    // first breath of the enclosure — a waft of hay and warm fur
+  }
+});
+
+world.registerEventHandler('if.event.scene_ended', (event, world) => {
+  if (event.data.sceneId === 'scene-petting-zoo') {
+    // the sounds of the animals fade behind you
+  }
+});
+```
+
+This is where atmosphere and staged events live: open a sequence when a scene
+begins, close it down when the scene ends.
+
+## Common shapes
+
+Most scenes are one of a few patterns, all expressed through `begin`/`end`:
+
+- **Location-based** — active while the player is somewhere, as above; `begin` and
+  `end` test the player's room. Usually `recurring`.
+- **One-shot trigger** — `begin` watches a flag (`w.getStateValue('alarmTripped')`)
+  and `end` fires after a turn or two, so the beat plays once and never returns.
+- **Timed** — `end` checks how long the scene has run. A scene's `SceneTrait`
+  tracks `activeTurns`, so a storm can last a fixed stretch:
+
+```typescript
+world.createScene('scene-storm', {
+  name: 'Thunderstorm',
+  begin: (w) => w.getStateValue('stormTriggered') === true,
+  end:   (w) => (w.getEntity('scene-storm')?.get(SceneTrait)?.activeTurns ?? 0) >= 15,
+});
+```
+
+## Scenes versus timed events
+
+The next chapter covers **daemons** and **fuses** — per-turn machinery for things
+that *do* something each turn or fire after a countdown. Scenes sit a level above
+that: a scene answers "*is this phase of the story on right now?*" It's state, not
+action. A common division of labor is a scene that defines the window and a daemon
+that does the per-turn work *while* that window is open — the daemon simply checks
+`world.isSceneActive(...)` in its condition. Reach for a scene when you're thinking
+in story beats; reach for a daemon or fuse when you're thinking in turns.
+
+## Key takeaway
+
+A scene is a named phase of the story with `begin` and `end` conditions the engine
+checks each turn, cycling `waiting → active → ended` (and back to `waiting` when
+`recurring`). Create them with `world.createScene()` in `initializeWorld()`, query
+state with `world.isSceneActive()` / `hasSceneHappened()`, and react to the edges
+through the `if.event.scene_began` / `scene_ended` handlers. Scenes are how you
+think in story beats rather than individual turns — the staging layer over the
+moment-to-moment world.
