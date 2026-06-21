@@ -325,7 +325,7 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
   / build-system / npm-publish guides, the BrowserClient save path, and ADR-175 (Zifmia v1 =
   room-scoped "watching IF together", shared single PC, NOT MPIF). Book renders clean to HTML/EPUB/PDF.
 
-### Phase 6b — v18 "Family Zoo: Sights & Sounds" **[DECIDED 2026-06-21: do after Volume VIII]**
+### Phase 6b — v18 "Family Zoo: Sights & Sounds" ✅ COMPLETE (2026-06-21) — see plan-20260621-familyzoo-v18.md
 - **Decision (David, 2026-06-21):** Volume VIII teaches against v17 (no new version needed for
   shipping mechanics). Volume VII (Presentation) IS the gap — v17 has zero presentation features,
   so ch24/26/27 currently teach against platform defaults + snippets, never the running zoo. Build

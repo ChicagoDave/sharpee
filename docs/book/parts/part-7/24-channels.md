@@ -122,6 +122,10 @@ says *what*; the renderer (next chapter) decides *how* it looks. That data-only 
 is what keeps presentation in the client's hands, where an author can restyle or
 replace it per story.
 
+Family Zoo v18 ships exactly this `zoo.ambience` channel — a one-line mood description
+for each area — and its browser entry registers a renderer that paints the line into a
+dedicated page element. The chapters ahead build on that concrete example.
+
 ## Key takeaway
 
 Channels are the universal UI surface: every story-to-player signal — prose, status,

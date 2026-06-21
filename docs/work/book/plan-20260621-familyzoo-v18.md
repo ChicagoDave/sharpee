@@ -2,7 +2,8 @@
 
 **Date:** 2026-06-21
 **Session:** 70b555
-**Status:** v18 SOURCE BUILT & VALIDATED (2026-06-21) — chapter retrofit (ch24/26/27) pending
+**Status:** COMPLETE (2026-06-21) — v18 built & validated; ch24/26/27 retrofitted; ch27 audio
+vocabulary corrected to `media.*`; platform findings filed as issues #146 and #147
 **Parent plan:** `docs/work/book/plan-20260620-sharpee-author-book.md` (Phase 6b)
 
 ## Goal
@@ -79,12 +80,15 @@ supply their own audio/image files. CLI play won't exercise media; browser 404s 
 - Channel unit test for `zoo.ambience` (model `ac-15.test.ts`).
 - Browser: `./sharpee build familyzoo --browser` — manual smoke (can't fully automate audio/image).
 
-## Retrofit (after v18 compiles + plays)
+## Retrofit — DONE (2026-06-21)
 
-- **ch24**: point the `zoo.ambience` example at v18.
-- **ch26**: reference the `zoo-sunny` story theme.
-- **ch27**: reference v18 atmospheres/cues; **correct the audio vocabulary** — `media.*` channel
-  path for ambient/music vs `audio.sfx` for effects (ch27 currently only describes `audio.*`).
+- **ch24**: `zoo.ambience` example now noted as shipped in v18 (with a browser renderer).
+- **ch26**: `zoo-sunny` theme now noted as shipped in `browser/familyzoo.css` (loaded last).
+- **ch27**: audio model rewritten to the canonical **`media.*`** vocabulary (`media.sound.play`,
+  `media.music.play`, `media.ambient.play`, `media.image.show`); `AudioRegistry` reframed as the
+  atmosphere *data store* + room-entry handler; a `@sharpee/media` note explains the legacy
+  `audio.*` path; grounded in v18 (aviary/nocturnal atmospheres, feed/shutter SFX, after-hours
+  music). Book renders clean to HTML/EPUB/PDF.
 
 ## Implementation result (2026-06-21)
 

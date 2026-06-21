@@ -22,10 +22,14 @@ The standard media channels are:
 | `music` | the background track |
 | `ambient:*` | layered environmental loops (wind, machinery, …) |
 
-A story emits an image by producing a value on an image channel; the browser's image
-renderer swaps the corresponding element. Because these are ordinary channels, an
-image hotspot can carry a `command` that the client routes back through
-`engine.executeTurn` — a clickable region that plays exactly like a typed verb.
+A story drives these channels by firing **`media.*` events** — `media.image.show`,
+`media.sound.play`, `media.music.play`, `media.ambient.play` (and their `.hide` /
+`.stop` partners). The standard channels listen for those events on the turn's event
+stream and project them; the browser renderers do the rest. That's the through-line of
+this chapter: *you emit a `media.*` event, and the channel surface turns it into
+something the player sees or hears.* Because these are ordinary channels, an image's
+hotspot can carry a `command` that the client routes back through `engine.executeTurn`
+— a clickable region that plays exactly like a typed verb.
 
 ## Capability gating
 
@@ -40,22 +44,26 @@ supports images" — the manifest already did.
 
 ## The audio model
 
-Audio is rich enough to have its own subsystem, `@sharpee/media`, but the principle
-is unchanged: the story emits audio *events*, and a client that can play them does.
-The event vocabulary is small and declarative:
+Audio is just more `media.*` events, each projected onto a standard channel:
 
-- **`audio.sfx`** — play a sound effect once (`src`, optional `volume`, `pan`, and a
-  `duck` priority that briefly lowers other audio so the effect cuts through).
-- **`audio.music.play` / `audio.music.stop`** — start or crossfade a track, or fade
-  it out. Music loops by default.
-- **`audio.ambient.play` / `audio.ambient.stop`** — start or stop a named ambient
-  loop. Reusing a channel name replaces its source; ambient layers stack.
-- **`audio.procedural`** — ask for a *named recipe* (`beep`, `alert`, `sweep-up`, …)
-  and let the client synthesize it. The story says what it wants; the client decides
-  how to make the sound.
+- **`media.sound.play`** — a one-off sound effect (`src`, optional `volume`, `pan`).
+  Read by the `sound` channel.
+- **`media.music.play` / `media.music.stop`** — start or crossfade the `music`
+  channel's track, or stop it. Music loops by default.
+- **`media.ambient.play` / `media.ambient.stop`** — start or stop a loop on an
+  `ambient:<id>` channel. Reusing the same `channel` id replaces its source, so a
+  soundscape swaps as the player moves room to room.
+- **`media.image.show` / `media.image.hide`** — show or hide an image on an
+  `image:<layer>` channel (`background`, `main`, `overlay`).
 
 Every duration is in milliseconds and every volume runs 0.0–1.0, so the events read
 like intent, not like a sound driver.
+
+> **A note on `@sharpee/media`.** Sharpee also ships a `@sharpee/media` package
+> (ADR-138) with an older `audio.*` event vocabulary and an `AudioRegistry`. That
+> vocabulary predates the channel surface; the events the channels actually consume
+> today are the `media.*` set above. The `AudioRegistry` is still useful — not as an
+> emitter, but as a *data store* for room atmospheres, which we use below.
 
 ## Fades, not cuts
 
@@ -69,49 +77,57 @@ the page. The client unlocks the audio context on the first command and queues a
 events that fired before then, so the opening turn's music waits for the player's
 first keystroke rather than being silently dropped.
 
-## Registering audio by name
+## Room atmospheres in practice
 
-Scattering raw file paths through your story code ages badly. The `AudioRegistry`
-gives every sound a name, set up once when you build the world, and referenced
-everywhere after:
+Scattering raw file paths through your story ages badly. The `AudioRegistry` lets you
+declare each room's **atmosphere** once — its ambient layers, an optional music track —
+with a fluent builder, and look it up by room later. Family Zoo v18 does exactly this:
 
 ```typescript
 const audio = new AudioRegistry();
 
-// A named cue — one sound, full control.
-audio.registerCue('feed.dispense', () =>
-  createTypedEvent('audio.sfx', { src: 'sfx/pellet-drop.mp3', volume: 0.7 }),
-);
-
-// A variation pool — several files, picked at random with jitter so
-// repetition never grates.
-audio.registerPool('footstep.gravel', {
-  sources: ['sfx/step-1.mp3', 'sfx/step-2.mp3', 'sfx/step-3.mp3'],
-  volume: 0.6,
-  pitchJitter: 0.05,
-});
+audio.atmosphere(aviaryId)
+  .ambient('audio/aviary-birdsong.mp3', 'environment', 0.4)
+  .build();
+audio.atmosphere(nocturnalId)
+  .ambient('audio/night-crickets.mp3', 'environment', 0.3)
+  .build();
 ```
 
-An action or handler then fires by name — `audio.cue('feed.dispense')` — and gets
-back the events to emit. If a name isn't registered, `cue` returns nothing and the
-turn proceeds in silence; audio degrades quietly rather than crashing a turn.
+Then a single room-entry handler turns the data into channel signals. On
+`if.event.actor_moved` it looks up the destination's atmosphere and emits the
+`media.*` events — and stops the loop for rooms that have none:
 
-You can go further and register a whole **room atmosphere** — its ambient layers,
-its music, an optional effect like cave reverb — with a fluent builder, so entering a
-room sets its entire soundscape in one declarative block. As with everything in this
-volume, the story declares the intent; the client, gated by what it can do, decides
-what the player actually perceives.
+```typescript
+const atmosphere = audio.getAtmosphere(toRoom);
+if (atmosphere) {
+  for (const a of atmosphere.ambient) {
+    effects.push(emit('media.ambient.play', {
+      src: a.src, channel: a.channel, volume: a.volume, loop: true,
+    }));
+  }
+} else {
+  effects.push(emit('media.ambient.stop', { channel: 'environment' }));
+}
+```
+
+Sound effects are simpler still — a one-off `media.sound.play` straight from the
+action that causes them. In v18 the feed action emits a crunch and the photograph
+action a shutter click, right alongside their prose. When the zoo closes, the
+after-hours daemon emits one `media.music.play` and a theme fades in. Throughout, the
+story only ever declares intent as a `media.*` event; the client, gated by what it can
+do, decides what the player actually perceives.
 
 ## Key takeaway
 
 Media is not a special path — images and audio are channels (`image:*`, `sound`,
-`music`, `ambient:*`) emitted like any other and **capability-gated**, so a text-only
-client never receives them and you never branch on client support. Audio events are
-small and declarative (`audio.sfx`, `audio.music.play`, `audio.ambient.play`,
-`audio.procedural`), measured in milliseconds and 0.0–1.0 volumes; the browser's
-`AudioManager` plays them with Web Audio fades (effects excepted) and unlocks on the
-first keystroke. Name your sounds through the `AudioRegistry` — cues, variation pools,
-room atmospheres — and reference them by name so file paths stay out of your logic.
-With sight and sound in place, the presentation layer is complete: from a typed verb
-to a rendered, scored, illustrated, scored-to-music turn, every signal you've met
-rides the one universal surface — the channel.
+`music`, `ambient:*`) and **capability-gated**, so a text-only client never receives
+them and you never branch on client support. You drive them by firing **`media.*`
+events** — `media.image.show`, `media.sound.play`, `media.music.play`,
+`media.ambient.play` — measured in milliseconds and 0.0–1.0 volumes; the standard
+channels project them, and the browser's `AudioManager` plays sound and music with Web
+Audio fades (effects excepted), unlocking on the first keystroke. Declare each room's
+atmosphere once with the `AudioRegistry` (a data store) and emit it on room entry, as
+Family Zoo v18 does. With sight and sound in place, the presentation layer is
+complete: from a typed verb to a rendered, scored, illustrated, scored-to-music turn,
+every signal you've met rides the one universal surface — the channel.
