@@ -345,11 +345,31 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
 - **Then:** weave concrete "in v18…" examples back into the already-written ch24, ch26, ch27.
 - **Acceptance:** v18 compiles & plays; Volume VII chapters reference v18 concretely; book renders clean.
 
-### Phase 7 — Site integration & duplication retirement
-- Generate the site pages from canonical source; wire into the site build.
-- Retire the triple-copy sources (per-version `.md`, `tutorial.md`, hand-authored zoo HTML) **pending
-  explicit confirmation** — flagged, not auto-deleted.
-- **Acceptance:** site renders from generated pages; David confirms before any deletion.
+### Phase 7 — Site integration & duplication retirement **[SCOPED 2026-06-21]**
+
+**Investigation findings (2026-06-21, session 70b555):**
+- **Two sites exist.** `./site/` is the live GitHub Pages site (CNAME `sharpee.net`) — hand-authored
+  static HTML incl. `zoo-01..17.html` + `family-zoo.html`. `./website/` is a newer Astro site
+  ("website2", not live) with structured `docs/tutorials/` (`family-zoo.mdx`, `cloak-of-darkness.mdx`),
+  fed by `copy-to-website.sh` (dungeo browser build + .sharpee download).
+- **The duplication ("triple copy") of the zoo tutorial:** (1) `tutorials/familyzoo/docs/v01..v16.md`
+  + `tutorial.md` (per-version markdown); (2) `site/zoo-*.html` + `site/family-zoo.html` (hand HTML);
+  (3) the book (`docs/book/`) — now the canonical source that supersedes both.
+
+**David's direction (2026-06-21):** Do NOT touch the live `/site` yet, and don't delete any
+duplication sources. First just build the book out as a web target under `docs/book/web/` and park
+it until we decide what to do with it (integrate into `/site` vs `/website` vs standalone).
+
+**Done (2026-06-21):** added a `web` target to `scripts/build-book.sh` (`build-book.sh web`) →
+multi-page chunked-HTML site (50 pages, sidebar nav, one page per chapter/volume/appendix) at
+`docs/book/web/`, generated from the same canonical source. Output gitignored (mirrors `build/`);
+view with `open docs/book/web/index.html` or a static server.
+
+**Deferred (needs David's decision later):**
+- Where the book-web lives long-term (serve from `/site`, fold into the Astro `/website`, or standalone).
+- Retiring the triple-copy sources (per-version `.md`, `tutorial.md`, `site/zoo-*.html`) — **deletion
+  gated on explicit confirmation**; flagged, not auto-deleted.
+- Reconciling the two sites (`/site` legacy vs `/website` Astro) — out of book scope; David's call.
 
 ### Phase 8 — Review & proof
 - Full read-through; fix cross-links; proof EPUB on a reader and PDF in print layout; compile-check

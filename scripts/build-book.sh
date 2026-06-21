@@ -105,6 +105,27 @@ build_pdf() {
   rm -f "$TMP"
 }
 
+# Multi-page web build: a browsable chunked-HTML site (one page per chapter, with
+# a sidebar nav) under docs/book/web/. Parked output — not wired into any live
+# site yet; gitignored like build/. Generated from the same canonical source.
+build_web() {
+  echo "→ WEB (chunked HTML site → web/)"
+  build_front_fragment
+  rm -rf web
+  pandoc --defaults=book.yaml \
+    --to=chunkedhtml \
+    --split-level=1 \
+    --embed-resources \
+    --css=styles/book.css \
+    --metadata=document-css:false \
+    --include-before-body="$FRONT_FRAGMENT" \
+    --output=web
+  # chunkedhtml copies media referenced in the body, but not assets referenced
+  # only from the --include-before-body fragment (the title page's cover image).
+  # Copy the optimized art so every referenced image resolves.
+  cp -f art/*.jpg web/art/ 2>/dev/null || true
+}
+
 echo "→ art"
 optimize_art
 
@@ -112,8 +133,9 @@ case "${1:-all}" in
   html) build_html ;;
   epub) build_epub ;;
   pdf)  build_pdf ;;
+  web)  build_web ;;
   all)  build_html; build_epub; build_pdf ;;
-  *)    echo "usage: build-book.sh [html|epub|pdf|all]"; exit 2 ;;
+  *)    echo "usage: build-book.sh [html|epub|pdf|web|all]"; exit 2 ;;
 esac
 
 echo "done → $BOOK_DIR/$OUT/"

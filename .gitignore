@@ -11,6 +11,9 @@ build/
 lib/
 out/
 
+# The Sharpee Book — parked multi-page web build (scripts/build-book.sh web)
+docs/book/web/
+
 # Test coverage reports
 coverage/
 .nyc_output/
