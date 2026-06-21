@@ -1,16 +1,28 @@
-::: part-page
-![](assets/sharpee-sword.png){.part-sword}
+::: {.part-page .has-poem}
 
-# Part IV — Custom Behavior {.part .unnumbered}
+# Volume IV — Custom Behavior {.part .unnumbered}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde
-omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam
-rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto.
+| Out of the night that covers me,
+|    Black as the Pit from pole to pole,
+| I thank whatever gods may be
+|    For my unconquerable soul.
+|
+| In the fell clutch of circumstance
+|    I have not winced nor cried aloud.
+| Under the bludgeonings of chance
+|    My head is bloody, but unbowed.
+|
+| Beyond this place of wrath and tears
+|    Looms but the Horror of the shade,
+| And yet the menace of the years
+|    Finds, and shall find, me unafraid.
+|
+| It matters not how strait the gate,
+|    How charged with punishments the scroll,
+| I am the master of my fate:
+|    I am the captain of my soul.
+
+*— William Ernest Henley, "Invictus" (1888)*
 :::
 
 # Event Handlers

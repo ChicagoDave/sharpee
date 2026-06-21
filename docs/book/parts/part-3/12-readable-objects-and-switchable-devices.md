@@ -136,7 +136,7 @@ illuminates nothing. The `SceneryTrait` means it can't be carried off.
 > **The mistake everyone makes once:** expecting a bare `SwitchableTrait` to do
 > something dramatic. On its own it just tracks `isOn`. Combine it with
 > `LightSourceTrait` for a controllable light, or react to its state with an
-> event handler (the next part of the book) when you want flipping the switch to
+> event handler (the next volume of the book) when you want flipping the switch to
 > *do* something.
 
 ## Switchable vs. openable

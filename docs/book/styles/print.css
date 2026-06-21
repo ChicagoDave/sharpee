@@ -10,7 +10,7 @@
 
 @page {
   size: 6in 9in;            /* trade paperback */
-  margin: 0.75in 0.7in;
+  margin: 0.5in 0.6in;      /* tight margins — this is a technical reference */
   @bottom-center {
     content: counter(page);
     font-family: "Helvetica Neue", Arial, sans-serif;
@@ -41,6 +41,20 @@ h1:first-of-type { break-before: avoid; }
 }
 /* The heading sits inside the centered page, so suppress its own page break. */
 .part-page > h1 { break-before: avoid; }
+
+/* A poem-bearing part divider (Part I) is too tall to vertically center inside
+   100vh — flex centering would clip the overflow and silently drop the closing
+   stanza. Lay it out top-down on its own page instead: it fits on one page, and
+   if it ever grows it spills to a second page cleanly rather than clipping. */
+.part-page.has-poem {
+  height: auto;
+  display: block;
+  justify-content: initial;
+  padding-top: 0;            /* sword sits at the top of the page, centered */
+}
+/* Pull the title tight under the sword so the verse fits on one page. */
+.part-page.has-poem .part-sword { margin-top: 0; margin-bottom: 0.45em; }
+.part-page.has-poem > h1 { margin-top: 0; }
 
 /* Title page: first page of the book, vertically centered, no page number. */
 .title-page {

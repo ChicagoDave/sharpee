@@ -66,6 +66,16 @@ pre {
   margin-top: 1.2em;
 }
 
+/* A poem used as a part-divider blurb (Part I uses Kipling's "If—"). */
+.part-page .line-block {
+  display: inline-block;
+  text-align: left;
+  font-style: italic;
+  color: #5a5a5a;
+  line-height: 1.4;
+  margin-top: 1em;
+}
+
 /* ---- Title page (reflowable) ---- */
 
 .title-page { text-align: center; }

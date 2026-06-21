@@ -158,7 +158,7 @@ extendParser(parser: Parser): void {
 A `:slot` (here `:thing`) is an argument the parser resolves to an entity. You
 can register several patterns for the same action — `photo` and `snap` are
 aliases for `photograph`. Use `withPriority(150)` (or higher) so your story
-patterns win over any stdlib defaults. Grammar gets its own chapter in Part V;
+patterns win over any stdlib defaults. Grammar gets its own chapter in Volume V;
 this is the minimum to make a custom verb fire.
 
 ## Supplying the text: extendLanguage
