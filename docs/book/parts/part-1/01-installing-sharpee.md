@@ -62,6 +62,29 @@ Sharpee stories are TypeScript, so the toolchain is the ordinary Node toolchain:
 That's the whole list. There's no game engine to install separately, no C
 compiler, no runtime besides Node.
 
+## Working in a terminal
+
+Every Sharpee command in this book is typed into a **terminal** — a text window
+where you enter commands and read their output. If you've never opened one, here's
+where to find it:
+
+- **macOS** — open **Terminal** (Applications → Utilities, or press ⌘-Space and
+  type "Terminal").
+- **Windows** — open **Windows Terminal** or **PowerShell** from the Start menu.
+- **Linux** — open your terminal emulator (often **Ctrl-Alt-T**).
+
+You'll see a prompt waiting for input. Type a command, press **Enter** to run it,
+and its output appears on the lines below. Throughout the book, a shaded block
+like this is one or more commands to type at that prompt:
+
+```bash
+node --version
+```
+
+Two you'll lean on constantly: `cd <folder>` moves you into a folder (so
+`cd my-game` steps into the project you just made), and running a command with no
+arguments — plain `sharpee` — prints its help.
+
 ## Installing the CLI
 
 Everything you do to a story — scaffold it, compile it, bundle it — goes through
