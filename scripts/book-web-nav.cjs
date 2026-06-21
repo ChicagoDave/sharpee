@@ -79,10 +79,7 @@ function sidebar(current) {
     // navigate away on click instead of revealing the chapters — so from the
     // index, where every volume starts collapsed, you could never reach them.)
     h += `<summary>${esc(g.label)}</summary>`;
-    let items = g.children;
-    // Keep the volume divider page reachable from the sidebar as its first item.
-    if (g.page) items = [{ title: g.label, page: g.page }, ...g.children];
-    h += '<ul>' + items.map((c) => li(c, current)).join('') + '</ul></details>';
+    h += '<ul>' + g.children.map((c) => li(c, current)).join('') + '</ul></details>';
   }
   h += '</nav>';
   return h;
@@ -132,6 +129,13 @@ for (const file of fs.readdirSync(WEB)) {
   const fp = path.join(WEB, file);
   let html = fs.readFileSync(fp, 'utf8');
   if (html.includes('id="book-nav"')) continue; // idempotent
+  // pandoc injects the --include-before-body title/copyright page into EVERY
+  // chunk. Keep it only on the index (landing) page; strip it elsewhere so
+  // chapters open on their own content, not the title page.
+  if (file !== 'index.html') {
+    html = html.replace(/<div class="title-page">[\s\S]*?<\/div>\s*/, '');
+    html = html.replace(/<div class="copyright-page">[\s\S]*?<\/div>\s*/, '');
+  }
   html = html.replace('</head>', `${CSS}\n</head>`);
   html = html.replace(/<body([^>]*)>/, `<body$1>\n${sidebar(file)}`);
   html = html.replace('</body>', `${bottomBar(file)}\n</body>`);
