@@ -1,393 +1,86 @@
-# Getting Started with Sharpee for Authors
+# Getting Started with Sharpee (Authors)
 
-> **BETA** (v0.9.2): Sharpee is feature-complete for story development. Currently being used to implement a full Mainframe Zork port.
-
-Welcome to Sharpee! This guide will help you create your first interactive fiction story.
+> **BETA** (v0.9.x). The complete, worked tutorial is **The Sharpee Author and
+> Developer Manual** in [`docs/book/`](../../book/) — it builds a full story (the
+> Family Zoo) one concept at a time. This page is just the short setup; follow the
+> book for the actual walkthrough.
 
 ## What is Sharpee?
 
-Sharpee is a modern TypeScript-based platform for creating interactive fiction (IF). It provides:
-
-- A powerful world model for rooms, objects, and characters
-- A natural language parser for player commands
-- An extensible action system
-- Support for complex game mechanics
-- Save/restore functionality
-- Multi-language support
+Sharpee is a TypeScript platform for parser-based interactive fiction. You write
+your story in TypeScript against the `@sharpee/sharpee` library — a world model
+(rooms, objects, characters), a command parser, a standard action library, and a
+presentation layer — and the `sharpee` CLI compiles it into a playable game.
 
 ## Prerequisites
 
-- Node.js 18 or higher
-- Basic familiarity with TypeScript/JavaScript
+- **Node.js 18 or newer** (`node --version`)
 - A text editor (VS Code recommended)
+- Basic familiarity with TypeScript
 
-## Installation
+## Install the CLI
+
+The `sharpee` command ships in `@sharpee/devkit`:
 
 ```bash
-# Create a new story project
-npx create-sharpee-story my-story
-cd my-story
+npm install -g @sharpee/devkit
+```
 
-# Install dependencies
+The platform (`@sharpee/sharpee`) is a normal dependency of each story project, not
+a global install — so different stories can pin different platform versions.
+
+## Create a project
+
+```bash
+sharpee init my-game
+cd my-game
 npm install
-
-# Run your story
-npm start
 ```
 
-## Your First Story
+`sharpee init` scaffolds a working starter — `src/index.ts` (a runnable story),
+`package.json` (pinned to the platform version), and `tsconfig.json`. Begin from
+the generated `src/index.ts` rather than copying code by hand: it always imports
+the right symbols for the platform version you installed.
 
-### 1. Basic Structure
-
-Every Sharpee story starts with a world definition:
-
-```typescript
-// src/my-story.ts
-import { 
-  Story, 
-  Room, 
-  Thing, 
-  Player,
-  createWorld 
-} from '@sharpee/world-model';
-
-export const MyStory: Story = {
-  metadata: {
-    title: "My First Story",
-    author: "Your Name",
-    version: "1.0.0",
-    description: "A simple adventure"
-  },
-  
-  world: createWorld({
-    // Your world definition goes here
-  }),
-  
-  startRoom: 'entrance'
-};
-```
-
-### 2. Creating Rooms
-
-Rooms are the locations in your story:
-
-```typescript
-const entrance = new Room('entrance', {
-  name: 'Entrance Hall',
-  description: 'A grand entrance hall with marble floors and tall columns.',
-  exits: {
-    north: 'hallway',
-    east: 'library'
-  }
-});
-
-const hallway = new Room('hallway', {
-  name: 'Long Hallway',
-  description: 'A dimly lit hallway stretches before you.',
-  exits: {
-    south: 'entrance',
-    north: 'bedroom'
-  }
-});
-
-const library = new Room('library', {
-  name: 'Ancient Library',
-  description: 'Dusty bookshelves tower above you, filled with ancient tomes.',
-  exits: {
-    west: 'entrance'
-  }
-});
-```
-
-### 3. Adding Objects
-
-Objects can be interacted with by the player:
-
-```typescript
-const book = new Thing('book', {
-  name: 'leather-bound book',
-  description: 'An old book with mysterious symbols on the cover.',
-  aliases: ['tome', 'volume'],
-  location: 'library',
-  traits: ['readable', 'takeable'],
-  readText: 'The book contains ancient spells and incantations.'
-});
-
-const table = new Thing('table', {
-  name: 'wooden table',
-  description: 'A sturdy oak table.',
-  location: 'entrance',
-  traits: ['supporter'],
-  cannotTake: 'The table is too heavy to carry.'
-});
-
-const key = new Thing('key', {
-  name: 'brass key',
-  description: 'A small brass key with intricate engravings.',
-  location: 'table',  // On the table
-  traits: ['takeable']
-});
-```
-
-### 4. Creating the Player
-
-```typescript
-const player = new Player('player', {
-  name: 'you',
-  description: 'As good-looking as ever.',
-  location: 'entrance'
-});
-```
-
-### 5. Putting It All Together
-
-```typescript
-export const MyStory: Story = {
-  metadata: {
-    title: "My First Story",
-    author: "Your Name",
-    version: "1.0.0"
-  },
-  
-  world: createWorld({
-    rooms: [entrance, hallway, library],
-    things: [book, table, key],
-    player: player
-  }),
-  
-  startRoom: 'entrance',
-  
-  // Optional: Custom initialization
-  initialize: (world) => {
-    console.log('Welcome to My First Story!');
-  }
-};
-```
-
-## Common Actions
-
-Players can interact with your world using natural language commands:
-
-### Movement
-- `go north` or just `north`, `n`
-- `enter library`
-- `exit` or `leave`
-
-### Examining
-- `look` or `l` - describe current room
-- `examine table` or `x table`
-- `look at book`
-
-### Manipulation
-- `take key` or `get key`
-- `drop book`
-- `put key on table`
-- `open door`
-- `close box`
-
-### Inventory
-- `inventory` or `i` - list carried items
-- `wear hat`
-- `remove coat`
-
-### Other
-- `save` - save game state
-- `restore` - load saved game
-- `quit` - end the game
-- `help` - show available commands
-
-## Traits System
-
-Traits define how objects behave:
-
-### Basic Traits
-- `takeable` - Can be picked up
-- `container` - Can hold other objects
-- `supporter` - Objects can be placed on it
-- `scenery` - Part of room description, can't be taken
-- `wearable` - Can be worn
-- `edible` - Can be eaten
-- `readable` - Can be read
-
-### Door Traits
-- `door` - Connects two rooms
-- `openable` - Can be opened/closed
-- `lockable` - Can be locked/unlocked
-
-### Example: Creating a Container
-
-```typescript
-const chest = new Thing('chest', {
-  name: 'wooden chest',
-  description: 'An old treasure chest.',
-  location: 'library',
-  traits: ['container', 'openable', 'lockable'],
-  isOpen: false,
-  isLocked: true,
-  keyId: 'key',  // Unlocked with the brass key
-  contents: ['gold', 'jewel']
-});
-
-const gold = new Thing('gold', {
-  name: 'gold coins',
-  description: 'A pile of shiny gold coins.',
-  traits: ['takeable']
-});
-```
-
-## Event Handlers
-
-Customize responses to player actions:
-
-```typescript
-// In your story definition
-eventHandlers: {
-  onTake: (event, world) => {
-    if (event.item === 'cursed-amulet') {
-      return [{
-        type: 'MESSAGE',
-        text: 'As you touch the amulet, you feel a chill run down your spine.'
-      }];
-    }
-  },
-  
-  onEnterRoom: (event, world) => {
-    if (event.room === 'secret-chamber' && !world.hasVisited('secret-chamber')) {
-      return [{
-        type: 'MESSAGE',
-        text: 'You have discovered the secret chamber! Your score increases.'
-      }, {
-        type: 'SCORE_CHANGED',
-        points: 10
-      }];
-    }
-  }
-}
-```
-
-## Testing Your Story
-
-### Running Locally
+## Build and play
 
 ```bash
-# Start in development mode with hot reload
-npm run dev
-
-# Run in production mode
-npm start
-
-# Run tests
-npm test
+sharpee build                       # compile src/ → dist/ + dist/<id>.sharpee bundle
+sharpee init-browser                # add a self-contained web client
+sharpee build                       # now also emits dist/web/
+python3 -m http.server -d dist/web  # open in a browser to play
 ```
 
-### Debug Commands
+## How a story is shaped
 
-When developing, these commands help debug:
+A story is a TypeScript class that implements the `Story` interface with two
+methods the engine calls at startup:
 
-- `debug on` - Enable debug mode
-- `debug inventory` - Show detailed inventory
-- `debug location` - Show current position
-- `debug scope` - Show visible objects
+- **`createPlayer(world)`** — create the player entity.
+- **`initializeWorld(world)`** — build the world: create entities with
+  `world.createEntity(...)` and give them behavior by adding traits
+  (`RoomTrait`, `IdentityTrait`, `ContainerTrait`, and so on).
 
-## Next Steps
+The book's chapter *Your First Room* walks through this line by line.
 
-### Learn More
-- [Advanced World Building](../guides/world-building.md)
-- [Creating NPCs](../guides/npcs.md)
-- [Puzzle Design](../guides/puzzles.md)
-- [Using Extensions](../guides/extensions.md)
+## CLI reference
 
-### Examples
-- [Tutorial Story](../../examples/stories/tutorial/)
-- [Classic Adventure](../../examples/stories/classic/)
-- [Modern Mystery](../../examples/stories/mystery/)
+| Command | What it does |
+|---|---|
+| `sharpee init [dir]` | Scaffold a new story project |
+| `sharpee init-browser` | Add a web client (`src/browser-entry.ts`) |
+| `sharpee build` | Compile `src/` and emit the `.sharpee` bundle (and the web client, if present) |
+| `sharpee build-browser` | Rebuild only the web client → `dist/web/` |
+| `sharpee introspect` | Print the project's rooms, objects, and NPCs as JSON |
+| `sharpee ifid` | Generate or validate an IFID (a story's unique identifier) |
 
-### Community
-- [Discord Server](#) (coming soon)
-- [GitHub Discussions](https://github.com/your-org/sharpee/discussions)
-- [Extension Marketplace](#) (coming soon)
+Run `sharpee` with no arguments to see the current list.
 
-## Tips for Success
+## Where to go next
 
-1. **Start Simple**: Begin with a few rooms and basic interactions
-2. **Test Often**: Play through your story frequently
-3. **Clear Descriptions**: Help players visualize the world
-4. **Logical Puzzles**: Make solutions discoverable
-5. **Helpful Hints**: Guide stuck players
-6. **Save States**: Test save/restore functionality
-7. **Beta Test**: Have others play your story
-
-## Common Patterns
-
-### Locked Door Puzzle
-
-```typescript
-const door = new Thing('door', {
-  name: 'heavy door',
-  description: 'A massive wooden door with iron hinges.',
-  traits: ['door', 'openable', 'lockable'],
-  isLocked: true,
-  keyId: 'iron-key',
-  connectsRooms: ['hallway', 'treasury']
-});
-```
-
-### Hidden Object
-
-```typescript
-const painting = new Thing('painting', {
-  name: 'oil painting',
-  description: 'A portrait of a stern-looking nobleman.',
-  traits: ['scenery'],
-  onExamine: (world) => {
-    if (!world.isRevealed('safe')) {
-      world.reveal('safe');
-      return 'Moving the painting reveals a hidden safe!';
-    }
-    return 'The painting hangs askew, revealing the safe behind it.';
-  }
-});
-
-const safe = new Thing('safe', {
-  name: 'wall safe',
-  description: 'A sturdy metal safe built into the wall.',
-  traits: ['container', 'openable', 'lockable'],
-  isHidden: true,  // Not visible until revealed
-  isLocked: true
-});
-```
-
-### Scoring System
-
-```typescript
-export const MyStory: Story = {
-  // ... other configuration
-  
-  scoring: {
-    maxScore: 100,
-    ranks: [
-      { score: 0, rank: 'Beginner' },
-      { score: 25, rank: 'Explorer' },
-      { score: 50, rank: 'Adventurer' },
-      { score: 75, rank: 'Expert' },
-      { score: 100, rank: 'Master' }
-    ]
-  },
-  
-  eventHandlers: {
-    onTake: (event, world) => {
-      if (event.item === 'treasure' && !world.hasScored('found-treasure')) {
-        world.addScore('found-treasure', 25);
-        return [{ 
-          type: 'MESSAGE', 
-          text: 'You found the treasure! (25 points)' 
-        }];
-      }
-    }
-  }
-};
-```
-
----
-
-Ready to create your story? Start with the [Tutorial](../../examples/stories/tutorial/) or dive into the [Complete Reference](../../reference/)!
+- **The Sharpee Author and Developer Manual** — [`docs/book/`](../../book/) (the full tutorial)
+- Build system & the CLI — [`docs/guides/build-system.md`](../../guides/build-system.md)
+- Creating stories — [`docs/guides/creating-stories.md`](../../guides/creating-stories.md)
+- Event handlers — [`docs/guides/event-handlers.md`](../../guides/event-handlers.md)
+- Transcript testing — [`docs/guides/transcript-testing.md`](../../guides/transcript-testing.md)
+- Public API reference — [`packages/sharpee/docs/genai-api/`](../../../packages/sharpee/docs/genai-api/)
