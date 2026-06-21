@@ -1,0 +1,57 @@
+# book.yaml — Pandoc defaults file for *The Sharpee Book*
+#
+# Purpose: single source of truth for chapter order and shared render metadata.
+#          `scripts/build-book.sh` loads this with `pandoc --defaults` and adds
+#          per-format flags (output target, CSS, PDF engine).
+# Owner:   docs/book (authoring toolchain, ADR — Sharpee author book plan)
+#
+# To add a chapter: add its path to `input-files` in reading order. Front matter
+# first, then parts in order, then appendices.
+
+from: markdown+fenced_divs+smart
+standalone: true
+toc: true
+toc-depth: 2
+number-sections: true
+
+metadata:
+  title: "The Sharpee Book"
+  subtitle: "Authoring Interactive Fiction with Sharpee"
+  author: "David Cornelson"
+  lang: en-US
+
+# Chapter order. Front matter, then Parts I–VI (Phase 2), then VII–VIII and
+# appendices (later phases). Migration chapters carry a `[v.. migrated]` /
+# `[v.. pending]` note; new chapters are stubs until their writing phase.
+input-files:
+  - frontmatter/00-preface.md
+  - frontmatter/01-how-to-read.md
+  # Part I — Getting Started
+  - parts/part-1/01-installing-sharpee.md          # new (stub)
+  - parts/part-1/02-your-first-room.md             # v01 (migrated)
+  - parts/part-1/03-the-play-loop.md               # new (stub)
+  # Part II — Building a World
+  - parts/part-2/04-rooms-and-navigation.md        # v02 (migrated)
+  - parts/part-2/05-scenery-and-portable-objects.md      # v03–v04 (pending)
+  - parts/part-2/06-containers-and-supporters.md         # v05 (pending)
+  - parts/part-2/07-openable-locked-doors-and-keys.md    # v06–v07 (pending)
+  - parts/part-2/08-light-and-dark.md                    # v08 (pending)
+  - parts/part-2/09-the-map-and-regions.md               # new (stub)
+  # Part III — Making It Interactive
+  - parts/part-3/10-standard-actions-and-the-four-phase-model.md   # new (stub)
+  - parts/part-3/11-scope-and-visibility.md                        # new (stub)
+  - parts/part-3/12-readable-objects-and-switchable-devices.md     # v09–v10 (pending)
+  # Part IV — Custom Behavior
+  - parts/part-4/13-event-handlers.md              # v12 (pending)
+  - parts/part-4/14-custom-actions.md              # v13 (pending)
+  - parts/part-4/15-capability-dispatch.md         # v14 (pending)
+  - parts/part-4/16-custom-traits-and-behaviors.md # new (stub)
+  # Part V — Words
+  - parts/part-5/17-extending-the-grammar.md       # new (stub)
+  - parts/part-5/18-the-language-layer.md          # new (stub)
+  - parts/part-5/19-the-formatter-chain.md         # new (stub)
+  # Part VI — Living Worlds
+  - parts/part-6/20-non-player-characters.md       # v11 (pending)
+  - parts/part-6/21-scenes.md                      # new (stub)
+  - parts/part-6/22-timed-events-and-daemons.md    # v15 (pending)
+  - parts/part-6/23-scoring-and-endgame.md         # v16 (pending)

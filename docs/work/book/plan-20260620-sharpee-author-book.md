@@ -1,7 +1,7 @@
 # Plan: The Sharpee Book
 
 **Date:** 2026-06-20
-**Status:** PROPOSED — awaiting go-ahead to start Phase 1
+**Status:** IN PROGRESS — Phase 1 COMPLETE (2026-06-20); Phase 2 is next
 **Work target:** `docs/work/book/`
 **Canonical output:** `docs/book/`
 
@@ -224,14 +224,40 @@ standalone snippets where a full new version isn't warranted. Confirm in Phase 5
 
 Each phase is one deliverable with an acceptance check. No phase ships without its check passing.
 
-### Phase 1 — Pipeline & scaffold
-- Create `docs/book/` skeleton, `book.yaml`, `styles/`, the render script, `.gitignore` for `build/`.
-- Pick the PDF engine; confirm the reading-paths model (#1 vs #2 vs #3).
-- Render a stub book (front matter + one migrated chapter) to **EPUB + PDF + HTML**.
-- Define and style the Under-the-Hood aside in all three outputs.
-- **Acceptance:** three outputs render from one source; aside boxes look right in each.
+### Phase 1 — Pipeline & scaffold ✅ COMPLETE (2026-06-20)
+- ✅ Created `docs/book/` skeleton, `book.yaml` (pandoc defaults file with chapter
+  order), `styles/` (book.css + print.css + epub.css), `scripts/build-book.sh`,
+  `.gitignore` for `build/`.
+- ✅ PDF engine: **WeasyPrint** (CSS-driven; print and web share `book.css`).
+  Reading-tracks model: **#1** (one spine, two depths — confirmed by David).
+- ✅ Rendered stub (preface + how-to-read + migrated v01 chapter) to
+  **HTML + EPUB + PDF**, all from `book.yaml`.
+- ✅ Under-the-Hood aside is a pandoc fenced div `::: under-the-hood` →
+  `<div class="under-the-hood">`, boxed in all three outputs. (Chosen over
+  blockquote for reliable CSS targeting; all outputs route through pandoc→HTML.)
+- **Acceptance:** ✅ three outputs render from one source; box visually confirmed
+  in PDF, present with CSS in HTML and EPUB.
+- **Toolchain installed:** `pandoc 3.10`, `weasyprint 69.0` (via brew).
 
-### Phase 2 — Migrate the existing spine (Parts I–VI)
+### Phase 2 — Migrate the existing spine (Parts I–VI) — IN PROGRESS
+- Decisions (David, 2026-06-20): **outline regrouping** (merge v03+v04, v06+v07, v09+v10); new
+  chapters get **brief stubs now**. Migration base: the rich per-version `.md`; fold in `tutorial.md`
+  "Common mistake" callouts; reconcile every code block against `familyzoo/src/v*.ts`.
+- **Batch 1 done (2026-06-20):** full 23-chapter Part I–VI skeleton scaffolded (6 part dividers,
+  unnumbered; 10 new-chapter stubs; placeholders for pending migrations). `book.yaml` carries the full
+  ordering. **Exemplar migrated chapter: ch4 Rooms & Navigation (v02)** — code reconciled against
+  `v02.ts`, renders clean in all three formats. v01 chapter (ch2) carries the seed Under-the-Hood
+  boxes; remaining chapters get their UtH layer in Phase 3.
+- **Part title pages (2026-06-20):** each part divider is a `::: part-page` div — Sharpee **sword
+  artwork** (reused from `docs/internal/images/sharpee-logo.png` → `docs/book/assets/sharpee-sword.png`)
+  centered above the part heading, with a ~100-word lorem-ipsum **blurb placeholder** (David to write
+  real blurbs). PDF centers the page vertically (flex + `100vh`).
+  - **Build gotcha (fixed):** weasyprint can't decode pandoc's base64 data-URI images, so the PDF build
+    is two-step (pandoc HTML at book root → weasyprint resolves `assets/` on disk). Also, the generic
+    `.part-page p` blurb rule collapsed the percentage-width sword to zero in weasyprint; excluded the
+    image's paragraph via `.part-page p:has(.part-sword)`.
+- **Remaining batches:** migrate v03–v04, v05, v06–v07, v08 (Part II); v09–v10 (Part III);
+  v12, v13, v14 (Part IV); v11, v15, v16 (Part VI) — 10 chapters.
 - For each of the 17 steps, pick the richest of the three existing copies as the base; reconcile every
   code sample against the actual `v*.ts` ground truth; normalize into canonical chapters.
 - **Acceptance:** every Part I–VI chapter present; each code block matches its `familyzoo/src`
@@ -270,14 +296,16 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
   all code samples against the familyzoo build.
 - **Acceptance:** clean EPUB + PDF + HTML; no broken links; samples compile.
 
-## Open Questions (carried into Phase 1)
+## Open Questions
 
-1. **Reading-tracks model** — #1 (one spine, two depths) vs #2 (interleaved programmer chapters) vs #3
-   (two parts). Lean: #1.
+**Resolved in Phase 1:**
+1. ✅ **Reading-tracks model** — **#1** (one spine, two depths). Confirmed by David.
+4. ✅ **PDF engine** — **WeasyPrint** (CSS-driven). Confirmed by David.
+
+**Still open (carried to their phases):**
 2. **Drift handling** for quoted API — (a) excerpt-and-verify against `.d.ts`/genai-api / (b) ref by
-   API symbol / (c) manual re-sync. Lean: (a).
-3. **Parts VII–VIII coverage** — new zoo versions (v18+) vs teach-against-v17. Lean: v17.
-4. **PDF engine** — weasyprint (CSS-driven) vs LaTeX. Lean: weasyprint.
+   API symbol / (c) manual re-sync. Lean: (a). → decide in Phase 3.
+3. **Parts VII–VIII coverage** — new zoo versions (v18+) vs teach-against-v17. Lean: v17. → Phase 5.
 
 ## Definition of Done
 
