@@ -1,0 +1,47 @@
+/*
+ * print.css — PDF/print-only styling for *The Sharpee Book*
+ *
+ * Used by: PDF output only (WeasyPrint, alongside book.css).
+ * Owner:   docs/book authoring toolchain.
+ *
+ * Holds page geometry and print niceties. All visual styling (typography, the
+ * Under the Hood box) lives in book.css so print and web stay in sync.
+ */
+
+@page {
+  size: 6in 9in;            /* trade paperback */
+  margin: 0.75in 0.7in;
+  @bottom-center {
+    content: counter(page);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 9pt;
+    color: #777;
+  }
+}
+
+body {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-size: 10.5pt;
+}
+
+/* Start each top-level chapter on a fresh page. */
+h1 { break-before: page; }
+h1:first-of-type { break-before: avoid; }
+
+/* Part title page: its own page, content centered vertically. */
+.part-page {
+  break-before: page;
+  break-after: page;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* The heading sits inside the centered page, so suppress its own page break. */
+.part-page > h1 { break-before: avoid; }
+
+/* Keep boxes and code blocks from splitting awkwardly across pages. */
+.under-the-hood, pre { break-inside: avoid; }
+h1, h2, h3 { break-after: avoid; }

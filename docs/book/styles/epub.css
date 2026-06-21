@@ -1,0 +1,67 @@
+/*
+ * epub.css — EPUB-only styling for *The Sharpee Book*
+ *
+ * Used by: EPUB output only (pandoc --css). E-readers sandbox and override CSS,
+ *          so this is intentionally conservative: relative units, no fixed
+ *          widths, no page geometry. The Under the Hood box is duplicated from
+ *          book.css here because EPUB cannot share the web/print stylesheet.
+ * Owner:   docs/book authoring toolchain.
+ */
+
+code, pre {
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+pre {
+  background: #f4f5f7;
+  padding: 0.7em 0.9em;
+  border-radius: 4px;
+  white-space: pre-wrap;     /* reflow long lines on small screens */
+}
+
+/* ---- The "Under the Hood" programmer's-perspective box ---- */
+
+.under-the-hood {
+  background: #f3f7fb;
+  border: 1px solid #2c6fb5;
+  border-left-width: 5px;
+  border-radius: 5px;
+  padding: 0.3em 0.9em 0.7em;
+  margin: 1.4em 0;
+}
+
+.under-the-hood > p:first-child {
+  font-weight: bold;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  color: #1d4e7e;
+  margin-bottom: 0.3em;
+}
+
+.under-the-hood pre {
+  background: #ffffff;
+  border: 1px solid #d6e2ef;
+}
+
+/* ---- Part title pages (reflowable: center text, no fixed page geometry) ---- */
+
+.part-page { text-align: center; }
+
+.part-sword {
+  display: block;
+  width: 80%;
+  max-width: 360px;
+  margin: 0 auto 1em;
+}
+
+.part-page h1.part {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.part-page p {
+  font-style: italic;
+  color: #5a5a5a;
+  margin-top: 1.2em;
+}

@@ -1,0 +1,129 @@
+/*
+ * book.css — shared base styling for *The Sharpee Book*
+ *
+ * Used by: HTML output (linked) and PDF output (WeasyPrint reads it alongside
+ *          print.css). EPUB has its own epub.css because e-readers sandbox CSS.
+ * Owner:   docs/book authoring toolchain.
+ *
+ * The single most important rule here is `.under-the-hood` — the programmer's
+ * perspective box. It must read as a distinct, boxed aside in every format.
+ */
+
+:root {
+  --ink: #1a1a1a;
+  --muted: #5a5a5a;
+  --rule: #d8d8d8;
+  --code-bg: #f4f5f7;
+  --uth-bg: #f3f7fb;
+  --uth-border: #2c6fb5;
+  --uth-label: #1d4e7e;
+}
+
+body {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  color: var(--ink);
+  line-height: 1.55;
+  max-width: 42rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+h1, h2, h3 {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.2;
+  margin-top: 1.8em;
+}
+
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.15rem; }
+
+code, pre {
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 0.88em;
+}
+
+p code, li code {
+  background: var(--code-bg);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--code-bg);
+  padding: 0.8em 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  line-height: 1.4;
+}
+
+pre code { background: none; padding: 0; }
+
+blockquote {
+  border-left: 3px solid var(--rule);
+  margin-left: 0;
+  padding-left: 1em;
+  color: var(--muted);
+}
+
+/* ---- The "Under the Hood" programmer's-perspective box ---- */
+
+.under-the-hood {
+  background: var(--uth-bg);
+  border: 1px solid var(--uth-border);
+  border-left-width: 5px;
+  border-radius: 5px;
+  padding: 0.4em 1.1em 0.9em;
+  margin: 1.6em 0;
+}
+
+.under-the-hood > p:first-child {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--uth-label);
+  margin-bottom: 0.4em;
+}
+
+.under-the-hood pre {
+  background: #fff;
+  border: 1px solid #d6e2ef;
+}
+
+/* Part divider title pages (`::: part-page` wrapping a sword, h1.part + blurb) */
+.part-page {
+  text-align: center;
+}
+
+/* The Sharpee sword motif above each part heading. Pandoc wraps it in a <p>;
+   that paragraph must be excluded from the blurb rule below (see .part-page p),
+   or weasyprint collapses the percentage-width image to zero. */
+.part-sword {
+  display: block;
+  width: 80%;
+  max-width: 4.2in;
+  margin: 0 auto 1.4em;
+}
+
+.part-page p:has(.part-sword) {
+  max-width: none;
+  margin: 0;
+}
+
+h1.part {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 2rem;
+  border: none;
+}
+
+/* The blurb paragraph(s) under a part heading — placeholder text for now. */
+.part-page p {
+  max-width: 30rem;
+  margin: 1.6em auto 0;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.7;
+}
