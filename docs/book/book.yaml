@@ -83,4 +83,5 @@ input-files:
   - backmatter/appendix-b-action-catalog.md        # B — standard actions (generated)
   - backmatter/appendix-c-trait-catalog.md         # C — traits (generated)
   - backmatter/appendix-d-message-reference.md     # D — message IDs (generated)
+  - backmatter/appendix-e-grammar-reference.md     # E — grammar patterns (generated)
   - backmatter/illustration-credits.md             # Met public-domain art credits
