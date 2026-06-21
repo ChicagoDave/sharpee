@@ -43,24 +43,35 @@
 
 # Installing Sharpee & the Sharpee CLI
 
-Before you can build the Family Zoo, you need two things on your machine: a place
-to write the story, and the `sharpee` command that turns it into something
-playable. This chapter gets you from an empty folder to a built story in a handful
-of commands — and introduces the CLI you'll use in every chapter after this one.
+Before you can build the Family Zoo, you need a working toolchain: Node.js, an
+editor, and the `sharpee` command. This chapter gets you from an empty folder to a
+built story in a handful of commands — and, along the way, explains the foundation
+the whole platform stands on.
 
-## What you need
+## Why Node and TypeScript?
 
-Sharpee stories are TypeScript, so the toolchain is the ordinary Node toolchain:
+Most interactive-fiction systems give you a purpose-built authoring language —
+Inform's natural-language syntax, TADS's bespoke object language. Sharpee takes a
+different path: a story is plain **TypeScript** that runs on **Node.js**, the same
+mainstream toolchain used across the web- and server-software world.
 
-- **Node.js 18 or newer** — check with `node --version`.
-- **A text editor** — anything works; Visual Studio Code has the smoothest
-  TypeScript experience.
-- **Comfort reading TypeScript.** You don't need to be an expert — the book
-  teaches the patterns as it goes — but you should be able to read a class and a
-  function without flinching.
+That's a real trade-off. The cost is that you write actual code from the start —
+there's no gentler English-like surface to ease in on. The payoff is everything
+that comes *with* a mainstream ecosystem:
 
-That's the whole list. There's no game engine to install separately, no C
-compiler, no runtime besides Node.
+- **Real editors.** Visual Studio Code (or any TypeScript-aware editor) gives you
+  autocomplete, inline documentation, and errors flagged as you type — before you
+  ever run the story.
+- **A type checker.** TypeScript catches whole classes of mistakes — a misspelled
+  property, the wrong kind of value — at compile time instead of mid-playthrough.
+- **The npm ecosystem.** Installing Sharpee, or any other library, is one command,
+  and the platform itself is just a package your story depends on.
+- **Ordinary tooling.** Version control, testing, formatting — the things millions
+  of developers already use work on a Sharpee story unchanged.
+
+In short, the "platform" isn't a separate application you launch — it's a library
+you import. The rest of this chapter installs that ecosystem and the Sharpee
+command that drives it.
 
 ## Working in a terminal
 
@@ -84,6 +95,28 @@ node --version
 Two you'll lean on constantly: `cd <folder>` moves you into a folder (so
 `cd my-game` steps into the project you just made), and running a command with no
 arguments — plain `sharpee` — prints its help.
+
+## Installing Node and npm
+
+**Node.js** is the runtime that executes your story; **npm** is its package
+manager, and it installs *with* Node — you don't fetch it separately. If you've
+done any modern JavaScript work you likely have both already; if not, install them
+once:
+
+1. Go to [nodejs.org](https://nodejs.org) and download the **LTS** ("Long-Term
+   Support") build for your operating system.
+2. Run the installer and accept the defaults. (If you expect to juggle several Node
+   versions, a version manager like **nvm** or **fnm** is a fine alternative — but
+   the installer is the simplest start.)
+3. Open a terminal and confirm both tools are on your path:
+
+```bash
+node --version    # want v18.0.0 or newer
+npm --version
+```
+
+If each prints a version number, you're set. `npm` is how you'll install Sharpee
+next — and any other library a story ever needs.
 
 ## Installing the CLI
 
@@ -179,11 +212,71 @@ author:
 
 Run `sharpee` with no arguments any time to see the current list.
 
+## A TypeScript primer
+
+The chapters ahead are full of TypeScript, but they lean on only a handful of its
+features. If the snippets below read clearly, you have everything you need — the
+book introduces the rest in context, and your editor fills the gaps.
+
+**TypeScript is JavaScript with types.** A *type annotation* — the `: string` part
+below — tells the compiler what kind of value something holds, so it can flag a
+mistake before you run anything:
+
+```typescript
+const title: string = 'Willowbrook Family Zoo';
+let turns: number = 0;
+```
+
+`const` declares a value that won't be reassigned; `let`, one that will. You'll
+rarely write the annotations by hand — TypeScript infers most of them — but you'll
+read them constantly.
+
+**Objects are bundles of named values**, written `{ key: value }`. In a type, a
+`?` marks a property as optional:
+
+```typescript
+const options = { isOpen: false, capacity: 10 };
+// e.g. `capacity?: number` means capacity may be left out
+```
+
+**Classes are templates you make instances of** with `new`. Most of Sharpee's
+building blocks — traits especially — are classes:
+
+```typescript
+const light = new IdentityTrait({ name: 'flashlight' });
+```
+
+**An interface is a contract.** A class that `implements` an interface promises to
+provide everything the interface requires. Every Sharpee story is a class that
+implements the `Story` interface:
+
+```typescript
+class MyStory implements Story { /* … */ }
+```
+
+**Imports bring in code from other packages; exports hand yours out:**
+
+```typescript
+import { IdentityTrait } from '@sharpee/world-model';
+export const story = new MyStory();
+```
+
+**Functions can be written compactly as arrow functions**, common in the short
+callbacks you'll pass to the platform:
+
+```typescript
+items.some(item => item.name === 'feed');
+```
+
+That's the working vocabulary. Don't try to memorize it — you'll absorb it by
+building the zoo, one chapter at a time.
+
 ## Key takeaway
 
-Install the CLI once with `npm install -g @sharpee/devkit`; scaffold a project with
-`sharpee init`; write your story in `src/index.ts`; compile and bundle it with
-`sharpee build`; and play it by adding a web client (`sharpee init-browser`) and
-serving `dist/web/`. The platform is just a dependency your story compiles
-against — you never build it yourself. With the toolchain in place, the next
-chapter writes the zoo's first room.
+Sharpee stories are TypeScript on Node, so the toolchain is the mainstream one:
+install Node (which brings npm), then the CLI with `npm install -g @sharpee/devkit`.
+Scaffold a project with `sharpee init`, write your story in `src/index.ts`, compile
+and bundle it with `sharpee build`, and play it by adding a web client
+(`sharpee init-browser`) and serving `dist/web/`. The platform is just a dependency
+your story compiles against — you never build it yourself. With the toolchain in
+place, the next chapter writes the zoo's first room.
