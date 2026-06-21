@@ -75,10 +75,14 @@ function sidebar(current) {
   for (const g of groups) {
     const here = g.page === current || g.children.some((c) => c.page === current);
     h += `<details${here ? ' open' : ''}>`;
-    h += g.page
-      ? `<summary><a href="${g.page}">${esc(g.label)}</a></summary>`
-      : `<summary>${esc(g.label)}</summary>`;
-    h += '<ul>' + g.children.map((c) => li(c, current)).join('') + '</ul></details>';
+    // Plain summary = pure expand/collapse toggle. (Wrapping it in an <a> would
+    // navigate away on click instead of revealing the chapters — so from the
+    // index, where every volume starts collapsed, you could never reach them.)
+    h += `<summary>${esc(g.label)}</summary>`;
+    let items = g.children;
+    // Keep the volume divider page reachable from the sidebar as its first item.
+    if (g.page) items = [{ title: g.label, page: g.page }, ...g.children];
+    h += '<ul>' + items.map((c) => li(c, current)).join('') + '</ul></details>';
   }
   h += '</nav>';
   return h;
