@@ -63,8 +63,11 @@ for (const s of L1) {
 }
 
 function li(item, current) {
-  const active = item.page === current ? ' class="active"' : '';
-  return `<li${active}><a href="${item.page}">${esc(item.title)}</a></li>`;
+  const classes = [];
+  if (item.page === current) classes.push('active');
+  if (item.cls) classes.push(item.cls);
+  const cls = classes.length ? ` class="${classes.join(' ')}"` : '';
+  return `<li${cls}><a href="${item.page}">${esc(item.title)}</a></li>`;
 }
 
 function sidebar(current) {
@@ -79,7 +82,12 @@ function sidebar(current) {
     // navigate away on click instead of revealing the chapters — so from the
     // index, where every volume starts collapsed, you could never reach them.)
     h += `<summary>${esc(g.label)}</summary>`;
-    h += '<ul>' + g.children.map((c) => li(c, current)).join('') + '</ul></details>';
+    // The volume divider page (its title + epigraph blurb) is reachable as a
+    // distinct "Overview" item — not a repeat of the full volume title.
+    const items = g.page
+      ? [{ title: 'Overview', page: g.page, cls: 'book-nav-opener' }, ...g.children]
+      : g.children;
+    h += '<ul>' + items.map((c) => li(c, current)).join('') + '</ul></details>';
   }
   h += '</nav>';
   return h;
@@ -110,6 +118,7 @@ const CSS = `
   #book-nav ul { list-style: none; margin: .2rem 0 .5rem .6rem; padding: 0; }
   #book-nav li { margin: .18rem 0; }
   #book-nav li.active > a { font-weight: 700; color: #000; }
+  #book-nav li.book-nav-opener > a { font-style: italic; color: #6b6452; }
   #book-nav details { margin: .25rem 0; }
   #book-nav summary { cursor: pointer; font-weight: 600; color: #1c1a15; }
   #book-nav summary a { color: inherit; }
