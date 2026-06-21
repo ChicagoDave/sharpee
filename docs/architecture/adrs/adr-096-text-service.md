@@ -1,6 +1,11 @@
 # ADR-096: Text Service Architecture
 
-## Status: ACCEPTED
+## Status: SUPERSEDED by ADR-174
+
+The `@sharpee/text-service` package described here has been **removed**. Turn-end
+rendering is now the engine-internal prose pipeline, with channel-IO (ADR-163) as
+the universal UI surface. See ADR-174 (Decoration Architecture and Engine-Internal
+Prose Pipeline). This ADR is retained for historical context only.
 
 ## Date: 2026-01-13
 

@@ -1,6 +1,9 @@
 # ADR-174: Decoration Architecture and Engine-Internal Prose Pipeline
 
-## Status: ACCEPTED
+## Status: ACCEPTED — IMPLEMENTED (Phases 1–3 complete; `@sharpee/text-service` deleted)
+
+Supersedes ADR-096 and ADR-029 (Text Service). Turn-end rendering is the
+engine-internal prose pipeline; channel-IO (ADR-163) is the universal UI surface.
 
 ## Date: 2026-05-09 (proposed) / 2026-05-10 (Phase 1 + Phase 2 + Phase 3 ACCEPTED)
 

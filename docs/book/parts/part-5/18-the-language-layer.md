@@ -19,8 +19,9 @@ context.event('zoo.event.photographed', {
 ```
 
 `zoo.photo.took_photo` is not text — it's a name for a piece of text. At the end of
-the turn, the text service takes that ID to the language layer and asks: *what does
-this say, in this language, with these parameters?* The answer is what prints.
+the turn, the engine's prose pipeline takes that ID to the language layer and asks:
+*what does this say, in this language, with these parameters?* The answer is what
+prints.
 
 The standard library works exactly the same way. Every built-in verb emits IDs
 like `if.action.taking.success`; the English language package maps each to its
@@ -43,7 +44,7 @@ extendLanguage(language: LanguageProvider): void {
 }
 ```
 
-Each call ties one ID to one template. When the text service later looks up
+Each call ties one ID to one template. When the engine later looks up
 `zoo.feeding.fed_goats`, it finds this string and renders it.
 
 ## Parameters
@@ -93,8 +94,8 @@ the layer built to hold it.
 
 All user-facing text lives in the language layer; code refers to it by **message
 ID**, never by literal string. Actions and handlers emit an ID plus `params`; the
-text service resolves the ID to a template and fills its `{placeholders}` at turn
-end. Register your story's text with `addMessage(id, template)` in `extendLanguage`,
+engine's prose pipeline resolves the ID to a template and fills its
+`{placeholders}` at turn end. Register your story's text with `addMessage(id, template)` in `extendLanguage`,
 namespace your IDs (`zoo.*` beside the platform's `if.*`), and reuse an existing ID
 to override a standard message. This one separation — intent in the code, words in
 the language layer — is what makes a Sharpee story translatable, restyleable, and

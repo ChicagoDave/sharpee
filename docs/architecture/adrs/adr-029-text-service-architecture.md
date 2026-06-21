@@ -1,7 +1,9 @@
 # ADR-029: Simple Query-Based Text Service Architecture
 
 ## Status
-Accepted
+Superseded by ADR-174 — the text service has been removed; turn-end rendering is now
+the engine-internal prose pipeline, with channel-IO (ADR-163) as the universal UI
+surface. Retained for historical context only.
 
 ## Context
 The text service is responsible for generating human-readable output after each turn in the game. Initial designs were overly complex, featuring:

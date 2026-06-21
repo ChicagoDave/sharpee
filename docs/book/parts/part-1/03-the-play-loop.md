@@ -69,9 +69,9 @@ context.event('if.event.taken', {
 });
 ```
 
-At the end of the turn the engine hands those events to the **text service**,
-which looks each message id up in the language layer and renders the actual words
-the player reads.
+At the end of the turn the engine's **prose pipeline** takes those events, looks
+each message id up in the language layer, and renders the actual words the player
+reads.
 
 Why the indirection? Because it keeps every player-facing word in one place. The
 same event can be rendered in another language, restyled in different prose, or
@@ -98,8 +98,8 @@ Put it together with a single command in the one-room zoo from Chapter 2:
 - **Scope** — "sign" resolves to the welcome sign in the room.
 - **Action** — examining validates (the sign is here and in scope), executes
   (nothing to change), and reports an event carrying the sign's description.
-- **Text** — the text service renders that event into the sign's description, and
-  it prints.
+- **Text** — the engine renders that event into the sign's description, and it
+  prints.
 - **Other actors** — nothing else lives in this tiny world yet, so the turn ends.
 - The prompt returns, and the loop comes back around.
 

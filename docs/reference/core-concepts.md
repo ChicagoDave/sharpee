@@ -264,13 +264,13 @@ Domain events (`if.event.*`) are **records of what happened** in the game world.
 **Key characteristics:**
 - Describe completed actions in past tense (taken, dropped, opened)
 - Written to one of THREE event sources: **game**, **debug**, **platform**
-- Consumed by the **text service** at turn end for rendering
+- Consumed by the engine's **prose pipeline** at turn end for rendering
 - Carry both domain data (what happened) and rendering data (messageId + params)
 
 **Domain event structure (ADR-097 pattern):**
 ```typescript
 context.event('if.event.taken', {
-  // Rendering data (text service uses these)
+  // Rendering data (the prose pipeline uses these)
   messageId: 'if.action.taken.success',
   params: { item: 'brass lamp' },
 
@@ -288,7 +288,8 @@ The Engine maintains three event sources:
 - **debug**: Diagnostic events for development/testing
 - **platform**: System events (save, restore, quit)
 
-At turn end, events are popped from these sources and sent to the text service.
+At turn end, events are popped from these sources and handed to the engine's
+**prose pipeline** (`packages/engine/src/prose-pipeline/`).
 
 ### Text Rendering Flow
 
@@ -296,9 +297,16 @@ At turn end, events are popped from these sources and sent to the text service.
 
 1. Actions emit **domain events** with `messageId` and `params`
 2. Events are written to the appropriate event source
-3. At turn end, events are sent to the **text service**
-4. Text service looks up `messageId` in language-specific message templates
-5. Text service renders final text to player
+3. At turn end, the engine's **prose pipeline** consumes the events
+4. The prose pipeline resolves each `messageId` against the language layer
+   (`@sharpee/lang-en-us`) and renders `ITextBlock[]` ("blocks")
+5. The blocks — plus status, media, and other per-turn signals — are delivered to
+   the client over **channels** (`@sharpee/channel-service`, ADR-163); a per-client
+   `Renderer` (ADR-165) turns each channel's payload into what the player sees
+
+> **Note:** the former `@sharpee/text-service` package was removed (ADR-174).
+> Turn-end rendering is now the engine-internal prose pipeline; channel-IO carries
+> the output to clients.
 
 ```typescript
 // CORRECT: Emit domain event with messageId
@@ -371,7 +379,7 @@ The perception system filters events based on what the player can perceive, hand
 
 ### PerceptionService (ADR-069)
 
-The PerceptionService sits between action execution and the text service, transforming events that describe things the player cannot perceive into appropriate alternative events.
+The PerceptionService sits between action execution and the prose pipeline, transforming events that describe things the player cannot perceive into appropriate alternative events.
 
 **Location:**
 - Interface: `/packages/if-services/src/perception-service.ts`
@@ -399,7 +407,7 @@ const engine = new GameEngine({
 ### How It Works
 
 1. Action generates events (room description, contents list, etc.)
-2. PerceptionService filters events before they reach the text service
+2. PerceptionService filters events before they reach the prose pipeline
 3. Visual events are blocked or transformed when player can't see
 4. Non-visual events (action.failure, game.message) pass through unchanged
 
@@ -457,9 +465,9 @@ roomTrait.isDark = false;
 // Now room description shows normally
 ```
 
-### Text Service Handling
+### Prose Pipeline Handling
 
-The text service handles blocked perception events:
+The prose pipeline handles blocked perception events:
 ```typescript
 case 'if.event.perception.blocked':
   // Show "It's pitch dark, and you can't see a thing."
