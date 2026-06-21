@@ -1,5 +1,20 @@
 # How to Read This Book {.unnumbered}
 
+## What kind of reader are you?
+
+Sharpee has no natural-language authoring layer — you write TypeScript from Chapter 1.
+If that's new to you, the primer there gets you going. Use this table to find your
+starting point:
+
+| If you're… | Start here |
+|---|---|
+| An IF author comfortable with code (or willing to learn) | Read straight through — the **Author's Track** below. |
+| An experienced TypeScript / JavaScript developer | The **Programmer's Track** — chapter bodies *and* every "Under the Hood" box. |
+| New to programming | Read Chapter 1, including its TypeScript primer, carefully; then Chapters 2–9 on the Author's Track, revisiting the primer as needed. |
+| Here to understand or extend the engine | Skim **Appendix A — Architecture Map**, then follow the Programmer's Track. |
+
+Whichever you are, the two tracks below are how the book serves you.
+
 ## Two tracks
 
 This book has one spine and two depths. Pick the **track** that fits why you're
