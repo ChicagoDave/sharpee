@@ -78,5 +78,9 @@ input-files:
   - parts/part-8/30-saving-and-restoring.md            # new (stub)
   - parts/part-8/31-building-and-publishing.md         # new (stub)
   - parts/part-8/32-multi-user-with-zifmia.md          # new (stub)
-  # Back matter
+  # Back matter — appendices, then credits
+  - backmatter/appendix-a-architecture-map.md      # A — the layer model
+  - backmatter/appendix-b-action-catalog.md        # B — standard actions (generated)
+  - backmatter/appendix-c-trait-catalog.md         # C — traits (generated)
+  - backmatter/appendix-d-message-reference.md     # D — message IDs (generated)
   - backmatter/illustration-credits.md             # Met public-domain art credits
