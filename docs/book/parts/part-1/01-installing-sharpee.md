@@ -13,7 +13,7 @@ omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam
 rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto.
 :::
 
-# Installing Sharpee & the `./sharpee` CLI
+# Installing Sharpee & the Sharpee CLI
 
 > **Status:** to be written (new chapter). Adapts the existing
 > `getting-started` and `build-system` guides.

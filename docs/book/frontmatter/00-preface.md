@@ -13,13 +13,18 @@ compiled, and transcript-tested.
 
 ## Two perspectives, one example
 
-Most authoring systems make you choose. You can read the *author's* book — how
-to use the system — or the *programmer's* book — what the system is made of. The
-two are written in different languages, shipped as different volumes, and the
-moment you need to cross from one to the other you fall off a cliff.
+Interactive-fiction systems often keep two layers distinct: the language you
+write a story in, and the language the system itself is built from. Inform 7, for
+instance, lets authors write in readable natural-language syntax and drops to
+Inform 6 for lower-level work — a deliberate split that makes the authoring
+surface welcoming, with a deeper layer waiting when you need it.
 
-Sharpee has no such cliff, because both perspectives are the **same
-TypeScript**. So this book carries both over a single running example:
+Sharpee makes a different tradeoff: the story you write and the library you call
+are the **same TypeScript**. The cost is that there's no gentle natural-language
+surface to start from — you're writing code from line one. The benefit is that
+there's no second language to learn when you want to see underneath. So this book
+carries both perspectives over a single running example, and you can move between
+them whenever you're ready:
 
 - The **author's perspective** is the main narrative: building the zoo with
   Sharpee's traits, actions, and messages as a ready-made vocabulary.

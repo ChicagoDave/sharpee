@@ -1,25 +1,17 @@
 # Your First Room
 
-You're standing at the entrance to the Willowbrook Family Zoo. There's a welcome
-sign and a ticket booth. You can look around and examine things, but there's
-nowhere to go yet.
+You're standing at the entrance to the Willowbrook Family Zoo. There's a welcome sign and a ticket booth. You can look around and examine things, but there's nowhere to go yet.
 
-That's it: one room, two things to look at. This is the simplest possible Sharpee
-story, and it's where the Family Zoo begins. By the end of this chapter you'll
-have a game you can play.
+That's it: one room, two things to look at. This is the simplest possible Sharpee story, and it's where the Family Zoo begins. By the end of this chapter you'll have a game you can play.
 
 ## The Story interface
 
-Every Sharpee story is a TypeScript class that implements the `Story` interface.
-The engine calls your class's methods during startup to build the world. Three
-things every story must provide:
+Every Sharpee story is a TypeScript class that implements the `Story` interface. The engine calls your class's methods during startup to build the world. Three things every story must provide:
 
 1. **`config`** — metadata: the story's title, author, version, and ID. The
    engine shows this as a banner when the game starts.
-2. **`createPlayer(world)`** — creates the player character. The engine calls
-   this first. You create an entity, attach traits, and return it.
-3. **`initializeWorld(world)`** — builds the world: rooms, objects, connections.
-   The engine calls this after `createPlayer`.
+2. **`createPlayer(world)`** — creates the player character. The engine calls this first. You create an entity, attach traits, and return it.
+3. **`initializeWorld(world)`** — builds the world: rooms, objects, connections. The engine calls this after `createPlayer`.
 
 There are optional methods too — `extendParser`, `extendLanguage`,
 `onEngineReady`, and others — but a basic story needs none of them.
@@ -40,32 +32,22 @@ interface Story {
 }
 ```
 
-The three required members are exactly the three things above. Everything else
-is optional and we'll meet the relevant ones in later chapters.
+The three required members are exactly the three things above. Everything else is optional and we'll meet the relevant ones in later chapters.
 :::
 
 ## Entities and traits
 
 Everything in a Sharpee game is an **entity** — rooms, objects, characters,
-doors, even the player. An entity by itself is just an empty shell with an ID.
-You make it useful by attaching **traits**: components that answer "what *is*
-this thing?" and "what can it *do*?"
+doors, even the player. An entity by itself is just an empty shell with an ID. You make it useful by attaching **traits**: components that answer "what *is* this thing?" and "what can it *do*?"
 
-You create entities with `world.createEntity(name, type)`. The type is a hint to
-the engine — `EntityType.ROOM`, `EntityType.ITEM`, `EntityType.ACTOR`,
-`EntityType.SCENERY`, and so on.
+You create entities with `world.createEntity(name, type)`. The type is a hint to the engine — `EntityType.ROOM`, `EntityType.ITEM`, `EntityType.ACTOR`, `EntityType.SCENERY`, and so on.
 
 In this version we use five traits:
 
-- **`IdentityTrait`** — a name, description, and aliases. Almost every entity has
-  one. The `description` is what `examine` shows; the `aliases` are the
-  alternative words the parser will accept.
-- **`ActorTrait`** — marks an entity as a character. `isPlayer: true` tells the
-  engine this is *the* player.
-- **`ContainerTrait`** — lets an entity hold other entities. The player needs it
-  to carry an inventory.
-- **`SceneryTrait`** — marks an entity as fixed. The player can examine it but
-  not take it.
+- **`IdentityTrait`** — a name, description, and aliases. Almost every entity has one. The `description` is what `examine` shows; the `aliases` are the alternative words the parser will accept.
+- **`ActorTrait`** — marks an entity as a character. `isPlayer: true` tells the engine this is *the* player.
+- **`ContainerTrait`** — lets an entity hold other entities. The player needs it to carry an inventory.
+- **`SceneryTrait`** — marks an entity as fixed. The player can examine it but not take it.
 - **`RoomTrait`** — marks an entity as a room, with exits and a darkness flag.
 
 ## Creating the player
@@ -95,8 +77,7 @@ createPlayer(world: WorldModel): IFEntity {
 }
 ```
 
-The `ContainerTrait` is what makes `take` and `inventory` work — without it, the
-player has nowhere to put anything.
+The `ContainerTrait` is what makes `take` and `inventory` work — without it, the player has nowhere to put anything.
 
 ::: under-the-hood
 **Under the Hood — `ContainerTrait`** · `@sharpee/world-model`
@@ -110,9 +91,7 @@ class ContainerTrait implements ITrait {
 }
 ```
 
-The constructor takes a `Partial` of the trait's own fields, so you set only what
-you need — here, just `capacity`. The standard `take` action reads `capacity` to
-decide whether an item fits.
+The constructor takes a `Partial` of the trait's own fields, so you set only what you need — here, just `capacity`. The standard `take` action reads `capacity` to decide whether an item fits.
 :::
 
 ## Building the world
@@ -158,11 +137,9 @@ initializeWorld(world: WorldModel): void {
 Creating an entity doesn't put it anywhere. You place it with
 `world.moveEntity(entityId, locationId)` — that puts the entity *inside* the
 location, whether that's an object in a room, an item in a container, or the
-player in a room. Forget this step and the entity exists in the database but is
-invisible: the player can never reach it.
+player in a room. Forget this step and the entity exists in the database but is invisible: the player can never reach it.
 
-The player is no exception. `world.moveEntity(player.id, entrance.id)` is what
-sets the starting location.
+The player is no exception. `world.moveEntity(player.id, entrance.id)` is what sets the starting location.
 
 ## Try it
 

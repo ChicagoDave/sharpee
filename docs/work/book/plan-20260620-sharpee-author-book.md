@@ -1,7 +1,7 @@
 # Plan: The Sharpee Book
 
 **Date:** 2026-06-20
-**Status:** IN PROGRESS — Phase 1 COMPLETE (2026-06-20); Phase 2 is next
+**Status:** IN PROGRESS — Phase 1 COMPLETE (2026-06-20); Phase 2 spine migration COMPLETE (2026-06-20); Phase 3 (Under-the-Hood layer) is next
 **Work target:** `docs/work/book/`
 **Canonical output:** `docs/book/`
 
@@ -21,9 +21,11 @@ exists as a 17-step tutorial with working, tested code):
   Signatures only — **never implementation bodies, internal logic, or monorepo `src/`**.
 
 Because both perspectives are the **same TypeScript**, one zoo example carries both — the author sees
-what to write, the programmer sees the classes and methods behind it. Inform and TADS can't do this: their two
-perspectives are literally different languages, so they ship separate books and authors fall off a
-cliff crossing over.
+what to write, the programmer sees the classes and methods behind it. This is a deliberate tradeoff:
+systems like Inform 7 keep a welcoming natural-language authoring surface separate from a lower-level
+implementation layer (Inform 6), which often means separate docs for the two audiences. Sharpee gives
+up that gentle on-ramp — you write code from line one — in exchange for a single language across both
+layers, so one book can carry both perspectives without a hand-off.
 
 ## Non-Goals
 
@@ -261,12 +263,24 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
   ch8 Light & Dark (v08). All code reconciled against `v0{3..8}.ts`; "Common mistake" callouts from
   `tutorial.md` folded in as blockquote asides; renders clean in HTML/EPUB/PDF. ch9 (The map &
   regions) remains a new-framing stub (no version migration).
-- **Remaining batches:** v09–v10 (Part III ch12); v12, v13, v14 (Part IV ch13–15); v11, v15, v16
-  (Part VI ch20, 22, 23) — 6 migration chapters left.
+- **Batch 3 done (2026-06-20):** final 6 migration chapters migrated — ch12 Readable Objects &
+  Switchable Devices (v09+v10), ch13 Event Handlers (v12), ch14 Custom Actions (v13), ch15 Capability
+  Dispatch (v14), ch20 Non-Player Characters (v11), ch22 Turns, Timed Events & Daemons (v15), ch23
+  Scoring & Endgame (v16). All code reconciled against `v0{9..16}.ts`; "Common mistake" callouts from
+  `tutorial.md` folded in as blockquote asides; part dividers (Part IV/VI) and ornaments preserved.
+  Renders clean in HTML/EPUB/PDF; no "pending migration" stubs remain in `parts/`.
+  - **Drift corrected against source (4 places):** chain handlers use a custom event type
+    (`zoo.event.goats_react`), NOT `game.message` (which the processor consumes as an override) — the
+    per-version docs showed the wrong pattern; v14 uses ONE unified `pettingBehavior` dispatching on
+    `animalKind` (registry allows one behavior per trait+capability) and a hand-written dispatch action,
+    not separate per-animal behaviors with `condition` nor `createCapabilityDispatchAction()` (mentioned
+    as the stdlib shortcut). Scheduler daemon/fuse events DO use `game.message` + `narrate: true` (the
+    correct form for scheduler output) — chapter notes the context difference.
 - For each of the 17 steps, pick the richest of the three existing copies as the base; reconcile every
   code sample against the actual `v*.ts` ground truth; normalize into canonical chapters.
-- **Acceptance:** every Part I–VI chapter present; each code block matches its `familyzoo/src`
-  version; book renders clean.
+- **Acceptance:** ✅ every Part I–VI chapter present (ch9, ch10, ch11, ch16, ch17, ch18, ch19, ch21 are
+  new-framing stubs with no version migration); migrated code blocks match their `familyzoo/src`
+  version; book renders clean in all three formats.
 
 ### Phase 3 — Under-the-Hood (programmer) layer
 - Add API-anchored Under-the-Hood sections through the migrated chapters, citing `@sharpee/*` public
