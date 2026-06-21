@@ -72,5 +72,11 @@ input-files:
   - parts/part-7/25-the-web-client.md              # new (stub)
   - parts/part-7/26-decoration-and-theming.md      # new (stub)
   - parts/part-7/27-media-and-audio.md             # new (stub)
+  # Part VIII — Shipping
+  - parts/part-8/28-the-multi-file-story.md             # v17 (new) + Volume VIII divider
+  - parts/part-8/29-transcript-testing-and-walkthroughs.md  # new (stub)
+  - parts/part-8/30-saving-and-restoring.md            # new (stub)
+  - parts/part-8/31-building-and-publishing.md         # new (stub)
+  - parts/part-8/32-multi-user-with-zifmia.md          # new (stub)
   # Back matter
   - backmatter/illustration-credits.md             # Met public-domain art credits

@@ -314,9 +314,29 @@ Each phase is one deliverable with an acceptance check. No phase ships without i
   (component theming), ADR-174 (decoration `[name:content]` → `sharpee-` spans), ADR-169
   (Web Audio fades). Book renders clean to HTML/EPUB/PDF.
 
-### Phase 6 — Volume VIII Shipping **[new writing]**
+### Phase 6 — Volume VIII Shipping **[new writing]** ✅ COMPLETE (2026-06-21)
 - v17 multi-file chapter, transcript testing, save/restore, build & publish, multi-user Zifmia.
 - **Acceptance:** five chapters drafted; build/test commands verified against the real `./sharpee`.
+- **Done (2026-06-21, session 70b555):** all five Volume VIII chapters written in full —
+  ch28 The Multi-File Story (v17 organization + after-hours act), ch29 Transcript Testing &
+  Walkthroughs, ch30 Saving & Restoring, ch31 Building & Publishing (single-player browser),
+  ch32 Multi-User with Zifmia. Volume VIII divider on ch28 carries a public-domain Tennyson
+  "Ulysses" (1842) epigraph. Grounded in `tutorials/familyzoo/src/v17/`, the transcript-testing
+  / build-system / npm-publish guides, the BrowserClient save path, and ADR-175 (Zifmia v1 =
+  room-scoped "watching IF together", shared single PC, NOT MPIF). Book renders clean to HTML/EPUB/PDF.
+
+### Phase 6b — v18 "Family Zoo: Sights & Sounds" **[DECIDED 2026-06-21: do after Volume VIII]**
+- **Decision (David, 2026-06-21):** Volume VIII teaches against v17 (no new version needed for
+  shipping mechanics). Volume VII (Presentation) IS the gap — v17 has zero presentation features,
+  so ch24/26/27 currently teach against platform defaults + snippets, never the running zoo. Build
+  a **v18** that adds *only* presentation concerns and retrofit Volume VII to teach against it.
+- **Scope:** `tutorials/familyzoo/src/v18/` built on v17, adding: a custom `zoo.ambience` mood-line
+  `IOChannel` + story renderer (ch24/25); an `AudioRegistry` (aviary/nocturnal atmospheres, feed &
+  shutter SFX, an after-hours music swap keyed to `zoo.after_hours`) (ch27); `image:background` per
+  area + one story-shipped theme `zoo-sunny` (ch26/27). Placeholder asset paths — teach the wiring,
+  note authors supply their own audio/image files.
+- **Then:** weave concrete "in v18…" examples back into the already-written ch24, ch26, ch27.
+- **Acceptance:** v18 compiles & plays; Volume VII chapters reference v18 concretely; book renders clean.
 
 ### Phase 7 — Site integration & duplication retirement
 - Generate the site pages from canonical source; wire into the site build.
