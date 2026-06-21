@@ -67,5 +67,10 @@ input-files:
   - parts/part-6/21-scenes.md                      # new (stub)
   - parts/part-6/22-timed-events-and-daemons.md    # v15 (pending)
   - parts/part-6/23-scoring-and-endgame.md         # v16 (pending)
+  # Part VII — Presentation
+  - parts/part-7/24-channels.md                    # new
+  - parts/part-7/25-the-web-client.md              # new (stub)
+  - parts/part-7/26-decoration-and-theming.md      # new (stub)
+  - parts/part-7/27-media-and-audio.md             # new (stub)
   # Back matter
   - backmatter/illustration-credits.md             # Met public-domain art credits
