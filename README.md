@@ -6,68 +6,71 @@ A parser-based Interactive Fiction authoring platform built in TypeScript.
 
 ## Quick Start
 
+The `sharpee` CLI ships in `@sharpee/devkit` — install it globally:
+
 ```bash
-npx @sharpee/sharpee init my-adventure
-cd my-adventure
-npm install
+npm install -g @sharpee/devkit
 ```
 
-Build and play:
+Scaffold a project, then build and play:
 
 ```bash
-npx @sharpee/sharpee build
+sharpee init my-adventure
+cd my-adventure
+npm install
+sharpee build
 open dist/web/index.html
 ```
 
-All CLI commands work via `npx @sharpee/sharpee <command>`:
-
 | Command | What it does |
 |---------|-------------|
-| `npx @sharpee/sharpee init <name>` | Create a new story project |
-| `npx @sharpee/sharpee init-browser` | Add browser client to existing project |
-| `npx @sharpee/sharpee build` | Build `.sharpee` bundle + browser client |
-| `npx @sharpee/sharpee build-browser` | Build browser client only |
-| `npx @sharpee/sharpee ifid` | Generate or validate an IFID |
+| `sharpee init <name>` | Create a new story project |
+| `sharpee init-browser` | Add browser client to existing project |
+| `sharpee build` | Build `.sharpee` bundle + browser client |
+| `sharpee build-browser` | Build browser client only |
+| `sharpee ifid` | Generate or validate an IFID |
 
 ## What's Included
 
-`@sharpee/sharpee` is the umbrella package — one install gives you everything. All 29 packages are published individually on npm under the `@sharpee` scope.
+`@sharpee/sharpee` is the umbrella package — it re-exports the **story runtime baseline** (ADR-178), the imports a story author needs. It deliberately does *not* re-export every symbol; for advanced use, import a sub-package directly. All 28 packages below are published individually on npm under the `@sharpee` scope.
 
 | Package | Description |
 |---------|-------------|
-| `@sharpee/bridge` | PostMessage bridge for iframe embedding |
-| `@sharpee/character` | NPC behavior chain: character model, conversation, goals, influence, propagation |
+| `@sharpee/sharpee` | Umbrella package — re-exports the story runtime baseline (ADR-178) |
 | `@sharpee/core` | Event system, types, utilities |
 | `@sharpee/engine` | Game engine, turn cycle, command execution |
 | `@sharpee/event-processor` | Applies semantic events to the world model |
-| `@sharpee/ext-basic-combat` | Generic skill-based combat extension |
-| `@sharpee/ext-testing` | Debug and testing tools (`/debug`, `/trace`, `$teleport`) |
-| `@sharpee/helpers` | Fluent entity builders (`world.helpers()`) |
+| `@sharpee/world-model` | Entity system with traits and behaviors |
 | `@sharpee/if-domain` | Core domain model and contracts |
-| `@sharpee/if-services` | Runtime service interfaces |
+| `@sharpee/if-services` | Runtime service interfaces (perception) |
+| `@sharpee/stdlib` | 51 standard IF actions (take, drop, open, lock, etc.) |
 | `@sharpee/lang-en-us` | English language output |
-| `@sharpee/media` | Audio event types, AudioRegistry, and capability negotiation |
 | `@sharpee/parser-en-us` | English natural language parser |
-| `@sharpee/platform-browser` | Browser client infrastructure |
+| `@sharpee/helpers` | Fluent entity builders (`world.helpers()`) |
+| `@sharpee/queries` | LINQ-style fluent entity query API |
+| `@sharpee/character` | NPC behavior chain: character model, conversation, goals, influence, propagation |
+| `@sharpee/plugins` | Plugin contracts for engine turn-cycle extensibility |
 | `@sharpee/plugin-npc` | NPC behaviors and autonomous turn processing |
 | `@sharpee/plugin-scheduler` | Daemons and fuses (timed events) |
 | `@sharpee/plugin-state-machine` | Declarative puzzle and narrative orchestration |
-| `@sharpee/plugins` | Plugin contracts for engine extensibility |
-| `@sharpee/runtime` | Headless engine for iframe embedding |
-| `@sharpee/sharpee` | Umbrella package (re-exports everything) |
-| `@sharpee/stdlib` | 49 standard IF actions (take, drop, open, lock, etc.) |
-| `@sharpee/text-blocks` | Structured text output interfaces |
-| `@sharpee/text-service` | Text rendering and status line |
+| `@sharpee/media` | Audio event types, AudioRegistry, and capability negotiation |
+| `@sharpee/text-blocks` | Structured text output interfaces (`ITextBlock`, `IDecoration`) |
+| `@sharpee/channel-service` | Universal channel-I/O wire producer (ADR-163) |
+| `@sharpee/platform-browser` | Framework-free browser client infrastructure |
+| `@sharpee/ext-basic-combat` | Generic skill-based combat extension |
+| `@sharpee/ext-testing` | Debug and testing tools (`/debug`, `/trace`, `$teleport`) |
+| `@sharpee/bootstrap` | Story loader — assembles a `.sharpee` story into a runnable game |
+| `@sharpee/devkit` | The `sharpee` CLI — build/test/verify/scaffold orchestration (ADR-180) |
+| `@sharpee/story-runtime-baseline` | Manifest of the canonical baseline packages a bundle may import (ADR-178) |
+| `@sharpee/ide-protocol` | Wire types for the IDE project-introspection manifest (ADR-184) |
 | `@sharpee/transcript-tester` | Transcript-based testing framework |
-| `@sharpee/world-model` | Entity system with traits and behaviors |
-| `@sharpee/interpreter` | Zifmia desktop client integration |
 
 ## Features
 
 - **Event-Driven Architecture** — Immutable semantic events for all state changes
 - **Natural Language Parser** — Complex player commands with slot constraints
 - **Rich World Model** — Entities with traits, behaviors, and relationships
-- **48 Standard Actions** — take, drop, open, close, lock, unlock, wear, eat, drink, attack, and more
+- **51 Standard Actions** — take, drop, open, close, lock, unlock, wear, eat, drink, attack, and more
 - **Four-Phase Action Pattern** — Consistent validate/execute/report/blocked flow
 - **Capability Dispatch** — Entity-specific handling for generic verbs
 - **Entity Helpers** — Fluent builder API for rooms, objects, containers, doors, actors
@@ -77,7 +80,7 @@ All CLI commands work via `npx @sharpee/sharpee <command>`:
 - **Daemons & Fuses** — Timed events and background processes
 - **Perception System** — Darkness, blindness, and sensory restrictions
 - **Language Layer Separation** — All text output goes through localizable message IDs
-- **Multi-Client Architecture** — Same story runs in CLI, browser, React, and Zifmia desktop
+- **Channel-Based UI** — Story→UI signals flow over channels (ADR-163); the same story runs in the CLI, a framework-free browser client, and the Zifmia multi-user server
 - **Full TypeScript** — Strict typing throughout
 
 ## Creating a Story
@@ -177,13 +180,16 @@ door('iron door')
 | plugins (npc,      | parser-en-us (grammar)   |
 |  scheduler, state) |                          |
 +--------------------+--------------------------+
-| engine | world-model | helpers | text-service |
+| engine | world-model | helpers | channels     |
 +-----------------------------------------------+
 | if-domain | if-services | event-processor     |
 +-----------------------------------------------+
 | core (events, types) | media (audio types)   |
 +-----------------------------------------------+
 ```
+
+Rendering is the engine's prose pipeline producing `ITextBlock[]`, carried to the
+UI by channels (ADR-163/174) — there is no separate text service.
 
 ### Key Principles
 
@@ -192,9 +198,9 @@ door('iron door')
 3. **Traits compose entity capabilities** — Add container, lockable, wearable, etc.
 4. **Parser scope is permissive** — Actions decide if visibility is truly required
 
-## Zifmia Desktop Runner
+## Zifmia Multi-User Server
 
-[Zifmia](https://sharpee.net/downloads/) is the Tauri-based desktop app for playing `.sharpee` story bundles. Features include save/restore with modal dialogs, font preferences, auto-save/restore, theme support, and story illustrations.
+[Zifmia](https://sharpee.net/downloads/) is the multi-user server (ADR-177) for hosting `.sharpee` story bundles — each player gets their own session over a shared story, with per-room saves. It ships as a self-contained Docker container and is built with `sharpee build --zifmia`.
 
 ## Standard Actions
 
@@ -231,11 +237,11 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 
 ## Example Stories
 
-| Story | Status | Description |
-|-------|--------|-------------|
-| `dungeo` | Complete | Mainframe Zork implementation (~191 rooms, 650 points + 100 endgame) |
-| `familyzoo` | Complete | Progressive tutorial — 17 versions teaching Sharpee concepts |
-| `entropy` | In progress | Original sci-fi story with audio system |
+| Story | Location | Description |
+|-------|----------|-------------|
+| `dungeo` | `stories/dungeo` | Mainframe Zork implementation (~191 rooms, 650 points + 100 endgame) |
+| `familyzoo` | `tutorials/familyzoo` | The book's Family Zoo — chapter-by-chapter tutorial snapshots, built against the published npm packages |
+| `entropy` | `stories/entropy` | Original sci-fi story with audio system (in progress) |
 
 ## Roadmap
 
@@ -274,7 +280,7 @@ Sharpee is actively developed. These are the open [Architecture Decision Records
 | Author Tools | ADR-131 | Automated World Explorer — Regression test generator |
 | Engine | ADR-127 | Location-Scoped Interceptors — Room-tied action interceptors |
 
-See the full [ADR index](./docs/architecture/adrs/README.md) for all 152 architecture decisions.
+See the full [ADR index](./docs/architecture/adrs/README.md) for the complete set of architecture decisions.
 
 ## License
 

@@ -6,10 +6,11 @@ description: Verify NPC exists, can be examined, and produces autonomous behavio
 ---
 
 # Go to the server room where the bot lives
-# onPlayerEnters fires: bot swivels its optical sensor
+# onPlayerEnters fires: bot swivels its optical sensor (emote action)
 > east
 [OK: contains "Server Room"]
 [OK: contains "maintenance bot"]
+[OK: contains "swivels its optical sensor"]
 
 # Examine the bot
 > examine bot
