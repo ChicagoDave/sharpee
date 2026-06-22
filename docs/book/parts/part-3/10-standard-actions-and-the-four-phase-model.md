@@ -1,13 +1,7 @@
-::: {.part-page .has-poem}
+::: {.part-page}
 
 # Volume III — Making It Interactive {.part .unnumbered}
 
-| He drew a circle that shut me out—
-| Heretic, rebel, a thing to flout.
-| But Love and I had the wit to win:
-| We drew a circle that took him in!
-
-*— Edwin Markham, "Outwitted" (1915)*
 :::
 
 # The Standard Actions & the Four-Phase Model

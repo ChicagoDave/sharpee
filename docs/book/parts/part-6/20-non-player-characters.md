@@ -1,18 +1,10 @@
-::: {.part-page .has-poem}
+::: {.part-page}
 
 # Volume VI — Living Worlds {.part .unnumbered}
 
-| All the world's a stage,
-| And all the men and women merely players;
-| They have their exits and their entrances,
-| And one man in his time plays many parts.
-
-*— William Shakespeare, from As You Like It (c. 1599)*
 :::
 
 # Non-Player Characters
-
-![](art/parrot.jpg){.chapter-ornament}
 
 Until now the zoo has been still. Animals are scenery, signs wait to be read,
 machines wait to be used — nothing moves unless the player moves it. A

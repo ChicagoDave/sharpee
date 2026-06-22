@@ -1,23 +1,7 @@
-::: {.part-page .has-poem}
+::: {.part-page}
 
 # Volume II — Building a World {.part .unnumbered}
 
-| I dwell in Possibility –
-| A fairer House than Prose –
-| More numerous of Windows –
-| Superior – for Doors –
-|
-| Of Chambers as the Cedars –
-| Impregnable of eye –
-| And for an everlasting Roof
-| The Gambrels of the Sky –
-|
-| Of Visitors – the fairest –
-| For Occupation – This –
-| The spreading wide my narrow Hands
-| To gather Paradise –
-
-*— Emily Dickinson, "I dwell in Possibility –" (c. 1862)*
 :::
 
 # Rooms & Navigation

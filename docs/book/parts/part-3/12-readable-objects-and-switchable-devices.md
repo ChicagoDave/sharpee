@@ -1,7 +1,5 @@
 # Readable Objects & Switchable Devices
 
-![](art/book-of-the-dead.jpg){.chapter-ornament}
-
 A zoo is full of things to read. Brass plaques by the enclosures, a glossy
 brochure at the entrance, a yellow warning sign outside the nocturnal exhibit —
 each one *says* something the player wants to take in, separate from what it

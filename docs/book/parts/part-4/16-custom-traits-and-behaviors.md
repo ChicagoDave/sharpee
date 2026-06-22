@@ -1,7 +1,5 @@
 # Custom Traits & Behaviors
 
-![](art/desk-bookcase.jpg){.chapter-ornament}
-
 Every object in the zoo has been assembled from traits — `IdentityTrait`,
 `RoomTrait`, `ContainerTrait`, `LightSourceTrait`. You've even written one:
 `PettableTrait`, back in *Capability Dispatch*. This chapter steps back to the

@@ -1,13 +1,7 @@
-::: {.part-page .has-poem}
+::: {.part-page}
 
 # Volume VII — Presentation {.part .unnumbered}
 
-| Thou still unravish'd bride of quietness,
-| Thou foster-child of silence and slow time,
-| Sylvan historian, who canst thus express
-| A flowery tale more sweetly than our rhyme:
-
-*— John Keats, from "Ode on a Grecian Urn" (1819)*
 :::
 
 # Channels — the Universal UI Surface

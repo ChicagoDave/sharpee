@@ -1,7 +1,5 @@
 # Turns, Timed Events & Daemons
 
-![](art/shiva.jpg){.chapter-ornament}
-
 A living world doesn't only react to the player — it has a clock of its own.
 Announcements crackle over the zoo PA as closing time approaches. Feeding time
 arrives on a schedule, and if you miss it the goats bleat for a few turns until

@@ -1,18 +1,10 @@
-::: {.part-page .has-poem}
+::: {.part-page}
 
 # Volume V — Words {.part .unnumbered}
 
-| 'Twas brillig, and the slithy toves
-|    Did gyre and gimble in the wabe:
-| All mimsy were the borogoves,
-|    And the mome raths outgrabe.
-
-*— Lewis Carroll, from "Jabberwocky" (1871)*
 :::
 
 # Extending the Grammar
-
-![](art/playing-cards.jpg){.chapter-ornament}
 
 A parser's whole job is to make sense of words — to take a line a player typed and
 decide which action it means and what it acts on. You've already taught it a few new

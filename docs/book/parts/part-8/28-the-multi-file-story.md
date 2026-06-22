@@ -1,13 +1,7 @@
-::: {.part-page .has-poem}
+::: {.part-page}
 
 # Volume VIII — Shipping {.part .unnumbered}
 
-| Come, my friends,
-| 'Tis not too late to seek a newer world.
-| Push off, and sitting well in order smite
-| The sounding furrows;
-
-*— Alfred, Lord Tennyson, from "Ulysses" (1842)*
 :::
 
 # Putting It All Together — The Multi-File Story

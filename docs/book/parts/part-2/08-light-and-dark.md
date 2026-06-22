@@ -1,7 +1,5 @@
 # Light & Dark
 
-![](art/lamp.jpg){.chapter-ornament}
-
 South of the supply room lies a nocturnal animals exhibit, and it is pitch black.
 Walk in without a light and you can't see a thing — no description, no animals,
 nothing to interact with but the way back out. The fix is sitting in the supply

@@ -1,7 +1,5 @@
 # Containers & Supporters
 
-![](art/ewer.jpg){.chapter-ornament}
-
 So far the zoo has things you walk past and things you carry. This chapter adds
 things that hold *other* things: a red backpack the player can store items inside,
 a feed dispenser bolted to a post at the petting zoo, and a park bench you can set

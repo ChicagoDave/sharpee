@@ -1,7 +1,5 @@
 # Scoring & Endgame
 
-![](art/phoenix.jpg){.chapter-ornament}
-
 A game needs a way to keep score and a way to end. The zoo gives points for
 seeing the sights and doing the activities — visiting each exhibit, feeding the
 animals, pressing a souvenir penny, reading the brochure — and when the player has
