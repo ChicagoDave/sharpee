@@ -61,26 +61,39 @@ check whether a phase has already played out.
 
 ## Reacting to transitions
 
-The real power is reacting to the *edges* — the moment a scene begins or ends. The
-engine emits `if.event.scene_began` and `if.event.scene_ended`, and you handle them
-exactly like any event from Chapter 13:
+The real power is reacting to the *edges* — the moment a scene begins or ends. You
+write those reactions as `onBegin` and `onEnd` callbacks, right next to the `begin`
+and `end` conditions in `createScene`. Each callback returns the text the player
+should see at that edge — either prose directly (`{ text }`) or a message id resolved
+through your language file (`{ messageId }`):
 
 ```typescript
-world.registerEventHandler('if.event.scene_began', (event, world) => {
-  if (event.data.sceneId === 'scene-petting-zoo') {
-    // first breath of the enclosure — a waft of hay and warm fur
-  }
-});
-
-world.registerEventHandler('if.event.scene_ended', (event, world) => {
-  if (event.data.sceneId === 'scene-petting-zoo') {
-    // the sounds of the animals fade behind you
-  }
+world.createScene('scene-petting-zoo', {
+  name: 'Among the Animals',
+  begin: (w) => w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
+  end:   (w) => w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
+  recurring: true,
+  onBegin: () => ({ text: 'A waft of hay and warm fur greets you.' }),
+  onEnd:   () => ({ text: 'The animal sounds fade behind you.' }),
 });
 ```
 
-This is where atmosphere and staged events live: open a sequence when a scene
-begins, close it down when the scene ends.
+The callback receives a typed context — `sceneId`, `sceneName`, `turn`, the `world`,
+and (on `onEnd`) `totalTurns`, how long the scene ran — so you can vary the line:
+
+```typescript
+  onEnd: (ctx) => ({ text: `You spent ${ctx.totalTurns} turns among the animals.` }),
+```
+
+Return nothing for a state-only beat (a scene whose edges drive logic but print no
+line). To return more than one line, return an array of reactions. This is where
+atmosphere and staged events live: open a sequence when a scene begins, close it down
+when the scene ends — and because the reaction is part of the scene definition, the
+condition and its payoff sit together.
+
+> The engine still emits `if.event.scene_began` / `if.event.scene_ended` as
+> observable facts (for perception, tooling, and transcript tests), but author
+> reactions go through `onBegin` / `onEnd`, not the event-handler bus.
 
 ## Common shapes
 
@@ -117,6 +130,6 @@ A scene is a named phase of the story with `begin` and `end` conditions the engi
 checks each turn, cycling `waiting → active → ended` (and back to `waiting` when
 `recurring`). Create them with `world.createScene()` in `initializeWorld()`, query
 state with `world.isSceneActive()` / `hasSceneHappened()`, and react to the edges
-through the `if.event.scene_began` / `scene_ended` handlers. Scenes are how you
+with the scene's own `onBegin` / `onEnd` callbacks. Scenes are how you
 think in story beats rather than individual turns — the staging layer over the
 moment-to-moment world.

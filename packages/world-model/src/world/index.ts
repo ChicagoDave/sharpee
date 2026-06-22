@@ -21,7 +21,11 @@ export {
   RegionCrossings,
   // Scene Management (ADR-149)
   SceneOptions,
-  SceneConditions
+  SceneConditions,
+  // Scene reaction callbacks (ADR-186)
+  SceneEventContext,
+  SceneReaction,
+  SceneCallback
 } from './WorldModel';
 
 // Re-export grammar vocabulary types from if-domain for convenience

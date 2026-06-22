@@ -79,7 +79,41 @@ export interface RegionOptions {
   defaultDark?: boolean;
 }
 
-// Scene management (ADR-149)
+// Scene management (ADR-149, ADR-186)
+
+/**
+ * Context passed to a scene reaction callback (ADR-186). Carries the typed
+ * data a callback needs to react to a scene transition — no `any` on the
+ * author path.
+ */
+export interface SceneEventContext {
+  /** The world model, for querying state in the reaction. */
+  world: IWorldModel;
+  /** The scene entity's id. */
+  sceneId: string;
+  /** The scene's human-readable name. */
+  sceneName: string;
+  /** The turn number on which the transition occurred. */
+  turn: number;
+  /** Turns the scene was active. Present only for onEnd. */
+  totalTurns?: number;
+}
+
+/**
+ * A player-visible reaction returned by a scene callback (ADR-186). Either
+ * direct story-owned prose (`text`) or a lang-routed message (`messageId`).
+ */
+export type SceneReaction =
+  | { text: string }
+  | { messageId: string; params?: Record<string, unknown> };
+
+/**
+ * A scene reaction callback (ADR-186). Invoked by SceneEvaluationPlugin at
+ * the begin/end transition. Returning nothing is valid (a state-only beat).
+ */
+export type SceneCallback =
+  (ctx: SceneEventContext) => SceneReaction[] | SceneReaction | void;
+
 export interface SceneOptions {
   /** Human-readable scene name. */
   name: string;
@@ -89,12 +123,20 @@ export interface SceneOptions {
   end: (world: IWorldModel) => boolean;
   /** Whether the scene can activate more than once. Default: false. */
   recurring?: boolean;
+  /** Optional reaction invoked when the scene begins (ADR-186). */
+  onBegin?: SceneCallback;
+  /** Optional reaction invoked when the scene ends (ADR-186). */
+  onEnd?: SceneCallback;
 }
 
 /** Stored condition closures for a scene (not serializable). */
 export interface SceneConditions {
   begin: (world: IWorldModel) => boolean;
   end: (world: IWorldModel) => boolean;
+  /** Optional reaction invoked when the scene begins (ADR-186). */
+  onBegin?: SceneCallback;
+  /** Optional reaction invoked when the scene ends (ADR-186). */
+  onEnd?: SceneCallback;
 }
 
 /**
@@ -1498,10 +1540,14 @@ export class WorldModel implements IWorldModel {
     }));
     this.entities.set(id, entity);
 
-    // Store condition closures separately (not serializable)
+    // Store condition closures separately (not serializable). Reaction
+    // callbacks (ADR-186) ride alongside the conditions so the engine's
+    // SceneEvaluationPlugin can reach them via getAllSceneConditions().
     this.sceneConditions.set(id, {
       begin: options.begin,
       end: options.end,
+      onBegin: options.onBegin,
+      onEnd: options.onEnd,
     });
 
     return entity;

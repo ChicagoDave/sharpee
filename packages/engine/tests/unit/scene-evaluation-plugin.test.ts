@@ -7,9 +7,22 @@
  */
 
 import { SceneEvaluationPlugin } from '../../src/scene-evaluation-plugin';
-import { WorldModel, SceneTrait, TraitType, EntityType } from '@sharpee/world-model';
+import { ProsePipeline } from '../../src/prose-pipeline/pipeline';
+import {
+  WorldModel,
+  SceneTrait,
+  TraitType,
+  EntityType,
+  type SceneEventContext,
+} from '@sharpee/world-model';
 import { createSeededRandom } from '@sharpee/core';
 import type { TurnPluginContext } from '@sharpee/plugins';
+import { makeProvider } from '../prose-pipeline/test-helpers';
+
+/** Pulls the game.message events (the author-visible reactions) out of a turn. */
+function reactionMessages(events: { type: string; data: unknown }[]) {
+  return events.filter((e) => e.type === 'game.message').map((e) => e.data as any);
+}
 
 function makeContext(world: WorldModel, turn: number): TurnPluginContext {
   return {
@@ -270,6 +283,188 @@ describe('SceneEvaluationPlugin', () => {
 
       const events = plugin.onAfterAction(makeContext(world, 1));
       expect(events).toHaveLength(0);
+    });
+  });
+
+  // ADR-186: typed scene reaction callbacks
+  describe('scene reactions (ADR-186)', () => {
+    it('onBegin returning { text } emits a game.message carrying that text', () => {
+      world.createScene('scene-zoo', {
+        name: 'Petting Zoo',
+        begin: () => true,
+        end: () => false,
+        onBegin: () => ({ text: 'A waft of hay and warm fur.' }),
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+
+      // The scene_began fact still fires…
+      expect(events.some((e) => e.type === 'if.event.scene_began')).toBe(true);
+      // …and the reaction rides alongside as a game.message.
+      const msgs = reactionMessages(events);
+      expect(msgs).toHaveLength(1);
+      expect(msgs[0].text).toBe('A waft of hay and warm fur.');
+    });
+
+    it('onBegin returning { messageId, params } emits a game.message with the id + params', () => {
+      world.createScene('scene-zoo', {
+        name: 'Petting Zoo',
+        begin: () => true,
+        end: () => false,
+        onBegin: () => ({ messageId: 'story.scene.zoo.enter', params: { animal: 'goat' } }),
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+
+      const msgs = reactionMessages(events);
+      expect(msgs).toHaveLength(1);
+      expect(msgs[0].messageId).toBe('story.scene.zoo.enter');
+      expect(msgs[0].params).toEqual({ animal: 'goat' });
+    });
+
+    it('onEnd receives totalTurns and its reaction renders', () => {
+      let shouldEnd = false;
+      let seen: SceneEventContext | undefined;
+      world.createScene('scene-storm', {
+        name: 'Thunderstorm',
+        begin: () => true,
+        end: () => shouldEnd,
+        onEnd: (ctx) => {
+          seen = ctx;
+          return { text: `The storm lasted ${ctx.totalTurns} turns.` };
+        },
+      });
+
+      // Active for 3 turns (activate on 1, increment on 2 and 3), end on turn 4.
+      plugin.onAfterAction(makeContext(world, 1));
+      plugin.onAfterAction(makeContext(world, 2));
+      plugin.onAfterAction(makeContext(world, 3));
+      shouldEnd = true;
+      const events = plugin.onAfterAction(makeContext(world, 4));
+
+      expect(seen?.totalTurns).toBe(3);
+      const msgs = reactionMessages(events);
+      expect(msgs).toHaveLength(1);
+      expect(msgs[0].text).toBe('The storm lasted 3 turns.');
+    });
+
+    it('a void return is a valid state-only beat — fact fires, no game.message', () => {
+      world.createScene('scene-quiet', {
+        name: 'Quiet Beat',
+        begin: () => true,
+        end: () => false,
+        onBegin: () => undefined,
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+
+      expect(events.some((e) => e.type === 'if.event.scene_began')).toBe(true);
+      expect(reactionMessages(events)).toHaveLength(0);
+    });
+
+    it('a scene with no callbacks emits the fact but produces no game.message', () => {
+      world.createScene('scene-bare', {
+        name: 'Bare',
+        begin: () => true,
+        end: () => false,
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+
+      expect(events.some((e) => e.type === 'if.event.scene_began')).toBe(true);
+      expect(reactionMessages(events)).toHaveLength(0);
+    });
+
+    it('a throwing onBegin does not abort the transition and emits no reaction', () => {
+      world.createScene('scene-bad', {
+        name: 'Bad Reaction',
+        begin: () => true,
+        end: () => false,
+        onBegin: () => { throw new Error('author bug'); },
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+
+      // Transition still happened…
+      expect(world.getEntity('scene-bad')!.get<SceneTrait>(TraitType.SCENE)!.state).toBe('active');
+      expect(events.some((e) => e.type === 'if.event.scene_began')).toBe(true);
+      // …but no reaction event leaked out.
+      expect(reactionMessages(events)).toHaveLength(0);
+    });
+
+    it('a recurring scene re-fires onBegin on each activation', () => {
+      let cycle = 0;
+      let begins = 0;
+      world.createScene('scene-patrol', {
+        name: 'Guard Patrol',
+        begin: () => true,
+        end: () => cycle > 0,
+        recurring: true,
+        onBegin: () => { begins++; return { text: 'The guard rounds the corner.' }; },
+      });
+
+      // Turn 1: activate (onBegin #1)
+      plugin.onAfterAction(makeContext(world, 1));
+      // Turn 2: end → back to waiting
+      cycle = 1;
+      plugin.onAfterAction(makeContext(world, 2));
+      // Turn 3: re-activate (onBegin #2)
+      cycle = 0;
+      plugin.onAfterAction(makeContext(world, 3));
+
+      expect(begins).toBe(2);
+    });
+  });
+
+  // ADR-186 plan-review tension: prove the reaction renders to a visible block,
+  // not just that an event was emitted (otherwise we re-create #151's silent path).
+  describe('end-to-end render through the prose pipeline (ADR-186)', () => {
+    const provider = makeProvider({
+      'story.scene.zoo.enter': 'You step into the {animal} enclosure.',
+    });
+    const pipeline = new ProsePipeline(provider);
+
+    it('an onBegin { text } reaction becomes a visible game.message block', () => {
+      world.createScene('scene-zoo', {
+        name: 'Petting Zoo',
+        begin: () => true,
+        end: () => false,
+        onBegin: () => ({ text: 'A waft of hay and warm fur.' }),
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+      const blocks = pipeline.processTurn(events);
+
+      const rendered = blocks.flatMap((b) => b.content).join(' ');
+      expect(rendered).toContain('A waft of hay and warm fur.');
+    });
+
+    it('an onBegin { messageId } reaction renders the language-resolved string', () => {
+      world.createScene('scene-zoo', {
+        name: 'Petting Zoo',
+        begin: () => true,
+        end: () => false,
+        onBegin: () => ({ messageId: 'story.scene.zoo.enter', params: { animal: 'goat' } }),
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+      const blocks = pipeline.processTurn(events);
+
+      const rendered = blocks.flatMap((b) => b.content).join(' ');
+      expect(rendered).toContain('You step into the goat enclosure.');
+    });
+
+    it('the scene_began fact alone renders no visible block', () => {
+      world.createScene('scene-bare', {
+        name: 'Bare',
+        begin: () => true,
+        end: () => false,
+      });
+
+      const events = plugin.onAfterAction(makeContext(world, 1));
+      const blocks = pipeline.processTurn(events);
+
+      expect(blocks).toHaveLength(0);
     });
   });
 });
