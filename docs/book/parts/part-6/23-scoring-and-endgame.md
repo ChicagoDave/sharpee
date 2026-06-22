@@ -88,6 +88,26 @@ const ScorePoints: Record<string, number> = {
 | Read the brochure | 5 |
 | **Total** | **75** |
 
+Two more tables finish the setup — one maps room names to their visit-score id (the
+room-visit handler reads it), and one holds the endgame message id:
+
+```typescript
+const ROOM_SCORE_MAP: Record<string, string> = {
+  'Petting Zoo': ScoreIds.VISIT_PETTING_ZOO,
+  'Aviary': ScoreIds.VISIT_AVIARY,
+  'Gift Shop': ScoreIds.VISIT_GIFT_SHOP,
+  'Supply Room': ScoreIds.VISIT_SUPPLY_ROOM,
+  'Nocturnal Animals Exhibit': ScoreIds.VISIT_NOCTURNAL,
+};
+
+const ScoreMessages = {
+  VICTORY: 'zoo.victory',
+} as const;
+```
+
+The `chainEvent` handlers below use the same `ISemanticEvent`/`IWorldModel` types
+and the `this.entityIds` field you established in *Event Handlers* (Chapter 13).
+
 ## Awarding points as the player plays
 
 Scoring hooks into the action layers you already know. Some awards live inside a
@@ -119,9 +139,34 @@ world.chainEvent('if.event.actor_moved', (event, w) => {
 }, { key: 'zoo.chain.room-visit-scoring' });
 ```
 
-The same shape covers collecting the map (`if.event.taken`) and reading the
-brochure (`if.event.read`) — match the event's `itemId`/`entityId`, award the
-points, return `null` to stay silent.
+The same shape covers collecting the map and reading the brochure. Each matches the
+event against the entity id recorded in `this.entityIds` (Chapter 13), awards the
+points, and returns `null` to stay silent:
+
+```typescript
+const mapId = this.entityIds.zooMap;
+world.chainEvent('if.event.taken', (event: ISemanticEvent, w: IWorldModel) => {
+  const data = event.data as Record<string, any>;
+  if (data.itemId === mapId) {
+    w.awardScore(ScoreIds.COLLECT_MAP, ScorePoints[ScoreIds.COLLECT_MAP],
+      'Collected the zoo map');
+  }
+  return null;
+}, { key: 'zoo.chain.take-scoring' });
+
+const brochureId = this.entityIds.brochure;
+world.chainEvent('if.event.read', (event: ISemanticEvent, w: IWorldModel) => {
+  const data = event.data as Record<string, any>;
+  if (data.entityId === brochureId || data.targetId === brochureId) {
+    w.awardScore(ScoreIds.READ_BROCHURE, ScorePoints[ScoreIds.READ_BROCHURE],
+      'Read the zoo brochure');
+  }
+  return null;
+}, { key: 'zoo.chain.read-scoring' });
+```
+
+(`this.entityIds.zooMap` and `.brochure` are recorded in `initializeWorld` when you
+create those items, the same way Chapter 13 stored the feed and penny ids.)
 
 ## The victory daemon
 
@@ -165,6 +210,16 @@ Register it like any daemon, alongside the others:
 
 ```typescript
 scheduler.registerDaemon(createVictoryDaemon());
+```
+
+And give `ScoreMessages.VICTORY` its text in `extendLanguage`, or the win narrates
+a raw id:
+
+```typescript
+language.addMessage(ScoreMessages.VICTORY,
+  "Congratulations! You've earned your JUNIOR ZOOKEEPER badge — you visited " +
+  'every exhibit, fed the animals, collected souvenirs, and made memories to ' +
+  'last a lifetime.\n\n*** You have won ***');
 ```
 
 > **The mistake everyone makes once:** giving the victory check a low priority, so

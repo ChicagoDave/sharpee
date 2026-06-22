@@ -27,7 +27,7 @@ description: Feeding the pygmy goats awards points and consumes the feed
 
 > feed goats
 [OK: contains "devour"]
-[OK: not contains "don't have")]
+[OK: not contains "don't have"]
 ```
 
 Run it and the tester drives those commands through the real engine, checking each
@@ -102,8 +102,10 @@ individually, exactly matching the two-kinds split. Working inside the Sharpee r
 itself, the prebuilt bundle is much faster and takes explicit paths:
 
 ```bash
-node dist/cli/sharpee.js --test stories/familyzoo/tests/transcripts/feed-goats.transcript
-node dist/cli/sharpee.js --test --chain stories/familyzoo/walkthroughs/wt-*.transcript
+# A single unit transcript (the Family Zoo tutorial's own tests):
+node dist/cli/sharpee.js --test tutorials/familyzoo/tests/transcripts/v02-navigation.transcript
+# A chained walkthrough set (Dungeo ships these; Family Zoo has none):
+node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
 ```
 
 The `--chain` flag is what makes walkthroughs persist state between files; omit it for

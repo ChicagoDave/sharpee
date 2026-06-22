@@ -18,13 +18,20 @@ that runs each turn — a background process, a ticking clock. A **fuse** is a
 countdown timer that fires once when it reaches zero, optionally re-arming to fire
 again.
 
-Registration follows the same `onEngineReady()` pattern as the NPC plugin:
+Registration follows the same `onEngineReady()` pattern as the NPC plugin — and in
+fact lives in the *same* `onEngineReady`, alongside the NPC registration from
+Chapter 20. The daemon `run` functions return `ISemanticEvent[]`, and one reads an
+`IdentityTrait`, so the imports grow a little:
 
 ```typescript
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import type { Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { ISemanticEvent } from '@sharpee/core';
+import { IdentityTrait } from '@sharpee/world-model';
 
 onEngineReady(engine: GameEngine): void {
+  // … the NPC plugin registration from Chapter 20 stays here …
+
   const schedulerPlugin = new SchedulerPlugin();
   engine.getPluginRegistry().register(schedulerPlugin);
   const scheduler = schedulerPlugin.getScheduler();
@@ -33,6 +40,20 @@ onEngineReady(engine: GameEngine): void {
   scheduler.setFuse(createFeedingTimeFuse());
   scheduler.registerDaemon(createGoatBleatingDaemon());
 }
+```
+
+The daemons and fuse below emit message ids from a `TimedMessages` table; declare
+it once, near the top of your story module:
+
+```typescript
+const TimedMessages = {
+  PA_CLOSING_3: 'zoo.pa.closing_3',
+  PA_CLOSING_2: 'zoo.pa.closing_2',
+  PA_CLOSING_1: 'zoo.pa.closing_1',
+  PA_CLOSED:    'zoo.pa.closed',
+  FEEDING_TIME: 'zoo.feeding_time.announced',
+  GOATS_BLEATING: 'zoo.goats.bleating',
+} as const;
 ```
 
 Both daemons and fuses receive a `SchedulerContext` — `{ world, turn, random,
@@ -181,6 +202,34 @@ state; the conditional daemon does the per-turn reaction until the state clears.
 > exactly ten turns after you set it. A newly set fuse skips its first tick, so it
 > fires about *eleven* ticks after registration. If precise timing matters, count
 > from the skip — or test it and adjust `turns`.
+
+## Giving the announcements their words
+
+Every `TimedMessages` id the daemons emit needs text in `extendLanguage`, or the PA
+just narrates raw ids:
+
+```typescript
+extendLanguage(language: LanguageProvider): void {
+  language.addMessage(TimedMessages.PA_CLOSING_3,
+    '*DING DONG* "Attention visitors! The zoo closes in three hours. Please ' +
+    'visit all exhibits before closing time!"');
+  language.addMessage(TimedMessages.PA_CLOSING_2,
+    '*DING DONG* "Two hours until closing. Don\'t forget the gift shop!"');
+  language.addMessage(TimedMessages.PA_CLOSING_1,
+    '*DING DONG* "One hour until closing. Please make your way toward the exit."');
+  language.addMessage(TimedMessages.PA_CLOSED,
+    '*DING DONG* "The zoo is now closed. Thank you for visiting!"');
+  language.addMessage(TimedMessages.FEEDING_TIME,
+    '*DING DONG* "It\'s FEEDING TIME at the Petting Zoo! Come watch the goats ' +
+    'and rabbits enjoy their snacks!"');
+  language.addMessage(TimedMessages.GOATS_BLEATING,
+    'The pygmy goats are bleating loudly and headbutting the fence. They seem ' +
+    'very hungry!');
+}
+```
+
+(If your story already has an `extendLanguage` from earlier chapters, add these
+lines to it — a story has just one.)
 
 ## Try it
 

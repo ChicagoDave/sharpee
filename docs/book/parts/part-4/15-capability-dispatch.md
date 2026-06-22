@@ -7,6 +7,21 @@ into your hand. Petting the parrot is a mistake — it bites. The verb is the sa
 the outcome belongs to the animal. That's **capability dispatch**: one verb, many
 behaviors, and the entity decides which one runs.
 
+This chapter pulls in the capability-dispatch toolkit from the world-model, plus
+the action types from the last chapter:
+
+```typescript
+import {
+  ITrait, IFEntity,
+  CapabilityBehavior, CapabilityValidationResult, CapabilitySharedData,
+  CapabilityEffect, createEffect,
+  registerCapabilityBehavior, hasCapabilityBehavior,
+  findTraitWithCapability, getBehaviorForCapability,
+} from '@sharpee/world-model';
+import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { ISemanticEvent } from '@sharpee/core';
+```
+
 ## When to reach for it
 
 | Pattern | Use when |
@@ -186,9 +201,74 @@ gets the `CANT_PET` message — petting the hay bale just tells you that you can
 > few options. The zoo writes it out by hand so the mechanism is visible, but in
 > a real story you'd usually let the factory generate it.
 
-This action is registered the ordinary way — return it from `getCustomActions()`
-and give it a grammar pattern (`grammar.define('pet :thing').mapsTo(...)`) and
-message text in `extendLanguage()`, exactly as in the previous chapter.
+This action is registered the same three ways as the feed action in the last
+chapter. Add it to `getCustomActions`:
+
+```typescript
+getCustomActions(): any[] {
+  return [feedAction, photographAction, pettingAction];
+}
+```
+
+Give it grammar patterns in `extendParser`:
+
+```typescript
+grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
+grammar.define('stroke :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
+```
+
+And register its four message ids in `extendLanguage` — without these, petting
+prints raw ids like `zoo.petting.goats`:
+
+```typescript
+language.addMessage(PetMessages.PET_GOATS,
+  'You pet the nearest goat. It leans into your hand and bleats happily; the ' +
+  'others crowd around demanding equal attention.');
+language.addMessage(PetMessages.PET_RABBITS,
+  'You gently stroke one of the rabbits. Its fur is incredibly soft, and it ' +
+  'twitches its nose at you contentedly.');
+language.addMessage(PetMessages.PET_PARROT,
+  'You reach toward the parrot. CHOMP! It nips your finger. "NO TOUCHING!" it ' +
+  'squawks indignantly.');
+language.addMessage(PetMessages.CANT_PET,
+  "You can't pet that.");
+```
+
+Finally, the registration block from "3. Registration that links trait to behavior"
+runs once at the end of `initializeWorld`, after the animals exist.
+
+## Making the zoo's animals pettable
+
+The behavior and action are wired; now the animals need the trait. The goats (from
+Chapter 4) and rabbits (from Chapter 5) are already scenery in the Petting Zoo —
+give each a `PettableTrait` carrying its kind. The parrot is new: add it to the
+Aviary as a perched bird. For now it just sits there (and bites); in Chapter 20 it
+becomes a full NPC that squawks and moves.
+
+```typescript
+// The petting-zoo animals — already in the world, now pettable.
+goats.add(new PettableTrait('goats'));
+rabbits.add(new PettableTrait('rabbits'));
+
+// A new resident of the Aviary: a scarlet macaw with a temper.
+const parrot = world.createEntity('parrot', EntityType.ACTOR);
+parrot.add(new IdentityTrait({
+  name: 'parrot',
+  description:
+    'A magnificent scarlet macaw perched on a rope, watching you with one ' +
+    'bright, calculating eye.',
+  aliases: ['parrot', 'macaw', 'scarlet macaw'],
+  article: 'a',
+}));
+parrot.add(new ActorTrait({ isPlayer: false }));
+parrot.add(new PettableTrait('parrot'));
+world.moveEntity(parrot.id, aviary.id);
+```
+
+With `goats`, `rabbits`, and `parrot` all carrying a `PettableTrait`, every `pet`
+command in the walkthrough below resolves — and each animal's `animalKind` selects
+its own outcome from the single behavior. (`ActorTrait` you met on the player in
+Chapter 2; here it simply marks the parrot as a character rather than an object.)
 
 ## How it fits together
 
@@ -212,7 +292,7 @@ behavior returns the bite message instead. One verb, the entity decides.
 > south; east               Go to the Petting Zoo
 > pet goats                 They lean in, bleating happily
 > pet rabbits               Soft and fuzzy
-> pet hay bale              "You can't pet that." (no PettableTrait)
+> pet dispenser             "You can't pet that." (no PettableTrait)
 > west; west                Aviary
 > pet parrot                CHOMP! It bites!
 ```

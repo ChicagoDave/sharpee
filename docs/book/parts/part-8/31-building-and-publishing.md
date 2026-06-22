@@ -9,7 +9,9 @@ commands to produce it.
 
 Throughout this book you've used the `sharpee` command from `@sharpee/devkit`. It's
 the whole build toolchain for a standalone story: it compiles your TypeScript and
-emits the runnable artifacts. Crucially, *the platform is never rebuilt* — `@sharpee/sharpee`
+emits the runnable artifacts. (You install it globally as `sharpee`, below; if you
+ever work *inside* the Sharpee monorepo itself, the same CLI is invoked through the
+repo's `./sharpee` wrapper.) Crucially, *the platform is never rebuilt* — `@sharpee/sharpee`
 is an ordinary npm dependency your story compiles against, so your builds are fast and
 reproducible.
 

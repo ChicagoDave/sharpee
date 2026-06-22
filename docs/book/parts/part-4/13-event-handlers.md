@@ -121,6 +121,88 @@ on the event type:
 Note `item` is the item's *name* and `itemId` is its *entity ID*. Compare
 against `itemId` — names aren't unique, IDs are.
 
+## Setting up: the gift shop, the press, and remembering IDs
+
+The reactions in this chapter need three things the world doesn't have yet: a Gift
+Shop room, the souvenir press to put the penny in, and a way for a handler to
+*refer* to specific entities long after `initializeWorld` has run. The story
+remembers the IDs it cares about in two class fields, and the handler signatures
+pull in a few new types:
+
+```typescript
+import { GameEngine } from '@sharpee/engine';
+import { ISemanticEvent } from '@sharpee/core';
+import { IWorldModel } from '@sharpee/world-model';
+
+class FamilyZooStory implements Story {
+  config = config;
+
+  private roomIds: { giftShop: string; pettingZoo: string } =
+    { giftShop: '', pettingZoo: '' };
+  private entityIds: { animalFeed: string; penny: string; souvenirPress: string } =
+    { animalFeed: '', penny: '', souvenirPress: '' };
+
+  // createPlayer / initializeWorld / onEngineReady …
+}
+```
+
+In `initializeWorld`, add the Gift Shop west of the Aviary and the press inside it,
+then record the IDs the handlers will match against (the `penny` and `animalFeed`
+entities were created back in Chapter 5):
+
+```typescript
+const giftShop = world.createEntity('Gift Shop', EntityType.ROOM);
+giftShop.add(new RoomTrait({ exits: {}, isDark: false }));
+giftShop.add(new IdentityTrait({
+  name: 'Gift Shop',
+  description:
+    'A small zoo gift shop crammed with stuffed animals and postcards. A large ' +
+    'souvenir penny press stands near the door. The aviary is back to the east.',
+  aliases: ['gift shop', 'shop', 'store'],
+  article: 'the',
+}));
+// Connect it west of the Aviary (and back east). This replaces the Aviary
+// exits from Chapter 4, adding the west passage.
+aviary.get(RoomTrait)!.exits = {
+  [Direction.EAST]: { destination: mainPath.id },
+  [Direction.WEST]: { destination: giftShop.id },
+};
+giftShop.get(RoomTrait)!.exits = {
+  [Direction.EAST]: { destination: aviary.id },
+};
+
+const souvenirPress = world.createEntity('souvenir press', EntityType.CONTAINER);
+souvenirPress.add(new IdentityTrait({
+  name: 'souvenir press',
+  description:
+    'A heavy cast-iron machine with a crank handle and a slot that accepts ' +
+    'pennies. A sign reads: "INSERT PENNY, TURN HANDLE, KEEP FOREVER!"',
+  aliases: ['press', 'souvenir press', 'penny press', 'machine'],
+  article: 'a',
+}));
+souvenirPress.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
+souvenirPress.add(new SceneryTrait());
+world.moveEntity(souvenirPress.id, giftShop.id);
+
+// Remember the IDs the event handlers will match against.
+this.roomIds.giftShop = giftShop.id;
+this.roomIds.pettingZoo = pettingZoo.id;
+this.entityIds.animalFeed = animalFeed.id;
+this.entityIds.penny = penny.id;
+this.entityIds.souvenirPress = souvenirPress.id;
+```
+
+The handlers themselves are registered in `onEngineReady`, which the engine calls
+once the world is fully built. The two reaction sections that follow both live
+inside it:
+
+```typescript
+onEngineReady(engine: GameEngine): void {
+  const world = engine.getWorld();
+  // the chainEvent registrations below go here
+}
+```
+
 ## Reaction pattern: the goats eat the feed
 
 Putting it together — when the player drops the feed in the petting zoo, the

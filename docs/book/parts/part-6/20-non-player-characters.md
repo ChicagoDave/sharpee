@@ -27,6 +27,19 @@ Sharpee's NPC system has three parts that work together:
 2. **`NpcBehavior`** — an object that decides what the NPC does each turn.
 3. **`NpcPlugin`** — an engine plugin that gives NPCs their own phase in the turn.
 
+These span four packages — the engine, the world-model, the NPC plugin, and the
+stdlib:
+
+```typescript
+import { GameEngine } from '@sharpee/engine';
+import { NpcTrait } from '@sharpee/world-model';
+import { NpcPlugin } from '@sharpee/plugin-npc';
+import { NpcBehavior, NpcContext, NpcAction, createPatrolBehavior } from '@sharpee/stdlib';
+```
+
+`parrotBehavior` further down is a top-level `const`; the entity creation and
+`onEngineReady` are members of your `FamilyZooStory` class.
+
 ## Creating an NPC entity
 
 An NPC is an actor, not an item. It needs three traits: `IdentityTrait` for name
@@ -66,6 +79,26 @@ between rooms — the parrot, which stays put, sets it to `false`.
 > registered behavior's `id`. The NPC exists and you can examine it, but it never
 > acts, because the NPC service can't find a behavior to run for it. Keep the two
 > strings identical.
+
+### The parrot becomes an NPC
+
+The parrot already exists — you created it in Chapter 15 as a pettable actor in the
+Aviary. Turning it into an NPC is one more trait on that same entity, linking it to
+the behavior we write below:
+
+```typescript
+// `parrot` is the entity from Chapter 15 (Aviary, already an ACTOR).
+parrot.add(new NpcTrait({
+  behaviorId: 'zoo-parrot',   // matches parrotBehavior.id, below
+  canMove: false,             // it stays on its perch
+  isAlive: true,
+  isConscious: true,
+}));
+```
+
+So the zookeeper is a brand-new NPC while the parrot is an existing actor promoted
+to one — both routes end at the same place: an actor with an `NpcTrait` whose
+`behaviorId` names a behavior.
 
 ## Built-in behaviors
 
@@ -147,11 +180,18 @@ does this turn:
 
 Return an empty array for a turn where the NPC does nothing.
 
+The `npc.speech` and `npc.emote` message ids the behavior emits are built into the
+stdlib — you don't register them in `extendLanguage`. The NPC service renders them
+from the `text` you pass in each action's `data`.
+
 ## Registering the plugin and behaviors
 
 NPC behaviors don't fire until the `NpcPlugin` is registered with the engine.
 That happens in `onEngineReady()` — the story hook called after the engine is
-fully built, which is where any plugin needing the engine reference is set up:
+fully built, which is where any plugin needing the engine reference is set up. The
+patrol route references `this.roomIds` — the field you started in Chapter 13; make
+sure `initializeWorld` records `mainPath`, `pettingZoo`, and `aviary` there so the
+route can name them:
 
 ```typescript
 onEngineReady(engine: GameEngine): void {

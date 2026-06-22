@@ -95,6 +95,12 @@ own **`IOChannel`** in the `registerChannels` hook. A channel is an object with 
 computes its value for the turn:
 
 ```typescript
+// A mood line per room — rooms not listed stay quiet.
+const AMBIENCE_BY_ROOM: Record<string, string> = {
+  'Aviary': 'The air is alive with birdsong and the rustle of wings.',
+  'Nocturnal Animals Exhibit': 'Your eyes strain against the warm red dark.',
+};
+
 registerChannels(registry: IChannelRegistry): void {
   registry.add({
     id: 'zoo.ambience',
@@ -103,9 +109,9 @@ registerChannels(registry: IChannelRegistry): void {
     emit: 'sparse',          // only re-emit when the value changes
     produce: (ctx) => {
       const world = ctx.world as WorldModel;
-      const room = world.getLocation(world.getPlayer()!.id);
+      const room = world.getEntity(world.getLocation(world.getPlayer()!.id));
       // a mood line for the current room, or undefined to stay quiet
-      return ambienceFor(room);
+      return room ? AMBIENCE_BY_ROOM[room.name] ?? undefined : undefined;
     },
   });
 }

@@ -42,10 +42,13 @@ backpack.add(new IdentityTrait({
 backpack.add(new ContainerTrait({
   capacity: { maxItems: 5 },   // holds up to 5 things
 }));
+world.moveEntity(backpack.id, entrance.id);
 ```
 
 Because we *didn't* add `SceneryTrait`, this backpack is portable — and that's
-where containers get interesting.
+where containers get interesting. (As always, the `moveEntity` is what puts it in
+the world; without it the backpack exists nowhere and `take backpack` finds
+nothing.)
 
 ### Portable vs fixed containers
 
@@ -64,9 +67,21 @@ storage the player can reach into but never walk off with:
 
 ```typescript
 const dispenser = world.createEntity('feed dispenser', EntityType.CONTAINER);
+dispenser.add(new IdentityTrait({
+  name: 'feed dispenser',
+  description:
+    'A coin-operated feed dispenser mounted on a wooden post, its glass ' +
+    'globe half full of pellets.',
+  aliases: ['dispenser', 'feed dispenser', 'machine', 'globe'],
+}));
 dispenser.add(new ContainerTrait({ capacity: { maxItems: 3 } }));
 dispenser.add(new SceneryTrait());   // can't take the dispenser itself
+world.moveEntity(dispenser.id, pettingZoo.id);
 ```
+
+A fixed container still needs its own `IdentityTrait` — the name and aliases are
+how the player refers to it (`examine dispenser`) — and its `moveEntity`, which
+bolts it into the Petting Zoo.
 
 ## SupporterTrait
 
@@ -81,9 +96,12 @@ parkBench.add(new IdentityTrait({
 }));
 parkBench.add(new SupporterTrait({ capacity: { maxItems: 3 } }));
 parkBench.add(new SceneryTrait());   // can't take the bench itself
+world.moveEntity(parkBench.id, mainPath.id);
 ```
 
-The key behavioral difference from a container: supporters are always
+The bench goes on the Main Path, so `put penny on bench` in the "Try it"
+walkthrough has a surface to use. The key behavioral difference from a container:
+supporters are always
 **open** — whatever sits on a bench is visible without any special action.
 Containers, as the next chapter shows, can be opened and closed to hide their
 contents.

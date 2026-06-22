@@ -114,8 +114,10 @@ world.createRegion('reg-mine', { name: 'Coal Mine', parentRegionId: 'reg-undergr
 ```
 
 And you can ask the world about membership at any time — `world.isInRegion(roomId,
-'reg-staff')` for a yes/no, or the entity-query API to list every room in an area:
-`world.rooms.inRegion('reg-staff', world).toArray()`.
+'reg-staff')` for a yes/no, or, if you add the optional `@sharpee/queries` package,
+its entity-query API to list every room in an area:
+`world.rooms.inRegion('reg-staff', world).toArray()`. (`world.rooms` comes from
+that package; the plain `WorldModel` gives you `isInRegion`.)
 
 ## Key takeaway
 

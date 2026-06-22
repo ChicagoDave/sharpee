@@ -94,6 +94,23 @@ and it appears in the theme menu beside the platform's. The component contract i
 exactly what makes this safe: your theme and the built-in themes target the same
 class names, so the DOM never has to change to accommodate yours.
 
+Concretely, the CSS block and the config entry are all it takes:
+
+```css
+/* browser/familyzoo.css — linked last, so it wins the cascade */
+[data-theme="zoo-sunny"] {
+  --sharpee-bg: #fffdf5;
+  --sharpee-fg: #2b2a25;
+  --sharpee-accent: #e8a13a;
+}
+```
+
+```typescript
+// in the BrowserClient config (Chapter 25)
+defaultTheme: 'zoo-sunny',
+themes: [{ id: 'zoo-sunny', name: 'Zoo Sunny' }, /* …platform themes… */],
+```
+
 Family Zoo v18 ships exactly this — a bright `[data-theme="zoo-sunny"]` block in
 `browser/familyzoo.css`, the author override stylesheet the build links *last* so it
 wins the cascade — and lists `zoo-sunny` in its `BrowserClient` config.

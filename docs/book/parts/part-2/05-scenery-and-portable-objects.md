@@ -155,6 +155,19 @@ fence.add(new IdentityTrait({
 fence.add(new SceneryTrait());
 world.moveEntity(fence.id, entrance.id);
 
+// More scenery — a pair of rabbits in the Petting Zoo, beside the goats.
+const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
+rabbits.add(new IdentityTrait({
+  name: 'rabbits',
+  description:
+    'A pair of Holland Lop rabbits with floppy ears and twitching noses — ' +
+    'one pure white, the other brown and cream.',
+  aliases: ['rabbits', 'rabbit', 'bunnies', 'bunny'],
+  article: 'some',
+}));
+rabbits.add(new SceneryTrait());
+world.moveEntity(rabbits.id, pettingZoo.id);
+
 // A takeable item — no SceneryTrait, so it's portable by default.
 const zooMap = world.createEntity('zoo map', EntityType.ITEM);
 zooMap.add(new IdentityTrait({
@@ -163,7 +176,23 @@ zooMap.add(new IdentityTrait({
   aliases: ['map', 'zoo map', 'folding map'],
 }));
 world.moveEntity(zooMap.id, entrance.id);
+
+// A second takeable item, in the Petting Zoo this time.
+const animalFeed = world.createEntity('bag of animal feed', EntityType.ITEM);
+animalFeed.add(new IdentityTrait({
+  name: 'bag of animal feed',
+  description:
+    'A small brown paper bag of dried corn and pellets. The label reads ' +
+    '"ZOO SNACKS — Safe for goats, rabbits, and birds." It rustles invitingly.',
+  aliases: ['feed', 'animal feed', 'bag of feed', 'bag', 'corn', 'pellets'],
+}));
+world.moveEntity(animalFeed.id, pettingZoo.id);
 ```
+
+The souvenir penny from earlier in the chapter sits on the Main Path, and the
+**pygmy goats** you placed in the Petting Zoo back in Chapter 4 are scenery — so
+every object the "Try it" walkthrough touches is now in the world: the map and
+penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 
 ## Try it
 

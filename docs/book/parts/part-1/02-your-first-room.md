@@ -50,10 +50,47 @@ In this version we use five traits:
 - **`SceneryTrait`** — marks an entity as fixed. The player can examine it but not take it.
 - **`RoomTrait`** — marks an entity as a room, with exits and a darkness flag.
 
+## The shape of the file
+
+Before the methods, the top of the file: the **imports**, the **config**, and the
+**class** that holds everything. Every symbol the story uses comes from one of two
+packages — `@sharpee/engine` (the `Story` contract and `StoryConfig`) and
+`@sharpee/world-model` (the world, entity types, and traits).
+
+```typescript
+import { Story, StoryConfig } from '@sharpee/engine';
+import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
+import {
+  IdentityTrait,
+  ActorTrait,
+  ContainerTrait,
+  RoomTrait,
+  SceneryTrait,
+} from '@sharpee/world-model';
+
+const config: StoryConfig = {
+  id: 'familyzoo',
+  title: 'Family Zoo',
+  author: 'Sharpee Tutorial',
+  version: '0.1.0',
+  description: 'A small family zoo — learn Sharpee one concept at a time.',
+};
+
+class FamilyZooStory implements Story {
+  config = config;
+
+  // createPlayer(world)     — fills in next
+  // initializeWorld(world)  — and after that
+}
+```
+
+The two methods below are members of this `FamilyZooStory` class — they go where
+the comments are. We'll write each one, then assemble the whole file at the end.
+
 ## Creating the player
 
-The engine calls `createPlayer` first. You build the player like any other
-entity — create it, add traits, return it.
+The engine calls `createPlayer` first. Inside the class, you build the player like
+any other entity — create it, add traits, return it.
 
 ```typescript
 createPlayer(world: WorldModel): IFEntity {
@@ -123,14 +160,28 @@ initializeWorld(world: WorldModel): void {
   }));
   sign.add(new SceneryTrait());
 
-  // ...the ticket booth is built the same way.
+  const booth = world.createEntity('ticket booth', EntityType.SCENERY);
+  booth.add(new IdentityTrait({
+    name: 'ticket booth',
+    description:
+      'A small wooden booth with a sliding glass window. A sign in the ' +
+      'window reads "Self-Guided Tours — No Ticket Needed Today!"',
+    aliases: ['booth', 'ticket booth', 'window'],
+    article: 'a',
+  }));
+  booth.add(new SceneryTrait());
 
   world.moveEntity(sign.id, entrance.id);
+  world.moveEntity(booth.id, entrance.id);
 
   const player = world.getPlayer();
   if (player) world.moveEntity(player.id, entrance.id);
 }
 ```
+
+The ticket booth is built exactly like the sign: an entity, an `IdentityTrait` for
+its name and description, and a `SceneryTrait` so it stays put. Both are placed in
+the entrance — and now `examine booth` in the "Try it" list has something to find.
 
 ## Placing things
 
@@ -140,6 +191,21 @@ location, whether that's an object in a room, an item in a container, or the
 player in a room. Forget this step and the entity exists in the database but is invisible: the player can never reach it.
 
 The player is no exception. `world.moveEntity(player.id, entrance.id)` is what sets the starting location.
+
+## Exposing the story
+
+The two methods live inside the `FamilyZooStory` class from "The shape of the file."
+The last piece is the bottom of the file: the engine loads your story from the
+module's exports, so provide both a named `story` and a default — it then works
+however the module is loaded.
+
+```typescript
+export const story = new FamilyZooStory();
+export default story;
+```
+
+That's the whole file: imports, `config`, the `class` with `createPlayer` and
+`initializeWorld`, and these exports. Build it and it runs.
 
 ## Try it
 

@@ -22,10 +22,13 @@ window, and the engine manages the lifecycle.
 
 ## Creating a scene
 
-Scenes are created in `initializeWorld()` with `world.createScene()`. The `begin`
-and `end` options are predicates over the world — each returns `true` when its
-moment has come. Here's a scene that's active only while the visitor is in the
-petting zoo:
+Scenes are created in `initializeWorld()` with `world.createScene()`. The scene
+methods — `createScene`, `isSceneActive`, `hasSceneHappened`, `hasSceneEnded` — are
+all on the `WorldModel` you already have in scope; the one symbol you import is
+`SceneTrait` (used later to read a scene's `activeTurns`), from `@sharpee/world-model`.
+The `begin` and `end` options are predicates over the world — each returns `true`
+when its moment has come. Here's a scene that's active only while the visitor is in
+the petting zoo:
 
 ```typescript
 world.createScene('scene-petting-zoo', {

@@ -14,10 +14,11 @@ them.
 
 ## Dark rooms
 
-Any room becomes dark by setting `isDark: true` on its `RoomTrait`:
+Any room becomes dark by setting `isDark: true` on its `RoomTrait`. Here's the one
+line that matters on the nocturnal exhibit (we build the whole room at the end of
+the chapter):
 
 ```typescript
-const nocturnalExhibit = world.createEntity('Nocturnal Exhibit', EntityType.ROOM);
 nocturnalExhibit.add(new RoomTrait({
   exits: {},
   isDark: true,     // this room is pitch black
@@ -127,6 +128,77 @@ until there's light. That makes darkness a natural gating mechanism: put somethi
 worth finding behind it, and the light source becomes the key that opens it. The
 flashlight here, a candle elsewhere, a magic spell in another game — same shape,
 different flavor.
+
+## Wiring it into the zoo
+
+Two new traits arrive this chapter — add them to your world-model import:
+
+```typescript
+import { LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
+```
+
+The dark exhibit hangs off the Supply Room from Chapter 7. Build the room in full,
+connect it south of the supply room (with the way back north), and populate it with
+the animals the flashlight will reveal:
+
+```typescript
+const nocturnalExhibit = world.createEntity('Nocturnal Animals Exhibit', EntityType.ROOM);
+nocturnalExhibit.add(new RoomTrait({ exits: {}, isDark: true }));
+nocturnalExhibit.add(new IdentityTrait({
+  name: 'Nocturnal Animals Exhibit',
+  description:
+    'A hushed, cavern-like hall lit by faint blue moonlight panels. Sugar ' +
+    'gliders leap between branches, wide-eyed bush babies cling to a rope, ' +
+    'and an enormous barn owl perches motionless on a stump.',
+  aliases: ['nocturnal exhibit', 'nocturnal animals', 'dark exhibit', 'exhibit'],
+  article: 'the',
+}));
+
+// Connect it south of the Supply Room, with the way back north. This adds the
+// south passage to the Supply Room exits from Chapter 7.
+supplyRoom.get(RoomTrait)!.exits = {
+  [Direction.NORTH]: { destination: mainPath.id, via: staffGate.id },
+  [Direction.SOUTH]: { destination: nocturnalExhibit.id },
+};
+nocturnalExhibit.get(RoomTrait)!.exits = {
+  [Direction.NORTH]: { destination: supplyRoom.id },
+};
+
+// The animals — scenery, examinable only once the room is lit.
+const sugarGliders = world.createEntity('sugar gliders', EntityType.SCENERY);
+sugarGliders.add(new IdentityTrait({
+  name: 'sugar gliders',
+  description: 'A family of tiny sugar gliders with enormous dark eyes, gliding between branches.',
+  aliases: ['sugar gliders', 'gliders', 'sugar glider'],
+  article: 'some',
+}));
+sugarGliders.add(new SceneryTrait());
+world.moveEntity(sugarGliders.id, nocturnalExhibit.id);
+
+const bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
+bushBabies.add(new IdentityTrait({
+  name: 'bush babies',
+  description: 'Two bush babies with impossibly large round eyes, clinging to a rope.',
+  aliases: ['bush babies', 'bush baby', 'galagos'],
+  article: 'some',
+}));
+bushBabies.add(new SceneryTrait());
+world.moveEntity(bushBabies.id, nocturnalExhibit.id);
+
+const barnOwl = world.createEntity('barn owl', EntityType.SCENERY);
+barnOwl.add(new IdentityTrait({
+  name: 'barn owl',
+  description: 'An enormous barn owl with a heart-shaped white face, watching you without blinking.',
+  aliases: ['barn owl', 'owl'],
+  article: 'a',
+}));
+barnOwl.add(new SceneryTrait());
+world.moveEntity(barnOwl.id, nocturnalExhibit.id);
+```
+
+The flashlight from earlier in the chapter sits in the Supply Room, ready to carry
+in — so `examine owl` and `examine gliders` in the walkthrough below both resolve
+once the light is on.
 
 ## Try it
 

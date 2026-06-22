@@ -58,14 +58,18 @@ Zifmia ships as a single, self-contained **Docker image** — that's its install
 The server is built from the monorepo with devkit:
 
 ```bash
-devkit build --zifmia      # → tools/zifmia/dist/
+sharpee build --zifmia      # → tools/zifmia/dist/  (same CLI as Chapter 31;
+                            #  inside the repo it's ./sharpee build --zifmia)
 ```
 
 and deployed with Docker Compose:
 
 ```bash
-docker compose up -d --build
+docker compose up -d        # pulls and runs the published image
 ```
+
+(To build the image from source instead, use the build compose file:
+`docker compose -f docker-compose.build.yml up -d --build`.)
 
 The container runs the Sharpee engine in-process, serves HTTP and the WebSocket on one
 port, and persists rooms and saves to a database volume. Operators drop their built

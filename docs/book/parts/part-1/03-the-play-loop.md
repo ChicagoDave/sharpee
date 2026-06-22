@@ -69,6 +69,9 @@ context.event('if.event.taken', {
 });
 ```
 
+(That snippet is illustrative — the zoo has no brass key. It just shows the
+*shape* of an event: a type, a message id, and parameters.)
+
 At the end of the turn the engine's **prose pipeline** takes those events, looks
 each message id up in the language layer, and renders the actual words the player
 reads.

@@ -10,6 +10,17 @@ clicks on and off but sheds no light at all. This chapter covers two small,
 self-contained traits that round out an ordinary world: `ReadableTrait` for
 things with words, and `SwitchableTrait` for devices with an on/off state.
 
+`ReadableTrait` is new this chapter; `SwitchableTrait` you met in *Light & Dark*.
+Both come from the world-model package:
+
+```typescript
+import { ReadableTrait, SwitchableTrait } from '@sharpee/world-model';
+```
+
+The snippets below go in `initializeWorld`, alongside the rooms you've built since
+Chapter 4 — `entrance`, `pettingZoo`, and `supplyRoom` are the same room entities
+from earlier chapters.
+
 ## ReadableTrait — what an object says
 
 `ReadableTrait` gives an entity text that the `read` action displays:

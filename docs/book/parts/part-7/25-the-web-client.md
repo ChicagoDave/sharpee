@@ -19,18 +19,20 @@ hands it the page's elements, connects the engine, and starts:
 
 ```typescript
 const client = new BrowserClient({
-  storagePrefix: 'zoo-',
-  defaultTheme: 'cozy',
+  storagePrefix: 'familyzoo-',
+  defaultTheme: 'zoo-sunny',
   themes: [
-    { id: 'cozy', name: 'Cozy' },
-    { id: 'dos-classic', name: 'DOS Classic' },
+    { id: 'zoo-sunny', name: 'Zoo Sunny' },        // story-shipped theme (Chapter 26)
+    { id: 'modern-dark', name: 'Modern Dark' },     // platform defaults
+    { id: 'retro-terminal', name: 'Retro Terminal' },
+    { id: 'paper', name: 'Paper' },
   ],
   storyInfo: {
     title: 'Family Zoo',
     authors: 'You',
     version: '1.0.0',
-    engineVersion: '…',
-    buildDate: '…',
+    engineVersion: '',   // filled by `sharpee build`; '' is a valid placeholder
+    buildDate: '',
   },
 });
 
@@ -103,12 +105,16 @@ const renderer = client.getChannelRenderer();
 renderer.registerRenderer('score', {
   onValue: (value) => {
     const { current } = value as { current: number };
-    document.getElementById('score-badge')!.textContent = `★ ${current}`;
+    // Guard the lookup — the element only exists if your host page adds it.
+    const badge = document.getElementById('score-badge');
+    if (badge) badge.textContent = `★ ${current}`;
   },
 });
 ```
 
-Registration is last-write-wins, so a story renderer registered after the defaults
+This assumes your host page has a `<span id="score-badge">` to write into; the
+guard keeps the renderer safe if it doesn't. Registration is last-write-wins, so a
+story renderer registered after the defaults
 simply replaces the platform one for that channel — without touching any other
 channel. The same hook is how a story renders a channel it *invented* in
 `registerChannels` (the `zoo.ambience` channel from the last chapter): register a

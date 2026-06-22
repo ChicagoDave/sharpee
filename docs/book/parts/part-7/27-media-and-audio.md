@@ -94,9 +94,28 @@ audio.atmosphere(nocturnalId)
   .build();
 ```
 
-Then a single room-entry handler turns the data into channel signals. On
-`if.event.actor_moved` it looks up the destination's atmosphere and emits the
-`media.*` events — and stops the loop for rooms that have none:
+A room-entry handler turns that data into channel signals. It's registered on the
+event processor and returns `Effect[]` (from `@sharpee/event-processor`). Two small
+helpers keep the body readable — `mediaEvent` builds a `media.*` semantic event, and
+`emit` wraps it in the `Effect` shape the processor expects:
+
+```typescript
+import type { Effect } from '@sharpee/event-processor';
+import { ISemanticEvent } from '@sharpee/core';
+
+let mediaCounter = 0;
+function mediaEvent(type: string, data: Record<string, unknown>): ISemanticEvent {
+  return { id: `zoo-media-${++mediaCounter}`, type, timestamp: Date.now(),
+           entities: {}, data };
+}
+function emit(type: string, data: Record<string, unknown>): Effect {
+  return { type: 'emit', event: mediaEvent(type, data) };
+}
+```
+
+On `if.event.actor_moved` the handler looks up the destination's atmosphere, emits
+the `media.*` events, and stops the loop for rooms that have none — building up the
+`effects` array it returns:
 
 ```typescript
 const atmosphere = audio.getAtmosphere(toRoom);
