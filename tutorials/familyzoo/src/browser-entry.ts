@@ -150,9 +150,10 @@ async function start(): Promise<void> {
   // client.start() so the first turn packet is painted.
   //  1. ambient:environment — the soundscape loop. Forward to the shared
   //     AudioManager so playback shares one Web Audio context.
-  //  2. zoo.ambience — our custom mood-line text channel. Paint it into a
-  //     #zoo-ambience element if the page provides one (authors add it in
-  //     their override); otherwise stay silent.
+  //  2. zoo.ambience — our custom mood-line text channel. The platform page has
+  //     no element for an invented channel, so the renderer creates its own
+  //     #zoo-ambience node above the prose and reuses it each turn (the
+  //     web-native pattern from Chapter 25 — no host-page edits, survives rebuilds).
   const channelRenderer = client.getChannelRenderer();
   channelRenderer.registerRenderer(
     'ambient:environment',
@@ -161,8 +162,16 @@ async function start(): Promise<void> {
   channelRenderer.registerRenderer(ZOO_AMBIENCE_CHANNEL_ID, {
     onValue(value: unknown): void {
       if (typeof value !== 'string') return;
-      const el = document.getElementById('zoo-ambience');
-      if (el) el.textContent = value;
+      const main = document.getElementById('main-window');
+      if (!main) return;
+      let line = document.getElementById('zoo-ambience');
+      if (!line) {
+        line = document.createElement('div');
+        line.id = 'zoo-ambience';
+        line.className = 'zoo-ambience';
+        main.prepend(line);
+      }
+      line.textContent = value;
     },
   });
 

@@ -103,7 +103,7 @@ registerChannels(registry: IChannelRegistry): void {
     emit: 'sparse',          // only re-emit when the value changes
     produce: (ctx) => {
       const world = ctx.world as WorldModel;
-      const room = world.getEntity(world.getLocation(world.getPlayer()!.id));
+      const room = world.getEntity(world.getLocation(world.getPlayer()!.id)!);
       // a mood line for the current room, or undefined to stay quiet
       return room ? AMBIENCE_BY_ROOM[room.name] ?? undefined : undefined;
     },
@@ -123,8 +123,9 @@ is what keeps presentation in the client's hands, where an author can restyle or
 replace it per story.
 
 Family Zoo v18 ships exactly this `zoo.ambience` channel — a one-line mood description
-for each area — and its browser entry registers a renderer that paints the line into a
-dedicated page element. The chapters ahead build on that concrete example.
+for each area — and its browser entry registers a renderer that creates a dedicated
+page element and paints the line into it. The chapters ahead build on that concrete
+example.
 
 ## Key takeaway
 

@@ -98,27 +98,57 @@ platform you already know.
 
 Because each channel maps to one registered renderer, customizing the UI is
 *re-registering*. After the platform defaults are in place — available from
-`connectEngine` onward — a story grabs the renderer and registers its own:
+`connectEngine` onward — a story grabs the renderer and registers its own. There are
+two cases, and they differ in one way: whether the channel already has a place on the
+page.
+
+**Replacing an existing channel's renderer.** A standard channel like `score`
+already renders into a platform element — the status line. To change *how* it looks,
+re-register against the same id and write into that same element. Registration is
+last-write-wins, so your renderer simply replaces the platform's for that channel,
+without touching any other:
 
 ```typescript
 const renderer = client.getChannelRenderer();
 renderer.registerRenderer('score', {
   onValue: (value) => {
     const { current } = value as { current: number };
-    // Guard the lookup — the element only exists if your host page adds it.
-    const badge = document.getElementById('score-badge');
-    if (badge) badge.textContent = `★ ${current}`;
+    const el = document.getElementById('score-turns'); // the platform status element
+    if (el) el.textContent = `★ ${current}`;
   },
 });
 ```
 
-This assumes your host page has a `<span id="score-badge">` to write into; the
-guard keeps the renderer safe if it doesn't. Registration is last-write-wins, so a
-story renderer registered after the defaults
-simply replaces the platform one for that channel — without touching any other
-channel. The same hook is how a story renders a channel it *invented* in
-`registerChannels` (the `zoo.ambience` channel from the last chapter): register a
-renderer against its id and the JSON-tree fallback gives way to your own DOM.
+You're not adding anything to the page — the score element is already there; you're
+only changing what gets written into it.
+
+**Rendering a channel you invented.** A channel you created in `registerChannels`
+(the `zoo.ambience` channel from the last chapter) has no place on the page yet —
+the platform doesn't know it exists, so left alone its value falls to the renderer's
+JSON-tree fallback. Its renderer therefore makes its own element the first time it
+runs and reuses it after. This is exactly how the platform's built-in renderers
+work: they create DOM nodes and append them into the page's containers. Create once,
+reuse thereafter:
+
+```typescript
+renderer.registerRenderer('zoo.ambience', {
+  onValue: (value) => {
+    const main = document.getElementById('main-window'); // a stable platform container
+    if (!main) return;
+    let line = document.getElementById('zoo-ambience');
+    if (!line) {
+      line = document.createElement('div');
+      line.id = 'zoo-ambience';
+      main.prepend(line); // a mood line above the prose
+    }
+    line.textContent = String(value ?? '');
+  },
+});
+```
+
+The renderer owns the element, so nothing needs to be added to the host page and it
+survives every rebuild. Style it from your override stylesheet (Chapter 26) by its
+id or a class you give it.
 
 ## Save, restore, and theme — for free
 
