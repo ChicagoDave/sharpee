@@ -15,8 +15,8 @@ import {
   ThemeManager,
   createAmbientChannelRenderer,
 } from '@sharpee/platform-browser';
-import story from './v18';
-import { ZOO_AMBIENCE_CHANNEL_ID } from './v18/presentation';
+import story from './ch24-27-presentation';
+import { ZOO_AMBIENCE_CHANNEL_ID } from './ch24-27-presentation/presentation';
 
 // Storage key for theme
 const THEME_STORAGE_KEY = 'familyzoo-theme';

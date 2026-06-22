@@ -5,14 +5,15 @@ These files are a 1:1 companion to *The Sharpee Author and Developer Manual*
 **book** has built it up to and including that chapter — in the book's reading
 order, with the book's code.
 
-The original `../v01`–`../v18` versions remain the historical tutorial. This set
-exists because the book **reorders the curriculum** relative to the version
+This **is** the Family Zoo tutorial. The original `v01`–`v18` versions are kept as
+the historical record under `docs/archive/tutorial/`. The set was rebuilt to the
+book's order because the book **reorders the curriculum** relative to the version
 numbers (notably: NPCs are taught late, at Chapter 20, *after* capability dispatch
-at Chapter 15). Following the book against `vNN.ts` therefore hits an ordering
-mismatch; this set removes it.
+at Chapter 15); following the book against `vNN.ts` hit an ordering mismatch, which
+this set removes.
 
-None of these are wired into `index.ts` (which still exports `v18`); they are
-reference sources, like the `vNN` files.
+`index.ts` re-exports the most complete snapshot (`ch24-27-presentation`), so a
+default build runs the finished game.
 
 ## File ↔ chapter map
 

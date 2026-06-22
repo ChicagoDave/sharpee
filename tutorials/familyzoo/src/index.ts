@@ -1,9 +1,11 @@
 /**
  * Family Zoo Tutorial — Default Entry Point
  *
- * This re-exports the latest completed version so that
- * `./build.sh -s familyzoo` always builds the most recent one.
+ * Re-exports the most complete book-aligned snapshot (the Presentation chapters,
+ * Chapters 24–27), so a default build runs the finished game.
  *
- * Currently: V18 (Sights & Sounds — Presentation)
+ * The chapter snapshots in this directory are a 1:1 companion to *The Sharpee
+ * Author and Developer Manual* — see README.md. The original v01–v18 tutorial is
+ * archived under docs/archive/tutorial/.
  */
-export { story, default } from './v18';
+export { story, default } from './ch24-27-presentation';
