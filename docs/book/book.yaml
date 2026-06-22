@@ -37,7 +37,8 @@ metadata:
 # `[v.. pending]` note; new chapters are stubs until their writing phase.
 input-files:
   - frontmatter/00-preface.md
-  - frontmatter/01-how-to-read.md
+  - frontmatter/01-introduction.md
+  - frontmatter/02-how-to-read.md
   # Part I — Getting Started
   - parts/part-1/01-installing-sharpee.md          # new (stub)
   - parts/part-1/02-your-first-room.md             # v01 (migrated)
