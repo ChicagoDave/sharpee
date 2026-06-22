@@ -19,7 +19,7 @@ export const showingLanguage = {
     'no_viewer': "Show it to whom?",
     'not_carrying': "{You} aren't carrying {the:item}.",
     'viewer_not_visible': "{You} {can't} see {the:viewer}.",
-    'viewer_too_far': "{the:cap:viewer} is too far away to see clearly.",
+    'viewer_too_far': "{the:cap:viewer} {is:viewer} too far away to see clearly.",
     'not_actor': "{You} can only show things to people.",
     'self': "{You} {examine} {the:item} closely.",
 

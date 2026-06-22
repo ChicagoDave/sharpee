@@ -10,6 +10,7 @@ import type { Formatter, FormatterRegistry, FormatterContext, EntityInfo } from 
 import { aFormatter, theFormatter, someFormatter, yourFormatter } from './article.js';
 import { listFormatter, orListFormatter, commaListFormatter, countFormatter } from './list.js';
 import { capFormatter, upperFormatter, lowerFormatter, titleFormatter } from './text.js';
+import { isFormatter, wasFormatter, hasFormatter } from './verb.js';
 
 /**
  * Create the default formatter registry with all built-in formatters
@@ -35,6 +36,11 @@ export function createFormatterRegistry(): FormatterRegistry {
   registry.set('upper', upperFormatter);
   registry.set('lower', lowerFormatter);
   registry.set('title', titleFormatter);
+
+  // Verb-agreement formatters (keyed to a placeholder's grammatical number)
+  registry.set('is', isFormatter);
+  registry.set('was', wasFormatter);
+  registry.set('has', hasFormatter);
 
   return registry;
 }

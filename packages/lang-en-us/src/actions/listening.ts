@@ -22,8 +22,8 @@ export const listeningLanguage = {
 
     // Success messages - specific targets
     'no_sound': "{the:cap:target} isn't making any sound.",
-    'device_running': "{the:cap:target} is making a soft humming sound.",
-    'device_off': "{the:cap:target} is silent.",
+    'device_running': "{the:cap:target} {is:target} making a soft humming sound.",
+    'device_off': "{the:cap:target} {is:target} silent.",
     'container_sounds': "{You} {hear} faint sounds from inside {the:target}.",
     'liquid_sounds': "{You} {hear} liquid sloshing in {the:target}.",
 

@@ -65,6 +65,26 @@ colons, and they apply in turn:
 `{the:cap:item}` builds "the toucan" and then capitalizes it. The text formatters
 are `cap` (capitalize the first letter), `upper`, `lower`, and `title`.
 
+## Verb agreement
+
+A verb has to agree with its subject — "the toucan **is** fixed in place," but "the
+pygmy goats **are** fixed in place." Rather than hardcode `is`, a template keys a
+**verb formatter** to the same entity:
+
+```text
+{the:cap:item} {is:item} fixed in place.
+→ The toucan is fixed in place.        (singular)
+→ The pygmy goats are fixed in place.  (plural)
+```
+
+`{is:item}` emits "is" or "are" depending on the entity's number — the same
+`grammaticalNumber: 'plural'` flag you set back in Chapter 5 (or `.plural()` on the
+`object()` builder). The companions `{was:item}` (was/were) and `{has:item}`
+(has/have) work the same way. An entity with no number metadata is treated as
+singular, so existing singular objects read exactly as before. This is why marking
+plural-named scenery matters: the platform's standard messages already use these
+formatters, so one flag on the entity keeps every generated line grammatical.
+
 ## Lists
 
 The chain also handles collections. `{items:list}` joins an array into a natural

@@ -2,6 +2,12 @@
 
 Core domain model and contracts for the Sharpee Interactive Fiction Platform.
 
+## Installation
+
+```bash
+npm install @sharpee/if-domain
+```
+
 ## Overview
 
 This package contains the shared domain types, events, and contracts that define the Interactive Fiction domain model. It serves as the single source of truth for domain concepts used across the Sharpee platform.
@@ -33,6 +39,16 @@ This package contains the shared domain types, events, and contracts that define
 - `EventSequence` - Sequencing information for events
 - `SequencedEvent` - Event with sequence information
 - `EventSequencer` - Interface for event sequencing
+
+### Language & Parser Contracts
+- `LanguageProvider`, `ParserLanguageProvider` - Language provider interfaces
+- Parser contracts (`Parser`, `ParserFactory`, `BaseParser`, `Token`, …) and the grammar system (ADR-087)
+- Vocabulary contracts (`VocabularyEntry`, `PartOfSpeech`, `vocabularyRegistry`, …)
+
+### Other Contracts
+- Prompt types (ADR-137)
+- Channel-I/O type contracts (ADR-163) — the universal UI surface
+- Spatial sound propagation contracts (ADR-172)
 
 ## Usage
 
@@ -69,3 +85,7 @@ This package must be built after `core` but before:
 - `event-processor`
 - `engine`
 - `stdlib`
+
+## License
+
+MIT

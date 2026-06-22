@@ -40,12 +40,18 @@ export const npcLanguage = {
     'npc.combat.attack.killed': "The troll lands a killing blow. You are dead.",
 
     // Speech messages
+    // `npc.speech` is the generic id emitted by NpcBehavior `speak` actions:
+    // the behavior supplies the full line in `{text}`, so render it verbatim.
+    'npc.speech': "{text}",
     'npc.speaks': "{npcName} says, \"{text}\"",
     'npc.shouts': "{npcName} shouts, \"{text}\"",
     'npc.whispers': "{npcName} whispers, \"{text}\"",
     'npc.mutters': "{npcName} mutters, \"{text}\"",
 
     // Emote messages
+    // `npc.emote` is the generic id emitted by NpcBehavior `emote` actions:
+    // the behavior supplies the full sentence in `{text}`, so render it verbatim.
+    'npc.emote': "{text}",
     'npc.laughs': "{npcName} laughs.",
     'npc.growls': "{npcName} growls menacingly.",
     'npc.cries': "{npcName} cries.",

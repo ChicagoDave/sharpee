@@ -2,6 +2,12 @@
 
 Standard library for the Sharpee IF Platform - 48 standard IF actions with four-phase pattern (validate/execute/report/blocked).
 
+## Installation
+
+```bash
+npm install @sharpee/stdlib
+```
+
 ## Overview
 
 The `@sharpee/stdlib` package provides the core IF functionality:
@@ -13,12 +19,12 @@ The `@sharpee/stdlib` package provides the core IF functionality:
 
 ## Architecture
 
-The stdlib implements Sharpee's three-phase command processing:
+The stdlib implements Sharpee's command processing pipeline:
 
 ```
 Input Text
     ↓
-[Parser] - Grammar analysis only
+[Parser] - Grammar analysis only        (@sharpee/parser-en-us)
     ↓
 ParsedCommand - Structured but unresolved
     ↓
@@ -26,26 +32,27 @@ ParsedCommand - Structured but unresolved
     ↓
 ValidatedCommand - Ready for execution
     ↓
-[Actions] - Business logic
+[Actions] - Four-phase: validate/execute/report/blocked
     ↓
 SemanticEvents - What happened
 ```
 
-## Parser
+## Parser Contracts
 
-The parser performs purely grammatical analysis without world knowledge:
+The concrete parser implementation lives in the language package
+(`@sharpee/parser-en-us`). stdlib re-exports the parser and vocabulary
+contracts (from `@sharpee/if-domain`) plus the `ParserFactory` used to register
+and create parsers:
 
 ```typescript
-import { BasicParser } from '@sharpee/stdlib/parser';
+import { ParserFactory } from '@sharpee/stdlib';
+import { EnglishParser } from '@sharpee/parser-en-us';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
-const parser = new BasicParser();
-parser.registerVocabulary(standardVocabulary);
+ParserFactory.registerParser('en-US', EnglishParser);
+const parser = ParserFactory.createParser('en-US', new EnglishLanguageProvider());
 
-const result = parser.parse("take the red ball");
-// Returns ParsedCommand with:
-// - action: "TAKE"
-// - directObject: { text: "red ball", candidates: ["ball", "red"] }
-// - pattern: "VERB_OBJ"
+const result = parser.parse('take the red ball');
 ```
 
 ## Validator
@@ -53,7 +60,7 @@ const result = parser.parse("take the red ball");
 The validator resolves entities and checks preconditions:
 
 ```typescript
-import { CommandValidator } from '@sharpee/stdlib/validation';
+import { CommandValidator } from '@sharpee/stdlib';
 
 const validator = new CommandValidator(world, actionRegistry);
 
@@ -85,20 +92,27 @@ const validated = validator.validate(parsedCommand, {
 Standard IF actions are included:
 
 ```typescript
-import { 
+import {
   takingAction,
   droppingAction,
   examiningAction,
   goingAction,
-  openingAction 
-} from '@sharpee/stdlib/actions';
+  openingAction
+} from '@sharpee/stdlib';
 
-// Actions implement the Action interface:
+// Actions implement the four-phase Action interface (ADR-051):
 interface Action {
   id: string;
-  execute(command: ValidatedCommand, context: ActionContext): SemanticEvent[];
+  validate(context: ActionContext): ValidationResult;  // checks, no mutations
+  execute(context: ActionContext): void;               // mutations only
+  report(context: ActionContext): ISemanticEvent[];    // events from final state
+  blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[];
 }
 ```
+
+> See `packages/stdlib/CLAUDE.md` for capability dispatch (ADR-090) — how
+> entity-specific verbs (LOWER, TURN, WAVE) are handled via traits + behaviors
+> rather than per-action branching.
 
 ### Available Actions (48 Total)
 
@@ -115,70 +129,45 @@ interface Action {
 
 ## Language System
 
-Message formatting and resolution:
+stdlib does not contain English prose. Actions emit semantic events carrying
+**message IDs** (defined in each action's `*-messages.ts`); the language package
+(`@sharpee/lang-en-us`) maps those IDs to text via its formatter chain
+(ADR-095/ADR-158). This keeps all user-facing text in the language layer.
 
-```typescript
-import { IFMessageResolver } from '@sharpee/stdlib/messages';
+## Vocabulary Contracts
 
-const resolver = new IFMessageResolver();
-resolver.registerBundle('en-US', enUSBundle);
-
-// Format messages with parameters
-const message = resolver.resolve('item_taken', {
-  item: 'golden key'
-});
-// "You take the golden key."
-```
-
-## Vocabulary
-
-Standard English vocabulary for IF:
-
-```typescript
-import { standardVocabulary } from '@sharpee/stdlib/vocabulary';
-
-// Includes common IF words:
-// - Verbs: take, drop, examine, go, etc.
-// - Prepositions: in, on, under, with, etc.
-// - Articles: the, a, an
-// - Common nouns and adjectives
-```
+stdlib re-exports the vocabulary contracts and registry (from
+`@sharpee/if-domain`) — `VocabularyEntry`, `PartOfSpeech`, `VocabularyProvider`,
+`vocabularyRegistry`, etc. The actual English word lists live in
+`@sharpee/lang-en-us`.
 
 ## Integration Example
 
 ```typescript
-import { 
-  BasicParser,
+import {
+  ParserFactory,
   CommandValidator,
-  ActionRegistry,
-  standardActions,
-  standardVocabulary 
+  StandardActionRegistry,
+  standardActions
 } from '@sharpee/stdlib';
+import { EnglishParser } from '@sharpee/parser-en-us';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
 // Set up parser
-const parser = new BasicParser();
-parser.registerVocabulary(standardVocabulary);
+ParserFactory.registerParser('en-US', EnglishParser);
+const parser = ParserFactory.createParser('en-US', new EnglishLanguageProvider());
 
 // Set up actions
-const actionRegistry = new ActionRegistry();
+const actionRegistry = new StandardActionRegistry();
 standardActions.forEach(action => actionRegistry.register(action));
 
 // Set up validator
 const validator = new CommandValidator(world, actionRegistry);
-
-// Process a command
-const parsed = parser.parse("take brass key");
-if (parsed.success) {
-  const validated = validator.validate(parsed.value, validationContext);
-  if (validated.success) {
-    const events = validated.value.actionHandler.execute(
-      validated.value,
-      actionContext
-    );
-    // Process events...
-  }
-}
 ```
+
+> In practice you rarely wire these by hand — `@sharpee/engine` and the build
+> toolchain assemble the parser, validator, action registry, and language
+> provider for you from the story's config.
 
 ## Design Philosophy
 

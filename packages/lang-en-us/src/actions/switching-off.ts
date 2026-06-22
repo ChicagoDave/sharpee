@@ -22,7 +22,7 @@ export const switchingOffLanguage = {
     'not_visible': "{You} {can't} see {the:target}.",
     'not_reachable': "{You} {can't} reach {the:target}.",
     'not_switchable': "{the:cap:target} isn't something {you} can switch off.",
-    'already_off': "{the:cap:target} is already off.",
+    'already_off': "{the:cap:target} {is:target} already off.",
 
     // Success messages
     'switched_off': "{You} {switch} off {the:target}.",

@@ -160,6 +160,7 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
     .description('Three pygmy goats hoping you have food.')
     .aliases('goats', 'pygmy goats', 'goat')
     .scenery()
+    .plural()
     .addTrait(new PettableTrait('goats'))
     .in(pettingZooEntity)
     .build();
@@ -168,6 +169,7 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
     .description('A pair of Holland Lop rabbits with floppy ears.')
     .aliases('rabbits', 'rabbit', 'bunnies')
     .scenery()
+    .plural()
     .addTrait(new PettableTrait('rabbits'))
     .in(pettingZooEntity)
     .build();
@@ -176,6 +178,7 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
     .description('A raucous flock of scarlet macaws and grey African parrots.')
     .aliases('parrots', 'macaws', 'birds')
     .scenery()
+    .plural()
     .in(aviaryEntity)
     .build();
 

@@ -18,7 +18,7 @@ export const askingLanguage = {
     'no_target': "Ask whom?",
     'no_topic': "Ask about what?",
     'not_visible': "{You} {can't} see {the:target}.",
-    'too_far': "{the:cap:target} is too far away.",
+    'too_far': "{the:cap:target} {is:target} too far away.",
     'not_actor': "{You} can only ask questions of people.",
 
     // Sentence-start NPC references use {the:cap:target} so proper-named

@@ -26,23 +26,23 @@ export const attackingLanguage = {
     'not_reachable': "{You} {can't} reach {the:target}.",
     'self': "Violence against {yourself} isn't the answer.",
     'not_holding_weapon': "{You} aren't holding {the:weapon}.",
-    'indestructible': "{the:cap:target} is far too solid to damage.",
+    'indestructible': "{the:cap:target} {is:target} far too solid to damage.",
     'need_weapon_to_damage': "{the:cap:target} requires a weapon to damage.",
     'wrong_weapon_type': "{the:cap:target} can't be damaged with that type of weapon.",
     'attack_ineffective': "{Your} attack has no effect on {the:target}.",
 
     // Combat validation errors
-    'already_dead': "{the:cap:target} is already dead.",
+    'already_dead': "{the:cap:target} {is:target} already dead.",
     'violence_not_the_answer': "Violence is not the answer.",
     // ADR-158: combat.* templates use the formatter chain via the
     // {target} EntityInfo param; CombatService and the attacking action
     // also pass {targetName} (bare string) on the same params block for
     // handler / event-sourcing consumption.
     'combat.cannot_attack': "{You} {can't} attack {the:target}.",
-    'combat.already_dead': "{the:cap:target} is already dead.",
+    'combat.already_dead': "{the:cap:target} {is:target} already dead.",
     'combat.not_hostile': "{the:cap:target} isn't hostile.",
     'combat.no_target': "Attack what?",
-    'combat.target_unconscious': "{the:cap:target} is already unconscious.",
+    'combat.target_unconscious': "{the:cap:target} {is:target} already unconscious.",
     'combat.need_weapon': "{You} {need} a weapon to attack effectively.",
 
     // Combat attack outcomes (ADR-072 CombatService)
@@ -60,11 +60,11 @@ export const attackingLanguage = {
 
     // Health status descriptions (ADR-072 CombatService)
     'combat.health.healthy': "{the:cap:target} appears uninjured.",
-    'combat.health.wounded': "{the:cap:target} has been wounded.",
-    'combat.health.badly_wounded': "{the:cap:target} is badly wounded.",
-    'combat.health.near_death': "{the:cap:target} is barely clinging to life!",
+    'combat.health.wounded': "{the:cap:target} {has:target} been wounded.",
+    'combat.health.badly_wounded': "{the:cap:target} {is:target} badly wounded.",
+    'combat.health.near_death': "{the:cap:target} {is:target} barely clinging to life!",
     'combat.health.unconscious': "{the:cap:target} lies unconscious.",
-    'combat.health.dead': "{the:cap:target} is dead.",
+    'combat.health.dead': "{the:cap:target} {is:target} dead.",
 
     // Special weapon effects (ADR-072 CombatService)
     'combat.special.sword_glows': "{Your} sword glows brightly!",
@@ -96,7 +96,7 @@ export const attackingLanguage = {
     'target_shattered': "{the:cap:target} shatters into pieces!",
     'broke': "{You} {break} {the:target}!",
     'smashed': "{You} {smash} {the:target} to pieces!",
-    'target_destroyed': "{the:cap:target} is utterly destroyed!",
+    'target_destroyed': "{the:cap:target} {is:target} utterly destroyed!",
     'destroyed': "{You} {destroy} {the:target}!",
     'shattered': "{the:cap:target} shatters!",
     'target_damaged': "{the:cap:target} shows signs of damage. ({damage} damage dealt)",

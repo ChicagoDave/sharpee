@@ -17,7 +17,7 @@ export const lockingLanguage = {
     'not_lockable': "{the:cap:item} can't be locked.",
     'no_key': "What do {you} want to lock it with?",
     'wrong_key': "{the:cap:key} doesn't fit {the:item}.",
-    'already_locked': "{the:cap:item} is already locked.",
+    'already_locked': "{the:cap:item} {is:item} already locked.",
     'not_closed': "{You} {need} to close {the:item} first.",
     'locked': "{You} {lock} {the:item}.",
     'locked_with': "{You} {lock} {the:item} with {the:key}.",

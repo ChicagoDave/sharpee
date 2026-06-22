@@ -22,8 +22,8 @@ export const switchingOnLanguage = {
     'not_visible': "{You} {can't} see {the:target}.",
     'not_reachable': "{You} {can't} reach {the:target}.",
     'not_switchable': "{the:cap:target} isn't something {you} can switch on.",
-    'already_on': "{the:cap:target} is already on.",
-    'no_power': "{the:cap:target} has no power source.",
+    'already_on': "{the:cap:target} {is:target} already on.",
+    'no_power': "{the:cap:target} {has:target} no power source.",
 
     // Success messages
     'switched_on': "{You} {switch} on {the:target}.",

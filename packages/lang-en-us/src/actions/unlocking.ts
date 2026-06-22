@@ -16,12 +16,12 @@ export const unlockingLanguage = {
     'not_lockable': "{the:cap:item} can't be unlocked.",
     'no_key': "What do {you} want to unlock it with?",
     'wrong_key': "{the:cap:key} doesn't fit {the:item}.",
-    'already_unlocked': "{the:cap:item} is already unlocked.",
+    'already_unlocked': "{the:cap:item} {is:item} already unlocked.",
     'unlocked': "{You} {unlock} {the:item}.",
     'unlocked_with': "{You} {unlock} {the:item} with {the:key}.",
     'cant_reach': "{You} {can't} reach {the:item}.",
     'key_not_held': "{You} {need} to be holding {the:key}.",
-    'still_locked': "{the:cap:item} is locked."
+    'still_locked': "{the:cap:item} {is:item} locked."
   },
   
   help: {

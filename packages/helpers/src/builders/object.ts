@@ -1,7 +1,7 @@
 /**
  * ObjectBuilder — fluent builder for object entities.
  *
- * Public interface: description, aliases, in, scenery, lightSource,
+ * Public interface: description, aliases, in, scenery, plural, lightSource,
  * skipValidation, build.
  *
  * Owner context: @sharpee/helpers (ADR-140)
@@ -33,6 +33,7 @@ export class ObjectBuilder {
   private _aliases?: string[];
   private _location?: IFEntity;
   private _scenery = false;
+  private _grammaticalNumber?: 'singular' | 'plural';
   private _lightSource?: { isLit?: boolean; fuelTurns?: number };
   private _skipValidation = false;
   private _traits: ITrait[] = [];
@@ -86,6 +87,19 @@ export class ObjectBuilder {
   }
 
   /**
+   * Mark the object as grammatically plural (e.g. "pygmy goats", "direction
+   * signs"). Sets the identity's `grammaticalNumber` to `'plural'` so message
+   * templates render agreeing verbs ("the goats are fixed in place") and
+   * pronouns ("take them").
+   *
+   * @returns this (for chaining)
+   */
+  plural(): this {
+    this._grammaticalNumber = 'plural';
+    return this;
+  }
+
+  /**
    * Add light source trait.
    *
    * @param opts - Light source options
@@ -129,6 +143,7 @@ export class ObjectBuilder {
       name: this.name,
       description: this._description,
       aliases: this._aliases,
+      grammaticalNumber: this._grammaticalNumber,
     }));
 
     if (this._scenery) {

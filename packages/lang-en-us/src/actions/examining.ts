@@ -36,13 +36,13 @@ export const examiningLanguage = {
     'no_description': "{You} {see} nothing special about {the:item}.",
 
     // Legacy messages for compatibility
-    'container_open': "{the:cap:item} is open.",
-    'container_closed': "{the:cap:item} is closed.",
-    'container_empty': "{the:cap:item} is empty.",
+    'container_open': "{the:cap:item} {is:item} open.",
+    'container_closed': "{the:cap:item} {is:item} closed.",
+    'container_empty': "{the:cap:item} {is:item} empty.",
     'container_contents': "In {the:container} {you} {see} {items}.",
     'surface_contents': "On {the:surface} {you} {see} {items}.",
     'worn_by_you': "{You} {are} wearing {the:item}.",
-    'worn_by_other': "{actor} is wearing {the:item}."
+    'worn_by_other': "{actor} {is:actor} wearing {the:item}."
   },
   
   help: {

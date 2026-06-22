@@ -222,7 +222,7 @@ class FamilyZooStory implements Story {
     // Main Path scenery
     const directionSigns = world.createEntity('direction signs', EntityType.SCENERY);
     directionSigns.add(new IdentityTrait({
-      name: 'direction signs',
+      name: 'direction signs', grammaticalNumber: 'plural',
       description:
         'A cluster of brightly colored arrow signs nailed to a wooden ' +
         'post. PETTING ZOO (east), AVIARY (west), EXIT (north).',
@@ -234,7 +234,7 @@ class FamilyZooStory implements Story {
 
     const benches = world.createEntity('wooden benches', EntityType.SCENERY);
     benches.add(new IdentityTrait({
-      name: 'wooden benches',
+      name: 'wooden benches', grammaticalNumber: 'plural',
       description:
         'Sturdy park benches painted forest green, each with a small ' +
         'brass plaque thanking a zoo donor.',
@@ -246,7 +246,7 @@ class FamilyZooStory implements Story {
 
     const flowerBeds = world.createEntity('flower beds', EntityType.SCENERY);
     flowerBeds.add(new IdentityTrait({
-      name: 'flower beds',
+      name: 'flower beds', grammaticalNumber: 'plural',
       description:
         'Tidy beds of marigolds and petunias in alternating orange and ' +
         'purple stripes.',
@@ -259,7 +259,7 @@ class FamilyZooStory implements Story {
     // Petting Zoo scenery
     const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
     goats.add(new IdentityTrait({
-      name: 'pygmy goats',
+      name: 'pygmy goats', grammaticalNumber: 'plural',
       description:
         'Three pygmy goats with stubby legs and expressive faces. They ' +
         'stare at you with their weird rectangular pupils, clearly ' +
@@ -284,7 +284,7 @@ class FamilyZooStory implements Story {
 
     const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
     rabbits.add(new IdentityTrait({
-      name: 'rabbits',
+      name: 'rabbits', grammaticalNumber: 'plural',
       description:
         'A pair of Holland Lop rabbits with floppy ears and twitching ' +
         'noses. One is pure white, the other brown and cream.',
@@ -308,7 +308,7 @@ class FamilyZooStory implements Story {
 
     const parrots = world.createEntity('parrots', EntityType.SCENERY);
     parrots.add(new IdentityTrait({
-      name: 'parrots',
+      name: 'parrots', grammaticalNumber: 'plural',
       description:
         'A raucous flock of scarlet macaws and grey African parrots.',
       aliases: ['parrots', 'parrot', 'macaws', 'macaw', 'birds'],

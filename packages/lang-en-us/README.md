@@ -19,24 +19,9 @@ import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 const languageProvider = new EnglishLanguageProvider();
 ```
 
-### With Custom Configuration
-
-```typescript
-import { EnglishLanguagePlugin } from '@sharpee/lang-en-us';
-
-const language = new EnglishLanguagePlugin({
-  // Custom templates
-  customTemplates: {
-    'taking.report.success': 'You grab {item} with gusto!'
-  },
-  
-  // Additional verb mappings
-  customVerbs: [{
-    action: IFActions.TAKING,
-    verbs: ['snatch', 'yoink']
-  }]
-});
-```
+In most cases you don't construct this directly — the build toolchain and
+clients select it automatically when a story's config sets `language: 'en-US'`,
+passing it to the engine alongside the matching parser.
 
 ## Features
 
@@ -54,35 +39,25 @@ const language = new EnglishLanguagePlugin({
 
 ## Architecture
 
-This package is a plugin for `@sharpee/stdlib` and extends the base language classes:
+This package implements the `ParserLanguageProvider` contract from `@sharpee/if-domain`:
 
-- `EnglishLanguagePlugin` extends `BaseIFLanguagePlugin`
-- `EnglishParser` extends `BaseIFParserPlugin`
+- `EnglishLanguageProvider` provides verbs, words, message templates, and the
+  formatter chain (ADR-095/ADR-158).
+- The matching grammar/parser lives in the companion `@sharpee/parser-en-us` package.
 
 ## Extending
 
-You can extend the English language plugin for regional variants or custom games:
+You can extend the English language provider for regional variants or custom
+games — override message templates and add verbs/words in the subclass:
 
 ```typescript
-import { EnglishLanguagePlugin } from '@sharpee/lang-en-us';
+import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
-class BritishEnglishPlugin extends EnglishLanguagePlugin {
-  protected getDefaultLanguageCode() {
-    return 'en-GB';
-  }
-  
-  protected getDefaultLanguageName() {
-    return 'English (UK)';
-  }
-  
-  protected initializeLanguageData() {
-    super.initializeLanguageData();
-    
-    // Add British spellings
-    this.registerActionTemplates({
-      'examining.report.basic': 'You examine {item} and see its colour is {color}.'
-    });
-  }
+class BritishEnglishProvider extends EnglishLanguageProvider {
+  readonly languageCode = 'en-GB';
+  readonly languageName = 'English (UK)';
+
+  // Override or add templates, verbs, and words as needed.
 }
 ```
 
@@ -90,10 +65,10 @@ class BritishEnglishPlugin extends EnglishLanguagePlugin {
 
 The package exports its data for customization:
 
-- `englishVerbs` - All verb definitions
 - `englishWords` - Word lists (articles, prepositions, etc.)
 - `irregularPlurals` - Irregular plural mappings
 - `abbreviations` - Common abbreviations
+- `directionMap`, `cardinalNumbers`, `ordinalNumbers` - Movement and number vocabulary
 
 ## License
 

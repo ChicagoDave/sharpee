@@ -31,3 +31,4 @@ export {
 export { aFormatter, theFormatter, someFormatter, yourFormatter } from './article.js';
 export { listFormatter, orListFormatter, commaListFormatter, countFormatter } from './list.js';
 export { capFormatter, upperFormatter, lowerFormatter, titleFormatter } from './text.js';
+export { isFormatter, wasFormatter, hasFormatter } from './verb.js';

@@ -119,7 +119,7 @@ export declare class RoomBuilder {
 /**
  * ObjectBuilder — fluent builder for object entities.
  *
- * Public interface: description, aliases, in, scenery, lightSource,
+ * Public interface: description, aliases, in, scenery, plural, lightSource,
  * skipValidation, build.
  *
  * Owner context: @sharpee/helpers (ADR-140)
@@ -145,6 +145,7 @@ export declare class ObjectBuilder {
     private _aliases?;
     private _location?;
     private _scenery;
+    private _grammaticalNumber?;
     private _lightSource?;
     private _skipValidation;
     private _traits;
@@ -176,6 +177,15 @@ export declare class ObjectBuilder {
      * @returns this (for chaining)
      */
     scenery(): this;
+    /**
+     * Mark the object as grammatically plural (e.g. "pygmy goats", "direction
+     * signs"). Sets the identity's `grammaticalNumber` to `'plural'` so message
+     * templates render agreeing verbs ("the goats are fixed in place") and
+     * pronouns ("take them").
+     *
+     * @returns this (for chaining)
+     */
+    plural(): this;
     /**
      * Add light source trait.
      *

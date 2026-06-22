@@ -21,7 +21,7 @@ export const pullingLanguage = {
     'no_target': "Pull what?",
     'not_visible': "{You} {can't} see {the:target}.",
     'not_reachable': "{You} {can't} reach {the:target}.",
-    'too_heavy': "{the:cap:target} is too heavy to pull (weighs {weight}kg).",
+    'too_heavy': "{the:cap:target} {is:target} too heavy to pull (weighs {weight}kg).",
     'wearing_it': "{You} {can't} pull {the:target} while wearing it.",
     'wont_budge': "{the:cap:target} won't budge.",
 
@@ -47,7 +47,7 @@ export const pullingLanguage = {
 
     // Success messages - fixed objects
     'pulling_does_nothing': "Pulling {the:target} has no effect.",
-    'fixed_in_place': "{the:cap:target} is fixed in place."
+    'fixed_in_place': "{the:cap:target} {is:target} fixed in place."
   },
   
   help: {

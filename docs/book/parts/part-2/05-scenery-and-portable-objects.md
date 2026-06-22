@@ -164,6 +164,7 @@ rabbits.add(new IdentityTrait({
     'one pure white, the other brown and cream.',
   aliases: ['rabbits', 'rabbit', 'bunnies', 'bunny'],
   article: 'some',
+  grammaticalNumber: 'plural',
 }));
 rabbits.add(new SceneryTrait());
 world.moveEntity(rabbits.id, pettingZoo.id);
@@ -193,6 +194,13 @@ The souvenir penny from earlier in the chapter sits on the Main Path, and the
 **pygmy goats** you placed in the Petting Zoo back in Chapter 4 are scenery — so
 every object the "Try it" walkthrough touches is now in the world: the map and
 penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
+
+> **Plural-named scenery:** the rabbits get `grammaticalNumber: 'plural'`. Sharpee's
+> messages agree in number with the entity, so this is what makes `take rabbits`
+> report "The rabbits **are** fixed in place." rather than "is". Set it on anything
+> with a plural name — *pygmy goats*, *direction signs*, *flower beds* — and the
+> generated prose stays grammatical. (See Chapter 19 for how the message templates
+> choose the verb.) Authors using the `object()` builder write `.plural()` instead.
 
 ## Try it
 

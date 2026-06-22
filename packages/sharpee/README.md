@@ -7,8 +7,20 @@ A modern TypeScript interactive fiction engine for creating text adventures and 
 
 ## Installation
 
+Add the runtime library to a project that embeds the engine:
+
 ```bash
 npm install @sharpee/sharpee
+```
+
+To scaffold and build a story from the command line, install the devkit globally —
+it provides the `sharpee` CLI:
+
+```bash
+npm install -g @sharpee/devkit
+# then
+sharpee init my-story
+sharpee build
 ```
 
 ## Features
@@ -24,59 +36,44 @@ npm install @sharpee/sharpee
 ```typescript
 import {
   GameEngine,
-  WorldModel,
   EnglishParser,
-  EnglishLanguageProvider,
-  TextService
+  EnglishLanguageProvider
 } from '@sharpee/sharpee';
 
-// Define your story
-const story = {
-  metadata: {
-    title: 'My Adventure',
-    author: 'Your Name',
-    version: '1.0.0'
-  },
+// Set up language + parser
+const language = new EnglishLanguageProvider();
+const parser = new EnglishParser(language);
 
-  setup(world: WorldModel) {
-    // Create a room
-    const room = world.createEntity('room', {
-      id: 'start-room',
-      name: 'Starting Room',
-      description: 'You are in a small room with stone walls.'
-    });
+// Build the engine (world and player typically come from your story setup)
+const engine = new GameEngine({ world, player, parser, language });
 
-    // Set as starting location
-    world.setStartingLocation(room);
-  }
-};
-
-// Initialize the engine
-const engine = new GameEngine({
-  story,
-  parser: new EnglishParser(),
-  languageProvider: new EnglishLanguageProvider(),
-  textService: new TextService()
-});
-
-// Start the game
-const startEvents = engine.start();
+// Register the story, then start
+engine.setStory(story);
+engine.start();
 
 // Process player commands
-const events = engine.processCommand('look');
+const result = await engine.executeTurn('look');
 ```
+
+> Rendering is no longer a separate text service (ADR-174). The engine's prose
+> pipeline produces `ITextBlock[]` that are carried to the UI by channels
+> (ADR-163); use `renderToString` to flatten blocks for a plain-text host.
 
 ## What's Included
 
-This package re-exports the core Sharpee packages:
+This umbrella package re-exports the **story runtime baseline** — the imports a
+story author needs (ADR-178). It deliberately does **not** re-export every
+symbol from every sub-package; for advanced use, import the specific sub-package
+directly (e.g. `@sharpee/world-model`, `@sharpee/stdlib`).
 
 | Export | Description |
 |--------|-------------|
 | `GameEngine` | Main game runtime |
-| `WorldModel`, `IFEntity` | Entity and world management |
+| `WorldModel`, `IFEntity`, `TraitType` | Entity and world management (types) |
 | `EnglishParser` | Natural language command parser |
-| `EnglishLanguageProvider` | English text generation |
-| `TextService` | Text formatting and output |
+| `EnglishLanguageProvider` | English language provider |
+| `renderToString`, `renderStatusLine` | Flatten prose blocks for a text host |
+| `ITextBlock`, `IDecoration` | Prose-pipeline output types (ADR-096) |
 | `QueryManager` | Player input queries (yes/no, menus) |
 
 ## Standard Actions

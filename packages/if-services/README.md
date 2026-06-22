@@ -2,16 +2,21 @@
 
 Runtime service interfaces for the Sharpee Interactive Fiction Platform.
 
+## Installation
+
+```bash
+npm install @sharpee/if-services
+```
+
 ## Purpose
 
 This package provides runtime service interfaces that need access to the world model. It separates these interfaces from the pure domain package (`@sharpee/if-domain`) to maintain clean architectural boundaries.
 
+> **Note (ADR-174):** Rendering is no longer a separate text service. The engine's prose pipeline produces `ITextBlock[]`, which are carried to the UI by channels (ADR-163). The former `TextService` interface has been removed from this package.
+
 ## Contents
 
-- **TextService**: Interface for text generation services that process game events and produce formatted output
-- (Future) Audio service interfaces
-- (Future) Graphics service interfaces  
-- (Future) Analytics service interfaces
+- **Perception service**: Interface for computing what an actor can perceive of the world (visibility, audibility) — used by rendering and sound propagation.
 
 ## Architecture
 
@@ -25,20 +30,7 @@ This pattern ensures that domain packages remain pure and don't have runtime dep
 ## Usage
 
 ```typescript
-import { TextService, TextServiceContext } from '@sharpee/if-services';
-
-// Implement the TextService interface
-class MyTextService implements TextService {
-  initialize(context: TextServiceContext): void {
-    // Initialize with game context
-  }
-  
-  processTurn(): TextOutput {
-    // Generate output for the current turn
-  }
-  
-  // ... other methods
-}
+import { IPerceptionService } from '@sharpee/if-services';
 ```
 
 ## Dependencies
@@ -46,3 +38,7 @@ class MyTextService implements TextService {
 - `@sharpee/core`: Core event system
 - `@sharpee/if-domain`: Domain types and contracts
 - `@sharpee/world-model`: World state management
+
+## License
+
+MIT

@@ -235,17 +235,17 @@ class FamilyZooStory implements Story {
     world.moveEntity(ironFence.id, entrance.id);
 
     const directionSigns = world.createEntity('direction signs', EntityType.SCENERY);
-    directionSigns.add(new IdentityTrait({ name: 'direction signs', description: 'Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).', aliases: ['signs', 'direction signs', 'arrow signs'], properName: false, article: 'some' }));
+    directionSigns.add(new IdentityTrait({ name: 'direction signs', grammaticalNumber: 'plural', description: 'Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).', aliases: ['signs', 'direction signs', 'arrow signs'], properName: false, article: 'some' }));
     directionSigns.add(new SceneryTrait());
     world.moveEntity(directionSigns.id, mainPath.id);
 
     const flowerBeds = world.createEntity('flower beds', EntityType.SCENERY);
-    flowerBeds.add(new IdentityTrait({ name: 'flower beds', description: 'Tidy beds of marigolds and petunias.', aliases: ['flowers', 'flower beds'], properName: false, article: 'some' }));
+    flowerBeds.add(new IdentityTrait({ name: 'flower beds', grammaticalNumber: 'plural', description: 'Tidy beds of marigolds and petunias.', aliases: ['flowers', 'flower beds'], properName: false, article: 'some' }));
     flowerBeds.add(new SceneryTrait());
     world.moveEntity(flowerBeds.id, mainPath.id);
 
     const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
-    goats.add(new IdentityTrait({ name: 'pygmy goats', description: 'Three pygmy goats hoping you have food.', aliases: ['goats', 'pygmy goats', 'goat'], properName: false, article: 'some' }));
+    goats.add(new IdentityTrait({ name: 'pygmy goats', grammaticalNumber: 'plural', description: 'Three pygmy goats hoping you have food.', aliases: ['goats', 'pygmy goats', 'goat'], properName: false, article: 'some' }));
     goats.add(new SceneryTrait());
     world.moveEntity(goats.id, pettingZoo.id);
 
@@ -255,7 +255,7 @@ class FamilyZooStory implements Story {
     world.moveEntity(hayBale.id, pettingZoo.id);
 
     const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
-    rabbits.add(new IdentityTrait({ name: 'rabbits', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
+    rabbits.add(new IdentityTrait({ name: 'rabbits', grammaticalNumber: 'plural', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
     rabbits.add(new SceneryTrait());
     world.moveEntity(rabbits.id, pettingZoo.id);
 
@@ -265,7 +265,7 @@ class FamilyZooStory implements Story {
     world.moveEntity(toucan.id, aviary.id);
 
     const parrots = world.createEntity('parrots', EntityType.SCENERY);
-    parrots.add(new IdentityTrait({ name: 'parrots', description: 'A raucous flock of scarlet macaws and grey African parrots.', aliases: ['parrots', 'macaws', 'birds'], properName: false, article: 'some' }));
+    parrots.add(new IdentityTrait({ name: 'parrots', grammaticalNumber: 'plural', description: 'A raucous flock of scarlet macaws and grey African parrots.', aliases: ['parrots', 'macaws', 'birds'], properName: false, article: 'some' }));
     parrots.add(new SceneryTrait());
     world.moveEntity(parrots.id, aviary.id);
 
@@ -275,12 +275,12 @@ class FamilyZooStory implements Story {
     world.moveEntity(waterfall.id, aviary.id);
 
     const perches = world.createEntity('rope perches', EntityType.SCENERY);
-    perches.add(new IdentityTrait({ name: 'rope perches', description: 'Thick sisal ropes strung between wooden posts — both furniture and snacks for the parrots.', aliases: ['perches', 'rope perches', 'ropes', 'rope'], properName: false, article: 'some' }));
+    perches.add(new IdentityTrait({ name: 'rope perches', grammaticalNumber: 'plural', description: 'Thick sisal ropes strung between wooden posts — both furniture and snacks for the parrots.', aliases: ['perches', 'rope perches', 'ropes', 'rope'], properName: false, article: 'some' }));
     perches.add(new SceneryTrait());
     world.moveEntity(perches.id, aviary.id);
 
     const shelves = world.createEntity('metal shelves', EntityType.SCENERY);
-    shelves.add(new IdentityTrait({ name: 'metal shelves', description: 'Industrial metal shelving units stacked with supplies.', aliases: ['shelves', 'metal shelves', 'shelf'], properName: false, article: 'some' }));
+    shelves.add(new IdentityTrait({ name: 'metal shelves', grammaticalNumber: 'plural', description: 'Industrial metal shelving units stacked with supplies.', aliases: ['shelves', 'metal shelves', 'shelf'], properName: false, article: 'some' }));
     shelves.add(new SceneryTrait());
     world.moveEntity(shelves.id, supplyRoom.id);
 
@@ -290,12 +290,12 @@ class FamilyZooStory implements Story {
     world.moveEntity(corkBoard.id, supplyRoom.id);
 
     const sugarGliders = world.createEntity('sugar gliders', EntityType.SCENERY);
-    sugarGliders.add(new IdentityTrait({ name: 'sugar gliders', description: 'A family of tiny sugar gliders with enormous dark eyes, leaping between branches.', aliases: ['sugar gliders', 'gliders'], properName: false, article: 'some' }));
+    sugarGliders.add(new IdentityTrait({ name: 'sugar gliders', grammaticalNumber: 'plural', description: 'A family of tiny sugar gliders with enormous dark eyes, leaping between branches.', aliases: ['sugar gliders', 'gliders'], properName: false, article: 'some' }));
     sugarGliders.add(new SceneryTrait());
     world.moveEntity(sugarGliders.id, nocturnalExhibit.id);
 
     const bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
-    bushBabies.add(new IdentityTrait({ name: 'bush babies', description: 'Two bush babies with impossibly large round eyes, clinging to a rope with tiny hands.', aliases: ['bush babies', 'galagos'], properName: false, article: 'some' }));
+    bushBabies.add(new IdentityTrait({ name: 'bush babies', grammaticalNumber: 'plural', description: 'Two bush babies with impossibly large round eyes, clinging to a rope with tiny hands.', aliases: ['bush babies', 'galagos'], properName: false, article: 'some' }));
     bushBabies.add(new SceneryTrait());
     world.moveEntity(bushBabies.id, nocturnalExhibit.id);
 
@@ -307,12 +307,12 @@ class FamilyZooStory implements Story {
     // --- Gift Shop scenery ---
 
     const stuffedAnimals = world.createEntity('stuffed animals', EntityType.SCENERY);
-    stuffedAnimals.add(new IdentityTrait({ name: 'stuffed animals', description: 'Shelves of plush tigers, pandas, and penguins in various sizes.', aliases: ['stuffed animals', 'plush', 'toys'], properName: false, article: 'some' }));
+    stuffedAnimals.add(new IdentityTrait({ name: 'stuffed animals', grammaticalNumber: 'plural', description: 'Shelves of plush tigers, pandas, and penguins in various sizes.', aliases: ['stuffed animals', 'plush', 'toys'], properName: false, article: 'some' }));
     stuffedAnimals.add(new SceneryTrait());
     world.moveEntity(stuffedAnimals.id, giftShop.id);
 
     const postcards = world.createEntity('postcards', EntityType.SCENERY);
-    postcards.add(new IdentityTrait({ name: 'postcards', description: 'A spinning rack of postcards showing the zoo\'s greatest hits.', aliases: ['postcards', 'cards', 'postcard rack'], properName: false, article: 'some' }));
+    postcards.add(new IdentityTrait({ name: 'postcards', grammaticalNumber: 'plural', description: 'A spinning rack of postcards showing the zoo\'s greatest hits.', aliases: ['postcards', 'cards', 'postcard rack'], properName: false, article: 'some' }));
     postcards.add(new SceneryTrait());
     world.moveEntity(postcards.id, giftShop.id);
 

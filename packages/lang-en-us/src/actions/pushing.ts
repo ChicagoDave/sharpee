@@ -20,7 +20,7 @@ export const pushingLanguage = {
     'no_target': "Push what?",
     'not_visible': "{You} {can't} see {the:target}.",
     'not_reachable': "{You} {can't} reach {the:target}.",
-    'too_heavy': "{the:cap:target} is far too heavy to push (weighs {weight}kg).",
+    'too_heavy': "{the:cap:target} {is:target} far too heavy to push (weighs {weight}kg).",
     'wearing_it': "{You} {can't} push {the:target} while wearing it.",
 
     // Success messages - buttons/switches
@@ -37,7 +37,7 @@ export const pushingLanguage = {
     // Success messages - fixed objects
     'wont_budge': "{the:cap:target} won't budge.",
     'pushing_does_nothing': "Pushing {the:target} has no effect.",
-    'fixed_in_place': "{the:cap:target} is fixed in place."
+    'fixed_in_place': "{the:cap:target} {is:target} fixed in place."
   },
   
   help: {

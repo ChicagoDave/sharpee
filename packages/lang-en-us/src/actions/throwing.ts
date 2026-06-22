@@ -26,7 +26,7 @@ export const throwingLanguage = {
     'target_not_visible': "{You} {can't} see {the:target}.",
     'target_not_here': "{the:cap:target} isn't here.",
     'no_exit': "There's no exit {direction}.",
-    'too_heavy': "{the:cap:item} is too heavy to throw far (weighs {weight}kg).",
+    'too_heavy': "{the:cap:item} {is:item} too heavy to throw far (weighs {weight}kg).",
     'self': "{You} {can't} throw things at {yourself}.",
 
     // Success messages - general throw

@@ -180,9 +180,9 @@ does this turn:
 
 Return an empty array for a turn where the NPC does nothing.
 
-The `npc.speech` and `npc.emote` message ids the behavior emits are built into the
-stdlib — you don't register them in `extendLanguage`. The NPC service renders them
-from the `text` you pass in each action's `data`.
+The `npc.speech` and `npc.emote` message ids the behavior emits are provided by the
+platform's language layer (`@sharpee/lang-en-us`) — you don't register them in
+`extendLanguage`. They render verbatim the `text` you pass in each action's `data`.
 
 ## Registering the plugin and behaviors
 

@@ -232,7 +232,7 @@ class FamilyZooStory implements Story {
     // --- Direction Signs (Main Path) ---
     const directionSigns = world.createEntity('direction signs', EntityType.SCENERY);
     directionSigns.add(new IdentityTrait({
-      name: 'direction signs',
+      name: 'direction signs', grammaticalNumber: 'plural',
       description:
         'A cluster of brightly colored arrow signs nailed to a wooden ' +
         'post. They point to: PETTING ZOO (east), AVIARY (west), ' +
@@ -247,7 +247,7 @@ class FamilyZooStory implements Story {
     // --- Goats (Petting Zoo) ---
     const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
     goats.add(new IdentityTrait({
-      name: 'pygmy goats',
+      name: 'pygmy goats', grammaticalNumber: 'plural',
       description:
         'Three pygmy goats with stubby legs and expressive faces. They ' +
         'stare at you with their weird rectangular pupils, clearly ' +

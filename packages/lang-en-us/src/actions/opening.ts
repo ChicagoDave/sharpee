@@ -14,8 +14,8 @@ export const openingLanguage = {
   messages: {
     'no_target': "Open what?",
     'not_openable': "{the:cap:item} can't be opened.",
-    'already_open': "{the:cap:item} is already open.",
-    'locked': "{the:cap:item} is locked.",
+    'already_open': "{the:cap:item} {is:item} already open.",
+    'locked': "{the:cap:item} {is:item} locked.",
     'opened': "{You} {open} {the:item}.",
     'revealing': "Opening {the:container} reveals {items}.",
     'its_empty': "{You} {open} {the:container}, which is empty.",

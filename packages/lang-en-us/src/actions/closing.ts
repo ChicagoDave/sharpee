@@ -13,10 +13,10 @@ export const closingLanguage = {
   messages: {
     'no_target': "Close what?",
     'not_closable': "{the:cap:item} can't be closed.",
-    'already_closed': "{the:cap:item} is already closed.",
+    'already_closed': "{the:cap:item} {is:item} already closed.",
     'closed': "{You} {close} {the:item}.",
     'cant_reach': "{You} {can't} reach {the:item}.",
-    'prevents_closing': "{You} {can't} close {the:item} while {obstacle} is in the way."
+    'prevents_closing': "{You} {can't} close {the:item} while {obstacle} {is:obstacle} in the way."
   },
   
   help: {

@@ -19,10 +19,10 @@ export const insertingLanguage = {
     'not_held': "{You} {need} to be holding {the:item} first.",
     'not_insertable': "{the:cap:item} can't be inserted into things.",
     'not_container': "{You} {can't} insert things into {the:destination}.",
-    'already_there': "{the:cap:item} is already in {the:destination}.",
+    'already_there': "{the:cap:item} {is:item} already in {the:destination}.",
     'inserted': "{You} {insert} {the:item} into {the:container}.",
     'wont_fit': "{the:cap:item} won't fit in {the:container}.",
-    'container_closed': "{the:cap:container} is closed."
+    'container_closed': "{the:cap:container} {is:container} closed."
   },
   
   help: {

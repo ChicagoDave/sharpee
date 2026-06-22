@@ -17,6 +17,9 @@ import {
   orListFormatter,
   capFormatter,
   upperFormatter,
+  isFormatter,
+  wasFormatter,
+  hasFormatter,
   EntityInfo,
   FormatterContext,
 } from '../src/formatters';
@@ -160,6 +163,61 @@ describe('Formatter System', () => {
       it('should convert to uppercase', () => {
         expect(upperFormatter('sword', context)).toBe('SWORD');
       });
+    });
+  });
+
+  describe('Verb-Agreement Formatters', () => {
+    const context: FormatterContext = {};
+
+    describe('isFormatter', () => {
+      it('should emit "is" for a singular EntityInfo (no number metadata)', () => {
+        const info: EntityInfo = { name: 'white house' };
+        expect(isFormatter(info, context)).toBe('is');
+      });
+
+      it('should emit "are" when nounType is plural', () => {
+        const info: EntityInfo = { name: 'pygmy goats', nounType: 'plural' };
+        expect(isFormatter(info, context)).toBe('are');
+      });
+
+      it('should emit "are" when grammaticalNumber is plural', () => {
+        const info: EntityInfo = { name: 'scissors', grammaticalNumber: 'plural' };
+        expect(isFormatter(info, context)).toBe('are');
+      });
+
+      it('should fall back to "is" for a bare string', () => {
+        expect(isFormatter('lamp', context)).toBe('is');
+      });
+
+      it('should treat a multi-element array as plural and a single-element array as singular', () => {
+        expect(isFormatter([{ name: 'a' }, { name: 'b' }], context)).toBe('are');
+        expect(isFormatter([{ name: 'a' }], context)).toBe('is');
+      });
+    });
+
+    describe('wasFormatter / hasFormatter', () => {
+      it('should agree in number', () => {
+        const singular: EntityInfo = { name: 'door' };
+        const plural: EntityInfo = { name: 'doors', nounType: 'plural' };
+        expect(wasFormatter(singular, context)).toBe('was');
+        expect(wasFormatter(plural, context)).toBe('were');
+        expect(hasFormatter(singular, context)).toBe('has');
+        expect(hasFormatter(plural, context)).toBe('have');
+      });
+    });
+
+    it('should render the fixed_in_place template with agreement (singular vs plural)', () => {
+      const registry = createFormatterRegistry();
+      const template = '{the:cap:item} {is:item} fixed in place.';
+      const singular = formatMessage(template, { item: { name: 'white house' } }, registry, context);
+      const plural = formatMessage(
+        template,
+        { item: { name: 'pygmy goats', nounType: 'plural' } },
+        registry,
+        context
+      );
+      expect(singular).toBe('The white house is fixed in place.');
+      expect(plural).toBe('The pygmy goats are fixed in place.');
     });
   });
 

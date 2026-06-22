@@ -603,19 +603,19 @@ class FamilyZooStory implements Story {
 
     // PETTABLE ANIMALS — Same as V14
     const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
-    goats.add(new IdentityTrait({ name: 'pygmy goats', description: 'Three pygmy goats hoping you have food.', aliases: ['goats', 'pygmy goats', 'goat'], properName: false, article: 'some' }));
+    goats.add(new IdentityTrait({ name: 'pygmy goats', grammaticalNumber: 'plural', description: 'Three pygmy goats hoping you have food.', aliases: ['goats', 'pygmy goats', 'goat'], properName: false, article: 'some' }));
     goats.add(new SceneryTrait());
     goats.add(new PettableTrait('goats'));
     world.moveEntity(goats.id, pettingZoo.id);
 
     const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
-    rabbits.add(new IdentityTrait({ name: 'rabbits', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
+    rabbits.add(new IdentityTrait({ name: 'rabbits', grammaticalNumber: 'plural', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
     rabbits.add(new SceneryTrait());
     rabbits.add(new PettableTrait('rabbits'));
     world.moveEntity(rabbits.id, pettingZoo.id);
 
     const parrots = world.createEntity('parrots', EntityType.SCENERY);
-    parrots.add(new IdentityTrait({ name: 'parrots', description: 'A raucous flock of scarlet macaws and grey African parrots.', aliases: ['parrots', 'macaws', 'birds'], properName: false, article: 'some' }));
+    parrots.add(new IdentityTrait({ name: 'parrots', grammaticalNumber: 'plural', description: 'A raucous flock of scarlet macaws and grey African parrots.', aliases: ['parrots', 'macaws', 'birds'], properName: false, article: 'some' }));
     parrots.add(new SceneryTrait());
     world.moveEntity(parrots.id, aviary.id);
 

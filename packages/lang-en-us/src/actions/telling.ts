@@ -17,7 +17,7 @@ export const tellingLanguage = {
     'no_target': "Tell whom?",
     'no_topic': "Tell them about what?",
     'not_visible': "{You} {can't} see {the:target}.",
-    'too_far': "{the:cap:target} is too far away.",
+    'too_far': "{the:cap:target} {is:target} too far away.",
     'not_actor': "{You} can only tell things to people.",
 
     // Success messages - general. Mid-sentence positions use {the:target}

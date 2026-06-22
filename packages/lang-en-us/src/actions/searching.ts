@@ -20,12 +20,12 @@ export const searchingLanguage = {
     // Error messages
     'not_visible': "{You} {can't} see {the:target} to search it.",
     'not_reachable': "{You} {can't} reach {the:target} to search it.",
-    'container_closed': "{the:cap:target} is closed.",
+    'container_closed': "{the:cap:target} {is:target} closed.",
 
     // Success messages
     'nothing_special': "{You} {find} nothing of interest.",
     'found_items': "{You} {discover}: {items}.",
-    'empty_container': "{the:cap:target} is empty.",
+    'empty_container': "{the:cap:target} {is:target} empty.",
     'container_contents': "In {the:target} {you} {see}: {items}.",
     'supporter_contents': "On {the:target} {you} {see}: {items}.",
     'searched_location': "{You} {search} around carefully.",

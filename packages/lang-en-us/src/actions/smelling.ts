@@ -16,7 +16,7 @@ export const smellingLanguage = {
   messages: {
     // Error messages
     'not_visible': "{You} {can't} see {the:target} to smell it.",
-    'too_far': "{the:cap:target} is too far away to smell.",
+    'too_far': "{the:cap:target} {is:target} too far away to smell.",
 
     // Success messages - environment
     'no_scent': "{You} {don't} smell anything unusual.",
@@ -25,9 +25,9 @@ export const smellingLanguage = {
     'smoke_detected': "{You} {detect} a faint smell of smoke.",
 
     // Success messages - specific targets
-    'no_particular_scent': "{the:cap:target} has no particular smell.",
+    'no_particular_scent': "{the:cap:target} {has:target} no particular smell.",
     'food_scent': "{the:cap:target} smells delicious.",
-    'drink_scent': "{the:cap:target} has a pleasant aroma.",
+    'drink_scent': "{the:cap:target} {has:target} a pleasant aroma.",
     'burning_scent': "{the:cap:target} gives off a smoky smell.",
     'container_food_scent': "{You} {smell} food inside {the:target}.",
     'musty_scent': "{the:cap:target} smells a bit musty.",

@@ -106,29 +106,32 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
 
   // --- Scenery ---
 
-  for (const [name, desc, aliasList, location] of [
+  // The fifth tuple element flags grammatically plural scenery so messages
+  // agree in number ("the direction signs are fixed in place").
+  for (const [name, desc, aliasList, location, plural] of [
     ['welcome sign', 'A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY ZOO."', ['sign', 'welcome sign'], entrance],
     ['ticket booth', 'A small wooden booth with a "Self-Guided Tours" sign.', ['booth', 'ticket booth'], entrance],
     ['iron fence', 'A tall wrought-iron fence with animal silhouettes.', ['fence', 'iron fence', 'railing'], entrance],
-    ['direction signs', 'Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).', ['signs', 'direction signs', 'arrow signs'], mainPath],
-    ['flower beds', 'Tidy beds of marigolds and petunias.', ['flowers', 'flower beds'], mainPath],
+    ['direction signs', 'Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).', ['signs', 'direction signs', 'arrow signs'], mainPath, true],
+    ['flower beds', 'Tidy beds of marigolds and petunias.', ['flowers', 'flower beds'], mainPath, true],
     ['hay bale', 'A large round bale of golden hay.', ['hay', 'hay bale', 'bale'], pettingZoo],
     ['toucan', 'A Toco toucan with an enormous orange-and-black bill.', ['toucan', 'toco toucan'], aviary],
     ['waterfall', 'A gentle artificial waterfall cascading into a stone basin.', ['waterfall', 'water', 'basin'], aviary],
-    ['rope perches', 'Thick sisal ropes strung between wooden posts.', ['perches', 'rope perches', 'ropes'], aviary],
-    ['metal shelves', 'Industrial metal shelving units stacked with supplies.', ['shelves', 'metal shelves', 'shelf'], supplyRoom],
-    ['sugar gliders', 'A family of tiny sugar gliders with enormous dark eyes.', ['sugar gliders', 'gliders'], nocturnalExhibit],
-    ['bush babies', 'Two bush babies with impossibly large round eyes.', ['bush babies', 'galagos'], nocturnalExhibit],
+    ['rope perches', 'Thick sisal ropes strung between wooden posts.', ['perches', 'rope perches', 'ropes'], aviary, true],
+    ['metal shelves', 'Industrial metal shelving units stacked with supplies.', ['shelves', 'metal shelves', 'shelf'], supplyRoom, true],
+    ['sugar gliders', 'A family of tiny sugar gliders with enormous dark eyes.', ['sugar gliders', 'gliders'], nocturnalExhibit, true],
+    ['bush babies', 'Two bush babies with impossibly large round eyes.', ['bush babies', 'galagos'], nocturnalExhibit, true],
     ['barn owl', 'An enormous barn owl with a heart-shaped white face.', ['barn owl', 'owl'], nocturnalExhibit],
-    ['stuffed animals', 'Shelves of plush tigers, pandas, and penguins.', ['stuffed animals', 'plush', 'toys'], giftShop],
-    ['postcards', 'A spinning rack of postcards showing the zoo\'s greatest hits.', ['postcards', 'cards', 'postcard rack'], giftShop],
-  ] as [string, string, string[], IFEntity][]) {
-    object(name)
+    ['stuffed animals', 'Shelves of plush tigers, pandas, and penguins.', ['stuffed animals', 'plush', 'toys'], giftShop, true],
+    ['postcards', 'A spinning rack of postcards showing the zoo\'s greatest hits.', ['postcards', 'cards', 'postcard rack'], giftShop, true],
+  ] as [string, string, string[], IFEntity, boolean?][]) {
+    const builder = object(name)
       .description(desc)
       .aliases(...aliasList)
       .scenery()
-      .in(location)
-      .build();
+      .in(location);
+    if (plural) builder.plural();
+    builder.build();
   }
 
   // Scenery with special traits

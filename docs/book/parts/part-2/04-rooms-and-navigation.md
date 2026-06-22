@@ -209,6 +209,7 @@ initializeWorld(world: WorldModel): void {
       'REPTILE HOUSE (south — coming soon!), and EXIT (north).',
     aliases: ['signs', 'direction signs', 'arrow signs', 'post'],
     article: 'some',
+    grammaticalNumber: 'plural',
   }));
   directionSigns.add(new SceneryTrait());
   world.moveEntity(directionSigns.id, mainPath.id);
@@ -221,6 +222,7 @@ initializeWorld(world: WorldModel): void {
       'hoping you have food.',
     aliases: ['goats', 'pygmy goats', 'goat'],
     article: 'some',
+    grammaticalNumber: 'plural',
   }));
   goats.add(new SceneryTrait());
   world.moveEntity(goats.id, pettingZoo.id);

@@ -19,7 +19,7 @@ export const removingLanguage = {
     'no_source': "Remove {the:item} from what?",
     'not_in_container': "{the:cap:item} isn't in {the:container}.",
     'not_on_surface': "{the:cap:item} isn't on {the:surface}.",
-    'container_closed': "{the:cap:container} is closed.",
+    'container_closed': "{the:cap:container} {is:container} closed.",
     'removed_from': "{You} {take} {the:item} from {the:container}.",
     'removed_from_surface': "{You} {take} {the:item} from {the:surface}.",
     'cant_reach': "{You} {can't} reach {the:item}.",

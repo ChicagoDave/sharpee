@@ -1808,10 +1808,12 @@ export declare const npcLanguage: {
         'npc.combat.attack.hit_heavy': string;
         'npc.combat.attack.knocked_out': string;
         'npc.combat.attack.killed': string;
+        'npc.speech': string;
         'npc.speaks': string;
         'npc.shouts': string;
         'npc.whispers': string;
         'npc.mutters': string;
+        'npc.emote': string;
         'npc.laughs': string;
         'npc.growls': string;
         'npc.cries': string;
@@ -2232,6 +2234,40 @@ export declare const lowerFormatter: Formatter;
  * "brass lantern" → "Brass Lantern"
  */
 export declare const titleFormatter: Formatter;
+```
+
+### formatters/verb
+
+```typescript
+/**
+ * Verb-Agreement Formatters
+ *
+ * Formatters that emit a verb form agreeing in number with the entity they
+ * are keyed to, so templates need not hardcode a singular verb. The verb is
+ * chosen from the entity's grammatical number, mirroring how the article
+ * formatters choose articles from `nounType`.
+ *
+ * Syntax keys the formatter to a placeholder, e.g. `{is:item}` resolves the
+ * `item` value and emits the agreeing copula:
+ *
+ *   "{the:cap:item} {is:item} fixed in place."
+ *     → "The white house is fixed in place."   (singular)
+ *     → "The pygmy goats are fixed in place."  (plural)
+ *
+ * An entity is treated as plural when its `nounType` is `'plural'` or its
+ * `grammaticalNumber` is `'plural'`. A bare string (no EntityInfo metadata)
+ * or a missing value falls back to the singular form.
+ *
+ * @see ADR-095 Message Templates with Formatters
+ * @see ADR-089 Grammatical Number
+ */
+import type { Formatter } from './types.js';
+/** "is" formatter — emits "is" (singular) or "are" (plural). */
+export declare const isFormatter: Formatter;
+/** "was" formatter — emits "was" (singular) or "were" (plural). */
+export declare const wasFormatter: Formatter;
+/** "has" formatter — emits "has" (singular) or "have" (plural). */
+export declare const hasFormatter: Formatter;
 ```
 
 ### data/words

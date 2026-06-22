@@ -22,7 +22,7 @@ export const givingLanguage = {
     'no_recipient': "Give it to whom?",
     'not_holding': "{You} aren't holding {the:item}.",
     'recipient_not_visible': "{You} {can't} see {the:recipient}.",
-    'recipient_not_reachable': "{the:cap:recipient} is too far away.",
+    'recipient_not_reachable': "{the:cap:recipient} {is:recipient} too far away.",
     'not_actor': "{You} can only give things to people.",
     'self': "{You} already {have} {the:item}!",
 

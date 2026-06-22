@@ -19,7 +19,7 @@ export const talkingLanguage = {
     // Error messages
     'no_target': "Talk to whom?",
     'not_visible': "{You} {can't} see {the:target}.",
-    'too_far': "{the:cap:target} is too far away for conversation.",
+    'too_far': "{the:cap:target} {is:target} too far away for conversation.",
     'not_actor': "{You} can only talk to people.",
     'self': "Talking to {yourself} is a sign of madness.",
     'not_available': "{the:cap:target} doesn't want to talk right now.",
@@ -42,7 +42,7 @@ export const talkingLanguage = {
 
     // Success messages - with topics
     'has_topics': "{the:cap:target} seems willing to discuss various topics.",
-    'nothing_to_say': "{the:cap:target} has nothing particular to say."
+    'nothing_to_say': "{the:cap:target} {has:target} nothing particular to say."
   },
   
   help: {

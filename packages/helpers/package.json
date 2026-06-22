@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/helpers",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "Fluent entity builder helpers for Sharpee Interactive Fiction Platform",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -245,12 +245,19 @@ export interface ResolvedStory {
     name: string;
     /** Absolute story directory. */
     dir: string;
-    /** Workspace package name if the story is an in-repo workspace story; else null. */
+    /** The story's real `package.json` name (the pnpm `--filter` target); null if absent. */
     pkg: string | null;
     /** True iff dir is a direct child of <root>/stories or <root>/tutorials. */
     inRepo: boolean;
     /** True iff dir is under <root>/stories (build.sh stamps version.ts only for these). */
     underStories: boolean;
+    /**
+     * True iff the story is a monorepo workspace member — detected by a `workspace:*`
+     * dependency. A story with published (non-workspace) deps is a *decoupled*
+     * standalone project that builds via its own toolchain even inside the repo
+     * (e.g. the Family Zoo tutorial), so it is NOT built via `pnpm --filter`.
+     */
+    workspace: boolean;
 }
 /**
  * Resolve a story given either a **path** (a directory with a package.json, tried

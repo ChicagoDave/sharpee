@@ -31,14 +31,14 @@ export const enteringLanguage = {
     'no_target': "Enter what?",
     'not_enterable': "{You} {can't} enter {the:place}.",
     'already_inside': "{You're} already in {the:place}.",
-    'container_closed': "{the:cap:container} is closed.",
-    'too_full': "{the:cap:place} is full (maximum {max} occupants).",
+    'container_closed': "{the:cap:container} {is:container} closed.",
+    'too_full': "{the:cap:place} {is:place} full (maximum {max} occupants).",
     'entered': "{You} {get} into {the:place}.",
     'entered_on': "{You} {get} onto {the:place}.",
     'cant_enter': "{You} {can't} enter {the:place}: {reason}.",
     'not_here': "{You} {don't} see {the:place} here.",
-    'too_small': "{the:cap:place} is too small for {you} to enter.",
-    'occupied': "{the:cap:place} is already occupied."
+    'too_small': "{the:cap:place} {is:place} too small for {you} to enter.",
+    'occupied': "{the:cap:place} {is:place} already occupied."
   },
   
   help: {
