@@ -622,5 +622,5 @@ class FamilyZooStory implements Story {
 // EXPORTS
 // ============================================================================
 
-export const story = new FamilyZooStory();
+export const story: Story = new FamilyZooStory();
 export default story;

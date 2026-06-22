@@ -200,9 +200,17 @@ module's exports, so provide both a named `story` and a default — it then work
 however the module is loaded.
 
 ```typescript
-export const story = new FamilyZooStory();
+export const story: Story = new FamilyZooStory();
 export default story;
 ```
+
+The `: Story` annotation matters: it types `story` as the full `Story` interface —
+including the *optional* hooks like `extendParser` and `extendLanguage` you'll add in
+later chapters. The browser client that `sharpee init-browser` generated in Chapter 1
+checks for those hooks (`if (story.extendParser) …`), and under TypeScript's `strict`
+mode that check only compiles if the type knows the hooks *might* exist. Without the
+annotation, `story` is typed as just `FamilyZooStory`, which doesn't have them yet, and
+the browser build fails. Annotate the export and every chapter builds.
 
 That's the whole file: imports, `config`, the `class` with `createPlayer` and
 `initializeWorld`, and these exports. Build it and it runs.
