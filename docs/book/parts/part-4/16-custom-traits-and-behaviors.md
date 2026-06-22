@@ -69,9 +69,14 @@ The trait holds the count; the *rule* — "you can dispense only while charges
 remain, and each use spends one" — belongs in a behavior. A behavior is typically a
 class of static methods that take the entity, fetch the trait, and change it:
 
+This is the first time we import from one of our *own* files rather than a
+`@sharpee/*` package. The project's TypeScript is configured for Node's ESM
+resolution, which requires a `.js` extension on relative imports (the `.js` points
+at the compiled output of `dispenser-trait.ts`):
+
 ```typescript
 import { IFEntity } from '@sharpee/world-model';
-import { DispenserTrait } from './dispenser-trait';
+import { DispenserTrait } from './dispenser-trait.js';
 
 export class DispenserBehavior {
   /** Spend one charge. Returns false if the dispenser is already empty. */

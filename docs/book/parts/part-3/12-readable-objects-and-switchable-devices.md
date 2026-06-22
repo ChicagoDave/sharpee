@@ -168,6 +168,7 @@ match how a person would actually talk about the object.
 
 ```
 > take brochure              Pick up the zoo brochure
+> take keycard               Grab the staff keycard — it's here at the entrance
 > read brochure              Read the guide — different from examine!
 > examine brochure           See the physical brochure
 > south                      Main Path
@@ -175,7 +176,6 @@ match how a person would actually talk about the object.
 > read plaque                Read about the goats and rabbits
 > examine plaque             See the brass plaque itself
 > west                       Back to Main Path
-> take keycard               (from the entrance, earlier)
 > unlock gate with keycard   Open the staff area
 > open gate; south           Supply Room
 > examine radio              See the battered radio

@@ -230,6 +230,7 @@ defined with `id: 'zoo-parrot'` to begin with.
 ## Try it
 
 ```
+> south                     Walk to the Main Path, where Sam patrols
 > examine zookeeper         See Sam's description
 > wait                      Sam patrols on toward the petting zoo
 > wait                      …and on toward the aviary

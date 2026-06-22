@@ -289,10 +289,10 @@ re-voiced without touching its logic.
 > take feed                 Get the bag of feed
 > feed goats                The goats eat happily
 > feed goats                "You've already fed them."
-> photograph toucan         "You don't have a camera." (blocked)
+> photograph goats          "You don't have a camera." (blocked)
 > west; west; west          Head to the Gift Shop
 > take camera               Grab the camera
-> photograph postcards      Click! Photo taken
+> photograph press          Click! Photo taken
 ```
 
 ## Key takeaway
