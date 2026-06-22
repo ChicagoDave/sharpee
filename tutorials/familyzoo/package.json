@@ -1,31 +1,32 @@
 {
-  "name": "@sharpee/tutorial-familyzoo",
-  "version": "1.0.8",
-  "description": "Family Zoo — A progressive Sharpee tutorial in 16 versions",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "name": "familyzoo",
+  "version": "1.0.0",
+  "description": "Family Zoo — the standalone tutorial for The Sharpee Author and Developer Manual",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "clean": "rimraf dist"
+    "build": "sharpee build",
+    "build:browser": "sharpee build-browser",
+    "clean": "sharpee clean"
   },
   "dependencies": {
-    "@sharpee/core": "workspace:*",
-    "@sharpee/engine": "workspace:*",
-    "@sharpee/event-processor": "workspace:*",
-    "@sharpee/helpers": "workspace:*",
-    "@sharpee/if-domain": "workspace:*",
-    "@sharpee/lang-en-us": "workspace:*",
-    "@sharpee/media": "workspace:*",
-    "@sharpee/parser-en-us": "workspace:*",
-    "@sharpee/platform-browser": "workspace:*",
-    "@sharpee/plugin-npc": "workspace:*",
-    "@sharpee/plugin-scheduler": "workspace:*",
-    "@sharpee/stdlib": "workspace:*",
-    "@sharpee/world-model": "workspace:*"
+    "@sharpee/core": "^1.0.8",
+    "@sharpee/engine": "^1.0.8",
+    "@sharpee/event-processor": "^1.0.8",
+    "@sharpee/helpers": "^1.0.8",
+    "@sharpee/if-domain": "^1.0.8",
+    "@sharpee/lang-en-us": "^1.0.8",
+    "@sharpee/media": "^1.0.8",
+    "@sharpee/parser-en-us": "^1.0.8",
+    "@sharpee/platform-browser": "^1.0.8",
+    "@sharpee/plugin-npc": "^1.0.8",
+    "@sharpee/plugin-scheduler": "^1.0.8",
+    "@sharpee/stdlib": "^1.0.8",
+    "@sharpee/world-model": "^1.0.8"
   },
   "devDependencies": {
+    "@sharpee/devkit": "^1.0.8",
     "@types/node": "^20.11.19",
-    "rimraf": "^5.0.5",
     "typescript": "^5.3.3"
   },
   "keywords": [
@@ -35,14 +36,5 @@
     "family-zoo"
   ],
   "author": "Sharpee Team",
-  "license": "MIT",
-  "module": "./dist-esm/index.js",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist-esm/index.js",
-      "require": "./dist/index.js",
-      "esm": "./dist-esm/index.js"
-    }
-  }
+  "license": "MIT"
 }

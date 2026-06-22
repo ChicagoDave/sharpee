@@ -8,4 +8,4 @@
  * Author and Developer Manual* — see README.md. The original v01–v18 tutorial is
  * archived under docs/archive/tutorial/.
  */
-export { story, default } from './ch24-27-presentation';
+export { story, default } from './ch24-27-presentation/index.js';

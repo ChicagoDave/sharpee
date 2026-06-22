@@ -6,7 +6,8 @@ packages:
   - '!packages/interpreter'
   - stories/dungeo
   - stories/channel-service-test
-  - tutorials/familyzoo
+  # tutorials/familyzoo is a standalone book-aligned project that consumes the
+  # published @sharpee/* npm packages — it is no longer a workspace member.
   - tools/shite
   - tools/zifmia
 
