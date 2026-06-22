@@ -99,40 +99,50 @@ describe('repo helpers', () => {
 
 describe('resolveStory (path or name)', () => {
   let root: string;
-  const mkStory = (rel: string) => {
+  const mkStory = (rel: string, pkgJson: Record<string, unknown> = { name: 'x', version: '1.0.0' }) => {
     const dir = join(root, rel);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'x', version: '1.0.0' }));
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(pkgJson));
     return dir;
   };
+  // A workspace member declares a workspace:* dependency; a decoupled standalone
+  // project depends on published versions instead.
+  const workspacePkg = (name: string) => ({ name, dependencies: { '@sharpee/core': 'workspace:*' } });
+  const standalonePkg = (name: string) => ({ name, dependencies: { '@sharpee/core': '^1.0.8' } });
 
   beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), 'devkit-resolve-'));
   });
   afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-  it('resolves a bare stories/ name → story package, in-repo, underStories', () => {
-    mkStory('stories/dungeo');
+  it('resolves a bare stories/ name → real pkg name, in-repo workspace, underStories', () => {
+    mkStory('stories/dungeo', workspacePkg('@sharpee/story-dungeo'));
     const r = resolveStory(root, 'dungeo')!;
-    expect(r).toMatchObject({ name: 'dungeo', pkg: '@sharpee/story-dungeo', inRepo: true, underStories: true });
+    expect(r).toMatchObject({ name: 'dungeo', pkg: '@sharpee/story-dungeo', inRepo: true, underStories: true, workspace: true });
   });
 
   it('resolves an in-repo PATH the same as the name', () => {
-    mkStory('stories/dungeo');
+    mkStory('stories/dungeo', workspacePkg('@sharpee/story-dungeo'));
     const r = resolveStory(root, 'stories/dungeo')!;
-    expect(r).toMatchObject({ name: 'dungeo', pkg: '@sharpee/story-dungeo', inRepo: true, underStories: true });
+    expect(r).toMatchObject({ name: 'dungeo', pkg: '@sharpee/story-dungeo', inRepo: true, underStories: true, workspace: true });
   });
 
-  it('classifies a tutorials story (in-repo, NOT underStories)', () => {
-    mkStory('tutorials/familyzoo');
+  it('classifies a decoupled tutorial by its real name, NOT as a workspace member', () => {
+    mkStory('tutorials/familyzoo', standalonePkg('familyzoo'));
     const r = resolveStory(root, 'familyzoo')!;
-    expect(r).toMatchObject({ pkg: '@sharpee/tutorial-familyzoo', inRepo: true, underStories: false });
+    expect(r).toMatchObject({ name: 'familyzoo', pkg: 'familyzoo', inRepo: true, underStories: false, workspace: false });
   });
 
-  it('a path to a non-story location is not in-repo (no workspace pkg)', () => {
+  it('classifies an in-repo workspace tutorial (workspace:* deps) as a workspace member', () => {
+    mkStory('tutorials/legacy', workspacePkg('@sharpee/tutorial-legacy'));
+    const r = resolveStory(root, 'legacy')!;
+    expect(r).toMatchObject({ pkg: '@sharpee/tutorial-legacy', inRepo: true, underStories: false, workspace: true });
+  });
+
+  it('a path to a non-story location is not in-repo', () => {
     const dir = mkStory('somewhere/else');
     const r = resolveStory(root, dir)!;
-    expect(r).toMatchObject({ inRepo: false, pkg: null, underStories: false });
+    expect(r).toMatchObject({ inRepo: false, underStories: false, workspace: false });
   });
 
   it('returns null when nothing resolves', () => {

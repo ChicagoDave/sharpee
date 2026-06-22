@@ -155,10 +155,15 @@ export function generateGenaiApi(root: string, opts: BuildOptions): void {
 export function buildStory(root: string, story: string, opts: BuildOptions): void {
   const resolved = resolveStory(root, story);
   if (!resolved) throw new Error(`story not found: ${story} (a path, or a stories/|tutorials/ name)`);
-  if (!resolved.inRepo || !resolved.pkg) {
-    // Standalone / out-of-repo stories build via their own toolchain — ADR-180 Phase U2.
+  if (!resolved.inRepo) {
+    throw new Error(`'${story}' is not an in-repo story (stories/ or tutorials/)`);
+  }
+  if (!resolved.workspace || !resolved.pkg) {
+    // A decoupled standalone story (published @sharpee/* deps, not a workspace
+    // member) builds via its own toolchain — the CLI routes these to the
+    // standalone build before reaching the platform pipeline.
     throw new Error(
-      `'${story}' is not an in-repo story (stories/ or tutorials/); standalone builds land in ADR-180 Phase U2`,
+      `'${story}' is a standalone project (not a workspace member) — build it with the standalone 'sharpee build' toolchain`,
     );
   }
   execFileSync('pnpm', ['--filter', resolved.pkg, 'build'], {

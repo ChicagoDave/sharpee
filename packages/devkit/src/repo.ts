@@ -154,12 +154,19 @@ export interface ResolvedStory {
   name: string;
   /** Absolute story directory. */
   dir: string;
-  /** Workspace package name if the story is an in-repo workspace story; else null. */
+  /** The story's real `package.json` name (the pnpm `--filter` target); null if absent. */
   pkg: string | null;
   /** True iff dir is a direct child of <root>/stories or <root>/tutorials. */
   inRepo: boolean;
   /** True iff dir is under <root>/stories (build.sh stamps version.ts only for these). */
   underStories: boolean;
+  /**
+   * True iff the story is a monorepo workspace member — detected by a `workspace:*`
+   * dependency. A story with published (non-workspace) deps is a *decoupled*
+   * standalone project that builds via its own toolchain even inside the repo
+   * (e.g. the Family Zoo tutorial), so it is NOT built via `pnpm --filter`.
+   */
+  workspace: boolean;
 }
 
 function classifyStory(root: string, dir: string): ResolvedStory {
@@ -168,12 +175,25 @@ function classifyStory(root: string, dir: string): ResolvedStory {
   const underStories = parent === join(root, 'stories');
   const underTutorials = parent === join(root, 'tutorials');
   const inRepo = underStories || underTutorials;
-  const pkg = underStories
-    ? `@sharpee/story-${name}`
-    : underTutorials
-      ? `@sharpee/tutorial-${name}`
-      : null;
-  return { name, dir, pkg, inRepo, underStories };
+
+  // Read the story's real package.json: its `name` is the pnpm `--filter` target,
+  // and any `workspace:*` dependency marks it as a workspace member. We no longer
+  // derive a `@sharpee/{story,tutorial}-<name>` name from the path — a decoupled
+  // tutorial names itself (e.g. `familyzoo`) and depends on published packages.
+  let pkg: string | null = null;
+  let workspace = false;
+  try {
+    const json = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    pkg = typeof json.name === 'string' ? json.name : null;
+    const deps = { ...(json.dependencies ?? {}), ...(json.devDependencies ?? {}) };
+    workspace =
+      inRepo &&
+      Object.values(deps).some((v) => typeof v === 'string' && v.startsWith('workspace:'));
+  } catch {
+    // No or invalid package.json — leave pkg null / workspace false.
+  }
+
+  return { name, dir, pkg, inRepo, underStories, workspace };
 }
 
 /**

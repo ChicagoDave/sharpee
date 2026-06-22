@@ -15,7 +15,7 @@ import { runIntrospect } from './commands/introspect';
 import { runBundle } from './commands/bundle';
 import { runClean } from './commands/clean';
 import { runVerify } from './commands/verify';
-import { detectMode } from './repo';
+import { detectMode, resolveStory, findRepoRoot } from './repo';
 // Standalone (author-project) commands, absorbed from the former @sharpee/sharpee CLI.
 import { runBuildCommand } from './standalone/build';
 import { runBuildBrowserCommand } from './standalone/build-browser';
@@ -114,7 +114,21 @@ async function main(argv: string[]): Promise<number> {
   switch (command) {
     case 'build': {
       if (detectMode() === 'monorepo') {
-        runBuild(parseBuild(rest));
+        const opts = parseBuild(rest);
+        // A decoupled standalone story (published @sharpee/* deps, not a workspace
+        // member) builds via its own toolchain even inside the monorepo — not via
+        // the platform pipeline + pnpm --filter.
+        const resolved = opts.story ? resolveStory(findRepoRoot(), opts.story) : null;
+        if (resolved && resolved.inRepo && !resolved.workspace) {
+          const flags = rest.filter((a) => a !== opts.story);
+          if (flags.includes('--browser')) {
+            await runBuildBrowserCommand(flags.filter((a) => a !== '--browser'), resolved.dir);
+          } else {
+            await runBuildCommand(flags, resolved.dir);
+          }
+          return 0;
+        }
+        runBuild(opts);
         return 0;
       }
       // Standalone: build the cwd project, or a registered story by name.
