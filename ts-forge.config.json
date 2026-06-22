@@ -49,7 +49,7 @@
     "npm": {
       "module": "commonjs",
       "outDir": "dist",
-      "imports": "relative",
+      "imports": "preserve",
       "declarations": true,
       "condition": "publish"
     }
