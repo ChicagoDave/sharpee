@@ -66,8 +66,10 @@ Track, you just saw the exact class behind it.
 
 Every chapter advances the same story. The code is versioned: `v01` is a single
 room, `v02` adds a second room, and so on through the complete game. Each
-chapter's code matches a real, compiled version under
-`tutorials/familyzoo/src/`, so anything you read here, you can run.
+chapter's code matches a real, compiled version in the book's companion
+repository, under `tutorials/familyzoo/src/` — browse it on GitHub at
+<https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/src>. You
+don't need to clone anything to read along; anything you read here, you can run.
 
 ## Conventions
 

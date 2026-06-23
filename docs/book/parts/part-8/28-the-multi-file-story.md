@@ -28,9 +28,10 @@ rules change together; the prose changes together. Each becomes a file.
 ## Organizing by concern, not by code type
 
 Family Zoo splits into seven files, each owning one slice of the world. All seven
-live in the tutorial source at `tutorials/familyzoo/src/ch28-multi-file/`; this
-chapter walks their structure rather than reprinting every line, so open them
-alongside as we go:
+live in the companion repository at
+[`tutorials/familyzoo/src/ch28-multi-file/`](https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/src/ch28-multi-file);
+this chapter walks their structure rather than reprinting every line, so open them
+on GitHub alongside as we go:
 
 | File | Owns |
 |---|---|

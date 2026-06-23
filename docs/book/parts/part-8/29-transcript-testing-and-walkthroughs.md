@@ -98,18 +98,7 @@ npx sharpee build --test --stop-on-failure
 ```
 
 It runs `walkthroughs/wt-*.transcript` as a chain and `tests/transcripts/*.transcript`
-individually, exactly matching the two-kinds split. Working inside the Sharpee repo
-itself, the prebuilt bundle is much faster and takes explicit paths:
-
-```bash
-# A single unit transcript (the Family Zoo tutorial's own tests):
-node dist/cli/sharpee.js --test tutorials/familyzoo/tests/transcripts/v02-navigation.transcript
-# A chained walkthrough set (Dungeo ships these; Family Zoo has none):
-node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
-```
-
-The `--chain` flag is what makes walkthroughs persist state between files; omit it for
-unit transcripts.
+individually, exactly matching the two-kinds split.
 
 ## Key takeaway
 
