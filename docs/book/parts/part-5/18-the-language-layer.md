@@ -24,7 +24,7 @@ the turn, the engine's prose pipeline takes that ID to the language layer and as
 prints.
 
 The standard library works exactly the same way. Every built-in verb emits IDs
-like `if.action.taking.success`; the English language package maps each to its
+like `if.action.taking.taken`; the English language package maps each to its
 prose. Nothing in the engine, stdlib, or world model ever hardcodes a sentence — it
 all flows through IDs.
 
@@ -64,7 +64,7 @@ capitalization — "the toucan," "a flashlight," "Some feed." That machinery is 
 
 IDs are just strings, but a consistent scheme keeps them legible. The convention:
 
-- Built-in messages use the `if.*` namespace — `if.action.taking.success`.
+- Built-in messages use the `if.*` namespace — `if.action.taking.taken`.
 - Your story's messages take a story prefix — `zoo.feeding.fed_goats`,
   `zoo.photo.no_camera`.
 

@@ -98,16 +98,20 @@ can pin different platform versions.
 
 ## Creating a story project
 
-`sharpee init` scaffolds a new project:
+`sharpee init` scaffolds a new project. On its own it walks you through a short
+wizard — story title, package ID, author, description — each question defaulting
+to a sensible value (the directory name, your username, and so on). Pass `-y` to
+accept every default and scaffold in one shot, which is what we'll do here:
 
 ```bash
-sharpee init my-zoo
+sharpee init my-zoo -y
 cd my-zoo
 npm install
 ```
 
-`init` writes a small, complete starting point; `npm install` pulls down the
-platform it pins. After that you have:
+(Drop the `-y` if you'd rather answer the prompts yourself; the `my-zoo` argument
+just supplies the default for the first question.) `init` writes a small, complete
+starting point; `npm install` pulls down the platform it pins. After that you have:
 
 ```
 my-zoo/
@@ -166,7 +170,7 @@ author:
 
 | Command | What it does |
 |---|---|
-| `sharpee init [dir]` | Scaffold a new story project |
+| `sharpee init [dir] [-y]` | Scaffold a new story project (`-y` skips the prompts) |
 | `sharpee init-browser` | Add a web client (`src/browser-entry.ts`) |
 | `sharpee build` | Compile `src/` and emit the `.sharpee` bundle (and the web client, if present) |
 | `sharpee build-browser` | Rebuild only the web client → `dist/web/` |

@@ -87,6 +87,19 @@ class FamilyZooStory implements Story {
 The two methods below are members of this `FamilyZooStory` class — they go where
 the comments are. We'll write each one, then assemble the whole file at the end.
 
+**The scaffolded stub looks a little different — and that's fine.** The
+`src/index.ts` that `sharpee init` generated isn't written exactly like the file we
+build here, but both are valid. The stub imports `Story` and `StoryConfig` from
+**`@sharpee/sharpee`** (a convenience barrel that re-exports the engine, world
+model, and parser as one package), where the book imports them from
+**`@sharpee/engine`** directly; the two names refer to the same types. The stub
+also defines the story as a plain **object literal**
+(`export const story: Story = { config, createPlayer, … }`) rather than a `class`.
+An object literal and a class instance satisfy the `Story` interface identically —
+we use the class form throughout the book because it gives the two methods a
+natural home and reads well as the story grows. Either style works; pick one and
+stay consistent.
+
 ## Creating the player
 
 The engine calls `createPlayer` first. Inside the class, you build the player like
