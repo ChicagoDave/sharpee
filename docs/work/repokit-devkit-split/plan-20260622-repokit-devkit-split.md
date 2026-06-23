@@ -2,7 +2,18 @@
 
 **Date**: 2026-06-22
 **ADR**: [ADR-187](../../architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md) (ACCEPTED) — supersedes ADR-180 Amendment 1's "one command, two depths"
-**Status**: IN PROGRESS — Phases 0–1 done (2026-06-22); Phase 2 next.
+**Status**: IN PROGRESS — Phases 0–1 done; Phase 2 underway (foundation + leaf commands ported).
+
+### Phase 2 progress
+- **2a–2d DONE** — full platform cluster ported into repokit (verbatim impls + thin
+  one-class-per-file Command wrappers): helpers `repo.ts`/`consumer-gen.ts`/`registry.ts`/
+  `browser.ts`/`zifmia.ts`; commands `build`/`bundle`/`verify`/`test:npm`/`clean`/
+  `introspect`/`ifid` + `test`/`play` (relocated as stubs). deps: `@sharpee/core` (ifid),
+  `@sharpee/bootstrap` (introspect). repokit builds clean; `./repokit` lists all 9 real
+  commands; `ifid generate` runs (real `@sharpee/core`); stubs return exit 2; devkit
+  untouched. **Polish debt:** copied-file headers still say "@sharpee/devkit".
+- **2e TODO (AC-5 gate, heavy/real build — do NOT auto-retry)** — `repokit build` platform +
+  `bundle` + `verify` clean + `dist/cli/sharpee.js` loads (~170ms) + Dungeo walkthrough chain.
 
 ## Progress
 
@@ -104,9 +115,17 @@ makes promotion an explicit, reviewed act.
   uses it). Real path, no stub.
 
 ### Phase 2 — Move platform logic to repokit [AC-1, AC-5]
-- Move build/bundle/verify/test-npm/zifmia/platform-clean + `repo.ts` into `tools/repokit`;
-  remove from devkit. repokit surface: `build` (platform), `bundle`, `verify`, `test:npm`,
-  `clean`, `build --browser` (workspace stories), + shared `test`/`play`/`introspect`/`ifid`.
+- **Sequencing refinement (2026-06-22):** Phase 2 **copies** the platform cluster into
+  repokit and verifies it (AC-5); **removal from devkit + the devkit-cli rewire move to
+  Phase 3.** Reason: `devkit/cli.ts` imports `runBuild`/`runBundle`/etc., so removing them
+  mid-Phase-2 breaks devkit's compile — and that rewire is Phase 3's "make devkit
+  project-relative" work. Copy-then-verify-then-remove is safer and matches ADR-187's
+  "duplicate the overlap during transition." devkit still ends with no platform logic
+  (at Phase 3); AC-1 unaffected.
+- Port build/bundle/verify/test-npm/zifmia/platform-clean + the in-repo browser build
+  + `repo.ts`/`consumer-gen.ts` into `tools/repokit`. repokit surface: `build` (platform),
+  `bundle`, `verify`, `test:npm`, `clean`, `build --browser` (workspace stories), + its
+  own `test`/`play`/`introspect`/`ifid`.
 - **Test (regression, AC-5):** run repokit end-to-end → `packages/*` compile,
   `dist/cli/sharpee.js` present and loads (~170ms), `verify` (`tsf build --npm`) clean,
   Dungeo walkthrough chain passes. **Gate: must pass before Phase 3.**

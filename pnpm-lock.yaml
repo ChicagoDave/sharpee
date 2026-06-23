@@ -1159,6 +1159,13 @@ importers:
         version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   tools/repokit:
+    dependencies:
+      '@sharpee/bootstrap':
+        specifier: workspace:*
+        version: link:../../packages/bootstrap
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../../packages/core
     devDependencies:
       '@types/node':
         specifier: ^20.11.19
