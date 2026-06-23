@@ -41,7 +41,7 @@ every **channel** "what do you have this turn?" and assembles a **packet**. The
 The single idea that ties Volume VII back to everything before it: **every story-to-UI
 signal travels as a channel** — prose, score, location, prompt, images, sound. There
 is no special path for any of them. That data-only packet stream is what lets one
-unchanged story run in a terminal, a browser, or a multi-user Zifmia room.
+unchanged story run in a terminal or a browser.
 
 ## Where does this belong?
 
