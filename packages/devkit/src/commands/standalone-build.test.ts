@@ -12,11 +12,13 @@
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { generateConsumer } from '../consumer-gen';
-import { DEFAULT_STAGING } from './test-npm';
 
+// Local tsf npm staging (was DEFAULT_STAGING in the since-removed test-npm command,
+// now repokit's; this gate keeps its own constant — ADR-187 full separation).
+const DEFAULT_STAGING = join(homedir(), '.tsf-publish', 'sharpee');
 const integration = process.env.DEVKIT_INTEGRATION === '1' && existsSync(DEFAULT_STAGING);
 
 /** Minimal consumer tsconfig (the standalone build runs `npx tsc` against it). */

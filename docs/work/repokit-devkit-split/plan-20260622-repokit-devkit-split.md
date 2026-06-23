@@ -2,7 +2,7 @@
 
 **Date**: 2026-06-22
 **ADR**: [ADR-187](../../architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md) (ACCEPTED) — supersedes ADR-180 Amendment 1's "one command, two depths"
-**Status**: IN PROGRESS — Phases 0–2 done; Phase 3 underway (3a done: devkit cli author-only; 3b remaining: delete dead platform files + trim).
+**Status**: IN PROGRESS — Phases 0–3 done (devkit/repokit split functional); Phase 4 next (doc migration: CLAUDE.md, ADR-180 amendment, book Ch 25/31).
 
 ### Phase 3 progress
 - **3a DONE (2026-06-22)** — `devkit/cli.ts` rewired author-only: `build` is now
@@ -13,11 +13,16 @@
   header updated. devkit builds clean; all 34 tests pass; `./sharpee build dungeo` →
   redirect hint; `./sharpee bundle` → unknown. Platform impl files remain as dead code
   (deleted in 3b).
-- **3b REMAINING (destructive)** — delete devkit `commands/{build,bundle,verify,clean,
-  test-npm,browser,zifmia}.ts` + `consumer-gen.ts` + their tests; strip those exports
-  from `index.ts`; trim `repo.ts` to the routing helpers (`findMonorepoRoot`,
-  `resolveStory`, + what `standalone/build.ts` uses); relocate the platform tests to a
-  new repokit vitest harness. This satisfies AC-1 (devkit has no platform logic).
+- **3b DONE (2026-06-22) [AC-1]** — deleted devkit `commands/{build,bundle,verify,clean,
+  test-npm,browser,zifmia}.ts` + their tests; stripped those exports from `index.ts`;
+  trimmed `repo.ts` (removed `PLATFORM_PACKAGES`/`BUNDLE_ALIASES`/`BUNDLE_DTS`/`tsfBin` —
+  monorepo-build config now repokit's; kept the resolution helpers cli.ts uses). Stood
+  up a repokit vitest harness and relocated the 5 platform tests there (25 passed, 1
+  skipped). devkit keeps its OWN `consumer-gen.ts` (+test) for its standalone-build
+  integration gate (overlap duplicated, ADR-187 R1). devkit suite: 16 passed, 1 skipped;
+  builds clean. `devkit/src/commands/` now = `introspect` + `register` only.
+  Verified: `./sharpee bundle` → unknown; `./sharpee build dungeo` → repokit redirect;
+  `./repokit` full surface + `ifid generate` real.
 
 ### Phase 2 progress
 - **2a–2d DONE** — full platform cluster ported into repokit (verbatim impls + thin
