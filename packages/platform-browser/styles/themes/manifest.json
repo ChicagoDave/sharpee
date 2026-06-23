@@ -1,0 +1,9 @@
+{
+  "$comment": "Built-in themes shipped by @sharpee/platform-browser (ADR-188). An author selects one by listing its id in the story's package.json `sharpee.themes`. The build copies `css` (and any `assets` dirs, relative to this folder) into dist/web/themes/ and adds a menu entry `{ id, name }`. `classic` is the engine's :root default and needs no entry here.",
+  "themes": {
+    "modern-dark": { "name": "Modern Dark", "css": "modern-dark.css" },
+    "retro-terminal": { "name": "Retro Terminal", "css": "retro-terminal.css" },
+    "paper": { "name": "Paper", "css": "paper.css" },
+    "system-6": { "name": "System 6", "css": "system-6.css", "assets": ["system-6"] }
+  }
+}

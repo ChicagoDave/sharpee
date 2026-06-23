@@ -20,11 +20,12 @@ hands it the page's elements, connects the engine, and starts:
 ```typescript
 const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
-  defaultTheme: 'zoo-sunny',
+  defaultTheme: 'zoo-sunny',            // the theme applied on first load / restore
+  // The clickable theme menu is generated at build time from your package.json
+  // `sharpee.themes` (Chapter 26); this array is metadata the generator fills in.
   themes: [
-    { id: 'zoo-sunny', name: 'Zoo Sunny' },        // story-shipped theme (Chapter 26)
-    { id: 'modern-dark', name: 'Modern Dark' },     // platform defaults
-    { id: 'retro-terminal', name: 'Retro Terminal' },
+    { id: 'zoo-sunny', name: 'Zoo Sunny' },
+    { id: 'modern-dark', name: 'Modern Dark' },
     { id: 'paper', name: 'Paper' },
   ],
   storyInfo: {

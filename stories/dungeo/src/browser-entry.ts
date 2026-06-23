@@ -38,9 +38,12 @@ const PORTED_BY = config.custom?.portedBy || '';
 // Create browser client with story configuration
 const client = new BrowserClient({
   storagePrefix: 'dungeo-',
-  defaultTheme: 'dos-classic',
+  // The default is the engine's `:root` "classic" baseline (no package) — ADR-188 R7.
+  // The clickable theme menu is generated at build time from `sharpee.themes`
+  // (this array only feeds ThemeManager's metadata; keep it in sync for clarity).
+  defaultTheme: 'classic',
   themes: [
-    { id: 'dos-classic', name: 'DOS Classic' },
+    { id: 'classic', name: 'Classic' },
     { id: 'modern-dark', name: 'Modern Dark' },
     { id: 'retro-terminal', name: 'Retro Terminal' },
     { id: 'paper', name: 'Paper' },

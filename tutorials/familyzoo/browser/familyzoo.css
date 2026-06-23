@@ -1,18 +1,21 @@
 /*
- * Family Zoo — author style override (NEW IN V18).
+ * Family Zoo — author style override.
  *
  * This is the single author CSS surface: devkit copies it to
- * dist/web/familyzoo.css and index.html links it LAST, so it wins the
- * cascade over the platform stylesheets. Here it ships one story theme,
- * `zoo-sunny`, styling the platform component vocabulary, plus a rule for
- * the custom #zoo-ambience element the browser entry paints.
+ * dist/web/familyzoo.css and index.html links it LAST, so it wins the cascade
+ * over the platform stylesheets. It defines the story's OWN theme, `zoo-sunny`
+ * — listed inline in package.json `sharpee.themes` so the build adds a menu
+ * entry. The token block alone would skin via the platform engine (ADR-188);
+ * zoo-sunny additionally re-skins the chrome with a few flourish rules. It also
+ * styles the custom #zoo-ambience element the browser entry paints.
  *
  * Authors must NOT use the reserved `sharpee-` prefix for their own class
  * names; `.sharpee-*` here only targets the platform's component classes.
  */
 
-/* --- Theme palette: a bright, friendly daytime zoo --- */
-:root[data-theme="zoo-sunny"] {
+/* --- zoo-sunny token block: a bright, friendly daytime zoo. The engine paints
+       every component from these alone; the flourishes below are optional. --- */
+[data-theme="zoo-sunny"] {
   --theme-bg: #fffaf0;          /* warm cream */
   --theme-bg-alt: #fff3da;
   --theme-text: #2f2a24;
@@ -28,7 +31,8 @@
   --theme-line-height: 1.6;
 }
 
-/* --- Component rules (so the theme is complete, not variable-only) --- */
+/* --- Flourishes: zoo-sunny deliberately puts the green on the chrome (title/
+       menu bars) rather than the engine's default (status bar). Optional. --- */
 [data-theme="zoo-sunny"] body {
   background: var(--theme-bg);
   color: var(--theme-text);

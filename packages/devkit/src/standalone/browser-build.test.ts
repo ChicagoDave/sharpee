@@ -4,7 +4,8 @@
  * devkit-owned template, then asserts the real dist/web/ deliverable: an esbuilt
  * game.js bundled from the real @sharpee/* packages, the platform-owned page +
  * engine CSS (base/engine/decorations from @sharpee/platform-browser, ADR-188),
- * and the author override stylesheet. No theme CSS/fonts ship (AC-4).
+ * and the author override stylesheet. No theme CSS ships until a package is listed
+ * in `sharpee.themes`; a second build pass then proves the wiring (ADR-188 Phase 4).
  *
  * No stubs of esbuild or the template — this is the integration's acceptance
  * gate (Integration Reality). The scratch project is created INSIDE the repo so
@@ -107,11 +108,38 @@ describe('browser scaffold (real path)', () => {
     for (const css of ['base.css', 'engine.css', 'decorations.css']) {
       expect(existsSync(join(web, css)), `${css} missing`).toBe(true);
     }
-    // AC-4: no theme CSS and no theme fonts are shipped — themes are @sharpee/theme-* packages.
+    // AC-4: with no themes listed, no theme CSS/fonts ship — and no stale monolith.
     expect(existsSync(join(web, 'styles.css')), 'styles.css should not ship').toBe(false);
-    expect(existsSync(join(web, 'themes')), 'themes/ should not ship').toBe(false);
+    expect(existsSync(join(web, 'themes')), 'themes/ should not ship when none listed').toBe(false);
 
     // Author override emitted (stubbed if absent; here seeded by init-browser).
     expect(existsSync(join(web, 'my-story.css'))).toBe(true);
-  }, 180_000);
+
+    // ADR-188 (AC-3/AC-5/AC-9): `sharpee.themes` wires a BUILT-IN theme (by id, from
+    // platform-browser) AND an AUTHOR theme (inline { id, name }, CSS in the override).
+    const pkgPath = join(projectDir, 'package.json');
+    const proj = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+    proj.sharpee = {
+      ...(proj.sharpee || {}),
+      themes: ['modern-dark', { id: 'my-theme', name: 'My Theme' }],
+    };
+    writeFileSync(pkgPath, JSON.stringify(proj, null, 2));
+
+    await runBuildBrowserCommand([], projectDir);
+
+    const themed = readFileSync(join(web, 'index.html'), 'utf-8');
+    // Built-in: CSS copied to themes/<id>.css, linked AFTER the engine and BEFORE the
+    // author override so the cascade is correct.
+    expect(existsSync(join(web, 'themes', 'modern-dark.css')), 'built-in CSS missing').toBe(true);
+    expect(themed).toContain('href="themes/modern-dark.css"');
+    expect(themed.indexOf('engine.css')).toBeLessThan(themed.indexOf('themes/modern-dark.css'));
+    expect(themed.indexOf('themes/modern-dark.css')).toBeLessThan(themed.indexOf('my-story.css'));
+    // Author theme: NO CSS copied (it lives in the override stylesheet), but it DOES
+    // get a menu entry.
+    expect(existsSync(join(web, 'themes', 'my-theme.css')), 'author theme must not copy CSS').toBe(false);
+    // Menu regenerated: classic default + built-in {id,name} + author {id,name}.
+    expect(themed).toContain('data-theme="classic">Classic<');
+    expect(themed).toContain('data-theme="modern-dark">Modern Dark<');
+    expect(themed).toContain('data-theme="my-theme">My Theme<');
+  }, 240_000);
 });

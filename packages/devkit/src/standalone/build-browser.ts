@@ -4,9 +4,11 @@
  * Bundles a Sharpee story for the browser into dist/web/. The bundle (game.js)
  * is esbuilt from src/browser-entry.ts; the HTML page is a devkit template, and
  * the engine CSS (base/engine/decorations) is owned by @sharpee/platform-browser
- * (ADR-188) and copied fresh from the resolved package every build. No theme CSS
- * is shipped (AC-4) — themes are @sharpee/theme-* packages (Phase 4). The author's
- * only CSS surface is browser/<story-id>.css, loaded last so it wins the cascade.
+ * (ADR-188) and copied fresh from the resolved package every build. Built-in themes
+ * the story lists in `sharpee.themes` are copied from platform-browser's
+ * styles/themes/ into dist/web/themes/ and wired into the menu; an author's own
+ * theme is a [data-theme] block in browser/<story-id>.css (loaded last, wins the
+ * cascade), listed inline as { id, name }.
  */
 
 import * as fs from 'fs';
@@ -22,6 +24,8 @@ const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'bro
 interface ProjectInfo {
   storyId: string;
   storyTitle: string;
+  /** Raw `sharpee.themes` entries: built-in id strings and/or `{ id, name }`. */
+  themes: unknown[];
 }
 
 /** Read story id/title from package.json, falling back to src/index.ts. */
@@ -30,9 +34,11 @@ function getProjectInfo(projectDir: string): ProjectInfo | null {
   if (fs.existsSync(packagePath)) {
     try {
       const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+      const themes = pkg.sharpee?.themes;
       return {
         storyId: pkg.name || 'my-story',
         storyTitle: pkg.description || pkg.name || 'My Story',
+        themes: Array.isArray(themes) ? themes : [],
       };
     } catch {
       // Fall through to index.ts.
@@ -48,6 +54,7 @@ function getProjectInfo(projectDir: string): ProjectInfo | null {
       return {
         storyId: idMatch?.[1] || 'my-story',
         storyTitle: titleMatch?.[1] || 'My Story',
+        themes: [],
       };
     }
   }
@@ -73,6 +80,130 @@ function resolveEngineStylesDir(projectDir: string): string {
     paths: [projectDir],
   });
   return path.join(path.dirname(pkgJson), 'styles');
+}
+
+/** A theme wired into the build (ADR-188). */
+interface WiredTheme {
+  id: string;
+  name: string;
+  /** Absolute path to a BUILT-IN theme's CSS (copied into dist/web/themes/), or
+   *  null for an AUTHOR theme whose `[data-theme]` block lives in the author
+   *  override stylesheet (browser/<story>.css) — nothing to copy or link. */
+  cssPath: string | null;
+  /** Dir holding the built-in CSS + its assets (platform-browser's styles/themes),
+   *  or null for an author theme. */
+  srcDir: string | null;
+  /** Sibling dirs (e.g. `system-6`) to copy alongside a built-in's CSS. */
+  assets: string[];
+}
+
+/** A built-in theme's entry in platform-browser's styles/themes/manifest.json. */
+interface BuiltinThemeEntry {
+  name: string;
+  css: string;
+  assets?: string[];
+}
+
+/**
+ * Resolve the themes a story lists in `sharpee.themes`. Each entry is either:
+ *  - a string id of a BUILT-IN theme (shipped by @sharpee/platform-browser under
+ *    styles/themes/, looked up in that dir's manifest.json), or
+ *  - an inline `{ id, name }` for the author's OWN theme — its `[data-theme]`
+ *    token block lives in the author override stylesheet (browser/<story>.css),
+ *    so the build only adds a menu entry.
+ * Explicit opt-in; no scanning (AC-9). `classic` is the engine default and is
+ * always present, so it need not be listed.
+ * @throws on an unknown built-in id or a malformed entry.
+ */
+function resolveWiredThemes(projectDir: string, entries: unknown[]): WiredTheme[] {
+  const themesDir = path.join(resolveEngineStylesDir(projectDir), 'themes');
+  const manifestPath = path.join(themesDir, 'manifest.json');
+  const builtins: Record<string, BuiltinThemeEntry> = fs.existsSync(manifestPath)
+    ? JSON.parse(fs.readFileSync(manifestPath, 'utf-8')).themes || {}
+    : {};
+
+  return entries.map((entry) => {
+    if (typeof entry === 'string') {
+      const b = builtins[entry];
+      if (!b) {
+        throw new Error(
+          `Unknown built-in theme "${entry}". Available: ${Object.keys(builtins).join(', ') || '(none)'}. ` +
+            `For your own theme, list { "id": "…", "name": "…" } and define its [data-theme] block in browser/<story-id>.css.`,
+        );
+      }
+      return {
+        id: entry,
+        name: b.name || entry,
+        cssPath: path.join(themesDir, b.css),
+        srcDir: themesDir,
+        assets: Array.isArray(b.assets) ? b.assets : [],
+      };
+    }
+    if (entry && typeof entry === 'object' && typeof (entry as { id?: unknown }).id === 'string') {
+      const e = entry as { id: string; name?: string };
+      return { id: e.id, name: e.name || e.id, cssPath: null, srcDir: null, assets: [] };
+    }
+    throw new Error(
+      `Invalid "sharpee.themes" entry: ${JSON.stringify(entry)}. ` +
+        `Use a built-in id (string) or an author theme { "id", "name" }.`,
+    );
+  });
+}
+
+/**
+ * Copy each BUILT-IN theme's CSS to `dist/web/themes/<id>.css` and its declared
+ * sibling assets into `dist/web/themes/` so relative `@font-face` URLs resolve.
+ * Author themes copy nothing (their CSS is in the override stylesheet). The
+ * `themes/` dir is rebuilt from scratch so a de-listed theme never lingers.
+ */
+function copyWiredThemes(themes: WiredTheme[], outDir: string): void {
+  const themesDir = path.join(outDir, 'themes');
+  fs.rmSync(themesDir, { recursive: true, force: true });
+  const builtins = themes.filter((t) => t.cssPath);
+  if (builtins.length === 0) return;
+  fs.mkdirSync(themesDir, { recursive: true });
+  for (const t of builtins) {
+    fs.copyFileSync(t.cssPath!, path.join(themesDir, `${t.id}.css`));
+    for (const asset of t.assets) {
+      fs.cpSync(path.join(t.srcDir!, asset), path.join(themesDir, asset), { recursive: true });
+    }
+  }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme at
+ * the THEME_LINKS marker (after the engine CSS; author themes need no link, their
+ * CSS is in the override stylesheet), and a regenerated `#theme-menu` — the
+ * `classic` default + one item per listed theme (ADR-188).
+ */
+function injectThemes(html: string, themes: WiredTheme[]): string {
+  const links = themes
+    .filter((t) => t.cssPath)
+    .map((t) => `  <link rel="stylesheet" href="themes/${t.id}.css">`)
+    .join('\n');
+  html = html.replace(
+    /[ \t]*<!--\s*THEME_LINKS:[\s\S]*?-->/,
+    links || '  <!-- no built-in themes wired -->',
+  );
+  const items = [
+    '              <li role="menuitemradio" class="sharpee-menu-option" data-theme="classic">Classic</li>',
+    ...themes.map(
+      (t) =>
+        `              <li role="menuitemradio" class="sharpee-menu-option" data-theme="${t.id}">${escapeHtml(t.name)}</li>`,
+    ),
+  ].join('\n');
+  return html.replace(
+    /(<ul role="menu" id="theme-menu"[^>]*>)[\s\S]*?(<\/ul>)/,
+    `$1\n${items}\n            $2`,
+  );
 }
 
 /** Run the build-browser command. */
@@ -140,24 +271,36 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
     process.exit(1);
   }
 
-  // index.html (the page) stays a devkit template — substitute story tokens.
+  // Resolve the listed themes (built-in ids + author themes; explicit opt-in, AC-9).
+  const wiredThemes = resolveWiredThemes(projectDir, info.themes);
+
+  // index.html (the page) stays a devkit template — substitute story tokens, then
+  // wire the theme <link>s + menu items (ADR-188 Phase 4).
   let html = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf-8');
-  fs.writeFileSync(path.join(outDir, 'index.html'), processTemplate(html, info));
+  html = injectThemes(processTemplate(html, info), wiredThemes);
+  fs.writeFileSync(path.join(outDir, 'index.html'), html);
   console.log('  ✓ Copied index.html');
 
   // Engine CSS (base + engine + decorations) is owned by @sharpee/platform-browser
-  // (ADR-188) and copied fresh from the resolved package every build. No theme CSS
-  // is shipped here (AC-4) — themes arrive as @sharpee/theme-* packages (Phase 4).
+  // (ADR-188) and copied fresh from the resolved package every build. Built-in
+  // themes the story listed are copied from platform-browser's styles/themes/ below.
   const engineStylesDir = resolveEngineStylesDir(projectDir);
   for (const css of ['base.css', 'engine.css', 'decorations.css']) {
     fs.copyFileSync(path.join(engineStylesDir, css), path.join(outDir, css));
   }
-  // Remove obsolete theme artifacts left by a pre-ADR-188 build, so a rebuild over an
-  // existing output never serves stale theme CSS/fonts (AC-4).
-  for (const stale of ['styles.css', 'themes']) {
-    fs.rmSync(path.join(outDir, stale), { recursive: true, force: true });
-  }
+  // Remove the obsolete monolithic theme kit left by a pre-ADR-188 build. The
+  // themes/ dir is rebuilt by copyWiredThemes below (which clears it first), so a
+  // rebuild over an existing output never serves stale theme CSS/fonts (AC-4).
+  fs.rmSync(path.join(outDir, 'styles.css'), { force: true });
   console.log('  ✓ Copied platform engine CSS (base, engine, decorations)');
+
+  // Wire theme packages: copy each theme.css (+ declared assets) into dist/web/themes/.
+  copyWiredThemes(wiredThemes, outDir);
+  if (wiredThemes.length > 0) {
+    console.log(
+      `  ✓ Wired ${wiredThemes.length} theme package(s): ${wiredThemes.map((t) => t.id).join(', ')}`,
+    );
+  }
 
   // Author override stylesheet → dist/web/<story-id>.css. index.html links it last,
   // so write an empty stub when the author hasn't added one (avoids a 404).
@@ -215,6 +358,7 @@ Output (dist/web/):
   game.js          Story + engine + browser client (one bundle)
   index.html       The page (platform-owned)
   base.css, engine.css, decorations.css   Engine CSS (from @sharpee/platform-browser)
+  themes/<id>.css  One per built-in theme id listed in package.json "sharpee.themes"
   <story-id>.css   Your overrides (from browser/<story-id>.css)
   <assets>         Contents of your assets/ dir (audio, images, …), copied as-is
 `);

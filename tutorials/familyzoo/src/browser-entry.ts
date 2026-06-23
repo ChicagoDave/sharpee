@@ -68,12 +68,17 @@ function getAboutText(): string {
 // Create browser client with story configuration
 const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
+  // zoo-sunny is the story's own theme (a [data-theme] block in browser/familyzoo.css).
+  // The clickable theme menu is generated at build time from package.json `sharpee.themes`
+  // (the four built-ins + zoo-sunny); this array only feeds ThemeManager metadata.
   defaultTheme: 'zoo-sunny',
   themes: [
-    { id: 'zoo-sunny', name: 'Zoo Sunny' },   // story-shipped theme (browser/familyzoo.css) — V18
+    { id: 'classic', name: 'Classic' },
+    { id: 'zoo-sunny', name: 'Zoo Sunny' },   // story-shipped theme (browser/familyzoo.css)
     { id: 'modern-dark', name: 'Modern Dark' },
     { id: 'retro-terminal', name: 'Retro Terminal' },
     { id: 'paper', name: 'Paper' },
+    { id: 'system-6', name: 'System 6' },
   ],
   storyInfo: {
     title: GAME_TITLE,

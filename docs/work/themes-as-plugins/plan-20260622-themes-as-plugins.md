@@ -1,8 +1,33 @@
 # Plan: Themes as plugins; platform-browser owns the theme engine — ADR-188
 
 **Date**: 2026-06-22
-**ADR**: [ADR-188](../../architecture/adrs/adr-188-themes-as-plugins.md) (ACCEPTED); extends ADR-170
-**Status**: NOT STARTED — platform change (`packages/platform-browser`, `packages/devkit`) + new theme packages + book; ADR-accepted
+**ADR**: [ADR-188](../../architecture/adrs/adr-188-themes-as-plugins.md) (ACCEPTED; delivery revised 2026-06-23); extends ADR-170
+**Status**: Phases 1–5 done; delivery model REVISED 2026-06-23 (see below) — pending: npm publish (user) + familyzoo build-verify (post-publish)
+
+## REVISION 2026-06-23 — built-in themes ship WITH the platform (not as packages)
+
+The package-per-theme model below (Phase 3's `@sharpee/theme-*` packages) was the wrong
+friction for **built-ins** — an author shouldn't `npm install`/publish a package per
+standard theme. The engine + token model is unchanged; delivery of the built-ins
+changed (see ADR-188 "Revision 2026-06-23"):
+- Built-in theme CSS now lives in `@sharpee/platform-browser/styles/themes/` (4 CSS +
+  `manifest.json` + system-6 fonts), travelling with the engine package. The four
+  `packages/theme-*` packages were **deleted**.
+- Authors apply built-ins by **id**: `sharpee.themes: ["modern-dark", "paper"]`. Their
+  own theme is a `[data-theme]` block in `browser/<story>.css`, listed inline as
+  `{ id, name }`. The `@sharpee/theme-*` package path is retained only for future
+  third-party themes.
+- Both builds (`build-browser.ts`, `commands/browser.ts`) rewritten: `resolveWiredThemes`
+  reads platform-browser's `styles/themes/manifest.json` for built-in ids + accepts inline
+  author themes; built-ins copy CSS + link, author themes are menu-only.
+- Verified: visual harness 9/9 (now sourcing `styles/themes/`), real dungeo build (4
+  built-ins copied byte-identical, namespaced system-6 fonts resolve, menu Classic+4),
+  devkit real-path test (built-in id + inline author theme). Ch 26 rewritten to the
+  built-in-id + author-theme model; ADR-188 revised. familyzoo migrated (lists 4 built-in
+  ids + inline zoo-sunny; deps → platform-browser ^1.1.2 / devkit ^1.1.3).
+- **The phase blocks below are HISTORICAL** (they describe the superseded package model);
+  the build/verify facts still apply, but "theme packages" → "built-in themes in
+  platform-browser" per this revision.
 
 ## Goal
 
@@ -148,6 +173,37 @@ audit the scaffold — `standalone/init.ts` + `init-browser.ts` (both reference
   page still loads + skins (engine default).
 
 ### Phase 3 — Theme package contract + migrate the 5 themes [AC-3, AC-9]
+
+> **Status (2026-06-23, session 36a20d): DONE — packages built + parity verified.**
+> Decision (user): **pure-CSS, workspace-only** packages (no TS shell, not in
+> `ts-forge.config.json`); **four** themes migrated (dos-classic stays the `:root`
+> `classic` default per R7, not packaged). Created under `packages/theme-*/`:
+> - `@sharpee/theme-modern-dark` — token block ONLY (it was the engine's de-scoped
+>   source of truth, so the engine already paints it; zero flourishes).
+> - `@sharpee/theme-retro-terminal` — token block + 1 flourish (`body` scanline
+>   gradient + phosphor `text-shadow`).
+> - `@sharpee/theme-paper` — token block + 1 flourish (dialog `::backdrop` 0.5).
+> - `@sharpee/theme-system-6` — the *rich* theme: token block (all 16) + `@font-face`
+>   (url re-pointed to package-local `fonts/`) + the full ~130-line Mac chrome set +
+>   the two bundled woff2 fonts (byte-identical copies).
+> Each ships `theme.css` + a `package.json` `sharpee.theme` manifest `{id,name,css[,assets]}`,
+> `files`, and `exports` for `./theme.css` + `./package.json` (+ `./fonts/*` for system-6).
+> **Verified:** token blocks diff byte-faithful to source (13/13/13/16 tokens);
+> `require.resolve('@sharpee/theme-<id>/theme.css' | '/package.json' | '/fonts/*')`
+> all resolve; `pnpm install` registered them (40 workspace projects). Parity harness
+> extended (`fixture.ts` gained `themeCssPath` to link a real package `theme.css` after
+> the engine; new `theme-parity.spec.ts`): **7/7 visual pass** (3 Phase-1 engine + 4
+> new per-theme parity, each asserting token application via the engine + the theme's
+> flourishes). No registration beyond the workspace glob — pure-CSS packages are
+> invisible to tsf by design (publish deferred).
+> **NOT done / deferred:** (1) npm-publish path for pure-CSS packages (tsf only
+> discovers tsconfig-bearing projects — a separate small decision later). (2) Deleting
+> the devkit template theme sources (`templates/browser/styles.css`, `themes/`) — the
+> migration source; delete only after Phase 4 wiring is proven (needs user confirmation).
+> (3) **Phase 4 font-placement contract:** system-6's `theme.css` uses `@font-face`
+> url `fonts/<file>.woff2` relative to itself, so Phase 4 must copy the theme's `fonts/`
+> dir to sit beside the linked CSS in `dist/web/`.
+
 - Define the `@sharpee/theme-<name>` shape: one CSS file (`theme.css` =
   `[data-theme="<id>"] { --theme-* }` + flourishes) + `package.json`
   `"sharpee": { "theme": { "id", "name", "css": "./theme.css" } }`.
@@ -160,6 +216,34 @@ audit the scaffold — `standalone/init.ts` + `init-browser.ts` (both reference
   **identically** to the current build (computed-style parity, no regression).
 
 ### Phase 4 — both browser builds wire listed theme packages [AC-5, AC-9]
+
+> **Status (2026-06-23, session 36a20d): DONE — both builds wire + verified.**
+> Decisions (user): authors declare the list in **`sharpee.themes`** (package-name
+> array) in the story package.json; the default menu entry is **`classic`** (ADR R7),
+> replacing the legacy `dos-classic`.
+> - **Templates** (devkit + repo-root `index.html`): default `data-theme="classic"`;
+>   a `THEME_LINKS` marker (build replaces with a `<link>` per theme, after the engine);
+>   `#theme-menu` reduced to the `classic` default + a `THEME_MENU_ITEMS` marker.
+> - **Both builds** (duplicated per ADR-187 R1): `resolveWiredThemes` (require.resolve
+>   each listed pkg from the story dir, read `sharpee.theme` manifest — explicit opt-in,
+>   no node_modules scan, AC-9), `copyWiredThemes` (theme.css → `dist/web/themes/<id>.css`
+>   + declared `assets` e.g. system-6 `fonts/` → `themes/fonts/`; dir rebuilt each time so
+>   a de-listed theme never lingers), `injectThemes` (links at the marker + regenerated
+>   menu = classic + `{id,name}` per pkg). repokit also mirrors `themes/` to `website/public`.
+> - **Dungeo** (story, autonomous): `sharpee.themes` lists the 4 packages + deps added;
+>   `browser-entry.ts` defaultTheme → `classic`, menu array aligned.
+> **Verified:** real `buildBrowserClient(root,'dungeo')` → `themes/{modern-dark,retro-terminal,paper,system-6}.css`
+> byte-identical to package source, `themes/fonts/*` byte-identical, 4 `<link>`s after the
+> engine, menu = Classic+4, default `classic`, website mirror updated, no leftover markers.
+> devkit real-path `browser-build.test.ts` extended (no-themes default → no `themes/`; then
+> add `sharpee.themes` + rebuild → `themes/modern-dark.css` present, linked after engine /
+> before override, menu regenerated) — passes. Visual harness +`theme-switch.spec.ts`
+> (AC-5 flip across 4 linked pkgs re-skins; AC-8 uninstalled id → classic) — **9/9 pass**.
+> repokit typecheck clean; repokit browser rejection tests 2/2.
+> **NOT done:** repokit lacks an *automated* real-path wiring test (manual `buildBrowserClient`
+> run verified; the logic is duplicated from the devkit path which IS auto-tested). Deleting
+> the devkit template theme sources is still deferred (post-Phase 4 cleanup, needs confirmation).
+
 - In **both** build paths (devkit `standalone/build-browser.ts` and repokit
   `commands/browser.ts`): for each theme package listed (BrowserClient `themes` config /
   project config), resolve it, read `sharpee.theme`, copy its CSS to
@@ -170,6 +254,30 @@ audit the scaffold — `standalone/init.ts` + `init-browser.ts` (both reference
   (repokit); switching (visual, harness) re-skins.
 
 ### Phase 5 — Book Ch 26 rewrite [AC-6]
+
+> **Status (2026-06-23, session 36a20d): DONE — chapter rewritten + web regenerated.**
+> `docs/book/parts/part-7/26-decoration-and-theming.md`: the "Theming: one DOM, many
+> skins" section now describes the **engine + token model** (the platform ships one
+> un-scoped consumer layer + the `:root` `classic` default; a theme is a `[data-theme]`
+> token override; the 16 `--theme-*` properties are the published contract, listed in
+> full; equal-specificity load-order + automatic `:root` fallback explained). The old
+> "each theme is a complete CSS file" / "the contract is the component classes, not the
+> variables" claims are gone. New "Themes are plugins" section: a theme ships as an
+> `@sharpee/theme-*` package with a `sharpee.theme` manifest, the author lists it in
+> `sharpee.themes`, the build copies/links/menus it (no node_modules scan). The §26.5
+> "all it takes" contradiction is resolved — a variables-only block now genuinely skins.
+> Family Zoo claim made truthful (it defines a `zoo-sunny` `[data-theme]` token block in
+> the author override stylesheet and lists it; the engine paints the components) without
+> over-claiming it's already variables-only. Key-takeaway theming sentence updated.
+> Regenerated the chunked web site (`scripts/build-book.sh web`, pandoc 3.10, 49 pages):
+> `docs/book/web/26-*.html` now shows the plugin model — 0 stale phrases, "theme engine"
+> / "@sharpee/theme" / "sharpee.theme" present.
+> **NOT done (drift to flag):** `tutorials/familyzoo` still ships `browser/familyzoo.css`
+> with the OLD full component-rule block AND consumes pre-ADR-188 published packages
+> (`@sharpee/* ^1.0.8`, no engine), so its zoo-sunny still NEEDS those component rules to
+> skin today. Migrating familyzoo to the engine model is a separate task (it tracks the
+> next published package release), out of this ADR's in-repo scope.
+
 - Rewrite §26.4–26.5 to the plugin model: a theme = a token block; ship/install it as an
   `@sharpee/theme-*` package; list it in config. §26.5's example becomes variables-only
   and is now correct. Document the `--theme-*` token vocabulary + the `:root`-default
@@ -184,14 +292,14 @@ audit the scaffold — `standalone/init.ts` + `init-browser.ts` (both reference
 
 ## Acceptance gate (ADR-188)
 - [x] AC-1 engine + `:root` default in platform-browser; zero-theme build skins white-on-blue. *(visual harness, 2026-06-22)*
-- [ ] AC-2 variables-only theme skins via the engine.
-- [ ] AC-3 5 themes ship as packages, removed from devkit, render identically.
-- [x] AC-4 neither browser build (devkit author / repokit in-repo) ships theme CSS. *(real-path build tests + dungeo build, 2026-06-22)*
-- [ ] AC-5 switching works across default + packages.
-- [ ] AC-6 book Ch 26 rewritten; §26.5 variables-only + correct.
+- [x] AC-2 variables-only theme skins via the engine. *(theme-modern-dark is token-only; parity harness, 2026-06-23)*
+- [~] AC-3 themes ship as packages, render identically (4 packages built + parity harness 4/4, 2026-06-23). Remaining: dropping the devkit template sources (deferred to post-Phase 4).
+- [x] AC-4 neither browser build (devkit author / repokit in-repo) ships theme CSS unless listed. *(real-path build tests + dungeo build, 2026-06-22/23)*
+- [x] AC-5 switching works across default + packages. *(theme-switch.spec.ts, 2026-06-23)*
+- [x] AC-6 book Ch 26 rewritten to the plugin model; §26.5 variables-only + correct; web regenerated. *(2026-06-23)*
 - [x] AC-7 unset token / unknown theme → `:root` default (never unskinned). *(visual harness, 2026-06-22)*
-- [ ] AC-8 persisted theme id w/ no package → default on restore.
-- [ ] AC-9 self-describing packages; explicit opt-in, no node_modules scan.
+- [x] AC-8 persisted theme id w/ no package → default on restore. *(theme-switch.spec.ts uninstalled-id case, 2026-06-23)*
+- [x] AC-9 self-describing packages; explicit opt-in, no node_modules scan. *(real-path wiring: devkit test + dungeo build, 2026-06-23)*
 
 ## Risks / notes
 - **CSS extraction is the delicate part** (Phase 1/3): separating shared engine rules from

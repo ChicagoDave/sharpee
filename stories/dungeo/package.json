@@ -12,7 +12,8 @@
     "headline": "A Recreation of Mainframe Zork",
     "genre": "Fantasy",
     "language": "en",
-    "forgiveness": "Nasty"
+    "forgiveness": "Nasty",
+    "themes": ["modern-dark", "retro-terminal", "paper", "system-6"]
   },
   "scripts": {
     "build": "tsc",

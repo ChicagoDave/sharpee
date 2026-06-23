@@ -1,0 +1,44 @@
+/*
+ * retro-terminal.css — Retro Terminal (green phosphor) built-in theme (ADR-188).
+ *
+ * Owner: @sharpee/platform-browser (a platform-shipped built-in theme).
+ *
+ * A `[data-theme="<id>"]` token override block targeting the `--theme-*`
+ * contract consumed by the engine layer (engine.css), plus one flourish the
+ * tokens can't express: the CRT scanline overlay and phosphor text-shadow glow
+ * on the body. Everything else is painted by the engine from these tokens.
+ *
+ * Built-in themes ship with platform-browser under styles/themes/ and are wired
+ * into a story by listing their id in `sharpee.themes`. Load order (ADR-188):
+ * base.css → engine.css → THIS FILE → [author override].
+ */
+
+[data-theme="retro-terminal"] {
+  --theme-bg: #0a0a0a;
+  --theme-bg-alt: #0f0f0f;
+  --theme-text: #00ff00;
+  --theme-text-muted: #00aa00;
+  --theme-accent: #00ff00;
+  --theme-accent-text: #000000;
+  --theme-border: #003300;
+  --theme-input-bg: transparent;
+  --theme-menu-bg: #0f0f0f;
+  --theme-menu-hover: #001100;
+  --theme-font: "JetBrains Mono", "Consolas", monospace;
+  --theme-font-size: 14px;
+  --theme-line-height: 1.5;
+}
+
+/* Flourish: scanline overlay + phosphor glow. The engine paints body's
+   background-color from --theme-bg; this higher-specificity rule layers the
+   gradient and glow on top. */
+[data-theme="retro-terminal"] body {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}

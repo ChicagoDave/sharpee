@@ -37,6 +37,12 @@ export interface FixtureOptions {
   /** Extra CSS injected as an inline `<style>` AFTER the engine link, to
    *  stand in for a theme package's token override (AC-7 cases). */
   extraStyle?: string;
+  /** Absolute path(s) to real built-in theme CSS file(s) (platform-browser's
+   *  styles/themes/), linked as `<link>`s AFTER the engine link, in order — the
+   *  real-path parity (AC-3) and switch (AC-5) cases. Relative `@font-face` URLs
+   *  resolve against the file's dir. Multiple paths mirror a built page that
+   *  ships several themes. */
+  themeCssPath?: string | string[];
 }
 
 /**
@@ -52,6 +58,11 @@ export function buildFixture(name: string, opts: FixtureOptions = {}): string {
   const headLinks =
     `  <link rel="stylesheet" href="${pathToFileURL(BASE_CSS).href}">\n` +
     `  <link rel="stylesheet" href="${pathToFileURL(ENGINE_CSS).href}">` +
+    (opts.themeCssPath
+      ? (Array.isArray(opts.themeCssPath) ? opts.themeCssPath : [opts.themeCssPath])
+          .map((p) => `\n  <link rel="stylesheet" href="${pathToFileURL(p).href}">`)
+          .join('')
+      : '') +
     (opts.extraStyle ? `\n  <style>${opts.extraStyle}</style>` : '');
 
   let html = raw

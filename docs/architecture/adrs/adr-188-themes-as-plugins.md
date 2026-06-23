@@ -1,8 +1,36 @@
 # ADR-188: Themes are plugins; platform-browser owns the theme engine
 
-## Status: ACCEPTED
+## Status: ACCEPTED (delivery model revised 2026-06-23 — see Revision below)
 
 ## Date: 2026-06-22
+
+## Revision (2026-06-23): built-in themes ship with the platform, not as packages
+
+Implementation surfaced that delivering the **built-in** themes as separate
+installable `@sharpee/theme-*` npm packages (R1) is the wrong friction: an author
+should not have to `npm install` (and the project publish) a package per standard
+theme. The engine + token model (the core of this ADR) is unchanged; only **delivery**
+of the built-ins changes:
+
+- **Built-in themes ship with `@sharpee/platform-browser`** under `styles/themes/`
+  (`modern-dark.css`, `retro-terminal.css`, `paper.css`, `system-6.css` + a
+  `manifest.json` mapping `id → { name, css, assets }`). They travel with the engine
+  package (already published as a `styles/**` asset) — no separate packages to publish
+  or install.
+- **An author applies a built-in by listing its id**: `sharpee.themes: ["modern-dark",
+  "paper"]`. The build copies that theme's CSS from platform-browser into
+  `dist/web/themes/` and wires the menu. `classic` is the `:root` default and needs no
+  entry.
+- **An author's own theme** is a `[data-theme]` token block in the author override
+  stylesheet (`browser/<story>.css`), listed inline as `{ id, name }` in
+  `sharpee.themes` (menu entry only; the CSS is already in the override).
+- **The `@sharpee/theme-*` package mechanism is retained as the future path for
+  *third-party/community* themes** (shareable, versioned), but the built-ins do not use
+  it. This supersedes R1/R5 *for the built-ins only*: they are platform-shipped data
+  selected by id, not packages. AC-3's "removed from devkit, ship as packages" is met
+  in spirit (the built-ins left devkit's template; they now live in platform-browser).
+
+The rest of the ADR (engine, token model, cascade/fallback, wiring, ACs) stands.
 
 ## Extends
 

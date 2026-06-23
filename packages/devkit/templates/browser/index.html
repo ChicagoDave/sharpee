@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dos-classic">
+<html lang="en" data-theme="classic">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +9,9 @@
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="engine.css">
   <link rel="stylesheet" href="decorations.css">
-  <!-- Theme packages (@sharpee/theme-*), if any, are injected here by the build —
-       after the engine, before the author override (ADR-188 Phase 4). -->
+  <!-- THEME_LINKS: the build replaces this line with a <link> per wired
+       @sharpee/theme-* package — after the engine, before the author override
+       (ADR-188 Phase 4). -->
   <!-- Author override: edit browser/{{STORY_ID}}.css. Loaded last so it wins the cascade. -->
   <link rel="stylesheet" href="{{STORY_ID}}.css">
 </head>
@@ -39,11 +40,10 @@
             <span>Theme</span>
             <span class="sharpee-menu-submenu-indicator" aria-hidden="true">&#9656;</span>
             <ul role="menu" id="theme-menu" class="sharpee-menu-dropdown">
-              <li role="menuitemradio" class="sharpee-menu-option" data-theme="dos-classic">DOS Classic</li>
-              <li role="menuitemradio" class="sharpee-menu-option" data-theme="modern-dark">Modern Dark</li>
-              <li role="menuitemradio" class="sharpee-menu-option" data-theme="retro-terminal">Retro Terminal</li>
-              <li role="menuitemradio" class="sharpee-menu-option" data-theme="paper">Paper</li>
-              <li role="menuitemradio" class="sharpee-menu-option" data-theme="system-6">System 6</li>
+              <!-- THEME_MENU_ITEMS: the build regenerates this list — the "classic"
+                   default (no package; the :root baseline) + one item per wired
+                   @sharpee/theme-* package (ADR-188 Phase 4). -->
+              <li role="menuitemradio" class="sharpee-menu-option" data-theme="classic">Classic</li>
             </ul>
           </li>
         </ul>
