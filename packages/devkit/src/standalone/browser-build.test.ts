@@ -12,7 +12,7 @@
  * availability of the pinned versions (a separate, install-time concern).
  */
 import { describe, it, expect, afterEach, beforeAll, vi } from 'vitest';
-import { mkdtempSync, rmSync, readFileSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { runInitCommand } from './init';
 import { runInitBrowserCommand } from './init-browser';
@@ -70,9 +70,21 @@ describe('browser scaffold (real path)', () => {
     const seededVersion = readFileSync(join(projectDir, 'src', 'version.ts'), 'utf-8');
     expect(seededVersion).toContain('export const STORY_VERSION');
 
+    // Author assets (ADR-187 AC-2): a referenced media path under assets/ must be
+    // bundled so audio/x.mp3 resolves in the served output; dotfiles are skipped.
+    mkdirSync(join(projectDir, 'assets', 'audio'), { recursive: true });
+    writeFileSync(join(projectDir, 'assets', 'audio', 'ambience.mp3'), 'FAKE-MP3-BYTES');
+    writeFileSync(join(projectDir, 'assets', '.DS_Store'), 'junk');
+
     await runBuildBrowserCommand([], projectDir);
 
     const web = join(projectDir, 'dist', 'web');
+
+    // ADR-187 AC-2: assets/ contents copied (audio/ambience.mp3 → web/audio/ambience.mp3),
+    // path preserved; the dotfile was NOT copied.
+    expect(existsSync(join(web, 'audio', 'ambience.mp3'))).toBe(true);
+    expect(readFileSync(join(web, 'audio', 'ambience.mp3'), 'utf-8')).toBe('FAKE-MP3-BYTES');
+    expect(existsSync(join(web, '.DS_Store'))).toBe(false);
 
     // The bundle exists, is non-empty, and is named game.js (what index.html loads).
     const gameJs = join(web, 'game.js');

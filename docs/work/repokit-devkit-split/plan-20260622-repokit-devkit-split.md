@@ -2,7 +2,7 @@
 
 **Date**: 2026-06-22
 **ADR**: [ADR-187](../../architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md) (ACCEPTED) — supersedes ADR-180 Amendment 1's "one command, two depths"
-**Status**: IN PROGRESS — Phase 0 done (2026-06-22, repokit scaffolded); Phase 1 next.
+**Status**: IN PROGRESS — Phases 0–1 done (2026-06-22); Phase 2 next.
 
 ## Progress
 
@@ -12,7 +12,14 @@
   (`src/cli.ts`) with the planned surface shown as `[Phase 2]`; added to
   `pnpm-workspace.yaml`. Builds clean (`tsc`); `./repokit` prints usage, planned commands
   report "not yet ported (Phase 2)", unknown commands error. `./sharpee`/devkit untouched.
-  No platform-package changes (purely additive).
+  No platform-package changes (purely additive). Committed `961082ae`.
+- **Phase 1 — DONE (2026-06-22) [AC-2].** devkit's author browser build
+  (`standalone/build-browser.ts`) now copies `<project>/assets/` contents into
+  `dist/web/` (skip dotfiles) so author media paths (`audio/x.mp3`) resolve; help text
+  updated. The real-path `browser-build.test.ts` extended: places `assets/audio/ambience.mp3`
+  + a `.DS_Store`, real build, asserts `web/audio/ambience.mp3` present with correct bytes
+  and the dotfile skipped. Full devkit suite green (34 passed, 2 skipped). repokit keeps
+  its own separate browser build (not merged).
 
 **Sequencing**: split-first (ADR-187 R4) — this lands before the book Ch 27 asset work
 

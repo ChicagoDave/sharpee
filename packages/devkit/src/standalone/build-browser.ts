@@ -156,6 +156,22 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
     fs.writeFileSync(overrideOut, `/* ${info.storyTitle} — author overrides (none yet) */\n`);
   }
 
+  // Author assets (audio, images): copy the contents of <project>/assets/ into the
+  // output so author-referenced paths (audio/x.mp3, images/y.png) resolve in the
+  // served bundle. Skip dotfiles (.DS_Store etc.), matching the in-repo build.
+  const assetsDir = path.join(projectDir, 'assets');
+  if (fs.existsSync(assetsDir)) {
+    let count = 0;
+    for (const entryName of fs.readdirSync(assetsDir)) {
+      if (entryName.startsWith('.')) continue;
+      fs.cpSync(path.join(assetsDir, entryName), path.join(outDir, entryName), { recursive: true });
+      count++;
+    }
+    if (count > 0) {
+      console.log(`  ✓ Copied assets/ (${count} ${count === 1 ? 'entry' : 'entries'})`);
+    }
+  }
+
   const bundlePath = path.join(outDir, 'game.js');
   if (!fs.existsSync(bundlePath) || fs.statSync(bundlePath).size === 0) {
     console.error('\nError: dist/web/game.js is missing or empty after build.');
@@ -186,5 +202,6 @@ Output (dist/web/):
   index.html       The page (platform-owned)
   base.css, decorations.css, styles.css, themes/   Platform CSS
   <story-id>.css   Your overrides (from browser/<story-id>.css)
+  <assets>         Contents of your assets/ dir (audio, images, …), copied as-is
 `);
 }
