@@ -2,7 +2,16 @@
 
 **Date**: 2026-06-22
 **ADR**: [ADR-187](../../architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md) (ACCEPTED) — supersedes ADR-180 Amendment 1's "one command, two depths"
-**Status**: NEAR DONE — Phases 0–4 done (split functional + docs migrated). Remaining: Phase 5 cutover verification (largely covered by per-phase gates) + header polish debt in repokit copies.
+**Status**: DONE — ADR-187 split complete and verified (Phases 0–5). Only header polish debt remains (repokit copied-file headers).
+
+### Phase 5 — DONE (2026-06-22) cutover verification
+- devkit build ✓; repokit build ✓; devkit suite 16 pass; repokit suite 25 pass.
+- `./repokit build dungeo` ✓ build complete; bundle loads.
+- Dungeo walkthrough chain → **all pass** (one clean deterministic pass; combat-RNG
+  cascade can fail individual runs but a clean pass is authoritative — the game logic
+  is deterministic, only combat has RNG; this flakiness is pre-existing and orthogonal
+  to the split).
+- AC-1…AC-7 all satisfied.
 
 ### Phase 4 — DONE (2026-06-22) [AC-6, AC-7]
 - Root CLAUDE.md Build section: platform commands `./sharpee build…` → `./repokit build…`;
