@@ -14,7 +14,7 @@ import {
   createWandererBehavior,
 } from '../../../src/npc';
 import { createSeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, Direction, EntityType } from '@sharpee/world-model';
 
 // Helper to create mock entity
 function createMockEntity(
@@ -390,6 +390,169 @@ describe('standard behaviors', () => {
       const actions = wanderer.onTurn(context);
       expect(actions.filter(a => a.type === 'move')).toHaveLength(0);
     });
+  });
+});
+
+describe('NpcService - movement announcements (#159)', () => {
+  let service: NpcService;
+  let random: ReturnType<typeof createSeededRandom>;
+
+  beforeEach(() => {
+    service = new NpcService();
+    random = createSeededRandom(12345);
+    vi.clearAllMocks();
+  });
+
+  /**
+   * Build a real WorldModel with two connected rooms (A ⇄ B), a player, and an
+   * NPC. The NPC's behavior is supplied per-test via a 'mover' behavior so we can
+   * drive a specific move/moveTo through the public `tick` path.
+   */
+  function setupMoveWorld(npcData: Partial<ConstructorParameters<typeof NpcTrait>[0]> = {}) {
+    const world = new WorldModel();
+
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add({ type: TraitType.ACTOR, isPlayer: true });
+    world.setPlayer(player.id);
+
+    const roomA = world.createEntity('Room A', EntityType.ROOM);
+    const roomB = world.createEntity('Room B', EntityType.ROOM);
+    roomA.add(new RoomTrait({ exits: { [Direction.EAST]: { destination: roomB.id } } }));
+    roomB.add(new RoomTrait({ exits: { [Direction.WEST]: { destination: roomA.id } } }));
+
+    const npc = world.createEntity('Sam', EntityType.ACTOR);
+    npc.add(new NpcTrait({ behaviorId: 'mover', canMove: true, ...npcData }));
+
+    return { world, player, roomA, roomB, npc };
+  }
+
+  /** Run one NPC turn where the NPC performs the given action. */
+  function tickWithAction(
+    world: WorldModel,
+    npcId: string,
+    playerLocation: string,
+    action: { type: 'move'; direction: string } | { type: 'moveTo'; roomId: string }
+  ): ISemanticEvent[] {
+    service.registerBehavior({ id: 'mover', onTurn: () => [action as never] });
+    return service.tick({
+      world,
+      turn: 1,
+      random,
+      playerLocation,
+      playerId: world.getPlayer()!.id,
+    });
+  }
+
+  function witnessed(events: ISemanticEvent[]): ISemanticEvent | undefined {
+    return events.find((e) => e.type === 'npc.moved.witnessed');
+  }
+
+  function renderings(event: ISemanticEvent): {
+    sight?: { messageId: string; params: Record<string, unknown> };
+    hearing?: { messageId: string; params: Record<string, unknown> };
+  } {
+    return (event.data as { renderings: never }).renderings;
+  }
+
+  // Test 0 — the critical world-state mutation.
+  it('relocates the NPC and emits npc.moved (state mutation is the contract)', () => {
+    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
+    world.moveEntity(npc.id, roomA.id);
+
+    // PRECONDITION
+    expect(world.getLocation(npc.id)).toBe(roomA.id);
+
+    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
+
+    // POSTCONDITION — the move actually happened
+    expect(world.getLocation(npc.id)).toBe(roomB.id);
+    expect(events.some((e) => e.type === 'npc.moved')).toBe(true);
+  });
+
+  // Test 1 — default departure.
+  it('announces a default departure from the player room (npc.leaves + heard_departs)', () => {
+    const { world, roomA, npc } = setupMoveWorld({ announcesMovement: true });
+    world.moveEntity(npc.id, roomA.id);
+
+    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
+
+    const w = witnessed(events);
+    expect(w).toBeDefined();
+    expect(renderings(w!).sight).toEqual({
+      messageId: 'npc.leaves',
+      params: { npcName: 'Sam', direction: Direction.EAST },
+    });
+    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
+  });
+
+  // Test 2 — default arrival uses the opposite direction.
+  it('announces a default arrival into the player room with the opposite direction', () => {
+    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
+    world.moveEntity(npc.id, roomB.id); // NPC starts away from the player
+
+    // NPC moves WEST from B into A (the player's room); player sees it arrive from the EAST.
+    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.WEST });
+
+    const w = witnessed(events);
+    expect(w).toBeDefined();
+    expect(renderings(w!).sight).toEqual({
+      messageId: 'npc.enters',
+      params: { npcName: 'Sam', direction: Direction.EAST },
+    });
+    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_arrives');
+  });
+
+  // Test 3 — directionless moveTo.
+  it('announces a directionless moveTo with npc.departs / npc.arrives and no direction param', () => {
+    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
+    world.moveEntity(npc.id, roomA.id);
+
+    const events = tickWithAction(world, npc.id, roomA.id, { type: 'moveTo', roomId: roomB.id });
+
+    const w = witnessed(events);
+    expect(w).toBeDefined();
+    expect(renderings(w!).sight).toEqual({ messageId: 'npc.departs', params: { npcName: 'Sam' } });
+    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
+  });
+
+  // Test 4 — silent when the flag is off.
+  it('stays silent (no witnessed fact) when announcesMovement is off', () => {
+    const { world, roomA, npc } = setupMoveWorld({ announcesMovement: false });
+    world.moveEntity(npc.id, roomA.id);
+
+    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
+
+    expect(events.some((e) => e.type === 'npc.moved')).toBe(true);
+    expect(witnessed(events)).toBeUndefined();
+  });
+
+  // Test 5 — silent when the move does not cross the player's room.
+  it('stays silent when the move touches neither the player room', () => {
+    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
+    const elsewhere = world.createEntity('Far Room', EntityType.ROOM);
+    world.moveEntity(npc.id, roomA.id);
+
+    // Player is in a third room; NPC moves A→B, witnessing neither end.
+    const events = tickWithAction(world, npc.id, elsewhere.id, { type: 'move', direction: Direction.EAST });
+
+    expect(world.getLocation(npc.id)).toBe(roomB.id);
+    expect(witnessed(events)).toBeUndefined();
+  });
+
+  // Test 6 — per-NPC override of the sight rendering.
+  it('uses a per-NPC movementMessages override for the sight rendering only', () => {
+    const { world, roomA, npc } = setupMoveWorld({
+      announcesMovement: true,
+      movementMessages: { leaves: 'zoo.sam.leaves' },
+    });
+    world.moveEntity(npc.id, roomA.id);
+
+    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
+
+    const w = witnessed(events);
+    expect(renderings(w!).sight!.messageId).toBe('zoo.sam.leaves');
+    expect(renderings(w!).sight!.params).toEqual({ npcName: 'Sam', direction: Direction.EAST });
+    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
   });
 });
 

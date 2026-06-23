@@ -5,7 +5,8 @@
  */
 
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, IExitInfo, DirectionType, CharacterModelTrait } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, IExitInfo, DirectionType, CharacterModelTrait, getOppositeDirection } from '@sharpee/world-model';
+import type { PerSenseRenderings } from '@sharpee/if-services';
 import {
   NpcBehavior,
   NpcContext,
@@ -215,7 +216,7 @@ export class NpcService implements INpcService {
 
       // Call onTurn hook
       const actions = behavior.onTurn(npcContext);
-      const actionEvents = this.executeActions(npc, actions, world, random);
+      const actionEvents = this.executeActions(npc, actions, world, random, playerLocation);
       events.push(...actionEvents);
 
       // Process lucidity decay for NPCs with character model (ADR-141)
@@ -267,7 +268,8 @@ export class NpcService implements INpcService {
       );
 
       const actions = behavior.onPlayerEnters(npcContext);
-      const actionEvents = this.executeActions(npc, actions, world, random);
+      // The player just entered roomId, so it is the player's current location.
+      const actionEvents = this.executeActions(npc, actions, world, random, roomId);
       events.push(...actionEvents);
     }
 
@@ -308,7 +310,7 @@ export class NpcService implements INpcService {
       );
 
       const actions = behavior.onPlayerLeaves(npcContext);
-      const actionEvents = this.executeActions(npc, actions, world, random);
+      const actionEvents = this.executeActions(npc, actions, world, random, playerLocation);
       events.push(...actionEvents);
     }
 
@@ -361,7 +363,7 @@ export class NpcService implements INpcService {
     );
 
     const actions = behavior.onSpokenTo(npcContext, words);
-    return this.executeActions(npc, actions, world, random);
+    return this.executeActions(npc, actions, world, random, playerLocation);
   }
 
   /**
@@ -399,7 +401,7 @@ export class NpcService implements INpcService {
     );
 
     const actions = behavior.onAttacked(npcContext, attacker);
-    return this.executeActions(npc, actions, world, random);
+    return this.executeActions(npc, actions, world, random, playerLocation);
   }
 
   // ==================== Private Helpers ====================
@@ -481,12 +483,13 @@ export class NpcService implements INpcService {
     npc: IFEntity,
     actions: NpcAction[],
     world: WorldModel,
-    random: SeededRandom
+    random: SeededRandom,
+    playerLocation: EntityId
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
 
     for (const action of actions) {
-      const actionEvents = this.executeAction(npc, action, world, random);
+      const actionEvents = this.executeAction(npc, action, world, random, playerLocation);
       events.push(...actionEvents);
     }
 
@@ -497,14 +500,15 @@ export class NpcService implements INpcService {
     npc: IFEntity,
     action: NpcAction,
     world: WorldModel,
-    random: SeededRandom
+    random: SeededRandom,
+    playerLocation: EntityId
   ): ISemanticEvent[] {
     switch (action.type) {
       case 'move':
-        return this.executeMove(npc, action.direction, world);
+        return this.executeMove(npc, action.direction, world, playerLocation);
 
       case 'moveTo':
-        return this.executeMoveTo(npc, action.roomId, world);
+        return this.executeMoveTo(npc, action.roomId, world, playerLocation);
 
       case 'take':
         return this.executeTake(npc, action.target, world);
@@ -557,7 +561,8 @@ export class NpcService implements INpcService {
   private executeMove(
     npc: IFEntity,
     direction: DirectionType,
-    world: WorldModel
+    world: WorldModel,
+    playerLocation: EntityId
   ): ISemanticEvent[] {
     const currentLocation = world.getLocation(npc.id);
     if (!currentLocation) return [];
@@ -585,13 +590,16 @@ export class NpcService implements INpcService {
         },
         npc.id
       ),
+      // Player-witnessable announcement (opt-in; layered on top of npc.moved).
+      ...this.announceMovement(npc, world, playerLocation, currentLocation, destination, direction),
     ];
   }
 
   private executeMoveTo(
     npc: IFEntity,
     roomId: EntityId,
-    world: WorldModel
+    world: WorldModel,
+    playerLocation: EntityId
   ): ISemanticEvent[] {
     const currentLocation = world.getLocation(npc.id);
     if (!currentLocation) return [];
@@ -607,6 +615,66 @@ export class NpcService implements INpcService {
           from: currentLocation,
           to: roomId,
         },
+        npc.id
+      ),
+      // Directionless announcement (npc.arrives / npc.departs).
+      ...this.announceMovement(npc, world, playerLocation, currentLocation, roomId),
+    ];
+  }
+
+  /**
+   * Build the player-witnessable movement announcement for a crossing.
+   *
+   * Returns a single sense-neutral `npc.moved.witnessed` fact carrying a per-sense
+   * `renderings` map (sight + hearing). PerceptionService selects the rendering for
+   * the player's available sense; neither is derived from the other.
+   *
+   * @returns one `npc.moved.witnessed` event, or `[]` when the NPC does not announce
+   *   movement or the move touches neither the player's room.
+   */
+  private announceMovement(
+    npc: IFEntity,
+    world: WorldModel,
+    playerLocation: EntityId,
+    from: EntityId,
+    to: EntityId,
+    direction?: DirectionType
+  ): ISemanticEvent[] {
+    const trait = npc.get(TraitType.NPC) as NpcTrait | undefined;
+    if (!trait?.announcesMovement) return [];
+    const overrides = trait.movementMessages ?? {};
+
+    let sightId: string;
+    let hearingId: string;
+    let params: Record<string, unknown>;
+
+    if (from === playerLocation) {            // departure
+      sightId = direction
+        ? (overrides.leaves ?? NpcMessages.NPC_LEAVES)
+        : (overrides.departs ?? NpcMessages.NPC_DEPARTS);
+      hearingId = NpcMessages.NPC_HEARD_DEPARTS;
+      params = { npcName: npc.name, ...(direction ? { direction } : {}) };
+    } else if (to === playerLocation) {       // arrival
+      sightId = direction
+        ? (overrides.enters ?? NpcMessages.NPC_ENTERS)
+        : (overrides.arrives ?? NpcMessages.NPC_ARRIVES);
+      hearingId = NpcMessages.NPC_HEARD_ARRIVES;
+      // The player sees the NPC arrive *from* the direction it came.
+      const dir = direction ? getOppositeDirection(direction) : undefined;
+      params = { npcName: npc.name, ...(dir ? { direction: dir } : {}) };
+    } else {
+      return [];                              // a move the player can't witness
+    }
+
+    const renderings: PerSenseRenderings = {
+      sight: { messageId: sightId, params },
+      hearing: { messageId: hearingId, params: {} },
+    };
+
+    return [
+      createEvent(
+        'npc.moved.witnessed',
+        { npc: npc.id, renderings },
         npc.id
       ),
     ];

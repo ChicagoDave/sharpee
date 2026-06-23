@@ -225,6 +225,90 @@ describe('PerceptionService', () => {
       expect(filtered[3].type).toBe('action.failure');
     });
   });
+
+  describe('filterEvents - per-sense rendering selection (#159 / ADR-069 amendment)', () => {
+    // A witnessable departure fact: sight = npc.leaves, hearing = npc.heard_departs.
+    function departureFact(sightId = 'npc.leaves'): ISemanticEvent {
+      return createEvent('npc.moved.witnessed', {
+        npc: 'sam',
+        renderings: {
+          sight: { messageId: sightId, params: { npcName: 'Sam', direction: 'EAST' } },
+          hearing: { messageId: 'npc.heard_departs', params: {} },
+        },
+      });
+    }
+
+    function arrivalFact(): ISemanticEvent {
+      return createEvent('npc.moved.witnessed', {
+        npc: 'sam',
+        renderings: {
+          sight: { messageId: 'npc.enters', params: { npcName: 'Sam', direction: 'WEST' } },
+          hearing: { messageId: 'npc.heard_arrives', params: {} },
+        },
+      });
+    }
+
+    // Test 9 — lit room selects sight.
+    test('lit room selects the sight rendering', () => {
+      world.moveEntity(player.id, litRoom.id);
+
+      const filtered = service.filterEvents([departureFact()], player, world);
+
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].type).toBe('npc.leaves');
+      expect(filtered[0].data).toEqual({ npcName: 'Sam', direction: 'EAST' });
+    });
+
+    // Test 7 — dark departure selects hearing (anonymized, no params).
+    test('dark room selects the hearing rendering for a departure', () => {
+      world.moveEntity(player.id, darkRoom.id);
+
+      const filtered = service.filterEvents([departureFact()], player, world);
+
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].type).toBe('npc.heard_departs');
+      expect(filtered[0].data).toEqual({});
+    });
+
+    // Test 8 — dark arrival selects hearing.
+    test('dark room selects the hearing rendering for an arrival', () => {
+      world.moveEntity(player.id, darkRoom.id);
+
+      const filtered = service.filterEvents([arrivalFact()], player, world);
+
+      expect(filtered[0].type).toBe('npc.heard_arrives');
+      expect(filtered[0].data).toEqual({});
+    });
+
+    // Test 10 — override is irrelevant in the dark; selection is per-sense.
+    test('a per-NPC custom sight ID is bypassed in the dark (hearing is selected)', () => {
+      world.moveEntity(player.id, darkRoom.id);
+
+      const filtered = service.filterEvents([departureFact('zoo.sam.leaves')], player, world);
+
+      expect(filtered[0].type).toBe('npc.heard_departs');
+    });
+
+    // An empty renderings map ⇒ perceptible by nothing ⇒ blocked (distinct from absent).
+    test('an empty renderings map is imperceptible (perception-blocked)', () => {
+      world.moveEntity(player.id, litRoom.id);
+      const fact = createEvent('npc.moved.witnessed', { renderings: {} });
+
+      const filtered = service.filterEvents([fact], player, world);
+
+      expect(filtered[0].type).toBe('if.event.perception.blocked');
+    });
+
+    // Absence of a renderings map ⇒ not a witnessable fact ⇒ passes through.
+    test('an event without renderings passes through unchanged', () => {
+      world.moveEntity(player.id, darkRoom.id);
+      const fact = createEvent('npc.moved', { npc: 'sam', from: 'a', to: 'b' });
+
+      const filtered = service.filterEvents([fact], player, world);
+
+      expect(filtered[0].type).toBe('npc.moved');
+    });
+  });
 });
 
 // Helper to create test events

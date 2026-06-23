@@ -5,7 +5,12 @@ changes are silent; the zookeeper's patrol is imperceptible without `look`.
 
 **Branch:** `fix/platform-issues-book-qa`
 
-**Status:** Planned (awaiting implementation).
+**Status:** Implemented (2026-06-23). All changes in §3 landed; tests §5 (0–10
+plus empty/absent-renderings edge cases) pass. **Deviation:** the shared wire-type
+(§3.0) lives in `@sharpee/if-services` (alongside the real `Sense` definition), not
+`@sharpee/core` — the plan/ADR said core, but `Sense` is in if-services and the
+ADR-069 tech-debt note already places these perception types there. stdlib's vitest
+config gained an `@sharpee/if-services` → `src` alias (matching the engine config).
 
 ---
 

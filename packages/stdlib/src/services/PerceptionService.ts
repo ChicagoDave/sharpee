@@ -10,10 +10,13 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, IWorldModel, VisibilityBehavior, WorldModel } from '@sharpee/world-model';
+import { SENSE_PRECEDENCE } from '@sharpee/if-services';
 
 // Re-export interface types from if-services for convenience
 export type {
   Sense,
+  Rendering,
+  PerSenseRenderings,
   PerceptionBlockReason,
   PerceptionBlockedData,
   IPerceptionService,
@@ -21,6 +24,7 @@ export type {
 
 import type {
   Sense,
+  PerSenseRenderings,
   PerceptionBlockReason,
   PerceptionBlockedData,
   IPerceptionService,
@@ -54,6 +58,23 @@ export class PerceptionService implements IPerceptionService {
     const canSee = this.canPerceive(actor, location, world, 'sight');
 
     return events.map((event) => {
+      // Witnessable facts carry a per-sense renderings map. Select the rendering
+      // for the perceiver's highest-precedence available sense. This is generic —
+      // it keys off the presence of `renderings`, not off NPC/movement specifics —
+      // so future witnessable facts (combat, object sounds, smells) reuse it.
+      const renderings = (event.data as { renderings?: PerSenseRenderings } | undefined)
+        ?.renderings;
+      if (renderings !== undefined) {
+        for (const sense of SENSE_PRECEDENCE) {
+          const r = renderings[sense];
+          if (r && this.canPerceive(actor, location, world, sense)) {
+            return { ...event, type: r.messageId, data: r.params };
+          }
+        }
+        // Present but nothing perceivable (incl. empty `{}`) ⇒ imperceptible.
+        return this.createPerceptionBlockedEvent(event, actor, location, world);
+      }
+
       // Only filter visual events
       if (!this.isVisualEvent(event)) {
         return event;

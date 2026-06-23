@@ -4,11 +4,15 @@
 
 export const npcLanguage = {
   messages: {
-    // Movement messages
+    // Movement messages (visual renderings)
     'npc.enters': "{npcName} enters from the {direction}.",
     'npc.leaves': "{npcName} leaves to the {direction}.",
     'npc.arrives': "{npcName} arrives.",
     'npc.departs': "{npcName} departs.",
+
+    // Movement messages (anonymized hearing renderings — heard in the dark/when blind)
+    'npc.heard_arrives': "You hear someone enter.",
+    'npc.heard_departs': "You hear someone leave.",
 
     // Observation messages
     'npc.notices_player': "{npcName} notices you.",
