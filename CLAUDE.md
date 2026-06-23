@@ -78,24 +78,33 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 - **DO NOT** use `2>&1` with pnpm commands — they don't work together properly.
 - Preferred format: `pnpm --filter '@sharpee/stdlib' test <test-name>`.
 
-### Build (`./sharpee`)
+### Build (`./repokit` in-repo; `./sharpee` is the author tool)
 
-**IMPORTANT**: Use `./sharpee build` (the Sharpee build CLI — the `@sharpee/devkit` engine, ADR-180) instead of manual `pnpm build` commands. It orchestrates the build; tsf compiles. In-repo, invoke via the repo-root `./sharpee` wrapper. (A globally-installed `sharpee` command for standalone authors lands in ADR-180 Phase U2.)
+**IMPORTANT (ADR-187)**: There are two build CLIs, split by audience:
+- **`./repokit`** — the **in-repo platform build** (for platform devs). Builds the
+  platform packages, the CLI bundle, verify, test:npm, and the in-repo example stories.
+  Use this for all platform/Dungeo builds.
+- **`./sharpee`** — the **author tool** (`@sharpee/devkit`): builds an author's own
+  story project (project-relative). A workspace story passed to `./sharpee build` is
+  redirected to `./repokit`. (Globally-installed `sharpee` for outside authors: ADR-180
+  Phase U2.)
+
+Use `./repokit build` (it orchestrates; tsf compiles) instead of manual `pnpm build`.
 
 ```bash
 # Show help
-./sharpee
+./repokit
 
-# Common workflows
-./sharpee build dungeo               # Build platform + story, then bundle
-./sharpee build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
-./sharpee build --zifmia             # + zifmia multi-user server (tools/zifmia/dist/)
-./sharpee build dungeo --skip stdlib # Resume the platform build from stdlib
-./sharpee clean                      # Remove dist/, dist-esm/, tsbuildinfo
-./sharpee verify                     # tsf build --npm + publish dry-run
+# Common platform workflows (in-repo)
+./repokit build dungeo               # Build platform + story, then bundle
+./repokit build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
+./repokit build --zifmia             # + zifmia multi-user server (tools/zifmia/dist/)
+./repokit build dungeo --skip stdlib # Resume the platform build from stdlib
+./repokit clean                      # Remove dist/, dist-esm/, tsbuildinfo
+./repokit verify                     # tsf build --npm + publish dry-run
 ```
 
-**Multi-user (zifmia)**: the corrected multi-user server (ADR-177) is built with `devkit build --zifmia` → `tools/zifmia/dist/`. The abandoned `shite` parts bin and the legacy Tauri `--runner` are no longer built (ADR-180 dropped them); their source remains for reference only.
+**Multi-user (zifmia)**: the corrected multi-user server (ADR-177) is built with `./repokit build --zifmia` → `tools/zifmia/dist/`. The abandoned `shite` parts bin and the legacy Tauri `--runner` are no longer built (ADR-180 dropped them); their source remains for reference only.
 
 **Outputs**:
 - `dist/cli/sharpee.js` — Platform bundle (CLI, testing)

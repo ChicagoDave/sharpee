@@ -6,6 +6,16 @@
 
 ## Amendment 1 (2026-06-18, session 5a7f09) — unify under the `sharpee` command
 
+> **Partially superseded by [ADR-187](adr-187-devkit-author-only-split-inrepo-build.md)
+> (2026-06-22).** Amendment 1's **"One command, two depths"** clause is reversed:
+> `@sharpee/devkit` (`sharpee`/`./sharpee`) is the **author** tool only; the in-repo
+> platform build is a **separate** tool, **`repokit`** (`tools/repokit`, `./repokit`).
+> The location-aware single command is gone. The **browser-target attribution** in
+> Decision 5 and AC-9 below (`devkit build <story> --browser`) splits accordingly:
+> the author browser build is **devkit's** (`sharpee build --browser`, project-relative,
+> bundles `assets/`); the in-repo/workspace-story browser build is **repokit's**
+> (`./repokit build <story> --browser`). The rest of ADR-180 stands.
+
 Implemented in the ADR-180 "U" phases. This amendment **supersedes** the clauses
 tagged `(amended — see Amendment 1)` below. New state:
 

@@ -2,7 +2,20 @@
 
 **Date**: 2026-06-22
 **ADR**: [ADR-187](../../architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md) (ACCEPTED) — supersedes ADR-180 Amendment 1's "one command, two depths"
-**Status**: IN PROGRESS — Phases 0–3 done (devkit/repokit split functional); Phase 4 next (doc migration: CLAUDE.md, ADR-180 amendment, book Ch 25/31).
+**Status**: NEAR DONE — Phases 0–4 done (split functional + docs migrated). Remaining: Phase 5 cutover verification (largely covered by per-phase gates) + header polish debt in repokit copies.
+
+### Phase 4 — DONE (2026-06-22) [AC-6, AC-7]
+- Root CLAUDE.md Build section: platform commands `./sharpee build…` → `./repokit build…`;
+  documented the two-CLI split (`./repokit` platform / `./sharpee` author + redirect);
+  `devkit build --zifmia` → `./repokit build --zifmia`.
+- ADR-180: added a "Partially superseded by ADR-187" banner to Amendment 1 — reverses
+  "one command, two depths" and reconciles Decision 5 + AC-9 (browser target: devkit
+  author / repokit workspace) (AC-7 + plan-review fix).
+- Book: **no change needed** — Ch 25/31 use `sharpee build` in the *author* sense, which
+  is unchanged. Per-package CLAUDE.md: none referenced platform builds.
+- **Polish debt (remaining):** repokit's copied-file headers still say "@sharpee/devkit"
+  (NOT sed-safe — `repo.ts` has `@sharpee/devkit` as a package-name string); fix the
+  Owner-context lines by hand in a later pass.
 
 ### Phase 3 progress
 - **3a DONE (2026-06-22)** — `devkit/cli.ts` rewired author-only: `build` is now
