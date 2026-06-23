@@ -306,6 +306,21 @@ describe('Formatter System', () => {
       );
       expect(result).toBe('{You} take sword.');
     });
+
+    // ISSUE #158: the room contents_list template must apply the Oxford "and"
+    // via {items:list} when given an array of names (stdlib no longer pre-joins).
+    it('renders the contents_list template with the list conjunction', () => {
+      const template = '{You} can {see} {list:items} here.';
+      expect(
+        formatMessage(template, { items: ['lamp', 'chair', 'table'] }, registry, context)
+      ).toBe('{You} can {see} lamp, chair, and table here.');
+      expect(
+        formatMessage(template, { items: ['broom', 'bucket'] }, registry, context)
+      ).toBe('{You} can {see} broom and bucket here.');
+      expect(
+        formatMessage(template, { items: ['key'] }, registry, context)
+      ).toBe('{You} can {see} key here.');
+    });
   });
 
   describe('applyFormatters', () => {

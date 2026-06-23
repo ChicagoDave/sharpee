@@ -344,11 +344,12 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
       // Emit contents list if there are visible items
       if (contents.length > 0) {
-        const itemList = contents.map(e => e.name).join(', ');
+        // Array, not a pre-joined string: the {items:list} formatter applies
+        // the conjunction in the lang layer (#158).
         events.push(context.event('if.event.list.contents', {
           messageId: 'if.action.looking.contents_list',
           params: {
-            items: itemList,
+            items: contents.map(e => e.name),
             count: contents.length
           }
         }));

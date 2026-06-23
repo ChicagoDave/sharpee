@@ -328,11 +328,14 @@ export function determineLookingMessage(
   // If there are direct room items, include them in params for contents_list
   // (the action will emit room_description first, then contents_list)
   if (directInRoom.length > 0) {
-    const itemList = directInRoom.map(e => e.name).join(', ');
+    // Pass names as an array; the lang layer's {items:list} formatter joins
+    // them with the locale-appropriate conjunction (#158). Joining here would
+    // hard-code English list grammar into stdlib.
+    const itemNames = directInRoom.map(e => e.name);
     return {
       messageId,  // room_description or room_description_brief
       params: {
-        items: itemList,
+        items: itemNames,
         count: directInRoom.length,
         hasItems: true,
         ...params
