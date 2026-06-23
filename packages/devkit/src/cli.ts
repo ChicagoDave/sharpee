@@ -1,22 +1,19 @@
 #!/usr/bin/env node
 /**
- * cli.ts — the `sharpee` command (ADR-180; engine package @sharpee/devkit).
+ * cli.ts — the `sharpee` command (ADR-180; ADR-187; package @sharpee/devkit).
  *
- * Owner context: the single Sharpee build/test/scaffold CLI. `build` is
- * **location-aware** — inside the monorepo it builds platform + bundle + in-repo
- * stories; in a standalone author project it builds that project's story via its
- * own toolchain (+ .sharpee + browser).
+ * Owner context: the **author** CLI — scaffold/build/inspect an author's own
+ * story project (cwd or a registered name), project-relative. The in-repo
+ * platform build (packages, CLI bundle, verify, test:npm) is a separate tool,
+ * `repokit` (tools/repokit); a workspace story passed to `build` is redirected
+ * there. devkit no longer contains platform-build logic.
  *
  * Public interface: process argv -> subcommand dispatch -> process exit code.
  */
-import { runTestNpm, TestNpmOptions } from './commands/test-npm';
-import { runBuild, BuildOptions } from './commands/build';
 import { runIntrospect } from './commands/introspect';
-import { runBundle } from './commands/bundle';
-import { runClean } from './commands/clean';
-import { runVerify } from './commands/verify';
-import { detectMode, resolveStory, findRepoRoot } from './repo';
-// Standalone (author-project) commands, absorbed from the former @sharpee/sharpee CLI.
+import { resolveStory, findMonorepoRoot } from './repo';
+// Author-project commands (devkit is the author tool; the in-repo platform build
+// is repokit — ADR-187). repo.ts is retained only for the workspace-story redirect.
 import { runBuildCommand } from './standalone/build';
 import { runBuildBrowserCommand } from './standalone/build-browser';
 import { runInitCommand } from './standalone/init';
@@ -24,85 +21,30 @@ import { runInitBrowserCommand } from './standalone/init-browser';
 import { runIfidCommand } from './standalone/ifid';
 import { runRegister, runList } from './commands/register';
 import { lookupStory } from './registry';
-import { existsSync } from 'node:fs';
 
-const USAGE = `sharpee — Interactive Fiction build/test/scaffold CLI (ADR-180)
+const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
 
 Usage:
-  sharpee build [story|path] [options]   Build a story (location-aware: monorepo vs standalone)
-  sharpee build-browser [options]        Build the browser client only
+  sharpee build [name|path] [--browser]  Build an author story project (cwd or registered name)
+  sharpee build-browser [options]        Build the browser client for the current project
   sharpee init <name>                    Scaffold a new story project
-  sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
   sharpee init-browser                   Add a browser client to the current project
+  sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
   sharpee ifid                           IFID utilities (generate, validate)
-  sharpee bundle                         (monorepo) Assemble dist/cli/sharpee.js
-  sharpee clean                          Remove build artifacts (dist, dist-esm, tsbuildinfo)
-  sharpee verify                         tsf build --npm + publish dry-run
-  sharpee test:npm <loc|name> [options]  Stand up an npm consumer for a story and run its transcripts
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
 
-build (monorepo) options:
-  [story|path]            In-repo story name or path (stories/<n>, tutorials/<n>, or a directory)
-  --browser               Also build the self-contained browser client (dist/web/<story>/)
-  --zifmia                Also build the zifmia multi-user server (tools/zifmia/dist/)
-  --skip <pkg>            Resume the platform build from this package short-name
-  --version <v> | --build-date <iso> | --no-version | --no-genai | --no-bundle | --esm
+build (author project): compiles src/ + emits the .sharpee bundle; --browser also
+  builds the self-contained browser client (dist/web/, with the project's assets/).
 
-build (standalone, in an author project): compiles src/ + emits the .sharpee bundle and
-  browser client. --test also runs the project's transcripts.
+build-browser options:
+  --no-minify | --no-sourcemap
 
-test:npm options:
-  --local [default] | --registry | --version <range> | --staging <dir>
-  --transcripts <glob> | --chain | --quick | --keep
+Note: platform/in-repo builds — the packages, the CLI bundle, verify, test:npm — are
+repokit's job. In the monorepo use ./repokit; devkit is the author tool. A workspace
+story passed to \`sharpee build\` is redirected to repokit.
 
-Reserved (later): test, play, bundle:story`;
-
-/** Parse the monorepo `build` flags (positional [story] + options). */
-function parseBuild(args: string[]): BuildOptions {
-  const opts: BuildOptions = {};
-  let i = 0;
-  while (i < args.length) {
-    const a = args[i];
-    if (a === '--skip') opts.skipTo = args[++i];
-    else if (a === '--version') opts.version = args[++i];
-    else if (a === '--build-date') opts.buildDate = args[++i];
-    else if (a === '--no-version') opts.noVersion = true;
-    else if (a === '--no-genai') opts.noGenai = true;
-    else if (a === '--no-bundle') opts.bundle = false;
-    else if (a === '--esm') opts.esm = true;
-    else if (a === '--browser') opts.browser = true;
-    else if (a === '--zifmia') opts.zifmia = true;
-    else if (a.startsWith('-')) throw new Error(`unknown option: ${a}`);
-    else if (!opts.story) opts.story = a;
-    else throw new Error(`unexpected argument: ${a}`);
-    i++;
-  }
-  return opts;
-}
-
-/** Parse the `test:npm` flags after the positional <location>. */
-function parseTestNpm(args: string[]): TestNpmOptions {
-  const opts: TestNpmOptions = { location: '' };
-  let i = 0;
-  while (i < args.length) {
-    const a = args[i];
-    if (a === '--local') opts.mode = 'local';
-    else if (a === '--registry') opts.mode = 'registry';
-    else if (a === '--chain') opts.chain = true;
-    else if (a === '--quick') opts.quick = true;
-    else if (a === '--keep') opts.keep = true;
-    else if (a === '--version') opts.registryVersion = args[++i];
-    else if (a === '--staging') opts.stagingDir = args[++i];
-    else if (a === '--transcripts') opts.transcripts = args[++i];
-    else if (a.startsWith('-')) throw new Error(`unknown option: ${a}`);
-    else if (!opts.location) opts.location = a;
-    else throw new Error(`unexpected argument: ${a}`);
-    i++;
-  }
-  if (!opts.location) throw new Error('test:npm requires a story <location>');
-  return opts;
-}
+Reserved (later): test, play`;
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -113,29 +55,27 @@ async function main(argv: string[]): Promise<number> {
 
   switch (command) {
     case 'build': {
-      if (detectMode() === 'monorepo') {
-        const opts = parseBuild(rest);
-        // A decoupled standalone story (published @sharpee/* deps, not a workspace
-        // member) builds via its own toolchain even inside the monorepo — not via
-        // the platform pipeline + pnpm --filter.
-        const resolved = opts.story ? resolveStory(findRepoRoot(), opts.story) : null;
-        if (resolved && resolved.inRepo && !resolved.workspace) {
-          const flags = rest.filter((a) => a !== opts.story);
-          if (flags.includes('--browser')) {
-            await runBuildBrowserCommand(flags.filter((a) => a !== '--browser'), resolved.dir);
-          } else {
-            await runBuildCommand(flags, resolved.dir);
-          }
-          return 0;
-        }
-        runBuild(opts);
-        return 0;
-      }
-      // Standalone: build the cwd project, or a registered story by name.
+      // Author-only build (ADR-187): build a project by cwd or registered name.
       const positional = rest.find((a) => !a.startsWith('-'));
       const flags = rest.filter((a) => a !== positional);
       let dir: string | undefined;
-      if (positional) {
+      // Inside the sharpee monorepo, redirect WORKSPACE stories to repokit; a
+      // decoupled in-repo project (e.g. the FZ tutorial) builds here, project-relative.
+      const monoRoot = findMonorepoRoot();
+      if (monoRoot && positional) {
+        const resolved = resolveStory(monoRoot, positional);
+        if (resolved?.inRepo && resolved.workspace) {
+          console.error(
+            `'${positional}' is a workspace story — build it with repokit: ` +
+              `\`./repokit build ${positional}\`. devkit is the author tool.`,
+          );
+          return 2;
+        }
+        if (resolved?.inRepo && !resolved.workspace) {
+          dir = resolved.dir; // decoupled in-repo project → build project-relative
+        }
+      }
+      if (!dir && positional) {
         dir = lookupStory(positional) ?? undefined; // throws if registered-but-stale
         if (!dir) {
           throw new Error(
@@ -147,11 +87,9 @@ async function main(argv: string[]): Promise<number> {
       else await runBuildCommand(flags, dir);
       return 0;
     }
-    case 'build-browser': {
-      if (detectMode() === 'monorepo') runBuild({ ...parseBuild(rest), browser: true });
-      else await runBuildBrowserCommand(rest);
+    case 'build-browser':
+      await runBuildBrowserCommand(rest);
       return 0;
-    }
     case 'init':
       await runInitCommand(rest);
       return 0;
@@ -167,30 +105,6 @@ async function main(argv: string[]): Promise<number> {
     case 'ifid':
       runIfidCommand(rest);
       return 0;
-    case 'bundle':
-      runBundle({});
-      return 0;
-    case 'clean':
-      runClean({});
-      return 0;
-    case 'verify':
-      runVerify({});
-      return 0;
-    case 'test:npm': {
-      const opts = parseTestNpm(rest);
-      // Resolve a registered story name → its path (so `test:npm <name>` works; ADR AC-3).
-      if (!existsSync(opts.location)) opts.location = lookupStory(opts.location) ?? opts.location;
-      const r = runTestNpm(opts);
-      if (!r.ran) return 0;
-      console.log('===========================================');
-      console.log(`  RESULTS: ${r.passed} passing, ${r.failed} failures`);
-      console.log('===========================================');
-      if (r.failed > 0) {
-        console.log('Failures: ' + r.failures.join(', '));
-        return 1;
-      }
-      return 0;
-    }
     case 'register':
       runRegister(rest);
       return 0;

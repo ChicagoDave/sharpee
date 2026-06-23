@@ -2,7 +2,22 @@
 
 **Date**: 2026-06-22
 **ADR**: [ADR-187](../../architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md) (ACCEPTED) — supersedes ADR-180 Amendment 1's "one command, two depths"
-**Status**: IN PROGRESS — Phases 0–1 done; Phase 2 underway (foundation + leaf commands ported).
+**Status**: IN PROGRESS — Phases 0–2 done; Phase 3 underway (3a done: devkit cli author-only; 3b remaining: delete dead platform files + trim).
+
+### Phase 3 progress
+- **3a DONE (2026-06-22)** — `devkit/cli.ts` rewired author-only: `build` is now
+  project-relative (cwd or registered name); a workspace story passed to `build` is
+  **redirected to repokit** with a hint (ADR-187 R2); decoupled in-repo projects (FZ)
+  still build via devkit. Removed the `bundle`/`clean`/`verify`/`test:npm` cases, the
+  monorepo build branch, `parseBuild`/`parseTestNpm`, and the platform imports; USAGE +
+  header updated. devkit builds clean; all 34 tests pass; `./sharpee build dungeo` →
+  redirect hint; `./sharpee bundle` → unknown. Platform impl files remain as dead code
+  (deleted in 3b).
+- **3b REMAINING (destructive)** — delete devkit `commands/{build,bundle,verify,clean,
+  test-npm,browser,zifmia}.ts` + `consumer-gen.ts` + their tests; strip those exports
+  from `index.ts`; trim `repo.ts` to the routing helpers (`findMonorepoRoot`,
+  `resolveStory`, + what `standalone/build.ts` uses); relocate the platform tests to a
+  new repokit vitest harness. This satisfies AC-1 (devkit has no platform logic).
 
 ### Phase 2 progress
 - **2a–2d DONE** — full platform cluster ported into repokit (verbatim impls + thin
@@ -12,8 +27,12 @@
   `@sharpee/bootstrap` (introspect). repokit builds clean; `./repokit` lists all 9 real
   commands; `ifid generate` runs (real `@sharpee/core`); stubs return exit 2; devkit
   untouched. **Polish debt:** copied-file headers still say "@sharpee/devkit".
-- **2e TODO (AC-5 gate, heavy/real build — do NOT auto-retry)** — `repokit build` platform +
-  `bundle` + `verify` clean + `dist/cli/sharpee.js` loads (~170ms) + Dungeo walkthrough chain.
+- **2e DONE (AC-5 gate, 2026-06-22).** `./repokit bundle` ✓; bundle loads ✓;
+  `./repokit build dungeo` (full platform + story + bundle) ✓ "build complete"; Dungeo
+  walkthrough chain ✓ **892 passed** (re-run — the first run hit the known thief/troll
+  combat-RNG flakiness: one early death cascaded into ~474 grue/"can't see" failures;
+  re-run clean per the flaky-walkthrough rule). repokit drives the full platform build
+  end-to-end. Committed `af65cc75` (ports); AC-5 verification not a code change.
 
 ## Progress
 
