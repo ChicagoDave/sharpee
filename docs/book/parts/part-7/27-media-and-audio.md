@@ -65,6 +65,40 @@ like intent, not like a sound driver.
 > today are the `media.*` set above. The `AudioRegistry` is still useful — not as an
 > emitter, but as a *data store* for room atmospheres, which we use below.
 
+## Supplying your own assets
+
+Sharpee ships no audio or images — the `src` of every `media.*` event is a path **you
+provide**. You source the files, drop them in one place, and the build bundles them.
+
+Put assets under an **`assets/`** directory at your project root, in whatever subfolders
+your `src` paths use:
+
+```
+my-zoo/
+  assets/
+    audio/aviary-birdsong.mp3
+    images/aviary.jpg
+  src/
+  browser/
+```
+
+`sharpee build --browser` copies the contents of `assets/` into the web bundle, so a
+`src` like `audio/aviary-birdsong.mp3` resolves at the page root —
+`dist/web/audio/aviary-birdsong.mp3`. There's no magic mapping: the folder layout you
+choose under `assets/` *is* the layout your `src` paths reference, copied across as-is.
+
+**Sourcing the files is your job, and so is their licensing.** Use audio and images you
+have the right to ship. Public-domain (CC0) material is the least friction — nothing to
+attribute inside a bundled game — and there are well-known CC0 sound and image
+collections to draw from. Whatever you choose, keep a note of each file's source and
+license; if a license asks for credit, surface it in your About text or an on-page
+credit.
+
+A `src` with no file behind it simply fails to load: the channel still fires and the
+renderer still runs, the browser just 404s the missing file. So a story that *declares*
+a soundscape but ships no audio is silent, not broken — wire the channels first and drop
+the real assets in later.
+
 ## Fades, not cuts
 
 On the browser side, the `AudioManager` plays these events through the Web Audio API
