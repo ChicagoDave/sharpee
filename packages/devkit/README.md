@@ -27,6 +27,7 @@ devkit orchestrates the build; [`tsf`](https://www.npmjs.com/package/ts-forge) c
 
 - **Location-aware `build`** — inside the monorepo it builds platform + bundle + in-repo stories; in a standalone author project it compiles `src/` and emits the `.sharpee` bundle and browser client
 - **Scaffolding** — `init` / `init-browser` create new story projects and add browser clients
+- **Theming (ADR-188)** — `build-browser` wires the themes a story lists in its `package.json` `sharpee.themes`: built-in ids (`"modern-dark"`, …, copied from `@sharpee/platform-browser`) and the author's own theme (a `[data-theme]` block in `browser/<story>.css`, listed inline as `{ "id", "name" }`)
 - **Verify** — `tsf build --npm` plus a publish dry-run before shipping packages
 - **npm-consumer testing** — `test:npm` stands up a real npm consumer for a story and runs its transcripts
 - **Story registry** — `register` / `list` map a story name to a path under `~/.sharpee/devkit`

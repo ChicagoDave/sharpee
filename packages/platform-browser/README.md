@@ -16,6 +16,7 @@ npm install @sharpee/platform-browser
 - **Display components** - `TextDisplay` and `StatusLine` render the engine's output regions.
 - **Audio** - `AudioManager` plays the audio events defined by `@sharpee/media`.
 - **Channel renderers** (ADR-165) - default browser renderers that consume the channel-I/O wire stream, since channels are the universal UI surface.
+- **Theme engine + built-in themes** (ADR-188) - ships the CSS engine (`styles/base.css`, `styles/engine.css`, `styles/decorations.css`) and the built-in themes (`styles/themes/*.css` + `manifest.json`, with bundled fonts) that the author build copies into a story's `dist/web/`. A theme is just a `[data-theme]` block of `--theme-*` tokens; the engine paints every `.sharpee-*` component from them, and the `:root` default (`classic`) keeps the page skinned with no theme selected. `ThemeManager` handles runtime switching.
 
 ## Usage
 

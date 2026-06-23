@@ -71,15 +71,32 @@ function processTemplate(content: string, info: ProjectInfo): string {
 
 /**
  * Resolve @sharpee/platform-browser's `styles/` dir from the project's deps.
- * The engine CSS (base/engine/decorations) is owned by platform-browser (ADR-188),
- * not devkit's template dir.
- * @throws if platform-browser is not resolvable from the project.
+ * The engine CSS (base/engine/decorations) + built-in themes are owned by
+ * platform-browser (ADR-188) and ship as plain asset files under styles/.
+ *
+ * We locate them via the package's `.` entry — the single export tsf preserves
+ * when it publishes (it flattens to a `.`-only `exports` map and ships assets as
+ * files, so `@sharpee/platform-browser/package.json` and `/styles/*` subpaths are
+ * NOT resolvable from a published install). From the resolved entry we walk up to
+ * the dir that holds `styles/engine.css`, which works for both the published flat
+ * layout (`index.js` + `styles/` at the package root) and the in-repo layout
+ * (`dist/index.js`, with `styles/` at the parent).
+ * @throws if platform-browser (or its styles/) is not resolvable from the project.
  */
-function resolveEngineStylesDir(projectDir: string): string {
-  const pkgJson = require.resolve('@sharpee/platform-browser/package.json', {
-    paths: [projectDir],
-  });
-  return path.join(path.dirname(pkgJson), 'styles');
+export function resolveEngineStylesDir(projectDir: string): string {
+  const entry = require.resolve('@sharpee/platform-browser', { paths: [projectDir] });
+  let dir = path.dirname(entry);
+  for (let i = 0; i < 8; i++) {
+    const styles = path.join(dir, 'styles');
+    if (fs.existsSync(path.join(styles, 'engine.css'))) return styles;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new Error(
+    'Could not locate @sharpee/platform-browser styles/ (engine CSS) from ' +
+      `${projectDir}. Is @sharpee/platform-browser installed?`,
+  );
 }
 
 /** A theme wired into the build (ADR-188). */
@@ -298,7 +315,7 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
   copyWiredThemes(wiredThemes, outDir);
   if (wiredThemes.length > 0) {
     console.log(
-      `  ✓ Wired ${wiredThemes.length} theme package(s): ${wiredThemes.map((t) => t.id).join(', ')}`,
+      `  ✓ Wired ${wiredThemes.length} theme(s): ${wiredThemes.map((t) => t.id).join(', ')}`,
     );
   }
 
