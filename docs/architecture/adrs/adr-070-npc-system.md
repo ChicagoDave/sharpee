@@ -508,3 +508,20 @@ Pure ECS with system that queries components.
 - Inform 7 NPC system
 - TADS Actor class
 - Zork MDL source (actors.mud)
+
+## Amendment — NPC action execution and event emission live in stdlib (2026-06-23)
+
+**Context.** The original "stdlib vs Story Responsibility" table assigned *NPC action execution* (move/take/drop/attack/speak/emote) and *event emission for NPC actions* to **engine (Core Infrastructure)**. The implementation diverged: those responsibilities live in `NpcService` (`packages/stdlib/src/npc/npc-service.ts`), which executes NPC actions and emits the `npc.*` semantic events (`npc.moved`, `npc.spoke`, etc.). The engine's only role is routing — `GameEngine.processPluginEvents` enriches, perception-filters, appends to `turnEvents`, and re-emits; it does not execute NPC actions or originate their events. This divergence surfaced while planning #159 (opt-in NPC movement announcements), whose emission logic correctly extends `NpcService`, not the engine.
+
+**Change.** The responsibility split is corrected as follows:
+
+| Layer | Owns |
+| ----- | ---- |
+| **engine** | NPC turn-phase scheduling; routing NPC events through `processPluginEvents` (enrich → perception-filter → re-emit). Does **not** execute NPC actions or originate `npc.*` events. |
+| **stdlib (`NpcService`)** | NPC action execution (move/take/drop/attack/speak/emote) **and** emission of `npc.*` semantic events. |
+| **world-model** | `NpcTrait` definition (data only). |
+| **lang-en-us** | Text for `npc.*` message IDs. |
+
+**Consequences.** New NPC behaviors and event types are added in stdlib `NpcService`, not the engine. The engine stays generic and never gains NPC-specific emission logic. The witnessable movement event `NpcService` emits is **sense-neutral** — it carries a per-sense renderings map and defers sense selection to `PerceptionService` (see the ADR-069 amendment), rather than emitting a visual line that other senses strip down. A known gap remains (tracked, not resolved here): because `processPluginEvents` does not call `eventProcessor.processEvents()`, `world.registerEventHandler` handlers do **not** fire for `npc.*` events — the "deeper half" of #159.
+
+**Session.** Branch `fix/platform-issues-book-qa`, issue #159.
