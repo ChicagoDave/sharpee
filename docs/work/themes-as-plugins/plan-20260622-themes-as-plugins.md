@@ -28,6 +28,33 @@ plan's per-phase "verify" steps that say *visual* must run there. The build/wiri
 ## Phases
 
 ### Phase 1 — Theme engine + `:root` default in platform-browser [AC-1, AC-7]
+
+> **Extraction analysis (2026-06-22, diff-driven — done; authoring NOT yet done).**
+> Mapped `devkit/templates/browser/styles.css` (1988 lines):
+> - **Token model already exists** at lines 25–113: `:root, :root[data-theme="dos-classic"]`
+>   (the default = white-on-blue = `classic`) + `:root[data-theme="X"]` overrides for the
+>   other 4. These token blocks move to platform-browser (`:root` default) / theme
+>   packages (the 4 overrides, Phase 3).
+> - **Component rules** (lines 116–1988) are 5 `[data-theme="X"]`-scoped blocks. Diffed
+>   prefix-normalized: dos/dark/paper/retro are ~identical (4–14 differing lines);
+>   **system-6 differs by ~188 lines** (a genuinely distinct Mac chrome). So the engine
+>   ≈ the shared ~357-rule block, de-scoped.
+> - **Engine source of truth = modern-dark's de-scoped block** — it's token-pure (uses
+>   `var(--theme-border)` etc. with no extra literals).
+> - **Latent bug found:** dos-classic hardcodes `border-bottom: 1px solid #333` where it
+>   should be `var(--theme-border)` (dark/paper/retro use the var). Engine uses the var.
+> - **Flourishes (→ theme packages, Phase 3):** retro = scanline `background-image`
+>   gradient + `text-shadow` glow; paper = dialog backdrop `rgba(0,0,0,.5)` (vs `.7`);
+>   system-6 = the ~188-line chrome set; classic/dark = none (token-only).
+> - **Token completeness TODO:** the `classic` `:root` block defines 13 of the 16 tokens;
+>   `--theme-desktop-bg`, `--theme-font-body`, `--theme-font-chrome` are defined elsewhere
+>   — the `:root` default must define **all 16** (AC-7: no unset token). Source the 3
+>   missing defaults before authoring.
+>
+> **Authoring (next, needs the QA harness for AC-1/AC-7 visual checks):** create
+> `platform-browser` `engine.css` (= de-scoped modern-dark block, `#333`→var) + the
+> all-16-token `:root` default; ship via package `files`.
+
 - Create the engine CSS in `packages/platform-browser` (e.g. `styles/engine.css` +
   `styles/base.css` for layout): the un-scoped component rules that consume `--theme-*`
   (`body { background: var(--theme-bg); color: var(--theme-text) } .sharpee-status-bar { … }`
