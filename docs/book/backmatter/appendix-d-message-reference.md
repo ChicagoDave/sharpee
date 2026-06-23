@@ -4,14 +4,14 @@ Every message ID registered by `@sharpee/lang-en-us`, with its default English t
 Override any of these from a story with `extendLanguage` (Volume V). Generated from the
 language provider; 808 messages in 82 groups.
 
-## `character.conversation`
+## `character.conversation` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.conversation.ends` | {npcName} nods, ending the conversation. |
 | `character.conversation.initiates` | {npcName} approaches you. "A word, if you please." |
 
-## `character.conversation.attention`
+## `character.conversation.attention` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -19,39 +19,39 @@ language provider; 808 messages in 82 groups.
 | `character.conversation.attention.protests` | {npcName} frowns as you turn away. "I wasn't finished." |
 | `character.conversation.attention.yields` | {npcName} steps aside, yielding the conversation. |
 
-## `character.conversation.between.confessing`
+## `character.conversation.between.confessing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.conversation.between.confessing.1` | {npcName} shifts uncomfortably, as though wanting to say more. |
 | `character.conversation.between.confessing.3` | {npcName} opens their mouth, then closes it again. |
 
-## `character.conversation.between.eager`
+## `character.conversation.between.eager` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.conversation.between.eager.1` | {npcName} watches you expectantly. |
 | `character.conversation.between.eager.3` | {npcName} clears their throat, waiting for your attention. |
 
-## `character.conversation.between.hostile`
+## `character.conversation.between.hostile` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.conversation.between.hostile.1` | {npcName} glares at you impatiently. |
 
-## `character.conversation.between.neutral`
+## `character.conversation.between.neutral` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.conversation.between.neutral.3` | {npcName} seems to lose interest in the conversation. |
 
-## `character.conversation.between.reluctant`
+## `character.conversation.between.reluctant` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.conversation.between.reluctant.1` | {npcName} seems relieved you're occupied. |
 
-## `character.conversation.cognitive`
+## `character.conversation.cognitive` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -59,7 +59,7 @@ language provider; 808 messages in 82 groups.
 | `character.conversation.cognitive.drifting` | {npcName} trails off, attention wandering to something only they can see. |
 | `character.conversation.cognitive.fragmented` | {npcName} speaks in broken fragments, losing the thread mid-sentence. |
 
-## `character.conversation.response`
+## `character.conversation.response` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -68,39 +68,39 @@ language provider; 808 messages in 82 groups.
 | `character.conversation.response.omit` | {npcName} says nothing about that. |
 | `character.conversation.response.refuse` | {npcName} refuses to discuss that. |
 
-## `character.influence.effect`
+## `character.influence.effect` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.influence.effect.departed` | With {influencerName} gone, {targetName} regains composure. |
 | `character.influence.effect.expired` | The influence over {targetName} fades. |
 
-## `character.influence.pc`
+## `character.influence.pc` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.influence.pc.action_intercepted` | You find it hard to concentrate. |
 | `character.influence.pc.focus_clouded` | You were about to do something, but you've lost your train of thought. |
 
-## `character.influence.resisted`
+## `character.influence.resisted` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.influence.resisted.default` | {targetName} seems unaffected by {influencerName}. |
 
-## `character.influence.witnessed`
+## `character.influence.witnessed` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.influence.witnessed.default` | {influencerName} exerts a subtle influence on {targetName}. |
 
-## `character.propagation`
+## `character.propagation` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `character.propagation.eavesdropped` | You overhear {speakerName} speaking to {listenerName}. |
 
-## `character.propagation.witnessed`
+## `character.propagation.witnessed` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -110,7 +110,7 @@ language provider; 808 messages in 82 groups.
 | `character.propagation.witnessed.neutral` | {speakerName} mentions something to {listenerName}. |
 | `character.propagation.witnessed.vague` | {speakerName} vaguely alludes to something near {listenerName}. |
 
-## `core`
+## `core` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -120,13 +120,13 @@ language provider; 808 messages in 82 groups.
 | `core.disambiguation_prompt` | Which do you mean: {options}? |
 | `core.entity_not_found` | You can't see any such thing. |
 
-## `game.started`
+## `game.started` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `game.started.banner` | {title} By {author}  Type HELP for instructions. |
 
-## `if.action.about`
+## `if.action.about` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -151,13 +151,13 @@ language provider; 808 messages in 82 groups.
 | `if.action.about.technical_info` | Technical Information: Engine: {engine} v{engineVersion} Platform: Interactive Fiction |
 | `if.action.about.website` | Website: {website} |
 
-## `if.action.again`
+## `if.action.again` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `if.action.again.nothing_to_repeat` | There is nothing to repeat. |
 
-## `if.action.answering`
+## `if.action.answering` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -176,7 +176,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.answering.too_late` | It's too late to answer that. |
 | `if.action.answering.unclear_answer` | {Your} answer isn't clear. Try again. |
 
-## `if.action.asking`
+## `if.action.asking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -197,7 +197,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.asking.too_far` | {the:cap:target} is too far away. |
 | `if.action.asking.unknown_topic` | {the:cap:target} says, "I don't know anything about that." |
 
-## `if.action.attacking`
+## `if.action.attacking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -243,7 +243,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.attacking.violence_not_the_answer` | Violence is not the answer. |
 | `if.action.attacking.wrong_weapon_type` | {the:cap:target} can't be damaged with that type of weapon. |
 
-## `if.action.attacking.combat`
+## `if.action.attacking.combat` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -258,7 +258,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.attacking.combat.started` | Combat has begun! |
 | `if.action.attacking.combat.target_unconscious` | {the:cap:target} is already unconscious. |
 
-## `if.action.attacking.combat.attack`
+## `if.action.attacking.combat.attack` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -269,7 +269,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.attacking.combat.attack.knocked_out` | {the:cap:target} collapses, unconscious! |
 | `if.action.attacking.combat.attack.missed` | {You} {swing} at {the:target} but miss! |
 
-## `if.action.attacking.combat.defend`
+## `if.action.attacking.combat.defend` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -277,7 +277,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.attacking.combat.defend.dodged` | {the:cap:target} dodges out of the way! |
 | `if.action.attacking.combat.defend.parried` | {the:cap:target} parries {your} attack! |
 
-## `if.action.attacking.combat.health`
+## `if.action.attacking.combat.health` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -288,7 +288,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.attacking.combat.health.unconscious` | {the:cap:target} lies unconscious. |
 | `if.action.attacking.combat.health.wounded` | {the:cap:target} has been wounded. |
 
-## `if.action.attacking.combat.special`
+## `if.action.attacking.combat.special` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -296,7 +296,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.attacking.combat.special.sword_glows` | {Your} sword glows brightly! |
 | `if.action.attacking.combat.special.sword_stops_glowing` | {Your} sword's glow fades. |
 
-## `if.action.climbing`
+## `if.action.climbing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -313,7 +313,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.climbing.too_high` | That's too high to climb. |
 | `if.action.climbing.too_slippery` | It's too slippery to climb. |
 
-## `if.action.closing`
+## `if.action.closing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -324,7 +324,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.closing.not_closable` | {the:cap:item} can't be closed. |
 | `if.action.closing.prevents_closing` | {You} {can't} close {the:item} while {obstacle} is in the way. |
 
-## `if.action.drinking`
+## `if.action.drinking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -354,7 +354,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.drinking.sweet` | {You} {drink} {the:item}. It's sweet. |
 | `if.action.drinking.thirst_quenched` | {You} {drink} {the:item}. {Your} thirst is quenched. |
 
-## `if.action.dropping`
+## `if.action.dropping` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -366,7 +366,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.dropping.not_held` | {You} aren't holding {the:item}. |
 | `if.action.dropping.nothing_to_drop` | {You} aren't carrying anything. |
 
-## `if.action.eating`
+## `if.action.eating` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -393,7 +393,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.eating.tasted` | {You} {taste} {the:item}. |
 | `if.action.eating.tasty` | {You} {eat} {the:item}. It's quite tasty. |
 
-## `if.action.entering`
+## `if.action.entering` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -409,7 +409,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.entering.too_full` | {the:cap:place} is full (maximum {max} occupants). |
 | `if.action.entering.too_small` | {the:cap:place} is too small for {you} to enter. |
 
-## `if.action.examining`
+## `if.action.examining` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -437,7 +437,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.examining.worn_by_other` | {actor} is wearing {the:item}. |
 | `if.action.examining.worn_by_you` | {You} {are} wearing {the:item}. |
 
-## `if.action.exiting`
+## `if.action.exiting` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -450,7 +450,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.exiting.must_stand_first` | {You}'ll need to stand up first. |
 | `if.action.exiting.nowhere_to_go` | There's nowhere to go from here. |
 
-## `if.action.giving`
+## `if.action.giving` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -470,7 +470,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.giving.self` | {You} already {have} {the:item}! |
 | `if.action.giving.too_heavy` | {the:cap:recipient} says, "That's too heavy for me." |
 
-## `if.action.going`
+## `if.action.going` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -495,7 +495,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.going.too_dark` | It is pitch dark. You are likely to be eaten by a grue. |
 | `if.action.going.went` | {You} {go} {direction}. |
 
-## `if.action.help`
+## `if.action.help` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -511,7 +511,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.help.stuck_help` | If you're stuck, try: - LOOK around carefully - EXAMINE everything - Check your INVENTORY - Try different verbs with objects |
 | `if.action.help.unknown_topic` | No help available on '{topic}'. Type HELP for general help. |
 
-## `if.action.hiding`
+## `if.action.hiding` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -523,7 +523,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.hiding.on` | {You} {crouch} on {the target}, out of sight. |
 | `if.action.hiding.under` | {You} {crawl} under {the target}. |
 
-## `if.action.inserting`
+## `if.action.inserting` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -537,7 +537,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.inserting.not_insertable` | {the:cap:item} can't be inserted into things. |
 | `if.action.inserting.wont_fit` | {the:cap:item} won't fit in {the:container}. |
 
-## `if.action.inventory`
+## `if.action.inventory` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -559,7 +559,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.inventory.wearing_count` | {You} {be} wearing {wearingCount} item(s). |
 | `if.action.inventory.worn_list` | {items} (worn) |
 
-## `if.action.listening`
+## `if.action.listening` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -575,7 +575,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.listening.not_visible` | {You} {can't} see {the:target} well enough to focus on its sounds. |
 | `if.action.listening.silence` | {You} {hear} nothing out of the ordinary. |
 
-## `if.action.locking`
+## `if.action.locking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -590,7 +590,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.locking.not_lockable` | {the:cap:item} can't be locked. |
 | `if.action.locking.wrong_key` | {the:cap:key} doesn't fit {the:item}. |
 
-## `if.action.looking`
+## `if.action.looking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -603,7 +603,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.looking.surface_contents` | On {the:surface} {you} {see} {items}. |
 | `if.action.looking.you_see` | {You} can {see} {items} here. |
 
-## `if.action.lowering`
+## `if.action.lowering` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -612,7 +612,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.lowering.lowered` | {You} {lower} {the:target}. |
 | `if.action.lowering.no_target` | Lower what? |
 
-## `if.action.opening`
+## `if.action.opening` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -625,7 +625,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.opening.opened` | {You} {open} {the:item}. |
 | `if.action.opening.revealing` | Opening {the:container} reveals {items}. |
 
-## `if.action.pulling`
+## `if.action.pulling` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -650,7 +650,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.pulling.wearing_it` | {You} {can't} pull {the:target} while wearing it. |
 | `if.action.pulling.wont_budge` | {the:cap:target} won't budge. |
 
-## `if.action.pushing`
+## `if.action.pushing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -670,7 +670,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.pushing.wearing_it` | {You} {can't} push {the:target} while wearing it. |
 | `if.action.pushing.wont_budge` | {the:cap:target} won't budge. |
 
-## `if.action.putting`
+## `if.action.putting` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -688,7 +688,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.putting.put_in` | {You} {put} {the:item} in {the:container}. |
 | `if.action.putting.put_on` | {You} {put} {the:item} on {the:surface}. |
 
-## `if.action.quitting`
+## `if.action.quitting` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -702,7 +702,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.quitting.quit_save_query` | Would {you} like to save before quitting? |
 | `if.action.quitting.quit_unsaved_query` | {You} {have} unsaved progress. What would {you} like to do? |
 
-## `if.action.raising`
+## `if.action.raising` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -711,7 +711,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.raising.no_target` | Raise what? |
 | `if.action.raising.raised` | {You} {raise} {the:target}. |
 
-## `if.action.reading`
+## `if.action.reading` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -724,7 +724,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.reading.read_text` | {the:cap:item} reads: {text} |
 | `if.action.reading.what_to_read` | What do you want to read? |
 
-## `if.action.removing`
+## `if.action.removing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -738,7 +738,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.removing.removed_from` | {You} {take} {the:item} from {the:container}. |
 | `if.action.removing.removed_from_surface` | {You} {take} {the:item} from {the:surface}. |
 
-## `if.action.restoring`
+## `if.action.restoring` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -763,14 +763,14 @@ language provider; 808 messages in 82 groups.
 | `if.action.restoring.unsaved_progress` | {You} {have} unsaved progress. Restore anyway? |
 | `if.action.restoring.welcome_back` | Welcome back! Game restored from {saveName}. |
 
-## `if.action.revealing`
+## `if.action.revealing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `if.action.revealing.not_hidden` | {You're} not hiding. |
 | `if.action.revealing.revealed` | {You} {come} out of hiding. |
 
-## `if.action.saving`
+## `if.action.saving` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -793,7 +793,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.saving.saved_locally` | Game saved to local storage. |
 | `if.action.saving.saved_to_cloud` | Game saved to cloud storage. |
 
-## `if.action.scoring`
+## `if.action.scoring` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -815,7 +815,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.scoring.scoring_not_enabled` | There is no score in this game. |
 | `if.action.scoring.with_achievements` | {You} {have} earned the following achievements: {achievements}. |
 
-## `if.action.searching`
+## `if.action.searching` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -831,7 +831,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.searching.searched_object` | {You} {search} {the:target} thoroughly. |
 | `if.action.searching.supporter_contents` | On {the:target} {you} {see}: {items}. |
 
-## `if.action.showing`
+## `if.action.showing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -850,7 +850,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.showing.viewer_unimpressed` | {the:cap:viewer} seems unimpressed. |
 | `if.action.showing.wearing_shown` | {You} {show} {the:viewer} that {you're} wearing {the:item}. |
 
-## `if.action.sleeping`
+## `if.action.sleeping` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -868,7 +868,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.sleeping.too_dangerous_to_sleep` | It's too dangerous to sleep in {location}. |
 | `if.action.sleeping.woke_refreshed` | {You} {wake} feeling refreshed. |
 
-## `if.action.smelling`
+## `if.action.smelling` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -888,7 +888,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.smelling.smoke_detected` | {You} {detect} a faint smell of smoke. |
 | `if.action.smelling.too_far` | {the:cap:target} is too far away to smell. |
 
-## `if.action.switching_off`
+## `if.action.switching_off` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -906,7 +906,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.switching_off.was_temporary` | {the:cap:target} switches off (it had {remainingTime} seconds left). |
 | `if.action.switching_off.with_sound` | {You} {switch} off {the:target}. {sound} |
 
-## `if.action.switching_on`
+## `if.action.switching_on` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -924,7 +924,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.switching_on.temporary_activation` | {the:cap:target} switches on temporarily. |
 | `if.action.switching_on.with_sound` | {You} {switch} on {the:target}. {sound} |
 
-## `if.action.taking`
+## `if.action.taking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -940,7 +940,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.taking.taken_multi` | {item}: Taken. |
 | `if.action.taking.too_heavy` | Your load is too heavy. You will have to leave something behind. |
 
-## `if.action.taking_off`
+## `if.action.taking_off` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -950,7 +950,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.taking_off.prevents_removal` | {You}'ll need to take off {the:blocking} first. |
 | `if.action.taking_off.removed` | {You} {take} off {the:item}. |
 
-## `if.action.talking`
+## `if.action.talking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -973,7 +973,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.talking.talked` | {You} {greet} {the:target}. |
 | `if.action.talking.too_far` | {the:cap:target} is too far away for conversation. |
 
-## `if.action.telling`
+## `if.action.telling` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -993,7 +993,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.telling.too_far` | {the:cap:target} is too far away. |
 | `if.action.telling.very_interested` | {the:cap:target} says, "Really? Tell me more!" |
 
-## `if.action.throwing`
+## `if.action.throwing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1022,7 +1022,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.throwing.thrown_gently` | {You} gently {toss} {the:item}. |
 | `if.action.throwing.too_heavy` | {the:cap:item} is too heavy to throw far (weighs {weight}kg). |
 
-## `if.action.touching`
+## `if.action.touching` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1048,7 +1048,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.touching.touched` | {You} {touch} {the:target}. |
 | `if.action.touching.touched_gently` | {You} gently {touch} {the:target}. |
 
-## `if.action.turning`
+## `if.action.turning` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1078,7 +1078,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.turning.wearing_it` | {You} {can't} turn {the:target} while wearing it. |
 | `if.action.turning.wheel_turned` | {You} {turn} {the:target}. |
 
-## `if.action.undoing`
+## `if.action.undoing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1087,7 +1087,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.undoing.undo_success` | Previous turn undone. |
 | `if.action.undoing.undo_to_turn` | Undone. (Now at turn {turn}) |
 
-## `if.action.unlocking`
+## `if.action.unlocking` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1102,7 +1102,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.unlocking.unlocked_with` | {You} {unlock} {the:item} with {the:key}. |
 | `if.action.unlocking.wrong_key` | {the:cap:key} doesn't fit {the:item}. |
 
-## `if.action.version`
+## `if.action.version` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1110,7 +1110,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.version.version_full` | {storyTitle} v{storyVersion} Sharpee Engine v{engineVersion} Built: {buildDate} |
 | `if.action.version.version_no_date` | {storyTitle} v{storyVersion} Sharpee Engine v{engineVersion} |
 
-## `if.action.waiting`
+## `if.action.waiting` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1127,7 +1127,7 @@ language provider; 808 messages in 82 groups.
 | `if.action.waiting.waited_in_vehicle` | {You} {wait} in {the:vehicle}. |
 | `if.action.waiting.waited_patiently` | {You} {wait} patiently. |
 
-## `if.action.wearing`
+## `if.action.wearing` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1139,13 +1139,13 @@ language provider; 808 messages in 82 groups.
 | `if.action.wearing.not_wearable` | {You} {can't} wear {the:item}. |
 | `if.action.wearing.worn` | {You} {put} on {the:item}. |
 
-## `if.platform`
+## `if.platform` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
 | `if.platform.prompt` | > |
 
-## `npc`
+## `npc` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1176,7 +1176,7 @@ language provider; 808 messages in 82 groups.
 | `npc.unconscious` | {npcName} collapses, unconscious. |
 | `npc.whispers` | {npcName} whispers, "{text}" |
 
-## `npc.combat.attack`
+## `npc.combat.attack` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1187,7 +1187,7 @@ language provider; 808 messages in 82 groups.
 | `npc.combat.attack.knocked_out` | The flat of the troll's axe hits you delicately on the head, knocking you out. |
 | `npc.combat.attack.missed` | The troll swings his axe, but it misses. |
 
-## `npc.guard`
+## `npc.guard` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1195,7 +1195,7 @@ language provider; 808 messages in 82 groups.
 | `npc.guard.blocks` | {npcName} blocks your way! |
 | `npc.guard.defeated` | {npcName} is no longer a threat. |
 
-## `sound.heard.ambient`
+## `sound.heard.ambient` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1204,7 +1204,7 @@ language provider; 808 messages in 82 groups.
 | `sound.heard.ambient.muffled` | {You} {hear} a muffled {kind}. |
 | `sound.heard.ambient.presence-only` | {You} {hear} something at the edge of hearing. |
 
-## `sound.heard.default`
+## `sound.heard.default` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
@@ -1213,7 +1213,7 @@ language provider; 808 messages in 82 groups.
 | `sound.heard.default.muffled` | {You} {hear} a muffled {kind}. |
 | `sound.heard.default.presence-only` | {You} {hear} something distant. |
 
-## `sound.heard.speech`
+## `sound.heard.speech` {.unnumbered .unlisted}
 
 | Message ID | Default text |
 |---|---|
