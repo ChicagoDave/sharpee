@@ -99,9 +99,9 @@ Concretely, the CSS block and the config entry are all it takes:
 ```css
 /* browser/familyzoo.css — linked last, so it wins the cascade */
 [data-theme="zoo-sunny"] {
-  --sharpee-bg: #fffdf5;
-  --sharpee-fg: #2b2a25;
-  --sharpee-accent: #e8a13a;
+  --theme-bg: #fffdf5;
+  --theme-text: #2b2a25;
+  --theme-accent: #e8a13a;
 }
 ```
 

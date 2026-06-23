@@ -325,3 +325,21 @@ media renderers) likely have working visible paths and can be executed. **Stoppi
 the Ch 24/25 gap before proceeding**, consistent with the Ch 20/21 "record, don't power through"
 discipline. Awaiting direction: take this to the book authors, or continue to Ch 26 noting the
 scoped, unresolved Ch 25 gap.
+
+## Ch 26 — Decoration, Theming & the Status Line ⚠️→✅ (theming BOOK BUG — FIXED)
+Decoration (§26.1–26.2, `[name:content]` → `sharpee-`-prefixed spans) and the status line
+(§26.5) work. **Theming bug (book QA, platform 1.1.2):** §26.5's shipped
+`[data-theme="zoo-sunny"]` block set `--sharpee-bg` / `--sharpee-fg` / `--sharpee-accent`, but
+the platform components consume the **`--theme-*`** namespace (`--theme-bg` / `--theme-text` /
+`--theme-accent` / `--theme-border` / …). `--sharpee-*` custom properties appear **0×** in the
+platform CSS (defined or consumed), so the theme was inert — `data-theme="zoo-sunny"` flipped on
+the document but the page never re-skinned. Root cause is a class-prefix-vs-variable confusion:
+the `sharpee-` namespace is for component **classes** (`.sharpee-window`, `.sharpee-status-bar`,
+…), which is the real author class-override surface — *not* for CSS custom properties. The book
+even contradicted itself: §26.3's `dos-classic` example already uses the correct `--theme-bg` /
+`--theme-text` names.
+
+**FIXED (this commit):** renamed §26.5's `zoo-sunny` block to `--theme-bg` / `--theme-text` /
+`--theme-accent`, matching §26.3, the platform components, and the shipping
+`tutorials/familyzoo/browser/familyzoo.css` (whose `:root[data-theme="zoo-sunny"]` already uses
+`--theme-*`). Book-only change; the FZ tutorial was already correct, so it was not touched.
