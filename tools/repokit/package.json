@@ -1,0 +1,23 @@
+{
+  "name": "@sharpee/repokit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Sharpee in-repo platform/maintenance build tool (ADR-187). Counterpart to @sharpee/devkit (the author tool): repokit builds the platform packages, the CLI bundle, verify, test:npm, and the example stories. In-repo only; not published.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "repokit": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

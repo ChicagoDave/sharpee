@@ -10,6 +10,7 @@ packages:
   # published @sharpee/* npm packages — it is no longer a workspace member.
   - tools/shite
   - tools/zifmia
+  - tools/repokit
 
 # Public-hoist @sharpee/* and the lz-string vendored baseline entry so
 # Node's ESM resolver can find every Story Runtime Baseline (ADR-178)

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------------
+# repokit — repo-local entry to the Sharpee in-repo platform build tool (ADR-187).
+#
+# A thin shim over the repokit engine (`tools/repokit/dist/cli.js`). repokit is
+# the platform/maintenance counterpart to devkit (the author tool): it builds the
+# platform packages, the CLI bundle, verify, test:npm, and the example stories.
+# In-repo only; not published.
+#
+#   ./repokit build dungeo
+#   ./repokit verify
+#   ./repokit test:npm <location>
+# -------------------------------------------------------------------
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLI="$ROOT/tools/repokit/dist/cli.js"
+
+if [ ! -f "$CLI" ]; then
+  echo "repokit: engine not built ($CLI missing)." >&2
+  echo "  run: pnpm --filter @sharpee/repokit build" >&2
+  exit 1
+fi
+
+exec node "$CLI" "$@"

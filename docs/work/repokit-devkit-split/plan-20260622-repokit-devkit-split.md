@@ -2,7 +2,18 @@
 
 **Date**: 2026-06-22
 **ADR**: [ADR-187](../../architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md) (ACCEPTED) — supersedes ADR-180 Amendment 1's "one command, two depths"
-**Status**: NOT STARTED — platform change (`packages/devkit` + new `repokit`); discussed + ADR-accepted
+**Status**: IN PROGRESS — Phase 0 done (2026-06-22, repokit scaffolded); Phase 1 next.
+
+## Progress
+
+- **Phase 0 — DONE (2026-06-22).** `tools/repokit/` scaffolded (private, unpublished,
+  `@sharpee/repokit`); `./repokit` wrapper (thin bash shim → `tools/repokit/dist/cli.js`);
+  `Command` contract (`src/commands/command.ts`, one class per file) + thin dispatcher
+  (`src/cli.ts`) with the planned surface shown as `[Phase 2]`; added to
+  `pnpm-workspace.yaml`. Builds clean (`tsc`); `./repokit` prints usage, planned commands
+  report "not yet ported (Phase 2)", unknown commands error. `./sharpee`/devkit untouched.
+  No platform-package changes (purely additive).
+
 **Sequencing**: split-first (ADR-187 R4) — this lands before the book Ch 27 asset work
 
 ## Goal
