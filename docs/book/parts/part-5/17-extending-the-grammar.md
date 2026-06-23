@@ -96,11 +96,16 @@ narrow it with `.where`, giving the slot a scope rule:
 ```typescript
 grammar
   .define('feed :animal')
-  .where('animal', scope => scope.touchable())
+  .where('animal', (scope: any) => scope.touchable())
   .mapsTo('zoo.action.feeding')
   .withPriority(150)
   .build();
 ```
+
+The `(scope: any)` annotation on the callback is there to satisfy the strict
+`tsconfig.json` that `sharpee init` generates: `.where` accepts more than one kind
+of constraint, so TypeScript can't infer the parameter's type on its own and
+`noImplicitAny` flags it. Annotating it keeps the build clean.
 
 Keep these rules **permissive** — `touchable` rather than `visible` — for the
 reason from Chapter 11: let the parser resolve the noun, and let the action's

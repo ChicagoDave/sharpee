@@ -19,8 +19,8 @@ export const lookingLanguage = {
     'room_description': "{name}\n{description}",
     'room_dark': "It's pitch dark, and {you} {can't} see a thing.",
     'exits': "Exits: {exits}",
-    'you_see': "{You} can {see} {items} here.",
-    'contents_list': "{You} can {see} {items} here.",
+    'you_see': "{You} can {see} {list:items} here.",
+    'contents_list': "{You} can {see} {list:items} here.",
     'nothing_special': "{You} {see} nothing special.",
     'container_contents': "In {the:container} {you} {see} {items}.",
     'surface_contents': "On {the:surface} {you} {see} {items}."

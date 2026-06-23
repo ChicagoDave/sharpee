@@ -166,6 +166,31 @@ world.chainEvent('if.event.read', (event: ISemanticEvent, w: IWorldModel) => {
 (`this.entityIds.zooMap` and `.brochure` are recorded in `initializeWorld` when you
 create those items, the same way Chapter 13 stored the feed and penny ids.)
 
+That covers eight of the twelve awards (40 of the 75 points). The remaining four
+ride the very same two patterns, so wire them up the same way. Feeding the goats or
+rabbits and photographing an animal award inside their custom actions' `execute()`
+(like petting, above); pressing a souvenir penny awards in the penny-press chain
+from Chapter 13 (like collecting the map):
+
+```typescript
+// inside the feeding action's execute(), keyed on which animal was fed:
+world.awardScore(ScoreIds.FEED_GOATS, ScorePoints[ScoreIds.FEED_GOATS], 'Fed the goats');
+//   …and ScoreIds.FEED_RABBITS the same way when the rabbits are fed.
+
+// inside the photograph action's execute():
+world.awardScore(ScoreIds.PHOTOGRAPH_ANIMAL,
+  ScorePoints[ScoreIds.PHOTOGRAPH_ANIMAL], 'Photographed an animal');
+
+// in the penny-press chain (Chapter 13), the same shape as the map award:
+w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
+  ScorePoints[ScoreIds.COLLECT_PRESSED_PENNY], 'Pressed a souvenir penny');
+```
+
+With all twelve awards in place the scores sum to the full 75, so the victory
+daemon below has a target it can actually reach. Leave any of these four out and
+the game caps at 40 (or wherever you stopped) and the win never fires — a useful
+reminder that the max score and the awarding code have to agree.
+
 ## The victory daemon
 
 The win condition is checked by a daemon — exactly the scheduler pattern from the

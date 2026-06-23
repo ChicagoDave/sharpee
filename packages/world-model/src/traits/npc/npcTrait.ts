@@ -33,6 +33,21 @@ export interface INpcData {
   /** ID of the behavior to use for this NPC */
   behaviorId?: string;
 
+  /** Announce this NPC's movement when it crosses the player's room (default false). */
+  announcesMovement?: boolean;
+
+  /**
+   * Per-NPC message-ID overrides for movement announcements. Any key left unset
+   * falls back to the platform default (npc.leaves / npc.enters / npc.arrives /
+   * npc.departs). Override text receives { npcName, direction } params.
+   */
+  movementMessages?: {
+    leaves?: string;   // departure with direction (move)
+    enters?: string;   // arrival with direction (move)
+    arrives?: string;  // arrival without direction (moveTo)
+    departs?: string;  // departure without direction (moveTo)
+  };
+
   /** Conversation state for dialogue */
   conversationState?: string;
 
@@ -75,6 +90,15 @@ export class NpcTrait implements ITrait, INpcData {
   // Behavior reference
   behaviorId?: string;
 
+  // Movement announcement (opt-in)
+  announcesMovement: boolean;
+  movementMessages?: {
+    leaves?: string;
+    enters?: string;
+    arrives?: string;
+    departs?: string;
+  };
+
   // Interaction state
   conversationState?: string;
   knowledge?: Record<string, unknown>;
@@ -92,6 +116,8 @@ export class NpcTrait implements ITrait, INpcData {
     this.allowedRooms = data.allowedRooms;
     this.forbiddenRooms = data.forbiddenRooms;
     this.behaviorId = data.behaviorId;
+    this.announcesMovement = data.announcesMovement ?? false;
+    this.movementMessages = data.movementMessages;
     this.conversationState = data.conversationState;
     this.knowledge = data.knowledge;
     this.goals = data.goals;

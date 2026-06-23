@@ -938,8 +938,10 @@ export class CommandValidator implements CommandValidator {
     // For now, use findWhere until WorldModel has a name index
     const normalizedName = name.toLowerCase();
     return this.world.findWhere(entity => {
-      // Skip rooms and player
-      if (entity.type === 'room' || entity.id === this.world.getPlayer()?.id) {
+      // Skip rooms. The player IS resolvable here: a player with an
+      // IdentityTrait ("yourself", aliases me/self/myself) must match
+      // "examine me", "x yourself", etc. (ISSUE #154).
+      if (entity.type === 'room') {
         return false;
       }
 
@@ -963,8 +965,9 @@ export class CommandValidator implements CommandValidator {
   private getEntitiesBySynonym(synonym: string): IFEntity[] {
     const normalizedSynonym = synonym.toLowerCase();
     return this.world.findWhere(entity => {
-      // Skip rooms and player
-      if (entity.type === 'room' || entity.id === this.world.getPlayer()?.id) {
+      // Skip rooms. The player IS resolvable here so its IdentityTrait
+      // aliases (me/self/myself) match (ISSUE #154).
+      if (entity.type === 'room') {
         return false;
       }
 
@@ -980,8 +983,8 @@ export class CommandValidator implements CommandValidator {
   private getEntitiesByAdjective(adjective: string): IFEntity[] {
     const normalizedAdjective = adjective.toLowerCase();
     return this.world.findWhere(entity => {
-      // Skip rooms and player
-      if (entity.type === 'room' || entity.id === this.world.getPlayer()?.id) {
+      // Skip rooms. The player IS resolvable here (ISSUE #154).
+      if (entity.type === 'room') {
         return false;
       }
 

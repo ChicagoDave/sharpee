@@ -16,7 +16,7 @@ export const goingLanguage = {
   
   messages: {
     'room_description': "{name}\n{description}",
-    'contents_list': "{You} can {see} {items} here.",
+    'contents_list': "{You} can {see} {list:items} here.",
     'no_exit': "{You} {can't} go that way.",
     'no_exit_that_way': "{You} {can't} go that way.",
     'door_closed': "{the:cap:door} {is:door} closed.",

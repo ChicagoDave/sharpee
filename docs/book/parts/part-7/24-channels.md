@@ -89,7 +89,7 @@ own **`IOChannel`** in the `registerChannels` hook. A channel is an object with 
 computes its value for the turn:
 
 ```typescript
-// A mood line per room — rooms not listed stay quiet.
+// A mood line per room — rooms not listed clear the line.
 const AMBIENCE_BY_ROOM: Record<string, string> = {
   'Aviary': 'The air is alive with birdsong and the rustle of wings.',
   'Nocturnal Animals Exhibit': 'Your eyes strain against the warm red dark.',
@@ -104,8 +104,8 @@ registerChannels(registry: IChannelRegistry): void {
     produce: (ctx) => {
       const world = ctx.world as WorldModel;
       const room = world.getEntity(world.getLocation(world.getPlayer()!.id)!);
-      // a mood line for the current room, or undefined to stay quiet
-      return room ? AMBIENCE_BY_ROOM[room.name] ?? undefined : undefined;
+      // a mood line for the current room, or '' to clear the line
+      return room ? AMBIENCE_BY_ROOM[room.name] ?? '' : '';
     },
   });
 }
@@ -116,6 +116,15 @@ number, and the channel's `prevValue`. Return a value to emit it, or `undefined`
 stay silent. The `emit` policy decides idle turns: `sparse` emits only when the
 value changes; `always` emits every turn. To *override* a standard channel, register
 one with the same `id` — last write wins.
+
+One subtlety to internalize, because it bites everyone once: on a `sparse`
+`replace` channel, `undefined` means *"no change this turn"* — **not** *"clear the
+line."* The channel doesn't re-emit, so whatever it last showed stays on screen. If
+you returned `undefined` for "rooms without a mood," the previous room's line would
+follow the player around. To actually blank the line you must emit a *different*
+value — here, the empty string `''` — which is a real transition the renderer paints
+as blank (and `sparse` then stays quiet until the mood changes again). Reach for
+`undefined` only when you genuinely want the current value to persist untouched.
 
 Crucially, a channel emits **data** — text, a number, JSON — never UI. The value
 says *what*; the renderer (next chapter) decides *how* it looks. That data-only wire

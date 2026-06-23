@@ -99,7 +99,11 @@ export const zooAmbienceChannel: IOChannel<string> = {
     if (!roomId) return undefined;
     const room = world.getEntity(roomId);
     if (!room) return undefined;
-    return AMBIENCE_BY_ROOM[room.name] ?? undefined;
+    // A room with no mood line emits '' to CLEAR the channel — not `undefined`.
+    // On a `sparse` `replace` channel, `undefined` means "no change", so the
+    // previous room's mood would linger; emitting '' is a value transition that
+    // the renderer paints as blank, then stays silent until the mood changes.
+    return AMBIENCE_BY_ROOM[room.name] ?? '';
   },
 };
 

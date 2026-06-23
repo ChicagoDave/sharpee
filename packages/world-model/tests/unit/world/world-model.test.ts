@@ -717,13 +717,14 @@ describe('WorldModel', () => {
   });
 
   describe('event sourcing', () => {
-    it('should register and apply event handler', () => {
+    it('records applied events without dispatching handlers (ADR-086, ISSUE #155)', () => {
+      // Handler dispatch is owned by the EventProcessor: registered handlers
+      // are wired into the processor (connectEventProcessor) and invoked there.
+      // applyEvent must NOT also dispatch, or every handler fires twice.
       let handlerCalled = false;
 
-      world.registerEventHandler('test-event', (event, w) => {
+      world.registerEventHandler('test-event', () => {
         handlerCalled = true;
-        expect(event.type).toBe('test-event');
-        expect(w).toBe(world);
       });
 
       const event: SemanticEvent = {
@@ -736,7 +737,18 @@ describe('WorldModel', () => {
 
       world.applyEvent(event);
 
-      expect(handlerCalled).toBe(true);
+      // applyEvent records to history but does not invoke the handler.
+      expect(handlerCalled).toBe(false);
+      expect(world.getAppliedEvents()).toContain(event);
+    });
+
+    it('wires registered handlers to a connected processor exactly once', () => {
+      const wired: string[] = [];
+      world.registerEventHandler('test-event', () => {});
+      world.connectEventProcessor({
+        registerHandler: (eventType: string) => { wired.push(eventType); }
+      });
+      expect(wired.filter(t => t === 'test-event')).toHaveLength(1);
     });
 
     it('should validate events', () => {
@@ -863,20 +875,18 @@ describe('WorldModel', () => {
       expect(world.getAppliedEvents()).toHaveLength(0);
     });
 
-    it('should unregister event handler', () => {
-      let callCount = 0;
-
-      world.registerEventHandler('removable', () => {
-        callCount++;
-      });
-
-      world.applyEvent({ id: 'evt-12', type: 'removable', timestamp: Date.now(), entities: {}, data: {} });
-      expect(callCount).toBe(1);
-
+    it('unregister prevents the handler from being wired to the processor', () => {
+      // Dispatch happens through the EventProcessor wiring (ADR-086), so
+      // unregister is observable as the handler no longer being wired.
+      world.registerEventHandler('removable', () => {});
       world.unregisterEventHandler('removable');
 
-      world.applyEvent({ id: 'evt-13', type: 'removable', timestamp: Date.now(), entities: {}, data: {} });
-      expect(callCount).toBe(1); // Should not increase
+      const wired: string[] = [];
+      world.connectEventProcessor({
+        registerHandler: (eventType: string) => { wired.push(eventType); }
+      });
+
+      expect(wired).not.toContain('removable');
     });
 
     it('should handle unregistered events silently', () => {

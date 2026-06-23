@@ -9,11 +9,15 @@
  * Message IDs for NPC events
  */
 export const NpcMessages = {
-  // Movement messages
+  // Movement messages (visual renderings)
   NPC_ENTERS: 'npc.enters',
   NPC_LEAVES: 'npc.leaves',
   NPC_ARRIVES: 'npc.arrives',
   NPC_DEPARTS: 'npc.departs',
+
+  // Movement messages (anonymized hearing renderings — no identity or direction)
+  NPC_HEARD_ARRIVES: 'npc.heard_arrives',
+  NPC_HEARD_DEPARTS: 'npc.heard_departs',
 
   // Observation messages
   NPC_NOTICES_PLAYER: 'npc.notices_player',

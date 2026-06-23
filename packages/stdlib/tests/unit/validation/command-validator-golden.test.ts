@@ -193,6 +193,45 @@ describe('CommandValidator (Golden Pattern)', () => {
     });
   });
 
+  describe('Player self-reference (ISSUE #154)', () => {
+    // The player has a full IdentityTrait (name + aliases) and should be
+    // resolvable by name/alias for examine: "examine me", "x myself", etc.
+    beforeEach(() => {
+      player.add({
+        type: TraitType.IDENTITY,
+        name: 'yourself',
+        description: 'Just an ordinary visitor.',
+        aliases: ['self', 'myself', 'me']
+      });
+    });
+
+    test.each(['me', 'myself', 'self', 'yourself'])(
+      'resolves "examine %s" to the player',
+      (noun) => {
+        const command = createCommand('if.action.examining');
+        command.parsed.structure = {
+          verb: { tokens: [0], text: 'examine', head: 'examine' },
+          directObject: {
+            tokens: [1],
+            text: noun,
+            head: noun,
+            modifiers: [],
+            articles: [],
+            determiners: [],
+            candidates: [noun]
+          }
+        };
+
+        const result = validator.validate(command.parsed);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+          expect(result.value.directObject?.entity.id).toBe(player.id);
+        }
+      }
+    );
+  });
+
   describe('Adjective Matching', () => {
     let redBall: IFEntity;
     let blueBall: IFEntity;

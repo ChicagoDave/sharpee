@@ -51,6 +51,9 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   
   if (isSelf) {
     eventData.self = true;
+    // Description is universal — the player carries an IdentityTrait description
+    // via the `noun.description` computed getter, same as any other entity.
+    eventData.hasDescription = !!noun.description;
     return eventData; // No trait checking for self-examination
   }
 
@@ -187,13 +190,15 @@ export function buildExaminingMessageParams(
   let messageId = eventData.self ? 'examined_self' : 'examined';
   let contentsMessage: ExaminingMessageResult['contentsMessage'] = undefined;
 
+  // Description is universal (self and non-self alike). Set it before the
+  // self-guard so `examined_self`'s `{description}` placeholder is populated;
+  // the trait branches below stay self-exclusive.
+  if (noun && eventData.hasDescription && noun.description) {
+    params.description = noun.description;
+  }
+
   if (!eventData.self && noun) {
     // Add trait-specific parameters
-
-    // Add description text if available (uses computed getter for trait-aware text)
-    if (eventData.hasDescription && noun.description) {
-      params.description = noun.description;
-    }
 
     // Wall-specific message (ADR-173 Phase 4) — checked first because walls
     // do not carry IdentityTrait, so the trait branches below are no-ops.

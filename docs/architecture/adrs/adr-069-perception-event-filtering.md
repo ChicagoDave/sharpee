@@ -448,3 +448,43 @@ Both operate on the event stream between action execution and final output. The 
 - ADR-052: Event Handlers for Custom Logic
 - Cloak of Darkness story test logs
 - Inform 6/7 end-of-turn room description model
+
+## Amendment — Per-sense rendering selection, not degradation (2026-06-23)
+
+**Context.** The accepted design (Option B) filters events by matching on `event.type` (e.g. `if.event.room.description`), and where a sense cannot perceive an event it was heading toward *transforming a primary visual event into a stripped-down one*. That bakes in an asymmetry — sight as canonical, other senses as lossy fallbacks ("degradation"). The senses are parallel channels, not tiers: in the dark you do not perceive a *worse* version of a visual fact, you perceive a *different* fact through a different sense. Type-matching also breaks for events whose type is author-overridable (a message ID), since the type is not known ahead of time. #159 (NPC movement announcements, override-able per-NPC via `NpcTrait.movementMessages` and globally via `extendLanguage`) forced the issue.
+
+**Change.** A **witnessable event carries a sense-neutral fact plus a set of per-sense _renderings_** — each a `(messageId, params)` pair keyed by sense. `PerceptionService` *selects* the rendering for the perceiver's available sense. No rendering is derived from another; none is primary.
+
+```
+event.data.renderings = {
+  sight:   { messageId: 'npc.leaves',        params: { npcName, direction } },
+  hearing: { messageId: 'npc.heard_departs', params: {} },
+}
+```
+
+**Contract (normative).**
+
+1. **Shared wire-type.** The renderings shape is a single type both the emitter and `PerceptionService` import — never redeclared per side (root CLAUDE.md rule 8b). It reuses the `Sense` union already defined by this ADR (Phase 1: `'sight' | 'hearing' | 'smell' | 'touch'`):
+
+   ```ts
+   interface Rendering { messageId: string; params: Record<string, unknown>; }
+   type PerSenseRenderings = Partial<Record<Sense, Rendering>>;
+   ```
+
+2. **Selection surface.** Selection folds into the existing `PerceptionService.filterEvents(events, actor, location, world)` — there is no separate `renderEvents` method; a private helper may exist but the public surface is unchanged. For each event:
+   - **`data.renderings` absent (`undefined`)** → not a witnessable fact; pass through unchanged (the existing type-matching path still applies).
+   - **`data.renderings` present** → select the rendering for the perceiver's highest-precedence available sense and replace the event with `{ ...event, type: rendering.messageId, data: rendering.params }`.
+   - **present but no listed sense is perceivable** (including an empty `{}` map) → imperceptible: `createPerceptionBlockedEvent`. An empty map is a deliberate "perceptible by nothing here," distinct from absent.
+
+3. **Sense precedence (normative).** When more than one sense is available and has a rendering, selection follows a fixed precedence order — `sight` ▸ `hearing` ▸ `smell` ▸ `touch` — independent of map key order. A future sense added to `Sense` must declare its rank here.
+
+4. **Lifecycle.** The witnessable event is transient — created by the emitter, replaced 1:1 during filtering, never persisted. The durable record (e.g. `npc.moved`) is a separate event and is not rendering-bearing.
+
+**Consequences.**
+- **No sense is canonical.** An event that omits a `hearing` rendering is simply inaudible; one that omits `sight` is invisible — by *absence of a rendering*, not by degrading a richer one. "Sam leaves to the east." and "You hear someone leave." are co-equal projections of one movement fact.
+- **Override-friendly.** Authors override the `sight` rendering's `messageId` (per-NPC or global) when the emitter builds the renderings map; `PerceptionService` selects by sense and is agnostic to which IDs are present.
+- **Reusable.** Future witnessable facts (combat, object sounds, smells) attach their own renderings map; `PerceptionService` gains no per-feature branches and no per-feature message IDs.
+- **Resolves the `if-services` coupling** flagged in Tech Debt above: because the emitter (e.g. `NpcService`) puts both the `sight` and `hearing` message IDs into the event's renderings, `PerceptionService` holds *no* stdlib message-ID imports — sense selection is fully generic. The move to `@sharpee/if-services` gets *easier*, not harder.
+- **Scope.** This supersedes the type-matching filter *for witnessable events*. The original type-based path (room-description darkness) remains for events that do not yet carry a renderings map; migrating those is follow-on work, not required by #159. If the sense set grows into a documented taxonomy, that taxonomy supersedes this amendment as its own ADR.
+
+**Session.** Branch `fix/platform-issues-book-qa`, issue #159.

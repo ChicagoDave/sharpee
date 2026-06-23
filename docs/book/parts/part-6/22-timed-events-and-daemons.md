@@ -238,8 +238,17 @@ lines to it — a story has just one.)
 > wait                      (repeat until "FEEDING TIME" is announced)
 > wait                      The goats start bleating
 > take feed                 Grab the feed
-> feed goats                The bleating stops
+> feed goats                Feed them — but the bleating runs on its own timer
+> wait                      …a turn or two later the bleating stops on its own
 ```
+
+The bleating ends when the daemon's three-turn countdown reaches zero — *not*
+because you fed the goats. The feeding action (Chapter 14) records that the goats
+were fed; it never touches `zoo.feeding_time_active`, which is the only state the
+daemon watches. If you *wanted* feeding to silence them early, you'd add an event
+handler on the feed action that clears that flag — a nice exercise, but the
+scheduler's own countdown is doing the stopping here, exactly as the conditional
+daemon above ("counting itself down and stopping") was built to do.
 
 ## Key takeaway
 
