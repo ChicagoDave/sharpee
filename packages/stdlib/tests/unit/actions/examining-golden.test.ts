@@ -104,6 +104,32 @@ describe('examiningAction (Golden Pattern)', () => {
         messageId: 'if.action.examining.examined_self'
       });
     });
+
+    test('should include the player description when examining self', () => {
+      const { world, player } = setupBasicWorld();
+      player.add({
+        type: TraitType.IDENTITY,
+        description: 'Just an ordinary visitor to the zoo.'
+      });
+
+      const command = createCommand(IFActions.EXAMINING, {
+        entity: player
+      });
+      const context = createRealTestContext(examiningAction, world, command);
+
+      const events = executeWithValidation(examiningAction, context);
+
+      // The `examined_self` template is `{description}` — the description param
+      // must be supplied or it renders literally (regression: see #164).
+      expectEvent(events, 'if.event.examined', {
+        self: true,
+        hasDescription: true,
+        messageId: 'if.action.examining.examined_self',
+        params: expect.objectContaining({
+          description: 'Just an ordinary visitor to the zoo.'
+        })
+      });
+    });
   });
 
   describe('Basic Examining', () => {
