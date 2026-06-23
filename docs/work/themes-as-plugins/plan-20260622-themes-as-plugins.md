@@ -20,14 +20,41 @@ persisted theme → `:root` default) is automatic from the token model — no fa
 
 ## Hard constraint: visual verification
 
-The visual ACs (AC-1/2/3/7 — does it actually skin, no regression to the 5 themes) can
-only be confirmed with the **Playwright QA harness** (the parallel book-QA session). This
-plan's per-phase "verify" steps that say *visual* must run there. The build/wiring ACs
-(AC-4/5/6/9) are verifiable in-repo. **Do not call a visual phase done without a harness run.**
+The visual ACs (AC-1/2/3/7 — does it actually skin, no regression to the 5 themes) require
+a **Playwright visual harness**. As of 2026-06-22 (session c9f121) one lives **in-repo** at
+`packages/platform-browser/tests/visual/` (`pnpm --filter @sharpee/platform-browser
+test:visual`) — a real-path suite (real engine CSS + real `.sharpee-*` shell DOM, Chromium,
+computed-style assertions). Later phases extend it: Phase 3 adds computed-style **parity**
+specs per migrated theme; Phase 4 adds a switch spec; Phase 6 runs the full set. The
+build/wiring ACs (AC-4/5/6/9) are verifiable without it. **Do not call a visual phase done
+without a harness run.**
 
 ## Phases
 
 ### Phase 1 — Theme engine + `:root` default in platform-browser [AC-1, AC-7]
+
+> **Status (2026-06-22, session c9f121): DONE — build/structural AND visual verified.**
+> Visual harness stood up in-repo (no longer waiting on a parallel session):
+> `packages/platform-browser/tests/visual/` — a real-path Playwright suite that loads
+> the actual `engine.css` + `base.css` against the real `.sharpee-*` shell DOM (read from
+> the platform's own `index.html`) in Chromium and asserts computed styles. Run with
+> `pnpm --filter @sharpee/platform-browser test:visual`. 3/3 pass:
+> AC-1 (zero-theme → white-on-blue skin), AC-7 (unknown theme → `:root` default), AC-7
+> (unset token within a theme → per-token `:root` fallback).
+> Created in `packages/platform-browser/styles/`:
+> - `base.css` — verbatim copy of the devkit structural CSS (owner header updated).
+> - `engine.css` — the `:root` default token set (all 16 tokens, classic = white-on-blue)
+>   + the de-scoped `modern-dark` component layer. The `#333` latent bug is avoided by
+>   construction (modern-dark used `var(--theme-border)`). Extraction proven faithful:
+>   the 285 declaration/selector lines diff IDENTICAL to the de-scoped source.
+> - `ts-forge.json` `{"assets":["styles/**"]}` + `files:["dist","dist-esm","styles"]`.
+> Verified: `tsf build --npm --package @sharpee/platform-browser` ships `base.css` +
+> `engine.css` to `~/.tsf-publish/sharpee/platform-browser/styles/`.
+> **NOT done:** AC-1 (zero-theme build renders fully-skinned white-on-blue) and AC-7
+> (unset token / unknown theme → `:root` default) are visual — require a harness run.
+> **Open question carried to Phase 2:** `decorations.css` (ADR-174 platform vocabulary)
+> is also a platform-shipped engine layer currently in devkit templates; it should move to
+> platform-browser too. Left out of Phase 1 to keep scope to the plan's `base`+`engine`.
 
 > **Extraction analysis (2026-06-22, diff-driven — done; authoring NOT yet done).**
 > Mapped `devkit/templates/browser/styles.css` (1988 lines):
@@ -73,6 +100,37 @@ plan's per-phase "verify" steps that say *visual* must run there. The build/wiri
   renders fully-skinned white-on-blue.
 
 ### Phase 2 — both browser builds source CSS from platform-browser [AC-4]
+
+> **Status (2026-06-22, session c9f121): DONE — both builds rewired + verified.**
+> - **decorations.css** moved into the engine layer: `packages/platform-browser/styles/`
+>   now holds base + engine + decorations (all three identical across the old devkit and
+>   repo-root template dirs, so the move is lossless). platform-browser `exports` gained
+>   `./package.json` + `./styles/*` so the devkit build can resolve the dir from a story's
+>   deps.
+> - **devkit author build** (`build-browser.ts`): copies base/engine/decorations from the
+>   resolved `@sharpee/platform-browser/styles`, no longer from `TEMPLATES_DIR`; ships no
+>   theme CSS/fonts; index.html links `engine.css`. Verified by the real-path
+>   `browser-build.test.ts` (fresh project → dist/web has base/engine/decorations, no
+>   styles.css/themes).
+> - **repokit in-repo build** (`commands/browser.ts`): copies the three from
+>   `packages/platform-browser/styles`; drops the `infocom.css→styles.css` theme + `themes/`;
+>   website mirror updated. Verified by a real `buildBrowserClient(root,'dungeo')` run:
+>   output CSS is **byte-identical** to platform-browser source, index.html links engine.css.
+> - **Stale-artifact cleanup:** both builds now `rm` an obsolete `styles.css` + `themes/`
+>   from the output (and repokit's website mirror), so a rebuild over a pre-ADR-188 output
+>   never serves stale theme CSS (confirmed against dungeo's existing output).
+> - **Both index.html templates** (devkit + repo-root) relink to `base → engine →
+>   decorations`, with a comment marking where Phase 4 injects theme links.
+> - **Scaffold audit:** `init.ts` / `init-browser.ts` only touch the author override —
+>   no stale theme/CSS refs.
+> - **Deletion deferred (deliberate):** the template theme files are NOT deleted.
+>   `templates/browser/styles.css` (the 5-theme kit) and `templates/browser/themes/`
+>   (system-6 fonts) are the **Phase 3 migration source**; `base.css`/`decorations.css` in
+>   the template dirs are now redundant-but-harmless. Delete all after Phase 3 packages exist.
+> **NOT done:** a full in-browser render of a built story (engine default skin) is Phase 6
+> cutover scope; the engine skin itself is already proven by the Phase 1 harness on the
+> byte-identical engine.css.
+
 Post-ADR-187 there are **two** browser builds in two separate tools — rewire **both**
 independently (ADR-187 R1: separate codebases, overlap duplicated):
 - **devkit author build** — `packages/devkit/src/standalone/build-browser.ts`.
@@ -125,13 +183,13 @@ audit the scaffold — `standalone/init.ts` + `init-browser.ts` (both reference
   resilience; wiring. Confirm AC-1…AC-9.
 
 ## Acceptance gate (ADR-188)
-- [ ] AC-1 engine + `:root` default in platform-browser; zero-theme build skins white-on-blue.
+- [x] AC-1 engine + `:root` default in platform-browser; zero-theme build skins white-on-blue. *(visual harness, 2026-06-22)*
 - [ ] AC-2 variables-only theme skins via the engine.
 - [ ] AC-3 5 themes ship as packages, removed from devkit, render identically.
-- [ ] AC-4 neither browser build (devkit author / repokit in-repo) ships theme CSS.
+- [x] AC-4 neither browser build (devkit author / repokit in-repo) ships theme CSS. *(real-path build tests + dungeo build, 2026-06-22)*
 - [ ] AC-5 switching works across default + packages.
 - [ ] AC-6 book Ch 26 rewritten; §26.5 variables-only + correct.
-- [ ] AC-7 unset token / unknown theme → `:root` default (never unskinned).
+- [x] AC-7 unset token / unknown theme → `:root` default (never unskinned). *(visual harness, 2026-06-22)*
 - [ ] AC-8 persisted theme id w/ no package → default on restore.
 - [ ] AC-9 self-describing packages; explicit opt-in, no node_modules scan.
 

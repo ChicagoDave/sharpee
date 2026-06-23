@@ -3,7 +3,8 @@
  * runInitCommand → runInitBrowserCommand → runBuildBrowserCommand against the
  * devkit-owned template, then asserts the real dist/web/ deliverable: an esbuilt
  * game.js bundled from the real @sharpee/* packages, the platform-owned page +
- * CSS + theme fonts, and the author override stylesheet.
+ * engine CSS (base/engine/decorations from @sharpee/platform-browser, ADR-188),
+ * and the author override stylesheet. No theme CSS/fonts ship (AC-4).
  *
  * No stubs of esbuild or the template — this is the integration's acceptance
  * gate (Integration Reality). The scratch project is created INSIDE the repo so
@@ -95,17 +96,20 @@ describe('browser scaffold (real path)', () => {
     const version = readFileSync(join(projectDir, 'src', 'version.ts'), 'utf-8');
     expect(version).toContain('export const STORY_VERSION');
 
-    // Platform-owned page: tokens substituted, references game.js + the override sheet.
+    // Platform-owned page: tokens substituted, references game.js, engine CSS + override.
     const html = readFileSync(join(web, 'index.html'), 'utf-8');
     expect(html).not.toContain('{{STORY_ID}}');
     expect(html).toContain('<script src="game.js">');
+    expect(html).toContain('href="engine.css"');
     expect(html).toContain('href="my-story.css"');
 
-    // Platform-owned CSS + theme fonts present.
-    for (const css of ['base.css', 'decorations.css', 'styles.css']) {
+    // Engine CSS present (base/engine/decorations from @sharpee/platform-browser, ADR-188).
+    for (const css of ['base.css', 'engine.css', 'decorations.css']) {
       expect(existsSync(join(web, css)), `${css} missing`).toBe(true);
     }
-    expect(existsSync(join(web, 'themes', 'system-6', 'fonts', 'ChicagoFLF.woff2'))).toBe(true);
+    // AC-4: no theme CSS and no theme fonts are shipped — themes are @sharpee/theme-* packages.
+    expect(existsSync(join(web, 'styles.css')), 'styles.css should not ship').toBe(false);
+    expect(existsSync(join(web, 'themes')), 'themes/ should not ship').toBe(false);
 
     // Author override emitted (stubbed if absent; here seeded by init-browser).
     expect(existsSync(join(web, 'my-story.css'))).toBe(true);

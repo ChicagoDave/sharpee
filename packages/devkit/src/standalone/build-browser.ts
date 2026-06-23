@@ -2,10 +2,11 @@
  * CLI: sharpee build-browser
  *
  * Bundles a Sharpee story for the browser into dist/web/. The bundle (game.js)
- * is esbuilt from src/browser-entry.ts; the HTML page and platform CSS
- * (base/decorations/styles + theme fonts) are owned by the platform and copied
- * fresh from devkit's bundled template every build. The author's only CSS
- * surface is browser/<story-id>.css, loaded last so it wins the cascade.
+ * is esbuilt from src/browser-entry.ts; the HTML page is a devkit template, and
+ * the engine CSS (base/engine/decorations) is owned by @sharpee/platform-browser
+ * (ADR-188) and copied fresh from the resolved package every build. No theme CSS
+ * is shipped (AC-4) — themes are @sharpee/theme-* packages (Phase 4). The author's
+ * only CSS surface is browser/<story-id>.css, loaded last so it wins the cascade.
  */
 
 import * as fs from 'fs';
@@ -61,14 +62,17 @@ function processTemplate(content: string, info: ProjectInfo): string {
     .replace(/\{\{STORY_TITLE\}\}/g, info.storyTitle);
 }
 
-/** Copy a platform asset from devkit's template into the output, warning if absent. */
-function copyPlatformAsset(name: string, outDir: string): void {
-  const src = path.join(TEMPLATES_DIR, name);
-  if (fs.existsSync(src)) {
-    fs.cpSync(src, path.join(outDir, name), { recursive: true });
-  } else {
-    console.warn(`  ⚠ Template asset not found: ${name}`);
-  }
+/**
+ * Resolve @sharpee/platform-browser's `styles/` dir from the project's deps.
+ * The engine CSS (base/engine/decorations) is owned by platform-browser (ADR-188),
+ * not devkit's template dir.
+ * @throws if platform-browser is not resolvable from the project.
+ */
+function resolveEngineStylesDir(projectDir: string): string {
+  const pkgJson = require.resolve('@sharpee/platform-browser/package.json', {
+    paths: [projectDir],
+  });
+  return path.join(path.dirname(pkgJson), 'styles');
 }
 
 /** Run the build-browser command. */
@@ -136,14 +140,24 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
     process.exit(1);
   }
 
-  // Platform-owned page + CSS + theme fonts: always copied fresh from devkit.
+  // index.html (the page) stays a devkit template — substitute story tokens.
   let html = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf-8');
   fs.writeFileSync(path.join(outDir, 'index.html'), processTemplate(html, info));
   console.log('  ✓ Copied index.html');
-  for (const asset of ['base.css', 'decorations.css', 'styles.css', 'themes']) {
-    copyPlatformAsset(asset, outDir);
+
+  // Engine CSS (base + engine + decorations) is owned by @sharpee/platform-browser
+  // (ADR-188) and copied fresh from the resolved package every build. No theme CSS
+  // is shipped here (AC-4) — themes arrive as @sharpee/theme-* packages (Phase 4).
+  const engineStylesDir = resolveEngineStylesDir(projectDir);
+  for (const css of ['base.css', 'engine.css', 'decorations.css']) {
+    fs.copyFileSync(path.join(engineStylesDir, css), path.join(outDir, css));
   }
-  console.log('  ✓ Copied platform CSS + themes');
+  // Remove obsolete theme artifacts left by a pre-ADR-188 build, so a rebuild over an
+  // existing output never serves stale theme CSS/fonts (AC-4).
+  for (const stale of ['styles.css', 'themes']) {
+    fs.rmSync(path.join(outDir, stale), { recursive: true, force: true });
+  }
+  console.log('  ✓ Copied platform engine CSS (base, engine, decorations)');
 
   // Author override stylesheet → dist/web/<story-id>.css. index.html links it last,
   // so write an empty stub when the author hasn't added one (avoids a 404).
@@ -200,7 +214,7 @@ Options:
 Output (dist/web/):
   game.js          Story + engine + browser client (one bundle)
   index.html       The page (platform-owned)
-  base.css, decorations.css, styles.css, themes/   Platform CSS
+  base.css, engine.css, decorations.css   Engine CSS (from @sharpee/platform-browser)
   <story-id>.css   Your overrides (from browser/<story-id>.css)
   <assets>         Contents of your assets/ dir (audio, images, …), copied as-is
 `);

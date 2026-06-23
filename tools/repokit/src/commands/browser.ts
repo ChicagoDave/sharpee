@@ -4,7 +4,9 @@
  *
  * Owner context: @sharpee/devkit (ADR-180 Phase 3b). The author's player-facing
  * deliverable (AC-9): an IIFE game.js + css + html that boots in one load, portable
- * to any static host. Byte-for-byte parity with build.sh until the 3d cutover.
+ * to any static host. Was byte-for-byte parity with build.sh; ADR-188 deliberately
+ * diverges on CSS — the engine CSS (base/engine/decorations) now comes from
+ * @sharpee/platform-browser and no theme CSS/fonts are shipped (themes are packages).
  *
  * Public interface: buildBrowserClient(root, story, opts) -> void.
  */
@@ -66,16 +68,19 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
   );
 
   const tpl = join(root, 'templates', 'browser');
-  // index.html (title set at runtime by BrowserClient from story config).
+  // index.html stays a repo template (title set at runtime by BrowserClient from story config).
   copyIfExists(join(tpl, 'index.html'), join(outDir, 'index.html'));
-  // CSS: base (structural, ADR-170), decorations (prose vocabulary, ADR-174), infocom→styles (theme).
-  copyIfExists(join(tpl, 'base.css'), join(outDir, 'base.css'));
-  copyIfExists(join(tpl, 'decorations.css'), join(outDir, 'decorations.css'));
-  copyIfExists(join(tpl, 'infocom.css'), join(outDir, 'styles.css'));
-  // Theme assets (per-theme bundled webfonts). rm -rf first to avoid cp-into-existing nesting.
-  if (existsSync(join(tpl, 'themes'))) {
-    rmSync(join(outDir, 'themes'), { recursive: true, force: true });
-    cpSync(join(tpl, 'themes'), join(outDir, 'themes'), { recursive: true });
+  // Engine CSS (base/engine/decorations) is owned by @sharpee/platform-browser (ADR-188),
+  // copied from the in-repo package. No theme CSS or theme fonts are shipped (AC-4) — themes
+  // arrive as @sharpee/theme-* packages (Phase 4).
+  const engineStyles = join(root, 'packages', 'platform-browser', 'styles');
+  cpSync(join(engineStyles, 'base.css'), join(outDir, 'base.css'));
+  cpSync(join(engineStyles, 'engine.css'), join(outDir, 'engine.css'));
+  cpSync(join(engineStyles, 'decorations.css'), join(outDir, 'decorations.css'));
+  // Remove obsolete theme artifacts left by a pre-ADR-188 build, so a rebuild over an
+  // existing output never serves stale theme CSS/fonts (AC-4).
+  for (const stale of ['styles.css', 'themes']) {
+    rmSync(join(outDir, stale), { recursive: true, force: true });
   }
 
   // Story assets (audio, images): copy the contents of <story>/assets/ into the output.
@@ -95,11 +100,11 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
     mkdirSync(webDir, { recursive: true });
     cpSync(join(outDir, 'game.js'), join(webDir, 'game.js'));
     if (existsSync(join(outDir, 'index.html'))) cpSync(join(outDir, 'index.html'), join(webDir, 'index.html'));
-    if (existsSync(join(outDir, 'base.css'))) cpSync(join(outDir, 'base.css'), join(webDir, 'base.css'));
-    if (existsSync(join(outDir, 'styles.css'))) cpSync(join(outDir, 'styles.css'), join(webDir, 'styles.css'));
-    if (existsSync(join(outDir, 'themes'))) {
-      rmSync(join(webDir, 'themes'), { recursive: true, force: true });
-      cpSync(join(outDir, 'themes'), join(webDir, 'themes'), { recursive: true });
+    for (const css of ['base.css', 'engine.css', 'decorations.css']) {
+      if (existsSync(join(outDir, css))) cpSync(join(outDir, css), join(webDir, css));
+    }
+    for (const stale of ['styles.css', 'themes']) {
+      rmSync(join(webDir, stale), { recursive: true, force: true });
     }
   }
 

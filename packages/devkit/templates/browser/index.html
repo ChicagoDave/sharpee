@@ -4,9 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sharpee</title>
+  <!-- Engine CSS from @sharpee/platform-browser (ADR-188): base (structural) →
+       engine (tokens + un-scoped component layer) → decorations (prose vocabulary). -->
   <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="engine.css">
   <link rel="stylesheet" href="decorations.css">
-  <link rel="stylesheet" href="styles.css">
+  <!-- Theme packages (@sharpee/theme-*), if any, are injected here by the build —
+       after the engine, before the author override (ADR-188 Phase 4). -->
   <!-- Author override: edit browser/{{STORY_ID}}.css. Loaded last so it wins the cascade. -->
   <link rel="stylesheet" href="{{STORY_ID}}.css">
 </head>

@@ -6,6 +6,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./package.json": "./package.json",
+    "./styles/*": "./styles/*",
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
@@ -37,12 +39,18 @@
       "esm": "./dist-esm/channels/status.js"
     }
   },
+  "files": [
+    "dist",
+    "dist-esm",
+    "styles"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist dist-esm tsconfig.tsbuildinfo",
     "test": "vitest",
-    "test:ci": "vitest run"
+    "test:ci": "vitest run",
+    "test:visual": "playwright test --config tests/visual/playwright.config.ts"
   },
   "peerDependencies": {
     "@sharpee/channel-service": "workspace:*",
@@ -61,6 +69,7 @@
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
+    "@playwright/test": "^1.48.0",
     "@types/lz-string": "^1.5.0",
     "happy-dom": "^15.7.4",
     "typescript": "^5.3.0",

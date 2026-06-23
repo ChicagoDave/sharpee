@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sharpee</title>
+  <!-- Engine CSS from @sharpee/platform-browser (ADR-188): base (structural) →
+       engine (tokens + un-scoped component layer) → decorations (prose vocabulary).
+       Theme packages (@sharpee/theme-*), if any, load after this set (Phase 4). -->
   <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="engine.css">
   <link rel="stylesheet" href="decorations.css">
-  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="sharpee-window">

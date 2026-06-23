@@ -1,0 +1,434 @@
+/*
+ * engine.css — the Sharpee browser theme engine (ADR-188).
+ *
+ * Owner: @sharpee/platform-browser (the published browser engine layer).
+ *
+ * This is the single, un-scoped consumer layer for the `--theme-*` design
+ * tokens. Every visual component rule here reads tokens via var(--theme-*)
+ * and carries NO `[data-theme]` selector — so it applies unconditionally.
+ * A theme is therefore just a token override:
+ *
+ *     [data-theme="<id>"] { --theme-bg: …; --theme-text: …; … }
+ *
+ * shipped as an `@sharpee/theme-*` package (ADR-188). The `:root` block
+ * below supplies the default token set ("classic" — white-on-blue), so the
+ * engine is fully skinned with zero themes installed and degrades to the
+ * default for any unset token, unknown theme id, or uninstalled persisted
+ * theme (AC-7). No fallback code is required — the cascade does it.
+ *
+ * Provenance: the component rules are the de-scoped `modern-dark` kit from
+ * the former devkit `templates/browser/styles.css`. modern-dark was the
+ * token-pure source of truth (it used var(--theme-border) where dos-classic
+ * had a hardcoded `#333` — that latent bug is fixed here by construction).
+ * Theme-specific flourishes (retro scanlines, paper backdrop opacity, the
+ * system-6 chrome) are NOT here; they live in their theme packages (ADR-188
+ * Phase 3).
+ *
+ * Load order (ADR-188): base.css → engine.css → [theme packages] →
+ * [author override]. Theme CSS MUST load after this file so equal-specificity
+ * token overrides win by source order.
+ */
+
+/* ============================================================
+   Default token set — "classic" (white-on-blue)
+   The published --theme-* contract (16 tokens, AC-7).
+   ============================================================ */
+
+:root {
+  --theme-bg: #0000aa;
+  --theme-bg-alt: #000088;
+  --theme-text: #ffffff;
+  --theme-text-muted: #aaaaaa;
+  --theme-accent: #00aaaa;
+  --theme-accent-text: #000000;
+  --theme-border: #00aaaa;
+  --theme-input-bg: transparent;
+  --theme-menu-bg: #0000aa;
+  --theme-menu-hover: #000088;
+  --theme-font: "Perfect DOS VGA 437", "Consolas", "Courier New", monospace;
+  --theme-font-size: 16px;
+  --theme-line-height: 1.4;
+
+  /* Extended tokens. Consumed by some theme flourishes (e.g. system-6's
+     distinct desktop background and chrome/body fonts). They default to the
+     base values so the contract is complete and nothing is ever unset. */
+  --theme-desktop-bg: var(--theme-bg);
+  --theme-font-body: var(--theme-font);
+  --theme-font-chrome: var(--theme-font);
+}
+
+/* ============================================================
+   Body
+   ============================================================ */
+
+body {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+/* ============================================================
+   Window chrome
+   ============================================================ */
+
+.sharpee-window-title-bar {
+  background: var(--theme-bg-alt);
+  height: 28px;
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+.sharpee-window-title {
+  font-weight: bold;
+  margin-right: 16px;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   Menu bar
+   ============================================================ */
+
+.sharpee-menu-bar {
+  background: var(--theme-bg-alt);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
+}
+
+.sharpee-menu-bar-trigger {
+  color: var(--theme-text);
+  border-radius: 2px;
+}
+
+.sharpee-menu-bar-trigger:hover,
+.sharpee-menu-bar-item--open > .sharpee-menu-bar-trigger {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.sharpee-menu-dropdown {
+  background: var(--theme-menu-bg);
+  border: 1px solid var(--theme-border);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.sharpee-menu-option {
+  color: var(--theme-text);
+}
+
+.sharpee-menu-option:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.sharpee-menu-separator {
+  background: var(--theme-border);
+}
+
+/* ============================================================
+   Status bar
+   ============================================================ */
+
+.sharpee-status-bar {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  font-weight: bold;
+}
+
+#location-name {
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   Prose pane
+   ============================================================ */
+
+.sharpee-prose-pane p {
+  margin-bottom: 0.8em;
+}
+
+.sharpee-prose-pane p:last-child {
+  margin-bottom: 0;
+}
+
+.sharpee-prose-pane .command-echo {
+  color: var(--theme-text-muted);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.sharpee-prose-pane .system-message {
+  color: var(--theme-accent);
+}
+
+.sharpee-prose-pane .game-status {
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  padding: 0.5em;
+  border: 1px solid var(--theme-border);
+}
+
+.sharpee-prose-pane {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-accent) var(--theme-bg);
+}
+
+.sharpee-prose-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sharpee-prose-pane::-webkit-scrollbar-track {
+  background: var(--theme-bg);
+}
+
+.sharpee-prose-pane::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* ============================================================
+   Input bar
+   ============================================================ */
+
+.sharpee-input-bar {
+  background: var(--theme-bg);
+  border-top: 2px solid var(--theme-border);
+}
+
+.sharpee-input-prompt {
+  color: var(--theme-text);
+}
+
+.sharpee-input-field {
+  background: var(--theme-input-bg);
+  color: var(--theme-text);
+  caret-color: var(--theme-text);
+}
+
+.sharpee-input-field::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.5;
+}
+
+/* ============================================================
+   Dialogs
+   ============================================================ */
+
+.sharpee-dialog {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border: 2px solid var(--theme-border);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+.sharpee-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.sharpee-dialog-title {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.sharpee-dialog-buttons {
+  border-top: 1px solid var(--theme-border);
+}
+
+.sharpee-dialog-button {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.sharpee-dialog-button:hover {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+  border-color: var(--theme-accent);
+}
+
+.sharpee-dialog-button:focus {
+  outline: 1px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+.sharpee-dialog-button:disabled {
+  color: var(--theme-text-muted);
+}
+
+/* ============================================================
+   Dialog body internals (save/restore UX, not part of the contract)
+   ============================================================ */
+
+.save-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.save-input-row label {
+  white-space: nowrap;
+}
+
+#save-name-input {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text);
+  padding: 4px 6px;
+}
+
+#save-name-input:focus {
+  border-color: var(--theme-accent);
+}
+
+.saves-list-label {
+  color: var(--theme-text-muted);
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.saves-list {
+  background: var(--theme-bg-alt);
+  border: 1px solid var(--theme-border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.save-slot {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.save-slot:last-child {
+  border-bottom: none;
+}
+
+.save-slot:hover {
+  background: var(--theme-menu-hover);
+}
+
+.save-slot.selected {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.save-slot-name {
+  font-weight: bold;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.save-slot-info {
+  color: var(--theme-text-muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.save-slot.selected .save-slot-info {
+  color: var(--theme-accent-text);
+}
+
+.no-saves-message {
+  color: var(--theme-text-muted);
+  font-style: italic;
+  padding: 12px;
+  text-align: center;
+}
+
+.startup-info {
+  color: var(--theme-accent);
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.startup-question {
+  color: var(--theme-text);
+  margin: 0;
+}
+
+.saves-list::-webkit-scrollbar,
+.sharpee-dialog-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.saves-list::-webkit-scrollbar-track,
+.sharpee-dialog-body::-webkit-scrollbar-track {
+  background: var(--theme-bg-alt);
+}
+
+.saves-list::-webkit-scrollbar-thumb,
+.sharpee-dialog-body::-webkit-scrollbar-thumb {
+  background: var(--theme-accent);
+}
+
+/* ============================================================
+   Mobile
+   ============================================================ */
+
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+  .sharpee-status-bar {
+    font-size: 12px;
+  }
+  .sharpee-input-prompt {
+    font-size: 16px;
+  }
+  .sharpee-dialog {
+    min-width: 280px;
+    margin: 12px;
+  }
+  .save-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .sharpee-dialog-buttons {
+    gap: 12px;
+  }
+  .sharpee-dialog-button {
+    flex: 1;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  body {
+    font-size: 13px;
+  }
+  .sharpee-status-bar {
+    font-size: 11px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  #location-name {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+  #score-turns {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .sharpee-prose-pane p {
+    margin-bottom: 0.5em;
+  }
+}
