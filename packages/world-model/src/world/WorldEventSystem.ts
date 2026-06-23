@@ -289,8 +289,9 @@ export class WorldEventSystem {
   // ── Event application ───────────────────────────────────────────────
 
   /**
-   * Apply an event to the world. Validates first, then invokes the handler
-   * and records the event in history.
+   * Apply an event to the world. Validates first, then records the event in
+   * history. Handler dispatch is NOT done here — it is owned by the
+   * EventProcessor (ADR-086, ISSUE #155); see the note in the body.
    *
    * @param event - The event to apply
    * @throws Error if validation fails
@@ -300,12 +301,12 @@ export class WorldEventSystem {
       throw new Error(`Cannot apply event of type '${event.type}': validation failed`);
     }
 
-    const world = this.getWorld();
-    const handler = this.eventHandlers.get(event.type);
-    if (handler) {
-      handler(event, world);
-    }
-
+    // Handler dispatch is owned by the EventProcessor (ADR-086): handlers
+    // registered via registerEventHandler are wired into the processor's
+    // storyHandlers (connectEventProcessor) and invoked there. applyEvent
+    // must NOT also invoke them — doing both fires every handler twice
+    // (ISSUE #155; ADR-086 explicitly rejected the "make applyEvent work"
+    // alternative for this reason). applyEvent only validates and records.
     this.appliedEvents.push(event);
 
     if (this.appliedEvents.length > this.maxEventHistory) {
