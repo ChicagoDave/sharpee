@@ -1,8 +1,8 @@
 # Scoring & Endgame: Winning the Game
 
 A game needs a way to keep score and a way to end. The zoo gives points for
-seeing the sights and doing the activities — visiting each exhibit, feeding the
-animals, pressing a souvenir penny, reading the brochure — and when the player has
+seeing the sights and doing the activities (visiting each exhibit, feeding the
+animals, pressing a souvenir penny, reading the brochure), and when the player has
 done it all, the game declares victory. This final mechanic chapter ties together
 much of what came before: a **score ledger** that records achievements, event
 handlers that award points as the player plays, and a **victory daemon** that
@@ -19,7 +19,7 @@ for it again.
 // Set the maximum in initializeWorld() so "score" can show "X out of Y"
 world.setMaxScore(75);
 
-// Award points — idempotent: the same ID never scores twice
+// Award points (idempotent): the same ID never scores twice
 const awarded = world.awardScore(
   'zoo.visit.petting_zoo',  // unique ID
   5,                        // points
@@ -34,7 +34,7 @@ const max = world.getMaxScore();
 
 > **The mistake everyone makes once:** reusing a score ID for two different
 > achievements. Because awarding is idempotent on the ID, the second achievement
-> silently never scores — the ledger thinks it's already been counted. Give every
+> silently never scores; the ledger thinks it's already been counted. Give every
 > achievement its own descriptive, unique ID.
 
 ## Defining the scoring table
@@ -86,8 +86,8 @@ const ScorePoints: Record<string, number> = {
 | Read the brochure | 5 |
 | **Total** | **75** |
 
-Two more tables finish the setup — one maps room names to their visit-score id (the
-room-visit handler reads it), and one holds the endgame message id:
+Two more tables finish the setup: one maps room names to their visit-score id (the
+room-visit handler reads it), and one holds the endgame message id.
 
 ```typescript
 const ROOM_SCORE_MAP: Record<string, string> = {
@@ -109,7 +109,7 @@ and the `this.entityIds` field you established in *Event Handlers* (Chapter 13).
 ## Awarding points as the player plays
 
 Scoring hooks into the action layers you already know. Some awards live inside a
-custom action or capability behavior — petting an animal awards its points right
+custom action or capability behavior; petting an animal awards its points right
 in the behavior's `execute()`:
 
 ```typescript
@@ -133,7 +133,7 @@ world.chainEvent('if.event.actor_moved', (event, w) => {
   if (!scoreId) return null;
 
   w.awardScore(scoreId, ScorePoints[scoreId], `Visited ${roomName}`);
-  return null;   // scoring is silent — no custom event
+  return null;   // scoring is silent; no custom event
 }, { key: 'zoo.chain.room-visit-scoring' });
 ```
 
@@ -188,12 +188,12 @@ w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
 
 With all twelve awards in place the scores sum to the full 75, so the victory
 daemon below has a target it can actually reach. Leave any of these four out and
-the game caps at 40 (or wherever you stopped) and the win never fires — a useful
+the game caps at 40 (or wherever you stopped) and the win never fires, a useful
 reminder that the max score and the awarding code have to agree.
 
 ## The victory daemon
 
-The win condition is checked by a daemon — exactly the scheduler pattern from the
+The win condition is checked by a daemon, exactly the scheduler pattern from the
 last chapter. It watches the score each turn and, when the maximum is reached,
 marks the game over and emits the victory message. Its `priority: 100` makes it
 run *last*, after every other daemon and all the turn's scoring has settled:
@@ -240,7 +240,7 @@ a raw id:
 
 ```typescript
 language.addMessage(ScoreMessages.VICTORY,
-  "Congratulations! You've earned your JUNIOR ZOOKEEPER badge — you visited " +
+  "Congratulations! You've earned your JUNIOR ZOOKEEPER badge. You visited " +
   'every exhibit, fed the animals, collected souvenirs, and made memories to ' +
   'last a lifetime.\n\n*** You have won ***');
 ```
@@ -254,13 +254,13 @@ language.addMessage(ScoreMessages.VICTORY,
 ## Try it
 
 ```
-> score                     Check the score — 0 out of 75
-> south; east               Visit the petting zoo — +5
+> score                     Check the score: 0 out of 75
+> south; east               Visit the petting zoo, +5
 > score                     Now 5 out of 75
 > take feed
 > feed goats                +10
 > ... visit every exhibit, feed, pet, photograph, press a penny, read ...
-> score                     75 out of 75 — victory!
+> score                     75 out of 75, victory!
 ```
 
 ## Key takeaway

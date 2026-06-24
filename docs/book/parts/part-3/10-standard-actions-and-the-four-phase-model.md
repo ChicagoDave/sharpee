@@ -7,8 +7,8 @@
 # The Standard Actions: The Four-Phase Model
 
 So far the zoo has been a place to *be*: rooms to walk through, objects to examine,
-containers to open. Everything the player could do already worked — `take`, `drop`,
-`open`, `go`, `examine` — and you never wrote a line of code to make it so. This
+containers to open. Everything the player could do already worked: `take`, `drop`,
+`open`, `go`, `examine`. You never wrote a line of code to make it so. This
 volume is about how a world *responds*, and it starts with the machinery you've been
 leaning on all along: the standard action library, and the four-phase model every
 action in Sharpee obeys.
@@ -35,8 +35,8 @@ and the matching verb lights up. (The full catalog lives in Appendix B.)
 
 ## One shape for every action
 
-Every action — the standard ones above, and the custom ones you'll write in Volume
-IV — has the same four-part structure. Chapter 3 sketched it as "check, change,
+Every action, the standard ones above and the custom ones you'll write in Volume
+IV, has the same four-part structure. Chapter 3 sketched it as "check, change,
 report"; here is the whole contract:
 
 ```typescript
@@ -63,13 +63,13 @@ floor. `validate` decides; it never changes anything.
 
 If validation passed, `execute` runs and performs the actual mutation — moving the
 item into the player's inventory, flipping `isOpen` to `true`. This is the *only*
-phase that changes game state, and it's meant to be small: the real work usually
+phase that changes game state, and it's meant to be small. The real work usually
 lives in a **behavior** (more on those in Volume IV), with `execute` just
 coordinating it.
 
 ### report — record what happened
 
-`report` produces the **events** for the turn — the `if.event.taken`,
+`report` produces the **events** for the turn: the `if.event.taken` and
 `if.event.opened` records you met in Chapter 3, each carrying a message id rather
 than text. It generates events; it doesn't mutate. Anything `execute` learned that
 `report` needs is handed forward through `context.sharedData`, never smuggled onto
@@ -79,7 +79,7 @@ the context itself.
 
 If `validate` returns `{ valid: false }`, the engine skips `execute` and `report`
 and calls `blocked` instead. Its job is to turn the validation error into an event
-the player can understand — "You can't take that." A refused action is still a
+the player can understand, such as "You can't take that." A refused action is still a
 complete, well-formed turn; it simply reports a different outcome.
 
 ## Why the discipline matters
@@ -89,7 +89,7 @@ execute, events only in report*) is what makes the whole system predictable and
 extensible:
 
 - **Validation can be trusted.** Because `validate` never changes anything, the
-  engine can ask "would this work?" without side effects — which is how the parser
+  engine can ask "would this work?" without side effects, which is how the parser
   can disambiguate and how a command can be checked before it commits.
 - **Every action reads the same way.** Learn the shape once and you can read any
   action in the library, and write your own that slots in beside them.
@@ -97,7 +97,7 @@ extensible:
   them happens in another. That clean seam is what lets event handlers (Chapter 13)
   react to what an action did, and what makes saved games and replays reliable.
 
-You won't write an action in this chapter — the standard library already covers the
+You won't write an action in this chapter, because the standard library already covers the
 zoo. But the four-phase model is the backbone of everything ahead: custom actions in
 Chapter 14 fill in all four phases by hand, capability dispatch in Chapter 15
 delegates them per entity, and event handlers in Chapter 13 hang new consequences
@@ -106,7 +106,7 @@ off the events `report` emits.
 ## Key takeaway
 
 The standard library gives you a complete set of IF verbs for free, each wired to
-the traits you add to entities — no registration required. Behind every verb is the
+the traits you add to entities, with no registration required. Behind every verb is the
 same four-phase contract: **validate** (can it happen?), **execute** (change the
 world), **report** (record what happened as events), and **blocked** (explain a
 refusal). Mutations live only in `execute`, events only in `report`, and data passes

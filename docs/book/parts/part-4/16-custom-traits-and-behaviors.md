@@ -3,7 +3,7 @@
 Every object in the zoo has been assembled from traits — `IdentityTrait`,
 `RoomTrait`, `ContainerTrait`, `LightSourceTrait`. You've even written one:
 `PettableTrait`, back in *Capability Dispatch*. This chapter steps back to the
-layer those traits live in — the world model — and shows how to build your own
+layer those traits live in, the world model, and shows how to build your own
 trait, and the **behavior** that owns the rules around it, when the standard kit
 doesn't carry the state your story needs.
 
@@ -11,18 +11,18 @@ doesn't carry the state your story needs.
 
 The world model draws a sharp line:
 
-- A **trait** is *data*. It holds the state an entity carries — a name, a
-  capacity, whether a light is lit — and nothing else. No logic.
+- A **trait** is *data*. It holds the state an entity carries (a name, a
+  capacity, whether a light is lit) and nothing else. No logic.
 - A **behavior** is *rules*. It's the code that reads and changes trait data,
   enforcing whatever constraints apply.
 
-Every built-in pair follows this split. `LightSourceTrait` is just fields —
+Every built-in pair follows this split. `LightSourceTrait` is just fields:
 `brightness`, `isLit`, `fuelRemaining`. The matching `LightSourceBehavior` is where
 the *logic* lives: lighting fails when the fuel is gone, extinguishing flips the
 flag, "is it lit?" falls back to the switch. The trait never decides anything; the
 behavior decides everything.
 
-This is the same principle you met in Chapter 10 from the action side — *behaviors
+This is the same principle you met in Chapter 10 from the action side: *behaviors
 own mutations, actions coordinate them*. Here you see the other half: the trait
 that holds the state, and the behavior that guards it.
 
@@ -31,11 +31,11 @@ that holds the state, and the behavior that guards it.
 A trait is a small class that implements `ITrait`. It needs a `type` string (both
 as a static, so code can refer to it, and as an instance field, so the engine can
 identify it on an entity) and whatever data fields it carries. By convention,
-custom trait types take a story-specific prefix — `zoo.trait.…` — to stay clear of
+custom trait types take a story-specific prefix, `zoo.trait.…`, to stay clear of
 the platform's built-ins.
 
 Suppose the feed dispenser in the petting zoo should run dry after a few uses. The
-state it needs — a count of charges — isn't in any standard trait, so you write
+state it needs, a count of charges, isn't in any standard trait, so you write
 one:
 
 ```typescript
@@ -54,7 +54,7 @@ export class DispenserTrait implements ITrait {
 }
 ```
 
-That's the whole trait — pure data and a constructor that copies in any overrides,
+That's the whole trait: pure data and a constructor that copies in any overrides,
 exactly like the built-ins. You add it to an entity the same way you add any trait:
 
 ```typescript
@@ -63,8 +63,8 @@ dispenser.add(new DispenserTrait({ chargesRemaining: 5 }));
 
 ## Defining the behavior
 
-The trait holds the count; the *rule* — "you can dispense only while charges
-remain, and each use spends one" — belongs in a behavior. A behavior is typically a
+The trait holds the count; the *rule* ("you can dispense only while charges
+remain, and each use spends one") belongs in a behavior. A behavior is typically a
 class of static methods that take the entity, fetch the trait, and change it:
 
 This is the first time we import from one of our *own* files rather than a
@@ -94,7 +94,7 @@ export class DispenserBehavior {
 
 Notice what the behavior does and doesn't do. It performs the mutation
 (`chargesRemaining -= 1`) and returns a small result (`true`/`false`); it doesn't
-print anything or emit events. That keeps it pure and testable — you can call
+print anything or emit events. That keeps it pure and testable: you can call
 `DispenserBehavior.dispense(d)` in a test and assert the count dropped, with no
 parser, no turn, no text in the way. (The platform's own behaviors share this
 shape; many extend a small `Behavior` base class that adds helpers like a
@@ -102,15 +102,15 @@ trait-required check, but the essence is just static methods over trait data.)
 
 ## Putting the pair to work
 
-A trait and behavior are inert on their own — something has to *call* the behavior.
+A trait and behavior are inert on their own; something has to *call* the behavior.
 That caller is one of the coordination tools from earlier volumes:
 
 ```typescript
 // inside a custom "operate dispenser" action's execute phase, or an event handler:
 if (DispenserBehavior.dispense(dispenser)) {
-  // success — hand out a serving of feed
+  // success: hand out a serving of feed
 } else {
-  // empty — report that it's out
+  // empty: report that it's out
 }
 ```
 
@@ -131,8 +131,8 @@ already seen:
 | Give entities genuinely new *state* and *rules* | A **custom trait + behavior** (this chapter) |
 
 The deciding question is whether your idea is really new *state on entities*. If an
-object needs to remember something the standard traits don't model — charges, a
-temperature, a loyalty score — and needs rules around how that something changes,
+object needs to remember something the standard traits don't model (charges, a
+temperature, a loyalty score) and needs rules around how that something changes,
 that's a trait-and-behavior. If you only need to react, or to add a verb, the
 lighter tools fit better.
 

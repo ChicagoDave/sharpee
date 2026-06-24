@@ -1,9 +1,9 @@
 # Scenery & Portable Objects: Everything Is Portable by Default
 
 A world you can only walk through is a stage set. In this chapter the zoo gains
-two kinds of things: **scenery** you can examine but never carry off — fences,
-benches, animals — and **portable items** the player can take, pocket, and drop —
-a zoo map, a souvenir penny, a bag of feed. Together they're the difference
+two kinds of things: **scenery** you can examine but never carry off (fences,
+benches, animals) and **portable items** the player can take, pocket, and drop
+(a zoo map, a souvenir penny, a bag of feed). Together they're the difference
 between a room description and a place you can rummage through.
 
 The surprising part is how little code each one takes. One of them takes *no new
@@ -15,7 +15,7 @@ Here is Sharpee's central rule about objects, and it catches everyone the first
 time: **an entity is takeable unless you say otherwise.** Create something with an
 `IdentityTrait` and nothing else, and the player can pick it up, carry it between
 rooms, and drop it wherever they like. There is no `PortableTrait`, because
-portability isn't a feature you add — it's the starting state.
+portability isn't a feature you add. It's the starting state.
 
 So a souvenir penny needs only its identity and a home:
 
@@ -31,7 +31,7 @@ world.moveEntity(penny.id, mainPath.id);
 
 That's a complete, takeable object. `EntityType.ITEM` is the type label for a
 generic portable thing; the `IdentityTrait` gives it a name, description, and
-aliases. No trait is needed to make it carryable — that's the default.
+aliases. No trait is needed to make it carryable; that's the default.
 
 ## SceneryTrait takes portability away
 
@@ -52,7 +52,7 @@ world.moveEntity(fence.id, entrance.id);
 ```
 
 Now `take fence` gives the player *"iron fence is fixed in place."* But
-`examine fence` still works — scenery blocks *taking*, not *looking*. The entity
+`examine fence` still works: scenery blocks *taking*, not *looking*. The entity
 keeps its `IdentityTrait`, so its description is always readable.
 
 > **The mistake everyone makes once:** forgetting `SceneryTrait`. Because items
@@ -85,7 +85,7 @@ to put a thing in their pocket, it's scenery.
 
 Whether takeable or fixed, every object should answer to more than its exact
 name. If a room mentions "a wrought-iron fence," the player might type
-`examine fence`, `examine railing`, or `examine wrought-iron fence` — and all of
+`examine fence`, `examine railing`, or `examine wrought-iron fence`, and all of
 them should land:
 
 ```typescript
@@ -94,7 +94,7 @@ aliases: ['fence', 'iron fence', 'wrought-iron fence', 'railing'],
 
 > **The other easy miss:** thin aliases. A player who can see a thing in the
 > description but can't refer to it the way they'd naturally say it will assume
-> it isn't really there. Be generous — every noun in your prose is a word the
+> it isn't really there. Be generous: every noun in your prose is a word the
 > player may type.
 
 ## What you get for free
@@ -160,8 +160,8 @@ const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
 rabbits.add(new IdentityTrait({
   name: 'rabbits',
   description:
-    'A pair of Holland Lop rabbits with floppy ears and twitching noses — ' +
-    'one pure white, the other brown and cream.',
+    'A pair of Holland Lop rabbits with floppy ears and twitching noses, ' +
+    'one pure white and the other brown and cream.',
   aliases: ['rabbits', 'rabbit', 'bunnies', 'bunny'],
   article: 'some',
   grammaticalNumber: 'plural',
@@ -191,14 +191,14 @@ world.moveEntity(animalFeed.id, pettingZoo.id);
 ```
 
 The souvenir penny from earlier in the chapter sits on the Main Path, and the
-**pygmy goats** you placed in the Petting Zoo back in Chapter 4 are scenery — so
+**pygmy goats** you placed in the Petting Zoo back in Chapter 4 are scenery, so
 every object the "Try it" walkthrough touches is now in the world: the map and
 penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 
 > **Plural-named scenery:** the rabbits get `grammaticalNumber: 'plural'`. Sharpee's
 > messages agree in number with the entity, so this is what makes `take rabbits`
 > report "The rabbits **are** fixed in place." rather than "is". Set it on anything
-> with a plural name — *pygmy goats*, *direction signs*, *flower beds* — and the
+> with a plural name (*pygmy goats*, *direction signs*, *flower beds*) and the
 > generated prose stays grammatical. (See Chapter 19 for how the message templates
 > choose the verb.) Authors using the `object()` builder write `.plural()` instead.
 
@@ -221,7 +221,7 @@ penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 
 ## Key takeaway
 
-Items are portable by default — `EntityType.ITEM` plus an `IdentityTrait` is a
+Items are portable by default: `EntityType.ITEM` plus an `IdentityTrait` is a
 complete takeable object, no special trait required. `SceneryTrait` *removes*
 portability; it's what makes fences, benches, and animals fixed in place while
 still examinable. Reach for scenery on anything the player shouldn't pocket, and

@@ -7,26 +7,26 @@
 # Channels: The Universal UI Surface
 
 You've built a complete game, but the book has quietly treated "what the player
-sees" as one thing: prose. A running story shows far more — where you are, your
+sees" as one thing: prose. A running story shows far more: where you are, your
 score, the turn count, a command prompt, and, in a rich client, images and sound.
 How does all of that travel from the engine to the screen, the same way whether the
-game runs in a terminal, a browser, or a multi-user server? Through **channels** —
+game runs in a terminal, a browser, or a multi-user server? Through **channels**,
 the foundation this whole volume builds on.
 
 ## One surface for everything
 
 A **channel** is a named stream of signals from the story to the UI. The key idea
-is that *everything* the player perceives travels over a channel — not just the
+is that *everything* the player perceives travels over a channel, not just the
 prose. The narrative is the `main` channel; the location and score are the
 `location` and `score` channels; the command prompt is the `prompt` channel; images
 and sound are media channels. There is no special path for prose and a separate one
-for the status bar. One mechanism carries it all — which is why channels are called
+for the status bar. One mechanism carries it all, which is why channels are called
 the universal UI surface.
 
 ## A turn produces a packet
 
 Each turn, the engine asks every channel "what do you have this turn?" and
-assembles the answers into a **turn packet** — the set of channels that emitted,
+assembles the answers into a **turn packet**: the set of channels that emitted,
 each with its value. On the other side, the client hands each channel's payload to a
 matching **renderer** that updates the corresponding piece of UI: the prose window,
 the status line, the score display.
@@ -54,7 +54,7 @@ channel.
 ## The channels you get for free
 
 The standard library registers a full set of channels, fed by the same world and
-events the rest of your story already produces — you wire none of them:
+events the rest of your story already produces. You wire none of them:
 
 | Channel | Mode | Carries |
 |---|---|---|
@@ -75,16 +75,17 @@ built becomes something a client can show.
 
 Not every client can display everything. At startup the client declares its
 **capabilities**, and the engine replies with a **manifest** listing the channels
-available to *that* client — a text-only terminal simply never sees the media
+available to *that* client; a text-only terminal simply never sees the media
 channels. After the manifest, the per-turn packets flow. As an author you rarely
-touch this; it's the machinery that lets one story serve a bare terminal and a
+touch this. It's the machinery that lets one story serve a bare terminal and a
 graphical browser from exactly the same code.
 
 ## Defining your own channel
 
-When your story has a UI signal the standard channels don't cover — an ambient mood
-line, a custom HUD value, a trigger for a story-specific overlay — you define your
-own **`IOChannel`** in the `registerChannels` hook. A channel is an object with an
+When your story has a UI signal the standard channels don't cover, such as an
+ambient mood line, a custom HUD value, or a trigger for a story-specific overlay,
+you define your own **`IOChannel`** in the `registerChannels` hook. A channel is an
+object with an
 `id`, a `contentType`, a `mode`, an `emit` policy, and a `produce` closure:
 
 ```typescript
@@ -117,21 +118,21 @@ value changes; `always` emits every turn. To *override* a standard channel, regi
 one with the same `id` — last write wins.
 
 One subtlety to internalize, because it bites everyone once: on a `sparse`
-`replace` channel, `undefined` means *"no change this turn"* — **not** *"clear the
+`replace` channel, `undefined` means *"no change this turn,"* **not** *"clear the
 line."* The channel doesn't re-emit, so whatever it last showed stays on screen. If
 you returned `undefined` for "rooms without a mood," the previous room's line would
 follow the player around. To actually blank the line you must emit a *different*
-value — here, the empty string `''` — which is a real transition the renderer paints
+value, here the empty string `''`, which is a real transition the renderer paints
 as blank (and `sparse` then stays quiet until the mood changes again). Reach for
 `undefined` only when you genuinely want the current value to persist untouched.
 
-Crucially, a channel emits **data** — text, a number, JSON — never UI. The value
+Crucially, a channel emits **data** (text, a number, JSON), never UI. The value
 says *what*; the renderer (next chapter) decides *how* it looks. That data-only wire
 is what keeps presentation in the client's hands, where an author can restyle or
 replace it per story.
 
-Family Zoo v18 ships exactly this `zoo.ambience` channel — a one-line mood description
-for each area — and its browser entry registers a renderer that creates a dedicated
+Family Zoo v18 ships exactly this `zoo.ambience` channel, a one-line mood description
+for each area, and its browser entry registers a renderer that creates a dedicated
 page element and paints the line into it. The chapters ahead build on that concrete
 example.
 

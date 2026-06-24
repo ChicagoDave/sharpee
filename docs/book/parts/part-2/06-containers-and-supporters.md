@@ -3,18 +3,18 @@
 So far the zoo has things you walk past and things you carry. This chapter adds
 things that hold *other* things: a red backpack the player can store items inside,
 a feed dispenser bolted to a post at the petting zoo, and a park bench you can set
-objects on top of. Two new traits cover both cases — and the difference between
+objects on top of. Two new traits cover both cases, and the difference between
 them is the difference between *in* and *on*.
 
 ## Two kinds of holders
 
 Sharpee gives you two traits for entities that hold other entities:
 
-- **`ContainerTrait`** — things go *inside*. Backpacks, boxes, drawers, dispensers.
-- **`SupporterTrait`** — things go *on top*. Tables, shelves, benches, pedestals.
+- **`ContainerTrait`**: things go *inside*. Backpacks, boxes, drawers, dispensers.
+- **`SupporterTrait`**: things go *on top*. Tables, shelves, benches, pedestals.
 
 The parser sorts them out by preposition. "put X **in** Y" routes to the
-container; "put X **on** Y" routes to the supporter. You never write that logic —
+container; "put X **on** Y" routes to the supporter. You never write that logic;
 you just declare which kind of holder each object is.
 
 ```
@@ -43,7 +43,7 @@ backpack.add(new ContainerTrait({
 world.moveEntity(backpack.id, entrance.id);
 ```
 
-Because we *didn't* add `SceneryTrait`, this backpack is portable — and that's
+Because we *didn't* add `SceneryTrait`, this backpack is portable, and that's
 where containers get interesting. (As always, the `moveEntity` is what puts it in
 the world; without it the backpack exists nowhere and `take backpack` finds
 nothing.)
@@ -60,8 +60,8 @@ A container is fixed or portable on exactly the rule from the last chapter:
 
 A portable container moves as a unit: the player takes the backpack and
 everything inside comes with it. A bag of five items counts as **one** item in the
-player's own inventory. A fixed container — the dispenser below — is for built-in
-storage the player can reach into but never walk off with:
+player's own inventory. A fixed container, like the dispenser below, is for
+built-in storage the player can reach into but never walk off with:
 
 ```typescript
 const dispenser = world.createEntity('feed dispenser', EntityType.CONTAINER);
@@ -77,9 +77,9 @@ dispenser.add(new SceneryTrait());   // can't take the dispenser itself
 world.moveEntity(dispenser.id, pettingZoo.id);
 ```
 
-A fixed container still needs its own `IdentityTrait` — the name and aliases are
-how the player refers to it (`examine dispenser`) — and its `moveEntity`, which
-bolts it into the Petting Zoo.
+A fixed container still needs its own `IdentityTrait` (the name and aliases are
+how the player refers to it, as in `examine dispenser`) and its `moveEntity`,
+which bolts it into the Petting Zoo.
 
 ## SupporterTrait
 
@@ -99,9 +99,9 @@ world.moveEntity(parkBench.id, mainPath.id);
 
 The bench goes on the Main Path, so `put penny on bench` in the "Try it"
 walkthrough has a surface to use. The key behavioral difference from a container:
-supporters are always
-**open** — whatever sits on a bench is visible without any special action.
-Containers, as the next chapter shows, can be opened and closed to hide their
+supporters are always **open**, so whatever sits on a bench is visible without
+any special action. Containers, as the next chapter shows, can be opened and
+closed to hide their
 contents.
 
 ## Capacity limits
@@ -113,7 +113,7 @@ capacity: { maxItems: 5 }
 ```
 
 Try to put a sixth item in a five-item container and the player gets a "can't fit"
-message. Capacity isn't just bookkeeping — limited space is the raw material of
+message. Capacity isn't just bookkeeping. Limited space is the raw material of
 puzzles, forcing the player to choose what to carry and what to leave behind.
 
 > **The mistake everyone makes once:** leaving `capacity` off. A container or
@@ -122,7 +122,7 @@ puzzles, forcing the player to choose what to carry and what to leave behind.
 
 ## Traits are composable
 
-The real lesson of this chapter isn't either trait on its own — it's that an
+The real lesson of this chapter isn't either trait on its own. It's that an
 entity can wear several traits at once, and they stack cleanly:
 
 - The park bench is a `SupporterTrait` (things go on it) **and** a `SceneryTrait`
@@ -158,5 +158,5 @@ new behavior.
 the parser routes "in" and "on" to the right one automatically. Either can be
 portable or fixed depending on whether it also has `SceneryTrait`, and a portable
 container carries its contents with it as a single inventory item. Set `capacity`
-to bound them — and remember that traits are composable, so you build each object
+to bound them, and remember that traits are composable, so you build each object
 by stacking the small traits it needs.

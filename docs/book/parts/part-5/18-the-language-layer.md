@@ -1,6 +1,6 @@
 # The Language Layer: Messages & Message IDs
 
-Chapter 3 promised that **actions emit events, not text** — that the words the
+Chapter 3 promised that **actions emit events, not text**, that the words the
 player reads are produced later, somewhere else. This is that somewhere else. The
 **language layer** is the single place every user-facing string lives, and the
 bridge between an action's intent and the sentence the player sees is a **message
@@ -18,14 +18,14 @@ context.event('zoo.event.photographed', {
 });
 ```
 
-`zoo.photo.took_photo` is not text — it's a name for a piece of text. At the end of
+`zoo.photo.took_photo` is not text. It's a name for a piece of text. At the end of
 the turn, the engine's prose pipeline takes that ID to the language layer and asks:
 *what does this say, in this language, with these parameters?* The answer is what
 prints.
 
 The standard library works exactly the same way. Every built-in verb emits IDs
 like `if.action.taking.taken`; the English language package maps each to its
-prose. Nothing in the engine, stdlib, or world model ever hardcodes a sentence — it
+prose. Nothing in the engine, stdlib, or world model ever hardcodes a sentence. It
 all flows through IDs.
 
 ## Registering your text
@@ -51,21 +51,21 @@ Each call ties one ID to one template. When the engine later looks up
 
 A template can carry **placeholders** in curly braces, filled from the `params` the
 event supplied. The photograph action passed `params: { target: name }`, and the
-template's `{target}` is where that value lands — so photographing the toucan reads
+template's `{target}` is where that value lands, so photographing the toucan reads
 "Click! You snap a photo of the toucan." Placeholders are how one message adapts to
 many situations without a separate string for each.
 
 (There's more to placeholders than plain substitution: when a parameter is an
 *entity*, the language layer can render its name with the right article and
-capitalization — "the toucan," "a flashlight," "Some feed." That machinery is the
+capitalization: "the toucan," "a flashlight," "Some feed." That machinery is the
 **formatter chain**, and it's the whole of the next chapter.)
 
 ## Naming message IDs
 
 IDs are just strings, but a consistent scheme keeps them legible. The convention:
 
-- Built-in messages use the `if.*` namespace — `if.action.taking.taken`.
-- Your story's messages take a story prefix — `zoo.feeding.fed_goats`,
+- Built-in messages use the `if.*` namespace, as in `if.action.taking.taken`.
+- Your story's messages take a story prefix, such as `zoo.feeding.fed_goats`,
   `zoo.photo.no_camera`.
 
 A descriptive, namespaced ID reads almost like documentation at the call site, and
@@ -78,17 +78,17 @@ layer instead of scattered through logic:
 
 - **Translation.** A French language package maps the same IDs to French prose; the
   story's code never changes.
-- **Restyling.** Terse or florid, second person or third — swap the templates, keep
+- **Restyling.** Terse or florid, second person or third: swap the templates, keep
   the behavior.
 - **Consistency.** Every "you can't see that" reads the same because it's one
   string, registered once.
 - **Overrides.** Supplying your own text for an existing ID replaces what the
-  player sees there — a way to reskin a standard response in your story's voice
+  player sees there, a way to reskin a standard response in your story's voice
   without touching the action behind it.
 
-Wherever your story produces player-facing words — actions, and the event handlers
-from Chapter 13 — prefer a message ID over an inline string, so the text stays in
-the layer built to hold it.
+Wherever your story produces player-facing words, whether in actions or in the
+event handlers from Chapter 13, prefer a message ID over an inline string, so the
+text stays in the layer built to hold it.
 
 ## Key takeaway
 

@@ -6,11 +6,11 @@
 
 # Event Handlers: Reacting to What Happens
 
-So far every object in the zoo has *been* something — scenery, a container, a
+So far every object in the zoo has *been* something: scenery, a container, a
 readable sign. This chapter is where the world starts to *react*. Drop the bag
 of feed in the petting zoo and the goats rush over to devour it. Feed a souvenir
 penny into the press in the gift shop and it comes out flattened and embossed.
-Neither of those is a new verb — the player is using ordinary `drop` and `put
+Neither of those is a new verb. The player is using ordinary `drop` and `put
 in`. The reaction comes from an **event handler** listening for those actions
 and adding something on top.
 
@@ -60,7 +60,7 @@ world.chainEvent(
   'if.event.dropped',
   (event, w) => {
     const data = event.data as Record<string, any>;
-    if (data.itemId !== feedId) return null;   // not our item — ignore
+    if (data.itemId !== feedId) return null;   // not our item, ignore
     return {
       id: `goats-react-${Date.now()}`,
       type: 'zoo.event.goats_react',
@@ -78,8 +78,8 @@ Use `registerEventHandler()` for bookkeeping the player never sees; use
 
 > **The mistake everyone makes once:** reaching for `type: 'game.message'` in a
 > chain handler. The event processor treats a `game.message` returned from a
-> handler as an *override* of the original action's text — so instead of adding
-> your reaction, it replaces the "You drop the feed." line. Use a custom event
+> handler as an *override* of the original action's text, so instead of adding
+> your reaction it replaces the "You drop the feed." line. Use a custom event
 > type like `zoo.event.goats_react` with a `text` field instead; the renderer
 > displays any event that carries `text`, and the original action message
 > survives.
@@ -98,7 +98,7 @@ on the event type:
 ```
 
 Note `item` is the item's *name* and `itemId` is its *entity ID*. Compare
-against `itemId` — names aren't unique, IDs are.
+against `itemId`. Names aren't unique; IDs are.
 
 ## Setting up: the gift shop, the press, and remembering IDs
 
@@ -184,7 +184,7 @@ onEngineReady(engine: GameEngine): void {
 
 ## Reaction pattern: the goats eat the feed
 
-Putting it together — when the player drops the feed in the petting zoo, the
+Putting it together: when the player drops the feed in the petting zoo, the
 goats react, but only once:
 
 ```typescript
@@ -279,8 +279,8 @@ Remove the old entity, create the new one, move it to the player, return the
 text. That four-step shape covers a surprising number of machines, ovens,
 forges, and vending slots.
 
-The `{ key: '...' }` option gives each handler a unique identifier — important so
-the engine can manage handlers across saves and reloads.
+The `{ key: '...' }` option gives each handler a unique identifier, which the
+engine needs to manage handlers across saves and reloads.
 
 ## Try it
 
@@ -303,6 +303,6 @@ Event handlers let standard actions do the work while you react to what they
 emit. `world.registerEventHandler()` runs silently for state bookkeeping;
 `world.chainEvent()` returns an event with a `text` field to show the player
 something. Match on `itemId`/`targetId` (not names), guard one-time reactions
-with a state flag, and never return `game.message` from a chain handler — use a
+with a state flag, and never return `game.message` from a chain handler. Use a
 custom event type so your reaction adds to the action's text instead of replacing
 it.

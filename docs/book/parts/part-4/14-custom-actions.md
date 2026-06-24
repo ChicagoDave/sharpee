@@ -2,7 +2,7 @@
 
 Event handlers let you react to verbs the stdlib already knows. But sometimes the
 verb itself doesn't exist yet. There's no `feed` action in the standard library,
-no `photograph`. When you need a brand-new verb, you write a **custom action** —
+no `photograph`. When you need a brand-new verb, you write a **custom action**,
 and wiring one up means touching every layer of Sharpee at once: the action
 logic, the grammar that recognizes the words, and the language that holds the
 text. This chapter feeds the goats and snaps photos to show all three.
@@ -17,13 +17,13 @@ import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
 ```
 
-The action objects below are top-level `const`s; the three registration methods —
-`getCustomActions`, `extendParser`, `extendLanguage` — are members of your
+The action objects below are top-level `const`s. The three registration methods
+(`getCustomActions`, `extendParser`, `extendLanguage`) are members of your
 `FamilyZooStory` class, alongside `initializeWorld`.
 
 ## The four-phase action
 
-Every action — standard or custom — implements the same four-phase pattern you
+Every action, standard or custom, implements the same four-phase pattern you
 met in *The Standard Actions*. A custom action is just an `Action` object with
 those four methods:
 
@@ -32,23 +32,23 @@ const feedAction: Action = {
   id: 'zoo.action.feeding',
   group: 'interaction',
 
-  // Phase 1 — can the action proceed?
+  // Phase 1: can the action proceed?
   validate(context: ActionContext): ValidationResult {
     if (!hasRequiredItem) return { valid: false, error: 'no_feed' };
     return { valid: true };
   },
 
-  // Phase 2 — mutate the world (only runs if valid)
+  // Phase 2: mutate the world (only runs if valid)
   execute(context: ActionContext): void {
     context.world.setStateValue('item-used', true);
   },
 
-  // Phase 3 — success events (text output)
+  // Phase 3: success events (text output)
   report(context: ActionContext): ISemanticEvent[] {
     return [context.event('zoo.event.fed', { messageId: 'fed_goats' })];
   },
 
-  // Phase 4 — failure events (runs instead of execute/report if invalid)
+  // Phase 4: failure events (runs instead of execute/report if invalid)
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('zoo.event.feeding_blocked', { messageId: result.error })];
   },
@@ -58,7 +58,7 @@ const feedAction: Action = {
 The engine runs them in order: `validate()` first; if it returns `{ valid:
 false }` it jumps straight to `blocked()`; otherwise it calls `execute()` then
 `report()`. Validation checks, world mutation, success text, and failure text
-each live in their own phase — never tangled together.
+each live in their own phase, never tangled together.
 
 ## A complete custom action: feeding
 
@@ -138,13 +138,13 @@ const feedAction: Action = {
 Notice `context.sharedData.feedTarget`. `validate()` already did the work of
 finding and checking the target, so it stashes the result in `sharedData` for
 `execute()` and `report()` to reuse. This is the sanctioned way to carry data
-forward — don't recompute the target in every phase, and don't smuggle it onto
+forward: don't recompute the target in every phase, and don't smuggle it onto
 the context object itself.
 
 ## A second action: photographing
 
 `getCustomActions` and the grammar further down both reference a
-`photographAction` — here it is in full. It's simpler than feeding: it checks the
+`photographAction`; here it is in full. It's simpler than feeding: it checks the
 player is carrying a camera, then reports a photo of whatever they aimed at.
 
 ```typescript
@@ -171,7 +171,7 @@ const photographAction: Action = {
   },
 
   execute(_context: ActionContext): void {
-    // Photographs are cosmetic — nothing in the world changes.
+    // Photographs are cosmetic; nothing in the world changes.
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -191,7 +191,7 @@ const photographAction: Action = {
 };
 ```
 
-The camera it looks for is an ordinary item — add it to the gift shop (the room
+The camera it looks for is an ordinary item. Add it to the gift shop (the room
 from Chapter 13) in `initializeWorld`:
 
 ```typescript
@@ -234,7 +234,7 @@ extendParser(parser: Parser): void {
 ```
 
 A `:slot` (here `:thing`) is an argument the parser resolves to an entity. You
-can register several patterns for the same action — `photo` and `snap` are
+can register several patterns for the same action; `photo` and `snap` are
 aliases for `photograph`. Use `withPriority(150)` (or higher) so your story
 patterns win over any stdlib defaults. Grammar gets its own chapter in Volume V;
 this is the minimum to make a custom verb fire.
@@ -246,7 +246,7 @@ The action returns *message IDs*, not sentences. Register the actual text in
 
 ```typescript
 extendLanguage(language: LanguageProvider): void {
-  // Feed action — every FeedMessages id needs text, or the player sees raw ids.
+  // Feed action: every FeedMessages id needs text, or the player sees raw ids.
   language.addMessage(FeedMessages.NO_FEED,
     "You don't have any animal feed.");
   language.addMessage(FeedMessages.NOT_AN_ANIMAL,
@@ -271,12 +271,12 @@ extendLanguage(language: LanguageProvider): void {
 ```
 
 A `{param}` placeholder in the text is filled from the `params` object the action
-passed — so `params: { target: name }` substitutes into `{target}`. Keeping text
+passed, so `params: { target: name }` substitutes into `{target}`. Keeping text
 out of the action and in the language layer is what lets a story be translated or
 re-voiced without touching its logic.
 
 > **The mistake everyone makes once:** wiring up only part of the chain. A custom
-> verb needs *all three* registrations — the action from `getCustomActions()`,
+> verb needs *all three* registrations: the action from `getCustomActions()`,
 > the pattern from `extendParser()`, and the message text from
 > `extendLanguage()`. Miss the grammar and the parser says it doesn't understand;
 > miss the language and the player sees a raw message ID like

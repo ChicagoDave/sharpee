@@ -3,8 +3,8 @@
 The containers in the last chapter gave up their contents freely. Real worlds make
 you work a little: a lunchbox you must open before you can reach the juice inside,
 a staff gate that stays shut until you find the right keycard. This chapter adds
-the *closed* state — first to containers, then to doors — and along the way wires
-up the zoo's first real puzzle: find a key, unlock a gate, walk through.
+the *closed* state, first to containers and then to doors, and along the way
+wires up the zoo's first real puzzle: find a key, unlock a gate, walk through.
 
 It builds in two steps. `OpenableTrait` adds open and closed. `LockableTrait`
 adds locked and unlocked on top of it. Doors then connect rooms through that
@@ -28,7 +28,7 @@ The three properties:
 
 | Property | Default | What it does |
 |---|---|---|
-| `isOpen` | `false` | Current state — open or closed |
+| `isOpen` | `false` | Current state: open or closed |
 | `canClose` | `true` | Whether the player can close it again after opening |
 | `revealsContents` | `true` | Whether opening prints "Inside you can see…" |
 
@@ -41,7 +41,7 @@ starts to matter:
   `put map in lunchbox` is blocked.
 - **Open:** contents are visible and every container operation works normally.
 
-This is how you make the player *discover* things — they open something and find
+This is how you make the player *discover* things: they open something and find
 items they couldn't see before.
 
 ### Stocking a container that starts closed
@@ -60,8 +60,8 @@ lunchbox.get(OpenableTrait)!.isOpen = false;   // close it again
 
 > **The mistake everyone makes once:** calling `moveEntity` into a container
 > that's closed at setup time and wondering why the item never appears. The
-> engine plays by its own rules during `initializeWorld()` — open the container,
-> stock it, then close it.
+> engine plays by its own rules during `initializeWorld()`, so open the
+> container, stock it, then close it.
 
 ## LockableTrait
 
@@ -84,7 +84,7 @@ succeeds.
 ### Keys are just items
 
 A key needs no special trait. It's an ordinary `EntityType.ITEM` with an
-`IdentityTrait` — nothing more. The *only* thing that makes it a key is that some
+`IdentityTrait`, nothing more. The *only* thing that makes it a key is that some
 lock's `keyId` points at its `id`. Which means anything can be a key: a literal
 key, a keycard, a gemstone, a spoken word. The lock decides what opens it, not the
 key.
@@ -93,9 +93,9 @@ key.
 
 A locked door asks three separate actions of the player, in order:
 
-1. **Find the key** — `take keycard`
-2. **Unlock the lock** — `unlock gate with keycard`
-3. **Open the door** — `open gate`
+1. **Find the key**: `take keycard`
+2. **Unlock the lock**: `unlock gate with keycard`
+3. **Open the door**: `open gate`
 
 Only after all three can they pass. That sequence is a puzzle in miniature, and
 you get it for free just by combining the traits.
@@ -115,7 +115,7 @@ staffGate.add(new DoorTrait({
 }));
 ```
 
-Second — and this is the part that's easy to forget — the rooms' exits must route
+Second, and this is the part that's easy to forget, the rooms' exits must route
 *through* the door using the `via` property:
 
 ```typescript
@@ -135,7 +135,7 @@ before moving them:
 - Is it open? → the player walks through.
 
 > **The mistake everyone makes once:** giving the gate every trait but forgetting
-> `via` on the exit. Without `via`, the going action never consults the door — the
+> `via` on the exit. Without `via`, the going action never consults the door; the
 > exit is unconditional and the player strolls through a "locked" gate as if it
 > weren't there. The door's state only matters because the exit points at it.
 
@@ -152,7 +152,7 @@ A working locked door is five traits on the door entity, plus a key, plus the
 | `LockableTrait` | Can be locked and unlocked with a key |
 | `SceneryTrait` | Can't be picked up |
 
-Plus a **key** — any portable item whose `id` you put in `LockableTrait.keyId` —
+Plus a **key** (any portable item whose `id` you put in `LockableTrait.keyId`)
 and **exits with `via`** pointing at the door from both sides.
 
 This chapter introduces three new traits, so add them to your world-model import:
@@ -180,7 +180,7 @@ supplyRoom.add(new IdentityTrait({
   article: 'the',
 }));
 
-// The metal shelves — scenery, so "examine shelves" has something to find.
+// The metal shelves: scenery, so "examine shelves" has something to find.
 const shelves = world.createEntity('metal shelves', EntityType.SCENERY);
 shelves.add(new IdentityTrait({
   name: 'metal shelves',
@@ -190,7 +190,7 @@ shelves.add(new IdentityTrait({
 shelves.add(new SceneryTrait());
 world.moveEntity(shelves.id, supplyRoom.id);
 
-// The key — an ordinary item, placed at the entrance for the player to find.
+// The key: an ordinary item, placed at the entrance for the player to find.
 const keycard = world.createEntity('staff keycard', EntityType.ITEM);
 keycard.add(new IdentityTrait({
   name: 'staff keycard',
@@ -202,7 +202,7 @@ keycard.add(new IdentityTrait({
 }));
 world.moveEntity(keycard.id, entrance.id);
 
-// The gate — type DOOR, wearing all five traits, placed on the Main Path.
+// The gate: type DOOR, wearing all five traits, placed on the Main Path.
 const staffGate = world.createEntity('staff gate', EntityType.DOOR);
 staffGate.add(new IdentityTrait({
   name: 'staff gate',
@@ -251,6 +251,6 @@ they came.
 
 `OpenableTrait` adds open/closed state and the `open`/`close` actions; combined
 with `ContainerTrait` it hides contents until opened. `LockableTrait` adds a lock
-on top, with `keyId` wiring one key to one lock — and keys are just ordinary
+on top, with `keyId` wiring one key to one lock, and keys are just ordinary
 items. A door between rooms needs `DoorTrait` *and* a `via` on the exits pointing
 at it, or the going action will never check the door at all.

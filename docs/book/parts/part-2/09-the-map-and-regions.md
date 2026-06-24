@@ -1,16 +1,17 @@
 # The Map & Regions: Grouping Rooms
 
 You've quietly been building a map since Chapter 4. Every `RoomTrait` you gave an
-`exits` table added another connection, and together the zoo's six rooms — entrance,
-main path, petting zoo, aviary, and the supply room and nocturnal exhibit behind
-the staff gate — form a small but complete map. This chapter steps back to look at
+`exits` table added another connection, and together the zoo's six rooms
+(entrance, main path, petting zoo, aviary, and the supply room and nocturnal
+exhibit behind the staff gate) form a small but complete map. This chapter steps
+back to look at
 that map as a whole, and introduces **regions**: a way to treat a group of rooms as
 a single named place.
 
 ## The map is the exits
 
 There is no separate "map" object in Sharpee. The map *is* the set of exits you
-declared on each room — a graph of rooms joined by directions. A couple of habits
+declared on each room: a graph of rooms joined by directions. A couple of habits
 keep that graph sane as it grows:
 
 - **Make exits reciprocal.** If the main path leads east to the petting zoo, the
@@ -20,7 +21,7 @@ keep that graph sane as it grows:
   bring them back. Players build a mental map from your compass; contradicting it is
   disorienting.
 - **Route doored connections through the door.** The staff gate connection uses
-  `via` so the door is actually checked (Chapter 7) — the map and the barrier on it
+  `via` so the door is actually checked (Chapter 7); the map and the barrier on it
   are the same link.
 
 For six rooms you can hold the whole map in your head. For sixty, you'll want a way
@@ -75,7 +76,7 @@ its rooms inherit. A `RegionOptions` object accepts a few:
 | `parentRegionId` | Nest this region inside another |
 
 Setting `defaultDark: true` on, say, a cave region saves you marking every room
-`isDark` by hand — a property that belongs to the *area* lives on the area.
+`isDark` by hand: a property that belongs to the *area* lives on the area.
 
 ## Crossing the boundary
 
@@ -83,23 +84,23 @@ The real power shows up when the player moves *between* regions. When a `go`
 command carries the player from a room in one region to a room in another, the
 engine emits two events automatically:
 
-- `if.event.region_exited` — once for each region being left,
-- `if.event.region_entered` — once for each region being entered.
+- `if.event.region_exited`, fired once for each region being left,
+- `if.event.region_entered`, fired once for each region being entered.
 
-You react to them exactly the way you'll react to any event in Volume IV — by
+You react to them exactly the way you'll react to any event in Volume IV, by
 registering a handler:
 
 ```typescript
 world.registerEventHandler('if.event.region_entered', (event, world) => {
   if (event.data.regionId === 'reg-staff') {
-    // The visitor just slipped into the staff area — flavor, a warning,
+    // The visitor just slipped into the staff area: flavor, a warning,
     // a scoring hook, whatever the moment calls for.
   }
 });
 ```
 
 This is the natural home for "as you enter the old town, the noise of the market
-swells" — atmosphere keyed to an area instead of bolted onto every room's
+swells": atmosphere keyed to an area instead of bolted onto every room's
 description.
 
 ## Nesting and querying
@@ -113,19 +114,20 @@ world.createRegion('reg-mine', { name: 'Coal Mine', parentRegionId: 'reg-undergr
 // a room in reg-mine answers true for reg-underground as well
 ```
 
-And you can ask the world about membership at any time — `world.isInRegion(roomId,
-'reg-staff')` for a yes/no, or, if you add the optional `@sharpee/queries` package,
-its entity-query API to list every room in an area:
+And you can ask the world about membership at any time:
+`world.isInRegion(roomId, 'reg-staff')` gives a yes/no, or, if you add the
+optional `@sharpee/queries` package, its entity-query API lists every room in an
+area:
 `world.rooms.inRegion('reg-staff', world).toArray()`. (`world.rooms` comes from
 that package; the plain `WorldModel` gives you `isInRegion`.)
 
 ## Key takeaway
 
-The map is nothing more than the exits you declare on each room — keep them
+The map is nothing more than the exits you declare on each room: keep them
 reciprocal and consistent and the graph stays trustworthy. When a map grows past
 what you can hold in your head, **regions** group rooms into named areas that can
 share properties (`defaultDark`, ambient sound and smell) and, best of all, fire
-`if.event.region_entered` / `region_exited` as the player crosses between them — the
+`if.event.region_entered` / `region_exited` as the player crosses between them, the
 hook for area-wide atmosphere and events. The zoo is small enough to skip regions
 entirely; reach for them when your world gets big enough to think about in
 neighborhoods.

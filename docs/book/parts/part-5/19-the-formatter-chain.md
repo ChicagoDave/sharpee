@@ -1,7 +1,7 @@
 # The Formatter Chain: Grammar in the Template, Not the Text
 
 The last chapter left a thread hanging: when a message parameter is an *entity*,
-the language layer renders its name with the right article and capitalization — "the
+the language layer renders its name with the right article and capitalization: "the
 toucan," "a flashlight," "Some feed." It does that with the **formatter chain**, a
 small grammar inside your message templates. This short chapter pulls that thread.
 
@@ -13,7 +13,7 @@ Suppose you write a template by hand:
 You pick up the {item}.
 ```
 
-It reads fine for "the brass key" — but the moment the object is a flashlight you
+It reads fine for "the brass key," but the moment the object is a flashlight you
 wanted "a flashlight," or a proper name ("you pick up Captain," no article at all),
 or a mass noun ("you scatter some feed"), the baked-in "the" is wrong. English
 articles depend on the noun, and you don't want a separate message for every
@@ -39,7 +39,7 @@ nouns), and `your`.
 ## Why pass the entity, not its name
 
 An article formatter can only choose correctly if it knows what kind of noun it's
-dealing with — is it a proper name? a mass noun? a plural? That information lives on
+dealing with: is it a proper name? a mass noun? a plural? That information lives on
 the entity (the `properName`, article, and noun-type fields you set on an
 `IdentityTrait` back in Volume II). So when an action supplies a parameter that the
 template will article-format, it passes the **entity's information**, not a bare
@@ -48,14 +48,14 @@ hand it the entity and it knows that "Captain" takes no article and "feed" takes
 "some."
 
 This is the practical reason the earlier chapters were careful about
-`IdentityTrait`'s `properName` and `article` fields — the formatter chain is what
+`IdentityTrait`'s `properName` and `article` fields: the formatter chain is what
 finally reads them.
 
 ## Capitalization and other text formatters
 
 Articles aren't the only thing that varies by position. A name at the start of a
 sentence needs a capital, even though "the toucan" is lowercase mid-sentence.
-That's another formatter, and formatters **chain** — list several, separated by
+That's another formatter, and formatters **chain**: list several, separated by
 colons, and they apply in turn:
 
 ```text
@@ -77,7 +77,7 @@ pygmy goats **are** fixed in place." Rather than hardcode `is`, a template keys 
 → The pygmy goats are fixed in place.  (plural)
 ```
 
-`{is:item}` emits "is" or "are" depending on the entity's number — the same
+`{is:item}` emits "is" or "are" depending on the entity's number, the same
 `grammaticalNumber: 'plural'` flag you set back in Chapter 5 (or `.plural()` on the
 `object()` builder). The companions `{was:item}` (was/were) and `{has:item}`
 (has/have) work the same way. An entity with no number metadata is treated as
@@ -88,7 +88,7 @@ formatters, so one flag on the entity keeps every generated line grammatical.
 ## Lists
 
 The chain also handles collections. `{items:list}` joins an array into a natural
-English list — commas and a final "and" — and you can format each element before
+English list, with commas and a final "and," and you can format each element before
 joining:
 
 ```text
