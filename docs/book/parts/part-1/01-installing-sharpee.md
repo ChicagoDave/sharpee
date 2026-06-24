@@ -4,7 +4,7 @@
 
 :::
 
-# Installing Sharpee & the Sharpee CLI
+# Installing Sharpee: The CLI and Your First Project
 
 Before you can build the Family Zoo, you need a working toolchain: Node.js, an
 editor, and the `sharpee` command. This chapter gets you from an empty folder to a

@@ -4,7 +4,7 @@
 
 :::
 
-# Channels — the Universal UI Surface
+# Channels: The Universal UI Surface
 
 You've built a complete game, but the book has quietly treated "what the player
 sees" as one thing: prose. A running story shows far more — where you are, your
@@ -138,12 +138,11 @@ example.
 
 ## Key takeaway
 
-Channels are the universal UI surface: every story-to-player signal — prose, status,
-prompt, media — travels as a named channel. Each turn the engine emits a packet of
-the channels that changed, and the client renders each one. A channel's **mode**
-(`replace` / `append` / `event`) tells the renderer how its value behaves; the
-standard channels come free, fed by the world you've already built. Define your own
-`IOChannel` in `registerChannels` for story-specific signals, returning data (never
-UI) from `produce`. And because the wire is data-only and capability-negotiated, one
-story drives a terminal, a browser, or a multi-user server unchanged — the subject
-of the chapters ahead.
+Channels are the universal UI surface: every story-to-player signal (prose, status,
+prompt, media) travels as a named channel, and each turn the engine emits a packet
+of the ones that changed for the client to render. A channel's **mode**
+(`replace`/`append`/`event`) tells the renderer how its value behaves; the standard
+channels come free, and you add your own `IOChannel` in `registerChannels`,
+returning data, never UI. Because the wire is data-only, one story drives a
+terminal, a browser, or a multi-user server unchanged. That portability is the
+subject of the chapters ahead.

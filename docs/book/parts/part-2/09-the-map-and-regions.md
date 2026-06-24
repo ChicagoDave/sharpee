@@ -1,4 +1,4 @@
-# The Map & Regions
+# The Map & Regions: Grouping Rooms
 
 You've quietly been building a map since Chapter 4. Every `RoomTrait` you gave an
 `exits` table added another connection, and together the zoo's six rooms — entrance,

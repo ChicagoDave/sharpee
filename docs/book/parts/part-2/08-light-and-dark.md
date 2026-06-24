@@ -1,4 +1,4 @@
-# Light & Dark
+# Light & Dark: What the Player Can See
 
 South of the supply room lies a nocturnal animals exhibit, and it is pitch black.
 Walk in without a light and you can't see a thing — no description, no animals,

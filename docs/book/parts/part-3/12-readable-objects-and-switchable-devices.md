@@ -1,4 +1,4 @@
-# Readable Objects & Switchable Devices
+# Readable Objects & Switchable Devices: Things That Carry State
 
 A zoo is full of things to read. Brass plaques by the enclosures, a glossy
 brochure at the entrance, a yellow warning sign outside the nocturnal exhibit —

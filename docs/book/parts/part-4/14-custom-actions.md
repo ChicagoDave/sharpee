@@ -1,4 +1,4 @@
-# Custom Actions
+# Custom Actions: Teaching the Parser New Verbs
 
 Event handlers let you react to verbs the stdlib already knows. But sometimes the
 verb itself doesn't exist yet. There's no `feed` action in the standard library,
@@ -297,9 +297,10 @@ re-voiced without touching its logic.
 
 ## Key takeaway
 
-A custom action is an `Action` object with `validate`/`execute`/`report`/`blocked`
-phases, registered four ways: `getCustomActions()` to register the action,
-`extendParser()` to recognize the words, `extendLanguage()` to supply the text,
-and `context.sharedData` to carry results between phases. Validation finds and
-checks; execute mutates; report and blocked emit message IDs that the language
-layer turns into sentences. Miss any one registration and the verb won't work.
+A custom action is an `Action` object with four phases. **Validate** checks
+whether the action can run. If it can, **execute** changes the world model as
+directed and **report** adds an event message to the turn's output; if it can't,
+**blocked** produces the failure message instead. Wiring it up takes three
+registrations: the action, its parser pattern, its language text. The object
+`context.sharedData` carries results between phases. Miss any one registration and
+the verb won't work.

@@ -4,7 +4,7 @@
 
 :::
 
-# Non-Player Characters
+# Non-Player Characters: Actors That Take Turns
 
 Until now the zoo has been still. Animals are scenery, signs wait to be read,
 machines wait to be used — nothing moves unless the player moves it. A
@@ -234,9 +234,9 @@ defined with `id: 'zoo-parrot'` to begin with.
 
 ## Key takeaway
 
-An NPC is an `EntityType.ACTOR` with `IdentityTrait`, `ActorTrait({ isPlayer:
-false })`, and `NpcTrait`, whose `behaviorId` must match a registered behavior's
-`id`. Use a built-in like `createPatrolBehavior` or implement `NpcBehavior`
-yourself — `onTurn` runs every turn, `onPlayerEnters` on arrival, and each returns
-`NpcAction[]`. Nothing acts until `onEngineReady()` registers the `NpcPlugin` with
-the engine *and* registers each behavior with its service.
+An NPC is an actor carrying `IdentityTrait`, `ActorTrait`, and `NpcTrait`, with a
+`behaviorId` that matches a registered behavior, whether you use a built-in such as
+`createPatrolBehavior` or write your own `NpcBehavior`, whose `onTurn` and
+`onPlayerEnters` return `NpcAction[]`. Nothing acts until `onEngineReady()` does
+*both*: registers the `NpcPlugin` with the engine and registers each behavior with
+its service.

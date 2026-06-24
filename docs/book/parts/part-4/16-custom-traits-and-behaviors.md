@@ -1,4 +1,4 @@
-# Custom Traits & Behaviors
+# Custom Traits & Behaviors: Data and Logic, Kept Apart
 
 Every object in the zoo has been assembled from traits — `IdentityTrait`,
 `RoomTrait`, `ContainerTrait`, `LightSourceTrait`. You've even written one:
@@ -138,11 +138,11 @@ lighter tools fit better.
 
 ## Key takeaway
 
-The world model keeps data and rules apart: a **trait** is a small `ITrait` class
-that holds state and nothing else, and a **behavior** is static methods that read
-and mutate that state while emitting no text or events — pure, testable logic.
-Add a custom trait with `entity.add(new YourTrait(...))`, keep its type namespaced
-(`zoo.trait.…`), and let actions or event handlers call the behavior to coordinate
-*when* and *what to say*. Reach for a custom trait only when your story needs new
-state and rules; for reactions, verbs, or per-entity verb behavior, the lighter
-tools from the earlier chapters are the better fit.
+The world model keeps data and logic apart: a **trait** holds state and nothing
+else, while a **behavior** is pure static methods that read and mutate that state.
+Behaviors emit no text or events, which is what keeps them testable. Add a trait
+with `entity.add(...)` and namespace its type (`zoo.trait.…`), then let actions or
+event handlers call the behavior to decide *when* and *what to say*. Reach for a
+custom trait only when your story genuinely needs new state and logic. For
+reactions, verbs, or per-entity behavior, the lighter tools from earlier chapters
+fit better.

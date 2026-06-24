@@ -1,6 +1,6 @@
 # Introduction {.unnumbered}
 
-Interactive Fiction quite literally altered my life and DNA. I was in high school playing baseball and getting mostly average grades in the classes I liked and one day I accidentally stumbled into a room where two students were hovered over paper terminals: one playing Crowther and Woods’ Adventure (ADVENT), the other playing the MIT mainframe version of Zork (though the program was named DUNGEON).
+Although this is a technical manual, it's very personal to me. Interactive Fiction quite literally altered my life and DNA. I was in high school playing baseball and getting mostly average grades in the classes I liked and one day I accidentally stumbled into a room where two students were hovered over paper terminals: one playing Crowther and Woods’ Adventure (ADVENT), the other playing the MIT mainframe version of Zork (though the program was named DUNGEON).
 
 I never returned to the baseball team or any other sport during the remaining two years of high school. Lightning had struck harder than the spider that transformed Peter Parker into Spider-Man.
 
@@ -13,3 +13,5 @@ Then about three years ago ChatGPT arrived and later Claude. Generative AI allow
 Sharpee owes its implementation to everyone that stands out in the Interactive Fiction community. From Crowther and Woods’, to the Infocom Implementors, to Graham Nelson, Andrew Plotkin, Emily Short, Mike Roberts, Kent Tessman, Jon Ingold, Tara McGrew, and so many more. I would not possess the domain knowledge without the entire community from Usenet to ifMud to intfiction.org.
 
 With the IF domain knowledge and my software engineering experience I have been able to leverage Anthropic’s Claude to help design and create a working Interactive Fiction system in Typescript. This book is the first complete technical guide to building parser-based interactive fiction using Sharpee.
+
+-- David Cornelson

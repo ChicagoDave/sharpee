@@ -1,4 +1,4 @@
-# The Web Client & Framework-Free UI
+# The Web Client: A Framework-Free UI
 
 The last chapter ended with a promise: a channel emits *data*, and something on the
 other side decides how it looks. That something is the **client**. This chapter
@@ -164,11 +164,10 @@ none of it is something you implement.
 ## Key takeaway
 
 The web client owns the page; the engine only emits channels. `BrowserClient` wires
-the two together with three calls — `initialize`, `connectEngine`, `start` — and
-drives the screen from exactly two engine signals: one manifest, then one packet per
-turn, dispatched to per-channel renderers. Commands (typed or gestured) flow back
-through `engine.executeTurn`. The UI is framework-free — plain HTML, CSS classes, and
-`--modifier` state — so you customize it the web-native way: restyle with CSS,
-replace a view by re-registering a `ChannelRenderer`. Save, restore, autosave, and
-theming come built in. With the data flowing and the page rendering it, the next two
-chapters turn to *how it looks*: decoration and theming, then media and audio.
+them with three calls and drives the screen from just two signals (one manifest,
+then one packet per turn) dispatched to per-channel renderers, with commands flowing
+back through `engine.executeTurn`. Because the UI is framework-free, you customize it
+the web-native way: restyle with CSS, or replace a view by re-registering a
+`ChannelRenderer`; save, restore, and theming come built in. With data flowing to a
+rendered page, the next two chapters turn to *how it looks*: decoration and theming,
+then media and audio.

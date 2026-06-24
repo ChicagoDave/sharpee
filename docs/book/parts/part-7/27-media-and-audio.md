@@ -1,4 +1,4 @@
-# Media & Audio
+# Media & Audio: Sight and Sound as Channels
 
 Every chapter so far has reached the player through words and the chrome around them.
 This last chapter of the volume adds the other senses: a picture behind the prose, a
@@ -173,14 +173,9 @@ do, decides what the player actually perceives.
 
 ## Key takeaway
 
-Media is not a special path — images and audio are channels (`image:*`, `sound`,
-`music`, `ambient:*`) and **capability-gated**, so a text-only client never receives
-them and you never branch on client support. You drive them by firing **`media.*`
-events** — `media.image.show`, `media.sound.play`, `media.music.play`,
-`media.ambient.play` — measured in milliseconds and 0.0–1.0 volumes; the standard
-channels project them, and the browser's `AudioManager` plays sound and music with Web
-Audio fades (effects excepted), unlocking on the first keystroke. Declare each room's
-atmosphere once with the `AudioRegistry` (a data store) and emit it on room entry, as
-Family Zoo v18 does. With sight and sound in place, the presentation layer is
-complete: from a typed verb to a rendered, scored, illustrated, scored-to-music turn,
-every signal you've met rides the one universal surface — the channel.
+Media are expressed as channels: images and audio ride `image:*`, `sound`, `music`,
+and `ambient:*`. Media channels are **capability-gated**, so a text-only client
+never receives them, and you never branch on client support. You drive them by
+firing `media.*` events, and declare each room's atmosphere once with the
+`AudioRegistry`, emitting it on entry. With sight and sound in place, every signal
+rides the one universal surface: the channel system.

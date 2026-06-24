@@ -1,4 +1,4 @@
-# Scoring & Endgame
+# Scoring & Endgame: Winning the Game
 
 A game needs a way to keep score and a way to end. The zoo gives points for
 seeing the sights and doing the activities — visiting each exhibit, feeding the
@@ -265,11 +265,9 @@ language.addMessage(ScoreMessages.VICTORY,
 
 ## Key takeaway
 
-`world.awardScore(id, points, description)` records an achievement; the unique
-`id` makes it idempotent, so the same award never counts twice — set the target
-with `world.setMaxScore()` so the `score` command can show progress. Hang awards
-wherever the achievement happens: inside custom actions and capability behaviors,
-or on standard-action events via `chainEvent` (returning `null` for silent
-scoring). A high-priority **victory daemon** watches `getScore()` each turn and
-triggers the ending once the maximum is reached. With scoring and an endgame in
-place, the zoo is a complete, winnable game.
+`world.awardScore(id, …)` records an achievement, and the unique `id` makes it
+idempotent, so the same award never counts twice. Hang awards wherever the
+achievement actually happens, whether in custom actions, capability behaviors, or
+standard-action events via `chainEvent`, and let a high-priority **victory daemon**
+watch `getScore()` and trigger the ending when the maximum is reached. With scoring
+and an endgame in place, the zoo is a complete, winnable game.

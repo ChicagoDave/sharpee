@@ -1,4 +1,4 @@
-# Scope & Visibility
+# Scope & Visibility: What the Player Can Reach
 
 When the player types `take key`, two quiet questions get answered before anything
 happens: *which* key, and *can the player refer to it at all?* A key in the room is

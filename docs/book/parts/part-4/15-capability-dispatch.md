@@ -1,11 +1,11 @@
-# Capability Dispatch
+# Capability Dispatch: One Verb, Many Rules
 
 The custom feed action in the last chapter did the same thing to every animal:
 check for feed, mark it fed, print a message. But some verbs mean different things
-depending on *what* you do them to. Petting the goats is affectionate — they lean
-into your hand. Petting the parrot is a mistake — it bites. The verb is the same;
-the outcome belongs to the animal. That's **capability dispatch**: one verb, many
-behaviors, and the entity decides which one runs.
+depending on *what* you apply them to. Petting the goats is affectionate so they
+lean into your hand. Petting the parrot is a mistake because it bites. The verb is
+the same; the outcome belongs to the animal. That's **capability dispatch**: one
+verb, many behaviors, and the entity decides which one runs.
 
 This chapter pulls in the capability-dispatch toolkit from the world-model, plus
 the action types from the last chapter:
@@ -299,10 +299,9 @@ behavior returns the bite message instead. One verb, the entity decides.
 
 ## Key takeaway
 
-Capability dispatch is one verb whose outcome lives on the entity. A custom trait
-declares `capabilities[]`; a `CapabilityBehavior` implements the four phases and
-branches on the trait's own data (the registry allows just one behavior per trait
-+ capability); `registerCapabilityBehavior()` links them. A dispatch action — hand-written
-or built by `createCapabilityDispatchAction()` — finds the trait claiming the
-capability and delegates each phase to its behavior. Entities without the trait
-get the can't-do-that message for free.
+Capability dispatch lets each entity carry its own rule for a verb. A custom trait
+declares the capability, a `CapabilityBehavior` implements the four phases over
+that trait's data, and `registerCapabilityBehavior()` links them. The dispatch
+action (yours, or one built by `createCapabilityDispatchAction()`) finds the trait
+claiming the capability and delegates to its behavior, so entities without the
+trait get the can't-do-that message for free.

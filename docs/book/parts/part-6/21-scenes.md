@@ -1,4 +1,4 @@
-# Scenes
+# Scenes: Named Windows of Story Time
 
 A world that only reacts command-by-command stays flat. Stories have *phases* — a
 storm that rolls in and passes, a market that's busy by day, a tense stretch while

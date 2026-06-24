@@ -1,4 +1,4 @@
-# Your First Room
+# Your First Room: Entities, Traits, and the World
 
 You're standing at the entrance to the Willowbrook Family Zoo. There's a welcome sign and a ticket booth. You can look around and examine things, but there's nowhere to go yet.
 

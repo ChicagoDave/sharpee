@@ -1,4 +1,4 @@
-# The Formatter Chain
+# The Formatter Chain: Grammar in the Template, Not the Text
 
 The last chapter left a thread hanging: when a message parameter is an *entity*,
 the language layer renders its name with the right article and capitalization — "the
@@ -101,11 +101,10 @@ Here `a` is applied to every element and then `list` stitches them together. A
 
 ## Key takeaway
 
-The formatter chain keeps English grammar out of your literal text and in the
-template's placeholders. Article formatters (`{a:item}`, `{the:item}`,
-`{some:item}`) choose the right word from the entity's own metadata — which is why
-you pass the *entity*, not a bare name — and text formatters (`{cap:…}`, and
-friends) handle capitalization; chain them with colons (`{the:cap:item}`) to
-combine, and use `{items:list}` for collections. Write one message, and it reads
-correctly for every object it's ever handed. With grammar, language, and formatting
-covered, the words half of Sharpee is complete.
+The formatter chain keeps English grammar in the template's placeholders, not your
+literal text. Article formatters (`{a:item}`, `{the:item}`) pick the right word
+from the entity's own metadata, which is why you pass the *entity*, not a bare
+name. Text formatters like `{cap:…}` handle capitalization, and you chain them with
+colons to stack more than one on a value, as in `{the:cap:item}`. Write one
+message, and it reads correctly for every object it's ever handed. With grammar,
+language, and formatting covered, the words side of Sharpee is complete.

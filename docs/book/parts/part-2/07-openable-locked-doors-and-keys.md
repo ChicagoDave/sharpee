@@ -1,4 +1,4 @@
-# Openable Things, Locked Doors & Keys
+# Openable Things, Locked Doors & Keys: Gating the Way Through
 
 The containers in the last chapter gave up their contents freely. Real worlds make
 you work a little: a lunchbox you must open before you can reach the juice inside,

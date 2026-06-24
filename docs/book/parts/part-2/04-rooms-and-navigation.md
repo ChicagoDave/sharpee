@@ -4,7 +4,7 @@
 
 :::
 
-# Rooms & Navigation
+# Rooms & Navigation: Exits Wired in Pairs
 
 One room is a demo, not a game. In this chapter the zoo grows to four
 locations — the Zoo Entrance, a Main Path, a Petting Zoo, and an Aviary — and the

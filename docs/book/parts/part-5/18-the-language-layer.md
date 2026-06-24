@@ -1,4 +1,4 @@
-# The Language Layer — Messages & Message IDs
+# The Language Layer: Messages & Message IDs
 
 Chapter 3 promised that **actions emit events, not text** — that the words the
 player reads are produced later, somewhere else. This is that somewhere else. The
@@ -92,11 +92,10 @@ the layer built to hold it.
 
 ## Key takeaway
 
-All user-facing text lives in the language layer; code refers to it by **message
-ID**, never by literal string. Actions and handlers emit an ID plus `params`; the
-engine's prose pipeline resolves the ID to a template and fills its
-`{placeholders}` at turn end. Register your story's text with `addMessage(id, template)` in `extendLanguage`,
-namespace your IDs (`zoo.*` beside the platform's `if.*`), and reuse an existing ID
-to override a standard message. This one separation — intent in the code, words in
-the language layer — is what makes a Sharpee story translatable, restyleable, and
-consistent.
+All user-facing text lives in the language layer or in your story; code refers to
+messages by **ID**, never a literal string. Actions emit an ID plus `params`, and
+the prose pipeline resolves it to a template at turn end. Registering text means
+`addMessage` in `extendLanguage`, namespacing your IDs beside the platform's, and
+reusing an ID to override a standard message. That separation keeps intent in the
+code and the words in the language layer, and it is what makes a Sharpee story
+translatable, restyleable, and consistent.

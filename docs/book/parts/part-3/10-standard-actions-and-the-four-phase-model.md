@@ -4,7 +4,7 @@
 
 :::
 
-# The Standard Actions & the Four-Phase Model
+# The Standard Actions: The Four-Phase Model
 
 So far the zoo has been a place to *be*: rooms to walk through, objects to examine,
 containers to open. Everything the player could do already worked — `take`, `drop`,

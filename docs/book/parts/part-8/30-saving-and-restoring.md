@@ -1,4 +1,4 @@
-# Saving & Restoring
+# Saving & Restoring: State Lives in the World
 
 A full play of the zoo runs to dozens of turns across two acts. Players will want to
 stop and come back. So how do you make the zoo saveable? The happy answer is the
@@ -85,12 +85,12 @@ mistaken for a different shape by the next.
 
 ## Key takeaway
 
-Save and restore come almost free because game state lives in the **world**, and the
-engine serializes the whole world into one `ISaveData` (a compressed `worldSnapshot`)
-that rebuilds on restore — score, positions, state flags, and all. The single thing
-you must handle yourself is **transient state held outside the world**: a closure flag
-or daemon counter is invisible to the snapshot, so expose it through `getRunnerState`
-/ `restoreRunnerState`, as v17's behavior-swap daemon does. In the browser, saves are
-wrapped in a `localStorage` envelope, autosaved every turn off the channel packet, and
-versioned so the format can evolve safely. With the game tested and persistable, it's
-time to hand it to players — building and publishing.
+Save and restore come almost free because game state lives in the **world**: the
+engine serializes the whole thing into one `ISaveData` that rebuilds on restore,
+score and positions and flags and all. The one thing you handle yourself is
+**transient state held outside the world**: a closure flag or daemon counter is
+invisible to the snapshot, so expose it through
+`getRunnerState`/`restoreRunnerState`, as v17's behavior-swap daemon does. In the
+browser, saves are versioned `localStorage` envelopes, autosaved every turn. With
+the game tested and persistable, it's time to hand it to players: building and
+publishing.

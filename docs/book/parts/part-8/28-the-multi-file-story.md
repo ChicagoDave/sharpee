@@ -4,7 +4,7 @@
 
 :::
 
-# Putting It All Together — The Multi-File Story
+# The Multi-File Story: Putting It All Together
 
 Every chapter so far has shown a fragment: a trait here, a daemon there, a custom
 action on its own. A real story is all of it at once — and by now the Family Zoo has
@@ -131,13 +131,11 @@ read — which is the entire payoff of organizing by concern.
 
 ## Key takeaway
 
-A growing story outgrows one file; split it by **concern** — what changes together —
-not by code type, so there's no `actions.ts` or `traits.ts`, only `zoo-map.ts`,
-`characters.ts`, `scoring.ts`, and friends. Each file exposes a builder function and
-a typed set of IDs; IDs flow forward through the build so files stay decoupled. The
-`Story` class in `index.ts` becomes a thin wiring layer over those builders. Version
-17 proves the structure by adding a whole second act — the after-hours phase, driven
-by a `zoo.after_hours` state flag and a runtime NPC behavior swap — without making
-any one file harder to read. The zoo is now a complete, shippable game. The rest of
-this volume is about getting it to players: testing it, saving it, building it, and
-serving it to many at once.
+As your story grows, one file becomes unwieldy. Split your story elements by
+**concern**: things that change together are sticky, so they belong in the same
+file. Each file exposes a builder and a typed set of IDs that flow forward through
+the build, so files stay decoupled and the `Story` class in `index.ts` is just a
+thin wiring layer. Version 17 proves the structure by adding a whole second act (the
+after-hours phase) without making any one file harder to read. The rest of this
+volume is about getting the zoo to players: testing, saving, building, and serving
+it.

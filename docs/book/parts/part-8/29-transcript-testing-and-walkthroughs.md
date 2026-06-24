@@ -1,4 +1,4 @@
-# Transcript Testing & Walkthroughs
+# Transcript Testing & Walkthroughs: Proving the Game Still Works
 
 The zoo is a real game now, spread across seven files and two acts. The moment you
 add an eighth feature, you risk breaking one of the first seven. You need a way to
@@ -102,13 +102,12 @@ individually, exactly matching the two-kinds split.
 
 ## Key takeaway
 
-Transcript testing replays a recorded playthrough through the real engine and checks
-it. **Unit transcripts** (`tests/transcripts/`) run in isolation on a fresh game;
-**walkthroughs** (`wt-*`, run with `--chain`) keep state across files to verify the
-whole game finishes, checkpointing with `$save`/`$restore`. Assert on three layers —
-text (`contains`, `matches`), **events** (`[EVENT: …]`), and **state** (`[STATE: …]`,
-the strongest, because it checks the mutation, not the message). Control-flow
-directives (`[GOAL]`/`[ENSURES]`, `[IF]`, `[WHILE]`, `[NAVIGATE TO]`) absorb the
-variation real play introduces. Run them with `npx sharpee build --test`. A green
-suite is your license to keep adding features without fear; next we make sure a
-player's *own* progress survives — saving and restoring.
+A transcript test replays a recorded sequence of commands through the real engine
+and checks each turn against assertions you write. **Unit transcripts** run in
+isolation on a fresh game; **walkthroughs** (`wt-*`, run with `--chain`) keep state
+across files to verify the whole game finishes. Assert on text, **events**, or
+**state**. State is the strongest, because it checks the mutation, not the message.
+Control-flow directives (`[GOAL]`, `[IF]`, `[WHILE]`, `[NAVIGATE TO]`) absorb the
+variation real play introduces. A green suite is your license to keep adding
+features without fear; next we make sure a player's *own* progress survives: saving
+and restoring.

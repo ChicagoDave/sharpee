@@ -4,7 +4,7 @@
 
 :::
 
-# Extending the Grammar
+# Extending the Grammar: Teaching New Sentence Shapes
 
 A parser's whole job is to make sense of words — to take a line a player typed and
 decide which action it means and what it acts on. You've already taught it a few new

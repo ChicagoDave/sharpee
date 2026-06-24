@@ -1,4 +1,4 @@
-# Scenery & Portable Objects
+# Scenery & Portable Objects: Everything Is Portable by Default
 
 A world you can only walk through is a stage set. In this chapter the zoo gains
 two kinds of things: **scenery** you can examine but never carry off — fences,

@@ -1,4 +1,4 @@
-# Turns, Timed Events & Daemons
+# Turns, Timed Events & Daemons: Giving the World a Clock
 
 A living world doesn't only react to the player — it has a clock of its own.
 Announcements crackle over the zoo PA as closing time approaches. Feeding time
@@ -252,10 +252,9 @@ daemon above ("counting itself down and stopping") was built to do.
 
 ## Key takeaway
 
-The `SchedulerPlugin` gives the world a clock: register it in `onEngineReady()`
-and it ticks after every player turn. **Daemons** run each turn — gate them with a
-`condition` (turn modulus or world state), keep internal state in the closure, and
-expose `getRunnerState`/`restoreRunnerState` for saves. **Fuses** count down and
-`trigger` once, re-arming when `repeat` is set, but skip their first tick. Both
-return `game.message` events with `narrate: true`, and both can cooperate through
-world state — a fuse setting the stage for a daemon to play out.
+The `SchedulerPlugin` gives the world a clock once you register it in
+`onEngineReady()`. **Daemons** run every turn; gate them with a `condition`, and
+expose `getRunnerState`/`restoreRunnerState` so their closure state survives a
+save. **Fuses** count down and fire once (re-arming with `repeat`), but skip their
+first tick. Both narrate through `game.message` events, and both can cooperate
+through world state: a fuse can set the stage for a daemon to play out.

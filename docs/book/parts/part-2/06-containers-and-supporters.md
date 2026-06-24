@@ -1,4 +1,4 @@
-# Containers & Supporters
+# Containers & Supporters: What Holds What
 
 So far the zoo has things you walk past and things you carry. This chapter adds
 things that hold *other* things: a red backpack the player can store items inside,

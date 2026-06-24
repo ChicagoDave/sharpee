@@ -1,4 +1,4 @@
-# Building & Publishing — the Single-Player Browser Client
+# Building & Publishing: The Single-Player Browser Client
 
 The zoo runs, it's tested, it saves. The last step is the one that turns a project
 into a *game*: getting it onto a screen that isn't yours. For single-player Sharpee
@@ -81,9 +81,10 @@ toolchain, and isn't something a story author needs.)
 
 Single-player publishing produces one self-contained artifact. `sharpee build`
 compiles your story and emits a **`.sharpee` bundle**; `sharpee init-browser` then
-`sharpee build` wraps it in the framework-free browser client at **`dist/web/`** — a
+`sharpee build` wraps it in the framework-free browser client at **`dist/web/`**, a
 static `index.html` with no server and no install, which you host anywhere static
 files live and verify locally with any file server. Builds are fast because the
 platform is a pinned npm dependency, never rebuilt; every build is **version-stamped
 first** so the number always matches the artifact. That ships the game to one player
-in a browser. The final chapter scales it to many at once — Zifmia.
+in a browser, a complete and hostable artifact, and the finish line for the zoo
+you've built chapter by chapter.

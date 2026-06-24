@@ -4,7 +4,7 @@
 
 :::
 
-# Event Handlers
+# Event Handlers: Reacting to What Happens
 
 So far every object in the zoo has *been* something — scenery, a container, a
 readable sign. This chapter is where the world starts to *react*. Drop the bag

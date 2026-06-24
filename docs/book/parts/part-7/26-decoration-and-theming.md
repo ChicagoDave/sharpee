@@ -1,4 +1,4 @@
-# Decoration, Theming & the Status Line
+# Decoration & Theming: Style Without HTML on the Wire
 
 Channels carry data, and the client paints it — but the data still has to *say*
 something about emphasis, and the page still has to *look* like something. This
@@ -201,18 +201,12 @@ privileged — it's the universal channel mechanism pointed at a strip of the pa
 
 ## Key takeaway
 
-Style reaches the screen in three layers, none of which puts HTML on the wire.
-**Decoration** marks prose with `[name:content]` brackets that become
-`sharpee-`-prefixed spans for the platform vocabulary (`[em:…]`, `[item:…]`) or
-verbatim author classes for names it doesn't know — markup says *what*, CSS says
-*how*. **Theming** keeps one DOM and a stable component vocabulary
-(`.sharpee-window`, `.sharpee-prose-pane`, …); the platform ships a theme *engine*
-that paints those components from sixteen `--theme-*` tokens, so a theme is just a
-`[data-theme]` block of variables — selected by a single `data-theme` flip. Offer a
-built-in by listing its id in `sharpee.themes`, or ship your own by writing a
-`[data-theme]` block in your override stylesheet and listing it inline; anything
-missing falls back to the `:root` default. The **status
-line** is just the `location` / `score` / `turn` channels rendered into the status
-bar — restyle it with CSS or re-register its renderers like any other channel. Text
-and chrome covered, the final chapter adds the senses Sharpee has saved for last:
-images and sound.
+Style reaches the screen without ever putting HTML on the wire. **Decoration** marks
+prose with `[name:content]` brackets that become `sharpee-`-prefixed spans; markup
+says *what*, CSS says *how*. **Theming** paints a stable component vocabulary from
+sixteen `--theme-*` tokens, so a theme is just a `[data-theme]` block of variables,
+selected by a single flip. Offer a built-in by id in `sharpee.themes`, or ship your
+own in your override stylesheet. Even the status line is just the
+`location`/`score`/`turn` channels rendered into a bar you can restyle. Text and
+chrome covered, the final chapter adds the senses Sharpee has saved for last: images
+and sound.
