@@ -319,7 +319,7 @@ describe('ExitTrait', () => {
       expect(retrievedTrait.to).toBe('pantry');
     });
 
-    it('should warn and keep original exit trait', () => {
+    it('should replace the existing exit trait with the new one (ADR-189)', () => {
       const entity = new IFEntity('portal', 'exit');
       
       const trait1 = new ExitTrait({
@@ -341,16 +341,14 @@ describe('ExitTrait', () => {
       entity.add(trait2);
       
       const retrievedTrait = entity.get(TraitType.EXIT) as ExitTrait;
-      // Should keep original trait, not the new one
-      expect(retrievedTrait).toBe(trait1);
-      expect(retrievedTrait.from).toBe('room1');
-      expect(retrievedTrait.to).toBe('room2');
-      expect(retrievedTrait.command).toBe('enter portal');
-      
-      // Should have warned about duplicate
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('already has trait: exit')
-      );
+      // The new trait replaces the original (replace-on-same-type)
+      expect(retrievedTrait).toBe(trait2);
+      expect(retrievedTrait.from).toBe('room3');
+      expect(retrievedTrait.to).toBe('room4');
+      expect(retrievedTrait.command).toBe('use portal');
+
+      // Silent overwrite: no warning
+      expect(warnSpy).not.toHaveBeenCalled();
       
       warnSpy.mockRestore();
     });

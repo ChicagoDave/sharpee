@@ -11,6 +11,7 @@ import { RegionTrait, IRegionData } from '../traits/region/regionTrait';
 import { SceneTrait } from '../traits/scene/sceneTrait';
 import { DoorTrait } from '../traits/door';
 import { SceneryTrait } from '../traits/scenery';
+import { DEFAULT_TRAITS } from './default-trait-registry';
 import { IdentityTrait } from '../traits/identity/identityTrait';
 import { OpenableTrait } from '../traits/openable/openableTrait';
 import { LockableTrait } from '../traits/lockable/lockableTrait';
@@ -166,7 +167,7 @@ export interface IWorldModel {
   hasCapability(name: string): boolean;
 
   // Entity Management
-  createEntity(displayName: string, type?: string): IFEntity;
+  createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean }): IFEntity;
   getEntity(id: string): IFEntity | undefined;
   hasEntity(id: string): boolean;
   removeEntity(id: string): boolean;
@@ -481,7 +482,7 @@ export class WorldModel implements IWorldModel {
   }
 
   // Entity Management
-  createEntity(displayName: string, type: string = 'object'): IFEntity {
+  createEntity(displayName: string, type: string = 'object', opts?: { defaultTraits?: boolean }): IFEntity {
     // Validate entity type
     if (!isEntityType(type)) {
       throw new Error(`Unknown entity type: '${type}'. Valid types are: ${Object.values(EntityType).join(', ')}`);
@@ -500,6 +501,18 @@ export class WorldModel implements IWorldModel {
 
     // Add to entity map
     this.entities.set(id, entity);
+
+    // ADR-189: give the entity its type's default traits (e.g. SCENERY -> SceneryTrait)
+    // unless the caller opts out. Each factory yields a fresh instance; an author can
+    // override later via add() (replace-on-same-type).
+    if (opts?.defaultTraits !== false) {
+      const factories = DEFAULT_TRAITS.get(type);
+      if (factories) {
+        for (const factory of factories) {
+          entity.add(factory());
+        }
+      }
+    }
 
     return entity;
   }

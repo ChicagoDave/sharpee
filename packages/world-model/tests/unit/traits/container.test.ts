@@ -190,7 +190,7 @@ describe('ContainerTrait', () => {
       expect(retrievedTrait.capacity?.maxItems).toBe(10);
     });
 
-    it('should warn and keep original container trait', () => {
+    it('should replace the existing container trait with the new one (ADR-189)', () => {
       const entity = createTestContainer(world, 'box');
       // Entity already has a container trait from createTestContainer
       const originalTrait = entity.get(TraitType.CONTAINER) as ContainerTrait;
@@ -206,13 +206,12 @@ describe('ContainerTrait', () => {
       entity.add(newTrait);
       
       const trait = entity.get(TraitType.CONTAINER) as ContainerTrait;
-      // Should keep original trait, not the new one
-      expect(trait).toBe(originalTrait);
-      
-      // Should have warned about duplicate
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('already has trait: container')
-      );
+      // The new trait replaces the original (replace-on-same-type)
+      expect(trait).toBe(newTrait);
+      expect(trait).not.toBe(originalTrait);
+
+      // Silent overwrite: no warning
+      expect(warnSpy).not.toHaveBeenCalled();
       
       warnSpy.mockRestore();
     });
