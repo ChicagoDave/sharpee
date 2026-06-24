@@ -139,8 +139,8 @@ sharpee build
   client or share for distribution.
 
 Whenever you change the story, `sharpee build` again. (If a build ever looks
-stale, delete `dist/` and rebuild — `build` checks that each step actually emits
-output, so a true no-op is rare.)
+stale, delete `dist/` and rebuild from a clean slate; `build` already checks that
+each step emits output, so a stale `dist/` rarely survives a rebuild on its own.)
 
 ## Playing it
 

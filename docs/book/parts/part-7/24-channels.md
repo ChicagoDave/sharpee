@@ -85,8 +85,7 @@ graphical browser from exactly the same code.
 When your story has a UI signal the standard channels don't cover — an ambient mood
 line, a custom HUD value, a trigger for a story-specific overlay — you define your
 own **`IOChannel`** in the `registerChannels` hook. A channel is an object with an
-`id`, a `contentType`, a `mode`, an `emit` policy, and a `produce` closure that
-computes its value for the turn:
+`id`, a `contentType`, a `mode`, an `emit` policy, and a `produce` closure:
 
 ```typescript
 // A mood line per room — rooms not listed clear the line.

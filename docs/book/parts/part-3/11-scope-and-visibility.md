@@ -32,9 +32,10 @@ because different verbs need different things:
 These overlap but aren't identical, and the gap between them is where good puzzles
 live. You can *see* a fish through the glass of an aquarium but not *reach* it. You
 can *hear* the parrot squawking from the next room without it being *visible*. Most
-of the time the standard actions pick the right degree for you — `examine` wants
-visibility, `take` wants reach — so you rarely think about it. But the distinction
-is there when you need it.
+of the time the standard actions pick the right degree for you (`examine` wants
+visibility, `take` wants reach), so you rarely think about it. You reach for the
+distinction yourself only when you write a custom action whose verb needs a
+different degree.
 
 ## Sight and darkness
 
@@ -46,15 +47,14 @@ with the darkness message instead. Bring a lit flashlight and visibility (and th
 room's contents) snap back.
 
 This is why darkness works as a gate: it doesn't remove objects, it removes the
-player's *perception* of them. Scope respects the senses, and sight is the one most
-stories lean on.
+player's *perception* of them. Sight is the sense most puzzles gate on, but the same
+rule covers the others: a sound the player can't hear is out of scope too.
 
 ## Permissive parser, strict action
 
-There's one design choice worth understanding even though you rarely configure it.
-The parser is deliberately **permissive**: when it resolves a noun, it accepts
-anything the player could plausibly be touching, and leaves the harder judgment to
-the action. The action's `validate` phase then applies the *strict* rule — does
+The parser is deliberately **permissive**, and this is worth understanding even
+though you rarely configure it: when it resolves a noun, it accepts anything the
+player could plausibly be touching, and leaves the harder judgment to the action. The action's `validate` phase then applies the *strict* rule — does
 this verb actually require sight? reach?
 
 The payoff is commands like attacking, pushing, or grabbing in the dark: the parser

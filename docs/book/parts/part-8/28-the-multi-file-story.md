@@ -125,9 +125,9 @@ the split files instead of tangling one big one:
 - **`scoring.ts`** grows a bonus tier: 25 points for witnessing the after-hours
   events, on top of the 75-point base game.
 
-Every one of those touches lands in the file that owns its concern. The feature is
-*more* ambitious than anything before it, and yet no single file became harder to
-read — which is the entire payoff of organizing by concern.
+Every one of those touches lands in the file that owns its concern: the daemons in
+`events.ts`, the phase flag in world state, the behavior swap in `index.ts`, the
+bonus tier in `scoring.ts`. A whole second act, and no single file grew harder to read.
 
 ## Key takeaway
 

@@ -67,8 +67,8 @@ A unit test answers "does this feature work in isolation?" A walkthrough answers
   words. After `feed goats`, assert the `fed-…` state flag is set and the score went
   up — the actual effects, not the message describing them.
 
-State assertions are worth reaching for. A message can read correctly while the world
-behind it is wrong; asserting on state catches that.
+A message can read correctly while the world behind it is wrong (a score that never
+incremented, an item that was never consumed), and only a state assertion catches that.
 
 ## Handling variable outcomes
 

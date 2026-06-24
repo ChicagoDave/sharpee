@@ -30,8 +30,8 @@ plaque.add(new ReadableTrait({
 }));
 ```
 
-The key idea is that *reading* and *examining* are different verbs that pull
-from different places:
+`read` and `examine` are different verbs that pull from different traits,
+`ReadableTrait.text` versus `IdentityTrait.description`:
 
 | Command | Trait used | What it shows |
 |---|---|---|

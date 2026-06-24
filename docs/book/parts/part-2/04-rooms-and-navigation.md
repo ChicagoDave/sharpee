@@ -229,7 +229,7 @@ initializeWorld(world: WorldModel): void {
 }
 ```
 
-That's the whole method — nothing is hidden behind an "as before" comment. The
+The method is complete; nothing is abbreviated with an "as before" comment. The
 `direction signs` on the Main Path are what `examine signs` in the "Try it" list
 below reads.
 

@@ -58,7 +58,7 @@ A container is fixed or portable on exactly the rule from the last chapter:
 | Backpack | Yes | No `SceneryTrait` — the player can take it |
 | Feed dispenser | No | Has `SceneryTrait` — fixed to its post |
 
-A portable container is a small piece of magic: the player takes the backpack and
+A portable container moves as a unit: the player takes the backpack and
 everything inside comes with it. A bag of five items counts as **one** item in the
 player's own inventory. A fixed container — the dispenser below — is for built-in
 storage the player can reach into but never walk off with:

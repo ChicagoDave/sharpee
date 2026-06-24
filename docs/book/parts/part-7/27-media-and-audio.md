@@ -56,8 +56,7 @@ Audio is just more `media.*` events, each projected onto a standard channel:
 - **`media.image.show` / `media.image.hide`** — show or hide an image on an
   `image:<layer>` channel (`background`, `main`, `overlay`).
 
-Every duration is in milliseconds and every volume runs 0.0–1.0, so the events read
-like intent, not like a sound driver.
+Every duration is in milliseconds and every volume runs 0.0–1.0.
 
 > **A note on `@sharpee/media`.** Sharpee also ships a `@sharpee/media` package
 > (ADR-138) with an older `audio.*` event vocabulary and an `AudioRegistry`. That

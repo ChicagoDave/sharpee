@@ -94,8 +94,7 @@ to one — both routes end at the same place: an actor with an `NpcTrait` whose
 
 ## Built-in behaviors
 
-You don't have to write a behavior from scratch. The stdlib ships several ready
-to use:
+The stdlib ships several behaviors ready to use, so common NPCs need no custom code:
 
 | Behavior | What it does |
 |---|---|

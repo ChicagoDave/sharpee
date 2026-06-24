@@ -89,11 +89,10 @@ library. The UI is plain HTML elements styled by CSS classes. Dialogs are native
 attributes — an open menu carries `--open` and `aria-expanded`, a checked theme
 carries `--checked`.
 
-This is a deliberate architecture, not an omission. A framework would put a runtime
+The framework-free build is deliberate: a framework would put a runtime
 between the author and the page and impose its own idioms for overriding a view.
 Sharpee's bet is the opposite: the page is just HTML and CSS, so an author restyles
-it with CSS and replaces a renderer with a function. Nothing to learn but the web
-platform you already know.
+it with CSS and replaces a renderer with a function. There is no framework API to learn.
 
 ## Overriding a renderer
 

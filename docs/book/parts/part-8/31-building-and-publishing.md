@@ -38,10 +38,9 @@ sharpee build          # now also emits the web client → dist/web/
 ```
 
 `dist/web/` is the deliverable: an `index.html` and its assets with your story baked
-in. It has no server, no build step, no runtime dependency — it's static files. Open
-`index.html` and the game runs. That self-containment is the point: the same channel
-architecture that let one story drive a terminal or a browser means the browser build
-is just files.
+in. It has no server, no build step, and no runtime dependency: open `index.html` and the
+game runs. The same channel architecture that let one story drive a terminal or a
+browser is what makes the browser build nothing but static files.
 
 ## Hosting it
 

@@ -9,7 +9,7 @@ doesn't carry the state your story needs.
 
 ## Traits are data; behaviors are rules
 
-The world model draws a sharp line, and it's worth saying plainly:
+The world model draws a sharp line:
 
 - A **trait** is *data*. It holds the state an entity carries — a name, a
   capacity, whether a light is lit — and nothing else. No logic.

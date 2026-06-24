@@ -84,9 +84,9 @@ complete, well-formed turn; it simply reports a different outcome.
 
 ## Why the discipline matters
 
-Splitting an action into four phases with strict rules — *mutations only in
-execute, events only in report* — is not bureaucracy. It's what makes the whole
-system predictable and extensible:
+Splitting an action into four phases with strict rules (*mutations only in
+execute, events only in report*) is what makes the whole system predictable and
+extensible:
 
 - **Validation can be trusted.** Because `validate` never changes anything, the
   engine can ask "would this work?" without side effects — which is how the parser

@@ -130,6 +130,5 @@ A scene is a named phase of the story with `begin` and `end` conditions the engi
 checks each turn, cycling `waiting → active → ended` (and back to `waiting` when
 `recurring`). Create them with `world.createScene()` in `initializeWorld()`, query
 state with `world.isSceneActive()` / `hasSceneHappened()`, and react to the edges
-with the scene's own `onBegin` / `onEnd` callbacks. Scenes are how you
-think in story beats rather than individual turns — the staging layer over the
-moment-to-moment world.
+with the scene's own `onBegin` / `onEnd` callbacks. Reach for a scene when a phase of the story needs a defined window; let a daemon or
+fuse handle whatever happens turn-by-turn inside it.

@@ -103,9 +103,8 @@ function createPAAnnouncementDaemon(): Daemon {
 }
 ```
 
-A few things to notice. The daemon keeps its own state (`announcementCount`) in
-the closure, and exposes `getRunnerState`/`restoreRunnerState` so that state
-survives a save and reload. Daemon events here use `type: 'game.message'` with a
+The daemon keeps its own state (`announcementCount`) in the closure, and exposes
+`getRunnerState`/`restoreRunnerState` so that state survives a save and reload. Daemon events here use `type: 'game.message'` with a
 `messageId` and `narrate: true` — that's the right form for scheduler output,
 which the engine narrates as ambient text. (Contrast this with the chain handlers
 in *Event Handlers*, which must avoid `game.message` because there it would

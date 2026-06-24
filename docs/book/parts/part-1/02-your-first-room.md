@@ -226,7 +226,7 @@ annotation, `story` is typed as just `FamilyZooStory`, which doesn't have them y
 the browser build fails. Annotate the export and every chapter builds.
 
 That's the whole file: imports, `config`, the `class` with `createPlayer` and
-`initializeWorld`, and these exports. Build it and it runs.
+`initializeWorld`, and these exports.
 
 ## Try it
 

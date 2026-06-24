@@ -130,7 +130,7 @@ their **ids** — no installs, no extra dependencies:
 ```
 
 `sharpee build-browser` copies each listed built-in's CSS out of platform-browser into
-`dist/web/themes/<id>.css`, links it, and adds it to the menu. That's the whole step.
+`dist/web/themes/<id>.css`, links it, and adds it to the menu.
 
 ### Your own theme — three lines of CSS and one list entry
 
@@ -162,7 +162,7 @@ Because a theme is just a token block, shipping your own takes two small pieces:
 That's it. The build adds *Zoo Sunny* to the menu; selecting it flips
 `data-theme="zoo-sunny"`, and the engine paints the window, menu, status bar, prose
 pane, dialogs, and input from your four variables (and the `:root` defaults for the
-rest). A token block is genuinely the whole theme — no component rules required.
+rest).
 
 If you *want* to push past the tokens — Family Zoo, for instance, deliberately puts
 its green on the title and menu bars instead of the engine's default (the status bar)

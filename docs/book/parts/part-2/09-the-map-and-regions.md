@@ -63,7 +63,7 @@ world.assignRoom(nocturnalExhibit.id, 'reg-staff');
 
 ## Region-wide properties
 
-The reason to group rooms — beyond tidiness — is that a region can carry properties
+The reason to group rooms is that a region can carry properties
 its rooms inherit. A `RegionOptions` object accepts a few:
 
 | Property | What it does |
