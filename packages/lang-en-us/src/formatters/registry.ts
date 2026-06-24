@@ -8,7 +8,7 @@
 
 import type { Formatter, FormatterRegistry, FormatterContext, EntityInfo } from './types.js';
 import { aFormatter, theFormatter, someFormatter, yourFormatter } from './article.js';
-import { listFormatter, orListFormatter, commaListFormatter, countFormatter } from './list.js';
+import { listFormatter, theListFormatter, namesFormatter, orListFormatter, commaListFormatter, countFormatter } from './list.js';
 import { capFormatter, upperFormatter, lowerFormatter, titleFormatter } from './text.js';
 import { isFormatter, wasFormatter, hasFormatter } from './verb.js';
 
@@ -27,6 +27,8 @@ export function createFormatterRegistry(): FormatterRegistry {
 
   // List formatters
   registry.set('list', listFormatter);
+  registry.set('the-list', theListFormatter);
+  registry.set('names', namesFormatter);
   registry.set('or-list', orListFormatter);
   registry.set('comma-list', commaListFormatter);
   registry.set('count', countFormatter);

@@ -45,6 +45,13 @@ export class IdentityTrait implements ITrait {
   
   /** Article to use with the name ("a", "an", "the", "some", or empty for proper names) */
   article = 'a';
+
+  /**
+   * Author-supplied plural form for irregular nouns (ADR-190), e.g. "geese" for
+   * "goose". The `list`/`count` formatters use this when set, else fall back to the
+   * `pluralize()` heuristic. Flows to the language layer via `entityInfoFrom`.
+   */
+  plural?: string;
   
   /** Whether this entity is concealed from normal view */
   concealed = false;

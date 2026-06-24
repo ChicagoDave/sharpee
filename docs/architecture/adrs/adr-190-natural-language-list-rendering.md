@@ -1,6 +1,6 @@
 # ADR-190: Natural-language list rendering in the language layer
 
-## Status: PROPOSED
+## Status: ACCEPTED (2026-06-24)
 
 ## Date: 2026-06-24
 
@@ -65,22 +65,37 @@ Rules:
    (vowel-sound aware), `some` for mass nouns, none for proper/unique names. A
    **definite** variant, `{the-list:items}`, renders "the goat, the rabbit, and the
    parrot".
-2. **Grouping**: identical entities (same rendered name) collapse to a count +
-   pluralized noun ("two goats"), using `pluralize()`; the count word is spelled out
-   for small numbers (configurable threshold) and numeric above it.
-3. **Join**: commas between elements, "and" before the last; **Oxford/serial comma on
-   by default** (3+ elements). Empty list → "nothing".
-4. **Order**: placeholder is the last colon segment (the existing `parsePlaceholder`
+2. **Grouping by rendered name**: identical entities (same rendered name) collapse to
+   a count + pluralized noun ("two goats"); the count is **spelled out for 2–10,
+   numeric for 11+**. Proper names and mass nouns never count-group.
+3. **Pluralization**: the grouped noun uses the entity's optional
+   `IdentityTrait.plural` override when set, else the `pluralize()` heuristic (regular
+   `+s`/`+es`).
+4. **Join**: commas between elements, "and" before the last. The **serial (Oxford)
+   comma is author-configurable** via a story setting, **default on** (so 3+ →
+   "a, b, and c"; off → "a, b and c"). Empty list → "nothing".
+5. **Order**: placeholder is the last colon segment (the existing `parsePlaceholder`
    rule). The working forms are `{list:items}` and `{the-list:items}`; this corrects
    the backwards `{items:list}` examples (GH #167).
+
+### Data contract (input) — ADR-158
+
+Producers pass an array of **`EntityInfo`** (via `entityInfoFrom(entity)`, ADR-158),
+**not** names. Bare name strings strip the `article`/`nounType`/`properName` the
+renderer needs, so today's `looking`/`going`/`switching_on` (which pass
+`items.map(e => e.name)`) are an ADR-158 violation and must change to pass
+`EntityInfo[]`. The `list` formatter consumes `EntityInfo[]` directly; no context
+lookup is required. The producer change, the formatter change, and the
+`IdentityTrait.plural` field land **together** — a partial change renders bare names
+or breaks.
 
 ### What this absorbs
 
 - **GH #167** stops being "patch a broken example" and becomes "document the real,
   working `{list:items}`."
-- **GH #166** folds in: count-grouping is how repeated items render inside a list. The
-  standalone `count` formatter is fixed to use real pluralization (`pluralize()`), or
-  retired in favor of list grouping (open question).
+- **GH #166 is fixed here** (not deferred): the `count` formatter's broken `> 1` branch
+  is corrected to render the real noun via the shared pluralization helper, and `list`
+  count-grouping reuses that helper. `{count:coins}` with three → "three coins".
 - The chain model is **not** extended to compose per-element formatters; `list` does
   the per-element work internally. `aFormatter`/`theFormatter` keep their current
   single-value/array behavior for non-list uses.
@@ -95,18 +110,20 @@ already do.
 
 ## Consequences
 
-- **Existing standard-action messages change output.** `looking`, `going`,
-  `switching_on` pass arrays to `{list:items}`; they will now render with articles and
-  grouping ("you can see a lamp, a sword, and two coins" instead of "lamp, sword, and
-  coins"). This is the desired improvement, but it is a behavior change: their golden
-  tests and any walkthroughs asserting the old name-only output must be updated.
+- **Existing standard-action messages change — code and output.** `looking`, `going`,
+  `switching_on` (and any list producer) change from passing `e.name` to passing
+  `entityInfoFrom(e)` arrays, and now render with articles and grouping ("you can see a
+  lamp, a sword, and two coins" instead of "lamp, sword, and coins"). This is the
+  desired improvement and an ADR-158 correction, but it is a behavior change: their
+  golden tests and any walkthroughs asserting the old name-only output must be updated.
 - **A name-only joiner may still be wanted** (e.g. lists of proper IDs or non-entity
   strings). Provide `{names:items}` (or keep the old behavior under a new name) so the
   articled `list` is not the only option.
-- **Pluralization is heuristic.** `pluralize()` is rule-based English; irregulars
-  (goose→geese) need either a better helper or a per-entity plural override on
-  `IdentityTrait`. The renderer must degrade gracefully (regular `+s`/`+es`) and allow
-  an override.
+- **Pluralization: heuristic + override.** Default rendering uses the `pluralize()`
+  heuristic (regular `+s`/`+es`); an **optional `plural` field on `IdentityTrait`**
+  (a world-model change) overrides it for irregulars (goose→geese) or special forms.
+- **The serial-comma setting is new story configuration** — a small, save-irrelevant
+  story-level flag (default on) the language layer reads at render time.
 - **Docs and the book become accurate showcases.** The Formatter Chain chapter's list
   example renders the real thing; `genai-api` regenerates from the corrected source.
 - **No save/wire impact** — this is text rendering only.
@@ -128,19 +145,25 @@ already do.
   pipeline yields `"You can see a goat, a rabbit, and a parrot here."`
 - **AC-10** Placeholder order: `{list:items}` works; the backwards `{items:list}` forms
   are gone from source and book (GH #167).
+- **AC-11** Serial-comma setting on (default) → "a goat, a rabbit, and a parrot"; off →
+  "a goat, a rabbit and a parrot".
+- **AC-12** Count threshold: ten identical items → "ten goats"; eleven → "11 goats".
+- **AC-13** Plural override: an entity with `IdentityTrait.plural = "geese"`, ×2 →
+  "two geese" (override beats the heuristic's "gooses").
+- **AC-14** Standalone `count` formatter renders the real pluralized noun
+  (`{count:coins}` with three → "three coins"), closing GH #166.
 
-## Open Questions
+## Resolved decisions (2026-06-24, David)
 
-- **Oxford comma**: on by default — should it be a per-story toggle, or fixed?
-- **Count threshold**: spell out counts up to N (e.g. "two", "three") then go numeric
-  ("12 coins") — what is N?
-- **`count` formatter**: fix it standalone (via `pluralize()`) for non-list uses, or
-  retire it now that `list` groups?
-- **Plural source**: rely on the `pluralize()` heuristic, or add an optional plural
-  field to `IdentityTrait` for irregulars? (Could ship heuristic now, add override
-  later.)
-- **Grouping key**: group by rendered name, or by entity identity/kind? (Two entities
-  both named "coin" group; two differently-named identical-kind items do not.)
+- **Data contract**: producers pass `EntityInfo[]` via `entityInfoFrom` (ADR-158); the
+  list formatter consumes it directly. Closes the review's contract gap.
+- **Serial (Oxford) comma**: author-configurable story setting, default on.
+- **Count threshold**: spell out 2–10, numeric for 11+.
+- **`count` formatter**: fixed (closes GH #166); shares the pluralization helper with
+  list grouping.
+- **Pluralization**: `pluralize()` heuristic by default, optional `IdentityTrait.plural`
+  override for irregulars.
+- **Grouping key**: by rendered name.
 
 ## Notes
 

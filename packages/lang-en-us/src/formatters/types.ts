@@ -16,6 +16,11 @@
 export interface FormatterContext {
   /** Get entity by ID for nounType/article lookup */
   getEntity?: (id: string) => EntityInfo | undefined;
+  /** Render-time settings the language layer reads (ADR-190). */
+  settings?: {
+    /** Serial (Oxford) comma in lists. Default true when absent. */
+    serialComma?: boolean;
+  };
 }
 
 /**
@@ -27,6 +32,12 @@ export interface EntityInfo {
   properName?: boolean;
   article?: string;
   grammaticalNumber?: 'singular' | 'plural';
+  /**
+   * Author-supplied plural form for irregular nouns (ADR-190). Populated from
+   * `IdentityTrait.plural` by `entityInfoFrom`. The `list`/`count` formatters use
+   * it when present, else fall back to the `pluralize()` heuristic.
+   */
+  plural?: string;
 }
 
 /**

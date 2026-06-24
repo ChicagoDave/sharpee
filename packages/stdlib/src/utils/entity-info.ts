@@ -66,6 +66,9 @@ export function entityInfoFrom(entity: IFEntity): EntityInfo {
   if (identity.grammaticalNumber !== undefined) {
     info.grammaticalNumber = identity.grammaticalNumber;
   }
+  if (identity.plural) {
+    info.plural = identity.plural;
+  }
 
   return info;
 }
