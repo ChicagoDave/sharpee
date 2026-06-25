@@ -135,15 +135,22 @@ build_web() {
     echo "  (skipping web nav injection: node not found)"
 }
 
-# Code-snippet page: render the book's per-chapter code steps + runnable cumulative
-# files into one standalone HTML page (docs/book/code-snippets/index.html) and publish
-# a copy into the GitHub Pages site (site/book-snippets.html). Self-contained; matches
-# the site palette/theme. Generated from the same canonical book source.
+# Book web presence on the site (GitHub Pages):
+#   - render the per-chapter code-snippet page as an integrated site page
+#     (site/book-snippets.html — shares style.css, the site nav, and theme.js).
+#   - publish the rendered book itself (HTML / EPUB / PDF) into site/ so the page's
+#     downloads bar and the nav's "Read the Book" link resolve.
+# Run after build_html/epub/pdf (the `all` target does); the artifact copy is guarded
+# so `build-book.sh snippets` alone still regenerates the page (downloads may 404 until
+# a full build publishes them).
 build_snippets() {
-  echo "→ SNIPPETS (book code-snippet page → site/book-snippets.html)"
-  command -v node >/dev/null || { echo "  (skipping snippet page: node not found)"; return 0; }
-  node "$SCRIPT_DIR/build-snippet-page.cjs"
-  cp -f "$BOOK_DIR/code-snippets/index.html" "$SCRIPT_DIR/../site/book-snippets.html"
+  echo "→ SNIPPETS + book downloads → site/"
+  local SITE="$SCRIPT_DIR/../site"
+  command -v node >/dev/null && node "$SCRIPT_DIR/build-snippet-page.cjs" \
+    || echo "  (skipping snippet page: node not found)"
+  for f in "$NAME.html" "$NAME.epub" "$NAME.pdf"; do
+    [ -f "$OUT/$f" ] && cp -f "$OUT/$f" "$SITE/$f" && echo "  published $f"
+  done
 }
 
 echo "→ art"

@@ -1,197 +1,173 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Sharpee Author and Developer Manual — Code Snippets</title>
-<style>
-  /* Palette mirrors site/style.css — dark default, champagne-gold accent, light toggle. */
-  :root{--bg:#0d1117;--bg-sidebar:#161b22;--border:#30363d;--text:#e6edf3;--text-muted:#8b949e;
-    --accent:#f2d280;--accent-hover:#f5dda0;--heading:#f0e6d3;
-    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-    --font-mono:"SF Mono","Cascadia Code","Fira Code",Menlo,Consolas,monospace;}
-  [data-theme="light"]{--bg:#faf9f7;--bg-sidebar:#f0eeeb;--border:#d4d0cc;--text:#2a2520;--text-muted:#555;
-    --accent:#3b82c4;--accent-hover:#2d6da3;--heading:#1a1a1a;}
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;font-family:var(--font-sans);font-size:15px;line-height:1.6;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
-  a{color:var(--accent);text-decoration:none}a:hover{color:var(--accent-hover)}
-  .sidebar{position:fixed;top:0;left:0;bottom:0;width:525px;overflow-y:auto;border-right:1px solid var(--border);background:var(--bg-sidebar);padding:1.5rem 0;display:flex;flex-direction:column}
-  .side-head{padding:0 1.5rem 1rem;font-weight:800;color:var(--accent);letter-spacing:-.02em;border-bottom:1px solid var(--border);margin-bottom:.5rem}
-  .side-head span{display:block;font-weight:400;color:var(--text-muted);font-size:13px;letter-spacing:0}
-  .sidebar ul{list-style:none;margin:0;padding:0;font-size:13.5px;flex:1}
-  .sidebar li a{display:block;padding:.34rem 1.5rem;color:var(--text-muted);border-left:3px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
-  .sidebar li a:hover{color:var(--accent)}
-  .sidebar li a.active{border-left-color:var(--accent);color:var(--accent);font-weight:700}
-  .theme-toggle{padding:0 1.5rem 1rem;display:flex;justify-content:flex-end}
-  .theme-toggle button{background:none;border:1px solid var(--border);color:var(--text-muted);font-family:var(--font-sans);font-size:.8rem;padding:.35rem .75rem;border-radius:4px;cursor:pointer}
-  .theme-toggle button:hover{color:var(--accent);border-color:var(--accent)}
-  .content{margin-left:525px;max-width:920px;padding:2.5rem 2rem 6rem}
-  header h1{margin:0 0 .25rem;font-size:2rem;font-weight:800;color:var(--heading);letter-spacing:-.02em;line-height:1.2}
-  header .subtitle{font-size:1rem;margin:.1rem 0 1rem;color:var(--text-muted)}
-  header p{color:var(--text-muted);margin:.25rem 0 1.5rem}
-  @media (max-width:760px){.sidebar{position:static;width:auto;bottom:auto;border-right:none;border-bottom:1px solid var(--border)}.content{margin-left:0}}
-  .chapter{border-top:1px solid var(--border);padding-top:1.5rem;margin-top:2.5rem}
-  h2{font-size:1.4rem;font-weight:700;color:var(--heading);margin:.2rem 0 .2rem}
-  h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:1.6rem 0 .6rem;font-weight:700}
-  .src{color:var(--text-muted);font-size:13px;margin:.1rem 0 0}
-  .note{color:var(--text-muted);font-size:13.5px}
-  .note code,.src code,header code{font-family:var(--font-mono);font-size:.85em;background:var(--bg-sidebar);padding:.1rem .35rem;border-radius:4px;border:1px solid var(--border)}
-  .step,.combined{border:1px solid var(--border);border-radius:6px;overflow:hidden;margin:.6rem 0}
-  .step-head{display:flex;align-items:center;gap:.6rem;padding:.4rem .7rem;background:var(--bg);border-bottom:1px solid var(--border);font-size:12.5px}
-  .badge{border:1px solid var(--border);color:var(--text-muted);border-radius:4px;padding:.05rem .45rem;font-weight:600}
-  .badge.run{background:var(--accent);color:var(--bg);border-color:var(--accent)}
-  .sec{color:var(--text);font-weight:600}
-  .lang{margin-left:auto;color:var(--text-muted);font-family:var(--font-mono)}
-  .lang.ref{color:var(--accent)}
-  .copy{border:1px solid var(--border);background:none;border-radius:5px;padding:.1rem .5rem;cursor:pointer;font-size:12px;color:var(--text-muted);font-family:var(--font-sans)}
-  .copy:hover{color:var(--accent);border-color:var(--accent)}
-  pre{margin:0;padding:.85rem 1rem;overflow:auto;background:var(--bg-sidebar);font:12.5px/1.5 var(--font-mono);color:var(--text)}
-  code{white-space:pre}
-</style></head>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Snippets — Sharpee</title>
+  <meta name="description" content="Every code snippet from The Sharpee Author and Developer Manual, by chapter: each step plus the complete runnable file it builds up to.">
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
-<aside class="sidebar">
-  <div class="theme-toggle"><button id="theme-toggle" type="button">Light mode</button></div>
-  <div class="side-head">The Sharpee Author and Developer Manual<br><span>Code Snippets</span></div>
-  <ul><li><a href="#ch01">Ch 1 — Installing Sharpee: The CLI and Your First Project</a></li><li><a href="#ch02">Ch 2 — Your First Room: Entities, Traits, and the World</a></li><li><a href="#ch03">Ch 3 — The Play Loop: How a Turn Works</a></li><li><a href="#ch04">Ch 4 — Rooms &amp; Navigation: Exits Wired in Pairs</a></li><li><a href="#ch05">Ch 5 — Scenery &amp; Portable Objects: Everything Is Portable by Default</a></li><li><a href="#ch06">Ch 6 — Containers &amp; Supporters: What Holds What</a></li><li><a href="#ch07">Ch 7 — Openable Things, Locked Doors &amp; Keys: Gating the Way Through</a></li><li><a href="#ch08">Ch 8 — Light &amp; Dark: What the Player Can See</a></li><li><a href="#ch09">Ch 9 — The Map &amp; Regions: Grouping Rooms</a></li><li><a href="#ch10">Ch 10 — The Standard Actions: The Four-Phase Model</a></li><li><a href="#ch11">Ch 11 — Scope &amp; Visibility: What the Player Can Reach</a></li><li><a href="#ch12">Ch 12 — Readable Objects &amp; Switchable Devices: Things That Carry State</a></li><li><a href="#ch13">Ch 13 — Event Handlers: Reacting to What Happens</a></li><li><a href="#ch14">Ch 14 — Custom Actions: Teaching the Parser New Verbs</a></li><li><a href="#ch15">Ch 15 — Capability Dispatch: One Verb, Many Rules</a></li><li><a href="#ch16">Ch 16 — Custom Traits &amp; Behaviors: Data and Logic, Kept Apart</a></li><li><a href="#ch17">Ch 17 — Extending the Grammar: Teaching New Sentence Shapes</a></li><li><a href="#ch18">Ch 18 — The Language Layer: Messages &amp; Message IDs</a></li><li><a href="#ch19">Ch 19 — The Formatter Chain: Grammar in the Template, Not the Text</a></li><li><a href="#ch20">Ch 20 — Non-Player Characters: Actors That Take Turns</a></li><li><a href="#ch21">Ch 21 — Scenes: Named Windows of Story Time</a></li><li><a href="#ch22">Ch 22 — Turns, Timed Events &amp; Daemons: Giving the World a Clock</a></li><li><a href="#ch23">Ch 23 — Scoring &amp; Endgame: Winning the Game</a></li><li><a href="#ch24">Ch 24 — Channels: The Universal UI Surface</a></li><li><a href="#ch25">Ch 25 — The Web Client: A Framework-Free UI</a></li><li><a href="#ch26">Ch 26 — Decoration &amp; Theming: Style Without HTML on the Wire</a></li><li><a href="#ch27">Ch 27 — Media &amp; Audio: Sight and Sound as Channels</a></li><li><a href="#ch28">Ch 28 — The Multi-File Story: Putting It All Together</a></li><li><a href="#ch29">Ch 29 — Transcript Testing &amp; Walkthroughs: Proving the Game Still Works</a></li><li><a href="#ch30">Ch 30 — Saving &amp; Restoring: State Lives in the World</a></li><li><a href="#ch31">Ch 31 — Building &amp; Publishing: The Single-Player Browser Client</a></li></ul>
-</aside>
-<main class="content">
-<header>
-  <h1>The Sharpee Author and Developer Manual</h1>
-  <p class="subtitle">Authoring Interactive Fiction with Sharpee · Code Snippets</p>
-  <p>Every code step from the manual, by book chapter. <b>Raw steps</b> are the deltas you add as you read; the <b>combined</b> block is the complete, runnable story so far (from the tested <code>familyzoo</code> tutorial source).</p>
-</header>
-
-    <section class="chapter" id="ch01">
-      <h2>Chapter 1 — Installing Sharpee: The CLI and Your First Project</h2>
-      <p class="src">book source: <code>docs/book/parts/part-1/01-installing-sharpee.md</code> · 13 raw step(s)</p>
-      <h3>Raw steps</h3>
+<div class="book-page">
+  <nav class="book-nav">
+    <div class="book-nav-title">The Sharpee Manual<span>Code Snippets</span></div>
+    <ul><li class="bn-ch"><a href="#ch01">Chapter 1</a><ul class="bn-secs"><li><a href="#ch01-s0">Working in a terminal</a></li><li><a href="#ch01-s1">Installing Node and npm</a></li><li><a href="#ch01-s2">Installing the CLI</a></li><li><a href="#ch01-s3">Creating a story project</a></li><li><a href="#ch01-s4">Building the story</a></li><li><a href="#ch01-s5">Playing it</a></li><li><a href="#ch01-s6">A TypeScript primer</a></li><li><a href="#ch01-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch02">Chapter 2</a><ul class="bn-secs"><li><a href="#ch02-s0">The Story interface</a></li><li><a href="#ch02-s1">The shape of the file</a></li><li><a href="#ch02-s2">Creating the player</a></li><li><a href="#ch02-s3">Building the world</a></li><li><a href="#ch02-s4">Exposing the story</a></li><li><a href="#ch02-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch03">Chapter 3</a><ul class="bn-secs"><li><a href="#ch03-s0">Events become text</a></li><li><a href="#ch03-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch04">Chapter 4</a><ul class="bn-secs"><li><a href="#ch04-s0">Exits live on the room</a></li><li><a href="#ch04-s1">Two rules that trip up everyone</a></li><li><a href="#ch04-s2">Getting a trait back with `.get()`</a></li><li><a href="#ch04-s3">Putting it together</a></li><li><a href="#ch04-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch05">Chapter 5</a><ul class="bn-secs"><li><a href="#ch05-s0">Everything is portable by default</a></li><li><a href="#ch05-s1">EntityType.SCENERY makes a thing fixed</a></li><li><a href="#ch05-s2">Aliases make objects findable</a></li><li><a href="#ch05-s3">Putting it together</a></li><li><a href="#ch05-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch06">Chapter 6</a><ul class="bn-secs"><li><a href="#ch06-s0">ContainerTrait</a></li><li><a href="#ch06-s1">Portable vs fixed containers</a></li><li><a href="#ch06-s2">SupporterTrait</a></li><li><a href="#ch06-s3">Capacity limits</a></li><li><a href="#ch06-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch07">Chapter 7</a><ul class="bn-secs"><li><a href="#ch07-s0">OpenableTrait</a></li><li><a href="#ch07-s1">Stocking a container that starts closed</a></li><li><a href="#ch07-s2">LockableTrait</a></li><li><a href="#ch07-s3">DoorTrait and the exit `via` property</a></li><li><a href="#ch07-s4">Wiring it all together</a></li><li><a href="#ch07-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch08">Chapter 8</a><ul class="bn-secs"><li><a href="#ch08-s0">Dark rooms</a></li><li><a href="#ch08-s1">LightSourceTrait</a></li><li><a href="#ch08-s2">SwitchableTrait</a></li><li><a href="#ch08-s3">The flashlight pattern</a></li><li><a href="#ch08-s4">Other light-source patterns</a></li><li><a href="#ch08-s5">Wiring it into the zoo</a></li><li><a href="#ch08-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch09">Chapter 9</a><ul class="bn-secs"><li><a href="#ch09-s0">Regions: grouping rooms</a></li><li><a href="#ch09-s1">Crossing the boundary</a></li><li><a href="#ch09-s2">Nesting and querying</a></li><li><a href="#ch09-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch10">Chapter 10</a><ul class="bn-secs"><li><a href="#ch10-s0">One shape for every action</a></li><li><a href="#ch10-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch11">Chapter 11</a><ul class="bn-secs"><li><a href="#ch11-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch12">Chapter 12</a><ul class="bn-secs"><li><a href="#ch12-s0">Readable Objects &amp; Switchable Devices: Things That Carry State</a></li><li><a href="#ch12-s1">ReadableTrait: what an object says</a></li><li><a href="#ch12-s2">Readable scenery: the info plaque</a></li><li><a href="#ch12-s3">Readable items: the brochure</a></li><li><a href="#ch12-s4">SwitchableTrait: a device with on/off state</a></li><li><a href="#ch12-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch13">Chapter 13</a><ul class="bn-secs"><li><a href="#ch13-s0">Two kinds of handler</a></li><li><a href="#ch13-s1">Reading the event data</a></li><li><a href="#ch13-s2">Setting up: the gift shop, the press, and remembering IDs</a></li><li><a href="#ch13-s3">Reaction pattern: the goats eat the feed</a></li><li><a href="#ch13-s4">Transformation pattern: put A in, get B out</a></li><li><a href="#ch13-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch14">Chapter 14</a><ul class="bn-secs"><li><a href="#ch14-s0">Custom Actions: Teaching the Parser New Verbs</a></li><li><a href="#ch14-s1">The four-phase action</a></li><li><a href="#ch14-s2">A complete custom action: feeding</a></li><li><a href="#ch14-s3">A second action: photographing</a></li><li><a href="#ch14-s4">Telling the engine: getCustomActions</a></li><li><a href="#ch14-s5">Teaching the parser: extendParser</a></li><li><a href="#ch14-s6">Supplying the text: extendLanguage</a></li><li><a href="#ch14-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch15">Chapter 15</a><ul class="bn-secs"><li><a href="#ch15-s0">Capability Dispatch: One Verb, Many Rules</a></li><li><a href="#ch15-s1">1. A trait that declares a capability</a></li><li><a href="#ch15-s2">2. A behavior that implements the capability</a></li><li><a href="#ch15-s3">3. Registration that links trait to behavior</a></li><li><a href="#ch15-s4">The dispatch action</a></li><li><a href="#ch15-s5">Making the zoo's animals pettable</a></li><li><a href="#ch15-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch16">Chapter 16</a><ul class="bn-secs"><li><a href="#ch16-s0">Defining a custom trait</a></li><li><a href="#ch16-s1">Defining the behavior</a></li><li><a href="#ch16-s2">Putting the pair to work</a></li><li><a href="#ch16-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch17">Chapter 17</a><ul class="bn-secs"><li><a href="#ch17-s0">Where patterns go</a></li><li><a href="#ch17-s1">Aliases: many patterns, one action</a></li><li><a href="#ch17-s2">Prepositions and two slots</a></li><li><a href="#ch17-s3">Constraining a slot</a></li><li><a href="#ch17-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch18">Chapter 18</a><ul class="bn-secs"><li><a href="#ch18-s0">Intent here, words there</a></li><li><a href="#ch18-s1">Registering your text</a></li><li><a href="#ch18-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch19">Chapter 19</a><ul class="bn-secs"><li><a href="#ch19-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch20">Chapter 20</a><ul class="bn-secs"><li><a href="#ch20-s0">Non-Player Characters: Actors That Take Turns</a></li><li><a href="#ch20-s1">Creating an NPC entity</a></li><li><a href="#ch20-s2">The parrot becomes an NPC</a></li><li><a href="#ch20-s3">Writing a custom behavior</a></li><li><a href="#ch20-s4">Registering the plugin and behaviors</a></li><li><a href="#ch20-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch21">Chapter 21</a><ul class="bn-secs"><li><a href="#ch21-s0">Creating a scene</a></li><li><a href="#ch21-s1">Querying a scene</a></li><li><a href="#ch21-s2">Reacting to transitions</a></li><li><a href="#ch21-s3">Common shapes</a></li><li><a href="#ch21-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch22">Chapter 22</a><ul class="bn-secs"><li><a href="#ch22-s0">How the scheduler ticks</a></li><li><a href="#ch22-s1">Daemons: run every turn</a></li><li><a href="#ch22-s2">Conditional daemons: react to state</a></li><li><a href="#ch22-s3">Fuses: count down and fire</a></li><li><a href="#ch22-s4">Giving the announcements their words</a></li><li><a href="#ch22-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch23">Chapter 23</a><ul class="bn-secs"><li><a href="#ch23-s0">The score ledger</a></li><li><a href="#ch23-s1">Defining the scoring table</a></li><li><a href="#ch23-s2">Awarding points as the player plays</a></li><li><a href="#ch23-s3">The victory daemon</a></li><li><a href="#ch23-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch24">Chapter 24</a><ul class="bn-secs"><li><a href="#ch24-s0">Defining your own channel</a></li><li><a href="#ch24-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch25">Chapter 25</a><ul class="bn-secs"><li><a href="#ch25-s0">What the client is responsible for</a></li><li><a href="#ch25-s1">How a turn reaches the screen</a></li><li><a href="#ch25-s2">Overriding a renderer</a></li><li><a href="#ch25-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch26">Chapter 26</a><ul class="bn-secs"><li><a href="#ch26-s0">Theming: one DOM, many skins</a></li><li><a href="#ch26-s1">Built-in themes: list the id</a></li><li><a href="#ch26-s2">Your own theme: three lines of CSS and one list entry</a></li><li><a href="#ch26-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch27">Chapter 27</a><ul class="bn-secs"><li><a href="#ch27-s0">Room atmospheres in practice</a></li><li><a href="#ch27-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch28">Chapter 28</a><ul class="bn-secs"><li><a href="#ch28-s0">Each file exports a builder and its IDs</a></li><li><a href="#ch28-s1">The index wires it together</a></li><li><a href="#ch28-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch29">Chapter 29</a><ul class="bn-secs"><li><a href="#ch29-s0">Running them</a></li><li><a href="#ch29-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch30">Chapter 30</a><ul class="bn-secs"><li><a href="#ch30-s0">The one thing you must save yourself</a></li><li><a href="#ch30-combined">Combined</a></li></ul></li><li class="bn-ch"><a href="#ch31">Chapter 31</a><ul class="bn-secs"><li><a href="#ch31-s0">The author toolchain</a></li><li><a href="#ch31-s1">Adding the browser client</a></li><li><a href="#ch31-s2">Hosting it</a></li><li><a href="#ch31-combined">Combined</a></li></ul></li></ul>
+  </nav>
+  <main class="content">
+    <h1>Code Snippets</h1>
+    <p>Every code step from <a href="the-sharpee-book.html">The Sharpee Author and Developer Manual</a>, by chapter. The <strong>step</strong> blocks are the deltas you add as you read; the <strong>combined</strong> block is the complete, runnable story so far, taken from the tested <code>familyzoo</code> tutorial source.</p>
+    <div class="book-downloads">
+      <a class="dl" href="the-sharpee-book.html">Read the book (HTML)</a>
+      <a class="dl" href="the-sharpee-book.epub" download>Download EPUB</a>
+      <a class="dl" href="the-sharpee-book.pdf" download>Download PDF</a>
+    </div>
+    
+    <section class="snip-chapter" id="ch01">
+      <h2>Chapter 1: Installing Sharpee: The CLI and Your First Project</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-1/01-installing-sharpee.md</code> · 13 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Working in a terminal</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
+      <h3 class="snip-section" id="ch01-s0">Working in a terminal</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>node --version</code></pre>
         </div>
-        <pre><code>node --version</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Installing Node and npm</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>node --version    # want v18.0.0 or newer
+      <h3 class="snip-section" id="ch01-s1">Installing Node and npm</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>node --version    # want v18.0.0 or newer
 npm --version</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Installing the CLI</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>npm install -g @sharpee/devkit</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Creating a story project</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
+      <h3 class="snip-section" id="ch01-s2">Installing the CLI</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>npm install -g @sharpee/devkit</code></pre>
         </div>
-        <pre><code>sharpee init my-zoo -y
+      <h3 class="snip-section" id="ch01-s3">Creating a story project</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>sharpee init my-zoo -y
 cd my-zoo
 npm install</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Building the story</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>sharpee build</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Playing it</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
+      <h3 class="snip-section" id="ch01-s4">Building the story</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>sharpee build</code></pre>
         </div>
-        <pre><code>sharpee init-browser          # adds src/browser-entry.ts
+      <h3 class="snip-section" id="ch01-s5">Playing it</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>sharpee init-browser          # adds src/browser-entry.ts
 sharpee build                 # now also emits a web client → dist/web/</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 7</span>
-          <span class="sec">Playing it</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>python3 -m http.server -d dist/web</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 8</span>
-          <span class="sec">A TypeScript primer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>python3 -m http.server -d dist/web</code></pre>
         </div>
-        <pre><code>const title: string = 'Willowbrook Family Zoo';
+      <h3 class="snip-section" id="ch01-s6">A TypeScript primer</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 8</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const title: string = 'Willowbrook Family Zoo';
 let turns: number = 0;</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 9</span>
-          <span class="sec">A TypeScript primer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const options = { isOpen: false, capacity: 10 };
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 9</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const options = { isOpen: false, capacity: 10 };
 // e.g. `capacity?: number` means capacity may be left out</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 10</span>
-          <span class="sec">A TypeScript primer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const light = new IdentityTrait({ name: 'flashlight' });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 11</span>
-          <span class="sec">A TypeScript primer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 10</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const light = new IdentityTrait({ name: 'flashlight' });</code></pre>
         </div>
-        <pre><code>class MyStory implements Story { /* … */ }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 12</span>
-          <span class="sec">A TypeScript primer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 11</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>class MyStory implements Story { /* … */ }</code></pre>
         </div>
-        <pre><code>import { IdentityTrait } from '@sharpee/world-model';
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 12</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { IdentityTrait } from '@sharpee/world-model';
 export const story = new MyStory();</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 13</span>
-          <span class="sec">A TypeScript primer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>items.some(item =&gt; item.name === 'feed');</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No cumulative story file yet (this chapter sets up tooling, not story code).</p>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 13</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>items.some(item =&gt; item.name === 'feed');</code></pre>
+        </div>
+      <h3 class="snip-section" id="ch01-combined">Combined runnable file</h3>
+      <p class="snip-note">No cumulative story file yet (this chapter sets up tooling, not story code).</p>
     </section>
 
-    <section class="chapter" id="ch02">
-      <h2>Chapter 2 — Your First Room: Entities, Traits, and the World</h2>
-      <p class="src">book source: <code>docs/book/parts/part-1/02-your-first-room.md</code> · 6 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch02">
+      <h2>Chapter 2: Your First Room: Entities, Traits, and the World</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-1/02-your-first-room.md</code> · 6 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">The Story interface</span>
-          <span class="lang ref">typescript · reference</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>interface Story {
+      <h3 class="snip-section" id="ch02-s0">The Story interface</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge ref">reference</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>interface Story {
   config: StoryConfig;
   initializeWorld(world: WorldModel): void;
   createPlayer(world: WorldModel): IFEntity;
@@ -201,14 +177,16 @@ export const story = new MyStory();</code></pre>
   extendParser?(parser: Parser): void;
   isComplete?(): boolean;
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">The shape of the file</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>import { Story, StoryConfig } from '@sharpee/engine';
+      <h3 class="snip-section" id="ch02-s1">The shape of the file</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { Story, StoryConfig } from '@sharpee/engine';
 import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
 import {
   IdentityTrait,
@@ -232,14 +210,16 @@ class FamilyZooStory implements Story {
   // createPlayer(world)     - fills in next
   // initializeWorld(world)  - and after that
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Creating the player</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>createPlayer(world: WorldModel): IFEntity {
+      <h3 class="snip-section" id="ch02-s2">Creating the player</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>createPlayer(world: WorldModel): IFEntity {
   const player = world.createEntity('yourself', EntityType.ACTOR);
 
   player.add(new IdentityTrait({
@@ -258,27 +238,29 @@ class FamilyZooStory implements Story {
 
   return player;
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Creating the player</span>
-          <span class="lang ref">typescript · reference</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>class ContainerTrait implements ITrait {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge ref">reference</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>class ContainerTrait implements ITrait {
   constructor(data?: Partial&lt;ContainerTrait&gt;);
   capacity?: { maxWeight?: number; maxVolume?: number; maxItems?: number };
   isTransparent: boolean;
   enterable: boolean;
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Building the world</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>initializeWorld(world: WorldModel): void {
+      <h3 class="snip-section" id="ch02-s3">Building the world</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>initializeWorld(world: WorldModel): void {
   const entrance = world.createEntity('Zoo Entrance', EntityType.ROOM);
 
   entrance.add(new RoomTrait({ exits: {}, isDark: false }));
@@ -316,21 +298,25 @@ class FamilyZooStory implements Story {
   const player = world.getPlayer();
   if (player) world.moveEntity(player.id, entrance.id);
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Exposing the story</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>export const story: Story = new FamilyZooStory();
+      <h3 class="snip-section" id="ch02-s4">Exposing the story</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>export const story: Story = new FamilyZooStory();
 export default story;</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch02-first-room.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch02-first-room.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch02-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch02-first-room.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch02-first-room.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo — Book-aligned tutorial, Chapter 2: Your First Room
  *
@@ -424,94 +410,103 @@ class FamilyZooStory implements Story {
 }
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch03">
-      <h2>Chapter 3 — The Play Loop: How a Turn Works</h2>
-      <p class="src">book source: <code>docs/book/parts/part-1/03-the-play-loop.md</code> · 1 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch03">
+      <h2>Chapter 3: The Play Loop: How a Turn Works</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-1/03-the-play-loop.md</code> · 1 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Events become text</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>context.event('if.event.taken', {
+      <h3 class="snip-section" id="ch03-s0">Events become text</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>context.event('if.event.taken', {
   messageId: 'if.action.taken.success',
   params: { item: 'brass key' },
 });</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch02-first-room.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch03-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch02-first-room.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch04">
-      <h2>Chapter 4 — Rooms &amp; Navigation: Exits Wired in Pairs</h2>
-      <p class="src">book source: <code>docs/book/parts/part-2/04-rooms-and-navigation.md</code> · 6 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch04">
+      <h2>Chapter 4: Rooms &amp; Navigation: Exits Wired in Pairs</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-2/04-rooms-and-navigation.md</code> · 6 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Exits live on the room</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>entranceRoom.exits = {
+      <h3 class="snip-section" id="ch04-s0">Exits live on the room</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>entranceRoom.exits = {
   [Direction.SOUTH]: { destination: mainPath.id },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Two rules that trip up everyone</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>entranceRoom.exits = {
+      <h3 class="snip-section" id="ch04-s1">Two rules that trip up everyone</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>entranceRoom.exits = {
   [Direction.SOUTH]: { destination: mainPath.id },   // entrance → path
 };
 mainPathRoom.exits = {
   [Direction.NORTH]: { destination: entrance.id },    // path → entrance (the way back)
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Getting a trait back with `.get()`</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const entranceRoom = entrance.get(RoomTrait)!;
+      <h3 class="snip-section" id="ch04-s2">Getting a trait back with `.get()`</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const entranceRoom = entrance.get(RoomTrait)!;
 entranceRoom.exits = { /* ... */ };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Getting a trait back with `.get()`</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const roomTrait = entrance.get(RoomTrait);
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const roomTrait = entrance.get(RoomTrait);
 if (roomTrait) {
   roomTrait.exits = { /* ... */ };
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Putting it together</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>import {
+      <h3 class="snip-section" id="ch04-s3">Putting it together</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import {
   WorldModel, IFEntity, EntityType, Direction,
 } from '@sharpee/world-model';</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Putting it together</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>initializeWorld(world: WorldModel): void {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>initializeWorld(world: WorldModel): void {
   // Step 1: create every room first, with empty exits.
   const entrance = world.createEntity('Zoo Entrance', EntityType.ROOM);
   entrance.add(new RoomTrait({ exits: {}, isDark: false }));
@@ -643,12 +638,14 @@ if (roomTrait) {
   const player = world.getPlayer();
   if (player) world.moveEntity(player.id, entrance.id);
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch04-navigation.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch04-navigation.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch04-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch04-navigation.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch04-navigation.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 2: Multiple Rooms &amp; Navigation
  *
@@ -939,57 +936,65 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch05">
-      <h2>Chapter 5 — Scenery &amp; Portable Objects: Everything Is Portable by Default</h2>
-      <p class="src">book source: <code>docs/book/parts/part-2/05-scenery-and-portable-objects.md</code> · 4 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch05">
+      <h2>Chapter 5: Scenery &amp; Portable Objects: Everything Is Portable by Default</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-2/05-scenery-and-portable-objects.md</code> · 4 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Everything is portable by default</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>const penny = world.createEntity('souvenir penny', EntityType.ITEM);
+      <h3 class="snip-section" id="ch05-s0">Everything is portable by default</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const penny = world.createEntity('souvenir penny', EntityType.ITEM);
 penny.add(new IdentityTrait({
   name: 'souvenir penny',
   description: 'A flattened copper penny stamped with a smiling elephant.',
   aliases: ['penny', 'coin', 'souvenir'],
 }));
 world.moveEntity(penny.id, mainPath.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">EntityType.SCENERY makes a thing fixed</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const fence = world.createEntity('iron fence', EntityType.SCENERY);
+      <h3 class="snip-section" id="ch05-s1">EntityType.SCENERY makes a thing fixed</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const fence = world.createEntity('iron fence', EntityType.SCENERY);
 fence.add(new IdentityTrait({
   name: 'iron fence',
   description: 'A tall wrought-iron fence with animal silhouettes.',
   aliases: ['fence', 'iron fence', 'railing'],
 }));
 world.moveEntity(fence.id, entrance.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Aliases make objects findable</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>aliases: ['fence', 'iron fence', 'wrought-iron fence', 'railing'],</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Putting it together</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+      <h3 class="snip-section" id="ch05-s2">Aliases make objects findable</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>aliases: ['fence', 'iron fence', 'wrought-iron fence', 'railing'],</code></pre>
         </div>
-        <pre><code>// Scenery: the SCENERY type fixes it in place, examinable, mentioned in room prose.
+      <h3 class="snip-section" id="ch05-s3">Putting it together</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// Scenery: the SCENERY type fixes it in place, examinable, mentioned in room prose.
 const fence = world.createEntity('iron fence', EntityType.SCENERY);
 fence.add(new IdentityTrait({
   name: 'iron fence',
@@ -1030,12 +1035,14 @@ animalFeed.add(new IdentityTrait({
   aliases: ['feed', 'animal feed', 'bag of feed', 'bag', 'corn', 'pellets'],
 }));
 world.moveEntity(animalFeed.id, pettingZoo.id);</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch05-scenery-items.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch05-scenery-items.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch05-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch05-scenery-items.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch05-scenery-items.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 4: Portable Objects
  *
@@ -1456,21 +1463,23 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch06">
-      <h2>Chapter 6 — Containers &amp; Supporters: What Holds What</h2>
-      <p class="src">book source: <code>docs/book/parts/part-2/06-containers-and-supporters.md</code> · 4 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch06">
+      <h2>Chapter 6: Containers &amp; Supporters: What Holds What</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-2/06-containers-and-supporters.md</code> · 4 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">ContainerTrait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>const backpack = world.createEntity('backpack', EntityType.CONTAINER);
+      <h3 class="snip-section" id="ch06-s0">ContainerTrait</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const backpack = world.createEntity('backpack', EntityType.CONTAINER);
 backpack.add(new IdentityTrait({
   name: 'backpack',
   description: 'A small red canvas backpack.',
@@ -1480,14 +1489,16 @@ backpack.add(new ContainerTrait({
   capacity: { maxItems: 5 },   // holds up to 5 things
 }));
 world.moveEntity(backpack.id, entrance.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Portable vs fixed containers</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const dispenser = world.createEntity('feed dispenser', EntityType.CONTAINER);
+      <h3 class="snip-section" id="ch06-s1">Portable vs fixed containers</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const dispenser = world.createEntity('feed dispenser', EntityType.CONTAINER);
 dispenser.add(new IdentityTrait({
   name: 'feed dispenser',
   description:
@@ -1498,14 +1509,16 @@ dispenser.add(new IdentityTrait({
 dispenser.add(new ContainerTrait({ capacity: { maxItems: 3 } }));
 dispenser.add(new SceneryTrait());   // can't take the dispenser itself
 world.moveEntity(dispenser.id, pettingZoo.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">SupporterTrait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const parkBench = world.createEntity('park bench', EntityType.SUPPORTER);
+      <h3 class="snip-section" id="ch06-s2">SupporterTrait</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const parkBench = world.createEntity('park bench', EntityType.SUPPORTER);
 parkBench.add(new IdentityTrait({
   name: 'park bench',
   description: 'A weathered wooden bench worn smooth by decades of visitors.',
@@ -1514,20 +1527,24 @@ parkBench.add(new IdentityTrait({
 parkBench.add(new SupporterTrait({ capacity: { maxItems: 3 } }));
 parkBench.add(new SceneryTrait());   // can't take the bench itself
 world.moveEntity(parkBench.id, mainPath.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Capacity limits</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>capacity: { maxItems: 5 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch06-containers.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch06-containers.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+      <h3 class="snip-section" id="ch06-s3">Capacity limits</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>capacity: { maxItems: 5 }</code></pre>
+        </div>
+      <h3 class="snip-section" id="ch06-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch06-containers.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch06-containers.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 5: Containers &amp; Supporters
  *
@@ -1945,89 +1962,99 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch07">
-      <h2>Chapter 7 — Openable Things, Locked Doors &amp; Keys: Gating the Way Through</h2>
-      <p class="src">book source: <code>docs/book/parts/part-2/07-openable-locked-doors-and-keys.md</code> · 7 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch07">
+      <h2>Chapter 7: Openable Things, Locked Doors &amp; Keys: Gating the Way Through</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-2/07-openable-locked-doors-and-keys.md</code> · 7 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">OpenableTrait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>lunchbox.add(new OpenableTrait({
+      <h3 class="snip-section" id="ch07-s0">OpenableTrait</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>lunchbox.add(new OpenableTrait({
   isOpen: false,          // starts closed
   canClose: true,         // the player can close it again
   revealsContents: true,  // opening announces what's inside
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Stocking a container that starts closed</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>lunchbox.get(OpenableTrait)!.isOpen = true;   // temporarily open
+      <h3 class="snip-section" id="ch07-s1">Stocking a container that starts closed</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>lunchbox.get(OpenableTrait)!.isOpen = true;   // temporarily open
 world.moveEntity(juice.id, lunchbox.id);       // place the item inside
 lunchbox.get(OpenableTrait)!.isOpen = false;   // close it again</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">LockableTrait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>staffGate.add(new LockableTrait({
+      <h3 class="snip-section" id="ch07-s2">LockableTrait</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>staffGate.add(new LockableTrait({
   isLocked: true,      // starts locked
   keyId: keycard.id,   // THIS key unlocks THIS lock
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">DoorTrait and the exit `via` property</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>staffGate.add(new DoorTrait({
+      <h3 class="snip-section" id="ch07-s3">DoorTrait and the exit `via` property</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>staffGate.add(new DoorTrait({
   room1: mainPath.id,      // one side
   room2: supplyRoom.id,    // the other side
   bidirectional: true,     // passable both ways
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">DoorTrait and the exit `via` property</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>mainPath.get(RoomTrait)!.exits = {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>mainPath.get(RoomTrait)!.exits = {
   [Direction.SOUTH]: {
     destination: supplyRoom.id,
     via: staffGate.id,          // must pass through this entity
   },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Wiring it all together</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>import {
+      <h3 class="snip-section" id="ch07-s4">Wiring it all together</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import {
   OpenableTrait, LockableTrait, DoorTrait,
 } from '@sharpee/world-model';</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 7</span>
-          <span class="sec">Wiring it all together</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// A new room, behind the gate.
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// A new room, behind the gate.
 const supplyRoom = world.createEntity('Supply Room', EntityType.ROOM);
 supplyRoom.add(new RoomTrait({ exits: {}, isDark: false }));
 supplyRoom.add(new IdentityTrait({
@@ -2085,12 +2112,14 @@ mainPath.get(RoomTrait)!.exits = {
 supplyRoom.get(RoomTrait)!.exits = {
   [Direction.NORTH]: { destination: mainPath.id, via: staffGate.id },
 };</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch07-doors-keys.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch07-doors-keys.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch07-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch07-doors-keys.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch07-doors-keys.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 7: Locked Doors &amp; Keys
  *
@@ -2478,53 +2507,61 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch08">
-      <h2>Chapter 8 — Light &amp; Dark: What the Player Can See</h2>
-      <p class="src">book source: <code>docs/book/parts/part-2/08-light-and-dark.md</code> · 9 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch08">
+      <h2>Chapter 8: Light &amp; Dark: What the Player Can See</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-2/08-light-and-dark.md</code> · 9 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Dark rooms</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>nocturnalExhibit.add(new RoomTrait({
+      <h3 class="snip-section" id="ch08-s0">Dark rooms</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>nocturnalExhibit.add(new RoomTrait({
   exits: {},
   isDark: true,     // this room is pitch black
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">LightSourceTrait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>flashlight.add(new LightSourceTrait({
+      <h3 class="snip-section" id="ch08-s1">LightSourceTrait</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>flashlight.add(new LightSourceTrait({
   brightness: 8,    // how powerful, 1–10
   isLit: false,     // starts unlit
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">SwitchableTrait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>flashlight.add(new SwitchableTrait({
+      <h3 class="snip-section" id="ch08-s2">SwitchableTrait</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>flashlight.add(new SwitchableTrait({
   isOn: false,      // starts off
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">The flashlight pattern</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const flashlight = world.createEntity('flashlight', EntityType.ITEM);
+      <h3 class="snip-section" id="ch08-s3">The flashlight pattern</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const flashlight = world.createEntity('flashlight', EntityType.ITEM);
 flashlight.add(new IdentityTrait({
   name: 'flashlight',
   description: 'A heavy rubberized flashlight with a bright halogen bulb.',
@@ -2533,51 +2570,55 @@ flashlight.add(new IdentityTrait({
 flashlight.add(new SwitchableTrait({ isOn: false }));
 flashlight.add(new LightSourceTrait({ brightness: 8, isLit: false }));
 world.moveEntity(flashlight.id, supplyRoom.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Other light-source patterns</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>gem.add(new LightSourceTrait({ isLit: true, brightness: 5 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Other light-source patterns</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+      <h3 class="snip-section" id="ch08-s4">Other light-source patterns</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>gem.add(new LightSourceTrait({ isLit: true, brightness: 5 }));</code></pre>
         </div>
-        <pre><code>candle.add(new LightSourceTrait({
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>candle.add(new LightSourceTrait({
   isLit: false,
   brightness: 3,
   fuelRemaining: 50,        // burns for 50 turns
   fuelConsumptionRate: 1,   // one fuel per turn
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 7</span>
-          <span class="sec">Other light-source patterns</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>lantern.add(new LightSourceTrait({ brightness: 10 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 8</span>
-          <span class="sec">Wiring it into the zoo</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>lantern.add(new LightSourceTrait({ brightness: 10 }));</code></pre>
         </div>
-        <pre><code>import { LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 9</span>
-          <span class="sec">Wiring it into the zoo</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+      <h3 class="snip-section" id="ch08-s5">Wiring it into the zoo</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 8</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';</code></pre>
         </div>
-        <pre><code>const nocturnalExhibit = world.createEntity('Nocturnal Animals Exhibit', EntityType.ROOM);
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 9</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const nocturnalExhibit = world.createEntity('Nocturnal Animals Exhibit', EntityType.ROOM);
 nocturnalExhibit.add(new RoomTrait({ exits: {}, isDark: true }));
 nocturnalExhibit.add(new IdentityTrait({
   name: 'Nocturnal Animals Exhibit',
@@ -2626,12 +2667,14 @@ barnOwl.add(new IdentityTrait({
   article: 'a',
 }));
 world.moveEntity(barnOwl.id, nocturnalExhibit.id);</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch08-light-dark.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch08-light-dark.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch08-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch08-light-dark.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch08-light-dark.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 8: Light &amp; Dark
  *
@@ -3046,21 +3089,23 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch09">
-      <h2>Chapter 9 — The Map &amp; Regions: Grouping Rooms</h2>
-      <p class="src">book source: <code>docs/book/parts/part-2/09-the-map-and-regions.md</code> · 4 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch09">
+      <h2>Chapter 9: The Map &amp; Regions: Grouping Rooms</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-2/09-the-map-and-regions.md</code> · 4 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Regions: grouping rooms</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>world.createRegion('reg-public', {
+      <h3 class="snip-section" id="ch09-s0">Regions: grouping rooms</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.createRegion('reg-public', {
   name: 'Public Zoo',
 });
 
@@ -3068,60 +3113,65 @@ world.createRegion('reg-staff', {
   name: 'Staff Area',
   ambientSmell: 'disinfectant and animal feed',
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Regions: grouping rooms</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>world.assignRoom(entrance.id, 'reg-public');
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.assignRoom(entrance.id, 'reg-public');
 world.assignRoom(mainPath.id, 'reg-public');
 world.assignRoom(pettingZoo.id, 'reg-public');
 world.assignRoom(aviary.id, 'reg-public');
 
 world.assignRoom(supplyRoom.id, 'reg-staff');
 world.assignRoom(nocturnalExhibit.id, 'reg-staff');</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Crossing the boundary</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>world.registerEventHandler('if.event.region_entered', (event, world) =&gt; {
+      <h3 class="snip-section" id="ch09-s1">Crossing the boundary</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.registerEventHandler('if.event.region_entered', (event, world) =&gt; {
   if (event.data.regionId === 'reg-staff') {
     // The visitor just slipped into the staff area: flavor, a warning,
     // a scoring hook, whatever the moment calls for.
   }
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Nesting and querying</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>world.createRegion('reg-underground', { name: 'The Underground', defaultDark: true });
+      <h3 class="snip-section" id="ch09-s2">Nesting and querying</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.createRegion('reg-underground', { name: 'The Underground', defaultDark: true });
 world.createRegion('reg-mine', { name: 'Coal Mine', parentRegionId: 'reg-underground' });
 // a room in reg-mine answers true for reg-underground as well</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch08-light-dark.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch09-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch08-light-dark.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch10">
-      <h2>Chapter 10 — The Standard Actions: The Four-Phase Model</h2>
-      <p class="src">book source: <code>docs/book/parts/part-3/10-standard-actions-and-the-four-phase-model.md</code> · 1 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch10">
+      <h2>Chapter 10: The Standard Actions: The Four-Phase Model</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-3/10-standard-actions-and-the-four-phase-model.md</code> · 1 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">One shape for every action</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>const someAction: Action = {
+      <h3 class="snip-section" id="ch10-s0">One shape for every action</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const someAction: Action = {
   id: 'if.action.taking',
 
   validate(context): ValidationResult { /* can this happen? */ },
@@ -3129,51 +3179,55 @@ world.createRegion('reg-mine', { name: 'Coal Mine', parentRegionId: 'reg-undergr
   report(context): ISemanticEvent[]  { /* record what happened */ },
   blocked(context, result): ISemanticEvent[] { /* explain the refusal */ },
 };</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch08-light-dark.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch10-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch08-light-dark.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch11">
-      <h2>Chapter 11 — Scope &amp; Visibility: What the Player Can Reach</h2>
-      <p class="src">book source: <code>docs/book/parts/part-3/11-scope-and-visibility.md</code> · 0 raw step(s)</p>
-      <h3>Raw steps</h3>
-      <p class="note">No code snippets in this chapter.</p>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch08-light-dark.ts</code>).</p>
+    <section class="snip-chapter" id="ch11">
+      <h2>Chapter 11: Scope &amp; Visibility: What the Player Can Reach</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-3/11-scope-and-visibility.md</code> · 0 step(s)</p>
+      <p class="snip-note">No code snippets in this chapter.</p>
+      <h3 class="snip-section" id="ch11-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch08-light-dark.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch12">
-      <h2>Chapter 12 — Readable Objects &amp; Switchable Devices: Things That Carry State</h2>
-      <p class="src">book source: <code>docs/book/parts/part-3/12-readable-objects-and-switchable-devices.md</code> · 5 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch12">
+      <h2>Chapter 12: Readable Objects &amp; Switchable Devices: Things That Carry State</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-3/12-readable-objects-and-switchable-devices.md</code> · 5 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Readable Objects &amp; Switchable Devices: Things That Carry State</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+      <h3 class="snip-section" id="ch12-s0">Readable Objects &amp; Switchable Devices: Things That Carry State</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { ReadableTrait, SwitchableTrait } from '@sharpee/world-model';</code></pre>
         </div>
-        <pre><code>import { ReadableTrait, SwitchableTrait } from '@sharpee/world-model';</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">ReadableTrait: what an object says</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>plaque.add(new ReadableTrait({
+      <h3 class="snip-section" id="ch12-s1">ReadableTrait: what an object says</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>plaque.add(new ReadableTrait({
   text: 'PYGMY GOATS: These Nigerian Dwarf goats are gentle, curious, ' +
         'and always hungry.',
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Readable scenery: the info plaque</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const pettingPlaque = world.createEntity('info plaque', EntityType.SCENERY);
+      <h3 class="snip-section" id="ch12-s2">Readable scenery: the info plaque</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const pettingPlaque = world.createEntity('info plaque', EntityType.SCENERY);
 pettingPlaque.add(new IdentityTrait({
   name: 'info plaque',
   description:
@@ -3193,14 +3247,16 @@ pettingPlaque.add(new ReadableTrait({
     'here at Willowbrook in 2023.',
 }));
 world.moveEntity(pettingPlaque.id, pettingZoo.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Readable items: the brochure</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const brochure = world.createEntity('zoo brochure', EntityType.ITEM);
+      <h3 class="snip-section" id="ch12-s3">Readable items: the brochure</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const brochure = world.createEntity('zoo brochure', EntityType.ITEM);
 brochure.add(new IdentityTrait({
   name: 'zoo brochure',
   description:
@@ -3220,14 +3276,16 @@ brochure.add(new ReadableTrait({
     '"Where every visit is a wild adventure!"',
 }));
 world.moveEntity(brochure.id, entrance.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">SwitchableTrait: a device with on/off state</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const radio = world.createEntity('radio', EntityType.ITEM);
+      <h3 class="snip-section" id="ch12-s4">SwitchableTrait: a device with on/off state</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const radio = world.createEntity('radio', EntityType.ITEM);
 radio.add(new IdentityTrait({
   name: 'radio',
   description:
@@ -3240,12 +3298,14 @@ radio.add(new IdentityTrait({
 radio.add(new SwitchableTrait({ isOn: false }));   // starts off
 radio.add(new SceneryTrait());                       // bolted to the shelf
 world.moveEntity(radio.id, supplyRoom.id);</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch12-readables.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch12-readables.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch12-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch12-readables.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch12-readables.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 10: Switchable Devices
  *
@@ -3618,32 +3678,34 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch13">
-      <h2>Chapter 13 — Event Handlers: Reacting to What Happens</h2>
-      <p class="src">book source: <code>docs/book/parts/part-4/13-event-handlers.md</code> · 8 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch13">
+      <h2>Chapter 13: Event Handlers: Reacting to What Happens</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-4/13-event-handlers.md</code> · 8 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Two kinds of handler</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>world.registerEventHandler('if.event.dropped', (event, world) =&gt; {
+      <h3 class="snip-section" id="ch13-s0">Two kinds of handler</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.registerEventHandler('if.event.dropped', (event, world) =&gt; {
   // Set a flag, move an item, change state; but no visible text
   world.setStateValue('item-was-dropped', true);
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Two kinds of handler</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>world.chainEvent(
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.chainEvent(
   'if.event.dropped',
   (event, w) =&gt; {
     const data = event.data as Record&lt;string, any&gt;;
@@ -3658,26 +3720,30 @@ export default story;</code></pre></div>
   },
   { key: 'zoo.chain.goats-eat-feed' },
 );</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Reading the event data</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// if.event.dropped
+      <h3 class="snip-section" id="ch13-s1">Reading the event data</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// if.event.dropped
 { item: string, itemId: EntityId, toLocation: EntityId }
 
 // if.event.put_in
 { itemId: EntityId, targetId: EntityId, preposition: 'in' }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Setting up: the gift shop, the press, and remembering IDs</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>import { GameEngine } from '@sharpee/engine';
+      <h3 class="snip-section" id="ch13-s2">Setting up: the gift shop, the press, and remembering IDs</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { GameEngine } from '@sharpee/engine';
 import { ISemanticEvent } from '@sharpee/core';
 import { IWorldModel } from '@sharpee/world-model';
 
@@ -3691,14 +3757,14 @@ class FamilyZooStory implements Story {
 
   // createPlayer / initializeWorld / onEngineReady …
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Setting up: the gift shop, the press, and remembering IDs</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const giftShop = world.createEntity('Gift Shop', EntityType.ROOM);
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const giftShop = world.createEntity('Gift Shop', EntityType.ROOM);
 giftShop.add(new RoomTrait({ exits: {}, isDark: false }));
 giftShop.add(new IdentityTrait({
   name: 'Gift Shop',
@@ -3737,25 +3803,27 @@ this.roomIds.pettingZoo = pettingZoo.id;
 this.entityIds.animalFeed = animalFeed.id;
 this.entityIds.penny = penny.id;
 this.entityIds.souvenirPress = souvenirPress.id;</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Setting up: the gift shop, the press, and remembering IDs</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>onEngineReady(engine: GameEngine): void {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>onEngineReady(engine: GameEngine): void {
   const world = engine.getWorld();
   // the chainEvent registrations below go here
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 7</span>
-          <span class="sec">Reaction pattern: the goats eat the feed</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const feedId = this.entityIds.animalFeed;
+      <h3 class="snip-section" id="ch13-s3">Reaction pattern: the goats eat the feed</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const feedId = this.entityIds.animalFeed;
 const pettingZooId = this.roomIds.pettingZoo;
 
 world.chainEvent(
@@ -3787,14 +3855,16 @@ world.chainEvent(
   },
   { key: 'zoo.chain.goats-eat-feed' },
 );</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 8</span>
-          <span class="sec">Transformation pattern: put A in, get B out</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const pennyId = this.entityIds.penny;
+      <h3 class="snip-section" id="ch13-s4">Transformation pattern: put A in, get B out</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 8</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const pennyId = this.entityIds.penny;
 const pressId = this.entityIds.souvenirPress;
 
 world.chainEvent(
@@ -3835,12 +3905,14 @@ world.chainEvent(
   },
   { key: 'zoo.chain.penny-press' },
 );</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch13-event-handlers.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch13-event-handlers.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch13-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch13-event-handlers.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch13-event-handlers.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 12: Event Handlers
  *
@@ -4444,33 +4516,37 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch14">
-      <h2>Chapter 14 — Custom Actions: Teaching the Parser New Verbs</h2>
-      <p class="src">book source: <code>docs/book/parts/part-4/14-custom-actions.md</code> · 8 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch14">
+      <h2>Chapter 14: Custom Actions: Teaching the Parser New Verbs</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-4/14-custom-actions.md</code> · 8 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Custom Actions: Teaching the Parser New Verbs</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+      <h3 class="snip-section" id="ch14-s0">Custom Actions: Teaching the Parser New Verbs</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">The four-phase action</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const feedAction: Action = {
+      <h3 class="snip-section" id="ch14-s1">The four-phase action</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const feedAction: Action = {
   id: 'zoo.action.feeding',
   group: 'interaction',
 
@@ -4495,14 +4571,16 @@ import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';</cod
     return [context.event('zoo.event.feeding_blocked', { messageId: result.error })];
   },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">A complete custom action: feeding</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const FEED_ACTION_ID = 'zoo.action.feeding';
+      <h3 class="snip-section" id="ch14-s2">A complete custom action: feeding</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const FEED_ACTION_ID = 'zoo.action.feeding';
 
 const FeedMessages = {
   NO_FEED: 'zoo.feeding.no_feed',
@@ -4567,14 +4645,16 @@ const feedAction: Action = {
     })];
   },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">A second action: photographing</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const PHOTOGRAPH_ACTION_ID = 'zoo.action.photographing';
+      <h3 class="snip-section" id="ch14-s3">A second action: photographing</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const PHOTOGRAPH_ACTION_ID = 'zoo.action.photographing';
 
 const PhotoMessages = {
   NO_CAMERA: 'zoo.photo.no_camera',
@@ -4615,14 +4695,14 @@ const photographAction: Action = {
     })];
   },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">A second action: photographing</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const camera = world.createEntity('disposable camera', EntityType.ITEM);
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const camera = world.createEntity('disposable camera', EntityType.ITEM);
 camera.add(new IdentityTrait({
   name: 'disposable camera',
   description: 'A cheap yellow disposable camera with "ZOO MEMORIES" on the side.',
@@ -4630,24 +4710,28 @@ camera.add(new IdentityTrait({
   article: 'a',
 }));
 world.moveEntity(camera.id, giftShop.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Telling the engine: getCustomActions</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>getCustomActions(): any[] {
+      <h3 class="snip-section" id="ch14-s4">Telling the engine: getCustomActions</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>getCustomActions(): any[] {
   return [feedAction, photographAction];
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 7</span>
-          <span class="sec">Teaching the parser: extendParser</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>extendParser(parser: Parser): void {
+      <h3 class="snip-section" id="ch14-s5">Teaching the parser: extendParser</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>extendParser(parser: Parser): void {
   const grammar = parser.getStoryGrammar();
 
   grammar.define('feed :thing').mapsTo(FEED_ACTION_ID).withPriority(150).build();
@@ -4656,14 +4740,16 @@ world.moveEntity(camera.id, giftShop.id);</code></pre>
   grammar.define('photo :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
   grammar.define('snap :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 8</span>
-          <span class="sec">Supplying the text: extendLanguage</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>extendLanguage(language: LanguageProvider): void {
+      <h3 class="snip-section" id="ch14-s6">Supplying the text: extendLanguage</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 8</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>extendLanguage(language: LanguageProvider): void {
   // Feed action: every FeedMessages id needs text, or the player sees raw ids.
   language.addMessage(FeedMessages.NO_FEED,
     "You don't have any animal feed.");
@@ -4686,12 +4772,14 @@ world.moveEntity(camera.id, giftShop.id);</code></pre>
   language.addMessage(PhotoMessages.TOOK_PHOTO,
     "Click! You snap a photo of {target}. That one's going on the fridge.");
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch14-custom-actions.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch14-custom-actions.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch14-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch14-custom-actions.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch14-custom-actions.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 13: Custom Actions
  *
@@ -5423,21 +5511,23 @@ class FamilyZooStory implements Story {
 // ============================================================================
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch15">
-      <h2>Chapter 15 — Capability Dispatch: One Verb, Many Rules</h2>
-      <p class="src">book source: <code>docs/book/parts/part-4/15-capability-dispatch.md</code> · 9 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch15">
+      <h2>Chapter 15: Capability Dispatch: One Verb, Many Rules</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-4/15-capability-dispatch.md</code> · 9 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Capability Dispatch: One Verb, Many Rules</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>import {
+      <h3 class="snip-section" id="ch15-s0">Capability Dispatch: One Verb, Many Rules</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import {
   ITrait, IFEntity,
   CapabilityBehavior, CapabilityValidationResult, CapabilitySharedData,
   CapabilityEffect, createEffect,
@@ -5446,14 +5536,16 @@ export default story;</code></pre></div>
 } from '@sharpee/world-model';
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">1. A trait that declares a capability</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>class PettableTrait implements ITrait {
+      <h3 class="snip-section" id="ch15-s1">1. A trait that declares a capability</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>class PettableTrait implements ITrait {
   static readonly type = 'zoo.trait.pettable' as const;
   static readonly capabilities = ['zoo.action.petting'] as const;
   readonly type = PettableTrait.type;
@@ -5463,14 +5555,16 @@ import { ISemanticEvent } from '@sharpee/core';</code></pre>
     this.animalKind = kind;
   }
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">2. A behavior that implements the capability</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const PetMessages = {
+      <h3 class="snip-section" id="ch15-s2">2. A behavior that implements the capability</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const PetMessages = {
   PET_GOATS: 'zoo.petting.goats',
   PET_RABBITS: 'zoo.petting.rabbits',
   PET_PARROT: 'zoo.petting.parrot',
@@ -5507,28 +5601,32 @@ const pettingBehavior: CapabilityBehavior = {
     })];
   },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">3. Registration that links trait to behavior</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>if (!hasCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID)) {
+      <h3 class="snip-section" id="ch15-s3">3. Registration that links trait to behavior</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>if (!hasCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID)) {
   registerCapabilityBehavior(
     PettableTrait.type,     // which trait
     PETTING_ACTION_ID,      // which capability
     pettingBehavior,        // which behavior
   );
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">The dispatch action</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const PETTING_ACTION_ID = 'zoo.action.petting';
+      <h3 class="snip-section" id="ch15-s4">The dispatch action</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const PETTING_ACTION_ID = 'zoo.action.petting';
 
 const pettingAction: Action = {
   id: PETTING_ACTION_ID,
@@ -5580,33 +5678,33 @@ const pettingAction: Action = {
     })];
   },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">The dispatch action</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>getCustomActions(): any[] {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>getCustomActions(): any[] {
   return [feedAction, photographAction, pettingAction];
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 7</span>
-          <span class="sec">The dispatch action</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
 grammar.define('stroke :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 8</span>
-          <span class="sec">The dispatch action</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>language.addMessage(PetMessages.PET_GOATS,
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 8</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>language.addMessage(PetMessages.PET_GOATS,
   'You pet the nearest goat. It leans into your hand and bleats happily; the ' +
   'others crowd around demanding equal attention.');
 language.addMessage(PetMessages.PET_RABBITS,
@@ -5617,14 +5715,16 @@ language.addMessage(PetMessages.PET_PARROT,
   'squawks indignantly.');
 language.addMessage(PetMessages.CANT_PET,
   "You can't pet that.");</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 9</span>
-          <span class="sec">Making the zoo's animals pettable</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// The petting-zoo animals, already in the world, now pettable.
+      <h3 class="snip-section" id="ch15-s5">Making the zoo's animals pettable</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 9</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// The petting-zoo animals, already in the world, now pettable.
 goats.add(new PettableTrait('goats'));
 rabbits.add(new PettableTrait('rabbits'));
 
@@ -5641,12 +5741,14 @@ parrot.add(new IdentityTrait({
 parrot.add(new ActorTrait({ isPlayer: false }));
 parrot.add(new PettableTrait('parrot'));
 world.moveEntity(parrot.id, aviary.id);</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch15-capability-dispatch.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch15-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch15-capability-dispatch.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 14: Capability Dispatch
  *
@@ -6342,21 +6444,23 @@ class FamilyZooStory implements Story {
 }
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch16">
-      <h2>Chapter 16 — Custom Traits &amp; Behaviors: Data and Logic, Kept Apart</h2>
-      <p class="src">book source: <code>docs/book/parts/part-4/16-custom-traits-and-behaviors.md</code> · 4 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch16">
+      <h2>Chapter 16: Custom Traits &amp; Behaviors: Data and Logic, Kept Apart</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-4/16-custom-traits-and-behaviors.md</code> · 4 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Defining a custom trait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>import { ITrait } from '@sharpee/world-model';
+      <h3 class="snip-section" id="ch16-s0">Defining a custom trait</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { ITrait } from '@sharpee/world-model';
 
 export class DispenserTrait implements ITrait {
   static readonly type = 'zoo.trait.dispenser';
@@ -6369,22 +6473,24 @@ export class DispenserTrait implements ITrait {
     if (data) Object.assign(this, data);
   }
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Defining a custom trait</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>dispenser.add(new DispenserTrait({ chargesRemaining: 5 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Defining the behavior</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>dispenser.add(new DispenserTrait({ chargesRemaining: 5 }));</code></pre>
         </div>
-        <pre><code>import { IFEntity } from '@sharpee/world-model';
+      <h3 class="snip-section" id="ch16-s1">Defining the behavior</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { IFEntity } from '@sharpee/world-model';
 import { DispenserTrait } from './dispenser-trait.js';
 
 export class DispenserBehavior {
@@ -6401,36 +6507,39 @@ export class DispenserBehavior {
     return !trait || trait.chargesRemaining &lt;= 0;
   }
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Putting the pair to work</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// inside a custom "operate dispenser" action's execute phase, or an event handler:
+      <h3 class="snip-section" id="ch16-s2">Putting the pair to work</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// inside a custom "operate dispenser" action's execute phase, or an event handler:
 if (DispenserBehavior.dispense(dispenser)) {
   // success: hand out a serving of feed
 } else {
   // empty: report that it's out
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch16-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch17">
-      <h2>Chapter 17 — Extending the Grammar: Teaching New Sentence Shapes</h2>
-      <p class="src">book source: <code>docs/book/parts/part-5/17-extending-the-grammar.md</code> · 4 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch17">
+      <h2>Chapter 17: Extending the Grammar: Teaching New Sentence Shapes</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-5/17-extending-the-grammar.md</code> · 4 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Where patterns go</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>extendParser(parser: Parser): void {
+      <h3 class="snip-section" id="ch17-s0">Where patterns go</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>extendParser(parser: Parser): void {
   const grammar = parser.getStoryGrammar();
 
   grammar
@@ -6439,69 +6548,78 @@ if (DispenserBehavior.dispense(dispenser)) {
     .withPriority(150)
     .build();
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Aliases: many patterns, one action</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>grammar.define('photograph :thing').mapsTo('zoo.action.photographing').withPriority(150).build();
+      <h3 class="snip-section" id="ch17-s1">Aliases: many patterns, one action</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>grammar.define('photograph :thing').mapsTo('zoo.action.photographing').withPriority(150).build();
 grammar.define('photo :thing').mapsTo('zoo.action.photographing').withPriority(150).build();
 grammar.define('snap :thing').mapsTo('zoo.action.photographing').withPriority(150).build();</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Prepositions and two slots</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>grammar
+      <h3 class="snip-section" id="ch17-s2">Prepositions and two slots</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>grammar
   .define('feed :food to :animal')
   .mapsTo('zoo.action.feeding')
   .withPriority(150)
   .build();</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Constraining a slot</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>grammar
+      <h3 class="snip-section" id="ch17-s3">Constraining a slot</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>grammar
   .define('feed :animal')
   .where('animal', (scope: any) =&gt; scope.touchable())
   .mapsTo('zoo.action.feeding')
   .withPriority(150)
   .build();</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch17-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch18">
-      <h2>Chapter 18 — The Language Layer: Messages &amp; Message IDs</h2>
-      <p class="src">book source: <code>docs/book/parts/part-5/18-the-language-layer.md</code> · 2 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch18">
+      <h2>Chapter 18: The Language Layer: Messages &amp; Message IDs</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-5/18-the-language-layer.md</code> · 2 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Intent here, words there</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>context.event('zoo.event.photographed', {
+      <h3 class="snip-section" id="ch18-s0">Intent here, words there</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>context.event('zoo.event.photographed', {
   messageId: 'zoo.photo.took_photo',
   params: { target: name },
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Registering your text</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>extendLanguage(language: LanguageProvider): void {
+      <h3 class="snip-section" id="ch18-s1">Registering your text</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>extendLanguage(language: LanguageProvider): void {
   language.addMessage('zoo.feeding.fed_goats',
     'You scatter some feed on the ground. The pygmy goats rush over, bleating ' +
     'excitedly, and devour the corn and pellets in seconds.');
@@ -6509,43 +6627,45 @@ grammar.define('snap :thing').mapsTo('zoo.action.photographing').withPriority(15
   language.addMessage('zoo.photo.took_photo',
     "Click! You snap a photo of {target}. That one's going on the fridge.");
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
-    </section>
-
-    <section class="chapter" id="ch19">
-      <h2>Chapter 19 — The Formatter Chain: Grammar in the Template, Not the Text</h2>
-      <p class="src">book source: <code>docs/book/parts/part-5/19-the-formatter-chain.md</code> · 0 raw step(s)</p>
-      <h3>Raw steps</h3>
-      <p class="note">No code snippets in this chapter.</p>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
-    </section>
-
-    <section class="chapter" id="ch20">
-      <h2>Chapter 20 — Non-Player Characters: Actors That Take Turns</h2>
-      <p class="src">book source: <code>docs/book/parts/part-6/20-non-player-characters.md</code> · 5 raw step(s)</p>
-      <h3>Raw steps</h3>
-      
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Non-Player Characters: Actors That Take Turns</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>import { GameEngine } from '@sharpee/engine';
+      <h3 class="snip-section" id="ch18-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
+    </section>
+
+    <section class="snip-chapter" id="ch19">
+      <h2>Chapter 19: The Formatter Chain: Grammar in the Template, Not the Text</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-5/19-the-formatter-chain.md</code> · 0 step(s)</p>
+      <p class="snip-note">No code snippets in this chapter.</p>
+      <h3 class="snip-section" id="ch19-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch15-capability-dispatch.ts</code>).</p>
+    </section>
+
+    <section class="snip-chapter" id="ch20">
+      <h2>Chapter 20: Non-Player Characters: Actors That Take Turns</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-6/20-non-player-characters.md</code> · 5 step(s)</p>
+      
+      <h3 class="snip-section" id="ch20-s0">Non-Player Characters: Actors That Take Turns</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { GameEngine } from '@sharpee/engine';
 import { NpcTrait } from '@sharpee/world-model';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { NpcBehavior, NpcContext, NpcAction, createPatrolBehavior } from '@sharpee/stdlib';</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Creating an NPC entity</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const zookeeper = world.createEntity('zookeeper', EntityType.ACTOR);
+      <h3 class="snip-section" id="ch20-s1">Creating an NPC entity</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const zookeeper = world.createEntity('zookeeper', EntityType.ACTOR);
 
 zookeeper.add(new IdentityTrait({
   name: 'zookeeper',
@@ -6567,28 +6687,32 @@ zookeeper.add(new NpcTrait({
 }));
 
 world.moveEntity(zookeeper.id, mainPath.id);</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">The parrot becomes an NPC</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// `parrot` is the entity from Chapter 15 (Aviary, already an ACTOR).
+      <h3 class="snip-section" id="ch20-s2">The parrot becomes an NPC</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// `parrot` is the entity from Chapter 15 (Aviary, already an ACTOR).
 parrot.add(new NpcTrait({
   behaviorId: 'zoo-parrot',   // matches parrotBehavior.id, below
   canMove: false,             // it stays on its perch
   isAlive: true,
   isConscious: true,
 }));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Writing a custom behavior</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const PARROT_PHRASES = [
+      <h3 class="snip-section" id="ch20-s3">Writing a custom behavior</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const PARROT_PHRASES = [
   'Polly wants a cracker!',
   'SQUAWK! Pretty bird! Pretty bird!',
   'Pieces of eight! Pieces of eight!',
@@ -6627,14 +6751,16 @@ const parrotBehavior: NpcBehavior = {
     }];
   },
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Registering the plugin and behaviors</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>onEngineReady(engine: GameEngine): void {
+      <h3 class="snip-section" id="ch20-s4">Registering the plugin and behaviors</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>onEngineReady(engine: GameEngine): void {
   // 1. Create and register the plugin: gives NPCs a turn phase
   const npcPlugin = new NpcPlugin();
   engine.getPluginRegistry().register(npcPlugin);
@@ -6656,12 +6782,14 @@ const parrotBehavior: NpcBehavior = {
   // 4. Register the parrot's custom behavior (its id already matches)
   npcService.registerBehavior(parrotBehavior);
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch20-npcs.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch20-npcs.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch20-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch20-npcs.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch20-npcs.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 14: Capability Dispatch
  *
@@ -7387,48 +7515,54 @@ class FamilyZooStory implements Story {
 }
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch21">
-      <h2>Chapter 21 — Scenes: Named Windows of Story Time</h2>
-      <p class="src">book source: <code>docs/book/parts/part-6/21-scenes.md</code> · 5 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch21">
+      <h2>Chapter 21: Scenes: Named Windows of Story Time</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-6/21-scenes.md</code> · 5 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Creating a scene</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>world.createScene('scene-petting-zoo', {
+      <h3 class="snip-section" id="ch21-s0">Creating a scene</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.createScene('scene-petting-zoo', {
   name: 'Among the Animals',
   begin: (w) =&gt; w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
   end:   (w) =&gt; w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
   recurring: true,
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Querying a scene</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>if (world.isSceneActive('scene-petting-zoo')) {
+      <h3 class="snip-section" id="ch21-s1">Querying a scene</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>if (world.isSceneActive('scene-petting-zoo')) {
   // the player is among the animals right now
 }
 
 if (world.hasSceneHappened('scene-finale')) {
   // the finale has run at least once
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Reacting to transitions</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>world.createScene('scene-petting-zoo', {
+      <h3 class="snip-section" id="ch21-s2">Reacting to transitions</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.createScene('scene-petting-zoo', {
   name: 'Among the Animals',
   begin: (w) =&gt; w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
   end:   (w) =&gt; w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
@@ -7436,43 +7570,46 @@ if (world.hasSceneHappened('scene-finale')) {
   onBegin: () =&gt; ({ text: 'A waft of hay and warm fur greets you.' }),
   onEnd:   () =&gt; ({ text: 'The animal sounds fade behind you.' }),
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Reacting to transitions</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>  onEnd: (ctx) =&gt; ({ text: `You spent ${ctx.totalTurns} turns among the animals.` }),</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Common shapes</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>  onEnd: (ctx) =&gt; ({ text: `You spent ${ctx.totalTurns} turns among the animals.` }),</code></pre>
         </div>
-        <pre><code>world.createScene('scene-storm', {
+      <h3 class="snip-section" id="ch21-s3">Common shapes</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.createScene('scene-storm', {
   name: 'Thunderstorm',
   begin: (w) =&gt; w.getStateValue('stormTriggered') === true,
   end:   (w) =&gt; (w.getEntity('scene-storm')?.get(SceneTrait)?.activeTurns ?? 0) &gt;= 15,
 });</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch20-npcs.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch21-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch20-npcs.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch22">
-      <h2>Chapter 22 — Turns, Timed Events &amp; Daemons: Giving the World a Clock</h2>
-      <p class="src">book source: <code>docs/book/parts/part-6/22-timed-events-and-daemons.md</code> · 6 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch22">
+      <h2>Chapter 22: Turns, Timed Events &amp; Daemons: Giving the World a Clock</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-6/22-timed-events-and-daemons.md</code> · 6 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">How the scheduler ticks</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
+      <h3 class="snip-section" id="ch22-s0">How the scheduler ticks</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import type { Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
@@ -7488,14 +7625,14 @@ onEngineReady(engine: GameEngine): void {
   scheduler.setFuse(createFeedingTimeFuse());
   scheduler.registerDaemon(createGoatBleatingDaemon());
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">How the scheduler ticks</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const TimedMessages = {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const TimedMessages = {
   PA_CLOSING_3: 'zoo.pa.closing_3',
   PA_CLOSING_2: 'zoo.pa.closing_2',
   PA_CLOSING_1: 'zoo.pa.closing_1',
@@ -7503,14 +7640,16 @@ onEngineReady(engine: GameEngine): void {
   FEEDING_TIME: 'zoo.feeding_time.announced',
   GOATS_BLEATING: 'zoo.goats.bleating',
 } as const;</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Daemons: run every turn</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>function createPAAnnouncementDaemon(): Daemon {
+      <h3 class="snip-section" id="ch22-s1">Daemons: run every turn</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>function createPAAnnouncementDaemon(): Daemon {
   let announcementCount = 0;        // internal state, kept across turns
 
   return {
@@ -7546,14 +7685,16 @@ onEngineReady(engine: GameEngine): void {
     restoreRunnerState(state) { announcementCount = (state.announcementCount as number) ?? 0; },
   };
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Conditional daemons: react to state</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>function createGoatBleatingDaemon(): Daemon {
+      <h3 class="snip-section" id="ch22-s2">Conditional daemons: react to state</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>function createGoatBleatingDaemon(): Daemon {
   return {
     id: 'zoo.daemon.goat_bleating',
     name: 'Goat Bleating',
@@ -7587,14 +7728,16 @@ onEngineReady(engine: GameEngine): void {
     },
   };
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Fuses: count down and fire</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>function createFeedingTimeFuse(): Fuse {
+      <h3 class="snip-section" id="ch22-s3">Fuses: count down and fire</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>function createFeedingTimeFuse(): Fuse {
   return {
     id: 'zoo.fuse.feeding_time',
     name: 'Feeding Time',
@@ -7614,14 +7757,16 @@ onEngineReady(engine: GameEngine): void {
     },
   };
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Giving the announcements their words</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>extendLanguage(language: LanguageProvider): void {
+      <h3 class="snip-section" id="ch22-s4">Giving the announcements their words</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>extendLanguage(language: LanguageProvider): void {
   language.addMessage(TimedMessages.PA_CLOSING_3,
     '*DING DONG* "Attention visitors! The zoo closes in three hours. Please ' +
     'visit all exhibits before closing time!"');
@@ -7638,12 +7783,14 @@ onEngineReady(engine: GameEngine): void {
     'The pygmy goats are bleating loudly and headbutting the fence. They seem ' +
     'very hungry!');
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch22-timed-events.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch22-timed-events.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch22-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch22-timed-events.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch22-timed-events.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 15: Timed Events (Daemons and Fuses)
  *
@@ -8484,21 +8631,23 @@ class FamilyZooStory implements Story {
 }
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch23">
-      <h2>Chapter 23 — Scoring &amp; Endgame: Winning the Game</h2>
-      <p class="src">book source: <code>docs/book/parts/part-6/23-scoring-and-endgame.md</code> · 10 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch23">
+      <h2>Chapter 23: Scoring &amp; Endgame: Winning the Game</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-6/23-scoring-and-endgame.md</code> · 10 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">The score ledger</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>// Set the maximum in initializeWorld() so "score" can show "X out of Y"
+      <h3 class="snip-section" id="ch23-s0">The score ledger</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// Set the maximum in initializeWorld() so "score" can show "X out of Y"
 world.setMaxScore(75);
 
 // Award points (idempotent): the same ID never scores twice
@@ -8512,14 +8661,16 @@ const awarded = world.awardScore(
 // Read the score back
 const current = world.getScore();
 const max = world.getMaxScore();</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Defining the scoring table</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const MAX_SCORE = 75;
+      <h3 class="snip-section" id="ch23-s1">Defining the scoring table</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const MAX_SCORE = 75;
 
 const ScoreIds = {
   VISIT_PETTING_ZOO: 'zoo.visit.petting_zoo',
@@ -8550,14 +8701,14 @@ const ScorePoints: Record&lt;string, number&gt; = {
   [ScoreIds.PET_ANIMAL]: 5,
   [ScoreIds.READ_BROCHURE]: 5,
 };</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Defining the scoring table</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const ROOM_SCORE_MAP: Record&lt;string, string&gt; = {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const ROOM_SCORE_MAP: Record&lt;string, string&gt; = {
   'Petting Zoo': ScoreIds.VISIT_PETTING_ZOO,
   'Aviary': ScoreIds.VISIT_AVIARY,
   'Gift Shop': ScoreIds.VISIT_GIFT_SHOP,
@@ -8568,24 +8719,26 @@ const ScorePoints: Record&lt;string, number&gt; = {
 const ScoreMessages = {
   VICTORY: 'zoo.victory',
 } as const;</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Awarding points as the player plays</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>execute(_entity, world, _actorId, _shared): void {
+      <h3 class="snip-section" id="ch23-s2">Awarding points as the player plays</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>execute(_entity, world, _actorId, _shared): void {
   world.awardScore(ScoreIds.PET_ANIMAL, ScorePoints[ScoreIds.PET_ANIMAL], 'Petted an animal');
 },</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">Awarding points as the player plays</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>world.chainEvent('if.event.actor_moved', (event, w) =&gt; {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>world.chainEvent('if.event.actor_moved', (event, w) =&gt; {
   const data = event.data as Record&lt;string, any&gt;;
   const toRoom = data.toRoom || data.destination;
   if (!toRoom) return null;
@@ -8597,14 +8750,14 @@ const ScoreMessages = {
   w.awardScore(scoreId, ScorePoints[scoreId], `Visited ${roomName}`);
   return null;   // scoring is silent; no custom event
 }, { key: 'zoo.chain.room-visit-scoring' });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 6</span>
-          <span class="sec">Awarding points as the player plays</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const mapId = this.entityIds.zooMap;
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const mapId = this.entityIds.zooMap;
 world.chainEvent('if.event.taken', (event: ISemanticEvent, w: IWorldModel) =&gt; {
   const data = event.data as Record&lt;string, any&gt;;
   if (data.itemId === mapId) {
@@ -8623,14 +8776,14 @@ world.chainEvent('if.event.read', (event: ISemanticEvent, w: IWorldModel) =&gt; 
   }
   return null;
 }, { key: 'zoo.chain.read-scoring' });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 7</span>
-          <span class="sec">Awarding points as the player plays</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// inside the feeding action's execute(), keyed on which animal was fed:
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// inside the feeding action's execute(), keyed on which animal was fed:
 world.awardScore(ScoreIds.FEED_GOATS, ScorePoints[ScoreIds.FEED_GOATS], 'Fed the goats');
 //   …and ScoreIds.FEED_RABBITS the same way when the rabbits are fed.
 
@@ -8641,14 +8794,16 @@ world.awardScore(ScoreIds.PHOTOGRAPH_ANIMAL,
 // in the penny-press chain (Chapter 13), the same shape as the map award:
 w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
   ScorePoints[ScoreIds.COLLECT_PRESSED_PENNY], 'Pressed a souvenir penny');</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 8</span>
-          <span class="sec">The victory daemon</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>function createVictoryDaemon(): Daemon {
+      <h3 class="snip-section" id="ch23-s3">The victory daemon</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 8</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>function createVictoryDaemon(): Daemon {
   let victoryTriggered = false;
 
   return {
@@ -8676,31 +8831,33 @@ w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
     restoreRunnerState(state) { victoryTriggered = (state.victoryTriggered as boolean) ?? false; },
   };
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 9</span>
-          <span class="sec">The victory daemon</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>scheduler.registerDaemon(createVictoryDaemon());</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 10</span>
-          <span class="sec">The victory daemon</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 9</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>scheduler.registerDaemon(createVictoryDaemon());</code></pre>
         </div>
-        <pre><code>language.addMessage(ScoreMessages.VICTORY,
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 10</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>language.addMessage(ScoreMessages.VICTORY,
   "Congratulations! You've earned your JUNIOR ZOOKEEPER badge. You visited " +
   'every exhibit, fed the animals, collected souvenirs, and made memories to ' +
   'last a lifetime.\n\n*** You have won ***');</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">Runnable cumulative at the end of this chapter — the complete, tested story so far. Source: <code>tutorials/familyzoo/src/ch23-scoring.ts</code></p>
-      <div class="combined"><div class="step-head"><span class="badge run">runnable</span>
-        <span class="sec">ch23-scoring.ts</span>
-        <span class="lang">typescript</span><button class="copy" data-copy>copy</button></div>
+        </div>
+      <h3 class="snip-section" id="ch23-combined">Combined runnable file</h3>
+      <p class="snip-note">The complete, runnable story at the end of this chapter (tested source: <code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+      <div class="snip">
+        <div class="snip-head"><span class="snip-badge run">runnable</span>
+          <span class="snip-file">ch23-scoring.ts</span>
+          <span class="snip-lang">typescript</span>
+          <button class="snip-copy" data-copy>copy</button></div>
         <pre><code>/**
  * Family Zoo Tutorial — Version 16: Scoring and Endgame
  *
@@ -9600,21 +9757,23 @@ class FamilyZooStory implements Story {
 }
 
 export const story: Story = new FamilyZooStory();
-export default story;</code></pre></div>
+export default story;</code></pre>
+      </div>
     </section>
 
-    <section class="chapter" id="ch24">
-      <h2>Chapter 24 — Channels: The Universal UI Surface</h2>
-      <p class="src">book source: <code>docs/book/parts/part-7/24-channels.md</code> · 1 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch24">
+      <h2>Chapter 24: Channels: The Universal UI Surface</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-7/24-channels.md</code> · 1 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Defining your own channel</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>// A mood line per room; rooms not listed clear the line.
+      <h3 class="snip-section" id="ch24-s0">Defining your own channel</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// A mood line per room; rooms not listed clear the line.
 const AMBIENCE_BY_ROOM: Record&lt;string, string&gt; = {
   'Aviary': 'The air is alive with birdsong and the rustle of wings.',
   'Nocturnal Animals Exhibit': 'Your eyes strain against the warm red dark.',
@@ -9634,23 +9793,24 @@ registerChannels(registry: IChannelRegistry): void {
     },
   });
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch24-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch25">
-      <h2>Chapter 25 — The Web Client: A Framework-Free UI</h2>
-      <p class="src">book source: <code>docs/book/parts/part-7/25-the-web-client.md</code> · 4 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch25">
+      <h2>Chapter 25: The Web Client: A Framework-Free UI</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-7/25-the-web-client.md</code> · 4 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">What the client is responsible for</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>const client = new BrowserClient({
+      <h3 class="snip-section" id="ch25-s0">What the client is responsible for</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
   defaultTheme: 'zoo-sunny',            // the theme applied on first load / restore
   // The clickable theme menu is generated at build time from your package.json
@@ -9672,23 +9832,27 @@ registerChannels(registry: IChannelRegistry): void {
 client.initialize(elements);          // page elements (after DOMContentLoaded)
 client.connectEngine(engine, world);  // wire the engine
 await client.start();                 // boot, restore autosave, first look</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">How a turn reaches the screen</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>engine.on('channel:manifest', (cmgt) =&gt; renderer.applyCmgt(cmgt));
+      <h3 class="snip-section" id="ch25-s1">How a turn reaches the screen</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>engine.on('channel:manifest', (cmgt) =&gt; renderer.applyCmgt(cmgt));
 engine.on('channel:packet',  (packet) =&gt; renderer.applyTurnPacket(packet));</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Overriding a renderer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const renderer = client.getChannelRenderer();
+      <h3 class="snip-section" id="ch25-s2">Overriding a renderer</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const renderer = client.getChannelRenderer();
 renderer.registerRenderer('score', {
   onValue: (value) =&gt; {
     const { current } = value as { current: number };
@@ -9696,14 +9860,14 @@ renderer.registerRenderer('score', {
     if (el) el.textContent = `★ ${current}`;
   },
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Overriding a renderer</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>renderer.registerRenderer('zoo.ambience', {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>renderer.registerRenderer('zoo.ambience', {
   onValue: (value) =&gt; {
     const main = document.getElementById('main-window'); // a stable platform container
     if (!main) return;
@@ -9716,74 +9880,80 @@ renderer.registerRenderer('score', {
     line.textContent = String(value ?? '');
   },
 });</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch25-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch26">
-      <h2>Chapter 26 — Decoration &amp; Theming: Style Without HTML on the Wire</h2>
-      <p class="src">book source: <code>docs/book/parts/part-7/26-decoration-and-theming.md</code> · 4 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch26">
+      <h2>Chapter 26: Decoration &amp; Theming: Style Without HTML on the Wire</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-7/26-decoration-and-theming.md</code> · 4 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Theming: one DOM, many skins</span>
-          <span class="lang ">css</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>/* the engine, shipped by the platform, written once, never per theme */
+      <h3 class="snip-section" id="ch26-s0">Theming: one DOM, many skins</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">css</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>/* the engine, shipped by the platform, written once, never per theme */
 body              { background: var(--theme-bg); color: var(--theme-text); }
 .sharpee-status-bar { background: var(--theme-accent); color: var(--theme-accent-text); }
 /* …every .sharpee-* component, all consuming var(--theme-*) … */</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Theming: one DOM, many skins</span>
-          <span class="lang ">css</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>[data-theme="modern-dark"] {
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">css</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>[data-theme="modern-dark"] {
   --theme-bg: #1e1e2e;
   --theme-text: #cdd6f4;
   --theme-accent: #89b4fa;
   --theme-font: "Inter", system-ui, sans-serif;
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Built-in themes: list the id</span>
-          <span class="lang ">jsonc</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// the story's package.json
+      <h3 class="snip-section" id="ch26-s1">Built-in themes: list the id</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">jsonc</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// the story's package.json
 "sharpee": { "themes": ["modern-dark", "paper", "system-6"] }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 4</span>
-          <span class="sec">Your own theme: three lines of CSS and one list entry</span>
-          <span class="lang ">css</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>[data-theme="zoo-sunny"] .sharpee-menu-bar { background: var(--theme-menu-bg); }
+      <h3 class="snip-section" id="ch26-s2">Your own theme: three lines of CSS and one list entry</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 4</span>
+            <span class="snip-lang">css</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>[data-theme="zoo-sunny"] .sharpee-menu-bar { background: var(--theme-menu-bg); }
 [data-theme="zoo-sunny"] .sharpee-status-bar { background: var(--theme-bg-alt); }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch26-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch27">
-      <h2>Chapter 27 — Media &amp; Audio: Sight and Sound as Channels</h2>
-      <p class="src">book source: <code>docs/book/parts/part-7/27-media-and-audio.md</code> · 3 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch27">
+      <h2>Chapter 27: Media &amp; Audio: Sight and Sound as Channels</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-7/27-media-and-audio.md</code> · 3 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Room atmospheres in practice</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>const audio = new AudioRegistry();
+      <h3 class="snip-section" id="ch27-s0">Room atmospheres in practice</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const audio = new AudioRegistry();
 
 audio.atmosphere(aviaryId)
   .ambient('audio/aviary-birdsong.mp3', 'environment', 0.4)
@@ -9791,14 +9961,14 @@ audio.atmosphere(aviaryId)
 audio.atmosphere(nocturnalId)
   .ambient('audio/night-crickets.mp3', 'environment', 0.3)
   .build();</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Room atmospheres in practice</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>import type { Effect } from '@sharpee/event-processor';
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>import type { Effect } from '@sharpee/event-processor';
 import { ISemanticEvent } from '@sharpee/core';
 
 let mediaCounter = 0;
@@ -9809,14 +9979,14 @@ function mediaEvent(type: string, data: Record&lt;string, unknown&gt;): ISemanti
 function emit(type: string, data: Record&lt;string, unknown&gt;): Effect {
   return { type: 'emit', event: mediaEvent(type, data) };
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Room atmospheres in practice</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>const atmosphere = audio.getAtmosphere(toRoom);
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>const atmosphere = audio.getAtmosphere(toRoom);
 if (atmosphere) {
   for (const a of atmosphere.ambient) {
     effects.push(emit('media.ambient.play', {
@@ -9826,23 +9996,24 @@ if (atmosphere) {
 } else {
   effects.push(emit('media.ambient.stop', { channel: 'environment' }));
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch27-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch28">
-      <h2>Chapter 28 — The Multi-File Story: Putting It All Together</h2>
-      <p class="src">book source: <code>docs/book/parts/part-8/28-the-multi-file-story.md</code> · 2 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch28">
+      <h2>Chapter 28: The Multi-File Story: Putting It All Together</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-8/28-the-multi-file-story.md</code> · 2 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Each file exports a builder and its IDs</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>// zoo-map.ts
+      <h3 class="snip-section" id="ch28-s0">Each file exports a builder and its IDs</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>// zoo-map.ts
 export interface RoomIds {
   entrance: string;
   pettingZoo: string;
@@ -9854,14 +10025,16 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; /* … */ } {
   // create rooms, wire exits, add scenery
   // return the IDs the rest of the story needs
 }</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">The index wires it together</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>initializeWorld(world: WorldModel): void {
+      <h3 class="snip-section" id="ch28-s1">The index wires it together</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>initializeWorld(world: WorldModel): void {
   world.setMaxScore(MAX_SCORE);
 
   const { rooms } = createZooMap(world);
@@ -9871,41 +10044,43 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; /* … */ } {
 
   // register the petting capability, place the player…
 }</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch28-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch29">
-      <h2>Chapter 29 — Transcript Testing &amp; Walkthroughs: Proving the Game Still Works</h2>
-      <p class="src">book source: <code>docs/book/parts/part-8/29-transcript-testing-and-walkthroughs.md</code> · 1 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch29">
+      <h2>Chapter 29: Transcript Testing &amp; Walkthroughs: Proving the Game Still Works</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-8/29-transcript-testing-and-walkthroughs.md</code> · 1 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">Running them</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>npx sharpee build --test                 # run every transcript it finds
+      <h3 class="snip-section" id="ch29-s0">Running them</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>npx sharpee build --test                 # run every transcript it finds
 npx sharpee build --test --stop-on-failure</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch29-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch30">
-      <h2>Chapter 30 — Saving &amp; Restoring: State Lives in the World</h2>
-      <p class="src">book source: <code>docs/book/parts/part-8/30-saving-and-restoring.md</code> · 2 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch30">
+      <h2>Chapter 30: Saving &amp; Restoring: State Lives in the World</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-8/30-saving-and-restoring.md</code> · 2 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">The one thing you must save yourself</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>let behaviorSwapped = false;
+      <h3 class="snip-section" id="ch30-s0">The one thing you must save yourself</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>let behaviorSwapped = false;
 scheduler.registerDaemon({
   id: 'zoo.daemon.parrot_behavior_swap',
   condition: (ctx) =&gt; !behaviorSwapped &amp;&amp; ctx.world.getStateValue('zoo.after_hours') === true,
@@ -9917,79 +10092,80 @@ scheduler.registerDaemon({
   },
   // …
 });</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">The one thing you must save yourself</span>
-          <span class="lang ">typescript</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>  getRunnerState(): Record&lt;string, unknown&gt; { return { behaviorSwapped }; },
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>  getRunnerState(): Record&lt;string, unknown&gt; { return { behaviorSwapped }; },
   restoreRunnerState(state): void { behaviorSwapped = (state.behaviorSwapped as boolean) ?? false; },</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch30-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
 
-    <section class="chapter" id="ch31">
-      <h2>Chapter 31 — Building &amp; Publishing: The Single-Player Browser Client</h2>
-      <p class="src">book source: <code>docs/book/parts/part-8/31-building-and-publishing.md</code> · 3 raw step(s)</p>
-      <h3>Raw steps</h3>
+    <section class="snip-chapter" id="ch31">
+      <h2>Chapter 31: Building &amp; Publishing: The Single-Player Browser Client</h2>
+      <p class="snip-src">Book source: <code>docs/book/parts/part-8/31-building-and-publishing.md</code> · 3 step(s)</p>
       
-      <div class="step">
-        <div class="step-head"><span class="badge">step 1</span>
-          <span class="sec">The author toolchain</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
-        </div>
-        <pre><code>npm install -g @sharpee/devkit   # one-time
+      <h3 class="snip-section" id="ch31-s0">The author toolchain</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 1</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>npm install -g @sharpee/devkit   # one-time
 sharpee init my-game -y          # scaffold src/index.ts, package.json, tsconfig.json
 cd my-game &amp;&amp; npm install        # pull the platform from npm
 sharpee build                    # compile src/ → dist/, emit the .sharpee bundle</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">Adding the browser client</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>sharpee init-browser   # adds src/browser-entry.ts (once)
+      <h3 class="snip-section" id="ch31-s1">Adding the browser client</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 2</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>sharpee init-browser   # adds src/browser-entry.ts (once)
 sharpee build          # now also emits the web client → dist/web/</code></pre>
-      </div>
-      <div class="step">
-        <div class="step-head"><span class="badge">step 3</span>
-          <span class="sec">Hosting it</span>
-          <span class="lang ">bash</span>
-          <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>sharpee build
+      <h3 class="snip-section" id="ch31-s2">Hosting it</h3>
+      
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 3</span>
+            <span class="snip-lang">bash</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>sharpee build
 python3 -m http.server -d dist/web
 # then open the printed http://localhost:8000</code></pre>
-      </div>
-      <h3>Combined — runnable cumulative</h3>
-      <p class="note">No story-code change this chapter — cumulative unchanged from the previous runnable checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
+        </div>
+      <h3 class="snip-section" id="ch31-combined">Combined runnable file</h3>
+      <p class="snip-note">No story-code change this chapter; the runnable file is unchanged from the previous checkpoint (<code>tutorials/familyzoo/src/ch23-scoring.ts</code>).</p>
     </section>
-</main>
+  </main>
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+<script src="components.js"></script>
+<script src="theme.js"></script>
 <script>
-// Theme toggle — same palette + persistence key as site/theme.js
-(function(){
-  var btn=document.getElementById('theme-toggle'), root=document.documentElement;
-  function apply(t){root.setAttribute('data-theme',t);btn.textContent=t==='dark'?'Light mode':'Dark mode';localStorage.setItem('sharpee-theme',t);}
-  apply(localStorage.getItem('sharpee-theme')||'dark');
-  btn.addEventListener('click',function(){apply(root.getAttribute('data-theme')==='dark'?'light':'dark');});
-})();
-document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>{
-  const code=b.closest('.step,.combined').querySelector('code').innerText;
-  navigator.clipboard.writeText(code).then(()=>{const t=b.textContent;b.textContent='copied';setTimeout(()=>b.textContent=t,1200);});
-}));
-// scrollspy: highlight the sidebar link for the chapter currently in view
-const links=new Map([...document.querySelectorAll('.sidebar a')].map(a=>[a.getAttribute('href').slice(1),a]));
-const spy=new IntersectionObserver(es=>{
-  es.forEach(e=>{ if(e.isIntersecting){
-    links.forEach(a=>a.classList.remove('active'));
-    const a=links.get(e.target.id); if(a){a.classList.add('active');a.scrollIntoView({block:'nearest'});}
-  }});
-},{rootMargin:'-10% 0px -80% 0px'});
-document.querySelectorAll('section.chapter').forEach(s=>spy.observe(s));
+document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
+  var code=b.closest('.snip').querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(function(){var t=b.textContent;b.textContent='copied';setTimeout(function(){b.textContent=t;},1200);});
+});});
+var navLinks=new Map([].slice.call(document.querySelectorAll('.book-nav a')).map(function(a){return [a.getAttribute('href').slice(1),a];}));
+var spy=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){
+  navLinks.forEach(function(a){a.classList.remove('active');});
+  var a=navLinks.get(e.target.id); if(a){a.classList.add('active');a.scrollIntoView({block:'nearest'});}
+}});},{rootMargin:'-5% 0px -85% 0px'});
+navLinks.forEach(function(a,id){var el=document.getElementById(id); if(el) spy.observe(el);});
 </script>
-</body></html>
+</body>
+</html>

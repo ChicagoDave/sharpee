@@ -163,6 +163,11 @@ python3 -m http.server -d dist/web
 That's the loop you'll use throughout the book: edit `src/`, `sharpee build`,
 refresh the page, play.
 
+> **Every snippet, online.** As you work through the book, the full set of code
+> snippets is browsable chapter by chapter, each step alongside the complete
+> runnable file it builds up to, at
+> [sharpee.net/book-snippets](https://sharpee.net/book-snippets.html).
+
 ## The CLI at a glance
 
 You've met most of these already; here's the full set you'll reach for as an

@@ -36,7 +36,8 @@
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/packages/sharpee/docs/genai-api">API Reference</a>' +
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/docs/guides">Author Guides</a>' +
       '<hr>' +
-      link('book-snippets.html', 'Book Snippets') +
+      '<a href="the-sharpee-book.html">Read the Book</a>' +
+      link('book-snippets.html', 'Code Snippets') +
     '</nav>' +
     '<div class="theme-toggle">' +
       '<button id="theme-toggle">Light mode</button>' +
@@ -47,17 +48,6 @@
     '<div class="footer-links">' +
       '<a href="https://github.com/ChicagoDave/sharpee">GitHub</a>' +
     '</div>';
-
-  // Sitewide 1.0 announcement bar — prepended to every page.
-  if (!document.querySelector('.announce-bar')) {
-    var announce = document.createElement('div');
-    announce.className = 'announce-bar';
-    announce.innerHTML =
-      '<span class="announce-badge">1.0</span>' +
-      'Sharpee 1.0 is here — the first stable release, now on npm. ' +
-      '<a href="getting-started.html">Get started &rarr;</a>';
-    document.body.insertBefore(announce, document.body.firstChild);
-  }
 
   var sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.innerHTML = sidebarHTML;
