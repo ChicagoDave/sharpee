@@ -1,0 +1,1 @@
+capacity: { maxItems: 5 }
