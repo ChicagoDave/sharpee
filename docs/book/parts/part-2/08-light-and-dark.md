@@ -170,7 +170,6 @@ sugarGliders.add(new IdentityTrait({
   aliases: ['sugar gliders', 'gliders', 'sugar glider'],
   article: 'some',
 }));
-sugarGliders.add(new SceneryTrait());
 world.moveEntity(sugarGliders.id, nocturnalExhibit.id);
 
 const bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
@@ -180,7 +179,6 @@ bushBabies.add(new IdentityTrait({
   aliases: ['bush babies', 'bush baby', 'galagos'],
   article: 'some',
 }));
-bushBabies.add(new SceneryTrait());
 world.moveEntity(bushBabies.id, nocturnalExhibit.id);
 
 const barnOwl = world.createEntity('barn owl', EntityType.SCENERY);
@@ -190,7 +188,6 @@ barnOwl.add(new IdentityTrait({
   aliases: ['barn owl', 'owl'],
   article: 'a',
 }));
-barnOwl.add(new SceneryTrait());
 world.moveEntity(barnOwl.id, nocturnalExhibit.id);
 ```
 

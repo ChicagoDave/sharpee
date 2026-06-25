@@ -9,44 +9,44 @@ importers:
   .:
     dependencies:
       '@sharpee/core':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/engine':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/event-processor':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/helpers':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/if-domain':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/lang-en-us':
-        specifier: ^1.0.8
-        version: 1.1.1
+        specifier: ^1.2.0
+        version: 1.2.0
       '@sharpee/media':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/parser-en-us':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/platform-browser':
         specifier: ^1.1.2
-        version: 1.1.2(@sharpee/channel-service@1.1.1)(@sharpee/core@1.1.1)(@sharpee/engine@1.1.1)(@sharpee/if-domain@1.1.1)(@sharpee/stdlib@1.1.1)(@sharpee/text-blocks@1.1.1)(@sharpee/world-model@1.1.1)
+        version: 1.1.2(@sharpee/channel-service@1.1.1)(@sharpee/core@1.1.1)(@sharpee/engine@1.1.1)(@sharpee/if-domain@1.1.1)(@sharpee/stdlib@1.2.0)(@sharpee/text-blocks@1.1.1)(@sharpee/world-model@1.2.0)
       '@sharpee/plugin-npc':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/plugin-scheduler':
-        specifier: ^1.0.8
+        specifier: ^1.1.1
         version: 1.1.1
       '@sharpee/stdlib':
-        specifier: ^1.0.8
-        version: 1.1.1
+        specifier: ^1.2.0
+        version: 1.2.0
       '@sharpee/world-model':
-        specifier: ^1.0.8
-        version: 1.1.1
+        specifier: ^1.2.0
+        version: 1.2.0
     devDependencies:
       '@sharpee/devkit':
         specifier: ^1.1.4
@@ -110,8 +110,11 @@ packages:
   '@sharpee/if-services@1.1.1':
     resolution: {integrity: sha512-/UYHCfBB4KOb2cbouMq+FZeX0NVchCbAuos1GdVvC7nebIM9LRzDCgVkKB3jw9YzNfrZAZpfSu6nL7YQilaWZg==}
 
-  '@sharpee/lang-en-us@1.1.1':
-    resolution: {integrity: sha512-gZFsE2iqkJWEA/aneb4clVqcVLHg4f17Gwgv5n0xYlNNq3jgYxPwwRf8FE4m4T6tw+RwAAmQphzc3Jufsumzog==}
+  '@sharpee/if-services@1.1.2':
+    resolution: {integrity: sha512-42LJ5AjGnrVltJSg4BdOqiE3nIXDP5YYImC/X4Uz71ojOrBm5sB5lO8NpJdW9gO96t4xFX1ugDsvOg975JOt4Q==}
+
+  '@sharpee/lang-en-us@1.2.0':
+    resolution: {integrity: sha512-De3PNbwE7dlZoNcRsrmdyKMitenIzeSiWvC8OBnyOr7X7xODryEufB6kwNCuatObMPE9wxl7JJhv1Chs+HjDRg==}
     engines: {node: '>=18.0.0'}
 
   '@sharpee/media@1.1.1':
@@ -145,8 +148,8 @@ packages:
     resolution: {integrity: sha512-ve8V72SAIyg00hj+S/q2uCu0B6Y7nd35aXWm5PbcnUkC0f5UoeRC3yg4fSZB7t9GXlQL3kXdE+f0T6uY1YPecg==}
     engines: {node: '>=18.0.0'}
 
-  '@sharpee/stdlib@1.1.1':
-    resolution: {integrity: sha512-4qTJiEkI5nXEhDK1uo7pCUBqQSIPAErJPUJV6EkGRAsPSfMvA6u7vuV3o0NEBJClh1S+MlgBmhRfzUDw+nhuAg==}
+  '@sharpee/stdlib@1.2.0':
+    resolution: {integrity: sha512-pWOhqBdQodJmY9hLWhA2+OtW/9K+i9l+xnnIwRIJoxbwTbFqoO7mKYfTEhd+wYNDzvHDWO+jBPldzo3XdigRdA==}
     engines: {node: '>=18.0.0'}
 
   '@sharpee/text-blocks@1.1.1':
@@ -157,8 +160,8 @@ packages:
     resolution: {integrity: sha512-hRJHvHkHuVRchsASFlAjiELeBfHvbkr8VwykYXBwy+8gdAPRQng67eS135zNGbroWL750KML1aCAypVi1GMRqA==}
     hasBin: true
 
-  '@sharpee/world-model@1.1.1':
-    resolution: {integrity: sha512-7DuB7XjlFUK09CRh1r2HOB6Wm5nmm/Q8ZaH+GDR50/1R/Q//5HwbBmYYKZbvxWET/Wj9Nku3Dy2YIr64R0ktDg==}
+  '@sharpee/world-model@1.2.0':
+    resolution: {integrity: sha512-GmNlwF6vuYNxCj/NT4Gk1m3aAwXkYpwjzULqpAfXc0DY84fY7EFWnLNCOHE34QCdZfiuxmAjnahrYybP7hRdOQ==}
     engines: {node: '>=18.0.0'}
 
   '@types/node@20.19.43':
@@ -340,17 +343,17 @@ snapshots:
       '@sharpee/ext-testing': 1.1.1
       '@sharpee/ide-protocol': 1.1.1
       '@sharpee/if-domain': 1.1.1
-      '@sharpee/lang-en-us': 1.1.1
+      '@sharpee/lang-en-us': 1.2.0
       '@sharpee/parser-en-us': 1.1.1
-      '@sharpee/stdlib': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/stdlib': 1.2.0
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/channel-service@1.1.1':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1
       '@sharpee/text-blocks': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/core@1.1.1':
     dependencies:
@@ -370,29 +373,29 @@ snapshots:
       '@sharpee/event-processor': 1.1.1
       '@sharpee/if-domain': 1.1.1
       '@sharpee/if-services': 1.1.1
-      '@sharpee/lang-en-us': 1.1.1
+      '@sharpee/lang-en-us': 1.2.0
       '@sharpee/parser-en-us': 1.1.1
       '@sharpee/plugins': 1.1.1
-      '@sharpee/stdlib': 1.1.1
+      '@sharpee/stdlib': 1.2.0
       '@sharpee/text-blocks': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
       fflate: 0.8.3
 
   '@sharpee/event-processor@1.1.1':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/ext-testing@1.1.1':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/helpers@1.1.1':
     dependencies:
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/ide-protocol@1.1.1': {}
 
@@ -405,9 +408,15 @@ snapshots:
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
-  '@sharpee/lang-en-us@1.1.1':
+  '@sharpee/if-services@1.1.2':
+    dependencies:
+      '@sharpee/core': 1.1.1
+      '@sharpee/if-domain': 1.1.1
+      '@sharpee/world-model': 1.2.0
+
+  '@sharpee/lang-en-us@1.2.0':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1
@@ -420,46 +429,46 @@ snapshots:
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1
-      '@sharpee/lang-en-us': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/lang-en-us': 1.2.0
+      '@sharpee/world-model': 1.2.0
 
-  '@sharpee/platform-browser@1.1.2(@sharpee/channel-service@1.1.1)(@sharpee/core@1.1.1)(@sharpee/engine@1.1.1)(@sharpee/if-domain@1.1.1)(@sharpee/stdlib@1.1.1)(@sharpee/text-blocks@1.1.1)(@sharpee/world-model@1.1.1)':
+  '@sharpee/platform-browser@1.1.2(@sharpee/channel-service@1.1.1)(@sharpee/core@1.1.1)(@sharpee/engine@1.1.1)(@sharpee/if-domain@1.1.1)(@sharpee/stdlib@1.2.0)(@sharpee/text-blocks@1.1.1)(@sharpee/world-model@1.2.0)':
     dependencies:
       '@sharpee/channel-service': 1.1.1
       '@sharpee/core': 1.1.1
       '@sharpee/engine': 1.1.1
       '@sharpee/if-domain': 1.1.1
-      '@sharpee/stdlib': 1.1.1
+      '@sharpee/stdlib': 1.2.0
       '@sharpee/text-blocks': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
       lz-string: 1.5.0
 
   '@sharpee/plugin-npc@1.1.1':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/plugins': 1.1.1
-      '@sharpee/stdlib': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/stdlib': 1.2.0
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/plugin-scheduler@1.1.1':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/plugins': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/plugins@1.1.1':
     dependencies:
       '@sharpee/core': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
-  '@sharpee/stdlib@1.1.1':
+  '@sharpee/stdlib@1.2.0':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1
-      '@sharpee/if-services': 1.1.1
-      '@sharpee/lang-en-us': 1.1.1
+      '@sharpee/if-services': 1.1.2
+      '@sharpee/lang-en-us': 1.2.0
       '@sharpee/text-blocks': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/world-model': 1.2.0
 
   '@sharpee/text-blocks@1.1.1': {}
 
@@ -469,14 +478,14 @@ snapshots:
       '@sharpee/channel-service': 1.1.1
       '@sharpee/core': 1.1.1
       '@sharpee/engine': 1.1.1
-      '@sharpee/lang-en-us': 1.1.1
+      '@sharpee/lang-en-us': 1.2.0
       '@sharpee/parser-en-us': 1.1.1
-      '@sharpee/stdlib': 1.1.1
-      '@sharpee/world-model': 1.1.1
+      '@sharpee/stdlib': 1.2.0
+      '@sharpee/world-model': 1.2.0
       chalk: 4.1.2
       glob: 10.5.0
 
-  '@sharpee/world-model@1.1.1':
+  '@sharpee/world-model@1.2.0':
     dependencies:
       '@sharpee/core': 1.1.1
       '@sharpee/if-domain': 1.1.1

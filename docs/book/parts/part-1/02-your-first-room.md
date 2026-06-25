@@ -170,7 +170,6 @@ initializeWorld(world: WorldModel): void {
     aliases: ['sign', 'wooden sign'],
     article: 'a',
   }));
-  sign.add(new SceneryTrait());
 
   const booth = world.createEntity('ticket booth', EntityType.SCENERY);
   booth.add(new IdentityTrait({
@@ -181,7 +180,6 @@ initializeWorld(world: WorldModel): void {
     aliases: ['booth', 'ticket booth', 'window'],
     article: 'a',
   }));
-  booth.add(new SceneryTrait());
 
   world.moveEntity(sign.id, entrance.id);
   world.moveEntity(booth.id, entrance.id);
@@ -191,9 +189,10 @@ initializeWorld(world: WorldModel): void {
 }
 ```
 
-The ticket booth is built exactly like the sign: an entity, an `IdentityTrait` for
-its name and description, and a `SceneryTrait` so it stays put. Both are placed in
-the entrance, and now `examine booth` in the "Try it" list has something to find.
+The ticket booth is built exactly like the sign: an entity and an `IdentityTrait`
+for its name and description. Both are typed `EntityType.SCENERY`, so they stay
+put, and both are placed in the entrance; now `examine booth` in the "Try it" list
+has something to find.
 
 ## Placing things
 

@@ -160,8 +160,8 @@ initializeWorld(world: WorldModel): void {
 
   // Step 3: scenery. The welcome sign and ticket booth from Chapter 2 stay
   // in the entrance. The three new rooms get scenery of their own. Each is the
-  // same pattern you already know which includes: an entity, an IdentityTrait,
-  // a SceneryTrait (so it can't be taken), and a moveEntity to place it.
+  // same pattern you already know: an entity, an IdentityTrait, and a moveEntity
+  // to place it. The EntityType.SCENERY type makes each one fixed.
   const sign = world.createEntity('welcome sign', EntityType.SCENERY);
   sign.add(new IdentityTrait({
     name: 'welcome sign',
@@ -169,7 +169,6 @@ initializeWorld(world: WorldModel): void {
     aliases: ['sign', 'welcome sign', 'wooden sign'],
     article: 'a',
   }));
-  sign.add(new SceneryTrait());
   world.moveEntity(sign.id, entrance.id);
 
   const booth = world.createEntity('ticket booth', EntityType.SCENERY);
@@ -181,7 +180,6 @@ initializeWorld(world: WorldModel): void {
     aliases: ['booth', 'ticket booth', 'window'],
     article: 'a',
   }));
-  booth.add(new SceneryTrait());
   world.moveEntity(booth.id, entrance.id);
 
   const directionSigns = world.createEntity('direction signs', EntityType.SCENERY);
@@ -195,7 +193,6 @@ initializeWorld(world: WorldModel): void {
     article: 'some',
     grammaticalNumber: 'plural',
   }));
-  directionSigns.add(new SceneryTrait());
   world.moveEntity(directionSigns.id, mainPath.id);
 
   const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
@@ -208,7 +205,6 @@ initializeWorld(world: WorldModel): void {
     article: 'some',
     grammaticalNumber: 'plural',
   }));
-  goats.add(new SceneryTrait());
   world.moveEntity(goats.id, pettingZoo.id);
 
   const toucan = world.createEntity('toucan', EntityType.SCENERY);
@@ -220,7 +216,6 @@ initializeWorld(world: WorldModel): void {
     aliases: ['toucan', 'bird', 'toco toucan'],
     article: 'a',
   }));
-  toucan.add(new SceneryTrait());
   world.moveEntity(toucan.id, aviary.id);
 
   // Step 4: place the player at the entrance, as in Chapter 2.

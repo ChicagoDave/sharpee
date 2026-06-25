@@ -187,65 +187,53 @@ class FamilyZooStory implements Story {
     // Zoo Entrance scenery
     const sign = world.createEntity('welcome sign', EntityType.SCENERY);
     sign.add(new IdentityTrait({ name: 'welcome sign', description: 'A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY ZOO."', aliases: ['sign', 'welcome sign'], properName: false, article: 'a' }));
-    sign.add(new SceneryTrait());
     world.moveEntity(sign.id, entrance.id);
 
     const booth = world.createEntity('ticket booth', EntityType.SCENERY);
     booth.add(new IdentityTrait({ name: 'ticket booth', description: 'A small wooden booth with a "Self-Guided Tours" sign.', aliases: ['booth', 'ticket booth'], properName: false, article: 'a' }));
-    booth.add(new SceneryTrait());
     world.moveEntity(booth.id, entrance.id);
 
     const ironFence = world.createEntity('iron fence', EntityType.SCENERY);
     ironFence.add(new IdentityTrait({ name: 'iron fence', description: 'A tall wrought-iron fence with animal silhouettes.', aliases: ['fence', 'iron fence', 'railing'], properName: false, article: 'an' }));
-    ironFence.add(new SceneryTrait());
     world.moveEntity(ironFence.id, entrance.id);
 
     // Main Path scenery
     const directionSigns = world.createEntity('direction signs', EntityType.SCENERY);
     directionSigns.add(new IdentityTrait({ name: 'direction signs', grammaticalNumber: 'plural', description: 'Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).', aliases: ['signs', 'direction signs', 'arrow signs'], properName: false, article: 'some' }));
-    directionSigns.add(new SceneryTrait());
     world.moveEntity(directionSigns.id, mainPath.id);
 
     const flowerBeds = world.createEntity('flower beds', EntityType.SCENERY);
     flowerBeds.add(new IdentityTrait({ name: 'flower beds', grammaticalNumber: 'plural', description: 'Tidy beds of marigolds and petunias.', aliases: ['flowers', 'flower beds'], properName: false, article: 'some' }));
-    flowerBeds.add(new SceneryTrait());
     world.moveEntity(flowerBeds.id, mainPath.id);
 
     // Petting Zoo scenery
     const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
     goats.add(new IdentityTrait({ name: 'pygmy goats', grammaticalNumber: 'plural', description: 'Three pygmy goats hoping you have food.', aliases: ['goats', 'pygmy goats', 'goat'], properName: false, article: 'some' }));
-    goats.add(new SceneryTrait());
     world.moveEntity(goats.id, pettingZoo.id);
 
     const hayBale = world.createEntity('hay bale', EntityType.SCENERY);
     hayBale.add(new IdentityTrait({ name: 'hay bale', description: 'A large round bale of golden hay.', aliases: ['hay', 'hay bale', 'bale'], properName: false, article: 'a' }));
-    hayBale.add(new SceneryTrait());
     world.moveEntity(hayBale.id, pettingZoo.id);
 
     const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
     rabbits.add(new IdentityTrait({ name: 'rabbits', grammaticalNumber: 'plural', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
-    rabbits.add(new SceneryTrait());
     world.moveEntity(rabbits.id, pettingZoo.id);
 
     // Aviary scenery
     const toucan = world.createEntity('toucan', EntityType.SCENERY);
     toucan.add(new IdentityTrait({ name: 'toucan', description: 'A Toco toucan with an enormous orange-and-black bill.', aliases: ['toucan', 'toco toucan'], properName: false, article: 'a' }));
-    toucan.add(new SceneryTrait());
     world.moveEntity(toucan.id, aviary.id);
 
     const parrots = world.createEntity('parrots', EntityType.SCENERY);
     parrots.add(new IdentityTrait({ name: 'parrots', grammaticalNumber: 'plural', description: 'A raucous flock of scarlet macaws and grey African parrots.', aliases: ['parrots', 'parrot', 'macaws', 'birds'], properName: false, article: 'some' }));
-    parrots.add(new SceneryTrait());
     world.moveEntity(parrots.id, aviary.id);
 
     const waterfall = world.createEntity('waterfall', EntityType.SCENERY);
     waterfall.add(new IdentityTrait({ name: 'waterfall', description: 'A gentle artificial waterfall cascading into a stone basin.', aliases: ['waterfall', 'water', 'basin'], properName: false, article: 'a' }));
-    waterfall.add(new SceneryTrait());
     world.moveEntity(waterfall.id, aviary.id);
 
     const perches = world.createEntity('rope perches', EntityType.SCENERY);
     perches.add(new IdentityTrait({ name: 'rope perches', grammaticalNumber: 'plural', description: 'Thick sisal ropes strung between wooden posts — both furniture and snacks for the parrots.', aliases: ['perches', 'rope perches', 'ropes', 'rope'], properName: false, article: 'some' }));
-    perches.add(new SceneryTrait());
     world.moveEntity(perches.id, aviary.id);
 
 

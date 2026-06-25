@@ -33,12 +33,13 @@ That's a complete, takeable object. `EntityType.ITEM` is the type label for a
 generic portable thing; the `IdentityTrait` gives it a name, description, and
 aliases. No trait is needed to make it carryable; that's the default.
 
-## SceneryTrait takes portability away
+## EntityType.SCENERY makes a thing fixed
 
 Most of the things in a room are *not* meant to be carried. You don't want the
 player stuffing a park bench into a backpack or wandering off with the iron
-fence. `SceneryTrait` is how you say "this is part of the world, not a
-collectible." It does exactly one thing: it blocks the taking action.
+fence. Create a fixed thing as `EntityType.SCENERY` and it comes with a
+`SceneryTrait` already attached. That trait does exactly one thing: it blocks the
+taking action.
 
 ```typescript
 const fence = world.createEntity('iron fence', EntityType.SCENERY);
@@ -47,7 +48,6 @@ fence.add(new IdentityTrait({
   description: 'A tall wrought-iron fence with animal silhouettes.',
   aliases: ['fence', 'iron fence', 'railing'],
 }));
-fence.add(new SceneryTrait());
 world.moveEntity(fence.id, entrance.id);
 ```
 
@@ -55,31 +55,31 @@ Now `take fence` gives the player *"iron fence is fixed in place."* But
 `examine fence` still works: scenery blocks *taking*, not *looking*. The entity
 keeps its `IdentityTrait`, so its description is always readable.
 
-> **The mistake everyone makes once:** forgetting `SceneryTrait`. Because items
-> are portable by default, an animal or a wall you created without it can be
-> picked up and carried away. If the player can pocket your waterfall, you left
-> off the scenery trait.
+> **The mistake everyone makes once:** a fixed thing that *isn't* typed
+> `EntityType.SCENERY`. The scenery type pins it for you, but a container, a
+> supporter, or an animal you made an `ACTOR` is portable by default. If the player
+> can pocket your feed dispenser, it has no `SceneryTrait` and you need to add one
+> by hand.
 
-## The label and the trait are two different things
+## When you still add SceneryTrait by hand
 
-This trips people up, because two things share the same word:
+Typing a thing `EntityType.SCENERY` is the usual way to fix it, and it is enough
+on its own. You reach for an explicit `SceneryTrait` in only two cases:
 
-- **`EntityType.SCENERY`** is a *label*. It tells the engine "this entity
-  represents scenery." On its own it does **not** prevent taking.
-- **`SceneryTrait`** is the *mechanism*. It's the thing that actually blocks the
-  taking action.
+- **A fixed thing of another type.** A feed dispenser is a `CONTAINER` and a park
+  bench is a `SUPPORTER`; those types don't arrive fixed, so you add a
+  `SceneryTrait` to pin them in place.
+- **A custom refusal.** A plain `SceneryTrait` gives the standard "fixed in place"
+  line; construct it with your own message to say something specific.
 
-You want both for a proper fixed object. `EntityType.SCENERY` without
-`SceneryTrait` is scenery the player can still pick up — almost never what you
-mean. The pair to keep straight:
-
-| Entity type | Portable by default | Example |
+| Entity type | Fixed by default | Example |
 |---|---|---|
-| `EntityType.ITEM` | Yes | Maps, keys, coins |
-| `EntityType.SCENERY` | No (with `SceneryTrait`) | Fences, benches, animals |
+| `EntityType.ITEM` | No (portable) | Maps, keys, coins |
+| `EntityType.SCENERY` | Yes (gets `SceneryTrait`) | Fences, benches, animals |
+| `EntityType.CONTAINER` / `SUPPORTER` | No (add `SceneryTrait` to fix) | Dispensers, shelves |
 
-A rule of thumb for which to reach for: if you'd find it strange for the player
-to put a thing in their pocket, it's scenery.
+A rule of thumb: if you'd find it strange for the player to put a thing in their
+pocket, make it `EntityType.SCENERY`.
 
 ## Aliases make objects findable
 
@@ -111,7 +111,7 @@ library handles the whole inventory vocabulary without a line of code from you:
 | `drop all` | Drops everything the player is holding |
 
 When the player carries an item and walks to a new room, the item travels with
-them — carried things live inside the player's own container, so they move
+them: carried things live inside the player's own container, so they move
 wherever the player goes. And loose portable objects on the floor are listed
 after the room description:
 
@@ -122,7 +122,7 @@ A wide gravel path winds through the heart of the zoo...
 You can see a souvenir penny here.
 ```
 
-Scenery is *not* listed this way — it's expected to be named in the room's
+Scenery is *not* listed this way; it's expected to be named in the room's
 description prose, where it belongs.
 
 ## How taking actually decides
@@ -138,24 +138,25 @@ types `take map`:
 4. The player sees *"Taken."*
 
 That's the entire rule. Portable or not is simply: *does it have `SceneryTrait`?*
+Creating a thing as `EntityType.SCENERY` is just the quickest way to give it one.
 
 ## Putting it together
 
 Fill each room with scenery for atmosphere, then scatter a few takeable items.
-Scenery gets `SceneryTrait`; items get nothing extra:
+Scenery is typed `EntityType.SCENERY`, which fixes it in place; items get nothing
+extra:
 
 ```typescript
-// Scenery — fixed in place, examinable, mentioned in room prose.
+// Scenery: the SCENERY type fixes it in place, examinable, mentioned in room prose.
 const fence = world.createEntity('iron fence', EntityType.SCENERY);
 fence.add(new IdentityTrait({
   name: 'iron fence',
   description: 'A tall wrought-iron fence with animal silhouettes.',
   aliases: ['fence', 'iron fence', 'railing'],
 }));
-fence.add(new SceneryTrait());
 world.moveEntity(fence.id, entrance.id);
 
-// More scenery — a pair of rabbits in the Petting Zoo, beside the goats.
+// More scenery: a pair of rabbits in the Petting Zoo, beside the goats.
 const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
 rabbits.add(new IdentityTrait({
   name: 'rabbits',
@@ -166,10 +167,9 @@ rabbits.add(new IdentityTrait({
   article: 'some',
   grammaticalNumber: 'plural',
 }));
-rabbits.add(new SceneryTrait());
 world.moveEntity(rabbits.id, pettingZoo.id);
 
-// A takeable item — no SceneryTrait, so it's portable by default.
+// A takeable item: no SceneryTrait, so it's portable by default.
 const zooMap = world.createEntity('zoo map', EntityType.ITEM);
 zooMap.add(new IdentityTrait({
   name: 'zoo map',
@@ -184,7 +184,7 @@ animalFeed.add(new IdentityTrait({
   name: 'bag of animal feed',
   description:
     'A small brown paper bag of dried corn and pellets. The label reads ' +
-    '"ZOO SNACKS — Safe for goats, rabbits, and birds." It rustles invitingly.',
+    '"ZOO SNACKS: Safe for goats, rabbits, and birds." It rustles invitingly.',
   aliases: ['feed', 'animal feed', 'bag of feed', 'bag', 'corn', 'pellets'],
 }));
 world.moveEntity(animalFeed.id, pettingZoo.id);
@@ -216,7 +216,7 @@ penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 > look                  Map is now on the ground in Main Path
 > east                  Go to the Petting Zoo
 > take feed             Pick up the bag of animal feed
-> take goats            Can't — they're scenery!
+> take goats            Can't: they're scenery!
 ```
 
 ## Key takeaway

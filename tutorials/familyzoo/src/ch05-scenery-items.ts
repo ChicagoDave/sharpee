@@ -192,7 +192,6 @@ class FamilyZooStory implements Story {
       aliases: ['sign', 'welcome sign', 'wooden sign'],
       properName: false, article: 'a',
     }));
-    sign.add(new SceneryTrait());
     world.moveEntity(sign.id, entrance.id);
 
     const booth = world.createEntity('ticket booth', EntityType.SCENERY);
@@ -204,7 +203,6 @@ class FamilyZooStory implements Story {
       aliases: ['booth', 'ticket booth'],
       properName: false, article: 'a',
     }));
-    booth.add(new SceneryTrait());
     world.moveEntity(booth.id, entrance.id);
 
     const fence = world.createEntity('iron fence', EntityType.SCENERY);
@@ -216,7 +214,6 @@ class FamilyZooStory implements Story {
       aliases: ['fence', 'iron fence', 'railing'],
       properName: false, article: 'an',
     }));
-    fence.add(new SceneryTrait());
     world.moveEntity(fence.id, entrance.id);
 
     // Main Path scenery
@@ -229,7 +226,6 @@ class FamilyZooStory implements Story {
       aliases: ['signs', 'direction signs', 'arrow signs', 'post'],
       properName: false, article: 'some',
     }));
-    directionSigns.add(new SceneryTrait());
     world.moveEntity(directionSigns.id, mainPath.id);
 
     const benches = world.createEntity('wooden benches', EntityType.SCENERY);
@@ -241,7 +237,6 @@ class FamilyZooStory implements Story {
       aliases: ['benches', 'bench', 'wooden benches', 'seat'],
       properName: false, article: 'some',
     }));
-    benches.add(new SceneryTrait());
     world.moveEntity(benches.id, mainPath.id);
 
     const flowerBeds = world.createEntity('flower beds', EntityType.SCENERY);
@@ -253,7 +248,6 @@ class FamilyZooStory implements Story {
       aliases: ['flowers', 'flower beds', 'marigolds', 'petunias'],
       properName: false, article: 'some',
     }));
-    flowerBeds.add(new SceneryTrait());
     world.moveEntity(flowerBeds.id, mainPath.id);
 
     // Petting Zoo scenery
@@ -267,7 +261,6 @@ class FamilyZooStory implements Story {
       aliases: ['goats', 'pygmy goats', 'goat'],
       properName: false, article: 'some',
     }));
-    goats.add(new SceneryTrait());
     world.moveEntity(goats.id, pettingZoo.id);
 
     const hayBale = world.createEntity('hay bale', EntityType.SCENERY);
@@ -279,7 +272,6 @@ class FamilyZooStory implements Story {
       aliases: ['hay', 'hay bale', 'bale', 'straw'],
       properName: false, article: 'a',
     }));
-    hayBale.add(new SceneryTrait());
     world.moveEntity(hayBale.id, pettingZoo.id);
 
     const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
@@ -291,7 +283,6 @@ class FamilyZooStory implements Story {
       aliases: ['rabbits', 'rabbit', 'bunnies', 'bunny'],
       properName: false, article: 'some',
     }));
-    rabbits.add(new SceneryTrait());
     world.moveEntity(rabbits.id, pettingZoo.id);
 
     // Aviary scenery
@@ -303,7 +294,6 @@ class FamilyZooStory implements Story {
       aliases: ['toucan', 'toco toucan'],
       properName: false, article: 'a',
     }));
-    toucan.add(new SceneryTrait());
     world.moveEntity(toucan.id, aviary.id);
 
     const parrots = world.createEntity('parrots', EntityType.SCENERY);
@@ -314,7 +304,6 @@ class FamilyZooStory implements Story {
       aliases: ['parrots', 'parrot', 'macaws', 'macaw', 'birds'],
       properName: false, article: 'some',
     }));
-    parrots.add(new SceneryTrait());
     world.moveEntity(parrots.id, aviary.id);
 
     const waterfall = world.createEntity('waterfall', EntityType.SCENERY);
@@ -326,7 +315,6 @@ class FamilyZooStory implements Story {
       aliases: ['waterfall', 'water', 'basin', 'fountain'],
       properName: false, article: 'a',
     }));
-    waterfall.add(new SceneryTrait());
     world.moveEntity(waterfall.id, aviary.id);
 
 

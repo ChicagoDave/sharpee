@@ -71,7 +71,6 @@ pettingPlaque.add(new ReadableTrait({
     'temperament. Our pair, Biscuit and Marmalade, were born right ' +
     'here at Willowbrook in 2023.',
 }));
-pettingPlaque.add(new SceneryTrait());
 world.moveEntity(pettingPlaque.id, pettingZoo.id);
 ```
 
@@ -111,8 +110,8 @@ world.moveEntity(brochure.id, entrance.id);
 ```
 
 Readable scenery (plaques, warning signs) and readable items (brochures,
-letters, books) are the same trait; the only difference is whether you also add
-`SceneryTrait`.
+letters, books) are the same trait; the only difference is whether the thing is
+fixed in place.
 
 ## SwitchableTrait — a device with on/off state
 
@@ -185,8 +184,8 @@ match how a person would actually talk about the object.
 ## Key takeaway
 
 `ReadableTrait` separates what an object *says* (`read`) from what it *looks
-like* (`examine`); add `SceneryTrait` for fixed plaques and signs, leave it off
-for portable brochures and books, and use `\n` to shape the text. `SwitchableTrait`
+like* (`examine`); type fixed plaques and signs `EntityType.SCENERY` and leave
+portable brochures and books as plain items, and use `\n` to shape the text. `SwitchableTrait`
 gives any device an on/off toggle through the `switch`/`turn` verbs, alone for a
 plain device like the radio, or paired with another trait when the switch should
 drive something. It's the sibling of `OpenableTrait`: same shape, different verbs,

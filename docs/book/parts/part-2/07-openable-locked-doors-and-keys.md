@@ -187,7 +187,6 @@ shelves.add(new IdentityTrait({
   description: 'Industrial steel shelving stacked with feed sacks and supplies.',
   aliases: ['shelves', 'metal shelves', 'shelf', 'shelving'],
 }));
-shelves.add(new SceneryTrait());
 world.moveEntity(shelves.id, supplyRoom.id);
 
 // The key: an ordinary item, placed at the entrance for the player to find.

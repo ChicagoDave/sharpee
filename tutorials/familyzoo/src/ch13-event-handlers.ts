@@ -221,99 +221,80 @@ class FamilyZooStory implements Story {
 
     const sign = world.createEntity('welcome sign', EntityType.SCENERY);
     sign.add(new IdentityTrait({ name: 'welcome sign', description: 'A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY ZOO."', aliases: ['sign', 'welcome sign'], properName: false, article: 'a' }));
-    sign.add(new SceneryTrait());
     world.moveEntity(sign.id, entrance.id);
 
     const booth = world.createEntity('ticket booth', EntityType.SCENERY);
     booth.add(new IdentityTrait({ name: 'ticket booth', description: 'A small wooden booth with a "Self-Guided Tours" sign.', aliases: ['booth', 'ticket booth'], properName: false, article: 'a' }));
-    booth.add(new SceneryTrait());
     world.moveEntity(booth.id, entrance.id);
 
     const ironFence = world.createEntity('iron fence', EntityType.SCENERY);
     ironFence.add(new IdentityTrait({ name: 'iron fence', description: 'A tall wrought-iron fence with animal silhouettes.', aliases: ['fence', 'iron fence', 'railing'], properName: false, article: 'an' }));
-    ironFence.add(new SceneryTrait());
     world.moveEntity(ironFence.id, entrance.id);
 
     const directionSigns = world.createEntity('direction signs', EntityType.SCENERY);
     directionSigns.add(new IdentityTrait({ name: 'direction signs', grammaticalNumber: 'plural', description: 'Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).', aliases: ['signs', 'direction signs', 'arrow signs'], properName: false, article: 'some' }));
-    directionSigns.add(new SceneryTrait());
     world.moveEntity(directionSigns.id, mainPath.id);
 
     const flowerBeds = world.createEntity('flower beds', EntityType.SCENERY);
     flowerBeds.add(new IdentityTrait({ name: 'flower beds', grammaticalNumber: 'plural', description: 'Tidy beds of marigolds and petunias.', aliases: ['flowers', 'flower beds'], properName: false, article: 'some' }));
-    flowerBeds.add(new SceneryTrait());
     world.moveEntity(flowerBeds.id, mainPath.id);
 
     const goats = world.createEntity('pygmy goats', EntityType.SCENERY);
     goats.add(new IdentityTrait({ name: 'pygmy goats', grammaticalNumber: 'plural', description: 'Three pygmy goats hoping you have food.', aliases: ['goats', 'pygmy goats', 'goat'], properName: false, article: 'some' }));
-    goats.add(new SceneryTrait());
     world.moveEntity(goats.id, pettingZoo.id);
 
     const hayBale = world.createEntity('hay bale', EntityType.SCENERY);
     hayBale.add(new IdentityTrait({ name: 'hay bale', description: 'A large round bale of golden hay.', aliases: ['hay', 'hay bale', 'bale'], properName: false, article: 'a' }));
-    hayBale.add(new SceneryTrait());
     world.moveEntity(hayBale.id, pettingZoo.id);
 
     const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
     rabbits.add(new IdentityTrait({ name: 'rabbits', grammaticalNumber: 'plural', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
-    rabbits.add(new SceneryTrait());
     world.moveEntity(rabbits.id, pettingZoo.id);
 
     const toucan = world.createEntity('toucan', EntityType.SCENERY);
     toucan.add(new IdentityTrait({ name: 'toucan', description: 'A Toco toucan with an enormous orange-and-black bill.', aliases: ['toucan', 'toco toucan'], properName: false, article: 'a' }));
-    toucan.add(new SceneryTrait());
     world.moveEntity(toucan.id, aviary.id);
 
     const parrots = world.createEntity('parrots', EntityType.SCENERY);
     parrots.add(new IdentityTrait({ name: 'parrots', grammaticalNumber: 'plural', description: 'A raucous flock of scarlet macaws and grey African parrots.', aliases: ['parrots', 'macaws', 'birds'], properName: false, article: 'some' }));
-    parrots.add(new SceneryTrait());
     world.moveEntity(parrots.id, aviary.id);
 
     const waterfall = world.createEntity('waterfall', EntityType.SCENERY);
     waterfall.add(new IdentityTrait({ name: 'waterfall', description: 'A gentle artificial waterfall cascading into a stone basin.', aliases: ['waterfall', 'water', 'basin'], properName: false, article: 'a' }));
-    waterfall.add(new SceneryTrait());
     world.moveEntity(waterfall.id, aviary.id);
 
     const perches = world.createEntity('rope perches', EntityType.SCENERY);
     perches.add(new IdentityTrait({ name: 'rope perches', grammaticalNumber: 'plural', description: 'Thick sisal ropes strung between wooden posts — both furniture and snacks for the parrots.', aliases: ['perches', 'rope perches', 'ropes', 'rope'], properName: false, article: 'some' }));
-    perches.add(new SceneryTrait());
     world.moveEntity(perches.id, aviary.id);
 
     const shelves = world.createEntity('metal shelves', EntityType.SCENERY);
     shelves.add(new IdentityTrait({ name: 'metal shelves', grammaticalNumber: 'plural', description: 'Industrial metal shelving units stacked with supplies.', aliases: ['shelves', 'metal shelves', 'shelf'], properName: false, article: 'some' }));
-    shelves.add(new SceneryTrait());
     world.moveEntity(shelves.id, supplyRoom.id);
 
     const corkBoard = world.createEntity('cork board', EntityType.SCENERY);
     corkBoard.add(new IdentityTrait({ name: 'cork board', description: 'A cork board with staff schedules. A note in red marker: "DON\'T FORGET: nocturnal exhibit lights need new batteries!"', aliases: ['cork board', 'board', 'notices'], properName: false, article: 'a' }));
-    corkBoard.add(new SceneryTrait());
     world.moveEntity(corkBoard.id, supplyRoom.id);
 
     const sugarGliders = world.createEntity('sugar gliders', EntityType.SCENERY);
     sugarGliders.add(new IdentityTrait({ name: 'sugar gliders', grammaticalNumber: 'plural', description: 'A family of tiny sugar gliders with enormous dark eyes, leaping between branches.', aliases: ['sugar gliders', 'gliders'], properName: false, article: 'some' }));
-    sugarGliders.add(new SceneryTrait());
     world.moveEntity(sugarGliders.id, nocturnalExhibit.id);
 
     const bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
     bushBabies.add(new IdentityTrait({ name: 'bush babies', grammaticalNumber: 'plural', description: 'Two bush babies with impossibly large round eyes, clinging to a rope with tiny hands.', aliases: ['bush babies', 'galagos'], properName: false, article: 'some' }));
-    bushBabies.add(new SceneryTrait());
     world.moveEntity(bushBabies.id, nocturnalExhibit.id);
 
     const barnOwl = world.createEntity('barn owl', EntityType.SCENERY);
     barnOwl.add(new IdentityTrait({ name: 'barn owl', description: 'An enormous barn owl with a heart-shaped white face on a fake tree stump.', aliases: ['barn owl', 'owl'], properName: false, article: 'a' }));
-    barnOwl.add(new SceneryTrait());
     world.moveEntity(barnOwl.id, nocturnalExhibit.id);
 
     // --- Gift Shop scenery ---
 
     const stuffedAnimals = world.createEntity('stuffed animals', EntityType.SCENERY);
     stuffedAnimals.add(new IdentityTrait({ name: 'stuffed animals', grammaticalNumber: 'plural', description: 'Shelves of plush tigers, pandas, and penguins in various sizes.', aliases: ['stuffed animals', 'plush', 'toys'], properName: false, article: 'some' }));
-    stuffedAnimals.add(new SceneryTrait());
     world.moveEntity(stuffedAnimals.id, giftShop.id);
 
     const postcards = world.createEntity('postcards', EntityType.SCENERY);
     postcards.add(new IdentityTrait({ name: 'postcards', grammaticalNumber: 'plural', description: 'A spinning rack of postcards showing the zoo\'s greatest hits.', aliases: ['postcards', 'cards', 'postcard rack'], properName: false, article: 'some' }));
-    postcards.add(new SceneryTrait());
     world.moveEntity(postcards.id, giftShop.id);
 
 
@@ -324,19 +305,16 @@ class FamilyZooStory implements Story {
     const pettingPlaque = world.createEntity('info plaque', EntityType.SCENERY);
     pettingPlaque.add(new IdentityTrait({ name: 'info plaque', description: 'A brass plaque mounted on a wooden post near the petting zoo gate.', aliases: ['plaque', 'info plaque', 'brass plaque'], properName: false, article: 'an' }));
     pettingPlaque.add(new ReadableTrait({ text: 'PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always hungry.\n\nHOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marmalade, were born here in 2023.' }));
-    pettingPlaque.add(new SceneryTrait());
     world.moveEntity(pettingPlaque.id, pettingZoo.id);
 
     const aviaryPlaque = world.createEntity('aviary plaque', EntityType.SCENERY);
     aviaryPlaque.add(new IdentityTrait({ name: 'aviary plaque', description: 'A colorful information board near the aviary entrance.', aliases: ['plaque', 'aviary plaque', 'information board'], properName: false, article: 'an' }));
     aviaryPlaque.add(new ReadableTrait({ text: 'WELCOME TO THE AVIARY — Home to over 30 species!\n\nTOCO TOUCAN — Its bill weighs less than a smartphone.\n\nSCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.' }));
-    aviaryPlaque.add(new SceneryTrait());
     world.moveEntity(aviaryPlaque.id, aviary.id);
 
     const warningSign = world.createEntity('warning sign', EntityType.SCENERY);
     warningSign.add(new IdentityTrait({ name: 'warning sign', description: 'A yellow warning sign near the nocturnal exhibit entrance.', aliases: ['warning', 'warning sign', 'yellow sign'], properName: false, article: 'a' }));
     warningSign.add(new ReadableTrait({ text: 'CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a flashlight. Do NOT use camera flash. (We don\'t talk about the Great Owl Incident of 2022.)' }));
-    warningSign.add(new SceneryTrait());
     world.moveEntity(warningSign.id, supplyRoom.id);
 
     const brochure = world.createEntity('zoo brochure', EntityType.ITEM);
