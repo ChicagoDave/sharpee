@@ -135,16 +135,28 @@ build_web() {
     echo "  (skipping web nav injection: node not found)"
 }
 
+# Code-snippet page: render the book's per-chapter code steps + runnable cumulative
+# files into one standalone HTML page (docs/book/code-snippets/index.html) and publish
+# a copy into the GitHub Pages site (site/book-snippets.html). Self-contained; matches
+# the site palette/theme. Generated from the same canonical book source.
+build_snippets() {
+  echo "→ SNIPPETS (book code-snippet page → site/book-snippets.html)"
+  command -v node >/dev/null || { echo "  (skipping snippet page: node not found)"; return 0; }
+  node "$SCRIPT_DIR/build-snippet-page.cjs"
+  cp -f "$BOOK_DIR/code-snippets/index.html" "$SCRIPT_DIR/../site/book-snippets.html"
+}
+
 echo "→ art"
 optimize_art
 
 case "${1:-all}" in
-  html) build_html ;;
-  epub) build_epub ;;
-  pdf)  build_pdf ;;
-  web)  build_web ;;
-  all)  build_html; build_epub; build_pdf ;;
-  *)    echo "usage: build-book.sh [html|epub|pdf|web|all]"; exit 2 ;;
+  html)     build_html ;;
+  epub)     build_epub ;;
+  pdf)      build_pdf ;;
+  web)      build_web ;;
+  snippets) build_snippets ;;
+  all)      build_html; build_epub; build_pdf; build_snippets ;;
+  *)        echo "usage: build-book.sh [html|epub|pdf|web|snippets|all]"; exit 2 ;;
 esac
 
 echo "done → $BOOK_DIR/$OUT/"

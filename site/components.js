@@ -35,6 +35,8 @@
       '<hr>' +
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/packages/sharpee/docs/genai-api">API Reference</a>' +
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/docs/guides">Author Guides</a>' +
+      '<hr>' +
+      link('book-snippets.html', 'Book Snippets') +
     '</nav>' +
     '<div class="theme-toggle">' +
       '<button id="theme-toggle">Light mode</button>' +
