@@ -36,10 +36,11 @@
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/packages/sharpee/docs/genai-api">API Reference</a>' +
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/docs/guides">Author Guides</a>' +
       '<hr>' +
-      '<a href="the-sharpee-book.html">Read the Book</a>' +
-      link('book-snippets.html', 'Code Snippets') +
+      '<div class="nav-section">Sharpee Book</div>' +
+      '<a href="the-sharpee-book.html">HTML Book</a>' +
       '<a href="the-sharpee-book.epub" download>Download EPUB</a>' +
       '<a href="the-sharpee-book.pdf" download>Download PDF</a>' +
+      link('book-snippets.html', 'Code Snippets') +
     '</nav>' +
     '<div class="theme-toggle">' +
       '<button id="theme-toggle">Light mode</button>' +

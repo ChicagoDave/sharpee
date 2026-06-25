@@ -189,6 +189,15 @@ a:hover { color: var(--accent-hover); }
   flex: 1;
 }
 
+.sidebar .nav-section {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0.4rem 0 0.15rem;
+}
+
 .sidebar a {
   display: block;
   padding: 0.4rem 0;
