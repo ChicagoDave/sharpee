@@ -111,9 +111,9 @@ library handles the whole inventory vocabulary without a line of code from you:
 | `drop all` | Drops everything the player is holding |
 
 When the player carries an item and walks to a new room, the item travels with
-them: carried things live inside the player's own container, so they move
-wherever the player goes. And loose portable objects on the floor are listed
-after the room description:
+them. Carried things live with the player's default ability to 'contain' items,
+so they go wherever the player goes. Loose portable objects left on the floor are
+listed after the room description:
 
 ```
 Main Path

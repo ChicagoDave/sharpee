@@ -1,30 +1,29 @@
 # Em-dash review — Chapter 05: Scenery & Portable Objects
 
-### 1. "The label and the trait" paragraph (line 73) — prose
-OLD:
-You want both for a proper fixed object. `EntityType.SCENERY` without
-`SceneryTrait` is scenery the player can still pick up — almost never what you
-mean. The pair to keep straight:
+> STATUS: integrated. Chapter 05 was reworked for ADR-189 (the `EntityType.SCENERY`
+> type now carries `SceneryTrait`) in PR #169, and every em-dash was folded into
+> that rework. The chapter is em-dash clean. Entries are kept for the record:
+> #1 and #4 were SUPERSEDED (the surrounding text was rewritten, so the OLD passage
+> no longer exists); the rest were APPLIED as the recast below.
 
-NEW:
-You want both for a proper fixed object. `EntityType.SCENERY` without
-`SceneryTrait` is scenery the player can still pick up, which is almost never what you
-mean. The pair to keep straight:
+### 1. "The label and the trait" paragraph — prose — SUPERSEDED
+The "The label and the trait are two different things" section (with its
+`... still pick up — almost never what you mean` em-dash) was replaced wholesale by
+"When you still add SceneryTrait by hand" in the ADR-189 rework. The OLD paragraph
+no longer exists in the chapter.
 
-### 2. "What you get for free" paragraph (line 114) — prose
+### 2. "What you get for free" paragraph — prose — REWRITTEN (not a colon swap)
 OLD:
 When the player carries an item and walks to a new room, the item travels with
 them — carried things live inside the player's own container, so they move
-wherever the player goes. And loose portable objects on the floor are listed
-after the room description:
+wherever the player goes.
 
 NEW:
 When the player carries an item and walks to a new room, the item travels with
-them: carried things live inside the player's own container, so they move
-wherever the player goes. And loose portable objects on the floor are listed
-after the room description:
+them. Carried things live with the player's default ability to 'contain' items,
+so they go wherever the player goes.
 
-### 3. Scenery-not-listed paragraph (line 125) — prose
+### 3. Scenery-not-listed paragraph — prose — APPLIED
 OLD:
 Scenery is *not* listed this way — it's expected to be named in the room's
 description prose, where it belongs.
@@ -33,60 +32,45 @@ NEW:
 Scenery is *not* listed this way; it's expected to be named in the room's
 description prose, where it belongs.
 
-### 4. "Putting it together" scenery comment (line 148) — comment
-OLD:
-```typescript
-// Scenery — fixed in place, examinable, mentioned in room prose.
-const fence = world.createEntity('iron fence', EntityType.SCENERY);
-```
+### 4. "Putting it together" scenery comment — comment — SUPERSEDED
+The fence comment was rewritten by the rework to drop the now-redundant
+`SceneryTrait` add, and reads `// Scenery: the SCENERY type fixes it in place,
+examinable, mentioned in room prose.` (no em-dash).
 
-NEW:
-```typescript
-// Scenery: fixed in place, examinable, mentioned in room prose.
-const fence = world.createEntity('iron fence', EntityType.SCENERY);
-```
-
-### 5. "More scenery" rabbits comment (line 158) — comment
+### 5. "More scenery" rabbits comment — comment — APPLIED
 OLD:
 ```typescript
 // More scenery — a pair of rabbits in the Petting Zoo, beside the goats.
-const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
 ```
 
 NEW:
 ```typescript
 // More scenery: a pair of rabbits in the Petting Zoo, beside the goats.
-const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
 ```
 
-### 6. "A takeable item" comment (line 172) — comment
+### 6. "A takeable item" comment — comment — APPLIED
 OLD:
 ```typescript
 // A takeable item — no SceneryTrait, so it's portable by default.
-const zooMap = world.createEntity('zoo map', EntityType.ITEM);
 ```
 
 NEW:
 ```typescript
 // A takeable item: no SceneryTrait, so it's portable by default.
-const zooMap = world.createEntity('zoo map', EntityType.ITEM);
 ```
 
-### 7. Animal feed label text (line 187) — in-world
+### 7. Animal feed label text — in-world — APPLIED (converted to colon)
 OLD:
 ```typescript
-    'A small brown paper bag of dried corn and pellets. The label reads ' +
     '"ZOO SNACKS — Safe for goats, rabbits, and birds." It rustles invitingly.',
 ```
 
 NEW:
-LEAVE (in-world copy) — or if converting:
 ```typescript
-    'A small brown paper bag of dried corn and pellets. The label reads ' +
     '"ZOO SNACKS: Safe for goats, rabbits, and birds." It rustles invitingly.',
 ```
 
-### 8. "Try it" transcript annotation (line 219) — transcript
+### 8. "Try it" transcript annotation — transcript — APPLIED
 OLD:
 ```
 > take goats            Can't — they're scenery!
