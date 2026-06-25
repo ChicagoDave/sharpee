@@ -71,7 +71,6 @@ class FamilyZooStory implements Story {
       aliases: ['sign', 'wooden sign'],
       article: 'a',
     }));
-    sign.add(new SceneryTrait());
 
     const booth = world.createEntity('ticket booth', EntityType.SCENERY);
     booth.add(new IdentityTrait({
@@ -82,7 +81,6 @@ class FamilyZooStory implements Story {
       aliases: ['booth', 'ticket booth', 'window'],
       article: 'a',
     }));
-    booth.add(new SceneryTrait());
 
     world.moveEntity(sign.id, entrance.id);
     world.moveEntity(booth.id, entrance.id);

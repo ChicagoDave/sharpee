@@ -211,7 +211,6 @@ class FamilyZooStory implements Story {
       properName: false,
       article: 'a',
     }));
-    sign.add(new SceneryTrait());
     world.moveEntity(sign.id, entrance.id);
 
     // --- Ticket Booth (Zoo Entrance) ---
@@ -226,7 +225,6 @@ class FamilyZooStory implements Story {
       properName: false,
       article: 'a',
     }));
-    booth.add(new SceneryTrait());
     world.moveEntity(booth.id, entrance.id);
 
     // --- Direction Signs (Main Path) ---
@@ -241,7 +239,6 @@ class FamilyZooStory implements Story {
       properName: false,
       article: 'some',
     }));
-    directionSigns.add(new SceneryTrait());
     world.moveEntity(directionSigns.id, mainPath.id);
 
     // --- Goats (Petting Zoo) ---
@@ -257,7 +254,6 @@ class FamilyZooStory implements Story {
       properName: false,
       article: 'some',
     }));
-    goats.add(new SceneryTrait());
     world.moveEntity(goats.id, pettingZoo.id);
 
     // --- Toucan (Aviary) ---
@@ -272,7 +268,6 @@ class FamilyZooStory implements Story {
       properName: false,
       article: 'a',
     }));
-    toucan.add(new SceneryTrait());
     world.moveEntity(toucan.id, aviary.id);
 
 
