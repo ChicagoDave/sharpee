@@ -45,8 +45,8 @@ objects.
 | `hang :item on :hook` | `if.action.putting` | 110 | — |
 | `read\|peruse\|study :target` | `if.action.reading` | — | — |
 | `inventory\|inv\|i` | `if.action.inventory` | — | — |
-| `go :direction` | `if.action.going` | 100 | custom constraint |
-| `` | `if.action.going` | — | directions |
+| `go :direction` | `if.action.going` | 100 | `direction` → direction |
+| a bare direction (`north`, `n`, `up`, …) | `if.action.going` | — | directions |
 | `open :door` | `if.action.opening` | 100 | `door` → openable |
 | `close :door` | `if.action.closing` | 100 | `door` → openable |
 | `turn\|switch\|flip on :device` | `if.action.switching_on` | — | `device` → switchable |

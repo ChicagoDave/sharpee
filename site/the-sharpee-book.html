@@ -12184,127 +12184,578 @@ only suitable objects.</p>
 <td><code>go :direction</code></td>
 <td><code>if.action.going</code></td>
 <td>100</td>
-<td>custom constraint</td>
+<td><code>direction</code> → direction</td>
 </tr>
 <tr>
-<td>`<code>|</code>if.action.going<code>| — | directions | |</code>open
-:door<code>|</code>if.action.opening<code>| 100 |</code>door<code>→ openable | |</code>close
-:door<code>|</code>if.action.closing<code>| 100 |</code>door<code>→ openable | |</code>turn|switch|flip
-on
-:device<code>|</code>if.action.switching_on<code>| — |</code>device<code>→ switchable | |</code>turn|switch|flip
-off
-:device<code>|</code>if.action.switching_off<code>| — |</code>device<code>→ switchable | |</code>turn
-:device
-on<code>|</code>if.action.switching_on<code>| — |</code>device<code>→ switchable | |</code>turn
-:device
-off<code>|</code>if.action.switching_off<code>| — |</code>device<code>→ switchable | |</code>push|press|shove|move
-:target<code>|</code>if.action.pushing<code>| — | — | |</code>pull|drag|yank
-:target<code>|</code>if.action.pulling<code>| — | — | |</code>lower
-:target<code>|</code>if.action.lowering<code>| — | — | |</code>raise|lift
-:target<code>|</code>if.action.raising<code>| — | — | |</code>wait|z<code>|</code>if.action.waiting<code>| — | — | |</code>save<code>|</code>if.action.saving<code>| 100 | — | |</code>restore<code>|</code>if.action.restoring<code>| 100 | — | |</code>restart<code>|</code>if.action.restarting<code>| 100 | — | |</code>quit|q<code>|</code>if.action.quitting<code>| — | — | |</code>undo<code>|</code>if.action.undoing<code>| 100 | — | |</code>score<code>|</code>if.action.scoring<code>| 100 | — | |</code>version<code>|</code>if.action.version<code>| 100 | — | |</code>help<code>|</code>if.action.help<code>| 100 | — | |</code>about<code>|</code>if.action.about<code>| 100 | — | |</code>info<code>|</code>if.action.about<code>| 100 | — | |</code>credits<code>|</code>if.action.about<code>| 100 | — | |</code>trace<code>|</code>author.trace<code>| 100 | — | |</code>trace
-on<code>|</code>author.trace<code>| 100 | — | |</code>trace
-off<code>|</code>author.trace<code>| 100 | — | |</code>trace parser
-on<code>|</code>author.trace<code>| 100 | — | |</code>trace parser
-off<code>|</code>author.trace<code>| 100 | — | |</code>trace validation
-on<code>|</code>author.trace<code>| 100 | — | |</code>trace validation
-off<code>|</code>author.trace<code>| 100 | — | |</code>trace system
-on<code>|</code>author.trace<code>| 100 | — | |</code>trace system
-off<code>|</code>author.trace<code>| 100 | — | |</code>trace all
-on<code>|</code>author.trace<code>| 100 | — | |</code>trace all
-off<code>|</code>author.trace<code>| 100 | — | |</code>give :item to
-:recipient<code>|</code>if.action.giving<code>| 100 |</code>recipient<code>→ actor | |</code>give
-:recipient
-:item<code>|</code>if.action.giving<code>| 95 |</code>recipient<code>→ actor | |</code>offer
-:item to
-:recipient<code>|</code>if.action.giving<code>| 100 |</code>recipient<code>→ actor | |</code>show
-:item to
-:recipient<code>|</code>if.action.showing<code>| 100 |</code>recipient<code>→ actor | |</code>show
-:recipient
-:item<code>|</code>if.action.showing<code>| 95 |</code>recipient<code>→ actor | |</code>throw
-:item at
-:target<code>|</code>if.action.throwing<code>| 100 | — | |</code>throw
-:item to
-:recipient<code>|</code>if.action.throwing<code>| 100 | — | |</code>take
-:item from :container with|using
-:tool<code>|</code>if.action.taking_with<code>| 110 | instrument | |</code>unlock
-:door with|using
-:key<code>|</code>if.action.unlocking<code>| 110 | instrument | |</code>open
-:container with|using
-:tool<code>|</code>if.action.opening_with<code>| 110 | instrument;</code>container<code>→ openable | |</code>cut
-:object with|using
-:tool<code>|</code>if.action.cutting<code>| 110 | instrument | |</code>attack|kill|fight|slay|murder|hit|strike
-:target<code>|</code>if.action.attacking<code>| — | — | |</code>attack
-:target with|using
-:weapon<code>|</code>if.action.attacking<code>| 110 | instrument | |</code>kill
-:target with|using
-:weapon<code>|</code>if.action.attacking<code>| 110 | instrument | |</code>hit
-:target with|using
-:weapon<code>|</code>if.action.attacking<code>| 110 | instrument | |</code>strike
-:target with|using
-:weapon<code>|</code>if.action.attacking<code>| 110 | instrument | |</code>dig
-:location with|using
-:tool<code>|</code>if.action.digging<code>| 110 | instrument | |</code>say
-:message<code>|</code>if.action.saying<code>| 100 | — | |</code>say
-:message to
-:recipient<code>|</code>if.action.saying_to<code>| 105 |</code>recipient<code>→ actor | |</code>write
-:message<code>|</code>if.action.writing<code>| 100 | — | |</code>write
-:message on
-:surface<code>|</code>if.action.writing_on<code>| 105 | — | |</code>shout
-:message<code>|</code>if.action.shouting<code>| 100 | — | |</code>whisper
-:message to
-:recipient<code>|</code>if.action.whispering<code>| 100 |</code>recipient<code>→ actor | |</code>tell
-:recipient about
-:topic<code>|</code>if.action.telling<code>| 100 |</code>recipient<code>→ actor | |</code>ask
-:recipient about
-:topic<code>|</code>if.action.asking<code>| 100 |</code>recipient<code>→ actor | |</code>touch|rub|feel|pat|stroke|poke|prod
-:target<code>|</code>if.action.touching<code>| — | — | |</code>enter
-:portal<code>|</code>if.action.entering<code>| 100 |</code>portal<code>→ enterable | |</code>get
-in
-:portal<code>|</code>if.action.entering<code>| 100 |</code>portal<code>→ enterable | |</code>get
-into
-:portal<code>|</code>if.action.entering<code>| 100 |</code>portal<code>→ enterable | |</code>climb
-in
-:portal<code>|</code>if.action.entering<code>| 100 |</code>portal<code>→ enterable | |</code>climb
-into
-:portal<code>|</code>if.action.entering<code>| 100 |</code>portal<code>→ enterable | |</code>go
-in
-:portal<code>|</code>if.action.entering<code>| 100 |</code>portal<code>→ enterable | |</code>go
-into
-:portal<code>|</code>if.action.entering<code>| 100 |</code>portal<code>→ enterable | |</code>exit<code>|</code>if.action.exiting<code>| 100 | — | |</code>get
-out<code>|</code>if.action.exiting<code>| 100 | — | |</code>leave<code>|</code>if.action.exiting<code>| 95 | — | |</code>climb
-out<code>|</code>if.action.exiting<code>| 100 | — | |</code>board
-:vehicle<code>|</code>if.action.entering<code>| 100 |</code>vehicle<code>→ enterable | |</code>get
-on
-:vehicle<code>|</code>if.action.entering<code>| 100 |</code>vehicle<code>→ enterable | |</code>exit
-:container<code>|</code>if.action.exiting<code>| 100 |</code>container<code>→ enterable | |</code>disembark<code>|</code>if.action.exiting<code>| 100 | — | |</code>disembark
-:vehicle<code>|</code>if.action.exiting<code>| 100 |</code>vehicle<code>→ enterable | |</code>get
-off
-:vehicle<code>|</code>if.action.exiting<code>| 100 |</code>vehicle<code>→ enterable | |</code>alight<code>|</code>if.action.exiting<code>| 95 | — | |</code>again<code>|</code>if.action.again<code>| 100 | — | |</code>g<code>|</code>if.action.again<code>| 90 | — | |</code>hide
-behind
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>duck
-behind
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>crouch
-behind
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>hide
-under
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>duck
-under
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>crouch
-under
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>hide on
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>hide in
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>hide
-inside
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>duck
-inside
-:target<code>|</code>if.action.hiding<code>| 100 | — | |</code>stand
-up<code>|</code>if.action.revealing<code>| 100 | — | |</code>come
-out<code>|</code>if.action.revealing<code>| 100 | — | |</code>reveal
-myself<code>|</code>if.action.revealing<code>| 100 | — | |</code>unhide<code>|</code>if.action.revealing<code>| 100 | — | |</code>stop
-hiding<code>|</code>if.action.revealing`</td>
+<td>a bare direction (<code>north</code>, <code>n</code>,
+<code>up</code>, …)</td>
+<td><code>if.action.going</code></td>
+<td>—</td>
+<td>directions</td>
+</tr>
+<tr>
+<td><code>open :door</code></td>
+<td><code>if.action.opening</code></td>
+<td>100</td>
+<td><code>door</code> → openable</td>
+</tr>
+<tr>
+<td><code>close :door</code></td>
+<td><code>if.action.closing</code></td>
+<td>100</td>
+<td><code>door</code> → openable</td>
+</tr>
+<tr>
+<td><code>turn\|switch\|flip on :device</code></td>
+<td><code>if.action.switching_on</code></td>
+<td>—</td>
+<td><code>device</code> → switchable</td>
+</tr>
+<tr>
+<td><code>turn\|switch\|flip off :device</code></td>
+<td><code>if.action.switching_off</code></td>
+<td>—</td>
+<td><code>device</code> → switchable</td>
+</tr>
+<tr>
+<td><code>turn :device on</code></td>
+<td><code>if.action.switching_on</code></td>
+<td>—</td>
+<td><code>device</code> → switchable</td>
+</tr>
+<tr>
+<td><code>turn :device off</code></td>
+<td><code>if.action.switching_off</code></td>
+<td>—</td>
+<td><code>device</code> → switchable</td>
+</tr>
+<tr>
+<td><code>push\|press\|shove\|move :target</code></td>
+<td><code>if.action.pushing</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>pull\|drag\|yank :target</code></td>
+<td><code>if.action.pulling</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>lower :target</code></td>
+<td><code>if.action.lowering</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>raise\|lift :target</code></td>
+<td><code>if.action.raising</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>wait\|z</code></td>
+<td><code>if.action.waiting</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>save</code></td>
+<td><code>if.action.saving</code></td>
 <td>100</td>
 <td>—</td>
-<td></td>
+</tr>
+<tr>
+<td><code>restore</code></td>
+<td><code>if.action.restoring</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>restart</code></td>
+<td><code>if.action.restarting</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>quit\|q</code></td>
+<td><code>if.action.quitting</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>undo</code></td>
+<td><code>if.action.undoing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>score</code></td>
+<td><code>if.action.scoring</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td><code>if.action.version</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>help</code></td>
+<td><code>if.action.help</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>about</code></td>
+<td><code>if.action.about</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td><code>if.action.about</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>credits</code></td>
+<td><code>if.action.about</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace on</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace off</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace parser on</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace parser off</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace validation on</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace validation off</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace system on</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace system off</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace all on</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>trace all off</code></td>
+<td><code>author.trace</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>give :item to :recipient</code></td>
+<td><code>if.action.giving</code></td>
+<td>100</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>give :recipient :item</code></td>
+<td><code>if.action.giving</code></td>
+<td>95</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>offer :item to :recipient</code></td>
+<td><code>if.action.giving</code></td>
+<td>100</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>show :item to :recipient</code></td>
+<td><code>if.action.showing</code></td>
+<td>100</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>show :recipient :item</code></td>
+<td><code>if.action.showing</code></td>
+<td>95</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>throw :item at :target</code></td>
+<td><code>if.action.throwing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>throw :item to :recipient</code></td>
+<td><code>if.action.throwing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>take :item from :container with\|using :tool</code></td>
+<td><code>if.action.taking_with</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>unlock :door with\|using :key</code></td>
+<td><code>if.action.unlocking</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>open :container with\|using :tool</code></td>
+<td><code>if.action.opening_with</code></td>
+<td>110</td>
+<td>instrument; <code>container</code> → openable</td>
+</tr>
+<tr>
+<td><code>cut :object with\|using :tool</code></td>
+<td><code>if.action.cutting</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>attack\|kill\|fight\|slay\|murder\|hit\|strike :target</code></td>
+<td><code>if.action.attacking</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>attack :target with\|using :weapon</code></td>
+<td><code>if.action.attacking</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>kill :target with\|using :weapon</code></td>
+<td><code>if.action.attacking</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>hit :target with\|using :weapon</code></td>
+<td><code>if.action.attacking</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>strike :target with\|using :weapon</code></td>
+<td><code>if.action.attacking</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>dig :location with\|using :tool</code></td>
+<td><code>if.action.digging</code></td>
+<td>110</td>
+<td>instrument</td>
+</tr>
+<tr>
+<td><code>say :message</code></td>
+<td><code>if.action.saying</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>say :message to :recipient</code></td>
+<td><code>if.action.saying_to</code></td>
+<td>105</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>write :message</code></td>
+<td><code>if.action.writing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>write :message on :surface</code></td>
+<td><code>if.action.writing_on</code></td>
+<td>105</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>shout :message</code></td>
+<td><code>if.action.shouting</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>whisper :message to :recipient</code></td>
+<td><code>if.action.whispering</code></td>
+<td>100</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>tell :recipient about :topic</code></td>
+<td><code>if.action.telling</code></td>
+<td>100</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>ask :recipient about :topic</code></td>
+<td><code>if.action.asking</code></td>
+<td>100</td>
+<td><code>recipient</code> → actor</td>
+</tr>
+<tr>
+<td><code>touch\|rub\|feel\|pat\|stroke\|poke\|prod :target</code></td>
+<td><code>if.action.touching</code></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>enter :portal</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>portal</code> → enterable</td>
+</tr>
+<tr>
+<td><code>get in :portal</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>portal</code> → enterable</td>
+</tr>
+<tr>
+<td><code>get into :portal</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>portal</code> → enterable</td>
+</tr>
+<tr>
+<td><code>climb in :portal</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>portal</code> → enterable</td>
+</tr>
+<tr>
+<td><code>climb into :portal</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>portal</code> → enterable</td>
+</tr>
+<tr>
+<td><code>go in :portal</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>portal</code> → enterable</td>
+</tr>
+<tr>
+<td><code>go into :portal</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>portal</code> → enterable</td>
+</tr>
+<tr>
+<td><code>exit</code></td>
+<td><code>if.action.exiting</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>get out</code></td>
+<td><code>if.action.exiting</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>leave</code></td>
+<td><code>if.action.exiting</code></td>
+<td>95</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>climb out</code></td>
+<td><code>if.action.exiting</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>board :vehicle</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>vehicle</code> → enterable</td>
+</tr>
+<tr>
+<td><code>get on :vehicle</code></td>
+<td><code>if.action.entering</code></td>
+<td>100</td>
+<td><code>vehicle</code> → enterable</td>
+</tr>
+<tr>
+<td><code>exit :container</code></td>
+<td><code>if.action.exiting</code></td>
+<td>100</td>
+<td><code>container</code> → enterable</td>
+</tr>
+<tr>
+<td><code>disembark</code></td>
+<td><code>if.action.exiting</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>disembark :vehicle</code></td>
+<td><code>if.action.exiting</code></td>
+<td>100</td>
+<td><code>vehicle</code> → enterable</td>
+</tr>
+<tr>
+<td><code>get off :vehicle</code></td>
+<td><code>if.action.exiting</code></td>
+<td>100</td>
+<td><code>vehicle</code> → enterable</td>
+</tr>
+<tr>
+<td><code>alight</code></td>
+<td><code>if.action.exiting</code></td>
+<td>95</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>again</code></td>
+<td><code>if.action.again</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>g</code></td>
+<td><code>if.action.again</code></td>
+<td>90</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hide behind :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>duck behind :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>crouch behind :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hide under :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>duck under :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>crouch under :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hide on :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hide in :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>hide inside :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>duck inside :target</code></td>
+<td><code>if.action.hiding</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>stand up</code></td>
+<td><code>if.action.revealing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>come out</code></td>
+<td><code>if.action.revealing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>reveal myself</code></td>
+<td><code>if.action.revealing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>unhide</code></td>
+<td><code>if.action.revealing</code></td>
+<td>100</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>stop hiding</code></td>
+<td><code>if.action.revealing</code></td>
+<td>100</td>
+<td>—</td>
 </tr>
 </tbody>
 </table>
