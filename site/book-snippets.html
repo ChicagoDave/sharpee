@@ -2053,7 +2053,7 @@ const keycard = world.createEntity('staff keycard', EntityType.ITEM);
 keycard.add(new IdentityTrait({
   name: 'staff keycard',
   description:
-    'A white plastic keycard reading "WILLOWBROOK ZOO — STAFF ONLY," with a ' +
+    'A white plastic keycard reading "WILLOWBROOK ZOO / STAFF ONLY," with a ' +
     'faded photo of a smiling zookeeper on the back.',
   aliases: ['keycard', 'key card', 'card', 'key', 'staff keycard'],
   article: 'a',
@@ -3158,7 +3158,7 @@ world.createRegion('reg-mine', { name: 'Coal Mine', parentRegionId: 'reg-undergr
       </div>
       <div class="step">
         <div class="step-head"><span class="badge">step 2</span>
-          <span class="sec">ReadableTrait — what an object says</span>
+          <span class="sec">ReadableTrait: what an object says</span>
           <span class="lang ">typescript</span>
           <button class="copy" data-copy>copy</button>
         </div>
@@ -3223,7 +3223,7 @@ world.moveEntity(brochure.id, entrance.id);</code></pre>
       </div>
       <div class="step">
         <div class="step-head"><span class="badge">step 5</span>
-          <span class="sec">SwitchableTrait — a device with on/off state</span>
+          <span class="sec">SwitchableTrait: a device with on/off state</span>
           <span class="lang ">typescript</span>
           <button class="copy" data-copy>copy</button>
         </div>
@@ -3232,7 +3232,7 @@ radio.add(new IdentityTrait({
   name: 'radio',
   description:
     'A battered portable radio held together with duct tape. A faded ' +
-    'sticker on the side reads "ZOO FM — All Animals, All The Time."',
+    'sticker on the side reads "ZOO FM | All Animals, All The Time."',
   aliases: ['radio', 'portable radio'],
   properName: false,
   article: 'a',
@@ -3633,7 +3633,7 @@ export default story;</code></pre></div>
           <button class="copy" data-copy>copy</button>
         </div>
         <pre><code>world.registerEventHandler('if.event.dropped', (event, world) =&gt; {
-  // Set a flag, move an item, change state — but no visible text
+  // Set a flag, move an item, change state; but no visible text
   world.setStateValue('item-was-dropped', true);
 });</code></pre>
       </div>
@@ -9614,7 +9614,7 @@ export default story;</code></pre></div>
           <span class="lang ">typescript</span>
           <button class="copy" data-copy>copy</button>
         </div>
-        <pre><code>// A mood line per room — rooms not listed clear the line.
+        <pre><code>// A mood line per room; rooms not listed clear the line.
 const AMBIENCE_BY_ROOM: Record&lt;string, string&gt; = {
   'Aviary': 'The air is alive with birdsong and the rustle of wings.',
   'Nocturnal Animals Exhibit': 'Your eyes strain against the warm red dark.',
