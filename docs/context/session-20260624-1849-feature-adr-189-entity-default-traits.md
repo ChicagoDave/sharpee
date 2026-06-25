@@ -171,3 +171,34 @@ Clarity pass proposed that the book claim "SCENERY items are non-takeable by def
   threading); book em-dash chapter integration continues on `main`.
 
 **Status: Phases 1-5 complete and committed; build/publish (Phase 6) is David's.**
+
+---
+
+## Continuation: merges, version correction, scenery alignment (2026-06-24/25)
+
+- **PR #168 merged** to `main` (`c17f60bb`): ADR-189 Phase 1 + ADR-190 Phases 1-5 +
+  the book copy-edit integration that had been local-only. GH #166 and #167 closed.
+- **Version correction (David):** bumping `world-model`/`lang-en-us`/`stdlib` to **1.2.0**
+  was an error — it should have been the next **1.1.x** patch (the platform publishes
+  incrementally; the rest of the suite is on 1.1.x). They were nonetheless published at
+  1.2.0. PENDING: corrected republish at 1.1.x + matching familyzoo dep update.
+- **ADR-189 book + tutorial alignment (option C), PR #169 merged (`895f979a`):** ch05
+  fully reworked to "the `EntityType.SCENERY` type carries the behavior"; redundant explicit
+  `SceneryTrait` adds removed from SCENERY-typed entities — book ch02/04/07/08/12 (12 sites)
+  and familyzoo (13 `ch*.ts` files, 158 sites); non-SCENERY fixed things (CONTAINER/SUPPORTER/
+  DOOR/ITEM) keep their explicit `SceneryTrait`; stale prose fixed in ch02/04/12.
+- **familyzoo tested on 1.2.0:** deps corrected to the real local versions (3 at `^1.2.0`,
+  rest at their true `1.1.x`); standalone install + build clean; published `world-model@1.2.0`
+  auto-adds `SceneryTrait` to SCENERY (not ITEM); ch05 story runs with scenery fixed and items
+  portable. Full v01-v16 transcript suite blocked only by a **stale in-repo bundle** (`world.helpers`
+  prototype-augmentation split) — needs `./repokit build`; standalone behavior already confirmed.
+- **Issues:** closed #166, #167; filed **#170** (align dungeo — 70 `SceneryTrait` adds / 35 SCENERY
+  sites — once the in-repo bundle is rebuilt).
+- **ch05 finalized** (`87d9c162`, local on `main`): "travels with them" paragraph rewritten to the
+  player's default container ability; `emdash-ch05.md` marked integrated (#1/#4 SUPERSEDED, rest APPLIED, #2 REWRITTEN).
+
+**Outstanding for David:** republish the three packages at the correct 1.1.x patch (+ familyzoo dep
+update); rebuild the in-repo CLI bundle (`./repokit build`) then run the dungeo + familyzoo walkthrough
+suites; dungeo SceneryTrait alignment (#170).
+
+**Status: ADR-189/190 shipped and merged; book + Family Zoo aligned; version reconciliation + bundle rebuild + dungeo alignment remain (David's).**
