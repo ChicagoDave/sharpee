@@ -7,7 +7,7 @@
 # Rooms & Navigation: Exits Wired in Pairs
 
 One room is a demo, not a game. In this chapter the zoo grows to four
-locations — the Zoo Entrance, a Main Path, a Petting Zoo, and an Aviary — and the
+locations: the Zoo Entrance, a Main Path, a Petting Zoo, and an Aviary. The
 player can walk between them with compass directions: north, south, east, west.
 
 Everything from the first chapter is still here. We're adding rooms and the
@@ -25,7 +25,7 @@ entranceRoom.exits = {
 ```
 
 Read that as: "when the player types `south` in the entrance, move them to the
-main path." The `Direction` enum gives you all the standard IF directions —
+main path." The `Direction` enum gives you all the standard IF directions:
 `NORTH`, `SOUTH`, `EAST`, `WEST`, `UP`, `DOWN`, the four diagonals, and `IN` /
 `OUT`. The parser already understands the short forms (`n`, `se`, and so on), so
 you never spell those out yourself.
@@ -33,7 +33,7 @@ you never spell those out yourself.
 ## Two rules that trip up everyone
 
 **Exits are one-way.** This is the single most common beginner mistake. If the
-entrance has a south exit to the main path, the player can walk south — but they
+entrance has a south exit to the main path, the player can walk south, but they
 *cannot* walk back unless the main path also has a north exit to the entrance.
 Always wire exits in pairs:
 
@@ -62,7 +62,7 @@ const entranceRoom = entrance.get(RoomTrait)!;
 entranceRoom.exits = { /* ... */ };
 ```
 
-The `!` is a non-null assertion — "I know this room has a `RoomTrait`." If you
+The `!` is a non-null assertion: "I know this room has a `RoomTrait`." If you
 aren't certain an entity has the trait, check instead of asserting:
 
 ```typescript
@@ -74,7 +74,7 @@ if (roomTrait) {
 
 ## Putting it together
 
-This chapter adds one new import — `Direction` — to the world-model line from
+This chapter adds one new import, `Direction`, to the world-model line from
 Chapter 2:
 
 ```typescript
@@ -91,7 +91,7 @@ the entrance.
 
 ```typescript
 initializeWorld(world: WorldModel): void {
-  // Step 1 — create every room first, with empty exits.
+  // Step 1: create every room first, with empty exits.
   const entrance = world.createEntity('Zoo Entrance', EntityType.ROOM);
   entrance.add(new RoomTrait({ exits: {}, isDark: false }));
   entrance.add(new IdentityTrait({
@@ -112,7 +112,7 @@ initializeWorld(world: WorldModel): void {
       'A wide gravel path winds through the heart of the zoo. Colorful ' +
       'direction signs point every which way. To the east, a white picket ' +
       'fence surrounds the petting zoo. To the west, a tall mesh enclosure ' +
-      'rises above the treetops — the aviary. The entrance gates are back ' +
+      'rises above the treetops, the aviary. The entrance gates are back ' +
       'to the north.',
     aliases: ['path', 'main path', 'gravel path'],
     article: 'the',
@@ -142,7 +142,7 @@ initializeWorld(world: WorldModel): void {
     article: 'the',
   }));
 
-  // Step 2 — wire exits now that every room exists.
+  // Step 2: wire exits now that every room exists.
   entrance.get(RoomTrait)!.exits = {
     [Direction.SOUTH]: { destination: mainPath.id },
   };
@@ -158,10 +158,10 @@ initializeWorld(world: WorldModel): void {
     [Direction.EAST]: { destination: mainPath.id },
   };
 
-  // Step 3 — scenery. The welcome sign and ticket booth from Chapter 2 stay
-  // in the entrance; the three new rooms get scenery of their own. Each is the
-  // same pattern you already know: an entity, an IdentityTrait, a SceneryTrait
-  // so it can't be taken, and a moveEntity to place it.
+  // Step 3: scenery. The welcome sign and ticket booth from Chapter 2 stay
+  // in the entrance. The three new rooms get scenery of their own. Each is the
+  // same pattern you already know which includes: an entity, an IdentityTrait,
+  // a SceneryTrait (so it can't be taken), and a moveEntity to place it.
   const sign = world.createEntity('welcome sign', EntityType.SCENERY);
   sign.add(new IdentityTrait({
     name: 'welcome sign',
@@ -177,7 +177,7 @@ initializeWorld(world: WorldModel): void {
     name: 'ticket booth',
     description:
       'A small wooden booth with a sliding glass window reading ' +
-      '"Self-Guided Tours — No Ticket Needed Today!"',
+      '"Self-Guided Tours / No Ticket Needed Today!"',
     aliases: ['booth', 'ticket booth', 'window'],
     article: 'a',
   }));
@@ -190,7 +190,7 @@ initializeWorld(world: WorldModel): void {
     description:
       'A cluster of brightly colored arrow signs nailed to a wooden post. ' +
       'They point to: PETTING ZOO (east), AVIARY (west), ' +
-      'REPTILE HOUSE (south — coming soon!), and EXIT (north).',
+      'REPTILE HOUSE (south -> coming soon!), and EXIT (north).',
     aliases: ['signs', 'direction signs', 'arrow signs', 'post'],
     article: 'some',
     grammaticalNumber: 'plural',
@@ -223,13 +223,13 @@ initializeWorld(world: WorldModel): void {
   toucan.add(new SceneryTrait());
   world.moveEntity(toucan.id, aviary.id);
 
-  // Step 4 — place the player at the entrance, as in Chapter 2.
+  // Step 4: place the player at the entrance, as in Chapter 2.
   const player = world.getPlayer();
   if (player) world.moveEntity(player.id, entrance.id);
 }
 ```
 
-That's the whole method — nothing is hidden behind an "as before" comment. The
+The method is complete; nothing is abbreviated with an "as before" comment. The
 `direction signs` on the Main Path are what `examine signs` in the "Try it" list
 below reads.
 
@@ -266,4 +266,4 @@ prints the new room's description. Wiring the exits is the whole job.
 
 Rooms are connected by exits on `RoomTrait`, each mapping a `Direction` to a
 destination room ID. Create every room before connecting them, and always wire
-exits in both directions — or the player will get stuck.
+exits in both directions, otherwise the player will get stuck.

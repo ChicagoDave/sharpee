@@ -55,28 +55,28 @@ A unit test answers "does this feature work in isolation?" A walkthrough answers
 
 `[OK: contains "…"]` covers most cases, but the tester checks three layers:
 
-- **Text** — `contains`, `not contains`, `contains_any "a" "b"`, `matches /regex/i`.
+- **Text**: `contains`, `not contains`, `contains_any "a" "b"`, `matches /regex/i`.
   Invert with `[FAIL: …]` to assert a check should *not* pass; defer with `[SKIP]` or
   `[TODO: …]`.
-- **Events** — `[EVENT: true, type="if.event.taken"]` asserts the engine emitted a
+- **Events**: `[EVENT: true, type="if.event.taken"]` asserts the engine emitted a
   given semantic event this turn, independent of the prose. Useful when an action's
-  text varies but its event shouldn't — e.g. confirming `feed goats` emits your
+  text varies but its event shouldn't, e.g. confirming `feed goats` emits your
   `zoo.event.fed` event.
-- **State** — `[STATE: true, player.inventory contains feed]` checks the world model
+- **State**: `[STATE: true, player.inventory contains feed]` checks the world model
   directly. This is the strongest assertion: it verifies the *mutation*, not just the
   words. After `feed goats`, assert the `fed-…` state flag is set and the score went
-  up — the actual effects, not the message describing them.
+  up: the actual effects, not the message describing them.
 
-State assertions are worth reaching for. A message can read correctly while the world
-behind it is wrong; asserting on state catches that.
+A message can read correctly while the world behind it is wrong (a score that never
+incremented, an item that was never consumed), and only a state assertion catches that.
 
 ## Handling variable outcomes
 
-Real playthroughs aren't perfectly deterministic — an NPC might wander, a daemon might
+Real playthroughs aren't perfectly deterministic; an NPC might wander, a daemon might
 fire on a different turn. Transcripts have control-flow directives for that:
 
 - **`[GOAL: …]` / `[END GOAL]`** group commands into a named objective, with optional
-  `[REQUIRES: …]` preconditions and `[ENSURES: …]` postconditions — the goal fails if
+  `[REQUIRES: …]` preconditions and `[ENSURES: …]` postconditions, so the goal fails if
   the world isn't in the expected state before or after.
 - **`[IF: …]` / `[END IF]`** runs commands only when a condition holds (the parrot is
   here, the trunk wasn't stolen).

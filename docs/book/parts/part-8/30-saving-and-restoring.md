@@ -2,7 +2,7 @@
 
 A full play of the zoo runs to dozens of turns across two acts. Players will want to
 stop and come back. So how do you make the zoo saveable? The happy answer is the
-theme of this whole book: mostly, you don't — the architecture already did it. This
+theme of this whole book: mostly, you don't, because the architecture already did it. This
 chapter explains why, and pins down the one case where you *do* write save code.
 
 ## State lives in the world, so it saves itself
@@ -11,7 +11,7 @@ Every meaningful thing that changes during play lives in the **world model**: wh
 the player is, what's in their inventory, which animals you've fed (the `fed-…` state
 flags), whether the zoo has closed (`zoo.after_hours`), and the scoring ledger from
 Volume VI. When the engine saves, it serializes the *entire* world into a single
-`ISaveData` — a complete snapshot, carried in a compressed `worldSnapshot`.
+`ISaveData`, a complete snapshot carried in a compressed `worldSnapshot`.
 
 Because your game state is *in* the world rather than in loose variables scattered
 through your code, restoring is just rebuilding the world from that snapshot. Score,
@@ -53,16 +53,16 @@ implementing two hooks:
 
 `getRunnerState` hands the engine the transient flag to fold into the save;
 `restoreRunnerState` reads it back. That's the rule: **any state you hold outside the
-world — a counter in a closure, a flag on a daemon — you must surface through these
+world (a counter in a closure, a flag on a daemon) you must surface through these
 hooks, or it won't survive a save.** The cleaner your story keeps its state in the
 world, the less of this you write.
 
 ## How the browser persists a save
 
 The engine produces the `ISaveData`; the *client* decides where to put it. In the
-browser client from Volume VII, a save is wrapped in a `BrowserSaveEnvelope` —
+browser client from Volume VII, a save is wrapped in a `BrowserSaveEnvelope`,
 the engine snapshot plus a little browser-only metadata (the visible score, the
-scrollback transcript) — and written to `localStorage`. Two paths use it:
+scrollback transcript), and written to `localStorage`. Two paths use it:
 
 - **Manual save/restore** through the menu, into named slots.
 - **Autosave**, which piggy-backs on the per-turn channel packet: every turn boundary
@@ -70,7 +70,7 @@ scrollback transcript) — and written to `localStorage`. Two paths use it:
   story code at all. Re-open the page and the autosave restores you mid-game.
 
 Restoring reverses the wrap: the client unwraps the envelope and hands the engine
-snapshot back, and the engine rebuilds the world from it — which is why the
+snapshot back, and the engine rebuilds the world from it, which is why the
 post-restore status line and score are correct without the client recomputing
 anything.
 
@@ -78,7 +78,7 @@ anything.
 
 A save is a serialized snapshot, and snapshots have a shape. The envelope carries a
 version field precisely so that a future change to the format can be *read* rather
-than silently misinterpreted — a newer client can recognize an older save and refuse
+than silently misinterpreted: a newer client can recognize an older save and refuse
 or adapt instead of loading garbage. As an author you don't manage this, but it's
 worth knowing the format is versioned: a save written by one build won't be
 mistaken for a different shape by the next.

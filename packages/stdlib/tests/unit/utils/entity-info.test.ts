@@ -34,6 +34,20 @@ describe('entityInfoFrom', () => {
     expect(info.nounType).toBeUndefined();
   });
 
+  test('carries the plural override from IdentityTrait (ADR-190)', () => {
+    const world = new WorldModel();
+    const goose = makeEntity(world, 'goose', { plural: 'geese' });
+
+    expect(entityInfoFrom(goose).plural).toBe('geese');
+  });
+
+  test('omits plural when the trait does not set one', () => {
+    const world = new WorldModel();
+    const sword = makeEntity(world, 'sword', { article: 'a' });
+
+    expect(entityInfoFrom(sword).plural).toBeUndefined();
+  });
+
   test('proper-named entity sets properName=true and skips falsy fields', () => {
     const world = new WorldModel();
     const john = makeEntity(world, 'John', { properName: true, article: '' });

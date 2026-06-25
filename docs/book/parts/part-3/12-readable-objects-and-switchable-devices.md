@@ -25,13 +25,13 @@ from earlier chapters.
 
 ```typescript
 plaque.add(new ReadableTrait({
-  text: 'PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, ' +
+  text: 'PYGMY GOATS: These Nigerian Dwarf goats are gentle, curious, ' +
         'and always hungry.',
 }));
 ```
 
-The key idea is that *reading* and *examining* are different verbs that pull
-from different places:
+`read` and `examine` are different verbs that pull from different traits,
+`ReadableTrait.text` versus `IdentityTrait.description`:
 
 | Command | Trait used | What it shows |
 |---|---|---|
@@ -39,12 +39,12 @@ from different places:
 | `read plaque` | `ReadableTrait.text` | What the object says |
 
 A brass plaque *looks like* "a brass plaque mounted on a wooden post." It
-*says* "PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and
+*says* "PYGMY GOATS: These Nigerian Dwarf goats are gentle, curious, and
 always hungry." Two different strings, two different verbs.
 
 The test for whether something wants a `ReadableTrait`: would a real person say
-"I want to *read* this"? A sign, a book, a letter, a label — yes. A rock, a
-fence, a tree — no; those just need a description.
+"I want to *read* this"? A sign, a book, a letter, a label: yes. A rock, a
+fence, a tree: no; those just need a description.
 
 ## Readable scenery: the info plaque
 
@@ -64,10 +64,10 @@ pettingPlaque.add(new IdentityTrait({
 }));
 pettingPlaque.add(new ReadableTrait({
   text:
-    'PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, ' +
+    'PYGMY GOATS: These Nigerian Dwarf goats are gentle, curious, ' +
     'and always hungry. They can eat up to 3% of their body weight ' +
     'daily. Please use only zoo-approved feed from the dispensers.\n\n' +
-    'HOLLAND LOP RABBITS — Known for their floppy ears and calm ' +
+    'HOLLAND LOP RABBITS: Known for their floppy ears and calm ' +
     'temperament. Our pair, Biscuit and Marmalade, were born right ' +
     'here at Willowbrook in 2023.',
 }));
@@ -100,7 +100,7 @@ brochure.add(new IdentityTrait({
 }));
 brochure.add(new ReadableTrait({
   text:
-    'WILLOWBROOK FAMILY ZOO — Your Guide\n\n' +
+    'WILLOWBROOK FAMILY ZOO: Your Guide\n\n' +
     'EXHIBITS:\n' +
     '  Petting Zoo ............ East from Main Path\n' +
     '  Aviary ................. West from Main Path\n' +
@@ -111,13 +111,13 @@ world.moveEntity(brochure.id, entrance.id);
 ```
 
 Readable scenery (plaques, warning signs) and readable items (brochures,
-letters, books) are the same trait — the only difference is whether you also add
+letters, books) are the same trait; the only difference is whether you also add
 `SceneryTrait`.
 
 ## SwitchableTrait — a device with on/off state
 
 Back in *Light & Dark* the flashlight combined `SwitchableTrait` with
-`LightSourceTrait`. But `SwitchableTrait` stands perfectly well on its own — for
+`LightSourceTrait`. But `SwitchableTrait` stands perfectly well on its own, for
 any device with an on/off state that isn't a light. The supply-room radio is
 exactly that:
 
@@ -138,7 +138,7 @@ world.moveEntity(radio.id, supplyRoom.id);
 ```
 
 The player can `switch on radio`, `switch off radio`, `turn on radio`, or `turn
-off radio` — the stdlib handles all four phrasings and reports the toggle. The
+off radio`; the stdlib handles all four phrasings and reports the toggle. The
 radio has no `LightSourceTrait`, so switching it on changes its state but
 illuminates nothing. The `SceneryTrait` means it can't be carried off.
 
@@ -150,8 +150,8 @@ illuminates nothing. The `SceneryTrait` means it can't be carried off.
 
 ## Switchable vs. openable
 
-`SwitchableTrait` and `OpenableTrait` look like twins — both hold a boolean,
-both have paired verbs — but they model different kinds of object, and the
+`SwitchableTrait` and `OpenableTrait` look like twins (both hold a boolean,
+both have paired verbs), but they model different kinds of object, and the
 parser keeps their verbs apart:
 
 | Trait | Verbs | Models | Examples |
@@ -166,8 +166,8 @@ match how a person would actually talk about the object.
 
 ```
 > take brochure              Pick up the zoo brochure
-> take keycard               Grab the staff keycard — it's here at the entrance
-> read brochure              Read the guide — different from examine!
+> take keycard               Grab the staff keycard; it's here at the entrance
+> read brochure              Read the guide, different from examine!
 > examine brochure           See the physical brochure
 > south                      Main Path
 > east                       Petting Zoo
@@ -177,9 +177,9 @@ match how a person would actually talk about the object.
 > unlock gate with keycard   Open the staff area
 > open gate; south           Supply Room
 > examine radio              See the battered radio
-> switch on radio            Click — it's on
-> switch off radio           Click — off again
-> take radio                 Can't — it's scenery
+> switch on radio            Click, it's on
+> switch off radio           Click, off again
+> take radio                 Can't, it's scenery
 ```
 
 ## Key takeaway
@@ -187,7 +187,7 @@ match how a person would actually talk about the object.
 `ReadableTrait` separates what an object *says* (`read`) from what it *looks
 like* (`examine`); add `SceneryTrait` for fixed plaques and signs, leave it off
 for portable brochures and books, and use `\n` to shape the text. `SwitchableTrait`
-gives any device an on/off toggle through the `switch`/`turn` verbs — alone for a
+gives any device an on/off toggle through the `switch`/`turn` verbs, alone for a
 plain device like the radio, or paired with another trait when the switch should
 drive something. It's the sibling of `OpenableTrait`: same shape, different verbs,
 different kind of object.

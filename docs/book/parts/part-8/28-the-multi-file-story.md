@@ -7,7 +7,7 @@
 # The Multi-File Story: Putting It All Together
 
 Every chapter so far has shown a fragment: a trait here, a daemon there, a custom
-action on its own. A real story is all of it at once — and by now the Family Zoo has
+action on its own. A real story is all of it at once, and by now the Family Zoo has
 grown past what one file should hold. This chapter is the turn from *learning
 Sharpee* to *shipping a Sharpee game*. It starts where every growing project does:
 splitting one long file into many.
@@ -18,7 +18,7 @@ Through most of this book the zoo lived in a single source file because each ver
 added just one idea. By version 17 that file holds rooms, items, characters, four
 custom actions, a scheduler full of daemons, an NPC plugin, scoring rules, and every
 line of player-facing prose. A single file that large is hard to navigate and harder
-to change — touching the scoring rules means scrolling past the map, the items, and
+to change. Touching the scoring rules means scrolling past the map, the items, and
 the parser grammar to find them.
 
 The fix is the same one every codebase reaches for: split by **concern**. The
@@ -35,7 +35,7 @@ on GitHub alongside as we go:
 
 | File | Owns |
 |---|---|
-| `zoo-map.ts` | rooms, exits, scenery — the physical zoo |
+| `zoo-map.ts` | rooms, exits, scenery: the physical zoo |
 | `zoo-items.ts` | the objects players pick up and use |
 | `characters.ts` | the zookeeper, the parrot, pettable animals, their NPC behaviors |
 | `events.ts` | PA announcements, feeding time, the after-hours daemons |
@@ -46,7 +46,7 @@ on GitHub alongside as we go:
 Notice what the split is *not*: there's no `traits.ts`, no `actions.ts`, no
 `behaviors.ts`. Sharpee doesn't ask you to group code by its type. The petting
 feature's trait, its capability behavior, and its prose can each live near the rest
-of *their* concern — the animal in `characters.ts`, the message in `language.ts` —
+of *their* concern (the animal in `characters.ts`, the message in `language.ts`)
 because that's what you'll edit together when you change how petting works. Group by
 the part of the *world* a file describes, and a change stays in one place.
 
@@ -79,7 +79,7 @@ the map doesn't know the items exist, and the items only know the rooms by their
 
 ## The index wires it together
 
-`index.ts` holds the `Story` class — the same four hooks you've used all along, now
+`index.ts` holds the `Story` class: the same four hooks you've used all along, now
 calling out to the builder functions instead of doing the work inline:
 
 ```typescript
@@ -99,13 +99,13 @@ initializeWorld(world: WorldModel): void {
 since they coordinate across concerns), `extendParser` adds their grammar,
 `extendLanguage` calls `registerMessages` from `language.ts`, and `onEngineReady`
 installs the NPC and scheduler plugins and registers every daemon. The class reads
-like a table of contents for the story — which is exactly what a wiring file should
+like a table of contents for the story, which is exactly what a wiring file should
 be.
 
 ## A feature that spans the files: after hours
 
 Version 17 isn't only a reorganization; it adds a second act. After enough turns the
-zoo closes: the zookeeper leaves, and the animals — freed from human ears — start to
+zoo closes: the zookeeper leaves, and the animals, freed from human ears, start to
 talk. It's the perfect feature to show how a single idea now threads cleanly through
 the split files instead of tangling one big one:
 
@@ -125,9 +125,9 @@ the split files instead of tangling one big one:
 - **`scoring.ts`** grows a bonus tier: 25 points for witnessing the after-hours
   events, on top of the 75-point base game.
 
-Every one of those touches lands in the file that owns its concern. The feature is
-*more* ambitious than anything before it, and yet no single file became harder to
-read — which is the entire payoff of organizing by concern.
+Every one of those touches lands in the file that owns its concern: the daemons in
+`events.ts`, the phase flag in world state, the behavior swap in `index.ts`, the
+bonus tier in `scoring.ts`. A whole second act, and no single file grew harder to read.
 
 ## Key takeaway
 

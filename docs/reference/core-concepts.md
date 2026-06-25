@@ -10,8 +10,15 @@ Entities are the fundamental building blocks representing everything in the game
 
 ```typescript
 // Entity creation
-const entity = world.createEntity(displayName: string, type?: string)
+const entity = world.createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean })
 ```
+
+**Default traits by type (ADR-189):** `createEntity` consults a default-trait
+registry and gives the entity the traits its type implies. Today the only mapping is
+`scenery` → `SceneryTrait`, so an `EntityType.SCENERY` entity is non-takeable by
+construction (no separate `SceneryTrait` add needed). Pass `{ defaultTraits: false }`
+to skip this. To configure a defaulted trait, just `add()` your own afterward; `add()`
+is replace-on-same-type, so the later one wins. See ADR-189.
 
 **Key Properties:**
 - `id`: Unique identifier (auto-generated)

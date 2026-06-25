@@ -212,7 +212,7 @@ describe('IdentityTrait', () => {
       expect(retrievedTrait.name).toBe('mysterious artifact');
     });
 
-    it('should warn and keep original identity trait', () => {
+    it('should replace the existing identity trait with the new one (ADR-189)', () => {
       const entity = createTestEntity('original name');
       // Entity already has an identity trait from createTestEntity
       const originalTrait = entity.get(TraitType.IDENTITY) as IdentityTrait;
@@ -228,15 +228,14 @@ describe('IdentityTrait', () => {
       entity.add(newTrait);
       
       const trait = entity.get(TraitType.IDENTITY) as IdentityTrait;
-      // Should keep original trait, not the new one
-      expect(trait).toBe(originalTrait);
-      expect(trait.name).toBe('original name');
-      expect(trait.description).toBe('');
-      
-      // Should have warned about duplicate
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('already has trait: identity')
-      );
+      // The new trait replaces the original (replace-on-same-type)
+      expect(trait).toBe(newTrait);
+      expect(trait).not.toBe(originalTrait);
+      expect(trait.name).toBe('new name');
+      expect(trait.description).toBe('new description');
+
+      // Silent overwrite: no warning
+      expect(warnSpy).not.toHaveBeenCalled();
       
       warnSpy.mockRestore();
     });

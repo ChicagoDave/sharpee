@@ -10,7 +10,7 @@ instead of a framework.
 
 The engine produces signals; it knows nothing about screens. The browser client,
 `@sharpee/platform-browser`, is the piece that owns the page: it holds the DOM, runs
-the input box, draws the menus and save dialogs, and — most importantly — receives
+the input box, draws the menus and save dialogs, and, most importantly, receives
 each turn packet and paints it. Everything visible is the client's job. The engine
 never reaches for an element; it only emits channels.
 
@@ -42,15 +42,15 @@ client.connectEngine(engine, world);  // wire the engine
 await client.start();                 // boot, restore autosave, first look
 ```
 
-You rarely write this by hand — `sharpee build --browser` generates the entry point
+You rarely write this by hand. `sharpee build --browser` generates the entry point
 and the host page for you. But knowing the three calls demystifies what the bundle
 is doing: `initialize` learns the DOM, `connectEngine` subscribes to the engine, and
 `start` runs the opening turn.
 
 ## How a turn reaches the screen
 
-Inside `connectEngine`, the client builds a **renderer** — the consumer-side host
-from the previous chapter — and subscribes to exactly two engine signals:
+Inside `connectEngine`, the client builds a **renderer** (the consumer-side host
+from the previous chapter) and subscribes to exactly two engine signals:
 
 ```typescript
 engine.on('channel:manifest', (cmgt) => renderer.applyCmgt(cmgt));
@@ -86,25 +86,24 @@ library. The UI is plain HTML elements styled by CSS classes. Dialogs are native
 `<dialog>` elements opened with `showModal()`; the menu bar is a `<nav>` with
 `.sharpee-menu-bar-item` rows; the prose window is a scrolling `<div>`. State that
 *would* be component props lives instead in `--modifier` classes and standard ARIA
-attributes — an open menu carries `--open` and `aria-expanded`, a checked theme
+attributes: an open menu carries `--open` and `aria-expanded`, a checked theme
 carries `--checked`.
 
-This is a deliberate architecture, not an omission. A framework would put a runtime
+The framework-free build is deliberate: a framework would put a runtime
 between the author and the page and impose its own idioms for overriding a view.
 Sharpee's bet is the opposite: the page is just HTML and CSS, so an author restyles
-it with CSS and replaces a renderer with a function. Nothing to learn but the web
-platform you already know.
+it with CSS and replaces a renderer with a function. There is no framework API to learn.
 
 ## Overriding a renderer
 
 Because each channel maps to one registered renderer, customizing the UI is
-*re-registering*. After the platform defaults are in place — available from
-`connectEngine` onward — a story grabs the renderer and registers its own. There are
+*re-registering*. After the platform defaults are in place, available from
+`connectEngine` onward, a story grabs the renderer and registers its own. There are
 two cases, and they differ in one way: whether the channel already has a place on the
 page.
 
 **Replacing an existing channel's renderer.** A standard channel like `score`
-already renders into a platform element — the status line. To change *how* it looks,
+already renders into a platform element, the status line. To change *how* it looks,
 re-register against the same id and write into that same element. Registration is
 last-write-wins, so your renderer simply replaces the platform's for that channel,
 without touching any other:
@@ -120,12 +119,12 @@ renderer.registerRenderer('score', {
 });
 ```
 
-You're not adding anything to the page — the score element is already there; you're
+You're not adding anything to the page. The score element is already there; you're
 only changing what gets written into it.
 
 **Rendering a channel you invented.** A channel you created in `registerChannels`
-(the `zoo.ambience` channel from the last chapter) has no place on the page yet —
-the platform doesn't know it exists, so left alone its value falls to the renderer's
+(the `zoo.ambience` channel from the last chapter) has no place on the page yet. The
+platform doesn't know it exists, so left alone its value falls to the renderer's
 JSON-tree fallback. Its renderer therefore makes its own element the first time it
 runs and reuses it after. This is exactly how the platform's built-in renderers
 work: they create DOM nodes and append them into the page's containers. Create once,
@@ -157,7 +156,7 @@ The client ships the surrounding chrome too. Saving routes the engine's complete
 `ISaveData` into a browser envelope persisted in `localStorage`; an **autosave**
 piggy-backs on the per-turn packet, so every turn boundary is captured without any
 story code. Restore unwraps the envelope and hands the save back to the engine,
-which rebuilds the world. Theme switching is one attribute flip on the document — the
+which rebuilds the world. Theme switching is one attribute flip on the document, the
 subject of the next chapter. All of it is configured through `BrowserClientConfig`;
 none of it is something you implement.
 

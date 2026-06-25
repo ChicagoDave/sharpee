@@ -80,7 +80,7 @@ const pettingBehavior: CapabilityBehavior = {
   },
 
   execute(_entity, _world, _actorId, _shared): void {
-    // no world mutation — petting is cosmetic
+    // no world mutation; petting is cosmetic
   },
 
   report(entity, _world, _actorId, _shared): CapabilityEffect[] {
@@ -106,13 +106,13 @@ const pettingBehavior: CapabilityBehavior = {
 };
 ```
 
-`report()` and `blocked()` return `CapabilityEffect[]` — built with the
-`createEffect()` helper — rather than events directly. The dispatch action turns
+`report()` and `blocked()` return `CapabilityEffect[]`, built with the
+`createEffect()` helper, rather than events directly. The dispatch action turns
 those effects into semantic events.
 
 > **The mistake everyone makes once:** trying to register a separate behavior for
 > each animal under the same trait and capability. The registry holds exactly one
-> behavior per trait type + capability — a second registration replaces the first.
+> behavior per trait type + capability; a second registration replaces the first.
 > Put the per-entity differences in the trait's own data (here `animalKind`) and
 > branch on it inside the one behavior.
 
@@ -135,8 +135,8 @@ if (!hasCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID)) {
 ## The dispatch action
 
 Something still has to receive the `pet` verb and route it to the right behavior.
-Writing it by hand shows exactly what dispatch does — find the trait that claims
-the capability, look up its behavior, and delegate each phase:
+Writing it by hand shows exactly what dispatch does: find the trait that claims
+the capability, look up its behavior, and delegate each phase.
 
 ```typescript
 const PETTING_ACTION_ID = 'zoo.action.petting';
@@ -194,7 +194,7 @@ const pettingAction: Action = {
 ```
 
 An entity with no `PettableTrait` falls out at `findTraitWithCapability()` and
-gets the `CANT_PET` message — petting the hay bale just tells you that you can't.
+gets the `CANT_PET` message; petting the hay bale just tells you that you can't.
 
 > **Worth knowing:** the stdlib ships `createCapabilityDispatchAction()`, a
 > factory that builds exactly this find-trait-then-delegate action for you from a
@@ -240,13 +240,13 @@ runs once at the end of `initializeWorld`, after the animals exist.
 ## Making the zoo's animals pettable
 
 The behavior and action are wired; now the animals need the trait. The goats (from
-Chapter 4) and rabbits (from Chapter 5) are already scenery in the Petting Zoo —
-give each a `PettableTrait` carrying its kind. The parrot is new: add it to the
+Chapter 4) and rabbits (from Chapter 5) are already scenery in the Petting Zoo,
+so give each a `PettableTrait` carrying its kind. The parrot is new: add it to the
 Aviary as a perched bird. For now it just sits there (and bites); in Chapter 20 it
 becomes a full NPC that squawks and moves.
 
 ```typescript
-// The petting-zoo animals — already in the world, now pettable.
+// The petting-zoo animals, already in the world, now pettable.
 goats.add(new PettableTrait('goats'));
 rabbits.add(new PettableTrait('rabbits'));
 
@@ -266,7 +266,7 @@ world.moveEntity(parrot.id, aviary.id);
 ```
 
 With `goats`, `rabbits`, and `parrot` all carrying a `PettableTrait`, every `pet`
-command in the walkthrough below resolves — and each animal's `animalKind` selects
+command in the walkthrough below resolves, and each animal's `animalKind` selects
 its own outcome from the single behavior. (`ActorTrait` you met on the player in
 Chapter 2; here it simply marks the parrot as a character rather than an object.)
 
@@ -283,7 +283,7 @@ Player types: "pet goats"
   ↓ pettingAction.report()  → behavior.report() → "The goat leans into your hand."
 ```
 
-Type `pet parrot` and the same path runs — but `animalKind` is `'parrot'`, so the
+Type `pet parrot` and the same path runs, but `animalKind` is `'parrot'`, so the
 behavior returns the bite message instead. One verb, the entity decides.
 
 ## Try it

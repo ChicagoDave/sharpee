@@ -1,6 +1,6 @@
 # Decoration & Theming: Style Without HTML on the Wire
 
-Channels carry data, and the client paints it — but the data still has to *say*
+Channels carry data, and the client paints it, but the data still has to *say*
 something about emphasis, and the page still has to *look* like something. This
 chapter covers the three pieces that turn bare text into a styled screen:
 **decoration** (how prose carries styling without carrying HTML), **theming** (how
@@ -9,7 +9,7 @@ turn become a bar at the top).
 
 ## Decoration: styling without HTML on the wire
 
-Volume V's formatter chain handled *grammar* — articles and capitalization inside a
+Volume V's formatter chain handled *grammar*: articles and capitalization inside a
 message template. Decoration handles *style*: making a word italic, marking a name,
 flagging a command. The rule Sharpee commits to is that **no HTML travels on the
 wire**. A message never contains `<em>` or an inline `style`. Instead, templates use
@@ -20,8 +20,8 @@ This is Flood Control Dam #3 in the center of [em:Zork].
 ```
 
 `[name:content]` wraps its content in a decoration. The prose pipeline turns each
-bracket into a structured decoration node — `[em:Zork]` becomes
-`{ className: 'sharpee-em', content: ['Zork'] }` — and the browser renderer turns
+bracket into a structured decoration node, so `[em:Zork]` becomes
+`{ className: 'sharpee-em', content: ['Zork'] }`, and the browser renderer turns
 *that* into `<span class="sharpee-em">Zork</span>`. Brackets nest: `[em:[strong:bold
 italic]]` produces a `sharpee-strong` span inside a `sharpee-em` span.
 
@@ -45,8 +45,8 @@ mapping to one CSS class with a default rule:
 | `command` | `.sharpee-command` | a verb the player can type |
 
 Write `[em:…]` and you inherit the platform's `.sharpee-em` rule. The resolver only
-prefixes names it recognizes. Write a name the platform *doesn't* know —
-`[thief-taunt:Hold still!]` — and it emits `<span class="thief-taunt">` verbatim,
+prefixes names it recognizes. Write a name the platform *doesn't* know, such as
+`[thief-taunt:Hold still!]`, and it emits `<span class="thief-taunt">` verbatim,
 with no prefix, and your story's CSS owns the styling completely. That's the one
 firm rule for authors: don't name your own classes with `sharpee-`; that namespace
 is the platform's.
@@ -54,7 +54,7 @@ is the platform's.
 ## Theming: one DOM, many skins
 
 Decoration styles the prose; **theming** styles the whole page. Sharpee's theming
-model (ADR-170) rests on two commitments. First, a stable **component vocabulary** —
+model (ADR-170) rests on two commitments. First, a stable **component vocabulary**:
 a fixed set of class names the DOM always uses, regardless of theme:
 
 | Component | Class |
@@ -66,20 +66,20 @@ a fixed set of class names the DOM always uses, regardless of theme:
 | Input bar | `.sharpee-input-bar` |
 | Dialog | `.sharpee-dialog` |
 
-Second — and this is the part ADR-188 settled — the platform ships a **theme
+Second, and this is the part ADR-188 settled, the platform ships a **theme
 engine**, and a theme is *data*. The engine (in `@sharpee/platform-browser`) is one
 un-scoped layer of component rules that reads a set of `--theme-*` custom properties
 and paints every component class once:
 
 ```css
-/* the engine — shipped by the platform, written once, never per theme */
+/* the engine, shipped by the platform, written once, never per theme */
 body              { background: var(--theme-bg); color: var(--theme-text); }
 .sharpee-status-bar { background: var(--theme-accent); color: var(--theme-accent-text); }
 /* …every .sharpee-* component, all consuming var(--theme-*) … */
 ```
 
-The engine also ships the default token values on `:root` — the `classic`
-white-on-blue palette — so the page is **always** skinned, even with no theme
+The engine also ships the default token values on `:root`, the `classic`
+white-on-blue palette, so the page is **always** skinned, even with no theme
 selected. A **theme**, then, is nothing but a block that overrides those tokens:
 
 ```css
@@ -99,13 +99,13 @@ how to consume: `--theme-bg`, `--theme-bg-alt`, `--theme-text`, `--theme-text-mu
 A theme sets the ones it cares about; the rest fall back to the `:root` default.
 
 So the contract between platform and author is now the **tokens**, not a pile of
-per-theme component rules — the variables aren't a convenience *inside* a theme, they
-*are* the theme. Switching is still one attribute flip — `data-theme="modern-dark"` →
-`data-theme="zoo-sunny"` — and the whole page re-skins, because the engine re-reads
+per-theme component rules. The variables aren't a convenience *inside* a theme, they
+*are* the theme. Switching is still one attribute flip, from `data-theme="modern-dark"`
+to `data-theme="zoo-sunny"`, and the whole page re-skins, because the engine re-reads
 the tokens. (Theme CSS loads *after* the engine: `:root` and `[data-theme="x"]` have
 equal specificity, so source order decides, and the theme must win.) The fallback is
 automatic and needs no code: an unset token, an unknown `data-theme`, or a selected
-theme that isn't wired into the build all resolve to the `:root` default — the page is
+theme that isn't wired into the build all resolve to the `:root` default, so the page is
 never unskinned. The `ThemeManager` handles the flip and remembers the choice in
 `localStorage`.
 
@@ -113,16 +113,16 @@ never unskinned. The `ThemeManager` handles the flip and remembers the choice in
 
 You wire themes into a story by listing them in **`package.json` → `sharpee.themes`**.
 The build reads that list, copies in any theme CSS, links it after the engine, and
-builds the theme menu — the `classic` default plus one entry per theme you list.
+builds the theme menu: the `classic` default plus one entry per theme you list.
 Discovery is never magic: the build wires exactly what you name and does **not** scan
 `node_modules`.
 
-### Built-in themes — list the id
+### Built-in themes: list the id
 
 The platform ships a set of built-in themes with `@sharpee/platform-browser`:
 `modern-dark`, `retro-terminal`, `paper`, and `system-6` (plus `classic`, the
 white-on-blue default, which is always present). To offer some of them, just list
-their **ids** — no installs, no extra dependencies:
+their **ids**, with no installs and no extra dependencies:
 
 ```jsonc
 // the story's package.json
@@ -130,9 +130,9 @@ their **ids** — no installs, no extra dependencies:
 ```
 
 `sharpee build-browser` copies each listed built-in's CSS out of platform-browser into
-`dist/web/themes/<id>.css`, links it, and adds it to the menu. That's the whole step.
+`dist/web/themes/<id>.css`, links it, and adds it to the menu.
 
-### Your own theme — three lines of CSS and one list entry
+### Your own theme: three lines of CSS and one list entry
 
 Because a theme is just a token block, shipping your own takes two small pieces:
 
@@ -162,11 +162,11 @@ Because a theme is just a token block, shipping your own takes two small pieces:
 That's it. The build adds *Zoo Sunny* to the menu; selecting it flips
 `data-theme="zoo-sunny"`, and the engine paints the window, menu, status bar, prose
 pane, dialogs, and input from your four variables (and the `:root` defaults for the
-rest). A token block is genuinely the whole theme — no component rules required.
+rest).
 
-If you *want* to push past the tokens — Family Zoo, for instance, deliberately puts
-its green on the title and menu bars instead of the engine's default (the status bar)
-— add a few **flourish** rules under the same `[data-theme]` selector in that same
+If you *want* to push past the tokens (Family Zoo, for instance, deliberately puts
+its green on the title and menu bars instead of the engine's default, the status bar),
+add a few **flourish** rules under the same `[data-theme]` selector in that same
 stylesheet:
 
 ```css
@@ -180,13 +180,13 @@ to a single component, an extra class your prose uses.)
 
 > **Sharing a theme across stories.** A theme that lives only in one story's override
 > stylesheet can't be reused elsewhere. The same `[data-theme]` block can instead be
-> published as a small npm package other authors install and list by name — the path
+> published as a small npm package other authors install and list by name, the path
 > the built-ins themselves use internally. That's an advanced step; for one story, the
 > override stylesheet is all you need.
 
 ## The status line
 
-The bar across the top — *Toucan Enclosure · Score: 12 · Turns: 47* — is not a
+The bar across the top, *Toucan Enclosure · Score: 12 · Turns: 47*, is not a
 special widget. It's three channels rendered into the status bar: `location`,
 `score`, and `turn`, all `replace`-mode (each shows a single current value that
 supersedes the last). Each turn, the engine reads the player's room, the scoring
@@ -197,7 +197,7 @@ Because they're ordinary channels, the status line is as customizable as anythin
 else. Don't want a turn counter? Restyle or hide `.sharpee-status-bar` in your
 theme. Want the score as a star badge instead of a number? Re-register the `score`
 renderer, exactly as the previous chapter showed. Nothing about the status line is
-privileged — it's the universal channel mechanism pointed at a strip of the page.
+privileged. It's the universal channel mechanism pointed at a strip of the page.
 
 ## Key takeaway
 

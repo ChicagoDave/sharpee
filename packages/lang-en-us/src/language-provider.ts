@@ -8,6 +8,7 @@
 import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern } from '@sharpee/if-domain';
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
+import { pluralize as pluralizeNoun } from './pluralize';
 import { standardActionLanguage } from './actions';
 import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc';
 import { soundMessages } from './sound-messages';
@@ -41,11 +42,14 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   // Narrative context for perspective-aware message resolution (ADR-089)
   private narrativeContext: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT;
 
-  // Formatter registry for {a:item}, {items:list}, etc. (ADR-095)
+  // Formatter registry for {a:item}, {list:items}, etc. (ADR-095)
   private formatterRegistry: FormatterRegistry;
 
   // Entity lookup function for formatters (set by engine)
   private entityLookup?: (id: string) => EntityInfo | undefined;
+
+  // Serial (Oxford) comma in lists (ADR-190); story-configurable, default on.
+  private serialComma = true;
 
   constructor() {
     // Initialize formatter registry
@@ -162,7 +166,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    * Supports three types of placeholders:
    * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
    *    - Resolved based on narrative context (1st/2nd/3rd person)
-   * 2. Formatted placeholders (ADR-095): {a:item}, {items:list}, etc.
+   * 2. Formatted placeholders (ADR-095): {a:item}, {list:items}, etc.
    *    - Applies formatters before substitution
    * 3. Simple placeholders: {item}, {target}, etc.
    *    - Replaced with values from params object
@@ -186,6 +190,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     if (params) {
       const context: FormatterContext = {
         getEntity: this.entityLookup,
+        settings: { serialComma: this.serialComma },
       };
       message = formatWithFormatters(message, params, this.formatterRegistry, context);
     }
@@ -203,6 +208,14 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    */
   setEntityLookup(lookup: (id: string) => EntityInfo | undefined): void {
     this.entityLookup = lookup;
+  }
+
+  /**
+   * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
+   * @param on true → "a, b, and c"; false → "a, b and c"
+   */
+  setSerialComma(on: boolean): void {
+    this.serialComma = on;
   }
 
   /**
@@ -543,46 +556,9 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   }
 
   pluralize(noun: string): string {
-    if (!noun) return 's';
-    
-    const lower = noun.toLowerCase();
-    
-    // Check irregular plurals - the map is plural->singular, so we need to reverse lookup
-    for (const [plural, singular] of irregularPlurals) {
-      if (singular === lower) {
-        // Preserve the case pattern of the original noun
-        if (noun === noun.toUpperCase()) {
-          return plural.toUpperCase();
-        } else if (noun[0] === noun[0].toUpperCase()) {
-          return plural[0].toUpperCase() + plural.slice(1);
-        }
-        return plural;
-      }
-    }
-    
-    // Regular rules
-    if (lower.endsWith('s') || lower.endsWith('x') || lower.endsWith('z') ||
-        lower.endsWith('ch') || lower.endsWith('sh')) {
-      return noun + 'es';
-    }
-    
-    if (lower.endsWith('y') && !['a', 'e', 'i', 'o', 'u'].includes(lower[lower.length - 2])) {
-      // Special handling for case preservation with -ies
-      if (noun === noun.toUpperCase()) {
-        return noun.slice(0, -1) + 'IES';
-      }
-      return noun.slice(0, -1) + 'ies';
-    }
-    
-    if (lower.endsWith('f')) {
-      return noun.slice(0, -1) + 'ves';
-    }
-    
-    if (lower.endsWith('fe')) {
-      return noun.slice(0, -2) + 'ves';
-    }
-    
-    return noun + 's';
+    // Delegates to the free `pluralize` (src/pluralize.ts), the single source of
+    // truth shared with the list/count formatters.
+    return pluralizeNoun(noun);
   }
 
   isIgnoreWord(word: string): boolean {

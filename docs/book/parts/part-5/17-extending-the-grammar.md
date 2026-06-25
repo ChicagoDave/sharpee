@@ -6,7 +6,7 @@
 
 # Extending the Grammar: Teaching New Sentence Shapes
 
-A parser's whole job is to make sense of words — to take a line a player typed and
+A parser's whole job is to make sense of words: to take a line a player typed and
 decide which action it means and what it acts on. You've already taught it a few new
 words: `feed`, `photograph`, `pet`, each wired up with a couple of grammar lines in
 `extendParser`. This volume is about words, and it starts where the player's words
@@ -14,13 +14,14 @@ enter the system: the **grammar**.
 
 ## How the parser matches
 
-The parser holds a set of **patterns** — word-shapes paired with action IDs. When
+The parser holds a set of **patterns**, which are word-shapes paired with action
+IDs. When
 the player types a line, it finds the best-matching pattern, binds the pattern's
 slots to entities that are in scope (Chapter 11), and hands the result to the
 engine as a command. `take lamp` matches the pattern `take :item`, binds `:item`
 to the lamp in the room, and runs the taking action.
 
-You don't touch the standard patterns — `take`, `drop`, `go`, and the rest come
+You don't touch the standard patterns. `take`, `drop`, `go`, and the rest come
 wired up. What you add are patterns for *your* verbs.
 
 ## Where patterns go
@@ -46,10 +47,10 @@ calls, one pattern.
 
 ## Slots
 
-The `:thing` in `feed :thing` is a **slot** — a placeholder the parser fills with an
+The `:thing` in `feed :thing` is a **slot**, a placeholder the parser fills with an
 entity from scope. The slot's name is how the action gets it back: a single slot
 becomes the command's *direct object*, which the action reads as
-`context.command.directObject?.entity` — exactly the line you saw in the feeding
+`context.command.directObject?.entity`, exactly the line you saw in the feeding
 action in Chapter 14. Name a slot whatever reads well; `:thing`, `:item`,
 `:target`, `:animal` are all fine.
 
@@ -81,11 +82,12 @@ grammar
 ```
 
 The first slot becomes the direct object, the second (after the preposition) the
-indirect object — `context.command.indirectObject?.entity` in the action. This is
+indirect object, which is `context.command.indirectObject?.entity` in the action.
+This is
 the shape behind built-in commands like `unlock :door with :key` and
 `put :item in :container`.
 
-Multi-word verbs — phrasal verbs like `pick up :item` — also go through `.define`,
+Multi-word verbs, phrasal verbs like `pick up :item`, also go through `.define`,
 since the verb itself is more than one word.
 
 ## Constraining a slot
@@ -107,7 +109,7 @@ The `(scope: any)` annotation on the callback is there to satisfy the strict
 of constraint, so TypeScript can't infer the parameter's type on its own and
 `noImplicitAny` flags it. Annotating it keeps the build clean.
 
-Keep these rules **permissive** — `touchable` rather than `visible` — for the
+Keep these rules **permissive**, `touchable` rather than `visible`, for the
 reason from Chapter 11: let the parser resolve the noun, and let the action's
 `validate` phase make the strict call about whether sight (or anything else) is
 truly required. A grammar that demands full visibility forecloses perfectly good
@@ -123,8 +125,8 @@ same words. For brand-new verbs it rarely matters; for verbs that overlap a
 standard one, it's what puts your version in charge.
 
 > **A note on the standard grammar.** The platform defines its own verbs with an
-> action-centric builder — `grammar.forAction('if.action.pushing').verbs(['push',
-> 'press', 'shove']).pattern(':target')` — which generates a pattern per verb alias
+> action-centric builder, `grammar.forAction('if.action.pushing').verbs(['push',
+> 'press', 'shove']).pattern(':target')`, which generates a pattern per verb alias
 > at once. As a story author you'll almost always use `.define` inside
 > `extendParser` instead; `forAction` is how the library wires its built-ins.
 
@@ -137,4 +139,4 @@ is filled from scope and reaches the action as its direct (or, after a prepositi
 indirect) object; register several patterns to give one action multiple phrasings;
 constrain a slot with `.where` but keep it permissive; and use a priority of 150+ so
 your verbs outrank the standard ones. Grammar decides *which* action and *what* it
-acts on — the next chapter decides what the game *says* back.
+acts on. The next chapter decides what the game *says* back.

@@ -111,8 +111,8 @@ describe('Formatter System', () => {
     const context: FormatterContext = {};
 
     describe('listFormatter', () => {
-      it('should return empty string for empty array', () => {
-        expect(listFormatter([], context)).toBe('');
+      it('should return "nothing" for an empty array (ADR-190 AC-1)', () => {
+        expect(listFormatter([], context)).toBe('nothing');
       });
 
       it('should return single item unchanged', () => {

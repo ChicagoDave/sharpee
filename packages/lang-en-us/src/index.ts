@@ -31,6 +31,10 @@ export * from './perspective';
 // Export formatter system (ADR-095)
 export * from './formatters';
 
+// English grammar helpers (ADR-190): pluralization + count-word spelling
+export { pluralize } from './pluralize';
+export { countWord } from './number-words';
+
 // Export vocabulary data for parser use (ADR-082)
 export {
   cardinalNumbers,

@@ -7,7 +7,7 @@
 # Non-Player Characters: Actors That Take Turns
 
 Until now the zoo has been still. Animals are scenery, signs wait to be read,
-machines wait to be used — nothing moves unless the player moves it. A
+machines wait to be used. Nothing moves unless the player moves it. A
 **non-player character** changes that. Sam the zookeeper walks a patrol between
 the main path, the petting zoo, and the aviary. A scarlet macaw sits on its perch
 and squawks at random, and greets you when you walk in. The world starts to feel
@@ -15,12 +15,12 @@ inhabited.
 
 Sharpee's NPC system has three parts that work together:
 
-1. **`NpcTrait`** — the trait that marks an entity as an NPC.
-2. **`NpcBehavior`** — an object that decides what the NPC does each turn.
-3. **`NpcPlugin`** — an engine plugin that gives NPCs their own phase in the turn.
+1. **`NpcTrait`**: the trait that marks an entity as an NPC.
+2. **`NpcBehavior`**: an object that decides what the NPC does each turn.
+3. **`NpcPlugin`**: an engine plugin that gives NPCs their own phase in the turn.
 
-These span four packages — the engine, the world-model, the NPC plugin, and the
-stdlib:
+These span four packages: the engine, the world-model, the NPC plugin, and the
+stdlib.
 
 ```typescript
 import { GameEngine } from '@sharpee/engine';
@@ -65,7 +65,7 @@ world.moveEntity(zookeeper.id, mainPath.id);
 
 The `behaviorId` is the crucial link: it must exactly match the `id` of a
 behavior you register later. `canMove` decides whether this NPC is allowed to walk
-between rooms — the parrot, which stays put, sets it to `false`.
+between rooms. The parrot, which stays put, sets it to `false`.
 
 > **The mistake everyone makes once:** a `behaviorId` that doesn't match any
 > registered behavior's `id`. The NPC exists and you can examine it, but it never
@@ -74,7 +74,7 @@ between rooms — the parrot, which stays put, sets it to `false`.
 
 ### The parrot becomes an NPC
 
-The parrot already exists — you created it in Chapter 15 as a pettable actor in the
+The parrot already exists; you created it in Chapter 15 as a pettable actor in the
 Aviary. Turning it into an NPC is one more trait on that same entity, linking it to
 the behavior we write below:
 
@@ -89,13 +89,12 @@ parrot.add(new NpcTrait({
 ```
 
 So the zookeeper is a brand-new NPC while the parrot is an existing actor promoted
-to one — both routes end at the same place: an actor with an `NpcTrait` whose
+to one. Both routes end at the same place: an actor with an `NpcTrait` whose
 `behaviorId` names a behavior.
 
 ## Built-in behaviors
 
-You don't have to write a behavior from scratch. The stdlib ships several ready
-to use:
+The stdlib ships several behaviors ready to use, so common NPCs need no custom code:
 
 | Behavior | What it does |
 |---|---|
@@ -105,7 +104,7 @@ to use:
 | `guardBehavior` | Stand guard, block passage, fight |
 | `passiveBehavior` | Do nothing (react-only NPCs) |
 
-The zookeeper uses `createPatrolBehavior` — give it a route of room IDs and it
+The zookeeper uses `createPatrolBehavior`: give it a route of room IDs and it
 walks them in order, finding the exits on its own.
 
 ## Writing a custom behavior
@@ -130,7 +129,7 @@ const parrotBehavior: NpcBehavior = {
 
   // Called every turn, whether or not the player is here.
   onTurn(context: NpcContext): NpcAction[] {
-    if (!context.playerVisible) return [];        // no audience — stay quiet
+    if (!context.playerVisible) return [];        // no audience, stay quiet
 
     if (context.random.chance(0.5)) {             // 50% chance to squawk
       const phrase = context.random.pick(PARROT_PHRASES);
@@ -173,21 +172,21 @@ does this turn:
 Return an empty array for a turn where the NPC does nothing.
 
 The `npc.speech` and `npc.emote` message ids the behavior emits are provided by the
-platform's language layer (`@sharpee/lang-en-us`) — you don't register them in
+platform's language layer (`@sharpee/lang-en-us`). You don't register them in
 `extendLanguage`. They render verbatim the `text` you pass in each action's `data`.
 
 ## Registering the plugin and behaviors
 
 NPC behaviors don't fire until the `NpcPlugin` is registered with the engine.
-That happens in `onEngineReady()` — the story hook called after the engine is
+That happens in `onEngineReady()`, the story hook called after the engine is
 fully built, which is where any plugin needing the engine reference is set up. The
-patrol route references `this.roomIds` — the field you started in Chapter 13; make
+patrol route references `this.roomIds`, the field you started in Chapter 13; make
 sure `initializeWorld` records `mainPath`, `pettingZoo`, and `aviary` there so the
 route can name them:
 
 ```typescript
 onEngineReady(engine: GameEngine): void {
-  // 1. Create and register the plugin — gives NPCs a turn phase
+  // 1. Create and register the plugin: gives NPCs a turn phase
   const npcPlugin = new NpcPlugin();
   engine.getPluginRegistry().register(npcPlugin);
 
@@ -201,7 +200,7 @@ onEngineReady(engine: GameEngine): void {
     waitTurns: 1,    // pause one turn at each stop
   });
 
-  // The factory's default id is 'patrol' — override it to match NpcTrait.behaviorId
+  // The factory's default id is 'patrol'; override it to match NpcTrait.behaviorId
   keeperPatrol.id = 'zoo-keeper-patrol';
   npcService.registerBehavior(keeperPatrol);
 
@@ -216,7 +215,7 @@ no NPC acts at all) and register each *behavior* (without it, an NPC with that
 
 Note the patrol factory: it returns a behavior whose `id` defaults to `'patrol'`,
 so the zookeeper's `behaviorId: 'zoo-keeper-patrol'` wouldn't match until you
-override `keeperPatrol.id`. The parrot needs no override — `parrotBehavior` was
+override `keeperPatrol.id`. The parrot needs no override; `parrotBehavior` was
 defined with `id: 'zoo-parrot'` to begin with.
 
 ## Try it
@@ -226,10 +225,10 @@ defined with `id: 'zoo-parrot'` to begin with.
 > examine zookeeper         See Sam's description
 > wait                      Sam patrols on toward the petting zoo
 > wait                      …and on toward the aviary
-> west                      Aviary — meet the parrot
+> west                      Aviary, meet the parrot
 > examine parrot            See the macaw
 > wait                      The parrot might squawk
-> wait                      …or not — it's a coin flip each turn
+> wait                      …or not; it's a coin flip each turn
 ```
 
 ## Key takeaway

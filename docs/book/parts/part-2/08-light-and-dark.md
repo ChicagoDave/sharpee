@@ -1,7 +1,7 @@
 # Light & Dark: What the Player Can See
 
 South of the supply room lies a nocturnal animals exhibit, and it is pitch black.
-Walk in without a light and you can't see a thing — no description, no animals,
+Walk in without a light and you can't see a thing: no description, no animals,
 nothing to interact with but the way back out. The fix is sitting in the supply
 room: a flashlight. Switch it on, carry it in, and the darkness lifts to reveal
 sugar gliders, bush babies, and a barn owl.
@@ -24,7 +24,7 @@ nocturnalExhibit.add(new RoomTrait({
 ```
 
 Enter a dark room with no light and the player sees a darkness message instead of
-the room description. They can't examine, take, or touch anything — the only move
+the room description. They can't examine, take, or touch anything; the only move
 available is to leave. The objects are still there; they're just unreachable until
 there's light.
 
@@ -58,8 +58,8 @@ switch is what lights the device.
 
 ## The flashlight pattern
 
-A flashlight is three traits stacked — the composability lesson from earlier
-chapters, applied again:
+A flashlight is three traits stacked, the composability lesson from earlier
+chapters applied again:
 
 | Trait | What it provides |
 |---|---|
@@ -70,7 +70,7 @@ chapters, applied again:
 When the player switches it on:
 
 1. `SwitchableTrait.isOn` becomes `true`.
-2. `LightSourceTrait.isLit` becomes `true` — the engine links the two.
+2. `LightSourceTrait.isLit` becomes `true`; the engine links the two.
 3. Any dark room the player carries it into is now lit.
 
 ```typescript
@@ -87,7 +87,7 @@ world.moveEntity(flashlight.id, supplyRoom.id);
 
 > **The mistake everyone makes once:** expecting `SwitchableTrait` alone to banish
 > the dark. A switch with no `LightSourceTrait` just toggles on and off and lights
-> nothing — and a `LightSourceTrait` with no switch is *always* lit. A controllable
+> nothing, and a `LightSourceTrait` with no switch is *always* lit. A controllable
 > light needs both.
 
 ## Other light-source patterns
@@ -95,7 +95,7 @@ world.moveEntity(flashlight.id, supplyRoom.id);
 The flashlight is the simplest case. The same trait covers others by changing
 which pieces you include:
 
-**Always-on light** (a glowing gem, an enchanted sword) — no switch, just lit:
+**Always-on light** (a glowing gem, an enchanted sword): no switch, just lit:
 
 ```typescript
 gem.add(new LightSourceTrait({ isLit: true, brightness: 5 }));
@@ -112,7 +112,7 @@ candle.add(new LightSourceTrait({
 }));
 ```
 
-**Adjustable light** (a lantern with a dimmer) — set `brightness` high and let
+**Adjustable light** (a lantern with a dimmer): set `brightness` high and let
 story code change it dynamically:
 
 ```typescript
@@ -121,15 +121,15 @@ lantern.add(new LightSourceTrait({ brightness: 10 }));
 
 ## Darkness as a gate
 
-Objects inside a dark room exist the whole time — they're simply inaccessible
+Objects inside a dark room exist the whole time; they're simply inaccessible
 until there's light. That makes darkness a natural gating mechanism: put something
 worth finding behind it, and the light source becomes the key that opens it. The
-flashlight here, a candle elsewhere, a magic spell in another game — same shape,
+flashlight here, a candle elsewhere, a magic spell in another game: same shape,
 different flavor.
 
 ## Wiring it into the zoo
 
-Two new traits arrive this chapter — add them to your world-model import:
+Two new traits arrive this chapter, so add them to your world-model import:
 
 ```typescript
 import { LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
@@ -162,7 +162,7 @@ nocturnalExhibit.get(RoomTrait)!.exits = {
   [Direction.NORTH]: { destination: supplyRoom.id },
 };
 
-// The animals — scenery, examinable only once the room is lit.
+// The animals: scenery, examinable only once the room is lit.
 const sugarGliders = world.createEntity('sugar gliders', EntityType.SCENERY);
 sugarGliders.add(new IdentityTrait({
   name: 'sugar gliders',
@@ -194,9 +194,9 @@ barnOwl.add(new SceneryTrait());
 world.moveEntity(barnOwl.id, nocturnalExhibit.id);
 ```
 
-The flashlight from earlier in the chapter sits in the Supply Room, ready to carry
-in — so `examine owl` and `examine gliders` in the walkthrough below both resolve
-once the light is on.
+The flashlight from earlier in the chapter sits in the Supply Room, ready to
+carry in, so `examine owl` and `examine gliders` in the walkthrough below both
+resolve once the light is on.
 
 ## Try it
 
@@ -223,5 +223,5 @@ once the light is on.
 `isDark: true` on a `RoomTrait` makes a room pitch black, locking out interaction
 until light arrives. `LightSourceTrait` lets an entity illuminate the dark, and
 `SwitchableTrait` adds the on/off control. A flashlight is just an item carrying
-both — switch it on, take it in, and the darkness lifts. Vary which traits you
+both: switch it on, take it in, and the darkness lifts. Vary which traits you
 include for always-on, consumable, or adjustable lights.

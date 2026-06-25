@@ -85,19 +85,18 @@ export class IFEntity implements IEntity {
   }
   
   /**
-   * Add a trait to the entity
+   * Add a trait to the entity.
+   *
+   * Replace-on-same-type (ADR-189): if a trait of the same `type` is already
+   * present, it is silently overwritten with the new trait and its params. This
+   * lets a configured trait supersede a default one (for example, a trait the
+   * entity-type default-trait registry added during `createEntity`). Last add wins.
    */
   add(trait: ITrait): this {
     if (!isTrait(trait)) {
       throw new Error('Invalid trait: must have a type property');
     }
-    
-    // Warn and ignore if trait already exists
-    if (this.traits.has(trait.type as TraitType)) {
-      console.warn(`Entity "${this.id}" already has trait: ${trait.type} - ignoring duplicate add`);
-      return this;
-    }
-    
+
     this.traits.set(trait.type as TraitType, trait);
     return this;
   }

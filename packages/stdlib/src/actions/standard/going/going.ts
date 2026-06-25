@@ -479,13 +479,13 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit contents list if there are visible items
     if (destinationContents.length > 0) {
-      // Array, not a pre-joined string: the {items:list} formatter applies the
-      // conjunction in the lang layer (#158). Use looking's messageId namespace
-      // since this is auto-look.
+      // EntityInfo[] (ADR-158/190): the {list:items} formatter renders articles +
+      // conjunction in the lang layer. Use looking's messageId namespace since this
+      // is auto-look.
       events.push(context.event('if.event.list.contents', {
         messageId: 'if.action.looking.contents_list',
         params: {
-          items: destinationContents.map(e => e.name),
+          items: destinationContents.map(e => entityInfoFrom(e)),
           count: destinationContents.length
         },
         locationId: destinationRoom.id,

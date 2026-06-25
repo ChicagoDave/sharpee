@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { takingAction } from '../../../src/actions/standard/taking'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WorldModel, EntityType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -155,6 +155,27 @@ describe('takingAction (Golden Pattern)', () => {
         takingAction,
         world,
         createCommand(IFActions.TAKING, { entity: scenery })
+      );
+
+      const events = executeWithValidation(takingAction, context);
+
+      expectEvent(events, 'if.event.take_blocked', {
+        messageId: 'if.action.taking.fixed_in_place',
+        params: { item: { name: 'ornate fountain' } }
+      });
+    });
+
+    test('AC-2 (ADR-189): an EntityType.SCENERY entity is fixed_in_place with no explicit SceneryTrait', () => {
+      const { world, room } = setupBasicWorld();
+      // Created as SCENERY; the default-trait registry adds SceneryTrait automatically.
+      const fountain = world.createEntity('ornate fountain', EntityType.SCENERY);
+      expect(fountain.has(TraitType.SCENERY)).toBe(true); // no explicit SceneryTrait add
+      world.moveEntity(fountain.id, room.id);
+
+      const context = createRealTestContext(
+        takingAction,
+        world,
+        createCommand(IFActions.TAKING, { entity: fountain })
       );
 
       const events = executeWithValidation(takingAction, context);
