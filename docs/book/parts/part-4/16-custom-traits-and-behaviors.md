@@ -1,6 +1,6 @@
 # Custom Traits & Behaviors: Data and Logic, Kept Apart
 
-Every object in the zoo has been assembled from traits — `IdentityTrait`,
+Every object in the zoo has been assembled from traits, including: `IdentityTrait`,
 `RoomTrait`, `ContainerTrait`, `LightSourceTrait`. You've even written one:
 `PettableTrait`, back in *Capability Dispatch*. This chapter steps back to the
 layer those traits live in, the world model, and shows how to build your own
@@ -120,7 +120,7 @@ The action or handler decides *when* to act and *what to say*; the behavior deci
 ## Which tool, when?
 
 Custom traits and behaviors are powerful, but they're not always the answer. Before
-reaching for a new trait, run down the lighter options — most of which you've
+reaching for a new trait, run down the lighter options, most of which you've
 already seen:
 
 | You want to… | Reach for |

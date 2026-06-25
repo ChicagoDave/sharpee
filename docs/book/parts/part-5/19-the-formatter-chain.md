@@ -32,7 +32,7 @@ You scatter {some:item}.      → You scatter some feed.
 There is {a:item} here.       → There is a flashlight here.
 ```
 
-`{a:item}` even chooses *a* versus *an* by the word that follows — "a flashlight,"
+`{a:item}` even chooses *a* versus *an* by the word that follows: "a flashlight,"
 "an owl." The full set of article formatters is `a` / `an`, `the`, `some` (for mass
 nouns), and `your`.
 
@@ -67,7 +67,7 @@ are `cap` (capitalize the first letter), `upper`, `lower`, and `title`.
 
 ## Verb agreement
 
-A verb has to agree with its subject — "the toucan **is** fixed in place," but "the
+A verb has to agree with its subject: "the toucan **is** fixed in place," but "the
 pygmy goats **are** fixed in place." Rather than hardcode `is`, a template keys a
 **verb formatter** to the same entity:
 

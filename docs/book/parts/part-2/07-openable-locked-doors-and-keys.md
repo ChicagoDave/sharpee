@@ -194,7 +194,7 @@ const keycard = world.createEntity('staff keycard', EntityType.ITEM);
 keycard.add(new IdentityTrait({
   name: 'staff keycard',
   description:
-    'A white plastic keycard reading "WILLOWBROOK ZOO — STAFF ONLY," with a ' +
+    'A white plastic keycard reading "WILLOWBROOK ZOO / STAFF ONLY," with a ' +
     'faded photo of a smiling zookeeper on the back.',
   aliases: ['keycard', 'key card', 'card', 'key', 'staff keycard'],
   article: 'a',

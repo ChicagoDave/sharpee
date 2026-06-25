@@ -52,22 +52,22 @@ const someAction: Action = {
 
 The engine calls these in a fixed order, and each has exactly one job.
 
-### validate — can this happen?
+### validate: can this happen?
 
 `validate` is the gatekeeper. It checks preconditions and returns either
 `{ valid: true }` or `{ valid: false, error: '...' }`. Taking something checks that
 it's here, that it's not already in your hands, that it's not scenery bolted to the
 floor. `validate` decides; it never changes anything.
 
-### execute — change the world
+### execute: change the world
 
-If validation passed, `execute` runs and performs the actual mutation — moving the
+If validation passed, `execute` runs and performs the actual mutation, which moves the
 item into the player's inventory, flipping `isOpen` to `true`. This is the *only*
 phase that changes game state, and it's meant to be small. The real work usually
 lives in a **behavior** (more on those in Volume IV), with `execute` just
 coordinating it.
 
-### report — record what happened
+### report: record what happened
 
 `report` produces the **events** for the turn: the `if.event.taken` and
 `if.event.opened` records you met in Chapter 3, each carrying a message id rather
@@ -75,7 +75,7 @@ than text. It generates events; it doesn't mutate. Anything `execute` learned th
 `report` needs is handed forward through `context.sharedData`, never smuggled onto
 the context itself.
 
-### blocked — explain the refusal
+### blocked: explain the refusal
 
 If `validate` returns `{ valid: false }`, the engine skips `execute` and `report`
 and calls `blocked` instead. Its job is to turn the validation error into an event

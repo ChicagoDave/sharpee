@@ -204,11 +204,11 @@ resolve once the light is on.
 > open gate                   Open it
 > south                       Supply Room
 > take flashlight             Grab the flashlight
-> south                       Nocturnal Exhibit — dark!
+> south                       Nocturnal Exhibit, dark!
 > look                        "It is pitch dark…"
 > north                       Retreat to the Supply Room
 > switch on flashlight        Let there be light
-> south                       Nocturnal Exhibit — now lit!
+> south                       Nocturnal Exhibit, now lit!
 > examine owl                 Look at the barn owl
 > examine gliders             Look at the sugar gliders
 > switch off flashlight       Darkness returns

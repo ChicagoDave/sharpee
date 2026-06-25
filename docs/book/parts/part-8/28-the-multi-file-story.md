@@ -116,7 +116,7 @@ the split files instead of tangling one big one:
   `zoo.after_hours` to `true`, and other daemons gate their behavior on it. State
   values you met in Volume III turn out to be exactly the right tool for "what act
   are we in?"
-- **`characters.ts`** exports two NPC behaviors for the parrot — `parrotBehavior`
+- **`characters.ts`** exports two NPC behaviors for the parrot: `parrotBehavior`
   (daytime squawking) and `parrotAfterHoursBehavior` (articulate). A small daemon in
   `index.ts` watches the flag and performs a **runtime behavior swap**: when
   `zoo.after_hours` flips, it calls `npcService.removeBehavior('zoo-parrot')` and

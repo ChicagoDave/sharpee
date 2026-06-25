@@ -89,7 +89,7 @@ object with an
 `id`, a `contentType`, a `mode`, an `emit` policy, and a `produce` closure:
 
 ```typescript
-// A mood line per room — rooms not listed clear the line.
+// A mood line per room; rooms not listed clear the line.
 const AMBIENCE_BY_ROOM: Record<string, string> = {
   'Aviary': 'The air is alive with birdsong and the rustle of wings.',
   'Nocturnal Animals Exhibit': 'Your eyes strain against the warm red dark.',
@@ -115,7 +115,7 @@ registerChannels(registry: IChannelRegistry): void {
 number, and the channel's `prevValue`. Return a value to emit it, or `undefined` to
 stay silent. The `emit` policy decides idle turns: `sparse` emits only when the
 value changes; `always` emits every turn. To *override* a standard channel, register
-one with the same `id` — last write wins.
+one with the same `id`. Last write wins.
 
 One subtlety to internalize, because it bites everyone once: on a `sparse`
 `replace` channel, `undefined` means *"no change this turn,"* **not** *"clear the

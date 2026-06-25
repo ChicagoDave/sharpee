@@ -45,7 +45,7 @@ browser is what makes the browser build nothing but static files.
 ## Hosting it
 
 Because the client is static, "publishing" is "putting files on the web." Any static
-host works — a personal site, GitHub Pages, itch.io, an S3 bucket. To check it locally
+host works: a personal site, GitHub Pages, itch.io, an S3 bucket. To check it locally
 before you upload, point any static file server at the folder:
 
 ```bash

@@ -55,8 +55,8 @@ A container is fixed or portable on exactly the rule from the last chapter:
 
 | Container | Portable? | How |
 |---|---|---|
-| Backpack | Yes | No `SceneryTrait` — the player can take it |
-| Feed dispenser | No | Has `SceneryTrait` — fixed to its post |
+| Backpack | Yes | No `SceneryTrait`, so the player can take it |
+| Feed dispenser | No | Has `SceneryTrait`, so it is fixed to its post |
 
 A portable container moves as a unit: the player takes the backpack and
 everything inside comes with it. A bag of five items counts as **one** item in the
@@ -117,7 +117,7 @@ message. Capacity isn't just bookkeeping. Limited space is the raw material of
 puzzles, forcing the player to choose what to carry and what to leave behind.
 
 > **The mistake everyone makes once:** leaving `capacity` off. A container or
-> supporter with no `capacity` has *no limit* — it will swallow the entire zoo.
+> supporter with no `capacity` has *no limit*; it will swallow the entire zoo.
 > If you want a bound, set `maxItems` explicitly.
 
 ## Traits are composable
@@ -142,13 +142,13 @@ new behavior.
 > take map               Pick up the zoo map
 > put map in backpack    Store the map inside
 > look in backpack       See what's in the backpack
-> inventory              Backpack counts as one item — its contents ride along
+> inventory              Backpack counts as one item; its contents ride along
 > south                  Go to the Main Path
 > take penny             Pick up the penny
 > put penny on bench     Place it on the supporter
 > look                   The penny is visible on the bench
 > east                   Go to the Petting Zoo
-> take dispenser         Can't — it's scenery
+> take dispenser         Can't: it's scenery
 > examine dispenser      But you can look at it
 ```
 

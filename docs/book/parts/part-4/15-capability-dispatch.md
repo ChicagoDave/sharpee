@@ -217,7 +217,7 @@ grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build()
 grammar.define('stroke :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
 ```
 
-And register its four message ids in `extendLanguage` — without these, petting
+And register its four message ids in `extendLanguage`. Without these, petting
 prints raw ids like `zoo.petting.goats`:
 
 ```typescript

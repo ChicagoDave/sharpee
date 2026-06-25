@@ -13,7 +13,7 @@ instead of a framework.
 NEW:
 The last chapter ended with a promise: a channel emits *data*, and something on the
 other side decides how it looks. That something is the **client**. This chapter
-walks through Sharpee's reference browser client: how it connects to the engine,
+walks through Sharpee's reference browser client, including: how it connects to the engine,
 turns turn packets into a living page, and why it's built from plain HTML and CSS
 instead of a framework.
 

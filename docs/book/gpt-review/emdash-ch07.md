@@ -12,6 +12,6 @@ NEW:
 LEAVE (in-world copy) — or if converting:
 ```typescript
   description:
-    'A white plastic keycard reading "WILLOWBROOK ZOO: STAFF ONLY," with a ' +
+    'A white plastic keycard reading "WILLOWBROOK ZOO / STAFF ONLY," with a ' +
     'faded photo of a smiling zookeeper on the back.',
 ```

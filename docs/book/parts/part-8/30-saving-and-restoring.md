@@ -15,7 +15,7 @@ Volume VI. When the engine saves, it serializes the *entire* world into a single
 
 Because your game state is *in* the world rather than in loose variables scattered
 through your code, restoring is just rebuilding the world from that snapshot. Score,
-entity positions, container contents, state flags, relationships, the ID counters —
+entity positions, container contents, state flags, relationships, the ID counters:
 all of it comes back, because all of it was in the world to begin with. The author
 who kept state in the world (as every earlier chapter taught) gets save/restore for
 free.
@@ -41,7 +41,7 @@ scheduler.registerDaemon({
 });
 ```
 
-That `behaviorSwapped` variable lives in a closure, **not** in the world — so the
+That `behaviorSwapped` variable lives in a closure, **not** in the world, so the
 world snapshot doesn't capture it. Save after the swap, restore, and a naïve daemon
 would think the swap hadn't happened and try to run again. The daemon avoids that by
 implementing two hooks:

@@ -10,7 +10,7 @@ trait, and the **behavior** that owns the rules around it, when the standard kit
 doesn't carry the state your story needs.
 
 NEW:
-Every object in the zoo has been assembled from traits: `IdentityTrait`,
+Every object in the zoo has been assembled from traits, including: `IdentityTrait`,
 `RoomTrait`, `ContainerTrait`, `LightSourceTrait`. You've even written one:
 `PettableTrait`, back in *Capability Dispatch*. This chapter steps back to the
 layer those traits live in, the world model, and shows how to build your own

@@ -12,8 +12,7 @@ how to consume: `--theme-bg`, `--theme-bg-alt`, `--theme-text`, `--theme-text-mu
 A theme sets the ones it cares about; the rest fall back to the `:root` default.
 
 NEW:
-The `--theme-*` set is the published contract: sixteen properties the engine knows
-how to consume: `--theme-bg`, `--theme-bg-alt`, `--theme-text`, `--theme-text-muted`,
+The `--theme-*` set is the published contract that includes sixteen properties the engine knows how to consume: `--theme-bg`, `--theme-bg-alt`, `--theme-text`, `--theme-text-muted`,
 `--theme-accent`, `--theme-accent-text`, `--theme-border`, `--theme-input-bg`,
 `--theme-menu-bg`, `--theme-menu-hover`, `--theme-desktop-bg`, `--theme-font`,
 `--theme-font-body`, `--theme-font-chrome`, `--theme-font-size`, `--theme-line-height`.

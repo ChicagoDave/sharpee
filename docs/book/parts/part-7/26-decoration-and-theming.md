@@ -91,7 +91,7 @@ selected. A **theme**, then, is nothing but a block that overrides those tokens:
 }
 ```
 
-The `--theme-*` set is the published contract — sixteen properties the engine knows
+The `--theme-*` set is the published contract. Sixteen properties the engine knows
 how to consume: `--theme-bg`, `--theme-bg-alt`, `--theme-text`, `--theme-text-muted`,
 `--theme-accent`, `--theme-accent-text`, `--theme-border`, `--theme-input-bg`,
 `--theme-menu-bg`, `--theme-menu-hover`, `--theme-desktop-bg`, `--theme-font`,
@@ -175,7 +175,7 @@ stylesheet:
 ```
 
 Flourishes are optional polish; the token block is what makes it a theme. (The author
-override stylesheet is also where anything that *isn't* a theme lives — a one-off tweak
+override stylesheet is also where anything that *isn't* a theme lives: a one-off tweak
 to a single component, an extra class your prose uses.)
 
 > **Sharing a theme across stories.** A theme that lives only in one story's override

@@ -2,7 +2,7 @@
 
 The last chapter ended with a promise: a channel emits *data*, and something on the
 other side decides how it looks. That something is the **client**. This chapter
-walks through Sharpee's reference browser client — how it connects to the engine,
+walks through Sharpee's reference browser client, including: how it connects to the engine,
 turns turn packets into a living page, and why it's built from plain HTML and CSS
 instead of a framework.
 
@@ -62,7 +62,7 @@ capability-filtered list of channels this client gets); thereafter it emits one
 **packet per turn**. The renderer dispatches each channel in the packet to the
 `ChannelRenderer` registered for it: the `main` channel's renderer appends prose,
 the `location` renderer rewrites the status line, the `score` renderer updates the
-score. There is no second path — prose and status and media all arrive the same way.
+score. There is no second path. Prose and status and media all arrive the same way.
 
 The client registers a full set of platform-default renderers in one call,
 `registerDefaultBrowserRenderers`, which covers `main`, `prompt`, `location`,
@@ -72,7 +72,7 @@ are what give you a working page with zero rendering code.
 ## Commands flow back the same way
 
 Rendering is only half a loop; the player has to type. The input box feeds commands
-to `engine.executeTurn(command)`, and the engine runs a turn — which produces the
+to `engine.executeTurn(command)`, and the engine runs a turn, which produces the
 next packet, which the renderer paints. UI *gestures* close the same loop: when a
 clickable hotspot or a menu item fires, it synthesizes the equivalent typed command
 and runs it through `executeTurn`, so a click and a typed verb are indistinguishable
@@ -150,7 +150,7 @@ The renderer owns the element, so nothing needs to be added to the host page and
 survives every rebuild. Style it from your override stylesheet (Chapter 26) by its
 id or a class you give it.
 
-## Save, restore, and theme — for free
+## Save, restore, and theme: for free
 
 The client ships the surrounding chrome too. Saving routes the engine's complete
 `ISaveData` into a browser envelope persisted in `localStorage`; an **autosave**

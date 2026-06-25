@@ -14,8 +14,8 @@ things with words, and `SwitchableTrait` for devices with an on/off state.
 
 NEW:
 A zoo is full of things to read. Brass plaques by the enclosures, a glossy
-brochure at the entrance, a yellow warning sign outside the nocturnal exhibit:
-each one *says* something the player wants to take in, separate from what it
+brochure at the entrance, a yellow warning sign outside the nocturnal exhibit.
+Each sign *says* something the player wants to take in, separate from what it
 *looks* like. And tucked on a shelf in the supply room is a battered radio that
 clicks on and off but sheds no light at all. This chapter covers two small,
 self-contained traits that round out an ordinary world: `ReadableTrait` for
@@ -29,7 +29,7 @@ from earlier chapters.
 
 NEW:
 The snippets below go in `initializeWorld`, alongside the rooms you've built since
-Chapter 4; `entrance`, `pettingZoo`, and `supplyRoom` are the same room entities
+Chapter 4. `entrance`, `pettingZoo`, and `supplyRoom` are the same room entities
 from earlier chapters.
 
 ### 3. Line 22 — `ReadableTrait` section heading — heading
@@ -45,8 +45,8 @@ Plaques are scenery you can read but can't take. Stack three traits — identity
 readable text, and scenery:
 
 NEW:
-Plaques are scenery you can read but can't take. Stack three traits: identity,
-readable text, and scenery:
+Plaques are scenery you can read but can't take. Each includes `IdentityTrait`,
+`ReadableTrait`, and `SceneryTrait`.
 
 ### 5. Line 117 — `SwitchableTrait` section heading — heading
 OLD:
@@ -61,4 +61,5 @@ OLD:
     'sticker on the side reads "ZOO FM — All Animals, All The Time."',
 
 NEW:
-LEAVE (in-world copy) — or if converting: 'A battered portable radio held together with duct tape. A faded ' + 'sticker on the side reads "ZOO FM: All Animals, All The Time."',
+    'A battered portable radio held together with duct tape. A faded ' +
+    'sticker on the side reads "ZOO FM | All Animals, All The Time."',
