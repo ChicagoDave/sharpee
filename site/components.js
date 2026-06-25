@@ -38,6 +38,8 @@
       '<hr>' +
       '<a href="the-sharpee-book.html">Read the Book</a>' +
       link('book-snippets.html', 'Code Snippets') +
+      '<a href="the-sharpee-book.epub" download>Download EPUB</a>' +
+      '<a href="the-sharpee-book.pdf" download>Download PDF</a>' +
     '</nav>' +
     '<div class="theme-toggle">' +
       '<button id="theme-toggle">Light mode</button>' +
