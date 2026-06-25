@@ -87,17 +87,19 @@ formatters, so one flag on the entity keeps every generated line grammatical.
 
 ## Lists
 
-The chain also handles collections. `{items:list}` joins an array into a natural
-English list, with commas and a final "and," and you can format each element before
-joining:
+The chain also handles collections. `{list:items}` turns an array of entities into a
+natural English list. It gives each one its article, groups identical items into
+counts, and joins them with commas and a final "and":
 
 ```text
-You see {a:items:list} here.
-→ You see a goat, a rabbit, and a parrot here.
+You see {list:items} here.
+→ You see a goat, two rabbits, and a parrot here.
 ```
 
-Here `a` is applied to every element and then `list` stitches them together. A
-`count` formatter handles quantities the same declarative way.
+One formatter does all of it: the articles ("a goat"), the grouping ("two rabbits"),
+and the join. Use `{the-list:items}` for the definite form ("the goat, the rabbit,
+and the parrot"), and `{count:items}` for a bare quantity ("three coins"). The serial
+(Oxford) comma is on by default, and a story can turn it off.
 
 ## Key takeaway
 

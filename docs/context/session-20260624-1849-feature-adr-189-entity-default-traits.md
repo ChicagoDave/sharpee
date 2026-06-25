@@ -147,3 +147,27 @@ Clarity pass proposed that the book claim "SCENERY items are non-takeable by def
 ---
 
 **Progressive update**: Session recorded 2026-06-24 18:49 CST
+
+---
+
+## Finalize update (2026-06-24)
+
+- **ADR-190 Phase 5 DONE (#167):** corrected the 6 backwards `{items:list}` / `{a:items:list}`
+  comment examples in lang-en-us source (placeholder-last `{list:items}`), retired the
+  obsolete `{a:items:list}` chaining example (the `list` formatter now renders articles
+  itself), and rewrote book ch19's Lists section into the real showcase
+  ("You see {list:items} here. → You see a goat, two rabbits, and a parrot here.").
+  Source + book chapters verified clean of backwards forms.
+- **All 14 ADR-190 acceptance criteria satisfied.** GH #166 and #167 are both closeable.
+- **Version bumps (minor, feature):** `@sharpee/world-model` 1.1.2→**1.2.0**,
+  `@sharpee/lang-en-us` 1.1.2→**1.2.0**, `@sharpee/stdlib` 1.1.3→**1.2.0**.
+- **Phase 6 (build + publish) handed to David:** `tsf build --npm` (the three packages) +
+  `./repokit build dungeo` + the dungeo walkthrough chain. The room-contents producers now
+  pass `EntityInfo[]`, so room-contents lines render with articles/grouping and the
+  walkthrough transcript assertions matching the old name-only output will need updating
+  during that build pass.
+- **Outstanding follow-up (not in this branch):** the plain-`{items}` container/surface
+  contents path (`looking.ts:129` pre-joins; needs template→`{list:items}` + entity
+  threading); book em-dash chapter integration continues on `main`.
+
+**Status: Phases 1-5 complete and committed; build/publish (Phase 6) is David's.**

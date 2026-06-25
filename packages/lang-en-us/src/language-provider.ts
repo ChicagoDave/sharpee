@@ -42,7 +42,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   // Narrative context for perspective-aware message resolution (ADR-089)
   private narrativeContext: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT;
 
-  // Formatter registry for {a:item}, {items:list}, etc. (ADR-095)
+  // Formatter registry for {a:item}, {list:items}, etc. (ADR-095)
   private formatterRegistry: FormatterRegistry;
 
   // Entity lookup function for formatters (set by engine)
@@ -166,7 +166,7 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    * Supports three types of placeholders:
    * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
    *    - Resolved based on narrative context (1st/2nd/3rd person)
-   * 2. Formatted placeholders (ADR-095): {a:item}, {items:list}, etc.
+   * 2. Formatted placeholders (ADR-095): {a:item}, {list:items}, etc.
    *    - Applies formatters before substitution
    * 3. Simple placeholders: {item}, {target}, etc.
    *    - Replaced with values from params object

@@ -115,7 +115,8 @@ export function applyFormatters(
  *
  * Supports both:
  * - Simple placeholders: {item}
- * - Formatted placeholders: {a:item}, {items:list}, {a:items:list}
+ * - Formatted placeholders: {a:item}, {list:items}, {the:cap:item}
+ *   (the placeholder is the last colon segment)
  *
  * @param template - Message template with {placeholder} syntax
  * @param params - Values for placeholders

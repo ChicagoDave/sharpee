@@ -3,10 +3,10 @@
  *
  * Formatters transform placeholder values in message templates.
  *
- * Syntax: {formatter:formatter:...:placeholder}
+ * Syntax: {formatter:formatter:...:placeholder} (the placeholder is the last segment)
  * Example: {a:item} → "a sword"
- * Example: {items:list} → "a sword, a key, and a coin"
- * Example: {a:items:list} → applies 'a' to each item, then 'list' to join
+ * Example: {list:items} → "a sword, a key, and a coin" (articles + grouping, ADR-190)
+ * Example: {the-list:items} → "the sword, the key, and the coin"
  *
  * @see ADR-095 Message Templates with Formatters
  */
