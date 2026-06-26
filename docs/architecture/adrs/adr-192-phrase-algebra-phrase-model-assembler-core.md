@@ -1,6 +1,9 @@
 # ADR-192: Phrase Algebra — Phrase Model & Assembler Core
 
-## Status: PROPOSED
+## Status: ACCEPTED
+
+> Accepted 2026-06-26 by David. Phase 1 (`@sharpee/if-domain` Phrase contracts)
+> authorized; implementation proceeds on `v2_phase1` per `docs/context/plan.md`.
 
 ## Date: 2026-06-26
 
