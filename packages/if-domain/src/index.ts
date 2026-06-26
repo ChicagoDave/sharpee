@@ -35,3 +35,6 @@ export * from './channels';
 
 // Spatial sound propagation contracts (ADR-172)
 export * from './sound';
+
+// Phrase algebra — language-neutral phrase contracts (ADR-192)
+export * from './phrase';
