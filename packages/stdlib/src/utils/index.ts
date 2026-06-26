@@ -7,3 +7,4 @@
  */
 
 export { entityInfoFrom } from './entity-info';
+export { nounPhraseFor } from './noun-phrase';

@@ -109,7 +109,9 @@ function headWithAdjectives(np: NounPhrase): string {
 function renderNoun(np: NounPhrase): string {
   const head = headWithAdjectives(np);
   const article = articleSurface(np, head);
-  return article ? `${article} ${head}` : head;
+  const text = article ? `${article} ${head}` : head;
+  // Case authority: the {capitalize …} hint upper-cases the rendered head.
+  return np.capitalize ? capitalizeSentenceStart(text) : text;
 }
 
 // ===========================================================================

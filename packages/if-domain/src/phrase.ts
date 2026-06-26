@@ -76,6 +76,12 @@ export interface NounPhrase extends PhraseBase {
   referableId?: EntityId;
   /** Pronoun set for later gendered / neopronoun reference (ADR-197). */
   pronounSet?: string;
+  /**
+   * Sentence-start capitalization requested by the `{capitalize …}` template
+   * hint (ADR-192 §5). The Assembler's Case authority upper-cases the rendered
+   * head's first letter when set. Language-neutral request, not a surface string.
+   */
+  capitalize?: boolean;
 }
 
 /** Combinator: group / pluralize / serial-comma over its items (ports ADR-190). */

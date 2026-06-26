@@ -134,6 +134,19 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 
 ### Phase 3: `parsePhraseTemplate` + `nounPhraseFor` + Infrastructure Deletion
 - **Branch**: `v2_phase3` (cut from `main`, merges back into `main`)
+
+> **SPLIT (2026-06-26, David's call)**: Deleting the legacy chain while the
+> engine/report layer still calls it breaks the build until Phase 4 rewires the
+> pipeline. So Phase 3 is split:
+> - **Phase 3a — additive, merged to `main` (green)**: `NounPhrase.capitalize`
+>   carrier (if-domain), `parsePhraseTemplate` + `PhraseParseError` + Assembler
+>   capitalize wiring (lang-en-us), `nounPhraseFor` (stdlib). AC-8 + AC-11 pass.
+>   Nothing deleted; old pipeline intact. **DONE.**
+> - **Phase 3b — destructive, FUSED with Phase 4**: deletion of `parsePlaceholder`
+>   / `EntityInfo` / `entityInfoFrom` / formatter chain / `formatters/*`,
+>   re-authoring every `lang-en-us` template, migrating every stdlib action, and
+>   amending ADR-158 — all done together with the Phase 4 report-pipeline rewire
+>   so `main` never has a broken build. Requires a fresh authorization gate.
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: N/A — parser implementation, producer migration, and mass deletion of legacy infrastructure

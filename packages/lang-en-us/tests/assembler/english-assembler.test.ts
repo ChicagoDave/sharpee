@@ -91,6 +91,20 @@ describe('AC-4: static adjectives, article agrees over leading adjective', () =>
   });
 });
 
+describe('Case authority: the capitalize hint upper-cases the rendered head', () => {
+  it('capitalizes the article when present', () => {
+    expect(render(np('cabinet', { articleType: 'definite', capitalize: true }))).toBe('The cabinet');
+  });
+
+  it('capitalizes the leading adjective, not the noun', () => {
+    expect(render(np('chest', { adjectives: ['small'], capitalize: true }))).toBe('A small chest');
+  });
+
+  it('is off by default (author case preserved)', () => {
+    expect(render(np('cabinet', { articleType: 'definite' }))).toBe('the cabinet');
+  });
+});
+
 // --- AC-5: ADR-190 list parity through the phrase path ---------------------
 
 describe('AC-5: PhraseList parity with ADR-190 (through the phrase path)', () => {
