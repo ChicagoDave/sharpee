@@ -128,7 +128,7 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
   - `lang-en-us` list formatter logic has migrated into the Assembler; no duplication
   - Old formatter chain (`applyFormatters`) still exists in `lang-en-us` but is not called by the Assembler (isolation test confirms this)
 
-- **Status**: NOT STARTED
+- **Status**: COMPLETE (2026-06-26). EnglishAssembler + six authorities in `lang-en-us/src/assembler/`; five foundational kinds realized, seven stubs throw `PhraseNotImplementedError`; ADR-190 list logic reproduced in the `PhraseList` case (old `formatters/list.ts` retained for Phase 3 deletion — transient duplication by design). 34 assembler tests (AC-1–7, AC-9, AC-10, ADR-190 parity, stub refusal, isolation); full lang-en-us suite 278 green; stdlib builds clean. Merges to `main`.
 
 ---
 
