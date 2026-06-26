@@ -1,14 +1,14 @@
 # Session Plan: ADR-192 — Phrase Algebra: Phrase Model & Assembler Core
 
 **Created**: 2026-06-26
-**Overall scope**: Implement the foundational phrase algebra on the v2 branch: language-neutral Phrase contracts in `@sharpee/if-domain`, the English Assembler with its six authorities in `@sharpee/lang-en-us`, `parsePhraseTemplate` replacing `parsePlaceholder`, `nounPhraseFor` replacing `entityInfoFrom`, and the new report pipeline. The formatter chain, `parsePlaceholder`, and `EntityInfo` are deleted; every `lang-en-us` message and stdlib action re-authors to the new grammar. ADR-190's List/EntityInfo work is ported in, not discarded — its 14 ACs must pass through the new phrase path. Nothing ships to `main`.
+**Overall scope**: Implement the foundational phrase algebra on the v2 line (which **is** `main` in this `sharpee_v2` repo): language-neutral Phrase contracts in `@sharpee/if-domain`, the English Assembler with its six authorities in `@sharpee/lang-en-us`, `parsePhraseTemplate` replacing `parsePlaceholder`, `nounPhraseFor` replacing `entityInfoFrom`, and the new report pipeline. The formatter chain, `parsePlaceholder`, and `EntityInfo` are deleted; every `lang-en-us` message and stdlib action re-authors to the new grammar. ADR-190's List/EntityInfo work is ported in, not discarded — its 14 ACs must pass through the new phrase path. We branch off `main` per phase (`v2_phaseN`) and merge back into `main`. The 1.x maintenance line lives in the sibling repo `../sharpee_v1` (branch `v1`); nothing here ships to that 1.x line.
 **Bounded contexts touched**: N/A — infrastructure/tooling (language pipeline refactor, no domain behavior change)
 **Key domain language**: N/A — the work is platform infrastructure; DDD framing does not apply
 
 ## References consulted
 
 - `docs/architecture/adrs/adr-192-phrase-algebra-phrase-model-assembler-core.md` — The 11 Acceptance Criteria and the Scope/Consequences section define what the plan must deliver and what is explicitly out of scope (ADR-193–198 atoms stay out); the Resolved Decisions (kind extensibility = closed union, error handling = parse-time, producer binding = in scope for this ADR) constrain implementation choices.
-- `docs/work/dynamic-text/phrase-algebra-design.md` — D3 establishes the v2 branch strategy (long-lived v2 branch, v2_phaseN naming, nothing cut until first breaking commit); D4 establishes EntityInfo→NounPhrase as a replace-not-extend; D5 establishes `@sharpee/if-domain` as the home for language-neutral phrase contracts (a new `@sharpee/text` package was explicitly rejected).
+- `docs/work/dynamic-text/phrase-algebra-design.md` — D3 sketched a branch strategy (v2_phaseN naming). **David has since clarified the direction (2026-06-26): `main` in this `sharpee_v2` repo IS the v2 line; phase branches cut off `main` and merge back into `main`. There is no separate long-lived `v2` integration branch, and 1.x maintenance lives in `../sharpee_v1`.** D4 establishes EntityInfo→NounPhrase as a replace-not-extend; D5 establishes `@sharpee/if-domain` as the home for language-neutral phrase contracts (a new `@sharpee/text` package was explicitly rejected).
 - `docs/architecture/adrs/adr-190-natural-language-list-rendering.md` — ACCEPTED; its 14 ACs must still pass through the phrase path (ADR-192 Consequences: "ADR-190 preserved, not discarded"). The List formatter logic is ported into the Assembler's PhraseList case rather than duplicated or deleted.
 - `docs/architecture/adrs/adr-158-entity-info-in-message-params.md` — ACCEPTED; established `entityInfoFrom` and the rule that entity-valued params carry full metadata (not bare names). ADR-192 absorbs this: `entityInfoFrom` becomes `nounPhraseFor`, the metadata contract is preserved at the NounPhrase level. No bare-name regression is permitted.
 - `docs/context/project-profile.md` — Vitest + pnpm workspace; strict TypeScript (noImplicitAny, noFallthroughCasesInSwitch); language-layer separation is a standing convention (no English strings in engine/stdlib/world-model). The plan's boundary between `if-domain` (language-neutral) and `lang-en-us` (English realization) must enforce this.
@@ -36,19 +36,19 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 
 ---
 
-### Phase 1: v2 Branch Setup + `@sharpee/if-domain` Phrase Contracts
-- **Branch**: `v2_phase1` (merges into `v2`)
+### Phase 1: `@sharpee/if-domain` Phrase Contracts
+- **Branch**: `v2_phase1` (cut from `main`, merges back into `main`)
 - **Tier**: Medium
 - **Budget**: 250 tool calls
 - **Domain focus**: N/A — language-neutral type contracts only; no locale logic, no runtime code
 
 - **Entry state**:
   - ADR-192 accepted by user
-  - The current checkout is at `/home/dave/repos/sharpee_v2` on branch `main`. The `v2` branch does not yet exist. D3 prescribed `git worktree add ../sharpee_v2 -b v2` from a `repos/sharpee` primary checkout — but since this repo is already at `repos/sharpee_v2`, the worktree-add path would conflict with the current directory. The Phase 1 branch setup accounts for this reality.
+  - The current checkout is at `/home/dave/repos/sharpee_v2` on branch `main` — `main` is the v2 development line.
   - `@sharpee/if-domain` has no Phrase types; `language-provider.ts` and `contracts.ts` exist as the adjacent contracts
 
 - **Deliverable**:
-  - `v2` branch created from `main` in the current repo (`git checkout -b v2`). This is the long-lived integration branch for all phrase-algebra work. Per D3 intent: `main`/1.x remains maintenance-only; all phrase-algebra work originates in phase branches (`v2_phase1`, `v2_phase2`, …) that merge into `v2`. **Note on worktree mechanics**: the D3 worktree-add (`git worktree add ../sharpee_v2 -b v2`) assumed a `repos/sharpee` primary checkout; since the current directory is already `repos/sharpee_v2`, the equivalent is creating the `v2` branch here. A separate `repos/sharpee_v1` worktree for the 1.x maintenance line can be created if needed at the time of first 1.x maintenance commit.
+  - `v2_phase1` branch cut from `main` (`git checkout -b v2_phase1`) for this phase's work; it merges back into `main` when the phase is complete. There is no separate long-lived `v2` branch — `main` is the integration line. 1.x maintenance happens in `../sharpee_v1` (branch `v1`), not here.
   - `packages/if-domain/src/phrase.ts` (or `phrase-types.ts`, placed beside `contracts.ts`) containing:
     - `PhraseBase` interface with `decorations?: Decoration[]`
     - Five concrete foundational kind interfaces: `Literal`, `NounPhrase`, `PhraseList`, `Sequence`, `Empty`
@@ -69,14 +69,14 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
   - `@sharpee/if-domain` exports the complete Phrase union, PhraseProducer, RenderContext, and Assembler interface
   - No locale logic or locale strings in `if-domain`; the AC-10 boundary is structurally enforced
   - All downstream packages (lang-en-us, stdlib, engine) still compile against the updated if-domain (new exports are additive at this stage)
-  - v2 branch exists and is the active worktree for all subsequent phases
+  - `v2_phase1` is merged into `main`; subsequent phases branch from `main`
 
 - **Status**: NOT STARTED
 
 ---
 
 ### Phase 2: English Assembler + Foundational Kind Realization
-- **Branch**: `v2_phase2` (merges into `v2`)
+- **Branch**: `v2_phase2` (cut from `main`, merges back into `main`)
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: N/A — English realization in `lang-en-us`; ports ADR-190 list formatter into Assembler
@@ -133,7 +133,7 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 ---
 
 ### Phase 3: `parsePhraseTemplate` + `nounPhraseFor` + Infrastructure Deletion
-- **Branch**: `v2_phase3` (merges into `v2`)
+- **Branch**: `v2_phase3` (cut from `main`, merges back into `main`)
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: N/A — parser implementation, producer migration, and mass deletion of legacy infrastructure
@@ -205,7 +205,7 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 ---
 
 ### Phase 4: Report Pipeline Integration + End-to-End Verification
-- **Branch**: `v2_phase4` (merges into `v2`)
+- **Branch**: `v2_phase4` (cut from `main`, merges back into `main`)
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: N/A — engine/report wiring; full integration test suite; walkthrough test migration
@@ -231,7 +231,7 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
   - ADR-190 end-to-end parity (AC-5 + ADR-190 AC-9): the room-contents message "You can see a goat, a rabbit, and a parrot here." renders correctly through the phrase path
   - Determinism verified end-to-end: same world state + same turn → identical output across two separate runs (AC-9)
   - Walkthrough transcripts (`stories/dungeo/walkthroughs/wt-*.transcript`) updated to reflect new output format (articles, grouping, and Oxford comma where the old formatter chain produced different text)
-  - `./repokit build dungeo` passes on the v2 branch
+  - `./repokit build dungeo` passes on `main` (after the phase branch merges)
   - `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` passes
 
 - **Test deliverable**:
@@ -239,13 +239,13 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
   - ADR-190 AC-9 integration: room-contents list in a live turn renders with articles + serial comma
   - Determinism integration: two successive runs of the same transcript produce byte-identical output (AC-9)
   - Boundary integration: a grep over the compiled `dist/cli/sharpee.js` confirms `parsePlaceholder` and `EntityInfo` are absent
-  - Full walkthrough chain passes on v2 branch
+  - Full walkthrough chain passes on `main` (after the phase branch merges)
 
 - **Exit state**:
   - The phrase tree → Assembler pipeline is the sole text-production path in the engine; the formatter chain path does not exist
   - All 11 ADR-192 ACs pass in integration
   - All 14 ADR-190 ACs pass through the phrase path
-  - Walkthrough chain passes on v2 branch
+  - Walkthrough chain passes on `main` (after the phase branch merges)
   - ADR-192 implementation is complete; ADR-193–198 are the next work items on v2
 
 - **Status**: NOT STARTED
