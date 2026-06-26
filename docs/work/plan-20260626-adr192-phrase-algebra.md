@@ -3,6 +3,7 @@
 **Created**: 2026-06-26
 **Overall scope**: Implement the foundational phrase algebra on the v2 branch: language-neutral Phrase contracts in `@sharpee/if-domain`, the English Assembler with its six authorities in `@sharpee/lang-en-us`, `parsePhraseTemplate` replacing `parsePlaceholder`, `nounPhraseFor` replacing `entityInfoFrom`, and the new report pipeline. The formatter chain, `parsePlaceholder`, and `EntityInfo` are deleted; every `lang-en-us` message and stdlib action re-authors to the new grammar. ADR-190's List/EntityInfo work is ported in, not discarded — its 14 ACs must pass through the new phrase path. Nothing ships to `main`.
 **Bounded contexts touched**: N/A — infrastructure/tooling (language pipeline refactor, no domain behavior change)
+**Archive note**: This is the corrected plan archive (post-plan-review). See docs/context/plan.md for the live version.
 **Key domain language**: N/A — the work is platform infrastructure; DDD framing does not apply
 
 ## References consulted
