@@ -71,7 +71,7 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
   - All downstream packages (lang-en-us, stdlib, engine) still compile against the updated if-domain (new exports are additive at this stage)
   - `v2_phase1` is merged into `main`; subsequent phases branch from `main`
 
-- **Status**: NOT STARTED
+- **Status**: COMPLETE (2026-06-26, merged to `main` at fc2a862b)
 
 ---
 
