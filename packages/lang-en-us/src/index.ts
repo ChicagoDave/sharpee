@@ -34,6 +34,9 @@ export * from './formatters';
 // Export the English Assembler — phrase-tree realization (ADR-192)
 export * from './assembler';
 
+// Export the phrase-template parser (ADR-192)
+export * from './parser';
+
 // English grammar helpers (ADR-190): pluralization + count-word spelling
 export { pluralize } from './pluralize';
 export { countWord } from './number-words';
