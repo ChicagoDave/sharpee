@@ -59,7 +59,17 @@ export function renderViaPhrase(
     return null;
   }
   const ctx = context.makeRenderContext!(params);
-  const blocks = lp.renderMessage!(messageId, params, ctx);
+  let blocks;
+  try {
+    blocks = lp.renderMessage!(messageId, params, ctx);
+  } catch (e) {
+    // A template that fails to parse at render time (unbound param, bad syntax)
+    // is an authoring error — warn and degrade to the caller's inline fallback
+    // rather than letting it abort the whole turn's prose.
+    // eslint-disable-next-line no-console
+    console.warn(`[phrase] renderMessage("${messageId}") failed: ${(e as Error).message}`);
+    return null;
+  }
   return blocks.map((b) => (b.key === blockKey ? b : { ...b, key: blockKey }));
 }
 
