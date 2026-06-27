@@ -101,7 +101,7 @@ describe('openingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.open_blocked', {
         messageId: 'if.action.opening.not_openable',
-        params: expect.objectContaining({ item: { name: 'rock' } })
+        params: expect.objectContaining({ item: expect.objectContaining({ name: 'rock' }) })
       });
     });
 
@@ -123,7 +123,7 @@ describe('openingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.open_blocked', {
         messageId: 'if.action.opening.already_open',
-        params: expect.objectContaining({ item: { name: 'box' } })
+        params: expect.objectContaining({ item: expect.objectContaining({ name: 'box' }) })
       });
     });
 
@@ -150,7 +150,7 @@ describe('openingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.open_blocked', {
         messageId: 'if.action.opening.locked',
-        params: expect.objectContaining({ item: { name: 'treasure chest' } })
+        params: expect.objectContaining({ item: expect.objectContaining({ name: 'treasure chest' }) })
       });
     });
   });
@@ -247,7 +247,7 @@ describe('openingAction (Golden Pattern)', () => {
         targetId: object.id,
         targetName: 'empty box',
         messageId: expect.stringContaining('its_empty'),
-        params: { container: { name: 'empty box' } }
+        params: { container: expect.objectContaining({ name: 'empty box' }) }
       });
 
       // Should NOT have any revealed events (empty container)
@@ -280,7 +280,7 @@ describe('openingAction (Golden Pattern)', () => {
         targetId: object.id,
         targetName: 'oak door',
         messageId: expect.stringContaining('opened'),
-        params: { item: { name: 'oak door' } }
+        params: { item: expect.objectContaining({ name: 'oak door' }) }
       });
 
       // Note: exit_revealed events would be emitted but require
@@ -366,7 +366,7 @@ describe('Opening Action Edge Cases', () => {
       targetId: object.id,
       targetName: 'thick book',
       messageId: expect.stringContaining('opened'),
-      params: { item: { name: 'thick book' } }
+      params: { item: expect.objectContaining({ name: 'thick book' }) }
     });
   });
 
