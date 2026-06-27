@@ -23,7 +23,7 @@ import { ClosingMessages } from './closing-messages';
 import { ClosedEventData } from './closing-event-data';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -119,7 +119,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: ClosingMessages.NOT_CLOSABLE,
-        params: { item: entityInfoFrom(noun) }
+        params: { item: nounPhraseFor(noun) }
       };
     }
 
@@ -130,14 +130,14 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: ClosingMessages.ALREADY_CLOSED,
-          params: { item: entityInfoFrom(noun) }
+          params: { item: nounPhraseFor(noun) }
         };
       }
       // Otherwise it can't be closed for some other reason
       return {
         valid: false,
         error: ClosingMessages.PREVENTS_CLOSING,
-        params: { item: entityInfoFrom(noun) }
+        params: { item: nounPhraseFor(noun) }
       };
     }
 
@@ -151,7 +151,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
           valid: false,
           error: ClosingMessages.PREVENTS_CLOSING,
           params: {
-            item: entityInfoFrom(noun),
+            item: nounPhraseFor(noun),
             obstacle: requirement.preventedBy
           }
         };
@@ -222,7 +222,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     // top-level fields stay strings for handlers.
     events.push(context.event('if.event.closed', {
       messageId: `${context.action.id}.${ClosingMessages.CLOSED}`,
-      params: { item: entityInfoFrom(noun) },
+      params: { item: nounPhraseFor(noun) },
       ...eventData,
       targetId: noun.id,
       targetName: noun.name,
@@ -269,7 +269,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       messageId,
       params: {
         ...result.params,
-        item: noun ? entityInfoFrom(noun) : undefined
+        item: noun ? nounPhraseFor(noun) : undefined
       },
       // Domain data — strings for handlers
       targetId: noun?.id,

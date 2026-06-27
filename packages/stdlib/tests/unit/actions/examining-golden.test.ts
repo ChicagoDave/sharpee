@@ -82,7 +82,7 @@ describe('examiningAction (Golden Pattern)', () => {
         blocked: true,
         messageId: 'if.action.examining.scope.not_known',
         params: expect.objectContaining({
-          target: { name: 'red ball' }
+          target: expect.objectContaining({ name: 'red ball' })
         })
       });
     });
@@ -147,7 +147,7 @@ describe('examiningAction (Golden Pattern)', () => {
         targetId: object.id,
         targetName: 'red ball',
         messageId: expect.stringContaining('examined'),
-        params: { target: { name: 'red ball' } }
+        params: { target: expect.objectContaining({ name: 'red ball' }) }
       });
     });
 
@@ -172,7 +172,7 @@ describe('examiningAction (Golden Pattern)', () => {
         hasBrief: true,
         messageId: expect.stringContaining('examined'),
         params: expect.objectContaining({
-          target: { name: 'old painting' },
+          target: expect.objectContaining({ name: 'old painting' }),
           description: 'A faded landscape painting in a golden frame.'
         })
       });
@@ -577,7 +577,7 @@ describe('Examining Action Edge Cases', () => {
       hasText: false,
       messageId: expect.stringContaining('examined'),
       params: expect.objectContaining({
-        target: { name: 'blank book' }
+        target: expect.objectContaining({ name: 'blank book' })
       })
     });
   });

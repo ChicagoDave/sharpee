@@ -17,25 +17,25 @@ export const savingLanguage = {
   messages: {
     // Success messages
     'game_saved': "Game saved.",
-    'game_saved_as': "Game saved as '{saveName}'.",
+    'game_saved_as': "Game saved as '{verbatim:saveName}'.",
     'save_successful': "{Your} game has been saved successfully.",
-    'save_slot': "Game saved to slot {saveName}.",
-    'overwrite_save': "Previous save '{saveName}' has been overwritten.",
+    'save_slot': "Game saved to slot {verbatim:saveName}.",
+    'overwrite_save': "Previous save '{verbatim:saveName}' has been overwritten.",
 
     // Save details
-    'save_details': "Saved: {saveName}\nScore: {score}\nMoves: {moves}",
+    'save_details': "Saved: {verbatim:saveName}\nScore: {score}\nMoves: {moves}",
     'quick_save': "Quick save completed.",
     'auto_save': "Auto-saving game...",
 
     // Error messages
     'save_failed': "Failed to save game.",
     'no_save_slots': "No save slots available.",
-    'invalid_save_name': "'{saveName}' is not a valid save name.",
+    'invalid_save_name': "'{verbatim:saveName}' is not a valid save name.",
     'save_not_allowed': "{You} cannot save the game at this time.",
     'save_in_progress': "Another save is already in progress.",
 
     // Confirmation messages
-    'confirm_overwrite': "A save named '{saveName}' already exists. Overwrite it?",
+    'confirm_overwrite': "A save named '{verbatim:saveName}' already exists. Overwrite it?",
     'save_reminder': "Don't forget to save {your} game regularly!",
 
     // Save location info

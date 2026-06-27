@@ -1446,15 +1446,23 @@ export {};
 
 ```typescript
 /**
- * Scene evaluation turn plugin (ADR-149).
+ * Scene evaluation turn plugin (ADR-149, ADR-186).
  *
  * Evaluates scene begin/end conditions each turn. Runs after NPC turns
  * and state machines, before daemons/fuses (priority 60).
  *
  * For each registered scene:
- * - If state='waiting' and begin() returns true → activate, emit scene_began
- * - If state='active' and end() returns true → end (or reset if recurring), emit scene_ended
+ * - If state='waiting' and begin() returns true → activate, emit scene_began,
+ *   then invoke the scene's onBegin reaction (ADR-186)
+ * - If state='active' and end() returns true → end (or reset if recurring),
+ *   emit scene_ended, then invoke the scene's onEnd reaction (ADR-186)
  * - If state='active' → increment activeTurns
+ *
+ * scene_began / scene_ended are emitted as observable facts (perception,
+ * tooling, transcripts). Author-visible reactions come from the typed
+ * onBegin/onEnd callbacks, translated here into game.message events — the
+ * event the prose pipeline renders — so reactions are visible by construction
+ * (ADR-186).
  *
  * Public interface: SceneEvaluationPlugin (TurnPlugin implementation).
  * Owner context: @sharpee/engine — turn cycle

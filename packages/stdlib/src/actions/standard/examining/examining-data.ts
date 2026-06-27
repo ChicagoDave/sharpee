@@ -11,7 +11,7 @@ import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait, WallEnti
 import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior } from '@sharpee/world-model';
 import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { ExaminedEventData } from './examining-events';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Build examining action success data
@@ -207,7 +207,7 @@ export function buildExaminingMessageParams(
         params.description = eventData.wallDescription;
         messageId = 'examined_wall';
       } else {
-        params.item = entityInfoFrom(noun);
+        params.item = nounPhraseFor(noun);
         messageId = 'nothing_special';
       }
       return { messageId, params, contentsMessage };
@@ -225,7 +225,7 @@ export function buildExaminingMessageParams(
         contentsMessage = {
           messageId: 'container_contents',
           params: {
-            container: entityInfoFrom(noun),
+            container: nounPhraseFor(noun),
             items: itemNames
           }
         };
@@ -243,7 +243,7 @@ export function buildExaminingMessageParams(
         contentsMessage = {
           messageId: 'surface_contents',
           params: {
-            surface: entityInfoFrom(noun),
+            surface: nounPhraseFor(noun),
             items: itemNames
           }
         };
@@ -281,7 +281,7 @@ export function buildExaminingMessageParams(
 
     // Default parameters for basic examined message
     else if (messageId === 'examined') {
-      params.target = entityInfoFrom(noun);
+      params.target = nounPhraseFor(noun);
     }
   }
 

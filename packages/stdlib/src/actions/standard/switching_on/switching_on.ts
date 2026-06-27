@@ -31,7 +31,7 @@ import { ScopeLevel } from '../../../scope';
 import { SwitchedOnEventData } from './switching_on-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 import { MESSAGES } from './switching_on-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils';
 
 /**
@@ -129,16 +129,16 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!noun.has(TraitType.SWITCHABLE)) {
-      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: entityInfoFrom(noun) } };
+      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: nounPhraseFor(noun) } };
     }
 
     if (!SwitchableBehavior.canSwitchOn(noun)) {
       const switchable = noun.getTrait(SwitchableTrait);
       if (switchable?.isOn) {
-        return { valid: false, error: MESSAGES.ALREADY_ON, params: { target: entityInfoFrom(noun) } };
+        return { valid: false, error: MESSAGES.ALREADY_ON, params: { target: nounPhraseFor(noun) } };
       }
       if (switchable?.requiresPower && !switchable.hasPower) {
-        return { valid: false, error: MESSAGES.NO_POWER, params: { target: entityInfoFrom(noun) } };
+        return { valid: false, error: MESSAGES.NO_POWER, params: { target: nounPhraseFor(noun) } };
       }
     }
 
@@ -195,7 +195,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
     // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = {
-      target: entityInfoFrom(noun)
+      target: nounPhraseFor(noun)
     };
 
     // Add light source data if applicable
@@ -283,7 +283,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       return [context.event('if.event.switch_on_blocked', {
         messageId: `${context.action.id}.${sharedData.errorMessageId}`,
         // params carry EntityInfo for the formatter chain (ADR-158)
-        params: { target: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } },
+        params: { target: noun ? nounPhraseFor(noun) : { name: sharedData.targetName } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         reason: sharedData.errorMessageId
@@ -349,7 +349,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         events.push(context.event('if.event.list.contents', {
           messageId: 'if.action.looking.contents_list',
           params: {
-            items: contents.map(e => entityInfoFrom(e)),
+            items: contents.map(e => nounPhraseFor(e)),
             count: contents.length
           }
         }));

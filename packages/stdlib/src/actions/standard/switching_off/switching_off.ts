@@ -19,7 +19,7 @@ import { ScopeLevel } from '../../../scope';
 import { SwitchedOffEventData } from './switching_off-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 import { MESSAGES } from './switching_off-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -89,11 +89,11 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!noun.has(TraitType.SWITCHABLE)) {
-      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: entityInfoFrom(noun) } };
+      return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: nounPhraseFor(noun) } };
     }
 
     if (!SwitchableBehavior.canSwitchOff(noun)) {
-      return { valid: false, error: MESSAGES.ALREADY_OFF, params: { target: entityInfoFrom(noun) } };
+      return { valid: false, error: MESSAGES.ALREADY_OFF, params: { target: nounPhraseFor(noun) } };
     }
 
     return { valid: true };
@@ -140,7 +140,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
 
     // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = {
-      target: entityInfoFrom(noun)
+      target: nounPhraseFor(noun)
     };
 
     // Add light source data if applicable
@@ -204,7 +204,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
       return [context.event('if.event.switch_off_blocked', {
         messageId: `${context.action.id}.${sharedData.errorMessageId}`,
         // params carry EntityInfo for the formatter chain (ADR-158)
-        params: { target: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } },
+        params: { target: noun ? nounPhraseFor(noun) : { name: sharedData.targetName } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         reason: sharedData.errorMessageId

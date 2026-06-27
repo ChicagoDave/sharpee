@@ -18,20 +18,24 @@
  * INVARIANT (ADR-192 §7): `realize` is a pure function of `(tree, ctx)` — the
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
- * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) are
- * realized here; the seven stub kinds throw `PhraseNotImplementedError`.
+ * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
+ * `Verb` (ADR-199) and `Verbatim` (ADR-200) atoms are realized here; the six
+ * remaining stub kinds throw `PhraseNotImplementedError`.
  */
 
 import {
   Assembler,
   Phrase,
   NounPhrase,
+  Verb,
   RenderContext,
   isLiteral,
   isNounPhrase,
   isPhraseList,
   isSequence,
   isEmpty,
+  isVerb,
+  isVerbatim,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -112,6 +116,89 @@ function renderNoun(np: NounPhrase): string {
   const text = article ? `${article} ${head}` : head;
   // Case authority: the {capitalize …} hint upper-cases the rendered head.
   return np.capitalize ? capitalizeSentenceStart(text) : text;
+}
+
+// ===========================================================================
+// Agreement authority — verb conjugation (ADR-199)
+// ===========================================================================
+
+/**
+ * Suppletive verbs whose plural / 1st-singular forms are not the regular `-s`
+ * strip. Keyed by the 3rd-person-singular `lemma` the author types. This is the
+ * table lifted out of the deleted `formatters/verb.ts`, extended with do/go.
+ */
+const IRREGULAR_VERBS: Record<string, { plural: string; firstSingular?: string }> = {
+  is: { plural: 'are', firstSingular: 'am' }, // be (present)
+  was: { plural: 'were', firstSingular: 'was' }, // be (past): I was / you were
+  has: { plural: 'have' }, // have
+  does: { plural: 'do' }, // do
+  goes: { plural: 'go' }, // go
+};
+
+/** Regular rule: the 3rd-singular `lemma` ends in `-s`; the plain form strips it. */
+function regularPluralVerb(lemma: string): string {
+  if (lemma.endsWith('ies') && lemma.length > 3) return `${lemma.slice(0, -3)}y`; // carries → carry
+  if (/(?:s|x|z|ch|sh)es$/.test(lemma)) return lemma.slice(0, -2); // pushes → push, boxes → box
+  if (lemma.endsWith('s')) return lemma.slice(0, -1); // opens → open
+  return lemma; // no -s to strip — leave as authored
+}
+
+/**
+ * The grammatical person of a subject noun phrase. The player subject (matched
+ * by `referableId` against `narrative.playerId`) takes the narrative person
+ * ("you are" in 2nd-person narration); otherwise an explicit `person` stamp, or
+ * undefined (→ third). ADR-199 §4 B, resolved at realize time where the
+ * narrative context is reliably present.
+ */
+function nounPerson(np: NounPhrase, ctx: RenderContext): 'first' | 'second' | 'third' | undefined {
+  if (np.referableId !== undefined && np.referableId === ctx.narrative.playerId) {
+    return ctx.narrative.person;
+  }
+  return np.person;
+}
+
+/** Read the agreement surface (number, optional person) off a bound subject value. */
+function subjectAgreement(subject: unknown, ctx: RenderContext): {
+  number: NounPhrase['number'];
+  person?: 'first' | 'second' | 'third';
+} {
+  if (subject !== null && typeof subject === 'object' && typeof (subject as { kind?: unknown }).kind === 'string') {
+    const phrase = subject as Phrase;
+    if (isNounPhrase(phrase)) return { number: phrase.number, person: nounPerson(phrase, ctx) };
+    if (isPhraseList(phrase)) {
+      const present = phrase.items.filter((item) => !isEmpty(item));
+      if (present.length > 1) return { number: 'plural' }; // "the troll and the goats" → are
+      const only = present[0];
+      if (present.length === 1 && only && isNounPhrase(only)) return { number: only.number, person: nounPerson(only, ctx) };
+      return { number: 'singular' };
+    }
+  }
+  // No agreement surface (Literal, Empty, scalar, unbound) → unmarked default (§4 C).
+  return { number: 'singular' };
+}
+
+/** Conjugate a lemma for the resolved subject number/person (Agreement authority). */
+function conjugateVerb(
+  lemma: string,
+  number: NounPhrase['number'],
+  person: 'first' | 'second' | 'third',
+): string {
+  // 3rd-person singular (and mass, which agrees singular) is the authored lemma.
+  if (person === 'third' && number !== 'plural') return lemma;
+  const irregular = IRREGULAR_VERBS[lemma];
+  // 1st-person singular suppletive ("I am", "I was").
+  if (number !== 'plural' && person === 'first' && irregular?.firstSingular) return irregular.firstSingular;
+  // Everything else (plural, or 1st/2nd person) takes the non-3rd-singular form.
+  if (irregular) return irregular.plural;
+  return regularPluralVerb(lemma);
+}
+
+/** Realize a `Verb` by agreeing it with its referenced subject's resolved surface. */
+function renderVerb(verb: Verb, ctx: RenderContext): string {
+  const agreement = subjectAgreement(ctx.params[verb.subjectRef], ctx);
+  // The subject's own person wins; else the Verb's declared person; else third.
+  const person = agreement.person ?? verb.person ?? 'third';
+  return conjugateVerb(verb.lemma, agreement.number, person);
 }
 
 // ===========================================================================
@@ -281,6 +368,17 @@ function realizeToRuns(
     return [{ text: renderList(phrase.items, phrase.conj, ctx), verbatim: false, deco: own }];
   }
 
+  if (isVerb(phrase)) {
+    const own = extendDeco(deco, phrase.decorations);
+    return [{ text: renderVerb(phrase, ctx), verbatim: false, deco: own }];
+  }
+
+  if (isVerbatim(phrase)) {
+    // Opaque pass-through (ADR-200): exempt from whitespace collapse.
+    const own = extendDeco(deco, phrase.decorations);
+    return [{ text: phrase.text, verbatim: true, deco: own }];
+  }
+
   if (isSequence(phrase)) {
     const own = extendDeco(deco, phrase.decorations);
     return phrase.parts.flatMap((part) => realizeToRuns(part, ctx, own));
@@ -333,21 +431,75 @@ function wrapDecorations(
   return node as IDecoration;
 }
 
+/** One emitted block's runs plus whether it is a tight continuation. */
+interface Segment {
+  runs: Run[];
+  tight: boolean;
+}
+
 /**
- * The English Assembler. Realizes a phrase tree to a single text block under the
- * default channel key; the report layer re-keys per channel in Phase 4.
+ * Split a run stream into per-block segments at newline boundaries (Whitespace
+ * authority — the block-structure half ADR-183/`createBlocks` owned). A single
+ * `\n` makes the next block a `tight` continuation; a blank line (`\n\n+`) starts
+ * a fresh paragraph. Newlines split every run — verbatim runs keep their
+ * *horizontal* whitespace but still break into blocks, matching the legacy
+ * `createBlocks` behaviour. No block's content carries a `\n`.
+ */
+function splitRunsOnNewlines(runs: Run[]): Segment[] {
+  const segments: Segment[] = [];
+  let current: Run[] = [];
+  let tight = false; // the first segment is never a tight continuation
+  for (const run of runs) {
+    const pieces = run.text.split(/(\n+)/); // keep the newline groups as separators
+    for (const piece of pieces) {
+      if (piece === '') continue;
+      if (/^\n+$/.test(piece)) {
+        segments.push({ runs: current, tight });
+        current = [];
+        tight = piece.length === 1; // single \n → tight; blank line → paragraph
+      } else {
+        current.push({ ...run, text: piece });
+      }
+    }
+  }
+  segments.push({ runs: current, tight });
+  return segments;
+}
+
+/**
+ * The English Assembler. Realizes a phrase tree to text blocks under the default
+ * channel key; the report layer re-keys per channel.
  */
 export class EnglishAssembler implements Assembler {
   /**
    * Realize a phrase tree to text blocks.
    *
+   * Newlines in the realized text are lifted to block boundaries (no block's
+   * content carries `\n`); horizontal whitespace is collapsed per block, except
+   * in verbatim runs. A single-line tree yields one block.
+   *
    * @param tree the phrase tree to realize
    * @param ctx the render context (world, params, settings, seams)
-   * @returns one text block carrying the realized content
+   * @returns the realized text blocks
    * @throws PhraseNotImplementedError when a reserved stub kind is encountered
    */
   realize(tree: Phrase, ctx: RenderContext): ITextBlock[] {
-    const runs = collapseWhitespace(realizeToRuns(tree, ctx, []));
-    return [{ key: ASSEMBLER_DEFAULT_BLOCK_KEY, content: runsToContent(runs) }];
+    const segments = splitRunsOnNewlines(realizeToRuns(tree, ctx, []));
+    const blocks: ITextBlock[] = [];
+    for (const seg of segments) {
+      const content = runsToContent(collapseWhitespace(seg.runs));
+      // Drop blank lines — they leave no block (paragraph spacing comes from
+      // the `tight` flag on the following block).
+      if (content.length === 1 && content[0] === '') continue;
+      blocks.push({
+        key: ASSEMBLER_DEFAULT_BLOCK_KEY,
+        content,
+        ...(seg.tight ? { tight: true } : {}),
+      });
+    }
+    if (blocks.length === 0) {
+      blocks.push({ key: ASSEMBLER_DEFAULT_BLOCK_KEY, content: [''] });
+    }
+    return blocks;
   }
 }

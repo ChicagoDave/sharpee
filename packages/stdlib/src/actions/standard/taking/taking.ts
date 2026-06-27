@@ -20,7 +20,7 @@ import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerB
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { TakingMessages } from './taking-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 // Import type guards and typed interfaces
 import {
@@ -86,7 +86,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: TakingMessages.ALREADY_HAVE,
-      params: { item: entityInfoFrom(noun) }
+      params: { item: nounPhraseFor(noun) }
     };
   }
 
@@ -95,7 +95,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: TakingMessages.CANT_TAKE_ROOM,
-      params: { item: entityInfoFrom(noun) }
+      params: { item: nounPhraseFor(noun) }
     };
   }
 
@@ -105,7 +105,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: customMessage || TakingMessages.FIXED_IN_PLACE,
-      params: { item: entityInfoFrom(noun) }
+      params: { item: nounPhraseFor(noun) }
     };
   }
 
@@ -161,7 +161,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: TakingMessages.CANNOT_TAKE,
-      params: { item: entityInfoFrom(noun) }
+      params: { item: nounPhraseFor(noun) }
     };
   }
 
@@ -301,12 +301,12 @@ function reportSingleSuccess(
   // formatter chain (`{the:cap:item}`, etc.) can pick the right article.
   // See ADR-158.
   const params = {
-    item: entityInfoFrom(noun),
+    item: nounPhraseFor(noun),
     itemId: noun.id,
     actor: actor.name,
     actorId: actor.id,
     previousLocation: result.previousLocation,
-    container: containerEntity ? entityInfoFrom(containerEntity) : ''
+    container: containerEntity ? nounPhraseFor(containerEntity) : ''
   };
 
   // Emit domain event with messageId (simplified pattern - ADR-097).
@@ -338,7 +338,7 @@ function reportSingleBlocked(
   events.push(context.event('if.event.take_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { item: entityInfoFrom(noun) },
+    params: { item: nounPhraseFor(noun) },
     // Domain data — strings for handlers
     item: noun.name,
     itemId: noun.id,
@@ -451,7 +451,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       messageId,
       params: {
         ...result.params,
-        item: noun ? entityInfoFrom(noun) : undefined
+        item: noun ? nounPhraseFor(noun) : undefined
       },
       // Domain data — strings for handlers
       item: noun?.name,

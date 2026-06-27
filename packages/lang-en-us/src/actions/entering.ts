@@ -29,16 +29,16 @@ export const enteringLanguage = {
   
   messages: {
     'no_target': "Enter what?",
-    'not_enterable': "{You} {can't} enter {the:place}.",
-    'already_inside': "{You're} already in {the:place}.",
-    'container_closed': "{the:cap:container} {is:container} closed.",
-    'too_full': "{the:cap:place} {is:place} full (maximum {max} occupants).",
-    'entered': "{You} {get} into {the:place}.",
-    'entered_on': "{You} {get} onto {the:place}.",
-    'cant_enter': "{You} {can't} enter {the:place}: {reason}.",
-    'not_here': "{You} {don't} see {the:place} here.",
-    'too_small': "{the:cap:place} {is:place} too small for {you} to enter.",
-    'occupied': "{the:cap:place} {is:place} already occupied."
+    'not_enterable': "{You} {can't} enter {the place}.",
+    'already_inside': "{You're} already in {the place}.",
+    'container_closed': "{capitalize the container} {verb:is container} closed.",
+    'too_full': "{capitalize the place} {verb:is place} full (maximum {max} occupants).",
+    'entered': "{You} {get} into {the place}.",
+    'entered_on': "{You} {get} onto {the place}.",
+    'cant_enter': "{You} {can't} enter {the place}: {reason}.",
+    'not_here': "{You} {don't} see {the place} here.",
+    'too_small': "{capitalize the place} {verb:is place} too small for {you} to enter.",
+    'occupied': "{capitalize the place} {verb:is place} already occupied."
   },
   
   help: {

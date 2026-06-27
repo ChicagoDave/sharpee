@@ -16,7 +16,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ReadableTrait } from '@sharpee/world-model';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 import {
   ReadingEventData,
   createReadingEvent
@@ -90,7 +90,7 @@ export const reading: Action = {
       return {
         valid: false,
         error: 'not_readable',
-        params: { item: entityInfoFrom(target) }
+        params: { item: nounPhraseFor(target) }
       };
     }
 
@@ -100,7 +100,7 @@ export const reading: Action = {
         valid: false,
         error: 'cannot_read_now',
         params: {
-          item: entityInfoFrom(target),
+          item: nounPhraseFor(target),
           reason: readable.cannotReadMessage || 'cannot_read_now'
         }
       };
@@ -165,7 +165,7 @@ export const reading: Action = {
 
     // params carry EntityInfo for the formatter chain (ADR-158)
     const params: Record<string, any> = {
-      item: entityInfoFrom(target),
+      item: nounPhraseFor(target),
       text: eventData.text
     };
 
@@ -186,7 +186,7 @@ export const reading: Action = {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
-      params: { item: target ? entityInfoFrom(target) : undefined, ...result.params },
+      params: { item: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name

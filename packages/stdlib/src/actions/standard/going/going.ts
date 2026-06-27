@@ -36,7 +36,7 @@ import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { buildEventData } from '../../data-builder-types';
 import { GoingMessages } from './going-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 // Import our data builders
 import {
@@ -132,7 +132,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: GoingMessages.NOT_IN_ROOM,
-          params: { vehicle: walkCheck.vehicle ? entityInfoFrom(walkCheck.vehicle) : undefined }
+          params: { vehicle: walkCheck.vehicle ? nounPhraseFor(walkCheck.vehicle) : undefined }
         };
       }
       // In a vehicle that allows walking (boat, etc.) - get the containing room
@@ -221,7 +221,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
             valid: false,
             error: GoingMessages.DOOR_LOCKED,
             params: {
-              door: entityInfoFrom(door),
+              door: nounPhraseFor(door),
               direction: direction,
               isClosed: isClosed,
               isLocked: true
@@ -233,7 +233,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           return {
             valid: false,
             error: GoingMessages.DOOR_CLOSED,
-            params: { door: entityInfoFrom(door), direction: direction }
+            params: { door: nounPhraseFor(door), direction: direction }
           };
         }
       }
@@ -479,13 +479,17 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit contents list if there are visible items
     if (destinationContents.length > 0) {
-      // EntityInfo[] (ADR-158/190): the {list:items} formatter renders articles +
-      // conjunction in the lang layer. Use looking's messageId namespace since this
-      // is auto-look.
+      // PhraseList of NounPhrases (ADR-192): the Assembler's list authority renders
+      // articles + conjunction in the lang layer. Use looking's messageId namespace
+      // since this is auto-look.
       events.push(context.event('if.event.list.contents', {
         messageId: 'if.action.looking.contents_list',
         params: {
-          items: destinationContents.map(e => entityInfoFrom(e)),
+          items: {
+            kind: 'list' as const,
+            conj: 'and' as const,
+            items: destinationContents.map(e => nounPhraseFor(e)),
+          },
           count: destinationContents.length
         },
         locationId: destinationRoom.id,

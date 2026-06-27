@@ -16,14 +16,14 @@ export const lookingLanguage = {
   
   messages: {
     // Room description - rendered via action.success (if.event.room.description is suppressed)
-    'room_description': "{name}\n{description}",
+    'room_description': "{name}\n{verbatim:description}",
     'room_dark': "It's pitch dark, and {you} {can't} see a thing.",
     'exits': "Exits: {exits}",
-    'you_see': "{You} can {see} {list:items} here.",
-    'contents_list': "{You} can {see} {list:items} here.",
+    'you_see': "{You} can {see} {items} here.",
+    'contents_list': "{You} can {see} {items} here.",
     'nothing_special': "{You} {see} nothing special.",
-    'container_contents': "In {the:container} {you} {see} {items}.",
-    'surface_contents': "On {the:surface} {you} {see} {items}."
+    'container_contents': "In {the container} {you} {see} {items}.",
+    'surface_contents': "On {the surface} {you} {see} {items}."
   },
   
   help: {

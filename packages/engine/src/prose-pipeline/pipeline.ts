@@ -28,6 +28,11 @@ import type { ISemanticEvent } from '@sharpee/core';
 
 import { filterEvents } from './stages/filter';
 import { sortEventsForProse } from './stages/sort';
+import {
+  createRenderWorld,
+  createRenderContextFactory,
+  type WorldModelLike,
+} from './render-context';
 
 import type { HandlerContext } from './handlers/types';
 import { handleRoomDescription } from './handlers/room';
@@ -58,14 +63,22 @@ import type { ITextService } from './types';
  */
 export class ProsePipeline implements ITextService {
   private readonly languageProvider: LanguageProvider;
+  private readonly world?: WorldModelLike;
 
-  constructor(languageProvider: LanguageProvider) {
+  /**
+   * @param languageProvider the active language provider (template → text)
+   * @param world the read-only world model; when supplied, each turn builds a
+   *   phrase-pipeline render-context factory (ADR-192, W2). Optional so legacy
+   *   and test construction (string path only) keeps working without a world.
+   */
+  constructor(languageProvider: LanguageProvider, world?: WorldModelLike) {
     if (!languageProvider) {
       throw new Error(
         'ProsePipeline requires a LanguageProvider; got null/undefined.',
       );
     }
     this.languageProvider = languageProvider;
+    this.world = world;
   }
 
   processTurn(events: ISemanticEvent[]): ITextBlock[] {
@@ -74,6 +87,16 @@ export class ProsePipeline implements ITextService {
 
     const context: HandlerContext = {
       languageProvider: this.languageProvider,
+      makeRenderContext: this.world
+        ? createRenderContextFactory(
+            createRenderWorld(this.world),
+            this.languageProvider.getLocaleSettings?.() ?? {},
+            {
+              person: this.languageProvider.getNarrativePerson?.() ?? 'third',
+              playerId: this.world.getPlayer()?.id,
+            },
+          )
+        : undefined,
     };
 
     const blocks: ITextBlock[] = [];
@@ -147,6 +170,7 @@ export class ProsePipeline implements ITextService {
  */
 export function createProsePipeline(
   languageProvider: LanguageProvider,
+  world?: WorldModelLike,
 ): ITextService {
-  return new ProsePipeline(languageProvider);
+  return new ProsePipeline(languageProvider, world);
 }

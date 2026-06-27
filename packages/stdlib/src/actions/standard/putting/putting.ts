@@ -42,7 +42,7 @@ import { getPuttingSharedData, PuttingSharedData, PuttingItemResult } from './pu
 
 // Import multi-object helpers
 import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
@@ -70,13 +70,13 @@ function determineTargetPreposition(
         return {
           targetPreposition: 'in',
           error: PuttingMessages.NOT_CONTAINER,
-          params: { destination: entityInfoFrom(target) }
+          params: { destination: nounPhraseFor(target) }
         };
       } else {
         return {
           targetPreposition: 'on',
           error: PuttingMessages.NOT_SURFACE,
-          params: { destination: entityInfoFrom(target) }
+          params: { destination: nounPhraseFor(target) }
         };
       }
     }
@@ -90,7 +90,7 @@ function determineTargetPreposition(
       return {
         targetPreposition: 'in',
         error: PuttingMessages.NOT_CONTAINER,
-        params: { destination: entityInfoFrom(target) }
+        params: { destination: nounPhraseFor(target) }
       };
     }
   }
@@ -111,7 +111,7 @@ function validateSingleEntity(
     return {
       valid: false,
       error: messageId,
-      params: { item: entityInfoFrom(item) }
+      params: { item: nounPhraseFor(item) }
     };
   }
 
@@ -122,9 +122,9 @@ function validateSingleEntity(
       valid: false,
       error: PuttingMessages.ALREADY_THERE,
       params: {
-        item: entityInfoFrom(item),
+        item: nounPhraseFor(item),
         relation: relation,
-        destination: entityInfoFrom(target)
+        destination: nounPhraseFor(target)
       }
     };
   }
@@ -142,7 +142,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: PuttingMessages.CONTAINER_CLOSED,
-        params: { container: entityInfoFrom(target) }
+        params: { container: nounPhraseFor(target) }
       };
     }
 
@@ -151,7 +151,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: PuttingMessages.NO_ROOM,
-        params: { container: entityInfoFrom(target) }
+        params: { container: nounPhraseFor(target) }
       };
     }
   }
@@ -162,7 +162,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: PuttingMessages.NO_SPACE,
-        params: { surface: entityInfoFrom(target) }
+        params: { surface: nounPhraseFor(target) }
       };
     }
   }
@@ -255,7 +255,7 @@ function reportSingleSuccess(
   const targetPreposition = result.targetPreposition as 'in' | 'on';
 
   if (targetPreposition === 'in') {
-    const params = { item: entityInfoFrom(item), container: entityInfoFrom(target) };
+    const params = { item: nounPhraseFor(item), container: nounPhraseFor(target) };
     events.push(context.event('if.event.put_in', {
       // Rendering data (messageId + params for text-service)
       messageId: `${context.action.id}.${PuttingMessages.PUT_IN}`,
@@ -271,7 +271,7 @@ function reportSingleSuccess(
       targetSnapshot: captureEntitySnapshot(target, context.world, true)
     }));
   } else {
-    const params = { item: entityInfoFrom(item), surface: entityInfoFrom(target) };
+    const params = { item: nounPhraseFor(item), surface: nounPhraseFor(target) };
     events.push(context.event('if.event.put_on', {
       // Rendering data (messageId + params for text-service)
       messageId: `${context.action.id}.${PuttingMessages.PUT_ON}`,
@@ -305,7 +305,7 @@ function reportSingleBlocked(
   events.push(context.event('if.event.put_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: entityInfoFrom(item), destination: entityInfoFrom(target) },
+    params: { ...errorParams, item: nounPhraseFor(item), destination: nounPhraseFor(target) },
     // Domain data — strings for handlers
     itemId: item.id,
     itemName: item.name,
@@ -376,7 +376,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: PuttingMessages.NO_DESTINATION,
-        params: { item: entityInfoFrom(item) }
+        params: { item: nounPhraseFor(item) }
       };
     }
 
@@ -519,7 +519,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit domain event with messageId (simplified pattern - ADR-097)
     if (targetPreposition === 'in') {
-      const params = { item: entityInfoFrom(item), container: entityInfoFrom(target) };
+      const params = { item: nounPhraseFor(item), container: nounPhraseFor(target) };
       events.push(context.event('if.event.put_in', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${PuttingMessages.PUT_IN}`,
@@ -535,7 +535,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         targetSnapshot: captureEntitySnapshot(target, context.world, true)
       }));
     } else {
-      const params = { item: entityInfoFrom(item), surface: entityInfoFrom(target) };
+      const params = { item: nounPhraseFor(item), surface: nounPhraseFor(target) };
       events.push(context.event('if.event.put_on', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${PuttingMessages.PUT_ON}`,
@@ -593,8 +593,8 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
-        item: item ? entityInfoFrom(item) : undefined,
-        destination: target ? entityInfoFrom(target) : undefined
+        item: item ? nounPhraseFor(item) : undefined,
+        destination: target ? nounPhraseFor(target) : undefined
       },
       itemId: item?.id,
       itemName: item?.name,

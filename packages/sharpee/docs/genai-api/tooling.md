@@ -6,138 +6,6 @@ Build/CLI orchestration (devkit) and the transcript test engine.
 
 ## @sharpee/devkit
 
-### commands/test-npm
-
-```typescript
-/** Default staging dir written by `tsf build --npm`. */
-export declare const DEFAULT_STAGING: string;
-export interface TestNpmOptions {
-    /** Story location (a directory containing package.json + src/). */
-    location: string;
-    /** 'local' (default) packs ~/.tsf-publish tarballs; 'registry' installs published versions. */
-    mode?: 'local' | 'registry';
-    /** Override the staging dir (local mode). Defaults to ~/.tsf-publish/sharpee. */
-    stagingDir?: string;
-    /** Glob of transcripts relative to location (default `tests/transcripts/*.transcript`). */
-    transcripts?: string;
-    /** Run transcripts as one stateful chain (dungeo walkthroughs) instead of per-file. */
-    chain?: boolean;
-    /** Compile only; skip transcript execution. */
-    quick?: boolean;
-    /** Registry version/range for @sharpee deps (registry mode; default 'latest'). */
-    registryVersion?: string;
-    /** Keep the temp dir for debugging (default false). */
-    keep?: boolean;
-}
-export interface TestNpmResult {
-    passed: number;
-    failed: number;
-    failures: string[];
-    /** false when --quick (compilation only). */
-    ran: boolean;
-}
-/**
- * Stand up the consumer, install, compile, and run the story's transcripts.
- * @throws if the location is not a story (no package.json or no src/), or if
- *         install/compile fails.
- */
-export declare function runTestNpm(opts: TestNpmOptions): TestNpmResult;
-```
-
-### commands/build
-
-```typescript
-export interface BuildOptions {
-    root?: string;
-    /** Story name to build (resolved stories/<name> then tutorials/<name>). */
-    story?: string;
-    /** Resume the platform build from this package short-name (build.sh --skip). */
-    skipTo?: string;
-    /** Explicit version to stamp (else read packages/sharpee/package.json). */
-    version?: string;
-    /** Frozen build date (parity determinism). Defaults to now in build.sh's format. */
-    buildDate?: string;
-    /** Skip version stamping (build.sh --no-version). */
-    noVersion?: boolean;
-    /** Skip genai-api generation. */
-    noGenai?: boolean;
-    /** Run the ESM build pass (needed for browser/story-bundle targets; false for the CLI bundle). */
-    esm?: boolean;
-    /** Run the bundle step at the end (default true — the full build.sh pipeline). */
-    bundle?: boolean;
-    /** Also build the browser client (dist/web/<story>/). Implies --esm; requires a story. */
-    browser?: boolean;
-    /** Also build the zifmia multi-user server (tools/zifmia/dist/). Implies --esm. */
-    zifmia?: boolean;
-    quiet?: boolean;
-}
-/**
- * Stamp versions (build.sh update_versions, CLI/story scope). Returns the resolved
- * SHARPEE_VERSION so callers can log it. See module-level Behavior Statement.
- */
-export declare function stampVersions(root: string, opts: BuildOptions): string;
-/** Build all platform packages in dependency order (build.sh build_platform). */
-export declare function buildPlatform(root: string, opts: BuildOptions): void;
-/** Generate the genai-api reference (build.sh generate_genai_api). */
-export declare function generateGenaiApi(root: string, opts: BuildOptions): void;
-/** Build a story package (build.sh build_story + resolve_story_pkg). */
-export declare function buildStory(root: string, story: string, opts: BuildOptions): void;
-/** Run the full build pipeline. */
-export declare function runBuild(opts?: BuildOptions): void;
-```
-
-### commands/bundle
-
-```typescript
-export interface BundleOptions {
-    /** Monorepo root; defaults to the workspace above cwd. */
-    root?: string;
-    /** Suppress per-step logging. */
-    quiet?: boolean;
-}
-/** Assemble dist/cli/sharpee.js + sharpee.d.ts. Assumes platform packages are built. */
-export declare function runBundle(opts?: BundleOptions): void;
-```
-
-### commands/browser
-
-```typescript
-export interface BrowserBuildOptions {
-    quiet?: boolean;
-}
-/**
- * Build the browser client for `story` into dist/web/<story>/. Assumes platform +
- * story (incl. ESM where applicable) are already built.
- * @throws if the story or its browser-entry.ts is missing, or game.js is empty after esbuild.
- */
-export declare function buildBrowserClient(root: string, story: string, opts?: BrowserBuildOptions): void;
-```
-
-### commands/zifmia
-
-```typescript
-export interface ZifmiaBuildOptions {
-    quiet?: boolean;
-}
-/**
- * Build the zifmia server and surface the Story Runtime Baseline version (for the
- * operator's `docker build --build-arg BASELINE_VERSION=`).
- * @throws if tools/zifmia is absent or the build produces no dist/.
- */
-export declare function buildZifmiaServer(root: string, opts?: ZifmiaBuildOptions): void;
-```
-
-### commands/clean
-
-```typescript
-export interface CleanOptions {
-    root?: string;
-    quiet?: boolean;
-}
-/** Run every package's `clean` script, then remove the top-level `dist/`. */
-export declare function runClean(opts?: CleanOptions): void;
-```
-
 ### commands/register
 
 ```typescript
@@ -184,32 +52,9 @@ export declare function listStories(): RegistryEntry[];
 export declare function lookupStory(name: string): string | null;
 ```
 
-### commands/verify
-
-```typescript
-export interface VerifyOptions {
-    root?: string;
-    quiet?: boolean;
-}
-/** Build the npm staging (`tsf build --npm`) and dry-run the beta publish. */
-export declare function runVerify(opts?: VerifyOptions): void;
-```
-
 ### repo
 
 ```typescript
-/**
- * Ordered platform build list (build.sh PACKAGES, 479-507): `[pkgName, dirUnderPackages]`.
- * Order is dependency order — do not re-sort.
- */
-export declare const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]>;
-/**
- * esbuild `--alias:` entries for the CLI bundle (build.sh build_bundle, 587-604).
- * Order matches build.sh so the esbuild command is byte-identical.
- */
-export declare const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]>;
-/** Hand-written CLI bundle declarations (build.sh build_bundle, 607-619) — verbatim. */
-export declare const BUNDLE_DTS = "// Auto-generated Sharpee type declarations\nexport * from '../packages/core/dist/index';\nexport * from '../packages/if-domain/dist/index';\nexport * from '../packages/world-model/dist/index';\nexport * from '../packages/stdlib/dist/index';\nexport * from '../packages/engine/dist/index';\nexport * from '../packages/parser-en-us/dist/index';\nexport * from '../packages/lang-en-us/dist/index';\nexport * from '../packages/event-processor/dist/index';\nexport * from '../packages/text-blocks/dist/index';\nexport * from '../packages/channel-service/dist/index';\n";
 /**
  * Walk up from `start` to the Sharpee monorepo root (the dir holding
  * pnpm-workspace.yaml AND packages/core — the monorepo signature, so an author's
@@ -227,12 +72,6 @@ export declare function findRepoRoot(start?: string): string;
  * own toolchain). The location-aware split behind `sharpee build` (ADR-180 unify).
  */
 export declare function detectMode(start?: string): 'monorepo' | 'standalone';
-/**
- * Resolve the `tsf` executable. Prefers the workspace-local `node_modules/.bin/tsf`
- * (a bare `tsf` fails when tsf is only a shell alias / not on a non-interactive PATH);
- * falls back to `tsf` on PATH. Produces identical compiler output either way.
- */
-export declare function tsfBin(root: string): string;
 /**
  * Resolve a story name to its directory (build.sh resolve_story_dir, 39-48):
  * `stories/<name>` then `tutorials/<name>`. Returns absolute path or null.
@@ -268,59 +107,6 @@ export interface ResolvedStory {
 export declare function resolveStory(root: string, nameOrPath: string): ResolvedStory | null;
 /** Read a package.json's `version` field. */
 export declare function readVersion(pkgJsonPath: string): string;
-```
-
-### consumer-gen
-
-```typescript
-export type StagingMap = Record<string, string>;
-/**
- * Map `@sharpee/<x>` package name -> its staging subdirectory. The directory name
- * is not assumed to equal the short package name, so each package.json is read.
- * @throws if stagingDir does not exist.
- */
-export declare function scanStaging(stagingDir: string): StagingMap;
-/** The story's directly-declared `@sharpee/*` dependencies (the closure seed). */
-export declare function readSharpeeSeed(storyPkgPath: string): string[];
-/**
- * Transitive closure over `@sharpee/*` deps. Pure: `depsOf(name)` returns the
- * `@sharpee/*` deps of `name`. Returns every reachable package including the seed.
- */
-export declare function computeClosure(seed: string[], depsOf: (name: string) => string[]): Set<string>;
-/** `depsOf` backed by the staging map — only deps present in staging are followed. */
-export declare function stagingDepsOf(stagingDir: string, staging: StagingMap, name: string): string[];
-export interface GenerateConsumerOptions {
-    /** 'local' packs the full closure as tarballs from staging; 'registry' declares seed deps. */
-    mode: 'local' | 'registry';
-    /** Path to the story's package.json (source of the seed deps). */
-    storyPkgPath: string;
-    /** `~/.tsf-publish/sharpee` — the `tsf build --npm` output (local mode only). */
-    stagingDir: string;
-    /** Directory to write tarballs into (local mode only). */
-    vendorDir: string;
-    /** Where the generated consumer package.json is written. */
-    outPkgPath: string;
-    /** Registry version/range for `@sharpee/*` deps in registry mode (default 'latest'). */
-    registryVersion?: string;
-}
-export interface GenerateConsumerResult {
-    /** Packages written as runtime deps (full closure in local mode; seed in registry mode). */
-    closure: string[];
-    /** true if transcript-tester is available as a dev dep (always true in registry mode). */
-    haveTranscriptTester: boolean;
-}
-/**
- * Generate the consumer package.json.
- *
- * Local mode packs the story's **full transitive `@sharpee` closure** into tarballs
- * and `file:`-refs them — required because `file:` deps do not resolve their own
- * `@sharpee` deps from anywhere. Registry mode declares only the story's **seed**
- * `@sharpee` deps and lets npm resolve transitive deps from the registry, exactly
- * as a real consumer install would (avoids staging-vs-registry graph divergence).
- *
- * @throws (local mode) if any seed dep is absent from the local staging.
- */
-export declare function generateConsumer(opts: GenerateConsumerOptions): GenerateConsumerResult;
 ```
 
 ## @sharpee/transcript-tester

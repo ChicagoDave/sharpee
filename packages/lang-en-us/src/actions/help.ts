@@ -18,8 +18,8 @@ export const helpLanguage = {
     'general_help': "Welcome to Interactive Fiction!\n\nBasic commands:\n- LOOK (L): Examine your surroundings\n- INVENTORY (I): List what you're carrying\n- EXAMINE (X) [object]: Look at something closely\n- TAKE/DROP [object]: Pick up or put down items\n- GO [direction] or just [direction]: Move around\n\nFor more help on a specific topic, type HELP [topic].",
     
     // Topic help headers
-    'help_topic': "Help on {topic}:",
-    'unknown_topic': "No help available on '{topic}'. Type HELP for general help.",
+    'help_topic': "Help on {verbatim:topic}:",
+    'unknown_topic': "No help available on '{verbatim:topic}'. Type HELP for general help.",
     
     // Movement help
     'help_movement': "Movement commands:\n- GO NORTH/SOUTH/EAST/WEST (or just N/S/E/W)\n- UP/DOWN (U/D)\n- IN/OUT\n- ENTER [place]\n- EXIT",

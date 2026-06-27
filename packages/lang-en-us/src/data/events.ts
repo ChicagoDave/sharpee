@@ -157,7 +157,7 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   [IFEvents.ITEM_THROWN]: "You throw {item}.",
   [IFEvents.ITEM_GIVEN]: "You give {item} to {recipient}.",
   [IFEvents.ITEM_SHOWN]: "You show {item} to {recipient}.",
-  [IFEvents.ITEM_EXAMINED]: "{description}",
+  [IFEvents.ITEM_EXAMINED]: "{verbatim:description}",
   [IFEvents.ITEM_DESTROYED]: "{item} is destroyed.",
   [IFEvents.ITEM_USED]: "You use {item}.",
   
@@ -208,17 +208,17 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   [IFEvents.USED]: "You use {target}.",
   
   // Movement events
-  [IFEvents.PLAYER_MOVED]: "You go {direction}.",
+  [IFEvents.PLAYER_MOVED]: "You go {verbatim:direction}.",
   [IFEvents.PLAYER_ENTERED]: "You enter {location}.",
   [IFEvents.PLAYER_EXITED]: "You leave {location}.",
-  [IFEvents.NPC_MOVED]: "{actor} goes {direction}.",
-  [IFEvents.NPC_ENTERED]: "{actor} arrives from {direction}.",
-  [IFEvents.NPC_EXITED]: "{actor} leaves to {direction}.",
+  [IFEvents.NPC_MOVED]: "{actor} goes {verbatim:direction}.",
+  [IFEvents.NPC_ENTERED]: "{actor} arrives from {verbatim:direction}.",
+  [IFEvents.NPC_EXITED]: "{actor} leaves to {verbatim:direction}.",
   [IFEvents.MOVEMENT_BLOCKED]: "You can't go that way.",
   
   // Room/location events
-  [IFEvents.ROOM_DESCRIBED]: "{description}",
-  [IFEvents.ROOM_FIRST_ENTERED]: "{description}",
+  [IFEvents.ROOM_DESCRIBED]: "{verbatim:description}",
+  [IFEvents.ROOM_FIRST_ENTERED]: "{verbatim:description}",
   [IFEvents.ROOM_ENTERED]: "You enter {room}.",
   [IFEvents.ROOM_EXITED]: "You leave {room}.",
   [IFEvents.ROOM_ILLUMINATED]: "The room is now lit.",
@@ -228,8 +228,8 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   
   // Character interaction events
   [IFEvents.NPC_TALKED_TO]: "You talk to {npc}.",
-  [IFEvents.NPC_ASKED_ABOUT]: "You ask {npc} about {topic}.",
-  [IFEvents.NPC_TOLD_ABOUT]: "You tell {npc} about {topic}.",
+  [IFEvents.NPC_ASKED_ABOUT]: "You ask {npc} about {verbatim:topic}.",
+  [IFEvents.NPC_TOLD_ABOUT]: "You tell {npc} about {verbatim:topic}.",
   [IFEvents.NPC_GIVEN_ITEM]: "You give {item} to {npc}.",
   [IFEvents.NPC_SHOWN_ITEM]: "You show {item} to {npc}.",
   [IFEvents.NPC_ATTACKED]: "You attack {npc}!",
@@ -268,7 +268,7 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   [IFEvents.ABOUT_DISPLAYED]: "", // Handled by template system,
   
   // Game state events
-  [IFEvents.GAME_STARTED]: "Welcome to {title}!",
+  [IFEvents.GAME_STARTED]: "Welcome to {verbatim:title}!",
   [IFEvents.GAME_ENDED]: "The game has ended.",
   [IFEvents.GAME_WON]: "*** You have won! ***",
   [IFEvents.GAME_LOST]: "*** You have lost. ***",
@@ -277,7 +277,7 @@ export const eventMessages: Partial<Record<IFEventType, string>> = {
   [IFEvents.GAME_RESTARTED]: "Game restarted.",
   
   // Parser/command events
-  [IFEvents.COMMAND_AMBIGUOUS]: "Which do you mean: {options}?",
+  [IFEvents.COMMAND_AMBIGUOUS]: "Which do you mean: {verbatim:options}?",
   [IFEvents.COMMAND_INCOMPLETE]: "You'll need to be more specific.",
   [IFEvents.OBJECT_NOT_FOUND]: "You can't see any such thing.",
   [IFEvents.VERB_NOT_UNDERSTOOD]: "I don't understand that verb."

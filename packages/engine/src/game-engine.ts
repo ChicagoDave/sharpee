@@ -297,7 +297,7 @@ export class GameEngine {
     // Set provided dependencies
     this.languageProvider = options.language;
     this.parser = options.parser;
-    this.textService = new ProsePipeline(this.languageProvider);
+    this.textService = new ProsePipeline(this.languageProvider, this.world);
     
     // Update action registry with language provider
     this.actionRegistry.setLanguageProvider(this.languageProvider);

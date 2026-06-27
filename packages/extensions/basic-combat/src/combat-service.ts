@@ -14,7 +14,7 @@ import {
   CombatantTrait,
   WeaponTrait,
 } from '@sharpee/world-model';
-import { entityInfoFrom } from '@sharpee/stdlib';
+import { nounPhraseFor } from '@sharpee/stdlib';
 import { CombatMessages, HealthStatus } from './combat-messages.js';
 
 /**
@@ -144,7 +144,7 @@ export class CombatService implements ICombatService {
       attackerName: attacker.name,
       targetName: target.name,
       weaponName: weapon?.name,
-      target: entityInfoFrom(target),
+      target: nounPhraseFor(target),
     };
 
     if (!hit) {
@@ -221,7 +221,7 @@ export class CombatService implements ICombatService {
       return {
         valid: false,
         messageId: CombatMessages.CANNOT_ATTACK,
-        messageData: { targetName: target.name, target: entityInfoFrom(target) },
+        messageData: { targetName: target.name, target: nounPhraseFor(target) },
       };
     }
 
@@ -230,7 +230,7 @@ export class CombatService implements ICombatService {
       return {
         valid: false,
         messageId: CombatMessages.ALREADY_DEAD,
-        messageData: { targetName: target.name, target: entityInfoFrom(target) },
+        messageData: { targetName: target.name, target: nounPhraseFor(target) },
       };
     }
 

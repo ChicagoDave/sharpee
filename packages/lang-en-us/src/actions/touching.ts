@@ -17,32 +17,32 @@ export const touchingLanguage = {
   messages: {
     // Error messages
     'no_target': "Touch what?",
-    'not_visible': "{You} {can't} see {the:target} to touch it.",
-    'not_reachable': "{You} {can't} reach {the:target}.",
+    'not_visible': "{You} {can't} see {the target} to touch it.",
+    'not_reachable': "{You} {can't} reach {the target}.",
 
     // Success messages - textures
-    'feels_normal': "{the:cap:target} feels as {you}'d expect.",
-    'feels_warm': "{the:cap:target} feels warm to the touch.",
-    'feels_hot': "{the:cap:target} {is:target} hot! {You} {pull} {your} hand back quickly.",
-    'feels_cold': "{the:cap:target} feels cold.",
-    'feels_soft': "{the:cap:target} feels soft.",
-    'feels_hard': "{the:cap:target} feels hard and solid.",
-    'feels_smooth': "{the:cap:target} feels smooth.",
-    'feels_rough': "{the:cap:target} feels rough.",
-    'feels_wet': "{the:cap:target} feels damp.",
+    'feels_normal': "{capitalize the target} feels as {you}'d expect.",
+    'feels_warm': "{capitalize the target} feels warm to the touch.",
+    'feels_hot': "{capitalize the target} {verb:is target} hot! {You} {pull} {your} hand back quickly.",
+    'feels_cold': "{capitalize the target} feels cold.",
+    'feels_soft': "{capitalize the target} feels soft.",
+    'feels_hard': "{capitalize the target} feels hard and solid.",
+    'feels_smooth': "{capitalize the target} feels smooth.",
+    'feels_rough': "{capitalize the target} feels rough.",
+    'feels_wet': "{capitalize the target} feels damp.",
 
     // Success messages - specific objects
-    'device_vibrating': "{the:cap:target} {is:target} vibrating slightly.",
-    'immovable_object': "{the:cap:target} {is:target} solid and immovable.",
-    'liquid_container': "{You} {feel} liquid sloshing inside {the:target}.",
+    'device_vibrating': "{capitalize the target} {verb:is target} vibrating slightly.",
+    'immovable_object': "{capitalize the target} {verb:is target} solid and immovable.",
+    'liquid_container': "{You} {feel} liquid sloshing inside {the target}.",
 
     // Generic touching
-    'touched': "{You} {touch} {the:target}.",
-    'touched_gently': "{You} gently {touch} {the:target}.",
-    'poked': "{You} {poke} {the:target}.",
-    'prodded': "{You} {prod} {the:target}.",
-    'patted': "{You} {pat} {the:target}.",
-    'stroked': "{You} {stroke} {the:target}."
+    'touched': "{You} {touch} {the target}.",
+    'touched_gently': "{You} gently {touch} {the target}.",
+    'poked': "{You} {poke} {the target}.",
+    'prodded': "{You} {prod} {the target}.",
+    'patted': "{You} {pat} {the target}.",
+    'stroked': "{You} {stroke} {the target}."
   },
   
   help: {

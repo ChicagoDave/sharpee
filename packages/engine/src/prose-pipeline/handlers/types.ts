@@ -14,6 +14,7 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
+import type { RenderContextFactory } from '../render-context';
 
 /**
  * Context passed to event handlers.
@@ -21,6 +22,17 @@ import type { ISemanticEvent } from '@sharpee/core';
 export interface HandlerContext {
   /** Language provider for template resolution. */
   languageProvider?: LanguageProvider;
+
+  /**
+   * Per-turn render-context factory for the phrase pipeline (ADR-192, W2).
+   *
+   * Present when the pipeline was constructed with a world model; a handler on
+   * the phrase path builds its per-message `RenderContext` by calling this with
+   * the message's params, then passes it to `languageProvider.renderMessage`.
+   * Absent in legacy/world-less construction (the old string path needs no
+   * render context).
+   */
+  makeRenderContext?: RenderContextFactory;
 }
 
 /**

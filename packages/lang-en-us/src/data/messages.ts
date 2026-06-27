@@ -252,7 +252,7 @@ export const systemMessages = {
   // Parser (legacy - prefer parserErrors below)
   unknownVerb: "I don't understand that verb.",
   unknownObject: "I don't know what '{object}' refers to.",
-  ambiguousObject: "Which do you mean: {options}?",
+  ambiguousObject: "Which do you mean: {verbatim:options}?",
   missingObject: "What do you want to {verb}?",
   missingIndirectObject: "What do you want to {verb} it {preposition}?",
 

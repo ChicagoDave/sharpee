@@ -13,14 +13,14 @@ export const aboutLanguage = {
   
   messages: {
     // Header
-    'about_header': "About {title}",
+    'about_header': "About {verbatim:title}",
     
     // Basic info
-    'game_info': "{title}\nVersion {version}\nBy {author}\nReleased: {releaseDate}",
-    'game_info_simple': "{title} by {author}",
+    'game_info': "{verbatim:title}\nVersion {verbatim:version}\nBy {verbatim:author}\nReleased: {releaseDate}",
+    'game_info_simple': "{verbatim:title} by {verbatim:author}",
     
     // Extended info
-    'description': "Description: {description}",
+    'description': "Description: {verbatim:description}",
     'copyright': "Copyright {copyright}",
     'license': "License: {license}",
     'website': "Website: {website}",
@@ -34,8 +34,8 @@ export const aboutLanguage = {
     'acknowledgments': "Acknowledgments: {acknowledgments}",
     
     // Technical info
-    'engine_info': "Powered by {engine} version {engineVersion}",
-    'technical_info': "Technical Information:\nEngine: {engine} v{engineVersion}\nPlatform: Interactive Fiction",
+    'engine_info': "Powered by {engine} version {verbatim:engineVersion}",
+    'technical_info': "Technical Information:\nEngine: {engine} v{verbatim:engineVersion}\nPlatform: Interactive Fiction",
     
     // Play statistics
     'play_stats': "Current Session:\nTime played: {playTime}\nMoves made: {sessionMoves}",
@@ -43,10 +43,10 @@ export const aboutLanguage = {
     
     // Footer
     'about_footer': "Thank you for playing!",
-    'enjoy_game': "We hope you enjoy playing {title}!",
+    'enjoy_game': "We hope you enjoy playing {verbatim:title}!",
     
     // Compact version
-    'about_compact': "{title} v{version} by {author}"
+    'about_compact': "{verbatim:title} v{version} by {verbatim:author}"
   },
   
   help: {

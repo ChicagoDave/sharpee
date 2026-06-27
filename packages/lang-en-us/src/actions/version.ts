@@ -11,13 +11,13 @@ export const versionLanguage = {
 
   messages: {
     // Full version display
-    'version_full': "{storyTitle} v{storyVersion}\nSharpee Engine v{engineVersion}\nBuilt: {buildDate}",
+    'version_full': "{verbatim:storyTitle} v{verbatim:storyVersion}\nSharpee Engine v{verbatim:engineVersion}\nBuilt: {buildDate}",
 
     // Without build date
-    'version_no_date': "{storyTitle} v{storyVersion}\nSharpee Engine v{engineVersion}",
+    'version_no_date': "{verbatim:storyTitle} v{verbatim:storyVersion}\nSharpee Engine v{verbatim:engineVersion}",
 
     // Compact version
-    'version_compact': "{storyTitle} v{storyVersion} (Sharpee v{engineVersion})"
+    'version_compact': "{verbatim:storyTitle} v{verbatim:storyVersion} (Sharpee v{verbatim:engineVersion})"
   },
 
   help: {

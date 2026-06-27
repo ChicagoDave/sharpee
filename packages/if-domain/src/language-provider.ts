@@ -1,14 +1,17 @@
 /**
  * Language provider interface for Interactive Fiction
- * 
+ *
  * This interface defines the contract for providing localized text,
  * action patterns, and message formatting throughout the IF system.
- * 
+ *
  * Implementations should handle:
  * - Action patterns (verb synonyms)
  * - Message text with parameter substitution
  * - Localization and customization
  */
+
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { LocaleSettings, RenderContext } from './phrase';
 
 /**
  * Structured help information for an action
@@ -60,7 +63,59 @@ export interface LanguageProvider {
    * @returns The formatted message
    */
   getMessage(messageId: string, params?: Record<string, any>): string;
-  
+
+  /**
+   * Get the raw, unresolved template for a message ID (ADR-192 phrase path).
+   *
+   * Unlike {@link getMessage}, this returns the author template verbatim —
+   * no perspective resolution, no parameter substitution — so the phrase
+   * pipeline can parse it into a {@link RenderContext}-realized tree.
+   *
+   * @param messageId The message identifier
+   * @returns The raw template, or undefined when the ID is not registered
+   */
+  getTemplate?(messageId: string): string | undefined;
+
+  /**
+   * Locale realization settings (ADR-192). Consumed by the engine when it
+   * builds the per-turn {@link RenderContext} so the Assembler agrees over
+   * the story's configured knobs (e.g. the serial comma).
+   *
+   * @returns The provider's current locale settings
+   */
+  getLocaleSettings?(): LocaleSettings;
+
+  /**
+   * The narrative grammatical person of the player subject (ADR-199 §4 B).
+   *
+   * Derived from the provider's perspective/narrative configuration (ADR-089).
+   * The engine reads it when building the per-turn {@link RenderContext} so the
+   * Assembler can give the player subject the agreeing verb form ("you are").
+   *
+   * @returns 'first' | 'second' | 'third'
+   */
+  getNarrativePerson?(): 'first' | 'second' | 'third';
+
+  /**
+   * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
+   *
+   * The phrase-path replacement for {@link getMessage}: resolves perspective
+   * placeholders, parses the template into a `Phrase` tree, and realizes it
+   * with the locale Assembler against the supplied render context. Returns
+   * `ITextBlock[]` directly — no intermediate string. `getMessage` remains for
+   * any non-phrase callers.
+   *
+   * @param messageId The message identifier
+   * @param params Parameter/producer bindings keyed by placeholder name
+   * @param ctx The per-message render context (world, settings, seams)
+   * @returns The realized text blocks
+   */
+  renderMessage?(
+    messageId: string,
+    params: Record<string, unknown>,
+    ctx: RenderContext,
+  ): ITextBlock[];
+
   /**
    * Check if a message exists
    * @param messageId The message identifier

@@ -10,7 +10,7 @@
 import { ActionContext } from '../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, TraitType, WearableTrait } from '@sharpee/world-model';
-import { entityInfoFrom } from '../../utils';
+import { nounPhraseFor } from '../../utils';
 
 /**
  * Context analysis for wearable actions
@@ -124,7 +124,7 @@ export function buildWearableEventParams(
 ): Record<string, unknown> {
   // params carry EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, unknown> = {
-    item: entityInfoFrom(item)
+    item: nounPhraseFor(item)
   };
   
   if (wearableTrait.bodyPart) {

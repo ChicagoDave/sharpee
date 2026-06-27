@@ -17,7 +17,7 @@ import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { WornEventData } from './wearing-events';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 import {
   analyzeWearableContext,
   checkWearingConflicts,
@@ -118,7 +118,7 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       sharedData.failed = true;
       sharedData.errorMessageId = wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing';
       sharedData.errorReason = sharedData.errorMessageId;
-      sharedData.errorParams = { item: entityInfoFrom(conflictingItem) };
+      sharedData.errorParams = { item: nounPhraseFor(conflictingItem) };
       return;
     }
 
@@ -132,15 +132,15 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       if (result.alreadyWorn) {
         sharedData.errorMessageId = 'already_wearing';
         sharedData.errorReason = 'already_wearing';
-        sharedData.errorParams = { item: entityInfoFrom(item) };
+        sharedData.errorParams = { item: nounPhraseFor(item) };
       } else if (result.wornByOther) {
         sharedData.errorMessageId = 'already_wearing';
         sharedData.errorReason = 'worn_by_other';
-        sharedData.errorParams = { item: entityInfoFrom(item), wornBy: result.wornByOther };
+        sharedData.errorParams = { item: nounPhraseFor(item), wornBy: result.wornByOther };
       } else {
         sharedData.errorMessageId = 'cant_wear_that';
         sharedData.errorReason = 'cant_wear_that';
-        sharedData.errorParams = { item: entityInfoFrom(item) };
+        sharedData.errorParams = { item: nounPhraseFor(item) };
       }
       return;
     }

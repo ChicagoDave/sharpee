@@ -13,16 +13,16 @@ export const readingLanguage = {
   messages: {
     // Error messages
     'what_to_read': "What do you want to read?",
-    'not_readable': "There's nothing written on {the:item}.",
+    'not_readable': "There's nothing written on {the item}.",
     'cannot_read_now': "{reason}",
 
     // Success messages - include item name for context.
-    // Use the formatter chain: {the:cap:item} -> "The book"
-    'read_text': "{the:cap:item} reads:\n{text}",
-    'read_book': "{the:cap:item} reads:\n{text}",
-    'read_book_page': "{the:cap:item} (page {currentPage} of {totalPages}):\n{text}",
-    'read_sign': "{the:cap:item} says:\n{text}",
-    'read_inscription': "{the:cap:item} reads:\n{text}"
+    // Phrase grammar: {capitalize the item} -> "The book"
+    'read_text': "{capitalize the item} reads:\n{verbatim:text}",
+    'read_book': "{capitalize the item} reads:\n{verbatim:text}",
+    'read_book_page': "{capitalize the item} (page {currentPage} of {totalPages}):\n{verbatim:text}",
+    'read_sign': "{capitalize the item} says:\n{verbatim:text}",
+    'read_inscription': "{capitalize the item} reads:\n{verbatim:text}"
   },
 
   help: {

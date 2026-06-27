@@ -18,7 +18,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ShownEventData } from './showing-events';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -66,8 +66,8 @@ function analyzeShowAction(context: ActionContext): ShowAnalysis | null {
   
   // params carry EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
-    item: entityInfoFrom(item),
-    viewer: entityInfoFrom(viewer)
+    item: nounPhraseFor(item),
+    viewer: nounPhraseFor(viewer)
   };
   
   // Determine viewer reaction
@@ -188,7 +188,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'viewer_too_far',
-        params: { viewer: entityInfoFrom(viewer) }
+        params: { viewer: nounPhraseFor(viewer) }
       };
     }
     
@@ -205,7 +205,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'self',
-        params: { item: entityInfoFrom(item) }
+        params: { item: nounPhraseFor(item) }
       };
     }
 
@@ -234,8 +234,8 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        item: item ? entityInfoFrom(item) : undefined,
-        viewer: viewer ? entityInfoFrom(viewer) : undefined
+        item: item ? nounPhraseFor(item) : undefined,
+        viewer: viewer ? nounPhraseFor(viewer) : undefined
       },
       reason: result.error,
       itemId: item?.id,

@@ -21,7 +21,7 @@ import { IFActions } from '../../constants';
 import { EatenEventData } from './eating-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -100,7 +100,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'not_edible',
-        params: { item: entityInfoFrom(item) }
+        params: { item: nounPhraseFor(item) }
       };
     }
 
@@ -109,7 +109,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'is_drink',
-        params: { item: entityInfoFrom(item) }
+        params: { item: nounPhraseFor(item) }
       };
     }
 
@@ -118,7 +118,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'already_consumed',
-        params: { item: entityInfoFrom(item) }
+        params: { item: nounPhraseFor(item) }
       };
     }
 
@@ -234,7 +234,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
-      params: { item: item ? entityInfoFrom(item) : undefined, ...result.params },
+      params: { item: item ? nounPhraseFor(item) : undefined, ...result.params },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name
@@ -258,7 +258,7 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity;
     events.push(context.event('if.event.eaten', {
       messageId: `${context.action.id}.${sharedData.messageId}`,
-      params: { item: item ? entityInfoFrom(item) : { name: sharedData.eventData?.itemName ?? '' } },
+      params: { item: item ? nounPhraseFor(item) : { name: sharedData.eventData?.itemName ?? '' } },
       ...sharedData.eventData
     }));
 

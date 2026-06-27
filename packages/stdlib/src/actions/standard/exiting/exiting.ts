@@ -13,7 +13,7 @@ import {
 import { IFActions } from '../../constants';
 import { ExitedEventData } from './exiting-events';
 import { ExitingMessages } from './exiting-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 interface ExitingExecutionState {
   fromLocation: string;
@@ -93,7 +93,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: ExitingMessages.CONTAINER_CLOSED,
-          params: { container: entityInfoFrom(currentContainer) }
+          params: { container: nounPhraseFor(currentContainer) }
         };
       }
     }
@@ -157,7 +157,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     const fromEntity = context.world.getEntity(state.fromLocation);
     return [context.event('if.event.exited', {
       messageId: `${context.action.id}.exited`,
-      params: { place: fromEntity ? entityInfoFrom(fromEntity) : { name: state.fromLocationName } },
+      params: { place: fromEntity ? nounPhraseFor(fromEntity) : { name: state.fromLocationName } },
       fromLocation: state.fromLocation,
       fromLocationName: state.fromLocationName,
       toLocation: state.toLocation,

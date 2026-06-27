@@ -5,7 +5,10 @@
  * Enhanced to support getMessage interface for text service
  */
 
-import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern } from '@sharpee/if-domain';
+import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
+import type { ITextBlock } from '@sharpee/text-blocks';
+import { EnglishAssembler } from './assembler';
+import { parsePhraseTemplate } from './parser';
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { pluralize as pluralizeNoun } from './pluralize';
@@ -17,14 +20,6 @@ import {
   DEFAULT_NARRATIVE_CONTEXT,
   resolvePerspectivePlaceholders,
 } from './perspective';
-import {
-  createFormatterRegistry,
-  formatMessage as formatWithFormatters,
-  FormatterRegistry,
-  FormatterContext,
-  EntityInfo,
-} from './formatters';
-
 // Types are now imported from @sharpee/if-domain
 
 /**
@@ -42,18 +37,14 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   // Narrative context for perspective-aware message resolution (ADR-089)
   private narrativeContext: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT;
 
-  // Formatter registry for {a:item}, {list:items}, etc. (ADR-095)
-  private formatterRegistry: FormatterRegistry;
-
-  // Entity lookup function for formatters (set by engine)
-  private entityLookup?: (id: string) => EntityInfo | undefined;
-
   // Serial (Oxford) comma in lists (ADR-190); story-configurable, default on.
   private serialComma = true;
 
+  // Phrase-path Assembler (ADR-192). Realizes a parsed phrase tree to blocks;
+  // stateless and pure, so a single shared instance is reused across turns.
+  private readonly assembler = new EnglishAssembler();
+
   constructor() {
-    // Initialize formatter registry
-    this.formatterRegistry = createFormatterRegistry();
     // Load core system messages
     this.loadCoreMessages();
     // Load all action messages
@@ -166,14 +157,16 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    * Supports three types of placeholders:
    * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
    *    - Resolved based on narrative context (1st/2nd/3rd person)
-   * 2. Formatted placeholders (ADR-095): {a:item}, {list:items}, etc.
-   *    - Applies formatters before substitution
-   * 3. Simple placeholders: {item}, {target}, etc.
-   *    - Replaced with values from params object
+   * 2. Simple `{key}` placeholders → `String(params[key])`.
+   *
+   * The ADR-095 formatter chain is gone (ADR-192): entity-aware article / list /
+   * verb realization lives in the phrase pipeline ({@link renderMessage}). This
+   * string path remains for non-phrase callers (e.g. core prompts) and does plain
+   * substitution only — no articles, lists, or `:`-chains.
    *
    * @param messageId Full message ID (e.g., 'if.action.taking.taken')
    * @param params Parameters to substitute in the message
-   * @returns The resolved message text, or null if not found
+   * @returns The resolved message text, or the ID when not registered
    */
   getMessage(messageId: string, params?: Record<string, any>): string {
     let message = this.messages.get(messageId);
@@ -182,32 +175,99 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       return messageId; // Return the ID as fallback
     }
 
-    // Step 1: Resolve perspective placeholders (ADR-089)
-    // This handles {You}, {your}, {take}, etc.
-    message = resolvePerspectivePlaceholders(message, this.narrativeContext);
+    // Step 1: Resolve perspective placeholders (ADR-089) — {You}, {your}, {take}.
+    message = resolvePerspectivePlaceholders(message, this.narrativeContext, params);
 
-    // Step 2: Apply formatters and substitute parameters (ADR-095)
+    // Step 2: Plain `{key}` substitution for any bound params.
     if (params) {
-      const context: FormatterContext = {
-        getEntity: this.entityLookup,
-        settings: { serialComma: this.serialComma },
-      };
-      message = formatWithFormatters(message, params, this.formatterRegistry, context);
+      message = message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key) =>
+        key in params ? String(params[key]) : match,
+      );
     }
 
     return message;
   }
 
   /**
-   * Set entity lookup function for formatters (ADR-095)
+   * Get the raw, unresolved template for a message ID (ADR-192 phrase path).
    *
-   * This allows formatters to look up entity info (nounType, etc.)
-   * for proper article selection.
+   * Returns the author template verbatim — no perspective resolution, no
+   * parameter substitution. The phrase pipeline resolves perspective and parses
+   * the result; see {@link renderMessage}.
    *
-   * @param lookup Function that returns EntityInfo for an entity ID
+   * @param messageId Full message ID (e.g. 'if.action.taking.taken')
+   * @returns The raw template, or undefined when the ID is not registered
    */
-  setEntityLookup(lookup: (id: string) => EntityInfo | undefined): void {
-    this.entityLookup = lookup;
+  getTemplate(messageId: string): string | undefined {
+    return this.messages.get(messageId);
+  }
+
+  /**
+   * Locale realization settings (ADR-192). The engine reads these when building
+   * the per-turn render context so the Assembler agrees over the story's
+   * configured knobs.
+   *
+   * @returns The current locale settings (serial comma, …)
+   */
+  getLocaleSettings(): LocaleSettings {
+    return { serialComma: this.serialComma };
+  }
+
+  /**
+   * The narrative grammatical person of the player subject (ADR-199 §4 B),
+   * mapped from the ADR-089 perspective ('1st'/'2nd'/'3rd' → first/second/third).
+   *
+   * @returns the player subject's grammatical person under the current narration
+   */
+  getNarrativePerson(): 'first' | 'second' | 'third' {
+    switch (this.narrativeContext.perspective) {
+      case '1st':
+        return 'first';
+      case '2nd':
+        return 'second';
+      default:
+        return 'third';
+    }
+  }
+
+  /**
+   * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
+   *
+   * Phrase-path replacement for {@link getMessage}: resolve perspective
+   * placeholders (kept as a string pre-pass, ADR-089), parse the template into a
+   * `Phrase` tree, then realize it with the Assembler against `ctx`. A missing
+   * template realizes to a literal of the ID, mirroring `getMessage`'s
+   * echo-the-ID fallback.
+   *
+   * @param messageId Full message ID
+   * @param params Parameter/producer bindings keyed by placeholder name
+   * @param ctx The per-message render context (world, settings, seams)
+   * @returns The realized text blocks
+   */
+  renderMessage(
+    messageId: string,
+    params: Record<string, unknown>,
+    ctx: RenderContext,
+  ): ITextBlock[] {
+    const template = this.messages.get(messageId);
+    if (template === undefined) {
+      // Unregistered ID echoes as a literal, matching getMessage's fallback.
+      return this.assembler.realize({ kind: 'literal', text: messageId }, ctx);
+    }
+
+    // Step 1: Resolve perspective placeholders (ADR-089) — a string pre-pass
+    // that runs BEFORE parsing. Passing params lets the resolver leave bound
+    // params for the phrase parser and conjugate every other bare {word} as a
+    // perspective verb (no central verb allowlist needed).
+    const resolved = resolvePerspectivePlaceholders(template, this.narrativeContext, params);
+
+    // Step 2: Parse to a phrase tree (binds params; throws PhraseParseError at
+    // parse time on legacy ':' chains, unknown kinds, or unbound params).
+    const tree = parsePhraseTemplate(resolved, params);
+
+    // Step 3: Realize with the Assembler — the sole authority for article,
+    // agreement, punctuation, whitespace, reference, and case.
+    return this.assembler.realize(tree, ctx);
   }
 
   /**
@@ -218,28 +278,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     this.serialComma = on;
   }
 
-  /**
-   * Register a custom formatter (ADR-095)
-   *
-   * Stories can register custom formatters for special formatting needs.
-   *
-   * @param name Formatter name (used in templates as {name:placeholder})
-   * @param formatter Formatter function
-   */
-  registerFormatter(
-    name: string,
-    formatter: (value: any, context: FormatterContext) => string
-  ): void {
-    this.formatterRegistry.set(name, formatter);
-  }
-
-  /**
-   * Get the formatter registry (for testing or advanced use)
-   */
-  getFormatterRegistry(): FormatterRegistry {
-    return this.formatterRegistry;
-  }
-  
   /**
    * Check if a message exists
    * @param messageId The message identifier

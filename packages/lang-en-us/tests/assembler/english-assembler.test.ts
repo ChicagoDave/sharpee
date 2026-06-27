@@ -34,6 +34,7 @@ function makeCtx(settings: LocaleSettings = {}): RenderContext {
     world: { getEntity: () => undefined, getEntityContents: () => [], getContainingRoom: () => undefined },
     params: {},
     settings,
+    narrative: { person: 'third' },
     reference: { lastMentioned: () => noted[noted.length - 1], note: (id) => void noted.push(id) },
     textState: { get: () => undefined, set: () => undefined },
     contribute: () => undefined,
@@ -212,7 +213,7 @@ describe('AC-9: determinism', () => {
 // --- stub kinds: named refusal ---------------------------------------------
 
 describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
-  const stubs: Array<Phrase['kind']> = ['pronoun', 'number', 'verbatim', 'contents', 'slot', 'optional', 'choice'];
+  const stubs: Array<Phrase['kind']> = ['pronoun', 'number', 'contents', 'slot', 'optional', 'choice'];
   for (const kind of stubs) {
     it(`refuses kind '${kind}'`, () => {
       expect(() => asm.realize({ kind } as Phrase, makeCtx())).toThrow(PhraseNotImplementedError);
@@ -224,6 +225,53 @@ describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
       }
     });
   }
+});
+
+// --- Verbatim atom (ADR-200) -----------------------------------------------
+
+describe('Verbatim atom realizes opaque, whitespace-exempt text (ADR-200)', () => {
+  it('renders the text byte-for-byte', () => {
+    expect(render({ kind: 'verbatim', text: 'Aragorn' })).toBe('Aragorn');
+    expect(render({ kind: 'verbatim', text: 'north' })).toBe('north');
+  });
+
+  it('is exempt from horizontal whitespace collapse (internal spaces survive)', () => {
+    expect(render({ kind: 'verbatim', text: 'a   b' })).toBe('a   b');
+  });
+
+  it('composes in a Sequence without disturbing neighbours’ normal collapse', () => {
+    const tree: Phrase = { kind: 'seq', parts: [lit('You see   '), { kind: 'verbatim', text: 'X  Y' }, lit('  here.')] };
+    expect(render(tree)).toBe('You see X  Y here.');
+  });
+});
+
+// --- newline → block boundaries (Whitespace authority, Phase 4) ------------
+
+describe('newlines lift to block boundaries (no \\n in block content)', () => {
+  it('a single-line tree yields exactly one block', () => {
+    const blocks = asm.realize(lit('You see a lamp.'), makeCtx());
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].tight).toBeUndefined();
+  });
+
+  it('a single \\n makes the next block a tight continuation', () => {
+    const blocks = asm.realize(lit('Line one\nLine two'), makeCtx());
+    expect(blocks.map((b) => b.content.join(''))).toEqual(['Line one', 'Line two']);
+    expect(blocks[0].tight).toBeUndefined();
+    expect(blocks[1].tight).toBe(true);
+  });
+
+  it('a blank line starts a fresh paragraph (not tight)', () => {
+    const blocks = asm.realize(lit('Para one\n\nPara two'), makeCtx());
+    expect(blocks.map((b) => b.content.join(''))).toEqual(['Para one', 'Para two']);
+    expect(blocks[1].tight).toBeUndefined();
+  });
+
+  it('no block content carries a newline', () => {
+    const blocks = asm.realize(lit('a\nb\n\nc'), makeCtx());
+    for (const b of blocks) expect(b.content.join('')).not.toContain('\n');
+    expect(blocks.map((b) => b.content.join(''))).toEqual(['a', 'b', 'c']);
+  });
 });
 
 // --- isolation: Assembler does not call the legacy formatter chain ----------

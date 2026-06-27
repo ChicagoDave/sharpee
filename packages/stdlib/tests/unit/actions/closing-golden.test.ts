@@ -93,7 +93,7 @@ describe('closingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.close_blocked', {
         messageId: expect.stringContaining('not_closable'),
-        params: expect.objectContaining({ item: { name: 'red ball' } })
+        params: expect.objectContaining({ item: expect.objectContaining({ name: 'red ball' }) })
       });
     });
 
@@ -114,7 +114,7 @@ describe('closingAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.close_blocked', {
         messageId: expect.stringContaining('already_closed'),
-        params: expect.objectContaining({ item: { name: 'wooden box' } })
+        params: expect.objectContaining({ item: expect.objectContaining({ name: 'wooden box' }) })
       });
     });
   });
@@ -145,7 +145,7 @@ describe('closingAction (Golden Pattern)', () => {
         targetId: object.id,
         targetName: 'wooden box',
         messageId: expect.stringContaining('closed'),
-        params: { item: { name: 'wooden box' } },
+        params: { item: expect.objectContaining({ name: 'wooden box' }) },
         isContainer: true,
         isDoor: false,
         isSupporter: false,
@@ -250,7 +250,7 @@ describe('closingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.close_blocked', {
         messageId: expect.stringContaining('prevents_closing'),
         params: expect.objectContaining({
-          item: { name: 'treasure chest' },
+          item: expect.objectContaining({ name: 'treasure chest' }),
           obstacle: 'sword handle sticking out'
         })
       });

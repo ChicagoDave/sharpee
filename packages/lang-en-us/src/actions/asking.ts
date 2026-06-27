@@ -17,29 +17,29 @@ export const askingLanguage = {
     // Error messages
     'no_target': "Ask whom?",
     'no_topic': "Ask about what?",
-    'not_visible': "{You} {can't} see {the:target}.",
-    'too_far': "{the:cap:target} {is:target} too far away.",
+    'not_visible': "{You} {can't} see {the target}.",
+    'too_far': "{capitalize the target} {verb:is target} too far away.",
     'not_actor': "{You} can only ask questions of people.",
 
-    // Sentence-start NPC references use {the:cap:target} so proper-named
+    // Sentence-start NPC references use {capitalize the target} so proper-named
     // NPCs render without article ("Floyd", not "The Floyd").
 
     // Success messages - unknown topic
-    'unknown_topic': "{the:cap:target} says, \"I don't know anything about that.\"",
-    'shrugs': "{the:cap:target} shrugs.",
-    'no_idea': "{the:cap:target} says, \"No idea what you're talking about.\"",
-    'confused': "{the:cap:target} looks confused.",
+    'unknown_topic': "{capitalize the target} says, \"I don't know anything about that.\"",
+    'shrugs': "{capitalize the target} shrugs.",
+    'no_idea': "{capitalize the target} says, \"No idea what you're talking about.\"",
+    'confused': "{capitalize the target} looks confused.",
 
     // Success messages - known topic
-    'responds': "{the:cap:target} tells you about {topic}.",
-    'explains': "{the:cap:target} explains about {topic}.",
-    'already_told': "{the:cap:target} says, \"I already told you about that.\"",
-    'remembers': "{the:cap:target} says, \"Ah yes, about {topic}...\"",
+    'responds': "{capitalize the target} tells you about {verbatim:topic}.",
+    'explains': "{capitalize the target} explains about {verbatim:topic}.",
+    'already_told': "{capitalize the target} says, \"I already told you about that.\"",
+    'remembers': "{capitalize the target} says, \"Ah yes, about {verbatim:topic}...\"",
 
     // Success messages - conditional responses
-    'not_yet': "{the:cap:target} says, \"I can't tell you about that yet.\"",
-    'must_do_first': "{the:cap:target} says, \"There's something you need to do first.\"",
-    'earned_trust': "{the:cap:target} says, \"Since you've proven yourself, I'll tell you...\""
+    'not_yet': "{capitalize the target} says, \"I can't tell you about that yet.\"",
+    'must_do_first': "{capitalize the target} says, \"There's something you need to do first.\"",
+    'earned_trust': "{capitalize the target} says, \"Since you've proven yourself, I'll tell you...\""
   },
   
   help: {

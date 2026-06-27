@@ -75,7 +75,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         blocked: true,
         messageId: 'if.action.searching.container_closed',
-        params: expect.objectContaining({ target: { name: 'treasure chest' } })
+        params: expect.objectContaining({ target: expect.objectContaining({ name: 'treasure chest' }) })
       });
     });
   });
@@ -109,7 +109,7 @@ describe('searchingAction (Golden Pattern)', () => {
       // Should emit empty_container message
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.empty_container',
-        params: expect.objectContaining({ target: { name: 'cardboard box' } })
+        params: expect.objectContaining({ target: expect.objectContaining({ name: 'cardboard box' }) })
       });
     });
 
@@ -140,7 +140,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.container_contents',
         params: expect.objectContaining({
-          target: { name: 'jewelry box' },
+          target: expect.objectContaining({ name: 'jewelry box' }),
           items: 'gold ring, pearl necklace'
         })
       });
@@ -185,7 +185,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.found_concealed',
         params: expect.objectContaining({
-          target: { name: 'oak desk' },
+          target: expect.objectContaining({ name: 'oak desk' }),
           items: 'secret key',
           where: 'inside'
         })
@@ -221,7 +221,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.supporter_contents',
         params: expect.objectContaining({
-          target: { name: 'dining table' },
+          target: expect.objectContaining({ name: 'dining table' }),
           items: 'dinner plate, lit candle'
         })
       });
@@ -259,7 +259,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.found_concealed',
         params: expect.objectContaining({
-          target: { name: 'stone altar' },
+          target: expect.objectContaining({ name: 'stone altar' }),
           items: 'hidden gem',
           where: 'on'
         })
@@ -286,7 +286,7 @@ describe('searchingAction (Golden Pattern)', () => {
       // Should emit nothing_special message
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.nothing_special',
-        params: expect.objectContaining({ target: { name: 'marble pedestal' } })
+        params: expect.objectContaining({ target: expect.objectContaining({ name: 'marble pedestal' }) })
       });
     });
   });
@@ -316,7 +316,7 @@ describe('searchingAction (Golden Pattern)', () => {
       // Should emit nothing_special message
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.nothing_special',
-        params: expect.objectContaining({ target: { name: 'bronze statue' } })
+        params: expect.objectContaining({ target: expect.objectContaining({ name: 'bronze statue' }) })
       });
     });
 
@@ -346,7 +346,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.nothing_special',
         params: expect.objectContaining({
-          target: { name: 'old painting' }
+          target: expect.objectContaining({ name: 'old painting' })
         })
       });
     });
@@ -384,7 +384,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.found_concealed',
         params: expect.objectContaining({
-          target: { name: 'Test Room' },
+          target: expect.objectContaining({ name: 'Test Room' }),
           items: 'silver coin',
           where: 'here'
         })
@@ -403,7 +403,7 @@ describe('searchingAction (Golden Pattern)', () => {
       // Should emit searched_location message
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.searched_location',
-        params: expect.objectContaining({ target: { name: 'Test Room' } })
+        params: expect.objectContaining({ target: expect.objectContaining({ name: 'Test Room' }) })
       });
     });
   });
@@ -435,7 +435,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.container_contents',
         params: expect.objectContaining({
-          target: { name: 'wall safe' },
+          target: expect.objectContaining({ name: 'wall safe' }),
           items: 'secret document'
         })
       });
@@ -488,7 +488,7 @@ describe('searchingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.found_concealed',
         params: expect.objectContaining({
-          target: { name: 'dusty bookshelf' },
+          target: expect.objectContaining({ name: 'dusty bookshelf' }),
           items: 'hidden lever, secret compartment',
           where: 'on'
         })

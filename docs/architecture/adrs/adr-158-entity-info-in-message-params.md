@@ -1,6 +1,17 @@
 # ADR-158: Entity-Valued Message Params Carry `EntityInfo`, Not Bare Names
 
-## Status: ACCEPTED
+## Status: ACCEPTED — SUPERSEDED on v2 by ADR-192/199/200
+
+> **Superseded (2026-06-27, branch `v2_phase34`, ADR-192 phrase-algebra cutover).**
+> `EntityInfo` and `entityInfoFrom` are **deleted**. Entity-valued message params now
+> carry a `NounPhrase` built by `nounPhraseFor(entity[, ctx])` (`stdlib/utils/noun-phrase.ts`),
+> realized by the English Assembler — not the deleted formatter chain. The metadata
+> contract this ADR established (entity params carry full grammatical metadata, never a
+> bare name) is **preserved**, now at the `NounPhrase` level. Wherever the text below says
+> `entityInfoFrom(entity)` / `EntityInfo`, read `nounPhraseFor(entity)` / `NounPhrase`. The
+> "Constrains Future Sessions" rule is updated accordingly: new stdlib actions use
+> `nounPhraseFor`, and `{the:item}`-style `:`-chains are replaced by the phrase grammar
+> (`{the item}`, `{verb:is x}`, `{verbatim:x}`).
 
 ## Date: 2026-04-24
 

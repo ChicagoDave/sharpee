@@ -147,6 +147,46 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 >   re-authoring every `lang-en-us` template, migrating every stdlib action, and
 >   amending ADR-158 — all done together with the Phase 4 report-pipeline rewire
 >   so `main` never has a broken build. Requires a fresh authorization gate.
+>
+> **Phase 3b+4 PROGRESS (branch `v2_phase34`, cut from `main` 2026-06-27):**
+> Tracked by workstream in `docs/work/dynamic-text/phase-3b-4-scope.md` §2.
+> - **W1 (pipeline plumbing) — DONE**: `LanguageProvider.getTemplate` /
+>   `getLocaleSettings` / `renderMessage(messageId, params, ctx): ITextBlock[]`
+>   added (if-domain interface + EnglishLanguageProvider impl). `renderMessage`
+>   does perspective-pre-pass → `parsePhraseTemplate` → `EnglishAssembler.realize`.
+>   `ProsePipeline` threads the world model and builds a per-turn render-context
+>   factory; `game-engine` passes `this.world`. §7.3 resolved as the cleaner
+>   `renderMessage(messageId, params, ctx)` (ctx carries world/settings/seams).
+> - **W2 (RenderContext runtime) — DONE**: `engine/prose-pipeline/render-context.ts`
+>   — `createRenderWorld` adapter over the world model + inert placeholder seams
+>   (reference/textState/contribute, ADR-195–197 deferred) + per-turn factory.
+> - **W3 (Verb atom, ADR-199) — DONE**: `Verb` added to the closed union +
+>   `NounPhrase.person` agreement surface + `isVerb` guard (if-domain);
+>   `{verb:lemma subject}` parse rule with parse-time unbound check
+>   (parse-phrase-template); Assembler Agreement-authority verb case — irregular
+>   table (is/are, was/were, has/have, does/do, goes/go) lifted from
+>   `formatters/verb.ts`, regular `-s` strip, number+person+mass handling, the
+>   PhraseList→plural and no-number→singular defaults. +12 verb-agreement, +6
+>   verb-parse tests. Build 13/13 green; lang suite 328 pass.
+>   - **OPEN (W5)**: §4 case B — stamping `person:'second'` on the *player*
+>     subject so `{verb:is actor}` → "you are". The Assembler honors `person` when
+>     present, but `nounPhraseFor` does not yet set it (needs player-id +
+>     narrative-person in `RenderContext`; small contract addition — DISCUSS before
+>     W5). Live `{is:actor}`-style usages with a player subject are wrong until then.
+> - **Verbatim atom (ADR-200) — DONE**: implemented the reserved `Verbatim` kind
+>   (`text` field + parser bind + Assembler whitespace-exempt case) as the home for
+>   non-entity scalars (names, directions, free text). This resolves the W4
+>   bare-placeholder fork the Sharpee way (bare `{x}` stays the entity NounPhrase
+>   default per ADR-192 §5; `{verbatim:x}` for scalars) — NOT by redefining the
+>   parser default. +3 parser / +3 assembler / +1 render-message tests; lang 334.
+>   Analysis + finalized migration rules: `docs/work/dynamic-text/w4-bare-placeholder-analysis.md`.
+> - **State**: the full atom set the cutover needs (NounPhrase, Verb, Verbatim,
+>   PhraseList, Literal, Sequence, Empty) is implemented + green. New render path
+>   wired but NOT switched — handlers still call `getMessage`. Build green.
+> - **NEXT (the mechanical bulk, build goes red on-branch)**: W4 (re-author ~522
+>   `:`-chains + scalars→`{verbatim}`), W5 (236 `entityInfoFrom`→`nounPhraseFor`),
+>   W6 (`{list:}`→PhraseList), pipeline switch (getMessage→renderMessage), then
+>   W7 (delete legacy) / W9 (ADR-158 amend) / W10 (walkthrough reconciliation).
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: N/A — parser implementation, producer migration, and mass deletion of legacy infrastructure

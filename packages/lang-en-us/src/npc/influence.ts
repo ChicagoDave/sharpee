@@ -14,9 +14,9 @@ export const influenceLanguage = {
     // -----------------------------------------------------------------------
 
     'character.influence.witnessed.default':
-      '{influencerName} exerts a subtle influence on {targetName}.',
+      '{verbatim:influencerName} exerts a subtle influence on {verbatim:targetName}.',
     'character.influence.resisted.default':
-      '{targetName} seems unaffected by {influencerName}.',
+      '{verbatim:targetName} seems unaffected by {verbatim:influencerName}.',
 
     // -----------------------------------------------------------------------
     // PC influence
@@ -32,8 +32,8 @@ export const influenceLanguage = {
     // -----------------------------------------------------------------------
 
     'character.influence.effect.expired':
-      'The influence over {targetName} fades.',
+      'The influence over {verbatim:targetName} fades.',
     'character.influence.effect.departed':
-      'With {influencerName} gone, {targetName} regains composure.',
+      'With {verbatim:influencerName} gone, {verbatim:targetName} regains composure.',
   },
 };

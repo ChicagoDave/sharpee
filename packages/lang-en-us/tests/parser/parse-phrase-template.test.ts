@@ -17,6 +17,7 @@ function makeCtx(settings: LocaleSettings = {}): RenderContext {
     world: { getEntity: () => undefined, getEntityContents: () => [], getContainingRoom: () => undefined },
     params: {},
     settings,
+    narrative: { person: 'third' },
     reference: { lastMentioned: () => undefined, note: () => undefined },
     textState: { get: () => undefined, set: () => undefined },
     contribute: () => undefined,
@@ -83,13 +84,28 @@ describe('kind-head routing to reserved stub kinds', () => {
     ['{number:coins words}', 'number'],
     ['{contents:box}', 'contents'],
     ['{slot:detail}', 'slot'],
-    ['{verbatim:banner}', 'verbatim'],
   ];
   for (const [template, kind] of cases) {
     it(`${template} → kind '${kind}'`, () => {
       expect(parsePhraseTemplate(template, {}).kind).toBe(kind);
     });
   }
+});
+
+// --- Verbatim atom (ADR-200) -----------------------------------------------
+
+describe('parsePhraseTemplate — Verbatim atom (ADR-200)', () => {
+  it('binds {verbatim:name} to its param value as opaque text', () => {
+    expect(parsePhraseTemplate('{verbatim:name}', { name: 'Aragorn' })).toEqual({ kind: 'verbatim', text: 'Aragorn' });
+  });
+
+  it('stringifies a non-string param value', () => {
+    expect(parsePhraseTemplate('{verbatim:dir}', { dir: 7 })).toEqual({ kind: 'verbatim', text: '7' });
+  });
+
+  it('throws PhraseParseError at parse time for an unbound verbatim param (AC-11)', () => {
+    expect(() => parsePhraseTemplate('{verbatim:name}', {})).toThrow(PhraseParseError);
+  });
 });
 
 // --- AC-8: legacy ':'-chain rejected ---------------------------------------

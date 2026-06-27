@@ -15,6 +15,7 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext, GenericEventData } from './types';
 import { createBlocks } from '../assemble';
+import { phraseAvailable, renderViaPhrase } from '../phrase-render';
 
 interface GameMessageData {
   text?: string;
@@ -33,12 +34,14 @@ export function handleGameMessage(
   const data = event.data as GameMessageData;
 
   if (data.messageId && context.languageProvider) {
-    const message = context.languageProvider.getMessage(
-      data.messageId,
-      data.params,
-    );
-    if (message && message !== data.messageId) {
-      return createBlocks(BLOCK_KEYS.GAME_MESSAGE, message);
+    if (phraseAvailable(context)) {
+      const blocks = renderViaPhrase(context, data.messageId, data.params ?? {}, BLOCK_KEYS.GAME_MESSAGE);
+      if (blocks) return blocks;
+    } else {
+      const message = context.languageProvider.getMessage(data.messageId, data.params);
+      if (message && message !== data.messageId) {
+        return createBlocks(BLOCK_KEYS.GAME_MESSAGE, message);
+      }
     }
   }
 
@@ -75,17 +78,26 @@ export function handleGenericEvent(
   }
 
   if (context.languageProvider) {
-    const message = context.languageProvider.getMessage(event.type, data);
+    const params = data as Record<string, unknown>;
 
+    // Phrase path: try the event type as a template key, then the messageId.
+    if (phraseAvailable(context)) {
+      const byType = renderViaPhrase(context, event.type, params, BLOCK_KEYS.ACTION_RESULT);
+      if (byType) return byType;
+      if (data.messageId) {
+        const byId = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.ACTION_RESULT);
+        if (byId) return byId;
+      }
+      return [];
+    }
+
+    const message = context.languageProvider.getMessage(event.type, data);
     if (message && message !== event.type) {
       return createBlocks(BLOCK_KEYS.ACTION_RESULT, message);
     }
 
     if (data.messageId) {
-      const msgFromId = context.languageProvider.getMessage(
-        data.messageId,
-        data,
-      );
+      const msgFromId = context.languageProvider.getMessage(data.messageId, data);
       if (msgFromId && msgFromId !== data.messageId) {
         return createBlocks(BLOCK_KEYS.ACTION_RESULT, msgFromId);
       }

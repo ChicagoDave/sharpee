@@ -16,7 +16,7 @@ import {
 } from '@sharpee/world-model';
 import { ActionMetadata } from '../validation';
 import { ScopeLevel } from '../scope/types';
-import { entityInfoFrom } from '../utils';
+import { nounPhraseFor } from '../utils';
 
 /**
  * Configuration for creating a capability-dispatch action.
@@ -120,7 +120,7 @@ export function createCapabilityDispatchAction(
         return {
           valid: false,
           error: config.cantDoThatError,
-          params: { target: entityInfoFrom(entity) }
+          params: { target: nounPhraseFor(entity) }
         };
       }
 
@@ -136,7 +136,7 @@ export function createCapabilityDispatchAction(
         return {
           valid: false,
           error: config.cantDoThatError,
-          params: { target: entityInfoFrom(entity) }
+          params: { target: nounPhraseFor(entity) }
         };
       }
 

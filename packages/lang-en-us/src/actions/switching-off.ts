@@ -19,20 +19,20 @@ export const switchingOffLanguage = {
   messages: {
     // Error messages
     'no_target': "Switch off what?",
-    'not_visible': "{You} {can't} see {the:target}.",
-    'not_reachable': "{You} {can't} reach {the:target}.",
-    'not_switchable': "{the:cap:target} isn't something {you} can switch off.",
-    'already_off': "{the:cap:target} {is:target} already off.",
+    'not_visible': "{You} {can't} see {the target}.",
+    'not_reachable': "{You} {can't} reach {the target}.",
+    'not_switchable': "{capitalize the target} isn't something {you} can switch off.",
+    'already_off': "{capitalize the target} {verb:is target} already off.",
 
     // Success messages
-    'switched_off': "{You} {switch} off {the:target}.",
-    'light_off': "{You} {switch} off {the:target}, plunging the area into darkness.",
-    'light_off_still_lit': "{You} {switch} off {the:target}.",
-    'device_stops': "{the:cap:target} powers down with a soft whir.",
-    'silence_falls': "{You} {switch} off {the:target}. Silence falls.",
-    'with_sound': "{You} {switch} off {the:target}. {sound}",
-    'door_closes': "{the:cap:target} switches off and closes.",
-    'was_temporary': "{the:cap:target} switches off (it had {remainingTime} seconds left)."
+    'switched_off': "{You} {switch} off {the target}.",
+    'light_off': "{You} {switch} off {the target}, plunging the area into darkness.",
+    'light_off_still_lit': "{You} {switch} off {the target}.",
+    'device_stops': "{capitalize the target} powers down with a soft whir.",
+    'silence_falls': "{You} {switch} off {the target}. Silence falls.",
+    'with_sound': "{You} {switch} off {the target}. {sound}",
+    'door_closes': "{capitalize the target} switches off and closes.",
+    'was_temporary': "{capitalize the target} switches off (it had {remainingTime} seconds left)."
   },
   
   help: {

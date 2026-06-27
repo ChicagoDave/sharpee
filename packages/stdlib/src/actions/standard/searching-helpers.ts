@@ -12,7 +12,7 @@ import {
   IFEntity
 } from '@sharpee/world-model';
 import { ActionContext } from '../enhanced-types';
-import { entityInfoFrom } from '../../utils';
+import { nounPhraseFor } from '../../utils';
 
 /**
  * Context about what was searched and found
@@ -89,7 +89,7 @@ export function determineSearchMessage(
   
   // params carry EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
-    target: entityInfoFrom(target)
+    target: nounPhraseFor(target)
   };
   
   // Found concealed items - most important result

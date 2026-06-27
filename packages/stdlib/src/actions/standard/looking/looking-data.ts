@@ -9,7 +9,7 @@ import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
 import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Check if a location is dark (needs light but has none).
@@ -276,7 +276,7 @@ export function determineLookingMessage(
   // This only happens when getDescribableLocation returns the container itself
   // params carry EntityInfo for the formatter chain (ADR-158)
   if (!immediateContainer && location.hasTrait(TraitType.CONTAINER)) {
-    const info = entityInfoFrom(location);
+    const info = nounPhraseFor(location);
     return {
       messageId: 'in_container',
       params: {
@@ -285,7 +285,7 @@ export function determineLookingMessage(
       }
     };
   } else if (!immediateContainer && location.hasTrait(TraitType.SUPPORTER)) {
-    const info = entityInfoFrom(location);
+    const info = nounPhraseFor(location);
     return {
       messageId: 'on_supporter',
       params: {
@@ -328,14 +328,18 @@ export function determineLookingMessage(
   // If there are direct room items, include them in params for contents_list
   // (the action will emit room_description first, then contents_list)
   if (directInRoom.length > 0) {
-    // Pass EntityInfo[] (ADR-158/190); the lang layer's {list:items} formatter
+    // Bind a PhraseList of NounPhrases (ADR-192); the Assembler's list authority
     // renders articles, grouping, and the locale conjunction. Passing bare names
     // or pre-joining here would hard-code English list grammar into stdlib.
-    const itemInfos = directInRoom.map(e => entityInfoFrom(e));
+    const itemList = {
+      kind: 'list' as const,
+      conj: 'and' as const,
+      items: directInRoom.map(e => nounPhraseFor(e)),
+    };
     return {
       messageId,  // room_description or room_description_brief
       params: {
-        items: itemInfos,
+        items: itemList,
         count: directInRoom.length,
         hasItems: true,
         ...params

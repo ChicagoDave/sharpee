@@ -5,35 +5,35 @@
 export const npcLanguage = {
   messages: {
     // Movement messages (visual renderings)
-    'npc.enters': "{npcName} enters from the {direction}.",
-    'npc.leaves': "{npcName} leaves to the {direction}.",
-    'npc.arrives': "{npcName} arrives.",
-    'npc.departs': "{npcName} departs.",
+    'npc.enters': "{verbatim:npcName} enters from the {verbatim:direction}.",
+    'npc.leaves': "{verbatim:npcName} leaves to the {verbatim:direction}.",
+    'npc.arrives': "{verbatim:npcName} arrives.",
+    'npc.departs': "{verbatim:npcName} departs.",
 
     // Movement messages (anonymized hearing renderings — heard in the dark/when blind)
     'npc.heard_arrives': "You hear someone enter.",
     'npc.heard_departs': "You hear someone leave.",
 
     // Observation messages
-    'npc.notices_player': "{npcName} notices you.",
-    'npc.ignores_player': "{npcName} ignores you.",
+    'npc.notices_player': "{verbatim:npcName} notices you.",
+    'npc.ignores_player': "{verbatim:npcName} ignores you.",
 
     // Action messages
-    'npc.takes': "{npcName} picks up {itemName}.",
-    'npc.drops': "{npcName} drops {itemName}.",
-    'npc.follows': "{npcName} follows you.",
+    'npc.takes': "{verbatim:npcName} picks up {verbatim:itemName}.",
+    'npc.drops': "{verbatim:npcName} drops {verbatim:itemName}.",
+    'npc.follows': "{verbatim:npcName} follows you.",
 
     // Guard messages
-    'npc.guard.blocks': "{npcName} blocks your way!",
-    'npc.guard.attacks': "{npcName} attacks you!",
-    'npc.guard.defeated': "{npcName} is no longer a threat.",
+    'npc.guard.blocks': "{verbatim:npcName} blocks your way!",
+    'npc.guard.attacks': "{verbatim:npcName} attacks you!",
+    'npc.guard.defeated': "{verbatim:npcName} is no longer a threat.",
 
     // Combat messages (basic)
-    'npc.attacks': "{npcName} attacks you!",
-    'npc.misses': "{npcName} swings at you but misses!",
-    'npc.hits': "{npcName} hits you for {damage} damage!",
-    'npc.killed': "{npcName} has been slain.",
-    'npc.unconscious': "{npcName} collapses, unconscious.",
+    'npc.attacks': "{verbatim:npcName} attacks you!",
+    'npc.misses': "{verbatim:npcName} swings at you but misses!",
+    'npc.hits': "{verbatim:npcName} hits you for {damage} damage!",
+    'npc.killed': "{verbatim:npcName} has been slain.",
+    'npc.unconscious': "{verbatim:npcName} collapses, unconscious.",
 
     // NPC combat attack outcomes (canonical Zork troll messages from MDL source)
     'npc.combat.attack.missed': "The troll swings his axe, but it misses.",
@@ -45,26 +45,26 @@ export const npcLanguage = {
 
     // Speech messages
     // `npc.speech` is the generic id emitted by NpcBehavior `speak` actions:
-    // the behavior supplies the full line in `{text}`, so render it verbatim.
-    'npc.speech': "{text}",
-    'npc.speaks': "{npcName} says, \"{text}\"",
-    'npc.shouts': "{npcName} shouts, \"{text}\"",
-    'npc.whispers': "{npcName} whispers, \"{text}\"",
-    'npc.mutters': "{npcName} mutters, \"{text}\"",
+    // the behavior supplies the full line in `{verbatim:text}`, so render it verbatim.
+    'npc.speech': "{verbatim:text}",
+    'npc.speaks': "{verbatim:npcName} says, \"{verbatim:text}\"",
+    'npc.shouts': "{verbatim:npcName} shouts, \"{verbatim:text}\"",
+    'npc.whispers': "{verbatim:npcName} whispers, \"{verbatim:text}\"",
+    'npc.mutters': "{verbatim:npcName} mutters, \"{verbatim:text}\"",
 
     // Emote messages
     // `npc.emote` is the generic id emitted by NpcBehavior `emote` actions:
-    // the behavior supplies the full sentence in `{text}`, so render it verbatim.
-    'npc.emote': "{text}",
-    'npc.laughs': "{npcName} laughs.",
-    'npc.growls': "{npcName} growls menacingly.",
-    'npc.cries': "{npcName} cries.",
-    'npc.sighs': "{npcName} sighs.",
+    // the behavior supplies the full sentence in `{verbatim:text}`, so render it verbatim.
+    'npc.emote': "{verbatim:text}",
+    'npc.laughs': "{verbatim:npcName} laughs.",
+    'npc.growls': "{verbatim:npcName} growls menacingly.",
+    'npc.cries': "{verbatim:npcName} cries.",
+    'npc.sighs': "{verbatim:npcName} sighs.",
 
     // Dialogue messages
-    'npc.greets': "{npcName} greets you.",
-    'npc.farewell': "{npcName} bids you farewell.",
-    'npc.no_response': "{npcName} doesn't respond.",
-    'npc.confused': "{npcName} looks confused."
+    'npc.greets': "{verbatim:npcName} greets you.",
+    'npc.farewell': "{verbatim:npcName} bids you farewell.",
+    'npc.no_response': "{verbatim:npcName} doesn't respond.",
+    'npc.confused': "{verbatim:npcName} looks confused."
   }
 };

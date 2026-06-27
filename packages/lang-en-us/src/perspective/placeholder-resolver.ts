@@ -253,7 +253,8 @@ function addThirdPersonS(verb: string): string {
  */
 export function resolvePerspectivePlaceholders(
   message: string,
-  context: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT
+  context: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT,
+  params?: Record<string, unknown>
 ): string {
   // Subject pronoun
   message = message.replace(/\{You\}/g, getSubjectPronoun(context));
@@ -290,6 +291,18 @@ export function resolvePerspectivePlaceholders(
     // Skip non-verb placeholders
     if (nonVerbPlaceholders.has(lowerVerb)) {
       return match; // Leave unchanged for regular param substitution
+    }
+
+    // Params-aware discrimination (ADR-192 phrase path): a bare {word} that is a
+    // bound param is left for the parser; anything else bare is a perspective
+    // verb to conjugate. This replaces the fragile verb allowlist when params
+    // are known, so story/action verbs need no central registration.
+    if (params) {
+      if (verb in params || lowerVerb in params) {
+        return match; // a bound param — the parser realizes it
+      }
+      const conjugated = conjugateVerb(verb, context);
+      return verb[0] === verb[0].toUpperCase() ? capitalize(conjugated) : conjugated;
     }
 
     // Check if it looks like a verb (common patterns)

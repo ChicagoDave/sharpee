@@ -21,7 +21,7 @@ import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { OpeningSharedData } from './opening-types';
 import { OpeningMessages } from './opening-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Extended shared data for opening action with interceptor support.
@@ -114,7 +114,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: OpeningMessages.NOT_OPENABLE,
-        params: { item: entityInfoFrom(noun) }
+        params: { item: nounPhraseFor(noun) }
       };
     }
 
@@ -123,7 +123,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: OpeningMessages.ALREADY_OPEN,
-        params: { item: entityInfoFrom(noun) }
+        params: { item: nounPhraseFor(noun) }
       };
     }
 
@@ -132,7 +132,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: OpeningMessages.LOCKED,
-        params: { item: entityInfoFrom(noun) }
+        params: { item: nounPhraseFor(noun) }
       };
     }
 
@@ -176,12 +176,12 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
 
     let messageKey: string = OpeningMessages.OPENED;
     // params carry EntityInfo for the formatter chain (ADR-158)
-    let params: Record<string, any> = { item: entityInfoFrom(noun) };
+    let params: Record<string, any> = { item: nounPhraseFor(noun) };
 
     // Special message for empty containers
     if (isContainer && contents.length === 0) {
       messageKey = OpeningMessages.ITS_EMPTY;
-      params = { container: entityInfoFrom(noun) };
+      params = { container: nounPhraseFor(noun) };
     }
 
     // 1. Primary domain event with messageId (simplified pattern - ADR-097)
@@ -235,7 +235,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       messageId,
       params: {
         ...result.params,
-        item: noun ? entityInfoFrom(noun) : undefined
+        item: noun ? nounPhraseFor(noun) : undefined
       },
       // Domain data
       targetId: noun?.id,
