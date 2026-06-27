@@ -16,6 +16,14 @@ export { ProsePipeline, createProsePipeline } from './pipeline';
 // Service interface.
 export type { ITextService } from './types';
 
+// Render-context runtime for the phrase pipeline (ADR-192, W2).
+export {
+  createRenderWorld,
+  createRenderContextFactory,
+  type RenderContextFactory,
+  type WorldModelLike,
+} from './render-context';
+
 // Decoration primitives (re-exported for convenience to engine code
 // outside the prose-pipeline subdirectory; the canonical types live
 // in `@sharpee/text-blocks`).

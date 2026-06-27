@@ -5,7 +5,10 @@
  * Enhanced to support getMessage interface for text service
  */
 
-import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern } from '@sharpee/if-domain';
+import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
+import type { ITextBlock } from '@sharpee/text-blocks';
+import { EnglishAssembler } from './assembler';
+import { parsePhraseTemplate } from './parser';
 import { englishVerbs } from './data/verbs';
 import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { pluralize as pluralizeNoun } from './pluralize';
@@ -50,6 +53,10 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
 
   // Serial (Oxford) comma in lists (ADR-190); story-configurable, default on.
   private serialComma = true;
+
+  // Phrase-path Assembler (ADR-192). Realizes a parsed phrase tree to blocks;
+  // stateless and pure, so a single shared instance is reused across turns.
+  private readonly assembler = new EnglishAssembler();
 
   constructor() {
     // Initialize formatter registry
@@ -196,6 +203,70 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     }
 
     return message;
+  }
+
+  /**
+   * Get the raw, unresolved template for a message ID (ADR-192 phrase path).
+   *
+   * Returns the author template verbatim — no perspective resolution, no
+   * parameter substitution. The phrase pipeline resolves perspective and parses
+   * the result; see {@link renderMessage}.
+   *
+   * @param messageId Full message ID (e.g. 'if.action.taking.taken')
+   * @returns The raw template, or undefined when the ID is not registered
+   */
+  getTemplate(messageId: string): string | undefined {
+    return this.messages.get(messageId);
+  }
+
+  /**
+   * Locale realization settings (ADR-192). The engine reads these when building
+   * the per-turn render context so the Assembler agrees over the story's
+   * configured knobs.
+   *
+   * @returns The current locale settings (serial comma, …)
+   */
+  getLocaleSettings(): LocaleSettings {
+    return { serialComma: this.serialComma };
+  }
+
+  /**
+   * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
+   *
+   * Phrase-path replacement for {@link getMessage}: resolve perspective
+   * placeholders (kept as a string pre-pass, ADR-089), parse the template into a
+   * `Phrase` tree, then realize it with the Assembler against `ctx`. A missing
+   * template realizes to a literal of the ID, mirroring `getMessage`'s
+   * echo-the-ID fallback.
+   *
+   * @param messageId Full message ID
+   * @param params Parameter/producer bindings keyed by placeholder name
+   * @param ctx The per-message render context (world, settings, seams)
+   * @returns The realized text blocks
+   */
+  renderMessage(
+    messageId: string,
+    params: Record<string, unknown>,
+    ctx: RenderContext,
+  ): ITextBlock[] {
+    const template = this.messages.get(messageId);
+    if (template === undefined) {
+      // Unregistered ID echoes as a literal, matching getMessage's fallback.
+      return this.assembler.realize({ kind: 'literal', text: messageId }, ctx);
+    }
+
+    // Step 1: Resolve perspective placeholders (ADR-089) — a string pre-pass
+    // that runs BEFORE parsing; perspective names are fixed words, never param
+    // refs, so there is no placeholder-syntax collision with the phrase grammar.
+    const resolved = resolvePerspectivePlaceholders(template, this.narrativeContext);
+
+    // Step 2: Parse to a phrase tree (binds params; throws PhraseParseError at
+    // parse time on legacy ':' chains, unknown kinds, or unbound params).
+    const tree = parsePhraseTemplate(resolved, params);
+
+    // Step 3: Realize with the Assembler — the sole authority for article,
+    // agreement, punctuation, whitespace, reference, and case.
+    return this.assembler.realize(tree, ctx);
   }
 
   /**

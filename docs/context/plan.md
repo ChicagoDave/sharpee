@@ -147,6 +147,24 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 >   re-authoring every `lang-en-us` template, migrating every stdlib action, and
 >   amending ADR-158 — all done together with the Phase 4 report-pipeline rewire
 >   so `main` never has a broken build. Requires a fresh authorization gate.
+>
+> **Phase 3b+4 PROGRESS (branch `v2_phase34`, cut from `main` 2026-06-27):**
+> Tracked by workstream in `docs/work/dynamic-text/phase-3b-4-scope.md` §2.
+> - **W1 (pipeline plumbing) — DONE**: `LanguageProvider.getTemplate` /
+>   `getLocaleSettings` / `renderMessage(messageId, params, ctx): ITextBlock[]`
+>   added (if-domain interface + EnglishLanguageProvider impl). `renderMessage`
+>   does perspective-pre-pass → `parsePhraseTemplate` → `EnglishAssembler.realize`.
+>   `ProsePipeline` threads the world model and builds a per-turn render-context
+>   factory; `game-engine` passes `this.world`. §7.3 resolved as the cleaner
+>   `renderMessage(messageId, params, ctx)` (ctx carries world/settings/seams).
+> - **W2 (RenderContext runtime) — DONE**: `engine/prose-pipeline/render-context.ts`
+>   — `createRenderWorld` adapter over the world model + inert placeholder seams
+>   (reference/textState/contribute, ADR-195–197 deferred) + per-turn factory.
+> - **State**: new path WIRED + unit-tested (11 lang + 6 engine new tests) but
+>   NOT switched — handlers still call `getMessage` (old string path). Build green;
+>   turbo `@sharpee/engine...` 13/13 packages compile; lang 310, engine 442 pass.
+> - **NEXT**: W3 (Verb atom, ADR-199), then W6, then the W4+W5 bulk cutover
+>   (build goes red on-branch until the pipeline is switched and legacy deleted).
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: N/A — parser implementation, producer migration, and mass deletion of legacy infrastructure
