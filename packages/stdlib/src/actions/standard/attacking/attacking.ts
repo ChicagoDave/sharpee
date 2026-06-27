@@ -32,7 +32,7 @@ import { AttackingSharedData, AttackResult } from './attacking-types';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { findWieldedWeapon } from '../../../combat';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Extended shared data for attacking action with interceptor support.
@@ -126,12 +126,12 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // Check if target is visible
     if (!context.canSee(target)) {
-      return { valid: false, error: 'not_visible', params: { target: entityInfoFrom(target) } };
+      return { valid: false, error: 'not_visible', params: { target: nounPhraseFor(target) } };
     }
 
     // Check if target is reachable
     if (!context.canReach(target)) {
-      return { valid: false, error: 'not_reachable', params: { target: entityInfoFrom(target) } };
+      return { valid: false, error: 'not_reachable', params: { target: nounPhraseFor(target) } };
     }
 
     // Prevent attacking self
@@ -151,11 +151,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     if (target.has(TraitType.COMBATANT)) {
       const combatant = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
       if (combatant && !combatant.isAlive) {
-        return { valid: false, error: 'already_dead', params: { target: entityInfoFrom(target) } };
+        return { valid: false, error: 'already_dead', params: { target: nounPhraseFor(target) } };
       }
       // No combat interceptor registered — block with standard IF response
       if (!interceptor) {
-        return { valid: false, error: 'violence_not_the_answer', params: { target: entityInfoFrom(target) } };
+        return { valid: false, error: 'violence_not_the_answer', params: { target: nounPhraseFor(target) } };
       }
     }
 
@@ -313,7 +313,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
-      params: { target: target ? entityInfoFrom(target) : undefined, ...result.params },
+      params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name
@@ -352,7 +352,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         context.event('if.event.attacked', {
           messageId: fullFailMessageId,
           // params carry EntityInfo for the formatter chain (ADR-158)
-          params: { target: entityInfoFrom(target) },
+          params: { target: nounPhraseFor(target) },
           target: target.id,
           targetName: target.name,
           failed: true
@@ -371,8 +371,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // params carry EntityInfo for the formatter chain (ADR-158)
     const params: Record<string, any> = {
-      target: entityInfoFrom(target),
-      weapon: weapon ? entityInfoFrom(weapon) : undefined
+      target: nounPhraseFor(target),
+      weapon: weapon ? nounPhraseFor(weapon) : undefined
     };
 
     // Create ATTACKED event for world model
@@ -390,7 +390,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       params.damage = combatResult.damage;
       params.attackerName = context.player.name;
       params.targetName = target.name; // string for combat service compat
-      params.target = entityInfoFrom(target);
+      params.target = nounPhraseFor(target);
 
       // Add any extra data from combat result
       if (combatResult.messageData) {

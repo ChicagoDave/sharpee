@@ -21,7 +21,7 @@ import { IFActions } from '../../constants';
 import { SearchedEventData } from './searching-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 import {
   analyzeSearchTarget,
   revealConcealedItems,
@@ -83,7 +83,7 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: 'container_closed',
-          params: { target: entityInfoFrom(target) }
+          params: { target: nounPhraseFor(target) }
         };
       }
     }
@@ -119,7 +119,7 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
-      params: { target: target ? entityInfoFrom(target) : undefined, ...result.params },
+      params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name

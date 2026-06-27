@@ -36,17 +36,17 @@ export const soundMessages = {
   //  Default fallbacks — used when no kind-specific entry exists
   // ────────────────────────────────────────────────────────────────────
 
-  'sound.heard.default.full': '{You} {hear} {kind}.',
-  'sound.heard.default.muffled': '{You} {hear} a muffled {kind}.',
-  'sound.heard.default.fragments': '{You} {catch} broken {kind}.',
+  'sound.heard.default.full': '{You} {hear} {verbatim:kind}.',
+  'sound.heard.default.muffled': '{You} {hear} a muffled {verbatim:kind}.',
+  'sound.heard.default.fragments': '{You} {catch} broken {verbatim:kind}.',
   'sound.heard.default.presence-only': '{You} {hear} something distant.',
 
   // ────────────────────────────────────────────────────────────────────
   //  Speech — content-bearing dialogue (NPCs, conversations)
   // ────────────────────────────────────────────────────────────────────
 
-  'sound.heard.speech.full': '{You} {hear}: "{content}"',
-  'sound.heard.speech.muffled': '{You} {catch} a muffled voice: "{content}"',
+  'sound.heard.speech.full': '{You} {hear}: "{verbatim:content}"',
+  'sound.heard.speech.muffled': '{You} {catch} a muffled voice: "{verbatim:content}"',
   'sound.heard.speech.fragments': '{You} {catch} fragments of speech.',
   'sound.heard.speech.presence-only': '{You} {hear} voices nearby.',
 
@@ -54,9 +54,9 @@ export const soundMessages = {
   //  Ambient — environmental sounds (footsteps, doors, mechanical)
   // ────────────────────────────────────────────────────────────────────
 
-  'sound.heard.ambient.full': '{You} {hear} {kind}.',
-  'sound.heard.ambient.muffled': '{You} {hear} a muffled {kind}.',
-  'sound.heard.ambient.fragments': '{You} {catch} the faint sound of {kind}.',
+  'sound.heard.ambient.full': '{You} {hear} {verbatim:kind}.',
+  'sound.heard.ambient.muffled': '{You} {hear} a muffled {verbatim:kind}.',
+  'sound.heard.ambient.fragments': '{You} {catch} the faint sound of {verbatim:kind}.',
   'sound.heard.ambient.presence-only': '{You} {hear} something at the edge of hearing.',
 } as const;
 

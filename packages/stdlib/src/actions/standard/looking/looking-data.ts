@@ -9,7 +9,7 @@ import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
 import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Check if a location is dark (needs light but has none).
@@ -276,7 +276,7 @@ export function determineLookingMessage(
   // This only happens when getDescribableLocation returns the container itself
   // params carry EntityInfo for the formatter chain (ADR-158)
   if (!immediateContainer && location.hasTrait(TraitType.CONTAINER)) {
-    const info = entityInfoFrom(location);
+    const info = nounPhraseFor(location);
     return {
       messageId: 'in_container',
       params: {
@@ -285,7 +285,7 @@ export function determineLookingMessage(
       }
     };
   } else if (!immediateContainer && location.hasTrait(TraitType.SUPPORTER)) {
-    const info = entityInfoFrom(location);
+    const info = nounPhraseFor(location);
     return {
       messageId: 'on_supporter',
       params: {
@@ -331,7 +331,7 @@ export function determineLookingMessage(
     // Pass EntityInfo[] (ADR-158/190); the lang layer's {list:items} formatter
     // renders articles, grouping, and the locale conjunction. Passing bare names
     // or pre-joining here would hard-code English list grammar into stdlib.
-    const itemInfos = directInRoom.map(e => entityInfoFrom(e));
+    const itemInfos = directInRoom.map(e => nounPhraseFor(e));
     return {
       messageId,  // room_description or room_description_brief
       params: {

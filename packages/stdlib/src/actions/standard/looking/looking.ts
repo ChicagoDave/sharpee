@@ -16,7 +16,7 @@ import { ActionMetadata } from '../../../validation';
 import { captureRoomSnapshot } from '../../base/snapshot-utils';
 import { emitIllustrations } from '../../helpers/emit-illustrations';
 import { buildEventData } from '../../data-builder-types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 import {
   lookingEventDataConfig,
   roomDescriptionDataConfig,
@@ -124,7 +124,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
           messageId: `${context.action.id}.${contentsMessageId}`,
           params: {
             [containerKey]: containerEntity
-              ? entityInfoFrom(containerEntity)
+              ? nounPhraseFor(containerEntity)
               : { name: containerInfo.containerName },
             items: containerInfo.itemNames.join(', ')
           },

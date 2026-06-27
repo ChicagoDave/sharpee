@@ -19,7 +19,7 @@ import { ScopeLevel } from '../../../scope';
 import { LockedEventData } from './locking-events';
 import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared';
 import { MESSAGES } from './locking-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -94,7 +94,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: MESSAGES.NOT_LOCKABLE,
-        params: { item: entityInfoFrom(noun) }
+        params: { item: nounPhraseFor(noun) }
       };
     }
 
@@ -105,14 +105,14 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: MESSAGES.ALREADY_LOCKED,
-          params: { item: entityInfoFrom(noun) }
+          params: { item: nounPhraseFor(noun) }
         };
       }
       if (noun.has(TraitType.OPENABLE) && OpenableBehavior.isOpen(noun)) {
         return {
           valid: false,
           error: MESSAGES.NOT_CLOSED,
-          params: { item: entityInfoFrom(noun) }
+          params: { item: nounPhraseFor(noun) }
         };
       }
     }
@@ -189,7 +189,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     // formatter chain (ADR-158); domain fields stay as separate strings.
     sharedData.messageId = determineLockMessage(true, !!withKey);
     sharedData.params = {
-      item: entityInfoFrom(noun)
+      item: nounPhraseFor(noun)
     };
 
     // Add container/door info
@@ -200,7 +200,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       sharedData.params.isDoor = true;
     }
     if (withKey) {
-      sharedData.params.key = entityInfoFrom(withKey);
+      sharedData.params.key = nounPhraseFor(withKey);
     }
   },
 
@@ -218,7 +218,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       return [context.event('if.event.lock_blocked', {
         messageId: `${context.action.id}.${sharedData.errorMessageId}`,
         // params carry EntityInfo for the formatter chain (ADR-158)
-        params: { item: noun ? entityInfoFrom(noun) : { name: sharedData.targetName } },
+        params: { item: noun ? nounPhraseFor(noun) : { name: sharedData.targetName } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         reason: sharedData.errorMessageId

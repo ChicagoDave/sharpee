@@ -18,7 +18,7 @@ import { IFActions } from '../../constants';
 import { PulledEventData } from './pulling-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -77,21 +77,21 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
 
     // Check if object is pullable
     if (!target.has(TraitType.PULLABLE)) {
-      return { valid: false, error: 'cant_pull_that', params: { target: entityInfoFrom(target) } };
+      return { valid: false, error: 'cant_pull_that', params: { target: nounPhraseFor(target) } };
     }
 
     // Can't pull worn items
     if (target.has(TraitType.WEARABLE)) {
       const wearable = target.getTrait(WearableTrait);
       if (wearable?.isWorn) {
-        return { valid: false, error: 'worn', params: { target: entityInfoFrom(target) } };
+        return { valid: false, error: 'worn', params: { target: nounPhraseFor(target) } };
       }
     }
 
     // Check state of pullable
     const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
     if (pullable.state === 'pulled') {
-      return { valid: false, error: 'already_pulled', params: { target: entityInfoFrom(target) } };
+      return { valid: false, error: 'already_pulled', params: { target: nounPhraseFor(target) } };
     }
 
     return { valid: true };
@@ -127,7 +127,7 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158);
       // top-level fields stay strings for handlers.
-      params: { target: target ? entityInfoFrom(target) : undefined, ...result.params },
+      params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name
@@ -146,7 +146,7 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     events.push(context.event('if.event.pulled', {
       messageId: `${context.action.id}.pulled`,
       // params carry EntityInfo for the formatter chain (ADR-158)
-      params: { target: target ? entityInfoFrom(target) : { name: sharedData.targetName } },
+      params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
       target: sharedData.targetId,
       targetName: sharedData.targetName,
       pullCount: sharedData.pullCount,

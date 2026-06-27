@@ -18,7 +18,7 @@ import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { RemovedEventData } from './taking-off-events';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 import {
   analyzeWearableContext,
   checkRemovalBlockers,
@@ -73,18 +73,18 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!item.has(TraitType.WEARABLE)) {
-      return { valid: false, error: 'not_wearing', params: { item: entityInfoFrom(item) } };
+      return { valid: false, error: 'not_wearing', params: { item: nounPhraseFor(item) } };
     }
 
     if (!WearableBehavior.canRemove(item, actor)) {
       const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
       if (!wearable.worn) {
-        return { valid: false, error: 'not_wearing', params: { item: entityInfoFrom(item) } };
+        return { valid: false, error: 'not_wearing', params: { item: nounPhraseFor(item) } };
       }
       if (wearable.wornBy !== actor.id) {
-        return { valid: false, error: 'not_wearing', params: { item: entityInfoFrom(item) } };
+        return { valid: false, error: 'not_wearing', params: { item: nounPhraseFor(item) } };
       }
-      return { valid: false, error: 'cant_remove', params: { item: entityInfoFrom(item) } };
+      return { valid: false, error: 'cant_remove', params: { item: nounPhraseFor(item) } };
     }
 
     return { valid: true };
@@ -113,7 +113,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       sharedData.failed = true;
       sharedData.errorMessageId = 'prevents_removal';
       sharedData.errorReason = 'prevents_removal';
-      sharedData.errorParams = { blocking: entityInfoFrom(blockingItem) };
+      sharedData.errorParams = { blocking: nounPhraseFor(blockingItem) };
       return;
     }
 
@@ -123,7 +123,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       sharedData.failed = true;
       sharedData.errorMessageId = 'cant_remove';
       sharedData.errorReason = 'cant_remove';
-      sharedData.errorParams = { item: entityInfoFrom(item) };
+      sharedData.errorParams = { item: nounPhraseFor(item) };
       return;
     }
 
@@ -136,15 +136,15 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       if (result.notWorn) {
         sharedData.errorMessageId = 'not_wearing';
         sharedData.errorReason = 'not_wearing';
-        sharedData.errorParams = { item: entityInfoFrom(item) };
+        sharedData.errorParams = { item: nounPhraseFor(item) };
       } else if (result.wornByOther) {
         sharedData.errorMessageId = 'not_wearing';
         sharedData.errorReason = 'worn_by_other';
-        sharedData.errorParams = { item: entityInfoFrom(item), wornBy: result.wornByOther };
+        sharedData.errorParams = { item: nounPhraseFor(item), wornBy: result.wornByOther };
       } else {
         sharedData.errorMessageId = 'cant_remove';
         sharedData.errorReason = 'cant_remove';
-        sharedData.errorParams = { item: entityInfoFrom(item) };
+        sharedData.errorParams = { item: nounPhraseFor(item) };
       }
       return;
     }

@@ -13,13 +13,13 @@ export const openingLanguage = {
   
   messages: {
     'no_target': "Open what?",
-    'not_openable': "{the:cap:item} can't be opened.",
-    'already_open': "{the:cap:item} {is:item} already open.",
-    'locked': "{the:cap:item} {is:item} locked.",
-    'opened': "{You} {open} {the:item}.",
-    'revealing': "Opening {the:container} reveals {items}.",
-    'its_empty': "{You} {open} {the:container}, which is empty.",
-    'cant_reach': "{You} {can't} reach {the:item}."
+    'not_openable': "{capitalize the item} can't be opened.",
+    'already_open': "{capitalize the item} {verb:is item} already open.",
+    'locked': "{capitalize the item} {verb:is item} locked.",
+    'opened': "{You} {open} {the item}.",
+    'revealing': "Opening {the container} reveals {items}.",
+    'its_empty': "{You} {open} {the container}, which is empty.",
+    'cant_reach': "{You} {can't} reach {the item}."
   },
   
   help: {

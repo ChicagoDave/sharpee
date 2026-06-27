@@ -14,21 +14,21 @@ export const propagationLanguage = {
     // -----------------------------------------------------------------------
 
     'character.propagation.witnessed.neutral':
-      '{speakerName} mentions something to {listenerName}.',
+      '{verbatim:speakerName} mentions something to {verbatim:listenerName}.',
     'character.propagation.witnessed.dramatic':
-      '{speakerName} excitedly tells {listenerName} about something.',
+      '{verbatim:speakerName} excitedly tells {verbatim:listenerName} about something.',
     'character.propagation.witnessed.vague':
-      '{speakerName} vaguely alludes to something near {listenerName}.',
+      '{verbatim:speakerName} vaguely alludes to something near {verbatim:listenerName}.',
     'character.propagation.witnessed.fearful':
-      '{speakerName} nervously whispers something to {listenerName}.',
+      '{verbatim:speakerName} nervously whispers something to {verbatim:listenerName}.',
     'character.propagation.witnessed.conspiratorial':
-      '{speakerName} leans close to {listenerName}, muttering under their breath.',
+      '{verbatim:speakerName} leans close to {verbatim:listenerName}, muttering under their breath.',
 
     // -----------------------------------------------------------------------
     // Eavesdropped — player overhears a full exchange
     // -----------------------------------------------------------------------
 
     'character.propagation.eavesdropped':
-      'You overhear {speakerName} speaking to {listenerName}.',
+      'You overhear {verbatim:speakerName} speaking to {verbatim:listenerName}.',
   },
 };

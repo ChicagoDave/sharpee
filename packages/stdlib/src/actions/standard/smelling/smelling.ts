@@ -18,7 +18,7 @@ import { IFActions } from '../../constants';
 import { SmelledEventData } from './smelling-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -49,7 +49,7 @@ function analyzeSmellAction(context: ActionContext): SmellAnalysis {
 
   if (target) {
     eventData.target = target.id;
-    params.target = entityInfoFrom(target);
+    params.target = nounPhraseFor(target);
 
     // Check if the target has smell-related properties
     if (target.has(TraitType.EDIBLE)) {
@@ -173,7 +173,7 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: 'too_far',
-          params: { target: entityInfoFrom(target) }
+          params: { target: nounPhraseFor(target) }
         };
       }
     }
@@ -201,7 +201,7 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        target: target ? entityInfoFrom(target) : undefined
+        target: target ? nounPhraseFor(target) : undefined
       },
       reason: result.error,
       targetId: target?.id,

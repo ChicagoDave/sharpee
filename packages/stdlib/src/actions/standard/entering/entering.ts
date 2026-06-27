@@ -26,7 +26,7 @@ import {
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
 import { EnteringMessages } from './entering-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 interface EnteringExecutionState {
   targetId: string;
@@ -121,7 +121,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: EnteringMessages.ALREADY_INSIDE,
-        params: { place: entityInfoFrom(target) }
+        params: { place: nounPhraseFor(target) }
       };
     }
 
@@ -130,7 +130,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: EnteringMessages.NOT_ENTERABLE,
-        params: { place: entityInfoFrom(target) }
+        params: { place: nounPhraseFor(target) }
       };
     }
 
@@ -139,7 +139,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: EnteringMessages.CONTAINER_CLOSED,
-        params: { container: entityInfoFrom(target) }
+        params: { container: nounPhraseFor(target) }
       };
     }
 
@@ -220,7 +220,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
     const events: ISemanticEvent[] = [context.event('if.event.entered', {
       messageId: `${context.action.id}.${messageId}`,
-      params: { place: target ? entityInfoFrom(target) : { name: state.targetName } },
+      params: { place: target ? nounPhraseFor(target) : { name: state.targetName } },
       targetId: state.targetId,
       targetName: state.targetName,
       fromLocation: state.fromLocation,
@@ -264,7 +264,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.entered', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
-      params: { place: target ? entityInfoFrom(target) : undefined, ...result.params },
+      params: { place: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name

@@ -41,7 +41,7 @@ import { getRemovingSharedData, RemovingSharedData, RemovingItemResult } from '.
 
 // Import multi-object helpers
 import { isMultiObjectCommand, getExcludedNames } from '../../../helpers/multi-object-handler';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
@@ -80,7 +80,7 @@ function validateSingleEntity(
     return {
       valid: false,
       error: RemovingMessages.ALREADY_HAVE,
-      params: { item: entityInfoFrom(item) }
+      params: { item: nounPhraseFor(item) }
     };
   }
 
@@ -92,8 +92,8 @@ function validateSingleEntity(
         valid: false,
         error: RemovingMessages.NOT_IN_CONTAINER,
         params: {
-          item: entityInfoFrom(item),
-          container: entityInfoFrom(source)
+          item: nounPhraseFor(item),
+          container: nounPhraseFor(source)
         }
       };
     } else if (source.has(TraitType.SUPPORTER)) {
@@ -101,8 +101,8 @@ function validateSingleEntity(
         valid: false,
         error: RemovingMessages.NOT_ON_SURFACE,
         params: {
-          item: entityInfoFrom(item),
-          surface: entityInfoFrom(source)
+          item: nounPhraseFor(item),
+          surface: nounPhraseFor(source)
         }
       };
     } else {
@@ -110,8 +110,8 @@ function validateSingleEntity(
         valid: false,
         error: RemovingMessages.NOT_IN_CONTAINER,
         params: {
-          item: entityInfoFrom(item),
-          container: entityInfoFrom(source)
+          item: nounPhraseFor(item),
+          container: nounPhraseFor(source)
         }
       };
     }
@@ -124,7 +124,7 @@ function validateSingleEntity(
       return {
         valid: false,
         error: RemovingMessages.CONTAINER_CLOSED,
-        params: { container: entityInfoFrom(source) }
+        params: { container: nounPhraseFor(source) }
       };
     }
   }
@@ -134,7 +134,7 @@ function validateSingleEntity(
     return {
       valid: false,
       error: RemovingMessages.CANNOT_TAKE,
-      params: { item: entityInfoFrom(item) }
+      params: { item: nounPhraseFor(item) }
     };
   }
 
@@ -157,7 +157,7 @@ function validateMultiObject(context: ActionContext): ValidationResult {
     return {
       valid: false,
       error: RemovingMessages.CONTAINER_CLOSED,
-      params: { container: entityInfoFrom(source) }
+      params: { container: nounPhraseFor(source) }
     };
   }
 
@@ -267,15 +267,15 @@ function reportSingleSuccess(
 
   // Build message params — EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
-    item: entityInfoFrom(item)
+    item: nounPhraseFor(item)
   };
 
   let messageKey: string;
   if (source.has(TraitType.CONTAINER)) {
-    params.container = entityInfoFrom(source);
+    params.container = nounPhraseFor(source);
     messageKey = RemovingMessages.REMOVED_FROM;
   } else {
-    params.surface = entityInfoFrom(source);
+    params.surface = nounPhraseFor(source);
     messageKey = RemovingMessages.REMOVED_FROM_SURFACE;
   }
 
@@ -315,7 +315,7 @@ function reportSingleBlocked(
   events.push(context.event('if.event.remove_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: entityInfoFrom(item), source: entityInfoFrom(source) },
+    params: { ...errorParams, item: nounPhraseFor(item), source: nounPhraseFor(source) },
     // Domain data — strings for handlers
     itemId: item.id,
     itemName: item.name,
@@ -382,7 +382,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: RemovingMessages.NO_SOURCE,
-        params: { item: entityInfoFrom(item) }
+        params: { item: nounPhraseFor(item) }
       };
     }
 
@@ -456,15 +456,15 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
 
     // Build message params — EntityInfo for the formatter chain (ADR-158)
     const params: Record<string, any> = {
-      item: entityInfoFrom(item)
+      item: nounPhraseFor(item)
     };
 
     let messageKey: string;
     if (source.has(TraitType.CONTAINER)) {
-      params.container = entityInfoFrom(source);
+      params.container = nounPhraseFor(source);
       messageKey = RemovingMessages.REMOVED_FROM;
     } else {
-      params.surface = entityInfoFrom(source);
+      params.surface = nounPhraseFor(source);
       messageKey = RemovingMessages.REMOVED_FROM_SURFACE;
     }
 
@@ -503,8 +503,8 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
-        item: item ? entityInfoFrom(item) : undefined,
-        source: source ? entityInfoFrom(source) : undefined
+        item: item ? nounPhraseFor(item) : undefined,
+        source: source ? nounPhraseFor(source) : undefined
       },
       // Domain data — strings for handlers
       itemId: item?.id,

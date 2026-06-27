@@ -5,7 +5,7 @@
 import { ActionContext, ValidationResult } from '../enhanced-types';
 import { IFEntity, TraitType, LockableBehavior, OpenableBehavior } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { entityInfoFrom } from '../../utils';
+import { nounPhraseFor } from '../../utils';
 
 /**
  * Shared message constants for lock/unlock validation
@@ -82,7 +82,7 @@ export function validateKeyRequirements(
     return {
       valid: false,
       error: LOCK_MESSAGES.KEY_NOT_HELD,
-      params: { key: entityInfoFrom(key) }
+      params: { key: nounPhraseFor(key) }
     };
   }
 
@@ -96,8 +96,8 @@ export function validateKeyRequirements(
       valid: false,
       error: LOCK_MESSAGES.WRONG_KEY,
       params: {
-        key: entityInfoFrom(key),
-        item: entityInfoFrom(target)
+        key: nounPhraseFor(key),
+        item: nounPhraseFor(target)
       }
     };
   }
@@ -123,7 +123,7 @@ export function createLockErrorEvent(
         actionId,
         messageId: 'already_locked',
         reason: 'already_locked',
-        params: { item: entityInfoFrom(target) }
+        params: { item: nounPhraseFor(target) }
       });
     }
     if (result.notClosed) {
@@ -131,7 +131,7 @@ export function createLockErrorEvent(
         actionId,
         messageId: 'not_closed',
         reason: 'not_closed',
-        params: { item: entityInfoFrom(target) }
+        params: { item: nounPhraseFor(target) }
       });
     }
   } else {
@@ -140,7 +140,7 @@ export function createLockErrorEvent(
         actionId,
         messageId: 'already_unlocked',
         reason: 'already_unlocked',
-        params: { item: entityInfoFrom(target) }
+        params: { item: nounPhraseFor(target) }
       });
     }
   }
@@ -160,8 +160,8 @@ export function createLockErrorEvent(
       messageId: 'wrong_key',
       reason: 'wrong_key',
       params: {
-        key: key ? entityInfoFrom(key) : { name: 'key' },
-        item: entityInfoFrom(target)
+        key: key ? nounPhraseFor(key) : { name: 'key' },
+        item: nounPhraseFor(target)
       }
     });
   }
@@ -171,7 +171,7 @@ export function createLockErrorEvent(
     actionId,
     messageId: isLocking ? 'cannot_lock' : 'cannot_unlock',
     reason: isLocking ? 'cannot_lock' : 'cannot_unlock',
-    params: { item: entityInfoFrom(target) }
+    params: { item: nounPhraseFor(target) }
   });
 }
 

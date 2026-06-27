@@ -18,7 +18,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -129,7 +129,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
-      params: { target: target ? entityInfoFrom(target) : undefined, ...result.params },
+      params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name,
@@ -172,7 +172,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       const target = context.command.directObject?.entity;
       events.push(context.event('if.event.climbed', {
         messageId: `${context.action.id}.climbed_onto`,
-        params: { target: target ? entityInfoFrom(target) : { name: sharedData.targetName ?? '' } },
+        params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName ?? '' } },
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
         method: 'onto'
@@ -245,13 +245,13 @@ function validateObjectClimbing(
   }
 
   if (!isClimbable) {
-    return { valid: false, error: 'not_climbable', params: { object: entityInfoFrom(target) } };
+    return { valid: false, error: 'not_climbable', params: { object: nounPhraseFor(target) } };
   }
 
   // Check if already on/in the target
   const currentLocation = context.world.getLocation(context.player.id);
   if (currentLocation === target.id) {
-    return { valid: false, error: 'already_there', params: { place: entityInfoFrom(target) } };
+    return { valid: false, error: 'already_there', params: { place: nounPhraseFor(target) } };
   }
 
   return { valid: true };

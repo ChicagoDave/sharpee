@@ -9,7 +9,7 @@ import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
 import { WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Build dropped event data
@@ -97,8 +97,8 @@ export function determineDroppingMessage(
 
   // params carry EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
-    item: entityInfoFrom(noun),
-    location: entityInfoFrom(dropLocation)
+    item: nounPhraseFor(noun),
+    location: nounPhraseFor(dropLocation)
   };
 
   let messageId = 'dropped';
@@ -106,10 +106,10 @@ export function determineDroppingMessage(
   // Determine message based on drop location
   if (droppedData.toContainer) {
     messageId = 'dropped_in';
-    params.container = entityInfoFrom(dropLocation);
+    params.container = nounPhraseFor(dropLocation);
   } else if (droppedData.toSupporter) {
     messageId = 'dropped_on';
-    params.supporter = entityInfoFrom(dropLocation);
+    params.supporter = nounPhraseFor(dropLocation);
   } else if (droppedData.toRoom) {
     // Vary the message based on how the item is dropped
     const verb = context.command.parsed.structure.verb?.text.toLowerCase() || 'drop';

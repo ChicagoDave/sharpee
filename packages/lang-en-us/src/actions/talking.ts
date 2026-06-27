@@ -18,31 +18,31 @@ export const talkingLanguage = {
   messages: {
     // Error messages
     'no_target': "Talk to whom?",
-    'not_visible': "{You} {can't} see {the:target}.",
-    'too_far': "{the:cap:target} {is:target} too far away for conversation.",
+    'not_visible': "{You} {can't} see {the target}.",
+    'too_far': "{capitalize the target} {verb:is target} too far away for conversation.",
     'not_actor': "{You} can only talk to people.",
     'self': "Talking to {yourself} is a sign of madness.",
-    'not_available': "{the:cap:target} doesn't want to talk right now.",
+    'not_available': "{capitalize the target} doesn't want to talk right now.",
 
     // Success messages - general
-    'talked': "{You} {greet} {the:target}.",
-    'no_response': "{the:cap:target} doesn't respond.",
-    'acknowledges': "{the:cap:target} acknowledges {you}.",
+    'talked': "{You} {greet} {the target}.",
+    'no_response': "{capitalize the target} doesn't respond.",
+    'acknowledges': "{capitalize the target} acknowledges {you}.",
 
     // Success messages - first meeting
-    'first_meeting': "{You} {introduce} {yourself} to {the:target}.",
-    'greets_back': "{the:cap:target} says, \"Hello there!\"",
-    'formal_greeting': "{the:cap:target} says, \"Good day to you.\"",
-    'casual_greeting': "{the:cap:target} says, \"Hey!\"",
+    'first_meeting': "{You} {introduce} {yourself} to {the target}.",
+    'greets_back': "{capitalize the target} says, \"Hello there!\"",
+    'formal_greeting': "{capitalize the target} says, \"Good day to you.\"",
+    'casual_greeting': "{capitalize the target} says, \"Hey!\"",
 
     // Success messages - subsequent meetings
-    'greets_again': "{the:cap:target} says, \"Hello again.\"",
-    'remembers_you': "{the:cap:target} says, \"Ah, it's you again.\"",
-    'friendly_greeting': "{the:cap:target} smiles in recognition.",
+    'greets_again': "{capitalize the target} says, \"Hello again.\"",
+    'remembers_you': "{capitalize the target} says, \"Ah, it's you again.\"",
+    'friendly_greeting': "{capitalize the target} smiles in recognition.",
 
     // Success messages - with topics
-    'has_topics': "{the:cap:target} seems willing to discuss various topics.",
-    'nothing_to_say': "{the:cap:target} {has:target} nothing particular to say."
+    'has_topics': "{capitalize the target} seems willing to discuss various topics.",
+    'nothing_to_say': "{capitalize the target} {verb:has target} nothing particular to say."
   },
   
   help: {

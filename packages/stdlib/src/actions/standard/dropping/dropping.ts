@@ -31,7 +31,7 @@ import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 import { DroppingMessages } from './dropping-messages';
 
 // Import our data builder
@@ -67,7 +67,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: DroppingMessages.NOT_HELD,
-      params: { item: entityInfoFrom(noun) }
+      params: { item: nounPhraseFor(noun) }
     };
   }
 
@@ -76,7 +76,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     return {
       valid: false,
       error: DroppingMessages.STILL_WORN,
-      params: { item: entityInfoFrom(noun) }
+      params: { item: nounPhraseFor(noun) }
     };
   }
 
@@ -97,7 +97,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
           return {
             valid: false,
             error: DroppingMessages.CONTAINER_FULL,
-            params: { item: entityInfoFrom(noun), container: entityInfoFrom(dropLocation) }
+            params: { item: nounPhraseFor(noun), container: nounPhraseFor(dropLocation) }
           };
         }
       }
@@ -189,8 +189,8 @@ function reportSingleSuccess(
   // params carry EntityInfo for the formatter chain (ADR-158).
   let messageKey: string = DroppingMessages.DROPPED;
   const params: Record<string, any> = {
-    item: entityInfoFrom(noun),
-    location: dropLocation ? entityInfoFrom(dropLocation) : undefined
+    item: nounPhraseFor(noun),
+    location: dropLocation ? nounPhraseFor(dropLocation) : undefined
   };
 
   // Determine location type flags and message
@@ -215,10 +215,10 @@ function reportSingleSuccess(
     messageKey = DroppingMessages.DROPPED_MULTI;
   } else if (toContainer) {
     messageKey = DroppingMessages.DROPPED_IN;
-    params.container = dropLocation ? entityInfoFrom(dropLocation) : undefined;
+    params.container = dropLocation ? nounPhraseFor(dropLocation) : undefined;
   } else if (toSupporter) {
     messageKey = DroppingMessages.DROPPED_ON;
-    params.supporter = dropLocation ? entityInfoFrom(dropLocation) : undefined;
+    params.supporter = dropLocation ? nounPhraseFor(dropLocation) : undefined;
   }
 
   // Emit domain event with messageId (simplified pattern - ADR-097)
@@ -254,7 +254,7 @@ function reportSingleBlocked(
   events.push(context.event('if.event.drop_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
     messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: entityInfoFrom(noun) },
+    params: { ...errorParams, item: nounPhraseFor(noun) },
     // Domain data — strings for handlers
     item: noun.name,
     itemId: noun.id,
@@ -448,7 +448,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.drop_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId: `${context.action.id}.${result.error}`,
-      params: { ...result.params, item: noun ? entityInfoFrom(noun) : undefined },
+      params: { ...result.params, item: noun ? nounPhraseFor(noun) : undefined },
       // Domain data — strings for handlers
       item: noun?.name,
       itemId: noun?.id,

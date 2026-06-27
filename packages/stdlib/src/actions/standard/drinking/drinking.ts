@@ -18,7 +18,7 @@ import { IFActions } from '../../constants';
 import { DrunkEventData, ImplicitTakenEventData } from './drinking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -213,17 +213,17 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     }
 
     if (!isDrinkable) {
-      return { valid: false, error: 'not_drinkable', params: { item: entityInfoFrom(item) } };
+      return { valid: false, error: 'not_drinkable', params: { item: nounPhraseFor(item) } };
     }
 
     // Check if already consumed
     if (edibleTrait && (edibleTrait.servings ?? 1) <= 0) {
-      return { valid: false, error: 'already_consumed', params: { item: entityInfoFrom(item) } };
+      return { valid: false, error: 'already_consumed', params: { item: nounPhraseFor(item) } };
     }
 
     // Check if container needs to be open
     if (containerTrait && item.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(item)) {
-      return { valid: false, error: 'container_closed', params: { item: entityInfoFrom(item) } };
+      return { valid: false, error: 'container_closed', params: { item: nounPhraseFor(item) } };
     }
 
     return { valid: true };
@@ -258,7 +258,7 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
 
     // params carry EntityInfo for the formatter chain (ADR-158)
     const params: Record<string, any> = {
-      item: entityInfoFrom(item)
+      item: nounPhraseFor(item)
     };
 
     // Capture state BEFORE mutations for determineMessage
@@ -317,7 +317,7 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
-      params: { item: item ? entityInfoFrom(item) : undefined, ...result.params },
+      params: { item: item ? nounPhraseFor(item) : undefined, ...result.params },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name

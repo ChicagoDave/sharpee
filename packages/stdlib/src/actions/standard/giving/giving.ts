@@ -27,7 +27,7 @@ import {
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { GivingEventMap } from './giving-events';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -121,7 +121,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'not_actor',
-        params: { recipient: entityInfoFrom(recipient) }
+        params: { recipient: nounPhraseFor(recipient) }
       };
     }
 
@@ -130,7 +130,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'self',
-        params: { item: entityInfoFrom(item) }
+        params: { item: nounPhraseFor(item) }
       };
     }
 
@@ -147,7 +147,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
           return {
             valid: false,
             error: 'inventory_full',
-            params: { recipient: entityInfoFrom(recipient) }
+            params: { recipient: nounPhraseFor(recipient) }
           };
         }
 
@@ -162,7 +162,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
             return {
               valid: false,
               error: 'too_heavy',
-              params: { item: entityInfoFrom(item), recipient: entityInfoFrom(recipient) }
+              params: { item: nounPhraseFor(item), recipient: nounPhraseFor(recipient) }
             };
           }
         }
@@ -180,7 +180,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
             return {
               valid: false,
               error: 'not_interested',
-              params: { item: entityInfoFrom(item), recipient: entityInfoFrom(recipient) }
+              params: { item: nounPhraseFor(item), recipient: nounPhraseFor(recipient) }
             };
           }
         }
@@ -259,8 +259,8 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
 
     // params carry EntityInfo for the formatter chain (ADR-158)
     sharedData.params = {
-      item: entityInfoFrom(item),
-      recipient: entityInfoFrom(recipient)
+      item: nounPhraseFor(item),
+      recipient: nounPhraseFor(recipient)
     };
   },
 
@@ -273,8 +273,8 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        item: item ? entityInfoFrom(item) : undefined,
-        recipient: recipient ? entityInfoFrom(recipient) : undefined
+        item: item ? nounPhraseFor(item) : undefined,
+        recipient: recipient ? nounPhraseFor(recipient) : undefined
       },
       reason: result.error,
       itemId: item?.id,

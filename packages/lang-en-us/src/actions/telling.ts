@@ -16,26 +16,26 @@ export const tellingLanguage = {
     // Error messages
     'no_target': "Tell whom?",
     'no_topic': "Tell them about what?",
-    'not_visible': "{You} {can't} see {the:target}.",
-    'too_far': "{the:cap:target} {is:target} too far away.",
+    'not_visible': "{You} {can't} see {the target}.",
+    'too_far': "{capitalize the target} {verb:is target} too far away.",
     'not_actor': "{You} can only tell things to people.",
 
-    // Success messages - general. Mid-sentence positions use {the:target}
+    // Success messages - general. Mid-sentence positions use {the target}
     // so proper-named NPCs render without an article.
-    'told': "{You} {tell} {the:target} about {topic}.",
-    'informed': "{You} {inform} {the:target} about {topic}.",
+    'told': "{You} {tell} {the target} about {verbatim:topic}.",
+    'informed': "{You} {inform} {the target} about {verbatim:topic}.",
 
     // Responses - interested
-    'interested': "{the:cap:target} listens with interest.",
-    'very_interested': "{the:cap:target} says, \"Really? Tell me more!\"",
-    'grateful': "{the:cap:target} says, \"Thank you for telling me!\"",
-    'already_knew': "{the:cap:target} says, \"Yes, I'm aware of that.\"",
+    'interested': "{capitalize the target} listens with interest.",
+    'very_interested': "{capitalize the target} says, \"Really? Tell me more!\"",
+    'grateful': "{capitalize the target} says, \"Thank you for telling me!\"",
+    'already_knew': "{capitalize the target} says, \"Yes, I'm aware of that.\"",
 
     // Responses - not interested
-    'not_interested': "{the:cap:target} doesn't seem interested.",
-    'bored': "{the:cap:target} looks bored.",
-    'dismissive': "{the:cap:target} says, \"So what?\"",
-    'ignores': "{the:cap:target} ignores what {you're} saying."
+    'not_interested': "{capitalize the target} doesn't seem interested.",
+    'bored': "{capitalize the target} looks bored.",
+    'dismissive': "{capitalize the target} says, \"So what?\"",
+    'ignores': "{capitalize the target} ignores what {you're} saying."
   },
   
   help: {

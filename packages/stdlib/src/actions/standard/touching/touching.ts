@@ -18,7 +18,7 @@ import { IFActions } from '../../constants';
 import { TouchedEventData } from './touching-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -231,7 +231,7 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        target: target ? entityInfoFrom(target) : undefined
+        target: target ? nounPhraseFor(target) : undefined
       },
       reason: result.error,
       targetId: target?.id,
@@ -248,7 +248,7 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
     events.push(context.event('if.event.touched', {
       messageId: `${context.action.id}.${sharedData.messageId || 'touched'}`,
-      params: { target: target ? entityInfoFrom(target) : { name: sharedData.targetName } },
+      params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
       ...sharedData.eventData
     }));
 

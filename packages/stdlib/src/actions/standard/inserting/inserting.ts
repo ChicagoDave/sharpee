@@ -25,7 +25,7 @@ import { IFActions } from '../../constants';
 import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
 import { InsertingMessages } from './inserting-messages';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -109,7 +109,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: InsertingMessages.NO_DESTINATION,
-        params: { item: item ? entityInfoFrom(item) : undefined }
+        params: { item: item ? nounPhraseFor(item) : undefined }
       };
     }
 
@@ -176,8 +176,8 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
         messageId: `${context.action.id}.${InsertingMessages.CANT_INSERT}`,
         // params carry EntityInfo for the formatter chain (ADR-158)
         params: {
-          item: item ? entityInfoFrom(item) : undefined,
-          container: container ? entityInfoFrom(container) : undefined
+          item: item ? nounPhraseFor(item) : undefined,
+          container: container ? nounPhraseFor(container) : undefined
         },
         itemId: item?.id,
         itemName: item?.name,
@@ -210,8 +210,8 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
-        item: item ? entityInfoFrom(item) : undefined,
-        container: container ? entityInfoFrom(container) : undefined
+        item: item ? nounPhraseFor(item) : undefined,
+        container: container ? nounPhraseFor(container) : undefined
       },
       // Domain data — strings for handlers
       itemId: item?.id,

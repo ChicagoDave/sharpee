@@ -18,7 +18,7 @@ import { TraitType, EdibleTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { ListenedEventData } from './listening-events';
-import { entityInfoFrom } from '../../../utils';
+import { nounPhraseFor } from '../../../utils';
 
 /**
  * Shared data passed between execute and report phases
@@ -52,7 +52,7 @@ function analyzeListening(context: ActionContext): ListeningAnalysis {
   
   if (target) {
     eventData.target = target.id;
-    params.target = entityInfoFrom(target);
+    params.target = nounPhraseFor(target);
     
     // Check if the target has any sound-related properties
     let hasSound = false;
@@ -178,7 +178,7 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
-        target: target ? entityInfoFrom(target) : undefined
+        target: target ? nounPhraseFor(target) : undefined
       },
       reason: result.error,
       targetId: target?.id,
