@@ -328,14 +328,18 @@ export function determineLookingMessage(
   // If there are direct room items, include them in params for contents_list
   // (the action will emit room_description first, then contents_list)
   if (directInRoom.length > 0) {
-    // Pass EntityInfo[] (ADR-158/190); the lang layer's {list:items} formatter
+    // Bind a PhraseList of NounPhrases (ADR-192); the Assembler's list authority
     // renders articles, grouping, and the locale conjunction. Passing bare names
     // or pre-joining here would hard-code English list grammar into stdlib.
-    const itemInfos = directInRoom.map(e => nounPhraseFor(e));
+    const itemList = {
+      kind: 'list' as const,
+      conj: 'and' as const,
+      items: directInRoom.map(e => nounPhraseFor(e)),
+    };
     return {
       messageId,  // room_description or room_description_brief
       params: {
-        items: itemInfos,
+        items: itemList,
         count: directInRoom.length,
         hasItems: true,
         ...params

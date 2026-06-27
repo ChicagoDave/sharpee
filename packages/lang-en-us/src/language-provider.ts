@@ -273,9 +273,10 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     }
 
     // Step 1: Resolve perspective placeholders (ADR-089) — a string pre-pass
-    // that runs BEFORE parsing; perspective names are fixed words, never param
-    // refs, so there is no placeholder-syntax collision with the phrase grammar.
-    const resolved = resolvePerspectivePlaceholders(template, this.narrativeContext);
+    // that runs BEFORE parsing. Passing params lets the resolver leave bound
+    // params for the phrase parser and conjugate every other bare {word} as a
+    // perspective verb (no central verb allowlist needed).
+    const resolved = resolvePerspectivePlaceholders(template, this.narrativeContext, params);
 
     // Step 2: Parse to a phrase tree (binds params; throws PhraseParseError at
     // parse time on legacy ':' chains, unknown kinds, or unbound params).

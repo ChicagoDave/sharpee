@@ -431,21 +431,75 @@ function wrapDecorations(
   return node as IDecoration;
 }
 
+/** One emitted block's runs plus whether it is a tight continuation. */
+interface Segment {
+  runs: Run[];
+  tight: boolean;
+}
+
 /**
- * The English Assembler. Realizes a phrase tree to a single text block under the
- * default channel key; the report layer re-keys per channel in Phase 4.
+ * Split a run stream into per-block segments at newline boundaries (Whitespace
+ * authority — the block-structure half ADR-183/`createBlocks` owned). A single
+ * `\n` makes the next block a `tight` continuation; a blank line (`\n\n+`) starts
+ * a fresh paragraph. Newlines split every run — verbatim runs keep their
+ * *horizontal* whitespace but still break into blocks, matching the legacy
+ * `createBlocks` behaviour. No block's content carries a `\n`.
+ */
+function splitRunsOnNewlines(runs: Run[]): Segment[] {
+  const segments: Segment[] = [];
+  let current: Run[] = [];
+  let tight = false; // the first segment is never a tight continuation
+  for (const run of runs) {
+    const pieces = run.text.split(/(\n+)/); // keep the newline groups as separators
+    for (const piece of pieces) {
+      if (piece === '') continue;
+      if (/^\n+$/.test(piece)) {
+        segments.push({ runs: current, tight });
+        current = [];
+        tight = piece.length === 1; // single \n → tight; blank line → paragraph
+      } else {
+        current.push({ ...run, text: piece });
+      }
+    }
+  }
+  segments.push({ runs: current, tight });
+  return segments;
+}
+
+/**
+ * The English Assembler. Realizes a phrase tree to text blocks under the default
+ * channel key; the report layer re-keys per channel.
  */
 export class EnglishAssembler implements Assembler {
   /**
    * Realize a phrase tree to text blocks.
    *
+   * Newlines in the realized text are lifted to block boundaries (no block's
+   * content carries `\n`); horizontal whitespace is collapsed per block, except
+   * in verbatim runs. A single-line tree yields one block.
+   *
    * @param tree the phrase tree to realize
    * @param ctx the render context (world, params, settings, seams)
-   * @returns one text block carrying the realized content
+   * @returns the realized text blocks
    * @throws PhraseNotImplementedError when a reserved stub kind is encountered
    */
   realize(tree: Phrase, ctx: RenderContext): ITextBlock[] {
-    const runs = collapseWhitespace(realizeToRuns(tree, ctx, []));
-    return [{ key: ASSEMBLER_DEFAULT_BLOCK_KEY, content: runsToContent(runs) }];
+    const segments = splitRunsOnNewlines(realizeToRuns(tree, ctx, []));
+    const blocks: ITextBlock[] = [];
+    for (const seg of segments) {
+      const content = runsToContent(collapseWhitespace(seg.runs));
+      // Drop blank lines — they leave no block (paragraph spacing comes from
+      // the `tight` flag on the following block).
+      if (content.length === 1 && content[0] === '') continue;
+      blocks.push({
+        key: ASSEMBLER_DEFAULT_BLOCK_KEY,
+        content,
+        ...(seg.tight ? { tight: true } : {}),
+      });
+    }
+    if (blocks.length === 0) {
+      blocks.push({ key: ASSEMBLER_DEFAULT_BLOCK_KEY, content: [''] });
+    }
+    return blocks;
   }
 }

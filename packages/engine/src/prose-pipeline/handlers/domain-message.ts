@@ -22,6 +22,7 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
 import { createBlocks } from '../assemble';
+import { phraseAvailable, renderViaPhrase } from '../phrase-render';
 
 interface DomainMessageData {
   messageId?: string;
@@ -58,31 +59,34 @@ export function tryProcessDomainEventMessage(
     return null;
   }
 
-  const message = context.languageProvider.getMessage(
-    data.messageId,
-    data.params,
-  );
-
-  // If the messageId echoes (not registered) or resolves to empty,
-  // fall back to inline text. Many events carry both a messageId and
-  // pre-rendered text (melee combat, GDT, etc.).
-  if (message === data.messageId || !message) {
-    const fallback = data.message ?? data.text;
-    if (typeof fallback === 'string' && fallback) {
-      return createBlocks(BLOCK_KEYS.ACTION_RESULT, fallback);
-    }
-    // No inline text — skip silently rather than showing an error.
-    // Domain events (if.event.*) carry messageId for semantic
-    // association, not for text rendering. Actual prose comes from
-    // game.message events.
-    return null;
-  }
-
   // Block key chosen by event-type semantics.
   const blockKey =
     event.type.includes('blocked') || event.type.includes('failure')
       ? BLOCK_KEYS.ACTION_BLOCKED
       : BLOCK_KEYS.ACTION_RESULT;
 
+  const inlineFallback = (): ITextBlock[] | null => {
+    // Many events carry both a messageId and pre-rendered text (melee combat,
+    // GDT, …). When the id is unregistered, render that inline text.
+    const fallback = data.message ?? data.text;
+    if (typeof fallback === 'string' && fallback) {
+      return createBlocks(blockKey, fallback);
+    }
+    // No inline text — skip silently. Domain events (if.event.*) carry a
+    // messageId for semantic association, not for text rendering.
+    return null;
+  };
+
+  // Phrase path (ADR-192): render the template to a phrase tree and realize it.
+  if (phraseAvailable(context)) {
+    const blocks = renderViaPhrase(context, data.messageId, data.params ?? {}, blockKey);
+    return blocks ?? inlineFallback();
+  }
+
+  // Legacy string path — only when the pipeline has no world (some unit tests).
+  const message = context.languageProvider.getMessage(data.messageId, data.params);
+  if (message === data.messageId || !message) {
+    return inlineFallback();
+  }
   return createBlocks(blockKey, message);
 }

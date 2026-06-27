@@ -479,13 +479,17 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit contents list if there are visible items
     if (destinationContents.length > 0) {
-      // EntityInfo[] (ADR-158/190): the {list:items} formatter renders articles +
-      // conjunction in the lang layer. Use looking's messageId namespace since this
-      // is auto-look.
+      // PhraseList of NounPhrases (ADR-192): the Assembler's list authority renders
+      // articles + conjunction in the lang layer. Use looking's messageId namespace
+      // since this is auto-look.
       events.push(context.event('if.event.list.contents', {
         messageId: 'if.action.looking.contents_list',
         params: {
-          items: destinationContents.map(e => nounPhraseFor(e)),
+          items: {
+            kind: 'list' as const,
+            conj: 'and' as const,
+            items: destinationContents.map(e => nounPhraseFor(e)),
+          },
           count: destinationContents.length
         },
         locationId: destinationRoom.id,

@@ -24,6 +24,29 @@ import type { IFEntity, IWorldModel } from '@sharpee/world-model';
  */
 export type Sense = 'sight' | 'hearing' | 'smell' | 'touch';
 /**
+ * A single per-sense rendering of a witnessable fact: the message ID to render
+ * and the parameters that fill its template.
+ *
+ * @see ADR-069 amendment — Per-sense rendering selection
+ */
+export interface Rendering {
+    messageId: string;
+    params: Record<string, unknown>;
+}
+/**
+ * The per-sense renderings carried by a witnessable event's `data.renderings`.
+ *
+ * The emitter (e.g. NpcService) populates the senses it produces; PerceptionService
+ * selects one by the perceiver's available sense. Absent ⇒ not a witnessable fact
+ * (pass through). Present-but-empty `{}` ⇒ perceptible by nothing (blocked).
+ */
+export type PerSenseRenderings = Partial<Record<Sense, Rendering>>;
+/**
+ * Fixed selection precedence for renderings — independent of map key order.
+ * A new `Sense` must declare its rank here.
+ */
+export declare const SENSE_PRECEDENCE: readonly Sense[];
+/**
  * Reasons why perception might be blocked
  */
 export type PerceptionBlockReason = 'darkness' | 'blindness' | 'blindfolded' | 'unknown';

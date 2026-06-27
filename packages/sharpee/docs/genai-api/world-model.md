@@ -60,7 +60,12 @@ export declare class IFEntity implements IEntity {
      */
     getTrait<T extends ITrait>(type: TraitType | string | ITraitConstructor<T>): T | undefined;
     /**
-     * Add a trait to the entity
+     * Add a trait to the entity.
+     *
+     * Replace-on-same-type (ADR-189): if a trait of the same `type` is already
+     * present, it is silently overwritten with the new trait and its params. This
+     * lets a configured trait supersede a default one (for example, a trait the
+     * entity-type default-trait registry added during `createEntity`). Last add wins.
      */
     add(trait: ITrait): this;
     /**
@@ -2188,6 +2193,12 @@ export declare class IdentityTrait implements ITrait {
     properName: boolean;
     /** Article to use with the name ("a", "an", "the", "some", or empty for proper names) */
     article: string;
+    /**
+     * Author-supplied plural form for irregular nouns (ADR-190), e.g. "geese" for
+     * "goose". The `list`/`count` formatters use this when set, else fall back to the
+     * `pluralize()` heuristic. Flows to the language layer via `entityInfoFrom`.
+     */
+    plural?: string;
     /** Whether this entity is concealed from normal view */
     concealed: boolean;
     /** Weight of the object (undefined = negligible/not tracked) */
@@ -4156,6 +4167,19 @@ export interface INpcData {
     forbiddenRooms?: EntityId[];
     /** ID of the behavior to use for this NPC */
     behaviorId?: string;
+    /** Announce this NPC's movement when it crosses the player's room (default false). */
+    announcesMovement?: boolean;
+    /**
+     * Per-NPC message-ID overrides for movement announcements. Any key left unset
+     * falls back to the platform default (npc.leaves / npc.enters / npc.arrives /
+     * npc.departs). Override text receives { npcName, direction } params.
+     */
+    movementMessages?: {
+        leaves?: string;
+        enters?: string;
+        arrives?: string;
+        departs?: string;
+    };
     /** Conversation state for dialogue */
     conversationState?: string;
     /** Knowledge state - what this NPC knows */
@@ -4187,6 +4211,13 @@ export declare class NpcTrait implements ITrait, INpcData {
     allowedRooms?: EntityId[];
     forbiddenRooms?: EntityId[];
     behaviorId?: string;
+    announcesMovement: boolean;
+    movementMessages?: {
+        leaves?: string;
+        enters?: string;
+        arrives?: string;
+        departs?: string;
+    };
     conversationState?: string;
     knowledge?: Record<string, unknown>;
     goals?: string[];
@@ -5722,6 +5753,38 @@ export interface RegionOptions {
     /** Whether rooms in this region default to dark. */
     defaultDark?: boolean;
 }
+/**
+ * Context passed to a scene reaction callback (ADR-186). Carries the typed
+ * data a callback needs to react to a scene transition — no `any` on the
+ * author path.
+ */
+export interface SceneEventContext {
+    /** The world model, for querying state in the reaction. */
+    world: IWorldModel;
+    /** The scene entity's id. */
+    sceneId: string;
+    /** The scene's human-readable name. */
+    sceneName: string;
+    /** The turn number on which the transition occurred. */
+    turn: number;
+    /** Turns the scene was active. Present only for onEnd. */
+    totalTurns?: number;
+}
+/**
+ * A player-visible reaction returned by a scene callback (ADR-186). Either
+ * direct story-owned prose (`text`) or a lang-routed message (`messageId`).
+ */
+export type SceneReaction = {
+    text: string;
+} | {
+    messageId: string;
+    params?: Record<string, unknown>;
+};
+/**
+ * A scene reaction callback (ADR-186). Invoked by SceneEvaluationPlugin at
+ * the begin/end transition. Returning nothing is valid (a state-only beat).
+ */
+export type SceneCallback = (ctx: SceneEventContext) => SceneReaction[] | SceneReaction | void;
 export interface SceneOptions {
     /** Human-readable scene name. */
     name: string;
@@ -5731,11 +5794,19 @@ export interface SceneOptions {
     end: (world: IWorldModel) => boolean;
     /** Whether the scene can activate more than once. Default: false. */
     recurring?: boolean;
+    /** Optional reaction invoked when the scene begins (ADR-186). */
+    onBegin?: SceneCallback;
+    /** Optional reaction invoked when the scene ends (ADR-186). */
+    onEnd?: SceneCallback;
 }
 /** Stored condition closures for a scene (not serializable). */
 export interface SceneConditions {
     begin: (world: IWorldModel) => boolean;
     end: (world: IWorldModel) => boolean;
+    /** Optional reaction invoked when the scene begins (ADR-186). */
+    onBegin?: SceneCallback;
+    /** Optional reaction invoked when the scene ends (ADR-186). */
+    onEnd?: SceneCallback;
 }
 /**
  * Result of comparing region hierarchies for two rooms (ADR-149).
@@ -5755,7 +5826,9 @@ export interface IWorldModel {
     updateCapability(name: string, data: Partial<ICapabilityData>): void;
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
-    createEntity(displayName: string, type?: string): IFEntity;
+    createEntity(displayName: string, type?: string, opts?: {
+        defaultTraits?: boolean;
+    }): IFEntity;
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
     removeEntity(id: string): boolean;
@@ -5875,7 +5948,9 @@ export declare class WorldModel implements IWorldModel {
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
     private generateId;
-    createEntity(displayName: string, type?: string): IFEntity;
+    createEntity(displayName: string, type?: string, opts?: {
+        defaultTraits?: boolean;
+    }): IFEntity;
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
     removeEntity(id: string): boolean;

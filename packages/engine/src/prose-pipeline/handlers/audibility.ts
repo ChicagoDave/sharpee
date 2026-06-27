@@ -37,6 +37,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { IAudibilityEvent } from '@sharpee/if-domain';
 import type { HandlerContext } from './types';
 import { createBlocks } from '../assemble';
+import { phraseAvailable, renderViaPhrase, flattenBlocks } from '../phrase-render';
 
 const AUDIBILITY_TEMPLATE_PREFIX = 'sound.heard';
 
@@ -67,17 +68,33 @@ export function handleAudibilityHeard(
   const params: Record<string, unknown> = {
     kind: data.kind,
   };
-  if (data.content?.messageId) {
-    const innerParams = data.content.params as
-      | Record<string, unknown>
-      | undefined;
-    params.content = provider.getMessage(data.content.messageId, innerParams);
-  }
 
   const kindId = `${AUDIBILITY_TEMPLATE_PREFIX}.${data.kind}.${data.audibilityTier}`;
+  const fallbackId = `${AUDIBILITY_TEMPLATE_PREFIX}.default.${data.audibilityTier}`;
+
+  // Phrase path (ADR-192): render the inner content message to text, embed it as
+  // the `content` scalar, then realize the `sound.heard.*` template.
+  if (phraseAvailable(context)) {
+    if (data.content?.messageId) {
+      const innerParams = (data.content.params as Record<string, unknown>) ?? {};
+      const innerCtx = context.makeRenderContext!(innerParams);
+      params.content = flattenBlocks(
+        provider.renderMessage!(data.content.messageId, innerParams, innerCtx),
+      );
+    }
+    const blocks =
+      renderViaPhrase(context, kindId, params, BLOCK_KEYS.ACTION_RESULT) ??
+      renderViaPhrase(context, fallbackId, params, BLOCK_KEYS.ACTION_RESULT);
+    return blocks ?? [];
+  }
+
+  // Legacy string path — only when the pipeline has no world (some unit tests).
+  if (data.content?.messageId) {
+    const innerParams = data.content.params as Record<string, unknown> | undefined;
+    params.content = provider.getMessage(data.content.messageId, innerParams);
+  }
   let message = provider.getMessage(kindId, params);
   if (!message || message === kindId) {
-    const fallbackId = `${AUDIBILITY_TEMPLATE_PREFIX}.default.${data.audibilityTier}`;
     message = provider.getMessage(fallbackId, params);
     if (!message || message === fallbackId) {
       return [];

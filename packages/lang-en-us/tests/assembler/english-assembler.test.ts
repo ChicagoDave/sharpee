@@ -235,13 +235,42 @@ describe('Verbatim atom realizes opaque, whitespace-exempt text (ADR-200)', () =
     expect(render({ kind: 'verbatim', text: 'north' })).toBe('north');
   });
 
-  it('is exempt from whitespace collapse (internal runs survive)', () => {
-    expect(render({ kind: 'verbatim', text: 'a   b\n\nc' })).toBe('a   b\n\nc');
+  it('is exempt from horizontal whitespace collapse (internal spaces survive)', () => {
+    expect(render({ kind: 'verbatim', text: 'a   b' })).toBe('a   b');
   });
 
   it('composes in a Sequence without disturbing neighbours’ normal collapse', () => {
     const tree: Phrase = { kind: 'seq', parts: [lit('You see   '), { kind: 'verbatim', text: 'X  Y' }, lit('  here.')] };
     expect(render(tree)).toBe('You see X  Y here.');
+  });
+});
+
+// --- newline → block boundaries (Whitespace authority, Phase 4) ------------
+
+describe('newlines lift to block boundaries (no \\n in block content)', () => {
+  it('a single-line tree yields exactly one block', () => {
+    const blocks = asm.realize(lit('You see a lamp.'), makeCtx());
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].tight).toBeUndefined();
+  });
+
+  it('a single \\n makes the next block a tight continuation', () => {
+    const blocks = asm.realize(lit('Line one\nLine two'), makeCtx());
+    expect(blocks.map((b) => b.content.join(''))).toEqual(['Line one', 'Line two']);
+    expect(blocks[0].tight).toBeUndefined();
+    expect(blocks[1].tight).toBe(true);
+  });
+
+  it('a blank line starts a fresh paragraph (not tight)', () => {
+    const blocks = asm.realize(lit('Para one\n\nPara two'), makeCtx());
+    expect(blocks.map((b) => b.content.join(''))).toEqual(['Para one', 'Para two']);
+    expect(blocks[1].tight).toBeUndefined();
+  });
+
+  it('no block content carries a newline', () => {
+    const blocks = asm.realize(lit('a\nb\n\nc'), makeCtx());
+    for (const b of blocks) expect(b.content.join('')).not.toContain('\n');
+    expect(blocks.map((b) => b.content.join(''))).toEqual(['a', 'b', 'c']);
   });
 });
 

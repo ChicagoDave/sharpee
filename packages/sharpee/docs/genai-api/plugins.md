@@ -142,7 +142,17 @@ export declare class NpcPlugin implements TurnPlugin {
     priority: number;
     private service;
     constructor();
-    /** Tick the NPC service for this turn and return the events NPCs produced. */
+    /**
+     * Tick the NPC service for this turn and return the events NPCs produced.
+     *
+     * After the per-turn tick (which drives each NPC's `onTurn`), this also fires
+     * the room-entry/exit hooks when the player's action moved them this turn:
+     * an `if.event.actor_moved` in `ctx.actionEvents` is always the player's move
+     * (NPC movement is produced here, not in the player's action events), so the
+     * NPCs in the room left react via `onPlayerLeaves` and those in the room
+     * entered react via `onPlayerEnters` (e.g. a greeting emote). Without this the
+     * service's `onPlayerEnters`/`onPlayerLeaves` hooks have no runtime caller.
+     */
     onAfterAction(ctx: TurnPluginContext): ISemanticEvent[];
     /**
      * Returns an empty object: NPC state lives in world-model entity traits, so it

@@ -2355,7 +2355,7 @@ export declare class StandardWitnessSystem implements WitnessSystem {
  */
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, IWorldModel } from '@sharpee/world-model';
-export type { Sense, PerceptionBlockReason, PerceptionBlockedData, IPerceptionService, } from '@sharpee/if-services';
+export type { Sense, Rendering, PerSenseRenderings, PerceptionBlockReason, PerceptionBlockedData, IPerceptionService, } from '@sharpee/if-services';
 import type { Sense, IPerceptionService } from '@sharpee/if-services';
 /**
  * Default implementation of IPerceptionService
@@ -2609,6 +2609,8 @@ export declare const NpcMessages: {
     readonly NPC_LEAVES: "npc.leaves";
     readonly NPC_ARRIVES: "npc.arrives";
     readonly NPC_DEPARTS: "npc.departs";
+    readonly NPC_HEARD_ARRIVES: "npc.heard_arrives";
+    readonly NPC_HEARD_DEPARTS: "npc.heard_departs";
     readonly NPC_NOTICES_PLAYER: "npc.notices_player";
     readonly NPC_IGNORES_PLAYER: "npc.ignores_player";
     readonly NPC_TAKES: "npc.takes";
@@ -2790,6 +2792,17 @@ export declare class NpcService implements INpcService {
     private executeAction;
     private executeMove;
     private executeMoveTo;
+    /**
+     * Build the player-witnessable movement announcement for a crossing.
+     *
+     * Returns a single sense-neutral `npc.moved.witnessed` fact carrying a per-sense
+     * `renderings` map (sight + hearing). PerceptionService selects the rendering for
+     * the player's available sense; neither is derived from the other.
+     *
+     * @returns one `npc.moved.witnessed` event, or `[]` when the NPC does not announce
+     *   movement or the move touches neither the player's room.
+     */
+    private announceMovement;
     private executeTake;
     private executeDrop;
     private executeAttack;
@@ -3186,6 +3199,46 @@ import { IFEntity } from '@sharpee/world-model';
  *   // Renders:  "The white house is fixed in place."
  */
 export declare function entityInfoFrom(entity: IFEntity): EntityInfo;
+```
+
+### utils/noun-phrase
+
+```typescript
+/**
+ * @file noun-phrase.ts
+ * @module @sharpee/stdlib/utils
+ *
+ * Bridges world-model's `IFEntity` to a language-neutral `NounPhrase`
+ * (ADR-192), replacing `entityInfoFrom` (ADR-158). stdlib is the only package
+ * depending on both `@sharpee/world-model` (source of `IFEntity`) and
+ * `@sharpee/if-domain` (home of the `Phrase` algebra), so the producer lives
+ * here.
+ *
+ * Public interface: `nounPhraseFor(entity, ctx)`.
+ *
+ * Per ADR-192 §3 the field mapping is the producer's contract — every step is
+ * named so none is silently dropped. The leading article hint from the template
+ * (`{the item}`) overrides the `nounType`-derived `articleType` default; the
+ * legacy `article: 'a'|'an'` literal is NOT mapped (the Assembler computes the
+ * surface — D4).
+ *
+ * @see ADR-192 Phrase Algebra — Phrase Model & Assembler Core
+ * @see ADR-158 (superseded) Entity-Valued Message Params Carry EntityInfo
+ */
+import { NounPhrase, RenderContext } from '@sharpee/if-domain';
+import { IFEntity } from '@sharpee/world-model';
+/**
+ * Build a `NounPhrase` from an `IFEntity` for use as a message-template
+ * parameter value. With no `IdentityTrait`, returns a minimal indefinite
+ * singular noun so callers need no null guards.
+ *
+ * @param entity any IFEntity — typically the noun, container, or target from an
+ *               action's command or a capability behavior
+ * @param _ctx the render context — reserved for computed names / state-derived
+ *             fields (ADR-193+); the static mapping does not consult it yet
+ * @returns a `NounPhrase` carrying the entity's grammatical metadata
+ */
+export declare function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext): NounPhrase;
 ```
 
 ### channels/registry

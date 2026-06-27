@@ -13,7 +13,8 @@ English language provider, message resolution, formatters.
  * Self-contained language implementation with no external dependencies
  * Enhanced to support getMessage interface for text service
  */
-import { ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern } from '@sharpee/if-domain';
+import { ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
+import type { ITextBlock } from '@sharpee/text-blocks';
 import { NarrativeContext } from './perspective';
 import { FormatterRegistry, FormatterContext, EntityInfo } from './formatters';
 /**
@@ -28,6 +29,8 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
     private narrativeContext;
     private formatterRegistry;
     private entityLookup?;
+    private serialComma;
+    private readonly assembler;
     constructor();
     /**
      * Load core system messages (command failures, etc.)
@@ -74,7 +77,7 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      * Supports three types of placeholders:
      * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
      *    - Resolved based on narrative context (1st/2nd/3rd person)
-     * 2. Formatted placeholders (ADR-095): {a:item}, {items:list}, etc.
+     * 2. Formatted placeholders (ADR-095): {a:item}, {list:items}, etc.
      *    - Applies formatters before substitution
      * 3. Simple placeholders: {item}, {target}, etc.
      *    - Replaced with values from params object
@@ -85,6 +88,47 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     getMessage(messageId: string, params?: Record<string, any>): string;
     /**
+     * Get the raw, unresolved template for a message ID (ADR-192 phrase path).
+     *
+     * Returns the author template verbatim — no perspective resolution, no
+     * parameter substitution. The phrase pipeline resolves perspective and parses
+     * the result; see {@link renderMessage}.
+     *
+     * @param messageId Full message ID (e.g. 'if.action.taking.taken')
+     * @returns The raw template, or undefined when the ID is not registered
+     */
+    getTemplate(messageId: string): string | undefined;
+    /**
+     * Locale realization settings (ADR-192). The engine reads these when building
+     * the per-turn render context so the Assembler agrees over the story's
+     * configured knobs.
+     *
+     * @returns The current locale settings (serial comma, …)
+     */
+    getLocaleSettings(): LocaleSettings;
+    /**
+     * The narrative grammatical person of the player subject (ADR-199 §4 B),
+     * mapped from the ADR-089 perspective ('1st'/'2nd'/'3rd' → first/second/third).
+     *
+     * @returns the player subject's grammatical person under the current narration
+     */
+    getNarrativePerson(): 'first' | 'second' | 'third';
+    /**
+     * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
+     *
+     * Phrase-path replacement for {@link getMessage}: resolve perspective
+     * placeholders (kept as a string pre-pass, ADR-089), parse the template into a
+     * `Phrase` tree, then realize it with the Assembler against `ctx`. A missing
+     * template realizes to a literal of the ID, mirroring `getMessage`'s
+     * echo-the-ID fallback.
+     *
+     * @param messageId Full message ID
+     * @param params Parameter/producer bindings keyed by placeholder name
+     * @param ctx The per-message render context (world, settings, seams)
+     * @returns The realized text blocks
+     */
+    renderMessage(messageId: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
+    /**
      * Set entity lookup function for formatters (ADR-095)
      *
      * This allows formatters to look up entity info (nounType, etc.)
@@ -93,6 +137,11 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      * @param lookup Function that returns EntityInfo for an entity ID
      */
     setEntityLookup(lookup: (id: string) => EntityInfo | undefined): void;
+    /**
+     * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
+     * @param on true → "a, b, and c"; false → "a, b and c"
+     */
+    setSerialComma(on: boolean): void;
     /**
      * Register a custom formatter (ADR-095)
      *
@@ -1789,6 +1838,8 @@ export declare const npcLanguage: {
         'npc.leaves': string;
         'npc.arrives': string;
         'npc.departs': string;
+        'npc.heard_arrives': string;
+        'npc.heard_departs': string;
         'npc.notices_player': string;
         'npc.ignores_player': string;
         'npc.takes': string;
@@ -2012,7 +2063,7 @@ export declare function conjugateVerb(verb: string, context: NarrativeContext): 
  * @param context Narrative context
  * @returns Message with resolved placeholders
  */
-export declare function resolvePerspectivePlaceholders(message: string, context?: NarrativeContext): string;
+export declare function resolvePerspectivePlaceholders(message: string, context?: NarrativeContext, params?: Record<string, unknown>): string;
 ```
 
 ### formatters/types
@@ -2023,9 +2074,9 @@ export declare function resolvePerspectivePlaceholders(message: string, context?
  *
  * Formatters transform placeholder values in message templates.
  *
- * Syntax: {formatter:formatter:...:placeholder}
+ * Syntax: {formatter:formatter:...:placeholder} (the placeholder is the last segment)
  * Example: {a:item} → "a sword"
- * Example: {items:list} → "a sword, a key, and a coin"
+ * Example: {list:items} → "a sword, a key, and a coin"
  *
  * @see ADR-095 Message Templates with Formatters
  */
@@ -2035,6 +2086,11 @@ export declare function resolvePerspectivePlaceholders(message: string, context?
 export interface FormatterContext {
     /** Get entity by ID for nounType/article lookup */
     getEntity?: (id: string) => EntityInfo | undefined;
+    /** Render-time settings the language layer reads (ADR-190). */
+    settings?: {
+        /** Serial (Oxford) comma in lists. Default true when absent. */
+        serialComma?: boolean;
+    };
 }
 /**
  * Minimal entity info for formatting
@@ -2045,6 +2101,12 @@ export interface EntityInfo {
     properName?: boolean;
     article?: string;
     grammaticalNumber?: 'singular' | 'plural';
+    /**
+     * Author-supplied plural form for irregular nouns (ADR-190). Populated from
+     * `IdentityTrait.plural` by `entityInfoFrom`. The `list`/`count` formatters use
+     * it when present, else fall back to the `pluralize()` heuristic.
+     */
+    plural?: string;
 }
 /**
  * Formatter function signature
@@ -2101,7 +2163,8 @@ export declare function applyFormatters(value: string | number | boolean | strin
  *
  * Supports both:
  * - Simple placeholders: {item}
- * - Formatted placeholders: {a:item}, {items:list}, {a:items:list}
+ * - Formatted placeholders: {a:item}, {list:items}, {the:cap:item}
+ *   (the placeholder is the last colon segment)
  *
  * @param template - Message template with {placeholder} syntax
  * @param params - Values for placeholders
@@ -2169,13 +2232,27 @@ export declare const yourFormatter: Formatter;
  */
 import type { Formatter } from './types.js';
 /**
- * "list" formatter - join with commas and "and"
+ * "list" formatter — natural-language list of entities (ADR-190).
  *
- * Single: "a sword"
- * Two: "a sword and a key"
- * Three+: "a sword, a key, and a coin"
+ * Each `EntityInfo` element gets its indefinite article ("a goat", "an apple",
+ * "some sand"); identical common nouns group and pluralize ("two goats"); the
+ * parts join with commas and "and", with the serial (Oxford) comma controlled by
+ * the story's `serialComma` setting (default on). Bare strings render as-is.
+ * Empty → "nothing".
+ *
+ *   {list:items} → "a goat, two rabbits, and a parrot"
  */
 export declare const listFormatter: Formatter;
+/**
+ * "the-list" formatter — definite variant: "the goat, the rabbit, and the parrot".
+ * No count-grouping (definite items are individuated); proper names take no article.
+ */
+export declare const theListFormatter: Formatter;
+/**
+ * "names" formatter — plain name join (the pre-ADR-190 `list` behavior) for
+ * non-entity string lists: no articles, no grouping. Empty → "".
+ */
+export declare const namesFormatter: Formatter;
 /**
  * "or-list" formatter - join with commas and "or"
  *
@@ -2191,10 +2268,14 @@ export declare const orListFormatter: Formatter;
  */
 export declare const commaListFormatter: Formatter;
 /**
- * "count" formatter - number + noun (with pluralization)
+ * "count" formatter - a count word plus the (pluralized) noun.
  *
- * Example: {items:count} with 3 swords → "3 swords"
- * Example: {items:count} with 1 sword → "1 sword"
+ * Spells out 1–10, numeric for 11+ (ADR-190). Uses the entity's `plural` override
+ * (from `IdentityTrait.plural`) when present, else the `pluralize()` heuristic.
+ *
+ * Example: {count:items} with 3 swords → "three swords"
+ * Example: {count:items} with 1 sword → "one sword"
+ * Example: {count:items} with 0       → "nothing"
  */
 export declare const countFormatter: Formatter;
 ```
@@ -2268,6 +2349,181 @@ export declare const isFormatter: Formatter;
 export declare const wasFormatter: Formatter;
 /** "has" formatter — emits "has" (singular) or "have" (plural). */
 export declare const hasFormatter: Formatter;
+```
+
+### assembler/english-assembler
+
+```typescript
+/**
+ * @file English Assembler — realizes a phrase tree to text blocks (ADR-192 §4).
+ *
+ * Purpose: the single English-locale component that walks a `Phrase` tree and
+ * is the SOLE authority for every cross-cutting correctness concern — article,
+ * agreement, punctuation, whitespace, reference, and case. It replaces the
+ * left-to-right formatter chain (`applyFormatters`) whose early collapse to a
+ * bare string lost the metadata neighbours need to agree against.
+ *
+ * Public interface: `EnglishAssembler` (implements `Assembler`),
+ * `ASSEMBLER_DEFAULT_BLOCK_KEY`, and the standalone `capitalizeSentenceStart`
+ * case-authority helper.
+ *
+ * Owner context: `@sharpee/lang-en-us` — English realization. The ADR-190 list
+ * formatter logic is reproduced here in the `PhraseList` case (the old
+ * `formatters/list.ts` is retired in Phase 3, not called from here).
+ *
+ * INVARIANT (ADR-192 §7): `realize` is a pure function of `(tree, ctx)` — the
+ * same tree and context yield byte-identical output. No clocks, no randomness.
+ *
+ * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
+ * `Verb` (ADR-199) and `Verbatim` (ADR-200) atoms are realized here; the six
+ * remaining stub kinds throw `PhraseNotImplementedError`.
+ */
+import { Assembler, Phrase, RenderContext } from '@sharpee/if-domain';
+import { ITextBlock } from '@sharpee/text-blocks';
+/**
+ * Default channel key for a realized tree. Phase 2 emits one block; the report
+ * layer (ADR-192 §6, Phase 4) assigns real channel keys (room.name, …) as it
+ * wires per-event trees.
+ */
+export declare const ASSEMBLER_DEFAULT_BLOCK_KEY: "action.result";
+/**
+ * Capitalize the first alphabetic character of a sentence. Exposed as the Case
+ * authority; the explicit `{capitalize …}` template hint is wired to it by the
+ * parser in Phase 3 (ADR-192 §5). Not auto-applied — realization preserves the
+ * author's case unless capitalization is requested.
+ *
+ * @param text the realized text
+ * @returns the text with its first letter upper-cased
+ */
+export declare function capitalizeSentenceStart(text: string): string;
+/**
+ * The English Assembler. Realizes a phrase tree to text blocks under the default
+ * channel key; the report layer re-keys per channel.
+ */
+export declare class EnglishAssembler implements Assembler {
+    /**
+     * Realize a phrase tree to text blocks.
+     *
+     * Newlines in the realized text are lifted to block boundaries (no block's
+     * content carries `\n`); horizontal whitespace is collapsed per block, except
+     * in verbatim runs. A single-line tree yields one block.
+     *
+     * @param tree the phrase tree to realize
+     * @param ctx the render context (world, params, settings, seams)
+     * @returns the realized text blocks
+     * @throws PhraseNotImplementedError when a reserved stub kind is encountered
+     */
+    realize(tree: Phrase, ctx: RenderContext): ITextBlock[];
+}
+```
+
+### assembler/errors
+
+```typescript
+/**
+ * @file Assembler error types (ADR-192).
+ *
+ * Purpose: the named error the English Assembler throws when it meets a phrase
+ * kind whose realization has not yet landed.
+ *
+ * Public interface: `PhraseNotImplementedError`.
+ *
+ * Owner context: `@sharpee/lang-en-us` — English realization. The seven stub
+ * kinds (Pronoun, Numeral, Verbatim, Contents, Slot, Optional, Choice) are
+ * reserved in the `if-domain` algebra but realized only by their follow-on ADRs;
+ * until then the Assembler refuses them loudly rather than emitting `Empty`.
+ */
+import { Phrase } from '@sharpee/if-domain';
+/**
+ * Thrown by the Assembler when a reserved (stub) phrase kind is realized before
+ * its follow-on ADR has implemented the case. Names the kind and the ADR.
+ */
+export declare class PhraseNotImplementedError extends Error {
+    readonly kind: Phrase['kind'];
+    constructor(kind: Phrase['kind']);
+}
+```
+
+### parser/parse-phrase-template
+
+```typescript
+/**
+ * @file parsePhraseTemplate — the phrase-tree template parser (ADR-192 §5).
+ *
+ * Purpose: parse an author template string into a `Phrase` tree, binding each
+ * placeholder to a producer/param value. Replaces `parsePlaceholder` and the
+ * `:`-chain formatter grammar. Placeholders are producer references, never
+ * formatter chains.
+ *
+ * Public interface: `parsePhraseTemplate(template, params)` and
+ * `PhraseParseError`.
+ *
+ * Owner context: `@sharpee/lang-en-us`. The grammar is English-locale authoring
+ * surface; the produced `Phrase` tree is language-neutral.
+ *
+ * Grammar (ADR-192 §5):
+ *  - `{item}` / `{the item}` / `{a item}` / `{an item}` / `{some item}` /
+ *    `{capitalize the item}` → `NounPhrase` (last bare token = param name,
+ *    leading bare tokens = reserved hints).
+ *  - `{verb:is target}` / `{verb:has target}` / `{verb:opens door}` → a `Verb`
+ *    atom (ADR-199): leading bare token is the lemma, last bare token is the
+ *    subject param to agree with. The subject must be a bound param.
+ *  - `{verbatim:name}` → a `Verbatim` atom (ADR-200): the param's value rendered
+ *    as opaque, whitespace-exempt text. The param must be bound.
+ *  - `{pronoun:it}` / `{number:n words}` / `{contents:box}` / `{slot:detail}` →
+ *    the corresponding reserved (stub) kind.
+ *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
+ *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
+ *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
+ */
+import { Phrase } from '@sharpee/if-domain';
+/**
+ * Raised when a template cannot be parsed: a legacy `:`-chain, an unknown
+ * kind-prefix, an unknown leading hint, or a reference to an unbound param.
+ * Carries the offending token and the full template so the author sees both.
+ */
+export declare class PhraseParseError extends Error {
+    readonly offendingToken: string;
+    readonly template: string;
+    readonly reason: string;
+    constructor(offendingToken: string, template: string, reason: string);
+}
+/**
+ * Parse a template into a phrase tree.
+ *
+ * @param template author template, e.g. "You take {the item}."
+ * @param params param/producer bindings keyed by placeholder name
+ * @returns the parsed phrase (a `Sequence` when the template mixes literal text
+ *          and placeholders; the bare phrase when it is a single placeholder)
+ * @throws PhraseParseError on a legacy `:`-chain, unknown kind-prefix, unknown
+ *         hint, or unbound param — synchronously, at parse time (AC-8, AC-11)
+ */
+export declare function parsePhraseTemplate(template: string, params?: Record<string, unknown>): Phrase;
+```
+
+### pluralize
+
+```typescript
+/**
+ * Pluralize an English noun. Checks the irregular map first (preserving the
+ * original case pattern), then applies regular rules (-es / -ies / -ves / -s).
+ *
+ * @param noun singular noun, e.g. "coin", "goose"
+ * @returns the plural form, e.g. "coins", "geese"
+ */
+export declare function pluralize(noun: string): string;
+```
+
+### number-words
+
+```typescript
+/**
+ * Render a count as a word for 1–10, or a numeral for 0 and 11+.
+ *
+ * @param n a non-negative integer count
+ * @returns "one".."ten" for 1–10, otherwise the numeral as a string
+ */
+export declare function countWord(n: number): string;
 ```
 
 ### data/words
@@ -2534,17 +2790,17 @@ export {};
  * @see ADR-172 — Spatial Sound Propagation §Audibility tier, §Channel routing
  */
 export declare const soundMessages: {
-    readonly 'sound.heard.default.full': "{You} {hear} {kind}.";
-    readonly 'sound.heard.default.muffled': "{You} {hear} a muffled {kind}.";
-    readonly 'sound.heard.default.fragments': "{You} {catch} broken {kind}.";
+    readonly 'sound.heard.default.full': "{You} {hear} {verbatim:kind}.";
+    readonly 'sound.heard.default.muffled': "{You} {hear} a muffled {verbatim:kind}.";
+    readonly 'sound.heard.default.fragments': "{You} {catch} broken {verbatim:kind}.";
     readonly 'sound.heard.default.presence-only': "{You} {hear} something distant.";
-    readonly 'sound.heard.speech.full': "{You} {hear}: \"{content}\"";
-    readonly 'sound.heard.speech.muffled': "{You} {catch} a muffled voice: \"{content}\"";
+    readonly 'sound.heard.speech.full': "{You} {hear}: \"{verbatim:content}\"";
+    readonly 'sound.heard.speech.muffled': "{You} {catch} a muffled voice: \"{verbatim:content}\"";
     readonly 'sound.heard.speech.fragments': "{You} {catch} fragments of speech.";
     readonly 'sound.heard.speech.presence-only': "{You} {hear} voices nearby.";
-    readonly 'sound.heard.ambient.full': "{You} {hear} {kind}.";
-    readonly 'sound.heard.ambient.muffled': "{You} {hear} a muffled {kind}.";
-    readonly 'sound.heard.ambient.fragments': "{You} {catch} the faint sound of {kind}.";
+    readonly 'sound.heard.ambient.full': "{You} {hear} {verbatim:kind}.";
+    readonly 'sound.heard.ambient.muffled': "{You} {hear} a muffled {verbatim:kind}.";
+    readonly 'sound.heard.ambient.fragments': "{You} {catch} the faint sound of {verbatim:kind}.";
     readonly 'sound.heard.ambient.presence-only': "{You} {hear} something at the edge of hearing.";
 };
 export type SoundMessageId = keyof typeof soundMessages;

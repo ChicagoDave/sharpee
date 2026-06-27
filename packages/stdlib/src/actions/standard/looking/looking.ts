@@ -117,8 +117,9 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
           : 'surface_contents';
         const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
 
-        // params carry EntityInfo for the formatter chain (ADR-158);
-        // top-level event fields stay strings for handler consumption.
+        // params carry phrases (ADR-192): the container NounPhrase and a
+        // PhraseList of its contents; top-level event fields stay strings for
+        // handler consumption.
         const containerEntity = context.world.getEntity(containerInfo.containerId);
         events.push(context.event('if.event.list.contents', {
           messageId: `${context.action.id}.${contentsMessageId}`,
@@ -126,7 +127,14 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
             [containerKey]: containerEntity
               ? nounPhraseFor(containerEntity)
               : { name: containerInfo.containerName },
-            items: containerInfo.itemNames.join(', ')
+            items: {
+              kind: 'list' as const,
+              conj: 'and' as const,
+              items: containerInfo.itemIds
+                .map(id => context.world.getEntity(id))
+                .filter((e): e is NonNullable<typeof e> => Boolean(e))
+                .map(e => nounPhraseFor(e)),
+            }
           },
           containerId: containerInfo.containerId,
           containerName: containerInfo.containerName,
