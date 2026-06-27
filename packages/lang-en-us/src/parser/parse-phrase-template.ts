@@ -19,8 +19,10 @@
  *  - `{verb:is target}` / `{verb:has target}` / `{verb:opens door}` → a `Verb`
  *    atom (ADR-199): leading bare token is the lemma, last bare token is the
  *    subject param to agree with. The subject must be a bound param.
- *  - `{pronoun:it}` / `{number:n words}` / `{contents:box}` / `{slot:detail}` /
- *    `{verbatim:banner}` → the corresponding reserved (stub) kind.
+ *  - `{verbatim:name}` → a `Verbatim` atom (ADR-200): the param's value rendered
+ *    as opaque, whitespace-exempt text. The param must be bound.
+ *  - `{pronoun:it}` / `{number:n words}` / `{contents:box}` / `{slot:detail}` →
+ *    the corresponding reserved (stub) kind.
  *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
  *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
@@ -36,13 +38,12 @@ const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {
   some: 'some',
 };
 
-/** Recognized `kind:` heads → the reserved `Phrase` kind they route to. */
+/** Recognized `kind:` heads → the reserved (stub) `Phrase` kind they route to. */
 const KIND_PREFIXES: Record<string, Phrase['kind']> = {
   pronoun: 'pronoun',
   number: 'number',
   contents: 'contents',
   slot: 'slot',
-  verbatim: 'verbatim',
 };
 
 /**
@@ -127,6 +128,24 @@ function parseVerb(inner: string, template: string, params: Record<string, unkno
   return { kind: 'verb', lemma, subjectRef };
 }
 
+/**
+ * Parse a `{verbatim:x}` head into a `Verbatim` atom (ADR-200): the last bare
+ * token is the param whose value is rendered as opaque text. The param must be
+ * bound — an unbound param fails at parse time (ADR-192 AC-11).
+ */
+function parseVerbatim(inner: string, template: string, params: Record<string, unknown>): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length !== 1) {
+    throw new PhraseParseError(inner, template, 'verbatim takes a single param, e.g. {verbatim:name}');
+  }
+  const name = tokens[0];
+  if (!(name in params)) {
+    throw new PhraseParseError(name, template, `verbatim param '${name}' is not bound`);
+  }
+  return { kind: 'verbatim', text: String(params[name]) };
+}
+
 /** Parse one placeholder's inner text into a phrase, binding against params. */
 function parsePlaceholder(inner: string, template: string, params: Record<string, unknown>): Phrase {
   // A ':' marks a kind head. Its prefix must be a known kind — anything else
@@ -136,6 +155,10 @@ function parsePlaceholder(inner: string, template: string, params: Record<string
     // Verb atom (ADR-199): parses its own lemma + subject and binds the subject.
     if (prefix === 'verb') {
       return parseVerb(inner, template, params);
+    }
+    // Verbatim atom (ADR-200): binds a single param, rendered as opaque text.
+    if (prefix === 'verbatim') {
+      return parseVerbatim(inner, template, params);
     }
     const kind = KIND_PREFIXES[prefix];
     if (kind === undefined) {

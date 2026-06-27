@@ -91,6 +91,11 @@ describe('EnglishLanguageProvider phrase path (ADR-192 W1)', () => {
       expect(off).toBe('an apple, a pear and a plum');
     });
 
+    it('renders a {verbatim:x} scalar param as opaque text (ADR-200, end-to-end)', () => {
+      provider.addMessage('test.greet', 'Hello, {verbatim:npcName}.');
+      expect(text(provider.renderMessage('test.greet', { npcName: 'Aragorn' }, makeCtx()))).toBe('Hello, Aragorn.');
+    });
+
     it('echoes an unregistered ID as a literal block (getMessage-parity fallback)', () => {
       const blocks = provider.renderMessage('test.missing', {}, makeCtx());
       expect(text(blocks)).toBe('test.missing');

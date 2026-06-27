@@ -19,8 +19,8 @@
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
  * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` atom (ADR-199) are realized here; the seven stub kinds throw
- * `PhraseNotImplementedError`.
+ * `Verb` (ADR-199) and `Verbatim` (ADR-200) atoms are realized here; the six
+ * remaining stub kinds throw `PhraseNotImplementedError`.
  */
 
 import {
@@ -35,6 +35,7 @@ import {
   isSequence,
   isEmpty,
   isVerb,
+  isVerbatim,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -370,6 +371,12 @@ function realizeToRuns(
   if (isVerb(phrase)) {
     const own = extendDeco(deco, phrase.decorations);
     return [{ text: renderVerb(phrase, ctx), verbatim: false, deco: own }];
+  }
+
+  if (isVerbatim(phrase)) {
+    // Opaque pass-through (ADR-200): exempt from whitespace collapse.
+    const own = extendDeco(deco, phrase.decorations);
+    return [{ text: phrase.text, verbatim: true, deco: own }];
   }
 
   if (isSequence(phrase)) {

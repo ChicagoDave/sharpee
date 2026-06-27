@@ -19,10 +19,10 @@
  *
  * Extensibility (ADR-192 §1): `Phrase` is a CLOSED discriminated union keyed by
  * `kind`. The five foundational kinds are implemented by the Assembler in
- * ADR-192; `Verb` is the first realized follow-on atom (ADR-199); the remaining
- * seven stub kinds are reserved discriminants whose fields and realization land
- * additively in their follow-on ADRs (193–198 + Verbatim). Extension is additive
- * only — a new member plus a new Assembler case, never a rewrite of the base.
+ * ADR-192; `Verb` (ADR-199) and `Verbatim` (ADR-200) are realized follow-on
+ * atoms; the remaining six stub kinds are reserved discriminants whose fields and
+ * realization land additively in their follow-on ADRs (193–198). Extension is
+ * additive only — a new member plus a new Assembler case, never a rewrite of the base.
  */
 
 import { EntityId, IEntity } from '@sharpee/core';
@@ -148,9 +148,15 @@ export interface Numeral extends PhraseBase {
   kind: 'number';
 }
 
-/** Atom — text passed through untouched. Fields + realization: Verbatim ADR. */
+/**
+ * Atom — opaque text passed through untouched and exempt from whitespace
+ * collapse (ADR-200). The phrase home for non-entity scalars (names, directions,
+ * free text, banners) the old chain substituted with a bare `String(value)`.
+ */
 export interface Verbatim extends PhraseBase {
   kind: 'verbatim';
+  /** The opaque value, rendered verbatim. */
+  text: string;
 }
 
 /** Combinator — an entity's contents / relational placement. Fields + realization: ADR-194. */

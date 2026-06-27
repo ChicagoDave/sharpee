@@ -213,7 +213,7 @@ describe('AC-9: determinism', () => {
 // --- stub kinds: named refusal ---------------------------------------------
 
 describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
-  const stubs: Array<Phrase['kind']> = ['pronoun', 'number', 'verbatim', 'contents', 'slot', 'optional', 'choice'];
+  const stubs: Array<Phrase['kind']> = ['pronoun', 'number', 'contents', 'slot', 'optional', 'choice'];
   for (const kind of stubs) {
     it(`refuses kind '${kind}'`, () => {
       expect(() => asm.realize({ kind } as Phrase, makeCtx())).toThrow(PhraseNotImplementedError);
@@ -225,6 +225,24 @@ describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
       }
     });
   }
+});
+
+// --- Verbatim atom (ADR-200) -----------------------------------------------
+
+describe('Verbatim atom realizes opaque, whitespace-exempt text (ADR-200)', () => {
+  it('renders the text byte-for-byte', () => {
+    expect(render({ kind: 'verbatim', text: 'Aragorn' })).toBe('Aragorn');
+    expect(render({ kind: 'verbatim', text: 'north' })).toBe('north');
+  });
+
+  it('is exempt from whitespace collapse (internal runs survive)', () => {
+    expect(render({ kind: 'verbatim', text: 'a   b\n\nc' })).toBe('a   b\n\nc');
+  });
+
+  it('composes in a Sequence without disturbing neighbours’ normal collapse', () => {
+    const tree: Phrase = { kind: 'seq', parts: [lit('You see   '), { kind: 'verbatim', text: 'X  Y' }, lit('  here.')] };
+    expect(render(tree)).toBe('You see X  Y here.');
+  });
 });
 
 // --- isolation: Assembler does not call the legacy formatter chain ----------
