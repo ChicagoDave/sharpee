@@ -1,7 +1,9 @@
 # ADR-192 Phase 3b + 4 — Detailed Scope (the fused destructive + integration step)
 
 **Created**: 2026-06-26
-**Status**: SCOPING — not started; needs decisions (see §7) before implementation.
+**Status**: READY — not started; the §7.1 verb-agreement BLOCKER is **resolved** (ADR-199
+ACCEPTED 2026-06-27, option B). §7.2 (appetite) and §7.3 (LanguageProvider API) remain
+author/implementer calls but are non-blocking.
 **Branch (proposed)**: `v2_phase34` from `main`.
 **Constraint**: ADR-192 explicitly rejects a dual pipeline / dispatch seam. Old and
 new template syntaxes cannot coexist on the same message set, so the cutover is
@@ -134,15 +136,21 @@ is one atomic cutover by ADR mandate.
 
 ## 7. Decisions needed before starting
 
-### 7.1 Verb agreement (BLOCKER)
-How do we render `{is:target}`/`{was:}`/`{has:}` (52 templates) in the phrase world?
-- **(A) Transitional pre-pass (recommended)**: a string pre-pass (sibling of the
-  perspective resolver) resolves `{is:x}`→"is"/"are" from `params[x].number` BEFORE
-  `parsePhraseTemplate` runs. Unblocks immediately, no new algebra member, no new ADR.
-  A future "Verb atom" ADR can fold agreement into the tree later.
-- **(B) Add a `Verb` kind now**: extend the closed union (new ADR), `{verb:is target}`
-  realized by the Assembler's Agreement authority. Cleanest long-term; more work + an ADR.
-- **(C) Other** (e.g., defer the 52 templates behind a temporary shim).
+### 7.1 Verb agreement — RESOLVED (option B → ADR-199 ACCEPTED 2026-06-27)
+**Decision: option B.** The 59 `{is:}`/`{has:}` usages (`{was:}` has zero live usages)
+become `{verb:is x}`/`{verb:has x}`, a new `Verb` atom in the closed union realized by the
+Assembler's Agreement authority. Implemented as W3. Full contract — interface, subject
+resolution (3rd-person / 2nd-person player / surface-less default), agreement algorithm,
+and acceptance criteria — in **ADR-199**. Rationale for B over A: v1 is frozen in the
+sibling repo, so A's only advantage (leaving templates untouched) is illusory — W4
+re-authors every template anyway, making A a guaranteed second migration for no saving.
+
+Original options, for the record:
+- **(A) Transitional pre-pass**: a string pre-pass resolving `{is:x}`→"is"/"are" before
+  `parsePhraseTemplate`. Rejected — reintroduces the formatter-style string pass ADR-192
+  deletes; no backward-compat reason to take it.
+- **(B) Add a `Verb` kind now** — **CHOSEN** (ADR-199).
+- **(C) Defer the 59 usages behind a shim** — rejected; leaves a known hole + a second cutover.
 
 ### 7.2 Appetite / session plan
 Confirm this runs as one atomic, multi-session branch that merges only when fully green

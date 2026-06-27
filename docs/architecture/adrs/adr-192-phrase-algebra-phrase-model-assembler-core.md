@@ -4,6 +4,13 @@
 
 > Accepted 2026-06-26 by David. Phase 1 (`@sharpee/if-domain` Phrase contracts)
 > authorized; implementation proceeds on `v2_phase1` per `docs/context/plan.md`.
+>
+> Amended 2026-06-27: (1) the §2 kind roster and "Foundation for" list gained the `Verb`
+> atom (→ ADR-199), which the original roster omitted; (2) the §1 agreement-surface `person`
+> field changed encoding from `1 | 2 | 3` to the spelled-out string union
+> `'first' | 'second' | 'third'`, matching the other surface fields (no magic numbers). The
+> field has no implemented consumer yet (ADR-199's Verb is the first), so the re-encoding is
+> a documentation-level refinement. The foundational union is otherwise unchanged.
 
 ## Date: 2026-06-26
 
@@ -66,7 +73,7 @@ Every phrase may carry the **agreement surface** — the metadata neighbors agre
 | Field | For |
 |-------|-----|
 | `number` (`singular`\|`plural`\|`mass`) | verb agreement, pluralization |
-| `person` (`1`\|`2`\|`3`) | pronouns, verb conjugation |
+| `person` (`first`\|`second`\|`third`) | pronouns, verb conjugation |
 | `pronounSet` | gendered/neopronoun reference |
 | `properName` | article suppression |
 | `articleType` (`indefinite`\|`definite`\|`some`\|`none`) | a/an/the/some/∅ |
@@ -139,6 +146,7 @@ foundational subset**; the rest are stubs reserved for their follow-on ADRs.
 | `Empty` | atom — renders to nothing; absorbed by combinators | ✅ |
 | `Pronoun` | atom | → ADR-197 |
 | `Numeral` | atom | → ADR-198 (minor) |
+| `Verb` | atom — subject-agreed verb | → ADR-199 |
 | `Verbatim` | atom | → ADR (E) verbatim |
 | `Contents` | combinator | → ADR-194 |
 | `Slot` | combinator | → ADR-195 |
@@ -331,7 +339,8 @@ this ADR ships nothing to `main`.
   whitespace authority).
 - **Foundation for** ADR-193 (state-derived adjectives & computed names), ADR-194
   (Contents & placement), ADR-195 (Slots), ADR-196 (Optional/Choice & text-state store),
-  ADR-197 (Pronoun & last-mentioned context), ADR-198 (Numeral), and the Verbatim atom.
+  ADR-197 (Pronoun & last-mentioned context), ADR-198 (Numeral), ADR-199 (Verb atom &
+  subject agreement), and the Verbatim atom.
 - **Workflow:** lands on the `v2` worktree per D3 (`repos/sharpee_v2`); `main`/1.x stays
   maintenance-only.
 
