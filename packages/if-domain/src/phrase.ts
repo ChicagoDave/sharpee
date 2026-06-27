@@ -7,7 +7,7 @@
  * `messageId → formatter-chain → string` pipeline with
  * `messageId → phrase tree → Assembler → ITextBlock[]`.
  *
- * Public interface: the `Phrase` union (12 members), `PhraseProducer`,
+ * Public interface: the `Phrase` union (13 members), `PhraseProducer`,
  * `RenderContext` (with the `reference` / `textState` / `contribute` seams),
  * `Assembler`, and the `isX` kind type guards.
  *
@@ -19,10 +19,10 @@
  *
  * Extensibility (ADR-192 §1): `Phrase` is a CLOSED discriminated union keyed by
  * `kind`. The five foundational kinds are implemented by the Assembler in
- * ADR-192; the seven stub kinds are reserved discriminants whose fields and
- * realization land additively in their follow-on ADRs (193–198 + Verbatim).
- * Extension is additive only — a new member plus a new Assembler case, never a
- * rewrite of the base.
+ * ADR-192; `Verb` is the first realized follow-on atom (ADR-199); the remaining
+ * seven stub kinds are reserved discriminants whose fields and realization land
+ * additively in their follow-on ADRs (193–198 + Verbatim). Extension is additive
+ * only — a new member plus a new Assembler case, never a rewrite of the base.
  */
 
 import { EntityId, IEntity } from '@sharpee/core';
@@ -67,6 +67,13 @@ export interface NounPhrase extends PhraseBase {
   /** Static adjectives (ADR-192 AC-4); state-derived adjectives land in ADR-193. */
   adjectives?: string[];
   number: 'singular' | 'plural' | 'mass';
+  /**
+   * Grammatical person, the verb-agreement surface a referencing `Verb` reads
+   * (ADR-199 §4). Unset is treated as third person; the player in 2nd-person
+   * narrative is stamped `'second'` so `{verb:is actor}` takes the plural form
+   * ("you are"). Language-neutral selector — no verb surface lives here.
+   */
+  person?: 'first' | 'second' | 'third';
   /** Suppresses the article when true. */
   properName?: boolean;
   articleType: 'indefinite' | 'definite' | 'some' | 'none';
@@ -100,6 +107,27 @@ export interface Sequence extends PhraseBase {
 /** Atom: realizes to "" and is absorbed by combinators (no dangling comma). */
 export interface Empty {
   kind: 'empty';
+}
+
+/**
+ * Verb atom (ADR-199): defers a verb's surface and agrees its number/person
+ * with a referenced subject phrase at realize time. Replaces the legacy
+ * `{is:}` / `{was:}` / `{has:}` formatters. A follow-on atom of ADR-192 —
+ * additive (new union member + one Assembler case), no core rewrite.
+ *
+ * `lemma` is the 3rd-person-singular surface the author types ('is','was',
+ * 'has','opens'); the agreed (plural / person-marked) form is the Assembler's
+ * Agreement authority to compute — NO conjugation strings live here, exactly as
+ * `NounPhrase` carries `articleType` and never the a/an surface.
+ */
+export interface Verb extends PhraseBase {
+  kind: 'verb';
+  /** 3rd-person-singular surface the author types: 'is', 'was', 'has', 'opens'. */
+  lemma: string;
+  /** Param/producer name of the subject phrase to agree number/person with. */
+  subjectRef: string;
+  /** Default 'third'; the subject's own `person` takes precedence when present. */
+  person?: 'first' | 'second' | 'third';
 }
 
 // ---------------------------------------------------------------------------
@@ -150,8 +178,9 @@ export interface Choice extends PhraseBase {
 // ---------------------------------------------------------------------------
 
 /**
- * The closed phrase algebra. Five foundational members are realized in ADR-192;
- * the seven stubs are reserved for their follow-on ADRs. Extension is additive.
+ * The closed phrase algebra. Five foundational members are realized in ADR-192
+ * and `Verb` in ADR-199; the seven stubs are reserved for their follow-on ADRs.
+ * Extension is additive.
  */
 export type Phrase =
   | Literal
@@ -159,6 +188,7 @@ export type Phrase =
   | PhraseList
   | Sequence
   | Empty
+  | Verb
   | Pronoun
   | Numeral
   | Verbatim
@@ -293,6 +323,11 @@ export function isSequence(p: Phrase): p is Sequence {
 /** @returns true if the phrase is `Empty`. */
 export function isEmpty(p: Phrase): p is Empty {
   return p.kind === 'empty';
+}
+
+/** @returns true if the phrase is a `Verb` (ADR-199). */
+export function isVerb(p: Phrase): p is Verb {
+  return p.kind === 'verb';
 }
 
 /** @returns true if the phrase is a `Pronoun` (ADR-197). */

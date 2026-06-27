@@ -18,20 +18,23 @@
  * INVARIANT (ADR-192 §7): `realize` is a pure function of `(tree, ctx)` — the
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
- * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) are
- * realized here; the seven stub kinds throw `PhraseNotImplementedError`.
+ * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
+ * `Verb` atom (ADR-199) are realized here; the seven stub kinds throw
+ * `PhraseNotImplementedError`.
  */
 
 import {
   Assembler,
   Phrase,
   NounPhrase,
+  Verb,
   RenderContext,
   isLiteral,
   isNounPhrase,
   isPhraseList,
   isSequence,
   isEmpty,
+  isVerb,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -112,6 +115,75 @@ function renderNoun(np: NounPhrase): string {
   const text = article ? `${article} ${head}` : head;
   // Case authority: the {capitalize …} hint upper-cases the rendered head.
   return np.capitalize ? capitalizeSentenceStart(text) : text;
+}
+
+// ===========================================================================
+// Agreement authority — verb conjugation (ADR-199)
+// ===========================================================================
+
+/**
+ * Suppletive verbs whose plural / 1st-singular forms are not the regular `-s`
+ * strip. Keyed by the 3rd-person-singular `lemma` the author types. This is the
+ * table lifted out of the deleted `formatters/verb.ts`, extended with do/go.
+ */
+const IRREGULAR_VERBS: Record<string, { plural: string; firstSingular?: string }> = {
+  is: { plural: 'are', firstSingular: 'am' }, // be (present)
+  was: { plural: 'were', firstSingular: 'was' }, // be (past): I was / you were
+  has: { plural: 'have' }, // have
+  does: { plural: 'do' }, // do
+  goes: { plural: 'go' }, // go
+};
+
+/** Regular rule: the 3rd-singular `lemma` ends in `-s`; the plain form strips it. */
+function regularPluralVerb(lemma: string): string {
+  if (lemma.endsWith('ies') && lemma.length > 3) return `${lemma.slice(0, -3)}y`; // carries → carry
+  if (/(?:s|x|z|ch|sh)es$/.test(lemma)) return lemma.slice(0, -2); // pushes → push, boxes → box
+  if (lemma.endsWith('s')) return lemma.slice(0, -1); // opens → open
+  return lemma; // no -s to strip — leave as authored
+}
+
+/** Read the agreement surface (number, optional person) off a bound subject value. */
+function subjectAgreement(subject: unknown): {
+  number: NounPhrase['number'];
+  person?: 'first' | 'second' | 'third';
+} {
+  if (subject !== null && typeof subject === 'object' && typeof (subject as { kind?: unknown }).kind === 'string') {
+    const phrase = subject as Phrase;
+    if (isNounPhrase(phrase)) return { number: phrase.number, person: phrase.person };
+    if (isPhraseList(phrase)) {
+      const present = phrase.items.filter((item) => !isEmpty(item));
+      if (present.length > 1) return { number: 'plural' }; // "the troll and the goats" → are
+      const only = present[0];
+      if (present.length === 1 && only && isNounPhrase(only)) return { number: only.number, person: only.person };
+      return { number: 'singular' };
+    }
+  }
+  // No agreement surface (Literal, Empty, scalar, unbound) → unmarked default (§4 C).
+  return { number: 'singular' };
+}
+
+/** Conjugate a lemma for the resolved subject number/person (Agreement authority). */
+function conjugateVerb(
+  lemma: string,
+  number: NounPhrase['number'],
+  person: 'first' | 'second' | 'third',
+): string {
+  // 3rd-person singular (and mass, which agrees singular) is the authored lemma.
+  if (person === 'third' && number !== 'plural') return lemma;
+  const irregular = IRREGULAR_VERBS[lemma];
+  // 1st-person singular suppletive ("I am", "I was").
+  if (number !== 'plural' && person === 'first' && irregular?.firstSingular) return irregular.firstSingular;
+  // Everything else (plural, or 1st/2nd person) takes the non-3rd-singular form.
+  if (irregular) return irregular.plural;
+  return regularPluralVerb(lemma);
+}
+
+/** Realize a `Verb` by agreeing it with its referenced subject's resolved surface. */
+function renderVerb(verb: Verb, ctx: RenderContext): string {
+  const agreement = subjectAgreement(ctx.params[verb.subjectRef]);
+  // The subject's own person wins; else the Verb's declared person; else third.
+  const person = agreement.person ?? verb.person ?? 'third';
+  return conjugateVerb(verb.lemma, agreement.number, person);
 }
 
 // ===========================================================================
@@ -279,6 +351,11 @@ function realizeToRuns(
   if (isPhraseList(phrase)) {
     const own = extendDeco(deco, phrase.decorations);
     return [{ text: renderList(phrase.items, phrase.conj, ctx), verbatim: false, deco: own }];
+  }
+
+  if (isVerb(phrase)) {
+    const own = extendDeco(deco, phrase.decorations);
+    return [{ text: renderVerb(phrase, ctx), verbatim: false, deco: own }];
   }
 
   if (isSequence(phrase)) {

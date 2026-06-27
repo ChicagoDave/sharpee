@@ -16,6 +16,9 @@
  *  - `{item}` / `{the item}` / `{a item}` / `{an item}` / `{some item}` /
  *    `{capitalize the item}` → `NounPhrase` (last bare token = param name,
  *    leading bare tokens = reserved hints).
+ *  - `{verb:is target}` / `{verb:has target}` / `{verb:opens door}` → a `Verb`
+ *    atom (ADR-199): leading bare token is the lemma, last bare token is the
+ *    subject param to agree with. The subject must be a bound param.
  *  - `{pronoun:it}` / `{number:n words}` / `{contents:box}` / `{slot:detail}` /
  *    `{verbatim:banner}` → the corresponding reserved (stub) kind.
  *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
@@ -100,12 +103,40 @@ function bindNounPhrase(
   return np;
 }
 
+/**
+ * Parse a `{verb:lemma subject}` head into a `Verb` atom (ADR-199 §2). Leading
+ * bare token(s) are the lemma; the last bare token is the subject param to agree
+ * with. The subject must be bound — an unbound subject is an authoring error and
+ * fails here at parse time (AC-11), matching the NounPhrase unbound-param rule.
+ */
+function parseVerb(inner: string, template: string, params: Record<string, unknown>): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length < 2) {
+    throw new PhraseParseError(
+      inner,
+      template,
+      'a verb needs a lemma and a subject, e.g. {verb:is target}',
+    );
+  }
+  const subjectRef = tokens.pop() as string;
+  const lemma = tokens.join(' ');
+  if (!(subjectRef in params)) {
+    throw new PhraseParseError(subjectRef, template, `verb subject '${subjectRef}' is not bound`);
+  }
+  return { kind: 'verb', lemma, subjectRef };
+}
+
 /** Parse one placeholder's inner text into a phrase, binding against params. */
 function parsePlaceholder(inner: string, template: string, params: Record<string, unknown>): Phrase {
   // A ':' marks a kind head. Its prefix must be a known kind — anything else
   // (a legacy chain like `cap:the:item`, or an unknown kind) fails here.
   if (inner.includes(':')) {
     const prefix = inner.slice(0, inner.indexOf(':')).trim();
+    // Verb atom (ADR-199): parses its own lemma + subject and binds the subject.
+    if (prefix === 'verb') {
+      return parseVerb(inner, template, params);
+    }
     const kind = KIND_PREFIXES[prefix];
     if (kind === undefined) {
       throw new PhraseParseError(

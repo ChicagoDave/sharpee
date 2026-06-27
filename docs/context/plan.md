@@ -160,10 +160,22 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 > - **W2 (RenderContext runtime) — DONE**: `engine/prose-pipeline/render-context.ts`
 >   — `createRenderWorld` adapter over the world model + inert placeholder seams
 >   (reference/textState/contribute, ADR-195–197 deferred) + per-turn factory.
-> - **State**: new path WIRED + unit-tested (11 lang + 6 engine new tests) but
->   NOT switched — handlers still call `getMessage` (old string path). Build green;
->   turbo `@sharpee/engine...` 13/13 packages compile; lang 310, engine 442 pass.
-> - **NEXT**: W3 (Verb atom, ADR-199), then W6, then the W4+W5 bulk cutover
+> - **W3 (Verb atom, ADR-199) — DONE**: `Verb` added to the closed union +
+>   `NounPhrase.person` agreement surface + `isVerb` guard (if-domain);
+>   `{verb:lemma subject}` parse rule with parse-time unbound check
+>   (parse-phrase-template); Assembler Agreement-authority verb case — irregular
+>   table (is/are, was/were, has/have, does/do, goes/go) lifted from
+>   `formatters/verb.ts`, regular `-s` strip, number+person+mass handling, the
+>   PhraseList→plural and no-number→singular defaults. +12 verb-agreement, +6
+>   verb-parse tests. Build 13/13 green; lang suite 328 pass.
+>   - **OPEN (W5)**: §4 case B — stamping `person:'second'` on the *player*
+>     subject so `{verb:is actor}` → "you are". The Assembler honors `person` when
+>     present, but `nounPhraseFor` does not yet set it (needs player-id +
+>     narrative-person in `RenderContext`; small contract addition — DISCUSS before
+>     W5). Live `{is:actor}`-style usages with a player subject are wrong until then.
+> - **State**: new path WIRED + unit-tested but NOT switched — handlers still call
+>   `getMessage` (old string path). Build green.
+> - **NEXT**: W6 ({list:items}→PhraseList binding), then the W4+W5 bulk cutover
 >   (build goes red on-branch until the pipeline is switched and legacy deleted).
 - **Tier**: Large
 - **Budget**: 400 tool calls
