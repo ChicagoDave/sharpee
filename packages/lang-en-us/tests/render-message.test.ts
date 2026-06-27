@@ -15,6 +15,7 @@ function makeCtx(settings: LocaleSettings = { serialComma: true }): RenderContex
     world: { getEntity: () => undefined, getEntityContents: () => [], getContainingRoom: () => undefined },
     params: {},
     settings,
+    narrative: { person: 'third' },
     reference: { lastMentioned: () => undefined, note: () => undefined },
     textState: { get: () => undefined, set: () => undefined },
     contribute: () => undefined,

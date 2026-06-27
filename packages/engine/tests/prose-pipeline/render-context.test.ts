@@ -26,13 +26,17 @@ function stubWorld(): WorldModelLike & {
   getEntity: ReturnType<typeof vi.fn>;
   getContents: ReturnType<typeof vi.fn>;
   getContainingRoom: ReturnType<typeof vi.fn>;
+  getPlayer: ReturnType<typeof vi.fn>;
 } {
   return {
     getEntity: vi.fn((id: EntityId) => entity(String(id))),
     getContents: vi.fn(() => [entity('a'), entity('b')]),
     getContainingRoom: vi.fn(() => entity('room')),
+    getPlayer: vi.fn(() => entity('player')),
   };
 }
+
+const THIRD = { person: 'third' as const };
 
 describe('createRenderWorld', () => {
   it('delegates getEntity to the model', () => {
@@ -58,22 +62,24 @@ describe('createRenderWorld', () => {
 });
 
 describe('createRenderContextFactory', () => {
-  it('binds the world and settings, and varies params per message', () => {
+  it('binds the world, settings, and narrative, and varies params per message', () => {
     const rw = createRenderWorld(stubWorld());
     const settings = { serialComma: false };
-    const make = createRenderContextFactory(rw, settings);
+    const narrative = { person: 'second' as const, playerId: 'player' };
+    const make = createRenderContextFactory(rw, settings, narrative);
 
     const ctxA = make({ item: 'lamp' });
     const ctxB = make({ item: 'sword' });
 
     expect(ctxA.world).toBe(rw);
     expect(ctxA.settings).toBe(settings);
+    expect(ctxA.narrative).toBe(narrative);
     expect(ctxA.params).toEqual({ item: 'lamp' });
     expect(ctxB.params).toEqual({ item: 'sword' });
   });
 
   it('shares the per-turn seams across every message context it builds', () => {
-    const make = createRenderContextFactory(createRenderWorld(stubWorld()), {});
+    const make = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD);
     const ctxA = make({});
     const ctxB = make({});
     expect(ctxA.reference).toBe(ctxB.reference);
@@ -81,7 +87,7 @@ describe('createRenderContextFactory', () => {
   });
 
   it('exposes inert placeholder seams (ADR-195–197 deferred)', () => {
-    const make = createRenderContextFactory(createRenderWorld(stubWorld()), {});
+    const make = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD);
     const ctx = make({});
 
     // reference: reports nothing, accepts notes without effect.

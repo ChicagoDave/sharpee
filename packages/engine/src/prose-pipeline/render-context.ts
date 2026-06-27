@@ -22,6 +22,7 @@
 import type { EntityId, IEntity } from '@sharpee/core';
 import type {
   LocaleSettings,
+  NarrativeAgreement,
   ReferenceContext,
   RenderContext,
   RenderWorld,
@@ -32,13 +33,15 @@ import type {
 
 /**
  * The minimal world surface the render world adapter needs. The engine's
- * `WorldModel` satisfies this structurally; declaring only the three methods
- * keeps the prose pipeline honest about what it reads (it never mutates).
+ * `WorldModel` satisfies this structurally; declaring only the methods the
+ * pipeline reads keeps it honest (it never mutates).
  */
 export interface WorldModelLike {
   getEntity(id: EntityId): IEntity | undefined;
   getContents(containerId: EntityId): IEntity[];
   getContainingRoom(entityId: EntityId): IEntity | undefined;
+  /** The player entity, for narrative verb-person agreement (ADR-199 §4 B). */
+  getPlayer(): IEntity | undefined;
 }
 
 /**
@@ -104,11 +107,13 @@ export type RenderContextFactory = (
  *
  * @param world the read-only render world (see {@link createRenderWorld})
  * @param settings the locale realization settings for this turn
+ * @param narrative the player id + narrative person for verb agreement (ADR-199 §4 B)
  * @returns a factory that yields a `RenderContext` for a message's params
  */
 export function createRenderContextFactory(
   world: RenderWorld,
   settings: LocaleSettings,
+  narrative: NarrativeAgreement,
 ): RenderContextFactory {
   // Per-turn seams: shared across every message rendered this turn.
   const reference = new PlaceholderReferenceContext();
@@ -125,6 +130,7 @@ export function createRenderContextFactory(
     world,
     params,
     settings,
+    narrative,
     reference,
     textState,
     contribute,

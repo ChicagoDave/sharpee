@@ -10,17 +10,18 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { NounPhrase, Phrase, PhraseList, RenderContext, LocaleSettings, Verb } from '@sharpee/if-domain';
+import type { NarrativeAgreement, NounPhrase, Phrase, PhraseList, RenderContext, Verb } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
 
 // --- harness ---------------------------------------------------------------
 
 /** A render context whose params carry the subjects a Verb agrees with. */
-function makeCtx(params: Record<string, unknown> = {}, settings: LocaleSettings = {}): RenderContext {
+function makeCtx(params: Record<string, unknown> = {}, narrative: NarrativeAgreement = { person: 'third' }): RenderContext {
   return {
     world: { getEntity: () => undefined, getEntityContents: () => [], getContainingRoom: () => undefined },
     params,
-    settings,
+    settings: {},
+    narrative,
     reference: { lastMentioned: () => undefined, note: () => undefined },
     textState: { get: () => undefined, set: () => undefined },
     contribute: () => undefined,
@@ -30,8 +31,8 @@ function makeCtx(params: Record<string, unknown> = {}, settings: LocaleSettings 
 const asm = new EnglishAssembler();
 
 /** Realize a tree and return its single block's flattened text. */
-function render(tree: Phrase, params?: Record<string, unknown>): string {
-  const blocks = asm.realize(tree, makeCtx(params));
+function render(tree: Phrase, params?: Record<string, unknown>, narrative?: NarrativeAgreement): string {
+  const blocks = asm.realize(tree, makeCtx(params, narrative));
   return blocks[0].content.map((c) => (typeof c === 'string' ? c : '⟦deco⟧')).join('');
 }
 
@@ -89,6 +90,17 @@ describe('Verb agreement (ADR-199)', () => {
   it('AC-6: person — 1st-person singular suppletive ("I am", "I was")', () => {
     expect(render(verb('is', 'me'), { me: noun('I', { person: 'first' }) })).toBe('am');
     expect(render(verb('was', 'me'), { me: noun('I', { person: 'first' }) })).toBe('was');
+  });
+
+  it('AC-6 case B: the player subject (referableId === playerId) takes the narrative person', () => {
+    // 2nd-person narration: the player subject → "you are" even with no explicit person stamp.
+    const player = noun('you', { referableId: 'player' });
+    expect(render(verb('is', 'actor'), { actor: player }, { person: 'second', playerId: 'player' })).toBe('are');
+    // A non-player subject in the same turn is unaffected → "is".
+    const dwarf = noun('dwarf', { referableId: 'dwarf' });
+    expect(render(verb('is', 'actor'), { actor: dwarf }, { person: 'second', playerId: 'player' })).toBe('is');
+    // 3rd-person narration: even the player subject is third → "is".
+    expect(render(verb('is', 'actor'), { actor: player }, { person: 'third', playerId: 'player' })).toBe('is');
   });
 
   it('the subject person overrides the Verb-declared person', () => {

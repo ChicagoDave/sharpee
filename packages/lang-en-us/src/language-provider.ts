@@ -231,6 +231,23 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   }
 
   /**
+   * The narrative grammatical person of the player subject (ADR-199 §4 B),
+   * mapped from the ADR-089 perspective ('1st'/'2nd'/'3rd' → first/second/third).
+   *
+   * @returns the player subject's grammatical person under the current narration
+   */
+  getNarrativePerson(): 'first' | 'second' | 'third' {
+    switch (this.narrativeContext.perspective) {
+      case '1st':
+        return 'first';
+      case '2nd':
+        return 'second';
+      default:
+        return 'third';
+    }
+  }
+
+  /**
    * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
    *
    * Phrase-path replacement for {@link getMessage}: resolve perspective

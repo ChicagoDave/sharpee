@@ -91,6 +91,10 @@ export class ProsePipeline implements ITextService {
         ? createRenderContextFactory(
             createRenderWorld(this.world),
             this.languageProvider.getLocaleSettings?.() ?? {},
+            {
+              person: this.languageProvider.getNarrativePerson?.() ?? 'third',
+              playerId: this.world.getPlayer()?.id,
+            },
           )
         : undefined,
     };

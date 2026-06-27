@@ -142,19 +142,33 @@ function regularPluralVerb(lemma: string): string {
   return lemma; // no -s to strip — leave as authored
 }
 
+/**
+ * The grammatical person of a subject noun phrase. The player subject (matched
+ * by `referableId` against `narrative.playerId`) takes the narrative person
+ * ("you are" in 2nd-person narration); otherwise an explicit `person` stamp, or
+ * undefined (→ third). ADR-199 §4 B, resolved at realize time where the
+ * narrative context is reliably present.
+ */
+function nounPerson(np: NounPhrase, ctx: RenderContext): 'first' | 'second' | 'third' | undefined {
+  if (np.referableId !== undefined && np.referableId === ctx.narrative.playerId) {
+    return ctx.narrative.person;
+  }
+  return np.person;
+}
+
 /** Read the agreement surface (number, optional person) off a bound subject value. */
-function subjectAgreement(subject: unknown): {
+function subjectAgreement(subject: unknown, ctx: RenderContext): {
   number: NounPhrase['number'];
   person?: 'first' | 'second' | 'third';
 } {
   if (subject !== null && typeof subject === 'object' && typeof (subject as { kind?: unknown }).kind === 'string') {
     const phrase = subject as Phrase;
-    if (isNounPhrase(phrase)) return { number: phrase.number, person: phrase.person };
+    if (isNounPhrase(phrase)) return { number: phrase.number, person: nounPerson(phrase, ctx) };
     if (isPhraseList(phrase)) {
       const present = phrase.items.filter((item) => !isEmpty(item));
       if (present.length > 1) return { number: 'plural' }; // "the troll and the goats" → are
       const only = present[0];
-      if (present.length === 1 && only && isNounPhrase(only)) return { number: only.number, person: only.person };
+      if (present.length === 1 && only && isNounPhrase(only)) return { number: only.number, person: nounPerson(only, ctx) };
       return { number: 'singular' };
     }
   }
@@ -180,7 +194,7 @@ function conjugateVerb(
 
 /** Realize a `Verb` by agreeing it with its referenced subject's resolved surface. */
 function renderVerb(verb: Verb, ctx: RenderContext): string {
-  const agreement = subjectAgreement(ctx.params[verb.subjectRef]);
+  const agreement = subjectAgreement(ctx.params[verb.subjectRef], ctx);
   // The subject's own person wins; else the Verb's declared person; else third.
   const person = agreement.person ?? verb.person ?? 'third';
   return conjugateVerb(verb.lemma, agreement.number, person);

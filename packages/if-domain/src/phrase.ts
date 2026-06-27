@@ -224,6 +224,22 @@ export interface LocaleSettings {
 }
 
 /**
+ * Narrative agreement context for verb-person resolution (ADR-199 §4 B).
+ *
+ * The player is the only subject that takes 1st/2nd-person agreement, and which
+ * grammatical person it takes depends on the story's narration. Carrying the
+ * player's id plus the narrative person here lets the Assembler's Agreement
+ * authority give the player subject the right verb form ("you **are**") without
+ * any producer needing the perspective at build time.
+ */
+export interface NarrativeAgreement {
+  /** Grammatical person of the player subject under the current narration. */
+  person: 'first' | 'second' | 'third';
+  /** The player entity's id, matched against a subject's `referableId`. */
+  playerId?: EntityId;
+}
+
+/**
  * Last-mentioned reference context — the seam a later `Pronoun` consumes.
  * SEAM (ADR-197): the implementation and final shape are owned by ADR-197; this
  * declaration only reserves the contract so the core is stable.
@@ -263,6 +279,8 @@ export interface RenderContext {
   readonly params: Record<string, unknown>;
   /** Locale realization settings. */
   readonly settings: LocaleSettings;
+  /** Narrative agreement context — player id + person for verb agreement (ADR-199 §4 B). */
+  readonly narrative: NarrativeAgreement;
   /** Last-mentioned context (consumed by `Pronoun`, ADR-197). */
   readonly reference: ReferenceContext;
   /** Per-`(entityId, messageKey)` store (consumed by `Choice`/`Optional`, ADR-196). */

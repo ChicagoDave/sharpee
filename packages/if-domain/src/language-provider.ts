@@ -86,6 +86,17 @@ export interface LanguageProvider {
   getLocaleSettings?(): LocaleSettings;
 
   /**
+   * The narrative grammatical person of the player subject (ADR-199 §4 B).
+   *
+   * Derived from the provider's perspective/narrative configuration (ADR-089).
+   * The engine reads it when building the per-turn {@link RenderContext} so the
+   * Assembler can give the player subject the agreeing verb form ("you are").
+   *
+   * @returns 'first' | 'second' | 'third'
+   */
+  getNarrativePerson?(): 'first' | 'second' | 'third';
+
+  /**
    * Render a message to text blocks through the phrase pipeline (ADR-192 §6).
    *
    * The phrase-path replacement for {@link getMessage}: resolves perspective
