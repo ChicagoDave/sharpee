@@ -173,10 +173,20 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
 >     present, but `nounPhraseFor` does not yet set it (needs player-id +
 >     narrative-person in `RenderContext`; small contract addition — DISCUSS before
 >     W5). Live `{is:actor}`-style usages with a player subject are wrong until then.
-> - **State**: new path WIRED + unit-tested but NOT switched — handlers still call
->   `getMessage` (old string path). Build green.
-> - **NEXT**: W6 ({list:items}→PhraseList binding), then the W4+W5 bulk cutover
->   (build goes red on-branch until the pipeline is switched and legacy deleted).
+> - **Verbatim atom (ADR-200) — DONE**: implemented the reserved `Verbatim` kind
+>   (`text` field + parser bind + Assembler whitespace-exempt case) as the home for
+>   non-entity scalars (names, directions, free text). This resolves the W4
+>   bare-placeholder fork the Sharpee way (bare `{x}` stays the entity NounPhrase
+>   default per ADR-192 §5; `{verbatim:x}` for scalars) — NOT by redefining the
+>   parser default. +3 parser / +3 assembler / +1 render-message tests; lang 334.
+>   Analysis + finalized migration rules: `docs/work/dynamic-text/w4-bare-placeholder-analysis.md`.
+> - **State**: the full atom set the cutover needs (NounPhrase, Verb, Verbatim,
+>   PhraseList, Literal, Sequence, Empty) is implemented + green. New render path
+>   wired but NOT switched — handlers still call `getMessage`. Build green.
+> - **NEXT (the mechanical bulk, build goes red on-branch)**: W4 (re-author ~522
+>   `:`-chains + scalars→`{verbatim}`), W5 (236 `entityInfoFrom`→`nounPhraseFor`),
+>   W6 (`{list:}`→PhraseList), pipeline switch (getMessage→renderMessage), then
+>   W7 (delete legacy) / W9 (ADR-158 amend) / W10 (walkthrough reconciliation).
 - **Tier**: Large
 - **Budget**: 400 tool calls
 - **Domain focus**: N/A — parser implementation, producer migration, and mass deletion of legacy infrastructure

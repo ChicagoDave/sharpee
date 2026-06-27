@@ -1,7 +1,45 @@
 # W4 bulk-cutover analysis — the bare-placeholder semantic fork
 
 **Created**: 2026-06-27 (session 491b9c, branch `v2_phase34`)
-**Status**: BLOCKER for W4 — needs a decision before the corpus rewrite.
+**Status**: RESOLVED — Verbatim atom (ADR-200) is the home for non-entity text;
+bare `{x}` stays the entity NounPhrase default (ADR-192 §5 unchanged). See
+"Resolution" at the bottom.
+
+## Resolution (2026-06-27)
+
+**Option B, done the Sharpee way: implement the reserved `Verbatim` atom**
+(ADR-200) rather than redefine the bare-`{x}` parser default (the rejected Option
+A workaround). The phrase algebra already reserved `{verbatim:x}` for exactly this;
+`Verb` (ADR-199) set the precedent for realizing a reserved atom.
+
+### Finalized W4 migration rules (mechanical)
+
+| Old (`:`-chain / bare) | New | Notes |
+|---|---|---|
+| `{the:x}` | `{the x}` | 457 sites — the bulk |
+| `{the:cap:x}` / `{cap:the:x}` | `{capitalize the x}` | cap carrier (3a) |
+| `{a:x}` / `{an:x}` | `{a x}` / `{an x}` | a/an agreed by Assembler |
+| `{some:x}` | `{some x}` | |
+| `{is:x}` | `{verb:is x}` | ADR-199 |
+| `{was:x}` | `{verb:was x}` | ADR-199 (0 live) |
+| `{has:x}` | `{verb:has x}` | ADR-199 |
+| `{list:x}` | bare `{x}` + producer binds `PhraseList` | W6; needs `-data.ts` change |
+| bare `{npcName}` / `{direction}` / `{description}` / `{text}` / names / kinds | `{verbatim:x}` | ADR-200 — non-entity scalars |
+| bare `{score}` / `{turn}` / numbers | bare `{x}` | parser lifts number → Literal |
+| bare `{item}` (entity) | review → usually `{the item}` | ~25 sites, case-by-case |
+| perspective `{You}`/`{your}`/`{take}`/… | untouched | resolved before parse |
+
+**Producer side (W5)**: entity params `entityInfoFrom(e)` → `nounPhraseFor(e[, ctx])`
+(236 sites). Scalar params stay raw strings (the `{verbatim:x}` template lifts them).
+
+**Pipeline switch**: prose-pipeline handlers (`domain-message`, `generic`,
+`game-message`, `audibility`) move from `getMessage` → `renderMessage(messageId,
+params, makeRenderContext(params))` once enough is migrated. ADR-192 forbids a dual
+path, so the switch is atomic; the on-branch build/tests are red through the window.
+
+---
+
+## Original analysis (for the record)
 
 ## What the scan found (lang-en-us templates)
 
