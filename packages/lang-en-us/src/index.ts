@@ -29,7 +29,6 @@ export * from './npc';
 export * from './perspective';
 
 // Export formatter system (ADR-095)
-export * from './formatters';
 
 // Export the English Assembler — phrase-tree realization (ADR-192)
 export * from './assembler';

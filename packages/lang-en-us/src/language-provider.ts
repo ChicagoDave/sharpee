@@ -20,14 +20,6 @@ import {
   DEFAULT_NARRATIVE_CONTEXT,
   resolvePerspectivePlaceholders,
 } from './perspective';
-import {
-  createFormatterRegistry,
-  formatMessage as formatWithFormatters,
-  FormatterRegistry,
-  FormatterContext,
-  EntityInfo,
-} from './formatters';
-
 // Types are now imported from @sharpee/if-domain
 
 /**
@@ -45,12 +37,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   // Narrative context for perspective-aware message resolution (ADR-089)
   private narrativeContext: NarrativeContext = DEFAULT_NARRATIVE_CONTEXT;
 
-  // Formatter registry for {a:item}, {list:items}, etc. (ADR-095)
-  private formatterRegistry: FormatterRegistry;
-
-  // Entity lookup function for formatters (set by engine)
-  private entityLookup?: (id: string) => EntityInfo | undefined;
-
   // Serial (Oxford) comma in lists (ADR-190); story-configurable, default on.
   private serialComma = true;
 
@@ -59,8 +45,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   private readonly assembler = new EnglishAssembler();
 
   constructor() {
-    // Initialize formatter registry
-    this.formatterRegistry = createFormatterRegistry();
     // Load core system messages
     this.loadCoreMessages();
     // Load all action messages
@@ -173,14 +157,16 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    * Supports three types of placeholders:
    * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
    *    - Resolved based on narrative context (1st/2nd/3rd person)
-   * 2. Formatted placeholders (ADR-095): {a:item}, {list:items}, etc.
-   *    - Applies formatters before substitution
-   * 3. Simple placeholders: {item}, {target}, etc.
-   *    - Replaced with values from params object
+   * 2. Simple `{key}` placeholders → `String(params[key])`.
+   *
+   * The ADR-095 formatter chain is gone (ADR-192): entity-aware article / list /
+   * verb realization lives in the phrase pipeline ({@link renderMessage}). This
+   * string path remains for non-phrase callers (e.g. core prompts) and does plain
+   * substitution only — no articles, lists, or `:`-chains.
    *
    * @param messageId Full message ID (e.g., 'if.action.taking.taken')
    * @param params Parameters to substitute in the message
-   * @returns The resolved message text, or null if not found
+   * @returns The resolved message text, or the ID when not registered
    */
   getMessage(messageId: string, params?: Record<string, any>): string {
     let message = this.messages.get(messageId);
@@ -189,17 +175,14 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       return messageId; // Return the ID as fallback
     }
 
-    // Step 1: Resolve perspective placeholders (ADR-089)
-    // This handles {You}, {your}, {take}, etc.
-    message = resolvePerspectivePlaceholders(message, this.narrativeContext);
+    // Step 1: Resolve perspective placeholders (ADR-089) — {You}, {your}, {take}.
+    message = resolvePerspectivePlaceholders(message, this.narrativeContext, params);
 
-    // Step 2: Apply formatters and substitute parameters (ADR-095)
+    // Step 2: Plain `{key}` substitution for any bound params.
     if (params) {
-      const context: FormatterContext = {
-        getEntity: this.entityLookup,
-        settings: { serialComma: this.serialComma },
-      };
-      message = formatWithFormatters(message, params, this.formatterRegistry, context);
+      message = message.replace(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, key) =>
+        key in params ? String(params[key]) : match,
+      );
     }
 
     return message;
@@ -288,18 +271,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
   }
 
   /**
-   * Set entity lookup function for formatters (ADR-095)
-   *
-   * This allows formatters to look up entity info (nounType, etc.)
-   * for proper article selection.
-   *
-   * @param lookup Function that returns EntityInfo for an entity ID
-   */
-  setEntityLookup(lookup: (id: string) => EntityInfo | undefined): void {
-    this.entityLookup = lookup;
-  }
-
-  /**
    * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
    * @param on true → "a, b, and c"; false → "a, b and c"
    */
@@ -307,28 +278,6 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     this.serialComma = on;
   }
 
-  /**
-   * Register a custom formatter (ADR-095)
-   *
-   * Stories can register custom formatters for special formatting needs.
-   *
-   * @param name Formatter name (used in templates as {name:placeholder})
-   * @param formatter Formatter function
-   */
-  registerFormatter(
-    name: string,
-    formatter: (value: any, context: FormatterContext) => string
-  ): void {
-    this.formatterRegistry.set(name, formatter);
-  }
-
-  /**
-   * Get the formatter registry (for testing or advanced use)
-   */
-  getFormatterRegistry(): FormatterRegistry {
-    return this.formatterRegistry;
-  }
-  
   /**
    * Check if a message exists
    * @param messageId The message identifier

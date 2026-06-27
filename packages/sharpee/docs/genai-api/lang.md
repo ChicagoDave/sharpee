@@ -16,7 +16,6 @@ English language provider, message resolution, formatters.
 import { ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { NarrativeContext } from './perspective';
-import { FormatterRegistry, FormatterContext, EntityInfo } from './formatters';
 /**
  * English language data and rules
  */
@@ -27,8 +26,6 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
     private messages;
     private customActionPatterns;
     private narrativeContext;
-    private formatterRegistry;
-    private entityLookup?;
     private serialComma;
     private readonly assembler;
     constructor();
@@ -77,14 +74,16 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      * Supports three types of placeholders:
      * 1. Perspective placeholders (ADR-089): {You}, {your}, {take}, etc.
      *    - Resolved based on narrative context (1st/2nd/3rd person)
-     * 2. Formatted placeholders (ADR-095): {a:item}, {list:items}, etc.
-     *    - Applies formatters before substitution
-     * 3. Simple placeholders: {item}, {target}, etc.
-     *    - Replaced with values from params object
+     * 2. Simple `{key}` placeholders → `String(params[key])`.
+     *
+     * The ADR-095 formatter chain is gone (ADR-192): entity-aware article / list /
+     * verb realization lives in the phrase pipeline ({@link renderMessage}). This
+     * string path remains for non-phrase callers (e.g. core prompts) and does plain
+     * substitution only — no articles, lists, or `:`-chains.
      *
      * @param messageId Full message ID (e.g., 'if.action.taking.taken')
      * @param params Parameters to substitute in the message
-     * @returns The resolved message text, or null if not found
+     * @returns The resolved message text, or the ID when not registered
      */
     getMessage(messageId: string, params?: Record<string, any>): string;
     /**
@@ -129,32 +128,10 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     renderMessage(messageId: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
     /**
-     * Set entity lookup function for formatters (ADR-095)
-     *
-     * This allows formatters to look up entity info (nounType, etc.)
-     * for proper article selection.
-     *
-     * @param lookup Function that returns EntityInfo for an entity ID
-     */
-    setEntityLookup(lookup: (id: string) => EntityInfo | undefined): void;
-    /**
      * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
      * @param on true → "a, b, and c"; false → "a, b and c"
      */
     setSerialComma(on: boolean): void;
-    /**
-     * Register a custom formatter (ADR-095)
-     *
-     * Stories can register custom formatters for special formatting needs.
-     *
-     * @param name Formatter name (used in templates as {name:placeholder})
-     * @param formatter Formatter function
-     */
-    registerFormatter(name: string, formatter: (value: any, context: FormatterContext) => string): void;
-    /**
-     * Get the formatter registry (for testing or advanced use)
-     */
-    getFormatterRegistry(): FormatterRegistry;
     /**
      * Check if a message exists
      * @param messageId The message identifier
@@ -2064,291 +2041,6 @@ export declare function conjugateVerb(verb: string, context: NarrativeContext): 
  * @returns Message with resolved placeholders
  */
 export declare function resolvePerspectivePlaceholders(message: string, context?: NarrativeContext, params?: Record<string, unknown>): string;
-```
-
-### formatters/types
-
-```typescript
-/**
- * Formatter Types
- *
- * Formatters transform placeholder values in message templates.
- *
- * Syntax: {formatter:formatter:...:placeholder} (the placeholder is the last segment)
- * Example: {a:item} → "a sword"
- * Example: {list:items} → "a sword, a key, and a coin"
- *
- * @see ADR-095 Message Templates with Formatters
- */
-/**
- * Context passed to formatters
- */
-export interface FormatterContext {
-    /** Get entity by ID for nounType/article lookup */
-    getEntity?: (id: string) => EntityInfo | undefined;
-    /** Render-time settings the language layer reads (ADR-190). */
-    settings?: {
-        /** Serial (Oxford) comma in lists. Default true when absent. */
-        serialComma?: boolean;
-    };
-}
-/**
- * Minimal entity info for formatting
- */
-export interface EntityInfo {
-    name: string;
-    nounType?: 'common' | 'proper' | 'mass' | 'unique' | 'plural';
-    properName?: boolean;
-    article?: string;
-    grammaticalNumber?: 'singular' | 'plural';
-    /**
-     * Author-supplied plural form for irregular nouns (ADR-190). Populated from
-     * `IdentityTrait.plural` by `entityInfoFrom`. The `list`/`count` formatters use
-     * it when present, else fall back to the `pluralize()` heuristic.
-     */
-    plural?: string;
-}
-/**
- * Formatter function signature
- *
- * @param value - The value to format (string, array, or EntityInfo)
- * @param context - Formatting context with entity lookup
- * @returns Formatted string
- */
-export type Formatter = (value: string | string[] | EntityInfo | EntityInfo[], context: FormatterContext) => string;
-/**
- * Formatter registry - maps formatter names to functions
- */
-export type FormatterRegistry = Map<string, Formatter>;
-```
-
-### formatters/registry
-
-```typescript
-/**
- * Formatter Registry
- *
- * Central registry of all formatters, with support for story extensions.
- *
- * @see ADR-095 Message Templates with Formatters
- */
-import type { FormatterRegistry, FormatterContext, EntityInfo } from './types.js';
-/**
- * Create the default formatter registry with all built-in formatters
- */
-export declare function createFormatterRegistry(): FormatterRegistry;
-/**
- * Parse a placeholder with formatters
- *
- * Syntax: {formatter:formatter:...:placeholder}
- *
- * @returns Object with formatters array and final placeholder name
- */
-export declare function parsePlaceholder(placeholder: string): {
-    formatters: string[];
-    name: string;
-};
-/**
- * Apply formatters to a value in sequence
- *
- * @param value - The value to format
- * @param formatters - Array of formatter names to apply in order
- * @param registry - The formatter registry
- * @param context - Formatting context
- * @returns Formatted string
- */
-export declare function applyFormatters(value: string | number | boolean | string[] | EntityInfo | EntityInfo[], formatters: string[], registry: FormatterRegistry, context: FormatterContext): string;
-/**
- * Format a message template with placeholders
- *
- * Supports both:
- * - Simple placeholders: {item}
- * - Formatted placeholders: {a:item}, {list:items}, {the:cap:item}
- *   (the placeholder is the last colon segment)
- *
- * @param template - Message template with {placeholder} syntax
- * @param params - Values for placeholders
- * @param registry - Formatter registry
- * @param context - Formatting context
- * @returns Formatted message
- */
-export declare function formatMessage(template: string, params: Record<string, string | number | boolean | string[] | EntityInfo | EntityInfo[]>, registry: FormatterRegistry, context?: FormatterContext): string;
-```
-
-### formatters/article
-
-```typescript
-/**
- * Article Formatters
- *
- * Formatters for adding articles to nouns based on noun type.
- *
- * @see ADR-095 Message Templates with Formatters
- */
-import type { Formatter } from './types.js';
-/**
- * "a" formatter - indefinite article
- *
- * Respects nounType:
- * - common: "a sword" / "an apple"
- * - proper: "John" (no article)
- * - mass: "some water"
- * - unique: "the sun"
- * - plural: "swords" (no article for indefinite plural)
- */
-export declare const aFormatter: Formatter;
-/**
- * "the" formatter - definite article
- *
- * Respects nounType:
- * - proper: "John" (no article)
- * - all others: "the X"
- */
-export declare const theFormatter: Formatter;
-/**
- * "some" formatter - partitive article
- *
- * Primarily for mass nouns: "some water"
- * Also works for plurals: "some coins"
- */
-export declare const someFormatter: Formatter;
-/**
- * "your" formatter - possessive
- *
- * Creates "your X" phrases
- */
-export declare const yourFormatter: Formatter;
-```
-
-### formatters/list
-
-```typescript
-/**
- * List Formatters
- *
- * Formatters for joining arrays of items into prose.
- *
- * @see ADR-095 Message Templates with Formatters
- */
-import type { Formatter } from './types.js';
-/**
- * "list" formatter — natural-language list of entities (ADR-190).
- *
- * Each `EntityInfo` element gets its indefinite article ("a goat", "an apple",
- * "some sand"); identical common nouns group and pluralize ("two goats"); the
- * parts join with commas and "and", with the serial (Oxford) comma controlled by
- * the story's `serialComma` setting (default on). Bare strings render as-is.
- * Empty → "nothing".
- *
- *   {list:items} → "a goat, two rabbits, and a parrot"
- */
-export declare const listFormatter: Formatter;
-/**
- * "the-list" formatter — definite variant: "the goat, the rabbit, and the parrot".
- * No count-grouping (definite items are individuated); proper names take no article.
- */
-export declare const theListFormatter: Formatter;
-/**
- * "names" formatter — plain name join (the pre-ADR-190 `list` behavior) for
- * non-entity string lists: no articles, no grouping. Empty → "".
- */
-export declare const namesFormatter: Formatter;
-/**
- * "or-list" formatter - join with commas and "or"
- *
- * Single: "north"
- * Two: "north or south"
- * Three+: "north, south, or east"
- */
-export declare const orListFormatter: Formatter;
-/**
- * "comma-list" formatter - join with commas only (no conjunction)
- *
- * "a sword, a key, a coin"
- */
-export declare const commaListFormatter: Formatter;
-/**
- * "count" formatter - a count word plus the (pluralized) noun.
- *
- * Spells out 1–10, numeric for 11+ (ADR-190). Uses the entity's `plural` override
- * (from `IdentityTrait.plural`) when present, else the `pluralize()` heuristic.
- *
- * Example: {count:items} with 3 swords → "three swords"
- * Example: {count:items} with 1 sword → "one sword"
- * Example: {count:items} with 0       → "nothing"
- */
-export declare const countFormatter: Formatter;
-```
-
-### formatters/text
-
-```typescript
-/**
- * Text Formatters
- *
- * Formatters for case transformation and text manipulation.
- *
- * @see ADR-095 Message Templates with Formatters
- */
-import type { Formatter } from './types.js';
-/**
- * "cap" formatter - capitalize first letter
- *
- * "sword" → "Sword"
- */
-export declare const capFormatter: Formatter;
-/**
- * "upper" formatter - all uppercase
- *
- * "sword" → "SWORD"
- */
-export declare const upperFormatter: Formatter;
-/**
- * "lower" formatter - all lowercase
- *
- * "SWORD" → "sword"
- */
-export declare const lowerFormatter: Formatter;
-/**
- * "title" formatter - title case (capitalize each word)
- *
- * "brass lantern" → "Brass Lantern"
- */
-export declare const titleFormatter: Formatter;
-```
-
-### formatters/verb
-
-```typescript
-/**
- * Verb-Agreement Formatters
- *
- * Formatters that emit a verb form agreeing in number with the entity they
- * are keyed to, so templates need not hardcode a singular verb. The verb is
- * chosen from the entity's grammatical number, mirroring how the article
- * formatters choose articles from `nounType`.
- *
- * Syntax keys the formatter to a placeholder, e.g. `{is:item}` resolves the
- * `item` value and emits the agreeing copula:
- *
- *   "{the:cap:item} {is:item} fixed in place."
- *     → "The white house is fixed in place."   (singular)
- *     → "The pygmy goats are fixed in place."  (plural)
- *
- * An entity is treated as plural when its `nounType` is `'plural'` or its
- * `grammaticalNumber` is `'plural'`. A bare string (no EntityInfo metadata)
- * or a missing value falls back to the singular form.
- *
- * @see ADR-095 Message Templates with Formatters
- * @see ADR-089 Grammatical Number
- */
-import type { Formatter } from './types.js';
-/** "is" formatter — emits "is" (singular) or "are" (plural). */
-export declare const isFormatter: Formatter;
-/** "was" formatter — emits "was" (singular) or "were" (plural). */
-export declare const wasFormatter: Formatter;
-/** "has" formatter — emits "has" (singular) or "have" (plural). */
-export declare const hasFormatter: Formatter;
 ```
 
 ### assembler/english-assembler

@@ -10,12 +10,35 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import type { RenderContext } from '@sharpee/if-domain';
 import {
   EnglishLanguageProvider,
   soundMessages,
   soundMessageId,
   soundFallbackMessageId,
 } from '../src';
+
+/** Inert render context for exercising the phrase path in tests. */
+function makeCtx(): RenderContext {
+  return {
+    world: { getEntity: () => undefined, getEntityContents: () => [], getContainingRoom: () => undefined },
+    params: {},
+    settings: {},
+    narrative: { person: 'third' },
+    reference: { lastMentioned: () => undefined, note: () => undefined },
+    textState: { get: () => undefined, set: () => undefined },
+    contribute: () => undefined,
+  };
+}
+
+/** Render a sound message through the phrase path (the audibility handler path). */
+function renderSound(provider: EnglishLanguageProvider, id: string, params: Record<string, unknown>): string {
+  return provider
+    .renderMessage(id, params, makeCtx())
+    .flatMap((b) => b.content)
+    .map((c) => (typeof c === 'string' ? c : ''))
+    .join('');
+}
 
 describe('soundMessages — table shape', () => {
   it('ships the four delivered tiers for the default fallback set', () => {
@@ -74,20 +97,20 @@ describe('soundMessageId / soundFallbackMessageId helpers', () => {
 describe('EnglishLanguageProvider — sound message resolution', () => {
   it('resolves the speech-muffled message', () => {
     const provider = new EnglishLanguageProvider();
-    const text = provider.getMessage('sound.heard.speech.muffled', {
+    const text = renderSound(provider, 'sound.heard.speech.muffled', {
       content: "I won't sign that paper",
     });
     expect(text).toContain("I won't sign that paper");
-    // Perspective placeholders resolve at getMessage time.
+    // Perspective placeholders resolve during rendering.
     expect(text.toLowerCase()).toContain('you');
   });
 
   it('resolves the default-fallback messages', () => {
     const provider = new EnglishLanguageProvider();
-    expect(provider.getMessage('sound.heard.default.full', { kind: 'gunshot' })).toContain(
+    expect(renderSound(provider, 'sound.heard.default.full', { kind: 'gunshot' })).toContain(
       'gunshot',
     );
-    expect(provider.getMessage('sound.heard.default.presence-only')).toBeTruthy();
+    expect(renderSound(provider, 'sound.heard.default.presence-only', {})).toBeTruthy();
   });
 
   it('hasMessage reports true for every shipped sound id', () => {

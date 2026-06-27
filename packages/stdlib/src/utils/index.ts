@@ -6,5 +6,4 @@
  * shared across actions and capability behaviors.
  */
 
-export { entityInfoFrom } from './entity-info';
 export { nounPhraseFor } from './noun-phrase';
