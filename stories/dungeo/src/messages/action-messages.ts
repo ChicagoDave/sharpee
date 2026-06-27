@@ -94,7 +94,7 @@ export function registerActionMessages(language: LanguageProvider): void {
 
   language.addMessage(SayMessages.NOTHING_TO_SAY, 'You need to say something.');
   language.addMessage(SayMessages.SAY_TO_AIR, 'You speak, but nobody is here to listen.');
-  language.addMessage(SayMessages.NPC_RESPONDS, '{npcName} responds to your words.');
+  language.addMessage(SayMessages.NPC_RESPONDS, '{verbatim:npcName} responds to your words.');
 
   // Loud Room echo puzzle
   language.addMessage(SayMessages.LOUD_ROOM_ECHO_DEATH,

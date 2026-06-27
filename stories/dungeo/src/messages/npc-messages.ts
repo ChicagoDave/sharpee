@@ -71,7 +71,7 @@ export function registerNpcMessages(language: LanguageProvider): void {
   language.addMessage(ThiefMessages.LURKS, 'The thief lurks in the shadows, watching.');
 
   // Stealing
-  language.addMessage(ThiefMessages.STEALS_FROM_PLAYER, '"My, what a lovely {itemName}!" The thief snatches it away.');
+  language.addMessage(ThiefMessages.STEALS_FROM_PLAYER, '"My, what a lovely {verbatim:itemName}!" The thief snatches it away.');
   language.addMessage(ThiefMessages.STEALS_FROM_ROOM, 'The thief pockets {the itemName}.');
   language.addMessage(ThiefMessages.NOTICES_VALUABLES, 'The thief\'s eyes gleam as he notices your possessions.');
   language.addMessage(ThiefMessages.GLOATS, 'The thief grins smugly at you.');
@@ -192,24 +192,24 @@ export function registerNpcMessages(language: LanguageProvider): void {
   // ==========================================================================
 
   // Guard behavior
-  language.addMessage('npc.guard.blocks', 'The {npcName} growls menacingly, blocking your way.');
-  language.addMessage('npc.guard.attacks', 'The {npcName} swings at you!');
-  language.addMessage('npc.guard.defeated', 'The {npcName} has been defeated!');
+  language.addMessage('npc.guard.blocks', 'The {verbatim:npcName} growls menacingly, blocking your way.');
+  language.addMessage('npc.guard.attacks', 'The {verbatim:npcName} swings at you!');
+  language.addMessage('npc.guard.defeated', 'The {verbatim:npcName} has been defeated!');
 
   // Combat
-  language.addMessage('npc.attacks', 'The {npcName} attacks!');
-  language.addMessage('npc.misses', 'The {npcName} misses.');
-  language.addMessage('npc.hits', 'The {npcName} hits you!');
-  language.addMessage('npc.killed', 'The {npcName} is dead.');
-  language.addMessage('npc.unconscious', 'The {npcName} slumps to the ground, unconscious.');
+  language.addMessage('npc.attacks', 'The {verbatim:npcName} attacks!');
+  language.addMessage('npc.misses', 'The {verbatim:npcName} misses.');
+  language.addMessage('npc.hits', 'The {verbatim:npcName} hits you!');
+  language.addMessage('npc.killed', 'The {verbatim:npcName} is dead.');
+  language.addMessage('npc.unconscious', 'The {verbatim:npcName} slumps to the ground, unconscious.');
 
   // Movement
-  language.addMessage('npc.enters', 'A {npcName} enters.');
-  language.addMessage('npc.leaves', 'The {npcName} leaves.');
-  language.addMessage('npc.notices_player', 'The {npcName} notices you.');
+  language.addMessage('npc.enters', 'A {verbatim:npcName} enters.');
+  language.addMessage('npc.leaves', 'The {verbatim:npcName} leaves.');
+  language.addMessage('npc.notices_player', 'The {verbatim:npcName} notices you.');
 
   // Speech
-  language.addMessage('npc.no_response', 'The {npcName} does not respond.');
+  language.addMessage('npc.no_response', 'The {verbatim:npcName} does not respond.');
 
   // ==========================================================================
   // Egg Messages (capability dispatch - only thief can open)

@@ -66,11 +66,11 @@ export function registerObjectMessages(language: LanguageProvider): void {
   // GDT Messages (Game Debugging Tool)
   // ==========================================================================
 
-  // GDT event templates — pre-rendered text passes through via {message}/{output}
-  language.addMessage(GDTEventTypes.ENTERED, '{message}');
-  language.addMessage(GDTEventTypes.EXITED, '{message}');
-  language.addMessage(GDTEventTypes.OUTPUT, '{output}');
-  language.addMessage(GDTEventTypes.UNKNOWN_COMMAND, '{message}');
+  // GDT event templates — pre-rendered text passes through via {verbatim:message}/{verbatim:output}
+  language.addMessage(GDTEventTypes.ENTERED, '{verbatim:message}');
+  language.addMessage(GDTEventTypes.EXITED, '{verbatim:message}');
+  language.addMessage(GDTEventTypes.OUTPUT, '{verbatim:output}');
+  language.addMessage(GDTEventTypes.UNKNOWN_COMMAND, '{verbatim:message}');
 
   // GDT prompt (ADR-137)
   language.addMessage('dungeo.gdt.prompt', 'GDT>');

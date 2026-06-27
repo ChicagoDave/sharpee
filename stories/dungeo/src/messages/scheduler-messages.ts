@@ -85,7 +85,7 @@ export function registerSchedulerMessages(language: LanguageProvider): void {
   language.addMessage(DungeoSchedulerMessages.BALLOON_DEFLATING, 'The balloon deflates as the heat source dies.');
 
   // Balloon handler messages
-  language.addMessage(BalloonHandlerMessages.OBJECT_BURNED_OUT, 'The {itemName} has burned out completely.');
+  language.addMessage(BalloonHandlerMessages.OBJECT_BURNED_OUT, 'The {verbatim:itemName} has burned out completely.');
 
   // Balloon exit messages (from handlers)
   const BalloonExitMessages = {

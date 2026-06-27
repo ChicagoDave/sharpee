@@ -103,7 +103,7 @@ export function registerPuzzleMessages(language: LanguageProvider): void {
   language.addMessage(InsideMirrorMessages.POLE_ALREADY_RAISED, 'The pole is already raised.');
   language.addMessage(InsideMirrorMessages.POLE_ALREADY_LOWERED, 'The pole is already lowered.');
   language.addMessage(InsideMirrorMessages.POLE_CANT_LOWER, 'You can\'t lower the pole right now.');
-  language.addMessage(InsideMirrorMessages.BOX_ROTATES, 'The structure rotates with a grinding sound. The T-bar arrow now points {direction}.');
+  language.addMessage(InsideMirrorMessages.BOX_ROTATES, 'The structure rotates with a grinding sound. The T-bar arrow now points {verbatim:direction}.');
   language.addMessage(InsideMirrorMessages.BOX_MOVES, 'The structure slides along the groove with a rumbling sound.');
   language.addMessage(InsideMirrorMessages.BOX_CANT_ROTATE, 'The structure won\'t rotate. The pole is locking it in place.');
   language.addMessage(InsideMirrorMessages.BOX_CANT_MOVE_UNLOCKED, 'The structure wobbles but doesn\'t move. The pole must be lowered into the channel first.');
@@ -113,7 +113,7 @@ export function registerPuzzleMessages(language: LanguageProvider): void {
   language.addMessage(InsideMirrorMessages.EXIT_MIRROR, 'You climb out of the structure to the north.');
   language.addMessage(InsideMirrorMessages.CANT_EXIT, 'You can\'t exit that way. The structure is not properly positioned.');
   language.addMessage(InsideMirrorMessages.NO_MIRROR_HERE, 'There is no structure here to enter.');
-  language.addMessage(InsideMirrorMessages.TBAR_DIRECTION, 'The arrow on the T-bar points {direction}.');
+  language.addMessage(InsideMirrorMessages.TBAR_DIRECTION, 'The arrow on the T-bar points {verbatim:direction}.');
 
   // ==========================================================================
   // Endgame Trigger Messages (Crypt darkness ritual)
@@ -147,7 +147,7 @@ export function registerPuzzleMessages(language: LanguageProvider): void {
   // ==========================================================================
 
   language.addMessage(BankPuzzleMessages.WALK_THROUGH, 'You feel somewhat disoriented as you pass through...');
-  language.addMessage(BankPuzzleMessages.NO_WALL, "I can't see any {direction} wall here.");
+  language.addMessage(BankPuzzleMessages.NO_WALL, "I can't see any {verbatim:direction} wall here.");
   language.addMessage(BankPuzzleMessages.CANT_WALK_THROUGH, "You can't walk through that.");
 
   // ==========================================================================
