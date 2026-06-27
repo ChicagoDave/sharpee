@@ -86,7 +86,7 @@ export function registerActionMessages(language: LanguageProvider): void {
   // Dropping Override — platform says "You put X in Y", we want cleaner text
   // ==========================================================================
 
-  language.addMessage('if.action.dropping.dropped_in', 'You drop the {item} in the {container}.');
+  language.addMessage('if.action.dropping.dropped_in', 'You drop {the item} in {the container}.');
 
   // ==========================================================================
   // SAY Action Messages
@@ -127,7 +127,7 @@ export function registerActionMessages(language: LanguageProvider): void {
   // BREAK Action Messages
   // ==========================================================================
 
-  language.addMessage(BreakMessages.BREAK_SUCCESS, 'You break the {target}.');
+  language.addMessage(BreakMessages.BREAK_SUCCESS, 'You break {the target}.');
   language.addMessage(BreakMessages.BREAK_FRAME, 'The frame shatters! Among the debris, you find a carved piece bearing strange symbols: "Only devotion can reveal my location."');
   language.addMessage(BreakMessages.CANT_BREAK, "You can't break that.");
   language.addMessage(BreakMessages.NO_TARGET, 'Break what?');
@@ -137,7 +137,7 @@ export function registerActionMessages(language: LanguageProvider): void {
   // BURN Action Messages
   // ==========================================================================
 
-  language.addMessage(BurnMessages.BURN_SUCCESS, 'You burn the {target}.');
+  language.addMessage(BurnMessages.BURN_SUCCESS, 'You burn {the target}.');
   language.addMessage(BurnMessages.BURN_INCENSE, 'The incense begins to smolder, releasing fragrant smoke that fills the room.');
   language.addMessage(BurnMessages.BURN_FUSE, 'The wire starts to burn.');
   language.addMessage(BurnMessages.ALREADY_BURNING, 'It is already burning.');
@@ -204,17 +204,17 @@ export function registerActionMessages(language: LanguageProvider): void {
 
   language.addMessage(PushPanelMessages.NOT_IN_MIRROR, 'There are no panels to push here.');
   language.addMessage(PushPanelMessages.NO_TARGET, 'Push which panel?');
-  language.addMessage(PushPanelMessages.NOT_VISIBLE, 'You don\'t see a {target} here.');
+  language.addMessage(PushPanelMessages.NOT_VISIBLE, 'You don\'t see {a target} here.');
   language.addMessage(PushPanelMessages.NOT_A_PANEL, 'That isn\'t a panel you can push.');
 
   // ==========================================================================
   // WAVE Action Messages (Rainbow puzzle)
   // ==========================================================================
 
-  language.addMessage(WaveMessages.SUCCESS, 'You wave the {target}.');
+  language.addMessage(WaveMessages.SUCCESS, 'You wave {the target}.');
   language.addMessage(WaveMessages.RAINBOW_APPEARS, 'Suddenly, the rainbow appears to become solid and, I venture, walkable (I think the giveaway was the stairs and bannister).');
   language.addMessage(WaveMessages.RAINBOW_GONE, 'The rainbow seems to have become somewhat run of the mill.');
-  language.addMessage(WaveMessages.NO_EFFECT, 'You wave the {target}, but nothing happens.');
+  language.addMessage(WaveMessages.NO_EFFECT, 'You wave {the target}, but nothing happens.');
   language.addMessage(WaveMessages.NO_TARGET, 'Wave what?');
   language.addMessage(WaveMessages.NOT_HOLDING, "You're not holding that.");
 
@@ -233,7 +233,7 @@ export function registerActionMessages(language: LanguageProvider): void {
   // WIND Action Messages (Canary/bauble)
   // ==========================================================================
 
-  language.addMessage(WindMessages.SUCCESS, 'You wind the {target}.');
+  language.addMessage(WindMessages.SUCCESS, 'You wind {the target}.');
   language.addMessage(WindMessages.CANARY_SINGS, 'The canary begins to sing a beautiful song.');
   language.addMessage(WindMessages.BAUBLE_APPEARS, 'The canary begins to sing. From somewhere nearby, an answering song is heard. Suddenly, a shiny brass bauble drops at your feet!');
   language.addMessage(WindMessages.NOT_IN_FOREST, 'The canary sings, but there is no response.');

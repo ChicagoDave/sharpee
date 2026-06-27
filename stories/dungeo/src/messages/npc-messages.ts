@@ -47,8 +47,8 @@ export function registerNpcMessages(language: LanguageProvider): void {
   language.addMessage(TrollMessages.COWERS, 'The troll, disarmed, cowers in terror, pleading for his life in the guttural tongue of the trolls.');
 
   // Troll player action interceptions (capability dispatch)
-  language.addMessage(TrollMessages.CATCHES_ITEM, 'The troll, who is remarkably coordinated, catches the {itemName}.');
-  language.addMessage(TrollMessages.EATS_ITEM, 'The troll, not having the most discriminating tastes, gleefully eats the {itemName}.');
+  language.addMessage(TrollMessages.CATCHES_ITEM, 'The troll, who is remarkably coordinated, catches {the itemName}.');
+  language.addMessage(TrollMessages.EATS_ITEM, 'The troll, not having the most discriminating tastes, gleefully eats {the itemName}.');
   language.addMessage(TrollMessages.THROWS_KNIFE_BACK, 'Being for the moment sated, the troll throws it back. Fortunately, the troll has poor control, and the knife falls to the floor. He does not look pleased.');
   language.addMessage(TrollMessages.SPITS_AT_PLAYER, 'The troll spits in your face, saying "Better luck next time."');
   language.addMessage(TrollMessages.MOCKS_UNARMED_ATTACK, 'The troll laughs at your puny gesture.');
@@ -72,7 +72,7 @@ export function registerNpcMessages(language: LanguageProvider): void {
 
   // Stealing
   language.addMessage(ThiefMessages.STEALS_FROM_PLAYER, '"My, what a lovely {itemName}!" The thief snatches it away.');
-  language.addMessage(ThiefMessages.STEALS_FROM_ROOM, 'The thief pockets the {itemName}.');
+  language.addMessage(ThiefMessages.STEALS_FROM_ROOM, 'The thief pockets {the itemName}.');
   language.addMessage(ThiefMessages.NOTICES_VALUABLES, 'The thief\'s eyes gleam as he notices your possessions.');
   language.addMessage(ThiefMessages.GLOATS, 'The thief grins smugly at you.');
 
@@ -132,8 +132,8 @@ export function registerNpcMessages(language: LanguageProvider): void {
   language.addMessage(RobotMessages.NO_BUTTON, 'The robot looks around but sees no button to push.');
   language.addMessage(RobotMessages.ALREADY_PUSHED, 'The robot has already pushed the button.');
   language.addMessage(RobotMessages.ARRIVES, 'The robot enters.');
-  language.addMessage(RobotMessages.TAKES_OBJECT, 'The robot takes the {objectName}.');
-  language.addMessage(RobotMessages.DROPS_OBJECT, 'The robot drops the {objectName}.');
+  language.addMessage(RobotMessages.TAKES_OBJECT, 'The robot takes {the objectName}.');
+  language.addMessage(RobotMessages.DROPS_OBJECT, 'The robot drops {the objectName}.');
   language.addMessage(RobotMessages.CAROUSEL_FIXED, 'You hear a grinding noise from somewhere nearby. The carousel mechanism has stopped spinning!');
   language.addMessage(RobotMessages.RAISES_CAGE, 'The robot reaches up and lifts the cage.');
 

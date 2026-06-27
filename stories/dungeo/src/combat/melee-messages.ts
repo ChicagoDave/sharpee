@@ -46,30 +46,30 @@ export type MeleeMessageTable = Record<MeleeOutcomeType, string[]>;
 export const SwordMelee: MeleeMessageTable = {
   // 0: MISSED
   [MeleeOutcome.MISSED]: [
-    'Your swing misses the {villain} by an inch.',
-    'A mighty blow, but it misses the {villain} by a mile.',
-    'You charge, but the {villain} jumps nimbly aside.',
+    'Your swing misses {the villain} by an inch.',
+    'A mighty blow, but it misses {the villain} by a mile.',
+    'You charge, but {the villain} jumps nimbly aside.',
     'Clang! Crash! The {villain} parries.',
-    'A good stroke, but it\'s too slow; the {villain} dodges.',
+    'A good stroke, but it\'s too slow; {the villain} dodges.',
   ],
   // 1: UNCONSCIOUS
   [MeleeOutcome.UNCONSCIOUS]: [
-    'Your sword crashes down, knocking the {villain} into dreamland.',
+    'Your sword crashes down, knocking {the villain} into dreamland.',
     'The {villain} is battered into unconsciousness.',
-    'A furious exchange, and the {villain} is knocked out!',
+    'A furious exchange, and {the villain} is knocked out!',
   ],
   // 2: KILLED
   [MeleeOutcome.KILLED]: [
-    'It\'s curtains for the {villain} as your sword removes his head.',
-    'The fatal blow strikes the {villain} square in the heart: He dies.',
+    'It\'s curtains for {the villain} as your sword removes his head.',
+    'The fatal blow strikes {the villain} square in the heart: He dies.',
     'The {villain} takes a final blow and slumps to the floor dead.',
   ],
   // 3: LIGHT_WOUND
   [MeleeOutcome.LIGHT_WOUND]: [
     'The {villain} is struck on the arm; blood begins to trickle down.',
-    'Your sword pinks the {villain} on the wrist, but it\'s not serious.',
+    'Your sword pinks {the villain} on the wrist, but it\'s not serious.',
     'Your stroke lands, but it was only the flat of the blade.',
-    'The blow lands, making a shallow gash in the {villain}\'s arm!',
+    'The blow lands, making a shallow gash in {the villain}\'s arm!',
   ],
   // 4: SERIOUS_WOUND
   [MeleeOutcome.SERIOUS_WOUND]: [
@@ -81,7 +81,7 @@ export const SwordMelee: MeleeMessageTable = {
   [MeleeOutcome.STAGGER]: [
     'The {villain} is staggered, and drops to his knees.',
     'The {villain} is momentarily disoriented and can\'t fight back.',
-    'The force of your blow knocks the {villain} back, stunned.',
+    'The force of your blow knocks {the villain} back, stunned.',
   ],
   // 6: LOSE_WEAPON
   [MeleeOutcome.LOSE_WEAPON]: [
@@ -99,42 +99,42 @@ export const SwordMelee: MeleeMessageTable = {
 export const KnifeMelee: MeleeMessageTable = {
   // 0: MISSED
   [MeleeOutcome.MISSED]: [
-    'Your stab misses the {villain} by an inch.',
-    'A good slash, but it misses the {villain} by a mile.',
-    'You charge, but the {villain} jumps nimbly aside.',
-    'A quick stroke, but the {villain} is on guard.',
-    'A good stroke, but it\'s too slow; the {villain} dodges.',
+    'Your stab misses {the villain} by an inch.',
+    'A good slash, but it misses {the villain} by a mile.',
+    'You charge, but {the villain} jumps nimbly aside.',
+    'A quick stroke, but {the villain} is on guard.',
+    'A good stroke, but it\'s too slow; {the villain} dodges.',
   ],
   // 1: UNCONSCIOUS
   [MeleeOutcome.UNCONSCIOUS]: [
-    'The haft of your knife knocks out the {villain}.',
+    'The haft of your knife knocks out {the villain}.',
     'The {villain} drops to the floor, unconscious.',
     'The {villain} is knocked out!',
   ],
   // 2: KILLED
   [MeleeOutcome.KILLED]: [
-    'The end for the {villain} as your knife severs his jugular.',
-    'The fatal thrust strikes the {villain} square in the heart: He dies.',
+    'The end for {the villain} as your knife severs his jugular.',
+    'The fatal thrust strikes {the villain} square in the heart: He dies.',
     'The {villain} takes a final blow and slumps to the floor dead.',
   ],
   // 3: LIGHT_WOUND
   [MeleeOutcome.LIGHT_WOUND]: [
     'The {villain} is slashed on the arm; blood begins to trickle down.',
-    'Your knife point pinks the {villain} on the wrist, but it\'s not serious.',
+    'Your knife point pinks {the villain} on the wrist, but it\'s not serious.',
     'Your stroke lands, but it was only the flat of the blade.',
-    'The blow lands, making a shallow gash in the {villain}\'s arm!',
+    'The blow lands, making a shallow gash in {the villain}\'s arm!',
   ],
   // 4: SERIOUS_WOUND
   [MeleeOutcome.SERIOUS_WOUND]: [
     'The {villain} receives a deep gash in his side.',
-    'A savage cut on the leg stuns the {villain}, but he can still fight!',
+    'A savage cut on the leg stuns {the villain}, but he can still fight!',
     'Slash! Your stroke connects! The {villain} could be in serious trouble!',
   ],
   // 5: STAGGER
   [MeleeOutcome.STAGGER]: [
     'The {villain} drops to his knees, staggered.',
     'The {villain} is confused and can\'t fight back.',
-    'The quickness of your thrust knocks the {villain} back, stunned.',
+    'The quickness of your thrust knocks {the villain} back, stunned.',
   ],
   // 6: LOSE_WEAPON
   [MeleeOutcome.LOSE_WEAPON]: [
@@ -323,7 +323,7 @@ export const ThiefMelee: MeleeMessageTable = {
   ],
   // 6: LOSE_WEAPON
   [MeleeOutcome.LOSE_WEAPON]: [
-    'A long, theatrical slash. You catch it on your {weapon}, but the thief twists his knife, and the {weapon} goes flying.',
+    'A long, theatrical slash. You catch it on your {weapon}, but the thief twists his knife, and {the weapon} goes flying.',
     'The thief neatly flips your {weapon} out of your hands, and it drops to the floor.',
     'You parry a low thrust, and your {weapon} slips out of your hand.',
     'Avoiding the thief\'s stiletto, you stumble to the floor, dropping your {weapon}.',

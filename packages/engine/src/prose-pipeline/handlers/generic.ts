@@ -34,11 +34,15 @@ export function handleGameMessage(
   const data = event.data as GameMessageData;
 
   if (data.messageId && context.languageProvider) {
+    // Story `game.message` events often carry the template's bindings at the
+    // event-data top level rather than under `params` (the same shape
+    // handleGenericEvent accepts). Fall back to `data` so those bind.
+    const params = (data.params ?? data) as Record<string, unknown>;
     if (phraseAvailable(context)) {
-      const blocks = renderViaPhrase(context, data.messageId, data.params ?? {}, BLOCK_KEYS.GAME_MESSAGE);
+      const blocks = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.GAME_MESSAGE);
       if (blocks) return blocks;
     } else {
-      const message = context.languageProvider.getMessage(data.messageId, data.params);
+      const message = context.languageProvider.getMessage(data.messageId, params);
       if (message && message !== data.messageId) {
         return createBlocks(BLOCK_KEYS.GAME_MESSAGE, message);
       }

@@ -86,7 +86,7 @@ export function registerObjectMessages(language: LanguageProvider): void {
 
   // Melt verb (MDL act1.mud:389-398)
   language.addMessage(GlacierMessages.MELT_DEATH, 'Part of the glacier melts, drowning you under a torrent of water.');
-  language.addMessage(GlacierMessages.MELT_NO_FLAME, "You certainly won't melt it with a {instrument}.");
+  language.addMessage(GlacierMessages.MELT_NO_FLAME, "You certainly won't melt it with {a instrument}.");
   language.addMessage(GlacierMessages.MELT_NOTHING, "You can't melt that.");
   language.addMessage(GlacierMessages.MELT_NO_INSTRUMENT, 'Melt it with what?');
 
