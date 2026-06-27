@@ -301,7 +301,16 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
   - Walkthrough chain passes on `main` (after the phase branch merges)
   - ADR-192 implementation is complete; ADR-193–198 are the next work items on v2
 
-- **Status**: NOT STARTED
+- **Status**: PLATFORM MERGED TO `main` (2026-06-27, merge `a342e0c4`).
+  The phrase-algebra cutover (ADR-192/199/200) is on `main`: Verb + Verbatim
+  atoms, params-aware perspective, pipeline switch, and the legacy formatter
+  chain / EntityInfo / entityInfoFrom deleted (W7+W8+W9). Platform unit suites
+  green (world-model 1292, lang-en-us 264, engine 442, stdlib 1278); build 13/13.
+  **Remaining = dungeo STORY reconciliation** (continues on `main`, autonomous
+  scope): unit transcripts 1370/1481, walkthroughs ~90% — story-side param-shape
+  bugs (params emitted at event top level instead of under `params:`), bare
+  placeholders rendering strings as "a X", GDT, + expected-value diffs. See
+  `docs/work/dynamic-text/w4-bare-placeholder-analysis.md` and the session summary.
 
 ---
 
