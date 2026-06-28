@@ -73,10 +73,14 @@ producer-bound params), and a **status**: ✅ implemented & verified in
 Sharpee: `"{capitalize the item} is here."` with `item = nounPhraseFor(cabinet)`.
 *Article authority + Case authority.*
 
-**2. Indefinite a/an over the rendered head** — I7 `say "You see [a noun]."` →
-"You see an owl." / "You see a goat." / "It takes an hour." / "a university".
-Sharpee: `"You see {a item}."`. The Assembler agrees a/an over the **realized head**
-(vowel sound, silent-h, "uni-"), not a stored letter.
+**2. Indefinite a/an — and a Sharpee *advantage*** — I7's `[a noun]` defaults to a
+**first-letter** guess (vowel → "an"), so it *mis-handles* silent-h and consonant-glides
+and requires a **per-object override**: `The indefinite article of the honest lawyer is
+"an". The indefinite article of the university is "a".` → "an honest lawyer outside a
+university." Sharpee: `"You see {a item}."` — the Assembler's article authority agrees
+a/an over the **rendered head** automatically (vowel sound, silent-h "hour/honest/heir",
+glide "uni-/one-"), so "an owl", "an hour", "a university" need **no per-object data**.
+*Verified: §02 of the test.*
 
 **3. Capitalized sentence-start indefinite** — I7 `say "[A noun] blocks the way."` →
 "An ogre blocks the way." Sharpee: `"{capitalize a item} blocks the way."`.
@@ -95,13 +99,16 @@ layer binds a `PhraseList` of `NounPhrase`s; template is `"You can see {items} h
 **7. Serial-comma toggle** — I7 `Use the serial comma.` Sharpee: a **locale setting**
 (`LocaleSettings.serialComma`) the Assembler reads, not a per-template directive.
 
-**8. Subject-verb agreement is/are** — I7 adaptive `say "[The noun] [are] locked."` →
-"The door is locked." / "The gates are locked." Sharpee: `"{capitalize the x} {verb:is x}
-locked."` — the `Verb` atom (ADR-199) agrees number with the realized subject `x`.
+**8. Subject-verb agreement is/are** — I7 adaptive `say "[The noun] [regarding the
+noun][are] locked."` → "The door is locked." / "The gates are locked." Sharpee:
+`"{capitalize the x} {verb:is x} locked."` — the `Verb` atom (ADR-199) agrees number with
+the realized subject `x`. *Sharpee's `{verb:is x}` carries its own subject reference, so
+there is no separate `[regarding …]` step.*
 
-**9. Coordinated subject → plural verb** — I7 `[is-are]`-style over a list → "the troll
-and the goats **are** watching you." Sharpee: subject param is a `PhraseList` →
-`{verb:is subj}` reads plural off it. *Falls out of subject-number resolution for free.*
+**9. Coordinated subject → plural verb** — I7 `say "[The troll] and [the goats][regarding
+the troll and the goats][are] blocking the bridge."` → "The troll and the goats **are**
+blocking the bridge." Sharpee: the subject param is a `PhraseList` → `{verb:is subj}` reads
+plural off it. *Falls out of subject-number resolution for free — no `[regarding]`.*
 
 **10. Second-person player verb** — I7 second-person narrative `say "[We] [are]
 carrying too much."` → "you are…". Sharpee: `{verb:is actor}` where `actor` is the
@@ -162,18 +169,35 @@ carries gender/neopronoun. `{pronoun:it}` resolves to the last-mentioned referen
 designed — candidate `NounPhrase` extension (`possessiveOf`) or a small atom; noted for a
 future ADR.
 
-**Bonus — State-derived adjective** — I7 prints "[an] open box" where "open" reflects
-live state. Sharpee static adjectives are done (#12); the **state-derived** contributor
-("open" from `OpenableTrait`) is **ADR-193**.
+**Bonus — State-derived adjective** — I7 `The printed name of the strongbox is "[if
+open]open [otherwise]closed [end if]wooden box".` → "an open wooden box" / "a closed
+wooden box" (the article recomputes a/an *after* the dynamic adjective). Sharpee static
+adjectives are done (#12); the **state-derived** contributor ("open" from `OpenableTrait`)
+is **ADR-193** — and because Sharpee's article authority always agrees over the *realized*
+head, the a/an recomputation is automatic once the adjective is contributed.
+
+### Part C — A genuine design difference (not a planned atom)
+
+**Adaptive verb TENSE** — I7 `say "[We] [open] the oak door and [step] through."` renders
+"You open … and step through." in present tense and "You opened … and stepped through."
+after `now the story tense is the past tense` — every bracketed verb conjugates to the
+live story tense (incl. irregulars "go"→"went"). **Sharpee does not do tense adaptation**:
+`{verb:lemma x}` agrees number/person only; the author writes the surface tense they want
+(ADR-199 §Scope explicitly excludes tense/aspect). This is a deliberate scope choice, not
+a missing atom — IF in practice is overwhelmingly present-tense second-person, and a
+tense-adaptive verb is an additive future option if a real need appears.
 
 ---
 
 ## Findings
 
-1. **The foundational text machinery matches I7 today.** Articles (incl. a/an over the
-   rendered head, mass, proper), capitalization, grouped/pluralized/serial-comma lists,
+1. **The foundational text machinery matches — and in one place beats — I7 today.**
+   Articles (a/an, mass, proper), capitalization, grouped/pluralized/serial-comma lists,
    subject-verb agreement (incl. coordinated subjects and 2nd-person), regular & irregular
    verbs, and verbatim/preformatted blocks all render correctly — 15/15 verified.
+   **Beats**: a/an agreement is *automatic* over the rendered head (silent-h, glides),
+   where I7 falls back to a first-letter guess that needs a per-object
+   `indefinite article` override.
 
 2. **The phrase algebra is at least as expressive as I7 for these, with two structural
    advantages**: (a) each cross-cutting concern (article, agreement, punctuation,
@@ -194,5 +218,26 @@ live state. Sharpee static adjectives are done (#12); the **state-derived** cont
    atoms are additive — a new union member + one Assembler case each.
 
 **Conclusion**: the ADR-192 cutover delivers parity with I7's *foundational* text engine
-and a cleaner, deterministic basis for its *advanced* (stateful/conditional) features,
-which land additively as ADR-193–198.
+(and a/an it handles *better*), a cleaner, deterministic basis for its *advanced*
+(stateful/conditional) features which land additively as ADR-193–198, and one deliberate
+non-goal (tense adaptation). The phrase-algebra atom roadmap is, in effect, "the rest of
+the Inform text engine, made language-neutral and deterministic."
+
+---
+
+## Inform 7 sources (Writing with Inform, 10.x)
+
+- §5.5–5.8 — articles, lists, text with random alternatives:
+  https://ganelson.github.io/inform-website/book/WI_5_7.html
+- §14.1 — tense & narrative viewpoint:
+  https://ganelson.github.io/inform-website/book/WI_14_1.html
+- §14.3 — adapting verbs:
+  https://ganelson.github.io/inform-website/book/WI_14_3.html
+- §14.4 — adapting text about the player (`[We]`/`[us]`/`[our]`):
+  https://ganelson.github.io/inform-website/book/WI_14_4.html
+- §14.6 — `[regarding …]` and adapting verbs to other subjects:
+  https://ganelson.github.io/inform-website/book/WI_14_6.html
+
+I7 syntax cross-checked against these via a research pass (2026-06-27); the Sharpee
+equivalents for Part A are verified executably in
+`packages/lang-en-us/tests/i7-comparison.test.ts` (15/15).
