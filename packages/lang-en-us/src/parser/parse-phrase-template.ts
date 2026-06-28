@@ -21,8 +21,10 @@
  *    subject param to agree with. The subject must be a bound param.
  *  - `{verbatim:name}` → a `Verbatim` atom (ADR-200): the param's value rendered
  *    as opaque, whitespace-exempt text. The param must be bound.
- *  - `{pronoun:it}` / `{number:n words}` / `{contents:box}` / `{slot:detail}` →
- *    the corresponding reserved (stub) kind.
+ *  - `{number:coins}` / `{number:coins words}` / `{number:floor ordinal}` → a
+ *    `Numeral` atom (ADR-198): the numeric param, optional format. Must be bound.
+ *  - `{pronoun:it}` / `{contents:box}` / `{slot:detail}` → the corresponding
+ *    reserved (stub) kind.
  *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
  *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
@@ -41,10 +43,12 @@ const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {
 /** Recognized `kind:` heads → the reserved (stub) `Phrase` kind they route to. */
 const KIND_PREFIXES: Record<string, Phrase['kind']> = {
   pronoun: 'pronoun',
-  number: 'number',
   contents: 'contents',
   slot: 'slot',
 };
+
+/** Recognized `{number:param format?}` formats (ADR-198). */
+const NUMERAL_FORMATS = new Set(['digits', 'words', 'ordinal']);
 
 /**
  * Raised when a template cannot be parsed: a legacy `:`-chain, an unknown
@@ -146,6 +150,28 @@ function parseVerbatim(inner: string, template: string, params: Record<string, u
   return { kind: 'verbatim', text: String(params[name]) };
 }
 
+/**
+ * Parse a `{number:param format?}` head into a `Numeral` atom (ADR-198). The
+ * first bare token is the numeric param; an optional trailing token is the format
+ * (`digits` default | `words` | `ordinal`). The param must be bound (AC-11).
+ */
+function parseNumber(inner: string, template: string, params: Record<string, unknown>): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length < 1 || tokens.length > 2) {
+    throw new PhraseParseError(inner, template, 'a number takes a param and an optional format, e.g. {number:coins words}');
+  }
+  const name = tokens[0];
+  const format = tokens[1] ?? 'digits';
+  if (!NUMERAL_FORMATS.has(format)) {
+    throw new PhraseParseError(format, template, `'${format}' is not a number format (digits | words | ordinal)`);
+  }
+  if (!(name in params)) {
+    throw new PhraseParseError(name, template, `number param '${name}' is not bound`);
+  }
+  return { kind: 'number', value: Number(params[name]), format: format as 'digits' | 'words' | 'ordinal' };
+}
+
 /** Parse one placeholder's inner text into a phrase, binding against params. */
 function parsePlaceholder(inner: string, template: string, params: Record<string, unknown>): Phrase {
   // A ':' marks a kind head. Its prefix must be a known kind — anything else
@@ -159,6 +185,10 @@ function parsePlaceholder(inner: string, template: string, params: Record<string
     // Verbatim atom (ADR-200): binds a single param, rendered as opaque text.
     if (prefix === 'verbatim') {
       return parseVerbatim(inner, template, params);
+    }
+    // Numeral atom (ADR-198): binds a numeric param + optional format.
+    if (prefix === 'number') {
+      return parseNumber(inner, template, params);
     }
     const kind = KIND_PREFIXES[prefix];
     if (kind === undefined) {

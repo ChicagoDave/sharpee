@@ -19,8 +19,8 @@
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
  * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` (ADR-199) and `Verbatim` (ADR-200) atoms are realized here; the six
- * remaining stub kinds throw `PhraseNotImplementedError`.
+ * `Verb` (ADR-199), `Verbatim` (ADR-200), and `Numeral` (ADR-198) atoms are
+ * realized here; the five remaining stub kinds throw `PhraseNotImplementedError`.
  */
 
 import {
@@ -36,10 +36,11 @@ import {
   isEmpty,
   isVerb,
   isVerbatim,
+  isNumeral,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
-import { countWord } from '../number-words.js';
+import { countWord, numberToWords, ordinalString } from '../number-words.js';
 import { PhraseNotImplementedError } from './errors.js';
 
 /**
@@ -191,6 +192,19 @@ function conjugateVerb(
   // Everything else (plural, or 1st/2nd person) takes the non-3rd-singular form.
   if (irregular) return irregular.plural;
   return regularPluralVerb(lemma);
+}
+
+/** Realize a `Numeral` (ADR-198): digits, spelled words, or numeric ordinal. */
+function renderNumeral(value: number, format: 'digits' | 'words' | 'ordinal'): string {
+  if (Number.isNaN(value)) return ''; // bound to a non-number — authoring error
+  switch (format) {
+    case 'words':
+      return numberToWords(value);
+    case 'ordinal':
+      return ordinalString(value);
+    default:
+      return String(value);
+  }
 }
 
 /** Realize a `Verb` by agreeing it with its referenced subject's resolved surface. */
@@ -377,6 +391,12 @@ function realizeToRuns(
     // Opaque pass-through (ADR-200): exempt from whitespace collapse.
     const own = extendDeco(deco, phrase.decorations);
     return [{ text: phrase.text, verbatim: true, deco: own }];
+  }
+
+  if (isNumeral(phrase)) {
+    // Numeral (ADR-198): digits / spelled words / ordinal.
+    const own = extendDeco(deco, phrase.decorations);
+    return [{ text: renderNumeral(phrase.value, phrase.format), verbatim: false, deco: own }];
   }
 
   if (isSequence(phrase)) {
