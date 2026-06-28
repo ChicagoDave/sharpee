@@ -21,7 +21,17 @@
  */
 
 import { NounPhrase, RenderContext } from '@sharpee/if-domain';
-import { IFEntity, IdentityTrait, TraitType } from '@sharpee/world-model';
+import { IFEntity, IdentityTrait, TraitType, getStateAdjectives } from '@sharpee/world-model';
+
+/** Options for {@link nounPhraseFor}. */
+export interface NounPhraseOptions {
+  /**
+   * Prepend live state-derived adjectives ("open", "locked") from the entity's
+   * traits (ADR-193). Default `false` — only producers that *describe* an object's
+   * state opt in, avoiding redundancy like "open the open box".
+   */
+  stateAdjectives?: boolean;
+}
 
 /**
  * Build a `NounPhrase` from an `IFEntity` for use as a message-template
@@ -30,19 +40,25 @@ import { IFEntity, IdentityTrait, TraitType } from '@sharpee/world-model';
  *
  * @param entity any IFEntity — typically the noun, container, or target from an
  *               action's command or a capability behavior
- * @param _ctx the render context — reserved for computed names / state-derived
- *             fields (ADR-193+); the static mapping does not consult it yet
+ * @param _ctx the render context — reserved for computed names (ADR-193+); the
+ *             mapping does not consult it yet
+ * @param opts options — set `stateAdjectives` to prepend live trait-state adjectives
  * @returns a `NounPhrase` carrying the entity's grammatical metadata
  */
-export function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext): NounPhrase {
+export function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext, opts?: NounPhraseOptions): NounPhrase {
+  // State-derived adjectives (ADR-193): opt-in; prepended before static ones.
+  const stateAdjectives = opts?.stateAdjectives ? getStateAdjectives(entity) : [];
+
   if (!entity.has(TraitType.IDENTITY)) {
-    return {
+    const np: NounPhrase = {
       kind: 'noun',
       name: entity.name,
       number: 'singular',
       articleType: 'indefinite',
       referableId: entity.id,
     };
+    if (stateAdjectives.length > 0) np.adjectives = [...stateAdjectives];
+    return np;
   }
 
   const identity = entity.get(TraitType.IDENTITY) as IdentityTrait;
@@ -75,8 +91,9 @@ export function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext): NounPhras
     referableId: entity.id,
   };
 
-  if (identity.adjectives && identity.adjectives.length > 0) {
-    np.adjectives = [...identity.adjectives];
+  const staticAdjectives = identity.adjectives ?? [];
+  if (stateAdjectives.length > 0 || staticAdjectives.length > 0) {
+    np.adjectives = [...stateAdjectives, ...staticAdjectives];
   }
   if (identity.plural) {
     np.pluralForm = identity.plural;

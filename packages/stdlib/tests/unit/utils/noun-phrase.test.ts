@@ -8,7 +8,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { WorldModel, IdentityTrait, EntityType } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, EntityType, OpenableTrait } from '@sharpee/world-model';
 import { nounPhraseFor } from '../../../src/utils/noun-phrase';
 
 function makeEntity(world: WorldModel, name: string, identity?: Partial<IdentityTrait>) {
@@ -132,5 +132,39 @@ describe('nounPhraseFor', () => {
     entity.add(new IdentityTrait({ name: '' }));
 
     expect(nounPhraseFor(entity).name).toBe(entity.name);
+  });
+});
+
+describe('nounPhraseFor — state-derived adjectives (ADR-193)', () => {
+  test('default (no opts) → no state adjectives (open box stays "box")', () => {
+    const world = new WorldModel();
+    const box = makeEntity(world, 'box', {});
+    box.add(new OpenableTrait({ isOpen: true }));
+
+    expect(nounPhraseFor(box).adjectives).toBeUndefined();
+  });
+
+  test('AC-2: opt-in prepends the live state adjective ("open box")', () => {
+    const world = new WorldModel();
+    const box = makeEntity(world, 'box', {});
+    box.add(new OpenableTrait({ isOpen: true }));
+
+    expect(nounPhraseFor(box, undefined, { stateAdjectives: true }).adjectives).toEqual(['open']);
+  });
+
+  test('AC-3: state adjectives prepend before static ones', () => {
+    const world = new WorldModel();
+    const box = makeEntity(world, 'box', { adjectives: ['wooden'] });
+    box.add(new OpenableTrait({ isOpen: true }));
+
+    expect(nounPhraseFor(box, undefined, { stateAdjectives: true }).adjectives).toEqual(['open', 'wooden']);
+  });
+
+  test('a closed box contributes nothing even when opted in', () => {
+    const world = new WorldModel();
+    const box = makeEntity(world, 'box', { adjectives: ['iron'] });
+    box.add(new OpenableTrait({ isOpen: false }));
+
+    expect(nounPhraseFor(box, undefined, { stateAdjectives: true }).adjectives).toEqual(['iron']);
   });
 });

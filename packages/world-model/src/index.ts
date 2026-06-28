@@ -18,6 +18,13 @@ export * from './traits/trait';
 export * from './traits/trait-types';
 export * from './traits/implementations';
 
+// State-derived adjective contributors (ADR-193)
+export {
+  registerAdjectiveContributor,
+  getStateAdjectives,
+  type AdjectiveContributor,
+} from './state-adjectives';
+
 // Individual trait exports
 export * from './traits/identity';
 export * from './traits/container';
