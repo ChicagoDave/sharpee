@@ -19,10 +19,11 @@
  *
  * Extensibility (ADR-192 §1): `Phrase` is a CLOSED discriminated union keyed by
  * `kind`. The five foundational kinds are implemented by the Assembler in
- * ADR-192; `Verb` (199), `Verbatim` (200), `Numeral` (198), and `Pronoun` (197) are
- * realized follow-on atoms; the remaining four stub kinds are reserved discriminants
- * whose fields and realization land additively in their follow-on ADRs (193–196).
- * Extension is additive only — a new member plus a new Assembler case, never a rewrite.
+ * ADR-192; `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), and
+ * `Contents` (194) are realized follow-on atoms; the remaining three stub kinds are
+ * reserved discriminants whose fields and realization land additively in their
+ * follow-on ADRs (193 adjectives, 195 Slot, 196 Optional/Choice). Extension is
+ * additive only — a new member plus a new Assembler case, never a rewrite.
  */
 
 import { EntityId, IEntity } from '@sharpee/core';
@@ -172,9 +173,16 @@ export interface Verbatim extends PhraseBase {
   text: string;
 }
 
-/** Combinator — an entity's contents / relational placement. Fields + realization: ADR-194. */
+/**
+ * Combinator — an entity's direct contents, read from the live world at realize
+ * time and grouped as a list (ADR-194). `containerRef` names the container param.
+ */
 export interface Contents extends PhraseBase {
   kind: 'contents';
+  /** Param naming the container (a `NounPhrase` carrying `referableId`, or an id). */
+  containerRef: string;
+  /** List conjunction. Default `and`. */
+  conj?: 'and' | 'or';
 }
 
 /** Combinator — a named contribution channel. Fields + realization: ADR-195. */
@@ -231,6 +239,12 @@ export interface RenderWorld {
   getEntityContents(entityId: EntityId): IEntity[];
   /** The room transitively containing an entity, if any. */
   getContainingRoom(entityId: EntityId): IEntity | undefined;
+  /**
+   * Produce the `NounPhrase` for an entity id (ADR-194) — the entity→phrase bridge
+   * `Contents`/`Slot` realize through. Optional: present when the engine wired it to
+   * the producer (`nounPhraseFor`); absent in bare/world-less render stubs.
+   */
+  nounPhraseFor?(entityId: EntityId): NounPhrase | undefined;
 }
 
 /**

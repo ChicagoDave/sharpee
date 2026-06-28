@@ -25,7 +25,9 @@
  *    `Numeral` atom (ADR-198): the numeric param, optional format. Must be bound.
  *  - `{pronoun:subject}` / `{pronoun:object}` / `{pronoun:possessive}` → a `Pronoun`
  *    atom (ADR-197): a grammatical case; the referent is the last-mentioned entity.
- *  - `{contents:box}` / `{slot:detail}` → the corresponding reserved (stub) kind.
+ *  - `{contents:box}` → a `Contents` atom (ADR-194): the container's live contents
+ *    as a grouped list, read at realize time. The container must be bound.
+ *  - `{slot:detail}` → the corresponding reserved (stub) kind.
  *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
  *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
@@ -43,7 +45,6 @@ const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {
 
 /** Recognized `kind:` heads → the reserved (stub) `Phrase` kind they route to. */
 const KIND_PREFIXES: Record<string, Phrase['kind']> = {
-  contents: 'contents',
   slot: 'slot',
 };
 
@@ -193,6 +194,30 @@ function parsePronoun(inner: string, template: string): Phrase {
   return { kind: 'pronoun', case: tokens[0] as 'subject' | 'object' | 'possessive' | 'possessive-pronoun' | 'reflexive' };
 }
 
+/**
+ * Parse a `{contents:container [or]}` head into a `Contents` atom (ADR-194). The
+ * first bare token is the container param (must be bound); an optional `or`/`and`
+ * sets the conjunction (default `and`). The contents are read at realize time.
+ */
+function parseContents(inner: string, template: string, params: Record<string, unknown>): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length < 1 || tokens.length > 2) {
+    throw new PhraseParseError(inner, template, 'contents takes a container and an optional conjunction, e.g. {contents:box}');
+  }
+  const name = tokens[0];
+  const conj = tokens[1];
+  if (conj !== undefined && conj !== 'and' && conj !== 'or') {
+    throw new PhraseParseError(conj, template, `'${conj}' is not a conjunction (and | or)`);
+  }
+  if (!(name in params)) {
+    throw new PhraseParseError(name, template, `contents container '${name}' is not bound`);
+  }
+  return conj === 'or'
+    ? { kind: 'contents', containerRef: name, conj: 'or' }
+    : { kind: 'contents', containerRef: name };
+}
+
 /** Parse one placeholder's inner text into a phrase, binding against params. */
 function parsePlaceholder(inner: string, template: string, params: Record<string, unknown>): Phrase {
   // A ':' marks a kind head. Its prefix must be a known kind — anything else
@@ -214,6 +239,10 @@ function parsePlaceholder(inner: string, template: string, params: Record<string
     // Pronoun atom (ADR-197): a grammatical case; referent is last-mentioned.
     if (prefix === 'pronoun') {
       return parsePronoun(inner, template);
+    }
+    // Contents atom (ADR-194): binds a container; contents read at realize time.
+    if (prefix === 'contents') {
+      return parseContents(inner, template, params);
     }
     const kind = KIND_PREFIXES[prefix];
     if (kind === undefined) {

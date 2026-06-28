@@ -31,6 +31,8 @@ import type {
   TextStateStore,
   Phrase,
 } from '@sharpee/if-domain';
+import type { IFEntity } from '@sharpee/world-model';
+import { nounPhraseFor as nounPhraseForEntity } from '@sharpee/stdlib';
 
 /**
  * The minimal world surface the render world adapter needs. The engine's
@@ -48,6 +50,10 @@ export interface WorldModelLike {
 /**
  * Wrap a world model as the read-only `RenderWorld` the Assembler consumes.
  *
+ * Supplies the entity→`NounPhrase` bridge (`nounPhraseFor`, ADR-194) by delegating
+ * to stdlib's producer — the engine may depend on stdlib, lang-en-us may not, so the
+ * bridge crosses here rather than in the Assembler.
+ *
  * @param world the live world model (read-only access only)
  * @returns a `RenderWorld` delegating to the model's lookup methods
  */
@@ -56,6 +62,10 @@ export function createRenderWorld(world: WorldModelLike): RenderWorld {
     getEntity: (entityId) => world.getEntity(entityId),
     getEntityContents: (entityId) => world.getContents(entityId),
     getContainingRoom: (entityId) => world.getContainingRoom(entityId),
+    nounPhraseFor: (entityId) => {
+      const entity = world.getEntity(entityId);
+      return entity ? nounPhraseForEntity(entity as IFEntity) : undefined;
+    },
   };
 }
 

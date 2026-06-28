@@ -19,8 +19,9 @@
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
  * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` (199), `Verbatim` (200), `Numeral` (198), and `Pronoun` (197) atoms are
- * realized here; the four remaining stub kinds throw `PhraseNotImplementedError`.
+ * `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), and `Contents`
+ * (194) atoms are realized here; the three remaining stub kinds throw
+ * `PhraseNotImplementedError`.
  */
 
 import {
@@ -29,6 +30,7 @@ import {
   NounPhrase,
   Verb,
   Pronoun,
+  Contents,
   RenderContext,
   isLiteral,
   isNounPhrase,
@@ -39,6 +41,7 @@ import {
   isVerbatim,
   isNumeral,
   isPronoun,
+  isContents,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -279,6 +282,28 @@ function renderList(items: Phrase[], conj: 'and' | 'or', ctx: RenderContext): st
   return joinParts(rendered, conj, serialComma);
 }
 
+/**
+ * Realize a `Contents` (ADR-194): read the container's live contents from the
+ * world, bridge each entity to a `NounPhrase`, and render as a grouped list.
+ * Graceful — an unresolved container or missing bridge renders "nothing".
+ */
+function renderContents(contents: Contents, ctx: RenderContext): string {
+  const ref = ctx.params[contents.containerRef];
+  let containerId: string | undefined;
+  if (typeof ref === 'string') {
+    containerId = ref;
+  } else if (ref !== null && typeof ref === 'object' && (ref as { kind?: unknown }).kind === 'noun') {
+    containerId = (ref as NounPhrase).referableId;
+  }
+  const bridge = ctx.world.nounPhraseFor;
+  if (containerId === undefined || !bridge) return 'nothing';
+  const items = ctx.world
+    .getEntityContents(containerId)
+    .map((entity) => bridge(entity.id))
+    .filter((np): np is NounPhrase => np !== undefined);
+  return renderList(items, contents.conj ?? 'and', ctx);
+}
+
 // ===========================================================================
 // Reference authority — last-mentioned tracking (placeholder; ADR-197)
 // ===========================================================================
@@ -437,6 +462,12 @@ function realizeToRuns(
     // Pronoun (ADR-197): the last-mentioned referent in the requested case.
     const own = extendDeco(deco, phrase.decorations);
     return [{ text: renderPronoun(phrase, ctx), verbatim: false, deco: own }];
+  }
+
+  if (isContents(phrase)) {
+    // Contents (ADR-194): the container's live contents as a grouped list.
+    const own = extendDeco(deco, phrase.decorations);
+    return [{ text: renderContents(phrase, ctx), verbatim: false, deco: own }];
   }
 
   if (isSequence(phrase)) {

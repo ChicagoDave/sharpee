@@ -80,7 +80,6 @@ describe('NounPhrase placeholders', () => {
 
 describe('kind-head routing to reserved stub kinds', () => {
   const cases: Array<[string, Phrase['kind']]> = [
-    ['{contents:box}', 'contents'],
     ['{slot:detail}', 'slot'],
   ];
   for (const [template, kind] of cases) {
@@ -88,6 +87,26 @@ describe('kind-head routing to reserved stub kinds', () => {
       expect(parsePhraseTemplate(template, {}).kind).toBe(kind);
     });
   }
+});
+
+// --- Contents atom (ADR-194) -----------------------------------------------
+
+describe('parsePhraseTemplate — Contents atom (ADR-194)', () => {
+  it('binds {contents:box} with the default "and" conjunction', () => {
+    expect(parsePhraseTemplate('{contents:box}', { box: 'box-1' })).toEqual({ kind: 'contents', containerRef: 'box' });
+  });
+
+  it('binds the "or" conjunction hint', () => {
+    expect(parsePhraseTemplate('{contents:box or}', { box: 'box-1' })).toEqual({ kind: 'contents', containerRef: 'box', conj: 'or' });
+  });
+
+  it('throws PhraseParseError on an unbound container (AC-4)', () => {
+    expect(() => parsePhraseTemplate('{contents:box}', {})).toThrow(PhraseParseError);
+  });
+
+  it('throws PhraseParseError on a bad conjunction', () => {
+    expect(() => parsePhraseTemplate('{contents:box nor}', { box: 'b' })).toThrow(PhraseParseError);
+  });
 });
 
 // --- Pronoun atom (ADR-197) ------------------------------------------------
