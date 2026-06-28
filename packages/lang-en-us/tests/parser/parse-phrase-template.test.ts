@@ -81,7 +81,6 @@ describe('NounPhrase placeholders', () => {
 describe('kind-head routing to reserved stub kinds', () => {
   const cases: Array<[string, Phrase['kind']]> = [
     ['{pronoun:it}', 'pronoun'],
-    ['{number:coins words}', 'number'],
     ['{contents:box}', 'contents'],
     ['{slot:detail}', 'slot'],
   ];
@@ -90,6 +89,31 @@ describe('kind-head routing to reserved stub kinds', () => {
       expect(parsePhraseTemplate(template, {}).kind).toBe(kind);
     });
   }
+});
+
+// --- Numeral atom (ADR-198) ------------------------------------------------
+
+describe('parsePhraseTemplate — Numeral atom (ADR-198)', () => {
+  it('binds {number:n} as digits by default', () => {
+    expect(parsePhraseTemplate('{number:n}', { n: 7 })).toEqual({ kind: 'number', value: 7, format: 'digits' });
+  });
+
+  it('binds the words / ordinal format hints', () => {
+    expect(parsePhraseTemplate('{number:n words}', { n: 21 })).toEqual({ kind: 'number', value: 21, format: 'words' });
+    expect(parsePhraseTemplate('{number:n ordinal}', { n: 3 })).toEqual({ kind: 'number', value: 3, format: 'ordinal' });
+  });
+
+  it('coerces a numeric-string param value', () => {
+    expect(parsePhraseTemplate('{number:n}', { n: '42' })).toEqual({ kind: 'number', value: 42, format: 'digits' });
+  });
+
+  it('throws PhraseParseError on an unbound number param (AC-11)', () => {
+    expect(() => parsePhraseTemplate('{number:n}', {})).toThrow(PhraseParseError);
+  });
+
+  it('throws PhraseParseError on an unknown format', () => {
+    expect(() => parsePhraseTemplate('{number:n roman}', { n: 4 })).toThrow(PhraseParseError);
+  });
 });
 
 // --- Verbatim atom (ADR-200) -----------------------------------------------

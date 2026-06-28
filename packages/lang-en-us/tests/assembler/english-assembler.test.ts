@@ -213,7 +213,7 @@ describe('AC-9: determinism', () => {
 // --- stub kinds: named refusal ---------------------------------------------
 
 describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
-  const stubs: Array<Phrase['kind']> = ['pronoun', 'number', 'contents', 'slot', 'optional', 'choice'];
+  const stubs: Array<Phrase['kind']> = ['pronoun', 'contents', 'slot', 'optional', 'choice'];
   for (const kind of stubs) {
     it(`refuses kind '${kind}'`, () => {
       expect(() => asm.realize({ kind } as Phrase, makeCtx())).toThrow(PhraseNotImplementedError);

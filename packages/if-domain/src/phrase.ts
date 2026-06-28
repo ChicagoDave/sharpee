@@ -19,10 +19,10 @@
  *
  * Extensibility (ADR-192 §1): `Phrase` is a CLOSED discriminated union keyed by
  * `kind`. The five foundational kinds are implemented by the Assembler in
- * ADR-192; `Verb` (ADR-199) and `Verbatim` (ADR-200) are realized follow-on
- * atoms; the remaining six stub kinds are reserved discriminants whose fields and
- * realization land additively in their follow-on ADRs (193–198). Extension is
- * additive only — a new member plus a new Assembler case, never a rewrite of the base.
+ * ADR-192; `Verb` (ADR-199), `Verbatim` (ADR-200), and `Numeral` (ADR-198) are
+ * realized follow-on atoms; the remaining five stub kinds are reserved discriminants
+ * whose fields and realization land additively in their follow-on ADRs (193–197).
+ * Extension is additive only — a new member plus a new Assembler case, never a rewrite.
  */
 
 import { EntityId, IEntity } from '@sharpee/core';
@@ -143,9 +143,17 @@ export interface Pronoun extends PhraseBase {
   kind: 'pronoun';
 }
 
-/** Atom — spelled or numeric quantity. Fields + realization: ADR-198. */
+/**
+ * Atom — a numeric value rendered as digits, spelled-out words, or an ordinal
+ * (ADR-198). Language-neutral: `value` is the number; the spelled surface
+ * ("seven", "3rd") is the Assembler's to compute (no number words here).
+ */
 export interface Numeral extends PhraseBase {
   kind: 'number';
+  /** The numeric value to render. */
+  value: number;
+  /** How to render it. Default `digits`. */
+  format: 'digits' | 'words' | 'ordinal';
 }
 
 /**
