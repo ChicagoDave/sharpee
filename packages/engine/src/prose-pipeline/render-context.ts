@@ -22,6 +22,7 @@
 import type { EntityId, IEntity } from '@sharpee/core';
 import type {
   LocaleSettings,
+  Mentioned,
   NarrativeAgreement,
   ReferenceContext,
   RenderContext,
@@ -59,16 +60,17 @@ export function createRenderWorld(world: WorldModelLike): RenderWorld {
 }
 
 /**
- * Placeholder last-mentioned context (ADR-197 SEAM). Reports no last-mentioned
- * entity and discards notes; a later `Pronoun` realization replaces this with a
- * real implementation. Inert but contract-complete so the seam is exercised.
+ * Last-mentioned reference context (ADR-197). Keeps the most recently realized
+ * referent for the turn so a following `Pronoun` resolves to it. Per-turn and
+ * realization-order-deterministic (the Assembler walks the tree in a fixed order).
  */
-class PlaceholderReferenceContext implements ReferenceContext {
-  lastMentioned(): EntityId | undefined {
-    return undefined;
+class TurnReferenceContext implements ReferenceContext {
+  private last: Mentioned | undefined;
+  lastMentioned(): Mentioned | undefined {
+    return this.last;
   }
-  note(_referableId: EntityId): void {
-    // ADR-197: no-op until last-mentioned tracking lands.
+  note(mentioned: Mentioned): void {
+    this.last = mentioned;
   }
 }
 
@@ -116,7 +118,7 @@ export function createRenderContextFactory(
   narrative: NarrativeAgreement,
 ): RenderContextFactory {
   // Per-turn seams: shared across every message rendered this turn.
-  const reference = new PlaceholderReferenceContext();
+  const reference = new TurnReferenceContext();
   const textState = new EmptyTextStateStore();
   const contribute = (
     _slotKey: string,

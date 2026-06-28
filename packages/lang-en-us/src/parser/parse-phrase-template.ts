@@ -23,8 +23,9 @@
  *    as opaque, whitespace-exempt text. The param must be bound.
  *  - `{number:coins}` / `{number:coins words}` / `{number:floor ordinal}` → a
  *    `Numeral` atom (ADR-198): the numeric param, optional format. Must be bound.
- *  - `{pronoun:it}` / `{contents:box}` / `{slot:detail}` → the corresponding
- *    reserved (stub) kind.
+ *  - `{pronoun:subject}` / `{pronoun:object}` / `{pronoun:possessive}` → a `Pronoun`
+ *    atom (ADR-197): a grammatical case; the referent is the last-mentioned entity.
+ *  - `{contents:box}` / `{slot:detail}` → the corresponding reserved (stub) kind.
  *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
  *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
@@ -42,13 +43,15 @@ const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {
 
 /** Recognized `kind:` heads → the reserved (stub) `Phrase` kind they route to. */
 const KIND_PREFIXES: Record<string, Phrase['kind']> = {
-  pronoun: 'pronoun',
   contents: 'contents',
   slot: 'slot',
 };
 
 /** Recognized `{number:param format?}` formats (ADR-198). */
 const NUMERAL_FORMATS = new Set(['digits', 'words', 'ordinal']);
+
+/** Recognized `{pronoun:case}` cases (ADR-197). */
+const PRONOUN_CASES = new Set(['subject', 'object', 'possessive', 'possessive-pronoun', 'reflexive']);
 
 /**
  * Raised when a template cannot be parsed: a legacy `:`-chain, an unknown
@@ -172,6 +175,24 @@ function parseNumber(inner: string, template: string, params: Record<string, unk
   return { kind: 'number', value: Number(params[name]), format: format as 'digits' | 'words' | 'ordinal' };
 }
 
+/**
+ * Parse a `{pronoun:case}` head into a `Pronoun` atom (ADR-197). The referent is
+ * the last-mentioned entity (resolved at realize time); the single token is the
+ * grammatical case. An unknown case fails at parse time (AC-11).
+ */
+function parsePronoun(inner: string, template: string): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length !== 1 || !PRONOUN_CASES.has(tokens[0])) {
+    throw new PhraseParseError(
+      inner,
+      template,
+      'a pronoun takes one case: {pronoun:subject|object|possessive|possessive-pronoun|reflexive}',
+    );
+  }
+  return { kind: 'pronoun', case: tokens[0] as 'subject' | 'object' | 'possessive' | 'possessive-pronoun' | 'reflexive' };
+}
+
 /** Parse one placeholder's inner text into a phrase, binding against params. */
 function parsePlaceholder(inner: string, template: string, params: Record<string, unknown>): Phrase {
   // A ':' marks a kind head. Its prefix must be a known kind — anything else
@@ -189,6 +210,10 @@ function parsePlaceholder(inner: string, template: string, params: Record<string
     // Numeral atom (ADR-198): binds a numeric param + optional format.
     if (prefix === 'number') {
       return parseNumber(inner, template, params);
+    }
+    // Pronoun atom (ADR-197): a grammatical case; referent is last-mentioned.
+    if (prefix === 'pronoun') {
+      return parsePronoun(inner, template);
     }
     const kind = KIND_PREFIXES[prefix];
     if (kind === undefined) {

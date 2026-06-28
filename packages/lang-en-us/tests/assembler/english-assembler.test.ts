@@ -23,19 +23,20 @@ import type {
   Empty,
   RenderContext,
   LocaleSettings,
+  Mentioned,
 } from '@sharpee/if-domain';
 import { EnglishAssembler, ASSEMBLER_DEFAULT_BLOCK_KEY, PhraseNotImplementedError } from '../../src/assembler';
 
 // --- harness ---------------------------------------------------------------
 
 function makeCtx(settings: LocaleSettings = {}): RenderContext {
-  const noted: string[] = [];
+  let last: Mentioned | undefined;
   return {
     world: { getEntity: () => undefined, getEntityContents: () => [], getContainingRoom: () => undefined },
     params: {},
     settings,
     narrative: { person: 'third' },
-    reference: { lastMentioned: () => noted[noted.length - 1], note: (id) => void noted.push(id) },
+    reference: { lastMentioned: () => last, note: (m) => { last = m; } },
     textState: { get: () => undefined, set: () => undefined },
     contribute: () => undefined,
   };
@@ -213,7 +214,7 @@ describe('AC-9: determinism', () => {
 // --- stub kinds: named refusal ---------------------------------------------
 
 describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
-  const stubs: Array<Phrase['kind']> = ['pronoun', 'contents', 'slot', 'optional', 'choice'];
+  const stubs: Array<Phrase['kind']> = ['contents', 'slot', 'optional', 'choice'];
   for (const kind of stubs) {
     it(`refuses kind '${kind}'`, () => {
       expect(() => asm.realize({ kind } as Phrase, makeCtx())).toThrow(PhraseNotImplementedError);
