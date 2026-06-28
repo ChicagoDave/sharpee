@@ -107,6 +107,27 @@ describe('Case authority: the capitalize hint upper-cases the rendered head', ()
   });
 });
 
+describe('Intrinsically-plural nouns: name is the plural surface (no double-pluralization)', () => {
+  it('renders a plural-marked noun as-is, suppressing the indefinite article', () => {
+    expect(render(np('pygmy goats', { number: 'plural' }))).toBe('pygmy goats');
+    expect(render(np('direction signs', { number: 'plural' }))).toBe('direction signs');
+  });
+
+  it('honors an explicit pluralForm override over the name', () => {
+    expect(render(np('mouse', { number: 'plural', pluralForm: 'mice' }))).toBe('mice');
+  });
+
+  it('renders inside a list without grouping or double-pluralizing', () => {
+    expect(
+      render(list([np('hay bale'), np('pygmy goats', { number: 'plural' }), np('rabbits', { number: 'plural' })])),
+    ).toBe('a hay bale, pygmy goats, and rabbits');
+  });
+
+  it('count-grouping of singular entities still pluralizes (unchanged)', () => {
+    expect(render(list([np('goat'), np('goat')]))).toBe('two goats');
+  });
+});
+
 // --- AC-5: ADR-190 list parity through the phrase path ---------------------
 
 describe('AC-5: PhraseList parity with ADR-190 (through the phrase path)', () => {

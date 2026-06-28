@@ -45,7 +45,9 @@ describe('Pronoun atom (ADR-197)', () => {
   });
 
   it('AC-2: plural referent → they/them/their', () => {
-    const papers = noun('paper', { number: 'plural' });
+    // An intrinsically-plural noun carries its plural surface in `name`
+    // (the producer maps it from the author-written IdentityTrait.name).
+    const papers = noun('papers', { number: 'plural' });
     expect(after(papers, pron('subject'))).toBe('the papers. they');
     expect(after(papers, pron('object'))).toBe('the papers. them');
     expect(after(papers, pron('possessive'))).toBe('the papers. their');
@@ -63,7 +65,7 @@ describe('Pronoun atom (ADR-197)', () => {
   });
 
   it('AC-4: tracks the MOST recently realized noun phrase', () => {
-    const tree = seq(noun('troll'), lit(' drops '), noun('coin', { number: 'plural' }), lit('. '), pron('subject'));
+    const tree = seq(noun('troll'), lit(' drops '), noun('coins', { number: 'plural' }), lit('. '), pron('subject'));
     expect(render(tree)).toBe('the troll drops the coins. they'); // agrees with "coins", the last noun
   });
 

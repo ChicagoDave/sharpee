@@ -103,9 +103,19 @@ function articleSurface(np: NounPhrase, head: string): string {
 // Agreement authority — number / pluralization
 // ===========================================================================
 
-/** The noun's surface form for its grammatical number (Agreement authority). */
+/**
+ * The noun's surface form for its grammatical number (Agreement authority).
+ *
+ * An intrinsically-plural NounPhrase (`number: 'plural'`) carries its plural
+ * surface directly in `name` — the producer maps it from `IdentityTrait.name`,
+ * which an author marking an entity `.plural()` writes already-plural ("pygmy
+ * goats", "direction signs"). So the name is used as-is; only an explicit
+ * `pluralForm` overrides it. Re-running `pluralize` here would double-pluralize
+ * ("goats" → "goatses"). The count-group path (N identical *singular* entities →
+ * "two goats") pluralizes singular names itself and does not pass through here.
+ */
 function nounSurface(np: NounPhrase): string {
-  if (np.number === 'plural') return np.pluralForm ?? pluralize(np.name);
+  if (np.number === 'plural') return np.pluralForm ?? np.name;
   return np.name; // singular and mass use the base name
 }
 

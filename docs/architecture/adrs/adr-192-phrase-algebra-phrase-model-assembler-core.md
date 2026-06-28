@@ -111,7 +111,19 @@ interface NounPhrase extends PhraseBase {
   referableId?: EntityId;                              // last-mentioned tracking → ADR-197
   pronounSet?: string;                                 // for later pronoun reference
 }
+```
 
+> **`name` / `number` / `pluralForm` contract (clarified 2026-06-28).** For an
+> *intrinsically*-plural noun (`number: 'plural'`), `name` **is** the plural surface —
+> the producer maps it straight from the author-written `IdentityTrait.name` (an entity
+> marked `.plural()` is named "pygmy goats"; there is no singular to derive). The Assembler
+> therefore renders `name` as-is and **does not** pluralize from `number` alone; only an
+> explicit `pluralForm` overrides it. (Re-running `pluralize(name)` here double-pluralizes —
+> "goats" → "goatses".) Pluralization happens in exactly one other place: the `PhraseList`
+> **count-group** path, which takes N identical *singular* entities and renders "two goats";
+> intrinsic plurals are not groupable, so the two never collide.
+
+```ts
 interface PhraseList extends PhraseBase {
   kind: 'list';
   items: Phrase[];
