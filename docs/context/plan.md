@@ -306,11 +306,13 @@ Every Acceptance Criteria from ADR-192 maps to at least one phase:
   atoms, params-aware perspective, pipeline switch, and the legacy formatter
   chain / EntityInfo / entityInfoFrom deleted (W7+W8+W9). Platform unit suites
   green (world-model 1292, lang-en-us 264, engine 442, stdlib 1278); build 13/13.
-  **Remaining = dungeo STORY reconciliation** (continues on `main`, autonomous
-  scope): unit transcripts 1370/1481, walkthroughs ~90% — story-side param-shape
-  bugs (params emitted at event top level instead of under `params:`), bare
-  placeholders rendering strings as "a X", GDT, + expected-value diffs. See
-  `docs/work/dynamic-text/w4-bare-placeholder-analysis.md` and the session summary.
+  **Dungeo STORY reconciliation — DEFERRED to a future ADR** (David, 2026-06-27:
+  "We can write an ADR to clean up Dungeo later"). Partial cleanup landed on `main`
+  (article-absorption, `handleGameMessage` param fallback, GDT/name verbatim);
+  dungeo units ~1369/1481. The remaining tail is mostly **test-side** (expected-value
+  reconciliation against now-correct output) + pre-existing format errors + GDT-mode
+  behavior + the basket-elevator capability + combat-entity binding. Full scope +
+  gotchas captured in `docs/work/dynamic-text/dungeo-cutover-cleanup-scope.md`.
 
 ---
 
