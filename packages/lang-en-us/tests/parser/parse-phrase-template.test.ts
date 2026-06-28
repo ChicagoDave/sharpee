@@ -80,7 +80,6 @@ describe('NounPhrase placeholders', () => {
 
 describe('kind-head routing to reserved stub kinds', () => {
   const cases: Array<[string, Phrase['kind']]> = [
-    ['{pronoun:it}', 'pronoun'],
     ['{contents:box}', 'contents'],
     ['{slot:detail}', 'slot'],
   ];
@@ -89,6 +88,21 @@ describe('kind-head routing to reserved stub kinds', () => {
       expect(parsePhraseTemplate(template, {}).kind).toBe(kind);
     });
   }
+});
+
+// --- Pronoun atom (ADR-197) ------------------------------------------------
+
+describe('parsePhraseTemplate — Pronoun atom (ADR-197)', () => {
+  it('binds each grammatical case', () => {
+    for (const c of ['subject', 'object', 'possessive', 'possessive-pronoun', 'reflexive']) {
+      expect(parsePhraseTemplate(`{pronoun:${c}}`, {})).toEqual({ kind: 'pronoun', case: c });
+    }
+  });
+
+  it('throws PhraseParseError on an unknown case (e.g. the bare "it")', () => {
+    expect(() => parsePhraseTemplate('{pronoun:it}', {})).toThrow(PhraseParseError);
+    expect(() => parsePhraseTemplate('{pronoun:nominative}', {})).toThrow(PhraseParseError);
+  });
 });
 
 // --- Numeral atom (ADR-198) ------------------------------------------------

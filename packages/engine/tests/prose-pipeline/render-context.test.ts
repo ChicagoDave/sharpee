@@ -86,14 +86,20 @@ describe('createRenderContextFactory', () => {
     expect(ctxA.textState).toBe(ctxB.textState);
   });
 
-  it('exposes inert placeholder seams (ADR-195–197 deferred)', () => {
+  it('reference seam tracks the last-mentioned referent (ADR-197)', () => {
     const make = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD);
     const ctx = make({});
 
-    // reference: reports nothing, accepts notes without effect.
     expect(ctx.reference.lastMentioned()).toBeUndefined();
-    ctx.reference.note('torch');
-    expect(ctx.reference.lastMentioned()).toBeUndefined();
+    ctx.reference.note({ referableId: 'torch', number: 'singular', pronounSet: 'it' });
+    expect(ctx.reference.lastMentioned()).toEqual({ referableId: 'torch', number: 'singular', pronounSet: 'it' });
+    ctx.reference.note({ referableId: 'coins', number: 'plural' });
+    expect(ctx.reference.lastMentioned()?.referableId).toBe('coins'); // most recent wins
+  });
+
+  it('exposes still-inert placeholder seams (textState ADR-196, contribute ADR-195)', () => {
+    const make = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD);
+    const ctx = make({});
 
     // textState: always-empty store.
     expect(ctx.textState.get('e', 'k')).toBeUndefined();

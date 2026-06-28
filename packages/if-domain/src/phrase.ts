@@ -19,9 +19,9 @@
  *
  * Extensibility (ADR-192 §1): `Phrase` is a CLOSED discriminated union keyed by
  * `kind`. The five foundational kinds are implemented by the Assembler in
- * ADR-192; `Verb` (ADR-199), `Verbatim` (ADR-200), and `Numeral` (ADR-198) are
- * realized follow-on atoms; the remaining five stub kinds are reserved discriminants
- * whose fields and realization land additively in their follow-on ADRs (193–197).
+ * ADR-192; `Verb` (199), `Verbatim` (200), `Numeral` (198), and `Pronoun` (197) are
+ * realized follow-on atoms; the remaining four stub kinds are reserved discriminants
+ * whose fields and realization land additively in their follow-on ADRs (193–196).
  * Extension is additive only — a new member plus a new Assembler case, never a rewrite.
  */
 
@@ -138,9 +138,14 @@ export interface Verb extends PhraseBase {
 // complete now (ADR-192 §2). The owning ADR defines each kind's fields and adds
 // its Assembler case; until then the Assembler throws PhraseNotImplementedError.
 
-/** Atom — pronoun reference. Fields + realization: ADR-197. */
+/**
+ * Atom — a pronoun ("it"/"them"/"his"/…) agreeing in case, number, and gender
+ * with the last-mentioned referent (ADR-197). Language-neutral: the he/she/it/they
+ * surface tables live in the locale Assembler; only the grammatical `case` is here.
+ */
 export interface Pronoun extends PhraseBase {
   kind: 'pronoun';
+  case: 'subject' | 'object' | 'possessive' | 'possessive-pronoun' | 'reflexive';
 }
 
 /**
@@ -254,15 +259,28 @@ export interface NarrativeAgreement {
 }
 
 /**
- * Last-mentioned reference context — the seam a later `Pronoun` consumes.
- * SEAM (ADR-197): the implementation and final shape are owned by ADR-197; this
- * declaration only reserves the contract so the core is stable.
+ * The agreement surface of a last-mentioned referent — enough for a `Pronoun` to
+ * choose its surface (case × number × gender) without re-reading the world (ADR-197).
+ */
+export interface Mentioned {
+  /** The referent entity's id. */
+  referableId: EntityId;
+  /** Its grammatical number. */
+  number: 'singular' | 'plural' | 'mass';
+  /** Its pronoun set ('he' | 'she' | 'it' | 'they', or a named set); optional. */
+  pronounSet?: string;
+}
+
+/**
+ * Last-mentioned reference context — the seam a later `Pronoun` consumes (ADR-197).
+ * The Assembler `note`s each realized `NounPhrase`'s surface; `lastMentioned`
+ * returns the most recent.
  */
 export interface ReferenceContext {
-  /** The entity most recently realized this turn, if any. */
-  lastMentioned(): EntityId | undefined;
-  /** Record an entity as last-mentioned. */
-  note(referableId: EntityId): void;
+  /** The referent most recently realized this turn, if any. */
+  lastMentioned(): Mentioned | undefined;
+  /** Record a referent as last-mentioned. */
+  note(mentioned: Mentioned): void;
 }
 
 /**

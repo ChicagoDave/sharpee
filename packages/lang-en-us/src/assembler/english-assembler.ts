@@ -19,8 +19,8 @@
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
  * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` (ADR-199), `Verbatim` (ADR-200), and `Numeral` (ADR-198) atoms are
- * realized here; the five remaining stub kinds throw `PhraseNotImplementedError`.
+ * `Verb` (199), `Verbatim` (200), `Numeral` (198), and `Pronoun` (197) atoms are
+ * realized here; the four remaining stub kinds throw `PhraseNotImplementedError`.
  */
 
 import {
@@ -28,6 +28,7 @@ import {
   Phrase,
   NounPhrase,
   Verb,
+  Pronoun,
   RenderContext,
   isLiteral,
   isNounPhrase,
@@ -37,6 +38,7 @@ import {
   isVerb,
   isVerbatim,
   isNumeral,
+  isPronoun,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -287,7 +289,39 @@ function renderList(items: Phrase[], conj: 'and' | 'or', ctx: RenderContext): st
  * seam so the contract is exercised end-to-end.
  */
 function noteReference(np: NounPhrase, ctx: RenderContext): void {
-  if (np.referableId !== undefined) ctx.reference.note(np.referableId);
+  if (np.referableId !== undefined) {
+    ctx.reference.note({ referableId: np.referableId, number: np.number, pronounSet: np.pronounSet });
+  }
+}
+
+// ===========================================================================
+// Pronoun authority — case × number × gender (ADR-197)
+// ===========================================================================
+
+/** he/she/it/they forms keyed by case. */
+const PRONOUNS: Record<'he' | 'she' | 'it' | 'they', Record<Pronoun['case'], string>> = {
+  he: { subject: 'he', object: 'him', possessive: 'his', 'possessive-pronoun': 'his', reflexive: 'himself' },
+  she: { subject: 'she', object: 'her', possessive: 'her', 'possessive-pronoun': 'hers', reflexive: 'herself' },
+  it: { subject: 'it', object: 'it', possessive: 'its', 'possessive-pronoun': 'its', reflexive: 'itself' },
+  they: { subject: 'they', object: 'them', possessive: 'their', 'possessive-pronoun': 'theirs', reflexive: 'themselves' },
+};
+
+/** Pick the gender row for a referent: explicit pronounSet, else by number. */
+function genderOf(ref: { number: NounPhrase['number']; pronounSet?: string }): 'he' | 'she' | 'it' | 'they' {
+  const set = ref.pronounSet?.toLowerCase();
+  if (set === 'he' || set === 'masculine') return 'he';
+  if (set === 'she' || set === 'feminine') return 'she';
+  if (set === 'they' || set === 'plural' || set === 'nonbinary') return 'they';
+  if (set === 'it' || set === 'neuter') return 'it';
+  return ref.number === 'plural' ? 'they' : 'it'; // no set → by number (mass agrees singular)
+}
+
+/** Realize a `Pronoun` (ADR-197): the last-mentioned referent in the requested case. */
+function renderPronoun(pronoun: Pronoun, ctx: RenderContext): string {
+  const ref = ctx.reference.lastMentioned();
+  // Graceful: no antecedent → neuter singular for the case (no throw).
+  const gender = ref ? genderOf(ref) : 'it';
+  return PRONOUNS[gender][pronoun.case];
 }
 
 // ===========================================================================
@@ -397,6 +431,12 @@ function realizeToRuns(
     // Numeral (ADR-198): digits / spelled words / ordinal.
     const own = extendDeco(deco, phrase.decorations);
     return [{ text: renderNumeral(phrase.value, phrase.format), verbatim: false, deco: own }];
+  }
+
+  if (isPronoun(phrase)) {
+    // Pronoun (ADR-197): the last-mentioned referent in the requested case.
+    const own = extendDeco(deco, phrase.decorations);
+    return [{ text: renderPronoun(phrase, ctx), verbatim: false, deco: own }];
   }
 
   if (isSequence(phrase)) {
