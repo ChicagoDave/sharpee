@@ -208,14 +208,46 @@ export interface Slot extends PhraseBase {
   conj?: 'and' | 'or';
 }
 
-/** Modifier — conditionally present phrase. Fields + realization: ADR-196. */
+/**
+ * Modifier — a phrase that renders its `child` **or `Empty`**, gated by a boolean
+ * the PRODUCER resolves from world state (ADR-196 §1). Realization is stateless:
+ * `present ? realize(child) : Empty`. The conditional-clause mechanism (scenarios
+ * S9–S10). `present: false` yields `Empty`, absorbed by the enclosing combinator
+ * (ADR-192 AC-6) so no dangling comma/whitespace survives. The boolean is resolved
+ * at tree-build time — there is NO realize-time world read.
+ */
 export interface Optional extends PhraseBase {
   kind: 'optional';
+  /** The phrase realized when `present` is true. */
+  child: Phrase;
+  /** Resolved by the producer from world state; NOT read at realize time. */
+  present: boolean;
 }
 
-/** Modifier — one of several variants. Fields + realization: ADR-196. */
+/**
+ * Modifier — a phrase that renders **one of** `alternatives`, selected by a
+ * deterministic, persistent selector keyed to `(entityId, messageKey)` in the
+ * text-state store (ADR-196 §2). The ONLY kind that reads/writes `ctx.textState`;
+ * the selector advances a per-`(entityId, messageKey)` counter at realize time.
+ * Variation / cycling / first-time text (scenarios S12–S14).
+ */
 export interface Choice extends PhraseBase {
   kind: 'choice';
+  /** The variants; length ≥ 1. An alternative MAY be `Empty` (once-only text). */
+  alternatives: Phrase[];
+  /**
+   * Selection strategy (ADR-196 §2):
+   * - `cycling` — advance through variants, wrapping (`i = n % len`).
+   * - `stopping` — advance to the last variant, then stick (`i = min(n, len-1)`).
+   * - `sticky` — pick once (seeded), then replay that variant.
+   * - `random` — seeded pick each trigger; deterministic from the counter.
+   * - `firstTime` — `alt[0]` first, `alt[1]` after (`alt[1]` may be `Empty`).
+   */
+  selector: 'cycling' | 'stopping' | 'sticky' | 'random' | 'firstTime';
+  /** The entity the variation is keyed to (text-state primary key). */
+  entityId: EntityId;
+  /** Stable per-choice-site key (text-state secondary key). */
+  messageKey: string;
 }
 
 // ---------------------------------------------------------------------------

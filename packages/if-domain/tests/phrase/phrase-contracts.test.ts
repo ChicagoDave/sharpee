@@ -55,8 +55,18 @@ const numeral: Numeral = { kind: 'number' };
 const verbatim: Verbatim = { kind: 'verbatim' };
 const contents: Contents = { kind: 'contents' };
 const slot: Slot = { kind: 'slot', slotKey: 'here' };
-const optional: Optional = { kind: 'optional' };
-const choice: Choice = { kind: 'choice' };
+const optional: Optional = {
+  kind: 'optional',
+  child: { kind: 'literal', text: 'lid flung wide' },
+  present: true,
+};
+const choice: Choice = {
+  kind: 'choice',
+  alternatives: [{ kind: 'literal', text: "You can't go that way." }],
+  selector: 'cycling',
+  entityId: 'exit-1',
+  messageKey: 'cant_go',
+};
 
 const all: Array<{ phrase: Phrase; guard: (p: Phrase) => boolean; name: string }> = [
   { phrase: literal, guard: isLiteral, name: 'isLiteral' },
@@ -121,6 +131,50 @@ describe('ADR-195 Phase 1 — enriched Slot contract + RenderContext read seam',
     // the Assembler reads as no contributions (ADR-195 §2).
     const worldless: Pick<RenderContext, 'contribute'> = { contribute: () => {} };
     expect((worldless as Partial<RenderContext>).slotContributions?.('here')).toBeUndefined();
+  });
+});
+
+describe('ADR-196 Phase 1 — enriched Optional + Choice contract', () => {
+  it('Optional carries child + a producer-resolved present boolean, discriminated by kind', () => {
+    const present: Optional = { kind: 'optional', child: { kind: 'literal', text: ', lid flung wide' }, present: true };
+    const absent: Optional = { kind: 'optional', child: { kind: 'literal', text: ', lid flung wide' }, present: false };
+    expect(isOptional(present)).toBe(true);
+    expect(isOptional(absent)).toBe(true);
+    // `present` is a resolved boolean (no realize-time read); `child` is any Phrase.
+    expect(present.present).toBe(true);
+    expect(absent.present).toBe(false);
+    expect(present.child.kind).toBe('literal');
+  });
+
+  it('Choice carries alternatives, a selector, and the (entityId, messageKey) store key', () => {
+    const choice196: Choice = {
+      kind: 'choice',
+      alternatives: [
+        { kind: 'literal', text: "You can't go that way." },
+        { kind: 'literal', text: 'There is no exit there.' },
+      ],
+      selector: 'random',
+      entityId: 'room-hall',
+      messageKey: 'blocked_exit',
+    };
+    expect(isChoice(choice196)).toBe(true);
+    expect(choice196.alternatives).toHaveLength(2);
+    expect(choice196.selector).toBe('random');
+    // The two keys that index the persistent text-state store (ADR-196 §2/§4).
+    expect(choice196.entityId).toBe('room-hall');
+    expect(choice196.messageKey).toBe('blocked_exit');
+  });
+
+  it('an alternative MAY be Empty (once-only text, ADR-196 §2)', () => {
+    const onceOnly: Choice = {
+      kind: 'choice',
+      alternatives: [{ kind: 'literal', text: 'A brass key glints here.' }, { kind: 'empty' }],
+      selector: 'firstTime',
+      entityId: 'key-1',
+      messageKey: 'first_glint',
+    };
+    expect(isChoice(onceOnly)).toBe(true);
+    expect(onceOnly.alternatives[1].kind).toBe('empty');
   });
 });
 
