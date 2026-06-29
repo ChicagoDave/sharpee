@@ -19,9 +19,9 @@
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
  * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), and `Contents`
- * (194) atoms are realized here; the three remaining stub kinds throw
- * `PhraseNotImplementedError`.
+ * `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), `Contents`
+ * (194), and `Slot` (195) atoms are realized here; the two remaining stub kinds
+ * (`Optional` / `Choice`, ADR-196) throw `PhraseNotImplementedError`.
  */
 
 import {
@@ -31,6 +31,7 @@ import {
   Verb,
   Pronoun,
   Contents,
+  Slot,
   RenderContext,
   isLiteral,
   isNounPhrase,
@@ -42,6 +43,7 @@ import {
   isNumeral,
   isPronoun,
   isContents,
+  isSlot,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -314,6 +316,35 @@ function renderContents(contents: Contents, ctx: RenderContext): string {
   return renderList(items, contents.conj ?? 'and', ctx);
 }
 
+/**
+ * Realize a `Slot` (ADR-195 §4): peek the turn's contributions for `slotKey`,
+ * realize each, absorb any that render empty (AC-4), and join the survivors. The
+ * SLOT owns the connective grammar — the contribution is bare content:
+ *
+ *  - zero survivors → `''` (the slot is `Empty`; the stem + its terminator stay
+ *    clean, no dangling space/comma — AC-3);
+ *  - `sentence` mode (default) → a leading space then the survivors space-joined,
+ *    so they follow the stem's terminator as independent sentences (AC-1);
+ *  - `clause` mode → a leading `", "` then the survivors joined through the
+ *    punctuation authority (`joinParts`: serial comma + final `conj`), so they
+ *    attach as clauses before the stem's terminator (AC-2).
+ *
+ * The accessor is optional (`?.`): a context that never wired the store yields no
+ * contributions, so the slot simply realizes empty (ADR-195 §2).
+ */
+function renderSlot(slot: Slot, ctx: RenderContext): string {
+  const contributions = ctx.slotContributions?.(slot.slotKey) ?? [];
+  const surfaces = contributions
+    .map((phrase) => renderToString(phrase, ctx))
+    .filter((s) => s.length > 0); // absorb Empty / empty-rendering contributions (AC-4)
+  if (surfaces.length === 0) return ''; // zero contributions → Empty, clean stem (AC-3)
+  if ((slot.mode ?? 'sentence') === 'clause') {
+    const serialComma = ctx.settings.serialComma ?? true;
+    return `, ${joinParts(surfaces, slot.conj ?? 'and', serialComma)}`;
+  }
+  return ` ${surfaces.join(' ')}`;
+}
+
 // ===========================================================================
 // Reference authority — last-mentioned tracking (placeholder; ADR-197)
 // ===========================================================================
@@ -480,12 +511,20 @@ function realizeToRuns(
     return [{ text: renderContents(phrase, ctx), verbatim: false, deco: own }];
   }
 
+  if (isSlot(phrase)) {
+    // Slot (ADR-195): the turn's contributions for this key, joined under the
+    // slot-owned connective grammar. Zero survivors → no run (absorbed as Empty).
+    const own = extendDeco(deco, phrase.decorations);
+    const text = renderSlot(phrase, ctx);
+    return text ? [{ text, verbatim: false, deco: own }] : [];
+  }
+
   if (isSequence(phrase)) {
     const own = extendDeco(deco, phrase.decorations);
     return phrase.parts.flatMap((part) => realizeToRuns(part, ctx, own));
   }
 
-  // The seven stub kinds: refuse loudly until their follow-on ADR lands.
+  // The remaining stub kinds (Optional, Choice): refuse loudly until ADR-196 lands.
   throw new PhraseNotImplementedError(phrase.kind);
 }
 

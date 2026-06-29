@@ -6,23 +6,18 @@
  *
  * Public interface: `PhraseNotImplementedError`.
  *
- * Owner context: `@sharpee/lang-en-us` — English realization. The seven stub
- * kinds (Pronoun, Numeral, Verbatim, Contents, Slot, Optional, Choice) are
- * reserved in the `if-domain` algebra but realized only by their follow-on ADRs;
- * until then the Assembler refuses them loudly rather than emitting `Empty`.
+ * Owner context: `@sharpee/lang-en-us` — English realization. The reserved
+ * `if-domain` stub kinds are realized only by their follow-on ADRs; until then
+ * the Assembler refuses them loudly rather than emitting `Empty`. With ADR-195
+ * (Slot) landed, only `Optional` / `Choice` (ADR-196) remain unrealized.
  */
 
 import { Phrase } from '@sharpee/if-domain';
 
-/** Maps each stub kind to the ADR that will implement its Assembler case. */
+/** Maps each still-unrealized stub kind to the ADR that will implement its case. */
 const STUB_KIND_ADR: Partial<Record<Phrase['kind'], string>> = {
-  contents: 'ADR-194',
-  slot: 'ADR-195',
   optional: 'ADR-196',
   choice: 'ADR-196',
-  pronoun: 'ADR-197',
-  number: 'ADR-198',
-  verbatim: 'the Verbatim ADR',
 };
 
 /**

@@ -21,6 +21,7 @@ import type {
   PhraseList,
   Sequence,
   Empty,
+  Slot,
   RenderContext,
   LocaleSettings,
   Mentioned,
@@ -235,7 +236,7 @@ describe('AC-9: determinism', () => {
 // --- stub kinds: named refusal ---------------------------------------------
 
 describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
-  const stubs: Array<Phrase['kind']> = ['slot', 'optional', 'choice'];
+  const stubs: Array<Phrase['kind']> = ['optional', 'choice'];
   for (const kind of stubs) {
     it(`refuses kind '${kind}'`, () => {
       expect(() => asm.realize({ kind } as Phrase, makeCtx())).toThrow(PhraseNotImplementedError);
@@ -247,6 +248,88 @@ describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
       }
     });
   }
+});
+
+// --- Slot combinator (ADR-195) ---------------------------------------------
+
+describe('Slot combinator realizes the turn contributions (ADR-195)', () => {
+  const slot = (slotKey: string): Slot => ({ kind: 'slot', slotKey });
+  const slotClause = (slotKey: string, conj?: 'and' | 'or'): Slot => ({
+    kind: 'slot',
+    slotKey,
+    mode: 'clause',
+    ...(conj ? { conj } : {}),
+  });
+
+  /** Realize a tree against a context wired with staged slot contributions. */
+  function renderSlots(
+    tree: Phrase,
+    staged: Record<string, Phrase[]>,
+    settings: LocaleSettings = {},
+  ): string {
+    const ctx: RenderContext = { ...makeCtx(settings), slotContributions: (key) => staged[key] ?? [] };
+    const blocks = asm.realize(tree, ctx);
+    expect(blocks).toHaveLength(1);
+    return blocks[0].content.map((c) => (typeof c === 'string' ? c : '⟦deco⟧')).join('');
+  }
+
+  it('AC-1: sentence mode joins contributions with a space after the stem terminator', () => {
+    const tree = seq([lit('You hear birdsong.'), slot('here')]);
+    const out = renderSlots(tree, { here: [lit('Sam is here.'), lit('A parrot eyes you.')] });
+    expect(out).toBe('You hear birdsong. Sam is here. A parrot eyes you.');
+  });
+
+  it('AC-1: realizes contributions in the order the store provides', () => {
+    const tree = seq([lit('Stem.'), slot('k')]);
+    const out = renderSlots(tree, { k: [lit('one.'), lit('two.'), lit('three.')] });
+    expect(out).toBe('Stem. one. two. three.');
+  });
+
+  it('AC-2: clause mode joins through the punctuation authority (serial comma + and)', () => {
+    const tree = seq([lit('A cabinet'), slotClause('detail'), lit('.')]);
+    const out = renderSlots(tree, {
+      detail: [lit('which is open'), lit('containing a key'), lit('glowing faintly')],
+    });
+    expect(out).toBe('A cabinet, which is open, containing a key, and glowing faintly.');
+  });
+
+  it('AC-2: clause mode with conj "or" uses a final or', () => {
+    const tree = seq([lit('A radio'), slotClause('detail', 'or'), lit('.')]);
+    const out = renderSlots(tree, { detail: [lit('humming'), lit('silent')] });
+    expect(out).toBe('A radio, humming or silent.');
+  });
+
+  it('AC-3: zero contributions render Empty — stem + terminator stay clean (no dangling space)', () => {
+    const tree = seq([lit('You hear birdsong.'), slot('here')]);
+    expect(renderSlots(tree, {})).toBe('You hear birdsong.');
+  });
+
+  it('AC-3: zero clause contributions leave no dangling comma before the terminator', () => {
+    const tree = seq([lit('A radio'), slotClause('detail'), lit('.')]);
+    expect(renderSlots(tree, {})).toBe('A radio.');
+  });
+
+  it('AC-4: an Empty (or empty-rendering) contribution is absorbed — no extra separator', () => {
+    const tree = seq([lit('You hear birdsong.'), slot('here')]);
+    const out = renderSlots(tree, {
+      here: [lit('Sam is here.'), { kind: 'empty' } as Empty, lit('A parrot eyes you.')],
+    });
+    expect(out).toBe('You hear birdsong. Sam is here. A parrot eyes you.');
+  });
+
+  it('renders Empty when the context never wired the slot accessor (ADR-195 §2)', () => {
+    // makeCtx() has no slotContributions — the optional read yields no contributions.
+    expect(render(seq([lit('You hear birdsong.'), slot('here')]))).toBe('You hear birdsong.');
+  });
+
+  it('AC-5: identical (tree, contributions, ctx) realizes byte-identically across runs', () => {
+    const tree = seq([lit('Stem'), slotClause('detail'), lit('.')]);
+    const staged = { detail: [lit('a'), lit('b'), lit('c')] };
+    const a = renderSlots(tree, staged);
+    const b = renderSlots(tree, staged);
+    expect(a).toBe(b);
+    expect(a).toBe('Stem, a, b, and c.');
+  });
 });
 
 // --- Verbatim atom (ADR-200) -----------------------------------------------

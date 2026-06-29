@@ -27,13 +27,17 @@
  *    atom (ADR-197): a grammatical case; the referent is the last-mentioned entity.
  *  - `{contents:box}` → a `Contents` atom (ADR-194): the container's live contents
  *    as a grouped list, read at realize time. The container must be bound.
- *  - `{slot:detail}` → the corresponding reserved (stub) kind.
+ *  - `{slot:here}` / `{slot:detail clause}` / `{slot:detail clause or}` → a `Slot`
+ *    combinator (ADR-195): the first bare token is the contribution channel key;
+ *    optional trailing hints set `mode` (`sentence` default | `clause`) and the
+ *    `clause` conjunction (`and` default | `or`). The key need NOT be a bound param
+ *    — an unfilled slot is valid (AC-7); a keyless `{slot:}` is a parse error (AC-9).
  *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
  *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
  */
 
-import { Phrase, NounPhrase } from '@sharpee/if-domain';
+import { Phrase, NounPhrase, Slot } from '@sharpee/if-domain';
 
 /** Leading hint → the article it selects on a `NounPhrase`. */
 const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {
@@ -43,10 +47,12 @@ const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {
   some: 'some',
 };
 
-/** Recognized `kind:` heads → the reserved (stub) `Phrase` kind they route to. */
-const KIND_PREFIXES: Record<string, Phrase['kind']> = {
-  slot: 'slot',
-};
+/**
+ * Recognized `kind:` heads → the reserved (stub) `Phrase` kind they route to.
+ * Empty for now: `slot` parses through `parseSlot`; the remaining stubs
+ * (`optional` / `choice`, ADR-196) populate this when their parse rules land.
+ */
+const KIND_PREFIXES: Record<string, Phrase['kind']> = {};
 
 /** Recognized `{number:param format?}` formats (ADR-198). */
 const NUMERAL_FORMATS = new Set(['digits', 'words', 'ordinal']);
@@ -218,6 +224,37 @@ function parseContents(inner: string, template: string, params: Record<string, u
     : { kind: 'contents', containerRef: name };
 }
 
+/**
+ * Parse a `{slot:key [mode] [conj]}` head into a `Slot` combinator (ADR-195 §5).
+ * The first bare token is the contribution channel key; optional trailing hints
+ * set `mode` (`sentence` | `clause`) and the `clause` conjunction (`and` | `or`).
+ *
+ * The key is a channel name, NOT a param binding — an unfilled slot is valid and
+ * renders to nothing (AC-7), so there is no `in params` check. A keyless `{slot:}`
+ * is an authoring error and fails here at parse time (AC-9).
+ */
+function parseSlot(inner: string, template: string): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length === 0) {
+    throw new PhraseParseError(inner, template, 'a slot needs a key, e.g. {slot:here}');
+  }
+  if (tokens.length > 3) {
+    throw new PhraseParseError(inner, template, 'a slot takes a key and optional mode/conj, e.g. {slot:detail clause or}');
+  }
+  const slot: Slot = { kind: 'slot', slotKey: tokens[0] };
+  for (const hint of tokens.slice(1)) {
+    if (hint === 'sentence' || hint === 'clause') {
+      slot.mode = hint;
+    } else if (hint === 'and' || hint === 'or') {
+      slot.conj = hint;
+    } else {
+      throw new PhraseParseError(hint, template, `'${hint}' is not a slot hint (sentence | clause | and | or)`);
+    }
+  }
+  return slot;
+}
+
 /** Parse one placeholder's inner text into a phrase, binding against params. */
 function parsePlaceholder(inner: string, template: string, params: Record<string, unknown>): Phrase {
   // A ':' marks a kind head. Its prefix must be a known kind — anything else
@@ -243,6 +280,10 @@ function parsePlaceholder(inner: string, template: string, params: Record<string
     // Contents atom (ADR-194): binds a container; contents read at realize time.
     if (prefix === 'contents') {
       return parseContents(inner, template, params);
+    }
+    // Slot combinator (ADR-195): a contribution channel key + optional mode/conj.
+    if (prefix === 'slot') {
+      return parseSlot(inner, template);
     }
     const kind = KIND_PREFIXES[prefix];
     if (kind === undefined) {

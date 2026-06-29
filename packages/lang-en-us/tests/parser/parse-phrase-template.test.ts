@@ -76,17 +76,44 @@ describe('NounPhrase placeholders', () => {
   });
 });
 
-// --- kind-head routing ------------------------------------------------------
+// --- Slot combinator (ADR-195) ---------------------------------------------
 
-describe('kind-head routing to reserved stub kinds', () => {
-  const cases: Array<[string, Phrase['kind']]> = [
-    ['{slot:detail}', 'slot'],
-  ];
-  for (const [template, kind] of cases) {
-    it(`${template} → kind '${kind}'`, () => {
-      expect(parsePhraseTemplate(template, {}).kind).toBe(kind);
+describe('parsePhraseTemplate — Slot combinator (ADR-195)', () => {
+  it('parses {slot:here} to a sentence-default Slot with the key, no param binding (AC-7)', () => {
+    // The key is a channel name, not a bound param — an unfilled slot is valid.
+    expect(parsePhraseTemplate('{slot:here}', {})).toEqual({ kind: 'slot', slotKey: 'here' });
+  });
+
+  it('parses the clause mode hint', () => {
+    expect(parsePhraseTemplate('{slot:detail clause}', {})).toEqual({
+      kind: 'slot',
+      slotKey: 'detail',
+      mode: 'clause',
     });
-  }
+  });
+
+  it('parses the clause-or conjunction hint', () => {
+    expect(parsePhraseTemplate('{slot:detail clause or}', {})).toEqual({
+      kind: 'slot',
+      slotKey: 'detail',
+      mode: 'clause',
+      conj: 'or',
+    });
+  });
+
+  it('embeds a Slot in a Sequence alongside literal stem text', () => {
+    const tree = parsePhraseTemplate('You hear birdsong.{slot:here}', {});
+    expect(tree.kind).toBe('seq');
+    expect((tree as { parts: Phrase[] }).parts.map((p) => p.kind)).toEqual(['literal', 'slot']);
+  });
+
+  it('rejects a keyless {slot:} at parse time (AC-9)', () => {
+    expect(() => parsePhraseTemplate('{slot:}', {})).toThrow(PhraseParseError);
+  });
+
+  it('rejects an unknown slot hint at parse time', () => {
+    expect(() => parsePhraseTemplate('{slot:detail bogus}', {})).toThrow(PhraseParseError);
+  });
 });
 
 // --- Contents atom (ADR-194) -----------------------------------------------
