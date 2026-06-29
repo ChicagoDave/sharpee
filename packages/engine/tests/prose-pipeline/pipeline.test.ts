@@ -358,7 +358,7 @@ describe('ProsePipeline — handleClientQuery (extracted)', () => {
 });
 
 describe('createProsePipeline factory', () => {
-  it('should return a functional ITextService', () => {
+  it('should return a functional IProsePipeline', () => {
     expect(createProsePipeline(makeProvider({})).processTurn([])).toEqual([]);
   });
 

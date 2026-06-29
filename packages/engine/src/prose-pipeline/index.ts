@@ -2,7 +2,7 @@
  * Prose pipeline — internal barrel for the engine package.
  *
  * Public interface: `ProsePipeline`, `createProsePipeline`,
- * `ITextService`. Plus the decoration primitives and stage utilities
+ * `IProsePipeline`. Plus the decoration primitives and stage utilities
  * the pipeline class composes.
  *
  * Owner context: `@sharpee/engine` — internal prose pipeline.
@@ -14,7 +14,7 @@
 export { ProsePipeline, createProsePipeline } from './pipeline';
 
 // Service interface.
-export type { ITextService } from './types';
+export type { IProsePipeline } from './types';
 
 // Render-context runtime for the phrase pipeline (ADR-192, W2).
 export {

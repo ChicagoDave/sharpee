@@ -1,5 +1,5 @@
 /**
- * Mock `ITextService` implementation for engine tests — sub-phase 1.5.
+ * Mock `IProsePipeline` implementation for engine tests — sub-phase 1.5.
  *
  * Mirrors the behavior of the legacy `MockTextService` so existing
  * tests can swap to this without surprise. In sub-phase 1.6 the
@@ -13,11 +13,11 @@
  * @see ADR-174 §Internal interfaces
  */
 
-import type { ITextService } from '../prose-pipeline/types';
+import type { IProsePipeline } from '../prose-pipeline/types';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 
-export class MockProsePipeline implements ITextService {
+export class MockProsePipeline implements IProsePipeline {
   processTurn(events: ISemanticEvent[]): ITextBlock[] {
     const blocks: ITextBlock[] = [];
 
@@ -52,6 +52,6 @@ export class MockProsePipeline implements ITextService {
   }
 }
 
-export function createMockProsePipeline(): ITextService {
+export function createMockProsePipeline(): IProsePipeline {
   return new MockProsePipeline();
 }

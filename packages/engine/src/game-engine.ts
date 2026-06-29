@@ -38,7 +38,7 @@ import {
   channelRegistry,
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
-import { ITextService, ProsePipeline } from './prose-pipeline';
+import { IProsePipeline, ProsePipeline } from './prose-pipeline';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
@@ -147,7 +147,7 @@ export class GameEngine {
   private eventProcessor: EventProcessor;
   private platformEvents: ISemanticEventSource;
   private actionRegistry: StandardActionRegistry;
-  private textService?: ITextService;
+  private textService?: IProsePipeline;
   private turnEvents = new Map<number, ISemanticEvent[]>();
   private running = false;
   private story?: Story;
@@ -1737,14 +1737,14 @@ export class GameEngine {
   /**
    * Get the text service
    */
-  getTextService(): ITextService | undefined {
+  getTextService(): IProsePipeline | undefined {
     return this.textService;
   }
 
   /**
    * Set a custom text service
    */
-  setTextService(service: ITextService): void {
+  setTextService(service: IProsePipeline): void {
     this.textService = service;
   }
 

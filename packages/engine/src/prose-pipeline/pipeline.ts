@@ -10,7 +10,7 @@
  *                time blocks return here they already carry parsed
  *                bracket decorations and final `className`s.
  *
- * Public interface: `class ProsePipeline implements ITextService`.
+ * Public interface: `class ProsePipeline implements IProsePipeline`.
  * Engine constructs one instance during `setStory()` and calls
  * `processTurn` per turn (same three call sites as the retiring
  * `TextService`).
@@ -50,7 +50,7 @@ import { handleImplicitTake } from './handlers/implicit-take';
 import { handleCommandFailed } from './handlers/command-failed';
 import { handleClientQuery } from './handlers/client-query';
 
-import type { ITextService } from './types';
+import type { IProsePipeline } from './types';
 
 /**
  * Engine-internal prose pipeline.
@@ -61,7 +61,7 @@ import type { ITextService } from './types';
  * the meta-command path (same three sites the retired
  * `TextService.processTurn` had).
  */
-export class ProsePipeline implements ITextService {
+export class ProsePipeline implements IProsePipeline {
   private readonly languageProvider: LanguageProvider;
   private readonly world?: WorldModelLike;
 
@@ -171,6 +171,6 @@ export class ProsePipeline implements ITextService {
 export function createProsePipeline(
   languageProvider: LanguageProvider,
   world?: WorldModelLike,
-): ITextService {
+): IProsePipeline {
   return new ProsePipeline(languageProvider, world);
 }

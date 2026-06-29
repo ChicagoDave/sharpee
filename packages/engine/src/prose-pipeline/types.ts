@@ -1,22 +1,22 @@
 /**
  * Prose pipeline service interface — engine-internal home for the
- * `ITextService` contract.
+ * `IProsePipeline` contract.
  *
  * Per ADR-174, the responsibility for translating events into blocks
- * moves into `@sharpee/engine`. The transitional `ITextService` name
- * is preserved here so engine code already typed against it (the
- * three `processTurn` call sites in `game-engine.ts` and the
- * `getTextService` / `setTextService` accessors) can keep compiling
- * during sub-phase 1.6's import swap. A follow-up cleanup may rename
- * this to `IProsePipeline` once the legacy alias is no longer
- * imported anywhere.
+ * moved into `@sharpee/engine`. The interface was introduced under the
+ * transitional `ITextService` name during that migration; ADR-195
+ * completes the anticipated cleanup and renames it to `IProsePipeline`
+ * now that the legacy alias is engine-private (no external importer).
+ * The `getTextService` / `setTextService` accessors on `GameEngine`
+ * keep their names — only the interface type is renamed.
  *
- * Public interface: `ITextService`. Implemented by `ProsePipeline`
+ * Public interface: `IProsePipeline`. Implemented by `ProsePipeline`
  * (and by `MockProsePipeline` in tests).
  *
  * Owner context: `@sharpee/engine` — internal prose pipeline.
  *
  * @see ADR-174 §Internal interfaces
+ * @see ADR-195 (interface rename + slot-contributor seam)
  */
 
 import type { ISemanticEvent } from '@sharpee/core';
@@ -31,7 +31,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
  * `setStory()` and calls `processTurn` per turn (and per
  * meta-command / restart).
  */
-export interface ITextService {
+export interface IProsePipeline {
   /**
    * Process turn events and produce TextBlocks.
    *
