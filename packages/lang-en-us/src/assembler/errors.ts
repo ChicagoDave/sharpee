@@ -6,18 +6,17 @@
  *
  * Public interface: `PhraseNotImplementedError`.
  *
- * Owner context: `@sharpee/lang-en-us` — English realization. The reserved
- * `if-domain` stub kinds are realized only by their follow-on ADRs; until then
- * the Assembler refuses them loudly rather than emitting `Empty`. With ADR-195
- * (Slot) landed, only `Optional` / `Choice` (ADR-196) remain unrealized.
+ * Owner context: `@sharpee/lang-en-us` — English realization. As of ADR-196
+ * (Optional / Choice) every if-domain phrase kind is realized; this error is now
+ * a defensive guard against a future kind landing without an Assembler case,
+ * refusing loudly rather than silently dropping text.
  */
 
 import { Phrase } from '@sharpee/if-domain';
 
-/** Maps each still-unrealized stub kind to the ADR that will implement its case. */
+/** Maps a still-unrealized stub kind to the ADR that will implement its case. */
 const STUB_KIND_ADR: Partial<Record<Phrase['kind'], string>> = {
-  optional: 'ADR-196',
-  choice: 'ADR-196',
+  // All kinds are realized as of ADR-196; an entry here would name the pending ADR.
 };
 
 /**

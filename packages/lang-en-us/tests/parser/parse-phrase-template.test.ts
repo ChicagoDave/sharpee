@@ -236,3 +236,36 @@ describe('AC-11: parse-time rejection (never a silent Empty)', () => {
     expect(() => parsePhraseTemplate('{frobnicate item}', { item: 'x' })).toThrow(PhraseParseError);
   });
 });
+
+// --- ADR-196 AC-11: no in-string control flow; Optional/Choice are code-built ---
+
+describe('ADR-196: branching is code-built, never in-string', () => {
+  it('rejects in-string conditional/cycling syntax at parse time', () => {
+    // The original ADR-B sins — all must throw, never silently realize.
+    expect(() => parsePhraseTemplate('{?open|closed}', {})).toThrow(PhraseParseError); // unbound param
+    expect(() => parsePhraseTemplate('{open?yes:no}', {})).toThrow(PhraseParseError);   // ':'-chain / bad prefix
+    expect(() => parsePhraseTemplate('{#cycle|A|B}', {})).toThrow(PhraseParseError);    // unbound param
+  });
+
+  it('rejects {optional:...} / {choice:...} — there is no parser route (ADR-196 §5)', () => {
+    expect(() => parsePhraseTemplate('{optional:detail}', {})).toThrow(PhraseParseError);
+    expect(() => parsePhraseTemplate('{choice:flavor}', {})).toThrow(PhraseParseError);
+  });
+
+  it('passes a code-built Choice bound by name through untouched (the de-fanged path)', () => {
+    const builtChoice = {
+      kind: 'choice',
+      alternatives: [{ kind: 'literal', text: 'A' }, { kind: 'literal', text: 'B' }],
+      selector: 'cycling',
+      entityId: 'e',
+      messageKey: 'k',
+    };
+    // `{flavor}` is a bare reference; the bound phrase passes through (no NounPhrase wrap).
+    expect(parsePhraseTemplate('{flavor}', { flavor: builtChoice })).toBe(builtChoice);
+  });
+
+  it('passes a code-built Optional bound by name through untouched', () => {
+    const builtOptional = { kind: 'optional', child: { kind: 'literal', text: ', lid wide' }, present: true };
+    expect(parsePhraseTemplate('{detail}', { detail: builtOptional })).toBe(builtOptional);
+  });
+});

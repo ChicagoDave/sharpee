@@ -233,21 +233,20 @@ describe('AC-9: determinism', () => {
   });
 });
 
-// --- stub kinds: named refusal ---------------------------------------------
+// --- defensive guard: an unhandled kind still refuses loudly ----------------
 
-describe('stub kinds throw PhraseNotImplementedError naming the kind', () => {
-  const stubs: Array<Phrase['kind']> = ['optional', 'choice'];
-  for (const kind of stubs) {
-    it(`refuses kind '${kind}'`, () => {
-      expect(() => asm.realize({ kind } as Phrase, makeCtx())).toThrow(PhraseNotImplementedError);
-      try {
-        asm.realize({ kind } as Phrase, makeCtx());
-      } catch (e) {
-        expect((e as PhraseNotImplementedError).kind).toBe(kind);
-        expect((e as Error).message).toContain(kind);
-      }
-    });
-  }
+describe('PhraseNotImplementedError guards an unhandled kind', () => {
+  it('throws naming the kind for a kind with no Assembler case', () => {
+    // As of ADR-196 every real if-domain kind is realized; a fabricated unknown
+    // kind exercises the defensive guard (a future kind added without a case).
+    const unknown = { kind: 'future-kind' } as unknown as Phrase;
+    expect(() => asm.realize(unknown, makeCtx())).toThrow(PhraseNotImplementedError);
+    try {
+      asm.realize(unknown, makeCtx());
+    } catch (e) {
+      expect((e as PhraseNotImplementedError).kind).toBe('future-kind');
+    }
+  });
 });
 
 // --- Slot combinator (ADR-195) ---------------------------------------------

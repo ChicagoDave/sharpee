@@ -15,13 +15,16 @@
  * formatter logic is reproduced here in the `PhraseList` case (the old
  * `formatters/list.ts` is retired in Phase 3, not called from here).
  *
- * INVARIANT (ADR-192 §7): `realize` is a pure function of `(tree, ctx)` — the
- * same tree and context yield byte-identical output. No clocks, no randomness.
+ * INVARIANT (ADR-192 §7): `realize` is a pure function of `(tree, ctx)` GIVEN the
+ * `textState` snapshot — the same tree, context, and counters yield byte-identical
+ * output. No clocks, no `Math.random`. The one declared state transition is a
+ * `Choice` advancing its `textState` counter (ADR-196 §3) — seeded, deterministic.
  *
- * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), `Contents`
- * (194), and `Slot` (195) atoms are realized here; the two remaining stub kinds
- * (`Optional` / `Choice`, ADR-196) throw `PhraseNotImplementedError`.
+ * All if-domain kinds are realized here: the foundational kinds (Literal,
+ * NounPhrase, PhraseList, Sequence, Empty) plus the `Verb` (199), `Verbatim`
+ * (200), `Numeral` (198), `Pronoun` (197), `Contents` (194), `Slot` (195), and
+ * `Optional` / `Choice` (196) atoms. `PhraseNotImplementedError` is now only a
+ * defensive guard against a future unhandled kind.
  */
 
 import {
@@ -32,6 +35,7 @@ import {
   Pronoun,
   Contents,
   Slot,
+  Choice,
   RenderContext,
   isLiteral,
   isNounPhrase,
@@ -44,6 +48,8 @@ import {
   isPronoun,
   isContents,
   isSlot,
+  isOptional,
+  isChoice,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -283,14 +289,19 @@ function renderList(items: Phrase[], conj: 'and' | 'or', ctx: RenderContext): st
   }
 
   const serialComma = ctx.settings.serialComma ?? true;
-  const rendered = parts.map((part) => {
-    if (part.count > 1 && part.np) {
-      const adjectives = part.np.adjectives?.length ? `${part.np.adjectives.join(' ')} ` : '';
-      const plural = part.np.pluralForm ?? pluralize(part.np.name);
-      return `${countWord(part.count)} ${adjectives}${plural}`;
-    }
-    return renderToString(part.phrase, ctx);
-  });
+  const rendered = parts
+    .map((part) => {
+      if (part.count > 1 && part.np) {
+        const adjectives = part.np.adjectives?.length ? `${part.np.adjectives.join(' ')} ` : '';
+        const plural = part.np.pluralForm ?? pluralize(part.np.name);
+        return `${countWord(part.count)} ${adjectives}${plural}`;
+      }
+      return renderToString(part.phrase, ctx);
+    })
+    // ADR-196: an Optional-absent / Choice→Empty item realizes to "" — absorb it
+    // like Empty so it leaves no dangling comma (extends ADR-192 AC-6 to modifiers).
+    .filter((s) => s.length > 0);
+  if (rendered.length === 0) return 'nothing';
   return joinParts(rendered, conj, serialComma);
 }
 
@@ -443,6 +454,82 @@ export function capitalizeSentenceStart(text: string): string {
 }
 
 // ===========================================================================
+// Choice selection (ADR-196 §2/§3) — deterministic, persistent variation
+// ===========================================================================
+
+/**
+ * FNV-1a 32-bit hash of a seed string. Deterministic; used only to seed the PRNG.
+ */
+function hashSeed(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/**
+ * `mulberry32` — a tiny deterministic PRNG. Seeded from `(entityId, messageKey,
+ * counter)`, never `Math.random`/`Date.now`, so `random`/`sticky` selection
+ * reproduces byte-identically across runs and after save/restore (ADR-196 §3).
+ */
+function seededUnitFloat(entityId: string, messageKey: string, counter: number): number {
+  let a = hashSeed(`${entityId} ${messageKey} ${counter}`) >>> 0;
+  a = (a + 0x6d2b79f5) | 0;
+  let t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+/**
+ * Select a `Choice`'s alternative from its persisted counter and advance the
+ * counter (ADR-196 §2). This is the one place the Assembler writes `ctx.textState`
+ * — the declared realize-time mutation (ADR-192 §7 / ADR-196 §4).
+ *
+ * Stored-number encoding: a trigger count for cycling/stopping/firstTime/random;
+ * the chosen index + 1 (sentinel 0/undefined = unchosen) for sticky.
+ *
+ * @returns the selected alternative phrase (caller realizes it; may be Empty).
+ */
+function selectChoice(choice: Choice, ctx: RenderContext): Phrase {
+  const { alternatives, selector, entityId, messageKey } = choice;
+  const len = alternatives.length;
+  if (len === 0) return { kind: 'empty' }; // defensive — the contract requires ≥ 1
+  const stored = ctx.textState.get(entityId, messageKey);
+
+  switch (selector) {
+    case 'cycling': {
+      const n = stored ?? 0;
+      ctx.textState.set(entityId, messageKey, n + 1);
+      return alternatives[n % len];
+    }
+    case 'stopping': {
+      const n = stored ?? 0;
+      ctx.textState.set(entityId, messageKey, n + 1);
+      return alternatives[Math.min(n, len - 1)];
+    }
+    case 'firstTime': {
+      const n = stored ?? 0;
+      ctx.textState.set(entityId, messageKey, Math.min(n + 1, 1));
+      return alternatives[n === 0 ? 0 : Math.min(1, len - 1)];
+    }
+    case 'random': {
+      const n = stored ?? 0;
+      ctx.textState.set(entityId, messageKey, n + 1);
+      return alternatives[Math.floor(seededUnitFloat(entityId, messageKey, n) * len)];
+    }
+    case 'sticky': {
+      // Already chosen — replay the persisted index (stored = index + 1).
+      if (stored && stored > 0) return alternatives[Math.min(stored - 1, len - 1)];
+      const i = Math.floor(seededUnitFloat(entityId, messageKey, 0) * len);
+      ctx.textState.set(entityId, messageKey, i + 1);
+      return alternatives[i];
+    }
+  }
+}
+
+// ===========================================================================
 // Realization core
 // ===========================================================================
 
@@ -524,8 +611,26 @@ function realizeToRuns(
     return phrase.parts.flatMap((part) => realizeToRuns(part, ctx, own));
   }
 
-  // The remaining stub kinds (Optional, Choice): refuse loudly until ADR-196 lands.
-  throw new PhraseNotImplementedError(phrase.kind);
+  if (isOptional(phrase)) {
+    // Optional (ADR-196 §1): the producer resolved `present`; realize the child or
+    // nothing. Absent → no runs, absorbed by the enclosing combinator like Empty.
+    const own = extendDeco(deco, phrase.decorations);
+    return phrase.present ? realizeToRuns(phrase.child, ctx, own) : [];
+  }
+
+  if (isChoice(phrase)) {
+    // Choice (ADR-196 §2): select one alternative from the persisted counter,
+    // advance the counter, and realize the winner. A winner that realizes to
+    // Empty leaves no runs (once-only text).
+    const own = extendDeco(deco, phrase.decorations);
+    return realizeToRuns(selectChoice(phrase, ctx), ctx, own);
+  }
+
+  // Defensive: every if-domain kind is realized above, so `phrase` narrows to
+  // `never` here — TypeScript proves exhaustiveness. The cast keeps the guard
+  // live at runtime: a future kind added without a case is refused loudly,
+  // naming it, rather than silently dropping text.
+  throw new PhraseNotImplementedError((phrase as Phrase).kind);
 }
 
 /** Realize a phrase to a plain string (used for list items and nested phrases). */
