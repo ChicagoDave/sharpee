@@ -8,6 +8,15 @@
 declared-inert `textState` store live + persistent. A `shuffle` selector and a trait-keyed
 conditional registry are OUT — named-and-deferred.
 
+## Progress (session b09711, 2026-06-29)
+
+- **Phase 1** ✅ committed `39a09c59` — if-domain `Optional`/`Choice` fields (if-domain 79/79).
+- **Phase 2** ✅ committed `6b930500` — `TEXT_STATE` capability + `WorldTextStateStore` (engine 457/7-skip; REAL-PATH save/restore).
+- **Phase 3** ✅ committed `9c5838d2` — Assembler `Optional`/`Choice` + `mulberry32`; `renderList` Empty-absorption (lang-en-us 337/337).
+- **Phase 4** ⏳ DESIGNED, not coded — resume notes in `docs/context/session-20260629-1430-v2_adr196_optional_choice.md`.
+- **Phase 5** ⏳ pending.
+- Branch cut from `main` after `v2_adr195_slot` fast-forwarded in (local, unpushed).
+
 ## Why this is additive (no destructive cutover)
 
 `Optional`/`Choice` already exist as field-less stubs (`phrase.ts:212–219`); the Assembler
