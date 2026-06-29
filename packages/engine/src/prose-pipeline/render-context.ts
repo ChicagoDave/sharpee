@@ -2,11 +2,12 @@
  * Per-turn RenderContext runtime for the phrase pipeline (ADR-192 §6, W2).
  *
  * The Assembler realizes a phrase tree against a `RenderContext`: a read-only
- * world, the bound params, locale settings, and three declared seams
- * (`reference` / `textState` / `contribute`). This module supplies the engine's
- * runtime for that contract — a thin adapter over the world model plus inert
- * placeholder seams whose real implementations land in ADR-195–197. The engine
- * owns this per turn; nothing here mutates world state.
+ * world, the bound params, locale settings, and the declared seams
+ * (`reference` / `textState` / `contribute` + `slotContributions`). This module
+ * supplies the engine's runtime for that contract — a thin adapter over the world
+ * model, the live turn-scoped slot store (ADR-195), and the still-inert `textState`
+ * placeholder (ADR-196). The engine owns this per turn; nothing here mutates world
+ * state.
  *
  * Public interface: `createRenderWorld`, `createRenderContextFactory`,
  * `WorldModelLike`. The factory binds the per-turn invariants (world, settings,
@@ -99,6 +100,55 @@ class EmptyTextStateStore implements TextStateStore {
 }
 
 /**
+ * One staged slot contribution: the phrase plus its two ordering keys (ADR-195 §2).
+ */
+interface SlotContribution {
+  /** The contributed phrase (bare clause/sentence content). */
+  phrase: Phrase;
+  /** Primary ordering key from `SlotContributionOptions.order` (default 0). */
+  order: number;
+  /** Monotonic insertion index — the deterministic tie-break within one `order`. */
+  seq: number;
+}
+
+/**
+ * Turn-scoped slot contribution store (ADR-195 §2). One instance per turn — created
+ * inside `createRenderContextFactory` and shared across every message rendered that
+ * turn, so a contribution staged while building one message is visible when a
+ * `{slot:key}` realizes in another.
+ *
+ * `read` is a PEEK, not a drain: it never consumes the store, so repeated reads and
+ * two `{slot:key}` nodes sharing a key both see the same ordered list. Ordering is
+ * `(order asc, seq asc)` — `seq` is monotonic insertion order, deterministic because
+ * producers and contributors run in a fixed order, so output is stable across
+ * save/replay (no `Date.now` / random). Never serialized — rebuilt every turn.
+ */
+class TurnSlotStore {
+  private readonly byKey = new Map<string, SlotContribution[]>();
+  private seq = 0;
+
+  /** Stage a contribution under `slotKey`; orphan keys are simply never read. */
+  contribute(slotKey: string, phrase: Phrase, opts?: SlotContributionOptions): void {
+    const entry: SlotContribution = { phrase, order: opts?.order ?? 0, seq: this.seq++ };
+    const list = this.byKey.get(slotKey);
+    if (list) {
+      list.push(entry);
+    } else {
+      this.byKey.set(slotKey, [entry]);
+    }
+  }
+
+  /** Peek the key's contributions, ordered `(order asc, insertion asc)`; `[]` if none. */
+  read(slotKey: string): Phrase[] {
+    const list = this.byKey.get(slotKey);
+    if (!list) return [];
+    return [...list]
+      .sort((a, b) => a.order - b.order || a.seq - b.seq)
+      .map((c) => c.phrase);
+  }
+}
+
+/**
  * A per-message render-context builder bound to a turn's invariants.
  *
  * @param params the message's parameter/producer bindings
@@ -112,10 +162,12 @@ export type RenderContextFactory = (
 /**
  * Build the per-turn render-context factory.
  *
- * World, locale settings, and the three seams are the turn's invariants and are
+ * World, locale settings, and the seams are the turn's invariants and are
  * captured once; only `params` vary per message, so the returned factory is
- * called once per rendered message. The `contribute` channel collects slot
- * contributions for the turn (no-op consumers until ADR-195).
+ * called once per rendered message. The `contribute` / `slotContributions` pair
+ * shares one turn-scoped {@link TurnSlotStore} across every message context, so a
+ * slot contribution staged while building one message is visible when another
+ * message's `{slot:key}` realizes (ADR-195 §2).
  *
  * @param world the read-only render world (see {@link createRenderWorld})
  * @param settings the locale realization settings for this turn
@@ -130,13 +182,13 @@ export function createRenderContextFactory(
   // Per-turn seams: shared across every message rendered this turn.
   const reference = new TurnReferenceContext();
   const textState = new EmptyTextStateStore();
+  const slots = new TurnSlotStore();
   const contribute = (
-    _slotKey: string,
-    _phrase: Phrase,
-    _opts?: SlotContributionOptions,
-  ): void => {
-    // ADR-195: slot contributions are dropped until the slot channel lands.
-  };
+    slotKey: string,
+    phrase: Phrase,
+    opts?: SlotContributionOptions,
+  ): void => slots.contribute(slotKey, phrase, opts);
+  const slotContributions = (slotKey: string): Phrase[] => slots.read(slotKey);
 
   return (params) => ({
     world,
@@ -146,5 +198,6 @@ export function createRenderContextFactory(
     reference,
     textState,
     contribute,
+    slotContributions,
   });
 }

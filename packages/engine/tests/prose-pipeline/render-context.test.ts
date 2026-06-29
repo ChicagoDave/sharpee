@@ -97,16 +97,72 @@ describe('createRenderContextFactory', () => {
     expect(ctx.reference.lastMentioned()?.referableId).toBe('coins'); // most recent wins
   });
 
-  it('exposes still-inert placeholder seams (textState ADR-196, contribute ADR-195)', () => {
+  it('exposes the still-inert textState placeholder seam (ADR-196)', () => {
     const make = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD);
     const ctx = make({});
 
-    // textState: always-empty store.
+    // textState: always-empty store (ADR-196 seam not yet live).
     expect(ctx.textState.get('e', 'k')).toBeUndefined();
     ctx.textState.set('e', 'k', 3);
     expect(ctx.textState.get('e', 'k')).toBeUndefined();
+  });
+});
 
-    // contribute: no-op (does not throw).
-    expect(() => ctx.contribute('slot', { kind: 'empty' })).not.toThrow();
+describe('slot contribution channel (ADR-195)', () => {
+  const lit = (text: string): { kind: 'literal'; text: string } => ({ kind: 'literal', text });
+
+  it('contribute then peek returns the staged phrase (channel is live, not a no-op)', () => {
+    const ctx = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD)({});
+    expect(ctx.slotContributions?.('here')).toEqual([]);
+    ctx.contribute('here', lit('Sam is here.'));
+    expect(ctx.slotContributions?.('here')).toEqual([lit('Sam is here.')]);
+  });
+
+  it('orders contributions by (order asc, then insertion) — AC-5', () => {
+    const ctx = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD)({});
+    // Insert out of order: same default order 0 keeps insertion order; an explicit
+    // lower `order` jumps ahead of earlier-inserted default-order entries.
+    ctx.contribute('here', lit('first-inserted'));
+    ctx.contribute('here', lit('second-inserted'));
+    ctx.contribute('here', lit('ordered-front'), { order: -1 });
+    expect(ctx.slotContributions?.('here')).toEqual([
+      lit('ordered-front'),
+      lit('first-inserted'),
+      lit('second-inserted'),
+    ]);
+  });
+
+  it('is a peek, not a drain — repeated reads are identical (AC-5)', () => {
+    const ctx = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD)({});
+    ctx.contribute('detail', lit('humming'));
+    const first = ctx.slotContributions?.('detail');
+    const second = ctx.slotContributions?.('detail');
+    expect(first).toEqual([lit('humming')]);
+    expect(second).toEqual(first);
+  });
+
+  it('shares one turn store across every message context the factory builds (AC-6)', () => {
+    const make = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD);
+    const ctxA = make({ msg: 'a' });
+    const ctxB = make({ msg: 'b' });
+    // Staged while building message A; visible when message B's {slot} realizes.
+    ctxA.contribute('here', lit('a parrot eyes you'));
+    expect(ctxB.slotContributions?.('here')).toEqual([lit('a parrot eyes you')]);
+  });
+
+  it('is turn-scoped — a fresh factory starts with an empty store (AC-6 next turn)', () => {
+    const world = createRenderWorld(stubWorld());
+    const turn1 = createRenderContextFactory(world, {}, THIRD)({});
+    turn1.contribute('here', lit('stale'));
+    expect(turn1.slotContributions?.('here')).toEqual([lit('stale')]);
+
+    const turn2 = createRenderContextFactory(world, {}, THIRD)({});
+    expect(turn2.slotContributions?.('here')).toEqual([]);
+  });
+
+  it('reads an unstaged (orphan) key as [] (AC-9 read side)', () => {
+    const ctx = createRenderContextFactory(createRenderWorld(stubWorld()), {}, THIRD)({});
+    ctx.contribute('here', lit('Sam is here.'));
+    expect(ctx.slotContributions?.('nobody-contributes-this')).toEqual([]);
   });
 });

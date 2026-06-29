@@ -50,7 +50,7 @@ import { handleImplicitTake } from './handlers/implicit-take';
 import { handleCommandFailed } from './handlers/command-failed';
 import { handleClientQuery } from './handlers/client-query';
 
-import type { IProsePipeline } from './types';
+import type { IProsePipeline, SlotContributor } from './types';
 
 /**
  * Engine-internal prose pipeline.
@@ -64,6 +64,8 @@ import type { IProsePipeline } from './types';
 export class ProsePipeline implements IProsePipeline {
   private readonly languageProvider: LanguageProvider;
   private readonly world?: WorldModelLike;
+  /** Realize-time slot contributors, run in registration order each turn (ADR-195 §3). */
+  private readonly slotContributors: SlotContributor[] = [];
 
   /**
    * @param languageProvider the active language provider (template → text)
@@ -81,23 +83,48 @@ export class ProsePipeline implements IProsePipeline {
     this.world = world;
   }
 
+  /**
+   * Register a realize-time slot contributor (ADR-195 §3). Contributors run once
+   * per turn at the top of `processTurn`, in registration order; that order feeds
+   * the `(order, insertion)` tie-break of the slot store.
+   *
+   * @param contributor the slot contributor to run each turn.
+   */
+  registerSlotContributor(contributor: SlotContributor): void {
+    this.slotContributors.push(contributor);
+  }
+
   processTurn(events: ISemanticEvent[]): ITextBlock[] {
     const filtered = filterEvents(events);
     const sorted = sortEventsForProse(filtered);
 
+    const makeRenderContext = this.world
+      ? createRenderContextFactory(
+          createRenderWorld(this.world),
+          this.languageProvider.getLocaleSettings?.() ?? {},
+          {
+            person: this.languageProvider.getNarrativePerson?.() ?? 'third',
+            playerId: this.world.getPlayer()?.id,
+          },
+        )
+      : undefined;
+
     const context: HandlerContext = {
       languageProvider: this.languageProvider,
-      makeRenderContext: this.world
-        ? createRenderContextFactory(
-            createRenderWorld(this.world),
-            this.languageProvider.getLocaleSettings?.() ?? {},
-            {
-              person: this.languageProvider.getNarrativePerson?.() ?? 'third',
-              playerId: this.world.getPlayer()?.id,
-            },
-          )
-        : undefined,
+      makeRenderContext,
     };
+
+    // ADR-195 §3: stage realize-time slot contributions BEFORE any message
+    // realizes. Each contributor runs once, in registration order, against a turn
+    // RenderContext whose `contribute` writes the per-turn store every later
+    // message context peeks via `slotContributions`. World-less pipelines have no
+    // factory, so there is nothing to stage into — contributors do not run.
+    if (makeRenderContext && this.slotContributors.length > 0) {
+      const staging = makeRenderContext({});
+      for (const contributor of this.slotContributors) {
+        contributor(staging);
+      }
+    }
 
     const blocks: ITextBlock[] = [];
     for (const event of sorted) {

@@ -16,8 +16,23 @@ import {
   ProsePipeline,
   createProsePipeline,
 } from '../../src/prose-pipeline/pipeline';
+import type { WorldModelLike } from '../../src/prose-pipeline/render-context';
 import { makeEvent, makeProvider } from './test-helpers';
 import type { IDecoration, TextContent } from '@sharpee/text-blocks';
+
+/**
+ * Minimal world satisfying `WorldModelLike` — enough that the pipeline builds a
+ * per-turn render-context factory (and thus stages slot contributors). The slot
+ * tests don't read entities, so the lookups return empty/undefined.
+ */
+function stubWorld(): WorldModelLike {
+  return {
+    getEntity: () => undefined,
+    getContents: () => [],
+    getContainingRoom: () => undefined,
+    getPlayer: () => undefined,
+  };
+}
 
 function isDecoration(item: TextContent): item is IDecoration {
   return typeof item === 'object' && item !== null && 'className' in item;
@@ -354,6 +369,58 @@ describe('ProsePipeline — handleClientQuery (extracted)', () => {
     ]);
 
     expect(blocks).toHaveLength(1);
+  });
+});
+
+describe('ProsePipeline slot contributors (ADR-195 §3)', () => {
+  // These cover the STAGING mechanism: contributors run, in order, against one
+  // shared turn store. The contributor→rendered-text path (a handler realizing a
+  // `{slot:key}` node that reads these contributions) is unrealizable until the
+  // Assembler slot case (Phase 3) and a `{slot}` template + transcripts (Phase 4,
+  // AC-8) land — that end-to-end proof is the Friendly Zoo S1/S2 walkthroughs.
+  const lit = (text: string): { kind: 'literal'; text: string } => ({ kind: 'literal', text });
+
+  it('runs registered contributors once per turn, in order, sharing one staging store', () => {
+    const pipeline = new ProsePipeline(makeProvider({}), stubWorld());
+    const seen: string[] = [];
+    // A contributes; B (registered after) must see A's contribution in the shared
+    // staging context — proving registration order + one store per turn.
+    pipeline.registerSlotContributor((ctx) => {
+      ctx.contribute('here', lit('Sam is here.'));
+      seen.push('A');
+    });
+    pipeline.registerSlotContributor((ctx) => {
+      seen.push(`B:${(ctx.slotContributions?.('here') ?? []).length}`);
+    });
+
+    pipeline.processTurn([]);
+
+    expect(seen).toEqual(['A', 'B:1']);
+  });
+
+  it('re-runs contributors every turn (per-turn staging)', () => {
+    const pipeline = new ProsePipeline(makeProvider({}), stubWorld());
+    let calls = 0;
+    pipeline.registerSlotContributor(() => {
+      calls++;
+    });
+
+    pipeline.processTurn([]);
+    pipeline.processTurn([]);
+
+    expect(calls).toBe(2);
+  });
+
+  it('does not run contributors on a world-less pipeline (no render factory)', () => {
+    const pipeline = new ProsePipeline(makeProvider({})); // no world
+    let ran = false;
+    pipeline.registerSlotContributor(() => {
+      ran = true;
+    });
+
+    pipeline.processTurn([]);
+
+    expect(ran).toBe(false);
   });
 });
 

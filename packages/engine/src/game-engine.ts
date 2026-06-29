@@ -38,7 +38,7 @@ import {
   channelRegistry,
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
-import { IProsePipeline, ProsePipeline } from './prose-pipeline';
+import { IProsePipeline, ProsePipeline, type SlotContributor } from './prose-pipeline';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
@@ -1746,6 +1746,20 @@ export class GameEngine {
    */
   setTextService(service: IProsePipeline): void {
     this.textService = service;
+  }
+
+  /**
+   * Register a realize-time slot contributor (ADR-195 §3).
+   *
+   * Stories call this from `onEngineReady` to stage slot contributions (room
+   * occupants, object detail clauses) into each turn's slot store before its
+   * messages realize. The contributor runs once per turn at the top of the prose
+   * pipeline's `processTurn`. No-op if the text service is not yet constructed.
+   *
+   * @param contributor the slot contributor to register.
+   */
+  registerSlotContributor(contributor: SlotContributor): void {
+    this.textService?.registerSlotContributor(contributor);
   }
 
   /**

@@ -21,6 +21,18 @@
 
 import type { ISemanticEvent } from '@sharpee/core';
 import type { ITextBlock } from '@sharpee/text-blocks';
+import type { RenderContext } from '@sharpee/if-domain';
+
+/**
+ * A realize-time slot contributor (ADR-195 §3).
+ *
+ * Holds a turn `RenderContext` and stages slot contributions into the turn's
+ * slot store via `ctx.contribute(key, phrase)` — typically reading the live
+ * world (the player's room → occupants for `'here'`; in-scope describable
+ * objects → state clauses for `'detail'`). It runs at render time, before the
+ * host messages realize, so it needs no turn-time (ADR-163) channel.
+ */
+export type SlotContributor = (ctx: RenderContext) => void;
 
 /**
  * Per-turn prose translator.
@@ -43,4 +55,17 @@ export interface IProsePipeline {
    * @returns Blocks in render order.
    */
   processTurn(events: ISemanticEvent[]): ITextBlock[];
+
+  /**
+   * Register a realize-time slot contributor (ADR-195 §3).
+   *
+   * The contributor runs once per turn — in registration order — at the top of
+   * `processTurn`, before the event→render loop, against a turn `RenderContext`
+   * whose `contribute` writes the shared per-turn slot store. Stories register
+   * via the engine's `onEngineReady` hook. A no-op on world-less pipelines (no
+   * per-turn render-context factory is built, so there is nothing to stage into).
+   *
+   * @param contributor the slot contributor to run each turn.
+   */
+  registerSlotContributor(contributor: SlotContributor): void;
 }

@@ -50,6 +50,11 @@ export class MockProsePipeline implements IProsePipeline {
 
     return blocks;
   }
+
+  /** ADR-195: the mock realizes no slots, so it stages no contributions. */
+  registerSlotContributor(): void {
+    // Intentionally inert — the mock's processTurn ignores the slot channel.
+  }
 }
 
 export function createMockProsePipeline(): IProsePipeline {

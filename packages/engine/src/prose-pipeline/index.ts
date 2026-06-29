@@ -14,7 +14,7 @@
 export { ProsePipeline, createProsePipeline } from './pipeline';
 
 // Service interface.
-export type { IProsePipeline } from './types';
+export type { IProsePipeline, SlotContributor } from './types';
 
 // Render-context runtime for the phrase pipeline (ADR-192, W2).
 export {
