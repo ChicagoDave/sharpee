@@ -54,6 +54,15 @@ export interface ISwitchableData {
 
   /** Description when switched off (used by computed description getter on IFEntity) */
   offDescription?: string;
+
+  /**
+   * State detail appended to the base description when switched on (ADR-195 S2).
+   * Unlike `onDescription` (which *replaces* the description via the computed
+   * getter), this is *appended* by the examine `{slot:detail}` channel — the base
+   * description stays and the state text follows it. Read by the `state-clauses`
+   * registry.
+   */
+  detailWhenOn?: string;
 }
 
 /**
@@ -85,6 +94,7 @@ export class SwitchableTrait implements ITrait, ISwitchableData {
   autoOffCounter: number;
   onDescription?: string;
   offDescription?: string;
+  detailWhenOn?: string;
 
   constructor(data: ISwitchableData = {}) {
     // Set defaults and merge with provided data
@@ -105,5 +115,6 @@ export class SwitchableTrait implements ITrait, ISwitchableData {
     this.autoOffCounter = data.autoOffCounter ?? (this.isOn && this.autoOffTime > 0 ? this.autoOffTime : 0);
     this.onDescription = data.onDescription;
     this.offDescription = data.offDescription;
+    this.detailWhenOn = data.detailWhenOn;
   }
 }

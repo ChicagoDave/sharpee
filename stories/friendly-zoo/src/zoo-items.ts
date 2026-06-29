@@ -81,8 +81,10 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
   const flashlight = object('flashlight')
     .description('A heavy-duty yellow flashlight.')
     .aliases('flashlight', 'torch', 'light', 'lamp')
-    .lightSource({ isLit: false })
-    .addTrait(new SwitchableTrait({ isOn: false }))
+    // ADR-195 S2: author-set state detail feeds the examine `{slot:detail}` channel
+    // (appended, not replacing) — switched on it clicks, lit it casts a beam.
+    .lightSource({ isLit: false, detailWhenLit: 'A thin beam plays across the floor.' })
+    .addTrait(new SwitchableTrait({ isOn: false, detailWhenOn: 'It clicks faintly as it powers up.' }))
     .in(supplyRoomEntity)
     .build();
 
@@ -96,7 +98,9 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .description('A battered portable radio held together with duct tape. The antenna is bent at a jaunty angle. A faded sticker on the side reads "ZOO FM — All Animals, All The Time."')
     .aliases('radio', 'portable radio')
     .scenery()
-    .addTrait(new SwitchableTrait({ isOn: false }))
+    // ADR-195 S2: switched on, the radio appends "It hums softly." to its examine
+    // `{slot:detail}` (the base description stays).
+    .addTrait(new SwitchableTrait({ isOn: false, detailWhenOn: 'It hums softly.' }))
     .in(supplyRoomEntity)
     .build();
 

@@ -39,12 +39,36 @@ export const PetMessages = {
   CANT_PET: 'zoo.petting.cant_pet',
 } as const;
 
+// Presence clauses (ADR-195 S1) — bare content appended to a room's `{slot:here}`
+// by `stageZooSlots` when the entity is in the player's room. The slot owns the
+// connective grammar (sentence break); these are plain, self-contained sentences.
+export const PresenceMessages = {
+  ZOOKEEPER: 'zoo.presence.zookeeper',
+  PARROT: 'zoo.presence.parrot',
+  GOATS: 'zoo.presence.goats',
+  RABBITS: 'zoo.presence.rabbits',
+} as const;
+
 
 // ============================================================================
 // REGISTER ALL MESSAGES
 // ============================================================================
 
 export function registerMessages(language: LanguageProvider): void {
+
+  // --- Room-occupant slot (ADR-195 S1) ---
+  //
+  // The room description body carries the `{slot:here}` occupant channel at the
+  // engine level (core message `if.room.description_body`), so every room is a
+  // slot host. The `stageZooSlots` contributor (index.ts) fills it at realize
+  // time with a presence clause per occupant in the player's room; with no
+  // occupants the slot realizes to nothing and the stem stays clean.
+  //
+  // Presence clauses — bare content; the slot owns the sentence break.
+  language.addMessage(PresenceMessages.ZOOKEEPER, 'Sam the zookeeper is here, jingling a ring of keys.');
+  language.addMessage(PresenceMessages.PARROT, 'A scarlet macaw watches you with one bright, knowing eye.');
+  language.addMessage(PresenceMessages.GOATS, 'Three pygmy goats mill about hopefully, eyeing your pockets for snacks.');
+  language.addMessage(PresenceMessages.RABBITS, 'A pair of Holland Lop rabbits lounges near the hay bale, ears flopped.');
 
   // --- Feeding ---
   language.addMessage(FeedMessages.NO_FEED, "You don't have any animal feed.");

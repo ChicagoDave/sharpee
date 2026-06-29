@@ -2155,6 +2155,47 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
+### state-adjectives
+
+```typescript
+/**
+ * @file State-derived adjective contributors (ADR-193).
+ *
+ * A registry mapping a trait type to a function that derives adjectives from an
+ * entity's *live state* ("open" from `OpenableTrait.isOpen`, "locked" from
+ * `LockableTrait.isLocked`). `nounPhraseFor` (stdlib) opts in to prepend these
+ * onto a `NounPhrase`'s static adjectives; the Assembler renders them and agrees
+ * the article over the leading one (no Assembler change — ADR-192 AC-4).
+ *
+ * Public interface: `registerAdjectiveContributor`, `getStateAdjectives`,
+ * `AdjectiveContributor`. The set is open — stories/extensions register their own.
+ *
+ * Owner context: `@sharpee/world-model` — ADR-192 §6 places the trait-contributor
+ * hooks here. INVARIANT: contributors return locale-neutral adjective *tokens*
+ * (the English realization is the Assembler's); no article/grammar logic here.
+ */
+import type { IFEntity } from './entities/if-entity';
+/** Derive adjective tokens from an entity's live state. */
+export type AdjectiveContributor = (entity: IFEntity) => string[];
+/**
+ * Register a state-adjective contributor for a trait type (ADR-193). Idempotent
+ * per trait type — the latest registration wins. Insertion order is preserved and
+ * determines adjective order across traits.
+ *
+ * @param traitType the trait whose state contributes adjectives
+ * @param fn maps an entity carrying that trait to its state adjectives
+ */
+export declare function registerAdjectiveContributor(traitType: string, fn: AdjectiveContributor): void;
+/**
+ * Collect the state-derived adjectives for an entity from every registered
+ * contributor whose trait the entity carries (ADR-193).
+ *
+ * @param entity the entity to inspect
+ * @returns the derived adjective tokens, in contributor-registration order
+ */
+export declare function getStateAdjectives(entity: IFEntity): string[];
+```
+
 ### traits/identity/identityTrait
 
 ```typescript

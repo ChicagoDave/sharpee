@@ -2067,8 +2067,9 @@ export declare function resolvePerspectivePlaceholders(message: string, context?
  * same tree and context yield byte-identical output. No clocks, no randomness.
  *
  * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` (ADR-199) and `Verbatim` (ADR-200) atoms are realized here; the six
- * remaining stub kinds throw `PhraseNotImplementedError`.
+ * `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), `Contents`
+ * (194), and `Slot` (195) atoms are realized here; the two remaining stub kinds
+ * (`Optional` / `Choice`, ADR-196) throw `PhraseNotImplementedError`.
  */
 import { Assembler, Phrase, RenderContext } from '@sharpee/if-domain';
 import { ITextBlock } from '@sharpee/text-blocks';
@@ -2120,10 +2121,10 @@ export declare class EnglishAssembler implements Assembler {
  *
  * Public interface: `PhraseNotImplementedError`.
  *
- * Owner context: `@sharpee/lang-en-us` — English realization. The seven stub
- * kinds (Pronoun, Numeral, Verbatim, Contents, Slot, Optional, Choice) are
- * reserved in the `if-domain` algebra but realized only by their follow-on ADRs;
- * until then the Assembler refuses them loudly rather than emitting `Empty`.
+ * Owner context: `@sharpee/lang-en-us` — English realization. The reserved
+ * `if-domain` stub kinds are realized only by their follow-on ADRs; until then
+ * the Assembler refuses them loudly rather than emitting `Empty`. With ADR-195
+ * (Slot) landed, only `Optional` / `Choice` (ADR-196) remain unrealized.
  */
 import { Phrase } from '@sharpee/if-domain';
 /**
@@ -2162,8 +2163,17 @@ export declare class PhraseNotImplementedError extends Error {
  *    subject param to agree with. The subject must be a bound param.
  *  - `{verbatim:name}` → a `Verbatim` atom (ADR-200): the param's value rendered
  *    as opaque, whitespace-exempt text. The param must be bound.
- *  - `{pronoun:it}` / `{number:n words}` / `{contents:box}` / `{slot:detail}` →
- *    the corresponding reserved (stub) kind.
+ *  - `{number:coins}` / `{number:coins words}` / `{number:floor ordinal}` → a
+ *    `Numeral` atom (ADR-198): the numeric param, optional format. Must be bound.
+ *  - `{pronoun:subject}` / `{pronoun:object}` / `{pronoun:possessive}` → a `Pronoun`
+ *    atom (ADR-197): a grammatical case; the referent is the last-mentioned entity.
+ *  - `{contents:box}` → a `Contents` atom (ADR-194): the container's live contents
+ *    as a grouped list, read at realize time. The container must be bound.
+ *  - `{slot:here}` / `{slot:detail clause}` / `{slot:detail clause or}` → a `Slot`
+ *    combinator (ADR-195): the first bare token is the contribution channel key;
+ *    optional trailing hints set `mode` (`sentence` default | `clause`) and the
+ *    `clause` conjunction (`and` default | `or`). The key need NOT be a bound param
+ *    — an unfilled slot is valid (AC-7); a keyless `{slot:}` is a parse error (AC-9).
  *  - No `:`-chain, `?`, `|`, `#`. A `:` head whose prefix is not a known kind,
  *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
@@ -2216,6 +2226,24 @@ export declare function pluralize(noun: string): string;
  * @returns "one".."ten" for 1–10, otherwise the numeral as a string
  */
 export declare function countWord(n: number): string;
+/**
+ * Spell an integer in words: ones/teens/tens, hundreds with "and", and the
+ * thousand/million/billion scales. Negatives prefix "minus"; non-integers fall
+ * back to digits. The general speller for the `Numeral` atom (ADR-198) —
+ * distinct from {@link countWord}, which caps at ten for list grouping.
+ *
+ * @param value the number to spell
+ * @returns the cardinal words, e.g. 105 → "one hundred and five"
+ */
+export declare function numberToWords(value: number): string;
+/**
+ * The ordinal surface of an integer: digits + suffix, handling the 11–13
+ * exception (1st, 2nd, 3rd, 4th, 11th, 21st). Non-integers fall back to digits.
+ *
+ * @param value the number to ordinalize
+ * @returns e.g. 3 → "3rd", 11 → "11th"
+ */
+export declare function ordinalString(value: number): string;
 ```
 
 ### data/words

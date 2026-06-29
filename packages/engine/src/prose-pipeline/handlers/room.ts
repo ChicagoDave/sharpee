@@ -21,6 +21,14 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types';
 import { createBlock, createBlocks, extractValue } from '../assemble';
+import { phraseAvailable, renderViaPhrase } from '../phrase-render';
+
+/**
+ * Core template id for the room description body (ADR-195). Realized through the
+ * phrase pipeline so its `{slot:here}` room-occupant channel fills with the
+ * presence clauses staged this turn. Registered in `@sharpee/lang-en-us`.
+ */
+const ROOM_DESCRIPTION_BODY_ID = 'if.room.description_body';
 
 /**
  * Room description event data.
@@ -100,7 +108,19 @@ export function handleRoomDescription(
   if (description) {
     const resolvedDesc = extractValue(description);
     if (resolvedDesc) {
-      const descBlocks = createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc);
+      // ADR-192/195: realize the description body through the phrase pipeline so
+      // its `{slot:here}` occupant channel fills with the presence clauses staged
+      // this turn. The room's prose is bound as a `{verbatim:description}` param;
+      // the slot owns the connective grammar. Degrade to literal blocks only when
+      // the pipeline has no world (the legacy string path, e.g. some unit tests).
+      const descBlocks = phraseAvailable(context)
+        ? renderViaPhrase(
+            context,
+            ROOM_DESCRIPTION_BODY_ID,
+            { description: resolvedDesc },
+            BLOCK_KEYS.ROOM_DESCRIPTION,
+          ) ?? createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc)
+        : createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc);
       // When the room name was emitted in this packet, the description's
       // first block continues the room "heading" visually — mark it tight
       // so the renderer collapses the inter-paragraph margin and the

@@ -999,7 +999,7 @@ import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
-import { ITextService } from './prose-pipeline';
+import { IProsePipeline, type SlotContributor } from './prose-pipeline';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
@@ -1308,11 +1308,22 @@ export declare class GameEngine {
     /**
      * Get the text service
      */
-    getTextService(): ITextService | undefined;
+    getTextService(): IProsePipeline | undefined;
     /**
      * Set a custom text service
      */
-    setTextService(service: ITextService): void;
+    setTextService(service: IProsePipeline): void;
+    /**
+     * Register a realize-time slot contributor (ADR-195 §3).
+     *
+     * Stories call this from `onEngineReady` to stage slot contributions (room
+     * occupants, object detail clauses) into each turn's slot store before its
+     * messages realize. The contributor runs once per turn at the top of the prose
+     * pipeline's `processTurn`. No-op if the text service is not yet constructed.
+     *
+     * @param contributor the slot contributor to register.
+     */
+    registerSlotContributor(contributor: SlotContributor): void;
     /**
      * Register save/restore hooks
      */

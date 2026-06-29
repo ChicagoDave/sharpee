@@ -1,0 +1,43 @@
+title: Friendly Zoo — Object-Detail Slot (ADR-195 S2)
+story: friendly-zoo
+description: The examine {slot:detail} channel — an examined object's traits stage state sentences (switchable hum, light-source beam) that the slot appends to its description at realize time. 0/1/N detail.
+
+# ADR-195 S2: the examine action collects state-derived detail from the examined
+# object's traits (the state-clauses registry) and stages it into the message's
+# {slot:detail}. Off → no detail (clean); on → the trait sentences append.
+---
+
+# --- Reach the Supply Room (behind the locked staff gate) ---
+> take keycard
+[OK: contains "Taken"]
+> south
+[OK: contains "Main Path"]
+> unlock gate with keycard
+[OK: contains "unlock"]
+> open gate
+[OK: contains "open"]
+> south
+[OK: contains "Supply Room"]
+
+# --- 0 detail: the radio is off; the slot is clean ---
+> examine radio
+[OK: contains "battered portable radio"]
+[OK: not contains "It hums softly"]
+
+# --- 1 detail: switched on, the radio's SwitchableTrait contributes one sentence ---
+> turn on radio
+[OK: contains "radio"]
+> examine radio
+[OK: contains "It hums softly."]
+
+# --- 0 detail: the flashlight is off ---
+> examine flashlight
+[OK: contains "heavy-duty yellow flashlight"]
+[OK: not contains "thin beam"]
+
+# --- N detail: switched on lights it too, so two traits contribute two sentences ---
+> turn on flashlight
+[OK: contains "flashlight"]
+> examine flashlight
+[OK: contains "It clicks faintly as it powers up."]
+[OK: contains "A thin beam plays across the floor."]

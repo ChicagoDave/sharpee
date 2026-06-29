@@ -34,7 +34,7 @@ export class ObjectBuilder {
   private _location?: IFEntity;
   private _scenery = false;
   private _grammaticalNumber?: 'singular' | 'plural';
-  private _lightSource?: { isLit?: boolean; fuelTurns?: number };
+  private _lightSource?: { isLit?: boolean; fuelTurns?: number; litDescription?: string; unlitDescription?: string; detailWhenLit?: string };
   private _skipValidation = false;
   private _traits: ITrait[] = [];
 
@@ -102,10 +102,13 @@ export class ObjectBuilder {
   /**
    * Add light source trait.
    *
-   * @param opts - Light source options
+   * @param opts - Light source options. `detailWhenLit` is the author-set state
+   *   text the ADR-195 S2 examine `{slot:detail}` channel *appends* when lit (e.g.
+   *   "A thin beam plays across the floor."); `litDescription` / `unlitDescription`
+   *   *replace* the description via the computed getter.
    * @returns this (for chaining)
    */
-  lightSource(opts: { isLit?: boolean; fuelTurns?: number } = {}): this {
+  lightSource(opts: { isLit?: boolean; fuelTurns?: number; litDescription?: string; unlitDescription?: string; detailWhenLit?: string } = {}): this {
     this._lightSource = opts;
     return this;
   }

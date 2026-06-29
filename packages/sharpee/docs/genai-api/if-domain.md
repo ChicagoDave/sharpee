@@ -2828,8 +2828,8 @@ export interface IAudibilityEvent {
  * `messageId → phrase tree → Assembler → ITextBlock[]`.
  *
  * Public interface: the `Phrase` union (13 members), `PhraseProducer`,
- * `RenderContext` (with the `reference` / `textState` / `contribute` seams),
- * `Assembler`, and the `isX` kind type guards.
+ * `RenderContext` (with the `reference` / `textState` / `contribute` write +
+ * `slotContributions` read seams), `Assembler`, and the `isX` kind type guards.
  *
  * Owner context: `@sharpee/if-domain` — language-neutral domain contracts,
  * beside `language-provider.ts` and `contracts.ts`. INVARIANT (ADR-192 AC-10):
@@ -2839,10 +2839,11 @@ export interface IAudibilityEvent {
  *
  * Extensibility (ADR-192 §1): `Phrase` is a CLOSED discriminated union keyed by
  * `kind`. The five foundational kinds are implemented by the Assembler in
- * ADR-192; `Verb` (ADR-199) and `Verbatim` (ADR-200) are realized follow-on
- * atoms; the remaining six stub kinds are reserved discriminants whose fields and
- * realization land additively in their follow-on ADRs (193–198). Extension is
- * additive only — a new member plus a new Assembler case, never a rewrite of the base.
+ * ADR-192; `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), and
+ * `Contents` (194) are realized follow-on atoms; the remaining three stub kinds are
+ * reserved discriminants whose fields and realization land additively in their
+ * follow-on ADRs (193 adjectives, 195 Slot, 196 Optional/Choice). Extension is
+ * additive only — a new member plus a new Assembler case, never a rewrite.
  */
 import { EntityId, IEntity } from '@sharpee/core';
 import { IDecoration, ITextBlock } from '@sharpee/text-blocks';
@@ -2933,13 +2934,26 @@ export interface Verb extends PhraseBase {
     /** Default 'third'; the subject's own `person` takes precedence when present. */
     person?: 'first' | 'second' | 'third';
 }
-/** Atom — pronoun reference. Fields + realization: ADR-197. */
+/**
+ * Atom — a pronoun ("it"/"them"/"his"/…) agreeing in case, number, and gender
+ * with the last-mentioned referent (ADR-197). Language-neutral: the he/she/it/they
+ * surface tables live in the locale Assembler; only the grammatical `case` is here.
+ */
 export interface Pronoun extends PhraseBase {
     kind: 'pronoun';
+    case: 'subject' | 'object' | 'possessive' | 'possessive-pronoun' | 'reflexive';
 }
-/** Atom — spelled or numeric quantity. Fields + realization: ADR-198. */
+/**
+ * Atom — a numeric value rendered as digits, spelled-out words, or an ordinal
+ * (ADR-198). Language-neutral: `value` is the number; the spelled surface
+ * ("seven", "3rd") is the Assembler's to compute (no number words here).
+ */
 export interface Numeral extends PhraseBase {
     kind: 'number';
+    /** The numeric value to render. */
+    value: number;
+    /** How to render it. Default `digits`. */
+    format: 'digits' | 'words' | 'ordinal';
 }
 /**
  * Atom — opaque text passed through untouched and exempt from whitespace
@@ -2951,13 +2965,38 @@ export interface Verbatim extends PhraseBase {
     /** The opaque value, rendered verbatim. */
     text: string;
 }
-/** Combinator — an entity's contents / relational placement. Fields + realization: ADR-194. */
+/**
+ * Combinator — an entity's direct contents, read from the live world at realize
+ * time and grouped as a list (ADR-194). `containerRef` names the container param.
+ */
 export interface Contents extends PhraseBase {
     kind: 'contents';
+    /** Param naming the container (a `NounPhrase` carrying `referableId`, or an id). */
+    containerRef: string;
+    /** List conjunction. Default `and`. */
+    conj?: 'and' | 'or';
 }
-/** Combinator — a named contribution channel. Fields + realization: ADR-195. */
+/**
+ * Combinator — an open, named append target (ADR-195). Several independent
+ * sources `contribute` bare clause/sentence content to `slotKey` during the
+ * turn; at realize time the Assembler collects them, orders them
+ * deterministically, and joins them under ONE punctuation authority — the slot
+ * owns every comma, "and", and sentence break, the contribution is bare content.
+ *
+ * `mode` selects the join grammar (default `sentence`): `sentence` joins
+ * contributions as independent sentences after the stem's terminator; `clause`
+ * joins them as clauses through the punctuation authority (serial comma + final
+ * `conj`) before the terminator. `conj` is that final connective for `clause`
+ * mode (default `and`). Language-neutral: no connective surface lives here.
+ */
 export interface Slot extends PhraseBase {
     kind: 'slot';
+    /** The contribution channel name (`{slot:here}` → `slotKey: 'here'`). */
+    slotKey: string;
+    /** Join grammar. Default `sentence`. */
+    mode?: 'sentence' | 'clause';
+    /** Final connective for `clause` mode. Default `and`. */
+    conj?: 'and' | 'or';
 }
 /** Modifier — conditionally present phrase. Fields + realization: ADR-196. */
 export interface Optional extends PhraseBase {
@@ -2984,6 +3023,12 @@ export interface RenderWorld {
     getEntityContents(entityId: EntityId): IEntity[];
     /** The room transitively containing an entity, if any. */
     getContainingRoom(entityId: EntityId): IEntity | undefined;
+    /**
+     * Produce the `NounPhrase` for an entity id (ADR-194) — the entity→phrase bridge
+     * `Contents`/`Slot` realize through. Optional: present when the engine wired it to
+     * the producer (`nounPhraseFor`); absent in bare/world-less render stubs.
+     */
+    nounPhraseFor?(entityId: EntityId): NounPhrase | undefined;
 }
 /**
  * Locale-tunable realization settings. Language-neutral knobs only; the English
@@ -3009,15 +3054,27 @@ export interface NarrativeAgreement {
     playerId?: EntityId;
 }
 /**
- * Last-mentioned reference context — the seam a later `Pronoun` consumes.
- * SEAM (ADR-197): the implementation and final shape are owned by ADR-197; this
- * declaration only reserves the contract so the core is stable.
+ * The agreement surface of a last-mentioned referent — enough for a `Pronoun` to
+ * choose its surface (case × number × gender) without re-reading the world (ADR-197).
+ */
+export interface Mentioned {
+    /** The referent entity's id. */
+    referableId: EntityId;
+    /** Its grammatical number. */
+    number: 'singular' | 'plural' | 'mass';
+    /** Its pronoun set ('he' | 'she' | 'it' | 'they', or a named set); optional. */
+    pronounSet?: string;
+}
+/**
+ * Last-mentioned reference context — the seam a later `Pronoun` consumes (ADR-197).
+ * The Assembler `note`s each realized `NounPhrase`'s surface; `lastMentioned`
+ * returns the most recent.
  */
 export interface ReferenceContext {
-    /** The entity most recently realized this turn, if any. */
-    lastMentioned(): EntityId | undefined;
-    /** Record an entity as last-mentioned. */
-    note(referableId: EntityId): void;
+    /** The referent most recently realized this turn, if any. */
+    lastMentioned(): Mentioned | undefined;
+    /** Record a referent as last-mentioned. */
+    note(mentioned: Mentioned): void;
 }
 /**
  * Per-`(entityId, messageKey)` persistent store backing deterministic
@@ -3051,8 +3108,20 @@ export interface RenderContext {
     readonly reference: ReferenceContext;
     /** Per-`(entityId, messageKey)` store (consumed by `Choice`/`Optional`, ADR-196). */
     readonly textState: TextStateStore;
-    /** Slot contribution channel (ADR-195). */
+    /** Slot contribution channel — write side (ADR-192/195). */
     contribute(slotKey: string, phrase: Phrase, opts?: SlotContributionOptions): void;
+    /**
+     * Slot contribution channel — read side (ADR-195). Returns the contributions
+     * staged for `slotKey` this turn, ordered by `(order asc, insertion asc)`.
+     * A PEEK, not a drain: it never consumes the store, so two `{slot:key}` nodes
+     * sharing a key see the same contributions and repeated reads are stable.
+     *
+     * OPTIONAL — matching `RenderWorld.nounPhraseFor?`'s optional-seam precedent
+     * (ADR-194): a context that never wired the store (world-less render stubs)
+     * omits it, and the Assembler reads `ctx.slotContributions?.(key) ?? []`, so an
+     * absent accessor yields no contributions and the slot realizes `Empty`.
+     */
+    slotContributions?(slotKey: string): Phrase[];
 }
 /** Code that emits a phrase from world state. May return `Empty`. */
 export type PhraseProducer = (ctx: RenderContext) => Phrase;

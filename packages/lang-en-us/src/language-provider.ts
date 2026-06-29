@@ -68,6 +68,11 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
       'core.command_failed': "I don't understand that.",
+      // Room description body (ADR-192/195): the room's prose realized through the
+      // phrase pipeline, carrying the `{slot:here}` room-occupant channel so present
+      // occupants append a presence clause at realize time (the room name is a
+      // separate structural block emitted by the room handler).
+      'if.room.description_body': '{verbatim:description}{slot:here}',
       // Game lifecycle messages
       'game.started.banner': "{title}\nBy {author}\n\nType HELP for instructions.",
       // Platform prompt (ADR-137)

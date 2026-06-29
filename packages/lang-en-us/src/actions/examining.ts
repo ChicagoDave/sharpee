@@ -20,18 +20,23 @@ export const examiningLanguage = {
     'not_visible': "{You} {can't} see {the item} here.",
     'cant_see': "{You} {can't} see {the item} here.",
 
-    // Success messages - these match stdlib's ExaminingMessages
-    'examined': "{verbatim:description}",
+    // Success messages - these match stdlib's ExaminingMessages.
+    // The trailing `{slot:detail}` is the ADR-195 S2 object-detail channel: the
+    // examined object's traits stage state sentences (e.g. "It hums softly.") that
+    // the slot appends after the description's terminator (sentence mode — the
+    // description is a complete sentence; clause mode is for author-terminated
+    // templates). Empty by default — only objects whose traits contribute get detail.
+    'examined': "{verbatim:description}{slot:detail}",
     'examined_self': "{verbatim:description}",
-    'examined_container': "{verbatim:description}",
-    'examined_supporter': "{verbatim:description}",
-    'examined_readable': "{verbatim:description}",
-    'examined_switchable': "{verbatim:description}",
-    'examined_wearable': "{verbatim:description}",
-    'examined_door': "{verbatim:description}",
-    'examined_wall': "{verbatim:description}",
+    'examined_container': "{verbatim:description}{slot:detail}",
+    'examined_supporter': "{verbatim:description}{slot:detail}",
+    'examined_readable': "{verbatim:description}{slot:detail}",
+    'examined_switchable': "{verbatim:description}{slot:detail}",
+    'examined_wearable': "{verbatim:description}{slot:detail}",
+    'examined_door': "{verbatim:description}{slot:detail}",
+    'examined_wall': "{verbatim:description}{slot:detail}",
     'nothing_special': "{You} {see} nothing special about {the item}.",
-    'description': "{verbatim:description}",
+    'description': "{verbatim:description}{slot:detail}",
     'brief_description': "{verbatim:description}",
     'no_description': "{You} {see} nothing special about {the item}.",
 

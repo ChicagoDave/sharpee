@@ -25,6 +25,13 @@ export {
   type AdjectiveContributor,
 } from './state-adjectives';
 
+// State-derived detail-clause contributors (ADR-195 S2)
+export {
+  registerClauseContributor,
+  getStateClauses,
+  type ClauseContributor,
+} from './state-clauses';
+
 // Individual trait exports
 export * from './traits/identity';
 export * from './traits/container';

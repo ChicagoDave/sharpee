@@ -39,6 +39,14 @@ export class LightSourceTrait implements ITrait {
   /** Description when unlit (used by computed description getter on IFEntity) */
   unlitDescription?: string;
 
+  /**
+   * State detail appended to the base description when lit (ADR-195 S2). Unlike
+   * `litDescription` (which *replaces* the description via the computed getter),
+   * this is *appended* by the examine `{slot:detail}` channel. Read by the
+   * `state-clauses` registry.
+   */
+  detailWhenLit?: string;
+
   constructor(data?: Partial<LightSourceTrait>) {
     if (data) {
       Object.assign(this, data);

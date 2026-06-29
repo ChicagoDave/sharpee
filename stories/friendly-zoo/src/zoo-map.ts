@@ -55,7 +55,7 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
     .build();
 
   const pettingZoo = room('Petting Zoo')
-    .description('A cheerful open-air enclosure filled with friendly animals. Pygmy goats trot around nibbling at visitors\' shoelaces, while a pair of fluffy rabbits hop lazily near a hay bale. A feed dispenser is mounted on a post. An info plaque is posted by the gate. The main path is back to the west.')
+    .description('A cheerful open-air enclosure that smells of warm hay and fur. A feed dispenser is mounted on a post, and an info plaque is posted by the gate. The main path is back to the west.')
     .aliases('petting zoo', 'petting area', 'pen')
     .build();
 

@@ -19,6 +19,7 @@ import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { emitIllustrations } from '../../helpers/emit-illustrations';
 import { buildEventData } from '../../data-builder-types';
+import { getStateClauses } from '@sharpee/world-model';
 
 // Import our data builder
 import { examiningDataConfig, buildExaminingMessageParams } from './examining-data';
@@ -87,6 +88,17 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
 
     // Get message parameters from the data
     const { messageId, params, contentsMessage } = buildExaminingMessageParams(eventData, noun);
+
+    // ADR-195 S2: collect state-derived detail clauses from the examined object's
+    // traits (the `state-clauses` registry) and stage them into this message's
+    // `{slot:detail}` channel. The slot (clause mode) owns the connective grammar;
+    // each clause is bare content. Plain phrase data, so it survives save/replay.
+    const detailClauses = getStateClauses(noun);
+    if (detailClauses.length > 0) {
+      (params as Record<string, unknown>).__slots__ = {
+        detail: detailClauses.map((text) => ({ kind: 'literal', text })),
+      };
+    }
 
     // Build events array - emit domain event with messageId for text rendering
     const examinedEvent = context.event('if.event.examined', {

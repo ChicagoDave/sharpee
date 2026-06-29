@@ -3178,6 +3178,15 @@ export declare function tryInferTarget(originalTarget: IFEntity, wasPronoun: boo
  */
 import { NounPhrase, RenderContext } from '@sharpee/if-domain';
 import { IFEntity } from '@sharpee/world-model';
+/** Options for {@link nounPhraseFor}. */
+export interface NounPhraseOptions {
+    /**
+     * Prepend live state-derived adjectives ("open", "locked") from the entity's
+     * traits (ADR-193). Default `false` — only producers that *describe* an object's
+     * state opt in, avoiding redundancy like "open the open box".
+     */
+    stateAdjectives?: boolean;
+}
 /**
  * Build a `NounPhrase` from an `IFEntity` for use as a message-template
  * parameter value. With no `IdentityTrait`, returns a minimal indefinite
@@ -3185,11 +3194,12 @@ import { IFEntity } from '@sharpee/world-model';
  *
  * @param entity any IFEntity — typically the noun, container, or target from an
  *               action's command or a capability behavior
- * @param _ctx the render context — reserved for computed names / state-derived
- *             fields (ADR-193+); the static mapping does not consult it yet
+ * @param _ctx the render context — reserved for computed names (ADR-193+); the
+ *             mapping does not consult it yet
+ * @param opts options — set `stateAdjectives` to prepend live trait-state adjectives
  * @returns a `NounPhrase` carrying the entity's grammatical metadata
  */
-export declare function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext): NounPhrase;
+export declare function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext, opts?: NounPhraseOptions): NounPhrase;
 ```
 
 ### channels/registry

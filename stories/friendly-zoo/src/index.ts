@@ -91,7 +91,7 @@ import {
   createPAAnnouncementDaemon, createFeedingTimeFuse,
   createGoatBleatingDaemon, createVictoryDaemon, createAfterHoursDaemons,
 } from './events.js';
-import { registerMessages, FeedMessages, PhotoMessages, PetMessages } from './language.js';
+import { registerMessages, FeedMessages, PhotoMessages, PetMessages, PresenceMessages } from './language.js';
 
 
 // ============================================================================
@@ -312,6 +312,36 @@ class FriendlyZooStory implements Story {
 
   onEngineReady(engine: GameEngine): void {
     const world = engine.getWorld();
+
+    // --- Room-occupant slot contributor (ADR-195 S1) ---
+    //
+    // Realize-time staging: before any message renders this turn, append a
+    // presence clause to each room description's `{slot:here}` for every known
+    // occupant in the player's room. The slot (sentence mode) owns the connective
+    // grammar — each contribution is bare content. The fixed `order` keeps the
+    // joined line deterministic across save/restore (ADR-195 AC-5).
+    const language = engine.getLanguageProvider();
+    const presence: Array<{ id: string; order: number; messageId: string }> = [
+      { id: this.characterIds.zookeeper, order: 0, messageId: PresenceMessages.ZOOKEEPER },
+      { id: this.characterIds.parrot, order: 1, messageId: PresenceMessages.PARROT },
+      { id: this.characterIds.goats, order: 2, messageId: PresenceMessages.GOATS },
+      { id: this.characterIds.rabbits, order: 3, messageId: PresenceMessages.RABBITS },
+    ];
+
+    engine.registerSlotContributor((ctx) => {
+      const playerId = ctx.narrative?.playerId ?? world.getPlayer()?.id;
+      if (!playerId) return;
+      const room = ctx.world.getContainingRoom(playerId);
+      if (!room) return;
+      const presentIds = new Set(ctx.world.getEntityContents(room.id).map((e) => e.id));
+      for (const occupant of presence) {
+        if (!presentIds.has(occupant.id)) continue;
+        const text = language?.getMessage(occupant.messageId);
+        if (text) {
+          ctx.contribute('here', { kind: 'literal' as const, text }, { order: occupant.order });
+        }
+      }
+    });
 
     // --- NPC Plugin ---
     const npcPlugin = new NpcPlugin();

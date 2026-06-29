@@ -41,7 +41,12 @@ export function phraseAvailable(context: HandlerContext): boolean {
  *
  * @param context the handler context (carries the render-context factory)
  * @param messageId the message id to render
- * @param params the message params (entity NounPhrases, scalars, …)
+ * @param params the message params (entity NounPhrases, scalars, …). The reserved
+ *   key `__slots__` (a `{ [slotKey]: Phrase[] }` map) is not a placeholder binding:
+ *   its phrases are staged into this message's turn slot store before realization,
+ *   so an action that knows its target (e.g. examine staging detail clauses) can
+ *   fill a `{slot:key}` in its own template without holding a render context at
+ *   report time (ADR-195 S2). Plain phrase data — save/replay-safe.
  * @param blockKey the channel key to stamp on the realized blocks
  * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
  *   id is not registered (the caller applies its inline-text fallback)
@@ -59,6 +64,19 @@ export function renderViaPhrase(
     return null;
   }
   const ctx = context.makeRenderContext!(params);
+
+  // ADR-195 S2: stage any pre-built slot contributions the emitter attached to
+  // `params.__slots__` into this turn's slot store, before the template realizes,
+  // so a `{slot:key}` in this message picks them up. Bare content; the slot owns
+  // the connective grammar.
+  const preStaged = params.__slots__ as Record<string, unknown[]> | undefined;
+  if (preStaged && ctx.contribute) {
+    for (const [slotKey, phrases] of Object.entries(preStaged)) {
+      for (const phrase of phrases) {
+        ctx.contribute(slotKey, phrase as Parameters<typeof ctx.contribute>[1]);
+      }
+    }
+  }
   let blocks;
   try {
     blocks = lp.renderMessage!(messageId, params, ctx);
