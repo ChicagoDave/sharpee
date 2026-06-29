@@ -5,7 +5,30 @@
 - Draft, review, and begin implementing **ADR-196 — Optional / Choice Atoms & the Text-State Store** (the next phrase-algebra atom after ADR-195 Slot).
 - Land Phases 1–3 (if-domain contract → persistent store → Assembler realization) with green builds/tests at each step.
 
-## Status: IN PROGRESS — Phases 1–3 COMPLETE & committed; Phase 4 designed, not yet coded
+## Status: IN PROGRESS — Phases 1–4 COMPLETE; Phase 4 coded + tested (uncommitted); Phase 5 remaining
+
+### Phase 4 — room first-visit bugfix (S14) — DONE (uncommitted)
+
+- `looking.ts` execute: captures `context.sharedData.isFirstVisit = !RoomBehavior.hasBeenVisited(room)` BEFORE marking visited; marks via `RoomBehavior.markVisited` only on first visit (mirrors `going`). Removed now-unused `RoomTrait` import.
+- `looking-data.ts` `buildRoomDescriptionData`: `firstVisit` now reads `sharedData.isFirstVisit`; on first visit prefers `roomTrait.initialDescription`/`initialDescriptionId` over identity/location description for `roomDescription`/`roomDescriptionId`.
+- `looking-data.ts` `determineLookingMessage`: same `firstVisit`-from-sharedData; `params.description` swaps to initial description on first visit; removed duplicate `const firstVisit = true`.
+- **Test (AC-12):** 3 new tests in `looking-golden.test.ts` (first visit → initial desc + room marked visited; re-visit → standard; no-initial → standard fallback). REAL-PATH (real WorldModel + real action, no stubs).
+- stdlib **1285 pass / 27 skip**; typecheck clean.
+- **No regression risk:** `useInitial` is gated on a room having an `initialDescription`; `verbose`/`messageId` unchanged (verbose mode still hardcoded true).
+
+#### Finding: snapshot shadows the top-level description field
+
+The first cut only set the top-level `roomDescription`/`roomDescriptionId`, but the engine room handler (`room.ts:96,104-105`) resolves from the **snapshot** first (`data.room.descriptionId` / `data.room.description`), falling back to the top-level fields only if the snapshot is empty. Since `captureRoomSnapshot` always fills `description` from identity, the top-level field was shadowed and the initial description never reached the player — caught only by the friendly-zoo e2e, not the original unit test (which asserted the event payload, not the rendered field). **Fix:** on first visit, `buildRoomDescriptionData` now also overrides `roomSnapshot.description`/`descriptionId`. Unit tests strengthened to assert on `event.data.room.description` (the field the handler actually renders).
+
+### Phase 5 (started) — Friendly Zoo consumer: entrance initialDescription
+
+- `stories/friendly-zoo/src/zoo-map.ts`: entrance room gets a first-visit `initialDescription` (set on the trait post-`.build()` — the `RoomBuilder` helper has no `initialDescription()` method; adding one is a deferred platform change).
+- New demo transcript `stories/friendly-zoo/tests/transcripts/entrance-initial-description.transcript`: first `look` → initial flavor; second `look` → standard, initial absent. **Passes** through the rebuilt bundle; friendly-zoo smoke still 6/6.
+- Verified via `--play`: first look shows "Your family piles out of the car…"; second look shows standard only.
+
+### Note: dungeo walkthroughs pre-existing broken (NOT this change)
+
+`--chain stories/dungeo/walkthroughs/wt-*.transcript` fails heavily on **both** the baseline (changes stashed: 653 fail) and with my changes (103 fail) — combat/chain-state failures ("attack troll" after troll dead → "can't see any such thing"). dungeo has no `initialDescription`, so Phase 4 cannot affect it. Pre-existing; flagged for separate investigation.
 
 ## What happened
 

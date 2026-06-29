@@ -10,7 +10,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, RoomTrait } from '@sharpee/world-model';
+import { TraitType, RoomBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { captureRoomSnapshot } from '../../base/snapshot-utils';
@@ -47,17 +47,19 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
   },
   
   execute(context: ActionContext): void {
-    // Only mutation: mark room as visited
-    const location = context.currentLocation;
+    // Only mutation: mark room as visited.
+    // Capture first-visit state BEFORE marking, so report() can distinguish the
+    // initial description from the standard one (mirrors going.ts:350–368).
     const room = context.world.getContainingRoom(context.player.id);
-    
+
     if (room && room.hasTrait(TraitType.ROOM)) {
-      const roomTrait = room.getTrait(RoomTrait);
-      if (roomTrait && !roomTrait.visited) {
-        roomTrait.visited = true;
+      const isFirstVisit = !RoomBehavior.hasBeenVisited(room);
+      context.sharedData.isFirstVisit = isFirstVisit;
+      if (isFirstVisit) {
+        RoomBehavior.markVisited(room, context.player);
       }
     }
-    
+
     // No events returned - they're generated in report()
   },
   

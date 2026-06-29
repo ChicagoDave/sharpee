@@ -12,7 +12,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { lookingAction } from '../../../src/actions/standard/looking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType } from '@sharpee/world-model';
+import { TraitType, RoomTrait, RoomBehavior } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -324,6 +324,74 @@ describe('lookingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.room.description', {
         roomId: room.id,
         verbose: true
+      });
+    });
+  });
+
+  describe('First Visit / Initial Description (ADR-196 Phase 4, AC-12)', () => {
+    test('should show the initial description on first visit, then mark the room visited', () => {
+      const { world, player, room } = setupBasicWorld();
+      // Standard (identity) description + a distinct first-visit description.
+      room.add({ type: TraitType.IDENTITY, name: 'Test Room', description: 'A plain test room.' });
+      const roomTrait = room.getTrait(RoomTrait) as RoomTrait;
+      roomTrait.initialDescription = 'You step into the room for the very first time.';
+
+      // PRECONDITION: room is unvisited (visited defaults to undefined).
+      expect(RoomBehavior.hasBeenVisited(room)).toBeFalsy();
+
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+      const events = executeWithValidation(lookingAction, context);
+
+      // First visit emits the INITIAL description.
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room.id,
+        roomDescription: 'You step into the room for the very first time.'
+      });
+      // The engine room handler renders from the SNAPSHOT first
+      // (data.room.description), so the initial text must reach there too.
+      const desc = events.find(e => e.type === 'if.event.room.description');
+      expect((desc?.data as any)?.room?.description).toBe('You step into the room for the very first time.');
+
+      // POSTCONDITION: the room is now marked visited (the only mutation).
+      expect(RoomBehavior.hasBeenVisited(room)).toBe(true);
+    });
+
+    test('should show the standard description on a subsequent visit', () => {
+      const { world, player, room } = setupBasicWorld();
+      room.add({ type: TraitType.IDENTITY, name: 'Test Room', description: 'A plain test room.' });
+      const roomTrait = room.getTrait(RoomTrait) as RoomTrait;
+      roomTrait.initialDescription = 'You step into the room for the very first time.';
+      // Pre-mark the room visited so this look is NOT the first.
+      roomTrait.visited = true;
+
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+      const events = executeWithValidation(lookingAction, context);
+
+      // Re-visit emits the STANDARD description, not the initial one.
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room.id,
+        roomDescription: 'A plain test room.'
+      });
+      const desc = events.find(e => e.type === 'if.event.room.description');
+      expect((desc?.data as any)?.room?.description).toBe('A plain test room.');
+    });
+
+    test('should fall back to the standard description when no initial description is set', () => {
+      const { world, player, room } = setupBasicWorld();
+      room.add({ type: TraitType.IDENTITY, name: 'Test Room', description: 'A plain test room.' });
+
+      // PRECONDITION: unvisited, but no initial description configured.
+      expect(RoomBehavior.hasBeenVisited(room)).toBeFalsy();
+
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+      const events = executeWithValidation(lookingAction, context);
+
+      expectEvent(events, 'if.event.room.description', {
+        roomId: room.id,
+        roomDescription: 'A plain test room.'
       });
     });
   });

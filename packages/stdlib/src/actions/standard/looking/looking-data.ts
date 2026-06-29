@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
 import { ActionContext } from '../../enhanced-types';
-import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait, RoomTrait } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
 import { nounPhraseFor } from '../../../utils';
 
@@ -100,11 +100,34 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
   // Determine if verbose mode
   // TODO: Wire verbose mode from game-meta state when brief/verbose commands are implemented
   const verboseMode = true;
-  const firstVisit = true;
+  // First-visit state is captured in looking.ts execute() BEFORE the room is
+  // marked visited, and handed forward via sharedData (mirrors going.ts).
+  const firstVisit = context.sharedData?.isFirstVisit === true;
   const isVerbose = verboseMode || firstVisit;
 
   // Get identity trait for ID fields (ADR-107 dual-mode)
   const identity = location.getTrait(IdentityTrait);
+
+  // On first visit, prefer the room's initial description over its standard one
+  // (ADR-107 dual-mode: message ID takes precedence over the literal).
+  const roomTrait = location.getTrait(RoomTrait);
+  const useInitial = firstVisit && roomTrait
+    && (roomTrait.initialDescriptionId !== undefined || roomTrait.initialDescription !== undefined);
+  const roomDescriptionId = useInitial
+    ? (roomTrait.initialDescriptionId ?? identity?.descriptionId)
+    : identity?.descriptionId;
+  const roomDescription = useInitial
+    ? (roomTrait.initialDescription ?? location.description)
+    : location.description;
+
+  // The room handler resolves the rendered description from the snapshot first
+  // (`data.room.description` / `data.room.descriptionId`), falling back to the
+  // top-level fields. Mirror the first-visit choice onto the snapshot so the
+  // initial description actually reaches the player, not just the event payload.
+  if (useInitial) {
+    roomSnapshot.description = roomDescription;
+    roomSnapshot.descriptionId = roomDescriptionId;
+  }
 
   return {
     // New atomic structure
@@ -113,10 +136,10 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
     // Backward compatibility fields
     roomId: location.id,
     roomName: location.name,
-    roomDescription: location.description,
+    roomDescription: roomDescription,
     // ADR-107: Message IDs for localization (take precedence over literals)
     roomNameId: identity?.nameId,
-    roomDescriptionId: identity?.descriptionId,
+    roomDescriptionId: roomDescriptionId,
     includeContents: true,
     verbose: isVerbose,
     inVehicle: immediateContainer?.name || null,
@@ -262,9 +285,16 @@ export function determineLookingMessage(
     };
   }
 
-  // Include name and description for room_description template
+  // Include name and description for room_description template.
+  // On first visit, prefer the room's initial description (mirrors
+  // buildRoomDescriptionData); first-visit state is staged in sharedData by
+  // looking.ts execute() before the room is marked visited.
+  const firstVisit = context.sharedData?.isFirstVisit === true;
+  const roomTrait = location.getTrait(RoomTrait);
   params.name = location.name;
-  params.description = location.description;
+  params.description = (firstVisit && roomTrait?.initialDescription !== undefined)
+    ? roomTrait.initialDescription
+    : location.description;
   params.location = location.name;
 
   // If we're in an immediate container (but can see the room), note it
@@ -295,10 +325,9 @@ export function determineLookingMessage(
     };
   }
 
-  // Check for brief/verbose mode
+  // Check for brief/verbose mode (firstVisit computed above from sharedData)
   // TODO: Wire verbose mode from game-meta state when brief/verbose commands are implemented
   const verboseMode = true;
-  const firstVisit = true;
 
   let messageId = (!verboseMode && !firstVisit) ? 'room_description_brief' : 'room_description';
 

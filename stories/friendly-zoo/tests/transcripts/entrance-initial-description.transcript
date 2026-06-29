@@ -1,0 +1,13 @@
+title: Entrance Initial Description
+story: friendly-zoo
+description: ADR-196 Phase 4 — entrance shows its first-visit (initial) description once, then the standard description on a re-look.
+---
+
+# First look at the entrance shows the first-visit-only flavor.
+> look
+[OK: contains "Your family piles out of the car"]
+
+# A second look at the same room shows the STANDARD description, not the initial one.
+> look
+[OK: contains "wrought-iron gates"]
+[OK: not contains "Your family piles out of the car"]
