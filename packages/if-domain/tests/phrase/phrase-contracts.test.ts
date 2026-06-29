@@ -28,6 +28,7 @@ import {
   Slot,
   Optional,
   Choice,
+  RenderContext,
   isLiteral,
   isNounPhrase,
   isPhraseList,
@@ -53,7 +54,7 @@ const pronoun: Pronoun = { kind: 'pronoun' };
 const numeral: Numeral = { kind: 'number' };
 const verbatim: Verbatim = { kind: 'verbatim' };
 const contents: Contents = { kind: 'contents' };
-const slot: Slot = { kind: 'slot' };
+const slot: Slot = { kind: 'slot', slotKey: 'here' };
 const optional: Optional = { kind: 'optional' };
 const choice: Choice = { kind: 'choice' };
 
@@ -88,6 +89,38 @@ describe('Phrase kind type guards (ADR-192 §1)', () => {
   it('covers all 12 members of the closed union', () => {
     const kinds = all.map((a) => a.phrase.kind);
     expect(new Set(kinds).size).toBe(12);
+  });
+});
+
+describe('ADR-195 Phase 1 — enriched Slot contract + RenderContext read seam', () => {
+  it('Slot carries slotKey and optional mode/conj, still discriminated by kind', () => {
+    const sentenceSlot: Slot = { kind: 'slot', slotKey: 'here' };
+    const clauseSlot: Slot = { kind: 'slot', slotKey: 'detail', mode: 'clause', conj: 'or' };
+    expect(isSlot(sentenceSlot)).toBe(true);
+    expect(isSlot(clauseSlot)).toBe(true);
+    expect(sentenceSlot.slotKey).toBe('here');
+    // mode/conj are optional — absent means the Assembler's defaults (sentence/and).
+    expect(sentenceSlot.mode).toBeUndefined();
+    expect(clauseSlot.mode).toBe('clause');
+    expect(clauseSlot.conj).toBe('or');
+  });
+
+  it('slotContributions is an optional peek accessor structurally present on RenderContext', () => {
+    // A context that wired the read seam: peek returns the same list on repeated
+    // reads (non-draining) and yields [] for an unstaged key.
+    const staged: Record<string, Phrase[]> = { here: [{ kind: 'literal', text: 'Sam is here.' }] };
+    const wired: Pick<RenderContext, 'contribute' | 'slotContributions'> = {
+      contribute: () => {},
+      slotContributions: (key) => staged[key] ?? [],
+    };
+    expect(wired.slotContributions?.('here')).toHaveLength(1);
+    expect(wired.slotContributions?.('here')).toBe(wired.slotContributions?.('here')); // peek, stable
+    expect(wired.slotContributions?.('missing')).toEqual([]);
+
+    // A world-less stub omits the optional accessor; `?.` yields undefined, which
+    // the Assembler reads as no contributions (ADR-195 §2).
+    const worldless: Pick<RenderContext, 'contribute'> = { contribute: () => {} };
+    expect((worldless as Partial<RenderContext>).slotContributions?.('here')).toBeUndefined();
   });
 });
 

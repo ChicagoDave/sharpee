@@ -8,8 +8,8 @@
  * `messageId → phrase tree → Assembler → ITextBlock[]`.
  *
  * Public interface: the `Phrase` union (13 members), `PhraseProducer`,
- * `RenderContext` (with the `reference` / `textState` / `contribute` seams),
- * `Assembler`, and the `isX` kind type guards.
+ * `RenderContext` (with the `reference` / `textState` / `contribute` write +
+ * `slotContributions` read seams), `Assembler`, and the `isX` kind type guards.
  *
  * Owner context: `@sharpee/if-domain` — language-neutral domain contracts,
  * beside `language-provider.ts` and `contracts.ts`. INVARIANT (ADR-192 AC-10):
@@ -185,9 +185,27 @@ export interface Contents extends PhraseBase {
   conj?: 'and' | 'or';
 }
 
-/** Combinator — a named contribution channel. Fields + realization: ADR-195. */
+/**
+ * Combinator — an open, named append target (ADR-195). Several independent
+ * sources `contribute` bare clause/sentence content to `slotKey` during the
+ * turn; at realize time the Assembler collects them, orders them
+ * deterministically, and joins them under ONE punctuation authority — the slot
+ * owns every comma, "and", and sentence break, the contribution is bare content.
+ *
+ * `mode` selects the join grammar (default `sentence`): `sentence` joins
+ * contributions as independent sentences after the stem's terminator; `clause`
+ * joins them as clauses through the punctuation authority (serial comma + final
+ * `conj`) before the terminator. `conj` is that final connective for `clause`
+ * mode (default `and`). Language-neutral: no connective surface lives here.
+ */
 export interface Slot extends PhraseBase {
   kind: 'slot';
+  /** The contribution channel name (`{slot:here}` → `slotKey: 'here'`). */
+  slotKey: string;
+  /** Join grammar. Default `sentence`. */
+  mode?: 'sentence' | 'clause';
+  /** Final connective for `clause` mode. Default `and`. */
+  conj?: 'and' | 'or';
 }
 
 /** Modifier — conditionally present phrase. Fields + realization: ADR-196. */
@@ -331,8 +349,20 @@ export interface RenderContext {
   readonly reference: ReferenceContext;
   /** Per-`(entityId, messageKey)` store (consumed by `Choice`/`Optional`, ADR-196). */
   readonly textState: TextStateStore;
-  /** Slot contribution channel (ADR-195). */
+  /** Slot contribution channel — write side (ADR-192/195). */
   contribute(slotKey: string, phrase: Phrase, opts?: SlotContributionOptions): void;
+  /**
+   * Slot contribution channel — read side (ADR-195). Returns the contributions
+   * staged for `slotKey` this turn, ordered by `(order asc, insertion asc)`.
+   * A PEEK, not a drain: it never consumes the store, so two `{slot:key}` nodes
+   * sharing a key see the same contributions and repeated reads are stable.
+   *
+   * OPTIONAL — matching `RenderWorld.nounPhraseFor?`'s optional-seam precedent
+   * (ADR-194): a context that never wired the store (world-less render stubs)
+   * omits it, and the Assembler reads `ctx.slotContributions?.(key) ?? []`, so an
+   * absent accessor yields no contributions and the slot realizes `Empty`.
+   */
+  slotContributions?(slotKey: string): Phrase[];
 }
 
 /** Code that emits a phrase from world state. May return `Empty`. */
