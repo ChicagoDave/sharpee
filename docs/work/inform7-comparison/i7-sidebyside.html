@@ -1,0 +1,149 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Inform 7 v10 ↔ Sharpee — text output side-by-side</title>
+<style>
+ body{font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#1f2328;background:#f6f8fa}
+ header{padding:20px 28px;background:#24292f;color:#fff}
+ header h1{margin:0 0 4px;font-size:19px} header p{margin:0;color:#c9d1d9;font-size:13px}
+ table{border-collapse:collapse;width:100%;background:#fff}
+ th,td{border:1px solid #d0d7de;padding:10px 12px;vertical-align:top;text-align:left}
+ th{background:#eaeef2;position:sticky;top:0;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+ td.n{width:30px;text-align:center;color:#57606a;font-weight:600}
+ td.cat{width:200px;font-weight:600}
+ td.i7,td.sh{width:38%}
+ pre{margin:0;white-space:pre-wrap;font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;background:#f6f8fa;border:1px solid #eaeef2;border-radius:6px;padding:8px}
+ .tpl{font:12.5px/1.45 ui-monospace,Menlo,monospace;background:#fbf7ff;border:1px solid #efe4ff;border-radius:6px;padding:8px}
+ .out{margin-top:6px;font-weight:600;color:#0a3069}
+ .out.live{color:#1a7f37}
+ .note{color:#3d4147}.adr{margin-top:6px;font:12px ui-monospace,Menlo,monospace;color:#9a6700}
+ .badge{margin-top:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+ .legend{padding:10px 28px;background:#fff;border-bottom:1px solid #d0d7de;font-size:12.5px;color:#57606a}
+</style></head><body>
+<header><h1>Inform 7 (v10) ↔ Sharpee phrase algebra — complex text output</h1>
+<p>The Sharpee column is <b>live-rendered</b> through the built lang-en-us Assembler (▸ = real output). Branch experiment/i7-text-comparison · ADR-192/199/200.</p></header>
+<div class="legend">✓ implemented &nbsp;·&nbsp; ✓ better than I7 (auto a/an over rendered head) &nbsp;·&nbsp; → future atom (ADR-193–198) &nbsp;·&nbsp; ◇ deliberate non-goal</div>
+<table><thead><tr><th>#</th><th>Feature</th><th>Inform 7 v10</th><th>Sharpee</th></tr></thead>
+<tbody><tr>
+    <td class="n">1</td>
+    <td class="cat">Definite article<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[The noun] is here."</pre><div class="out">▸ The cabinet is here.</div></td>
+    <td class="sh"><div class="tpl">{capitalize the item} is here.</div><div class="out live">▸ The cabinet is here.</div></td>
+  </tr>
+<tr>
+    <td class="n">2</td>
+    <td class="cat">Indefinite a/an (Sharpee auto; I7 needs per-object override)<div class="badge" style="color:#8250df">✓ better than I7</div></td>
+    <td class="i7"><pre>The indefinite article of the honest lawyer is "an".
+say "You meet [a honest lawyer]."</pre><div class="out">▸ You meet an honest lawyer.</div></td>
+    <td class="sh"><div class="tpl">You see {a item}.   (no per-object data)</div><div class="out live">▸ You see an owl.  ·  You see a goat.  ·  You see an hour.  ·  You see a university.</div></td>
+  </tr>
+<tr>
+    <td class="n">3</td>
+    <td class="cat">Capitalized sentence-start indefinite<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[A lamp] sits here."</pre><div class="out">▸ A lamp sits here.</div></td>
+    <td class="sh"><div class="tpl">{capitalize a item} blocks the way.</div><div class="out live">▸ An ogre blocks the way.</div></td>
+  </tr>
+<tr>
+    <td class="n">4</td>
+    <td class="cat">Mass noun<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>The indefinite article of the water is "some".
+say "There is [a water]."</pre><div class="out">▸ There is some water.</div></td>
+    <td class="sh"><div class="tpl">There is {some stuff} here.</div><div class="out live">▸ There is some water here.</div></td>
+  </tr>
+<tr>
+    <td class="n">5</td>
+    <td class="cat">Proper noun (no article)<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[The noun] nods."  (proper-named)</pre><div class="out">▸ Alice nods.</div></td>
+    <td class="sh"><div class="tpl">{who} nods.</div><div class="out live">▸ Alice nods.</div></td>
+  </tr>
+<tr>
+    <td class="n">6</td>
+    <td class="cat">List: grouping + Oxford comma<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>Use the serial comma.
+say "You can see [a list of things here]."</pre><div class="out">▸ You can see a lamp, a brass key, and two coins here.</div></td>
+    <td class="sh"><div class="tpl">You can see {items} here.</div><div class="out live">▸ You can see a lamp, a brass key, and two coins here.</div></td>
+  </tr>
+<tr>
+    <td class="n">7</td>
+    <td class="cat">List + is/are subject-verb agreement<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "On the table [regarding the list][are] [a list of things on the table]."</pre><div class="out">▸ On the table are a lamp and two coins.</div></td>
+    <td class="sh"><div class="tpl">On the table {verb:is items} {items}.</div><div class="out live">▸ On the table are a lamp and two coins.</div></td>
+  </tr>
+<tr>
+    <td class="n">8</td>
+    <td class="cat">Coordinated subject → plural verb<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[The troll] and [the goats][regarding the troll and the goats][are] blocking the bridge."</pre><div class="out">▸ The troll and the goats are blocking the bridge.</div></td>
+    <td class="sh"><div class="tpl">{subj} {verb:is subj} blocking the bridge.</div><div class="out live">▸ the troll and the goats are blocking the bridge.</div></td>
+  </tr>
+<tr>
+    <td class="n">9</td>
+    <td class="cat">is/are by number<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[The noun] [regarding the noun][are] locked."</pre><div class="out">▸ The door is locked. / The gates are locked.</div></td>
+    <td class="sh"><div class="tpl">{capitalize the x} {verb:is x} locked.</div><div class="out live">▸ The door is locked.  /  The gates are locked.</div></td>
+  </tr>
+<tr>
+    <td class="n">10</td>
+    <td class="cat">Second-person player verb<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[We] [are] carrying too much."  (2nd person)</pre><div class="out">▸ You are carrying too much.</div></td>
+    <td class="sh"><div class="tpl">{You} {verb:is actor} carrying too much.   ({You} via perspective)</div><div class="out live">▸ You are carrying too much.</div></td>
+  </tr>
+<tr>
+    <td class="n">11</td>
+    <td class="cat">has/have agreement<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[The noun] [have] a lid."</pre><div class="out">▸ The box has a lid. / The boxes have lids.</div></td>
+    <td class="sh"><div class="tpl">{capitalize the x} {verb:has x} a lid.</div><div class="out live">▸ The box has a lid.  /  The boxes have lids.</div></td>
+  </tr>
+<tr>
+    <td class="n">12</td>
+    <td class="cat">Static adjectives; article over leading adj<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "You find [a strongbox]."  (printed adjectives)</pre><div class="out">▸ You find a small iron chest. / an old empty box.</div></td>
+    <td class="sh"><div class="tpl">You find {a item}.</div><div class="out live">▸ You find a small iron chest.  /  You find an old empty box.</div></td>
+  </tr>
+<tr>
+    <td class="n">13</td>
+    <td class="cat">Regular verb agreement<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[The noun] [open] slowly."</pre><div class="out">▸ The door opens slowly. / The doors open slowly.</div></td>
+    <td class="sh"><div class="tpl">{capitalize the x} {verb:opens x} slowly.</div><div class="out live">▸ The door opens slowly.  /  The doors open slowly.</div></td>
+  </tr>
+<tr>
+    <td class="n">14</td>
+    <td class="cat">Small-count spelling in lists<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[the number of coins in words] coins"</pre><div class="out">▸ three coins</div></td>
+    <td class="sh"><div class="tpl">{items}</div><div class="out live">▸ three coins</div></td>
+  </tr>
+<tr>
+    <td class="n">15</td>
+    <td class="cat">Verbatim / preformatted block<div class="badge" style="color:#1a7f37">✓ implemented</div></td>
+    <td class="i7"><pre>say "[fixed letter spacing]...[line break]..."</pre><div class="out">▸ +----+\n| ZORK |\n+----+</div></td>
+    <td class="sh"><div class="tpl">{verbatim:banner}</div><div class="out live">▸ +--------+
+| ZORK I |
++--------+</div></td>
+  </tr>
+<tr>
+    <td class="n">16</td>
+    <td class="cat">Conditional text [if]…[otherwise]<div class="badge" style="color:#9a6700">→ future atom</div></td>
+    <td class="i7"><pre>say "The torch is [if lit]blazing[otherwise]dark[end if]."</pre><div class="out">▸ The torch is blazing.</div></td>
+    <td class="sh"><div class="note">No in-string if (ADR-192). A named Choice producer the template references; selection logic lives in code.</div><div class="adr">ADR-196 (Choice/Optional)</div></td>
+  </tr>
+<tr>
+    <td class="n">17</td>
+    <td class="cat">Cycling / random / stopping text<div class="badge" style="color:#9a6700">→ future atom</div></td>
+    <td class="i7"><pre>say "[one of]green[or]amber[or]red[cycling]"</pre><div class="out">▸ green → amber → red → green …</div></td>
+    <td class="sh"><div class="note">Choice backed by the per-(entity,messageKey) textState store → deterministic &amp; save/replay-safe (I7 cycling is not).</div><div class="adr">ADR-196 (Choice + textState seam)</div></td>
+  </tr>
+<tr>
+    <td class="n">18</td>
+    <td class="cat">Number in words / ordinal<div class="badge" style="color:#9a6700">→ future atom</div></td>
+    <td class="i7"><pre>say "[the number of coins in words] coins"</pre><div class="out">▸ seven coins</div></td>
+    <td class="sh"><div class="note">{number:coins words}. The spelling logic (countWord) already exists in the Assembler for list counts; ADR-198 exposes it as an atom.</div><div class="adr">ADR-198 (Numeral)</div></td>
+  </tr>
+<tr>
+    <td class="n">19</td>
+    <td class="cat">Pronoun reference (it/them/gendered)<div class="badge" style="color:#9a6700">→ future atom</div></td>
+    <td class="i7"><pre>say "[The noun]… [regarding the noun][They] [are] heavy. Take [them]?"</pre><div class="out">▸ It is heavy. Take it? / They are heavy. Take them?</div></td>
+    <td class="sh"><div class="note">{pronoun:it} consumes the reference seam (last-mentioned) the Assembler already feeds; pronounSet carries gender.</div><div class="adr">ADR-197 (Pronoun)</div></td>
+  </tr>
+<tr>
+    <td class="n">20</td>
+    <td class="cat">Adaptive verb TENSE (deliberate non-goal)<div class="badge" style="color:#57606a">◇ non-goal</div></td>
+    <td class="i7"><pre>say "[We] [open] … and [step] through."  (present vs past story tense)</pre><div class="out">▸ You open … / You opened …</div></td>
+    <td class="sh"><div class="note">Sharpee does NOT adapt tense: the author writes the surface form. Additive future option if a real need appears.</div><div class="adr">out of scope (ADR-199 §Scope)</div></td>
+  </tr></tbody></table>
+</body></html>
