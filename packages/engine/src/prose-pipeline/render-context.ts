@@ -5,14 +5,16 @@
  * world, the bound params, locale settings, and the declared seams
  * (`reference` / `textState` / `contribute` + `slotContributions`). This module
  * supplies the engine's runtime for that contract — a thin adapter over the world
- * model, the live turn-scoped slot store (ADR-195), and the still-inert `textState`
- * placeholder (ADR-196). The engine owns this per turn; nothing here mutates world
- * state.
+ * model, the live turn-scoped slot store (ADR-195), and the live persistent
+ * `textState` store (ADR-196). The engine owns this per turn. The ONE sanctioned
+ * mutation is the `textState` capability write (ADR-196 §4 — the declared exception
+ * ADR-192 §7 reserved for deterministic `Choice` variation); entity and spatial
+ * state are never touched here.
  *
  * Public interface: `createRenderWorld`, `createRenderContextFactory`,
- * `WorldModelLike`. The factory binds the per-turn invariants (world, settings,
- * seams) once and yields a per-message `RenderContext` by adding that message's
- * params.
+ * `WorldTextStateStore`, `WorldModelLike`. The factory binds the per-turn
+ * invariants (world, settings, seams) once and yields a per-message
+ * `RenderContext` by adding that message's params.
  *
  * Owner context: `@sharpee/engine` — internal prose pipeline.
  *
@@ -33,12 +35,21 @@ import type {
   Phrase,
 } from '@sharpee/if-domain';
 import type { IFEntity } from '@sharpee/world-model';
+import { StandardCapabilities } from '@sharpee/world-model';
 import { nounPhraseFor as nounPhraseForEntity } from '@sharpee/stdlib';
+
+/** The world capability backing the persistent text-state store (ADR-196 §4). */
+const TEXT_STATE_CAPABILITY: string = StandardCapabilities.TEXT_STATE;
 
 /**
  * The minimal world surface the render world adapter needs. The engine's
  * `WorldModel` satisfies this structurally; declaring only the methods the
- * pipeline reads keeps it honest (it never mutates).
+ * pipeline reads keeps it honest. The pipeline never mutates entity/spatial
+ * state — the one sanctioned write is the `textState` capability (ADR-196 §4),
+ * exposed through the OPTIONAL capability accessors below. They are optional
+ * (the ADR-195 optional-seam precedent) so test mocks that wire only the read
+ * methods keep compiling; a world without them degrades to an empty text-state
+ * store (no persistence, `Choice` starts at counter 0 — AC-9).
  */
 export interface WorldModelLike {
   getEntity(id: EntityId): IEntity | undefined;
@@ -46,6 +57,14 @@ export interface WorldModelLike {
   getContainingRoom(entityId: EntityId): IEntity | undefined;
   /** The player entity, for narrative verb-person agreement (ADR-199 §4 B). */
   getPlayer(): IEntity | undefined;
+  /** Read a capability's data map (ADR-196 text-state read). */
+  getCapability?(name: string): Record<string, unknown> | undefined;
+  /** Merge into a capability's data map (ADR-196 text-state write — the one sanctioned mutation). */
+  updateCapability?(name: string, updates: Record<string, unknown>): void;
+  /** Whether a capability is registered (guards the defensive self-register). */
+  hasCapability?(name: string): boolean;
+  /** Register a capability if absent (defensive — the engine normally registers `textState` at setup). */
+  registerCapability?(name: string, registration?: { initialData?: Record<string, unknown> }): void;
 }
 
 /**
@@ -86,16 +105,56 @@ class TurnReferenceContext implements ReferenceContext {
 }
 
 /**
- * Placeholder per-`(entityId, messageKey)` store (ADR-196 SEAM). Always empty,
- * so `Choice` / `Optional` selections are unseeded; the real seeded store lands
- * in ADR-196.
+ * Empty per-`(entityId, messageKey)` store — the world-less fallback (ADR-196).
+ * A render context built without a capability-bearing world uses this: every
+ * `get` is `undefined` (so `Choice` starts at counter 0) and `set` is a no-op.
+ * Used by the no-world / string-path pipelines and test stubs.
  */
 class EmptyTextStateStore implements TextStateStore {
   get(_entityId: EntityId, _messageKey: string): number | undefined {
     return undefined;
   }
   set(_entityId: EntityId, _messageKey: string, _value: number): void {
-    // ADR-196: no-op until the deterministic text-state store lands.
+    // No backing capability — nothing to persist.
+  }
+}
+
+/** The `textState` map shape (ADR-196 §4): `{ [entityId]: { [messageKey]: number } }`. */
+type TextStateData = Record<string, Record<string, number>>;
+
+/**
+ * The persistent per-`(entityId, messageKey)` text-state store (ADR-196 §4).
+ *
+ * Backed by the `textState` world capability, which serializes with the world —
+ * so a `Choice`'s cycle index / trigger count / sticky pick survives turns and
+ * save/restore (S13–S14). The engine registers the capability at setup
+ * (`game-engine.ts`); this store also self-registers defensively so it works in
+ * tests and standalone render contexts.
+ *
+ * A world that does not expose the optional capability accessors degrades to the
+ * empty-store behavior (no persistence) — AC-9.
+ */
+export class WorldTextStateStore implements TextStateStore {
+  constructor(private readonly world: WorldModelLike) {}
+
+  get(entityId: EntityId, messageKey: string): number | undefined {
+    const data = this.world.getCapability?.(TEXT_STATE_CAPABILITY) as TextStateData | undefined;
+    return data?.[entityId]?.[messageKey];
+  }
+
+  set(entityId: EntityId, messageKey: string, value: number): void {
+    // Degrade silently when the world has no capability surface (AC-9 / world-less).
+    if (!this.world.updateCapability || !this.world.getCapability) return;
+    // Defensive self-register: the engine registers `textState` at setup, but a
+    // standalone/test world may not. Guarded so we never double-register.
+    if (this.world.hasCapability?.(TEXT_STATE_CAPABILITY) === false) {
+      this.world.registerCapability?.(TEXT_STATE_CAPABILITY, { initialData: {} });
+    }
+    const data = (this.world.getCapability(TEXT_STATE_CAPABILITY) as TextStateData | undefined) ?? {};
+    // Merge into this entity's submap, preserving its other message keys; other
+    // entities' submaps are untouched (updateCapability Object.assigns the top key).
+    const forEntity = { ...(data[entityId] ?? {}), [messageKey]: value };
+    this.world.updateCapability(TEXT_STATE_CAPABILITY, { [entityId]: forEntity });
   }
 }
 
@@ -172,16 +231,20 @@ export type RenderContextFactory = (
  * @param world the read-only render world (see {@link createRenderWorld})
  * @param settings the locale realization settings for this turn
  * @param narrative the player id + narrative person for verb agreement (ADR-199 §4 B)
+ * @param textState the persistent text-state store backing `Choice` (ADR-196 §4);
+ *   defaults to the empty store for world-less / string-path callers
  * @returns a factory that yields a `RenderContext` for a message's params
  */
 export function createRenderContextFactory(
   world: RenderWorld,
   settings: LocaleSettings,
   narrative: NarrativeAgreement,
+  textState: TextStateStore = new EmptyTextStateStore(),
 ): RenderContextFactory {
-  // Per-turn seams: shared across every message rendered this turn.
+  // Per-turn seams: shared across every message rendered this turn. `textState`
+  // is the ONE persistent seam (ADR-196) — it lives in the world capability, not
+  // the turn; the others (reference, slots) are turn-scoped.
   const reference = new TurnReferenceContext();
-  const textState = new EmptyTextStateStore();
   const slots = new TurnSlotStore();
   const contribute = (
     slotKey: string,

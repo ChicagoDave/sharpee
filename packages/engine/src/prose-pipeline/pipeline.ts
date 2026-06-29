@@ -31,6 +31,7 @@ import { sortEventsForProse } from './stages/sort';
 import {
   createRenderWorld,
   createRenderContextFactory,
+  WorldTextStateStore,
   type WorldModelLike,
 } from './render-context';
 
@@ -106,6 +107,9 @@ export class ProsePipeline implements IProsePipeline {
             person: this.languageProvider.getNarrativePerson?.() ?? 'third',
             playerId: this.world.getPlayer()?.id,
           },
+          // ADR-196: persistent text-state store backed by the world's `textState`
+          // capability — survives save/restore, unlike the turn-scoped seams.
+          new WorldTextStateStore(this.world),
         )
       : undefined;
 

@@ -221,6 +221,12 @@ export class GameEngine {
     this.world.registerCapability(StandardCapabilities.COMMAND_HISTORY, {
       schema: CommandHistoryCapabilitySchema
     });
+    // ADR-196: persistent text-state store backing deterministic `Choice` variation.
+    // Free-form `{ [entityId]: { [messageKey]: number } }` map (no per-field schema —
+    // the keys are dynamic entity ids). Serializes with the world for save/restore.
+    this.world.registerCapability(StandardCapabilities.TEXT_STATE, {
+      initialData: {}
+    });
     this.config = {
       maxHistory: 100,
       validateEvents: true,

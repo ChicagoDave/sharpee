@@ -37,6 +37,13 @@ export const StandardCapabilities = {
   GAME_META: 'gameMeta',
   COMMAND_HISTORY: 'commandHistory',
   DEBUG: 'debug',
+  /**
+   * Persistent per-`(entityId, messageKey)` text-state counters backing
+   * deterministic `Choice` variation (ADR-196). Data shape:
+   * `{ [entityId]: { [messageKey]: number } }`. Serializes with the world so
+   * cycling/first-time positions survive save/restore.
+   */
+  TEXT_STATE: 'textState',
 } as const;
 
 export type StandardCapabilityName = typeof StandardCapabilities[keyof typeof StandardCapabilities];
