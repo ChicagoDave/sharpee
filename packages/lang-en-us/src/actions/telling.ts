@@ -27,14 +27,14 @@ export const tellingLanguage = {
 
     // Responses - interested
     'interested': "{capitalize the target} listens with interest.",
-    'very_interested': "{capitalize the target} says, \"Really? Tell me more!\"",
-    'grateful': "{capitalize the target} says, \"Thank you for telling me!\"",
-    'already_knew': "{capitalize the target} says, \"Yes, I'm aware of that.\"",
+    'very_interested': "{capitalize the target} {verb:says target}, \"Really? Tell me more!\"",
+    'grateful': "{capitalize the target} {verb:says target}, \"Thank you for telling me!\"",
+    'already_knew': "{capitalize the target} {verb:says target}, \"Yes, I'm aware of that.\"",
 
     // Responses - not interested
     'not_interested': "{capitalize the target} doesn't seem interested.",
     'bored': "{capitalize the target} looks bored.",
-    'dismissive': "{capitalize the target} says, \"So what?\"",
+    'dismissive': "{capitalize the target} {verb:says target}, \"So what?\"",
     'ignores': "{capitalize the target} ignores what {you're} saying."
   },
   
