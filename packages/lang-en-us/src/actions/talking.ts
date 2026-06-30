@@ -31,13 +31,13 @@ export const talkingLanguage = {
 
     // Success messages - first meeting
     'first_meeting': "{You} {introduce} {yourself} to {the target}.",
-    'greets_back': "{capitalize the target} says, \"Hello there!\"",
-    'formal_greeting': "{capitalize the target} says, \"Good day to you.\"",
-    'casual_greeting': "{capitalize the target} says, \"Hey!\"",
+    'greets_back': "{capitalize the target} {verb:says target}, \"Hello there!\"",
+    'formal_greeting': "{capitalize the target} {verb:says target}, \"Good day to you.\"",
+    'casual_greeting': "{capitalize the target} {verb:says target}, \"Hey!\"",
 
     // Success messages - subsequent meetings
-    'greets_again': "{capitalize the target} says, \"Hello again.\"",
-    'remembers_you': "{capitalize the target} says, \"Ah, it's you again.\"",
+    'greets_again': "{capitalize the target} {verb:says target}, \"Hello again.\"",
+    'remembers_you': "{capitalize the target} {verb:says target}, \"Ah, it's you again.\"",
     'friendly_greeting': "{capitalize the target} smiles in recognition.",
 
     // Success messages - with topics

@@ -25,21 +25,21 @@ export const askingLanguage = {
     // NPCs render without article ("Floyd", not "The Floyd").
 
     // Success messages - unknown topic
-    'unknown_topic': "{capitalize the target} says, \"I don't know anything about that.\"",
+    'unknown_topic': "{capitalize the target} {verb:says target}, \"I don't know anything about that.\"",
     'shrugs': "{capitalize the target} shrugs.",
-    'no_idea': "{capitalize the target} says, \"No idea what you're talking about.\"",
+    'no_idea': "{capitalize the target} {verb:says target}, \"No idea what you're talking about.\"",
     'confused': "{capitalize the target} looks confused.",
 
     // Success messages - known topic
-    'responds': "{capitalize the target} tells you about {verbatim:topic}.",
-    'explains': "{capitalize the target} explains about {verbatim:topic}.",
-    'already_told': "{capitalize the target} says, \"I already told you about that.\"",
-    'remembers': "{capitalize the target} says, \"Ah yes, about {verbatim:topic}...\"",
+    'responds': "{capitalize the target} {verb:tells target} you about {verbatim:topic}.",
+    'explains': "{capitalize the target} {verb:explains target} about {verbatim:topic}.",
+    'already_told': "{capitalize the target} {verb:says target}, \"I already told you about that.\"",
+    'remembers': "{capitalize the target} {verb:says target}, \"Ah yes, about {verbatim:topic}...\"",
 
     // Success messages - conditional responses
-    'not_yet': "{capitalize the target} says, \"I can't tell you about that yet.\"",
-    'must_do_first': "{capitalize the target} says, \"There's something you need to do first.\"",
-    'earned_trust': "{capitalize the target} says, \"Since you've proven yourself, I'll tell you...\""
+    'not_yet': "{capitalize the target} {verb:says target}, \"I can't tell you about that yet.\"",
+    'must_do_first': "{capitalize the target} {verb:says target}, \"There's something you need to do first.\"",
+    'earned_trust': "{capitalize the target} {verb:says target}, \"Since you've proven yourself, I'll tell you...\""
   },
   
   help: {
