@@ -49,6 +49,16 @@ export const PresenceMessages = {
   RABBITS: 'zoo.presence.rabbits',
 } as const;
 
+// ADR-196 dynamic-text consumers. Each template embeds a phrase-valued param the
+// story binds at emit time (no in-string control flow — ADR-196 §5):
+//   GATE_STATUS  references `{openClause}` — an `Optional` gated on the gate state.
+//   PARROT_FLAVOR references `{parrotCycle}` (a cycling `Choice`) and `{parrotAside}`
+//                 (a firstTime `Choice` whose second alternative is `Empty`).
+export const DynamicTextMessages = {
+  GATE_STATUS: 'zoo.gate.status',       // C1 — Optional (S9–S10)
+  PARROT_FLAVOR: 'zoo.parrot.flavor',   // C2 — Choice (S12–S14)
+} as const;
+
 
 // ============================================================================
 // REGISTER ALL MESSAGES
@@ -115,4 +125,19 @@ export function registerMessages(language: LanguageProvider): void {
 
   language.addMessage(AfterHoursMessages.SNAKE_CANDID,
     'A soft, sibilant voice drifts from behind the glass of the snake enclosure. "Ssso... you\'re the one who stayed. Good. Do you know what it\'s like in here? They keep the lights on \'dim\' and call it \'nocturnal.\' I haven\'t seen actual moonlight in three years. Three. Years."');
+
+  // --- ADR-196 dynamic text (C1 Optional, C2 Choice) ---
+  //
+  // GATE_STATUS is a single Sequence: the `{openClause}` Optional sits mid-sentence
+  // so its absence (gate closed) leaves no dangling comma — the Assembler absorbs
+  // the Empty and the period attaches cleanly (AC-2). When present (gate open) the
+  // clause renders inline before the period (AC-1).
+  language.addMessage(DynamicTextMessages.GATE_STATUS,
+    'The staff gate is set into the fence{openClause}.');
+
+  // PARROT_FLAVOR concatenates two Choice params. `{parrotCycle}` is a full
+  // sentence that cycles each examine; `{parrotAside}` is a firstTime aside whose
+  // leading space lives inside its first alternative, so once it flips to Empty the
+  // line ends cleanly with no trailing space.
+  language.addMessage(DynamicTextMessages.PARROT_FLAVOR, '{parrotCycle}{parrotAside}');
 }

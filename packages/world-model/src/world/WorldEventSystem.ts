@@ -91,6 +91,12 @@ export class WorldEventSystem {
   // Event chaining (ADR-094)
   private eventChains = new Map<string, ChainRegistration[]>();
 
+  // Trigger types whose single chain-dispatcher is already wired into the
+  // processor. `executeChains(triggerType)` fans out to EVERY chain for the type,
+  // so exactly one dispatcher per type must be registered — wiring it once per
+  // `chainEvent` call would replay every chain N times. Reset on (re)connect.
+  private wiredChainTriggers = new Set<string>();
+
   /**
    * Set the world reference used when invoking handlers.
    * Called by WorldModel after construction.
@@ -165,6 +171,8 @@ export class WorldEventSystem {
    */
   connectEventProcessor(wiring: IEventProcessorWiring): void {
     this.eventProcessorWiring = wiring;
+    // Fresh processor connection — forget what was wired into any prior one.
+    this.wiredChainTriggers.clear();
 
     for (const [eventType, handler] of this.eventHandlers) {
       this.wireHandlerToProcessor(eventType, handler);
@@ -233,6 +241,11 @@ export class WorldEventSystem {
 
   private wireChainToProcessor(triggerType: string): void {
     if (!this.eventProcessorWiring) return;
+    // Idempotent: one dispatcher per trigger type. The dispatcher runs
+    // executeChains(), which already iterates every chain registered for the
+    // type, so additional chainEvent() calls must NOT add more dispatchers.
+    if (this.wiredChainTriggers.has(triggerType)) return;
+    this.wiredChainTriggers.add(triggerType);
 
     this.eventProcessorWiring.registerHandler(triggerType, (event) => {
       const chainedEvents = this.executeChains(triggerType, event);

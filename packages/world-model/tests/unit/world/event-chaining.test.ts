@@ -400,6 +400,25 @@ describe('Event Chaining (ADR-094)', () => {
 
       expect(chainedEvents).toHaveLength(1);
     });
+
+    it('wires ONE dispatcher per trigger type for multiple same-type chains added after connect (idempotent)', () => {
+      // Regression: each post-connect chainEvent() call previously registered a
+      // fresh processor dispatcher, and every dispatcher replays ALL chains for
+      // the type — so two same-type chains fired each chain twice (4 events) and
+      // a textState/Choice counter double-advanced. Wiring must be idempotent.
+      world.connectEventProcessor(mockWiring);
+
+      world.chainEvent('if.event.examined', () => ({ type: 'if.event.a', data: {} }), { key: 'k.a' });
+      world.chainEvent('if.event.examined', () => ({ type: 'if.event.b', data: {} }), { key: 'k.b' });
+
+      // Exactly one processor dispatcher registered for the trigger type.
+      expect(registeredHandlers.get('if.event.examined')).toHaveLength(1);
+
+      // Each chain fires exactly once → 2 events, not 4.
+      const chainedEvents = invokeHandlers('if.event.examined', createTestEvent('if.event.examined', {}));
+      expect(chainedEvents).toHaveLength(2);
+      expect(chainedEvents.map(e => e.type).sort()).toEqual(['if.event.a', 'if.event.b']);
+    });
   });
 
   describe('world.clear()', () => {

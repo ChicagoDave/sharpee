@@ -1,0 +1,38 @@
+title: Persistent Choice (ADR-196 C2)
+story: friendly-zoo
+description: Parrot flavor cycles through variants with a once-only aside, and the cycle position survives save → restore via the persistent textState store (S12–S14, AC-8 end-to-end, AC-13).
+---
+
+# To the aviary, where the scarlet macaw lives.
+> south
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+# Examine 1 — cycle variant 0 + the first-time aside.
+> examine parrot
+[OK: contains "whistles a jaunty tune"]
+[OK: contains "rescues from the illegal pet trade"]
+
+# Examine 2 — cycle variant 1; the once-only aside is now gone.
+> examine parrot
+[OK: contains "Pretty bird"]
+[OK: not contains "rescues from the illegal pet trade"]
+
+# Save with the cycle counter at 2.
+$save parrot-mid
+
+# Examine 3 — cycle variant 2 (advances the live counter to 3).
+> examine parrot
+[OK: contains "theatrical disdain"]
+
+# Restore: the world (and its textState counter) goes back to 2.
+$restore parrot-mid
+
+# Examine again — resumes at variant 2 ("theatrical disdain"), proving the
+# counter persisted in the save. A non-persisted counter would reset to 0 and
+# show variant 0 ("whistles a jaunty tune") instead.
+> examine parrot
+[OK: contains "theatrical disdain"]
+[OK: not contains "whistles a jaunty tune"]

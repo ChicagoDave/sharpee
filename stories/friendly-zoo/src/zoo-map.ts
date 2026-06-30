@@ -39,7 +39,7 @@ export interface RoomIds {
 // MAP CREATION
 // ============================================================================
 
-export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: string } {
+export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: string; gateId: string } {
   const { room, object, door } = createHelpers(world);
 
   // --- Rooms ---
@@ -94,7 +94,7 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
     .in(entrance)
     .build();
 
-  door('staff gate')
+  const staffGate = door('staff gate')
     .description('A sturdy metal gate with a "STAFF ONLY" sign.')
     .aliases('gate', 'staff gate', 'metal gate', 'staff door')
     .between(mainPath, supplyRoom, Direction.SOUTH)
@@ -183,5 +183,6 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
       giftShop: giftShop.id,
     },
     keycardId: keycard.id,
+    gateId: staffGate.id,
   };
 }

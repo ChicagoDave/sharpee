@@ -5,7 +5,27 @@
 - Draft, review, and begin implementing **ADR-196 — Optional / Choice Atoms & the Text-State Store** (the next phrase-algebra atom after ADR-195 Slot).
 - Land Phases 1–3 (if-domain contract → persistent store → Assembler realization) with green builds/tests at each step.
 
-## Status: IN PROGRESS — Phases 1–4 COMPLETE; Phase 4 coded + tested (uncommitted); Phase 5 remaining
+## Status: IN PROGRESS — Phases 1–5 COMPLETE; Phase 4 committed (`24b9a884`); Phase 5 coded + green (uncommitted)
+
+### Phase 5 — Friendly Zoo consumers C1 (Optional) + C2 (Choice) — DONE (uncommitted)
+
+Story-level (autonomous). Both consumers fire off `if.event.examined` and emit a custom-typed event carrying a phrase-valued param; the prose pipeline realizes it through the textState-backed Assembler (ADR-097 domain-message path).
+
+- **C1 — Optional (S9–S10):** examining the **staff gate** emits `zoo.event.gate_status` → template `"The staff gate is set into the fence{openClause}."` where `openClause` is an `Optional` whose `present` is read from `OpenableBehavior.isOpen(gate)` at emit time. Closed → clause absorbed, clean period (AC-2); open → ", standing wide open" inline (AC-1).
+- **C2 — Choice (S12–S14):** examining the **parrot** emits `zoo.event.parrot_flavor` → template `"{parrotCycle}{parrotAside}"`: `parrotCycle` a `cycling` Choice (3 variants), `parrotAside` a `firstTime` Choice (alt[1]=Empty), both keyed `(parrotId, 'parrot-cycle'|'parrot-aside')`. Distinct keys avoid within-turn collision.
+- Files: new `src/dynamic-text.ts` (phrase constructors + `registerDynamicText` with **two independent chains**, gate + parrot); `zoo-map.ts` returns `gateId`; `index.ts` captures `gateId` + calls registrar; `language.ts` adds `DynamicTextMessages` + two templates.
+- Transcripts: `walkthroughs/wt-04-optional.transcript` (gate 0/1), `wt-05-choice-cycle.transcript` (cycle + **save → restore → resume at variant 2**, AC-8 e2e). Both green; smoke + entrance-initial still green (20/20 across 4 transcripts).
+- Verified via `--verbose`: examine shows the base description AND the flavor line as separate lines; exactly one reaction per examine; cycle resumes at "theatrical disdain" after restore (a non-persisted counter would reset to variant 0).
+
+#### Finding A — platform bug, FIXED properly (The Sharpee Way, not worked around)
+
+`WorldEventSystem.wireChainToProcessor` (`packages/world-model/src/world/WorldEventSystem.ts`) was **not idempotent**: `chainEvent` called it once per registration, and each call registered a *new* processor dispatcher that runs `executeChains` over **all** chains for that trigger type. So registering **two chains on the same trigger type after `connectEventProcessor`** made every chain for that type fire **twice** (flagged via `if.event.error` "Multiple game.message reactions"; silently doubled a Choice counter otherwise). No existing story hit it (their chains are on distinct types); it surfaced when wt-04+wt-05 ran in one invocation.
+
+**Fix (platform, user-directed):** added a `wiredChainTriggers: Set<string>` — `wireChainToProcessor` registers at most one dispatcher per trigger type (the dispatcher already fans out to all chains); reset on (re)connect. Regression test `event-chaining.test.ts` "wires ONE dispatcher per trigger type … (idempotent)". world-model **1297 pass**, event-processor 18, engine 457 — all green. The story now registers **two natural, independent chains** (gate + parrot), the way the architecture intends — the earlier single-dispatcher merge was the workaround and is gone.
+
+#### Finding B (design note)
+
+Returning `type: 'game.message'` from a chain triggers ADR-106 **message-override** semantics (the reaction replaces the triggering event's messageId) and conflicts when there are 2+. Use a **custom event type** (`zoo.event.*`) + `{messageId, params}` to render as a separate line via the ADR-097 domain-message path — that's the idiomatic story pattern and preserves the examine description.
 
 ### Phase 4 — room first-visit bugfix (S14) — DONE (uncommitted)
 

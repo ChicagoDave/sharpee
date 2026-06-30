@@ -92,6 +92,7 @@ import {
   createGoatBleatingDaemon, createVictoryDaemon, createAfterHoursDaemons,
 } from './events.js';
 import { registerMessages, FeedMessages, PhotoMessages, PetMessages, PresenceMessages } from './language.js';
+import { registerDynamicText } from './dynamic-text.js';
 
 
 // ============================================================================
@@ -263,6 +264,7 @@ class FriendlyZooStory implements Story {
   private roomIds!: RoomIds;
   private itemIds!: ItemIds;
   private characterIds!: CharacterIds;
+  private gateId!: string;
 
   createPlayer(world: WorldModel): IFEntity {
     const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -276,8 +278,9 @@ class FriendlyZooStory implements Story {
     world.setMaxScore(MAX_SCORE);
 
     // Build the zoo from our separate files
-    const { rooms, keycardId: _keycardId } = createZooMap(world);
+    const { rooms, keycardId: _keycardId, gateId } = createZooMap(world);
     this.roomIds = rooms;
+    this.gateId = gateId;
 
     this.itemIds = createZooItems(world, rooms);
     this.characterIds = createCharacters(world, rooms);
@@ -393,6 +396,9 @@ class FriendlyZooStory implements Story {
       getRunnerState(): Record<string, unknown> { return { behaviorSwapped }; },
       restoreRunnerState(state: Record<string, unknown>): void { behaviorSwapped = (state.behaviorSwapped as boolean) ?? false; },
     });
+
+    // --- ADR-196 dynamic-text consumers (C1 Optional, C2 Choice) ---
+    registerDynamicText(world, { gateId: this.gateId, parrotId: this.characterIds.parrot });
 
     // --- Scoring event chains (from V16) ---
 
