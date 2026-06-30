@@ -333,6 +333,133 @@ does. Every gap below is *unbuilt plumbing*, not an architectural ceiling.
 
 ---
 
+## L. Dialogue & speech emission  ← **the cross-cutting composition gap**
+
+NPC speech is not a *new* primitive — it **composes** the atoms above (pronouns F,
+verb agreement G, variation D, conditional C, case A). But it composes them in a
+distinct shape — *someone says something* — and that shape exposes invariants the
+description scenarios never hit, because description rarely starts a sentence with a
+pronoun, embeds a quoted sentence, or conjugates an arbitrary speech verb. These were
+never enumerated, which is how the pronoun-capitalization gap reached "aspirational
+prose in ADR-197" instead of an acceptance criterion. The stdlib `talking` action
+(`lang-en-us/actions/talking.ts`) is the live reference: it shows what authors do today
+(hardcode literal `says, "…"`) and where the seams are.
+
+### S39. Speech attribution / dialogue tag ◐
+- **Invariant:** the attributive verb of a dialogue tag agrees in number/person with
+  the speaker ("the guard **says**" / "the guards **say**" / "you **say**"), and the
+  speaker's name/reference is rendered through the normal article+case chain.
+- **Want:** "The merchant says, …" ; "The twins say, …" ; "You say, …".
+- **I7:** "[The speaker] [say]" — adaptive speech verb across person/number.
+- **Sharpee:** ◐ the machinery exists but the dialogue templates don't use it. The
+  `Verb` atom (ADR-199) conjugates an arbitrary lemma to the subject's number/person
+  (`{verb:says target}` → "say" for a plural speaker via `regularPluralVerb`,
+  english-assembler.ts:162–218). But the standard templates **hardcode the literal
+  "says"** (`talking.ts:34–40`), which is only correct for a 3rd-singular speaker —
+  a plural or 2nd-person speaker reads wrong. **Tense** is not adaptive (no past-tense
+  "said" — that's S28, deferred).
+- **Mitigation:** swap the literal speech verbs in the dialogue catalog for
+  `{verb:<lemma> <speaker>}` (uses ADR-199; no platform change). Past-tense narration
+  stays folded into S28.
+
+### S40. Sentence-initial pronoun capitalization ✗  ← **the flagged gap**
+- **Invariant:** a sentence (or quoted sentence) that *begins* with a pronoun
+  capitalizes it — "**He** says…", "**They** reply…", "'**She**'ll know,' he adds."
+- **Want:** "The guard turns. **He** says, …" rather than "…turns. he says, …".
+- **I7:** sentence casing is automatic; `[They]` capitalizes.
+- **Sharpee:** ✗ `{capitalize …}` is a **NounPhrase-only** hint (english-assembler.ts:141–142);
+  the `Pronoun` atom has no capitalize path (`renderPronoun` returns the bare table form,
+  english-assembler.ts:396–402) and `{capitalize pronoun:subject}` throws; there is **no
+  auto sentence-start capitalization** (`capitalizeSentenceStart` is invoked *only* by the
+  `np.capitalize` hint at :142, never at block/sentence start). Dialogue is where this
+  bites hardest because so many narrated sentences open with a pronoun. This is the
+  "aspirational" note in ADR-197 and the cap-gap follow-up from session 2026-06-29.
+- **Mitigation → ADR-G:** either (a) honor `capitalize` on the `Pronoun` atom (carry the
+  flag, apply `capitalizeSentenceStart` in `renderPronoun`), or (b) auto-capitalize the
+  first alphabetic glyph of each rendered sentence/quoted clause. (a) is the smaller,
+  more predictable change and matches the existing per-atom case authority.
+
+### S41. Speaker / addressee pronoun reference ◐
+- **Invariant:** within and across dialogue, the speaker and the addressed player render
+  as the correct **case** pronoun — subject vs object vs possessive — agreeing in
+  number/gender ("**she** tells **you**", "you ask **him**", "it was **his** idea").
+- **Want:** "You ask the guard about the bridge. **He** shrugs. You press **him**."
+- **I7:** pronoun bookkeeping + `[the noun]`/`[him]`.
+- **Sharpee:** ◐ the `{pronoun:case}` atom (ADR-197) resolves the **last-mentioned**
+  referent in any case (subject/object/possessive/reflexive — `PRONOUNS` table +
+  `noteReference`/`lastMentioned`, english-assembler.ts:368–402) and the player viewpoint
+  is handled by the perspective resolver (`{you}`, S23). Gaps: (1) last-mentioned is
+  per-render-block, so cross-line/cross-turn antecedents are not yet tracked; (2) general
+  **output object pronouns** for arbitrary objects remain the S24/S25 gap; (3) a
+  sentence-initial reference still hits S40.
+- **Mitigation → ADR-D** (output object/gender pronouns) + ADR-G for the cross-line
+  last-mentioned scope; data already exists on `ActorTrait.pronouns` (actorTrait.ts:10).
+
+### S42. Quote punctuation & the embedded quoted sentence ✗
+- **Invariant:** a quoted utterance composes with its tag under one punctuation rule —
+  comma before an opening quote in a leading tag, terminal punctuation **inside** the
+  closing quote, the first quoted word capitalized, and no doubled/again-stripped marks
+  when the utterance itself is dynamic.
+- **Want:** from one template + a dynamic utterance param: `She says, "The bridge is
+  out."` / `"The bridge is out," she says.` / `"Is it?" he asks.` — correct commas and
+  capital regardless of which utterance string is bound.
+- **I7:** quotation handling / smart casing inside say-text.
+- **Sharpee:** ✗ no quote machinery. Quotes, the attaching comma, and the inner capital
+  are **literal characters the author types** (`talking.ts:34` — `says, \"Hello
+  there!\"`). Fine for a fixed line; brittle the moment the utterance is a bound param,
+  a `Choice` variant, or an `Optional` (the author must hand-manage the comma/cap/period
+  across every branch).
+- **Mitigation → ADR-G:** a `{quote:<utterance>}` (or tag-aware speech) producer that
+  owns the surrounding comma, the inner sentence-cap, and terminal-punctuation-inside —
+  the dialogue analogue of how the list formatter owns serial commas.
+
+### S43. Direct vs reported (indirect) speech ✗
+- **Invariant:** the same semantic utterance can render as **direct** ("'The gate is
+  locked,' she says.") or **reported** ("She tells you that the gate is locked."), and
+  the reported form shifts pronouns/tense/deixis correctly.
+- **I7:** authored separately; no automatic transform.
+- **Sharpee:** ✗ no machinery; an author writes each form as its own message. The
+  pronoun/tense shifting a true transform needs is out of scope today (tense ⇒ S28).
+- **Mitigation:** **defer** (note in ADR-G as out-of-scope); revisit only if multi-tense
+  narration (S28) is taken on.
+
+### S44. State- / topic-conditional dialogue lines ◐
+- **Invariant:** which line an NPC emits varies by conversation state (have we met?
+  is this topic known/exhausted?) without exploding into hand-selected message IDs for
+  every combination.
+- **Want:** greet warmly if met before; offer a topic only while it's undiscussed.
+- **I7:** `[if]…[end if]` against world/relationship state, inline in the say-text.
+- **Sharpee:** ◐ branching lives in **code** today — the action picks the messageId
+  (`talking.ts` carries `first_meeting` / `greets_again` / `remembers_you` /
+  `nothing_to_say` variants; conversation state per ADR-018 / ADR-142). Inline
+  conditional prose is the S9 gap (ADR-B); fine-grained variation is now also
+  expressible with the ADR-196 `Optional`/`Choice` atoms keyed by `(speakerId, key)`.
+- **Mitigation → ADR-B** (inline conditional) for in-template branching; otherwise the
+  code-layer selection is idiomatic and already works.
+
+### S45. First-time vs repeated dialogue (greet-once, then vary) ◐→✓
+- **Invariant:** an NPC's line differs on first contact, then advances/cycles/sticks on
+  repeat, **persisting per (speaker, message-key) across turns and saves**.
+- **Want:** first "Hello, stranger." → then cycle "What now?" / "Yes?" / "Still here?".
+- **I7:** `[first time]…[only]`, `[cycling]`.
+- **Sharpee:** ◐→✓ previously ad-hoc booleans; **now buildable** with the ADR-196
+  `Choice` atom (`firstTime`/`cycling`/`sticky` selectors) over the persistent
+  text-state store keyed by `(speakerId, messageKey)`. This is S13/S14 realized for the
+  dialogue case — worth an explicit dialogue example so authors don't re-invent it.
+- **Mitigation:** none new — document the pattern (author guide); the platform piece
+  shipped with ADR-196.
+
+### S46. Name-then-pronoun alternation (anti-repetition) ◐
+- **Invariant:** the first reference to a speaker in a passage uses the name; subsequent
+  references switch to a pronoun, to avoid "The guard… the guard… the guard…".
+- **Want:** "The guard scowls. **He** says, … Then **he** turns away."
+- **Sharpee:** ◐ `{the speaker}` then `{pronoun:subject}` composes via the last-mentioned
+  `note()` (ADR-197, english-assembler.ts:360–402), but only within one render block
+  (see S41 scope gap), and a sentence-initial pronoun still needs S40.
+- **Mitigation → S40 + S41** (no separate work once those land).
+
+---
+
 ## Summary matrix
 
 | ID | Scenario | Status | Mitigation → ADR |
@@ -359,6 +486,14 @@ does. Every gap below is *unbuilt plumbing*, not an architectural ceiling.
 | S34–S35 | Breaks / indent / center | ✓ | — |
 | S36–S37 | Verbatim / preformatted block | ✗ | **ADR-E** |
 | S-append | Compositional / appendable output (deferred close) | ✗ | **ADR-F** |
+| S39 | Speech-attribution verb agreement | ◐ (atom exists, templates hardcode) | **ADR-G** (use ADR-199) |
+| S40 | Sentence-initial pronoun capitalization | ✗ | **ADR-G** |
+| S41 | Speaker/addressee pronoun reference | ◐ | ADR-G + ADR-D |
+| S42 | Quote punctuation / embedded quoted sentence | ✗ | **ADR-G** |
+| S43 | Direct vs reported speech | ✗ | defer (ADR-G note) |
+| S44 | State/topic-conditional dialogue | ◐ (code-layer) | ADR-B |
+| S45 | First-time / cycling dialogue | ◐→✓ (ADR-196) | document only |
+| S46 | Name-then-pronoun alternation | ◐ | S40 + S41 |
 
 ---
 
@@ -388,6 +523,16 @@ does. Every gap below is *unbuilt plumbing*, not an architectural ceiling.
   channel model. *Load-bearing decision: does a contributor supply bare clause content
   (slot owns lead-in/connective) or its own connective — the former keeps punctuation
   clean.*
+- **ADR-G — Dialogue & speech emission.** The composition layer for NPC speech. Net-new
+  pieces: (1) **sentence-initial pronoun capitalization** — honor `capitalize` on the
+  `Pronoun` atom (or auto-cap sentence/quote starts), closing the ADR-197 cap-gap (S40);
+  (2) a **quote/speech-tag producer** that owns the attaching comma, the inner sentence
+  capital, and terminal-punctuation-inside-the-quote across dynamic utterances (S42);
+  (3) **cross-line last-mentioned scope** so name→pronoun alternation survives beyond one
+  render block (S41/S46). Reuses ADR-199 for speech-verb agreement (S39 — fix the stdlib
+  `talking` templates to use `{verb:…}`), ADR-D for output object pronouns, and ADR-196's
+  Choice for first-time/cycling lines (S45 — document, don't rebuild). Reported speech
+  (S43) is explicitly **out of scope** pending S28.
 - **Minor:** number-to-words / ordinal formatters (S30); adaptive tense/person (S28) —
   defer unless multi-tense narration becomes a goal.
 
@@ -406,3 +551,12 @@ does. Every gap below is *unbuilt plumbing*, not an architectural ceiling.
 - **`IdentityTrait.adjectives` is dead data (S5).** Declared and set by stories (e.g.
   Dungeo's trap door `adjectives: ['trap']`) but never consumed by any formatter — it
   silently does nothing today.
+- **Speech verbs are hardcoded literals in the dialogue catalog (S39).** `talking.ts:34–40`
+  writes the literal `says` rather than `{verb:says target}`, so a non-3rd-singular
+  speaker (plural twins, 2nd-person narration) reads ungrammatically. The ADR-199 atom
+  already conjugates correctly; the catalog just doesn't call it. Low-risk near-term fix
+  independent of ADR-G.
+- **Pronouns can't be capitalized (S40).** `{capitalize pronoun:subject}` throws and there
+  is no auto sentence-start cap, so the `{pronoun:case}` atom cannot open a sentence — the
+  exact case dialogue narration leans on ("He says…"). The "compose `{capitalize}` over
+  the pronoun" prose in ADR-197 is aspirational; this is the load-bearing item for ADR-G.
