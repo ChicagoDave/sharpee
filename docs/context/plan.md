@@ -105,7 +105,7 @@ reconciliation pass is new. Phase 5 is contained to the parser.
 
 - **Follow-up (out of scope for Phase 1)**: other catalogs still hardcode attribution `says` and should get the same `{verb:…}` treatment in a later slice — `packages/lang-en-us/src/npc/npc.ts`, `packages/lang-en-us/src/actions/giving.ts`, `stories/dungeo/src/regions/endgame.ts`.
 
-- **Status**: DONE (build verification deferred)
+- **Status**: DONE — merged to `main` (merge commit `8ce5b01b`; build verification deferred)
 
 ---
 
@@ -140,11 +140,13 @@ reconciliation pass is new. Phase 5 is contained to the parser.
   ADR-202 AC-2 (exempt helpers are token-local or whitespace-only).
 
 - **Exit state**:
-  - CI would catch a future structure-recovery regex addition in the assembler.
-  - Gate is green on the current codebase.
-  - `v2_adr201_p2` merged to `main`.
+  - CI would catch a future structure-recovery regex addition in the assembler. ✓ (self-check test plants a violation outside the allowlist and asserts it is flagged)
+  - Gate is green on the current codebase ("born compliant"). ✓
+  - Implemented as a Vitest structural test (no custom-ESLint-plugin infra exists; ADR-202 AC-1 permits "a lint rule **or** test"; a failing test reds CI). Uses the TS compiler AST for accurate enclosing-function scoping. File: `packages/lang-en-us/tests/assembler/structural-mandate.test.ts` (4 tests). Full lang-en-us suite 350 green.
+  - `./repokit build dungeo` — DEFERRED (same pre-existing stale-workspace blocker as Phase 1).
+  - `v2_adr201_p2` merge to `main`: pending user direction.
 
-- **Status**: PENDING
+- **Status**: DONE (build verification deferred)
 
 ---
 
@@ -203,7 +205,7 @@ reconciliation pass is new. Phase 5 is contained to the parser.
   - All packages compile; existing tests pass.
   - `v2_adr201_p3` merged to `main`.
 
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ---
 
@@ -298,9 +300,23 @@ reconciliation pass is new. Phase 5 is contained to the parser.
   **8. Update `renderToString`** to pass a neutral position default when calling `realizeToRuns`
   (internal calls for list items, slots, etc. do not carry sentence position).
 
+  **Edge case — author-supplied terminal punctuation / ellipsis (do NOT double-punctuate).**
+  Plain author prose with explicit newlines and ellipses is already handled outside this phase:
+  `splitRunsOnNewlines` lifts `\n` to block boundaries, `collapseWhitespace` normalizes only
+  horizontal whitespace, and per ADR-202 nothing scans prose for `.`/`...`. The new piece this
+  phase adds is the `Sentence`/`Quote` auto-terminal (`ownsTrailingPunct: terminal ?? '.'`). When
+  the realized content ALREADY ends in author terminal punctuation — `.`, `?`, `!`, or an ellipsis
+  `...`/`…` — the reconciliation pass must **suppress the default `.`** rather than append a second
+  mark (avoid `"...like this...."` / `"Really?!."`). Rule: emit the explicit `terminal` when the
+  author set one; otherwise default to `.` ONLY if the child's last glyph is not already terminal
+  punctuation or an ellipsis. This is metadata-driven (inspect the last run's own trailing glyph —
+  a node's-own-surface read, ADR-202-permitted), never a cross-output prose scan.
+
 - **Tests**:
   - Unit: Sentence realizes child with first-word cap and terminal period.
   - Unit: Quote over a Literal utterance yields `"Hello."` with period inside.
+  - Unit: Quote/Sentence over content already ending in `.`/`?`/`!`/`...`/`…` does NOT append a
+    second terminal (`"...like this..."` stays single-ellipsis; `"Really?"` stays single `?`).
   - Unit: Quote over a `Choice` utterance (one variant Empty) — absorbed Optional leaves no stray
     comma on the dialogue tag (AC-5).
   - Unit: Leading dialogue tag + Quote reconciliation: `She {verb:says actor}, {quote:line}` →
