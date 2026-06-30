@@ -120,9 +120,37 @@ Checked before starting "197": the entire ADR-192 phrase-algebra atom roadmap is
 
 `hashSeed`'s seed template literal (line 478) contained two **raw NUL bytes** (the `'\0'` ADR-196 mulberry32 separators written literally, not escaped), which tripped binary-file detection in grep/tools (rg flagged a `\0` at offset 21072). Replaced each raw NUL with the `\0` escape: `` `${entityId}\0${messageKey}\0${counter}` ``. Identical runtime seed (so seeded `random`/`sticky` Choice output is byte-identical) but pure-ASCII source. Verified: 0 NUL bytes remain, typecheck clean, lang-en-us **337/337** (incl. AC-6 random / AC-7 sticky).
 
+### Documentation planning for declarative output (dynamic text)
+
+- `docs/work/dynamic-text/prompts/` — Nano Banana Pro image-prompt storyboard, rebuilt
+  around **dynamic wins** with verified syntax after a critique pass (the first cut used
+  invalid inline `{optional:…}` and oversold static cases). Opener `00-catalog-migration.md`
+  frames the real scope: the **53-file lang-en-us catalog** was migrated from the colon-chain
+  formatter (`{the:cap:item}`, `{is:item}`) to phrase grammar (`{capitalize the item}`,
+  `{verb:is item}`), legacy formatter chain deleted (ADR-192 W7–W9).
+- `docs/work/dynamic-text/author-guide-outline.md` — Layer-2 author guide outline
+  (custom dynamic messages), each section led by the failure it prevents, all examples
+  dynamic; boundary drawn against code-bound Optional/Choice (Layer 3).
+- **Delimiter discussion** (`:` / `{}` / `[]` / `()` / `{{}}`): explored, **no change** —
+  current grammar kept as-is.
+
+#### Findings (verified against source, while resolving guide open items)
+
+- **Pronoun capitalization gap.** `{capitalize …}` is a NounPhrase-only hint;
+  `{capitalize pronoun:subject}` throws; no auto sentence-start capitalization. The
+  `{pronoun:case}` atom therefore cannot be capitalized — ADR-197's "compose `{capitalize}`
+  over the pronoun" prose is aspirational. **Platform follow-up:** add a pronoun capitalize
+  path or auto-cap sentence starts.
+- **Perspective is a pre-pass.** `renderMessage` runs `resolvePerspectivePlaceholders`
+  (ADR-089: `{You}`/`{take}`) on the raw string *before* `parsePhraseTemplate`. Two verb
+  mechanisms coexist: perspective `{take}` (agrees with player) vs atom `{verb:…}` (agrees
+  with subject param).
+
 ## Session Metadata
 
-- **Status**: COMPLETE — ADR-196 Phases 1–5 merged + pushed to `origin/main`; phrase-algebra atom roadmap confirmed complete; assembler NUL-byte hygiene fix.
+- **Status**: COMPLETE — ADR-196 Phases 1–5 merged + pushed; atom roadmap confirmed complete;
+  NUL-byte hygiene fix; dynamic-text documentation planning (prompts + author-guide outline).
 - **Blocker**: none
-- **Open items**: dungeo walkthroughs pre-existing broken (combat/chain-state; baseline 653 fail) — unrelated, flagged for separate investigation.
+- **Open items**: (1) dungeo walkthroughs pre-existing broken (combat/chain-state; baseline
+  653 fail) — unrelated. (2) Pronoun-capitalization platform gap (above) — decide a fix.
 - **Rollback Safety**: safe — all changes additive / behavior-preserving; no schema migration (absent `textState` capability ⇒ counter 0)
