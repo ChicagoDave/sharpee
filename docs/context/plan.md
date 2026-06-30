@@ -198,14 +198,15 @@ reconciliation pass is new. Phase 5 is contained to the parser.
 - **ACs satisfied**: Foundational for ADR-201 AC-1, AC-2, AC-8 (contract only; realization in Phase 4).
 
 - **Exit state**:
-  - `phrase.ts` has 15 union members and the pinned shapes from ADR-201 §2/§4.
-  - `RenderContext` has the optional `position` seam.
-  - `LocaleSettings` has quote-glyph knobs.
-  - No locale logic in `if-domain` (AC-10 boundary maintained).
-  - All packages compile; existing tests pass.
-  - `v2_adr201_p3` merged to `main`.
+  - `phrase.ts` has 15 union members and the pinned shapes from ADR-201 §2/§4. ✓ (Sentence, Quote added; both `extends PhraseBase` to match existing atoms)
+  - `Pronoun` gains `capitalize?: boolean`; `RenderContext` gains the optional `readonly position?: RenderPosition` seam. ✓
+  - `LocaleSettings` has `openQuote?`/`closeQuote?` knobs (fields only; `"` defaults are realizer-side, Phase 4). ✓
+  - `isSentence`/`isQuote` guards added; all exported via the `export * from './phrase'` barrel. ✓
+  - No locale logic in `if-domain` (boundary maintained). ✓
+  - Verification: if-domain typecheck + build clean; lang-en-us typecheck clean + full suite 350 green; stdlib typecheck clean + full suite 1286 green. (Refreshing the stale if-domain & world-model dist as part of this also cleared the pre-existing downstream stale-dist typecheck errors.) `./repokit build dungeo` still deferred (bootstrap/repokit blocker unchanged).
+  - `v2_adr201_p3` merge to `main`: pending user direction.
 
-- **Status**: CURRENT
+- **Status**: DONE (build verification via package typecheck/build + suites; dungeo deferred)
 
 ---
 
