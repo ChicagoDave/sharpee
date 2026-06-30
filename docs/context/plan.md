@@ -105,7 +105,7 @@ reconciliation pass is new. Phase 5 is contained to the parser.
 
 - **Follow-up (out of scope for Phase 1)**: other catalogs still hardcode attribution `says` and should get the same `{verb:…}` treatment in a later slice — `packages/lang-en-us/src/npc/npc.ts`, `packages/lang-en-us/src/actions/giving.ts`, `stories/dungeo/src/regions/endgame.ts`.
 
-- **Status**: DONE (build verification deferred)
+- **Status**: DONE — merged to `main` (merge commit `8ce5b01b`; build verification deferred)
 
 ---
 
@@ -140,11 +140,13 @@ reconciliation pass is new. Phase 5 is contained to the parser.
   ADR-202 AC-2 (exempt helpers are token-local or whitespace-only).
 
 - **Exit state**:
-  - CI would catch a future structure-recovery regex addition in the assembler.
-  - Gate is green on the current codebase.
-  - `v2_adr201_p2` merged to `main`.
+  - CI would catch a future structure-recovery regex addition in the assembler. ✓ (self-check test plants a violation outside the allowlist and asserts it is flagged)
+  - Gate is green on the current codebase ("born compliant"). ✓
+  - Implemented as a Vitest structural test (no custom-ESLint-plugin infra exists; ADR-202 AC-1 permits "a lint rule **or** test"; a failing test reds CI). Uses the TS compiler AST for accurate enclosing-function scoping. File: `packages/lang-en-us/tests/assembler/structural-mandate.test.ts` (4 tests). Full lang-en-us suite 350 green.
+  - `./repokit build dungeo` — DEFERRED (same pre-existing stale-workspace blocker as Phase 1).
+  - `v2_adr201_p2` merge to `main`: pending user direction.
 
-- **Status**: PENDING
+- **Status**: DONE (build verification deferred)
 
 ---
 
