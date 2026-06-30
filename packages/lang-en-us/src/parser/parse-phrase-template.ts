@@ -186,8 +186,11 @@ function parseNumber(inner: string, template: string, params: Record<string, unk
  * Parse a `{pronoun:case}` head into a `Pronoun` atom (ADR-197). The referent is
  * the last-mentioned entity (resolved at realize time); the single token is the
  * grammatical case. An unknown case fails at parse time (AC-11).
+ *
+ * `capitalize` (ADR-201 §2, from a `{capitalize pronoun:…}` head) sets the S40
+ * explicit override so the pronoun caps regardless of position.
  */
-function parsePronoun(inner: string, template: string): Phrase {
+function parsePronoun(inner: string, template: string, capitalize = false): Phrase {
   const rest = inner.slice(inner.indexOf(':') + 1).trim();
   const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
   if (tokens.length !== 1 || !PRONOUN_CASES.has(tokens[0])) {
@@ -197,7 +200,38 @@ function parsePronoun(inner: string, template: string): Phrase {
       'a pronoun takes one case: {pronoun:subject|object|possessive|possessive-pronoun|reflexive}',
     );
   }
-  return { kind: 'pronoun', case: tokens[0] as 'subject' | 'object' | 'possessive' | 'possessive-pronoun' | 'reflexive' };
+  const cased = tokens[0] as 'subject' | 'object' | 'possessive' | 'possessive-pronoun' | 'reflexive';
+  return capitalize ? { kind: 'pronoun', case: cased, capitalize: true } : { kind: 'pronoun', case: cased };
+}
+
+/**
+ * Parse a `{quote:utterance [terminal]}` head into a `Quote` atom (ADR-201 §5).
+ * The first bare token is the utterance param (must be bound); an optional second
+ * token sets the terminal placed inside the closing quote (`.` default | `?` | `!`).
+ * A bound `Phrase` value is used as the utterance directly; a scalar becomes a
+ * `Literal` (quoted speech, not an article-bearing noun phrase). An unbound param
+ * or a missing utterance fails at parse time (AC-10).
+ */
+function parseQuote(inner: string, template: string, params: Record<string, unknown>): Phrase {
+  const rest = inner.slice(inner.indexOf(':') + 1).trim();
+  const tokens = rest.split(/\s+/).filter((t) => t.length > 0);
+  if (tokens.length < 1) {
+    throw new PhraseParseError(inner, template, 'a quote needs an utterance param, e.g. {quote:line}');
+  }
+  if (tokens.length > 2) {
+    throw new PhraseParseError(inner, template, 'a quote takes an utterance param and an optional terminal, e.g. {quote:line !}');
+  }
+  const name = tokens[0];
+  const terminal = tokens[1];
+  if (terminal !== undefined && terminal !== '.' && terminal !== '?' && terminal !== '!') {
+    throw new PhraseParseError(terminal, template, `'${terminal}' is not a terminal (. | ? | !)`);
+  }
+  if (!(name in params)) {
+    throw new PhraseParseError(name, template, `quote utterance '${name}' is not bound`);
+  }
+  const value = params[name];
+  const utterance: Phrase = isPhraseValue(value) ? value : { kind: 'literal', text: String(value) };
+  return terminal ? { kind: 'quote', utterance, terminal } : { kind: 'quote', utterance };
 }
 
 /**
@@ -260,30 +294,56 @@ function parsePlaceholder(inner: string, template: string, params: Record<string
   // A ':' marks a kind head. Its prefix must be a known kind — anything else
   // (a legacy chain like `cap:the:item`, or an unknown kind) fails here.
   if (inner.includes(':')) {
-    const prefix = inner.slice(0, inner.indexOf(':')).trim();
+    // A leading `capitalize` modifier on a kind head — only `pronoun` accepts it
+    // (ADR-201 §2). NounPhrase `{capitalize the item}` is handled in the no-`:`
+    // branch below; `{capitalize number:…}` / `verb` / `quote` etc. are authoring
+    // errors that throw at parse time (AC-10).
+    let capitalize = false;
+    let body = inner;
+    const trimmedStart = inner.trimStart();
+    if (trimmedStart.startsWith('capitalize ')) {
+      capitalize = true;
+      body = trimmedStart.slice('capitalize '.length).trimStart();
+    }
+    const prefix = body.slice(0, body.indexOf(':')).trim();
+    if (capitalize && prefix !== 'pronoun') {
+      throw new PhraseParseError(inner, template, `capitalize is not a valid modifier for '${prefix}'`);
+    }
     // Verb atom (ADR-199): parses its own lemma + subject and binds the subject.
     if (prefix === 'verb') {
-      return parseVerb(inner, template, params);
+      return parseVerb(body, template, params);
     }
     // Verbatim atom (ADR-200): binds a single param, rendered as opaque text.
     if (prefix === 'verbatim') {
-      return parseVerbatim(inner, template, params);
+      return parseVerbatim(body, template, params);
     }
     // Numeral atom (ADR-198): binds a numeric param + optional format.
     if (prefix === 'number') {
-      return parseNumber(inner, template, params);
+      return parseNumber(body, template, params);
     }
     // Pronoun atom (ADR-197): a grammatical case; referent is last-mentioned.
     if (prefix === 'pronoun') {
-      return parsePronoun(inner, template);
+      return parsePronoun(body, template, capitalize);
+    }
+    // Quote atom (ADR-201): a bound utterance wrapped in locale quote glyphs.
+    if (prefix === 'quote') {
+      return parseQuote(body, template, params);
     }
     // Contents atom (ADR-194): binds a container; contents read at realize time.
     if (prefix === 'contents') {
-      return parseContents(inner, template, params);
+      return parseContents(body, template, params);
     }
     // Slot combinator (ADR-195): a contribution channel key + optional mode/conj.
     if (prefix === 'slot') {
-      return parseSlot(inner, template);
+      return parseSlot(body, template);
+    }
+    // Sentence (ADR-201) is emitted by message structure / Quote, not authored.
+    if (prefix === 'sentence') {
+      throw new PhraseParseError(
+        inner,
+        template,
+        'sentence is not an author-facing kind prefix — it is emitted by message structure / quote',
+      );
     }
     const kind = KIND_PREFIXES[prefix];
     if (kind === undefined) {

@@ -434,16 +434,17 @@ reconciliation pass is new. Phase 5 is contained to the parser.
   head, `{capitalize numeral:…}`).
 
 - **Exit state**:
-  - `{quote:utterance}` and `{capitalize pronoun:case}` parse correctly in author templates.
-  - All three AC-10 rejection cases throw `PhraseParseError` at parse time with no partial output.
-  - `{sentence:…}` is blocked from author templates.
-  - Dialogue catalog attribution messages use `{quote:utterance}` (no bare hardcoded `\"…\"` strings).
-  - Full parser test suite green; end-to-end dialogue template round-trips.
-  - `./repokit build dungeo` green.
-  - `v2_adr201_p5` merged to `main`.
-  - All 10 ADR-201 ACs and all 3 ADR-202 ACs are satisfied on `main`.
+  - `{quote:utterance}` and `{capitalize pronoun:case}` parse correctly in author templates. ✓
+  - All AC-10 rejection cases throw `PhraseParseError` at parse time with no partial output (unbound/missing quote param, unknown pronoun case, `capitalize` on a non-pronoun kind, `{sentence:…}`). ✓
+  - `{sentence:…}` is blocked from author templates. ✓
+  - **Catalog `{quote:}` follow-through: NOT done — deliberately deferred** (decision: Option A, confirmed with user). The static greeting utterances are locale content that must live in the lang catalog template; `{quote:param}` only sources a *bound* param, and authoring the text into a param would put English in stdlib (layer-separation violation). Making static utterances structured `Quote`s needs inline-literal-quote syntax, which exceeds ADR §5 and would pre-empt the Q2-deferred `{say:}` decision (ADR explicitly wanted real usage to validate tag-comma ownership before locking new dialogue syntax). So static greetings stay in their Phase 1 interim form; the `{quote:}` surface ships for dynamic/bound utterances. The asking `responds`/`explains` use `{verbatim:topic}` (reported content) and need no quote.
+  - Tests: `tests/parser/quote-pronoun-parse.test.ts` (15, incl. end-to-end round-trip → `He says, "Hello."`). Full parser suite + full lang-en-us suite 382 green.
+  - `./repokit build dungeo` — DEFERRED (bootstrap/repokit blocker).
+  - `v2_adr201_p5` merge to `main`: pending user direction.
 
-- **Status**: PENDING
+- **Follow-up:** locale-tuned glyphs on *static* catalog utterances await the `{say:}` / static-utterance design (post-v1, Q2). Until then those specific lines render with literal `"` glyphs; dynamic `{quote:param}` utterances are already locale-tuned.
+
+- **Status**: DONE (parser surface; catalog follow-through deferred per Option A; dungeo deferred)
 
 ---
 
