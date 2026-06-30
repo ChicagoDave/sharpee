@@ -110,9 +110,19 @@ Story-level (autonomous). C2 must include a save→restore→re-trigger transcri
 - On `v2_adr196_optional_choice`, working tree **clean**. Phases 1–3 committed.
 - `main` is ahead of `origin/main` (the slot fast-forward) — **unpushed**. Nothing on this branch is pushed.
 
+## Post-merge follow-ups (after ADR-196 pushed to `origin/main` @ `1fd7453e`)
+
+### ADR-197 (Pronoun) and the rest of the atom roadmap — ALREADY DONE
+
+Checked before starting "197": the entire ADR-192 phrase-algebra atom roadmap is already implemented and on `main`. ADR-197 Pronoun (`8e5ba02a`, merged `1db7404c` via `v2_adr197_pronoun`; parser `{pronoun:case}` rule, engine `TurnReferenceContext`, assembler `PRONOUNS` table + `note()` last-mentioned, tests 5/5), ADR-198 Numeral (`2b8ae771`), ADR-199 Verb/subject-agreement (`6ba3b37d`,`d829d14a`), ADR-200 Verbatim (`bc70dd10`). The ADR-196 plan's "remaining atoms" line was stale — nothing to build. The assembler header confirms all kinds are realized; `PhraseNotImplementedError` is now only a defensive guard.
+
+### Fix: NUL byte in `english-assembler.ts`
+
+`hashSeed`'s seed template literal (line 478) contained two **raw NUL bytes** (the `'\0'` ADR-196 mulberry32 separators written literally, not escaped), which tripped binary-file detection in grep/tools (rg flagged a `\0` at offset 21072). Replaced each raw NUL with the `\0` escape: `` `${entityId}\0${messageKey}\0${counter}` ``. Identical runtime seed (so seeded `random`/`sticky` Choice output is byte-identical) but pure-ASCII source. Verified: 0 NUL bytes remain, typecheck clean, lang-en-us **337/337** (incl. AC-6 random / AC-7 sticky).
+
 ## Session Metadata
 
-- **Status**: IN PROGRESS
+- **Status**: COMPLETE — ADR-196 Phases 1–5 merged + pushed to `origin/main`; phrase-algebra atom roadmap confirmed complete; assembler NUL-byte hygiene fix.
 - **Blocker**: none
-- **Estimated Remaining**: Phase 4 (small) + Phase 5 (medium) + merge to main
-- **Rollback Safety**: safe — all changes additive; no schema migration (absent `textState` capability ⇒ counter 0)
+- **Open items**: dungeo walkthroughs pre-existing broken (combat/chain-state; baseline 653 fail) — unrelated, flagged for separate investigation.
+- **Rollback Safety**: safe — all changes additive / behavior-preserving; no schema migration (absent `textState` capability ⇒ counter 0)

@@ -475,7 +475,7 @@ function hashSeed(s: string): number {
  * reproduces byte-identically across runs and after save/restore (ADR-196 §3).
  */
 function seededUnitFloat(entityId: string, messageKey: string, counter: number): number {
-  let a = hashSeed(`${entityId} ${messageKey} ${counter}`) >>> 0;
+  let a = hashSeed(`${entityId}\0${messageKey}\0${counter}`) >>> 0;
   a = (a + 0x6d2b79f5) | 0;
   let t = Math.imul(a ^ (a >>> 15), 1 | a);
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
