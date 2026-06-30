@@ -205,7 +205,7 @@ reconciliation pass is new. Phase 5 is contained to the parser.
   - All packages compile; existing tests pass.
   - `v2_adr201_p3` merged to `main`.
 
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ---
 
