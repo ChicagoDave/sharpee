@@ -50,6 +50,8 @@ import {
   isSlot,
   isOptional,
   isChoice,
+  isSentence,
+  isQuote,
 } from '@sharpee/if-domain';
 import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
@@ -63,13 +65,33 @@ import { PhraseNotImplementedError } from './errors.js';
  */
 export const ASSEMBLER_DEFAULT_BLOCK_KEY = CORE_BLOCK_KEYS.ACTION_RESULT;
 
-/** A flattened text run carrying its verbatim flag and decoration stack. */
+/**
+ * A flattened text run carrying its verbatim flag, decoration stack, and the
+ * optional grammatical-edge metadata `Sentence`/`Quote`/`Pronoun` emit while
+ * realizing (ADR-201 §3.1). The reconciliation pass (§3.2) is the only consumer;
+ * an absent field degrades to today's behavior. Structure flows as metadata —
+ * never recovered by scanning prose (ADR-202).
+ */
 interface Run {
   text: string;
   /** Verbatim text is exempt from whitespace collapse (Whitespace authority). */
   verbatim: boolean;
   /** Outer→inner decoration wrappers inherited through composition. */
   deco: ReadonlyArray<{ className: string; value?: string }>;
+  /** This run begins a sentence (with `capEligible` → cap its first glyph). */
+  sentenceInitial?: boolean;
+  /**
+   * First glyph may be capitalized when sentence-initial. `false` is an explicit
+   * opt-out (e.g. a `{capitalize pronoun:…}` with `capitalize: false`) that the
+   * sentence-start marker must not override.
+   */
+  capEligible?: boolean;
+  /** Run carries an opening quote glyph (structural marker; AC-3). */
+  quoteOpen?: boolean;
+  /** Run carries a closing quote glyph — terminal punctuation goes INSIDE it. */
+  quoteClose?: boolean;
+  /** Terminal punctuation this run owns; materialized by the reconciliation pass. */
+  ownsTrailingPunct?: '.' | '?' | '!';
 }
 
 // ===========================================================================
@@ -545,6 +567,52 @@ function extendDeco(
   ];
 }
 
+// ===========================================================================
+// Sentence/Quote edge metadata (ADR-201 §3) — emitted here, resolved by the
+// reconciliation pass. All reads below are a NODE'S OWN realized surface
+// (its child/utterance runs), never neighbours' or whole-output prose (ADR-202).
+// ===========================================================================
+
+/** A node's own last glyph already terminates the clause (so no auto-terminal). */
+function endsWithTerminalOrEllipsis(text: string): boolean {
+  const t = text.trimEnd();
+  // `.` already covers a `...` ellipsis; `…` is the single-glyph form.
+  return t.endsWith('.') || t.endsWith('?') || t.endsWith('!') || t.endsWith('…');
+}
+
+/** True if the last non-empty run of a realized child ends in terminal punctuation. */
+function lastContentRunEndsTerminal(runs: Run[]): boolean {
+  for (let i = runs.length - 1; i >= 0; i--) {
+    if (runs[i].text.length > 0) return endsWithTerminalOrEllipsis(runs[i].text);
+  }
+  return false;
+}
+
+/**
+ * Flag the first non-empty run as sentence-initial + cap-eligible, so the
+ * reconciliation pass capitalizes a sentence's / quote's first word. An explicit
+ * `capEligible: false` (author opt-out) is preserved, not overridden.
+ */
+function markFirstSentenceInitial(runs: Run[]): Run[] {
+  const i = runs.findIndex((r) => r.text.length > 0);
+  if (i < 0) return runs;
+  const copy = runs.slice();
+  copy[i] = { ...copy[i], sentenceInitial: true, capEligible: copy[i].capEligible === false ? false : true };
+  return copy;
+}
+
+/** Mark the last non-empty run as owning a trailing terminal mark (Sentence close). */
+function markLastTrailingTerminal(runs: Run[], terminal: '.' | '?' | '!'): Run[] {
+  for (let i = runs.length - 1; i >= 0; i--) {
+    if (runs[i].text.length > 0) {
+      const copy = runs.slice();
+      copy[i] = { ...copy[i], ownsTrailingPunct: terminal };
+      return copy;
+    }
+  }
+  return runs;
+}
+
 /** Realize a phrase to flat runs, threading the decoration stack through composition. */
 function realizeToRuns(
   phrase: Phrase,
@@ -588,8 +656,18 @@ function realizeToRuns(
 
   if (isPronoun(phrase)) {
     // Pronoun (ADR-197): the last-mentioned referent in the requested case.
+    // ADR-201 §2 (Q1) capitalization: `true` ⇒ cap now (own-glyph rule); `false`
+    // ⇒ never (opt out of sentence-start cap); absent ⇒ defer to position — if it
+    // lands sentence-initial, `markFirstSentenceInitial` flags it for the pass.
     const own = extendDeco(deco, phrase.decorations);
-    return [{ text: renderPronoun(phrase, ctx), verbatim: false, deco: own }];
+    const text = renderPronoun(phrase, ctx);
+    if (phrase.capitalize === true) {
+      return [{ text: capitalizeSentenceStart(text), verbatim: false, deco: own }];
+    }
+    if (phrase.capitalize === false) {
+      return [{ text, verbatim: false, deco: own, capEligible: false }];
+    }
+    return [{ text, verbatim: false, deco: own }];
   }
 
   if (isContents(phrase)) {
@@ -626,6 +704,35 @@ function realizeToRuns(
     return realizeToRuns(selectChoice(phrase, ctx), ctx, own);
   }
 
+  if (isSentence(phrase)) {
+    // Sentence (ADR-201 §2): realize the child as a sentence — cap its first word
+    // and emit a terminal mark at its close, suppressed if the child already ends
+    // in terminal punctuation or an ellipsis (no double-punctuation).
+    const own = extendDeco(deco, phrase.decorations);
+    let runs = markFirstSentenceInitial(realizeToRuns(phrase.child, ctx, own));
+    if (!lastContentRunEndsTerminal(runs)) {
+      runs = markLastTrailingTerminal(runs, phrase.terminal ?? '.');
+    }
+    return runs;
+  }
+
+  if (isQuote(phrase)) {
+    // Quote (ADR-201 §2): wrap the utterance in locale glyphs, cap its first word,
+    // and place terminal punctuation INSIDE the closing glyph (suppressed if the
+    // utterance already ends terminal/ellipsis). The attributive comma is the
+    // template's in v1 (explicit composition, ADR §5) — the Quote does not own it.
+    // An utterance that absorbs to nothing absorbs the whole quote (no stray `""`).
+    const own = extendDeco(deco, phrase.decorations);
+    const utterance = markFirstSentenceInitial(realizeToRuns(phrase.utterance, ctx, own));
+    if (!utterance.some((r) => r.text.length > 0)) return [];
+    const open: Run = { text: ctx.settings.openQuote ?? '"', verbatim: false, deco: own, quoteOpen: true };
+    const close: Run = { text: ctx.settings.closeQuote ?? '"', verbatim: false, deco: own, quoteClose: true };
+    if (!lastContentRunEndsTerminal(utterance)) {
+      close.ownsTrailingPunct = phrase.terminal ?? '.';
+    }
+    return [open, ...utterance, close];
+  }
+
   // Defensive: every if-domain kind is realized above, so `phrase` narrows to
   // `never` here — TypeScript proves exhaustiveness. The cast keeps the guard
   // live at runtime: a future kind added without a case is refused loudly,
@@ -633,9 +740,33 @@ function realizeToRuns(
   throw new PhraseNotImplementedError((phrase as Phrase).kind);
 }
 
+/**
+ * The single structural reconciliation pass (ADR-201 §3.2). Walks the realized
+ * runs once and resolves, using run metadata only (never prose scanning, ADR-202):
+ *  1. Capitalization — upper-case the first glyph of each `sentenceInitial`
+ *     `capEligible` run (the case authority's glyph helper does the upper-casing).
+ *  2. Terminal punctuation — materialize each `ownsTrailingPunct`: a closing-quote
+ *     run places it INSIDE the glyph (`."`); any other run appends it.
+ * Whitespace collapse (§3.2 step 4) stays the final per-segment step in `realize`.
+ */
+function reconciliationPass(runs: Run[]): Run[] {
+  return runs.map((run) => {
+    let out = run;
+    if (out.sentenceInitial && out.capEligible === true && out.text.length > 0) {
+      out = { ...out, text: capitalizeSentenceStart(out.text) };
+    }
+    if (out.ownsTrailingPunct) {
+      out = out.quoteClose
+        ? { ...out, text: out.ownsTrailingPunct + out.text } // terminal inside the closing glyph
+        : { ...out, text: out.text + out.ownsTrailingPunct }; // sentence terminal appended
+    }
+    return out;
+  });
+}
+
 /** Realize a phrase to a plain string (used for list items and nested phrases). */
 function renderToString(phrase: Phrase, ctx: RenderContext): string {
-  return collapseWhitespace(realizeToRuns(phrase, ctx, []))
+  return collapseWhitespace(reconciliationPass(realizeToRuns(phrase, ctx, [])))
     .map((r) => r.text)
     .join('');
 }
@@ -729,7 +860,12 @@ export class EnglishAssembler implements Assembler {
    * @throws PhraseNotImplementedError when a reserved stub kind is encountered
    */
   realize(tree: Phrase, ctx: RenderContext): ITextBlock[] {
-    const segments = splitRunsOnNewlines(realizeToRuns(tree, ctx, []));
+    let runs = realizeToRuns(tree, ctx, []);
+    // Honor the optional position seam (ADR-201 §4): a context that declares it
+    // starts sentence-initial flags the first word for capitalization. Absent →
+    // not sentence-initial (today's behavior), so existing render paths are unaffected.
+    if (ctx.position?.sentenceInitial) runs = markFirstSentenceInitial(runs);
+    const segments = splitRunsOnNewlines(reconciliationPass(runs));
     const blocks: ITextBlock[] = [];
     for (const seg of segments) {
       const content = runsToContent(collapseWhitespace(seg.runs));

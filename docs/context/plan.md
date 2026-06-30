@@ -335,13 +335,19 @@ reconciliation pass is new. Phase 5 is contained to the parser.
   (Sentence/Quote as the first atoms carrying Run edge metadata through the reconciliation pass).
 
 - **Exit state**:
-  - `english-assembler.ts` handles `Sentence` and `Quote` with full reconciliation-pass mechanics.
-  - `Pronoun` realizer has position-aware capitalization.
-  - All phase-4 unit tests pass; full lang-en-us test suite green.
-  - `./repokit build dungeo` green.
-  - `v2_adr201_p4` merged to `main`.
+  - `english-assembler.ts` handles `Sentence` and `Quote` via run edge-metadata + a `reconciliationPass` (cap + terminal-inside). ✓
+  - `Pronoun` realizer has position-aware capitalization (true/false/absent precedence). ✓
+  - Tests: `tests/assembler/sentence-quote.test.ts` (17). Full lang-en-us suite 367 green; stdlib suite 1286 green (real-path dialogue test unaffected). ✓
+  - `./repokit build dungeo` — DEFERRED (pre-existing bootstrap/repokit blocker).
+  - `v2_adr201_p4` merge to `main`: pending user direction.
 
-- **Status**: PENDING
+- **Implementation notes / deviations from the literal plan** (all confirmed with user before coding):
+  - **No deep `position` param ripple.** Instead of threading a `position` arg through all 13 `realizeToRuns` cases, the `Sentence`/`Quote` cases mark the first run of their own realized child (`markFirstSentenceInitial`), and `realize()` honors the top-level `ctx.position` seam. Observably equivalent for v1, far lower-risk (the "broad mechanical ripple" the plan flagged is avoided).
+  - **Quote does NOT own the leading comma in v1** (decision #1): the attributive comma stays the template's (`{verb:says target}, {quote:…}`), so AC-4's "exactly one comma" holds without `ownsLeadingPunct`. `ownsLeadingPunct` field omitted; revisit with `{say:}` sugar (post-v1). Corollary: an absorbed quote can leave the template's literal comma stray — accepted limitation, tied to the deferred comma-ownership work.
+  - **Ellipsis/terminal suppression** implemented via String methods (`endsWith`/`trimEnd`), NOT regex, so the Phase 2 structural-mandate gate stays green (no new allowlist entry needed).
+  - **Empty-absorption (AC-5):** an utterance that absorbs to nothing absorbs the whole quote (no empty `""`); general Optional/Choice/Slot absorption + whitespace cleanup unchanged.
+
+- **Status**: DONE (build via typecheck + suites; dungeo deferred)
 
 ---
 
