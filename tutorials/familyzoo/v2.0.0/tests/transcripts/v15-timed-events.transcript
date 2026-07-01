@@ -1,0 +1,60 @@
+title: V15 — Timed Events (Daemons and Fuses)
+story: familyzoo
+entry: v15
+author: Sharpee Tutorial
+description: Verify PA announcements, feeding time fuse, and goat bleating daemon
+
+---
+
+# V15 teaches: Daemons (every-turn) and fuses (countdown timers)
+
+# Wait turns 1-4 — nothing fires yet
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 5 — PA announcement daemon fires (ctx.turn % 5 === 0)
+> wait
+[OK: contains "DING DONG"]
+[OK: contains "closing"]
+
+# Move to petting zoo (turns 6-7)
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+# Wait turns 8-9
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 10 — second PA announcement
+> wait
+[OK: contains "DING DONG"]
+
+# Turn 11 — feeding time fuse triggers (10 turns + skipNextTick)
+> wait
+[OK: contains "FEEDING TIME"]
+
+# Turn 12 — goat bleating daemon fires (we're in petting zoo)
+> wait
+[OK: contains "bleating"]
+
+# Feed the goats — stops bleating
+> take feed
+[OK: contains "Taken"]
+
+> feed goats
+[OK: contains "pygmy goats"]

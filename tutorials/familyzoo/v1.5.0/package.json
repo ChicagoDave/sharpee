@@ -1,0 +1,49 @@
+{
+  "name": "familyzoo",
+  "version": "1.5.0",
+  "description": "Family Zoo — the standalone tutorial for The Sharpee Author and Developer Manual (v1.5 edition)",
+  "type": "module",
+  "main": "dist/index.js",
+  "sharpee": {
+    "themes": [
+      "modern-dark",
+      "retro-terminal",
+      "paper",
+      "system-6",
+      { "id": "zoo-sunny", "name": "Zoo Sunny" }
+    ]
+  },
+  "scripts": {
+    "build": "sharpee build",
+    "build:browser": "sharpee build-browser",
+    "clean": "sharpee clean"
+  },
+  "dependencies": {
+    "@sharpee/core": "^1.5.0",
+    "@sharpee/engine": "^1.5.0",
+    "@sharpee/event-processor": "^1.5.0",
+    "@sharpee/helpers": "^1.5.0",
+    "@sharpee/if-domain": "^1.5.0",
+    "@sharpee/lang-en-us": "^1.5.0",
+    "@sharpee/media": "^1.5.0",
+    "@sharpee/parser-en-us": "^1.5.0",
+    "@sharpee/platform-browser": "^1.5.0",
+    "@sharpee/plugin-npc": "^1.5.0",
+    "@sharpee/plugin-scheduler": "^1.5.0",
+    "@sharpee/stdlib": "^1.5.0",
+    "@sharpee/world-model": "^1.5.0"
+  },
+  "devDependencies": {
+    "@sharpee/devkit": "^1.5.0",
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "tutorial",
+    "family-zoo"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT"
+}

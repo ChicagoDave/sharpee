@@ -1,0 +1,58 @@
+title: V13 — Custom Actions
+story: familyzoo
+entry: v13
+author: Sharpee Tutorial
+description: Verify custom feed and photograph actions with grammar extension
+
+---
+
+# V13 teaches: Story-specific actions, grammar extension, language messages
+
+# Go to petting zoo and get feed
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+
+# Feed the goats
+> feed goats
+[OK: contains "goats"]
+[OK: contains "bleating"]
+
+# Try to feed again — already fed
+> feed goats
+[OK: contains "already fed"]
+
+# Try to photograph without a camera — blocked
+> photograph goats
+[OK: contains "camera"]
+
+# Go get the camera from the gift shop
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> west
+[OK: contains "Gift Shop"]
+
+> take camera
+[OK: contains "Taken"]
+
+# Photograph the postcards
+> photograph postcards
+[OK: contains "Click"]
+[OK: contains "postcards"]
+
+# Go to aviary and photograph the toucan
+> east
+[OK: contains "Aviary"]
+
+> photograph toucan
+[OK: contains "Click"]
+[OK: contains "toucan"]
