@@ -43,10 +43,18 @@ The Round Room (`CAROU` in MDL) has 8 compass exits. When `CAROUSEL-FLIP!-FLAG` 
 
 ### Low Room / Magnet Room (MAGNE)
 
-The Low Room (`MAGNE`) is a separate room from the Round Room with its OWN magnetic behavior:
-- When `CAROUSEL-FLIP!-FLAG` is false, all exits randomly go to either Machine Room or Tea Room (50/50)
-- When fixed, East → Machine Room, SE/OUT → Tea Room
-- The robot starts in this room
+The Low Room (`MAGNE`) is a separate room from the Round Room with its OWN magnetic behavior.
+The single `CAROUSEL-FLIP!-FLAG` drives the two rooms **oppositely** (verified in MDL
+`act1.254` `CAROUSEL-EXIT` and `act3.199` `MAGNET-ROOM-EXIT`):
+- The flag starts **false**. `MAGNET-ROOM-EXIT`: when the flag is **false**, exits are
+  deterministic (East → Machine Room, SE/OUT → Tea Room); when **true**, all exits randomly
+  go to Machine Room or Tea Room (`<PROB 50>`).
+- The triangular button (`TRBUT`) toggles the flag to **true**, which **fixes the Round Room
+  but randomizes the Low Room**. So after the button push the player must bounce through the
+  Low Room (retry until Tea Room) to get out — see the WHILE loop in `wt-10-tea-room`.
+- The robot starts in this room.
+- (Randomization uses `Math.random()` in `carousel-handler.ts` — like the Round Room; not yet
+  replay-deterministic. Transcripts cope via WHILE-loop retry, not a fixed seed.)
 
 ## Project Structure
 

@@ -2942,6 +2942,13 @@ export interface Verb extends PhraseBase {
 export interface Pronoun extends PhraseBase {
     kind: 'pronoun';
     case: 'subject' | 'object' | 'possessive' | 'possessive-pronoun' | 'reflexive';
+    /**
+     * S40 capitalization override (ADR-201 §2, Q1). `true` ⇒ always cap; `false` ⇒
+     * never cap (even sentence-initial); absent ⇒ cap iff sentence-initial (driven
+     * by `RenderContext.position`). The precedence logic is realizer-side (ADR-201
+     * §3.2 / Phase 4); this field is the explicit author opt.
+     */
+    capitalize?: boolean;
 }
 /**
  * Atom — a numeric value rendered as digits, spelled-out words, or an ordinal
@@ -2998,20 +3005,80 @@ export interface Slot extends PhraseBase {
     /** Final connective for `clause` mode. Default `and`. */
     conj?: 'and' | 'or';
 }
-/** Modifier — conditionally present phrase. Fields + realization: ADR-196. */
+/**
+ * Modifier — a phrase that renders its `child` **or `Empty`**, gated by a boolean
+ * the PRODUCER resolves from world state (ADR-196 §1). Realization is stateless:
+ * `present ? realize(child) : Empty`. The conditional-clause mechanism (scenarios
+ * S9–S10). `present: false` yields `Empty`, absorbed by the enclosing combinator
+ * (ADR-192 AC-6) so no dangling comma/whitespace survives. The boolean is resolved
+ * at tree-build time — there is NO realize-time world read.
+ */
 export interface Optional extends PhraseBase {
     kind: 'optional';
-}
-/** Modifier — one of several variants. Fields + realization: ADR-196. */
-export interface Choice extends PhraseBase {
-    kind: 'choice';
+    /** The phrase realized when `present` is true. */
+    child: Phrase;
+    /** Resolved by the producer from world state; NOT read at realize time. */
+    present: boolean;
 }
 /**
- * The closed phrase algebra. Five foundational members are realized in ADR-192
- * and `Verb` in ADR-199; the seven stubs are reserved for their follow-on ADRs.
- * Extension is additive.
+ * Modifier — a phrase that renders **one of** `alternatives`, selected by a
+ * deterministic, persistent selector keyed to `(entityId, messageKey)` in the
+ * text-state store (ADR-196 §2). The ONLY kind that reads/writes `ctx.textState`;
+ * the selector advances a per-`(entityId, messageKey)` counter at realize time.
+ * Variation / cycling / first-time text (scenarios S12–S14).
  */
-export type Phrase = Literal | NounPhrase | PhraseList | Sequence | Empty | Verb | Pronoun | Numeral | Verbatim | Contents | Slot | Optional | Choice;
+export interface Choice extends PhraseBase {
+    kind: 'choice';
+    /** The variants; length ≥ 1. An alternative MAY be `Empty` (once-only text). */
+    alternatives: Phrase[];
+    /**
+     * Selection strategy (ADR-196 §2):
+     * - `cycling` — advance through variants, wrapping (`i = n % len`).
+     * - `stopping` — advance to the last variant, then stick (`i = min(n, len-1)`).
+     * - `sticky` — pick once (seeded), then replay that variant.
+     * - `random` — seeded pick each trigger; deterministic from the counter.
+     * - `firstTime` — `alt[0]` first, `alt[1]` after (`alt[1]` may be `Empty`).
+     */
+    selector: 'cycling' | 'stopping' | 'sticky' | 'random' | 'firstTime';
+    /** The entity the variation is keyed to (text-state primary key). */
+    entityId: EntityId;
+    /** Stable per-choice-site key (text-state secondary key). */
+    messageKey: string;
+}
+/**
+ * Atom — a sentence boundary (ADR-201 §2). Declares that `child` realizes as a
+ * sentence: its first glyph is capitalized and a terminal mark is emitted at its
+ * close. The structural carrier of "capitalize the start" (ADR-202) — the
+ * Assembler drives sentence-start casing from this boundary, not by scanning
+ * prose. Not author-facing in v1 (emitted by message structure / `Quote`).
+ */
+export interface Sentence extends PhraseBase {
+    kind: 'sentence';
+    /** The content realized as a sentence. */
+    child: Phrase;
+    /** Terminal punctuation emitted at the sentence close. Default `.`. */
+    terminal?: '.' | '?' | '!';
+}
+/**
+ * Atom — a quoted utterance (ADR-201 §2). Wraps an `utterance` `Phrase` and owns
+ * the surrounding quote glyphs (locale-tuned via `LocaleSettings`), capitalization
+ * of the utterance's first word, terminal-punctuation-INSIDE the closing quote,
+ * and the attributive comma owed to an enclosing dialogue tag. Implies a
+ * `Sentence` boundary for its contents.
+ */
+export interface Quote extends PhraseBase {
+    kind: 'quote';
+    /** The quoted words; glyphs / first-word cap / terminal-inside are realizer-applied. */
+    utterance: Phrase;
+    /** Punctuation placed INSIDE the closing quote. Default `.`. */
+    terminal?: '.' | '?' | '!';
+}
+/**
+ * The closed phrase algebra. Foundational members are realized in ADR-192,
+ * `Verb` in ADR-199, and `Sentence`/`Quote` in ADR-201; remaining stubs are
+ * reserved for their follow-on ADRs. Extension is additive.
+ */
+export type Phrase = Literal | NounPhrase | PhraseList | Sequence | Empty | Verb | Pronoun | Numeral | Verbatim | Contents | Slot | Optional | Choice | Sentence | Quote;
 /**
  * Read-only world access for realization. Language-neutral subset of the world
  * model exposed to the Assembler — no mutation, no parser or command surface.
@@ -3037,6 +3104,14 @@ export interface RenderWorld {
 export interface LocaleSettings {
     /** Serial (Oxford) comma in lists. Default on. */
     serialComma?: boolean;
+    /**
+     * Opening quote glyph for `Quote` (ADR-201 §2). The default (`"`) is applied by
+     * the locale realizer (lang-en-us) — kept out of if-domain so no locale logic
+     * lives here.
+     */
+    openQuote?: string;
+    /** Closing quote glyph for `Quote` (ADR-201 §2). Default applied by the realizer. */
+    closeQuote?: string;
 }
 /**
  * Narrative agreement context for verb-person resolution (ADR-199 §4 B).
@@ -3091,6 +3166,19 @@ export interface SlotContributionOptions {
     order?: number;
 }
 /**
+ * Read-mostly position state threaded down the recursive realizer (ADR-201 §4).
+ * Lets sentence-start capitalization and quote nesting fall out of structure
+ * instead of prose-scanning (ADR-202). Per-render and ephemeral — never persisted.
+ */
+export interface RenderPosition {
+    /** The next atom realizes at a sentence start (→ cap-eligible first glyph). */
+    sentenceInitial: boolean;
+    /** Currently within a `Quote`'s utterance. */
+    insideQuote: boolean;
+    /** Terminal punctuation owed when the enclosing sentence closes. */
+    pendingTerminal?: '.' | '?' | '!';
+}
+/**
  * The context a producer realizes against: a read-only world, the bound params,
  * locale settings, and the three declared seams. The seam METHODS are part of
  * the contract now; their behavior is filled in by ADR-195–197.
@@ -3122,6 +3210,13 @@ export interface RenderContext {
      * absent accessor yields no contributions and the slot realizes `Empty`.
      */
     slotContributions?(slotKey: string): Phrase[];
+    /**
+     * Sentence/quote position state (ADR-201 §4). OPTIONAL — matching the
+     * `slotContributions?` optional-seam precedent: an absent `position` degrades
+     * to "not sentence-initial, not in quote" (today's behavior), so existing
+     * render paths that don't supply it are unaffected.
+     */
+    readonly position?: RenderPosition;
 }
 /** Code that emits a phrase from world state. May return `Empty`. */
 export type PhraseProducer = (ctx: RenderContext) => Phrase;
@@ -3168,4 +3263,8 @@ export declare function isSlot(p: Phrase): p is Slot;
 export declare function isOptional(p: Phrase): p is Optional;
 /** @returns true if the phrase is a `Choice` (ADR-196). */
 export declare function isChoice(p: Phrase): p is Choice;
+/** @returns true if the phrase is a `Sentence` (ADR-201). */
+export declare function isSentence(p: Phrase): p is Sentence;
+/** @returns true if the phrase is a `Quote` (ADR-201). */
+export declare function isQuote(p: Phrase): p is Quote;
 ```

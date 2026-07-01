@@ -2184,7 +2184,6 @@ export interface IQueryContext {
     }>;
     /** For NPC queries */
     npcId?: string;
-    npcName?: string;
     topic?: string;
     /** For game mechanic queries */
     attempts?: number;

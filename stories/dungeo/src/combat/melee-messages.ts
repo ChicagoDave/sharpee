@@ -380,7 +380,12 @@ export function getHeroAttackMessage(
   const variants = table[outcome];
   if (!variants || variants.length === 0) return undefined;
   const msg = pick(variants);
-  return msg.replace(/\{villain\}/g, villainName);
+  // Two placeholder forms appear in the tables: `{villain}` (bare name, used after a
+  // literal article e.g. "The {villain}") and `{the villain}` (article + name). Replace
+  // the longer form first so its "the " is not left stranded.
+  return msg
+    .replace(/\{the villain\}/g, `the ${villainName}`)
+    .replace(/\{villain\}/g, villainName);
 }
 
 /**

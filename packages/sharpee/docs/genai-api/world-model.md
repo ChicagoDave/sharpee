@@ -2196,6 +2196,60 @@ export declare function registerAdjectiveContributor(traitType: string, fn: Adje
 export declare function getStateAdjectives(entity: IFEntity): string[];
 ```
 
+### state-clauses
+
+```typescript
+/**
+ * @file State-derived detail-clause contributors (ADR-195 S2).
+ *
+ * A registry mapping a trait type to a function that derives detail text from an
+ * entity's *live state* ("It hums softly." from `SwitchableTrait.detailWhenOn`
+ * while on; "A thin beam plays across the floor." from `LightSourceTrait`'s
+ * `detailWhenLit` while lit). The examining action opts in to collect these and
+ * stage them into the examined object's `{slot:detail}` channel; the Assembler's
+ * slot owns the connective grammar (the sentence break) — the contribution is bare
+ * content, exactly as the room-occupant slot (S1) joins presence sentences. The
+ * slot mode (sentence vs clause) is the examine template's choice; the contributor
+ * supplies content, not punctuation.
+ *
+ * NOTE the deliberate field split: `onDescription`/`litDescription` *replace* the
+ * description (via IFEntity's computed `description` getter); `detailWhenOn`/
+ * `detailWhenLit` *append* to it here. Reading the former would double the text.
+ *
+ * This mirrors the ADR-193 state-adjective registry (`state-adjectives.ts`): same
+ * open-set, trait-keyed, register-your-own shape — adjectives are single-word and
+ * pre-noun, clauses are multi-word and post-noun. The two are siblings, not rivals.
+ *
+ * Public interface: `registerClauseContributor`, `getStateClauses`,
+ * `ClauseContributor`. The set is open — stories/extensions register their own.
+ *
+ * Owner context: `@sharpee/world-model`. INVARIANT: a contributor returns the
+ * clause *content* an author supplied (e.g. the trait's `onDescription`); it adds
+ * no punctuation or connective — that is the slot's authority in the Assembler.
+ */
+import type { IFEntity } from './entities/if-entity';
+/** Derive post-noun detail-clause fragments from an entity's live state. */
+export type ClauseContributor = (entity: IFEntity) => string[];
+/**
+ * Register a detail-clause contributor for a trait type (ADR-195 S2). Idempotent
+ * per trait type — the latest registration wins. Insertion order is preserved and
+ * determines clause order across traits (the slot's `(order, insertion)` tie-break
+ * sees them in this order).
+ *
+ * @param traitType the trait whose state contributes detail clauses
+ * @param fn maps an entity carrying that trait to its state clauses
+ */
+export declare function registerClauseContributor(traitType: string, fn: ClauseContributor): void;
+/**
+ * Collect the state-derived detail clauses for an entity from every registered
+ * contributor whose trait the entity carries (ADR-195 S2).
+ *
+ * @param entity the entity to inspect
+ * @returns the derived clause fragments, in contributor-registration order
+ */
+export declare function getStateClauses(entity: IFEntity): string[];
+```
+
 ### traits/identity/identityTrait
 
 ```typescript
@@ -2833,6 +2887,13 @@ export declare class LightSourceTrait implements ITrait {
     litDescription?: string;
     /** Description when unlit (used by computed description getter on IFEntity) */
     unlitDescription?: string;
+    /**
+     * State detail appended to the base description when lit (ADR-195 S2). Unlike
+     * `litDescription` (which *replaces* the description via the computed getter),
+     * this is *appended* by the examine `{slot:detail}` channel. Read by the
+     * `state-clauses` registry.
+     */
+    detailWhenLit?: string;
     constructor(data?: Partial<LightSourceTrait>);
 }
 ```
@@ -3107,6 +3168,14 @@ export interface ISwitchableData {
     onDescription?: string;
     /** Description when switched off (used by computed description getter on IFEntity) */
     offDescription?: string;
+    /**
+     * State detail appended to the base description when switched on (ADR-195 S2).
+     * Unlike `onDescription` (which *replaces* the description via the computed
+     * getter), this is *appended* by the examine `{slot:detail}` channel — the base
+     * description stays and the state text follows it. Read by the `state-clauses`
+     * registry.
+     */
+    detailWhenOn?: string;
 }
 /**
  * Switchable trait for entities that can be turned on and off.
@@ -3135,6 +3204,7 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
     autoOffCounter: number;
     onDescription?: string;
     offDescription?: string;
+    detailWhenOn?: string;
     constructor(data?: ISwitchableData);
 }
 ```
@@ -4213,7 +4283,7 @@ export interface INpcData {
     /**
      * Per-NPC message-ID overrides for movement announcements. Any key left unset
      * falls back to the platform default (npc.leaves / npc.enters / npc.arrives /
-     * npc.departs). Override text receives { npcName, direction } params.
+     * npc.departs). Override text receives { speaker, direction } params.
      */
     movementMessages?: {
         leaves?: string;
@@ -6668,6 +6738,13 @@ export declare const StandardCapabilities: {
     readonly GAME_META: "gameMeta";
     readonly COMMAND_HISTORY: "commandHistory";
     readonly DEBUG: "debug";
+    /**
+     * Persistent per-`(entityId, messageKey)` text-state counters backing
+     * deterministic `Choice` variation (ADR-196). Data shape:
+     * `{ [entityId]: { [messageKey]: number } }`. Serializes with the world so
+     * cycling/first-time positions survive save/restore.
+     */
+    readonly TEXT_STATE: "textState";
 };
 export type StandardCapabilityName = typeof StandardCapabilities[keyof typeof StandardCapabilities];
 ```

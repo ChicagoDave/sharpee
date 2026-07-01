@@ -1808,6 +1808,12 @@ export declare const standardActionLanguage: ({
 ```typescript
 /**
  * Language content for NPC system (ADR-070)
+ *
+ * Attribution lines name the acting NPC via a `speaker` NounPhrase param (ADR-203)
+ * and agree their verb with it via the ADR-199 Verb atom (`{verb:LEMMA speaker}`).
+ * The article is the ADR-192 hint (`{the speaker}` here; author-overridable). The
+ * `{capitalize …}` hint supplies the sentence-initial capital (top-level messages are
+ * not sentence-initial by default, so auto-cap does not fire here).
  */
 export declare const npcLanguage: {
     messages: {
@@ -1863,6 +1869,11 @@ export declare const npcLanguage: {
  * Platform default messages for response action framing, cognitive
  * speech patterns, between-turn commentary, and attention management.
  * Authors override per-NPC; these serve as fallbacks.
+ *
+ * Attribution names the NPC via a `speaker` NounPhrase (ADR-203) and agrees the
+ * leading verb with it (`{verb:LEMMA speaker}`, ADR-199). Embedded literal dialogue
+ * stays verbatim (ADR-200); secondary body verbs remain literal (leading-attribution
+ * scope).
  *
  * Owner context: @sharpee/lang-en-us / npc
  */
@@ -2063,13 +2074,16 @@ export declare function resolvePerspectivePlaceholders(message: string, context?
  * formatter logic is reproduced here in the `PhraseList` case (the old
  * `formatters/list.ts` is retired in Phase 3, not called from here).
  *
- * INVARIANT (ADR-192 §7): `realize` is a pure function of `(tree, ctx)` — the
- * same tree and context yield byte-identical output. No clocks, no randomness.
+ * INVARIANT (ADR-192 §7): `realize` is a pure function of `(tree, ctx)` GIVEN the
+ * `textState` snapshot — the same tree, context, and counters yield byte-identical
+ * output. No clocks, no `Math.random`. The one declared state transition is a
+ * `Choice` advancing its `textState` counter (ADR-196 §3) — seeded, deterministic.
  *
- * Foundational kinds (Literal, NounPhrase, PhraseList, Sequence, Empty) plus the
- * `Verb` (199), `Verbatim` (200), `Numeral` (198), `Pronoun` (197), `Contents`
- * (194), and `Slot` (195) atoms are realized here; the two remaining stub kinds
- * (`Optional` / `Choice`, ADR-196) throw `PhraseNotImplementedError`.
+ * All if-domain kinds are realized here: the foundational kinds (Literal,
+ * NounPhrase, PhraseList, Sequence, Empty) plus the `Verb` (199), `Verbatim`
+ * (200), `Numeral` (198), `Pronoun` (197), `Contents` (194), `Slot` (195), and
+ * `Optional` / `Choice` (196) atoms. `PhraseNotImplementedError` is now only a
+ * defensive guard against a future unhandled kind.
  */
 import { Assembler, Phrase, RenderContext } from '@sharpee/if-domain';
 import { ITextBlock } from '@sharpee/text-blocks';
@@ -2121,10 +2135,10 @@ export declare class EnglishAssembler implements Assembler {
  *
  * Public interface: `PhraseNotImplementedError`.
  *
- * Owner context: `@sharpee/lang-en-us` — English realization. The reserved
- * `if-domain` stub kinds are realized only by their follow-on ADRs; until then
- * the Assembler refuses them loudly rather than emitting `Empty`. With ADR-195
- * (Slot) landed, only `Optional` / `Choice` (ADR-196) remain unrealized.
+ * Owner context: `@sharpee/lang-en-us` — English realization. As of ADR-196
+ * (Optional / Choice) every if-domain phrase kind is realized; this error is now
+ * a defensive guard against a future kind landing without an Assembler case,
+ * refusing loudly rather than silently dropping text.
  */
 import { Phrase } from '@sharpee/if-domain';
 /**

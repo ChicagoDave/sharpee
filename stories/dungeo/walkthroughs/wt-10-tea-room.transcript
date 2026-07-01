@@ -212,17 +212,27 @@ $restore wt-09
 
 [GOAL: Store treasures in trophy case]
 
-# Return to Living Room via well bucket and Round Room (carousel now fixed)
-# Dingy Closet → Machine Room → Low Room → Tea Room → Top of Well → bucket down →
-# Well Bottom → Pearl Room → Riddle Room → Engravings Cave → Round Room → Living Room
+# Return to Living Room via well bucket and Round Room.
+# The Round Room is now FIXED, but pushing the button ALSO activated the Low Room
+# carousel (MDL: one CAROUSEL-FLIP flag drives both rooms oppositely — Round Room
+# fixed, Low Room randomized). The Low Room's exits now scramble to Machine Room or
+# Tea Room, so we bounce through it until we reach the Tea Room, exactly like the
+# Round Room carousel loop above.
+# Dingy Closet → Machine Room → Low Room → (bounce) → Tea Room → Top of Well → bucket
+# down → Well Bottom → Pearl Room → Riddle Room → Engravings Cave → Round Room → Living Room
 > north
 [OK: contains "Machine Room"]
 
 > west
 [OK: contains "Low Room"]
 
+[WHILE: not location = "Tea Room"]
 > southeast
-[OK: contains "Tea Room"]
+[SKIP]
+[IF: not location = "Tea Room"]
+[NAVIGATE TO: "Low Room"]
+[END IF]
+[END WHILE]
 
 > west
 [OK: contains "Top of Well"]
