@@ -11,7 +11,7 @@ import {
   WorldModel,
   TraitType,
 } from '@sharpee/world-model';
-import { findWieldedWeapon } from '@sharpee/stdlib';
+import { findWieldedWeapon, nounPhraseFor } from '@sharpee/stdlib';
 import type { NpcCombatResolver } from '@sharpee/stdlib';
 import { CombatService, applyCombatResult } from './combat-service.js';
 import { CombatMessages } from './combat-messages.js';
@@ -93,7 +93,7 @@ export const basicNpcResolver: NpcCombatResolver = (
     'npc.attacked',
     {
       npc: npc.id,
-      npcName: npc.name,
+      speaker: nounPhraseFor(npc),
       target: target.id,
       targetName: target.name,
       hit: combatResult.hit,

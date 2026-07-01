@@ -9,6 +9,7 @@
 import { NpcBehavior, NpcContext, NpcAction } from './types';
 import { NpcMessages } from './npc-messages';
 import { TraitType, CombatantTrait } from '@sharpee/world-model';
+import { nounPhraseFor } from '../utils';
 
 /**
  * Guard behavior - stationary NPC that blocks passage and fights back
@@ -53,7 +54,7 @@ export const guardBehavior: NpcBehavior = {
       {
         type: 'emote',
         messageId: NpcMessages.GUARD_BLOCKS,
-        data: { npcName: context.npc.name },
+        data: { speaker: nounPhraseFor(context.npc) },
       },
     ];
   },
@@ -106,7 +107,7 @@ export function createWandererBehavior(options: {
             actions.push({
               type: 'emote',
               messageId: NpcMessages.NPC_ENTERS,
-              data: { npcName: context.npc.name },
+              data: { speaker: nounPhraseFor(context.npc) },
             });
           }
         }
@@ -121,7 +122,7 @@ export function createWandererBehavior(options: {
         {
           type: 'emote',
           messageId: NpcMessages.NPC_NOTICES_PLAYER,
-          data: { npcName: context.npc.name },
+          data: { speaker: nounPhraseFor(context.npc) },
         },
       ];
     },
@@ -168,7 +169,7 @@ export function createFollowerBehavior(options: {
           actions.push({
             type: 'emote',
             messageId: followMessageId,
-            data: { npcName: context.npc.name },
+            data: { speaker: nounPhraseFor(context.npc) },
           });
         }
       }
@@ -196,7 +197,7 @@ export function createFollowerBehavior(options: {
           {
             type: 'emote',
             messageId: followMessageId,
-            data: { npcName: context.npc.name },
+            data: { speaker: nounPhraseFor(context.npc) },
           },
         ];
       }

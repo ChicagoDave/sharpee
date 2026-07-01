@@ -136,7 +136,7 @@ and after Phase 2 begins; it becomes green only after Phase 2 fully lands and ty
   - NounPhrase literal shape for devkit fixture confirmed.
   - No files modified; no branch created.
 
-- **Status**: DONE
+- **Status**: PENDING
 
 ---
 
@@ -201,7 +201,7 @@ and after Phase 2 begins; it becomes green only after Phase 2 fully lands and ty
     missing-template-param warnings, not type errors in the emitter logic itself).
   - Tests may fail at this point (templates produce empty output); this is expected.
 
-- **Status**: DONE
+- **Status**: PENDING
 
 ---
 
@@ -303,7 +303,7 @@ and after Phase 2 begins; it becomes green only after Phase 2 fully lands and ty
   - Unit test suites may still fail if existing tests hardcode expected output with old
     `npcName` string format; fix those within this phase.
 
-- **Status**: DONE
+- **Status**: PENDING
 
 ---
 
@@ -381,7 +381,7 @@ and after Phase 2 begins; it becomes green only after Phase 2 fully lands and ty
   - Session summary records the bootstrap/dungeo build as a deferred open item (unchanged
     from prior session state).
 
-- **Status**: DONE
+- **Status**: PENDING
 
 ---
 

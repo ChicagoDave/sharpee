@@ -480,7 +480,7 @@ describe('NpcService - movement announcements (#159)', () => {
     expect(w).toBeDefined();
     expect(renderings(w!).sight).toEqual({
       messageId: 'npc.leaves',
-      params: { npcName: 'Sam', direction: Direction.EAST },
+      params: { speaker: expect.objectContaining({ name: 'Sam' }), direction: Direction.EAST },
     });
     expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
   });
@@ -497,7 +497,7 @@ describe('NpcService - movement announcements (#159)', () => {
     expect(w).toBeDefined();
     expect(renderings(w!).sight).toEqual({
       messageId: 'npc.enters',
-      params: { npcName: 'Sam', direction: Direction.EAST },
+      params: { speaker: expect.objectContaining({ name: 'Sam' }), direction: Direction.EAST },
     });
     expect(renderings(w!).hearing!.messageId).toBe('npc.heard_arrives');
   });
@@ -511,7 +511,7 @@ describe('NpcService - movement announcements (#159)', () => {
 
     const w = witnessed(events);
     expect(w).toBeDefined();
-    expect(renderings(w!).sight).toEqual({ messageId: 'npc.departs', params: { npcName: 'Sam' } });
+    expect(renderings(w!).sight).toEqual({ messageId: 'npc.departs', params: { speaker: expect.objectContaining({ name: 'Sam' }) } });
     expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
   });
 
@@ -551,7 +551,7 @@ describe('NpcService - movement announcements (#159)', () => {
 
     const w = witnessed(events);
     expect(renderings(w!).sight!.messageId).toBe('zoo.sam.leaves');
-    expect(renderings(w!).sight!.params).toEqual({ npcName: 'Sam', direction: Direction.EAST });
+    expect(renderings(w!).sight!.params).toEqual({ speaker: expect.objectContaining({ name: 'Sam' }), direction: Direction.EAST });
     expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
   });
 });
