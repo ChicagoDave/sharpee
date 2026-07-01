@@ -221,13 +221,13 @@ export function registerNpcMessages(language: LanguageProvider): void {
   // Melee Combat Messages (canonical MDL melee engine)
   // ==========================================================================
 
-  // These are placeholder registrations — actual combat text is generated
-  // dynamically from message tables (SwordMelee, KnifeMelee, etc.) and
-  // injected via postReport as game.message events with embedded text.
-  language.addMessage(MeleeMessages.HERO_ATTACK, '');
-  language.addMessage(MeleeMessages.VILLAIN_ATTACK, '');
+  // HERO_ATTACK / VILLAIN_ATTACK / BACKUP_WEAPON / VILLAIN_DISARMED are
+  // intentionally NOT registered. Combat blow text is generated dynamically from
+  // the melee message tables (SwordMelee, KnifeMelee, …) and injected as the event's
+  // pre-rendered `text` field. Leaving these ids unregistered makes getTemplate return
+  // undefined, so the prose pipeline's inline-text fallback renders `data.text`.
+  // Registering them as '' would instead resolve to a blank template and SHADOW the
+  // fallback → blank combat output (see docs/reference/phrase-algebra-primer.md §13).
   language.addMessage(MeleeMessages.STILL_RECOVERING, 'You are still recovering from a staggering blow.');
   language.addMessage(MeleeMessages.UNARMED_ATTACK, 'Fighting unarmed is suicide.');
-  language.addMessage(MeleeMessages.BACKUP_WEAPON, '');
-  language.addMessage(MeleeMessages.VILLAIN_DISARMED, '');
 }

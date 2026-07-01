@@ -99,8 +99,12 @@ export function makeRobotPushButton(
     }
   }
 
-  // Activate Low Room carousel (canonical: button toggles CAROUSEL-FLIP to TRUE,
-  // which fixes Round Room but randomizes Low Room exits — player doesn't need Low Room anymore)
+  // Toggle CAROUSEL-FLIP!-FLAG to TRUE (MDL act3.199 TRBUT). Per canonical MDL the
+  // one flag drives both rooms OPPOSITELY: FLIP true FIXES the Round Room
+  // (CAROUSEL-EXIT, act1.254:482) but RANDOMIZES the Low Room (MAGNET-ROOM-EXIT,
+  // act3.199:180 — any exit → Machine Room / Tea Room, PROB 50). The player must
+  // still bounce back out through the now-random Low Room (Machine Room's only
+  // non-dead-end exit is W→Low Room); wt-10's return path retries until Tea Room.
   world.setStateValue('dungeo.carousel.active', true);
 
   // Emit success events

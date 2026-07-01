@@ -189,12 +189,18 @@ export declare class ObjectBuilder {
     /**
      * Add light source trait.
      *
-     * @param opts - Light source options
+     * @param opts - Light source options. `detailWhenLit` is the author-set state
+     *   text the ADR-195 S2 examine `{slot:detail}` channel *appends* when lit (e.g.
+     *   "A thin beam plays across the floor."); `litDescription` / `unlitDescription`
+     *   *replace* the description via the computed getter.
      * @returns this (for chaining)
      */
     lightSource(opts?: {
         isLit?: boolean;
         fuelTurns?: number;
+        litDescription?: string;
+        unlitDescription?: string;
+        detailWhenLit?: string;
     }): this;
     /**
      * Add a custom trait to the entity.
