@@ -131,3 +131,52 @@ describe('Verb agreement (ADR-199)', () => {
     expect(a).toBe('are');
   });
 });
+
+// --- ADR-204: verb-pluralization heuristic (-se/-ze stems + -ie closed set) -----
+
+describe('Verb pluralization heuristic (ADR-204)', () => {
+  /** Plural surface for a 3sg lemma: render {verb:lemma s} against a plural subject. */
+  const plural = (lemma: string): string =>
+    render(verb(lemma, 's'), { s: noun('twins', { number: 'plural' }) });
+  /** Singular surface: the authored lemma is returned unchanged. */
+  const singular = (lemma: string): string =>
+    render(verb(lemma, 's'), { s: noun('one') });
+
+  it('AC-1: -se/-ze stems strip only -s (not -es)', () => {
+    const cases: Array<[string, string]> = [
+      ['uses', 'use'], ['refuses', 'refuse'], ['raises', 'raise'], ['closes', 'close'],
+      ['collapses', 'collapse'], ['freezes', 'freeze'], ['loses', 'lose'],
+      ['chooses', 'choose'], ['releases', 'release'],
+    ];
+    for (const [lemma, want] of cases) {
+      expect(plural(lemma), `${lemma} → plural`).toBe(want);
+      expect(singular(lemma), `${lemma} → singular`).toBe(lemma); // singular unchanged
+    }
+  });
+
+  it('AC-2: genuine -es inflections (doubled sibilant / x·ch·sh) still strip -es', () => {
+    const cases: Array<[string, string]> = [
+      ['kisses', 'kiss'], ['misses', 'miss'], ['passes', 'pass'], ['boxes', 'box'],
+      ['buzzes', 'buzz'], ['watches', 'watch'], ['pushes', 'push'], ['approaches', 'approach'],
+    ];
+    for (const [lemma, want] of cases) expect(plural(lemma), lemma).toBe(want);
+  });
+
+  it('AC-3: unaffected classes unchanged (-s, -ces, -ges, -y)', () => {
+    const cases: Array<[string, string]> = [
+      ['opens', 'open'], ['dances', 'dance'], ['notices', 'notice'], ['changes', 'change'],
+      ['carries', 'carry'], ['cries', 'cry'], ['flies', 'fly'],
+    ];
+    for (const [lemma, want] of cases) expect(plural(lemma), lemma).toBe(want);
+  });
+
+  it('AC-3a: the -ie closed set resolves via IRREGULAR_VERBS', () => {
+    const cases: Array<[string, string]> = [
+      ['dies', 'die'], ['lies', 'lie'], ['ties', 'tie'], ['vies', 'vie'],
+    ];
+    for (const [lemma, want] of cases) {
+      expect(plural(lemma), `${lemma} → plural`).toBe(want);
+      expect(singular(lemma), `${lemma} → singular`).toBe(lemma);
+    }
+  });
+});
