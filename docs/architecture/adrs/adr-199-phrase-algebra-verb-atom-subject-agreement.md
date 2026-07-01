@@ -100,6 +100,10 @@ At realize time the Agreement authority:
      deleted `formatters/verb.ts`;
    - else the **regular rule**: the singular `lemma` ends in the 3rd-singular `-s`; the
      plural form strips it (`opens` → `open`).
+     > **Amended by ADR-204 (2026-06-30):** the `-es` strip applies only to genuine `-es`
+     > inflections — a doubled sibilant (`ss`/`zz`) or `x`/`ch`/`sh` — not to a single
+     > `-se`/`-ze` stem (use→uses→"use", refuse→refuses→"refuse"). The `-ie` closed set
+     > (die/lie/tie/vie) and rare single-`s` stems (focus/bus/gas) live in `IRREGULAR_VERBS`.
 3. `mass` agrees as **singular** ("the water is murky"); `plural` takes the plural form;
    `person` defaults to `'third'` and is the seam by which 2nd-person ("you are", via the
    ADR-089 perspective subject) is handled when needed.

@@ -179,13 +179,26 @@ const IRREGULAR_VERBS: Record<string, { plural: string; firstSingular?: string }
   has: { plural: 'have' }, // have
   does: { plural: 'do' }, // do
   goes: { plural: 'go' }, // go
+  // `-ie` stems (ADR-204): 3sg adds only `-s`, so they surface as `-ies` and would be
+  // mis-handled by the `ies`→`y` rule (which is correct for the common `-y` stems). This
+  // closed set is the exception; add longer derivatives (unties, belies) on demand.
+  dies: { plural: 'die' }, // die
+  lies: { plural: 'lie' }, // lie
+  ties: { plural: 'tie' }, // tie
+  vies: { plural: 'vie' }, // vie
 };
 
-/** Regular rule: the 3rd-singular `lemma` ends in `-s`; the plain form strips it. */
+/**
+ * Regular rule: the 3rd-singular `lemma` ends in `-s`; the plain form strips it (ADR-199,
+ * refined ADR-204). The `-es` strip applies only to genuine `-es` inflections — a doubled
+ * sibilant (`ss`/`zz`) or `x`/`ch`/`sh` — NOT to a single `-se`/`-ze` stem, which added only
+ * `-s` (use→uses, refuse→refuses). Single-`s` stems (focus/bus/gas, a rare closed set) that
+ * legitimately take `-es` are the residual ambiguity; add them to `IRREGULAR_VERBS` on demand.
+ */
 function regularPluralVerb(lemma: string): string {
   if (lemma.endsWith('ies') && lemma.length > 3) return `${lemma.slice(0, -3)}y`; // carries → carry
-  if (/(?:s|x|z|ch|sh)es$/.test(lemma)) return lemma.slice(0, -2); // pushes → push, boxes → box
-  if (lemma.endsWith('s')) return lemma.slice(0, -1); // opens → open
+  if (/(?:ss|zz|x|ch|sh)es$/.test(lemma)) return lemma.slice(0, -2); // kisses → kiss, boxes → box, watches → watch
+  if (lemma.endsWith('s')) return lemma.slice(0, -1); // opens → open, uses → use, refuses → refuse
   return lemma; // no -s to strip — leave as authored
 }
 

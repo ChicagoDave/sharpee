@@ -22,7 +22,7 @@ export const conversationLanguage = {
     'character.conversation.response.deflect':
       '{capitalize the speaker} {verb:changes speaker} the subject.',
     'character.conversation.response.refuse':
-      '{capitalize the speaker} {verb:declines speaker} to discuss that.',
+      '{capitalize the speaker} {verb:refuses speaker} to discuss that.',
     'character.conversation.response.confabulate':
       '{capitalize the speaker} {verb:seems speaker} to be filling in the gaps from memory.',
     'character.conversation.response.omit':

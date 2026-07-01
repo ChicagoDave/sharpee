@@ -39,7 +39,7 @@ export const npcLanguage = {
     'npc.misses': "{capitalize the speaker} {verb:swings speaker} at you but {verb:misses speaker}!",
     'npc.hits': "{capitalize the speaker} {verb:hits speaker} you for {damage} damage!",
     'npc.killed': "{capitalize the speaker} {verb:has speaker} been slain.",
-    'npc.unconscious': "{capitalize the speaker} {verb:falls speaker} unconscious.",
+    'npc.unconscious': "{capitalize the speaker} {verb:collapses speaker}, unconscious.",
 
     // NPC combat attack outcomes (canonical Zork troll messages from MDL source)
     'npc.combat.attack.missed': "The troll swings his axe, but it misses.",
