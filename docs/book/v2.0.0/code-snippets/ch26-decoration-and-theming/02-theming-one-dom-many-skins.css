@@ -1,0 +1,6 @@
+[data-theme="modern-dark"] {
+  --theme-bg: #1e1e2e;
+  --theme-text: #cdd6f4;
+  --theme-accent: #89b4fa;
+  --theme-font: "Inter", system-ui, sans-serif;
+}

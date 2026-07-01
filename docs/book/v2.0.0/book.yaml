@@ -28,7 +28,7 @@ epub-title-page: false
 # (frontmatter/00-title-page.md, 00b-copyright.md via frontmatter.yaml).
 metadata:
   title: "The Sharpee Author and Developer Manual"
-  subtitle: "Authoring Interactive Fiction with Sharpee"
+  subtitle: "Authoring Interactive Fiction with Sharpee (v2.0 — Phrase Algebra)"
   author: "David Cornelson"
   lang: en-US
 

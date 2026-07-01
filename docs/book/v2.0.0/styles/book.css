@@ -1,0 +1,224 @@
+/*
+ * book.css — shared base styling for *The Sharpee Book*
+ *
+ * Used by: HTML output (linked) and PDF output (WeasyPrint reads it alongside
+ *          print.css). EPUB has its own epub.css because e-readers sandbox CSS.
+ * Owner:   docs/book authoring toolchain.
+ *
+ * The single most important rule here is `.under-the-hood` — the programmer's
+ * perspective box. It must read as a distinct, boxed aside in every format.
+ */
+
+:root {
+  --ink: #1a1a1a;
+  --muted: #5a5a5a;
+  --rule: #d8d8d8;
+  --code-bg: #f4f5f7;
+  --uth-bg: #f3f7fb;
+  --uth-border: #2c6fb5;
+  --uth-label: #1d4e7e;
+}
+
+body {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  color: var(--ink);
+  line-height: 1.55;
+  max-width: 42rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+h1, h2, h3 {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.2;
+  margin-top: 1.8em;
+}
+
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1.05rem; }
+
+code, pre {
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 0.88em;
+}
+
+p code, li code {
+  background: var(--code-bg);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--code-bg);
+  padding: 0.8em 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  line-height: 1.4;
+}
+
+pre code { background: none; padding: 0; }
+
+blockquote {
+  border-left: 3px solid var(--rule);
+  margin-left: 0;
+  padding-left: 1em;
+  color: var(--muted);
+}
+
+/* ---- The "Under the Hood" programmer's-perspective box ---- */
+
+.under-the-hood {
+  background: var(--uth-bg);
+  border: 1px solid var(--uth-border);
+  border-left-width: 5px;
+  border-radius: 5px;
+  padding: 0.4em 1.1em 0.9em;
+  margin: 1.6em 0;
+}
+
+.under-the-hood > p:first-child {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--uth-label);
+  margin-bottom: 0.4em;
+}
+
+.under-the-hood pre {
+  background: #fff;
+  border: 1px solid #d6e2ef;
+}
+
+/* Part divider title pages (`::: part-page` wrapping a sword, h1.part + blurb) */
+.part-page {
+  text-align: center;
+}
+
+/* The Sharpee sword motif above each part heading. Pandoc wraps it in a <p>;
+   that paragraph must be excluded from the blurb rule below (see .part-page p),
+   or weasyprint collapses the percentage-width image to zero. */
+.part-sword {
+  display: block;
+  width: 80%;
+  max-width: 4.2in;
+  margin: 0 auto 1.4em;
+}
+
+.part-page p:has(.part-sword) {
+  max-width: none;
+  margin: 0;
+}
+
+h1.part {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 2rem;
+  border: none;
+}
+
+/* The blurb paragraph(s) under a part heading — placeholder text for now. */
+.part-page p {
+  max-width: 30rem;
+  margin: 1.6em auto 0;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.7;
+}
+
+/* A poem used as a part-divider blurb (Part I uses Kipling's "If—"). The verse
+   is long, so a poem page shrinks the sword and tightens the verse to fit one
+   page; print.css drops the vertical-centering geometry so it can never clip. */
+/* Explicit (non-percentage) width + margin auto centers reliably in the
+   block layout used for the poem page, independent of the :has() width reset. */
+.part-page.has-poem .part-sword { width: 1.8in; max-width: 1.8in; margin: 0 auto 0.7em; }
+.part-page.has-poem h1.part { font-size: 1.6rem; margin: 0 0 0.4em; }
+.part-page .line-block {
+  display: inline-block;     /* shrink-to-content so the centered page centers it */
+  text-align: left;
+  margin: 0.4em auto 0;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.3;
+  font-size: 0.86rem;
+}
+.part-page .line-block + p { margin-top: 0.7em; font-size: 0.88rem; }
+
+/* Pandoc auto-generates a title block from metadata; the book uses an authored
+   title page instead (frontmatter/00-title-page.md), so hide the auto one. */
+#title-block-header { display: none; }
+
+/* ---- Title page (authored: sword + title + subtitle + author) ---- */
+.title-page {
+  text-align: center;
+}
+
+.title-sword,
+.title-art {
+  display: block;
+  margin: 0 auto 1.6em;
+}
+
+.title-sword { width: 70%; max-width: 3.6in; }
+.title-art   { width: 62%; max-width: 2.9in; }
+
+.title-page p:has(.title-sword),
+.title-page p:has(.title-art) {
+  max-width: none;
+  margin: 0;
+}
+
+.book-title {
+  display: block;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-size: 2.1rem;
+  line-height: 1.15;
+  margin: 0 auto 0.8em;
+  max-width: 9in;
+}
+
+.book-subtitle {
+  display: block;
+  font-size: 1.25rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.book-author {
+  display: block;
+  margin-top: 2.4em;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Copyright / imprint page ---- */
+.copyright-page {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.copyright-page p {
+  margin: 0.6em 0;
+}
+
+.copyright-page em {
+  font-style: italic;
+}
+
+.art-credit {
+  display: block;
+  margin-top: 1.4em;
+  font-size: 0.8em;
+}
+
+/* Chapter-opening ornament: a small artwork directly under a chapter heading. */
+.chapter-ornament {
+  display: block;
+  width: 1.9in;
+  max-width: 45%;
+  margin: 0.2em auto 1.8em;
+}

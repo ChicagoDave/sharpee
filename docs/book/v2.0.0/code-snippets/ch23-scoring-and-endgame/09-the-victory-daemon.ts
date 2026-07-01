@@ -1,0 +1,1 @@
+scheduler.registerDaemon(createVictoryDaemon());
