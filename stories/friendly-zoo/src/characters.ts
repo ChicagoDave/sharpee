@@ -74,12 +74,12 @@ export const parrotBehavior: NpcBehavior = {
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
     if (context.random.chance(0.5)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { npcName: 'parrot', text: context.random.pick(PARROT_PHRASES) } }];
+      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASES) } }];
     }
     return [];
   },
   onPlayerEnters(): NpcAction[] {
-    return [{ type: 'emote', messageId: 'npc.emote', data: { npcName: 'parrot', text: 'The parrot ruffles its feathers and eyes you with interest.' } }];
+    return [{ type: 'emote', messageId: 'npc.emote', data: { text: 'The parrot ruffles its feathers and eyes you with interest.' } }];
   },
 };
 
@@ -107,12 +107,12 @@ export const parrotAfterHoursBehavior: NpcBehavior = {
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
     if (context.random.chance(0.6)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { npcName: 'parrot', text: context.random.pick(PARROT_AFTER_HOURS_PHRASES) } }];
+      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_AFTER_HOURS_PHRASES) } }];
     }
     return [];
   },
   onPlayerEnters(): NpcAction[] {
-    return [{ type: 'emote', messageId: 'npc.emote', data: { npcName: 'parrot', text: 'The parrot glances at you and nods, as if recognizing a fellow after-hours regular.' } }];
+    return [{ type: 'emote', messageId: 'npc.emote', data: { text: 'The parrot glances at you and nods, as if recognizing a fellow after-hours regular.' } }];
   },
 };
 

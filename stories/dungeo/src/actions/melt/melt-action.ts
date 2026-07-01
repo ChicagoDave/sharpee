@@ -116,7 +116,7 @@ export const meltAction: Action = {
     if (context.sharedData.noFlame) {
       return [context.event('game.message', {
         messageId: MeltMessages.NO_FLAME,
-        instrument: context.sharedData.instrumentName
+        params: { instrument: context.sharedData.instrumentName }
       })];
     }
 

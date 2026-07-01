@@ -209,7 +209,7 @@ export const pushPanelAction: Action = {
     const { sharedData } = context;
     const events: ISemanticEvent[] = [];
 
-    const result = sharedData.pushResult as { success: boolean; message: string } | undefined;
+    const result = sharedData.pushResult as { success: boolean; message: string; params?: Record<string, unknown> } | undefined;
     if (!result) {
       return events;
     }
@@ -221,6 +221,7 @@ export const pushPanelAction: Action = {
       // Emit the pushed event (for handler to update feedback)
       events.push(context.event('if.event.pushed', {
         messageId: result.message,
+        ...(result.params ?? {}),
         targetId: target?.id,
         panelType
       }));

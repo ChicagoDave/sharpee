@@ -163,7 +163,7 @@ export const breakAction: Action = {
     // Emit the break event with appropriate message
     events.push(context.event('game.message', {
       messageId: isFrame ? BreakMessages.BREAK_FRAME : BreakMessages.BREAK_SUCCESS,
-      target: targetName,
+      params: { target: targetName },
       framePieceId: sharedData.framePieceId
     }));
 
