@@ -28,7 +28,6 @@ export const patrolBotBehavior: NpcBehavior = {
           type: 'speak',
           messageId: 'npc.speech',
           data: {
-            npcName: 'maintenance bot',
             text: context.random.pick(BOT_PHRASES),
           },
         },
@@ -42,7 +41,6 @@ export const patrolBotBehavior: NpcBehavior = {
         type: 'emote',
         messageId: 'npc.emote',
         data: {
-          npcName: 'maintenance bot',
           text: 'The maintenance bot swivels its optical sensor toward you.',
         },
       },

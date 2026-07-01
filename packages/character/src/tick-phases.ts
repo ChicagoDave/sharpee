@@ -19,6 +19,7 @@ import {
   RoomTrait,
   IExitInfo,
 } from '@sharpee/world-model';
+import { nounPhraseFor } from '@sharpee/stdlib';
 import {
   PropagationProfile,
   PropagationContext,
@@ -410,7 +411,7 @@ function executeNpcGoals(
       goalId: activeGoal.def.id,
       step: activeGoal.currentStep,
       messageId: stepResult.witnessed,
-      npcName: npc.name,
+      speaker: nounPhraseFor(npc),
     }, npc.id));
   }
 

@@ -5,6 +5,11 @@
  * speech patterns, between-turn commentary, and attention management.
  * Authors override per-NPC; these serve as fallbacks.
  *
+ * Attribution names the NPC via a `speaker` NounPhrase (ADR-203) and agrees the
+ * leading verb with it (`{verb:LEMMA speaker}`, ADR-199). Embedded literal dialogue
+ * stays verbatim (ADR-200); secondary body verbs remain literal (leading-attribution
+ * scope).
+ *
  * Owner context: @sharpee/lang-en-us / npc
  */
 
@@ -15,57 +20,57 @@ export const conversationLanguage = {
     // -----------------------------------------------------------------------
 
     'character.conversation.response.deflect':
-      '{verbatim:npcName} changes the subject.',
+      '{capitalize the speaker} {verb:changes speaker} the subject.',
     'character.conversation.response.refuse':
-      '{verbatim:npcName} refuses to discuss that.',
+      '{capitalize the speaker} {verb:declines speaker} to discuss that.',
     'character.conversation.response.confabulate':
-      '{verbatim:npcName} seems to be filling in the gaps from memory.',
+      '{capitalize the speaker} {verb:seems speaker} to be filling in the gaps from memory.',
     'character.conversation.response.omit':
-      '{verbatim:npcName} says nothing about that.',
+      '{capitalize the speaker} {verb:says speaker} nothing about that.',
 
     // -----------------------------------------------------------------------
     // Cognitive speech patterns
     // -----------------------------------------------------------------------
 
     'character.conversation.cognitive.fragmented':
-      '{verbatim:npcName} speaks in broken fragments, losing the thread mid-sentence.',
+      '{capitalize the speaker} {verb:speaks speaker} in broken fragments, losing the thread mid-sentence.',
     'character.conversation.cognitive.drifting':
-      '{verbatim:npcName} trails off, attention wandering to something only they can see.',
+      '{capitalize the speaker} {verb:trails speaker} off, attention wandering to something only they can see.',
     'character.conversation.cognitive.detached':
-      '{verbatim:npcName} responds flatly, as if reciting from a great distance.',
+      '{capitalize the speaker} {verb:responds speaker} flatly, as if reciting from a great distance.',
 
     // -----------------------------------------------------------------------
     // Between-turn defaults
     // -----------------------------------------------------------------------
 
     'character.conversation.between.eager.1':
-      '{verbatim:npcName} watches you expectantly.',
+      '{capitalize the speaker} {verb:watches speaker} you expectantly.',
     'character.conversation.between.eager.3':
-      '{verbatim:npcName} clears their throat, waiting for your attention.',
+      '{capitalize the speaker} {verb:clears speaker} their throat, waiting for your attention.',
     'character.conversation.between.reluctant.1':
-      '{verbatim:npcName} seems relieved you\'re occupied.',
+      '{capitalize the speaker} {verb:seems speaker} relieved you\'re occupied.',
     'character.conversation.between.hostile.1':
-      '{verbatim:npcName} glares at you impatiently.',
+      '{capitalize the speaker} {verb:glares speaker} at you impatiently.',
     'character.conversation.between.confessing.1':
-      '{verbatim:npcName} shifts uncomfortably, as though wanting to say more.',
+      '{capitalize the speaker} {verb:shifts speaker} uncomfortably, as though wanting to say more.',
     'character.conversation.between.confessing.3':
-      '{verbatim:npcName} opens their mouth, then closes it again.',
+      '{capitalize the speaker} {verb:opens speaker} their mouth, then closes it again.',
     'character.conversation.between.neutral.3':
-      '{verbatim:npcName} seems to lose interest in the conversation.',
+      '{capitalize the speaker} {verb:seems speaker} to lose interest in the conversation.',
 
     // -----------------------------------------------------------------------
     // Attention / lifecycle
     // -----------------------------------------------------------------------
 
     'character.conversation.attention.yields':
-      '{verbatim:npcName} steps aside, yielding the conversation.',
+      '{capitalize the speaker} {verb:steps speaker} aside, yielding the conversation.',
     'character.conversation.attention.protests':
-      '{verbatim:npcName} frowns as you turn away. "I wasn\'t finished."',
+      '{capitalize the speaker} {verb:frowns speaker} as you turn away. "I wasn\'t finished."',
     'character.conversation.attention.blocks':
-      '{verbatim:npcName} steps in front of you. "We\'re not done here."',
+      '{capitalize the speaker} {verb:steps speaker} in front of you. "We\'re not done here."',
     'character.conversation.ends':
-      '{verbatim:npcName} nods, ending the conversation.',
+      '{capitalize the speaker} {verb:nods speaker}, ending the conversation.',
     'character.conversation.initiates':
-      '{verbatim:npcName} approaches you. "A word, if you please."',
+      '{capitalize the speaker} {verb:approaches speaker} you. "A word, if you please."',
   },
 };

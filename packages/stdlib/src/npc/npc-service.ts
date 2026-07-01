@@ -14,6 +14,7 @@ import {
 } from './types';
 import { NpcMessages } from './npc-messages';
 import { processLucidityDecay } from './lucidity-decay';
+import { nounPhraseFor } from '../utils';
 /**
  * A tick phase handler that runs during NPC turn processing.
  * Registered by higher-level packages (e.g., @sharpee/character).
@@ -342,7 +343,7 @@ export class NpcService implements INpcService {
           {
             npc: npcId,
             messageId: NpcMessages.NPC_NO_RESPONSE,
-            data: { npcName: npc.name },
+            data: { speaker: nounPhraseFor(npc) },
           },
           npcId
         ),
@@ -653,7 +654,7 @@ export class NpcService implements INpcService {
         ? (overrides.leaves ?? NpcMessages.NPC_LEAVES)
         : (overrides.departs ?? NpcMessages.NPC_DEPARTS);
       hearingId = NpcMessages.NPC_HEARD_DEPARTS;
-      params = { npcName: npc.name, ...(direction ? { direction } : {}) };
+      params = { speaker: nounPhraseFor(npc), ...(direction ? { direction } : {}) };
     } else if (to === playerLocation) {       // arrival
       sightId = direction
         ? (overrides.enters ?? NpcMessages.NPC_ENTERS)
@@ -661,7 +662,7 @@ export class NpcService implements INpcService {
       hearingId = NpcMessages.NPC_HEARD_ARRIVES;
       // The player sees the NPC arrive *from* the direction it came.
       const dir = direction ? getOppositeDirection(direction) : undefined;
-      params = { npcName: npc.name, ...(dir ? { direction: dir } : {}) };
+      params = { speaker: nounPhraseFor(npc), ...(dir ? { direction: dir } : {}) };
     } else {
       return [];                              // a move the player can't witness
     }

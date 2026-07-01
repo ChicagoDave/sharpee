@@ -105,7 +105,9 @@ export interface IQueryContext {
   
   /** For NPC queries */
   npcId?: string;
-  npcName?: string;
+  // NPC attribution messages carry the speaker as a `NounPhrase` in the loose
+  // message-params bag (ADR-203), not a typed field here — keeps `core` free of an
+  // `if-domain` dependency. (Replaced the former bare-string speaker-name field.)
   topic?: string;
   
   /** For game mechanic queries */

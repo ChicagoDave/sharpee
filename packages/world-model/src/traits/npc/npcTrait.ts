@@ -39,7 +39,7 @@ export interface INpcData {
   /**
    * Per-NPC message-ID overrides for movement announcements. Any key left unset
    * falls back to the platform default (npc.leaves / npc.enters / npc.arrives /
-   * npc.departs). Override text receives { npcName, direction } params.
+   * npc.departs). Override text receives { speaker, direction } params.
    */
   movementMessages?: {
     leaves?: string;   // departure with direction (move)
