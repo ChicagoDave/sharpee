@@ -192,24 +192,24 @@ export function registerNpcMessages(language: LanguageProvider): void {
   // ==========================================================================
 
   // Guard behavior
-  language.addMessage('npc.guard.blocks', 'The {verbatim:npcName} growls menacingly, blocking your way.');
-  language.addMessage('npc.guard.attacks', 'The {verbatim:npcName} swings at you!');
-  language.addMessage('npc.guard.defeated', 'The {verbatim:npcName} has been defeated!');
+  language.addMessage('npc.guard.blocks', '{capitalize the speaker} growls menacingly, blocking your way.');
+  language.addMessage('npc.guard.attacks', '{capitalize the speaker} swings at you!');
+  language.addMessage('npc.guard.defeated', '{capitalize the speaker} has been defeated!');
 
   // Combat
-  language.addMessage('npc.attacks', 'The {verbatim:npcName} attacks!');
-  language.addMessage('npc.misses', 'The {verbatim:npcName} misses.');
-  language.addMessage('npc.hits', 'The {verbatim:npcName} hits you!');
-  language.addMessage('npc.killed', 'The {verbatim:npcName} is dead.');
-  language.addMessage('npc.unconscious', 'The {verbatim:npcName} slumps to the ground, unconscious.');
+  language.addMessage('npc.attacks', '{capitalize the speaker} attacks!');
+  language.addMessage('npc.misses', '{capitalize the speaker} misses.');
+  language.addMessage('npc.hits', '{capitalize the speaker} hits you!');
+  language.addMessage('npc.killed', '{capitalize the speaker} is dead.');
+  language.addMessage('npc.unconscious', '{capitalize the speaker} slumps to the ground, unconscious.');
 
   // Movement
-  language.addMessage('npc.enters', 'A {verbatim:npcName} enters.');
-  language.addMessage('npc.leaves', 'The {verbatim:npcName} leaves.');
-  language.addMessage('npc.notices_player', 'The {verbatim:npcName} notices you.');
+  language.addMessage('npc.enters', '{capitalize a speaker} enters.');
+  language.addMessage('npc.leaves', '{capitalize the speaker} leaves.');
+  language.addMessage('npc.notices_player', '{capitalize the speaker} notices you.');
 
   // Speech
-  language.addMessage('npc.no_response', 'The {verbatim:npcName} does not respond.');
+  language.addMessage('npc.no_response', '{capitalize the speaker} does not respond.');
 
   // ==========================================================================
   // Egg Messages (capability dispatch - only thief can open)

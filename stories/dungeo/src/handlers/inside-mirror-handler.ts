@@ -168,7 +168,7 @@ export function lowerPole(world: WorldModel): { success: boolean; message: strin
 /**
  * Rotate the box (push red or yellow panel)
  */
-export function rotateBox(world: WorldModel, clockwise: boolean): { success: boolean; message: string } {
+export function rotateBox(world: WorldModel, clockwise: boolean): { success: boolean; message: string; params?: Record<string, unknown> } {
   const state = getMirrorState(world);
 
   // Can only rotate if pole is not lowered into channel
@@ -183,7 +183,7 @@ export function rotateBox(world: WorldModel, clockwise: boolean): { success: boo
 
   world.setStateValue(DIRECTION_KEY, newDirection);
   world.setStateValue(BOX_ROTATED_KEY, getDirectionName(newDirection));
-  return { success: true, message: InsideMirrorMessages.BOX_ROTATES };
+  return { success: true, message: InsideMirrorMessages.BOX_ROTATES, params: { direction: getDirectionName(newDirection) } };
 }
 
 /**

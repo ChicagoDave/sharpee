@@ -200,7 +200,7 @@ function executeRobotTake(
       context.world.moveEntity(targetObject.id, robot.id);
       events.push(context.event('game.message', {
         messageId: RobotMessages.TAKES_OBJECT,
-        objectName: targetIdentity?.name || 'object'
+        params: { objectName: targetIdentity?.name || 'object' }
       }));
     }
   }
@@ -252,7 +252,7 @@ function executeRobotDrop(
     context.world.moveEntity(targetObject.id, robotLocation);
     events.push(context.event('game.message', {
       messageId: RobotMessages.DROPS_OBJECT,
-      objectName: targetObject.get(IdentityTrait)?.name || 'object'
+      params: { objectName: targetObject.get(IdentityTrait)?.name || 'object' }
     }));
   }
 

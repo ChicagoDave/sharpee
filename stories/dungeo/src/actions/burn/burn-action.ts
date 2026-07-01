@@ -229,7 +229,7 @@ export const burnAction: Action = {
     } else if (sharedData.burnableType === 'flammable') {
       events.push(context.event('game.message', {
         messageId: BurnMessages.BURN_SUCCESS,
-        target: targetName
+        params: { target: targetName }
       }));
     } else {
       events.push(context.event('game.message', {
