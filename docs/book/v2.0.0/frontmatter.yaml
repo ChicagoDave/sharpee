@@ -1,0 +1,19 @@
+# frontmatter.yaml — the title page and copyright page, layered ahead of the body.
+#
+# Purpose: these two pages must come *before* the table of contents. Pandoc's
+#          HTML/PDF writer injects the auto-TOC at the top of the body, so they
+#          can't simply be the first entries in book.yaml's input-files (that
+#          puts them after the TOC). Instead:
+#            - EPUB renders `--defaults=frontmatter.yaml --defaults=book.yaml`,
+#              which appends the two input-file lists (front matter first), and
+#              the EPUB spine order is correct.
+#            - HTML/PDF render this file to a standalone-less fragment and pass it
+#              via `--include-before-body`, which the template places ahead of
+#              the TOC. (See scripts/build-book.sh.)
+# Owner:   docs/book authoring toolchain.
+
+from: markdown+fenced_divs+smart
+
+input-files:
+  - frontmatter/00-title-page.md
+  - frontmatter/00b-copyright.md

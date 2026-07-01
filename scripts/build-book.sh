@@ -2,27 +2,39 @@
 #
 # build-book.sh — render *The Sharpee Book* to HTML, EPUB, and PDF.
 #
-# Purpose: one canonical markdown source (docs/book/) → three outputs, driven
-#          locally (no CI). Chapter order and shared metadata live in
-#          docs/book/book.yaml (a pandoc defaults file).
+# Purpose: per-version markdown source (docs/book/<version>/) → three outputs,
+#          driven locally (no CI). Chapter order and shared metadata live in
+#          docs/book/<version>/book.yaml (a pandoc defaults file).
 # Owner:   docs/book authoring toolchain (ADR — Sharpee author book plan).
 #
 # Usage:
-#   scripts/build-book.sh            # render all three formats
-#   scripts/build-book.sh html       # render one format (html | epub | pdf)
+#   scripts/build-book.sh <version>          # render all formats for one edition
+#   scripts/build-book.sh <version> html     # render one format (html | epub | pdf)
+#   version = v1.5.0 | v2.0.0  (subdirectories of docs/book/)
 #
 # Requires: pandoc, weasyprint (PDF engine). See the book plan, Phase 1.
 
 set -euo pipefail
 
-# Resolve the book directory relative to this script, then work from there so
+# The book is split into per-version editions under docs/book/<version>/ (each a
+# self-contained pandoc source with its own book.yaml + assets). Require the
+# version as the first arg; the optional second arg is the format.
+VERSION="${1:-}"
+if [ -z "$VERSION" ]; then
+  echo "usage: build-book.sh <version> [html|epub|pdf|web|snippets|all]  (version = v1.5.0 | v2.0.0)"
+  exit 2
+fi
+FORMAT="${2:-all}"
+
+# Resolve the edition directory relative to this script, then work from there so
 # the input-files paths in book.yaml resolve correctly.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOOK_DIR="$SCRIPT_DIR/../docs/book"
+BOOK_DIR="$SCRIPT_DIR/../docs/book/$VERSION"
+[ -d "$BOOK_DIR" ] || { echo "error: book edition not found: docs/book/$VERSION"; exit 2; }
 cd "$BOOK_DIR"
 
 OUT="build"
-NAME="the-sharpee-book"
+NAME="the-sharpee-book-$VERSION"
 mkdir -p "$OUT"
 
 command -v pandoc >/dev/null || { echo "error: pandoc not found (brew install pandoc)"; exit 1; }
@@ -156,14 +168,14 @@ build_snippets() {
 echo "→ art"
 optimize_art
 
-case "${1:-all}" in
+case "$FORMAT" in
   html)     build_html ;;
   epub)     build_epub ;;
   pdf)      build_pdf ;;
   web)      build_web ;;
   snippets) build_snippets ;;
   all)      build_html; build_epub; build_pdf; build_snippets ;;
-  *)        echo "usage: build-book.sh [html|epub|pdf|web|snippets|all]"; exit 2 ;;
+  *)        echo "usage: build-book.sh <version> [html|epub|pdf|web|snippets|all]"; exit 2 ;;
 esac
 
 echo "done → $BOOK_DIR/$OUT/"

@@ -1,0 +1,86 @@
+# book.yaml — Pandoc defaults file for *The Sharpee Book*
+#
+# Purpose: single source of truth for chapter order and shared render metadata.
+#          `scripts/build-book.sh` loads this with `pandoc --defaults` and adds
+#          per-format flags (output target, CSS, PDF engine).
+# Owner:   docs/book (authoring toolchain, ADR — Sharpee author book plan)
+#
+# To add a chapter: add its path to `input-files` in reading order (preface,
+# then parts in order, then appendices). The TITLE PAGE and COPYRIGHT PAGE are
+# NOT listed here — they live in frontmatter.yaml and are layered ahead of this
+# body so they precede the table of contents (see build-book.sh and
+# frontmatter.yaml for why).
+
+from: markdown+fenced_divs+smart
+standalone: true
+toc: true
+toc-depth: 2
+number-sections: true
+
+# Suppress pandoc's auto-generated EPUB title page (= --epub-title-page=false);
+# the authored frontmatter/00-title-page.md is the single title page for all
+# three formats. (Ignored by the HTML/PDF writers, which hide their auto title
+# block via CSS instead — see #title-block-header in book.css.)
+epub-title-page: false
+
+# `metadata.title`/`author` drive the HTML <title>, PDF document properties, and
+# EPUB OPF metadata. The visible title/copyright pages are authored markdown
+# (frontmatter/00-title-page.md, 00b-copyright.md via frontmatter.yaml).
+metadata:
+  title: "The Sharpee Author and Developer Manual"
+  subtitle: "Authoring Interactive Fiction with Sharpee (v1.5)"
+  author: "David Cornelson"
+  lang: en-US
+
+# Chapter order. Front matter, then Parts I–VI (Phase 2), then VII–VIII and
+# appendices (later phases). Migration chapters carry a `[v.. migrated]` /
+# `[v.. pending]` note; new chapters are stubs until their writing phase.
+input-files:
+  - frontmatter/00-preface.md
+  - frontmatter/01-introduction.md
+  - frontmatter/02-how-to-read.md
+  # Part I — Getting Started
+  - parts/part-1/01-installing-sharpee.md          # new (stub)
+  - parts/part-1/02-your-first-room.md             # v01 (migrated)
+  - parts/part-1/03-the-play-loop.md               # new (stub)
+  # Part II — Building a World
+  - parts/part-2/04-rooms-and-navigation.md        # v02 (migrated)
+  - parts/part-2/05-scenery-and-portable-objects.md      # v03–v04 (pending)
+  - parts/part-2/06-containers-and-supporters.md         # v05 (pending)
+  - parts/part-2/07-openable-locked-doors-and-keys.md    # v06–v07 (pending)
+  - parts/part-2/08-light-and-dark.md                    # v08 (pending)
+  - parts/part-2/09-the-map-and-regions.md               # new (stub)
+  # Part III — Making It Interactive
+  - parts/part-3/10-standard-actions-and-the-four-phase-model.md   # new (stub)
+  - parts/part-3/11-scope-and-visibility.md                        # new (stub)
+  - parts/part-3/12-readable-objects-and-switchable-devices.md     # v09–v10 (pending)
+  # Part IV — Custom Behavior
+  - parts/part-4/13-event-handlers.md              # v12 (pending)
+  - parts/part-4/14-custom-actions.md              # v13 (pending)
+  - parts/part-4/15-capability-dispatch.md         # v14 (pending)
+  - parts/part-4/16-custom-traits-and-behaviors.md # new (stub)
+  # Part V — Words
+  - parts/part-5/17-extending-the-grammar.md       # new (stub)
+  - parts/part-5/18-the-language-layer.md          # new (stub)
+  - parts/part-5/19-the-formatter-chain.md         # new (stub)
+  # Part VI — Living Worlds
+  - parts/part-6/20-non-player-characters.md       # v11 (pending)
+  - parts/part-6/21-scenes.md                      # new (stub)
+  - parts/part-6/22-timed-events-and-daemons.md    # v15 (pending)
+  - parts/part-6/23-scoring-and-endgame.md         # v16 (pending)
+  # Part VII — Presentation
+  - parts/part-7/24-channels.md                    # new
+  - parts/part-7/25-the-web-client.md              # new (stub)
+  - parts/part-7/26-decoration-and-theming.md      # new (stub)
+  - parts/part-7/27-media-and-audio.md             # new (stub)
+  # Part VIII — Shipping
+  - parts/part-8/28-the-multi-file-story.md             # v17 (new) + Volume VIII divider
+  - parts/part-8/29-transcript-testing-and-walkthroughs.md  # new (stub)
+  - parts/part-8/30-saving-and-restoring.md            # new (stub)
+  - parts/part-8/31-building-and-publishing.md         # new (stub)
+  # Back matter — appendices, then credits
+  - backmatter/appendix-a-architecture-map.md      # A — the layer model
+  - backmatter/appendix-b-action-catalog.md        # B — standard actions (generated)
+  - backmatter/appendix-c-trait-catalog.md         # C — traits (generated)
+  - backmatter/appendix-d-message-reference.md     # D — message IDs (generated)
+  - backmatter/appendix-e-grammar-reference.md     # E — grammar patterns (generated)

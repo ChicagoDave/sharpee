@@ -1,0 +1,4 @@
+/* the engine, shipped by the platform, written once, never per theme */
+body              { background: var(--theme-bg); color: var(--theme-text); }
+.sharpee-status-bar { background: var(--theme-accent); color: var(--theme-accent-text); }
+/* …every .sharpee-* component, all consuming var(--theme-*) … */
