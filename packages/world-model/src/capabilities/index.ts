@@ -15,18 +15,15 @@ export {
 // Behavior interface
 export { CapabilityBehavior, CapabilitySharedData } from './capability-behavior';
 
-// Registry
+// Binding types (ADR-090, ADR-207). The binding map itself is per-world —
+// it lives on WorldModel (registerCapabilityBehavior / getBehaviorForCapability /
+// getBehaviorBinding), not as a module-level registry. These are the shapes
+// WorldModel stores, kept here for reuse and to avoid a WorldModel -> capabilities
+// -> world import cycle (see capability-binding.ts header).
 export {
   TraitBehaviorBinding,
-  BehaviorRegistrationOptions,
-  registerCapabilityBehavior,
-  getBehaviorForCapability,
-  getBehaviorBinding,
-  hasCapabilityBehavior,
-  unregisterCapabilityBehavior,
-  clearCapabilityRegistry,
-  getAllCapabilityBindings
-} from './capability-registry';
+  BehaviorRegistrationOptions
+} from './capability-binding';
 
 // Defaults and configuration
 export {

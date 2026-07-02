@@ -17,6 +17,11 @@ import { ITrait } from '../traits/trait';
 import { OpenableTrait } from '../traits/openable/openableTrait';
 import { LockableTrait } from '../traits/lockable/lockableTrait';
 import { ICapabilityStore } from './capabilities';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type {
+  TraitBehaviorBinding,
+  BehaviorRegistrationOptions
+} from '../capabilities/capability-binding';
 import type {
   IWorldModel,
   EventHandler,
@@ -358,6 +363,25 @@ export class AuthorModel implements IWorldModel {
 
   hasCapability(name: string): boolean {
     return this.worldModel.hasCapability(name);
+  }
+
+  // Capability-Behavior Binding Management (ADR-090 dispatch, ADR-207 ownership)
+  // — delegates to the underlying WorldModel, which owns the per-world map.
+  registerCapabilityBehavior<T extends ITrait = ITrait>(
+    traitType: string,
+    capability: string,
+    behavior: CapabilityBehavior,
+    options?: BehaviorRegistrationOptions<T>
+  ): void {
+    this.worldModel.registerCapabilityBehavior(traitType, capability, behavior, options);
+  }
+
+  getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined {
+    return this.worldModel.getBehaviorForCapability(trait, capability);
+  }
+
+  getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
+    return this.worldModel.getBehaviorBinding(traitType, capability);
   }
 
   // Score Ledger

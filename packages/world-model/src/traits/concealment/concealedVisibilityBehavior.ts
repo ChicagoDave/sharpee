@@ -10,7 +10,7 @@
  */
 
 import { CapabilityBehavior } from '../../capabilities/capability-behavior';
-import { registerCapabilityBehavior } from '../../capabilities/capability-registry';
+import { WorldModel } from '../../world/WorldModel';
 import { VISIBILITY_CAPABILITY } from '../../world/VisibilityBehavior';
 import { ConcealedStateTrait } from './concealedStateTrait';
 
@@ -35,12 +35,16 @@ export const ConcealedVisibilityBehavior: CapabilityBehavior = {
 /**
  * Register the default visibility behavior for concealed actors.
  *
- * Call this during platform initialization. Stories that need NPC detection
- * can register their own behavior for specific trait types using the same
- * capability dispatch override pattern.
+ * Call this during a game's initialization, once per `WorldModel` instance
+ * (ADR-207 — the binding map is per-world, not process-global). Stories that
+ * need NPC detection can register their own behavior for specific trait
+ * types on the same `world` using the same capability dispatch override
+ * pattern.
+ *
+ * @param world - The world instance to register the binding on.
  */
-export function registerConcealedVisibilityBehavior(): void {
-  registerCapabilityBehavior(
+export function registerConcealedVisibilityBehavior(world: WorldModel): void {
+  world.registerCapabilityBehavior(
     ConcealedStateTrait.type,
     VISIBILITY_CAPABILITY,
     ConcealedVisibilityBehavior

@@ -31,6 +31,13 @@ import {
   ICapabilitySchema,
   ICapabilityRegistration
 } from './capabilities';
+import { ITrait, ITraitConstructor } from '../traits/trait';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type {
+  TraitBehaviorBinding,
+  BehaviorRegistrationOptions
+} from '../capabilities/capability-binding';
+import { capabilityBindingKey } from '../capabilities/capability-binding';
 import {
   WorldState,
   WorldConfig,
@@ -160,11 +167,53 @@ export interface IWorldModel {
   // Get the data store for sharing with AuthorModel
   getDataStore(): IDataStore;
 
-  // Capability Management
+  // Capability Management (ADR-129 data capabilities — scoring, save-blob
+  // fields, etc. Distinct from the ADR-090/ADR-207 capability-behavior
+  // binding map below; both are named "capability" for historical reasons.)
   registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
   updateCapability(name: string, data: Partial<ICapabilityData>): void;
   getCapability(name: string): ICapabilityData | undefined;
   hasCapability(name: string): boolean;
+
+  // Capability-Behavior Binding Management (ADR-090 dispatch, ADR-207 ownership)
+  /**
+   * Register a behavior for a (traitType, capability) binding on this world.
+   *
+   * Idempotent: re-registering the same (traitType, capability) key
+   * overwrites the previous binding (last-registration-wins) rather than
+   * throwing. Scoped to this `WorldModel` instance only — two worlds may
+   * bind the same key to different behaviors.
+   *
+   * @param traitType - The trait type identifier (e.g. a trait's static `type`)
+   * @param capability - The action ID (capability) this binding handles
+   * @param behavior - The stateless behavior definition to bind
+   * @param options - Optional priority/resolution/mode overrides (ADR-090)
+   */
+  registerCapabilityBehavior<T extends ITrait = ITrait>(
+    traitType: string,
+    capability: string,
+    behavior: CapabilityBehavior,
+    options?: BehaviorRegistrationOptions<T>
+  ): void;
+  /**
+   * Resolve the behavior bound to a trait instance's capability on this world.
+   *
+   * @param trait - The trait instance claiming the capability
+   * @param capability - The action ID (capability) to resolve
+   * @returns The bound behavior, or `undefined` if this world has no binding
+   *   for the trait's type + capability (the caller's normal "can't do that"
+   *   rejection path handles this — never throws for a missing binding).
+   */
+  getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+  /**
+   * Resolve the full binding (behavior + priority/resolution/mode overrides)
+   * for a (traitType, capability) pair on this world.
+   *
+   * @param traitType - The trait type identifier
+   * @param capability - The action ID (capability) to resolve
+   * @returns The binding, or `undefined` if none is registered on this world
+   */
+  getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
 
   // Entity Management
   createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean }): IFEntity;
@@ -327,6 +376,13 @@ export class WorldModel implements IWorldModel {
   private config: WorldConfig;
   private capabilities: ICapabilityStore = {};
 
+  // Capability-behavior binding map (ADR-090 dispatch, ADR-207 ownership).
+  // Per-world, in-memory only — not serialized (see AC-9: bindings are code
+  // wiring re-established by story init, not save-game state). Not to be
+  // confused with `capabilities` above (ADR-129 data capabilities — a
+  // different, unrelated "capability" concept).
+  private capabilityBindings: Map<string, TraitBehaviorBinding> = new Map();
+
   // Score Ledger (ADR-129)
   private scoreLedger = new ScoreLedger();
 
@@ -459,6 +515,56 @@ export class WorldModel implements IWorldModel {
 
   hasCapability(name: string): boolean {
     return name in this.capabilities;
+  }
+
+  // Capability-Behavior Binding Management (ADR-090 dispatch, ADR-207 ownership)
+  //
+  // The binding map lives on this WorldModel instance — created with the
+  // world, garbage-collected with it, never shared across games (AC-1, AC-2).
+  // Registration is idempotent: re-registering a (traitType, capability) key
+  // overwrites the previous binding rather than throwing (AC-4).
+
+  registerCapabilityBehavior<T extends ITrait = ITrait>(
+    traitType: string,
+    capability: string,
+    behavior: CapabilityBehavior,
+    options?: BehaviorRegistrationOptions<T>
+  ): void {
+    const key = capabilityBindingKey(traitType, capability);
+    this.capabilityBindings.set(key, {
+      traitType,
+      capability,
+      behavior,
+      priority: options?.priority ?? 0,
+      resolution: options?.resolution,
+      mode: options?.mode,
+      validateBinding: options?.validateBinding as ((trait: ITrait) => boolean) | undefined
+    });
+  }
+
+  getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
+    return this.capabilityBindings.get(capabilityBindingKey(traitType, capability));
+  }
+
+  getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined {
+    const traitType = (trait.constructor as ITraitConstructor).type;
+    const binding = this.getBehaviorBinding(traitType, capability);
+
+    // No binding registered on this world for this trait+capability — the
+    // caller's normal rejection path handles this (AC-10). Never throw for
+    // an absent binding; a trait can statically declare a capability without
+    // this particular world having wired up a behavior for it.
+    if (!binding) {
+      return undefined;
+    }
+
+    if (binding.validateBinding && !binding.validateBinding(trait)) {
+      throw new Error(
+        `Behavior validation failed for trait "${traitType}", capability "${capability}"`
+      );
+    }
+
+    return binding.behavior;
   }
 
   // ID Generation

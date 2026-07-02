@@ -12,7 +12,7 @@ import { OpenableTrait } from '../traits/openable/openableTrait';
 import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
 import { SceneryTrait } from '../traits/scenery/sceneryTrait';
 import { IdentityTrait } from '../traits/identity/identityTrait';
-import { findTraitWithCapability, getBehaviorForCapability } from '../capabilities';
+import { findTraitWithCapability } from '../capabilities';
 
 /**
  * Standard capability ID for visibility control.
@@ -85,7 +85,7 @@ export class VisibilityBehavior extends Behavior {
     // Check if target has visibility capability that blocks being seen
     const visibilityTrait = findTraitWithCapability(target, VISIBILITY_CAPABILITY);
     if (visibilityTrait) {
-      const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+      const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
       if (behavior) {
         const result = behavior.validate(target, world, observer.id, {});
         if (!result.valid) {
@@ -205,7 +205,7 @@ export class VisibilityBehavior extends Behavior {
         // Check if entity has visibility capability that blocks being seen
         const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
         if (visibilityTrait) {
-          const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+          const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
           if (behavior) {
             const result = behavior.validate(entity, world, observer.id, {});
             if (!result.valid) {
@@ -280,7 +280,7 @@ export class VisibilityBehavior extends Behavior {
         // Check if entity has visibility capability that blocks being seen
         const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
         if (visibilityTrait) {
-          const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+          const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
           if (behavior) {
             // Note: We don't have a direct observer here, use container's id as proxy
             const result = behavior.validate(entity, world, container.id, {});
@@ -419,7 +419,7 @@ export class VisibilityBehavior extends Behavior {
     // Note: For isVisible we don't have an observer, so we pass empty string
     const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
     if (visibilityTrait) {
-      const behavior = getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+      const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
       if (behavior) {
         const result = behavior.validate(entity, world, '', {});
         if (!result.valid) {

@@ -5,17 +5,13 @@
 import { IFEntity } from '../../../src/entities/if-entity';
 import { ITrait } from '../../../src/traits/trait';
 import { TraitType } from '../../../src/traits/trait-types';
+import { WorldModel } from '../../../src/world/WorldModel';
 import {
   findTraitWithCapability,
   hasCapability,
   getEntityCapabilities,
   traitHasCapability,
   getCapableTraits,
-  registerCapabilityBehavior,
-  getBehaviorForCapability,
-  hasCapabilityBehavior,
-  unregisterCapabilityBehavior,
-  clearCapabilityRegistry,
   CapabilityBehavior,
   CapabilityValidationResult,
   CapabilityEffect,
@@ -175,96 +171,133 @@ describe('Capability Helpers', () => {
   });
 });
 
-describe('Capability Registry', () => {
-  beforeEach(() => {
-    clearCapabilityRegistry();
-  });
-
-  afterEach(() => {
-    clearCapabilityRegistry();
-  });
-
+// ADR-207: the capability-behavior binding map is owned by each WorldModel
+// instance, not a process-global registry. These tests exercise the
+// WorldModel methods directly — a fresh `world` per test gives isolation for
+// free (AC-3), replacing the old clearCapabilityRegistry()-in-beforeEach
+// pattern.
+describe('WorldModel capability-behavior bindings (ADR-207)', () => {
   describe('registerCapabilityBehavior', () => {
     it('should register a behavior for trait+capability', () => {
-      registerCapabilityBehavior(
+      const world = new WorldModel();
+      world.registerCapabilityBehavior(
         TestLowerableTrait.type,
         'if.action.lowering',
         testBehavior
       );
 
-      expect(hasCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering')).toBe(true);
+      const trait = new TestLowerableTrait();
+      expect(world.getBehaviorForCapability(trait, 'if.action.lowering')).toBe(testBehavior);
     });
 
-    it('should throw on duplicate registration', () => {
-      registerCapabilityBehavior(
-        TestLowerableTrait.type,
-        'if.action.lowering',
-        testBehavior
-      );
+    it('should overwrite on re-registration, not throw (AC-4: idempotent, last-wins)', () => {
+      const world = new WorldModel();
+      const secondBehavior: CapabilityBehavior = {
+        ...testBehavior,
+        validate: () => ({ valid: false, error: 'second_behavior' })
+      };
+
+      world.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
 
       expect(() => {
-        registerCapabilityBehavior(
-          TestLowerableTrait.type,
-          'if.action.lowering',
-          testBehavior
-        );
-      }).toThrow(/already registered/);
+        world.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', secondBehavior);
+      }).not.toThrow();
+
+      const trait = new TestLowerableTrait();
+      expect(world.getBehaviorForCapability(trait, 'if.action.lowering')).toBe(secondBehavior);
     });
   });
 
-  describe('getBehaviorForCapability', () => {
-    it('should return registered behavior', () => {
-      registerCapabilityBehavior(
-        TestLowerableTrait.type,
-        'if.action.lowering',
-        testBehavior
-      );
-
+  describe('getBehaviorForCapability / getBehaviorBinding', () => {
+    it('should return undefined for a capability with no registered behavior on this world (AC-10)', () => {
+      const world = new WorldModel();
       const trait = new TestLowerableTrait();
-      const behavior = getBehaviorForCapability(trait, 'if.action.lowering');
 
-      expect(behavior).toBe(testBehavior);
+      expect(world.getBehaviorForCapability(trait, 'if.action.lowering')).toBeUndefined();
+      expect(world.getBehaviorBinding(TestLowerableTrait.type, 'if.action.lowering')).toBeUndefined();
     });
 
-    it('should return undefined for unregistered', () => {
+    it('should never throw for a missing binding (AC-10)', () => {
+      const world = new WorldModel();
       const trait = new TestLowerableTrait();
-      const behavior = getBehaviorForCapability(trait, 'if.action.lowering');
 
-      expect(behavior).toBeUndefined();
+      expect(() => world.getBehaviorForCapability(trait, 'if.action.lowering')).not.toThrow();
     });
   });
 
-  describe('unregisterCapabilityBehavior', () => {
-    it('should remove registered behavior', () => {
-      registerCapabilityBehavior(
-        TestLowerableTrait.type,
-        'if.action.lowering',
-        testBehavior
-      );
+  describe('concurrency and isolation (AC-2, AC-3)', () => {
+    it('should let two worlds bind the same trait+capability key to different behaviors independently (AC-2)', () => {
+      const worldA = new WorldModel();
+      const worldB = new WorldModel();
+      const behaviorA: CapabilityBehavior = {
+        ...testBehavior,
+        validate: () => ({ valid: false, error: 'from_world_a' })
+      };
+      const behaviorB: CapabilityBehavior = {
+        ...testBehavior,
+        validate: () => ({ valid: false, error: 'from_world_b' })
+      };
 
-      unregisterCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering');
+      worldA.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', behaviorA);
+      worldB.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', behaviorB);
 
-      expect(hasCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering')).toBe(false);
+      const trait = new TestLowerableTrait();
+      expect(worldA.getBehaviorForCapability(trait, 'if.action.lowering')).toBe(behaviorA);
+      expect(worldB.getBehaviorForCapability(trait, 'if.action.lowering')).toBe(behaviorB);
+    });
+
+    it('should not leak or throw across sequential loads in one process (AC-3)', () => {
+      const trait = new TestLowerableTrait();
+
+      const firstLoad = new WorldModel();
+      firstLoad.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
+      expect(firstLoad.getBehaviorForCapability(trait, 'if.action.lowering')).toBe(testBehavior);
+
+      // A second "load" is a fresh WorldModel — registering the same key again
+      // must neither throw (unlike the old globalThis registry) nor see the
+      // first load's binding.
+      const secondLoad = new WorldModel();
+      expect(secondLoad.getBehaviorForCapability(trait, 'if.action.lowering')).toBeUndefined();
+      expect(() => {
+        secondLoad.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
+      }).not.toThrow();
+    });
+  });
+
+  describe('persistence (AC-9)', () => {
+    it('should not include capability bindings in getState()/setState() — bindings are code wiring, not save data', () => {
+      const world = new WorldModel();
+      world.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
+
+      const state = world.getState();
+      expect(JSON.stringify(state)).not.toContain('if.action.lowering');
+
+      // Re-running "init" registration after a simulated restore repopulates
+      // the map — bindings are re-established by story code, not deserialized.
+      const restored = new WorldModel();
+      restored.setState(state);
+      const trait = new TestLowerableTrait();
+      expect(restored.getBehaviorForCapability(trait, 'if.action.lowering')).toBeUndefined();
+
+      restored.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
+      expect(restored.getBehaviorForCapability(trait, 'if.action.lowering')).toBe(testBehavior);
     });
   });
 });
 
 describe('CapabilityBehavior', () => {
   let entity: IFEntity;
+  let world: WorldModel;
 
   beforeEach(() => {
     entity = new IFEntity('test-1', 'object');
     entity.add(new TestLowerableTrait());
-    clearCapabilityRegistry();
-    registerCapabilityBehavior(
+    world = new WorldModel();
+    world.registerCapabilityBehavior(
       TestLowerableTrait.type,
       'if.action.lowering',
       testBehavior
     );
-  });
-
-  afterEach(() => {
-    clearCapabilityRegistry();
   });
 
   it('should validate successfully when preconditions met', () => {
