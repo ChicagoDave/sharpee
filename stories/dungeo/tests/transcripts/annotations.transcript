@@ -33,7 +33,7 @@ $note opening mailbox works well
 # Another comment after opening
 
 > take leaflet
-[OK: contains "take leaflet"]
+[OK: contains "Taken"]
 $confusing
 
 > read leaflet

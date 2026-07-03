@@ -26,6 +26,11 @@ description: Test ADR-078 ghost ritual puzzle actions (pray, burn) and Basin Roo
 > switch on lantern
 [OK: contains "on"]
 
+# Test 2: Verify pray action works (generic response outside ritual)
+# (Run here — praying at the armed basin triggers the ADR-078 spirit trap.)
+> pray
+[OK: contains "prayer"]
+
 # Test 1: Verify Basin Room exists and is accessible
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
@@ -39,10 +44,6 @@ description: Test ADR-078 ghost ritual puzzle actions (pray, burn) and Basin Roo
 > look
 [OK: contains "Basin Room"]
 [OK: contains "basin"]
-
-# Test 2: Verify pray action works (generic response outside ritual)
-> pray
-[OK: contains "prayer"]
 
 # Test 3: Verify current room info via DR
 > gdt

@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/bootstrap",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "Load and assemble a Sharpee story (entry-aware) into a runnable game — the single loader used by transcript-tester, the CLI bundle, and devkit (ADR-180)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

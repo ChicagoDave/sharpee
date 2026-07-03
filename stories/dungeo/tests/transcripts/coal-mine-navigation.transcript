@@ -24,7 +24,7 @@ description: Verify all coal mine routes needed for wt-10 walkthrough
 
 # Toggle to State B (Coal Mine access)
 > rub mirror
-[OK: contains "mirror"]
+[OK: contains "rumble"]
 
 # Route 1: Mirror Room → Cold Passage → Slide Room → Mine Entrance
 > west
@@ -129,7 +129,7 @@ description: Verify all coal mine routes needed for wt-10 walkthrough
 [OK: contains "diamond"]
 
 > take diamond
-[OK: contains "diamond"]
+[OK: contains "Taken"]
 
 # Route 7: Machine Room → back through deep mine to maze
 > northwest

@@ -27,9 +27,17 @@ story: dungeo
 [OK: contains "Troll Room"]
 
 # Test with RETRY (triggers save/restore) + DO/UNTIL
+# RNG: the troll's swing can disarm us (sword drops) - recover it first,
+# and the disarm line ("knocks your sword out of your hand") mentions
+# neither "troll" nor "staggering", so "sword" is a valid outcome too.
 [RETRY: max=5]
 [DO]
+[WHILE: not inventory contains "elvish sword"]
+> take sword
+[SKIP]
+[END WHILE]
 > attack troll with sword
+[OK: contains_any "troll" "staggering" "sword"]
 [UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
 [ENSURES: not entity "troll" alive]
 [END RETRY]

@@ -72,7 +72,7 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 # Now pour water to make bucket rise
 > pour water
 [OK: contains "rises"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.event.poured"]
 
 # Should now be at Top of Well - check via look
 > look
@@ -82,7 +82,7 @@ description: Tests the VehicleTrait counterweight mechanism for bucket and well
 # Now fill bottle from bucket to descend
 > fill bottle
 [OK: contains "descends"]
-[EVENT: true, type="action.success"]
+[EVENT: true, type="dungeo.event.filled"]
 
 # Should now be at Well Bottom again
 > look

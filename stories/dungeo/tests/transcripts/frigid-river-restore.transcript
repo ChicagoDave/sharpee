@@ -4,13 +4,10 @@ description: Same as frigid-river-full but starting from $restore wt-06 to test 
 
 ---
 
-# Restore from wt-06 save (player in Living Room with torch, lantern, bell, book, candles)
+# Restore from wt-06 save (player in Living Room with torch and lantern)
 $restore wt-06
 
-# Drop items we don't need, take pump
-> drop bell
-> drop book
-> drop candles
+# Take the pump
 > take pump
 [OK: contains "Taken"]
 
@@ -104,6 +101,7 @@ $restore wt-06
 [OK: contains "Taken"]
 
 > drop buoy
+[OK: contains "drop the red buoy"]
 
 # ============================================================================
 # TEST: Land at Rocky Shore and disembark (KEY TEST - does disembark survive restore?)

@@ -4,7 +4,7 @@
  * NEW IN THIS VERSION:
  *   - Capability dispatch (ADR-090) — one verb, different behavior per entity
  *   - Custom traits with capabilities[] — declaring what an entity can do
- *   - registerCapabilityBehavior() — registering what happens when you do it
+ *   - world.registerCapabilityBehavior() — registering what happens when you do it
  *   - CapabilityBehavior interface — validate/execute/report/blocked
  *
  * WHAT YOU'LL LEARN:
@@ -42,10 +42,7 @@ import {
   CapabilitySharedData,           // Shared state between phases
   CapabilityEffect,               // What report/blocked return
   createEffect,                   // Helper to build effects
-  registerCapabilityBehavior,     // Register behavior for trait+capability
-  hasCapabilityBehavior,          // Check if already registered
   findTraitWithCapability,        // Find trait on entity claiming a capability
-  getBehaviorForCapability,       // Get behavior registered for trait+capability
   ITrait,                         // Base trait interface
 } from '@sharpee/world-model';
 import {
@@ -251,8 +248,9 @@ const pettingAction: Action = {
       return { valid: false, error: PetMessages.CANT_PET };
     }
 
-    // Get the registered behavior
-    const behavior = getBehaviorForCapability(trait, PETTING_ACTION_ID);
+    // Get the behavior registered on this world (ADR-207: the binding map
+    // belongs to the running game's world, not a process-wide registry)
+    const behavior = context.world.getBehaviorForCapability(trait, PETTING_ACTION_ID);
     if (!behavior) {
       return { valid: false, error: PetMessages.CANT_PET };
     }
@@ -596,20 +594,21 @@ class FamilyZooStory implements Story {
     // REGISTER CAPABILITY BEHAVIOR — NEW IN V14
     // ========================================================================
     //
-    // registerCapabilityBehavior(traitType, actionId, behavior) tells the
-    // engine: "when someone does actionId on an entity with this trait,
+    // world.registerCapabilityBehavior(traitType, actionId, behavior) tells
+    // the engine: "when someone does actionId on an entity with this trait,
     // use this behavior."
     //
-    // The registry allows ONE behavior per trait type + capability.
+    // The binding map belongs to THIS world (ADR-207): every game registers
+    // its own behaviors in initializeWorld(), and registration is idempotent
+    // (re-registering a key just overwrites it), so there is no need to
+    // check whether it is already registered.
     // Our unified pettingBehavior dispatches internally by animalKind.
 
-    if (!hasCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID)) {
-      registerCapabilityBehavior(
-        PettableTrait.type,
-        PETTING_ACTION_ID,
-        pettingBehavior,
-      );
-    }
+    world.registerCapabilityBehavior(
+      PettableTrait.type,
+      PETTING_ACTION_ID,
+      pettingBehavior,
+    );
 
     // PLAYER STARTING LOCATION
     const player = world.getPlayer();

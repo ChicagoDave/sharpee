@@ -20,7 +20,7 @@ import {
   SwitchableTrait,
   ReadableTrait,
 } from '@sharpee/world-model';
-import '@sharpee/helpers';
+import { createHelpers } from '@sharpee/helpers';
 import type { RoomIds } from './zoo-map.js';
 
 
@@ -42,7 +42,7 @@ export interface ItemIds {
 // ============================================================================
 
 export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
-  const { object, container } = world.helpers();
+  const { object, container } = createHelpers(world);
 
   // We need entities for .in() — look them up from room IDs
   const entranceEntity = world.getEntity(rooms.entrance)!;

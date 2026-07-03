@@ -21,20 +21,18 @@ import { BasketElevatorTrait } from './basket-elevator-trait';
 /**
  * Message IDs for basket elevator
  *
- * Short keys are auto-prefixed with the actionId by the capability
- * dispatch factory (e.g., 'lowered' → 'if.action.lowering.lowered').
- * Fully-qualified keys (with dots) pass through unchanged.
+ * All fully-qualified story IDs: the engine's universal capability dispatch
+ * forwards effect messageIds unchanged (it does not auto-prefix short keys
+ * the way the stdlib dispatch factory does), so short keys like 'lowered'
+ * render blank. Texts are registered in `messages/object-messages.ts`.
  */
 export const BasketElevatorMessages = {
-  // Lowering messages (short keys, auto-prefixed)
-  LOWERED: 'lowered',
-  ALREADY_DOWN: 'already_down',
+  LOWERED: 'dungeo.basket.lowered',
+  ALREADY_DOWN: 'dungeo.basket.already_bottom',
 
-  // Raising messages (short keys, auto-prefixed)
-  RAISED: 'raised',
-  ALREADY_UP: 'already_up',
+  RAISED: 'dungeo.basket.raised',
+  ALREADY_UP: 'dungeo.basket.already_top',
 
-  // Story-specific message (fully-qualified, passes through unchanged)
   PLAYER_TRANSPORTED: 'dungeo.basket.player_transported'
 } as const;
 

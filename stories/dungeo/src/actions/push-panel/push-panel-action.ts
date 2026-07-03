@@ -218,10 +218,13 @@ export const pushPanelAction: Action = {
     const panelType = sharedData.panelType as PanelType;
 
     if (result.success) {
-      // Emit the pushed event (for handler to update feedback)
+      // Emit the pushed event (for handler to update feedback).
+      // NOTE: params must be NESTED — any event carrying a messageId is rendered
+      // first by the ADR-097 domain-message path, which binds from data.params
+      // (tryProcessDomainEventMessage), not flat data.
       events.push(context.event('if.event.pushed', {
         messageId: result.message,
-        ...(result.params ?? {}),
+        ...(result.params ? { params: result.params } : {}),
         targetId: target?.id,
         panelType
       }));

@@ -22,7 +22,7 @@ import {
   NpcTrait,
   SceneryTrait,
 } from '@sharpee/world-model';
-import '@sharpee/helpers';
+import { createHelpers } from '@sharpee/helpers';
 import type { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
 import type { RoomIds } from './zoo-map.js';
 
@@ -74,12 +74,12 @@ export const parrotBehavior: NpcBehavior = {
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
     if (context.random.chance(0.5)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { npcName: 'parrot', text: context.random.pick(PARROT_PHRASES) } }];
+      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASES) } }];
     }
     return [];
   },
   onPlayerEnters(): NpcAction[] {
-    return [{ type: 'emote', messageId: 'npc.emote', data: { npcName: 'parrot', text: 'The parrot ruffles its feathers and eyes you with interest.' } }];
+    return [{ type: 'emote', messageId: 'npc.emote', data: { text: 'The parrot ruffles its feathers and eyes you with interest.' } }];
   },
 };
 
@@ -107,12 +107,12 @@ export const parrotAfterHoursBehavior: NpcBehavior = {
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
     if (context.random.chance(0.6)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { npcName: 'parrot', text: context.random.pick(PARROT_AFTER_HOURS_PHRASES) } }];
+      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_AFTER_HOURS_PHRASES) } }];
     }
     return [];
   },
   onPlayerEnters(): NpcAction[] {
-    return [{ type: 'emote', messageId: 'npc.emote', data: { npcName: 'parrot', text: 'The parrot glances at you and nods, as if recognizing a fellow after-hours regular.' } }];
+    return [{ type: 'emote', messageId: 'npc.emote', data: { text: 'The parrot glances at you and nods, as if recognizing a fellow after-hours regular.' } }];
   },
 };
 
@@ -129,7 +129,7 @@ export const KEEPER_PATROL_ID = 'zoo-keeper-patrol';
 // ============================================================================
 
 export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterIds {
-  const { actor, object } = world.helpers();
+  const { actor, object } = createHelpers(world);
 
   const mainPathEntity = world.getEntity(rooms.mainPath)!;
   const aviaryEntity = world.getEntity(rooms.aviary)!;

@@ -17,6 +17,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
+import { StandardCapabilities } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import { HelpDisplayedEventData } from './help-events';
@@ -56,18 +57,18 @@ function analyzeHelpRequest(context: ActionContext): HelpState {
     // General help (no topic specified)
     eventData.generalHelp = true;
     eventData.helpType = 'general';
-    
-    // Check if this is the first time help was requested
-    const worldAny = context.world as unknown as Record<string, unknown> & { getSharedData?: () => Record<string, unknown> };
-    const sharedData = worldAny.getSharedData?.() || {};
-    const helpRequested = sharedData['helpRequested'] || false;
 
-    if (!helpRequested) {
+    // First-time check: the gameMeta capability's helpRequested flag,
+    // set by execute() on every help invocation. Capability data
+    // serializes with the world, so the flag survives save/restore.
+    const gameMeta = context.world.getCapability(StandardCapabilities.GAME_META);
+    if (!gameMeta?.helpRequested) {
       eventData.firstTime = true;
     }
 
-    // Include game-specific help sections
-    const helpSections = sharedData['helpSections'] as string[] | undefined || [
+    // Include game-specific help sections (stories may set these in the
+    // gameMeta capability; defaults otherwise)
+    const helpSections = (gameMeta?.helpSections as string[] | undefined) || [
       'basic_commands',
       'movement',
       'objects',
@@ -76,7 +77,7 @@ function analyzeHelpRequest(context: ActionContext): HelpState {
     eventData.sections = helpSections;
 
     // Include hints availability
-    const hintsEnabled = (sharedData['hintsEnabled'] as boolean | undefined) ?? true;
+    const hintsEnabled = (gameMeta?.hintsEnabled as boolean | undefined) ?? true;
     eventData.hintsAvailable = hintsEnabled;
   }
   
@@ -96,13 +97,13 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
   },
   
   requiredMessages: [
-    'general_help',
-    'help_topic',
+    'general',
+    'topic',
     'unknown_topic',
     'help_movement',
     'help_objects',
     'help_special',
-    'first_time_help',
+    'first_time',
     'hints_available',
     'hints_disabled',
     'stuck_help',
@@ -115,12 +116,22 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
   },
 
   execute(context: ActionContext): void {
-    // Help has NO world mutations
     // Analyze help request and store in sharedData for report phase
+    // (before recording the flag, so THIS invocation still sees firstTime)
     const state = analyzeHelpRequest(context);
     const sharedData = getHelpSharedData(context);
 
     sharedData.eventData = state.eventData;
+
+    // Record that help has been requested in this game — drives the
+    // first_time vs general message on subsequent HELP invocations.
+    // Lives in the gameMeta capability so it serializes with the world.
+    if (!context.world.hasCapability(StandardCapabilities.GAME_META)) {
+      context.world.registerCapability(StandardCapabilities.GAME_META, {
+        initialData: { helpRequested: false }
+      });
+    }
+    context.world.updateCapability(StandardCapabilities.GAME_META, { helpRequested: true });
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {

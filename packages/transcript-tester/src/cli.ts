@@ -301,13 +301,18 @@ async function main(): Promise<void> {
 
   console.log(`Loading story from: ${options.storyPath}`);
 
-  // Load the story
-  let game: TestableGame;
-  try {
-    game = await loadStory(options.storyPath);
-  } catch (error) {
-    console.error(`Error loading story: ${error}`);
-    process.exit(3);
+  // Chain mode shares one game instance across all transcripts, so load it up
+  // front. In per-transcript mode the loop loads a fresh game for each
+  // transcript (honoring its `entry:` header) — an eager load here would be
+  // discarded unused (ADR-207 AC-7: no side-effecting pre-load).
+  let game: TestableGame | undefined;
+  if (options.chain) {
+    try {
+      game = await loadStory(options.storyPath);
+    } catch (error) {
+      console.error(`Error loading story: ${error}`);
+      process.exit(3);
+    }
   }
 
   console.log(`Found ${transcriptPaths.length} transcript(s) to run`);
@@ -332,14 +337,19 @@ async function main(): Promise<void> {
       continue;
     }
 
-    // Reload story for each transcript to reset state (unless chaining).
+    // Load a fresh story for each transcript to reset state (unless chaining).
     // Honor the transcript's optional `entry:` header (ADR-180).
     if (!options.chain) {
-      game = await loadStory(options.storyPath, transcript.header.entry);
+      try {
+        game = await loadStory(options.storyPath, transcript.header.entry);
+      } catch (error) {
+        console.error(`Error loading story: ${error}`);
+        process.exit(3);
+      }
     }
 
     // Run the transcript
-    const result = await runTranscript(transcript, game, {
+    const result = await runTranscript(transcript, game!, {
       verbose: options.verbose,
       emitTraits: options.emitTraits,
       stopOnFailure: options.stopOnFailure

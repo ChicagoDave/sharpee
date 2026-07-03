@@ -22,9 +22,8 @@ export { handleRoomDescription } from './room';
 export { handleRevealed } from './revealed';
 export { handleGameMessage, handleGenericEvent } from './generic';
 export { handleGameStarted } from './game';
-export { handleHelpDisplayed } from './help';
-export { handleAboutDisplayed } from './about';
 export { handleAudibilityHeard } from './audibility';
+export { handlePlatformEvent } from './platform';
 
 // Inline handlers extracted from text-service.ts in this sub-phase.
 export { tryProcessDomainEventMessage } from './domain-message';

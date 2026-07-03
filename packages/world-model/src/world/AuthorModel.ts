@@ -349,8 +349,8 @@ export class AuthorModel implements IWorldModel {
   }
 
   // Capability Management
-  registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void {
-    this.worldModel.registerCapability(name, registration);
+  registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData {
+    return this.worldModel.registerCapability(name, registration);
   }
 
   updateCapability(name: string, data: Partial<ICapabilityData>): void {
@@ -382,6 +382,10 @@ export class AuthorModel implements IWorldModel {
 
   getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
     return this.worldModel.getBehaviorBinding(traitType, capability);
+  }
+
+  getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding> {
+    return this.worldModel.getAllCapabilityBindings();
   }
 
   // Score Ledger

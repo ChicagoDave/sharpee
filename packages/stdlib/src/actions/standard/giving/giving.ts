@@ -20,7 +20,6 @@ import {
   ActorTrait,
   IdentityBehavior,
   findTraitWithCapability,
-  getBehaviorForCapability,
   CapabilityBehavior,
   CapabilityEffect,
   ITrait
@@ -204,7 +203,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
     // Check if recipient has a capability behavior for giving (ADR-090)
     const capTrait = findTraitWithCapability(recipient, IFActions.GIVING);
     if (capTrait) {
-      const behavior = getBehaviorForCapability(capTrait, IFActions.GIVING);
+      const behavior = context.world.getBehaviorForCapability(capTrait, IFActions.GIVING);
       if (behavior) {
         sharedData.capabilityBehavior = behavior;
         sharedData.capabilityTrait = capTrait;

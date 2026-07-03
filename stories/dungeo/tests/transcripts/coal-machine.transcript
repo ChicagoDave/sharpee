@@ -39,7 +39,7 @@ description: Test the coal machine - put coal in machine, turn switch, get diamo
 
 # Put coal in machine
 > put coal in machine
-[OK: contains "put coal in machine"]
+[OK: contains "You put the pile of coal in the machine."]
 
 # Turn the switch - should create diamond
 > turn switch

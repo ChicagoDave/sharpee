@@ -16,7 +16,7 @@ $save test-checkpoint-1
 [OK: contains "leaflet"]
 
 > take leaflet
-[OK: contains "take leaflet"]
+[OK: contains "Taken"]
 
 > inventory
 [OK: contains "leaflet"]
@@ -25,8 +25,10 @@ $save test-checkpoint-1
 $restore test-checkpoint-1
 
 # After restore, inventory should be empty again
+# (empty-inventory phrasing varies: "Your pockets are empty." /
+#  "You aren't carrying anything at all.")
 > inventory
-[OK: contains "empty"]
+[OK: contains_any "empty" "aren't carrying"]
 
 # The mailbox should be closed again (restore resets state)
 # Note: The mailbox still contains the leaflet

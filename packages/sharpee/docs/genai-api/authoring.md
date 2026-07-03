@@ -73,6 +73,7 @@ export declare class RoomBuilder {
     private world;
     private name;
     private _description?;
+    private _initialDescription?;
     private _aliases?;
     private _isDark;
     private _traits;
@@ -84,6 +85,16 @@ export declare class RoomBuilder {
      * @returns this (for chaining)
      */
     description(desc: string): this;
+    /**
+     * Set the first-visit description (ADR-196 Phase 4).
+     *
+     * Shown the first time the player looks at the room; on subsequent visits the
+     * standard `description` is used instead. Populates `RoomTrait.initialDescription`.
+     *
+     * @param desc - First-visit room description text
+     * @returns this (for chaining)
+     */
+    initialDescription(desc: string): this;
     /**
      * Add name aliases for the room.
      *

@@ -1,8 +1,14 @@
 title: Low Room Carousel (Magnet Room)
 story: dungeo
-description: Tests the Low Room carousel exit randomization and button fix
+description: Tests the Low Room carousel exit randomization and button toggle (MDL act3 MAGNET-ROOM-EXIT)
 
 ---
+
+# MDL act3.mud: CAROUSEL-FLIP!-FLAG starts FALSE.
+# Flag false  -> Low Room exits deterministic (E -> Machine Room, SE -> Tea Room),
+#                no compass message on entry.
+# Flag true (after button push) -> compass spins on entry, all exits randomly
+#                go to Machine Room or Tea Room ("You cannot get your bearings...").
 
 # Setup - get light source
 > gdt
@@ -22,23 +28,21 @@ description: Tests the Low Room carousel exit randomization and button fix
 [OK: contains "on"]
 
 # ============================================================
-# Part 1: Carousel Active - verify entry and exit behavior
+# Part 1: Flag false - deterministic exits, no compass spinning
 # ============================================================
 
-# Go northwest from Tea Room to Low Room
-# Entry daemon should fire: "compass starts spinning wildly"
+# Go northwest from Tea Room to Low Room - no compass message yet
 > northwest
 [OK: contains "Low Room"]
-[OK: contains "compass starts spinning"]
+[OK: not contains "compass"]
 
-# Go east - exit daemon should randomize destination
-# Player ends up in either Machine Room or Tea Room (50/50)
+# Go east - deterministic: always Machine Room
 > east
-[OK: contains "cannot get your bearings"]
-[OK: contains "Room"]
+[OK: contains "Machine Room"]
+[OK: not contains "cannot get your bearings"]
 
 # ============================================================
-# Part 2: Fix carousel via robot button push
+# Part 2: Toggle carousel via robot button push
 # ============================================================
 
 # Teleport to well-area Machine Room (use alias to avoid coal mine one)
@@ -66,24 +70,28 @@ description: Tests the Low Room carousel exit randomization and button fix
 [OK: contains "carousel"]
 
 # ============================================================
-# Part 3: Carousel Fixed - exits work normally
+# Part 3: Flag true - compass spins, exits randomized
 # ============================================================
 
-# Go west to Low Room - no compass spinning message
+# Go west to Low Room - compass spinning message on entry
 > west
 [OK: contains "Low Room"]
-[OK: not contains "compass"]
+[OK: contains "compass starts spinning"]
 
-# Go east - should reliably reach Machine Room (no randomization)
+# Any exit now randomly goes to Machine Room or Tea Room (PROB 50)
 > east
-[OK: contains "Machine Room"]
-[OK: not contains "cannot get your bearings"]
+[OK: contains "cannot get your bearings"]
+[OK: contains_any "Machine Room" "Tea Room"]
 
-# Go back west to Low Room
-> west
-[OK: contains "Low Room"]
-
-# Go southeast - should reliably reach Tea Room
+# Bounce through the Low Room until we land in the Tea Room
+[WHILE: not location = "Tea Room"]
 > southeast
+[SKIP]
+[IF: not location = "Tea Room"]
+[NAVIGATE TO: "Low Room"]
+[END IF]
+[END WHILE]
+
+# Confirm we escaped to the Tea Room
+> look
 [OK: contains "Tea Room"]
-[OK: not contains "cannot get your bearings"]

@@ -14,11 +14,13 @@ export const helpLanguage = {
   ],
   
   messages: {
-    // General help
-    'general_help': "Welcome to Interactive Fiction!\n\nBasic commands:\n- LOOK (L): Examine your surroundings\n- INVENTORY (I): List what you're carrying\n- EXAMINE (X) [object]: Look at something closely\n- TAKE/DROP [object]: Pick up or put down items\n- GO [direction] or just [direction]: Move around\n\nFor more help on a specific topic, type HELP [topic].",
-    
-    // Topic help headers
-    'help_topic': "Help on {verbatim:topic}:",
+    // General help — key matches the messageId the stdlib help action emits
+    // (if.action.help.general). Stories override by registering the same
+    // fully-qualified id: language.addMessage('if.action.help.general', ...).
+    'general': "Welcome to Interactive Fiction!\n\nBasic commands:\n- LOOK (L): Examine your surroundings\n- INVENTORY (I): List what you're carrying\n- EXAMINE (X) [object]: Look at something closely\n- TAKE/DROP [object]: Pick up or put down items\n- GO [direction] or just [direction]: Move around\n\nFor more help on a specific topic, type HELP [topic].",
+
+    // Topic help headers — 'topic' matches if.action.help.topic
+    'topic': "Help on {verbatim:topic}:",
     'unknown_topic': "No help available on '{verbatim:topic}'. Type HELP for general help.",
     
     // Movement help
@@ -30,8 +32,8 @@ export const helpLanguage = {
     // Special commands help
     'help_special': "Special commands:\n- SAVE/RESTORE: Save and load your game\n- SCORE: Check your progress\n- WAIT (Z): Let time pass\n- AGAIN (G): Repeat last command\n- QUIT: Exit the game",
     
-    // First time help
-    'first_time_help': "New to Interactive Fiction? Try these commands to get started:\n- LOOK to see where you are\n- INVENTORY to see what you're carrying\n- EXAMINE interesting objects\n- Go in compass directions (NORTH, SOUTH, etc.)",
+    // First time help — key matches if.action.help.first_time
+    'first_time': "New to Interactive Fiction? Try these commands to get started:\n- LOOK to see where you are\n- INVENTORY to see what you're carrying\n- EXAMINE interesting objects\n- Go in compass directions (NORTH, SOUTH, etc.)",
     
     // Hints availability
     'hints_available': "Hints are available. Type HINTS to see them.",

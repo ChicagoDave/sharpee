@@ -8,6 +8,7 @@
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
 import { IdentityTrait, NpcTrait, CombatantTrait, TraitType } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
+import { applyVillainDeathSideEffects } from '../../../interceptors/melee-interceptor';
 
 // Store engine reference for event processing
 let storedEngine: any = null;
@@ -99,6 +100,17 @@ export const klHandler: GDTCommandHandler = {
       combatant.health = 0;
       combatant.isAlive = false;
       combatant.isConscious = false;
+    }
+
+    // ADR-078: Killing the thief or troll via GDT applies the same death side
+    // effects as a combat kill (thief: max score 616 → 650, loot scatter,
+    // frame spawn; troll: troll + axe vanish in smoke, north exit unblocked;
+    // both: entity removal). Entity `on` death handlers were removed
+    // (ISSUE-068), so this must run in the execution flow.
+    const nameForSideEffects = (identity?.name ?? '').toLowerCase();
+    if (nameForSideEffects.includes('thief') || nameForSideEffects.includes('troll')) {
+      const deathMessages = applyVillainDeathSideEffects(targetEntity, world);
+      output.push(...deathMessages);
     }
 
     // Emit death event through event processor for story-level handlers

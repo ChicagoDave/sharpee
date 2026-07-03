@@ -39,6 +39,10 @@ $restore wt-15
 > open trap door
 [OK: contains "open"]
 
+# The torch was lost to the glacier in wt-15 — the lantern is our only light.
+> turn on lantern
+[OK: contains "lantern"]
+
 > down
 [OK: contains "Cellar"]
 
@@ -195,6 +199,10 @@ $restore wt-15
 [OK: contains "Total:"]
 > ex
 [OK: contains "Returning"]
+
+# Bank lantern battery in the lit Living Room; wt-17 turns it back on.
+> turn off lantern
+[OK: contains "lantern"]
 
 [END GOAL]
 

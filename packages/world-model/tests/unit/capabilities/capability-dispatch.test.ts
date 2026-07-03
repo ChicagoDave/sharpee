@@ -6,6 +6,7 @@ import { IFEntity } from '../../../src/entities/if-entity';
 import { ITrait } from '../../../src/traits/trait';
 import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
+import { AuthorModel } from '../../../src/world/AuthorModel';
 import {
   findTraitWithCapability,
   hasCapability,
@@ -261,6 +262,36 @@ describe('WorldModel capability-behavior bindings (ADR-207)', () => {
       expect(() => {
         secondLoad.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
       }).not.toThrow();
+    });
+  });
+
+  describe('getAllCapabilityBindings (introspection)', () => {
+    it('should enumerate registered bindings keyed by traitType:capability', () => {
+      const world = new WorldModel();
+      expect(world.getAllCapabilityBindings().size).toBe(0);
+
+      world.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
+      world.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.raising', testBehavior);
+
+      const bindings = world.getAllCapabilityBindings();
+      expect(bindings.size).toBe(2);
+      const binding = bindings.get(`${TestLowerableTrait.type}:if.action.lowering`);
+      expect(binding?.behavior).toBe(testBehavior);
+      expect(binding?.traitType).toBe(TestLowerableTrait.type);
+      expect(binding?.capability).toBe('if.action.lowering');
+    });
+
+    it('should reflect the live per-world map through the AuthorModel delegate', () => {
+      const world = new WorldModel();
+      const author = new AuthorModel(world.getDataStore(), world);
+
+      author.registerCapabilityBehavior(TestLowerableTrait.type, 'if.action.lowering', testBehavior);
+
+      // Same map, visible from both surfaces — not a stale or empty copy.
+      expect(author.getAllCapabilityBindings().size).toBe(1);
+      expect(
+        world.getAllCapabilityBindings().get(`${TestLowerableTrait.type}:if.action.lowering`)?.behavior
+      ).toBe(testBehavior);
     });
   });
 

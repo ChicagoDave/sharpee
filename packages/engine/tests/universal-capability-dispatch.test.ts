@@ -3,9 +3,13 @@
  *
  * Verifies that story traits can intercept standard stdlib actions
  * by declaring capabilities and registering behaviors.
+ *
+ * Per ADR-207, bindings are registered on a `WorldModel` instance (not a
+ * process-global registry), so each test creates its own world and registers
+ * the behaviors it needs — no cross-test cleanup required.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   checkCapabilityDispatch,
   executeCapabilityValidate,
@@ -15,11 +19,9 @@ import {
 } from '../src/capability-dispatch-helper';
 import {
   WorldModel,
+  IWorldModel,
   ITrait,
   IFEntity,
-  registerCapabilityBehavior,
-  unregisterCapabilityBehavior,
-  clearCapabilityRegistry,
   CapabilityBehavior,
   CapabilitySharedData
 } from '@sharpee/world-model';
@@ -134,23 +136,20 @@ const blockingBehavior: CapabilityBehavior = {
 };
 
 describe('Universal Capability Dispatch', () => {
-  beforeEach(() => {
-    // Register test behaviors
-    registerCapabilityBehavior(GuardedItemTrait.type, 'if.action.taking', guardedItemBehavior);
-    registerCapabilityBehavior(BlockingTrait.type, 'if.action.going', blockingBehavior);
-  });
+  let world: WorldModel;
 
-  afterEach(() => {
-    // Clean up registered behaviors
-    unregisterCapabilityBehavior(GuardedItemTrait.type, 'if.action.taking');
-    unregisterCapabilityBehavior(BlockingTrait.type, 'if.action.going');
+  beforeEach(() => {
+    // Register test behaviors on a fresh per-test world (ADR-207)
+    world = new WorldModel();
+    world.registerCapabilityBehavior(GuardedItemTrait.type, 'if.action.taking', guardedItemBehavior);
+    world.registerCapabilityBehavior(BlockingTrait.type, 'if.action.going', blockingBehavior);
   });
 
   describe('checkCapabilityDispatch', () => {
     it('should return shouldDispatch=true for entity with matching capability', () => {
       const entity = createMockEntity('axe', 'bloody axe', [new GuardedItemTrait(false, 'The troll guards it!')]);
 
-      const result = checkCapabilityDispatch('if.action.taking', entity);
+      const result = checkCapabilityDispatch(world, 'if.action.taking', entity);
 
       expect(result.shouldDispatch).toBe(true);
       expect(result.trait).toBeDefined();
@@ -161,7 +160,7 @@ describe('Universal Capability Dispatch', () => {
     it('should return shouldDispatch=false for entity without capability', () => {
       const entity = createMockEntity('sword', 'rusty sword', []);
 
-      const result = checkCapabilityDispatch('if.action.taking', entity);
+      const result = checkCapabilityDispatch(world, 'if.action.taking', entity);
 
       expect(result.shouldDispatch).toBe(false);
       expect(result.trait).toBeUndefined();
@@ -169,7 +168,7 @@ describe('Universal Capability Dispatch', () => {
     });
 
     it('should return shouldDispatch=false for undefined target', () => {
-      const result = checkCapabilityDispatch('if.action.taking', undefined);
+      const result = checkCapabilityDispatch(world, 'if.action.taking', undefined);
 
       expect(result.shouldDispatch).toBe(false);
     });
@@ -178,7 +177,17 @@ describe('Universal Capability Dispatch', () => {
       const entity = createMockEntity('door', 'wooden door', [new GuardedItemTrait()]);
 
       // Check for a capability that's not registered
-      const result = checkCapabilityDispatch('if.action.opening', entity);
+      const result = checkCapabilityDispatch(world, 'if.action.opening', entity);
+
+      expect(result.shouldDispatch).toBe(false);
+    });
+
+    it('should return shouldDispatch=false on a world without the binding (per-world isolation)', () => {
+      const entity = createMockEntity('axe', 'bloody axe', [new GuardedItemTrait()]);
+      const otherWorld = new WorldModel();
+
+      // The trait claims the capability, but this world never registered a behavior
+      const result = checkCapabilityDispatch(otherWorld, 'if.action.taking', entity);
 
       expect(result.shouldDispatch).toBe(false);
     });
@@ -186,7 +195,7 @@ describe('Universal Capability Dispatch', () => {
     it('should find correct behavior for blocking trait', () => {
       const entity = createMockEntity('troll', 'nasty troll', [new BlockingTrait(true, 'The troll blocks your way!')]);
 
-      const result = checkCapabilityDispatch('if.action.going', entity);
+      const result = checkCapabilityDispatch(world, 'if.action.going', entity);
 
       expect(result.shouldDispatch).toBe(true);
       expect(result.trait?.type).toBe(BlockingTrait.type);
@@ -196,10 +205,10 @@ describe('Universal Capability Dispatch', () => {
   describe('executeCapabilityValidate', () => {
     it('should delegate validation to behavior and return valid=true when allowed', () => {
       const entity = createMockEntity('unguarded', 'unguarded item', [new GuardedItemTrait(true)]);
-      const check = checkCapabilityDispatch('if.action.taking', entity);
+      const check = checkCapabilityDispatch(world, 'if.action.taking', entity);
 
       const mockContext = {
-        world: {} as WorldModel,
+        world,
         player: { id: 'player-1' }
       } as ActionContext;
 
@@ -212,10 +221,10 @@ describe('Universal Capability Dispatch', () => {
 
     it('should delegate validation to behavior and return valid=false when blocked', () => {
       const entity = createMockEntity('guarded', 'guarded item', [new GuardedItemTrait(false, 'Guardian says no!')]);
-      const check = checkCapabilityDispatch('if.action.taking', entity);
+      const check = checkCapabilityDispatch(world, 'if.action.taking', entity);
 
       const mockContext = {
-        world: {} as WorldModel,
+        world,
         player: { id: 'player-1' }
       } as ActionContext;
 
@@ -230,10 +239,10 @@ describe('Universal Capability Dispatch', () => {
   describe('executeCapabilityExecute', () => {
     it('should call behavior execute phase', () => {
       const entity = createMockEntity('item', 'test item', [new GuardedItemTrait(true)]);
-      const check = checkCapabilityDispatch('if.action.taking', entity);
+      const check = checkCapabilityDispatch(world, 'if.action.taking', entity);
 
       const mockContext = {
-        world: {} as WorldModel,
+        world,
         player: { id: 'player-1' },
         command: { directObject: { entity } }
       } as ActionContext;
@@ -252,10 +261,10 @@ describe('Universal Capability Dispatch', () => {
   describe('executeCapabilityReport', () => {
     it('should return events from behavior report phase', () => {
       const entity = createMockEntity('item', 'test item', [new GuardedItemTrait(true)]);
-      const check = checkCapabilityDispatch('if.action.taking', entity);
+      const check = checkCapabilityDispatch(world, 'if.action.taking', entity);
 
       const mockContext = {
-        world: {} as WorldModel,
+        world,
         player: { id: 'player-1' },
         command: { directObject: { entity } },
         event: (type: string, payload: any) => ({ type, data: payload })
@@ -280,10 +289,10 @@ describe('Universal Capability Dispatch', () => {
   describe('executeCapabilityBlocked', () => {
     it('should return blocked events from behavior', () => {
       const entity = createMockEntity('guarded', 'guarded item', [new GuardedItemTrait(false, 'No touching!')]);
-      const check = checkCapabilityDispatch('if.action.taking', entity);
+      const check = checkCapabilityDispatch(world, 'if.action.taking', entity);
 
       const mockContext = {
-        world: {} as WorldModel,
+        world,
         player: { id: 'player-1' },
         command: { directObject: { entity } },
         event: (type: string, payload: any) => ({ type, data: payload })
@@ -309,13 +318,13 @@ describe('Universal Capability Dispatch', () => {
       ]);
 
       // Check dispatch for going action with troll as target
-      const check = checkCapabilityDispatch('if.action.going', troll);
+      const check = checkCapabilityDispatch(world, 'if.action.going', troll);
 
       expect(check.shouldDispatch).toBe(true);
 
       // Validate - should be blocked
       const mockContext = {
-        world: {} as WorldModel,
+        world,
         player: { id: 'player-1' },
         command: { directObject: { entity: troll } },
         event: (type: string, payload: any) => ({ type, data: payload })
@@ -331,11 +340,11 @@ describe('Universal Capability Dispatch', () => {
         new GuardedItemTrait(false, 'The troll guards the axe fiercely!')
       ]);
 
-      const check = checkCapabilityDispatch('if.action.taking', axe);
+      const check = checkCapabilityDispatch(world, 'if.action.taking', axe);
       expect(check.shouldDispatch).toBe(true);
 
       const mockContext = {
-        world: {} as WorldModel,
+        world,
         player: { id: 'player-1' },
         command: { directObject: { entity: axe } },
         event: (type: string, payload: any) => ({ type, data: payload })
@@ -350,9 +359,39 @@ describe('Universal Capability Dispatch', () => {
       // Item without any capability trait - dispatch should not apply
       const sword = createMockEntity('sword-1', 'rusty sword', []);
 
-      const check = checkCapabilityDispatch('if.action.taking', sword);
+      const check = checkCapabilityDispatch(world, 'if.action.taking', sword);
       expect(check.shouldDispatch).toBe(false);
       // Normal stdlib taking action would handle this
+    });
+  });
+
+  describe('dual-instance dispatch (ADR-207 AC-8)', () => {
+    it('resolves behaviors registered via a different @sharpee/world-model module copy through the shared world instance', async () => {
+      // Load a second, independent module copy of @sharpee/world-model —
+      // the bundler dual-instance scenario the deleted globalThis hack
+      // existed to paper over (ADR-207 Context).
+      vi.resetModules();
+      const wmCopyB = await import('@sharpee/world-model');
+
+      // Prove it really is a distinct module instance, not the cached one.
+      expect(wmCopyB.WorldModel).not.toBe(WorldModel);
+
+      // "Story code" holds only the copy-B API surface and the shared world
+      // object. Registration goes through the instance, so no module-level
+      // state is involved.
+      const storyRegister = (w: IWorldModel) => {
+        w.registerCapabilityBehavior(GuardedItemTrait.type, 'if.action.taking', guardedItemBehavior);
+      };
+      const sharedWorld = new wmCopyB.WorldModel();
+      storyRegister(sharedWorld as unknown as IWorldModel);
+
+      // Engine-side dispatch (statically imported copy A) resolves the
+      // binding because it reads the same world instance, not a per-module map.
+      const entity = createMockEntity('axe', 'bloody axe', [new GuardedItemTrait(false, 'Guarded!')]);
+      const check = checkCapabilityDispatch(sharedWorld as unknown as IWorldModel, 'if.action.taking', entity);
+
+      expect(check.shouldDispatch).toBe(true);
+      expect(check.behavior).toBe(guardedItemBehavior);
     });
   });
 });

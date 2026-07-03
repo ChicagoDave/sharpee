@@ -5152,6 +5152,7 @@ export declare function getConcealmentState(entity: IFEntity): IConcealedStateTr
  * Owner context: @sharpee/world-model / traits / concealment
  */
 import { CapabilityBehavior } from '../../capabilities/capability-behavior';
+import { WorldModel } from '../../world/WorldModel';
 /**
  * Default visibility behavior for concealed actors.
  *
@@ -5162,11 +5163,15 @@ export declare const ConcealedVisibilityBehavior: CapabilityBehavior;
 /**
  * Register the default visibility behavior for concealed actors.
  *
- * Call this during platform initialization. Stories that need NPC detection
- * can register their own behavior for specific trait types using the same
- * capability dispatch override pattern.
+ * Call this during a game's initialization, once per `WorldModel` instance
+ * (ADR-207 — the binding map is per-world, not process-global). Stories that
+ * need NPC detection can register their own behavior for specific trait
+ * types on the same `world` using the same capability dispatch override
+ * pattern.
+ *
+ * @param world - The world instance to register the binding on.
  */
-export declare function registerConcealedVisibilityBehavior(): void;
+export declare function registerConcealedVisibilityBehavior(world: WorldModel): void;
 ```
 
 ### traits/acoustic/acousticTrait
@@ -5846,6 +5851,9 @@ import { DirectionType } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { IDataStore } from './AuthorModel';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities';
+import { ITrait } from '../traits/trait';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
 import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { IScopeRule } from '../scope/scope-rule';
@@ -5937,6 +5945,49 @@ export interface IWorldModel {
     updateCapability(name: string, data: Partial<ICapabilityData>): void;
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
+    /**
+     * Register a behavior for a (traitType, capability) binding on this world.
+     *
+     * Idempotent: re-registering the same (traitType, capability) key
+     * overwrites the previous binding (last-registration-wins) rather than
+     * throwing. Scoped to this `WorldModel` instance only — two worlds may
+     * bind the same key to different behaviors.
+     *
+     * @param traitType - The trait type identifier (e.g. a trait's static `type`)
+     * @param capability - The action ID (capability) this binding handles
+     * @param behavior - The stateless behavior definition to bind
+     * @param options - Optional priority/resolution/mode overrides (ADR-090)
+     */
+    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    /**
+     * Resolve the behavior bound to a trait instance's capability on this world.
+     *
+     * @param trait - The trait instance claiming the capability
+     * @param capability - The action ID (capability) to resolve
+     * @returns The bound behavior, or `undefined` if this world has no binding
+     *   for the trait's type + capability (the caller's normal "can't do that"
+     *   rejection path handles this — never throws for a missing binding).
+     */
+    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+    /**
+     * Resolve the full binding (behavior + priority/resolution/mode overrides)
+     * for a (traitType, capability) pair on this world.
+     *
+     * @param traitType - The trait type identifier
+     * @param capability - The action ID (capability) to resolve
+     * @returns The binding, or `undefined` if none is registered on this world
+     */
+    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+    /**
+     * Enumerate every capability-behavior binding registered on this world,
+     * keyed by `traitType:capability` (see `capabilityBindingKey`).
+     *
+     * Read-only introspection surface (IDE/debug summaries) — register through
+     * `registerCapabilityBehavior`, never by mutating the returned map.
+     *
+     * @returns The world's binding map as a read-only view
+     */
+    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
     }): IFEntity;
@@ -6043,6 +6094,7 @@ export declare class WorldModel implements IWorldModel {
     private spatialIndex;
     private config;
     private capabilities;
+    private capabilityBindings;
     private scoreLedger;
     private sceneConditions;
     private idCounters;
@@ -6058,6 +6110,10 @@ export declare class WorldModel implements IWorldModel {
     updateCapability(name: string, updates: Partial<ICapabilityData>): void;
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
+    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
+    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
     private generateId;
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
@@ -6445,6 +6501,8 @@ import { TraitType } from '../traits/trait-types';
 import { SpatialIndex } from './SpatialIndex';
 import { ITrait } from '../traits/trait';
 import { ICapabilityStore } from './capabilities';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
 import type { IWorldModel, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel';
 import type { ScoreEntry } from './ScoreLedger';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -6568,6 +6626,10 @@ export declare class AuthorModel implements IWorldModel {
     updateCapability(name: string, data: Partial<ICapabilityData>): void;
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
+    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
     awardScore(id: string, points: number, description: string): boolean;
     revokeScore(id: string): boolean;
     hasScore(id: string): boolean;
@@ -7155,20 +7217,27 @@ export interface CapabilityBehavior {
 }
 ```
 
-### capabilities/capability-registry
+### capabilities/capability-binding
 
 ```typescript
 /**
- * Capability Registry (ADR-090)
+ * Capability binding types (ADR-090, ADR-207).
  *
- * Registry for trait-behavior bindings. Stories register behaviors
- * for their traits, and the dispatch system looks them up at runtime.
+ * A binding associates a trait type + capability (action ID) with a behavior
+ * definition. Per ADR-207, a binding is per-game state: it is scoped to one
+ * running `WorldModel` instance, not process-global. The behavior definition
+ * it points at stays a shareable, stateless strategy (ADR-090); only the
+ * *binding* (which behavior a given world has wired up for a given
+ * trait+capability) is per-world.
+ *
+ * Public interface: `TraitBehaviorBinding`, `BehaviorRegistrationOptions`.
+ * Owner: world-model (capability dispatch storage, ADR-090/ADR-207).
  */
 import { ITrait } from '../traits/trait';
-import { CapabilityBehavior } from './capability-behavior';
-import { CapabilityResolution, CapabilityMode } from './capability-defaults';
+import type { CapabilityBehavior } from './capability-behavior';
+import type { CapabilityResolution, CapabilityMode } from './capability-defaults';
 /**
- * Options for registering a capability behavior.
+ * Options for registering a capability behavior on a `WorldModel`.
  */
 export interface BehaviorRegistrationOptions<T extends ITrait = ITrait> {
     /** Priority for resolution (higher = checked first). Default: 0 */
@@ -7181,7 +7250,10 @@ export interface BehaviorRegistrationOptions<T extends ITrait = ITrait> {
     validateBinding?: (trait: T) => boolean;
 }
 /**
- * Binding between a trait type, capability, and behavior.
+ * Binding between a trait type, capability, and behavior — scoped to one
+ * running game (owned by the `WorldModel` instance that registered it,
+ * ADR-207). Two `WorldModel` instances may legitimately bind the same
+ * `(traitType, capability)` key to different behaviors.
  */
 export interface TraitBehaviorBinding<T extends ITrait = ITrait> {
     /** Trait type identifier */
@@ -7200,78 +7272,11 @@ export interface TraitBehaviorBinding<T extends ITrait = ITrait> {
     validateBinding?: (trait: T) => boolean;
 }
 /**
- * Register a behavior for a trait+capability combination.
- *
- * Stories call this to register their behaviors during initialization.
- * Each trait+capability pair can only have one behavior registered.
- *
- * @param traitType - The trait type identifier (e.g., 'dungeo.trait.basket_elevator')
- * @param capability - The action ID (e.g., 'if.action.lowering')
- * @param behavior - The behavior implementation
- * @param options - Optional configuration (priority, resolution override, mode override)
- *
- * @example
- * ```typescript
- * // Basic registration (uses global defaults)
- * registerCapabilityBehavior(
- *   BasketElevatorTrait.type,
- *   'if.action.lowering',
- *   BasketLoweringBehavior
- * );
- *
- * // With priority and overrides
- * registerCapabilityBehavior(
- *   TrollAxeTrait.type,
- *   'if.action.taking',
- *   TrollAxeTakingBehavior,
- *   { priority: 100, resolution: 'any-blocks' }
- * );
- * ```
+ * Generate the binding-map key for a trait+capability combination.
+ * Shared by `WorldModel`'s registration/lookup methods so the key format
+ * stays in one place.
  */
-export declare function registerCapabilityBehavior<T extends ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
-/**
- * Get behavior for a trait instance and capability.
- *
- * Called by capability-dispatch actions to find the right behavior.
- *
- * @param trait - The trait instance
- * @param capability - The action ID
- * @returns The behavior, or undefined if not registered
- */
-export declare function getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
-/**
- * Get the full binding for a trait instance and capability.
- *
- * Includes priority and configuration overrides. Used by dispatch helper
- * for resolution logic.
- *
- * @param trait - The trait instance
- * @param capability - The action ID
- * @returns The binding, or undefined if not registered
- */
-export declare function getBehaviorBinding(trait: ITrait, capability: string): TraitBehaviorBinding | undefined;
-/**
- * Check if a behavior is registered for a trait+capability.
- *
- * @param traitType - The trait type identifier
- * @param capability - The action ID
- */
-export declare function hasCapabilityBehavior(traitType: string, capability: string): boolean;
-/**
- * Unregister a behavior (primarily for testing).
- *
- * @param traitType - The trait type identifier
- * @param capability - The action ID
- */
-export declare function unregisterCapabilityBehavior(traitType: string, capability: string): void;
-/**
- * Clear all registered behaviors (for testing).
- */
-export declare function clearCapabilityRegistry(): void;
-/**
- * Get all registered bindings (for debugging/introspection).
- */
-export declare function getAllCapabilityBindings(): Map<string, TraitBehaviorBinding>;
+export declare function capabilityBindingKey(traitType: string, capability: string): string;
 ```
 
 ### capabilities/capability-defaults

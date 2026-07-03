@@ -17,7 +17,7 @@ import {
   RoomTrait,
   ReadableTrait,
 } from '@sharpee/world-model';
-import '@sharpee/helpers';
+import { createHelpers } from '@sharpee/helpers';
 
 
 // ============================================================================
@@ -40,7 +40,7 @@ export interface RoomIds {
 // ============================================================================
 
 export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: string } {
-  const { room, object, door } = world.helpers();
+  const { room, object, door } = createHelpers(world);
 
   // --- Rooms ---
 

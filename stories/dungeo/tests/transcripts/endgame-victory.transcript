@@ -10,15 +10,12 @@ description: Test victory sequence when entering Treasury of Zork
 # 2. Bronze door open (dial set to 4, button pushed)
 # 3. Enter Treasury from Prison Cell
 
-# Enter GDT mode
+# Enter GDT mode (game commands only work after EX — GDT is an input mode)
 > gdt
 [OK: contains "GDT ready"]
 
 > tk brass lantern
 [OK: contains "Taken"]
-
-> turn on lantern
-[OK: contains "switches on"]
 
 # Teleport to Parapet
 > ah Parapet
@@ -41,12 +38,15 @@ description: Test victory sequence when entering Treasury of Zork
 > ah Prison Cell
 [OK: contains "Teleported to"]
 
-> look
-[OK: contains "Prison Cell"]
-
 # Exit GDT mode
 > ex
 [OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+> look
+[OK: contains "Prison Cell"]
 
 # Enter Treasury - this should trigger victory!
 > s

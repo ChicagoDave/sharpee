@@ -268,6 +268,7 @@ export class CommandExecutor {
         command.indirectObject?.entity
       ];
       const capabilityCheck = checkCapabilityDispatchMulti(
+        world,
         command.actionId,
         involvedEntities
       );
@@ -342,6 +343,7 @@ export class CommandExecutor {
               command.indirectObject?.entity
             ];
             const inferredCapabilityCheck = checkCapabilityDispatchMulti(
+              world,
               command.actionId,
               inferredInvolvedEntities
             );

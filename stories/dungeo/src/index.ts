@@ -29,8 +29,6 @@ import {
   StandardCapabilities,
   IWorldModel,
   IParsedCommand,
-  registerCapabilityBehavior,
-  hasCapabilityBehavior,
   VisibilityBehavior,
   registerActionInterceptor,
   hasActionInterceptor
@@ -245,23 +243,19 @@ export class DungeoStory implements Story {
     // Take-scoring: stdlib taking action reads IdentityTrait.points
     // Trophy case scoring: TrophyCasePuttingInterceptor reads TreasureTrait.trophyCaseValue
 
-    // Register capability behaviors (ADR-090)
+    // Register capability behaviors (ADR-090) on this world's binding map
+    // (ADR-207: per-world, idempotent — no duplicate-registration guard needed)
     // Basket elevator uses lowering/raising capability dispatch
-    // Check first to avoid duplicate registration (global registry persists across test runs)
-    if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
-      registerCapabilityBehavior(
-        BasketElevatorTrait.type,
-        'if.action.lowering',
-        BasketLoweringBehavior
-      );
-    }
-    if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
-      registerCapabilityBehavior(
-        BasketElevatorTrait.type,
-        'if.action.raising',
-        BasketRaisingBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      BasketElevatorTrait.type,
+      'if.action.lowering',
+      BasketLoweringBehavior
+    );
+    world.registerCapabilityBehavior(
+      BasketElevatorTrait.type,
+      'if.action.raising',
+      BasketRaisingBehavior
+    );
 
     // Troll axe uses action interceptor for taking (ADR-118: blocks while troll is alive)
     if (!hasActionInterceptor(TrollAxeTrait.type, 'if.action.taking')) {
@@ -273,13 +267,11 @@ export class DungeoStory implements Story {
     }
 
     // Troll axe uses universal dispatch for visibility (hidden when troll unconscious)
-    if (!hasCapabilityBehavior(TrollAxeTrait.type, 'if.scope.visible')) {
-      registerCapabilityBehavior(
-        TrollAxeTrait.type,
-        'if.scope.visible',
-        TrollAxeVisibilityBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      TrollAxeTrait.type,
+      'if.scope.visible',
+      TrollAxeVisibilityBehavior
+    );
 
     // Troll NPC uses action interceptors for TAKE/ATTACK/TALK interception
     // (Converted from capability behaviors to work around ISSUE-052: cross-module registry bug)
@@ -299,29 +291,23 @@ export class DungeoStory implements Story {
     }
 
     // Troll capability behaviors for GIVE/THROW (ADR-090)
-    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.giving')) {
-      registerCapabilityBehavior(
-        TrollTrait.type,
-        'if.action.giving',
-        TrollReceivingBehavior
-      );
-    }
-    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.throwing')) {
-      registerCapabilityBehavior(
-        TrollTrait.type,
-        'if.action.throwing',
-        TrollReceivingBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      TrollTrait.type,
+      'if.action.giving',
+      TrollReceivingBehavior
+    );
+    world.registerCapabilityBehavior(
+      TrollTrait.type,
+      'if.action.throwing',
+      TrollReceivingBehavior
+    );
 
     // Egg uses universal dispatch for opening (only thief can open)
-    if (!hasCapabilityBehavior(EggTrait.type, 'if.action.opening')) {
-      registerCapabilityBehavior(
-        EggTrait.type,
-        'if.action.opening',
-        EggOpeningBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      EggTrait.type,
+      'if.action.opening',
+      EggOpeningBehavior
+    );
 
     // Reality Altered: migrated to state machine (ADR-119)
 

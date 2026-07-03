@@ -31,16 +31,16 @@ description: Tests basic balloon entry/exit at ground level
 
 ## Enter the balloon
 > enter balloon
-[OK: contains "get into balloon"]
+[OK: contains "You get into the balloon."]
 
 ## Exit at ground level (should work normally)
 > exit
-[OK: contains "get out of balloon"]
+[OK: contains "climb out of the balloon"]
 
 ## Re-enter for verification
 > enter balloon
-[OK: contains "get into balloon"]
+[OK: contains "You get into the balloon."]
 
 ## Exit again
 > exit
-[OK: contains "get out of balloon"]
+[OK: contains "climb out of the balloon"]

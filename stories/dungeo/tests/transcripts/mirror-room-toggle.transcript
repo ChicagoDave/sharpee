@@ -23,6 +23,9 @@ description: Test Mirror Room exit toggle when rubbing the mirror (State A vs St
 > ah mirror room
 [OK: contains "Teleported to"]
 
+> ex
+[OK: contains "Returning"]
+
 # Verify we're in Mirror Room
 > look
 [OK: contains "Mirror Room"]
@@ -54,9 +57,10 @@ description: Test Mirror Room exit toggle when rubbing the mirror (State A vs St
 [OK: contains "Mirror Room"]
 
 # Now RUB MIRROR to toggle to State B (Coal Mine)
-# Note: Message effect not yet appearing in output (ADR-075 enhancement needed)
+# MDL act1.mud: "There is a rumble from deep within the earth and the room shakes."
 > rub mirror
-[OK: contains "mirror"]
+[OK: contains "rumble"]
+[OK: contains "room shakes"]
 
 # STATE B: Test exits now go to Coal Mine area
 # W should now go to Cold Passage (not Winding Passage)
@@ -85,7 +89,8 @@ description: Test Mirror Room exit toggle when rubbing the mirror (State A vs St
 
 # RUB MIRROR again to toggle back to State A
 > rub mirror
-[OK: contains "mirror"]
+[OK: contains "rumble"]
+[OK: contains "room shakes"]
 
 # STATE A again: Verify exits are back to Grail Room area
 > w
@@ -99,7 +104,3 @@ description: Test Mirror Room exit toggle when rubbing the mirror (State A vs St
 
 > sw
 [OK: contains "Mirror Room"]
-
-# Exit GDT
-> ex
-[OK: contains "Returning"]

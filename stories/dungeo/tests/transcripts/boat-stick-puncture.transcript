@@ -29,6 +29,7 @@ description: Test that carrying sharp stick into boat punctures and deflates it
 
 # Turn on lamp for light
 > turn on lantern
+[OK: contains "switches on"]
 
 # ============================================================================
 # TEST: Inflate boat then board with stick - should puncture

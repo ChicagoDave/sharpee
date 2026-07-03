@@ -41,11 +41,15 @@ export const roomAction: Action = {
     const roomTrait = room.get<RoomTrait>(TraitType.ROOM);
     const description = room.description || 'You see nothing special.';
 
-    // Emit room description event (same as looking action)
+    // Emit room description event (same as looking action).
+    // The engine's room-description handler reads `roomName`/`roomDescription`
+    // (name only when `verbose`), so emit that shape — a bare `description`
+    // key renders nothing.
     events.push(context.event('if.event.room.description', {
       roomId: room.id,
       roomName: room.name,
-      description: description,
+      roomDescription: description,
+      verbose: true,
       isVisited: roomTrait?.visited || false,
     }));
 

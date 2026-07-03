@@ -170,8 +170,29 @@ export interface IWorldModel {
   // Capability Management (ADR-129 data capabilities — scoring, save-blob
   // fields, etc. Distinct from the ADR-090/ADR-207 capability-behavior
   // binding map below; both are named "capability" for historical reasons.)
-  registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
+  /**
+   * Register a data capability. THREE RULES (2026-07-02, regression
+   * findings P6):
+   *
+   * 1. **Register-once.** If `name` is already registered this is a no-op
+   *    (strict mode: throws) — data is never reset or merged by
+   *    re-registration.
+   * 2. **`initialData` is DEEP-copied.** The stored data object is built
+   *    from schema defaults + a deep copy of `initialData`; mutating the
+   *    object you passed in afterward changes nothing. Capability data must
+   *    be plain serializable values — it lands in the save blob (never store
+   *    service/class instances here).
+   * 3. **Mutate via the returned/live object or `updateCapability`.** The
+   *    return value IS the live stored data object (also what
+   *    `getCapability` returns) — mutating it persists.
+   *
+   * @returns The live stored data object (the existing one when `name` was
+   *   already registered).
+   */
+  registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
+  /** Merge `data` into the capability's stored data. No-op (strict: throws) when unregistered. */
   updateCapability(name: string, data: Partial<ICapabilityData>): void;
+  /** Returns the LIVE stored data object (not a copy) — mutations persist. */
   getCapability(name: string): ICapabilityData | undefined;
   hasCapability(name: string): boolean;
 
@@ -214,6 +235,16 @@ export interface IWorldModel {
    * @returns The binding, or `undefined` if none is registered on this world
    */
   getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+  /**
+   * Enumerate every capability-behavior binding registered on this world,
+   * keyed by `traitType:capability` (see `capabilityBindingKey`).
+   *
+   * Read-only introspection surface (IDE/debug summaries) — register through
+   * `registerCapabilityBehavior`, never by mutating the returned map.
+   *
+   * @returns The world's binding map as a read-only view
+   */
+  getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
 
   // Entity Management
   createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean }): IFEntity;
@@ -449,12 +480,14 @@ export class WorldModel implements IWorldModel {
   }
 
   // Capability Management
-  registerCapability(name: string, registration: Partial<ICapabilityRegistration> = {}): void {
+  registerCapability(name: string, registration: Partial<ICapabilityRegistration> = {}): ICapabilityData {
     if (this.capabilities[name]) {
       if (this.config.strictMode) {
         throw new Error(`Capability '${name}' is already registered`);
       }
-      return;
+      // Register-once: return the EXISTING live data object so
+      // register-then-mutate is correct in both branches.
+      return this.capabilities[name].data;
     }
 
     // Initialize capability with schema and initial data
@@ -469,15 +502,25 @@ export class WorldModel implements IWorldModel {
       }
     }
 
-    // Override with provided initial data
+    // Override with a DEEP copy of the provided initial data — capability
+    // data must be plain serializable values (it lands in the save blob),
+    // and a shallow copy gave nesting-depth-dependent semantics: top-level
+    // fields detached from the caller's object while nested objects stayed
+    // shared (regression findings P6, Trap A′). structuredClone throws on
+    // functions/class instances, which is the honest failure for data that
+    // could never serialize anyway.
     if (registration.initialData) {
-      Object.assign(initialData, registration.initialData);
+      Object.assign(initialData, structuredClone(registration.initialData));
     }
 
     this.capabilities[name] = {
       data: initialData,
       schema: registration.schema
     };
+
+    // Return the LIVE stored object — mutations to it persist (it is the
+    // same object getCapability returns).
+    return initialData;
   }
 
   updateCapability(name: string, updates: Partial<ICapabilityData>): void {
@@ -544,6 +587,10 @@ export class WorldModel implements IWorldModel {
 
   getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
     return this.capabilityBindings.get(capabilityBindingKey(traitType, capability));
+  }
+
+  getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding> {
+    return this.capabilityBindings;
   }
 
   getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined {

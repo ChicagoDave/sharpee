@@ -407,6 +407,12 @@ $restore wt-14
 > ex
 [OK: contains "Returning"]
 
+# Bank lantern battery while in the lit Living Room — the torch is gone
+# (thrown at the glacier), so the battery must last through wt-16 and the
+# wt-17 endgame. wt-16 turns the lantern back on before descending.
+> turn off lantern
+[OK: contains "lantern"]
+
 [END GOAL]
 
 $save wt-15

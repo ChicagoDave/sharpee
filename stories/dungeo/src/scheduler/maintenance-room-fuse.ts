@@ -88,11 +88,16 @@ export function startFlooding(
   maintenanceRoomId: EntityId,
   leakId?: EntityId
 ): ISemanticEvent[] {
-  // Get or create flooding state
+  // Get or create flooding state.
+  // NOTE: registerCapability copies initialData into a new stored object, so we
+  // must re-fetch via getCapability and mutate the STORED object — mutating a
+  // local initialData object is invisible to the daemon.
   let state = world.getCapability(FLOODING_STATE_KEY) as FloodingState | null;
   if (!state) {
-    state = { floodingLevel: 0, isFlooded: false };
-    world.registerCapability(FLOODING_STATE_KEY, { initialData: state });
+    world.registerCapability(FLOODING_STATE_KEY, {
+      initialData: { floodingLevel: 0, isFlooded: false }
+    });
+    state = world.getCapability(FLOODING_STATE_KEY) as unknown as FloodingState;
   }
 
   // Already flooding or flooded? Button jammed

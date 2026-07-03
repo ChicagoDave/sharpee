@@ -30,7 +30,7 @@ description: Tests full balloon flight: burn guidebook, inflate, rise, dock at l
 
 # Enter the balloon
 > enter balloon
-[OK: contains "get into balloon"]
+[OK: contains "You get into the balloon."]
 
 # Open the receptacle (brazier)
 > open receptacle
@@ -86,7 +86,7 @@ description: Tests full balloon flight: burn guidebook, inflate, rise, dock at l
 
 # Re-enter balloon
 > enter balloon
-[OK: contains "get into balloon"]
+[OK: contains "You get into the balloon."]
 
 # Untie to resume flight
 # Daemon fires immediately on untie turn: ledg2 → vair2

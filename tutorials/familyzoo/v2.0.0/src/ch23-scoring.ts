@@ -56,10 +56,7 @@ import {
   CapabilitySharedData,
   CapabilityEffect,
   createEffect,
-  registerCapabilityBehavior,
-  hasCapabilityBehavior,
   findTraitWithCapability,
-  getBehaviorForCapability,
   ITrait,
 } from '@sharpee/world-model';
 import {
@@ -223,7 +220,7 @@ const pettingAction: Action = {
     if (!entity) return { valid: false, error: PetMessages.CANT_PET };
     const trait = findTraitWithCapability(entity, PETTING_ACTION_ID);
     if (!trait) return { valid: false, error: PetMessages.CANT_PET };
-    const behavior = getBehaviorForCapability(trait, PETTING_ACTION_ID);
+    const behavior = context.world.getBehaviorForCapability(trait, PETTING_ACTION_ID);
     if (!behavior) return { valid: false, error: PetMessages.CANT_PET };
     const sharedData: CapabilitySharedData = {};
     const behaviorResult = behavior.validate(entity, context.world, context.player.id, sharedData);
@@ -348,11 +345,11 @@ const parrotBehavior: NpcBehavior = {
   id: 'zoo-parrot', name: 'Parrot Behavior',
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
-    if (context.random.chance(0.5)) return [{ type: 'speak', messageId: 'npc.speech', data: { npcName: 'parrot', text: context.random.pick(PARROT_PHRASES) } }];
+    if (context.random.chance(0.5)) return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASES) } }];
     return [];
   },
   onPlayerEnters(): NpcAction[] {
-    return [{ type: 'emote', messageId: 'npc.emote', data: { npcName: 'parrot', text: 'The parrot ruffles its feathers and eyes you with interest.' } }];
+    return [{ type: 'emote', messageId: 'npc.emote', data: { text: 'The parrot ruffles its feathers and eyes you with interest.' } }];
   },
 };
 
@@ -711,10 +708,9 @@ class FamilyZooStory implements Story {
     parrot.add(new PettableTrait('parrot'));
     world.moveEntity(parrot.id, aviary.id);
 
-    // REGISTER CAPABILITY BEHAVIOR
-    if (!hasCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID)) {
-      registerCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID, pettingBehavior);
-    }
+    // REGISTER CAPABILITY BEHAVIOR (per-world and idempotent per ADR-207,
+    // so no already-registered guard is needed)
+    world.registerCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID, pettingBehavior);
 
     // PLAYER STARTING LOCATION
     const player = world.getPlayer();

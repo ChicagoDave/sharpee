@@ -585,7 +585,11 @@ Examples:
         console.log(`Chain mode: Game state will persist between transcripts`);
       }
 
-      let game = loadStoryAndCreateGame(options.storyPath);
+      // Chain mode shares one game instance across all transcripts, so load it
+      // up front. In per-transcript mode the loop loads a fresh game for each
+      // transcript (honoring its `entry:` header) — an eager load here would be
+      // discarded unused (ADR-207 AC-7: no side-effecting pre-load).
+      let game = options.chain ? loadStoryAndCreateGame(options.storyPath) : undefined;
       const results = [];
 
       for (const transcriptPath of options.transcriptPaths) {

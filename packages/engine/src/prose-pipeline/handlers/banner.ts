@@ -2,9 +2,9 @@
  * Shared banner-block builder.
  *
  * Emits the opening banner as a sequence of semantically-classed
- * blocks. Used by both `handleGameStarted` and `handleAboutDisplayed`
- * so the banner shown at game-start and via the ABOUT command are
- * structurally identical.
+ * blocks. Used by `handleGameStarted` for the game-start banner.
+ * (ABOUT renders via the lang-en-us `if.action.about.success` template
+ * since 2026-07-02; its dedicated handler was removed.)
  *
  * Pieces (in order):
  *
@@ -30,8 +30,7 @@ const STORY_TAIL_MESSAGE_ID = 'game.banner.story-tail';
 
 /**
  * Subset of story metadata used by the banner builder.
- * Both `handleGameStarted` (`event.data.story`) and
- * `handleAboutDisplayed` (`event.data.params`) project into this shape.
+ * `handleGameStarted` projects `event.data.story` into this shape.
  */
 export interface BannerStoryInfo {
   title?: string;
@@ -44,7 +43,7 @@ export interface BannerStoryInfo {
 
 /**
  * Build the structured banner blocks for a `key` (typically
- * `'game.banner'` from `game.started` or `'about.text'` from ABOUT).
+ * `'game.banner'` from `game.started`).
  */
 export function buildBannerBlocks(
   key: string,

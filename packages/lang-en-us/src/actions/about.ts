@@ -12,6 +12,14 @@ export const aboutLanguage = {
   ],
   
   messages: {
+    // Default ABOUT output — key matches the messageId the stdlib about
+    // action emits (if.action.about.success). The action pulls the params
+    // (title, author, version, description, ...) from the game's
+    // StoryInfoTrait, so this renders real story data with no story-side
+    // setup. Stories override by registering the same fully-qualified id:
+    // language.addMessage('if.action.about.success', ...).
+    'success': "{verbatim:title}\nVersion {verbatim:version}\nBy {verbatim:author}\n\n{verbatim:description}",
+
     // Header
     'about_header': "About {verbatim:title}",
     

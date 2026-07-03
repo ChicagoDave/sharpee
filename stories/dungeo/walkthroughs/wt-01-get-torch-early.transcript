@@ -81,10 +81,18 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 
 # Kill troll - melee combat with DO/UNTIL loop
 # Loops attack until troll dies or player dies (retry handles player death)
+# RNG: the troll can disarm us; unarmed attacks are blocked ("Fighting
+# unarmed is suicide.") so recover the sword before each swing. The disarm
+# line ("knocked out of your hands") mentions neither troll nor staggering,
+# so "sword"/"hands" are valid attack-turn outputs too.
 [RETRY: max=5]
 [DO]
+[WHILE: not inventory contains "elvish sword"]
+> take sword
+[SKIP]
+[END WHILE]
 > attack troll with sword
-[OK: contains_any "troll" "staggering"]
+[OK: contains_any "troll" "staggering" "sword" "hands"]
 [UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
 [ENSURES: not entity "troll" alive]
 [END RETRY]

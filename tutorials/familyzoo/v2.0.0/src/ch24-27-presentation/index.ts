@@ -72,10 +72,7 @@ import {
   CapabilitySharedData,
   CapabilityEffect,
   createEffect,
-  registerCapabilityBehavior,
-  hasCapabilityBehavior,
   findTraitWithCapability,
-  getBehaviorForCapability,
 } from '@sharpee/world-model';
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
@@ -154,7 +151,7 @@ const pettingAction: Action = {
     if (!entity) return { valid: false, error: PetMessages.CANT_PET };
     const trait = findTraitWithCapability(entity, PETTING_ACTION_ID);
     if (!trait) return { valid: false, error: PetMessages.CANT_PET };
-    const behavior = getBehaviorForCapability(trait, PETTING_ACTION_ID);
+    const behavior = context.world.getBehaviorForCapability(trait, PETTING_ACTION_ID);
     if (!behavior) return { valid: false, error: PetMessages.CANT_PET };
     const sharedData: CapabilitySharedData = {};
     const behaviorResult = behavior.validate(entity, context.world, context.player.id, sharedData);
@@ -312,10 +309,9 @@ class FamilyZooStory implements Story {
       giftShop: rooms.giftShop,
     });
 
-    // Register petting capability
-    if (!hasCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID)) {
-      registerCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID, pettingBehavior);
-    }
+    // Register petting capability (per-world and idempotent per ADR-207,
+    // so no already-registered guard is needed)
+    world.registerCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID, pettingBehavior);
 
     // Place the player
     const player = world.getPlayer();

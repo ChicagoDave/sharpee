@@ -16,8 +16,8 @@ import {
   TraitType,
   EntityType,
   StoryInfoTrait,
-  getAllCapabilityBindings,
-  getAllInterceptorBindings
+  getAllInterceptorBindings,
+  registerConcealedVisibilityBehavior
 } from '@sharpee/world-model';
 import { EventProcessor, Effect } from '@sharpee/event-processor';
 import {
@@ -359,6 +359,13 @@ export class GameEngine {
       newPlayer.add(new ListenerTrait());
     }
 
+    // ADR-148 concealment: register the standard concealed-visibility
+    // behavior on this world (NPCs can't see a concealed player — the
+    // hide-and-observe mechanic). Registered BEFORE initializeWorld so a
+    // story can override the binding with its own NPC-detection behavior
+    // (per-world registration is last-wins, ADR-207).
+    registerConcealedVisibilityBehavior(this.world);
+
     // Initialize story-specific world content (player must exist first)
     story.initializeWorld(this.world);
 
@@ -371,6 +378,22 @@ export class GameEngine {
       ? story.config.author.join(', ')
       : story.config.author;
     this.context.metadata.version = story.config.version;
+
+    // Ensure a StoryInfo entity exists — the standard ABOUT action resolves
+    // its params (title/author/version/description) from `StoryInfoTrait`.
+    // Stories may create their own during `initializeWorld` (dungeo does, to
+    // add build-pipeline metadata) and that one wins; when none exists,
+    // create it from `StoryConfig` so ABOUT renders real story data with no
+    // story-side setup.
+    if (this.world.findByTrait(TraitType.STORY_INFO).length === 0) {
+      const storyInfoEntity = this.world.createEntity('story-info', EntityType.OBJECT);
+      storyInfoEntity.add(new StoryInfoTrait({
+        title: story.config.title,
+        author: this.context.metadata.author,
+        version: story.config.version,
+        description: story.config.description,
+      }));
+    }
 
     // Seed the `storyInfo` capability for ADR-163 `infoChannel` /
     // `ifidChannel` to project. Channels read from the world via
@@ -523,7 +546,7 @@ export class GameEngine {
 
     // Collect capability and interceptor registrations per trait type
     const capsByTrait = new Map<string, string[]>();
-    for (const [key] of getAllCapabilityBindings()) {
+    for (const [key] of this.world.getAllCapabilityBindings()) {
       const [traitType, capability] = key.split(':');
       const list = capsByTrait.get(traitType) ?? [];
       list.push(capability);
@@ -563,7 +586,7 @@ export class GameEngine {
     // Behavior bindings — capability behaviors and action interceptors
     const behaviors: BehaviorBindingSummary[] = [];
 
-    for (const [key, binding] of getAllCapabilityBindings()) {
+    for (const [key, binding] of this.world.getAllCapabilityBindings()) {
       const [traitType, capability] = key.split(':');
       const behavior = binding.behavior;
       const phases: string[] = [];

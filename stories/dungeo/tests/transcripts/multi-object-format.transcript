@@ -9,8 +9,7 @@ description: Verifies take all and drop all show compact format
 [OK: contains "open"]
 
 > take leaflet
-[OK: contains "take"]
-[OK: contains "leaflet"]
+[OK: contains "Taken"]
 
 # Go to kitchen to get multiple items
 > s

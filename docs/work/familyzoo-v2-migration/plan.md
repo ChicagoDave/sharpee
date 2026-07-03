@@ -1,6 +1,8 @@
 # Plan — Split Family Zoo tutorial into v1.5.0 / v2.0.0 editions
 
-**Status:** Phase 1 COMPLETE (the split). Phases 2–4 pending.
+**Status:** Phases 1–3 done (split + re-pointing + v1.5.0 freeze). Phase 4 (v2.0.0
+migration) pending a scope decision. Build/test verification of both editions is
+publish-gated.
 **Target:** `tutorials/familyzoo/`
 **Approach:** Mirror the **book split** from session 20260701-0128 — freeze the current
 1.x tutorial as a `v1.5.0` edition and fork a `v2.0.0` edition that later receives the
@@ -116,6 +118,27 @@ phrase-algebra packages yet. That is Phase 4.
 *Gate:* no remaining references to a bare `tutorials/familyzoo/{src,docs,…}` path that
 now lives under an edition subdir.
 
+> **Done (session 3c69ac):**
+> - `README.md` example-stories table row → both editions + their pins.
+> - `website/.../project-structure.mdx` → dir tree shows `v1.5.0/` + `v2.0.0/`.
+> - `website/.../family-zoo.mdx` → Step 1 structure block re-pointed from the
+>   non-existent `src/v17/` to `tutorials/familyzoo/<edition>/src/ch28-multi-file/` and
+>   the edition split.
+>
+> **Deferred flags (not Phase 2 scope):**
+> 1. `family-zoo.mdx` still carries **pre-split** staleness unrelated to the move — a
+>    `world.helpers()` code snippet (v1 pattern) and `./build.sh -s familyzoo` commands
+>    (the build is `sharpee build` now). These are Phase 4 / a "which edition does the
+>    website page track" decision, not path re-pointing.
+> 2. IDE tooling `tools/ide/.../BrowserEntry.swift` resolves
+>    `tutorials/<story>/src/browser-entry.ts`; post-split the real familyzoo entry lives
+>    under an edition subdir, so the resolver won't find it (its unit test uses a
+>    synthetic fixture, so the test still passes). Separate tooling task.
+> 3. `docs/context/**` archives reference old `tutorials/familyzoo/src/vNN` paths —
+>    historical point-in-time logs, intentionally left as-is.
+> 4. `tools/repokit/.../build.test.ts` writes a synthetic `tutorials/familyzoo/…`
+>    fixture in a temp root — not coupled to the real path; no change.
+
 ---
 
 ## 6. Phase 3 — Freeze & verify v1.5.0
@@ -127,12 +150,32 @@ v1.5.0 is the **current, working** 1.x tutorial moved verbatim. No code changes.
   drives that publish; [[release-strategy-v1-5-v2-0]]).
 - Until then, v1.5.0 is "frozen as-is"; validation is deferred to post-publish.
 
+> **Done (session 3c69ac):** freeze confirmed — every v1.5.0 file is a 100% pure git
+> rename except `package.json` (pin/version edits); no source drift, no phrase-algebra
+> leakage. Code correctness inherited from the pre-split tutorial (validated end-to-end
+> against published packages per `src/README.md`). Build/test against real `^1.5`
+> packages deferred to post-publish (user-driven from the `sharpee_v1` clone).
+
 ---
 
 ## 7. Phase 4 — Migrate the `v2.0.0/` edition to Phrase Algebra (the real work; follow-on)
 
 This is the previously-analysed migration, now scoped to `tutorials/familyzoo/v2.0.0/`
 only. Three tiers (full per-file detail from the surveys retained below):
+
+> **Tier H DONE + VALIDATED (session 3c69ac).** Applied across the v2.0.0 edition:
+> `npcName` dropped from all NPC speech/emote emits (ch20, ch22, ch23, ch24-27, ch28)
+> and `world.helpers()` → `createHelpers(world)` (ch24-27 + ch28) — 9 source files, the
+> exact transformation validated by the green `stories/friendly-zoo`. **Real-path
+> validation** (scratchpad copy, `npm install` published `@sharpee/*@2.0.0`):
+> `tsc --noEmit` clean, and `sharpee build --test` = **196/197 transcript assertions
+> pass**. The 1 failure (`v16-scoring` expects "perfect score") is **unrelated to Tier H
+> and not a bug** — root cause confirmed: `ch23-scoring.ts` (V16) sets `MAX_SCORE = 75`,
+> so 75 *is* perfect there and the transcript (which declares `entry: v16`) is correct.
+> But devkit's `loadStory` **ignores the `entry:` header** and runs every transcript
+> against the single default entry (`ch24-27`, `MAX_SCORE = 100`), so the V16 walkthrough
+> is 25 short of *that* game's max. This is open question #5 (a devkit harness gap), not
+> content. Deferred to Phase 5.
 
 ### Tier H — HARD BREAKS (won't compile / render blank)
 - `npcName` → `speaker: nounPhraseFor(npc)` (ADR-203) in `ch20-npcs.ts`,
@@ -146,6 +189,48 @@ only. Three tiers (full per-file detail from the surveys retained below):
   Whether the prototype patch happens to survive a standalone single-instance install
   only changes whether this counts as a correctness fix or a consistency cleanup — not
   whether to make the change.
+
+> **Devkit entry-selection fix DONE + VALIDATED (session 3c69ac).** Root of open
+> question #5. Two parts:
+> - **Platform** (`packages/devkit/src/standalone/build.ts`): `runTranscriptTests` now
+>   threads `transcript.header.entry` into `loadStory` (unit tests parse-before-load +
+>   per-file entry; walkthroughs use the first transcript's entry). `bootstrap`
+>   (`resolve.ts`) and the `transcript-tester` CLI were already entry-aware — devkit was
+>   the sole place the header was dropped. Blast radius checked: familyzoo is the ONLY
+>   story repo-wide that uses `entry:` headers.
+> - **Story**: remapped the 6 stale `entry: vNN` headers to their `chNN` chapter
+>   basenames (v11→ch20-npcs, v12→ch13-event-handlers, v13→ch14-custom-actions,
+>   v14→ch15-capability-dispatch, v15→ch22-timed-events, v16→ch23-scoring). Mapping
+>   verified NPC-safe against each transcript's actual assertions.
+> - **Validated** (scratchpad, patched devkit overlaid on published platform):
+>   `v16-scoring` now loads `ch23` (max **75**, was 100) — proving entry selection works.
+>   196/197 hold; v11–v15 pass against their real chapters.
+> - **Ships in devkit 2.0.1** — the published 2.0.0 devkit lacks this; a republish is
+>   needed for the fix to reach author builds.
+>
+> **New finding — a v2 PLATFORM regression (NOT the devkit issue, NOT a walkthrough gap).**
+> With v16 now on its correct chapter it scores **70/75**. Bisected to a single lost
+> award: **`pet goats` does not award `PET_ANIMAL` (5 pts)** in v2, though v1 gives the
+> perfect 75. The `pet` command runs and emits the correct `report()` message, but the
+> `execute()` phase's `world.awardScore(PET_ANIMAL)` never persists. Distinguishing
+> factor: petting uses the four-phase **capability-dispatch** action (`pettingAction`)
+> that threads entity/behavior validate→execute→report via `context.sharedData` and
+> awards inside `behavior.execute()`; feed/photo award *directly* in a plain action's
+> `execute` and DO persist. So the regression is in the v2 capability-dispatch /
+> four-phase `execute` path (likely `sharedData` lifecycle or execute-phase commit) —
+> a `packages/` matter (stdlib/engine/world-model) needing its own investigation +
+> discussion. ch23 petting code is untouched by the Tier H migration.
+>
+> **Root-caused + ADR drafted:** the registry is a `globalThis` singleton never reset
+> between loads + throw-on-duplicate + author `hasCapabilityBehavior` guards + the
+> tester's eager default pre-load → first-loaded chapter's behavior wins process-wide, so
+> ch23's scoring-aware petting is skipped. Design fix (engine-owned registry) captured in
+> **ADR-207** (PROPOSED) — `docs/architecture/adrs/adr-207-capability-registry-engine-owned.md`.
+> Removing this also lets the `familyzoo` guards go and reaches 75/75.
+>
+> **v1.5.0 note:** its transcripts carry the same stale `entry: vNN`, but it pins devkit
+> `^1.5` (which ignores `entry:`), so they stay harmlessly ignored there. If the v1.5
+> devkit ever gains this fix, apply the same remap.
 
 ### Tier I — IDIOMATIC (renders as a `Literal`, loses article/agreement/reference)
 - String params → `nounPhraseFor(entity, ctx)` (ADR-158) in `ch14`, `ch15`, `ch20`

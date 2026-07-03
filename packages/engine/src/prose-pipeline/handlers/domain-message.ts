@@ -6,6 +6,11 @@
  * story actions emitting `action.success` / `action.blocked` events
  * also flow through here.
  *
+ * Params bind nested-preferred with flat fallback (`data.params ?? data`,
+ * ADR-206 unified rule) — emitters may nest template params under
+ * `params` or carry them flat on the event data; nested wins when both
+ * exist.
+ *
  * Public interface: `tryProcessDomainEventMessage`. The pipeline
  * consults this first; on null, it falls through to the type-keyed
  * handlers (room, revealed, generic, etc.).
@@ -77,14 +82,22 @@ export function tryProcessDomainEventMessage(
     return null;
   };
 
+  // Params binding (ADR-206 unified rule, 2026-07-02): prefer the nested
+  // `data.params` object; fall back to the flat event data — the same
+  // nested-preferred/flat-fallback rule handleGameMessage uses. Before
+  // this, the domain path was nested-only while the generic fallback bound
+  // flat, so a messageId + flat-params event failed here (stderr "param not
+  // bound" noise) and only rendered by accident via the generic handler.
+  const params = (data.params ?? data) as Record<string, unknown>;
+
   // Phrase path (ADR-192): render the template to a phrase tree and realize it.
   if (phraseAvailable(context)) {
-    const blocks = renderViaPhrase(context, data.messageId, data.params ?? {}, blockKey);
+    const blocks = renderViaPhrase(context, data.messageId, params, blockKey);
     return blocks ?? inlineFallback();
   }
 
   // Legacy string path — only when the pipeline has no world (some unit tests).
-  const message = context.languageProvider.getMessage(data.messageId, data.params);
+  const message = context.languageProvider.getMessage(data.messageId, params);
   if (message === data.messageId || !message) {
     return inlineFallback();
   }

@@ -17,7 +17,8 @@ import { IFActions } from '../../constants';
  * Usage:
  * 1. Create a trait that declares `static capabilities = ['if.action.raising']`
  * 2. Create a behavior implementing CapabilityBehavior
- * 3. Register the behavior with registerCapabilityBehavior()
+ * 3. Register the behavior with world.registerCapabilityBehavior() in your
+ *    story's initializeWorld() (per-world binding, ADR-207)
  * 4. Add the trait to your entity
  */
 export const raisingAction = createCapabilityDispatchAction({

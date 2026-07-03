@@ -45,7 +45,9 @@ export function registerPuzzleMessages(language: LanguageProvider): void {
   language.addMessage(PuzzleHandlerMessages.CANT_EXIT, 'There is no way to reach the hole in the ceiling.');
   language.addMessage(PuzzleHandlerMessages.MOVE_BLOCKED, 'You cannot go that way.');
   language.addMessage(PuzzleHandlerMessages.MOVE_SUCCESS, 'OK.');
-  language.addMessage(PuzzleHandlerMessages.ROOM_DESCRIPTION, '{text}');
+  // text is a full generated room description — verbatim, or the bare-noun
+  // default articles it ("a You are in a maze of sandstone walls…").
+  language.addMessage(PuzzleHandlerMessages.ROOM_DESCRIPTION, '{verbatim:text}');
   language.addMessage(PuzzleHandlerMessages.TAKE_CARD, 'You carefully extract the gold card from the depression in the floor.');
   language.addMessage(PuzzleHandlerMessages.CANT_TAKE_CARD, 'You are not close enough to reach the card.');
   language.addMessage(PuzzleHandlerMessages.PUSH_SUCCESS, 'The sandstone wall slides into the space beyond.');

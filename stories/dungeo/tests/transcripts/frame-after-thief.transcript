@@ -3,14 +3,29 @@ story: dungeo
 description: Test ADR-078 frame spawning, scenery, reading, and breaking after thief death
 ---
 
-# Restore from wt-13 (thief is dead)
-$restore wt-13
+# Kill the thief via GDT — spawns the empty frame in the Treasure Room
+# (wt-13 now breaks the frame itself, so this test creates its own state)
+> gdt
+[OK: contains "GDT"]
 
-$teleport Treasure Room
+> tk brass lantern
+[OK: contains "Taken"]
+
+> kl thief
+[OK: contains "Killed"]
+
+> ah Treasure Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
 
 # Frame should be visible in room
 > look
-[OK: contains "frame"]
+[OK: contains "empty frame"]
 
 # Examine should show description with writing hint
 > examine frame
@@ -23,11 +38,12 @@ $teleport Treasure Room
 
 # Try take — should be blocked (scenery)
 > take frame
-[OK: contains "frame"]
+[OK: contains "mounted on the wall"]
 
-# Break frame should work
+# Break frame should work and reveal the carved piece
 > break frame
-[OK: contains "frame"]
+[OK: contains "shatters"]
+[OK: contains "devotion"]
 
 # Frame piece should be on floor
 > look

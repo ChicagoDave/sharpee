@@ -223,7 +223,20 @@ migration**. Instead, each phase deletes what it replaces in the same commit:
   `packages/stdlib/src/actions/standard/lowering/lowering.ts`,
   `packages/engine/tests/universal-capability-dispatch.test.ts`,
   `packages/world-model/tests/unit/capabilities/capability-dispatch.test.ts`.
-- **Status**: CURRENT
+- **Status**: DONE — see `docs/context/session-20260702-1344-v2_familyzoo_split.md`. Beyond the
+  listed Affected files, two additional consumers required migration:
+  `packages/engine/src/command-executor.ts` (the two `checkCapabilityDispatchMulti` call sites
+  now pass `world`) and `packages/engine/src/game-engine.ts` (introspection loops used the
+  deleted `getAllCapabilityBindings()` free function — a new read-only
+  `IWorldModel.getAllCapabilityBindings()` enumeration method was added to world-model to
+  serve it, with `WorldModel` impl + `AuthorModel` delegate). One Phase 1 test leftover fixed:
+  `hiding-golden.test.ts` end-to-end tests called `ensureVisibilityBehavior()` without the
+  world arg. AC-8 dual-instance test added (vi.resetModules second module copy of
+  `@sharpee/world-model`; dispatch resolves through the shared world instance). Open Question 3
+  confirmed trivially: stdlib bundles no `CapabilityBehavior` implementations at all —
+  raising/lowering behaviors are story-owned and registered per world. Suites: world-model
+  1299 passed, stdlib 1291 passed, engine 459 passed. Expected remaining breakage: stories/
+  tutorials until Phase 4.
 
 ### Phase 3: Loader, Transcript-Tester, and Devkit Lifecycle Cleanup
 - **Tier**: Small
@@ -260,7 +273,23 @@ migration**. Instead, each phase deletes what it replaces in the same commit:
 - **Affected files**: `packages/transcript-tester/src/cli.ts`,
   `packages/devkit/src/standalone/build.ts`, and (only if the audit finds one) a
   `bootstrap`/`engine` loader file.
-- **Status**: PENDING
+- **Status**: DONE — see `docs/context/session-20260702-1344-v2_familyzoo_split.md` (Phase 3
+  section). Loader audit clean: no reset/clear code exists anywhere in bootstrap/engine/
+  transcript-tester/devkit (confirms the ADR's "nothing ever calls clearCapabilityRegistry").
+  Both listed load-and-discard sites fixed, plus a **third site the plan missed**:
+  `scripts/bundle-entry.js` (the `dist/cli/sharpee.js` CLI entry — the primary testing path)
+  had the same eager pre-loop `loadStoryAndCreateGame` in non-chain mode; now loads up front
+  only when `--chain`. Also added the `getAllCapabilityBindings()` unit tests (world-model
+  30/30 in capability-dispatch.test.ts) closing the Phase 2 coverage gap flagged by mutation
+  verification. **Exit-check deviation**: the dungeo walkthrough-chain check cannot run until
+  Phase 4 — dungeo's compiled story calls the deleted `hasCapabilityBehavior` at
+  `initializeWorld` (verified: `TypeError ... is not a function`); the plan's claim that this
+  check is independent of Phase 4 was wrong. Behavior-preservation verified instead with
+  `stories/channel-service-test` (`wt-stat.transcript`, 6/6) through BOTH CLIs
+  (`dist/cli/sharpee.js` and `packages/transcript-tester/dist/cli.js`) in BOTH modes (chain +
+  per-transcript). Re-run the dungeo chain at Phase 4 exit as planned. Pre-existing devkit
+  test failures noted (init.test version expectation `^1.x` vs workspace `2.0.1`;
+  browser-build needs platform-browser dist-esm) — unrelated to this phase.
 
 ### Phase 4: Story Registration Migration — dungeo, familyzoo (v1.5.0 + v2.0.0), friendly-zoo
 - **Tier**: Large
@@ -322,7 +351,31 @@ migration**. Instead, each phase deletes what it replaces in the same commit:
   12 listed files under `tutorials/familyzoo/v1.5.0/src/`, all 12 listed files under
   `tutorials/familyzoo/v2.0.0/src/` (24 total across both editions, counting each chapter file
   once).
-- **Status**: PENDING
+- **Status**: DONE — see `docs/context/session-20260702-1344-v2_familyzoo_split.md` (Phase 4
+  section). User confirmation obtained ("phase 4"). **Deviation: `tutorials/familyzoo/v1.5.0`
+  was NOT migrated** — the plan's file list was wrong to include it: that edition is frozen
+  and pins published `@sharpee/*@^1.5.0` (see `docs/work/familyzoo-v2-migration/plan.md`,
+  "v1.5.0 freeze"), where the old free-function API remains correct; rewriting it to
+  `world.registerCapabilityBehavior` would break it against its own dependency line. Migrated:
+  dungeo (6 guard sites; interceptor registrations untouched — different registry, out of
+  ADR-207 scope), friendly-zoo (guard + pettingAction), all 6 familyzoo **v2.0.0** chapter
+  files (guards + pettingActions + teaching-comment prose updated to the per-world API).
+  Verification: `./repokit build dungeo` clean; dungeo walkthrough chain **871/871**
+  (also closes Phase 3's deferred exit-check); dungeo unit suite matches a freshly-built
+  **pre-ADR-207 baseline** (worktree at aa99440d): 100 baseline failures vs 101 current,
+  delta fully accounted for by documented carousel/combat RNG — basket-elevator's 7 failures
+  (blank `lower basket` output) are **identical in the baseline** (pre-existing platform
+  finding, see below). friendly-zoo transcripts 36/36 (per-transcript mode; its walkthroughs
+  are independent scenarios, not a chain) + manual `pet goats` awards PET_ANIMAL (5 pts).
+  familyzoo v2.0.0: `tsc --noEmit` clean against workspace-built packages via a paths-mapped
+  scratchpad tsconfig; runtime AC-6 validation is Phase 5 (per-plan — published-package path).
+  **Pre-existing platform findings surfaced (present in the pre-207 baseline, NOT
+  regressions, not fixed per the platform-change gate)**: (1) engine universal dispatch
+  (`capability-dispatch-helper.ts` `effectsToEvents`) does not prefix short capability-effect
+  messageIds with the actionId the way stdlib's `createCapabilityDispatchAction` does →
+  story behaviors written for the prefix convention (dungeo basket lowering/raising:
+  `'lowered'` → expected `if.action.lowering.lowered`) render blank when the universal path
+  intercepts; (2) Shaft Room contents list renders "a [object Object]".
 
 ### Phase 5: End-to-End Verification — familyzoo v16-scoring 75/75 and Full AC Matrix
 - **Tier**: Medium
@@ -375,7 +428,7 @@ migration**. Instead, each phase deletes what it replaces in the same commit:
   harness files under the session scratchpad or a documented `docs/work/adr-207-capability-
   registry/` verification note; possible new/updated test files if AC-9/AC-10 need a
   dedicated integration test rather than reusing an existing transcript.
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ## Summary of AC coverage by phase
 

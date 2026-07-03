@@ -24,7 +24,8 @@ import {
   LightSourceTrait,
   SwitchableTrait,
   LockableTrait,
-  WeaponTrait
+  WeaponTrait,
+  OpenInventoryTrait
 } from '@sharpee/world-model';
 import { TrollAxeTrait, TrollTrait, TreasureTrait, TinyRoomDoorTrait, TinyRoomKeyTrait, RopeStateTrait } from '../traits';
 
@@ -303,6 +304,11 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     article: 'a'
   }));
   troll.add(new ActorTrait({ isPlayer: false }));
+  // Make the troll's inventory reachable so TAKE AXE resolves and the
+  // TrollAxeTakingInterceptor can block it with the white-hot message
+  // (MDL AXE-FUNCTION intercepts TAKE; without this the scope resolver
+  // rejects NPC-held items before the action runs).
+  troll.add(new OpenInventoryTrait());
   troll.add(new NpcTrait({
     behaviorId: 'troll',  // Custom troll behavior (weapon recovery, cowering)
     isHostile: true,

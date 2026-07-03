@@ -216,6 +216,7 @@ export function registerNpcMessages(language: LanguageProvider): void {
   // ==========================================================================
 
   language.addMessage(EggMessages.NO_EXPERTISE, 'You have neither the tools nor the expertise.');
+  language.addMessage(EggMessages.OPENED, 'The jewel-encrusted egg is now open.');
 
   // ==========================================================================
   // Melee Combat Messages (canonical MDL melee engine)

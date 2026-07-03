@@ -513,9 +513,8 @@ describe('concealment-break hook listener', () => {
 
 describe('end-to-end concealment pipeline', () => {
   test('hide → verify state → verify visibility → reveal → verify restored', () => {
-    ensureVisibilityBehavior();
-
     const { world, player, room } = setupBasicWorld();
+    ensureVisibilityBehavior(world);
     const curtain = createHidingSpot(world, room.id, 'curtain', {
       positions: ['behind'],
       quality: 'good',
@@ -558,9 +557,8 @@ describe('end-to-end concealment pipeline', () => {
   });
 
   test('hide → silent action preserves → explicit reveal clears', () => {
-    ensureVisibilityBehavior();
-
     const { world, player, room } = setupBasicWorld();
+    ensureVisibilityBehavior(world);
     const desk = createHidingSpot(world, room.id, 'desk', {
       positions: ['under'],
       quality: 'fair',

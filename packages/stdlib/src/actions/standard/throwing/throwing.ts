@@ -29,7 +29,6 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   findTraitWithCapability,
-  getBehaviorForCapability,
   CapabilityBehavior,
   CapabilityEffect,
   ITrait,
@@ -318,7 +317,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       // Check if target has a capability behavior for throwing (ADR-090)
       const capTrait = findTraitWithCapability(target, IFActions.THROWING);
       if (capTrait) {
-        const behavior = getBehaviorForCapability(capTrait, IFActions.THROWING);
+        const behavior = context.world.getBehaviorForCapability(capTrait, IFActions.THROWING);
         if (behavior) {
           sharedData.capabilityBehavior = behavior;
           sharedData.capabilityTrait = capTrait;

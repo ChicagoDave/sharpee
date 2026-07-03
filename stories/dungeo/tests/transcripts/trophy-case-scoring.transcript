@@ -23,7 +23,7 @@ description: Test treasure scoring - take points and trophy case bonus
 
 # Take the egg from the nest (treasureValue = 5)
 > take egg
-[OK: contains "egg"]
+[OK: contains "Taken"]
 [EVENT: true, type="if.event.taken"]
 
 # Score should now be 5 (take points awarded)
@@ -79,7 +79,7 @@ description: Test treasure scoring - take points and trophy case bonus
 
 # Take egg from trophy case
 > get egg
-[OK: contains "egg"]
+[OK: contains "Taken"]
 
 # Score should still be 20 (removing doesn't subtract)
 > score

@@ -56,12 +56,20 @@ description: Tests entry, push mechanics, card taking, and blocked card message
 [OK: contains "maze"]
 [OK: contains "Passages"]
 
-# Move toward the card (at position 33)
+# Move toward the card cell (position 36, initially under a sandstone wall)
 > south
 [OK: contains "maze"]
 
-> south
-[OK: contains "card"]
+> east
+[OK: contains "maze"]
+
+> east
+[OK: contains "maze"]
+
+# Push the sandstone wall off the card cell — player steps onto the depression
+> push south wall
+[OK: contains "slides"]
+[OK: contains "gold card"]
 
 # Now we should see the gold card description
 > look

@@ -20,10 +20,8 @@
 import { ISemanticEvent } from '@sharpee/core';
 import {
   IFEntity,
-  WorldModel,
+  IWorldModel,
   findTraitWithCapability,
-  getBehaviorForCapability,
-  getBehaviorBinding,
   CapabilityBehavior,
   CapabilitySharedData,
   CapabilityEffect,
@@ -81,11 +79,13 @@ export interface CapabilityDispatchData {
 /**
  * Check if capability dispatch should be used for this action and target.
  *
+ * @param world - The world whose binding map resolves behaviors (ADR-207)
  * @param actionId - The action being executed
  * @param target - The target entity (directObject) - for backward compatibility
  * @returns Check result with trait and behavior if dispatch should be used
  */
 export function checkCapabilityDispatch(
+  world: IWorldModel,
   actionId: string,
   target: IFEntity | undefined
 ): CapabilityDispatchCheck {
@@ -94,7 +94,7 @@ export function checkCapabilityDispatch(
   }
 
   // Use the multi-entity version with single entity
-  return checkCapabilityDispatchMulti(actionId, [target]);
+  return checkCapabilityDispatchMulti(world, actionId, [target]);
 }
 
 /**
@@ -103,11 +103,13 @@ export function checkCapabilityDispatch(
  * Collects all capability claims from the provided entities, sorts by priority,
  * and returns the appropriate dispatch information based on resolution config.
  *
+ * @param world - The world whose binding map resolves behaviors (ADR-207)
  * @param actionId - The action being executed
  * @param entities - All entities involved in the action (directObject, indirectObject, etc.)
  * @returns Check result with claims and resolution mode
  */
 export function checkCapabilityDispatchMulti(
+  world: IWorldModel,
   actionId: string,
   entities: (IFEntity | undefined)[]
 ): CapabilityDispatchCheck {
@@ -124,7 +126,7 @@ export function checkCapabilityDispatchMulti(
     const trait = findTraitWithCapability(entity, actionId);
     if (!trait) continue;
 
-    const binding = getBehaviorBinding(trait, actionId);
+    const binding = world.getBehaviorBinding(trait.type, actionId);
     if (!binding) {
       // Trait claims capability but no behavior registered
       console.warn(

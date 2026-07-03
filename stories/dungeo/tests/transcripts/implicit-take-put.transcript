@@ -23,6 +23,7 @@ description: Test that PUT X IN Y implicitly takes X first
 [OK: contains "Returning"]
 
 > turn on lantern
+[OK: contains "switches on"]
 
 # Inflate the boat
 > inflate boat

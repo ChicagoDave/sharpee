@@ -160,12 +160,12 @@ export function registerObjectMessages(language: LanguageProvider): void {
   // Basket Elevator Messages (capability dispatch ADR-090)
   // ==========================================================================
 
-  // Note: These may need to be registered if BasketElevatorMessages has values
-  // Currently checking if they exist before registering
-  if (BasketElevatorMessages) {
-    // Register any basket-specific messages if defined
-    // The actual lowering/raising behaviors use semantic events
-  }
+  // Success/blocked texts are MDL-canonical (act2.mud:82,91)
+  language.addMessage(BasketElevatorMessages.LOWERED, 'The basket is lowered to the bottom of the shaft.');
+  language.addMessage(BasketElevatorMessages.RAISED, 'The basket is raised to the top of the shaft.');
+  language.addMessage(BasketElevatorMessages.ALREADY_DOWN, 'The basket is already at the bottom of the shaft.');
+  language.addMessage(BasketElevatorMessages.ALREADY_UP, 'The basket is already at the top of the shaft.');
+  language.addMessage(BasketElevatorMessages.PLAYER_TRANSPORTED, 'The basket moves, carrying you along.');
 
   // ==========================================================================
   // Safe Opening Interceptor (rusted shut / blown open)

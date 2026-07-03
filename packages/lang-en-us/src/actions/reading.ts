@@ -14,7 +14,9 @@ export const readingLanguage = {
     // Error messages
     'what_to_read': "What do you want to read?",
     'not_readable': "There's nothing written on {the item}.",
-    'cannot_read_now': "{reason}",
+    // reason is a full story-authored sentence (ReadableTrait.cannotReadMessage)
+    // — verbatim, or the bare-noun default articles it ("a You can make out…").
+    'cannot_read_now': "{verbatim:reason}",
 
     // Success messages - include item name for context.
     // Phrase grammar: {capitalize the item} -> "The book"
