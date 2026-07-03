@@ -23,6 +23,21 @@ David's explicit go-ahead, per the standing DevArch rule ("never proceed from pl
 implementation without explicit user permission") — even though book edits are docs-only
 and do not trip CLAUDE.md's `packages/` platform-change gate.
 
+**VOICE CONSTRAINTS (added 2026-07-03, David — apply to every phase's prose edits)**:
+all book prose must match the v1.5.0 edition's voice. Specifically:
+1. **No em-dashes in prose.** The v1.5 book's only em-dashes are the eight
+   "Volume N — Title" part headings; its running prose has zero. Use a comma,
+   parentheses, or a new sentence instead.
+2. **Complete sentences only.** No fragments, no clipped asides.
+3. **No "lost meaning" paragraphs** — paragraphs compressed to the point that the
+   point is gone (a known defect class from the initial book development). If a
+   paragraph can't state its claim plainly, expand it rather than tightening it.
+**The appendices are exempt** from these voice and style rules (David, 2026-07-03) —
+Appendix E's 85 pre-existing em-dashes and the other generated backmatter need no
+sweep. Phases 1–2 output was written before this constraint existed and
+is remediated by Phase 3.5 below; the small Phase 1 spillover fixes (ch18 ×2
+sentences, ch14 ×1) were already corrected during the Phase 3 session.
+
 **Decision needed from David before/at Phase 7** (flagged, not resolved by this plan —
 see Phase 7/Phase 8 below): how to scope the known completeness-audit findings
 (`docs/book/v2.0.0/testing/2026-06-22-completeness-audit-full-book.md` — elided imports,
@@ -209,7 +224,48 @@ call is David's.
   `initializeWorld` compiles and dispatches correctly against published `@sharpee/*@2.1.0`
   with zero guard code, matching the tutorial's actual `ch15-capability-dispatch.ts`.
 - **Affected files**: `docs/book/v2.0.0/parts/part-4/15-capability-dispatch.md`.
-- **Status**: CURRENT (gated on go-ahead)
+- **Status**: DONE (2026-07-03 — all seven change-list findings resolved: import block
+  trimmed to surviving symbols, bare `world.registerCapabilityBehavior()` registration
+  with per-world/idempotent prose lifted from the tutorial's teaching comments,
+  `context.world.getBehaviorForCapability()` in validate, world-method trace, per-world
+  key takeaway, per-world "mistake" aside, factory aside demoted with the
+  fully-qualified-messageId sentence; import symbols verified against
+  `packages/world-model/dist` barrel + `WorldModel.d.ts`; voice constraints applied
+  (0 em-dashes, complete sentences); snippets re-extracted (3 ch15 blocks); html build
+  clean)
+
+### Phase 3.5: Voice-Conformance Pass over Phase 1 Output (ch19)
+- **Tier**: Small
+- **Budget**: 100 tool calls
+- **Domain focus**: editorial only — bring the Phase 1 ch19 rewrite (written before the
+  voice constraints were stated) into conformance with the VOICE CONSTRAINTS block above.
+  No technical content changes; every template, quoted output, and error string stays
+  byte-identical to what the Phase 1 render harness verified.
+- **Entry state**: `docs/book/v2.0.0/parts/part-5/19-the-phrase-algebra.md` contains 36
+  em-dashes (v1.5 whole-book prose baseline: zero) and has not been read against the
+  fragment / lost-meaning bar. ch18's 4 and ch14's 1 em-dash (also Phase 1 additions) were
+  already fixed in the Phase 3 session; no other live prose chapter deviates from the
+  v1.5 baseline (per-chapter grep vs commit `44f1cb3d` confirms all other counts are
+  pre-existing part headings or untouched generated appendices).
+- **Deliverable**: rewrite ch19's em-dash constructions as commas/parentheses/new
+  sentences; read the full chapter against v1.5's voice (complete sentences, no clipped
+  fragments); expand any paragraph whose compression lost its point. Re-run
+  `node scripts/extract-book-snippets.cjs` (from `docs/book/v2.0.0/`) only if a code
+  block's surrounding text edit touches fenced content (none expected).
+- **Exit state**: 0 em-dashes in ch19 prose; chapter reads in the v1.5 voice; all
+  quoted templates/outputs still byte-match the Phase 1 verification harness results;
+  `scripts/build-book.sh v2.0.0 html` clean.
+- **Affected files**: `docs/book/v2.0.0/parts/part-5/19-the-phrase-algebra.md`.
+- **Status**: DONE (2026-07-03 — 35 of 36 em-dashes rewritten as commas, parentheses,
+  colons, or new sentences; the one survivor is inside the quoted `PhraseParseError`
+  text, which is the parser's own message (verified against
+  `parse-phrase-template.ts:353`) and now carries a note saying so. Fragment fixes:
+  the "is it a proper name? a mass noun?" rhetorical fragments joined into one
+  question; the dangling "with the template …" continuation after the Optional code
+  block made a full sentence. Two code comments (CORRECT/WRONG) switched from dash to
+  colon; snippets re-extracted (only that one ch19 block changed). Phase 1's render
+  harness re-run: all parses, all documented-rejected throws, and all 8 quoted
+  outputs still byte-exact. html build clean.)
 
 ### Phase 4: Book-Wide Sweeps (tutorial-split paths, chapter-snapshot naming, ADR-158 article quotes)
 - **Tier**: Medium
@@ -246,7 +302,25 @@ call is David's.
   `docs/book/v2.0.0/parts/part-7/24-channels.md`,
   `docs/book/v2.0.0/parts/part-7/27-media-and-audio.md`,
   `docs/book/v2.0.0/parts/part-8/28-the-multi-file-story.md`.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-03 — all three sweeps complete, grep-verified before/after in
+  source and built HTML. Path sweep: 3 hits fixed (02-how-to-read ×2, ch28 link). Naming
+  sweep: 02-how-to-read `v01`/`v02` claim rewritten to chapter-named snapshots; ch24 +
+  ch27 ×2 "v18" → `ch24-27-presentation/`; ch28 "version 17" ×2 → `ch23-scoring.ts`
+  (the last single-file snapshot) and `ch28-multi-file/`; **plus ch30's two "v17"
+  references** (change list listed naming drift only through ch28, but the exit
+  criterion is book-wide) → `ch28-multi-file/`, whose `events.ts`/`index.ts` hold the
+  behavior-swap daemon ch30 cites. Adjacent fix while rewriting the ch28 sentence:
+  "four custom actions" → "three" (all snapshots define exactly feed/photograph/petting,
+  verified by grep). Article sweep: ch5 ×2 + the ch5 zoo-map POLISH (folded in here — it
+  appears in no later phase) and ch6 ×2, all matching the regenerated Appendix D
+  templates (`{You} {put} {the item} in {the container}.` etc.). Only `node --version
+  # want v18.0.0` remains (Node.js version, not naming drift). Voice rules held (0 new
+  em-dashes; remaining ones in swept files are pre-existing title forms). No snippet
+  drift (ch6 transcript is a non-code block). html build clean.
+  **FLAG for Phase 7**: the corrected GitHub links
+  (`tree/main/tutorials/familyzoo/v2.0.0/...`) 404 today because `main` still has the
+  pre-split layout; they resolve once `v2_familyzoo_split` merges. The links are correct
+  for the published state; the dry run should not count this as a book defect.)
 
 ### Phase 5: Single-Chapter Fixes (ch23 priority inversion + companion fix, ch25, ch27, ch29, ch9, ch3, ch20, ch14)
 - **Tier**: Medium
@@ -295,7 +369,30 @@ call is David's.
   `docs/book/v2.0.0/parts/part-1/03-the-play-loop.md`,
   `docs/book/v2.0.0/parts/part-6/20-non-player-characters.md`,
   `docs/book/v2.0.0/parts/part-4/14-custom-actions.md`.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-03 — all eight chapters' findings resolved:
+  **ch23** priority inversion corrected in prose, snippet comment, callout (reframed:
+  highest-first ordering verified against `scheduler-service.ts:214/313`, and the
+  stale-score worry is moot since scoring happens during command processing), and
+  takeaway; **companion fix** applied to `ch23-scoring.ts:452` (comment-only).
+  **ch25** boot snippet now imports `STORY_VERSION`/`ENGINE_VERSION`/`BUILD_DATE`
+  from `./version.js` (matches `devkit/templates/browser/browser-entry.ts.template`),
+  init-browser-scaffolds-once/build-regenerates-host-page claim fixed,
+  `registerDefaultBrowserRenderers` scoped to static media with ambient cross-ref.
+  **ch27** intro + table no longer present `ambient:*` as platform defaults; both
+  story-side registration lines added after the room-atmosphere walkthrough
+  (engine `registry.add(createAmbientChannel('environment'))`, browser
+  `createAmbientChannelRenderer(...)`, lifted from `presentation.ts`/`browser-entry.ts`)
+  with the silence failure mode stated. **ch29** takeaway `--chain` claim corrected to
+  `sharpee build --test` auto-chaining; `entry:` header taught (verified in tutorial
+  transcripts); `##` softened to any-`#`-is-a-comment. **ch9** cast applied verbatim
+  (`event.data as { regionId?: string } | undefined`), `world.rooms` monkeypatch now
+  shows the required side-effect `import '@sharpee/queries';`. **ch3** messageId fixed
+  to `if.action.taking.taken` (verified in Appendix D), "nothing subscribes" softened
+  per ADR-052 with ch13 cross-ref. **ch20** both `npcName` fields dropped (matches
+  canonical `ch20-npcs.ts:383,387`). **ch14** `sharedData` "sanctioned way" softened;
+  `@deprecated`/`ValidationResult.data` note added (verified in
+  `stdlib/src/actions/enhanced-types.ts:276`). Voice rules held (0 new em-dashes);
+  snippets re-extracted (148, +1 for the ch27 registration block); html build clean.)
 
 ### Phase 6: Polish Batch (ch1, ch24, ch26, ch30, Appendix A)
 - **Tier**: Small
@@ -322,7 +419,21 @@ call is David's.
   `docs/book/v2.0.0/parts/part-7/26-decoration-and-theming.md`,
   `docs/book/v2.0.0/parts/part-8/30-saving-and-restoring.md`,
   `docs/book/v2.0.0/backmatter/appendix-a-architecture-map.md`.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-03 — all POLISH findings resolved: ch1 CLI table gains
+  `sharpee register`/`sharpee list` rows (verified against `devkit/src/cli.ts` USAGE,
+  which lists exactly the table's 8 commands) and the file tree gains `.gitignore`
+  (verified: `init.ts:170-176` writes node_modules/dist/logs ignores); ch24 channels
+  table gains the `lifecycle` event row (verified in `stdlib/src/channels/standard.ts`,
+  event-mode save/restore outcomes); ch26 vocabulary table marked as an excerpt with
+  the full `PLATFORM_VOCABULARY` families enumerated (verified against
+  `engine/src/prose-pipeline/decorations/platform-vocabulary.ts`: u/st/super/sub,
+  direction, quote, color-*/bgcolor-*, size-*, font-mono, br/p/indent/center/right);
+  ch30 gains the `platform.*` re-voicing sentence (ids verified in regenerated
+  Appendix D); Appendix A world-model row gains the per-world registries clause AND
+  the finding's second clause — stdlib row now reads "capability dispatch (consulting
+  the world's registries)". Executive-summary cross-check: every change-list row now
+  resolved by Phases 1–6. Voice rules held. `build-book.sh v2.0.0 all` clean —
+  html + epub + pdf all render.)
 
 ### Phase 7: Pre-Handoff Naive-Execution Verification Gate (dry run)
 - **Tier**: Large
@@ -366,7 +477,10 @@ call is David's.
   scratchpad harness script if `extract-book-snippets.cjs`'s output needs light assembly
   tooling to concatenate a chapter's ordered snippets into a buildable project — keep any
   such script in `scripts/` if it proves reusable, scratchpad otherwise.
-- **Status**: PENDING
+- **Status**: CURRENT (gated on go-ahead). Note from Phase 4: the book's GitHub links
+  point at `main`, which does not have the v2.0.0 tutorial split until
+  `v2_familyzoo_split` merges — the dry run should verify link *paths* against the
+  local tree, not remote `main`.
 
 ### Phase 8: Completeness-Audit Triage & Repair (scope contingent on Phase 7 findings)
 - **Tier**: TBD — size after Phase 7's pass/fail table exists; do not estimate blind

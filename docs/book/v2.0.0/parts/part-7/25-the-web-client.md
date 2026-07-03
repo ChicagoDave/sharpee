@@ -18,6 +18,8 @@ The orchestrator is `BrowserClient`. A story's browser entry point creates one,
 hands it the page's elements, connects the engine, and starts:
 
 ```typescript
+import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+
 const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
   defaultTheme: 'zoo-sunny',            // the theme applied on first load / restore
@@ -31,9 +33,9 @@ const client = new BrowserClient({
   storyInfo: {
     title: 'Family Zoo',
     authors: 'You',
-    version: '1.0.0',
-    engineVersion: '',   // filled by `sharpee build`; '' is a valid placeholder
-    buildDate: '',
+    version: STORY_VERSION,        // all three stamped into './version.js'
+    engineVersion: ENGINE_VERSION, // by `sharpee build`
+    buildDate: BUILD_DATE,
   },
 });
 
@@ -42,10 +44,12 @@ client.connectEngine(engine, world);  // wire the engine
 await client.start();                 // boot, restore autosave, first look
 ```
 
-You rarely write this by hand. `sharpee build --browser` generates the entry point
-and the host page for you. But knowing the three calls demystifies what the bundle
-is doing: `initialize` learns the DOM, `connectEngine` subscribes to the engine, and
-`start` runs the opening turn.
+You rarely write this by hand. `sharpee init-browser` scaffolds the entry point
+once, and `sharpee build --browser` regenerates the host page around it on each
+build; the build stops with an error if `src/browser-entry.ts` is missing. But
+knowing the three calls demystifies what the bundle is doing: `initialize` learns
+the DOM, `connectEngine` subscribes to the engine, and `start` runs the opening
+turn.
 
 ## How a turn reaches the screen
 
@@ -66,8 +70,10 @@ score. There is no second path. Prose and status and media all arrive the same w
 
 The client registers a full set of platform-default renderers in one call,
 `registerDefaultBrowserRenderers`, which covers `main`, `prompt`, `location`,
-`score`, `turn`, the notification channels, and every media channel. Those defaults
-are what give you a working page with zero rendering code.
+`score`, `turn`, the notification channels, and the static media channels. The
+`ambient:*` renderers are not among them; the story registers those itself, as the
+Media chapter shows. Those defaults are what give you a working page with zero
+rendering code.
 
 ## Commands flow back the same way
 

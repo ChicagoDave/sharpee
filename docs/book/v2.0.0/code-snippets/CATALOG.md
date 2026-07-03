@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **147 snippets** across 31 chapters (144 author, 3 reference).
+- **148 snippets** across 31 chapters (145 author, 3 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -32,15 +32,15 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 02 | `02-installing-node-and-npm.sh` | Installing Node and npm | bash | author | 76 |
 | 03 | `03-installing-the-cli.sh` | Installing the CLI | bash | author | 90 |
 | 04 | `04-creating-a-story-project.sh` | Creating a story project | bash | author | 106 |
-| 05 | `05-building-the-story.sh` | Building the story | bash | author | 131 |
-| 06 | `06-playing-it.sh` | Playing it | bash | author | 151 |
-| 07 | `07-playing-it.sh` | Playing it | bash | author | 159 |
-| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 197 |
-| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 209 |
-| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 217 |
-| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 225 |
-| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 231 |
-| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 239 |
+| 05 | `05-building-the-story.sh` | Building the story | bash | author | 132 |
+| 06 | `06-playing-it.sh` | Playing it | bash | author | 152 |
+| 07 | `07-playing-it.sh` | Playing it | bash | author | 160 |
+| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 200 |
+| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 212 |
+| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 220 |
+| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 228 |
+| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 234 |
+| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 242 |
 
 ## Your First Room: Entities, Traits, and the World
 
@@ -139,7 +139,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 39 |
 | 02 | `02-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 55 |
 | 03 | `03-crossing-the-boundary.ts` | Crossing the boundary | typescript | author | 93 |
-| 04 | `04-nesting-and-querying.ts` | Nesting and querying | typescript | author | 111 |
+| 04 | `04-nesting-and-querying.ts` | Nesting and querying | typescript | author | 115 |
 
 # Volume III — Making It Interactive
 
@@ -189,11 +189,11 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-custom-actions-teaching-the-parser-new-verbs.ts` | Custom Actions: Teaching the Parser New Verbs | typescript | author | 12 |
 | 02 | `02-the-four-phase-action.ts` | The four-phase action | typescript | author | 30 |
 | 03 | `03-a-complete-custom-action-feeding.ts` | A complete custom action: feeding | typescript | author | 68 |
-| 04 | `04-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 150 |
-| 05 | `05-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 197 |
-| 06 | `06-telling-the-engine-getcustomactions.ts` | Telling the engine: getCustomActions | typescript | author | 213 |
-| 07 | `07-teaching-the-parser-extendparser.ts` | Teaching the parser: extendParser | typescript | author | 224 |
-| 08 | `08-supplying-the-text-extendlanguage.ts` | Supplying the text: extendLanguage | typescript | author | 247 |
+| 04 | `04-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 153 |
+| 05 | `05-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 200 |
+| 06 | `06-telling-the-engine-getcustomactions.ts` | Telling the engine: getCustomActions | typescript | author | 216 |
+| 07 | `07-teaching-the-parser-extendparser.ts` | Teaching the parser: extendParser | typescript | author | 227 |
+| 08 | `08-supplying-the-text-extendlanguage.ts` | Supplying the text: extendLanguage | typescript | author | 250 |
 
 ## Capability Dispatch: One Verb, Many Rules
 
@@ -202,14 +202,14 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-capability-dispatch-one-verb-many-rules.ts` | Capability Dispatch: One Verb, Many Rules | typescript | author | 13 |
-| 02 | `02-1-a-trait-that-declares-a-capability.ts` | 1. A trait that declares a capability | typescript | author | 46 |
-| 03 | `03-2-a-behavior-that-implements-the-capability.ts` | 2. A behavior that implements the capability | typescript | author | 69 |
-| 04 | `04-3-registration-that-links-trait-to-behavior.ts` | 3. Registration that links trait to behavior | typescript | author | 125 |
-| 05 | `05-the-dispatch-action.ts` | The dispatch action | typescript | author | 141 |
-| 06 | `06-the-dispatch-action.ts` | The dispatch action | typescript | author | 207 |
-| 07 | `07-the-dispatch-action.ts` | The dispatch action | typescript | author | 215 |
-| 08 | `08-the-dispatch-action.ts` | The dispatch action | typescript | author | 223 |
-| 09 | `09-making-the-zoo-s-animals-pettable.ts` | Making the zoo's animals pettable | typescript | author | 248 |
+| 02 | `02-1-a-trait-that-declares-a-capability.ts` | 1. A trait that declares a capability | typescript | author | 45 |
+| 03 | `03-2-a-behavior-that-implements-the-capability.ts` | 2. A behavior that implements the capability | typescript | author | 68 |
+| 04 | `04-3-registration-that-links-trait-to-behavior.ts` | 3. Registration that links trait to behavior | typescript | author | 126 |
+| 05 | `05-the-dispatch-action.ts` | The dispatch action | typescript | author | 140 |
+| 06 | `06-the-dispatch-action.ts` | The dispatch action | typescript | author | 209 |
+| 07 | `07-the-dispatch-action.ts` | The dispatch action | typescript | author | 217 |
+| 08 | `08-the-dispatch-action.ts` | The dispatch action | typescript | author | 225 |
+| 09 | `09-making-the-zoo-s-animals-pettable.ts` | Making the zoo's animals pettable | typescript | author | 250 |
 
 ## Custom Traits & Behaviors: Data and Logic, Kept Apart
 
@@ -268,7 +268,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 02 | `02-creating-an-npc-entity.ts` | Creating an NPC entity | typescript | author | 41 |
 | 03 | `03-the-parrot-becomes-an-npc.ts` | The parrot becomes an NPC | typescript | author | 81 |
 | 04 | `04-writing-a-custom-behavior.ts` | Writing a custom behavior | typescript | author | 117 |
-| 05 | `05-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 187 |
+| 05 | `05-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 186 |
 
 ## Scenes: Named Windows of Story Time
 
@@ -308,9 +308,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 125 |
 | 06 | `06-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 144 |
 | 07 | `07-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 175 |
-| 08 | `08-the-victory-daemon.ts` | The victory daemon | typescript | author | 201 |
-| 09 | `09-the-victory-daemon.ts` | The victory daemon | typescript | author | 234 |
-| 10 | `10-the-victory-daemon.ts` | The victory daemon | typescript | author | 241 |
+| 08 | `08-the-victory-daemon.ts` | The victory daemon | typescript | author | 203 |
+| 09 | `09-the-victory-daemon.ts` | The victory daemon | typescript | author | 236 |
+| 10 | `10-the-victory-daemon.ts` | The victory daemon | typescript | author | 243 |
 
 # Volume VII — Presentation
 
@@ -320,7 +320,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-defining-your-own-channel.ts` | Defining your own channel | typescript | author | 91 |
+| 01 | `01-defining-your-own-channel.ts` | Defining your own channel | typescript | author | 92 |
 
 ## The Web Client: A Framework-Free UI
 
@@ -329,9 +329,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-what-the-client-is-responsible-for.ts` | What the client is responsible for | typescript | author | 20 |
-| 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 55 |
-| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 111 |
-| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 133 |
+| 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 59 |
+| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 117 |
+| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 139 |
 
 ## Decoration & Theming: Style Without HTML on the Wire
 
@@ -339,10 +339,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 74 |
-| 02 | `02-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 85 |
-| 03 | `03-built-in-themes-list-the-id.jsonc` | Built-in themes: list the id | jsonc | author | 127 |
-| 04 | `04-your-own-theme-three-lines-of-css-and-one-list-ent.css` | Your own theme: three lines of CSS and one list entry | css | author | 172 |
+| 01 | `01-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 81 |
+| 02 | `02-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 92 |
+| 03 | `03-built-in-themes-list-the-id.jsonc` | Built-in themes: list the id | jsonc | author | 134 |
+| 04 | `04-your-own-theme-three-lines-of-css-and-one-list-ent.css` | Your own theme: three lines of CSS and one list entry | css | author | 179 |
 
 ## Media & Audio: Sight and Sound as Channels
 
@@ -350,9 +350,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-room-atmospheres-in-practice.ts` | Room atmospheres in practice | typescript | author | 119 |
-| 02 | `02-room-atmospheres-in-practice.ts` | Room atmospheres in practice | typescript | author | 135 |
-| 03 | `03-room-atmospheres-in-practice.ts` | Room atmospheres in practice | typescript | author | 153 |
+| 01 | `01-room-atmospheres-in-practice.ts` | Room atmospheres in practice | typescript | author | 122 |
+| 02 | `02-room-atmospheres-in-practice.ts` | Room atmospheres in practice | typescript | author | 138 |
+| 03 | `03-room-atmospheres-in-practice.ts` | Room atmospheres in practice | typescript | author | 156 |
+| 04 | `04-room-atmospheres-in-practice.ts` | Room atmospheres in practice | typescript | author | 175 |
 
 # Volume VIII — Shipping
 
@@ -371,7 +372,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-running-them.sh` | Running them | bash | author | 95 |
+| 01 | `01-running-them.sh` | Running them | bash | author | 99 |
 
 ## Saving & Restoring: State Lives in the World
 

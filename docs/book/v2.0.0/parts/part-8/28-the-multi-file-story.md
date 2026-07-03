@@ -14,10 +14,10 @@ splitting one long file into many.
 
 ## When one file stops working
 
-Through most of this book the zoo lived in a single source file because each version
-added just one idea. By version 17 that file holds rooms, items, characters, four
-custom actions, a scheduler full of daemons, an NPC plugin, scoring rules, and every
-line of player-facing prose. A single file that large is hard to navigate and harder
+Through most of this book the zoo lived in a single source file because each chapter
+added just one idea. By the scoring chapter's snapshot (`ch23-scoring.ts`) that file
+holds rooms, items, characters, three custom actions, a scheduler full of daemons, an
+NPC plugin, scoring rules, and every line of player-facing prose. A single file that large is hard to navigate and harder
 to change. Touching the scoring rules means scrolling past the map, the items, and
 the parser grammar to find them.
 
@@ -29,7 +29,7 @@ rules change together; the prose changes together. Each becomes a file.
 
 Family Zoo splits into seven files, each owning one slice of the world. All seven
 live in the companion repository at
-[`tutorials/familyzoo/src/ch28-multi-file/`](https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/src/ch28-multi-file);
+[`tutorials/familyzoo/v2.0.0/src/ch28-multi-file/`](https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/v2.0.0/src/ch28-multi-file);
 this chapter walks their structure rather than reprinting every line, so open them
 on GitHub alongside as we go:
 
@@ -104,7 +104,7 @@ be.
 
 ## A feature that spans the files: after hours
 
-Version 17 isn't only a reorganization; it adds a second act. After enough turns the
+The `ch28-multi-file/` snapshot isn't only a reorganization; it adds a second act. After enough turns the
 zoo closes: the zookeeper leaves, and the animals, freed from human ears, start to
 talk. It's the perfect feature to show how a single idea now threads cleanly through
 the split files instead of tangling one big one:

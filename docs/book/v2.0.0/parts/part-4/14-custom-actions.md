@@ -137,9 +137,12 @@ const feedAction: Action = {
 
 Notice `context.sharedData.feedTarget`. `validate()` already did the work of
 finding and checking the target, so it stashes the result in `sharedData` for
-`execute()` and `report()` to reuse. This is the sanctioned way to carry data
-forward: don't recompute the target in every phase, and don't smuggle it onto
-the context object itself.
+`execute()` and `report()` to reuse. The principle is the point: don't recompute
+the target in every phase, and don't smuggle it onto the context object itself.
+One note for the future: for carrying data out of `validate()` specifically,
+`sharedData` is marked `@deprecated` in favor of returning it in
+`ValidationResult.data`. Both work today, and this book's examples use
+`sharedData` throughout.
 
 ## A second action: photographing
 
@@ -271,8 +274,8 @@ extendLanguage(language: LanguageProvider): void {
 ```
 
 A `{param}` placeholder in the text is filled from the `params` object the action
-passed, so `params: { target: name }` substitutes into `{the target}` — the `the`
-asks for the definite article, as Volume V explains. Keeping text
+passed, so `params: { target: name }` substitutes into `{the target}`. The `the`
+in the placeholder asks for the definite article, as Volume V explains. Keeping text
 out of the action and in the language layer is what lets a story be translated or
 re-voiced without touching its logic.
 

@@ -64,7 +64,7 @@ each one carries a *message id*, not a finished sentence:
 
 ```typescript
 context.event('if.event.taken', {
-  messageId: 'if.action.taken.success',
+  messageId: 'if.action.taking.taken',
   params: { item: 'brass key' },
 });
 ```
@@ -72,9 +72,11 @@ context.event('if.event.taken', {
 (That snippet is illustrative; the zoo has no brass key. It just shows the
 *shape* of an event: a type, a message id, and parameters.)
 
-If you come from web or app development, set one expectation aside: these aren't
-notifications dispatched to listeners, and nothing subscribes to them. They're
-just records the action *reports*, collected as the turn runs.
+If you come from web or app development, set one expectation aside: these are
+records first, not notifications racing off to listeners. They're what the action
+*reports*, collected as the turn runs. (The world *can* react to them; Chapter 13
+registers handlers with `world.registerEventHandler`. But rendering never depends
+on anyone listening.)
 
 At the end of the turn the engine's **prose pipeline** consumes the reported
 events: it looks each message id up in the language layer, fills in the message

@@ -65,6 +65,7 @@ events the rest of your story already produces. You wire none of them:
 | `prompt` | replace | the command prompt |
 | `info`, `ifid` | replace | story metadata |
 | `death`, `endgame`, `score_notify` | event | endgame and scoring signals |
+| `lifecycle` | event | save/restore outcome signals (saved, restored, failed) |
 
 The `score` channel reads the ledger you set up in *Scoring & Endgame*; the
 `location` channel reads the player's room; the `main` channel carries the blocks
@@ -131,7 +132,8 @@ says *what*; the renderer (next chapter) decides *how* it looks. That data-only 
 is what keeps presentation in the client's hands, where an author can restyle or
 replace it per story.
 
-Family Zoo v18 ships exactly this `zoo.ambience` channel, a one-line mood description
+Family Zoo's `ch24-27-presentation/` snapshot ships exactly this `zoo.ambience`
+channel, a one-line mood description
 for each area, and its browser entry registers a renderer that creates a dedicated
 page element and paints the line into it. The chapters ahead build on that concrete
 example.

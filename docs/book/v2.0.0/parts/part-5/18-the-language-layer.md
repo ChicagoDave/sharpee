@@ -51,16 +51,16 @@ Each call ties one ID to one template. When the engine later looks up
 
 A template can carry **placeholders** in curly braces, filled from the `params` the
 event supplied. The photograph action passed `params: { target: name }`, and the
-template's `{the target}` is where that value lands — the `the` before the
-parameter name asks for the definite article — so photographing the toucan reads
+template's `{the target}` is where that value lands. The `the` before the
+parameter name asks for the definite article, so photographing the toucan reads
 "Click! You snap a photo of the toucan." Placeholders are how one message adapts to
 many situations without a separate string for each.
 
 (There's more to placeholders than plain substitution: hint words like that `the`,
 and when a parameter is an *entity*, the language layer renders its name with the
 right article and capitalization: "the toucan," "a flashlight," "some feed." That
-machinery is the **phrase algebra** — the template grammar and the Assembler that
-renders it — and it's the whole of the next chapter.)
+machinery is the **phrase algebra**, the template grammar and the Assembler that
+renders it, and it's the whole of the next chapter.)
 
 ## Naming message IDs
 

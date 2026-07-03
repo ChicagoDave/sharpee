@@ -196,7 +196,9 @@ reminder that the max score and the awarding code have to agree.
 The win condition is checked by a daemon, exactly the scheduler pattern from the
 last chapter. It watches the score each turn and, when the maximum is reached,
 marks the game over and emits the victory message. Its `priority: 100` makes it
-run *last*, after every other daemon and all the turn's scoring has settled:
+run *first* among the daemons (the scheduler runs highest priority first). By the
+time any daemon runs, the turn's scoring has already settled: awards happen during
+command processing, before the scheduler tick.
 
 ```typescript
 function createVictoryDaemon(): Daemon {
@@ -205,7 +207,7 @@ function createVictoryDaemon(): Daemon {
   return {
     id: 'zoo.daemon.victory',
     name: 'Victory Check',
-    priority: 100,   // run last, after all scoring for the turn
+    priority: 100,   // runs first among daemons; the turn's scoring is already settled
 
     condition: (ctx: SchedulerContext): boolean => {
       if (victoryTriggered) return false;
@@ -245,11 +247,13 @@ language.addMessage(ScoreMessages.VICTORY,
   'last a lifetime.\n\n*** You have won ***');
 ```
 
-> **The mistake everyone makes once:** giving the victory check a low priority, so
-> it runs *before* the turn's scoring daemons and event handlers. It then sees a
-> stale score, misses the moment the player crosses the line, and only fires a turn
-> late. Keep the victory daemon at high priority so it evaluates after everything
-> else has had its say.
+> **The mistake everyone makes once:** reading `priority: 100` as "runs last." The
+> scheduler runs daemons *highest priority first*, so 100 puts the victory check at
+> the front of the daemon queue. And the stale-score worry is unfounded either way:
+> all scoring happens during command processing, before any daemon ticks, so the
+> check sees the turn's settled score at every priority. Priority only orders
+> daemons among themselves. A high value here means the victory announcement
+> prints before any other daemon's output that turn.
 
 ## Try it
 
@@ -268,6 +272,6 @@ language.addMessage(ScoreMessages.VICTORY,
 `world.awardScore(id, …)` records an achievement, and the unique `id` makes it
 idempotent, so the same award never counts twice. Hang awards wherever the
 achievement actually happens, whether in custom actions, capability behaviors, or
-standard-action events via `chainEvent`, and let a high-priority **victory daemon**
-watch `getScore()` and trigger the ending when the maximum is reached. With scoring
+standard-action events via `chainEvent`, and let a **victory daemon** watch
+`getScore()` each turn and trigger the ending when the maximum is reached. With scoring
 and an endgame in place, the zoo is a complete, winnable game.

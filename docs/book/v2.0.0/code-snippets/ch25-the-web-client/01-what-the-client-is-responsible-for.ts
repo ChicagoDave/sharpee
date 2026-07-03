@@ -1,3 +1,5 @@
+import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+
 const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
   defaultTheme: 'zoo-sunny',            // the theme applied on first load / restore
@@ -11,9 +13,9 @@ const client = new BrowserClient({
   storyInfo: {
     title: 'Family Zoo',
     authors: 'You',
-    version: '1.0.0',
-    engineVersion: '',   // filled by `sharpee build`; '' is a valid placeholder
-    buildDate: '',
+    version: STORY_VERSION,        // all three stamped into './version.js'
+    engineVersion: ENGINE_VERSION, // by `sharpee build`
+    buildDate: BUILD_DATE,
   },
 });
 

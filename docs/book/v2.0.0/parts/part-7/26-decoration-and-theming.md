@@ -31,8 +31,8 @@ a baked-in color.
 
 ## Platform vocabulary and the `sharpee-` namespace
 
-The platform reserves the `sharpee-` prefix and ships a small vocabulary, each name
-mapping to one CSS class with a default rule:
+The platform reserves the `sharpee-` prefix and ships a vocabulary, each name
+mapping to one CSS class with a default rule. The names you'll use most:
 
 | Decoration | Class | Renders as |
 |---|---|---|
@@ -43,6 +43,13 @@ mapping to one CSS class with a default rule:
 | `npc` | `.sharpee-npc` | a character |
 | `room` | `.sharpee-room` | a location |
 | `command` | `.sharpee-command` | a verb the player can type |
+
+This table is an excerpt; the full `PLATFORM_VOCABULARY` is considerably larger.
+It also covers text styles (`u`, `st`, `super`, `sub`), `direction`, `quote`, the
+`color-*` and `bgcolor-*` families, `size-*`, `font-mono`, and the layout macros
+(`br`, `p`, `indent`, `center`, `right`). Check it before inventing a class name,
+because any name the platform knows gets the `sharpee-` prefix, which may not be
+what you intended.
 
 Write `[em:…]` and you inherit the platform's `.sharpee-em` rule. The resolver only
 prefixes names it recognizes. Write a name the platform *doesn't* know, such as

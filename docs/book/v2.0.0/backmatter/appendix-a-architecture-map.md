@@ -14,8 +14,8 @@ nothing about any particular game.
 | Layer | Package(s) | Owns | In this book |
 |---|---|---|---|
 | **Engine** | `@sharpee/engine` | The turn cycle, command execution, event dispatch, scheduler, save/restore, the channel manifest + per-turn packets | Vol. I (the play loop), VI (turns & daemons), VIII (saving) |
-| **World model** | `@sharpee/world-model` | Entities, traits, and behaviors — all game *state* and the rules that mutate it | Vol. II (building a world), IV (custom traits & behaviors) |
-| **Standard library** | `@sharpee/stdlib` | The standard actions (validate/execute/report/blocked), scope & visibility, capability dispatch, the standard channels | Vol. III (actions, scope), IV (capability dispatch) |
+| **World model** | `@sharpee/world-model` | Entities, traits, and behaviors — all game *state* and the rules that mutate it — plus the per-world capability-behavior and action-interceptor registries (ADR-207/208) | Vol. II (building a world), IV (custom traits & behaviors) |
+| **Standard library** | `@sharpee/stdlib` | The standard actions (validate/execute/report/blocked), scope & visibility, capability dispatch (consulting the world's registries), the standard channels | Vol. III (actions, scope), IV (capability dispatch) |
 | **Parser** | `@sharpee/parser-en-us` | Grammar patterns — turning typed text into a resolved command | Vol. V (extending the grammar) |
 | **Language** | `@sharpee/lang-en-us` | All player-facing text: message IDs, templates, the phrase algebra's template grammar and Assembler | Vol. V (the language layer, the phrase algebra) |
 | **Story** | your project | Game-specific content and overrides — rooms, items, NPCs, custom actions, puzzles | the whole Family Zoo running example |
