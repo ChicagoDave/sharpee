@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/media",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Audio and media type definitions for Sharpee Interactive Fiction Platform",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",

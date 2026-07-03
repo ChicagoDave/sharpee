@@ -185,6 +185,11 @@ retry(s)") — off-by-one in the retry limit accounting.
 ## Follow-up decision for David (flagged, not taken)
 - **Publish**: dry-run publish fails on the 2.0.0 version collision — shipping the
   fixed platform to npm needs a lockstep version bump. Overlay proof ≠ release.
+- **RESOLVED (2026-07-03)**: David published lockstep **2.1.0** to npm. Registry
+  verification: published world-model tarball has the per-world API, zero stale
+  registry files; fresh familyzoo v2.0.0 installed purely from the registry
+  (`^2.0.0` → 2.1.0) passes **197/197** incl. v16 75/75 — AC-6 on the true
+  published path. (Workspace 2.1.0 version-bump edits are David's, uncommitted.)
 
 ## Open Items (small, carried)
 - dungeo SW-vs-SOUTH map deviation (N/S Passage → Round Room), ADR-206 CI guard test,

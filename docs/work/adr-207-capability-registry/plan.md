@@ -469,11 +469,12 @@ migration**. Instead, each phase deletes what it replaces in the same commit:
     (A run performed before that direction confirmed its known 196/197 baseline;
     the two files its tooling touched — pnpm-lock.yaml, src/version.ts — were
     reverted, freeze byte-exact.)
-  - **Publish note (follow-up decision for David)**: `./repokit verify`'s dry-run
-    publish fails on the 2.0.0 version collision (2.0.0 already on npm) — a real
-    publish of the fixed platform needs a version bump (lockstep, per the release
-    strategy). This phase proved the fix via the staging overlay; cutting a release
-    is a separate decision.
+  - **Publish note — RESOLVED (2026-07-03)**: David published the lockstep **2.1.0**
+    packages to npm. Registry verification (session b65caa): the published
+    `@sharpee/world-model@2.1.0` tarball carries the per-world API and zero stale
+    registry artifacts; a fresh familyzoo v2.0.0 copy installed purely from the npm
+    registry (`^2.0.0` → 2.1.0, no overlay) passes **197/197** including v16-scoring
+    75/75 — AC-6 confirmed on the true published resolution path.
 
 ## Summary of AC coverage by phase
 
