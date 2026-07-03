@@ -191,6 +191,17 @@ retry(s)") — off-by-one in the retry limit accounting.
   (`^2.0.0` → 2.1.0) passes **197/197** incl. v16 75/75 — AC-6 on the true
   published path. (Workspace 2.1.0 version-bump edits are David's, uncommitted.)
 
+# Book v2.0.0 edition plan (2026-07-03, user: "go ahead and create the plan")
+- **`docs/work/book-v2-edition/plan.md` created** (session-planner; plan-review clean
+  vs 13 references); `.current-plan` repointed to it. 8 phases: (1) ch19 rewrite +
+  ch18 [CURRENT, gated on go-ahead], (2) Appendix D regeneration (generator must be
+  located/written), (3) ch15 ADR-207 edit, (4) book-wide sweeps, (5) single-chapter
+  fixes incl. ch23-scoring.ts:453 companion fix, (6) polish, (7) **pre-handoff
+  naive-execution gate** — per user directive the finished book goes to a naive
+  Claude in a Docker container to execute as-is; this phase dry-runs that against
+  registry-installed @sharpee/*@2.1.0, (8) completeness-audit triage (contingent —
+  scoping decision open for David: recommend letting Phase 7 results scope it).
+
 ## Open Items (small, carried)
 - dungeo SW-vs-SOUTH map deviation (N/S Passage → Round Room), ADR-206 CI guard test,
   familyzoo book v2.0.0 prose updates for the per-world capability API.
