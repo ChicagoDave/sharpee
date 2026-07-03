@@ -9,8 +9,10 @@ even hears about them.
 ## Media is just more channels
 
 There is no separate media engine. Images and audio are channels like `main` and
-`score`, registered among the platform defaults and rendered by the browser client.
-The standard media channels are:
+`score`, rendered by the browser client. Most are registered among the platform
+defaults; the `ambient:*` channels are the exception, and the story registers them
+on both the engine and browser sides, as shown later in this chapter. The standard
+media channels are:
 
 | Channel | Carries |
 |---|---|
@@ -20,7 +22,7 @@ The standard media channels are:
 | `image:preload` | assets to fetch ahead of time |
 | `sound` | one-off sound effects |
 | `music` | the background track |
-| `ambient:*` | layered environmental loops (wind, machinery, …) |
+| `ambient:*` | layered environmental loops (wind, machinery, …); story-registered, see below |
 
 A story drives these channels by firing **`media.*` events**: `media.image.show`,
 `media.sound.play`, `media.music.play`, `media.ambient.play` (and their `.hide` /
@@ -114,7 +116,8 @@ first keystroke rather than being silently dropped.
 
 Scattering raw file paths through your story ages badly. The `AudioRegistry` lets you
 declare each room's **atmosphere** once, its ambient layers and an optional music track,
-with a fluent builder, and look it up by room later. Family Zoo v18 does exactly this:
+with a fluent builder, and look it up by room later. Family Zoo's
+`ch24-27-presentation/` snapshot does exactly this:
 
 ```typescript
 const audio = new AudioRegistry();
@@ -163,8 +166,34 @@ if (atmosphere) {
 }
 ```
 
+None of this makes a sound until the `ambient:*` channel exists on both sides, and
+both registrations belong to the story, not the platform defaults. The engine side
+registers the channel in `Story.registerChannels` (where the Channels chapter
+registered `zoo.ambience`); the browser side registers its renderer in the browser
+entry:
+
+```typescript
+// Engine side, in Story.registerChannels:
+import { createAmbientChannel } from '@sharpee/stdlib';
+
+registry.add(createAmbientChannel('environment'));
+
+// Browser side, in the browser entry:
+import { createAmbientChannelRenderer } from '@sharpee/platform-browser';
+
+client.getChannelRenderer().registerRenderer(
+  'ambient:environment',
+  createAmbientChannelRenderer(client.getAudioManager(), 'environment'),
+);
+```
+
+Skip the engine line and the `media.ambient.*` events are never projected into a
+turn packet; skip the browser line and the packet's channel arrives with no
+renderer. Either way the walkthrough above plays silence.
+
 Sound effects are simpler still: a one-off `media.sound.play` straight from the
-action that causes them. In v18 the feed action emits a crunch and the photograph
+action that causes them. In the `ch24-27-presentation/` snapshot the feed action
+emits a crunch and the photograph
 action a shutter click, right alongside their prose. When the zoo closes, the
 after-hours daemon emits one `media.music.play` and a theme fades in. Throughout, the
 story only ever declares intent as a `media.*` event; the client, gated by what it can

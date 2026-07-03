@@ -8,23 +8,16 @@ description: Test the Parapet dial puzzle and GDT DL command
 # The dial controls which prison cell is rotated into position.
 # Cell is accessed via DOWN from Parapet.
 
-# Enter GDT mode
+# Enter GDT mode (game commands only work after EX — GDT is an input mode)
 > gdt
 [OK: contains "GDT ready"]
 
 > tk brass lantern
 [OK: contains "Taken"]
 
-> turn on lantern
-[OK: contains "switches on"]
-
 # Teleport to Parapet (endgame area)
 > ah Parapet
 [OK: contains "Teleported to"]
-
-> look
-[OK: contains "Parapet"]
-[OK: contains "dial"]
 
 # Test DL command - display dial state
 > dl
@@ -32,9 +25,16 @@ description: Test the Parapet dial puzzle and GDT DL command
 [OK: contains "Dial Setting"]
 [OK: contains "Bronze Door"]
 
-# Test set dial to 4 (directly using action)
+# Exit GDT and verify the Parapet in-game
 > ex
 [OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+> look
+[OK: contains "Parapet"]
+[OK: contains "dial"]
 
 # Test SET DIAL action at Parapet
 > set dial to 4

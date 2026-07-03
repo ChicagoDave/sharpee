@@ -23,7 +23,6 @@ import {
   ActorBehavior,
   IDropItemResult,
   IFEntity,
-  getInterceptorForAction,
   InterceptorSharedData,
   applyInterceptorReportResult
 } from '@sharpee/world-model';
@@ -310,7 +309,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getDroppingSharedData(context);
 
     // Check for interceptor on the item being dropped (ADR-118)
-    const interceptorResult = getInterceptorForAction(noun, IFActions.DROPPING);
+    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.DROPPING);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {};
 

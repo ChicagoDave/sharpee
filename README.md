@@ -240,7 +240,7 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 | Story | Location | Description |
 |-------|----------|-------------|
 | `dungeo` | `stories/dungeo` | Mainframe Zork implementation (~191 rooms, 650 points + 100 endgame) |
-| `familyzoo` | `tutorials/familyzoo` | The book's Family Zoo — chapter-by-chapter tutorial snapshots, built against the published npm packages |
+| `familyzoo` | `tutorials/familyzoo/v1.5.0`, `tutorials/familyzoo/v2.0.0` | The book's Family Zoo — chapter-by-chapter tutorial snapshots, built against the published npm packages. Split into two editions: `v1.5.0` (the frozen 1.x line, pins `^1.5`) and `v2.0.0` (the Phrase Algebra line, pins `^2.0`) |
 | `entropy` | `stories/entropy` | Original sci-fi story with audio system (in progress) |
 
 ## Roadmap

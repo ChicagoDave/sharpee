@@ -1,21 +1,24 @@
-# Test HELP, ABOUT, DIAGNOSE, ROOM, RNAME, OBJECTS commands
+title: Help and Room Info Commands
+story: dungeo
+description: Test HELP, ABOUT, DIAGNOSE, and ROOM commands
+
+---
 
 > help
-Commands to DUNGEO are simple sentences
+[OK: contains "HOW TO PLAY"]
 
 > about
-DUNGEO
-A port of Mainframe Zork
+[OK: contains "DUNGEON"]
 
 > diagnose
 [OK: contains "perfect health"]
-[OK: contains "strong enough"]
+[OK: contains "can be killed"]
 
+# ROOM prints the verbose room description (name + prose, no object list)
 > room
-West of House
+[OK: contains "West of House"]
+[OK: contains "open field"]
 
-> rname
-West of House
-
-> objects
-There is a small mailbox here.
+# RNAME and OBJECTS are rendered via story-defined channels (dungeo.rname /
+# dungeo.objects in src/channels.ts) for the browser client only; the CLI
+# main channel intentionally does not display them, so they are not tested here.

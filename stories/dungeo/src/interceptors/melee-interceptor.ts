@@ -255,11 +255,29 @@ function handleVillainDeath(
   return false; // Use default inventory drop
 }
 
+/**
+ * Apply the canonical villain death side effects outside combat (e.g. GDT KL).
+ *
+ * Runs the same flow as a combat kill — for the thief this includes the
+ * ADR-078 hidden max score change (616 → 650), loot scatter, frame spawn,
+ * and entity removal.
+ *
+ * @param villain - The villain entity being killed
+ * @param world - The world model
+ * @returns Death messages that a combat kill would have narrated
+ */
+export function applyVillainDeathSideEffects(villain: IFEntity, world: WorldModel): string[] {
+  const sharedData: InterceptorSharedData = {};
+  handleVillainDeath(getVillainKey(villain), villain, world, sharedData);
+  return (sharedData.deathMessages as string[] | undefined) ?? [];
+}
+
 // ============= The Interceptor =============
 
 export const MeleeInterceptor: ActionInterceptor = {
   /**
-   * PRE-VALIDATE: Check if the hero is staggered (misses next turn).
+   * PRE-VALIDATE: Block bare-handed attacks, then check if the hero is
+   * staggered (misses next turn).
    */
   preValidate(
     _entity: IFEntity,
@@ -269,6 +287,18 @@ export const MeleeInterceptor: ActionInterceptor = {
   ): InterceptorResult | null {
     const player = world.getEntity(actorId);
     if (!player) return null;
+
+    // MDL act1.mud KILLER: attacking a villain with no weapon is suicidal —
+    // no combat round happens (checked before stagger, which BLOW never
+    // consumes for a bare-handed attempt).
+    const carried = world.getContents(actorId);
+    const hasWeapon = carried.some((item) => item.has(TraitType.WEAPON));
+    if (!hasWeapon) {
+      return {
+        valid: false,
+        error: MeleeMessages.UNARMED_ATTACK,
+      };
+    }
 
     const staggered = player.attributes[MELEE_STATE.STAGGERED];
     if (staggered) {
@@ -504,6 +534,14 @@ export const MeleeInterceptor: ActionInterceptor = {
         createEffect('game.message', {
           messageId: MeleeMessages.STILL_RECOVERING,
           text: 'You are still recovering from a staggering blow.',
+        }),
+      ];
+    }
+    if (error === MeleeMessages.UNARMED_ATTACK) {
+      return [
+        createEffect('game.message', {
+          messageId: MeleeMessages.UNARMED_ATTACK,
+          text: 'Fighting unarmed is suicide.',
         }),
       ];
     }

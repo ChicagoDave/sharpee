@@ -1,18 +1,27 @@
----
 title: Nest in Description Test (ISSUE-011)
 story: dungeo
+description: Nest should be mentioned in Up a Tree room description
+
 ---
+
 # Test ISSUE-011: Nest should be mentioned in Up a Tree room description
 # Verifies nest is discoverable in room description
 
-# Go to Forest Path 1 (where the large tree is)
+# Grab the mailbox contents first (parity with original test setup)
 > open mailbox
+[OK: contains "open"]
+
 > take all
-> n
-> n
+[OK: contains "Taken"]
 
-# Climb up the tree
+# Go to Forest Path (where the large tree is)
+> n
+[OK: contains "North of House"]
+
+> n
+[OK: contains "Forest Path"]
+
+# Climb up the tree - the nest must appear in the room description
 > u
-
-# Verify the nest is mentioned in the room description
-/bird's nest/
+[OK: contains "Up a Tree"]
+[OK: contains "bird's nest"]

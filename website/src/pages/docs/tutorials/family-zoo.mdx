@@ -41,10 +41,14 @@ title: "Family Zoo Tutorial"
 
 ## Step 1: Project Structure
 
-The Family Zoo tutorial ships with Sharpee in `tutorials/familyzoo/`. The latest version (v17) splits the story across multiple files by concern:
+The Family Zoo tutorial ships with Sharpee in `tutorials/familyzoo/`, split into two
+editions by platform line: **`v1.5.0/`** (the frozen 1.x line, pins `^1.5`) and
+**`v2.0.0/`** (the Phrase Algebra line, pins `^2.0`). Each edition is a self-contained
+project with the same layout. The multi-file final version splits the story across files
+by concern:
 
 ```
-tutorials/familyzoo/src/v17/
+tutorials/familyzoo/<edition>/src/ch28-multi-file/
 ├── index.ts        # Story class — wires everything together
 ├── zoo-map.ts      # Rooms, exits, scenery, locked door
 ├── zoo-items.ts    # Portable objects, containers, supporters

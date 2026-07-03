@@ -14,6 +14,7 @@ import { englishWords, irregularPlurals, abbreviations } from './data/words';
 import { pluralize as pluralizeNoun } from './pluralize';
 import { standardActionLanguage } from './actions';
 import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc';
+import { platformLanguage } from './platform-messages';
 import { soundMessages } from './sound-messages';
 import {
   NarrativeContext,
@@ -55,6 +56,8 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     this.loadCharacterMessages();
     // Load spatial sound prose defaults (ADR-172 Phase 5)
     this.loadSoundMessages();
+    // Load platform-event prose defaults (save/restore/undo outcomes)
+    this.loadPlatformMessages();
   }
 
   /**
@@ -152,6 +155,17 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    */
   private loadSoundMessages(): void {
     for (const [key, value] of Object.entries(soundMessages)) {
+      this.messages.set(key, value);
+    }
+  }
+
+  /**
+   * Load platform-event prose defaults (save/restore/undo outcomes).
+   * The prose pipeline renders a `platform.*` event via the message
+   * registered under the event type; stories override the same ids.
+   */
+  private loadPlatformMessages(): void {
+    for (const [key, value] of Object.entries(platformLanguage.messages)) {
       this.messages.set(key, value);
     }
   }

@@ -22,8 +22,8 @@ free.
 
 ## The one thing you must save yourself
 
-There is exactly one trap, and v17 already walks into it on purpose so you can see the
-fix. The after-hours **behavior swap** daemon keeps a local flag so it only fires
+There is exactly one trap, and the `ch28-multi-file/` snapshot already walks into it
+on purpose so you can see the fix. The after-hours **behavior swap** daemon keeps a local flag so it only fires
 once:
 
 ```typescript
@@ -74,6 +74,11 @@ snapshot back, and the engine rebuilds the world from it, which is why the
 post-restore status line and score are correct without the client recomputing
 anything.
 
+The player-facing prose around these operations ("Saved.", "Restored.", "Previous
+turn undone.") renders from the language layer's `platform.*` messages, so a story
+can re-voice any of it with a same-id `addMessage` in `extendLanguage`, exactly
+like any other message.
+
 ## Save formats change with a version
 
 A save is a serialized snapshot, and snapshots have a shape. The envelope carries a
@@ -90,7 +95,8 @@ engine serializes the whole thing into one `ISaveData` that rebuilds on restore,
 score and positions and flags and all. The one thing you handle yourself is
 **transient state held outside the world**: a closure flag or daemon counter is
 invisible to the snapshot, so expose it through
-`getRunnerState`/`restoreRunnerState`, as v17's behavior-swap daemon does. In the
+`getRunnerState`/`restoreRunnerState`, as the `ch28-multi-file/` snapshot's
+behavior-swap daemon does. In the
 browser, saves are versioned `localStorage` envelopes, autosaved every turn. With
 the game tested and persistable, it's time to hand it to players: building and
 publishing.

@@ -19,15 +19,19 @@
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
 import { ISchedulerService } from '@sharpee/plugin-scheduler';
 
-// We'll get the scheduler through the world's capability system
-const SCHEDULER_CAPABILITY_KEY = 'dungeo.scheduler.ref';
+// Per-world scheduler handles. A runtime service reference must NOT live in
+// the world's capability store: capability data is deep-copied on
+// registration (dropping the service's prototype methods) and serializes
+// into save blobs (regression findings P6). A WeakMap keyed by the world
+// instance gives per-world lookup without touching serializable state.
+const gdtSchedulers = new WeakMap<object, ISchedulerService>();
 
 /**
- * Get scheduler from world state (set during story initialization)
+ * Get the scheduler registered for this context's world
+ * (set during story onEngineReady via setSchedulerForGDT).
  */
 function getScheduler(context: GDTContext): ISchedulerService | undefined {
-  // The scheduler reference is stored in world capability during onEngineReady
-  return context.world.getCapability(SCHEDULER_CAPABILITY_KEY) as ISchedulerService | undefined;
+  return gdtSchedulers.get(context.world as object);
 }
 
 export const dcHandler: GDTCommandHandler = {
@@ -117,23 +121,9 @@ export const dcHandler: GDTCommandHandler = {
 };
 
 /**
- * Store scheduler reference in world for GDT access
- * Call this from story.onEngineReady()
+ * Register this world's scheduler for GDT access.
+ * Call from story.onEngineReady(). Last call for a world wins.
  */
-export function setSchedulerForGDT(world: any, scheduler: ISchedulerService): void {
-  // Store as capability so it persists and is accessible
-  if (typeof world.registerCapability === 'function') {
-    try {
-      world.registerCapability(SCHEDULER_CAPABILITY_KEY, { initialData: scheduler });
-    } catch {
-      // Capability already registered, update it
-      const existing = world.getCapability(SCHEDULER_CAPABILITY_KEY);
-      if (existing) {
-        // Replace the reference
-        Object.assign(existing, scheduler);
-      }
-    }
-  }
+export function setSchedulerForGDT(world: object, scheduler: ISchedulerService): void {
+  gdtSchedulers.set(world, scheduler);
 }
-
-export const SCHEDULER_GDT_KEY = SCHEDULER_CAPABILITY_KEY;

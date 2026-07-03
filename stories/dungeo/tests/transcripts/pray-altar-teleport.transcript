@@ -4,7 +4,8 @@ description: Tests PRAY action at Altar teleports to Forest Path 1 (per Fortran 
 
 ---
 
-# Setup: Get lamp and go to Altar using GDT
+# Setup: Get lamp and go to Altar using GDT (then EX back to the game —
+# GDT is an input mode, so game commands only work after EX)
 > gdt
 [OK: contains "GDT"]
 
@@ -13,6 +14,9 @@ description: Tests PRAY action at Altar teleports to Forest Path 1 (per Fortran 
 
 > ah Altar
 [OK: contains "Altar"]
+
+> ex
+[OK: contains "Returning to game"]
 
 # Turn on lamp so we can see
 > turn on lantern
@@ -37,8 +41,14 @@ description: Tests PRAY action at Altar teleports to Forest Path 1 (per Fortran 
 ---
 
 # Test that PRAY elsewhere gives generic response
+> gdt
+[OK: contains "GDT"]
+
 > ah Living Room
 [OK: contains "Living Room"]
+
+> ex
+[OK: contains "Returning to game"]
 
 # Pray in Living Room - should give generic response (not teleport)
 > pray

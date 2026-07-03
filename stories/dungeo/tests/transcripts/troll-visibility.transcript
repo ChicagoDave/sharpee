@@ -49,11 +49,11 @@ description: Tests that the axe is held by troll, can't be taken (white-hot), an
 > ex
 [OK: contains "Returning"]
 
-# Both troll and axe should be gone
+# Both troll and axe should be gone (vanish in black smoke, MDL)
 > look
 [OK: contains "Troll Room"]
-[FAIL: contains "troll"]
-[FAIL: contains "axe"]
+[OK: not contains "troll blocks"]
+[OK: not contains "bloody axe"]
 
 # Can't examine axe - it's gone
 > examine axe

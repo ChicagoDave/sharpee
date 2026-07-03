@@ -10,7 +10,7 @@
  * not just events or return values.
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { IFActions } from '../../../src/actions/constants';
 import {
   WorldModel,
@@ -57,23 +57,12 @@ function createHidingSpot(world: WorldModel, roomId: string, name: string, opts:
   return entity;
 }
 
-// Register visibility behavior once for all tests
-beforeEach(() => {
-  // The registry is global — re-registration would throw.
-  // We rely on the first test's beforeAll to register.
-});
-
-let visibilityRegistered = false;
-function ensureVisibilityBehavior() {
-  if (!visibilityRegistered) {
-    try {
-      registerConcealedVisibilityBehavior();
-      visibilityRegistered = true;
-    } catch {
-      // Already registered from a previous test run
-      visibilityRegistered = true;
-    }
-  }
+// Register the default concealed-visibility behavior on a given test's world.
+// ADR-207: the binding map is per-WorldModel and registration is idempotent
+// (last-wins, never throws), so this is safe to call once per fresh world —
+// no cross-test registry leakage to work around anymore.
+function ensureVisibilityBehavior(world: WorldModel) {
+  registerConcealedVisibilityBehavior(world);
 }
 
 // ============================================================================
@@ -313,9 +302,9 @@ describe('revealingAction', () => {
 
 describe('ConcealedVisibilityBehavior', () => {
   test('should make concealed player invisible to NPCs via canSee()', () => {
-    ensureVisibilityBehavior();
-
     const { world, player, room } = setupBasicWorld();
+    ensureVisibilityBehavior(world);
+
     const curtain = createHidingSpot(world, room.id, 'curtain', {
       positions: ['behind'],
       quality: 'good',
@@ -342,9 +331,9 @@ describe('ConcealedVisibilityBehavior', () => {
   });
 
   test('should restore visibility after revealing', () => {
-    ensureVisibilityBehavior();
-
     const { world, player, room } = setupBasicWorld();
+    ensureVisibilityBehavior(world);
+
     const curtain = createHidingSpot(world, room.id, 'curtain', {
       positions: ['behind'],
       quality: 'good',
@@ -524,9 +513,8 @@ describe('concealment-break hook listener', () => {
 
 describe('end-to-end concealment pipeline', () => {
   test('hide → verify state → verify visibility → reveal → verify restored', () => {
-    ensureVisibilityBehavior();
-
     const { world, player, room } = setupBasicWorld();
+    ensureVisibilityBehavior(world);
     const curtain = createHidingSpot(world, room.id, 'curtain', {
       positions: ['behind'],
       quality: 'good',
@@ -569,9 +557,8 @@ describe('end-to-end concealment pipeline', () => {
   });
 
   test('hide → silent action preserves → explicit reveal clears', () => {
-    ensureVisibilityBehavior();
-
     const { world, player, room } = setupBasicWorld();
+    ensureVisibilityBehavior(world);
     const desk = createHidingSpot(world, room.id, 'desk', {
       positions: ['under'],
       quality: 'fair',

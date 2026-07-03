@@ -25,22 +25,22 @@ Stories with custom combat register their own interceptor and resolver instead o
 ```typescript
 import { registerBasicCombat } from '@sharpee/ext-basic-combat';
 
-// In your story's initializeWorld():
-registerBasicCombat();
+// In your story's initializeWorld(world):
+registerBasicCombat(world);
 ```
 
 To wire only one direction, register the individual components yourself:
 
 ```typescript
-import { TraitType, registerActionInterceptor } from '@sharpee/world-model';
+import { TraitType } from '@sharpee/world-model';
 import { registerNpcCombatResolver } from '@sharpee/stdlib';
 import {
   BasicCombatInterceptor,
   basicNpcResolver,
 } from '@sharpee/ext-basic-combat';
 
-// PC→NPC only
-registerActionInterceptor(
+// PC→NPC only — the binding is per-world and idempotent (ADR-208)
+world.registerActionInterceptor(
   TraitType.COMBATANT,
   'if.action.attacking',
   BasicCombatInterceptor

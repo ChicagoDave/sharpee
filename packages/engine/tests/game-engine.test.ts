@@ -7,7 +7,7 @@ import { GameEngine } from '../src/game-engine';
 import { MinimalTestStory } from './stories/minimal-test-story';
 import { createMockAction } from './fixtures/index';
 import { createMockProsePipeline as createMockTextService } from '../src/test-helpers/mock-prose-pipeline';
-import { EntityType, WorldModel, IFEntity } from '@sharpee/world-model';
+import { EntityType, WorldModel, IFEntity, TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import { ISaveData } from '@sharpee/core';
 import { EngineConfig } from '../src/types';
 import { setupTestEngine, createMinimalStory } from './test-helpers/setup-test-engine';
@@ -95,8 +95,36 @@ describe('GameEngine', () => {
       // Create a story that throws during initialization
       const badStory = new MinimalTestStory();
       badStory.forceInitError = true;
-      
+
       expect(() => engine.setStory(badStory)).toThrow();
+    });
+
+    it('should register the concealed-visibility behavior on the story world (ADR-148)', () => {
+      engine.setStory(story);
+
+      // The hide-and-observe mechanic: NPCs must not see a concealed
+      // player. setStory registers the standard binding per-world (before
+      // initializeWorld, so stories can override it last-wins).
+      const world = engine.getWorld();
+      const binding = world.getBehaviorBinding('if.trait.concealed_state', 'if.scope.visible');
+      expect(binding).toBeDefined();
+      expect(binding?.behavior.validate).toBeTypeOf('function');
+    });
+
+    it('should auto-create a StoryInfo entity from StoryConfig when the story does not', () => {
+      engine.setStory(story);
+
+      // The standard ABOUT action resolves its params from StoryInfoTrait —
+      // setStory must guarantee the entity exists (from config) when the
+      // story's initializeWorld didn't create one.
+      const world = engine.getWorld();
+      const infoEntities = world.findByTrait(TraitType.STORY_INFO);
+      expect(infoEntities).toHaveLength(1);
+
+      const trait = infoEntities[0].get<StoryInfoTrait>(TraitType.STORY_INFO);
+      expect(trait?.title).toBe(story.config.title);
+      expect(trait?.author).toBe(story.config.author);
+      expect(trait?.version).toBe(story.config.version);
     });
   });
 

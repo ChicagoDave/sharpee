@@ -82,11 +82,33 @@ const BasketLoweringBehavior: CapabilityBehavior = {
   },
 };
 
-// 3. Register in story's initializeWorld()
-registerCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering', BasketLoweringBehavior);
+// 3. Register in story's initializeWorld() — on the world instance (ADR-207:
+//    per-world binding map, idempotent; no already-registered guard needed)
+world.registerCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering', BasketLoweringBehavior);
 ```
 
-### Story-Specific Actions (for new verbs)
+**Capability-effect messageIds MUST be fully-qualified** (decision 2026-07-02, dungeo
+regression findings P1). The engine's universal dispatch forwards effect payloads
+unchanged — it does NOT auto-prefix short keys the way `createCapabilityDispatchAction`
+does, and the universal path always wins when a binding exists, so short keys render
+blank. Emit story-registered IDs like `'dungeo.basket.lowered'` from
+`report()`/`blocked()` and from `validate()` error codes; never bare keys like
+`'lowered'`. The factory's short-key prefixing is legacy — do not rely on it.
+
+### Action Interceptors (ADR-118 hooks, ADR-208 registration)
+
+Interceptors hook into a standard action's phases (`preValidate`/`postValidate`/
+`postExecute`/`onBlocked`/`postReport`) without replacing it. Registration is the
+same model as capability behaviors — on the world instance (ADR-208: per-world
+binding map, idempotent last-wins; no already-registered guard needed):
+
+```typescript
+// In the story's initializeWorld()
+world.registerActionInterceptor(TrollAxeTrait.type, 'if.action.taking', TrollAxeTakingInterceptor);
+```
+
+Stdlib actions resolve interceptors via `context.world.getInterceptorForAction(entity,
+actionId)` — never a module-level registry (the old free-function registry is deleted).
 
 When stdlib doesn't have the verb at all, the story creates a full action:
 

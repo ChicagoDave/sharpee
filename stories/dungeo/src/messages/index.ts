@@ -87,4 +87,65 @@ Ported by David Cornelson
 
 Type HELP for instructions, ABOUT for credits.`,
   );
+
+  // HELP — the stdlib help action emits messageIds if.action.help.first_time /
+  // if.action.help.general, which have no registered templates; the engine's
+  // canonical fallback handler renders to the 'help.text' block key, which the
+  // stdlib main channel does not route (MAIN_KEYS). Registering the text here
+  // sends it through the messageId path as action.result, which IS routed.
+  const HELP_TEXT = `HOW TO PLAY INTERACTIVE FICTION
+
+Interactive fiction is a conversation between you and the game. You type commands; the game describes what happens.
+
+MOVING AROUND
+  Type a direction to move: NORTH (N), SOUTH (S), EAST (E), WEST (W),
+  NORTHEAST (NE), NORTHWEST (NW), SOUTHEAST (SE), SOUTHWEST (SW),
+  UP (U), DOWN (D), IN, OUT, ENTER, EXIT.
+
+LOOKING AND EXAMINING
+  LOOK (L) - Describe your surroundings.
+  EXAMINE (X) something - Look closely at an object.
+
+INTERACTING WITH OBJECTS
+  TAKE (GET) something - Pick it up.
+  DROP something - Put it down.
+  OPEN / CLOSE something - Open or close a door, container, etc.
+  PUT something IN / ON something - Place an object in a container or on a surface.
+  TURN ON / TURN OFF something - Operate a switch or device.
+  READ something - Read text on an object.
+
+OTHER COMMANDS
+  INVENTORY (I) - List what you're carrying.
+  WAIT (Z) - Let time pass.
+  AGAIN (G) - Repeat your last command.
+  SCORE - Check your progress.
+  SAVE / RESTORE - Save or load your game.
+  UNDO - Take back your last move.
+  QUIT - End the game.
+  ABOUT - Information about this game.
+
+When in doubt, EXAMINE everything.`;
+  language.addMessage('if.action.help.first_time', HELP_TEXT);
+  language.addMessage('if.action.help.general', HELP_TEXT);
+
+  // ABOUT / INFO / CREDITS — same routing gap as HELP: the stdlib about action
+  // emits if.action.about.success (unregistered) and the engine's banner
+  // fallback renders to 'about.text', which main does not route. Params come
+  // from the event's nested params (title, author, description, portedBy, …).
+  language.addMessage(
+    'if.action.about.success',
+    `{verbatim:title}
+
+{verbatim:description}
+By {verbatim:author}
+Ported by {verbatim:portedBy}
+
+Sharpee v{verbatim:engineVersion}`,
+  );
+
+  // SAVE / UNDO — narrated by the platform since 2026-07-02: the prose
+  // pipeline renders platform.* completion events via lang-en-us messages
+  // registered under the event type ("Saved.", "Previous turn undone.", …).
+  // The former story-side workarounds (if.event.save_requested template and
+  // the actions/undo override) were removed with that fix.
 }

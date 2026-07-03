@@ -18,6 +18,7 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
+import { nounPhraseFor } from '../../../utils';
 import {
   ConcealmentTrait,
   ConcealmentPosition,
@@ -133,12 +134,19 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getHidingSharedData(context);
 
+    // The success templates bind {the target} (ADR-158) — pass the noun
+    // phrase nested under params (ADR-206); domain fields stay top-level.
+    const targetEntity = context.world.getEntity(sharedData.targetId!);
     return [context.event('if.event.player_concealed', {
       messageId: `${context.action.id}.${sharedData.position}`,
+      params: {
+        target: targetEntity ? nounPhraseFor(targetEntity) : { name: sharedData.targetName },
+        position: sharedData.position,
+      },
       targetId: sharedData.targetId,
       targetName: sharedData.targetName,
       position: sharedData.position,
       quality: sharedData.quality,
-    } as PlayerConcealedEventData & { messageId: string; targetName: string })];
+    } as PlayerConcealedEventData & { messageId: string; targetName: string; params: Record<string, unknown> })];
   },
 };

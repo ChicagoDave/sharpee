@@ -16,7 +16,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait, getInterceptorForAction, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { TakingMessages } from './taking-messages';
@@ -46,7 +46,7 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 
   // Check for interceptor on the target entity (ADR-118)
   // This runs first so entity-specific blocks (e.g., white-hot axe) take priority
-  const interceptorResult = getInterceptorForAction(noun, IFActions.TAKING);
+  const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.TAKING);
   if (interceptorResult) {
     const { interceptor } = interceptorResult;
     const interceptorData: InterceptorSharedData = {};

@@ -1,0 +1,56 @@
+title: V04 — Portable Objects
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify taking, dropping, and inventory with portable items
+
+---
+
+# V4 teaches: portable items, take, drop, inventory
+
+# Start at entrance — zoo map should be here
+> look
+[OK: contains "Zoo Entrance"]
+
+# Take the map
+> take map
+[OK: contains "Taken"]
+
+# Check inventory
+> inventory
+[OK: contains "zoo map"]
+
+# Carry map to another room
+> south
+[OK: contains "Main Path"]
+
+# Take the penny
+> take penny
+[OK: contains "Taken"]
+
+# Inventory should show both
+> inventory
+[OK: contains "zoo map"]
+[OK: contains "souvenir penny"]
+
+# Drop the map in this room
+> drop map
+[OK: contains "Dropped"]
+
+# Map should appear in room now
+> look
+[OK: contains "zoo map"]
+
+# Go to Petting Zoo and take the feed
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "souvenir penny"]
+[OK: contains "bag of animal feed"]
+
+# Scenery is still not takeable
+> take goats
+[OK: contains "fixed in place"]

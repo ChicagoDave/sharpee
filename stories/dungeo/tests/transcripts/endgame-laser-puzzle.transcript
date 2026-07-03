@@ -20,7 +20,7 @@ description: Test laser beam and stone button puzzle mechanics
 # Push button with laser still active — button pushes but nothing happens
 > push button
 [OK: contains "push"]
-[NOT: contains "fixed"]
+[OK: not contains "fixed"]
 
 # Go south to Small Room (laser beam room)
 > south
@@ -47,4 +47,4 @@ description: Test laser beam and stone button puzzle mechanics
 # Push button with laser disabled — should succeed
 > push button
 [OK: contains "push"]
-[NOT: contains "fixed"]
+[OK: not contains "fixed"]

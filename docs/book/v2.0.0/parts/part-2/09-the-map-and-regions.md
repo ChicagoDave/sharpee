@@ -92,12 +92,16 @@ registering a handler:
 
 ```typescript
 world.registerEventHandler('if.event.region_entered', (event, world) => {
-  if (event.data.regionId === 'reg-staff') {
+  const data = event.data as { regionId?: string } | undefined;
+  if (data?.regionId === 'reg-staff') {
     // The visitor just slipped into the staff area: flavor, a warning,
     // a scoring hook, whatever the moment calls for.
   }
 });
 ```
+
+(`event.data` is typed `unknown`, so the cast is what lets the strict compiler
+accept the field access.)
 
 This is the natural home for "as you enter the old town, the noise of the market
 swells": atmosphere keyed to an area instead of bolted onto every room's
@@ -115,11 +119,12 @@ world.createRegion('reg-mine', { name: 'Coal Mine', parentRegionId: 'reg-undergr
 ```
 
 And you can ask the world about membership at any time:
-`world.isInRegion(roomId, 'reg-staff')` gives a yes/no, or, if you add the
-optional `@sharpee/queries` package, its entity-query API lists every room in an
-area:
-`world.rooms.inRegion('reg-staff', world).toArray()`. (`world.rooms` comes from
-that package; the plain `WorldModel` gives you `isInRegion`.)
+`world.isInRegion(roomId, 'reg-staff')` gives a yes/no. If you add the optional
+`@sharpee/queries` package, its entity-query API lists every room in an area:
+`world.rooms.inRegion('reg-staff', world).toArray()`. The package installs
+`world.rooms` as a side effect, so it only exists after an
+`import '@sharpee/queries';` line somewhere in your story; without that import,
+the plain `WorldModel` gives you `isInRegion`.
 
 ## Key takeaway
 

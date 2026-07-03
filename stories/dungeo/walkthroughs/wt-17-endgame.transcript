@@ -12,11 +12,13 @@ $restore wt-16
 
 [GOAL: Navigate to Mirror Room]
 
-> down
-[OK: contains "Cellar"]
-
+# Light the lantern BEFORE descending — wt-16 banks the battery by turning
+# it off at the (lit) Living Room, so the Cellar is dark on arrival.
 > turn on lantern
 [OK: contains "lantern"]
+
+> down
+[OK: contains "Cellar"]
 
 > east
 [OK: contains "Troll Room"]

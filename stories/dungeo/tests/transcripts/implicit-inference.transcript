@@ -27,7 +27,7 @@ description: Test implicit take for reading action (inference feature is disable
 
 # Take the leaflet explicitly first
 > take leaflet
-[OK: contains "take leaflet"]
+[OK: contains "Taken"]
 
 # Now reading leaflet works (already holding it)
 > read leaflet

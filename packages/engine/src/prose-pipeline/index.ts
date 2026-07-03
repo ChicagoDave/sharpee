@@ -58,8 +58,6 @@ export {
   handleGameMessage,
   handleGenericEvent,
   handleGameStarted,
-  handleHelpDisplayed,
-  handleAboutDisplayed,
   handleAudibilityHeard,
   tryProcessDomainEventMessage,
   handleImplicitTake,

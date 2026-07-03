@@ -19,7 +19,7 @@ const parrotBehavior: NpcBehavior = {
       return [{
         type: 'speak',
         messageId: 'npc.speech',
-        data: { npcName: 'parrot', text: phrase },
+        data: { text: phrase },
       }];
     }
     return [];
@@ -31,7 +31,6 @@ const parrotBehavior: NpcBehavior = {
       type: 'emote',
       messageId: 'npc.emote',
       data: {
-        npcName: 'parrot',
         text: 'The parrot ruffles its feathers and eyes you with interest.',
       },
     }];

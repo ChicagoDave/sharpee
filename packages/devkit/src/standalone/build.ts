@@ -231,14 +231,21 @@ async function runTranscriptTests(
     return;
   }
 
-  // Load the story from compiled dist/
+  // Load the chained walkthrough game from compiled dist/. Walkthroughs share one
+  // chained game, so the chain targets a single story entry — honor the first
+  // walkthrough's `entry:` header (undefined ⇒ default dist/index.js). Unit tests
+  // load their own entry per-file below, so with no walkthroughs there is nothing
+  // to load here (ADR-207 AC-7: no load-and-discard pre-load).
   let game: any;
-  try {
-    game = await loadStory(projectDir);
-  } catch (error: any) {
-    console.error(`  Failed to load story: ${error.message}`);
-    console.error('  Make sure TypeScript compiled successfully (dist/index.js exists).\n');
-    process.exit(1);
+  if (walkthroughs.length > 0) {
+    try {
+      const chainEntry = parseTranscriptFile(walkthroughs[0]).header.entry;
+      game = await loadStory(projectDir, chainEntry);
+    } catch (error: any) {
+      console.error(`  Failed to load story: ${error.message}`);
+      console.error('  Make sure TypeScript compiled successfully (dist/index.js exists).\n');
+      process.exit(1);
+    }
   }
 
   const allResults: any[] = [];
@@ -280,16 +287,17 @@ async function runTranscriptTests(
     console.log(`\n  Unit tests: ${unitTests.length} files\n`);
 
     for (const utPath of unitTests) {
-      // Create fresh game for each unit test
+      // Parse first so we can honor the transcript's `entry:` header when loading.
+      const transcript = parseTranscriptFile(utPath);
+      // Create a fresh game per unit test, pinned to the transcript's entry.
       let unitGame: any;
       try {
-        unitGame = await loadStory(projectDir);
+        unitGame = await loadStory(projectDir, transcript.header.entry);
       } catch (error: any) {
         console.error(`  Failed to reload story for unit test: ${error.message}`);
         continue;
       }
 
-      const transcript = parseTranscriptFile(utPath);
       const result = await runTranscript(transcript, unitGame, {
         verbose: options.verbose,
         stopOnFailure: options.stopOnFailure,

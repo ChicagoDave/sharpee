@@ -4,7 +4,7 @@ function createVictoryDaemon(): Daemon {
   return {
     id: 'zoo.daemon.victory',
     name: 'Victory Check',
-    priority: 100,   // run last, after all scoring for the turn
+    priority: 100,   // runs first among daemons; the turn's scoring is already settled
 
     condition: (ctx: SchedulerContext): boolean => {
       if (victoryTriggered) return false;

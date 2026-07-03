@@ -32,8 +32,12 @@ description: Feeding the pygmy goats awards points and consumes the feed
 
 Run it and the tester drives those commands through the real engine, checking each
 assertion against the actual output. A passing run is silent; a failing one tells you
-exactly which command produced the wrong result. Comments start with `#`; section
-headers start with `##` and just organize the output.
+exactly which command produced the wrong result. Any line starting with `#` is a
+comment; by convention `##` lines are used as section headers to organize the
+output, but the tester treats them like any other comment. The header can also
+carry an `entry:` line naming which compiled story the transcript runs against;
+the tutorial's own transcripts pin their chapter snapshot this way
+(`entry: ch23-scoring`).
 
 ## Two kinds of test
 
@@ -104,7 +108,8 @@ individually, exactly matching the two-kinds split.
 
 A transcript test replays a recorded sequence of commands through the real engine
 and checks each turn against assertions you write. **Unit transcripts** run in
-isolation on a fresh game; **walkthroughs** (`wt-*`, run with `--chain`) keep state
+isolation on a fresh game; **walkthroughs** (`wt-*`, chained automatically by
+`sharpee build --test`) keep state
 across files to verify the whole game finishes. Assert on text, **events**, or
 **state**. State is the strongest, because it checks the mutation, not the message.
 Control-flow directives (`[GOAL]`, `[IF]`, `[WHILE]`, `[NAVIGATE TO]`) absorb the

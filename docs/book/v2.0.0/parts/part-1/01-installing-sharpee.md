@@ -119,6 +119,7 @@ my-zoo/
     index.ts        # a single starter file that hosts your story
   package.json      # pinned to the platform version devkit shipped with
   tsconfig.json     # TypeScript config, set up for Sharpee
+  .gitignore        # ignores node_modules/, dist/, logs
 ```
 
 `src/index.ts` is where the story lives. Right now it's a starter stub; in the
@@ -181,6 +182,8 @@ author:
 | `sharpee build-browser` | Rebuild only the web client → `dist/web/` |
 | `sharpee introspect` | Print the project's rooms, objects, and NPCs as JSON |
 | `sharpee ifid` | Generate or validate an IFID (a story's unique identifier) |
+| `sharpee register <location> [--name]` | Register a story name→path mapping, so `build` works from anywhere |
+| `sharpee list` | List registered stories |
 
 Run `sharpee` with no arguments any time to see the current list.
 

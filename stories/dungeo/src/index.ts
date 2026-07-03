@@ -29,11 +29,7 @@ import {
   StandardCapabilities,
   IWorldModel,
   IParsedCommand,
-  registerCapabilityBehavior,
-  hasCapabilityBehavior,
-  VisibilityBehavior,
-  registerActionInterceptor,
-  hasActionInterceptor
+  VisibilityBehavior
 } from '@sharpee/world-model';
 import { MetaCommandRegistry, registerNpcCombatResolver } from '@sharpee/stdlib';
 
@@ -245,83 +241,65 @@ export class DungeoStory implements Story {
     // Take-scoring: stdlib taking action reads IdentityTrait.points
     // Trophy case scoring: TrophyCasePuttingInterceptor reads TreasureTrait.trophyCaseValue
 
-    // Register capability behaviors (ADR-090)
+    // Register capability behaviors (ADR-090) on this world's binding map
+    // (ADR-207: per-world, idempotent — no duplicate-registration guard needed)
     // Basket elevator uses lowering/raising capability dispatch
-    // Check first to avoid duplicate registration (global registry persists across test runs)
-    if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
-      registerCapabilityBehavior(
-        BasketElevatorTrait.type,
-        'if.action.lowering',
-        BasketLoweringBehavior
-      );
-    }
-    if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.raising')) {
-      registerCapabilityBehavior(
-        BasketElevatorTrait.type,
-        'if.action.raising',
-        BasketRaisingBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      BasketElevatorTrait.type,
+      'if.action.lowering',
+      BasketLoweringBehavior
+    );
+    world.registerCapabilityBehavior(
+      BasketElevatorTrait.type,
+      'if.action.raising',
+      BasketRaisingBehavior
+    );
 
     // Troll axe uses action interceptor for taking (ADR-118: blocks while troll is alive)
-    if (!hasActionInterceptor(TrollAxeTrait.type, 'if.action.taking')) {
-      registerActionInterceptor(
-        TrollAxeTrait.type,
-        'if.action.taking',
-        TrollAxeTakingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      TrollAxeTrait.type,
+      'if.action.taking',
+      TrollAxeTakingInterceptor
+    );
 
     // Troll axe uses universal dispatch for visibility (hidden when troll unconscious)
-    if (!hasCapabilityBehavior(TrollAxeTrait.type, 'if.scope.visible')) {
-      registerCapabilityBehavior(
-        TrollAxeTrait.type,
-        'if.scope.visible',
-        TrollAxeVisibilityBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      TrollAxeTrait.type,
+      'if.scope.visible',
+      TrollAxeVisibilityBehavior
+    );
 
     // Troll NPC uses action interceptors for TAKE/ATTACK/TALK interception
     // (Converted from capability behaviors to work around ISSUE-052: cross-module registry bug)
-    if (!hasActionInterceptor(TrollTrait.type, 'if.action.taking')) {
-      registerActionInterceptor(
-        TrollTrait.type,
-        'if.action.taking',
-        TrollTakingInterceptor
-      );
-    }
-    if (!hasActionInterceptor(TrollTrait.type, 'if.action.talking')) {
-      registerActionInterceptor(
-        TrollTrait.type,
-        'if.action.talking',
-        TrollTalkingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      TrollTrait.type,
+      'if.action.taking',
+      TrollTakingInterceptor
+    );
+    world.registerActionInterceptor(
+      TrollTrait.type,
+      'if.action.talking',
+      TrollTalkingInterceptor
+    );
 
     // Troll capability behaviors for GIVE/THROW (ADR-090)
-    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.giving')) {
-      registerCapabilityBehavior(
-        TrollTrait.type,
-        'if.action.giving',
-        TrollReceivingBehavior
-      );
-    }
-    if (!hasCapabilityBehavior(TrollTrait.type, 'if.action.throwing')) {
-      registerCapabilityBehavior(
-        TrollTrait.type,
-        'if.action.throwing',
-        TrollReceivingBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      TrollTrait.type,
+      'if.action.giving',
+      TrollReceivingBehavior
+    );
+    world.registerCapabilityBehavior(
+      TrollTrait.type,
+      'if.action.throwing',
+      TrollReceivingBehavior
+    );
 
     // Egg uses universal dispatch for opening (only thief can open)
-    if (!hasCapabilityBehavior(EggTrait.type, 'if.action.opening')) {
-      registerCapabilityBehavior(
-        EggTrait.type,
-        'if.action.opening',
-        EggOpeningBehavior
-      );
-    }
+    world.registerCapabilityBehavior(
+      EggTrait.type,
+      'if.action.opening',
+      EggOpeningBehavior
+    );
 
     // Reality Altered: migrated to state machine (ADR-119)
 
@@ -499,107 +477,85 @@ export class DungeoStory implements Story {
     }
 
     // Register glacier throwing interceptor
-    if (!hasActionInterceptor(GlacierTrait.type, 'if.action.throwing')) {
-      registerActionInterceptor(
-        GlacierTrait.type,
-        'if.action.throwing',
-        GlacierThrowingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      GlacierTrait.type,
+      'if.action.throwing',
+      GlacierThrowingInterceptor
+    );
 
     // Register boat puncture interceptor (ADR-118)
     // Entering an inflated boat while carrying a sharp object punctures it
-    if (!hasActionInterceptor(InflatableTrait.type, 'if.action.entering')) {
-      registerActionInterceptor(
-        InflatableTrait.type,
-        'if.action.entering',
-        InflatableEnteringInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      InflatableTrait.type,
+      'if.action.entering',
+      InflatableEnteringInterceptor
+    );
 
     // Register balloon receptacle interceptor (ADR-118)
     // Putting a burning object in the receptacle inflates the balloon
-    if (!hasActionInterceptor(BalloonReceptacleTrait.type, 'if.action.putting')) {
-      registerActionInterceptor(
-        BalloonReceptacleTrait.type,
-        'if.action.putting',
-        ReceptaclePuttingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      BalloonReceptacleTrait.type,
+      'if.action.putting',
+      ReceptaclePuttingInterceptor
+    );
 
     // Register ghost ritual dropping interceptor (ADR-118)
     // Dropping frame piece in Basin Room while incense is burning completes the ritual
-    if (!hasActionInterceptor(FramePieceTrait.type, 'if.action.dropping')) {
-      registerActionInterceptor(
-        FramePieceTrait.type,
-        'if.action.dropping',
-        GhostRitualDroppingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      FramePieceTrait.type,
+      'if.action.dropping',
+      GhostRitualDroppingInterceptor
+    );
 
     // Sphere/Cage puzzle interceptor (ADR-118: blocks taking when cage unsolved)
-    if (!hasActionInterceptor(SphereTrait.type, 'if.action.taking')) {
-      registerActionInterceptor(
-        SphereTrait.type,
-        'if.action.taking',
-        SphereTakingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      SphereTrait.type,
+      'if.action.taking',
+      SphereTakingInterceptor
+    );
 
     // Gas Room destination interceptor (ADR-126: blocks entry with lit flame)
-    if (!hasActionInterceptor(GasRoomTrait.type, 'if.action.entering_room')) {
-      registerActionInterceptor(
-        GasRoomTrait.type,
-        'if.action.entering_room',
-        GasRoomEntryInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      GasRoomTrait.type,
+      'if.action.entering_room',
+      GasRoomEntryInterceptor
+    );
 
     // Trophy Case putting interceptor (ADR-129: awards trophy case points)
-    if (!hasActionInterceptor(TrophyCaseTrait.type, 'if.action.putting')) {
-      registerActionInterceptor(
-        TrophyCaseTrait.type,
-        'if.action.putting',
-        TrophyCasePuttingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      TrophyCaseTrait.type,
+      'if.action.putting',
+      TrophyCasePuttingInterceptor
+    );
 
     // Safe opening interceptor (blocks OPEN when rusted shut, before explosion)
-    if (!hasActionInterceptor(SafeTrait.type, 'if.action.opening')) {
-      registerActionInterceptor(
-        SafeTrait.type,
-        'if.action.opening',
-        SafeOpeningInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      SafeTrait.type,
+      'if.action.opening',
+      SafeOpeningInterceptor
+    );
 
     // Safe closing interceptor (blocks CLOSE after explosion — no door)
-    if (!hasActionInterceptor(SafeTrait.type, 'if.action.closing')) {
-      registerActionInterceptor(
-        SafeTrait.type,
-        'if.action.closing',
-        SafeClosingInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      SafeTrait.type,
+      'if.action.closing',
+      SafeClosingInterceptor
+    );
 
     // Rug push interceptor (reveals trapdoor, ISSUE-068 Phase 4)
-    if (!hasActionInterceptor(RugTrait.type, 'if.action.pushing')) {
-      registerActionInterceptor(
-        RugTrait.type,
-        'if.action.pushing',
-        RugPushInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      RugTrait.type,
+      'if.action.pushing',
+      RugPushInterceptor
+    );
 
     // Melee combat interceptor (Phase 3: canonical MDL melee engine)
     // Replaces CombatService with score-scaled, table-based combat for all villains
-    if (!hasActionInterceptor(TraitType.COMBATANT, 'if.action.attacking')) {
-      registerActionInterceptor(
-        TraitType.COMBATANT,
-        'if.action.attacking',
-        MeleeInterceptor
-      );
-    }
+    world.registerActionInterceptor(
+      TraitType.COMBATANT,
+      'if.action.attacking',
+      MeleeInterceptor
+    );
 
     // Melee NPC resolver — handles villain→hero attacks via canonical melee engine
     registerNpcCombatResolver(meleeNpcResolver);

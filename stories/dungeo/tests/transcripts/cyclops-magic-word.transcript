@@ -59,10 +59,14 @@ description: Test saying "odysseus" or "ulysses" to scare away the cyclops
 [EVENT: true, type="npc.emoted" messageId="dungeo.cyclops.flees"]
 [EVENT: true, type="game.message" messageId="dungeo.cyclops.passage_opens"]
 
-# The passage should now be open - try going north
+# The passage should now be open - north leads to the Strange Passage (MDL: CYCLO NORTH -> BLROO)
 > north
-[OK: contains "Living Room"]
+[OK: contains "Strange Passage"]
 [EVENT: true, type="if.event.actor_moved"]
+
+# East through the cyclops-sized hole into the Living Room (MDL: BLROO EAST -> LROOM)
+> east
+[OK: contains "Living Room"]
 
 # Use GDT to go back to Cyclops Room and verify cyclops is gone
 > gdt

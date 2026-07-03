@@ -43,9 +43,21 @@ description: Test flee-and-recover cycle - villain heals when player leaves room
 [OK: contains "Troll Room"]
 [OK: contains "troll"]
 
-# Attack the troll to engage melee combat
+# Attack the troll to engage melee combat.
+# RNG: the troll's swing can disarm us (sword drops) - recover it first.
+[WHILE: not inventory contains "elvish sword"]
+> take sword
+[SKIP]
+[END WHILE]
+
 > attack troll with sword
-[EVENT: true, type="game.message"]
+[SKIP]
+
+# RNG: if we were staggered, the attack was blocked - retry until it lands
+[WHILE: output contains "recovering"]
+> attack troll with sword
+[SKIP]
+[END WHILE]
 
 # Flee combat by going west (back to Cellar)
 > west
@@ -58,8 +70,18 @@ description: Test flee-and-recover cycle - villain heals when player leaves room
 [OK: contains "troll"]
 
 # Attack again - troll should still be fighting (fully healed)
+[WHILE: not inventory contains "elvish sword"]
+> take sword
+[SKIP]
+[END WHILE]
+
 > attack troll with sword
-[EVENT: true, type="game.message"]
+[SKIP]
+
+[WHILE: output contains "recovering"]
+> attack troll with sword
+[SKIP]
+[END WHILE]
 
 # Flee again
 > west

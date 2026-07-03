@@ -5152,6 +5152,7 @@ export declare function getConcealmentState(entity: IFEntity): IConcealedStateTr
  * Owner context: @sharpee/world-model / traits / concealment
  */
 import { CapabilityBehavior } from '../../capabilities/capability-behavior';
+import { WorldModel } from '../../world/WorldModel';
 /**
  * Default visibility behavior for concealed actors.
  *
@@ -5162,11 +5163,15 @@ export declare const ConcealedVisibilityBehavior: CapabilityBehavior;
 /**
  * Register the default visibility behavior for concealed actors.
  *
- * Call this during platform initialization. Stories that need NPC detection
- * can register their own behavior for specific trait types using the same
- * capability dispatch override pattern.
+ * Call this during a game's initialization, once per `WorldModel` instance
+ * (ADR-207 — the binding map is per-world, not process-global). Stories that
+ * need NPC detection can register their own behavior for specific trait
+ * types on the same `world` using the same capability dispatch override
+ * pattern.
+ *
+ * @param world - The world instance to register the binding on.
  */
-export declare function registerConcealedVisibilityBehavior(): void;
+export declare function registerConcealedVisibilityBehavior(world: WorldModel): void;
 ```
 
 ### traits/acoustic/acousticTrait
@@ -5846,6 +5851,11 @@ import { DirectionType } from '../constants/directions';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { IDataStore } from './AuthorModel';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities';
+import { ITrait } from '../traits/trait';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
+import type { ActionInterceptor } from '../capabilities/action-interceptor';
+import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding';
 import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry';
 import { IScopeRule } from '../scope/scope-rule';
@@ -5933,10 +5943,123 @@ import { ScoreEntry } from './ScoreLedger';
 export { ScoreEntry } from './ScoreLedger';
 export interface IWorldModel {
     getDataStore(): IDataStore;
-    registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
+    /**
+     * Register a data capability. THREE RULES (2026-07-02, regression
+     * findings P6):
+     *
+     * 1. **Register-once.** If `name` is already registered this is a no-op
+     *    (strict mode: throws) — data is never reset or merged by
+     *    re-registration.
+     * 2. **`initialData` is DEEP-copied.** The stored data object is built
+     *    from schema defaults + a deep copy of `initialData`; mutating the
+     *    object you passed in afterward changes nothing. Capability data must
+     *    be plain serializable values — it lands in the save blob (never store
+     *    service/class instances here).
+     * 3. **Mutate via the returned/live object or `updateCapability`.** The
+     *    return value IS the live stored data object (also what
+     *    `getCapability` returns) — mutating it persists.
+     *
+     * @returns The live stored data object (the existing one when `name` was
+     *   already registered).
+     */
+    registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
+    /** Merge `data` into the capability's stored data. No-op (strict: throws) when unregistered. */
     updateCapability(name: string, data: Partial<ICapabilityData>): void;
+    /** Returns the LIVE stored data object (not a copy) — mutations persist. */
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
+    /**
+     * Register a behavior for a (traitType, capability) binding on this world.
+     *
+     * Idempotent: re-registering the same (traitType, capability) key
+     * overwrites the previous binding (last-registration-wins) rather than
+     * throwing. Scoped to this `WorldModel` instance only — two worlds may
+     * bind the same key to different behaviors.
+     *
+     * @param traitType - The trait type identifier (e.g. a trait's static `type`)
+     * @param capability - The action ID (capability) this binding handles
+     * @param behavior - The stateless behavior definition to bind
+     * @param options - Optional priority/resolution/mode overrides (ADR-090)
+     */
+    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    /**
+     * Resolve the behavior bound to a trait instance's capability on this world.
+     *
+     * @param trait - The trait instance claiming the capability
+     * @param capability - The action ID (capability) to resolve
+     * @returns The bound behavior, or `undefined` if this world has no binding
+     *   for the trait's type + capability (the caller's normal "can't do that"
+     *   rejection path handles this — never throws for a missing binding).
+     */
+    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+    /**
+     * Resolve the full binding (behavior + priority/resolution/mode overrides)
+     * for a (traitType, capability) pair on this world.
+     *
+     * @param traitType - The trait type identifier
+     * @param capability - The action ID (capability) to resolve
+     * @returns The binding, or `undefined` if none is registered on this world
+     */
+    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+    /**
+     * Enumerate every capability-behavior binding registered on this world,
+     * keyed by `traitType:capability` (see `capabilityBindingKey`).
+     *
+     * Read-only introspection surface (IDE/debug summaries) — register through
+     * `registerCapabilityBehavior`, never by mutating the returned map.
+     *
+     * @returns The world's binding map as a read-only view
+     */
+    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
+    /**
+     * Register an interceptor for a (traitType, actionId) binding on this world.
+     *
+     * Idempotent: re-registering the same (traitType, actionId) key overwrites
+     * the previous binding (last-registration-wins) rather than throwing.
+     * Scoped to this `WorldModel` instance only — two worlds may bind the same
+     * key to different interceptors.
+     *
+     * @param traitType - The trait type identifier (e.g. a trait's static `type`)
+     * @param actionId - The action ID this interceptor hooks (e.g. 'if.action.taking')
+     * @param interceptor - The stateless interceptor definition to bind (ADR-118)
+     * @param options - Optional priority override (higher = checked first)
+     */
+    registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
+    /**
+     * Resolve the interceptor for an entity + action on this world.
+     *
+     * Scans the entity's traits for interceptor bindings registered for the
+     * action and returns the highest-priority match (ADR-118 resolution).
+     *
+     * @param entity - The entity whose traits are checked
+     * @param actionId - The action ID to resolve
+     * @returns The interceptor, its declaring trait, and the binding — or
+     *   `undefined` if this world has no binding for any of the entity's
+     *   traits + action (the standard action proceeds unintercepted — never
+     *   throws for a missing binding).
+     */
+    getInterceptorForAction(entity: {
+        traits: Map<string, ITrait>;
+    }, actionId: string): InterceptorLookupResult | undefined;
+    /**
+     * Resolve the full binding (interceptor + priority) for a
+     * (traitType, actionId) pair on this world.
+     *
+     * @param traitType - The trait type identifier
+     * @param actionId - The action ID
+     * @returns The binding, or `undefined` if none is registered on this world
+     */
+    getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
+    /**
+     * Enumerate every action-interceptor binding registered on this world,
+     * keyed by `traitType:actionId` (see `interceptorBindingKey`).
+     *
+     * Read-only introspection surface (IDE/debug summaries) — register through
+     * `registerActionInterceptor`, never by mutating the returned map.
+     *
+     * @returns The world's binding map as a read-only view
+     */
+    getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
     }): IFEntity;
@@ -6043,6 +6166,8 @@ export declare class WorldModel implements IWorldModel {
     private spatialIndex;
     private config;
     private capabilities;
+    private capabilityBindings;
+    private interceptorBindings;
     private scoreLedger;
     private sceneConditions;
     private idCounters;
@@ -6054,10 +6179,20 @@ export declare class WorldModel implements IWorldModel {
     private grammarVocabularyProvider;
     constructor(config?: WorldConfig, platformEvents?: ISemanticEventSource);
     private emitPlatformEvent;
-    registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): void;
+    registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
     updateCapability(name: string, updates: Partial<ICapabilityData>): void;
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
+    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
+    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+    registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
+    getInterceptorForAction(entity: {
+        traits: Map<string, ITrait>;
+    }, actionId: string): InterceptorLookupResult | undefined;
+    getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
+    getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
     private generateId;
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
@@ -6445,6 +6580,10 @@ import { TraitType } from '../traits/trait-types';
 import { SpatialIndex } from './SpatialIndex';
 import { ITrait } from '../traits/trait';
 import { ICapabilityStore } from './capabilities';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
+import type { ActionInterceptor } from '../capabilities/action-interceptor';
+import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding';
 import type { IWorldModel, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel';
 import type { ScoreEntry } from './ScoreLedger';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -6564,10 +6703,20 @@ export declare class AuthorModel implements IWorldModel {
     isSceneActive(sceneId: string): boolean;
     hasSceneEnded(sceneId: string): boolean;
     hasSceneHappened(sceneId: string): boolean;
-    registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
+    registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
     updateCapability(name: string, data: Partial<ICapabilityData>): void;
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
+    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
+    registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
+    getInterceptorForAction(entity: {
+        traits: Map<string, ITrait>;
+    }, actionId: string): InterceptorLookupResult | undefined;
+    getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
+    getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
     awardScore(id: string, points: number, description: string): boolean;
     revokeScore(id: string): boolean;
     hasScore(id: string): boolean;
@@ -7155,20 +7304,27 @@ export interface CapabilityBehavior {
 }
 ```
 
-### capabilities/capability-registry
+### capabilities/capability-binding
 
 ```typescript
 /**
- * Capability Registry (ADR-090)
+ * Capability binding types (ADR-090, ADR-207).
  *
- * Registry for trait-behavior bindings. Stories register behaviors
- * for their traits, and the dispatch system looks them up at runtime.
+ * A binding associates a trait type + capability (action ID) with a behavior
+ * definition. Per ADR-207, a binding is per-game state: it is scoped to one
+ * running `WorldModel` instance, not process-global. The behavior definition
+ * it points at stays a shareable, stateless strategy (ADR-090); only the
+ * *binding* (which behavior a given world has wired up for a given
+ * trait+capability) is per-world.
+ *
+ * Public interface: `TraitBehaviorBinding`, `BehaviorRegistrationOptions`.
+ * Owner: world-model (capability dispatch storage, ADR-090/ADR-207).
  */
 import { ITrait } from '../traits/trait';
-import { CapabilityBehavior } from './capability-behavior';
-import { CapabilityResolution, CapabilityMode } from './capability-defaults';
+import type { CapabilityBehavior } from './capability-behavior';
+import type { CapabilityResolution, CapabilityMode } from './capability-defaults';
 /**
- * Options for registering a capability behavior.
+ * Options for registering a capability behavior on a `WorldModel`.
  */
 export interface BehaviorRegistrationOptions<T extends ITrait = ITrait> {
     /** Priority for resolution (higher = checked first). Default: 0 */
@@ -7181,7 +7337,10 @@ export interface BehaviorRegistrationOptions<T extends ITrait = ITrait> {
     validateBinding?: (trait: T) => boolean;
 }
 /**
- * Binding between a trait type, capability, and behavior.
+ * Binding between a trait type, capability, and behavior — scoped to one
+ * running game (owned by the `WorldModel` instance that registered it,
+ * ADR-207). Two `WorldModel` instances may legitimately bind the same
+ * `(traitType, capability)` key to different behaviors.
  */
 export interface TraitBehaviorBinding<T extends ITrait = ITrait> {
     /** Trait type identifier */
@@ -7200,78 +7359,11 @@ export interface TraitBehaviorBinding<T extends ITrait = ITrait> {
     validateBinding?: (trait: T) => boolean;
 }
 /**
- * Register a behavior for a trait+capability combination.
- *
- * Stories call this to register their behaviors during initialization.
- * Each trait+capability pair can only have one behavior registered.
- *
- * @param traitType - The trait type identifier (e.g., 'dungeo.trait.basket_elevator')
- * @param capability - The action ID (e.g., 'if.action.lowering')
- * @param behavior - The behavior implementation
- * @param options - Optional configuration (priority, resolution override, mode override)
- *
- * @example
- * ```typescript
- * // Basic registration (uses global defaults)
- * registerCapabilityBehavior(
- *   BasketElevatorTrait.type,
- *   'if.action.lowering',
- *   BasketLoweringBehavior
- * );
- *
- * // With priority and overrides
- * registerCapabilityBehavior(
- *   TrollAxeTrait.type,
- *   'if.action.taking',
- *   TrollAxeTakingBehavior,
- *   { priority: 100, resolution: 'any-blocks' }
- * );
- * ```
+ * Generate the binding-map key for a trait+capability combination.
+ * Shared by `WorldModel`'s registration/lookup methods so the key format
+ * stays in one place.
  */
-export declare function registerCapabilityBehavior<T extends ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
-/**
- * Get behavior for a trait instance and capability.
- *
- * Called by capability-dispatch actions to find the right behavior.
- *
- * @param trait - The trait instance
- * @param capability - The action ID
- * @returns The behavior, or undefined if not registered
- */
-export declare function getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
-/**
- * Get the full binding for a trait instance and capability.
- *
- * Includes priority and configuration overrides. Used by dispatch helper
- * for resolution logic.
- *
- * @param trait - The trait instance
- * @param capability - The action ID
- * @returns The binding, or undefined if not registered
- */
-export declare function getBehaviorBinding(trait: ITrait, capability: string): TraitBehaviorBinding | undefined;
-/**
- * Check if a behavior is registered for a trait+capability.
- *
- * @param traitType - The trait type identifier
- * @param capability - The action ID
- */
-export declare function hasCapabilityBehavior(traitType: string, capability: string): boolean;
-/**
- * Unregister a behavior (primarily for testing).
- *
- * @param traitType - The trait type identifier
- * @param capability - The action ID
- */
-export declare function unregisterCapabilityBehavior(traitType: string, capability: string): void;
-/**
- * Clear all registered behaviors (for testing).
- */
-export declare function clearCapabilityRegistry(): void;
-/**
- * Get all registered bindings (for debugging/introspection).
- */
-export declare function getAllCapabilityBindings(): Map<string, TraitBehaviorBinding>;
+export declare function capabilityBindingKey(traitType: string, capability: string): string;
 ```
 
 ### capabilities/capability-defaults
@@ -7797,29 +7889,37 @@ export interface ActionInterceptor {
 }
 ```
 
-### capabilities/interceptor-registry
+### capabilities/interceptor-binding
 
 ```typescript
 /**
- * Interceptor Registry (ADR-118)
+ * Interceptor binding types (ADR-118, ADR-208).
  *
- * Registry for trait-interceptor bindings. Stories register interceptors
- * for their traits, and stdlib actions look them up at runtime.
+ * A binding associates a trait type + action ID with an interceptor
+ * definition. Per ADR-208, a binding is per-game state: it is scoped to one
+ * running `WorldModel` instance, not process-global. The interceptor
+ * definition it points at stays a shareable, stateless hook object
+ * (ADR-118); only the *binding* (which interceptor a given world has wired
+ * up for a given trait+action) is per-world.
  *
- * Mirrors capability-registry.ts pattern but for interceptors instead
- * of full-delegation behaviors.
+ * Public interface: `TraitInterceptorBinding`, `InterceptorRegistrationOptions`,
+ * `InterceptorLookupResult`.
+ * Owner: world-model (action-interceptor storage, ADR-118/ADR-208).
  */
 import { ITrait } from '../traits/trait';
-import { ActionInterceptor } from './action-interceptor';
+import type { ActionInterceptor } from './action-interceptor';
 /**
- * Options for registering an action interceptor.
+ * Options for registering an action interceptor on a `WorldModel`.
  */
 export interface InterceptorRegistrationOptions {
     /** Priority for resolution (higher = checked first). Default: 0 */
     priority?: number;
 }
 /**
- * Binding between a trait type, action, and interceptor.
+ * Binding between a trait type, action, and interceptor — scoped to one
+ * running game (owned by the `WorldModel` instance that registered it,
+ * ADR-208). Two `WorldModel` instances may legitimately bind the same
+ * `(traitType, actionId)` key to different interceptors.
  */
 export interface TraitInterceptorBinding {
     /** Trait type identifier */
@@ -7832,36 +7932,6 @@ export interface TraitInterceptorBinding {
     priority: number;
 }
 /**
- * Register an interceptor for a trait+action combination.
- *
- * Stories call this to register their interceptors during initialization.
- * Each trait+action pair can only have one interceptor registered.
- *
- * @param traitType - The trait type identifier (e.g., 'dungeo.trait.inflatable')
- * @param actionId - The action ID (e.g., 'if.action.entering')
- * @param interceptor - The interceptor implementation
- * @param options - Optional configuration (priority)
- *
- * @example
- * ```typescript
- * // Register boat puncture interceptor
- * registerActionInterceptor(
- *   InflatableTrait.type,
- *   'if.action.entering',
- *   InflatableEnteringInterceptor
- * );
- *
- * // With priority
- * registerActionInterceptor(
- *   TrollGuardianTrait.type,
- *   'if.action.going',
- *   TrollGoingInterceptor,
- *   { priority: 100 }
- * );
- * ```
- */
-export declare function registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
-/**
  * Result from looking up an interceptor for an entity+action.
  */
 export interface InterceptorLookupResult {
@@ -7873,57 +7943,11 @@ export interface InterceptorLookupResult {
     binding: TraitInterceptorBinding;
 }
 /**
- * Get interceptor for an entity and action.
- *
- * Finds a trait on the entity that has an interceptor registered for
- * the given action. Looks up by trait type string in the registry.
- *
- * @param entity - The entity to check
- * @param actionId - The action ID
- * @returns The interceptor and trait, or undefined if not found
- *
- * @example
- * ```typescript
- * const result = getInterceptorForAction(boat, 'if.action.entering');
- * if (result) {
- *   const { interceptor, trait, binding } = result;
- *   // Call interceptor hooks during action execution
- * }
- * ```
+ * Generate the binding-map key for a trait+action combination.
+ * Shared by `WorldModel`'s registration/lookup methods so the key format
+ * stays in one place.
  */
-export declare function getInterceptorForAction(entity: {
-    traits: Map<string, ITrait>;
-}, actionId: string): InterceptorLookupResult | undefined;
-/**
- * Get the interceptor binding for a trait type and action.
- *
- * @param traitType - The trait type identifier
- * @param actionId - The action ID
- * @returns The binding, or undefined if not registered
- */
-export declare function getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
-/**
- * Check if an interceptor is registered for a trait+action.
- *
- * @param traitType - The trait type identifier
- * @param actionId - The action ID
- */
-export declare function hasActionInterceptor(traitType: string, actionId: string): boolean;
-/**
- * Unregister an interceptor (primarily for testing).
- *
- * @param traitType - The trait type identifier
- * @param actionId - The action ID
- */
-export declare function unregisterActionInterceptor(traitType: string, actionId: string): void;
-/**
- * Clear all registered interceptors (for testing).
- */
-export declare function clearInterceptorRegistry(): void;
-/**
- * Get all registered interceptor bindings (for debugging/introspection).
- */
-export declare function getAllInterceptorBindings(): Map<string, TraitInterceptorBinding>;
+export declare function interceptorBindingKey(traitType: string, actionId: string): string;
 ```
 
 ### capabilities/interceptor-helpers

@@ -1,5 +1,6 @@
 /**
- * Tests for `filterEvents` — drops system.* and platform.* events.
+ * Tests for `filterEvents` — drops system.* and platform request-phase
+ * events; platform outcome events pass through to handlePlatformEvent.
  *
  * @see ADR-174 §Engine-internal prose pipeline
  * @see plan-20260509-phase1.md §Sub-phase 1.3 (port from text-service)
@@ -31,9 +32,14 @@ describe('filterEvents', () => {
       expectedTypes: [],
     },
     {
-      name: 'drops platform.* events',
-      inputTypes: ['platform.save_requested', 'platform.restore_completed', 'platform.quit'],
+      name: 'drops platform request-phase events',
+      inputTypes: ['platform.save_requested', 'platform.undo_requested', 'platform.quit_requested'],
       expectedTypes: [],
+    },
+    {
+      name: 'passes through platform outcome events (rendered by handlePlatformEvent)',
+      inputTypes: ['platform.save_completed', 'platform.restore_completed', 'platform.undo_failed'],
+      expectedTypes: ['platform.save_completed', 'platform.restore_completed', 'platform.undo_failed'],
     },
     {
       name: 'passes through domain events',
@@ -64,7 +70,7 @@ describe('filterEvents', () => {
     },
     {
       name: 'returns empty array when all events are filtered',
-      inputTypes: ['system.tick', 'platform.quit'],
+      inputTypes: ['system.tick', 'platform.quit_requested'],
       expectedTypes: [],
     },
   ])('$name', ({ inputTypes, expectedTypes }) => {

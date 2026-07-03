@@ -31,6 +31,20 @@ import {
   ICapabilitySchema,
   ICapabilityRegistration
 } from './capabilities';
+import { ITrait, ITraitConstructor } from '../traits/trait';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type {
+  TraitBehaviorBinding,
+  BehaviorRegistrationOptions
+} from '../capabilities/capability-binding';
+import { capabilityBindingKey } from '../capabilities/capability-binding';
+import type { ActionInterceptor } from '../capabilities/action-interceptor';
+import type {
+  TraitInterceptorBinding,
+  InterceptorRegistrationOptions,
+  InterceptorLookupResult
+} from '../capabilities/interceptor-binding';
+import { interceptorBindingKey } from '../capabilities/interceptor-binding';
 import {
   WorldState,
   WorldConfig,
@@ -160,11 +174,143 @@ export interface IWorldModel {
   // Get the data store for sharing with AuthorModel
   getDataStore(): IDataStore;
 
-  // Capability Management
-  registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void;
+  // Capability Management (ADR-129 data capabilities — scoring, save-blob
+  // fields, etc. Distinct from the ADR-090/ADR-207 capability-behavior
+  // binding map below; both are named "capability" for historical reasons.)
+  /**
+   * Register a data capability. THREE RULES (2026-07-02, regression
+   * findings P6):
+   *
+   * 1. **Register-once.** If `name` is already registered this is a no-op
+   *    (strict mode: throws) — data is never reset or merged by
+   *    re-registration.
+   * 2. **`initialData` is DEEP-copied.** The stored data object is built
+   *    from schema defaults + a deep copy of `initialData`; mutating the
+   *    object you passed in afterward changes nothing. Capability data must
+   *    be plain serializable values — it lands in the save blob (never store
+   *    service/class instances here).
+   * 3. **Mutate via the returned/live object or `updateCapability`.** The
+   *    return value IS the live stored data object (also what
+   *    `getCapability` returns) — mutating it persists.
+   *
+   * @returns The live stored data object (the existing one when `name` was
+   *   already registered).
+   */
+  registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
+  /** Merge `data` into the capability's stored data. No-op (strict: throws) when unregistered. */
   updateCapability(name: string, data: Partial<ICapabilityData>): void;
+  /** Returns the LIVE stored data object (not a copy) — mutations persist. */
   getCapability(name: string): ICapabilityData | undefined;
   hasCapability(name: string): boolean;
+
+  // Capability-Behavior Binding Management (ADR-090 dispatch, ADR-207 ownership)
+  /**
+   * Register a behavior for a (traitType, capability) binding on this world.
+   *
+   * Idempotent: re-registering the same (traitType, capability) key
+   * overwrites the previous binding (last-registration-wins) rather than
+   * throwing. Scoped to this `WorldModel` instance only — two worlds may
+   * bind the same key to different behaviors.
+   *
+   * @param traitType - The trait type identifier (e.g. a trait's static `type`)
+   * @param capability - The action ID (capability) this binding handles
+   * @param behavior - The stateless behavior definition to bind
+   * @param options - Optional priority/resolution/mode overrides (ADR-090)
+   */
+  registerCapabilityBehavior<T extends ITrait = ITrait>(
+    traitType: string,
+    capability: string,
+    behavior: CapabilityBehavior,
+    options?: BehaviorRegistrationOptions<T>
+  ): void;
+  /**
+   * Resolve the behavior bound to a trait instance's capability on this world.
+   *
+   * @param trait - The trait instance claiming the capability
+   * @param capability - The action ID (capability) to resolve
+   * @returns The bound behavior, or `undefined` if this world has no binding
+   *   for the trait's type + capability (the caller's normal "can't do that"
+   *   rejection path handles this — never throws for a missing binding).
+   */
+  getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+  /**
+   * Resolve the full binding (behavior + priority/resolution/mode overrides)
+   * for a (traitType, capability) pair on this world.
+   *
+   * @param traitType - The trait type identifier
+   * @param capability - The action ID (capability) to resolve
+   * @returns The binding, or `undefined` if none is registered on this world
+   */
+  getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
+  /**
+   * Enumerate every capability-behavior binding registered on this world,
+   * keyed by `traitType:capability` (see `capabilityBindingKey`).
+   *
+   * Read-only introspection surface (IDE/debug summaries) — register through
+   * `registerCapabilityBehavior`, never by mutating the returned map.
+   *
+   * @returns The world's binding map as a read-only view
+   */
+  getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
+
+  // Action-Interceptor Binding Management (ADR-118 hooks, ADR-208 ownership —
+  // a third, distinct "wiring" surface: not ADR-129 data capabilities, not
+  // the ADR-090/207 capability-behavior bindings above.)
+  /**
+   * Register an interceptor for a (traitType, actionId) binding on this world.
+   *
+   * Idempotent: re-registering the same (traitType, actionId) key overwrites
+   * the previous binding (last-registration-wins) rather than throwing.
+   * Scoped to this `WorldModel` instance only — two worlds may bind the same
+   * key to different interceptors.
+   *
+   * @param traitType - The trait type identifier (e.g. a trait's static `type`)
+   * @param actionId - The action ID this interceptor hooks (e.g. 'if.action.taking')
+   * @param interceptor - The stateless interceptor definition to bind (ADR-118)
+   * @param options - Optional priority override (higher = checked first)
+   */
+  registerActionInterceptor(
+    traitType: string,
+    actionId: string,
+    interceptor: ActionInterceptor,
+    options?: InterceptorRegistrationOptions
+  ): void;
+  /**
+   * Resolve the interceptor for an entity + action on this world.
+   *
+   * Scans the entity's traits for interceptor bindings registered for the
+   * action and returns the highest-priority match (ADR-118 resolution).
+   *
+   * @param entity - The entity whose traits are checked
+   * @param actionId - The action ID to resolve
+   * @returns The interceptor, its declaring trait, and the binding — or
+   *   `undefined` if this world has no binding for any of the entity's
+   *   traits + action (the standard action proceeds unintercepted — never
+   *   throws for a missing binding).
+   */
+  getInterceptorForAction(
+    entity: { traits: Map<string, ITrait> },
+    actionId: string
+  ): InterceptorLookupResult | undefined;
+  /**
+   * Resolve the full binding (interceptor + priority) for a
+   * (traitType, actionId) pair on this world.
+   *
+   * @param traitType - The trait type identifier
+   * @param actionId - The action ID
+   * @returns The binding, or `undefined` if none is registered on this world
+   */
+  getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
+  /**
+   * Enumerate every action-interceptor binding registered on this world,
+   * keyed by `traitType:actionId` (see `interceptorBindingKey`).
+   *
+   * Read-only introspection surface (IDE/debug summaries) — register through
+   * `registerActionInterceptor`, never by mutating the returned map.
+   *
+   * @returns The world's binding map as a read-only view
+   */
+  getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
 
   // Entity Management
   createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean }): IFEntity;
@@ -327,6 +473,19 @@ export class WorldModel implements IWorldModel {
   private config: WorldConfig;
   private capabilities: ICapabilityStore = {};
 
+  // Capability-behavior binding map (ADR-090 dispatch, ADR-207 ownership).
+  // Per-world, in-memory only — not serialized (see AC-9: bindings are code
+  // wiring re-established by story init, not save-game state). Not to be
+  // confused with `capabilities` above (ADR-129 data capabilities — a
+  // different, unrelated "capability" concept).
+  private capabilityBindings: Map<string, TraitBehaviorBinding> = new Map();
+
+  // Action-interceptor binding map (ADR-118 hooks, ADR-208 ownership).
+  // Per-world, in-memory only — not serialized (AC-9: bindings are code
+  // wiring re-established by story init, not save-game state). Distinct
+  // from both maps above despite the shared "wiring" flavor.
+  private interceptorBindings: Map<string, TraitInterceptorBinding> = new Map();
+
   // Score Ledger (ADR-129)
   private scoreLedger = new ScoreLedger();
 
@@ -393,12 +552,14 @@ export class WorldModel implements IWorldModel {
   }
 
   // Capability Management
-  registerCapability(name: string, registration: Partial<ICapabilityRegistration> = {}): void {
+  registerCapability(name: string, registration: Partial<ICapabilityRegistration> = {}): ICapabilityData {
     if (this.capabilities[name]) {
       if (this.config.strictMode) {
         throw new Error(`Capability '${name}' is already registered`);
       }
-      return;
+      // Register-once: return the EXISTING live data object so
+      // register-then-mutate is correct in both branches.
+      return this.capabilities[name].data;
     }
 
     // Initialize capability with schema and initial data
@@ -413,15 +574,25 @@ export class WorldModel implements IWorldModel {
       }
     }
 
-    // Override with provided initial data
+    // Override with a DEEP copy of the provided initial data — capability
+    // data must be plain serializable values (it lands in the save blob),
+    // and a shallow copy gave nesting-depth-dependent semantics: top-level
+    // fields detached from the caller's object while nested objects stayed
+    // shared (regression findings P6, Trap A′). structuredClone throws on
+    // functions/class instances, which is the honest failure for data that
+    // could never serialize anyway.
     if (registration.initialData) {
-      Object.assign(initialData, registration.initialData);
+      Object.assign(initialData, structuredClone(registration.initialData));
     }
 
     this.capabilities[name] = {
       data: initialData,
       schema: registration.schema
     };
+
+    // Return the LIVE stored object — mutations to it persist (it is the
+    // same object getCapability returns).
+    return initialData;
   }
 
   updateCapability(name: string, updates: Partial<ICapabilityData>): void {
@@ -459,6 +630,125 @@ export class WorldModel implements IWorldModel {
 
   hasCapability(name: string): boolean {
     return name in this.capabilities;
+  }
+
+  // Capability-Behavior Binding Management (ADR-090 dispatch, ADR-207 ownership)
+  //
+  // The binding map lives on this WorldModel instance — created with the
+  // world, garbage-collected with it, never shared across games (AC-1, AC-2).
+  // Registration is idempotent: re-registering a (traitType, capability) key
+  // overwrites the previous binding rather than throwing (AC-4).
+
+  registerCapabilityBehavior<T extends ITrait = ITrait>(
+    traitType: string,
+    capability: string,
+    behavior: CapabilityBehavior,
+    options?: BehaviorRegistrationOptions<T>
+  ): void {
+    const key = capabilityBindingKey(traitType, capability);
+    this.capabilityBindings.set(key, {
+      traitType,
+      capability,
+      behavior,
+      priority: options?.priority ?? 0,
+      resolution: options?.resolution,
+      mode: options?.mode,
+      validateBinding: options?.validateBinding as ((trait: ITrait) => boolean) | undefined
+    });
+  }
+
+  getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
+    return this.capabilityBindings.get(capabilityBindingKey(traitType, capability));
+  }
+
+  getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding> {
+    return this.capabilityBindings;
+  }
+
+  getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined {
+    const traitType = (trait.constructor as ITraitConstructor).type;
+    const binding = this.getBehaviorBinding(traitType, capability);
+
+    // No binding registered on this world for this trait+capability — the
+    // caller's normal rejection path handles this (AC-10). Never throw for
+    // an absent binding; a trait can statically declare a capability without
+    // this particular world having wired up a behavior for it.
+    if (!binding) {
+      return undefined;
+    }
+
+    if (binding.validateBinding && !binding.validateBinding(trait)) {
+      throw new Error(
+        `Behavior validation failed for trait "${traitType}", capability "${capability}"`
+      );
+    }
+
+    return binding.behavior;
+  }
+
+  // Action-Interceptor Binding Management (ADR-118 hooks, ADR-208 ownership)
+  //
+  // The binding map lives on this WorldModel instance — created with the
+  // world, garbage-collected with it, never shared across games (AC-1, AC-2).
+  // Registration is idempotent: re-registering a (traitType, actionId) key
+  // overwrites the previous binding rather than throwing (AC-4).
+
+  registerActionInterceptor(
+    traitType: string,
+    actionId: string,
+    interceptor: ActionInterceptor,
+    options?: InterceptorRegistrationOptions
+  ): void {
+    const key = interceptorBindingKey(traitType, actionId);
+    this.interceptorBindings.set(key, {
+      traitType,
+      actionId,
+      interceptor,
+      priority: options?.priority ?? 0
+    });
+  }
+
+  getInterceptorForAction(
+    entity: { traits: Map<string, ITrait> },
+    actionId: string
+  ): InterceptorLookupResult | undefined {
+    // Find all traits on the entity that have an interceptor bound for this
+    // action on this world (lookup by trait type string — more reliable than
+    // a static constructor property across module copies).
+    const candidates: Array<{ trait: ITrait; binding: TraitInterceptorBinding }> = [];
+
+    for (const trait of entity.traits.values()) {
+      const binding = this.interceptorBindings.get(
+        interceptorBindingKey(trait.type, actionId)
+      );
+      if (binding) {
+        candidates.push({ trait, binding });
+      }
+    }
+
+    // No binding on this world for any of the entity's traits — the standard
+    // action proceeds unintercepted (AC-10). Never throw for a missing binding.
+    if (candidates.length === 0) {
+      return undefined;
+    }
+
+    // Highest priority wins (ADR-118 resolution semantics, unchanged).
+    candidates.sort((a, b) => b.binding.priority - a.binding.priority);
+
+    const { trait, binding } = candidates[0];
+    return {
+      interceptor: binding.interceptor,
+      trait,
+      binding
+    };
+  }
+
+  getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined {
+    return this.interceptorBindings.get(interceptorBindingKey(traitType, actionId));
+  }
+
+  getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
+    return this.interceptorBindings;
   }
 
   // ID Generation

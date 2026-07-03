@@ -142,10 +142,10 @@ description: Test Round Room hub area rooms and connections (after robot fixes c
 > d
 [OK: contains "Loud Room"]
 
-# Go SW to N/S Passage
-> sw
+# Go W to N/S Passage (MDL ECHO: WEST -> PASS5)
+> w
 [OK: contains "North/South Passage"]
 
-# Go SW back to Round Room
+# Go SW back to Round Room (port maps PASS5 -> CAROU as SW)
 > sw
 [OK: contains "Round Room"]

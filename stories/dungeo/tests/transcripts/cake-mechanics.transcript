@@ -79,7 +79,7 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # ============================================================
 
 > eat red cake
-[OK: contains "terrible"]
+[OK: contains "awful"]
 
 # Still alive, still in Tea Room
 > look
@@ -127,6 +127,7 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # ============================================================
 
 > west
+[OK: contains "Posts Room"]
 
 > west
 [OK: contains "Tea Room"]

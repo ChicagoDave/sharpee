@@ -1,0 +1,53 @@
+title: V05 — Containers & Supporters
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify containers (backpack, dispenser) and supporters (bench)
+
+---
+
+# V5 teaches: ContainerTrait, SupporterTrait, put in, put on
+
+# Take the backpack (portable container)
+> take backpack
+[OK: contains "Taken"]
+
+# Take the map
+> take map
+[OK: contains "Taken"]
+
+# Put map inside backpack
+> put map in backpack
+[OK: contains "put"]
+
+# Look inside backpack to see contents
+> look in backpack
+[OK: contains "zoo map"]
+
+# Go to Main Path for the supporter test
+> south
+[OK: contains "Main Path"]
+
+# Take the penny
+> take penny
+[OK: contains "Taken"]
+
+# Put penny on the park bench (supporter)
+> put penny on bench
+[OK: contains "put"]
+
+# The bench should show the penny
+> examine bench
+[OK: contains "park bench"]
+
+# Go to Petting Zoo for the scenery container
+> east
+[OK: contains "Petting Zoo"]
+
+# The dispenser is a scenery container — can't take it
+> take dispenser
+[OK: contains "fixed in place"]
+
+# But we can examine it
+> examine dispenser
+[OK: contains "feed dispenser"]
+[OK: contains "FREE"]

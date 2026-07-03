@@ -71,10 +71,16 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 
 # Go back to troll room - daemon ticks consumed all 4 ticks by now
 # Troll wakes up during the "north" turn (tick 4), player has already moved
-> south
+# (MDL PASS1: WEST -> MTROL is the way back; there is no south exit)
+> west
 [OK: contains "Troll Room"]
 
-# Troll should now be conscious again (woke up after 4 daemon ticks)
+# Troll wakes up on this turn (recovery daemon fires: "The troll stirs")
+> examine troll
+[OK: contains "stirs"]
+[OK: contains "fighting stance"]
+
+# Now conscious again - description back to TROLLDESC
 > examine troll
 [OK: contains "blocks"]
 [OK: contains "northern passage"]

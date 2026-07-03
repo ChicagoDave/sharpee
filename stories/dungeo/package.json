@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-dungeo",
-  "version": "1.1.1",
+  "version": "2.1.0",
   "description": "Dungeo - A Sharpee implementation of Mainframe Zork",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,7 +13,12 @@
     "genre": "Fantasy",
     "language": "en",
     "forgiveness": "Nasty",
-    "themes": ["modern-dark", "retro-terminal", "paper", "system-6"]
+    "themes": [
+      "modern-dark",
+      "retro-terminal",
+      "paper",
+      "system-6"
+    ]
   },
   "scripts": {
     "build": "tsc",

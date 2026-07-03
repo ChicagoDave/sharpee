@@ -17,7 +17,8 @@ import { IFActions } from '../../constants';
  * Usage:
  * 1. Create a trait that declares `static capabilities = ['if.action.lowering']`
  * 2. Create a behavior implementing CapabilityBehavior
- * 3. Register the behavior with registerCapabilityBehavior()
+ * 3. Register the behavior with world.registerCapabilityBehavior() in your
+ *    story's initializeWorld() (per-world binding, ADR-207)
  * 4. Add the trait to your entity
  *
  * @example
@@ -36,8 +37,8 @@ import { IFActions } from '../../constants';
  *   blocked(entity, world, actorId, error) { ... }
  * };
  *
- * // Registration:
- * registerCapabilityBehavior(
+ * // Registration (in the story's initializeWorld(world)):
+ * world.registerCapabilityBehavior(
  *   BasketElevatorTrait.type,
  *   'if.action.lowering',
  *   BasketLoweringBehavior

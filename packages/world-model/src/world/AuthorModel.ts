@@ -17,6 +17,17 @@ import { ITrait } from '../traits/trait';
 import { OpenableTrait } from '../traits/openable/openableTrait';
 import { LockableTrait } from '../traits/lockable/lockableTrait';
 import { ICapabilityStore } from './capabilities';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import type {
+  TraitBehaviorBinding,
+  BehaviorRegistrationOptions
+} from '../capabilities/capability-binding';
+import type { ActionInterceptor } from '../capabilities/action-interceptor';
+import type {
+  TraitInterceptorBinding,
+  InterceptorRegistrationOptions,
+  InterceptorLookupResult
+} from '../capabilities/interceptor-binding';
 import type {
   IWorldModel,
   EventHandler,
@@ -344,8 +355,8 @@ export class AuthorModel implements IWorldModel {
   }
 
   // Capability Management
-  registerCapability(name: string, registration: Partial<ICapabilityRegistration>): void {
-    this.worldModel.registerCapability(name, registration);
+  registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData {
+    return this.worldModel.registerCapability(name, registration);
   }
 
   updateCapability(name: string, data: Partial<ICapabilityData>): void {
@@ -358,6 +369,55 @@ export class AuthorModel implements IWorldModel {
 
   hasCapability(name: string): boolean {
     return this.worldModel.hasCapability(name);
+  }
+
+  // Capability-Behavior Binding Management (ADR-090 dispatch, ADR-207 ownership)
+  // — delegates to the underlying WorldModel, which owns the per-world map.
+  registerCapabilityBehavior<T extends ITrait = ITrait>(
+    traitType: string,
+    capability: string,
+    behavior: CapabilityBehavior,
+    options?: BehaviorRegistrationOptions<T>
+  ): void {
+    this.worldModel.registerCapabilityBehavior(traitType, capability, behavior, options);
+  }
+
+  getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined {
+    return this.worldModel.getBehaviorForCapability(trait, capability);
+  }
+
+  getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
+    return this.worldModel.getBehaviorBinding(traitType, capability);
+  }
+
+  getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding> {
+    return this.worldModel.getAllCapabilityBindings();
+  }
+
+  // Action-Interceptor Binding Management (ADR-118 hooks, ADR-208 ownership)
+  // — delegates to the underlying WorldModel, which owns the per-world map.
+  registerActionInterceptor(
+    traitType: string,
+    actionId: string,
+    interceptor: ActionInterceptor,
+    options?: InterceptorRegistrationOptions
+  ): void {
+    this.worldModel.registerActionInterceptor(traitType, actionId, interceptor, options);
+  }
+
+  getInterceptorForAction(
+    entity: { traits: Map<string, ITrait> },
+    actionId: string
+  ): InterceptorLookupResult | undefined {
+    return this.worldModel.getInterceptorForAction(entity, actionId);
+  }
+
+  getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined {
+    return this.worldModel.getInterceptorBinding(traitType, actionId);
+  }
+
+  getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
+    return this.worldModel.getAllActionInterceptors();
   }
 
   // Score Ledger

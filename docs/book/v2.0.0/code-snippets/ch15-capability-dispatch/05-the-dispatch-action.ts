@@ -12,8 +12,8 @@ const pettingAction: Action = {
     const trait = findTraitWithCapability(entity, PETTING_ACTION_ID);
     if (!trait) return { valid: false, error: PetMessages.CANT_PET };
 
-    // Look up the behavior registered for that trait + capability
-    const behavior = getBehaviorForCapability(trait, PETTING_ACTION_ID);
+    // Look up the behavior registered on this world for that trait + capability
+    const behavior = context.world.getBehaviorForCapability(trait, PETTING_ACTION_ID);
     if (!behavior) return { valid: false, error: PetMessages.CANT_PET };
 
     // Delegate validation to the behavior

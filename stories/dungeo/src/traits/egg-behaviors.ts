@@ -32,8 +32,10 @@ export const EggMessages = {
   /** "You have neither the tools nor the expertise." */
   NO_EXPERTISE: 'dungeo.egg.no_expertise',
 
-  /** Standard opening success message - matches lang-en-us */
-  OPENED: 'opened'
+  /** NPC (thief) open success. Fully-qualified per the capability-effect
+   * messageId requirement — the engine's universal dispatch does not
+   * auto-prefix short keys. Registered in messages/npc-messages.ts. */
+  OPENED: 'dungeo.egg.opened'
 } as const;
 
 /**

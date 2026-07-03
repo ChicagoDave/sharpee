@@ -21,7 +21,6 @@ import {
   SwitchableBehavior,
   LightSourceBehavior,
   VisibilityBehavior,
-  getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
   applyInterceptorReportResult
@@ -106,7 +105,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = getInterceptorForAction(noun, IFActions.SWITCHING_ON);
+    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.SWITCHING_ON);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {};
 
@@ -320,18 +319,12 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       const contents = context.world.getContents(room.id)
         .filter(e => e.id !== context.player.id);
 
-      // Emit room description domain event with messageId (ADR-097)
-      // Uses looking action's message IDs since this is an auto-LOOK
+      // Emit room description domain event exactly the way the looking action
+      // does: NO messageId — the engine's specialized room handler renders the
+      // title/description. Adding the looking messageId here routed the event
+      // through the ADR-097 domain-message template path instead, whose {name}
+      // formatter articles the bare room title ("a Shaft Room").
       events.push(context.event('if.event.room.description', {
-        // Rendering data (messageId + params for text-service)
-        messageId: 'if.action.looking.room_description',
-        // ADR-158 exception: room titles render proper-style ("Living Room",
-        // "West of House") and are not articled — pass bare name string,
-        // not EntityInfo. The looking template uses {name}, not {the:cap:name}.
-        params: {
-          name: room.name,
-          description: room.description
-        },
         // Domain data (for event listeners / handlers)
         room: room,
         visibleItems: sharedData.visibleSnapshots || [],
@@ -344,12 +337,18 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
       // Emit contents list if there are visible items
       if (contents.length > 0) {
-        // EntityInfo[] (ADR-158/190): the {list:items} formatter renders articles +
-        // conjunction in the lang layer.
+        // Bind a PhraseList of NounPhrases (ADR-192), matching looking-data.ts:
+        // the Assembler's list authority renders articles, grouping, and the
+        // locale conjunction. A bare NounPhrase[] stringifies each item to
+        // "[object Object]" in the {list:items} formatter.
         events.push(context.event('if.event.list.contents', {
           messageId: 'if.action.looking.contents_list',
           params: {
-            items: contents.map(e => nounPhraseFor(e)),
+            items: {
+              kind: 'list' as const,
+              conj: 'and' as const,
+              items: contents.map(e => nounPhraseFor(e)),
+            },
             count: contents.length
           }
         }));

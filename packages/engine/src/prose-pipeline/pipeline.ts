@@ -43,8 +43,7 @@ import {
   handleGenericEvent,
 } from './handlers/generic';
 import { handleGameStarted } from './handlers/game';
-import { handleHelpDisplayed } from './handlers/help';
-import { handleAboutDisplayed } from './handlers/about';
+import { handlePlatformEvent } from './handlers/platform';
 import { handleAudibilityHeard } from './handlers/audibility';
 import { tryProcessDomainEventMessage } from './handlers/domain-message';
 import { handleImplicitTake } from './handlers/implicit-take';
@@ -168,11 +167,11 @@ export class ProsePipeline implements IProsePipeline {
       case 'if.event.revealed':
         return handleRevealed(event, context);
 
-      case 'if.event.help_displayed':
-        return handleHelpDisplayed(event, context);
-
-      case 'if.event.about_displayed':
-        return handleAboutDisplayed(event, context);
+      // if.event.help_displayed / if.event.about_displayed carry messageIds
+      // with lang-en-us templates (if.action.help.*, if.action.about.success)
+      // and render via tryProcessDomainEventMessage above; their dedicated
+      // handlers (help.text/about.text blocks MAIN_KEYS never routed) were
+      // removed 2026-07-02 (dungeo regression findings P3).
 
       case 'sound.audibility.heard':
         return handleAudibilityHeard(event, context);
@@ -187,6 +186,11 @@ export class ProsePipeline implements IProsePipeline {
         return handleClientQuery(event, context);
 
       default:
+        // Platform lifecycle events carry `payload` (not `data`) and render
+        // via the message registered under the event type itself.
+        if (event.type.startsWith('platform.')) {
+          return handlePlatformEvent(event, context);
+        }
         return handleGenericEvent(event, context);
     }
   }

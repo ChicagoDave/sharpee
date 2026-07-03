@@ -85,6 +85,29 @@ stops this recurring).
 - Author guidance: story `game.message` emits put render params under `params`; the guard enforces it.
 - Handler-read `game.message` fields (exorcism) are preserved by the per-emit split.
 
+## Amendment (2026-07-02): unified `data.params ?? data` binding in the domain-message path
+
+The first rejected option ("make the render path fall back to flat everywhere") was
+**adopted by user decision** during the dungeo regression cleanup (findings P5,
+`docs/work/dungeo-regression-cleanup/findings-20260702.md`). The reasoning that changed:
+
+- The nested-only domain path did not actually enforce the contract — a `messageId` +
+  flat-params event failed the domain render (stderr noise) and then usually rendered
+  **anyway** via `handleGenericEvent`'s flat binding, so the "unambiguous contract" was in
+  practice a silent dual convention selected by whether an emitter set `messageId`. It also
+  had two worse modes: an inline `data.message` fallback shadowing the correct template
+  render, and blank output when no fallback existed. This exact shape was the
+  `box_rotates` residual this ADR's session left open.
+- The flat-collision concern (`getEventEntities` claiming `target`/`instrument`) applied
+  equally to the generic path that was already doing the flat binding; nested `params`
+  still **wins** whenever present, so conforming emitters are unaffected.
+
+`tryProcessDomainEventMessage` now binds `data.params ?? data` — the same rule
+`handleGameMessage` always had. The authoring guidance is unchanged (**nest render params
+under `params`**; the flat fallback is a compatibility net, not the recommended shape),
+and the CI guard described in Scope remains worth writing — it now guards against binding
+failures of any origin rather than enforcing nesting per se.
+
 ## Acceptance Criteria
 
 1. All 20 flat emits carry render params under `params`; handler-read fields remain top-level.

@@ -19,9 +19,9 @@ you just declare which kind of holder each object is.
 
 ```
 > put map in backpack
-You put zoo map in backpack.
+You put the zoo map in the backpack.
 > put penny on bench
-You put souvenir penny on park bench.
+You put the souvenir penny on the park bench.
 ```
 
 ## ContainerTrait

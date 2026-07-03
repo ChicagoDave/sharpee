@@ -51,7 +51,7 @@ fence.add(new IdentityTrait({
 world.moveEntity(fence.id, entrance.id);
 ```
 
-Now `take fence` gives the player *"iron fence is fixed in place."* But
+Now `take fence` gives the player *"The iron fence is fixed in place."* But
 `examine fence` still works: scenery blocks *taking*, not *looking*. The entity
 keeps its `IdentityTrait`, so its description is always readable.
 
@@ -132,7 +132,7 @@ types `take map`:
 
 1. The **parser** finds the entity named "map" in the current room.
 2. The **taking** action asks: does this entity have `SceneryTrait`?
-   - If yes → blocked: *"The map is fixed in place."*
+   - If yes → blocked: *"The zoo map is fixed in place."*
    - If no → it proceeds.
 3. The action moves the entity into the player: `world.moveEntity(map.id, player.id)`.
 4. The player sees *"Taken."*
@@ -209,7 +209,7 @@ penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 > take map              Pick up the map
 > inventory             See what you're carrying
 > examine fence         You can look at scenery...
-> take fence            ...but "iron fence is fixed in place."
+> take fence            ...but "The iron fence is fixed in place."
 > south                 Walk to the Main Path (map comes with you)
 > take penny            Pick up the souvenir penny
 > drop map              Leave the map here

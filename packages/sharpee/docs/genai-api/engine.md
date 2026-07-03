@@ -761,7 +761,7 @@ export declare function createCommandExecutor(world: WorldModel, actionRegistry:
  * - highest-priority: Only highest priority entity is checked
  */
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, CapabilityBehavior, CapabilitySharedData, ITrait, CapabilityResolution } from '@sharpee/world-model';
+import { IFEntity, IWorldModel, CapabilityBehavior, CapabilitySharedData, ITrait, CapabilityResolution } from '@sharpee/world-model';
 import { ActionContext, ValidationResult } from '@sharpee/stdlib';
 /**
  * A single capability claim from an entity.
@@ -808,22 +808,24 @@ export interface CapabilityDispatchData {
 /**
  * Check if capability dispatch should be used for this action and target.
  *
+ * @param world - The world whose binding map resolves behaviors (ADR-207)
  * @param actionId - The action being executed
  * @param target - The target entity (directObject) - for backward compatibility
  * @returns Check result with trait and behavior if dispatch should be used
  */
-export declare function checkCapabilityDispatch(actionId: string, target: IFEntity | undefined): CapabilityDispatchCheck;
+export declare function checkCapabilityDispatch(world: IWorldModel, actionId: string, target: IFEntity | undefined): CapabilityDispatchCheck;
 /**
  * Check if capability dispatch should be used for this action across multiple entities.
  *
  * Collects all capability claims from the provided entities, sorts by priority,
  * and returns the appropriate dispatch information based on resolution config.
  *
+ * @param world - The world whose binding map resolves behaviors (ADR-207)
  * @param actionId - The action being executed
  * @param entities - All entities involved in the action (directObject, indirectObject, etc.)
  * @returns Check result with claims and resolution mode
  */
-export declare function checkCapabilityDispatchMulti(actionId: string, entities: (IFEntity | undefined)[]): CapabilityDispatchCheck;
+export declare function checkCapabilityDispatchMulti(world: IWorldModel, actionId: string, entities: (IFEntity | undefined)[]): CapabilityDispatchCheck;
 /**
  * Execute capability dispatch validation phase.
  *

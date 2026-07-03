@@ -28,7 +28,7 @@ import { rdHandler } from './rd';
 import { nrHandler } from './nr';
 import { rrHandler } from './rr';
 // Phase 4 - Scheduler debug
-import { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
+import { dcHandler, setSchedulerForGDT } from './dc';
 // Phase 5 - Puzzle debug
 import { pzHandler } from './pz';
 // Phase 6 - Trivia debug
@@ -164,7 +164,7 @@ export { ndHandler } from './nd';
 export { rdHandler } from './rd';
 export { nrHandler } from './nr';
 export { rrHandler } from './rr';
-export { dcHandler, setSchedulerForGDT, SCHEDULER_GDT_KEY } from './dc';
+export { dcHandler, setSchedulerForGDT } from './dc';
 export { pzHandler } from './pz';
 export { tqHandler } from './tq';
 export { dlHandler } from './dl';

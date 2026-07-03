@@ -64,12 +64,14 @@ Track, you just saw the exact class behind it.
 
 ## How the zoo grows
 
-Every chapter advances the same story. The code is versioned: `v01` is a single
-room, `v02` adds a second room, and so on through the complete game. Each
-chapter's code matches a real, compiled version in the book's companion
-repository, under `tutorials/familyzoo/src/`; browse it on GitHub at
-<https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/src>. You
-don't need to clone anything to read along; anything you read here, you can run.
+Every chapter advances the same story. The code arrives as chapter-named
+cumulative snapshots: `ch02-first-room.ts` is a single room, `ch04-navigation.ts`
+adds more rooms, and so on through the complete game. Each chapter's code matches
+a real, compiled snapshot in the book's companion repository, under
+`tutorials/familyzoo/v2.0.0/src/`; browse it on GitHub at
+<https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/v2.0.0/src>.
+You don't need to clone anything to read along; anything you read here, you can
+run.
 
 ## Conventions
 

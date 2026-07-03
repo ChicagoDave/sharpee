@@ -48,10 +48,18 @@ description: Test killing the troll via melee interceptor with RETRY for combat 
 # ===== Melee interceptor combat test =====
 # RETRY handles player death from counter-attacks — restores and retries
 # DO/UNTIL loops attack until troll death message or player death
+# RNG: the troll can disarm us (unarmed attacks are blocked as suicide) or
+# knock us out — recover the sword before each swing, and accept the
+# disarm/knockout lines ("sword"/"hands"/"unconscious") as attack-turn output.
 
-[RETRY: max=5]
+[RETRY: max=10]
 [DO]
+[WHILE: not inventory contains "elvish sword"]
+> take sword
+[SKIP]
+[END WHILE]
 > attack troll with sword
+[OK: contains_any "troll" "staggering" "sword" "hands" "unconscious"]
 [UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
 [ENSURES: not entity "troll" alive]
 [END RETRY]
@@ -60,7 +68,8 @@ description: Test killing the troll via melee interceptor with RETRY for combat 
 > north
 [OK: contains "East-West Passage"]
 
-# Go back to troll room and verify troll is gone
-> south
+# Go back to troll room and verify troll is gone (Troll Room is WEST of
+# East-West Passage per the map)
+> west
 [OK: contains "Troll Room"]
 [OK: not contains "You can see"]

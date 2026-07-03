@@ -14,7 +14,6 @@ import {
   Direction,
 } from '@sharpee/world-model';
 import {
-  RoomTrait,
   ReadableTrait,
 } from '@sharpee/world-model';
 import { createHelpers } from '@sharpee/helpers';
@@ -44,16 +43,14 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
 
   // --- Rooms ---
 
+  // First-visit-only flavor (ADR-196 Phase 4). Shown the first time the player
+  // looks at the entrance; subsequent looks fall back to the standard
+  // description above.
   const entrance = room('Zoo Entrance')
     .description('You stand before the wrought-iron gates of the Willowbrook Family Zoo. A cheerful welcome sign arches over the entrance, and a small ticket booth sits to one side. A sturdy iron fence runs along either side of the gates. The main path leads south into the zoo grounds.')
+    .initialDescription('Your family piles out of the car, buzzing with excitement — a whole day at the zoo! You straighten the strap of your backpack and take it all in. You stand before the wrought-iron gates of the Willowbrook Family Zoo. A cheerful welcome sign arches over the entrance, and a small ticket booth sits to one side. A sturdy iron fence runs along either side of the gates. The main path leads south into the zoo grounds.')
     .aliases('entrance', 'gates', 'gate')
     .build();
-  // First-visit-only flavor (ADR-196 Phase 4). The RoomBuilder helper has no
-  // initialDescription() method, so we set it on the trait post-build. Shown the
-  // first time the player looks at the entrance; subsequent looks fall back to
-  // the standard description above.
-  (entrance.getTrait(RoomTrait) as RoomTrait).initialDescription =
-    'Your family piles out of the car, buzzing with excitement — a whole day at the zoo! You straighten the strap of your backpack and take it all in. You stand before the wrought-iron gates of the Willowbrook Family Zoo. A cheerful welcome sign arches over the entrance, and a small ticket booth sits to one side. A sturdy iron fence runs along either side of the gates. The main path leads south into the zoo grounds.';
 
   const mainPath = room('Main Path')
     .description('A wide gravel path winds through the heart of the zoo. Colorful direction signs point every which way. A park bench sits beside the path. To the east, the petting zoo. To the west, the aviary. A staff gate blocks the path to the south. The entrance is back to the north.')

@@ -69,9 +69,11 @@ description: Test the Inside Mirror entry, pole operations, panel pushing, and e
 [OK: contains "east"]
 
 # Try to lower - should fall to floor since not N-S aligned
+# (the floor message legitimately mentions "the channel at this angle",
+# so assert the absence of the success phrase instead)
 > lower pole
 [OK: contains "floor"]
-[NOT: contains "channel"]
+[OK: not contains "clicks into place"]
 
 # Check we're still in the mirror
 > look

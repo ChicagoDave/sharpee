@@ -69,6 +69,12 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     private loadSoundMessages;
     /**
+     * Load platform-event prose defaults (save/restore/undo outcomes).
+     * The prose pipeline renders a `platform.*` event via the message
+     * registered under the event type; stories override the same ids.
+     */
+    private loadPlatformMessages;
+    /**
      * Get a message by its ID with optional parameter substitution
      *
      * Supports three types of placeholders:
@@ -554,6 +560,7 @@ export declare const standardActionLanguage: ({
         too_heavy: string;
         cannot_take: string;
         taken: string;
+        nothing_to_take: string;
         taken_from: string;
         taken_multi: string;
     };
@@ -1632,13 +1639,13 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        general_help: string;
-        help_topic: string;
+        general: string;
+        topic: string;
         unknown_topic: string;
         help_movement: string;
         help_objects: string;
         help_special: string;
-        first_time_help: string;
+        first_time: string;
         hints_available: string;
         hints_disabled: string;
         stuck_help: string;
@@ -1653,6 +1660,7 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        success: string;
         about_header: string;
         game_info: string;
         game_info_simple: string;

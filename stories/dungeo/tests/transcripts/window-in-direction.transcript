@@ -1,21 +1,27 @@
----
 title: Window In Direction Test (ISSUE-002)
 story: dungeo
+description: IN should enter through the window at Behind House
+
 ---
+
 # Test ISSUE-002: "in" should enter through window at Behind House
 # Verifies "in" works as an alias for going through the open window
 
 # Go to Behind House
 > n
+[OK: contains "North of House"]
+
 > e
+[OK: contains "Behind House"]
 
 # Try "in" with closed window - should fail
 > in
-/can't go|closed|blocked/i
+[OK: contains "closed"]
 
 # Open the window
 > open window
+[OK: contains "open"]
 
 # Now "in" should work to enter the Kitchen
 > in
-/Kitchen/
+[OK: contains "Kitchen"]

@@ -9,7 +9,7 @@ turn become a bar at the top).
 
 ## Decoration: styling without HTML on the wire
 
-Volume V's formatter chain handled *grammar*: articles and capitalization inside a
+Volume V's phrase algebra handled *grammar*: articles and capitalization inside a
 message template. Decoration handles *style*: making a word italic, marking a name,
 flagging a command. The rule Sharpee commits to is that **no HTML travels on the
 wire**. A message never contains `<em>` or an inline `style`. Instead, templates use
@@ -31,8 +31,8 @@ a baked-in color.
 
 ## Platform vocabulary and the `sharpee-` namespace
 
-The platform reserves the `sharpee-` prefix and ships a small vocabulary, each name
-mapping to one CSS class with a default rule:
+The platform reserves the `sharpee-` prefix and ships a vocabulary, each name
+mapping to one CSS class with a default rule. The names you'll use most:
 
 | Decoration | Class | Renders as |
 |---|---|---|
@@ -43,6 +43,13 @@ mapping to one CSS class with a default rule:
 | `npc` | `.sharpee-npc` | a character |
 | `room` | `.sharpee-room` | a location |
 | `command` | `.sharpee-command` | a verb the player can type |
+
+This table is an excerpt; the full `PLATFORM_VOCABULARY` is considerably larger.
+It also covers text styles (`u`, `st`, `super`, `sub`), `direction`, `quote`, the
+`color-*` and `bgcolor-*` families, `size-*`, `font-mono`, and the layout macros
+(`br`, `p`, `indent`, `center`, `right`). Check it before inventing a class name,
+because any name the platform knows gets the `sharpee-` prefix, which may not be
+what you intended.
 
 Write `[em:…]` and you inherit the platform's `.sharpee-em` rule. The resolver only
 prefixes names it recognizes. Write a name the platform *doesn't* know, such as

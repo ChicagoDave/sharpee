@@ -1,4 +1,4 @@
 context.event('if.event.taken', {
-  messageId: 'if.action.taken.success',
+  messageId: 'if.action.taking.taken',
   params: { item: 'brass key' },
 });

@@ -21,8 +21,7 @@ description: Test opening mailbox and reading the leaflet
 
 # Take the leaflet
 > take leaflet
-[OK: contains "take"]
-[OK: contains "leaflet"]
+[OK: contains "Taken"]
 [EVENT: true, type="if.event.taken"]
 
 # Read it

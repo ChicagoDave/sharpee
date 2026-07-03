@@ -1,0 +1,81 @@
+/*
+ * Family Zoo — author style override.
+ *
+ * This is the single author CSS surface: devkit copies it to
+ * dist/web/familyzoo.css and index.html links it LAST, so it wins the cascade
+ * over the platform stylesheets. It defines the story's OWN theme, `zoo-sunny`
+ * — listed inline in package.json `sharpee.themes` so the build adds a menu
+ * entry. The token block alone would skin via the platform engine (ADR-188);
+ * zoo-sunny additionally re-skins the chrome with a few flourish rules. It also
+ * styles the custom #zoo-ambience element the browser entry paints.
+ *
+ * Authors must NOT use the reserved `sharpee-` prefix for their own class
+ * names; `.sharpee-*` here only targets the platform's component classes.
+ */
+
+/* --- zoo-sunny token block: a bright, friendly daytime zoo. The engine paints
+       every component from these alone; the flourishes below are optional. --- */
+[data-theme="zoo-sunny"] {
+  --theme-bg: #fffaf0;          /* warm cream */
+  --theme-bg-alt: #fff3da;
+  --theme-text: #2f2a24;
+  --theme-text-muted: #7a6f5d;
+  --theme-accent: #4a9d52;       /* zoo green */
+  --theme-accent-text: #ffffff;
+  --theme-border: #e5c98f;
+  --theme-input-bg: #fffdf8;
+  --theme-menu-bg: #4a9d52;
+  --theme-menu-hover: #3c8344;
+  --theme-font: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --theme-font-size: 16px;
+  --theme-line-height: 1.6;
+}
+
+/* --- Flourishes: zoo-sunny deliberately puts the green on the chrome (title/
+       menu bars) rather than the engine's default (status bar). Optional. --- */
+[data-theme="zoo-sunny"] body {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  font-family: var(--theme-font);
+  font-size: var(--theme-font-size);
+  line-height: var(--theme-line-height);
+}
+
+[data-theme="zoo-sunny"] .sharpee-window-title-bar {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="zoo-sunny"] .sharpee-menu-bar {
+  background: var(--theme-menu-bg);
+  color: var(--theme-accent-text);
+}
+
+[data-theme="zoo-sunny"] .sharpee-menu-bar-trigger:hover,
+[data-theme="zoo-sunny"] .sharpee-menu-bar-item--open > .sharpee-menu-bar-trigger {
+  background: var(--theme-menu-hover);
+}
+
+[data-theme="zoo-sunny"] .sharpee-status-bar {
+  background: var(--theme-bg-alt);
+  color: var(--theme-text-muted);
+  border-bottom: 2px solid var(--theme-border);
+}
+
+[data-theme="zoo-sunny"] .sharpee-prose-pane {
+  background: var(--theme-bg);
+}
+
+[data-theme="zoo-sunny"] .sharpee-input-bar {
+  background: var(--theme-bg-alt);
+  border-top: 2px solid var(--theme-border);
+}
+
+/* --- The custom ambience line the zoo.ambience renderer paints --- */
+#zoo-ambience {
+  padding: 0.35rem 0.75rem;
+  font-style: italic;
+  color: var(--theme-text-muted);
+  background: var(--theme-bg-alt);
+  border-left: 3px solid var(--theme-accent);
+}

@@ -81,11 +81,23 @@ export function registerCakeEatingHandler(world: WorldModel): void {
     const teaRoomId = w.getStateValue('dungeo.tea_room.id') as string;
     const postsRoomId = w.getStateValue('dungeo.posts_room.id') as string;
 
+    // MDL EATME-FUNCTION / CAKE-FUNCTION move the shrunk/enlarged room's
+    // objects along with the player (ALICE's contents ride into ALISM and
+    // back). Mirror that: relocate the room's loose (non-scenery) items.
+    const moveRoomContents = (fromRoomId: string, toRoomId: string): void => {
+      for (const entity of w.getContents(fromRoomId)) {
+        if (entity.id === player.id) continue;
+        if (entity.hasTrait(TraitType.SCENERY)) continue;
+        w.moveEntity(entity.id, toRoomId);
+      }
+    };
+
     switch (cakeType) {
       case 'eat-me': {
-        // In Tea Room → shrink, teleport to Posts Room
+        // In Tea Room → shrink, teleport to Posts Room (cakes come along)
         if (playerLocation === teaRoomId) {
           w.moveEntity(player.id, postsRoomId);
+          moveRoomContents(teaRoomId, postsRoomId);
           return makeEvent('dungeo.event.cake_effect', CakeMessages.EAT_ME_SHRINK, {
             destination: 'Posts Room',
             cakeType: 'eat-me'
@@ -96,8 +108,9 @@ export function registerCakeEatingHandler(world: WorldModel): void {
 
       case 'blue-icing': {
         if (playerLocation === postsRoomId) {
-          // In Posts Room → enlarge, teleport back to Tea Room
+          // In Posts Room → enlarge, teleport back to Tea Room (items return)
           w.moveEntity(player.id, teaRoomId);
+          moveRoomContents(postsRoomId, teaRoomId);
           return makeEvent('dungeo.event.cake_effect', CakeMessages.BLUE_ENLARGE, {
             destination: 'Tea Room',
             cakeType: 'blue-icing'

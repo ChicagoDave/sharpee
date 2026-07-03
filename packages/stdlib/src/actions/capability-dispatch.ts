@@ -10,7 +10,6 @@ import { Action, ActionContext, ValidationResult } from './enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   findTraitWithCapability,
-  getBehaviorForCapability,
   CapabilityEffect,
   CapabilitySharedData
 } from '@sharpee/world-model';
@@ -124,8 +123,8 @@ export function createCapabilityDispatchAction(
         };
       }
 
-      // Get behavior for this trait+capability
-      const behavior = getBehaviorForCapability(trait, config.actionId);
+      // Get behavior for this trait+capability from this world's binding map (ADR-207)
+      const behavior = context.world.getBehaviorForCapability(trait, config.actionId);
       if (!behavior) {
         // Trait claims capability but no behavior registered
         // This is a configuration error - log and fail gracefully

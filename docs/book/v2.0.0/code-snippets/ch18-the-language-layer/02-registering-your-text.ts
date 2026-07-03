@@ -4,5 +4,5 @@ extendLanguage(language: LanguageProvider): void {
     'excitedly, and devour the corn and pellets in seconds.');
 
   language.addMessage('zoo.photo.took_photo',
-    "Click! You snap a photo of {target}. That one's going on the fridge.");
+    "Click! You snap a photo of {the target}. That one's going on the fridge.");
 }

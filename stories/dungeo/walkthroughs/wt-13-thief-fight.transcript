@@ -183,10 +183,16 @@ $restore wt-12
 [OK: contains "Treasure Room"]
 
 # Fight thief with nasty knife. DO/UNTIL loops until thief dies or player dies.
+# RNG: the thief can disarm us; unarmed attacks are blocked ("Fighting
+# unarmed is suicide.") so recover the knife before each swing.
 [RETRY: max=5]
 [DO]
+[WHILE: not inventory contains "nasty knife"]
+> take knife
+[SKIP]
+[END WHILE]
 > attack thief with knife
-[OK: contains "thief"]
+[OK: contains_any "thief" "staggering" "knife" "hands"]
 [UNTIL "fog" OR "carcass" OR "Finishing you off"]
 [ENSURES: not entity "seedy-looking thief" alive]
 [END RETRY]
@@ -419,6 +425,11 @@ $restore wt-12
 > look
 [OK: contains "Living Room"]
 [OK: contains "trophy case"]
+
+# Bank lantern battery: the lit torch is back in hand and wt-14 runs on it.
+# (The lantern was only on as theft insurance during the thief fight.)
+> turn off lantern
+[OK: contains "lantern"]
 
 [END GOAL]
 

@@ -142,4 +142,4 @@ description: Test commanding the robot - matches FORTRAN timefnc.for behavior
 # Try to command the cyclops
 > tell cyclops to dance
 [OK: contains "cannot command"]
-[EVENT: true, type="game.message" messageId="dungeo.commanding.cant_command"]
+[EVENT: true, type="dungeo.event.commanding_blocked"]

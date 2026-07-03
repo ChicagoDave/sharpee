@@ -15,8 +15,7 @@ import {
   ITrait, IFEntity,
   CapabilityBehavior, CapabilityValidationResult, CapabilitySharedData,
   CapabilityEffect, createEffect,
-  registerCapabilityBehavior, hasCapabilityBehavior,
-  findTraitWithCapability, getBehaviorForCapability,
+  findTraitWithCapability,
 } from '@sharpee/world-model';
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
@@ -111,25 +110,25 @@ const pettingBehavior: CapabilityBehavior = {
 those effects into semantic events.
 
 > **The mistake everyone makes once:** trying to register a separate behavior for
-> each animal under the same trait and capability. The registry holds exactly one
-> behavior per trait type + capability; a second registration replaces the first.
-> Put the per-entity differences in the trait's own data (here `animalKind`) and
-> branch on it inside the one behavior.
+> each animal under the same trait and capability. Each world's registry holds
+> exactly one behavior per trait type + capability; a later registration
+> overwrites the earlier one. Put the per-entity differences in the trait's own
+> data (here `animalKind`) and branch on it inside the one behavior.
 
 ### 3. Registration that links trait to behavior
 
-`registerCapabilityBehavior()` connects a trait type, a capability (action ID),
-and the behavior that handles them. Guard it with `hasCapabilityBehavior()` so it
-only registers once:
+`world.registerCapabilityBehavior()` connects a trait type, a capability (action
+ID), and the behavior that handles them. The binding map belongs to this world
+instance: every game registers its own behaviors in `initializeWorld`, and
+registration is idempotent (re-registering a key just overwrites it), so there is
+no need to check whether it is already registered:
 
 ```typescript
-if (!hasCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID)) {
-  registerCapabilityBehavior(
-    PettableTrait.type,     // which trait
-    PETTING_ACTION_ID,      // which capability
-    pettingBehavior,        // which behavior
-  );
-}
+world.registerCapabilityBehavior(
+  PettableTrait.type,     // which trait
+  PETTING_ACTION_ID,      // which capability
+  pettingBehavior,        // which behavior
+);
 ```
 
 ## The dispatch action
@@ -153,8 +152,8 @@ const pettingAction: Action = {
     const trait = findTraitWithCapability(entity, PETTING_ACTION_ID);
     if (!trait) return { valid: false, error: PetMessages.CANT_PET };
 
-    // Look up the behavior registered for that trait + capability
-    const behavior = getBehaviorForCapability(trait, PETTING_ACTION_ID);
+    // Look up the behavior registered on this world for that trait + capability
+    const behavior = context.world.getBehaviorForCapability(trait, PETTING_ACTION_ID);
     if (!behavior) return { valid: false, error: PetMessages.CANT_PET };
 
     // Delegate validation to the behavior
@@ -197,9 +196,12 @@ An entity with no `PettableTrait` falls out at `findTraitWithCapability()` and
 gets the `CANT_PET` message; petting the hay bale just tells you that you can't.
 
 > **Worth knowing:** the stdlib ships `createCapabilityDispatchAction()`, a
-> factory that builds exactly this find-trait-then-delegate action for you from a
-> few options. The zoo writes it out by hand so the mechanism is visible, but in
-> a real story you'd usually let the factory generate it.
+> factory that builds exactly this find-trait-then-delegate action from a few
+> options. The zoo writes it out by hand so the mechanism is visible. Either way,
+> every messageId your behavior emits from `report()`, `blocked()`, and
+> `validate()` error codes must be a fully-qualified, story-registered id like
+> `zoo.petting.goats`, never a bare key like `goats`. The engine forwards effect
+> payloads unchanged, and the factory's old short-key prefixing is legacy.
 
 This action is registered the same three ways as the feed action in the last
 chapter. Add it to `getCustomActions`:
@@ -277,7 +279,7 @@ Player types: "pet goats"
   ↓ parser matches "pet :thing" → zoo.action.petting, target = goats
   ↓ pettingAction.validate():
       findTraitWithCapability(goats, 'zoo.action.petting') → PettableTrait
-      getBehaviorForCapability(trait, 'zoo.action.petting') → pettingBehavior
+      world.getBehaviorForCapability(trait, 'zoo.action.petting') → pettingBehavior
       behavior.validate() → { valid: true }
   ↓ pettingAction.execute() → behavior.execute() (nothing)
   ↓ pettingAction.report()  → behavior.report() → "The goat leans into your hand."
@@ -301,7 +303,8 @@ behavior returns the bite message instead. One verb, the entity decides.
 
 Capability dispatch lets each entity carry its own rule for a verb. A custom trait
 declares the capability, a `CapabilityBehavior` implements the four phases over
-that trait's data, and `registerCapabilityBehavior()` links them. The dispatch
+that trait's data, and `world.registerCapabilityBehavior()` links them, once per
+world, in `initializeWorld`. The dispatch
 action (yours, or one built by `createCapabilityDispatchAction()`) finds the trait
 claiming the capability and delegates to its behavior, so entities without the
 trait get the can't-do-that message for free.

@@ -1,0 +1,55 @@
+title: V02 — Multiple Rooms & Navigation
+story: familyzoo
+author: Sharpee Tutorial
+description: Verify room connections and compass navigation between zoo areas
+
+---
+
+# V2 teaches: multiple rooms, Direction exits, going action
+
+# Start at Zoo Entrance
+> look
+[OK: contains "Zoo Entrance"]
+
+# Go south to Main Path
+> south
+[OK: contains "Main Path"]
+[OK: contains "gravel path"]
+[OK: contains "petting zoo"]
+[OK: contains "aviary"]
+
+# Examine the direction signs
+> examine signs
+[OK: contains "PETTING ZOO"]
+[OK: contains "AVIARY"]
+
+# Go east to Petting Zoo
+> east
+[OK: contains "Petting Zoo"]
+[OK: contains "goats"]
+
+# Examine the goats
+> examine goats
+[OK: contains "pygmy goats"]
+
+# Go back west to Main Path
+> west
+[OK: contains "Main Path"]
+
+# Go west to Aviary
+> west
+[OK: contains "Aviary"]
+[OK: contains "mesh dome"]
+
+# Examine the toucan
+> examine toucan
+[OK: contains "toucan"]
+[OK: contains "orange"]
+
+# Go back east to Main Path
+> east
+[OK: contains "Main Path"]
+
+# Go north back to entrance
+> north
+[OK: contains "Zoo Entrance"]

@@ -13,8 +13,6 @@ import {
   EntityType,
   Direction,
   AuthorModel,
-  registerCapabilityBehavior,
-  hasCapabilityBehavior,
 } from '@sharpee/world-model';
 import {
   IdentityTrait,
@@ -303,10 +301,8 @@ export function setupWorld(world: WorldModel): void {
   serverRack.add(new InspectableTrait('Temperature: 22°C. Load: 73%. All drives healthy.'));
   world.moveEntity(serverRack.id, serverRoom.id);
 
-  // Register capability behavior
-  if (!hasCapabilityBehavior(InspectableTrait.type, INSPECT_ACTION_ID)) {
-    registerCapabilityBehavior(InspectableTrait.type, INSPECT_ACTION_ID, inspectBehavior);
-  }
+  // Register capability behavior — per-world, idempotent (ADR-207), no guard needed
+  world.registerCapabilityBehavior(InspectableTrait.type, INSPECT_ACTION_ID, inspectBehavior);
 
   // ---- NPC (maintenance bot) ----
 
@@ -571,12 +567,8 @@ export function setupWorld(world: WorldModel): void {
   world.moveEntity(glassPanel.id, rooftop.id);
 
   // ---- REGISTER COMBAT SYSTEM ----
-  // Guard: interceptor registry is global; second story load throws if already registered
-  try {
-    registerBasicCombat();
-  } catch {
-    // Already registered from a previous transcript run in the same process
-  }
+  // Per-world, idempotent registration (ADR-208) — safe on every load
+  registerBasicCombat(world);
 
   // ---- PLACE PLAYER ----
 

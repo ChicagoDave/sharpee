@@ -22,7 +22,6 @@ import {
   PushableTrait,
   SwitchableTrait,
   SwitchableBehavior,
-  getInterceptorForAction,
   InterceptorSharedData,
   applyInterceptorReportResult
 } from '@sharpee/world-model';
@@ -78,7 +77,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = getInterceptorForAction(target, IFActions.PUSHING);
+    const interceptorResult = context.world.getInterceptorForAction(target, IFActions.PUSHING);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {
       targetId: target.id,

@@ -46,5 +46,5 @@ description: Test that Attic is dark without light source
 
 > up
 [OK: contains "Attic"]
-[NOT: contains "dark"]
-[NOT: contains "grue"]
+[OK: not contains "dark"]
+[OK: not contains "grue"]

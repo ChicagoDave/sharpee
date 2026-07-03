@@ -25,6 +25,7 @@ import type { IWorldModel, ITrait } from '@sharpee/world-model';
  */
 export class RoomBuilder {
   private _description?: string;
+  private _initialDescription?: string;
   private _aliases?: string[];
   private _isDark = false;
   private _traits: ITrait[] = [];
@@ -42,6 +43,20 @@ export class RoomBuilder {
    */
   description(desc: string): this {
     this._description = desc;
+    return this;
+  }
+
+  /**
+   * Set the first-visit description (ADR-196 Phase 4).
+   *
+   * Shown the first time the player looks at the room; on subsequent visits the
+   * standard `description` is used instead. Populates `RoomTrait.initialDescription`.
+   *
+   * @param desc - First-visit room description text
+   * @returns this (for chaining)
+   */
+  initialDescription(desc: string): this {
+    this._initialDescription = desc;
     return this;
   }
 
@@ -84,7 +99,10 @@ export class RoomBuilder {
    */
   build(): IFEntity {
     const entity = this.world.createEntity(this.name, 'room');
-    entity.add(new RoomTrait({ isDark: this._isDark }));
+    entity.add(new RoomTrait({
+      isDark: this._isDark,
+      initialDescription: this._initialDescription,
+    }));
     entity.add(new IdentityTrait({
       name: this.name,
       description: this._description,
