@@ -477,10 +477,20 @@ call is David's.
   scratchpad harness script if `extract-book-snippets.cjs`'s output needs light assembly
   tooling to concatenate a chapter's ordered snippets into a buildable project — keep any
   such script in `scripts/` if it proves reusable, scratchpad otherwise.
-- **Status**: CURRENT (gated on go-ahead). Note from Phase 4: the book's GitHub links
-  point at `main`, which does not have the v2.0.0 tutorial split until
-  `v2_familyzoo_split` merges — the dry run should verify link *paths* against the
-  local tree, not remote `main`.
+- **Status**: DONE (2026-07-03 — full results and the chapter-by-chapter table live in
+  `docs/context/session-20260703-1150-v2_familyzoo_split.md` §Phase 7. Headlines:
+  registry-only environment PASS (`devkit@2.1.0` install → init → build → init-browser →
+  build --test all work from npm alone); **zero API/staleness errors across all 27
+  snippet-bearing chapters** against published 2.1.0; ch2 assembled from the book alone
+  builds and reproduces its Try-it 5/5 including the byte-exact ADR-158 form "The
+  welcome sign is fixed in place."; ch25's --browser error claim and ch29's
+  `build --test` claim verified against the published CLI. True completeness elisions
+  concentrate in 6 chapters (ch7, ch8, ch12, ch16, ch25, ch27 — ~11 named gaps such as
+  `lunchbox`/`lantern`/`plaque` never created); the heavy "FRAMES" counts are the
+  teach-by-excerpt style whose prose anchoring ch2 proves workable. Nothing fixed
+  during the phase, per the report-only rule. Harness + JSON results in the session
+  scratchpad (`probe-chapters.cjs`, `classify-names.cjs`). Note from Phase 4 stands:
+  GitHub links resolve only after `v2_familyzoo_split` merges.)
 
 ### Phase 8: Completeness-Audit Triage & Repair (scope contingent on Phase 7 findings)
 - **Tier**: TBD — size after Phase 7's pass/fail table exists; do not estimate blind
@@ -508,5 +518,10 @@ call is David's.
   ch4/ch5 `SceneryTrait` chapter↔version mismatch).
 - **Exit state**: TBD pending scoping decision.
 - **Affected files**: TBD.
-- **Status**: PENDING (blocked on Phase 7 output + David's scoping decision — do not size
-  or start until both exist)
+- **Status**: CLOSED — no repair phase (David, 2026-07-03: "I'll take the book to
+  docker"). The plan closes as **staleness-only**; completeness gaps surface in the
+  real Docker naive-executor run instead. Phase 7's table (session summary
+  2026-07-03 §Phase 7) is the input for that run: the 6 elision chapters (ch7, ch8,
+  ch12, ch16, ch25, ch27) are the places the Docker agent is most likely to stall.
+  **PLAN COMPLETE** — all change-list findings resolved, dry-run gate green on
+  staleness, handoff to the Docker gate is David's.

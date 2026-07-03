@@ -190,10 +190,92 @@
 - Voice rules held (0 new em-dashes; remaining are part headings).
 - `./scripts/build-book.sh v2.0.0 all` clean: html (856K) + epub (242K) + pdf (986K).
 
+# Phase 7 (same session, go-ahead: "commit and push, then phase 7"): Naive-Execution Dry Run
+
+Phases 3-6 committed as `61fddee1` and pushed before this phase started.
+
+## Method
+Registry-only author environment in the session scratchpad (`dry-run/`):
+`npm install @sharpee/devkit@2.1.0` -> `npx sharpee init zoo -y` -> `npm install`
+(resolves `@sharpee/sharpee@2.1.0` etc. purely from npm). Then, per chapter with
+author snippets: concatenate the chapter's own snippets in order into `src/index.ts`
+(no gap-filling from tutorials) and run `tsc --noEmit`; classify every diagnostic.
+Two harness scripts kept in scratchpad (`probe-chapters.cjs`, `classify-names.cjs`;
+results in `probe-results.json`, `name-provenance.json`).
+
+## Headline results
+- **Zero API/staleness errors in all 27 snippet-bearing chapters.** Not one snippet
+  references a symbol, member, or signature the published 2.1.0 platform lacks. The
+  Phases 1-6 repair holds against the real registry packages.
+- **Environment PASS**: install, init, baseline `sharpee build`, `init-browser`,
+  browser build all work from the registry alone. `sharpee build --browser` without
+  the entry errors exactly as the fixed ch25 states. Published devkit supports
+  `build --test` (ch29's corrected claim verified; "Reserved: test, play" refers to
+  top-level commands only).
+- **ch2 end-to-end PASS**: assembled from the book alone (its prose gives explicit
+  frame placement), `sharpee build --test` green, all 5 Try-it commands pass, and
+  the ADR-158 exact form "The welcome sign is fixed in place." reproduces
+  byte-exact.
+
+## Chapter-by-chapter table
+Verdicts: CLEAN-ISH = fragments only, no missing code; FRAMES = method/statement
+excerpts needing the enclosing frame from prose (count = syntax diagnostics);
+ELIDED = names whose defining code no chapter ever shows (the completeness class).
+`world`/`context` hits are frame parameters, not elisions, and are excluded.
+
+| Chapter | Verdict | Frames | True elisions |
+|---|---|---|---|
+| ch01 installing | illustrative | 0 | `items` (throwaway example) |
+| ch02 first room | **BUILD+TRY-IT PASS** | 28* | none (*prose places all frames) |
+| ch03 play loop | illustrative | 0 | `context` shape demo only |
+| ch04 rooms/navigation | FRAMES | 69 | none |
+| ch05 scenery | FRAMES | 1 | none |
+| ch06 containers | imports-not-reshown | 0 | none (SupporterTrait import new) |
+| ch07 doors/keys | ELISIONS | 0 | `lunchbox`, `juice` never created |
+| ch08 light/dark | ELISIONS | 0 | `gem`, `candle`, `lantern` never created |
+| ch09 map/regions | CLEAN-ISH | 0 | none |
+| ch10 four-phase | CLEAN-ISH | 0 | none (skeleton has TS2355 stubs) |
+| ch12 readables | ELISIONS | 0 | `plaque` never created |
+| ch13 event handlers | FRAMES | 8 | none |
+| ch14 custom actions | FRAMES | 33 | none |
+| ch15 capability dispatch | FRAMES | 3 | none |
+| ch16 custom traits | multi-file | 0 | `./dispenser-trait.js` file never shown |
+| ch17 grammar | FRAMES | 6 | none |
+| ch18 language layer | FRAMES | 6 | none |
+| ch19 phrase algebra | FRAMES | 4 | none |
+| ch20 NPCs | FRAMES | 16 | none |
+| ch21 scenes | CLEAN-ISH | 0 | none |
+| ch22 timed events | FRAMES | 28 | none |
+| ch23 scoring | FRAMES | 3 | none |
+| ch24 channels | FRAMES | 4 | none |
+| ch25 web client | ELISIONS | 0 | `elements`, `engine` wiring never shown |
+| ch27 media/audio | ELISIONS | 0 | `aviaryId`, `nocturnalId`, `registry` |
+| ch28 multi-file | FRAMES | 12 | none |
+| ch30 saving | FRAMES | 6 | none |
+
+(ch11, ch26, ch29, ch31 have no extracted TS author snippets; frontmatter/appendices
+out of scope.)
+
+## Reading the table
+- FRAMES is the book's deliberate teach-by-excerpt style; ch2 proves the style
+  executes when prose says where fragments go. Whether each chapter's prose anchors
+  are as explicit as ch2's is exactly the 2026-06-22 completeness audit's subject.
+- The **true elisions are concentrated in 6 chapters** (ch7, ch8, ch12, ch16, ch25,
+  ch27) plus trivial illustrative names: ~11 named gaps, far fewer than the audit's
+  ~60 items across 18 chapters, because Phases 1-6 incidentally resolved overlapping
+  chapters (ch15, ch20, ch23) and many audit items are prose-anchoring, not
+  missing-name, issues.
+- **Nothing was fixed during this phase** (per the gate's report-only rule).
+
 ## Session Metadata
-- **Status**: DONE — Phases 3 through 6 complete; the staleness change list is fully
-  resolved. Uncommitted. Phase 7 (naive-execution dry-run gate) is CURRENT, gated on
-  go-ahead; note its Phase 8 scoping decision is David's.
+- **Status**: DONE — Phases 3-7 complete; **plan complete**. Phase 8 CLOSED per
+  David (2026-07-03): staleness-only; he takes the book to the Docker
+  naive-executor gate himself. Phase 7's table is the Docker run's input; the 6
+  elision chapters (ch7, ch8, ch12, ch16, ch25, ch27) are the likeliest stalls.
 - **Blocker**: N/A
-- **Rollback Safety**: docs + two comment/string-level tutorial edits; reverts
-  cleanly.
+- **Rollback Safety**: Phase 7 wrote nothing outside the scratchpad; this finalize
+  commits only plan/session-summary updates.
+- **Open items for next session**: root-level `code-snippets/CATALOG.md` (stray
+  extractor artifact, deletable) and `site/the-sharpee-book-v2.0.0.{epub,html,pdf}`
+  (new build outputs; repo tracks unversioned names) left uncommitted awaiting
+  David's call. GitHub book links resolve only after `v2_familyzoo_split` merges.
