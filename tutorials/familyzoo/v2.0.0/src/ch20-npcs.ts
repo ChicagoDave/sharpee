@@ -669,7 +669,7 @@ class FamilyZooStory implements Story {
     language.addMessage(FeedMessages.FED_RABBITS, 'You sprinkle some pellets near the rabbits. Biscuit and Marmalade hop over cautiously, then munch away happily.');
     language.addMessage(FeedMessages.FED_GENERIC, 'You offer some feed. The animal eats it gratefully.');
     language.addMessage(PhotoMessages.NO_CAMERA, "You don't have a camera. There's one in the gift shop.");
-    language.addMessage(PhotoMessages.TOOK_PHOTO, 'Click! You snap a photo of {target}. That one\'s going on the fridge.');
+    language.addMessage(PhotoMessages.TOOK_PHOTO, 'Click! You snap a photo of {the target}. That one\'s going on the fridge.');
 
     // V14 messages — petting responses
     language.addMessage(PetMessages.PET_GOATS,

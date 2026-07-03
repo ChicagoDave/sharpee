@@ -135,7 +135,10 @@ call is David's.
   cross-chapter links if the filename changes), `docs/book/v2.0.0/parts/part-5/18-the-language-layer.md`,
   `docs/book/v2.0.0/book.yaml` (if filename changes), `docs/book/v2.0.0/code-snippets/ch18-*`,
   `docs/book/v2.0.0/code-snippets/ch19-*`.
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-03 — ch19 rewritten as `19-the-phrase-algebra.md`, ch18 fixed,
+  companion `{the target}` edits in ch14 + `tutorials/familyzoo/v2.0.0/src/ch20-npcs.ts:672`,
+  rename-fallout terminology fixes in ch3/ch26/appendix-a; all templates parse+render
+  verified against the real grammar/Assembler; html build clean; snippets re-extracted)
 
 ### Phase 2: Appendix D Regeneration (Message-ID Reference)
 - **Tier**: Medium
@@ -173,7 +176,11 @@ call is David's.
   gets the exact ID the platform actually emits — no renamed/legacy keys.
 - **Affected files**: `docs/book/v2.0.0/backmatter/appendix-d-message-reference.md`,
   possibly a new `scripts/generate-appendix-d.cjs`.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-03 — new `scripts/generate-appendix-d.cjs` enumerates the live
+  provider's `getAllMessages()`; appendix regenerated: 821 messages / 84 groups; ID-set
+  diff vs old table is exactly the change-list findings (3 renamed help keys out, 16 in:
+  help renames, about.success, nothing_to_take, platform.*, npc.*, room.description_body);
+  html build clean, TOC suppression intact, zero legacy colon templates / npcName)
 
 ### Phase 3: Chapter 15 Capability Dispatch — ADR-207 Focused Edit
 - **Tier**: Small
@@ -202,7 +209,7 @@ call is David's.
   `initializeWorld` compiles and dispatches correctly against published `@sharpee/*@2.1.0`
   with zero guard code, matching the tutorial's actual `ch15-capability-dispatch.ts`.
 - **Affected files**: `docs/book/v2.0.0/parts/part-4/15-capability-dispatch.md`.
-- **Status**: PENDING
+- **Status**: CURRENT (gated on go-ahead)
 
 ### Phase 4: Book-Wide Sweeps (tutorial-split paths, chapter-snapshot naming, ADR-158 article quotes)
 - **Tier**: Medium

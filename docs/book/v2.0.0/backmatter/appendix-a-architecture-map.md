@@ -17,7 +17,7 @@ nothing about any particular game.
 | **World model** | `@sharpee/world-model` | Entities, traits, and behaviors — all game *state* and the rules that mutate it | Vol. II (building a world), IV (custom traits & behaviors) |
 | **Standard library** | `@sharpee/stdlib` | The standard actions (validate/execute/report/blocked), scope & visibility, capability dispatch, the standard channels | Vol. III (actions, scope), IV (capability dispatch) |
 | **Parser** | `@sharpee/parser-en-us` | Grammar patterns — turning typed text into a resolved command | Vol. V (extending the grammar) |
-| **Language** | `@sharpee/lang-en-us` | All player-facing text: message IDs, templates, the formatter chain | Vol. V (the language layer, formatter chain) |
+| **Language** | `@sharpee/lang-en-us` | All player-facing text: message IDs, templates, the phrase algebra's template grammar and Assembler | Vol. V (the language layer, the phrase algebra) |
 | **Story** | your project | Game-specific content and overrides — rooms, items, NPCs, custom actions, puzzles | the whole Family Zoo running example |
 | **Client** | `@sharpee/platform-browser` (and others) | UI: rendering channel packets to a screen, reading input | Vol. VII (the web client, decoration, media) |
 
@@ -32,7 +32,7 @@ then mutates the **world model** through behaviors, then reports what happened a
 events.
 
 **Output — state becomes presentation.** The engine renders the turn's prose through
-the **language** layer's templates and formatter chain into text blocks, then asks
+the **language** layer's templates and Assembler into text blocks, then asks
 every **channel** "what do you have this turn?" and assembles a **packet**. The
 **client** hands each channel's value to a renderer that updates the screen.
 

@@ -77,8 +77,8 @@ notifications dispatched to listeners, and nothing subscribes to them. They're
 just records the action *reports*, collected as the turn runs.
 
 At the end of the turn the engine's **prose pipeline** consumes the reported
-events: it looks each message id up in the language layer, runs each through the
-text formatters, and renders the actual words the player reads.
+events: it looks each message id up in the language layer, fills in the message
+template's placeholders, and renders the actual words the player reads.
 
 Why the indirection? Because it keeps every player-facing word in one place. The
 same event can be rendered in another language, restyled in different prose, or

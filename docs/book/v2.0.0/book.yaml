@@ -62,7 +62,7 @@ input-files:
   # Part V — Words
   - parts/part-5/17-extending-the-grammar.md       # new (stub)
   - parts/part-5/18-the-language-layer.md          # new (stub)
-  - parts/part-5/19-the-formatter-chain.md         # new (stub)
+  - parts/part-5/19-the-phrase-algebra.md          # new (stub)
   # Part VI — Living Worlds
   - parts/part-6/20-non-player-characters.md       # v11 (pending)
   - parts/part-6/21-scenes.md                      # new (stub)

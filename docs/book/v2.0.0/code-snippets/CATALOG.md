@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **142 snippets** across 30 chapters (139 author, 3 reference).
+- **147 snippets** across 31 chapters (144 author, 3 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -35,12 +35,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-building-the-story.sh` | Building the story | bash | author | 131 |
 | 06 | `06-playing-it.sh` | Playing it | bash | author | 151 |
 | 07 | `07-playing-it.sh` | Playing it | bash | author | 159 |
-| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 192 |
-| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 204 |
-| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 212 |
-| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 220 |
-| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 226 |
-| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 234 |
+| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 197 |
+| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 209 |
+| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 217 |
+| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 225 |
+| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 231 |
+| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 239 |
 
 ## Your First Room: Entities, Traits, and the World
 
@@ -158,10 +158,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-readable-objects-switchable-devices-things-that-ca.ts` | Readable Objects & Switchable Devices: Things That Carry State | typescript | author | 14 |
-| 02 | `02-readabletrait-what-an-object-says.ts` | ReadableTrait — what an object says | typescript | author | 26 |
+| 02 | `02-readabletrait-what-an-object-says.ts` | ReadableTrait: what an object says | typescript | author | 26 |
 | 03 | `03-readable-scenery-the-info-plaque.ts` | Readable scenery: the info plaque | typescript | author | 54 |
 | 04 | `04-readable-items-the-brochure.ts` | Readable items: the brochure | typescript | author | 89 |
-| 05 | `05-switchabletrait-a-device-with-on-off-state.ts` | SwitchableTrait — a device with on/off state | typescript | author | 123 |
+| 05 | `05-switchabletrait-a-device-with-on-off-state.ts` | SwitchableTrait: a device with on/off state | typescript | author | 123 |
 
 # Volume IV — Custom Behavior
 
@@ -243,6 +243,18 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-intent-here-words-there.ts` | Intent here, words there | typescript | author | 14 |
 | 02 | `02-registering-your-text.ts` | Registering your text | typescript | author | 36 |
+
+## The Phrase Algebra: Grammar in the Template, Not the Text
+
+`ch19-the-phrase-algebra/` &nbsp;·&nbsp; source: `docs/book/parts/part-5/19-the-phrase-algebra.md`
+
+| # | File | Section | Lang | Kind | Src line |
+|---|------|---------|------|------|----------|
+| 01 | `01-pass-a-noun-phrase-not-a-name.ts` | Pass a noun phrase, not a name | typescript | author | 59 |
+| 02 | `02-lists.ts` | Lists | typescript | author | 128 |
+| 03 | `03-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 208 |
+| 04 | `04-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 232 |
+| 05 | `05-where-the-parameters-go-nest-them-under-params.ts` | Where the parameters go: nest them under `params` | typescript | author | 260 |
 
 # Volume VI — Living Worlds
 

@@ -9,7 +9,7 @@ turn become a bar at the top).
 
 ## Decoration: styling without HTML on the wire
 
-Volume V's formatter chain handled *grammar*: articles and capitalization inside a
+Volume V's phrase algebra handled *grammar*: articles and capitalization inside a
 message template. Decoration handles *style*: making a word italic, marking a name,
 flagging a command. The rule Sharpee commits to is that **no HTML travels on the
 wire**. A message never contains `<em>` or an inline `style`. Instead, templates use

@@ -3,7 +3,7 @@ radio.add(new IdentityTrait({
   name: 'radio',
   description:
     'A battered portable radio held together with duct tape. A faded ' +
-    'sticker on the side reads "ZOO FM — All Animals, All The Time."',
+    'sticker on the side reads "ZOO FM | All Animals, All The Time."',
   aliases: ['radio', 'portable radio'],
   properName: false,
   article: 'a',

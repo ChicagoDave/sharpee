@@ -19,5 +19,5 @@ extendLanguage(language: LanguageProvider): void {
   language.addMessage(PhotoMessages.NO_CAMERA,
     "You don't have a camera. There's one in the gift shop.");
   language.addMessage(PhotoMessages.TOOK_PHOTO,
-    "Click! You snap a photo of {target}. That one's going on the fridge.");
+    "Click! You snap a photo of {the target}. That one's going on the fridge.");
 }

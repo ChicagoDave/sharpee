@@ -1,4 +1,4 @@
-// A mood line per room — rooms not listed clear the line.
+// A mood line per room; rooms not listed clear the line.
 const AMBIENCE_BY_ROOM: Record<string, string> = {
   'Aviary': 'The air is alive with birdsong and the rustle of wings.',
   'Nocturnal Animals Exhibit': 'Your eyes strain against the warm red dark.',

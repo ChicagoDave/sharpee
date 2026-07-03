@@ -266,12 +266,13 @@ extendLanguage(language: LanguageProvider): void {
   language.addMessage(PhotoMessages.NO_CAMERA,
     "You don't have a camera. There's one in the gift shop.");
   language.addMessage(PhotoMessages.TOOK_PHOTO,
-    "Click! You snap a photo of {target}. That one's going on the fridge.");
+    "Click! You snap a photo of {the target}. That one's going on the fridge.");
 }
 ```
 
 A `{param}` placeholder in the text is filled from the `params` object the action
-passed, so `params: { target: name }` substitutes into `{target}`. Keeping text
+passed, so `params: { target: name }` substitutes into `{the target}` — the `the`
+asks for the definite article, as Volume V explains. Keeping text
 out of the action and in the language layer is what lets a story be translated or
 re-voiced without touching its logic.
 
