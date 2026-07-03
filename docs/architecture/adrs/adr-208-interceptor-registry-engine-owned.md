@@ -3,8 +3,13 @@
 ## Status: ACCEPTED
 
 > Accepted 2026-07-02 by David (adr-review 13/13, READY — two review corrections
-> applied: new-tests-not-rewrites scope, explicit root-barrel step). Implementation
-> planned in `docs/work/adr-208-interceptor-registry/`.
+> applied: new-tests-not-rewrites scope, explicit root-barrel step).
+> **IMPLEMENTED 2026-07-02** (session b65caa, Phases 1-3): see
+> `docs/work/adr-208-interceptor-registry/plan.md` (per-phase completion notes and
+> execution deviations) and
+> `docs/context/session-20260702-1956-v2_familyzoo_split.md` (implementation
+> summary, AC-1..AC-10 evidence). Published-package proof (shared with ADR-207)
+> rides ADR-207 Phase 5's overlay harness.
 
 > The interceptor registry (ADR-118) has the **identical defect class ADR-207 just
 > eliminated for capability-behavior bindings**: trait→interceptor bindings live in a

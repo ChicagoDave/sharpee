@@ -25,7 +25,6 @@ import {
   OpenableBehavior,
   Direction,
   DirectionType,
-  getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
   findTraitWithCapability,
@@ -171,7 +170,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
 
     // Check for interceptor on the target entity (ADR-118)
     // Interceptors are on the thing being thrown AT, not the item being thrown
-    const interceptorResult = target ? getInterceptorForAction(target, IFActions.THROWING) : undefined;
+    const interceptorResult = target ? context.world.getInterceptorForAction(target, IFActions.THROWING) : undefined;
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {
       // Pass item info to interceptor so it knows what's being thrown

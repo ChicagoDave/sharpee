@@ -10,7 +10,6 @@ import {
   CapabilityBehavior,
   CapabilitySharedData,
   findTraitWithCapability,
-  getBehaviorForCapability,
 } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
@@ -36,7 +35,7 @@ export const inspectAction: Action = {
     if (!trait) {
       return { valid: false, error: 'regression.inspect.not_inspectable' };
     }
-    const behavior = getBehaviorForCapability(trait, INSPECT_ACTION_ID);
+    const behavior = context.world.getBehaviorForCapability(trait, INSPECT_ACTION_ID);
     if (!behavior) {
       return { valid: false, error: 'regression.inspect.not_inspectable' };
     }

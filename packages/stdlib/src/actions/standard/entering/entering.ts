@@ -17,7 +17,6 @@ import {
   TraitType,
   OpenableBehavior,
   EnterableTrait,
-  getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
   createEffect,
@@ -88,7 +87,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = getInterceptorForAction(target, IFActions.ENTERING);
+    const interceptorResult = context.world.getInterceptorForAction(target, IFActions.ENTERING);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {};
 

@@ -428,7 +428,52 @@ migration**. Instead, each phase deletes what it replaces in the same commit:
   harness files under the session scratchpad or a documented `docs/work/adr-207-capability-
   registry/` verification note; possible new/updated test files if AC-9/AC-10 need a
   dedicated integration test rather than reusing an existing transcript.
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-02 session b65caa; run after ADR-208 Phases 1-3 per the
+  sequencing note, so this one overlay run closes BOTH migrations' published-path proof).
+  - **Harness (documented choice)**: devkit's `generateConsumer` (mode 'local') — the
+    same mechanism as the DEVKIT_INTEGRATION real-path gate. `npm pack` tarballs of the
+    full `@sharpee` closure from the tsf staging (`~/.tsf-publish/sharpee`, regenerated
+    via `npx tsf build --npm`), grafted as `file:vendor/*.tgz` deps into a scratchpad
+    copy of familyzoo v2.0.0; three transitive dev-chain packages (bootstrap,
+    ext-testing, ide-protocol) initially leaked from the npm registry and were added as
+    explicit file: deps — final install: **0 registry-resolved @sharpee packages** (21
+    local). Script: session scratchpad `make-overlay.cjs`.
+  - **Pre-step (stale-artifact finding)**: the tsf staging AND local `dist/` trees still
+    carried compiled `capability-registry.js` + `interceptor-registry.js` (tsc doesn't
+    delete outputs of deleted sources; tsf overlays staging without cleaning) — a
+    published package would have shipped the deleted `globalThis` code. Fixed with
+    `./repokit clean` + full rebuild + staging wipe/regen. AC-1 re-confirmed clean at
+    bundle, source, and **staging** level for both ADRs' registry keys.
+  - **AC-6**: `sharpee build --test` (standalone author path) on the overlay:
+    **201/201 in 17 transcripts** including v16-scoring — `pet goats` renders the
+    petting message and the final `score` shows "perfect score" (75/75) against
+    published-equivalent resolution.
+  - **AC-2/AC-3**: the same run is 17 sequential story loads (per-transcript `entry:`
+    chapters) in one process — no throw on re-registration, no cross-load leak (plus
+    dungeo's 868/868 walkthrough chain, ADR-208 Phase 3).
+  - **AC-8**: the overlay IS the real-world dual-instance topology (story dist +
+    harness packages resolving `@sharpee/world-model` independently); pet-goats
+    dispatch resolving through the shared world instance end-to-end confirms the
+    Phase 2 unit test's assumption.
+  - **AC-9**: scratch overlay transcript (v99, ch23 entry): `pet goats` → `$save` →
+    `$restore` → `pet goats` again, 4/4; save blob keys = {pluginStates, worldState},
+    only trait-state mention of "pettable", no binding/behavior fields.
+  - **AC-10**: node script against the overlay's installed packages — declared-but-
+    unbound trait resolves `undefined` (no throw) on both the capability and
+    interceptor surfaces.
+  - **Suites**: dungeo units green on the clean rebuild; friendly-zoo **36/36**
+    (story dist needed rebuilding after `./repokit clean` — the memory-documented
+    `pnpm --filter '@sharpee/story-friendly-zoo' build`).
+  - **familyzoo v1.5.0: EXCLUDED per user direction** (2026-07-02): the frozen
+    edition belongs to the old platform line; v2 work never regression-tests it.
+    (A run performed before that direction confirmed its known 196/197 baseline;
+    the two files its tooling touched — pnpm-lock.yaml, src/version.ts — were
+    reverted, freeze byte-exact.)
+  - **Publish note (follow-up decision for David)**: `./repokit verify`'s dry-run
+    publish fails on the 2.0.0 version collision (2.0.0 already on npm) — a real
+    publish of the fixed platform needs a version bump (lockstep, per the release
+    strategy). This phase proved the fix via the staging overlay; cutting a release
+    is a separate decision.
 
 ## Summary of AC coverage by phase
 

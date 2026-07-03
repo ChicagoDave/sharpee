@@ -14,14 +14,14 @@
  * ```typescript
  * import { registerBasicCombat } from '@sharpee/ext-basic-combat';
  *
- * // In story's initializeWorld():
- * registerBasicCombat();
+ * // In story's initializeWorld(world):
+ * registerBasicCombat(world);
  * ```
  */
 
 import {
   TraitType,
-  registerActionInterceptor,
+  type IWorldModel,
 } from '@sharpee/world-model';
 import { registerNpcCombatResolver } from '@sharpee/stdlib';
 import { BasicCombatInterceptor } from './basic-combat-interceptor.js';
@@ -37,9 +37,15 @@ import { basicNpcResolver } from './basic-npc-resolver.js';
  * Registers:
  * 1. BasicCombatInterceptor on CombatantTrait + if.action.attacking (PC→NPC)
  * 2. basicNpcResolver as the NPC combat resolver (NPC→PC)
+ *
+ * The interceptor binding is registered on the given world (ADR-208):
+ * per-world, idempotent (last-wins), so calling this on every story load
+ * is correct — no guard needed.
+ *
+ * @param world - The world to register the combat interceptor on
  */
-export function registerBasicCombat(): void {
-  registerActionInterceptor(
+export function registerBasicCombat(world: IWorldModel): void {
+  world.registerActionInterceptor(
     TraitType.COMBATANT,
     'if.action.attacking',
     BasicCombatInterceptor

@@ -16,7 +16,6 @@ import {
   TraitType,
   EntityType,
   StoryInfoTrait,
-  getAllInterceptorBindings,
   registerConcealedVisibilityBehavior
 } from '@sharpee/world-model';
 import { EventProcessor, Effect } from '@sharpee/event-processor';
@@ -554,7 +553,7 @@ export class GameEngine {
     }
 
     const intsByTrait = new Map<string, string[]>();
-    for (const [key] of getAllInterceptorBindings()) {
+    for (const [key] of this.world.getAllActionInterceptors()) {
       const [traitType, actionId] = key.split(':');
       const list = intsByTrait.get(traitType) ?? [];
       list.push(actionId);
@@ -604,7 +603,7 @@ export class GameEngine {
       });
     }
 
-    for (const [key, binding] of getAllInterceptorBindings()) {
+    for (const [key, binding] of this.world.getAllActionInterceptors()) {
       const [traitType, actionId] = key.split(':');
       const interceptor = binding.interceptor;
       const phases: string[] = [];

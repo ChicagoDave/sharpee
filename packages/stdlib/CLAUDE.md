@@ -95,7 +95,20 @@ blank. Emit story-registered IDs like `'dungeo.basket.lowered'` from
 `report()`/`blocked()` and from `validate()` error codes; never bare keys like
 `'lowered'`. The factory's short-key prefixing is legacy — do not rely on it.
 
-### Story-Specific Actions (for new verbs)
+### Action Interceptors (ADR-118 hooks, ADR-208 registration)
+
+Interceptors hook into a standard action's phases (`preValidate`/`postValidate`/
+`postExecute`/`onBlocked`/`postReport`) without replacing it. Registration is the
+same model as capability behaviors — on the world instance (ADR-208: per-world
+binding map, idempotent last-wins; no already-registered guard needed):
+
+```typescript
+// In the story's initializeWorld()
+world.registerActionInterceptor(TrollAxeTrait.type, 'if.action.taking', TrollAxeTakingInterceptor);
+```
+
+Stdlib actions resolve interceptors via `context.world.getInterceptorForAction(entity,
+actionId)` — never a module-level registry (the old free-function registry is deleted).
 
 When stdlib doesn't have the verb at all, the story creates a full action:
 

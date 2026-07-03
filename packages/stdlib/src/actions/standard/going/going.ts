@@ -24,7 +24,6 @@ import {
   Direction,
   DirectionType,
   canActorWalkInVehicle,
-  getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
   RegionCrossings,
@@ -154,7 +153,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Check for interceptor on the source room (ADR-118)
     // Interceptors on rooms can block or modify movement attempts
-    const interceptorResult = getInterceptorForAction(currentRoom, IFActions.GOING);
+    const interceptorResult = context.world.getInterceptorForAction(currentRoom, IFActions.GOING);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {
       // Pass direction info to interceptor
@@ -258,7 +257,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // === DESTINATION INTERCEPTOR LOOKUP (ADR-126) ===
     // Check if the destination room has an entry condition interceptor
-    const destInterceptorResult = getInterceptorForAction(destination, IFActions.ENTERING_ROOM);
+    const destInterceptorResult = context.world.getInterceptorForAction(destination, IFActions.ENTERING_ROOM);
     const destInterceptor = destInterceptorResult?.interceptor;
     const destInterceptorData: InterceptorSharedData = {
       direction: direction,

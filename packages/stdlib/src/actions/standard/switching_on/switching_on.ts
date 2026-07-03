@@ -21,7 +21,6 @@ import {
   SwitchableBehavior,
   LightSourceBehavior,
   VisibilityBehavior,
-  getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
   applyInterceptorReportResult
@@ -106,7 +105,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = getInterceptorForAction(noun, IFActions.SWITCHING_ON);
+    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.SWITCHING_ON);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {};
 

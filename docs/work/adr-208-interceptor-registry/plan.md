@@ -205,7 +205,17 @@ at once. Therefore:
   - `packages/world-model/src/index.ts` (root barrel)
   - `packages/world-model/src/world/AuthorModel.ts` (delegate methods)
   - `packages/world-model/tests/unit/capabilities/` (new test file)
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-02 session b65caa) — all deliverables landed as specified:
+  `interceptor-binding.ts` created (types + `interceptorBindingKey`),
+  `interceptor-registry.ts` deleted (user-confirmed), 4 `IWorldModel` methods +
+  `WorldModel` impl + `AuthorModel` delegates added, capabilities barrel updated
+  (root barrel is `export *` — flows through), new test file
+  `interceptor-bindings.test.ts` (12 tests: AC-2/3/4/9/10 + priority resolution +
+  enumeration + AuthorModel delegate). world-model build clean; suite 1318 passed /
+  10 skipped (baseline 1306 + 12 new). Partial AC-1 grep clean inside world-model.
+  Expected breakage confirmed present and exactly matching the survey: 11 stdlib
+  actions + engine game-engine.ts + stories/dungeo/src/index.ts still reference the
+  deleted free functions (no extra consumers found).
 
 ### Phase 2: Engine + Stdlib Reader Migration and Dungeo Registration Migration (coordinated single pass)
 - **Tier**: Large
@@ -273,7 +283,35 @@ at once. Therefore:
   `packages/engine/src/game-engine.ts`, `stories/dungeo/src/index.ts`,
   `packages/engine/tests/universal-capability-dispatch.test.ts` or a new sibling test
   file for the interceptor AC-8 case.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-02 session b65caa, user go-ahead "go ahead with phase 2").
+  All 12 stdlib call sites (going has 2), both engine introspection loops, and dungeo's
+  guarded registrations migrated; AC-8 test added
+  (`packages/engine/tests/interceptor-dual-instance.test.ts`, mirrors the ADR-207
+  pattern). Verification: stdlib 1294 passed / 27 skipped; engine 463 passed / 7
+  skipped; `./repokit build dungeo` clean; dungeo unit suite green on three consecutive
+  full runs (106 transcripts, "All tests passed"), AC-6 named puzzles green
+  (rug-trapdoor, troll-visibility, troll-interactions, trophy-case-scoring; the safe
+  rusted-shut path lives in brick-explosion.transcript). stdlib CLAUDE.md got the
+  ADR-208 registration note (per ADR Consequences).
+  **Execution deviations**:
+  - Dungeo had **14** guarded sites, not 15 (the survey's 15 counted the import line).
+  - The re-grep found two consumers beyond the survey (the `packages/*/src` glob missed
+    them): (1) `packages/extensions/basic-combat` — public API changed to
+    `registerBasicCombat(world: IWorldModel)`, now calling
+    `world.registerActionInterceptor`; README example updated; genai-api combat.md
+    regenerates automatically. (2) its caller
+    `packages/devkit/fixtures/basic-story/src/world-setup.ts` — try/catch guard removed,
+    passes `world`.
+  - The fixture also still used **ADR-207**-deleted capability free functions
+    (`registerCapabilityBehavior`/`hasCapabilityBehavior` guard,
+    `getBehaviorForCapability` in actions.ts) — missed by ADR-207 Phase 4 because
+    nothing compiles the fixture in-workspace (its real-path gate is the env-gated
+    DEVKIT_INTEGRATION test). Migrated to the world-method form in this pass; fixture
+    now type-checks clean against workspace-built packages (scratchpad tsconfig
+    harness). The fixture's runtime proof rides ADR-207 Phase 5's overlay/staging run.
+  - familyzoo v1.5.0 still references the old capability free functions —
+    intentionally untouched (frozen ^1.5.0 edition, same recorded deviation as
+    ADR-207 Phase 4).
 
 ### Phase 3: End-to-End Verification — Full AC Matrix and Hand-Back to ADR-207 Phase 5
 - **Tier**: Medium
@@ -323,7 +361,30 @@ at once. Therefore:
 - **Affected files**: none in `packages/`/`stories/` expected beyond the ADR-208 header
   note update; no new test files expected unless AC-7/AC-9 re-confirmation needs a
   dedicated test rather than reusing an existing transcript/CLI path.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-02 session b65caa). All deliverables:
+  - AC-1 bundle-level: 0 hits for `__sharpee_interceptor_registry__` /
+    `interceptor-registry` in `dist/cli/sharpee.js` and in packages/stories sources.
+  - Unit suite green via bundle ("All tests passed", 106 transcripts at the time;
+    now 107 with the new AC-9 transcript). Walkthrough chain **868/868 first run**
+    (one-good-run rule; also the AC-3 integration re-confirmation).
+  - AC-7: new `packages/engine/tests/introspect-interceptors.test.ts` (2 tests) —
+    `engine.introspect()` enumerates the running world's bindings
+    (phases/priority/kind + trait summary) and a second engine/world sees none.
+    Engine suite 465 passed / 7 skipped.
+  - AC-9: new `stories/dungeo/tests/transcripts/interceptor-save-restore.transcript`
+    (7/7) — rug interceptor fires again on restored state across $save/$restore; the
+    save blob (`stories/dungeo/saves/*.json`, gitignored) has zero interceptor
+    content and no new top-level field (keys: pluginStates, worldState).
+  - ADR-208 header note updated to IMPLEMENTED with pointers.
+  - `.current-plan` moved back to `docs/work/adr-207-capability-registry/plan.md`.
+  - **Investigation record**: the first Phase 3 unit-suite run flaked on
+    `troll-combat.transcript` (troll knockout RNG — player loses the fight, RETRY
+    exhausts). Measured against a pre-ADR-208 scratchpad worktree build of HEAD
+    (4b75e230): baseline 19/20 vs current 19/20 (plus 2/30 in wider current
+    sampling, ~5% per-run) — **identical rates, pre-existing flake, not an ADR-208
+    regression**. Side observation (pre-existing, transcript-tester): a RETRY block
+    with `max=10` passed on attempt 11 ("Passed after 11 retry(s)") — off-by-one in
+    the retry limit; flagged for discussion, not fixed (platform gate).
 
 ## Summary of AC coverage by phase
 

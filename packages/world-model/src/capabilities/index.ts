@@ -70,19 +70,17 @@ export {
   applyInterceptorReportResult
 } from './action-interceptor';
 
-// Interceptor registry
+// Binding types (ADR-118, ADR-208). The binding map itself is per-world —
+// it lives on WorldModel (registerActionInterceptor / getInterceptorForAction /
+// getInterceptorBinding / getAllActionInterceptors), not as a module-level
+// registry. These are the shapes WorldModel stores, kept here for reuse and
+// to avoid a WorldModel -> capabilities -> world import cycle (see
+// interceptor-binding.ts header).
 export {
   TraitInterceptorBinding,
   InterceptorRegistrationOptions,
-  InterceptorLookupResult,
-  registerActionInterceptor,
-  getInterceptorForAction,
-  getInterceptorBinding,
-  hasActionInterceptor,
-  unregisterActionInterceptor,
-  clearInterceptorRegistry,
-  getAllInterceptorBindings
-} from './interceptor-registry';
+  InterceptorLookupResult
+} from './interceptor-binding';
 
 // Interceptor helpers
 export {

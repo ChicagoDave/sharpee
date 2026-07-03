@@ -1,0 +1,36 @@
+title: Interceptor Bindings Survive Save/Restore (ADR-208 AC-9)
+story: dungeo
+description: The rug push interceptor fires again on restored state — bindings are per-world code wiring, not save data
+
+---
+
+# Get to the Living Room
+> north
+[OK: contains "North of House"]
+
+> east
+[OK: contains "Behind House"]
+
+> open window
+[OK: contains "open"]
+
+> west
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Living Room"]
+
+# Checkpoint BEFORE the rug is moved
+$save ac9-checkpoint
+
+# Rug push routes through the story's RugPushInterceptor (ADR-118)
+> push rug
+[OK: contains "trap door"]
+
+# Restore to the pre-push state
+$restore ac9-checkpoint
+
+# The rug is back in place and the interceptor must fire again on the
+# restored world — bindings live on the world instance, not in the save blob
+> push rug
+[OK: contains "trap door"]

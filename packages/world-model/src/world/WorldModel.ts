@@ -38,6 +38,13 @@ import type {
   BehaviorRegistrationOptions
 } from '../capabilities/capability-binding';
 import { capabilityBindingKey } from '../capabilities/capability-binding';
+import type { ActionInterceptor } from '../capabilities/action-interceptor';
+import type {
+  TraitInterceptorBinding,
+  InterceptorRegistrationOptions,
+  InterceptorLookupResult
+} from '../capabilities/interceptor-binding';
+import { interceptorBindingKey } from '../capabilities/interceptor-binding';
 import {
   WorldState,
   WorldConfig,
@@ -246,6 +253,65 @@ export interface IWorldModel {
    */
   getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
 
+  // Action-Interceptor Binding Management (ADR-118 hooks, ADR-208 ownership —
+  // a third, distinct "wiring" surface: not ADR-129 data capabilities, not
+  // the ADR-090/207 capability-behavior bindings above.)
+  /**
+   * Register an interceptor for a (traitType, actionId) binding on this world.
+   *
+   * Idempotent: re-registering the same (traitType, actionId) key overwrites
+   * the previous binding (last-registration-wins) rather than throwing.
+   * Scoped to this `WorldModel` instance only — two worlds may bind the same
+   * key to different interceptors.
+   *
+   * @param traitType - The trait type identifier (e.g. a trait's static `type`)
+   * @param actionId - The action ID this interceptor hooks (e.g. 'if.action.taking')
+   * @param interceptor - The stateless interceptor definition to bind (ADR-118)
+   * @param options - Optional priority override (higher = checked first)
+   */
+  registerActionInterceptor(
+    traitType: string,
+    actionId: string,
+    interceptor: ActionInterceptor,
+    options?: InterceptorRegistrationOptions
+  ): void;
+  /**
+   * Resolve the interceptor for an entity + action on this world.
+   *
+   * Scans the entity's traits for interceptor bindings registered for the
+   * action and returns the highest-priority match (ADR-118 resolution).
+   *
+   * @param entity - The entity whose traits are checked
+   * @param actionId - The action ID to resolve
+   * @returns The interceptor, its declaring trait, and the binding — or
+   *   `undefined` if this world has no binding for any of the entity's
+   *   traits + action (the standard action proceeds unintercepted — never
+   *   throws for a missing binding).
+   */
+  getInterceptorForAction(
+    entity: { traits: Map<string, ITrait> },
+    actionId: string
+  ): InterceptorLookupResult | undefined;
+  /**
+   * Resolve the full binding (interceptor + priority) for a
+   * (traitType, actionId) pair on this world.
+   *
+   * @param traitType - The trait type identifier
+   * @param actionId - The action ID
+   * @returns The binding, or `undefined` if none is registered on this world
+   */
+  getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
+  /**
+   * Enumerate every action-interceptor binding registered on this world,
+   * keyed by `traitType:actionId` (see `interceptorBindingKey`).
+   *
+   * Read-only introspection surface (IDE/debug summaries) — register through
+   * `registerActionInterceptor`, never by mutating the returned map.
+   *
+   * @returns The world's binding map as a read-only view
+   */
+  getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
+
   // Entity Management
   createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean }): IFEntity;
   getEntity(id: string): IFEntity | undefined;
@@ -413,6 +479,12 @@ export class WorldModel implements IWorldModel {
   // confused with `capabilities` above (ADR-129 data capabilities — a
   // different, unrelated "capability" concept).
   private capabilityBindings: Map<string, TraitBehaviorBinding> = new Map();
+
+  // Action-interceptor binding map (ADR-118 hooks, ADR-208 ownership).
+  // Per-world, in-memory only — not serialized (AC-9: bindings are code
+  // wiring re-established by story init, not save-game state). Distinct
+  // from both maps above despite the shared "wiring" flavor.
+  private interceptorBindings: Map<string, TraitInterceptorBinding> = new Map();
 
   // Score Ledger (ADR-129)
   private scoreLedger = new ScoreLedger();
@@ -612,6 +684,71 @@ export class WorldModel implements IWorldModel {
     }
 
     return binding.behavior;
+  }
+
+  // Action-Interceptor Binding Management (ADR-118 hooks, ADR-208 ownership)
+  //
+  // The binding map lives on this WorldModel instance — created with the
+  // world, garbage-collected with it, never shared across games (AC-1, AC-2).
+  // Registration is idempotent: re-registering a (traitType, actionId) key
+  // overwrites the previous binding rather than throwing (AC-4).
+
+  registerActionInterceptor(
+    traitType: string,
+    actionId: string,
+    interceptor: ActionInterceptor,
+    options?: InterceptorRegistrationOptions
+  ): void {
+    const key = interceptorBindingKey(traitType, actionId);
+    this.interceptorBindings.set(key, {
+      traitType,
+      actionId,
+      interceptor,
+      priority: options?.priority ?? 0
+    });
+  }
+
+  getInterceptorForAction(
+    entity: { traits: Map<string, ITrait> },
+    actionId: string
+  ): InterceptorLookupResult | undefined {
+    // Find all traits on the entity that have an interceptor bound for this
+    // action on this world (lookup by trait type string — more reliable than
+    // a static constructor property across module copies).
+    const candidates: Array<{ trait: ITrait; binding: TraitInterceptorBinding }> = [];
+
+    for (const trait of entity.traits.values()) {
+      const binding = this.interceptorBindings.get(
+        interceptorBindingKey(trait.type, actionId)
+      );
+      if (binding) {
+        candidates.push({ trait, binding });
+      }
+    }
+
+    // No binding on this world for any of the entity's traits — the standard
+    // action proceeds unintercepted (AC-10). Never throw for a missing binding.
+    if (candidates.length === 0) {
+      return undefined;
+    }
+
+    // Highest priority wins (ADR-118 resolution semantics, unchanged).
+    candidates.sort((a, b) => b.binding.priority - a.binding.priority);
+
+    const { trait, binding } = candidates[0];
+    return {
+      interceptor: binding.interceptor,
+      trait,
+      binding
+    };
+  }
+
+  getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined {
+    return this.interceptorBindings.get(interceptorBindingKey(traitType, actionId));
+  }
+
+  getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
+    return this.interceptorBindings;
   }
 
   // ID Generation

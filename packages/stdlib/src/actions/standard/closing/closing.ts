@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, getInterceptorForAction, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { closedDataConfig } from './closing-data';
@@ -87,7 +87,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = getInterceptorForAction(noun, IFActions.CLOSING);
+    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.CLOSING);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {};
 

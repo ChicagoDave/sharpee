@@ -9,8 +9,14 @@
 > process wins the binding for every game after it. The visible symptom was `familyzoo`
 > scoring 70/75 instead of a perfect 75 (petting silently stopped awarding). Fix: the
 > per-game **binding map** moves to `WorldModel` ownership; behavior *definitions* remain
-> shareable stateless strategies. Implementation planned in
-> `docs/work/adr-207-capability-registry/`.
+> shareable stateless strategies.
+> **IMPLEMENTED 2026-07-02** (Phases 1-4 sessions earlier that day; Phase 5
+> published-package overlay verification in session b65caa — familyzoo v2.0.0
+> **75/75 / "perfect score"** with `pet goats` awarding through the per-world map,
+> 201/201 transcript assertions against `npm pack` tarballs of the staged packages):
+> see `docs/work/adr-207-capability-registry/plan.md` (per-phase completion notes)
+> and `docs/context/session-20260702-1956-v2_familyzoo_split.md` (Phase 5 evidence,
+> shared with ADR-208's published-path proof).
 
 ## Date: 2026-07-02
 

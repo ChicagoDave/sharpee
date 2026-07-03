@@ -22,6 +22,12 @@ import type {
   TraitBehaviorBinding,
   BehaviorRegistrationOptions
 } from '../capabilities/capability-binding';
+import type { ActionInterceptor } from '../capabilities/action-interceptor';
+import type {
+  TraitInterceptorBinding,
+  InterceptorRegistrationOptions,
+  InterceptorLookupResult
+} from '../capabilities/interceptor-binding';
 import type {
   IWorldModel,
   EventHandler,
@@ -386,6 +392,32 @@ export class AuthorModel implements IWorldModel {
 
   getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding> {
     return this.worldModel.getAllCapabilityBindings();
+  }
+
+  // Action-Interceptor Binding Management (ADR-118 hooks, ADR-208 ownership)
+  // — delegates to the underlying WorldModel, which owns the per-world map.
+  registerActionInterceptor(
+    traitType: string,
+    actionId: string,
+    interceptor: ActionInterceptor,
+    options?: InterceptorRegistrationOptions
+  ): void {
+    this.worldModel.registerActionInterceptor(traitType, actionId, interceptor, options);
+  }
+
+  getInterceptorForAction(
+    entity: { traits: Map<string, ITrait> },
+    actionId: string
+  ): InterceptorLookupResult | undefined {
+    return this.worldModel.getInterceptorForAction(entity, actionId);
+  }
+
+  getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined {
+    return this.worldModel.getInterceptorBinding(traitType, actionId);
+  }
+
+  getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
+    return this.worldModel.getAllActionInterceptors();
   }
 
   // Score Ledger

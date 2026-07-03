@@ -28,7 +28,6 @@ import {
   IAddItemResult,
   IAddItemToSupporterResult,
   IFEntity,
-  getInterceptorForAction,
   ActionInterceptor,
   InterceptorSharedData,
   applyInterceptorReportResult
@@ -382,7 +381,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
 
     // Check for interceptor on the target entity (ADR-118)
     // Interceptors are on the container/supporter receiving the item
-    const interceptorResult = getInterceptorForAction(target, IFActions.PUTTING);
+    const interceptorResult = context.world.getInterceptorForAction(target, IFActions.PUTTING);
     const interceptor = interceptorResult?.interceptor;
     const interceptorData: InterceptorSharedData = {
       // Pass item info to interceptor so it knows what's being put
