@@ -1,11 +1,7 @@
-import type { Effect } from '@sharpee/event-processor';
-import { ISemanticEvent } from '@sharpee/core';
-
-let mediaCounter = 0;
-function mediaEvent(type: string, data: Record<string, unknown>): ISemanticEvent {
-  return { id: `zoo-media-${++mediaCounter}`, type, timestamp: Date.now(),
-           entities: {}, data };
-}
-function emit(type: string, data: Record<string, unknown>): Effect {
-  return { type: 'emit', event: mediaEvent(type, data) };
-}
+// in initializeWorld, after the rooms are created:
+audio.atmosphere(aviary.id)
+  .ambient('audio/aviary-birdsong.mp3', 'environment', 0.4)
+  .build();
+audio.atmosphere(nocturnalExhibit.id)
+  .ambient('audio/night-crickets.mp3', 'environment', 0.3)
+  .build();

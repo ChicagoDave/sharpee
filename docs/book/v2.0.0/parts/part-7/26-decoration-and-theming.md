@@ -79,9 +79,16 @@ un-scoped layer of component rules that reads a set of `--theme-*` custom proper
 and paints every component class once:
 
 ```css
-/* the engine, shipped by the platform, written once, never per theme */
-body              { background: var(--theme-bg); color: var(--theme-text); }
-.sharpee-status-bar { background: var(--theme-accent); color: var(--theme-accent-text); }
+/* the engine, shipped by the platform,
+   written once, never per theme */
+body {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+}
+.sharpee-status-bar {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
 /* …every .sharpee-* component, all consuming var(--theme-*) … */
 ```
 
@@ -180,8 +187,12 @@ add a few **flourish** rules under the same `[data-theme]` selector in that same
 stylesheet:
 
 ```css
-[data-theme="zoo-sunny"] .sharpee-menu-bar { background: var(--theme-menu-bg); }
-[data-theme="zoo-sunny"] .sharpee-status-bar { background: var(--theme-bg-alt); }
+[data-theme="zoo-sunny"] .sharpee-menu-bar {
+  background: var(--theme-menu-bg);
+}
+[data-theme="zoo-sunny"] .sharpee-status-bar {
+  background: var(--theme-bg-alt);
+}
 ```
 
 Flourishes are optional polish; the token block is what makes it a theme. (The author

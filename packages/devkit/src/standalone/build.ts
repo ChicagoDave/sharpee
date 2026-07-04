@@ -352,6 +352,7 @@ Options:
 Output:
   dist/<story>.sharpee   Story bundle for Zifmia runner
   dist/web/              Browser client (if browser-entry.ts exists)
+  dist/index.js          Compiled story (declaration files land alongside)
 
 Test files:
   walkthroughs/wt-*.transcript   Walkthrough chain (state persists between files)

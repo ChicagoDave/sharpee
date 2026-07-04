@@ -26,7 +26,9 @@ stdlib.
 import { GameEngine } from '@sharpee/engine';
 import { NpcTrait } from '@sharpee/world-model';
 import { NpcPlugin } from '@sharpee/plugin-npc';
-import { NpcBehavior, NpcContext, NpcAction, createPatrolBehavior } from '@sharpee/stdlib';
+import {
+  NpcBehavior, NpcContext, NpcAction, createPatrolBehavior,
+} from '@sharpee/stdlib';
 ```
 
 `parrotBehavior` further down is a top-level `const`; the entity creation and
@@ -39,13 +41,17 @@ and description, `ActorTrait` with `isPlayer: false` to mark it as a character
 rather than the player, and `NpcTrait` to connect it to a behavior:
 
 ```typescript
-const zookeeper = world.createEntity('zookeeper', EntityType.ACTOR);
+const zookeeper = world.createEntity(
+  'zookeeper',
+  EntityType.ACTOR,
+);
 
 zookeeper.add(new IdentityTrait({
   name: 'zookeeper',
   description:
-    'A friendly zookeeper in khaki overalls and a wide-brimmed hat, ' +
-    'carrying a bucket of mixed animal feed. A name tag reads "Sam."',
+    'A friendly zookeeper in khaki overalls and a ' +
+    'wide-brimmed hat, carrying a bucket of mixed ' +
+    'animal feed. A name tag reads "Sam."',
   aliases: ['keeper', 'zookeeper', 'sam'],
   properName: false,
   article: 'a',
@@ -54,9 +60,11 @@ zookeeper.add(new IdentityTrait({
 zookeeper.add(new ActorTrait({ isPlayer: false }));
 
 zookeeper.add(new NpcTrait({
-  behaviorId: 'zoo-keeper-patrol',  // must match the behavior's id
+  // must match the behavior's id
+  behaviorId: 'zoo-keeper-patrol',
   canMove: true,                    // allowed to change rooms
-  announcesMovement: true,          // "The zookeeper leaves to the east."
+  // "The zookeeper leaves to the east."
+  announcesMovement: true,
   isAlive: true,
   isConscious: true,
 }));
@@ -87,7 +95,8 @@ Aviary. Turning it into an NPC is one more trait on that same entity, linking it
 the behavior we write below:
 
 ```typescript
-// `parrot` is the entity from Chapter 15 (Aviary, already an ACTOR).
+// `parrot` is the entity from Chapter 15 (Aviary, already
+// an ACTOR).
 parrot.add(new NpcTrait({
   behaviorId: 'zoo-parrot',   // matches parrotBehavior.id, below
   canMove: false,             // it stays on its perch
@@ -137,9 +146,11 @@ const parrotBehavior: NpcBehavior = {
 
   // Called every turn, whether or not the player is here.
   onTurn(context: NpcContext): NpcAction[] {
-    if (!context.playerVisible) return [];        // no audience, stay quiet
+    // no audience, stay quiet
+    if (!context.playerVisible) return [];
 
-    if (context.random.chance(0.5)) {             // 50% chance to squawk
+    // 50% chance to squawk
+    if (context.random.chance(0.5)) {
       const phrase = context.random.pick(PARROT_PHRASES);
       return [{
         type: 'speak',
@@ -156,7 +167,9 @@ const parrotBehavior: NpcBehavior = {
       type: 'emote',
       messageId: 'npc.emote',
       data: {
-        text: 'The parrot ruffles its feathers and eyes you with interest.',
+        text:
+          'The parrot ruffles its feathers and eyes you ' +
+          'with interest.',
       },
     }];
   },
@@ -205,16 +218,23 @@ onEngineReady(engine: GameEngine): void {
 
   // 3. Build the zookeeper's patrol from a route of room IDs
   const keeperPatrol = createPatrolBehavior({
-    route: [this.roomIds.mainPath, this.roomIds.pettingZoo, this.roomIds.aviary],
-    loop: true,      // Main Path → Petting Zoo → Aviary → Main Path → …
+    route: [
+      this.roomIds.mainPath,
+      this.roomIds.pettingZoo,
+      this.roomIds.aviary,
+    ],
+    // Main Path → Petting Zoo → Aviary → Main Path → …
+    loop: true,
     waitTurns: 1,    // pause one turn at each stop
   });
 
-  // The factory's default id is 'patrol'; override it to match NpcTrait.behaviorId
+  // The factory's default id is 'patrol'; override it to
+  // match NpcTrait.behaviorId
   keeperPatrol.id = 'zoo-keeper-patrol';
   npcService.registerBehavior(keeperPatrol);
 
-  // 4. Register the parrot's custom behavior (its id already matches)
+  // 4. Register the parrot's custom behavior
+  // (its id already matches)
   npcService.registerBehavior(parrotBehavior);
 }
 ```

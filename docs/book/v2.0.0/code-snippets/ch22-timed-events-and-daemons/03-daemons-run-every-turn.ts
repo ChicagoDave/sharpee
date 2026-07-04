@@ -1,10 +1,12 @@
 function createPAAnnouncementDaemon(): Daemon {
-  let announcementCount = 0;        // internal state, kept across turns
+  // internal state, kept across turns
+  let announcementCount = 0;
 
   return {
     id: 'zoo.daemon.pa_announcements',
     name: 'Zoo PA Announcements',
-    priority: 5,                    // low; runs after more important daemons
+    // low; runs after more important daemons
+    priority: 5,
 
     // Only run every 5th turn, and only four times total
     condition: (ctx: SchedulerContext): boolean =>
@@ -29,8 +31,12 @@ function createPAAnnouncementDaemon(): Daemon {
       }];
     },
 
-    // Save/restore the internal counter so it survives a save/load
+    // Save/restore the internal counter so it survives
+    // a save/load
     getRunnerState() { return { announcementCount }; },
-    restoreRunnerState(state) { announcementCount = (state.announcementCount as number) ?? 0; },
+    restoreRunnerState(state) {
+      announcementCount =
+        (state.announcementCount as number) ?? 0;
+    },
   };
 }

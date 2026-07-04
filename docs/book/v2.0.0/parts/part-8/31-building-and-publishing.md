@@ -17,9 +17,11 @@ reproducible.
 
 ```bash
 npm install -g @sharpee/devkit   # one-time
-sharpee init my-game -y          # scaffold src/index.ts, package.json, tsconfig.json
+# scaffold src/index.ts, package.json, tsconfig.json
+sharpee init my-game -y
 cd my-game && npm install        # pull the platform from npm
-sharpee build                    # compile src/ → dist/, emit the .sharpee bundle
+# compile src/ → dist/, emit the .sharpee bundle
+sharpee build
 ```
 
 `sharpee build` produces the two artifacts you care about in `dist/` (alongside

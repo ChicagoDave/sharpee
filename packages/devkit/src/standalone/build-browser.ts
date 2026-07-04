@@ -7,7 +7,7 @@
  * (ADR-188) and copied fresh from the resolved package every build. Built-in themes
  * the story lists in `sharpee.themes` are copied from platform-browser's
  * styles/themes/ into dist/web/themes/ and wired into the menu; an author's own
- * theme is a [data-theme] block in browser/<story-id>.css (loaded last, wins the
+ * theme is a [data-theme] block in browser/<package-name>.css (loaded last, wins the
  * cascade), listed inline as { id, name }.
  */
 
@@ -105,7 +105,7 @@ interface WiredTheme {
   name: string;
   /** Absolute path to a BUILT-IN theme's CSS (copied into dist/web/themes/), or
    *  null for an AUTHOR theme whose `[data-theme]` block lives in the author
-   *  override stylesheet (browser/<story>.css) — nothing to copy or link. */
+   *  override stylesheet (browser/<package-name>.css) — nothing to copy or link. */
   cssPath: string | null;
   /** Dir holding the built-in CSS + its assets (platform-browser's styles/themes),
    *  or null for an author theme. */
@@ -126,7 +126,7 @@ interface BuiltinThemeEntry {
  *  - a string id of a BUILT-IN theme (shipped by @sharpee/platform-browser under
  *    styles/themes/, looked up in that dir's manifest.json), or
  *  - an inline `{ id, name }` for the author's OWN theme — its `[data-theme]`
- *    token block lives in the author override stylesheet (browser/<story>.css),
+ *    token block lives in the author override stylesheet (browser/<package-name>.css),
  *    so the build only adds a menu entry.
  * Explicit opt-in; no scanning (AC-9). `classic` is the engine default and is
  * always present, so it need not be listed.
@@ -145,7 +145,7 @@ function resolveWiredThemes(projectDir: string, entries: unknown[]): WiredTheme[
       if (!b) {
         throw new Error(
           `Unknown built-in theme "${entry}". Available: ${Object.keys(builtins).join(', ') || '(none)'}. ` +
-            `For your own theme, list { "id": "…", "name": "…" } and define its [data-theme] block in browser/<story-id>.css.`,
+            `For your own theme, list { "id": "…", "name": "…" } and define its [data-theme] block in browser/<package-name>.css.`,
         );
       }
       return {
@@ -319,7 +319,7 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
     );
   }
 
-  // Author override stylesheet → dist/web/<story-id>.css. index.html links it last,
+  // Author override stylesheet → dist/web/<package-name>.css. index.html links it last,
   // so write an empty stub when the author hasn't added one (avoids a 404).
   const overrideCss = path.join(projectDir, 'browser', `${info.storyId}.css`);
   const overrideOut = path.join(outDir, `${info.storyId}.css`);
@@ -375,8 +375,8 @@ Output (dist/web/):
   game.js          Story + engine + browser client (one bundle)
   index.html       The page (platform-owned)
   base.css, engine.css, decorations.css   Engine CSS (from @sharpee/platform-browser)
-  themes/<id>.css  One per built-in theme id listed in package.json "sharpee.themes"
-  <story-id>.css   Your overrides (from browser/<story-id>.css)
-  <assets>         Contents of your assets/ dir (audio, images, …), copied as-is
+  themes/<id>.css      One per built-in theme id listed in package.json "sharpee.themes"
+  <package-name>.css   Your overrides (from browser/<package-name>.css)
+  <assets>             Contents of your assets/ dir (audio, images, …), copied as-is
 `);
 }

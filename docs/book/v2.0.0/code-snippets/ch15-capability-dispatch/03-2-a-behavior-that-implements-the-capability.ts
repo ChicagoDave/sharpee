@@ -6,8 +6,11 @@ const PetMessages = {
 } as const;
 
 const pettingBehavior: CapabilityBehavior = {
-  validate(_entity, _world, _actorId, _shared): CapabilityValidationResult {
-    return { valid: true };          // every pettable animal accepts a pet
+  validate(
+    _entity, _world, _actorId, _shared,
+  ): CapabilityValidationResult {
+    // every pettable animal accepts a pet
+    return { valid: true };
   },
 
   execute(_entity, _world, _actorId, _shared): void {
@@ -28,7 +31,9 @@ const pettingBehavior: CapabilityBehavior = {
     })];
   },
 
-  blocked(entity, _world, _actorId, error, _shared): CapabilityEffect[] {
+  blocked(
+    entity, _world, _actorId, error, _shared,
+  ): CapabilityEffect[] {
     return [createEffect('zoo.event.petting_blocked', {
       messageId: error,
       params: { target: entity.name },

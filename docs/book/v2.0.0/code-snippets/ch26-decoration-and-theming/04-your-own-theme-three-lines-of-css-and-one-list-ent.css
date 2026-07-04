@@ -1,2 +1,6 @@
-[data-theme="zoo-sunny"] .sharpee-menu-bar { background: var(--theme-menu-bg); }
-[data-theme="zoo-sunny"] .sharpee-status-bar { background: var(--theme-bg-alt); }
+[data-theme="zoo-sunny"] .sharpee-menu-bar {
+  background: var(--theme-menu-bg);
+}
+[data-theme="zoo-sunny"] .sharpee-status-bar {
+  background: var(--theme-bg-alt);
+}

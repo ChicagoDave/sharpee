@@ -33,8 +33,10 @@ the petting zoo:
 ```typescript
 world.createScene('scene-petting-zoo', {
   name: 'Among the Animals',
-  begin: (w) => w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
-  end:   (w) => w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
+  begin: (w) =>
+    w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
+  end:   (w) =>
+    w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
   recurring: true,
 });
 ```
@@ -71,10 +73,13 @@ version above — a scene id is registered once, so type in only this final form
 ```typescript
 world.createScene('scene-petting-zoo', {
   name: 'Among the Animals',
-  begin: (w) => w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
-  end:   (w) => w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
+  begin: (w) =>
+    w.getLocation(w.getPlayer()!.id) === pettingZoo.id,
+  end:   (w) =>
+    w.getLocation(w.getPlayer()!.id) !== pettingZoo.id,
   recurring: true,
-  onBegin: () => ({ text: 'A waft of hay and warm fur greets you.' }),
+  onBegin: () =>
+    ({ text: 'A waft of hay and warm fur greets you.' }),
   onEnd:   () => ({ text: 'The animal sounds fade behind you.' }),
 });
 ```
@@ -83,7 +88,9 @@ The callback receives a typed context (`sceneId`, `sceneName`, `turn`, the `worl
 and, on `onEnd`, `totalTurns`, how long the scene ran), so you can vary the line:
 
 ```typescript
-  onEnd: (ctx) => ({ text: `You spent ${ctx.totalTurns} turns among the animals.` }),
+  onEnd: (ctx) => ({
+    text: `You spent ${ctx.totalTurns} turns among the animals.`,
+  }),
 ```
 
 Return nothing for a state-only beat (a scene whose edges drive logic but print no
@@ -111,7 +118,9 @@ Most scenes are one of a few patterns, all expressed through `begin`/`end`:
 world.createScene('scene-storm', {
   name: 'Thunderstorm',
   begin: (w) => w.getStateValue('stormTriggered') === true,
-  end:   (w) => (w.getEntity('scene-storm')?.get(SceneTrait)?.activeTurns ?? 0) >= 15,
+  end:   (w) =>
+    (w.getEntity('scene-storm')
+      ?.get(SceneTrait)?.activeTurns ?? 0) >= 15,
 });
 ```
 

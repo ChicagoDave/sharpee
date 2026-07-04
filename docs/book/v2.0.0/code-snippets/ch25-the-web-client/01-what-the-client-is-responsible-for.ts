@@ -1,10 +1,16 @@
-import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+import {
+  STORY_VERSION,
+  ENGINE_VERSION,
+  BUILD_DATE,
+} from './version.js';
 
 const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
-  defaultTheme: 'zoo-sunny',            // the theme applied on first load / restore
-  // The clickable theme menu is generated at build time from your package.json
-  // `sharpee.themes` (Chapter 26); this array is metadata the generator fills in.
+  // the theme applied on first load / restore
+  defaultTheme: 'zoo-sunny',
+  // The clickable theme menu is generated at build time
+  // from your package.json `sharpee.themes` (Chapter 26);
+  // this array is metadata the generator fills in.
   themes: [
     { id: 'zoo-sunny', name: 'Zoo Sunny' },
     { id: 'modern-dark', name: 'Modern Dark' },
@@ -13,12 +19,15 @@ const client = new BrowserClient({
   storyInfo: {
     title: 'Family Zoo',
     authors: 'You',
-    version: STORY_VERSION,        // all three stamped into './version.js'
+    // all three stamped into './version.js'
+    version: STORY_VERSION,
     engineVersion: ENGINE_VERSION, // by `sharpee build`
     buildDate: BUILD_DATE,
   },
 });
 
-client.initialize(elements);          // page elements (after DOMContentLoaded)
+// page elements (after DOMContentLoaded)
+client.initialize(elements);
 client.connectEngine(engine, world);  // wire the engine
-await client.start();                 // boot, restore autosave, first look
+// boot, restore autosave, first look
+await client.start();

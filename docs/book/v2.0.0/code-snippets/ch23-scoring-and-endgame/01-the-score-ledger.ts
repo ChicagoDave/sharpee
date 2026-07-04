@@ -1,11 +1,13 @@
-// Set the maximum in initializeWorld() so "score" can show "X out of Y"
+// Set the maximum in initializeWorld() so "score" can show
+// "X out of Y"
 world.setMaxScore(75);
 
 // Award points (idempotent): the same ID never scores twice
 const awarded = world.awardScore(
   'zoo.visit.petting_zoo',  // unique ID
   5,                        // points
-  'Visited the petting zoo' // description (for debugging / transcripts)
+  // description (for debugging / transcripts)
+  'Visited the petting zoo'
 );
 // awarded === true the first time, false on every call after
 

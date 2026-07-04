@@ -1,6 +1,7 @@
 renderer.registerRenderer('zoo.ambience', {
   onValue: (value) => {
-    const main = document.getElementById('main-window'); // a stable platform container
+    // a stable platform container
+    const main = document.getElementById('main-window');
     if (!main) return;
     let line = document.getElementById('zoo-ambience');
     if (!line) {

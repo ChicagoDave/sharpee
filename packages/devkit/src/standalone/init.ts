@@ -182,7 +182,7 @@ dist/
     console.log(`  cd ${targetDir}`);
   }
   console.log('  npm install');
-  console.log('  npm run build');
+  console.log('  sharpee build');
   console.log('');
   console.log('To add a browser client:');
   console.log('  sharpee init-browser');

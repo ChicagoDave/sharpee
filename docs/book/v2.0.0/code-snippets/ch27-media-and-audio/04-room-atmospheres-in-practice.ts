@@ -1,12 +1,28 @@
-// Engine side, in Story.registerChannels:
-import { createAmbientChannel } from '@sharpee/stdlib';
+// in onEngineReady, alongside the plugin registrations:
+engine.getEventProcessor().registerHandler(
+  'if.event.actor_moved',
+  (event: ISemanticEvent): Effect[] => {
+    const data = event.data as
+      { toRoom?: string; destination?: string } | undefined;
+    const toRoom = data?.toRoom ?? data?.destination;
+    if (!toRoom) return [];
 
-registry.add(createAmbientChannel('environment'));
-
-// Browser side, in the browser entry:
-import { createAmbientChannelRenderer } from '@sharpee/platform-browser';
-
-client.getChannelRenderer().registerRenderer(
-  'ambient:environment',
-  createAmbientChannelRenderer(client.getAudioManager(), 'environment'),
+    const effects: Effect[] = [];
+    const atmosphere = audio.getAtmosphere(toRoom);
+    if (atmosphere) {
+      for (const a of atmosphere.ambient) {
+        effects.push(emit('media.ambient.play', {
+          src: a.src,
+          channel: a.channel,
+          volume: a.volume,
+          loop: true,
+        }));
+      }
+    } else {
+      effects.push(emit('media.ambient.stop', {
+        channel: 'environment',
+      }));
+    }
+    return effects;
+  },
 );

@@ -94,13 +94,16 @@ You react to them exactly the way you'll react to any event in Volume IV, by
 registering a handler:
 
 ```typescript
-world.registerEventHandler('if.event.region_entered', (event, world) => {
-  const data = event.data as { regionId?: string } | undefined;
-  if (data?.regionId === 'reg-staff') {
-    // The visitor just slipped into the staff area: flavor, a warning,
-    // a scoring hook, whatever the moment calls for.
-  }
-});
+world.registerEventHandler(
+  'if.event.region_entered',
+  (event, world) => {
+    const data = event.data as { regionId?: string } | undefined;
+    if (data?.regionId === 'reg-staff') {
+      // The visitor just slipped into the staff area: flavor, a
+      // warning, a scoring hook, whatever the moment calls for.
+    }
+  },
+);
 ```
 
 (`event.data` is typed `unknown`, so the cast is what lets the strict compiler
@@ -116,8 +119,14 @@ Regions can nest. Give one a `parentRegionId` and a room in the child counts as
 being in the parent too:
 
 ```typescript
-world.createRegion('reg-underground', { name: 'The Underground', defaultDark: true });
-world.createRegion('reg-mine', { name: 'Coal Mine', parentRegionId: 'reg-underground' });
+world.createRegion('reg-underground', {
+  name: 'The Underground',
+  defaultDark: true,
+});
+world.createRegion('reg-mine', {
+  name: 'Coal Mine',
+  parentRegionId: 'reg-underground',
+});
 // a room in reg-mine answers true for reg-underground as well
 ```
 

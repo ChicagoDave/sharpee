@@ -7,8 +7,11 @@ class FamilyZooStory implements Story {
 
   private roomIds: { giftShop: string; pettingZoo: string } =
     { giftShop: '', pettingZoo: '' };
-  private entityIds: { animalFeed: string; penny: string; souvenirPress: string } =
-    { animalFeed: '', penny: '', souvenirPress: '' };
+  private entityIds: {
+    animalFeed: string;
+    penny: string;
+    souvenirPress: string;
+  } = { animalFeed: '', penny: '', souvenirPress: '' };
 
   // createPlayer / initializeWorld / onEngineReady …
 }

@@ -78,7 +78,10 @@ import { IFEntity } from '@sharpee/world-model';
 import { DispenserTrait } from './dispenser-trait.js';
 
 export class DispenserBehavior {
-  /** Spend one charge. Returns false if the dispenser is already empty. */
+  /**
+   * Spend one charge. Returns false if the dispenser is
+   * already empty.
+   */
   static dispense(dispenser: IFEntity): boolean {
     const trait = dispenser.get(DispenserTrait);
     if (!trait || trait.chargesRemaining <= 0) return false;
@@ -107,7 +110,8 @@ A trait and behavior are inert on their own; something has to *call* the behavio
 That caller is one of the coordination tools from earlier volumes:
 
 ```typescript
-// inside a custom "operate dispenser" action's execute phase, or an event handler:
+// inside a custom "operate dispenser" action's execute phase,
+// or an event handler:
 if (DispenserBehavior.dispense(dispenser)) {
   // success: hand out a serving of feed
 } else {

@@ -8,23 +8,33 @@
  * the standard site nav. A downloads bar links the rendered book (HTML / EPUB / PDF),
  * which build-book.sh publishes alongside this page.
  *
- * Organized BY BOOK CHAPTER (docs/book/parts/**), in book reading order. For each chapter:
+ * Organized BY BOOK CHAPTER (docs/book/<version>/parts/**), in book reading order.
+ * For each chapter:
  *   1. STEPS     — the individual fenced code blocks from the book (the deltas a reader
  *                  adds), grouped under their section headings.
  *   2. COMBINED  — the cumulative, runnable story file at that point, taken from the real
- *                  tested tutorial source (tutorials/familyzoo/src/chNN-*.ts). Chapters
- *                  that add no story code carry the previous cumulative forward.
+ *                  tested tutorial source (tutorials/familyzoo/<version>/src/chNN-*.ts).
+ *                  Chapters that add no story code carry the previous cumulative forward.
  *
- * Run from anywhere:  node scripts/build-snippet-page.cjs [chNN ...]
- *   With no args: every chapter. With args (e.g. ch02 ch03 ch04): only those (preview).
+ * Run from anywhere:  node scripts/build-snippet-page.cjs [vX.Y.Z] [chNN ...]
+ *   The optional leading vX.Y.Z picks the book edition (build-book.sh passes its
+ *   version through); default is the newest edition under docs/book/. With no
+ *   chapter args: every chapter. With args (e.g. ch02 ch03 ch04): only those (preview).
  *
  * Owner: docs/book authoring toolchain (book web presence on the site).
  */
 const fs = require('fs'), path = require('path');
 
 const ROOT = path.resolve(__dirname, '..'); // repo root (this script lives in scripts/)
-const BOOK = path.join(ROOT, 'docs/book');
-const FZ = path.join(ROOT, 'tutorials/familyzoo/src');
+
+// Book editions are versioned (docs/book/<version>/, tutorials/familyzoo/<version>/).
+// An optional leading vX.Y.Z argument picks the edition; default: newest present.
+const argv = process.argv.slice(2);
+const VERSION = /^v\d/.test(argv[0] || '')
+  ? argv.shift()
+  : fs.readdirSync(path.join(ROOT, 'docs/book')).filter((d) => /^v\d/.test(d)).sort().pop();
+const BOOK = path.join(ROOT, 'docs/book', VERSION);
+const FZ = path.join(ROOT, 'tutorials/familyzoo', VERSION, 'src');
 const OUT = path.join(ROOT, 'site', 'book-snippets.html');
 
 // book-chapter number -> the runnable tutorial file that is its end-of-chapter checkpoint
@@ -36,7 +46,7 @@ const RUNNABLE = {
   '23':'ch23-scoring.ts',
 };
 const INCLUDE = { typescript:'ts', bash:'sh', css:'css', jsonc:'jsonc' };
-const filter = process.argv.slice(2); // e.g. ['ch02','ch04']
+const filter = argv; // remaining args are chapter filters, e.g. ['ch02','ch04']
 
 const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
@@ -179,7 +189,7 @@ const html = `<!DOCTYPE html>
   </nav>
   <main class="content">
     <h1>Code Snippets</h1>
-    <p>Every code step from <a href="the-sharpee-book.html">The Sharpee Author and Developer Manual</a>, by chapter. The <strong>step</strong> blocks are the deltas you add as you read; the <strong>combined</strong> block is the complete, runnable story so far, taken from the tested <code>familyzoo</code> tutorial source.${filter.length?' <strong>Preview build: '+chapters.length+' chapter(s).</strong>':''}</p>
+    <p>Every code step from <a href="the-sharpee-book-${VERSION}.html">The Sharpee Author and Developer Manual</a> (${VERSION}), by chapter. The <strong>step</strong> blocks are the deltas you add as you read; the <strong>combined</strong> block is the complete, runnable story so far, taken from the tested <code>familyzoo</code> tutorial source.${filter.length?' <strong>Preview build: '+chapters.length+' chapter(s).</strong>':''}</p>
     ${chapters.map(chapterHtml).join('\n')}
   </main>
   <aside id="sidebar" class="sidebar"></aside>

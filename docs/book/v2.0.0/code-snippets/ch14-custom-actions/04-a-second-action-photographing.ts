@@ -10,10 +10,13 @@ const photographAction: Action = {
   group: 'interaction',
 
   validate(context: ActionContext): ValidationResult {
-    const inventory = context.world.getContents(context.player.id);
+    const inventory = context.world
+      .getContents(context.player.id);
     const hasCamera = inventory.some(item =>
       item.get(IdentityTrait)?.aliases?.includes('camera'));
-    if (!hasCamera) return { valid: false, error: PhotoMessages.NO_CAMERA };
+    if (!hasCamera) {
+      return { valid: false, error: PhotoMessages.NO_CAMERA };
+    }
 
     const target = context.command.directObject?.entity;
     if (target) context.sharedData.photoTarget = target;
@@ -25,15 +28,20 @@ const photographAction: Action = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const target = context.sharedData.photoTarget as IFEntity | undefined;
-    const name = target?.get(IdentityTrait)?.name || 'the scenery';
+    const target =
+      context.sharedData.photoTarget as IFEntity | undefined;
+    const name =
+      target?.get(IdentityTrait)?.name || 'the scenery';
     return [context.event('zoo.event.photographed', {
       messageId: PhotoMessages.TOOK_PHOTO,
       params: { target: name },
     })];
   },
 
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  blocked(
+    context: ActionContext,
+    result: ValidationResult,
+  ): ISemanticEvent[] {
     return [context.event('zoo.event.photographing_blocked', {
       messageId: result.error || PhotoMessages.NO_CAMERA,
     })];

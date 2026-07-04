@@ -47,7 +47,11 @@ from the installed npm package. Here is the legend, and a live example:
 ```typescript
 class ContainerTrait implements ITrait {
   constructor(data?: Partial<ContainerTrait>);
-  capacity?: { maxWeight?: number; maxVolume?: number; maxItems?: number };
+  capacity?: {
+    maxWeight?: number;
+    maxVolume?: number;
+    maxItems?: number;
+  };
   isTransparent: boolean;
   enterable: boolean;
 }

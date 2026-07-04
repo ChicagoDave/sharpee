@@ -16,14 +16,16 @@ second time. You never have to worry about a player re-entering a room and scori
 for it again.
 
 ```typescript
-// Set the maximum in initializeWorld() so "score" can show "X out of Y"
+// Set the maximum in initializeWorld() so "score" can show
+// "X out of Y"
 world.setMaxScore(75);
 
 // Award points (idempotent): the same ID never scores twice
 const awarded = world.awardScore(
   'zoo.visit.petting_zoo',  // unique ID
   5,                        // points
-  'Visited the petting zoo' // description (for debugging / transcripts)
+  // description (for debugging / transcripts)
+  'Visited the petting zoo'
 );
 // awarded === true the first time, false on every call after
 
@@ -114,7 +116,8 @@ in the behavior's `execute()`:
 
 ```typescript
 execute(_entity, world, _actorId, _shared): void {
-  world.awardScore(ScoreIds.PET_ANIMAL, ScorePoints[ScoreIds.PET_ANIMAL], 'Petted an animal');
+  world.awardScore(ScoreIds.PET_ANIMAL,
+    ScorePoints[ScoreIds.PET_ANIMAL], 'Petted an animal');
 },
 ```
 
@@ -128,11 +131,13 @@ world.chainEvent('if.event.actor_moved', (event, w) => {
   const toRoom = data.toRoom || data.destination;
   if (!toRoom) return null;
 
-  const roomName = w.getEntity(toRoom)?.get(IdentityTrait)?.name || '';
+  const roomName =
+    w.getEntity(toRoom)?.get(IdentityTrait)?.name || '';
   const scoreId = ROOM_SCORE_MAP[roomName];
   if (!scoreId) return null;
 
-  w.awardScore(scoreId, ScorePoints[scoreId], `Visited ${roomName}`);
+  w.awardScore(scoreId, ScorePoints[scoreId],
+    `Visited ${roomName}`);
   return null;   // scoring is silent; no custom event
 }, { key: 'zoo.chain.room-visit-scoring' });
 ```
@@ -143,24 +148,35 @@ points, and returns `null` to stay silent:
 
 ```typescript
 const mapId = this.entityIds.zooMap;
-world.chainEvent('if.event.taken', (event: ISemanticEvent, w: IWorldModel) => {
-  const data = event.data as Record<string, any>;
-  if (data.itemId === mapId) {
-    w.awardScore(ScoreIds.COLLECT_MAP, ScorePoints[ScoreIds.COLLECT_MAP],
-      'Collected the zoo map');
-  }
-  return null;
-}, { key: 'zoo.chain.take-scoring' });
+world.chainEvent(
+  'if.event.taken',
+  (event: ISemanticEvent, w: IWorldModel) => {
+    const data = event.data as Record<string, any>;
+    if (data.itemId === mapId) {
+      w.awardScore(ScoreIds.COLLECT_MAP,
+        ScorePoints[ScoreIds.COLLECT_MAP],
+        'Collected the zoo map');
+    }
+    return null;
+  },
+  { key: 'zoo.chain.take-scoring' },
+);
 
 const brochureId = this.entityIds.brochure;
-world.chainEvent('if.event.read', (event: ISemanticEvent, w: IWorldModel) => {
-  const data = event.data as Record<string, any>;
-  if (data.entityId === brochureId || data.targetId === brochureId) {
-    w.awardScore(ScoreIds.READ_BROCHURE, ScorePoints[ScoreIds.READ_BROCHURE],
-      'Read the zoo brochure');
-  }
-  return null;
-}, { key: 'zoo.chain.read-scoring' });
+world.chainEvent(
+  'if.event.read',
+  (event: ISemanticEvent, w: IWorldModel) => {
+    const data = event.data as Record<string, any>;
+    if (data.entityId === brochureId ||
+        data.targetId === brochureId) {
+      w.awardScore(ScoreIds.READ_BROCHURE,
+        ScorePoints[ScoreIds.READ_BROCHURE],
+        'Read the zoo brochure');
+    }
+    return null;
+  },
+  { key: 'zoo.chain.read-scoring' },
+);
 ```
 
 (`this.entityIds.zooMap` and `.brochure` are recorded in `initializeWorld` when you
@@ -173,17 +189,23 @@ rabbits and photographing an animal award inside their custom actions' `execute(
 from Chapter 13 (like collecting the map):
 
 ```typescript
-// inside the feeding action's execute(), keyed on which animal was fed:
-world.awardScore(ScoreIds.FEED_GOATS, ScorePoints[ScoreIds.FEED_GOATS], 'Fed the goats');
-//   …and ScoreIds.FEED_RABBITS the same way when the rabbits are fed.
+// inside the feeding action's execute(), keyed on which
+// animal was fed:
+world.awardScore(ScoreIds.FEED_GOATS,
+  ScorePoints[ScoreIds.FEED_GOATS], 'Fed the goats');
+//   …and ScoreIds.FEED_RABBITS the same way when the
+//   rabbits are fed.
 
 // inside the photograph action's execute():
 world.awardScore(ScoreIds.PHOTOGRAPH_ANIMAL,
-  ScorePoints[ScoreIds.PHOTOGRAPH_ANIMAL], 'Photographed an animal');
+  ScorePoints[ScoreIds.PHOTOGRAPH_ANIMAL],
+  'Photographed an animal');
 
-// in the penny-press chain (Chapter 13), the same shape as the map award:
+// in the penny-press chain (Chapter 13), the same shape as
+// the map award:
 w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
-  ScorePoints[ScoreIds.COLLECT_PRESSED_PENNY], 'Pressed a souvenir penny');
+  ScorePoints[ScoreIds.COLLECT_PRESSED_PENNY],
+  'Pressed a souvenir penny');
 ```
 
 With all twelve awards in place the scores sum to the full 75, so the victory
@@ -207,7 +229,9 @@ function createVictoryDaemon(): Daemon {
   return {
     id: 'zoo.daemon.victory',
     name: 'Victory Check',
-    priority: 100,   // runs first among daemons; the turn's scoring is already settled
+    // runs first among daemons; the turn's scoring is
+    // already settled
+    priority: 100,
 
     condition: (ctx: SchedulerContext): boolean => {
       if (victoryTriggered) return false;
@@ -226,7 +250,10 @@ function createVictoryDaemon(): Daemon {
     },
 
     getRunnerState() { return { victoryTriggered }; },
-    restoreRunnerState(state) { victoryTriggered = (state.victoryTriggered as boolean) ?? false; },
+    restoreRunnerState(state) {
+      victoryTriggered =
+        (state.victoryTriggered as boolean) ?? false;
+    },
   };
 }
 ```
@@ -242,9 +269,10 @@ a raw id:
 
 ```typescript
 language.addMessage(ScoreMessages.VICTORY,
-  "Congratulations! You've earned your JUNIOR ZOOKEEPER badge. You visited " +
-  'every exhibit, fed the animals, collected souvenirs, and made memories to ' +
-  'last a lifetime.\n\n*** You have won ***');
+  "Congratulations! You've earned your JUNIOR ZOOKEEPER " +
+  'badge. You visited every exhibit, fed the animals, ' +
+  'collected souvenirs, and made memories to last a ' +
+  'lifetime.\n\n*** You have won ***');
 ```
 
 > **The mistake everyone makes once:** reading `priority: 100` as "runs last." The

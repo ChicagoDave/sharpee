@@ -4,7 +4,9 @@ function createVictoryDaemon(): Daemon {
   return {
     id: 'zoo.daemon.victory',
     name: 'Victory Check',
-    priority: 100,   // runs first among daemons; the turn's scoring is already settled
+    // runs first among daemons; the turn's scoring is
+    // already settled
+    priority: 100,
 
     condition: (ctx: SchedulerContext): boolean => {
       if (victoryTriggered) return false;
@@ -23,6 +25,9 @@ function createVictoryDaemon(): Daemon {
     },
 
     getRunnerState() { return { victoryTriggered }; },
-    restoreRunnerState(state) { victoryTriggered = (state.victoryTriggered as boolean) ?? false; },
+    restoreRunnerState(state) {
+      victoryTriggered =
+        (state.victoryTriggered as boolean) ?? false;
+    },
   };
 }

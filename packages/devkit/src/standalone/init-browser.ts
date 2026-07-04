@@ -3,7 +3,7 @@
  *
  * Adds a browser client to an existing Sharpee story project: the entry-point
  * wiring (src/browser-entry.ts), an author override stylesheet
- * (browser/<story-id>.css), the runtime dependencies the entry point imports,
+ * (browser/<package-name>.css), the runtime dependencies the entry point imports,
  * and a build:browser script. The HTML and platform CSS are owned by the
  * platform and supplied at build time by `sharpee build-browser` — never seeded.
  */
@@ -32,7 +32,8 @@ interface ProjectInfo {
   storyTitle: string;
 }
 
-/** Read story id/title from package.json, falling back to src/index.ts. */
+/** Read the story id (the package name — it names the override stylesheet)
+ *  and title from package.json, falling back to src/index.ts. */
 function getProjectInfo(projectDir: string): ProjectInfo | null {
   const packagePath = path.join(projectDir, 'package.json');
   if (fs.existsSync(packagePath)) {
@@ -162,9 +163,7 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
 
   console.log('\n✅ Browser client added!\n');
   console.log('Next steps:');
-  console.log('  npm install            # Install the browser runtime deps');
-  console.log('  npm run build          # Build the story');
-  console.log('  npm run build:browser  # Build the web bundle → dist/web/');
+  console.log('  sharpee build          # Build the story + web bundle → dist/web/');
   console.log('');
   console.log('Customize:');
   console.log('  src/browser-entry.ts   # Engine + client wiring');
@@ -180,8 +179,8 @@ Usage: sharpee init-browser
 
 Adds the files needed to build a web version of your story:
 
-  src/browser-entry.ts     Engine + browser-client wiring
-  browser/<story-id>.css   Author style overrides (loaded last)
+  src/browser-entry.ts         Engine + browser-client wiring
+  browser/<package-name>.css   Author style overrides (loaded last)
 
 Also adds the browser runtime dependencies and a build:browser script to
 package.json. The HTML page and platform CSS are supplied at build time by

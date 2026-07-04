@@ -2,7 +2,8 @@ const renderer = client.getChannelRenderer();
 renderer.registerRenderer('score', {
   onValue: (value) => {
     const { current } = value as { current: number };
-    const el = document.getElementById('score-turns'); // the platform status element
+    // the platform status element
+    const el = document.getElementById('score-turns');
     if (el) el.textContent = `★ ${current}`;
   },
 });

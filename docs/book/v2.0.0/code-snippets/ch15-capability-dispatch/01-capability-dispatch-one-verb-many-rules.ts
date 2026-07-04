@@ -1,8 +1,11 @@
 import {
   ITrait, IFEntity,
-  CapabilityBehavior, CapabilityValidationResult, CapabilitySharedData,
+  CapabilityBehavior, CapabilityValidationResult,
+  CapabilitySharedData,
   CapabilityEffect, createEffect,
   findTraitWithCapability,
 } from '@sharpee/world-model';
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import {
+  Action, ActionContext, ValidationResult,
+} from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';

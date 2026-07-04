@@ -1,3 +1,4 @@
 lunchbox.get(OpenableTrait)!.isOpen = true;   // temporarily open
-world.moveEntity(juice.id, lunchbox.id);       // place the item inside
+// place the item inside
+world.moveEntity(juice.id, lunchbox.id);
 lunchbox.get(OpenableTrait)!.isOpen = false;   // close it again

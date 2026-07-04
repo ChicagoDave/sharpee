@@ -23,7 +23,9 @@ Chapter 20. The daemon `run` functions return `ISemanticEvent[]`, and one reads 
 
 ```typescript
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
-import type { Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import type {
+  Daemon, Fuse, SchedulerContext,
+} from '@sharpee/plugin-scheduler';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 
@@ -66,12 +68,14 @@ fires every fifth turn and walks through a sequence of closing announcements:
 
 ```typescript
 function createPAAnnouncementDaemon(): Daemon {
-  let announcementCount = 0;        // internal state, kept across turns
+  // internal state, kept across turns
+  let announcementCount = 0;
 
   return {
     id: 'zoo.daemon.pa_announcements',
     name: 'Zoo PA Announcements',
-    priority: 5,                    // low; runs after more important daemons
+    // low; runs after more important daemons
+    priority: 5,
 
     // Only run every 5th turn, and only four times total
     condition: (ctx: SchedulerContext): boolean =>
@@ -96,9 +100,13 @@ function createPAAnnouncementDaemon(): Daemon {
       }];
     },
 
-    // Save/restore the internal counter so it survives a save/load
+    // Save/restore the internal counter so it survives
+    // a save/load
     getRunnerState() { return { announcementCount }; },
-    restoreRunnerState(state) { announcementCount = (state.announcementCount as number) ?? 0; },
+    restoreRunnerState(state) {
+      announcementCount =
+        (state.announcementCount as number) ?? 0;
+    },
   };
 }
 ```
@@ -129,27 +137,35 @@ function createGoatBleatingDaemon(): Daemon {
     priority: 3,
 
     condition: (ctx: SchedulerContext): boolean => {
-      const active = ctx.world.getStateValue('zoo.feeding_time_active') as boolean;
-      const left = ctx.world.getStateValue('zoo.bleat_turns_remaining') as number;
+      const active = ctx.world
+        .getStateValue('zoo.feeding_time_active') as boolean;
+      const left = ctx.world
+        .getStateValue('zoo.bleat_turns_remaining') as number;
       return active === true && (left ?? 0) > 0;
     },
 
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
-      const left = (ctx.world.getStateValue('zoo.bleat_turns_remaining') as number) ?? 0;
+      const left = (ctx.world.getStateValue(
+        'zoo.bleat_turns_remaining'
+      ) as number) ?? 0;
       if (left <= 1) {
         ctx.world.setStateValue('zoo.feeding_time_active', false);
         ctx.world.setStateValue('zoo.bleat_turns_remaining', 0);
       } else {
-        ctx.world.setStateValue('zoo.bleat_turns_remaining', left - 1);
+        ctx.world
+          .setStateValue('zoo.bleat_turns_remaining', left - 1);
       }
 
-      // Ambient sound, only heard if the player is in the petting zoo
+      // Ambient sound, only heard if the player is in the
+      // petting zoo
       const room = ctx.world.getEntity(ctx.playerLocation);
-      if ((room?.get(IdentityTrait)?.name || '').includes('Petting Zoo')) {
+      if ((room?.get(IdentityTrait)?.name || '')
+        .includes('Petting Zoo')) {
         return [{
           id: `zoo-bleat-${ctx.turn}`, type: 'game.message',
           timestamp: Date.now(), entities: {},
-          data: { messageId: TimedMessages.GOATS_BLEATING }, narrate: true,
+          data: { messageId: TimedMessages.GOATS_BLEATING },
+          narrate: true,
         }];
       }
       return [];
@@ -185,7 +201,8 @@ function createFeedingTimeFuse(): Fuse {
       return [{
         id: `zoo-feeding-${ctx.turn}`, type: 'game.message',
         timestamp: Date.now(), entities: {},
-        data: { messageId: TimedMessages.FEEDING_TIME }, narrate: true,
+        data: { messageId: TimedMessages.FEEDING_TIME },
+        narrate: true,
       }];
     },
   };
@@ -208,20 +225,25 @@ just narrates raw ids:
 ```typescript
 extendLanguage(language: LanguageProvider): void {
   language.addMessage(TimedMessages.PA_CLOSING_3,
-    '*DING DONG* "Attention visitors! The zoo closes in three hours. Please ' +
-    'visit all exhibits before closing time!"');
+    '*DING DONG* "Attention visitors! The zoo closes in ' +
+    'three hours. Please visit all exhibits before closing ' +
+    'time!"');
   language.addMessage(TimedMessages.PA_CLOSING_2,
-    '*DING DONG* "Two hours until closing. Don\'t forget the gift shop!"');
+    '*DING DONG* "Two hours until closing. ' +
+    'Don\'t forget the gift shop!"');
   language.addMessage(TimedMessages.PA_CLOSING_1,
-    '*DING DONG* "One hour until closing. Please make your way toward the exit."');
+    '*DING DONG* "One hour until closing. Please make ' +
+    'your way toward the exit."');
   language.addMessage(TimedMessages.PA_CLOSED,
-    '*DING DONG* "The zoo is now closed. Thank you for visiting!"');
+    '*DING DONG* "The zoo is now closed. ' +
+    'Thank you for visiting!"');
   language.addMessage(TimedMessages.FEEDING_TIME,
-    '*DING DONG* "It\'s FEEDING TIME at the Petting Zoo! Come watch the goats ' +
-    'and rabbits enjoy their snacks!"');
+    '*DING DONG* "It\'s FEEDING TIME at the Petting ' +
+    'Zoo! Come watch the goats and rabbits enjoy their ' +
+    'snacks!"');
   language.addMessage(TimedMessages.GOATS_BLEATING,
-    'The pygmy goats are bleating loudly and headbutting the fence. They seem ' +
-    'very hungry!');
+    'The pygmy goats are bleating loudly and headbutting ' +
+    'the fence. They seem very hungry!');
 }
 ```
 

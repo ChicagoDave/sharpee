@@ -39,7 +39,7 @@ describe('runInitCommand (scaffold)', () => {
     expect(pkg.devDependencies['@sharpee/devkit']).toBe(`^${devkitVersion}`);
 
     // The CLI is a local devDependency so `sharpee build`/`introspect` resolve.
-    expect(pkg.devDependencies['@sharpee/devkit']).toMatch(/^\^1\./);
+    expect(pkg.devDependencies['@sharpee/devkit']).toMatch(/^\^\d+\./);
 
     // No npx anywhere in the scaffold's scripts (1.0 decision).
     expect(JSON.stringify(pkg.scripts)).not.toContain('npx');
