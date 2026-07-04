@@ -143,8 +143,11 @@ build_web() {
   cp -f styles/book.css web/styles/book.css
   # chunkedhtml ships only a minimal top nav; add a persistent left sidebar
   # (collapsible volumes → chapters) and a bottom Prev/Next bar to every page.
-  command -v node >/dev/null && node "$SCRIPT_DIR/book-web-nav.cjs" || \
+  if command -v node >/dev/null; then
+    node "$SCRIPT_DIR/book-web-nav.cjs" "$VERSION"
+  else
     echo "  (skipping web nav injection: node not found)"
+  fi
 }
 
 # Book web presence on the site (GitHub Pages):
@@ -158,8 +161,11 @@ build_web() {
 build_snippets() {
   echo "→ SNIPPETS + book downloads → site/"
   local SITE="$SCRIPT_DIR/../site"
-  command -v node >/dev/null && node "$SCRIPT_DIR/build-snippet-page.cjs" \
-    || echo "  (skipping snippet page: node not found)"
+  if command -v node >/dev/null; then
+    node "$SCRIPT_DIR/build-snippet-page.cjs" "$VERSION"
+  else
+    echo "  (skipping snippet page: node not found)"
+  fi
   for f in "$NAME.html" "$NAME.epub" "$NAME.pdf"; do
     [ -f "$OUT/$f" ] && cp -f "$OUT/$f" "$SITE/$f" && echo "  published $f"
   done

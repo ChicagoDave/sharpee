@@ -1,8 +1,13 @@
 /*
- * book-web-nav.cjs — post-process the pandoc chunkedhtml output (docs/book/web/)
- * to add a persistent left sidebar (collapsible volumes → chapters) and a bottom
- * Prev/Next bar to every page. Driven by web/sitemap.json (the full structure
- * pandoc emits). Invoked by `scripts/build-book.sh web` after pandoc runs.
+ * book-web-nav.cjs — post-process the pandoc chunkedhtml output
+ * (docs/book/<version>/web/) to add a persistent left sidebar (collapsible
+ * volumes → chapters) and a bottom Prev/Next bar to every page. Driven by
+ * web/sitemap.json (the full structure pandoc emits). Invoked by
+ * `scripts/build-book.sh <version> web` after pandoc runs.
+ *
+ * Run from anywhere:  node scripts/book-web-nav.cjs [vX.Y.Z]
+ *   The optional vX.Y.Z picks the book edition (build-book.sh passes its
+ *   version through); default is the newest edition under docs/book/.
  *
  * pandoc's chunkedhtml only ships a minimal top "Up/Next/Prev" line (#sitenav);
  * this gives the parked web build real book navigation.
@@ -10,7 +15,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const WEB = path.join(__dirname, '..', 'docs', 'book', 'web');
+// Book editions are versioned (docs/book/<version>/). An optional leading
+// vX.Y.Z argument picks the edition; default: newest present.
+const BOOK_ROOT = path.join(__dirname, '..', 'docs', 'book');
+const VERSION = /^v\d/.test(process.argv[2] || '')
+  ? process.argv[2]
+  : fs.readdirSync(BOOK_ROOT).filter((d) => /^v\d/.test(d)).sort().pop();
+const WEB = path.join(BOOK_ROOT, VERSION, 'web');
 const sm = JSON.parse(fs.readFileSync(path.join(WEB, 'sitemap.json'), 'utf8'));
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

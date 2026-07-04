@@ -143,21 +143,30 @@ Try-it blocks used compounds in six chapters (now split as single commands).
 Decide: support chaining in parser-en-us, or leave unsupported (book no longer
 depends on it).
 
-## P6 — devkit polish
+## P6 — devkit polish — DONE (in working tree)
+
+Resolved 2026-07-04 per David's per-item decisions (1: fix it, 2: sharpee
+build, 3: drop the step, 4: align it):
 
 - `init-browser` names the author override stylesheet after **pkg.name**
   (`getProjectInfo` prefers `package.json name` and only falls back to the
   story's `config.id`), while its own comments/output call it
   `browser/<story-id>.css`. Book §26.4.2 now says "named after your package
-  name". Either rename the concept or read the real story id first.
+  name". → Renamed the concept: all devkit comments/help/output now say
+  `browser/<package-name>.css` (init-browser.ts, build-browser.ts); behavior
+  unchanged and matches the book.
 - `sharpee init` "Next steps" says `npm run build`; the book teaches
-  `sharpee build`. Pick one voice.
+  `sharpee build`. → One voice: `sharpee build` (init.ts keeps `npm install`
+  — a fresh project genuinely needs it).
 - `init-browser` "Next steps" tells the user to `npm install` browser deps, but
-  `sharpee build` succeeds immediately without it. Drop or explain the step.
+  `sharpee build` succeeds immediately without it. → Dropped; next steps are
+  now the single line `sharpee build  # Build the story + web bundle → dist/web/`.
 - `sharpee build` output claims "two things in dist/" — dist/ also carries
-  `.d.ts` files (book wording now hedged; CLI copy could hedge too).
+  `.d.ts` files. → Help Output section now also lists `dist/index.js`
+  "Compiled story (declaration files land alongside)", matching the book's
+  hedged wording.
 
-## P7 — Book production: code measure (build/styles decision)
+## P7 — Book production: code measure (build/styles decision) — DONE (in working tree)
 
 The print page fits roughly 60–65 monospace characters; ~80 code-block lines in
 the book source are longer. WeasyPrint wraps them at spaces **without any
@@ -167,6 +176,12 @@ no break opportunity (Ch 14/15/17 grammar chains, fixed by reformatting; a
 `pre { white-space: pre-wrap; overflow-wrap: break-word }` safety net is now in
 `styles/print.css` so nothing can be clipped again). Remaining decision: reflow
 all long listings to the measure, shrink the code font, or accept marked wraps.
+
+**Resolution (approved 2026-07-04)**: reflow — all over-measure code lines in
+the book source were reflowed to the 6×9 print measure (commit ef876b67). The
+reflow's brace-expansion side effect in Ch 14/15 (grammar chains split across
+lines) was reviewed and approved by David. The `print.css` pre-wrap safety net
+stays as a backstop.
 
 ## Transcript testing threaded through the book (2026-07-04)
 
