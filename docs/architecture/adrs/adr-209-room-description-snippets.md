@@ -1,19 +1,23 @@
 # ADR-209: Room-Description Snippets — Author-Written Text Spliced at Explicit Markers
 
-## Status: DRAFT
+## Status: ACCEPTED
 
-> Proposed 2026-07-03 from a design discussion with David (session daf0f1).
-> **All seven open questions resolved by David the same day** (see the Open
-> Questions section; each records its decision and the rejected alternatives).
-> Not yet reviewed (`/adr-review` pending) and not scheduled for
-> implementation.
+> Accepted 2026-07-03 by David. Proposed the same day from a design
+> discussion (session daf0f1); **all seven open questions resolved by David**
+> (see the Open Questions section; each records its decision and the rejected
+> alternatives). **adr-review round 1 applied** (initial verdict NEEDS WORK,
+> 8/13 → 13/13 after fixes): added Interface contracts (wire types in
+> if-domain, `Seq` phrase value, stdlib-owns-scan boundary resolution),
+> render-time graceful degradation for runtime map mutation,
+> duplicate-marker and presence-definition edge rules, and AC-1..AC-10.
+> Not yet implemented; implementation requires its own go-ahead.
 
 ## Date: 2026-07-03
 
 ## Terminology
 
 - **Marker** — a named placeholder the author writes inside their own room
-  description prose, e.g. `{cabinet}`.
+  description prose, e.g. `{snippet:cabinet}`.
 - **Snippet** — author-written text that replaces a marker: a single string, or
   a list of strings the platform selects among.
 - **Snippet map** — the room's marker→snippet table, supplied by the author.
@@ -105,11 +109,17 @@ Rendered (one possible visit):
    room has a snippet map**. Rooms without one remain pure
    `{verbatim:description}`: braces in existing prose keep meaning nothing,
    so the change is additive with zero migration.
-6. **Mistakes fail loudly**, per house style: in a snippet-bearing room, a
-   marker with no snippet entry is a synchronous error at story load (same
-   posture as `PhraseParseError`). A snippet entry whose marker never appears
-   in the description is a build-time lint warning (likely author drift, not
-   fatal).
+6. **Mistakes fail loudly at load, degrade gracefully at render.** In a
+   snippet-bearing room, a marker with no snippet entry is a synchronous
+   error at story load (same posture as `PhraseParseError`). Because
+   handlers may mutate the map at runtime (semantics 7), the render path
+   must also cope: an unbound marker encountered at render time splices
+   nothing and logs
+   `[snippet] room "study": marker 'cabinet' has no entry` — the same
+   treat-the-log-as-a-broken-build posture as `renderMessage` failures. The
+   render path never throws mid-turn. A snippet entry whose marker never
+   appears in either description text is a build-time lint warning (likely
+   author drift, not fatal).
 7. **Optional `mentions` — coverage metadata and presence gate** (still
    optional per snippet, but with behavior when set):
 
@@ -145,16 +155,19 @@ Rendered (one possible visit):
 
 ### Touched layers (sizing, not a plan)
 
-- **world-model**: snippet-map storage on `RoomTrait` (alongside the ADR-107
+- **if-domain**: `SnippetText` / `SnippetEntry` / `SnippetMap` wire types and
+  the `Seq` phrase kind (see Interface contracts).
+- **world-model**: `RoomTrait.snippets` storage (alongside the ADR-107
   `descriptionMessageId` and `initialDescription` fields) and the
-  builder/helper surface.
-- **stdlib (looking)**: pass the snippet map (or the pre-split description
-  parts) into the room-description params instead of one opaque string.
-- **lang-en-us / Assembler**: realize the spliced description as a sequence of
-  verbatim segments interleaved with Literal/Choice values, so Choice counters
-  advance under the Assembler's single authority as they do everywhere else.
+  builder/helper surface (`room().snippets()`).
+- **stdlib (looking)**: the scan/gate/resolve pass; binds the `Seq` as the
+  `description` param (see Boundary resolution).
+- **lang-en-us / Assembler**: realize `Seq` by in-order concatenation; Choice
+  counters advance under the Assembler's single authority as everywhere else.
   `if.room.description_body` (`{verbatim:description}{slot:here}`) keeps its
   shape; the `description` param's *value* becomes composite.
+- **engine**: load-time marker validation after `initializeWorld`.
+- **devkit**: the unused-entry build lint (warning).
 
 ## Open questions (all resolved by David, 2026-07-03)
 
@@ -218,6 +231,91 @@ Rendered (one possible visit):
    deleting them, so the load-time unbound-marker error stays meaningful.
    A snippet that should outlive its entity ("scorch marks where the trunk
    stood") simply omits `mentions` on that text.
+8. **Duplicate markers resolve once per render.** If the same marker appears
+   twice in one description, both occurrences splice the same resolved text,
+   and the entry's selector counter advances once for that render.
+9. **Presence is transitive containment within the room.** For the `mentions`
+   gate, an entity is "present" when its containing room is this room,
+   however deeply nested (the trunk inside a crate in the parlor still
+   counts). It stops being present when its containing room changes or the
+   entity is destroyed — matching the scope system's notion of "here."
+
+### Interface contracts
+
+The snippet map's wire shape is shared by world-model (storage), stdlib
+(scan/gate), and lang-en-us (realization), so per the co-located wire-type
+rule it lives in **`@sharpee/if-domain`**, next to the phrase contract:
+
+```typescript
+// @sharpee/if-domain
+export type SnippetText = { text: string } | { messageId: string };
+
+export type SnippetEntry =
+  | string                                    // one text, spliced every render
+  | string[]                                  // short form: cycling over texts
+  | (SnippetText & { mentions?: string })     // one text with optional gate
+  | {
+      selector?: 'cycling' | 'stopping' | 'sticky' | 'random' | 'firstTime';
+      texts: Array<string | SnippetText>;
+      mentions?: string;                      // entity id; gates the whole entry
+    };
+
+export type SnippetMap = Record<string, SnippetEntry>;
+```
+
+```typescript
+// @sharpee/world-model — RoomTrait gains one optional field
+snippets?: SnippetMap;
+```
+
+The spliced description reaches the Assembler as a **`Seq` phrase value**
+(new in if-domain unless `PhraseList` with no conjunction proves honest at
+implementation time): `{ kind: 'seq', parts: Phrase[] }`, realized as plain
+in-order concatenation with no joining punctuation. Parts are `Verbatim`
+literals (the author's prose segments) interleaved with `Literal` / `Choice`
+values (the resolved snippet entries). Choice *picks* still happen at
+realize time inside the Assembler, so selector counters advance under its
+single authority, keyed `(roomId, markerName)`.
+
+**Boundary resolution (stdlib ↔ lang):** the stdlib looking action owns the
+scan and the gate — it splits the description text at markers, resolves each
+marker to its entry, applies the `mentions` presence check via world queries,
+resolves `{ messageId }` texts through the language provider interface, and
+binds the resulting `Seq` as the `description` param. The Assembler stays
+world-blind and simply realizes what it is handed. Load-time marker
+validation runs in the **engine** at story initialization (after
+`initializeWorld` returns); the unused-entry lint runs in the **devkit**
+build.
+
+## Acceptance criteria
+
+Each AC lands as a test: unit tests in the owning package for scan, gate, and
+realization, plus one story-level transcript exercising AC-1 through AC-4,
+AC-8, and AC-9 end to end.
+
+- **AC-1**: The study example (Author surface) renders byte-exactly as shown
+  on first visit (default `cycling` picks the first entry).
+- **AC-2**: Repeated `look` advances a `cycling` snippet in declaration order
+  and wraps; a `random` snippet is seeded-deterministic and replays
+  identically in the same transcript.
+- **AC-3**: Saving mid-cycle and restoring continues the cycle where it left
+  off (counter persisted with the game).
+- **AC-4**: A snippet with `mentions: trunk` stops rendering once the trunk
+  leaves the room (destroyed, taken, or moved) and resumes if it returns;
+  the same entry mutated by a handler to `''` renders nothing without error.
+- **AC-5**: Story load fails synchronously, naming room and marker, when a
+  description or initialDescription contains `{snippet:x}` with no `x` entry.
+- **AC-6**: `sharpee build` warns, naming room and entry, when a snippet
+  entry's marker appears in neither description text.
+- **AC-7**: A room with no snippet map whose description contains literal
+  braces renders them verbatim — behavior identical to today.
+- **AC-8**: A marker appearing twice in one description splices the same
+  resolved text at both sites and advances the counter once.
+- **AC-9**: `description` and `initialDescription` share entries and
+  counters: a cycling entry advances across a first-visit render
+  (initialDescription) followed by a second-visit render (description).
+- **AC-10**: A `{ messageId }` entry resolves through the language provider;
+  an unknown id follows the platform's existing missing-message behavior.
 
 ## Consequences
 
