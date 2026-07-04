@@ -144,7 +144,9 @@ Creating a thing as `EntityType.SCENERY` is just the quickest way to give it one
 
 Fill each room with scenery for atmosphere, then scatter a few takeable items.
 Scenery is typed `EntityType.SCENERY`, which fixes it in place; items get nothing
-extra:
+extra. (The iron fence below is the same one from the `EntityType.SCENERY`
+section above, repeated here so the whole version is in one listing — add it
+once.)
 
 ```typescript
 // Scenery: the SCENERY type fixes it in place, examinable, mentioned in room prose.
@@ -200,7 +202,8 @@ penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 > report "The rabbits **are** fixed in place." rather than "is". Set it on anything
 > with a plural name (*pygmy goats*, *direction signs*, *flower beds*) and the
 > generated prose stays grammatical. (See Chapter 19 for how the message templates
-> choose the verb.) Authors using the `object()` builder write `.plural()` instead.
+> choose the verb.) The multi-file chapter's `object()` builder — a fluent
+> alternative you'll meet in Chapter 28 — spells this `.plural()`.
 
 ## Try it
 
@@ -217,6 +220,55 @@ penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 > east                  Go to the Petting Zoo
 > take feed             Pick up the bag of animal feed
 > take goats            Can't: they're scenery!
+```
+
+## Test it
+
+Portable-versus-fixed is exactly the kind of rule a later chapter can
+accidentally break. Add `tests/transcripts/scenery-and-items.transcript`:
+
+```text
+title: Scenery and items
+story: familyzoo
+description: Portable by default; scenery fixed in place
+
+---
+
+> look
+[OK: contains "zoo map"]
+
+> take map
+[OK: contains "Taken"]
+
+> inventory
+[OK: contains "zoo map"]
+
+> examine fence
+[OK: contains "wrought-iron"]
+
+> take fence
+[OK: contains "fixed in place"]
+
+> south
+[OK: contains "Main Path"]
+
+> take penny
+[OK: contains "Taken"]
+
+> drop map
+[OK: contains "Dropped"]
+
+> look
+[OK: contains "zoo map"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+
+> take goats
+[OK: contains "fixed in place"]
 ```
 
 ## Key takeaway

@@ -259,12 +259,129 @@ language.addMessage(ScoreMessages.VICTORY,
 
 ```
 > score                     Check the score: 0 out of 75
-> south; east               Visit the petting zoo, +5
+> south                     Main Path
+> east                      Visit the petting zoo, +5
 > score                     Now 5 out of 75
 > take feed
 > feed goats                +10
 > ... visit every exhibit, feed, pet, photograph, press a penny, read ...
-> score                     75 out of 75, victory!
+```
+
+The victory fires on the turn the last points land: the command that scores your
+75th point prints its own output *and then* the victory message, because the
+victory daemon runs in the scheduler tick at the end of that same turn. Don't
+wait for a later `score` to announce it; by then it has already happened:
+
+```
+> south                     Nocturnal Exhibit, +5 — and the daemon fires:
+                            "…*** You have won ***"
+> score                     "You have achieved a perfect score of 75 points!"
+```
+
+## Test it
+
+This is the capstone: a transcript that earns all twelve achievements and
+asserts the victory fires on the turn the 75th point lands. It doubles as a
+full walkthrough of the game so far. Add
+`tests/transcripts/scoring.transcript`:
+
+```text
+title: Scoring and victory
+story: familyzoo
+description: All 75 points are earnable and the game can be won
+
+# press a penny, read ..."); expanded to the full 12 achievements.
+# "> south; east" compound split as before.
+
+---
+
+> score
+[OK: contains "0 out of 75"]
+
+> take map
+[OK: contains "Taken"]
+
+> take brochure
+[OK: contains "Taken"]
+
+> read brochure
+[OK: contains "Your Guide"]
+
+> take keycard
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Main Path"]
+
+> take penny
+[OK: contains "Taken"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> score
+[OK: contains "out of 75"]
+
+> take feed
+[OK: contains "Taken"]
+
+> feed goats
+[OK: contains "devour"]
+
+> feed rabbits
+[OK: contains "munch away"]
+
+> pet goats
+[OK: contains "leans into your hand"]
+
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> west
+[OK: contains "Gift Shop"]
+
+> take camera
+[OK: contains "Taken"]
+
+> photograph press
+[OK: contains "Click!"]
+
+> put penny in press
+[OK: contains "CLUNK"]
+
+> east
+[OK: contains "Aviary"]
+
+> east
+[OK: contains "Main Path"]
+
+> unlock gate with keycard
+[OK: not contains "can't"]
+
+> open gate
+[OK: not contains "can't"]
+
+> south
+[OK: contains "Supply Room"]
+
+> take flashlight
+[OK: contains "Taken"]
+
+> switch on flashlight
+[OK: not contains "can't"]
+
+# The victory daemon fires on the turn the 75th point is awarded (this one),
+# not on the later `score` command as the book's Try-it annotation implies.
+> south
+[OK: contains "Nocturnal Animals Exhibit"]
+[OK: contains "JUNIOR ZOOKEEPER"]
+[OK: contains "*** You have won ***"]
+
+> score
+[OK: contains "perfect score of 75 points"]
 ```
 
 ## Key takeaway

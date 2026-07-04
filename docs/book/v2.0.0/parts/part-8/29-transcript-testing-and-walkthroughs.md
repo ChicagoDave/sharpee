@@ -1,29 +1,35 @@
 # Transcript Testing & Walkthroughs: Proving the Game Still Works
 
-The zoo is a real game now, spread across seven files and two acts. The moment you
-add an eighth feature, you risk breaking one of the first seven. You need a way to
-*play the whole game automatically* and be told the instant something stops working.
-That's what transcript testing is: a recorded playthrough the engine replays and
-checks for you.
+The zoo is a real game now, spread across seven files and two acts — and you've
+been protecting it since Chapter 2. Every **Test it** block along the way added a
+transcript to `tests/transcripts/`, so by now `npx sharpee build --test` replays
+fourteen recorded sessions against every build: the map, the gate, the dark, the
+goats, the scheduler, the win. That suite is why you could keep adding features
+without fear of breaking chapter three. This chapter turns the habit into the
+full discipline: the assertion layers you haven't used yet (events and world
+state), control flow for runs that vary, and **walkthroughs** — chained
+transcripts that prove a player can finish the whole game.
 
 ## A test that reads like play
 
-A transcript is a plain-text file of commands and expectations that looks like a
-session at the keyboard. A YAML header names it; a `---` ends the header; then each
-`>` line is a command and each `[…]` line is an assertion:
+You know the shape by heart now — a YAML header, a `---`, then `>` commands each
+followed by `[…]` assertions:
 
 ```text
 title: Feed the goats
 story: familyzoo
-description: Feeding the pygmy goats awards points and consumes the feed
+description: Feeding the pygmy goats awards points and marks them fed
 
 ---
 
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
 > take feed
 [OK: contains "Taken"]
-
-> south
-[OK: contains "Petting Zoo"]
 
 > feed goats
 [OK: contains "devour"]
@@ -44,8 +50,9 @@ the tutorial's own transcripts pin their chapter snapshot this way
 Sharpee distinguishes two transcript styles, and the distinction matters:
 
 - **Unit transcripts** (`tests/transcripts/*.transcript`) are short and isolated.
-  Each gets a *fresh* game. Use them to pin down one feature or puzzle: "feeding the
-  goats consumes the feed," "the camera is required to photograph."
+  Each gets a *fresh* game. This is what you've been writing all along: every
+  Test it file pins down one feature or puzzle — "the gate needs the keycard,"
+  "the camera is required to photograph."
 - **Walkthroughs** (`walkthroughs/wt-*.transcript`) are long and *chained*: game
   state persists from one file to the next, so `wt-02` begins where `wt-01` left off.
   Together they verify the whole game progresses end to end. Walkthroughs checkpoint
@@ -69,7 +76,10 @@ A unit test answers "does this feature work in isolation?" A walkthrough answers
 - **State**: `[STATE: true, player.inventory contains feed]` checks the world model
   directly. This is the strongest assertion: it verifies the *mutation*, not just the
   words. After `feed goats`, assert the `fed-…` state flag is set and the score went
-  up: the actual effects, not the message describing them.
+  up: the actual effects, not the message describing them. `player` is a reserved
+  word for the player entity, whatever your story named it; every other entity
+  reference resolves by name, id, or any of its `IdentityTrait` aliases (so `feed`
+  finds the bag of animal feed).
 
 A message can read correctly while the world behind it is wrong (a score that never
 incremented, an item that was never consumed), and only a state assertion catches that.

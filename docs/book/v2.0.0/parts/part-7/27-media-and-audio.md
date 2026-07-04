@@ -114,30 +114,41 @@ first keystroke rather than being silently dropped.
 
 ## Room atmospheres in practice
 
-Scattering raw file paths through your story ages badly. The `AudioRegistry` lets you
+Scattering raw file paths through your story ages badly. The `AudioRegistry` (from
+the `@sharpee/media` package mentioned above) lets you
 declare each room's **atmosphere** once, its ambient layers and an optional music track,
-with a fluent builder, and look it up by room later. Family Zoo's
-`ch24-27-presentation/` snapshot does exactly this:
+with a fluent builder, and look it up by room later. Declare the registry as a
+top-level `const`, then fill it in `initializeWorld`, after the rooms exist, using
+the same `aviary` and `nocturnalExhibit` room entities you created back in
+Volume II:
 
 ```typescript
-const audio = new AudioRegistry();
+import { AudioRegistry } from '@sharpee/media';
 
-audio.atmosphere(aviaryId)
+const audio = new AudioRegistry();
+```
+
+```typescript
+// in initializeWorld, after the rooms are created:
+audio.atmosphere(aviary.id)
   .ambient('audio/aviary-birdsong.mp3', 'environment', 0.4)
   .build();
-audio.atmosphere(nocturnalId)
+audio.atmosphere(nocturnalExhibit.id)
   .ambient('audio/night-crickets.mp3', 'environment', 0.3)
   .build();
 ```
 
-A room-entry handler turns that data into channel signals. It's registered on the
-event processor and returns `Effect[]` (from `@sharpee/event-processor`). Two small
+A room-entry handler turns that data into channel signals. This is a new
+registration surface, the last one the book introduces: the **event processor**
+accepts handlers that return `Effect[]` — unlike `chainEvent` (which returns a
+single event) or `registerEventHandler` (which returns nothing), an
+effect-returning handler can emit several signals from one event. You reach it
+from `onEngineReady` via `engine.getEventProcessor()`. Two small
 helpers keep the body readable: `mediaEvent` builds a `media.*` semantic event, and
 `emit` wraps it in the `Effect` shape the processor expects:
 
 ```typescript
 import type { Effect } from '@sharpee/event-processor';
-import { ISemanticEvent } from '@sharpee/core';
 
 let mediaCounter = 0;
 function mediaEvent(type: string, data: Record<string, unknown>): ISemanticEvent {
@@ -149,21 +160,34 @@ function emit(type: string, data: Record<string, unknown>): Effect {
 }
 ```
 
-On `if.event.actor_moved` the handler looks up the destination's atmosphere, emits
-the `media.*` events, and stops the loop for rooms that have none, building up the
-`effects` array it returns:
+(`ISemanticEvent` has been imported since Chapter 13.) Here is the whole handler,
+registered in `onEngineReady`: on `if.event.actor_moved` it looks up the
+destination's atmosphere, emits the `media.*` events, and stops the loop for rooms
+that have none:
 
 ```typescript
-const atmosphere = audio.getAtmosphere(toRoom);
-if (atmosphere) {
-  for (const a of atmosphere.ambient) {
-    effects.push(emit('media.ambient.play', {
-      src: a.src, channel: a.channel, volume: a.volume, loop: true,
-    }));
-  }
-} else {
-  effects.push(emit('media.ambient.stop', { channel: 'environment' }));
-}
+// in onEngineReady, alongside the plugin registrations:
+engine.getEventProcessor().registerHandler(
+  'if.event.actor_moved',
+  (event: ISemanticEvent): Effect[] => {
+    const data = event.data as { toRoom?: string; destination?: string } | undefined;
+    const toRoom = data?.toRoom ?? data?.destination;
+    if (!toRoom) return [];
+
+    const effects: Effect[] = [];
+    const atmosphere = audio.getAtmosphere(toRoom);
+    if (atmosphere) {
+      for (const a of atmosphere.ambient) {
+        effects.push(emit('media.ambient.play', {
+          src: a.src, channel: a.channel, volume: a.volume, loop: true,
+        }));
+      }
+    } else {
+      effects.push(emit('media.ambient.stop', { channel: 'environment' }));
+    }
+    return effects;
+  },
+);
 ```
 
 None of this makes a sound until the `ambient:*` channel exists on both sides, and

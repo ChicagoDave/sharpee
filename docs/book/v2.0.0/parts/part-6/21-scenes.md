@@ -65,7 +65,8 @@ The real power is reacting to the *edges*: the moment a scene begins or ends. Yo
 write those reactions as `onBegin` and `onEnd` callbacks, right next to the `begin`
 and `end` conditions in `createScene`. Each callback returns the text the player
 should see at that edge, either prose directly (`{ text }`) or a message id resolved
-through your language file (`{ messageId }`):
+through your language file (`{ messageId }`). This listing *replaces* the bare
+version above — a scene id is registered once, so type in only this final form:
 
 ```typescript
 world.createScene('scene-petting-zoo', {
@@ -123,6 +124,34 @@ action. A common division of labor is a scene that defines the window and a daem
 that does the per-turn work *while* that window is open; the daemon simply checks
 `world.isSceneActive(...)` in its condition. Reach for a scene when you're thinking
 in story beats; reach for a daemon or fuse when you're thinking in turns.
+
+## Test it
+
+Scenes have no "Try it" list — their whole point is text that appears at the
+*edges*, and that's precisely what a transcript can pin. Add
+`tests/transcripts/scenes.transcript`; the last command proves `recurring`
+works by re-entering:
+
+```text
+title: Scenes
+story: familyzoo
+description: The petting-zoo scene begins, ends, and recurs
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+[OK: contains "A waft of hay and warm fur greets you."]
+
+> west
+[OK: contains "The animal sounds fade behind you."]
+
+> east
+[OK: contains "A waft of hay and warm fur greets you."]
+```
 
 ## Key takeaway
 

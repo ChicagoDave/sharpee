@@ -257,6 +257,47 @@ prints the new room's description. Wiring the exits is the whole job.
 > north                 Back to the Zoo Entrance
 ```
 
+One line can carry several commands: `south. east`, `west; west`, or
+`east then north` all work, and each statement runs as its own full turn. If a
+statement fails, the rest of the line is dropped — the parser won't march on
+after a wrong turn.
+
+## Test it
+
+A forgotten return exit is the classic map bug, and nothing catches it faster
+than replaying the round trip. Save this as
+`tests/transcripts/navigation.transcript` and run `npx sharpee build --test` —
+your first-room test runs right alongside it:
+
+```text
+title: Navigation
+story: familyzoo
+description: Four rooms wired in pairs
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> examine signs
+[OK: contains "PETTING ZOO"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> east
+[OK: contains "Main Path"]
+
+> north
+[OK: contains "Zoo Entrance"]
+```
+
 ## Key takeaway
 
 Rooms are connected by exits on `RoomTrait`, each mapping a `Direction` to a

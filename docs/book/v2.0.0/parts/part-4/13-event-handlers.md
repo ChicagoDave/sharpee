@@ -285,7 +285,8 @@ engine needs to manage handlers across saves and reloads.
 ## Try it
 
 ```
-> south; east               Go to the Petting Zoo
+> south                     Main Path
+> east                      Petting Zoo
 > take feed                 Pick up the bag of animal feed
 > drop feed                 The goats rush over!
 > west                      Back to Main Path
@@ -295,6 +296,52 @@ engine needs to manage handlers across saves and reloads.
 > examine press             See the souvenir press
 > put penny in press        CLUNK! CRUNCH! WHIRRR!
 > inventory                 You're holding a pressed penny
+```
+
+## Test it
+
+Both reactions — the goats' feast and the penny press — now have observable
+outcomes worth guarding. Add `tests/transcripts/event-handlers.transcript`:
+
+```text
+title: Event handlers
+story: familyzoo
+description: Goats devour dropped feed; the press transforms the penny
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+
+> drop feed
+[OK: contains "devour"]
+
+> west
+[OK: contains "Main Path"]
+
+> take penny
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Aviary"]
+
+> west
+[OK: contains "Gift Shop"]
+
+> examine press
+[OK: contains "INSERT PENNY"]
+
+> put penny in press
+[OK: contains "CLUNK"]
+
+> inventory
+[OK: contains "pressed penny"]
 ```
 
 ## Key takeaway

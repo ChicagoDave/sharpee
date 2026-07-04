@@ -36,7 +36,7 @@ the platform's built-ins.
 
 Suppose the feed dispenser in the petting zoo should run dry after a few uses. The
 state it needs, a count of charges, isn't in any standard trait, so you write
-one:
+one. Put it in a new file, `src/dispenser-trait.ts`:
 
 ```typescript
 import { ITrait } from '@sharpee/world-model';
@@ -67,7 +67,8 @@ The trait holds the count; the *rule* ("you can dispense only while charges
 remain, and each use spends one") belongs in a behavior. A behavior is typically a
 class of static methods that take the entity, fetch the trait, and change it:
 
-This is the first time we import from one of our *own* files rather than a
+The behavior gets its own file too: `src/dispenser-behavior.ts`. This is the
+first time we import from one of our *own* files rather than a
 `@sharpee/*` package. The project's TypeScript is configured for Node's ESM
 resolution, which requires a `.js` extension on relative imports (the `.js` points
 at the compiled output of `dispenser-trait.ts`):
@@ -116,6 +117,14 @@ if (DispenserBehavior.dispense(dispenser)) {
 
 The action or handler decides *when* to act and *what to say*; the behavior decides
 *what changes*. The trait just remembers. Each layer has one job.
+
+One honest note before you go looking for a "Try it": the zoo doesn't wire this
+pair up. The two files compile alongside your story, but no action calls
+`DispenserBehavior.dispense` yet, so the dispenser never actually runs dry in
+play. That's deliberate — the caller would be a custom "operate dispenser" action,
+and you already know how to build one from Chapter 14; wiring it end-to-end makes
+a good exercise. What this chapter adds is the pattern itself: state in a trait,
+rules in a behavior, coordination elsewhere.
 
 ## Which tool, when?
 

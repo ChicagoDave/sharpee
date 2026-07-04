@@ -233,7 +233,8 @@ lines to it; a story has just one.)
 ```
 > wait                      (repeat ~5 times; the first PA announcement crackles)
 > wait                      …closing announcements count down
-> south; east               Petting Zoo
+> south                     Main Path
+> east                      Petting Zoo
 > wait                      (repeat until "FEEDING TIME" is announced)
 > wait                      The goats start bleating
 > take feed                 Grab the feed
@@ -248,6 +249,68 @@ daemon watches. If you *wanted* feeding to silence them early, you'd add an even
 handler on the feed action that clears that flag. That's a nice exercise, but the
 scheduler's own countdown is doing the stopping here, exactly as the conditional
 daemon above ("counting itself down and stopping") was built to do.
+
+## Test it
+
+Timed events are the easiest thing in the zoo to break by accident — an
+off-by-one in a condition and the PA falls silent. This test walks the clock
+turn by turn. Add `tests/transcripts/timed-events.transcript`:
+
+```text
+title: Timed events
+story: familyzoo
+description: PA announcements, the feeding-time fuse, and the bleating daemon
+
+---
+
+> wait
+[OK: not contains "DING DONG"]
+
+> wait
+[OK: not contains "DING DONG"]
+
+> wait
+[OK: not contains "DING DONG"]
+
+> wait
+[OK: not contains "DING DONG"]
+
+> wait
+[OK: contains "three hours"]
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> wait
+[OK: matches /./]
+
+> wait
+[OK: matches /./]
+
+> wait
+[OK: contains "Two hours"]
+
+> wait
+[OK: contains "FEEDING TIME"]
+
+> take feed
+[OK: contains "Taken"]
+[OK: contains "bleating loudly"]
+
+> feed goats
+[OK: contains "devour"]
+[OK: contains "bleating loudly"]
+
+> wait
+[OK: contains "bleating loudly"]
+
+> wait
+[OK: contains "One hour"]
+[OK: not contains "bleating loudly"]
+```
 
 ## Key takeaway
 

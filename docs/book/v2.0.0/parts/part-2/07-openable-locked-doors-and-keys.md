@@ -246,6 +246,44 @@ they came.
 > north                       Back through the open gate
 ```
 
+## Test it
+
+The gate is the zoo's first real puzzle, which makes it the first test that
+guards a *sequence*: locked blocks, unlock-open-walk works. Add
+`tests/transcripts/locked-gate.transcript`:
+
+```text
+title: The locked gate
+story: familyzoo
+description: Keycard unlocks the staff gate
+
+---
+
+> take keycard
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Main Path"]
+
+> south
+[OK: contains "locked"]
+
+> unlock gate with keycard
+[OK: not contains "can't"]
+
+> open gate
+[OK: not contains "can't"]
+
+> south
+[OK: contains "Supply Room"]
+
+> examine shelves
+[OK: contains "steel shelving"]
+
+> north
+[OK: contains "Main Path"]
+```
+
 ## Key takeaway
 
 `OpenableTrait` adds open/closed state and the `open`/`close` actions; combined
