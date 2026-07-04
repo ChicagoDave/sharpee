@@ -140,7 +140,7 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
   const zookeeper = actor('zookeeper')
     .description('A friendly zookeeper in khaki overalls. A name tag reads "Sam."')
     .aliases('keeper', 'zookeeper', 'sam')
-    .addTrait(new NpcTrait({ behaviorId: KEEPER_PATROL_ID, canMove: true, isAlive: true, isConscious: true }))
+    .addTrait(new NpcTrait({ behaviorId: KEEPER_PATROL_ID, canMove: true, announcesMovement: true, isAlive: true, isConscious: true }))
     .in(mainPathEntity)
     .build();
 

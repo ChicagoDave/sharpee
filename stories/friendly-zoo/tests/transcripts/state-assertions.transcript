@@ -1,0 +1,20 @@
+title: STATE assertion resolution
+story: friendly-zoo
+description: Pins the tester's entity resolution for [STATE] assertions —
+  the reserved `player` keyword (works whatever the player entity is named)
+  and alias resolution for the contains argument (transcript-tester P4).
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+[STATE: true, player.inventory contains feed]
+[STATE: true, player.inventory contains bag of animal feed]
+[STATE: true, yourself.inventory contains feed]
+[STATE: false, player.inventory contains camera]

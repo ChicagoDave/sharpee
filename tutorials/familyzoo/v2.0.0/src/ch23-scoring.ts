@@ -439,9 +439,9 @@ function createGoatBleatingDaemon(): Daemon {
 // A daemon that checks each turn whether the player has reached the maximum
 // score. When they do, it emits a victory message and marks the game as ended.
 //
-// This is the same pattern used in dungeo's victory handler — a daemon with
-// a condition that watches for a specific game state, and a run function
-// that triggers the endgame.
+// The shape is the same as every daemon in Chapter 22: a condition that
+// watches for a specific game state, and a run function that triggers
+// the endgame when it arrives.
 
 function createVictoryDaemon(): Daemon {
   let victoryTriggered = false;
@@ -698,7 +698,7 @@ class FamilyZooStory implements Story {
     const zookeeper = world.createEntity('zookeeper', EntityType.ACTOR);
     zookeeper.add(new IdentityTrait({ name: 'zookeeper', description: 'A friendly zookeeper in khaki overalls. A name tag reads "Sam."', aliases: ['keeper', 'zookeeper', 'sam'], properName: false, article: 'a' }));
     zookeeper.add(new ActorTrait({ isPlayer: false }));
-    zookeeper.add(new NpcTrait({ behaviorId: 'zoo-keeper-patrol', canMove: true, isAlive: true, isConscious: true }));
+    zookeeper.add(new NpcTrait({ behaviorId: 'zoo-keeper-patrol', canMove: true, announcesMovement: true, isAlive: true, isConscious: true }));
     world.moveEntity(zookeeper.id, mainPath.id);
 
     const parrot = world.createEntity('parrot', EntityType.ACTOR);
