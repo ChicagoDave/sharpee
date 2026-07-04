@@ -1,18 +1,18 @@
 # Transcript Testing & Walkthroughs: Proving the Game Still Works
 
-The zoo is a real game now, spread across seven files and two acts — and you've
+The zoo is a real game now, spread across seven files and two acts, and you've
 been protecting it since Chapter 2. Every **Test it** block along the way added a
 transcript to `tests/transcripts/`, so by now `npx sharpee build --test` replays
 fourteen recorded sessions against every build: the map, the gate, the dark, the
 goats, the scheduler, the win. That suite is why you could keep adding features
 without fear of breaking chapter three. This chapter turns the habit into the
 full discipline: the assertion layers you haven't used yet (events and world
-state), control flow for runs that vary, and **walkthroughs** — chained
+state), control flow for runs that vary, and **walkthroughs**, chained
 transcripts that prove a player can finish the whole game.
 
 ## A test that reads like play
 
-You know the shape by heart now — a YAML header, a `---`, then `>` commands each
+You know the shape by heart now: a YAML header, a `---`, then `>` commands each
 followed by `[…]` assertions:
 
 ```text
@@ -51,7 +51,7 @@ Sharpee distinguishes two transcript styles, and the distinction matters:
 
 - **Unit transcripts** (`tests/transcripts/*.transcript`) are short and isolated.
   Each gets a *fresh* game. This is what you've been writing all along: every
-  Test it file pins down one feature or puzzle — "the gate needs the keycard,"
+  Test it file pins down one feature or puzzle: "the gate needs the keycard,"
   "the camera is required to photograph."
 - **Walkthroughs** (`walkthroughs/wt-*.transcript`) are long and *chained*: game
   state persists from one file to the next, so `wt-02` begins where `wt-01` left off.

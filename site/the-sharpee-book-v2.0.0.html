@@ -969,7 +969,7 @@ ground as a transcript test for your suite; Chapter 2 introduces the
 mechanic, Chapter 29 completes it).</li>
 <li>The zoo grows in <strong>one file</strong> until late in the book,
 so imports accumulate. When a chapter shows an <code>import</code>, add
-only the names your file doesn’t already import — TypeScript rejects the
+only the names your file doesn’t already import; TypeScript rejects the
 same identifier imported twice.</li>
 <li>Unless a chapter says otherwise, new world-building code goes at the
 <strong>end of <code>initializeWorld</code></strong> (before the player
@@ -1496,7 +1496,7 @@ and every chapter builds.</p>
 test</h2>
 <p>Playing through the “Try it” list confirms the room works
 <em>today</em>. A <strong>transcript test</strong> confirms it still
-works after every change you’ll ever make — and you have twenty-nine
+works after every change you’ll ever make, and you have twenty-nine
 chapters of changes ahead of you. A transcript is a plain-text file that
 reads like a play session: a small header, then each <code>&gt;</code>
 line is a command and each <code>[OK: …]</code> line is an assertion
@@ -1546,7 +1546,7 @@ against a fresh copy of the game:</p>
 <p>That’s the whole discipline. From here on, every chapter that adds
 something playable ends with a <strong>Test it</strong> block: one more
 file for this folder, a green suite before you move on. By the last page
-you’ll have a suite that plays the entire zoo — and the moment a future
+you’ll have a suite that plays the entire zoo, and the moment a future
 change breaks an earlier chapter’s behavior, a red line will point at
 exactly what stopped working. (Transcripts can also assert on
 <em>events</em> and <em>world state</em>, and chain into full
@@ -1935,13 +1935,13 @@ description. Wiring the exits is the whole job.</p>
 <p>One line can carry several commands: <code>south. east</code>,
 <code>west; west</code>, or <code>east then north</code> all work, and
 each statement runs as its own full turn. If a statement fails, the rest
-of the line is dropped — the parser won’t march on after a wrong
+of the line is dropped; the parser won’t march on after a wrong
 turn.</p>
 <h2 data-number="4.8" id="test-it"><span class="header-section-number">4.8</span> Test it</h2>
 <p>A forgotten return exit is the classic map bug, and nothing catches
 it faster than replaying the round trip. Save this as
 <code>tests/transcripts/navigation.transcript</code> and run
-<code>npx sharpee build --test</code> — your first-room test runs right
+<code>npx sharpee build --test</code>; your first-room test runs right
 alongside it:</p>
 <pre class="text"><code>title: Navigation
 story: familyzoo
@@ -2172,7 +2172,7 @@ one.</p>
 takeable items. Scenery is typed <code>EntityType.SCENERY</code>, which
 fixes it in place; items get nothing extra. (The iron fence below is the
 same one from the <code>EntityType.SCENERY</code> section above,
-repeated here so the whole version is in one listing — add it once.)</p>
+repeated here so the whole version is in one listing; add it once.)</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Scenery: the SCENERY type fixes it in place, examinable,</span></span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="co">// mentioned in room prose.</span></span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fence <span class="op">=</span> world<span class="op">.</span><span class="fu">createEntity</span>(</span>
@@ -2243,8 +2243,8 @@ report “The rabbits <strong>are</strong> fixed in place.” rather than
 “is”. Set it on anything with a plural name (<em>pygmy goats</em>,
 <em>direction signs</em>, <em>flower beds</em>) and the generated prose
 stays grammatical. (See Chapter 19 for how the message templates choose
-the verb.) The multi-file chapter’s <code>object()</code> builder — a
-fluent alternative you’ll meet in Chapter 28 — spells this
+the verb.) The multi-file chapter’s <code>object()</code> builder (a
+fluent alternative you’ll meet in Chapter 28) spells this
 <code>.plural()</code>.</p>
 </blockquote>
 <h2 data-number="5.8" id="try-it-2"><span class="header-section-number">5.8</span> Try it</h2>
@@ -2487,9 +2487,9 @@ same move: combine traits to get new behavior.</p>
 &gt; take dispenser         Can&#39;t: it&#39;s scenery
 &gt; examine dispenser      But you can look at it</code></pre>
 <h2 data-number="6.7" id="test-it-2"><span class="header-section-number">6.7</span> Test it</h2>
-<p>Add <code>tests/transcripts/containers.transcript</code> — note how
-the assertions pin the <em>behavior</em> (contents ride along, scenery
-refuses) rather than exact prose:</p>
+<p>Add <code>tests/transcripts/containers.transcript</code>, and note
+how the assertions pin the <em>behavior</em> (contents ride along,
+scenery refuses) rather than exact prose:</p>
 <pre class="text"><code>title: Containers and supporters
 story: familyzoo
 description: Backpack, dispenser, and bench hold things
@@ -3215,7 +3215,7 @@ The zoo divides naturally into two: the public area the visitor wanders
 freely (entrance, main path, petting zoo, aviary) and the staff area
 behind the gate (supply room, nocturnal exhibit). Regions let you name
 that division and act on it.</p>
-<p>Type this pair into your project — the zoo is small enough that
+<p>Type this pair into your project. The zoo is small enough that
 regions are optional here (nothing later depends on them), but wiring
 them in once shows the whole pattern, and the staff-area smell will pay
 off when the map grows. Create regions in
@@ -3336,9 +3336,9 @@ group rooms into named areas that can share properties
 (<code>defaultDark</code>, ambient sound and smell) and, best of all,
 fire <code>if.event.region_entered</code> / <code>region_exited</code>
 as the player crosses between them, the hook for area-wide atmosphere
-and events. A map the zoo’s size could have skipped regions entirely —
-we wired them in to learn the pattern — and they earn their keep when
-your world gets big enough to think about in neighborhoods.</p>
+and events. A map the zoo’s size could have skipped regions entirely (we
+wired them in to learn the pattern), and they earn their keep when your
+world gets big enough to think about in neighborhoods.</p>
 <section id="volume-iii-making-it-interactive" class="part unnumbered part-page">
 <h1 class="part unnumbered">Volume III — Making It Interactive</h1>
 </section>
@@ -3775,7 +3775,7 @@ whose verbs match how a person would actually talk about the object.</p>
 &gt; switch off radio           Click, off again
 &gt; take radio                 Can&#39;t, it&#39;s scenery</code></pre>
 <h2 data-number="12.7" id="test-it-5"><span class="header-section-number">12.7</span> Test it</h2>
-<p>Add <code>tests/transcripts/readables.transcript</code> — it pins the
+<p>Add <code>tests/transcripts/readables.transcript</code>; it pins the
 read-versus-examine distinction on both the plaque and the brochure:</p>
 <pre class="text"><code>title: Readables and switchables
 story: familyzoo
@@ -4161,7 +4161,7 @@ reloads.</p>
 &gt; put penny in press        CLUNK! CRUNCH! WHIRRR!
 &gt; inventory                 You&#39;re holding a pressed penny</code></pre>
 <h2 data-number="13.8" id="test-it-6"><span class="header-section-number">13.8</span> Test it</h2>
-<p>Both reactions — the goats’ feast and the penny press — now have
+<p>Both reactions, the goats’ feast and the penny press, now have
 observable outcomes worth guarding. Add
 <code>tests/transcripts/event-handlers.transcript</code>:</p>
 <pre class="text"><code>title: Event handlers
@@ -4927,7 +4927,7 @@ returns the bite message instead. One verb, the entity decides.</p>
 &gt; west                      Aviary
 &gt; pet parrot                CHOMP! It bites!</code></pre>
 <h2 data-number="15.7" id="test-it-8"><span class="header-section-number">15.7</span> Test it</h2>
-<p>One verb, four outcomes — a perfect shape for a transcript. Add
+<p>One verb with four outcomes is a perfect shape for a transcript. Add
 <code>tests/transcripts/petting.transcript</code>:</p>
 <pre class="text"><code>title: Petting
 story: familyzoo
@@ -5084,9 +5084,9 @@ remembers. Each layer has one job.</p>
 <p>One honest note before you go looking for a “Try it”: the zoo doesn’t
 wire this pair up. The two files compile alongside your story, but no
 action calls <code>DispenserBehavior.dispense</code> yet, so the
-dispenser never actually runs dry in play. That’s deliberate — the
-caller would be a custom “operate dispenser” action, and you already
-know how to build one from Chapter 14; wiring it end-to-end makes a good
+dispenser never actually runs dry in play. That’s deliberate: the caller
+would be a custom “operate dispenser” action, and you already know how
+to build one from Chapter 14; wiring it end-to-end makes a good
 exercise. What this chapter adds is the pattern itself: state in a
 trait, rules in a behavior, coordination elsewhere.</p>
 <h2 data-number="16.5" id="which-tool-when"><span class="header-section-number">16.5</span> Which tool, when?</h2>
@@ -5769,9 +5769,9 @@ rooms. The parrot, which stays put, sets it to <code>false</code>.</p>
 <p><code>announcesMovement</code> is what makes the patrol
 <em>visible</em>: when Sam walks out of (or into) the player’s room, the
 platform prints a line like “The zookeeper leaves to the east.” It
-defaults to <code>false</code> — a silent NPC that changes rooms between
-turns is imperceptible until the player types <code>look</code> — so
-switch it on for any NPC whose comings and goings the player should
+defaults to <code>false</code>, but a silent NPC that changes rooms
+between turns is imperceptible until the player types <code>look</code>,
+so switch it on for any NPC whose comings and goings the player should
 notice. (Moves between two rooms the player isn’t in stay silent either
 way.)</p>
 <blockquote>
@@ -5940,7 +5940,7 @@ registered with the engine. That happens in
 fully built, which is where any plugin needing the engine reference is
 set up. Chapter 13 already gave your story an <code>onEngineReady</code>
 (it holds the two chain handlers), so <em>add</em> the plugin code below
-at the top of that existing method — don’t declare a second one. The
+at the top of that existing method; don’t declare a second one. The
 patrol route references <code>this.roomIds</code>, the field you started
 in Chapter 13; make sure <code>initializeWorld</code> records
 <code>mainPath</code>, <code>pettingZoo</code>, and <code>aviary</code>
@@ -5994,8 +5994,8 @@ override <code>keeperPatrol.id</code>. The parrot needs no override;
 &gt; wait                      The parrot might squawk
 &gt; wait                      …or not; it&#39;s a coin flip each turn</code></pre>
 <p>(Without <code>announcesMovement: true</code> on Sam’s
-<code>NpcTrait</code>, that wait prints only “Time passes…” — the patrol
-still happens, invisibly. And the timing is worth noticing:
+<code>NpcTrait</code>, that wait prints only “Time passes…”, but the
+patrol still happens, invisibly. And the timing is worth noticing:
 <code>waitTurns: 1</code> means Sam pauses one turn at each stop, so the
 turn you spend examining him is the turn he rests; he walks on the
 next.)</p>
@@ -6003,7 +6003,8 @@ next.)</p>
 <p>NPCs act on their own clock, so the test pins the <em>turn</em>
 things happen on as much as the text. Add
 <code>tests/transcripts/npcs.transcript</code> (the two closing waits
-assert nothing specific — the parrot’s squawk is a coin flip):</p>
+assert nothing specific, because the parrot’s squawk is a coin
+flip):</p>
 <pre class="text"><code>title: NPCs
 story: familyzoo
 description: Sam patrols visibly; the parrot greets and squawks
@@ -6102,8 +6103,8 @@ begins or ends. You write those reactions as <code>onBegin</code> and
 returns the text the player should see at that edge, either prose
 directly (<code>{ text }</code>) or a message id resolved through your
 language file (<code>{ messageId }</code>). This listing
-<em>replaces</em> the bare version above — a scene id is registered
-once, so type in only this final form:</p>
+<em>replaces</em> the bare version above, because a scene id is
+registered once, so type in only this final form:</p>
 <div class="sourceCode" id="cb146"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb146-1"><a href="#cb146-1" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">createScene</span>(<span class="st">&#39;scene-petting-zoo&#39;</span><span class="op">,</span> {</span>
 <span id="cb146-2"><a href="#cb146-2" aria-hidden="true" tabindex="-1"></a>  name<span class="op">:</span> <span class="st">&#39;Among the Animals&#39;</span><span class="op">,</span></span>
 <span id="cb146-3"><a href="#cb146-3" aria-hidden="true" tabindex="-1"></a>  begin<span class="op">:</span> (w) <span class="kw">=&gt;</span></span>
@@ -6170,7 +6171,7 @@ that defines the window and a daemon that does the per-turn work
 scene when you’re thinking in story beats; reach for a daemon or fuse
 when you’re thinking in turns.</p>
 <h2 data-number="21.7" id="test-it-10"><span class="header-section-number">21.7</span> Test it</h2>
-<p>Scenes have no “Try it” list — their whole point is text that appears
+<p>Scenes have no “Try it” list; their whole point is text that appears
 at the <em>edges</em>, and that’s precisely what a transcript can pin.
 Add <code>tests/transcripts/scenes.transcript</code>; the last command
 proves <code>recurring</code> works by re-entering:</p>
@@ -6460,7 +6461,7 @@ exercise, but the scheduler’s own countdown is doing the stopping here,
 exactly as the conditional daemon above (“counting itself down and
 stopping”) was built to do.</p>
 <h2 data-number="22.7" id="test-it-11"><span class="header-section-number">22.7</span> Test it</h2>
-<p>Timed events are the easiest thing in the zoo to break by accident —
+<p>Timed events are the easiest thing in the zoo to break by accident:
 an off-by-one in a condition and the PA falls silent. This test walks
 the clock turn by turn. Add
 <code>tests/transcripts/timed-events.transcript</code>:</p>
@@ -6823,7 +6824,7 @@ scores your 75th point prints its own output <em>and then</em> the
 victory message, because the victory daemon runs in the scheduler tick
 at the end of that same turn. Don’t wait for a later <code>score</code>
 to announce it; by then it has already happened:</p>
-<pre><code>&gt; south                     Nocturnal Exhibit, +5 — and the daemon fires:
+<pre><code>&gt; south                     Nocturnal Exhibit, +5, and the daemon fires:
                             &quot;…*** You have won ***&quot;
 &gt; score                     &quot;You have achieved a perfect score of 75 points!&quot;</code></pre>
 <h2 data-number="23.6" id="test-it-12"><span class="header-section-number">23.6</span> Test it</h2>
@@ -7565,7 +7566,7 @@ of CSS and one list entry</h3>
 small pieces:</p>
 <ol type="1">
 <li><p><strong>Write a <code>[data-theme]</code> token block</strong> in
-your author override stylesheet — the <code>browser/*.css</code> file
+your author override stylesheet, the <code>browser/*.css</code> file
 <code>sharpee init-browser</code> created, named after your project’s
 <em>package name</em> (for the tutorial project that’s
 <code>browser/my-zoo.css</code>, not the story’s
@@ -7825,7 +7826,7 @@ created back in Volume II:</p>
 <p>A room-entry handler turns that data into channel signals. This is a
 new registration surface, the last one the book introduces: the
 <strong>event processor</strong> accepts handlers that return
-<code>Effect[]</code> — unlike <code>chainEvent</code> (which returns a
+<code>Effect[]</code>. Unlike <code>chainEvent</code> (which returns a
 single event) or <code>registerEventHandler</code> (which returns
 nothing), an effect-returning handler can emit several signals from one
 event. You reach it from <code>onEngineReady</code> via
@@ -8112,7 +8113,7 @@ harder to read. The rest of this volume is about getting the zoo to
 players: testing, saving, building, and serving it.</p>
 <h1 data-number="29" id="transcript-testing-walkthroughs-proving-the-game-still-works"><span class="header-section-number">29</span> Transcript Testing &amp;
 Walkthroughs: Proving the Game Still Works</h1>
-<p>The zoo is a real game now, spread across seven files and two acts —
+<p>The zoo is a real game now, spread across seven files and two acts,
 and you’ve been protecting it since Chapter 2. Every <strong>Test
 it</strong> block along the way added a transcript to
 <code>tests/transcripts/</code>, so by now
@@ -8122,11 +8123,11 @@ scheduler, the win. That suite is why you could keep adding features
 without fear of breaking chapter three. This chapter turns the habit
 into the full discipline: the assertion layers you haven’t used yet
 (events and world state), control flow for runs that vary, and
-<strong>walkthroughs</strong> — chained transcripts that prove a player
+<strong>walkthroughs</strong>, chained transcripts that prove a player
 can finish the whole game.</p>
 <h2 data-number="29.1" id="a-test-that-reads-like-play"><span class="header-section-number">29.1</span> A test that reads like
 play</h2>
-<p>You know the shape by heart now — a YAML header, a <code>---</code>,
+<p>You know the shape by heart now: a YAML header, a <code>---</code>,
 then <code>&gt;</code> commands each followed by <code>[…]</code>
 assertions:</p>
 <pre class="text"><code>title: Feed the goats
@@ -8163,7 +8164,7 @@ matters:</p>
 <li><strong>Unit transcripts</strong>
 (<code>tests/transcripts/*.transcript</code>) are short and isolated.
 Each gets a <em>fresh</em> game. This is what you’ve been writing all
-along: every Test it file pins down one feature or puzzle — “the gate
+along: every Test it file pins down one feature or puzzle: “the gate
 needs the keycard,” “the camera is required to photograph.”</li>
 <li><strong>Walkthroughs</strong>
 (<code>walkthroughs/wt-*.transcript</code>) are long and

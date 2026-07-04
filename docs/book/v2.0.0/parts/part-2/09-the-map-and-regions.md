@@ -34,7 +34,7 @@ into two: the public area the visitor wanders freely (entrance, main path, petti
 zoo, aviary) and the staff area behind the gate (supply room, nocturnal exhibit).
 Regions let you name that division and act on it.
 
-Type this pair into your project — the zoo is small enough that regions are
+Type this pair into your project. The zoo is small enough that regions are
 optional here (nothing later depends on them), but wiring them in once shows the
 whole pattern, and the staff-area smell will pay off when the map grows. Create
 regions in `initializeWorld()`, before the rooms that belong to them:
@@ -146,5 +146,5 @@ what you can hold in your head, **regions** group rooms into named areas that ca
 share properties (`defaultDark`, ambient sound and smell) and, best of all, fire
 `if.event.region_entered` / `region_exited` as the player crosses between them, the
 hook for area-wide atmosphere and events. A map the zoo's size could have skipped
-regions entirely — we wired them in to learn the pattern — and they earn their
+regions entirely (we wired them in to learn the pattern), and they earn their
 keep when your world gets big enough to think about in neighborhoods.

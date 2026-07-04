@@ -326,7 +326,7 @@ engine needs to manage handlers across saves and reloads.
 
 ## Test it
 
-Both reactions — the goats' feast and the penny press — now have observable
+Both reactions, the goats' feast and the penny press, now have observable
 outcomes worth guarding. Add `tests/transcripts/event-handlers.transcript`:
 
 ```text

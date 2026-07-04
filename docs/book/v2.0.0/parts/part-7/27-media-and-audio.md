@@ -140,7 +140,7 @@ audio.atmosphere(nocturnalExhibit.id)
 
 A room-entry handler turns that data into channel signals. This is a new
 registration surface, the last one the book introduces: the **event processor**
-accepts handlers that return `Effect[]` — unlike `chainEvent` (which returns a
+accepts handlers that return `Effect[]`. Unlike `chainEvent` (which returns a
 single event) or `registerEventHandler` (which returns nothing), an
 effect-returning handler can emit several signals from one event. You reach it
 from `onEngineReady` via `engine.getEventProcessor()`. Two small

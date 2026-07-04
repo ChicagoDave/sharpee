@@ -256,7 +256,7 @@ That's the whole file: imports, `config`, the `class` with `createPlayer` and
 
 Playing through the "Try it" list confirms the room works *today*. A
 **transcript test** confirms it still works after every change you'll ever
-make — and you have twenty-nine chapters of changes ahead of you. A transcript
+make, and you have twenty-nine chapters of changes ahead of you. A transcript
 is a plain-text file that reads like a play session: a small header, then each
 `>` line is a command and each `[OK: …]` line is an assertion checked against
 that command's output.
@@ -317,7 +317,7 @@ Running: tests/transcripts/first-room.transcript
 That's the whole discipline. From here on, every chapter that adds something
 playable ends with a **Test it** block: one more file for this folder, a
 green suite before you move on. By the last page you'll have a suite that
-plays the entire zoo — and the moment a future change breaks an earlier
+plays the entire zoo, and the moment a future change breaks an earlier
 chapter's behavior, a red line will point at exactly what stopped working.
 (Transcripts can also assert on *events* and *world state*, and chain into
 full walkthroughs; Chapter 29 covers all of that.)

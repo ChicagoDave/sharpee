@@ -125,7 +125,7 @@ The action or handler decides *when* to act and *what to say*; the behavior deci
 One honest note before you go looking for a "Try it": the zoo doesn't wire this
 pair up. The two files compile alongside your story, but no action calls
 `DispenserBehavior.dispense` yet, so the dispenser never actually runs dry in
-play. That's deliberate — the caller would be a custom "operate dispenser" action,
+play. That's deliberate: the caller would be a custom "operate dispenser" action,
 and you already know how to build one from Chapter 14; wiring it end-to-end makes
 a good exercise. What this chapter adds is the pattern itself: state in a trait,
 rules in a behavior, coordination elsewhere.

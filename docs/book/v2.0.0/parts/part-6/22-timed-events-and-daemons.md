@@ -274,7 +274,7 @@ daemon above ("counting itself down and stopping") was built to do.
 
 ## Test it
 
-Timed events are the easiest thing in the zoo to break by accident — an
+Timed events are the easiest thing in the zoo to break by accident: an
 off-by-one in a condition and the PA falls silent. This test walks the clock
 turn by turn. Add `tests/transcripts/timed-events.transcript`:
 

@@ -78,8 +78,8 @@ between rooms. The parrot, which stays put, sets it to `false`.
 
 `announcesMovement` is what makes the patrol *visible*: when Sam walks out of
 (or into) the player's room, the platform prints a line like "The zookeeper
-leaves to the east." It defaults to `false` — a silent NPC that changes rooms
-between turns is imperceptible until the player types `look` — so switch it on
+leaves to the east." It defaults to `false`, but a silent NPC that changes rooms
+between turns is imperceptible until the player types `look`, so switch it on
 for any NPC whose comings and goings the player should notice. (Moves between
 two rooms the player isn't in stay silent either way.)
 
@@ -201,7 +201,7 @@ NPC behaviors don't fire until the `NpcPlugin` is registered with the engine.
 That happens in `onEngineReady()`, the story hook called after the engine is
 fully built, which is where any plugin needing the engine reference is set up.
 Chapter 13 already gave your story an `onEngineReady` (it holds the two chain
-handlers), so *add* the plugin code below at the top of that existing method —
+handlers), so *add* the plugin code below at the top of that existing method;
 don't declare a second one. The
 patrol route references `this.roomIds`, the field you started in Chapter 13; make
 sure `initializeWorld` records `mainPath`, `pettingZoo`, and `aviary` there so the
@@ -261,7 +261,7 @@ defined with `id: 'zoo-parrot'` to begin with.
 ```
 
 (Without `announcesMovement: true` on Sam's `NpcTrait`, that wait prints only
-"Time passes..." — the patrol still happens, invisibly. And the timing is
+"Time passes...", but the patrol still happens, invisibly. And the timing is
 worth noticing: `waitTurns: 1` means Sam pauses one turn at each stop, so the
 turn you spend examining him is the turn he rests; he walks on the next.)
 
@@ -269,7 +269,7 @@ turn you spend examining him is the turn he rests; he walks on the next.)
 
 NPCs act on their own clock, so the test pins the *turn* things happen on as
 much as the text. Add `tests/transcripts/npcs.transcript` (the two closing
-waits assert nothing specific — the parrot's squawk is a coin flip):
+waits assert nothing specific, because the parrot's squawk is a coin flip):
 
 ```text
 title: NPCs

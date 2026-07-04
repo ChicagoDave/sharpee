@@ -301,7 +301,7 @@ victory daemon runs in the scheduler tick at the end of that same turn. Don't
 wait for a later `score` to announce it; by then it has already happened:
 
 ```
-> south                     Nocturnal Exhibit, +5 — and the daemon fires:
+> south                     Nocturnal Exhibit, +5, and the daemon fires:
                             "…*** You have won ***"
 > score                     "You have achieved a perfect score of 75 points!"
 ```

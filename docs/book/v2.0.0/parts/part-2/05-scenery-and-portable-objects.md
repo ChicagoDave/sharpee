@@ -153,7 +153,7 @@ Creating a thing as `EntityType.SCENERY` is just the quickest way to give it one
 Fill each room with scenery for atmosphere, then scatter a few takeable items.
 Scenery is typed `EntityType.SCENERY`, which fixes it in place; items get nothing
 extra. (The iron fence below is the same one from the `EntityType.SCENERY`
-section above, repeated here so the whole version is in one listing — add it
+section above, repeated here so the whole version is in one listing; add it
 once.)
 
 ```typescript
@@ -226,8 +226,8 @@ penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 > report "The rabbits **are** fixed in place." rather than "is". Set it on anything
 > with a plural name (*pygmy goats*, *direction signs*, *flower beds*) and the
 > generated prose stays grammatical. (See Chapter 19 for how the message templates
-> choose the verb.) The multi-file chapter's `object()` builder — a fluent
-> alternative you'll meet in Chapter 28 — spells this `.plural()`.
+> choose the verb.) The multi-file chapter's `object()` builder (a fluent
+> alternative you'll meet in Chapter 28) spells this `.plural()`.
 
 ## Try it
 

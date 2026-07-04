@@ -68,7 +68,7 @@ write those reactions as `onBegin` and `onEnd` callbacks, right next to the `beg
 and `end` conditions in `createScene`. Each callback returns the text the player
 should see at that edge, either prose directly (`{ text }`) or a message id resolved
 through your language file (`{ messageId }`). This listing *replaces* the bare
-version above — a scene id is registered once, so type in only this final form:
+version above, because a scene id is registered once, so type in only this final form:
 
 ```typescript
 world.createScene('scene-petting-zoo', {
@@ -136,7 +136,7 @@ in story beats; reach for a daemon or fuse when you're thinking in turns.
 
 ## Test it
 
-Scenes have no "Try it" list — their whole point is text that appears at the
+Scenes have no "Try it" list; their whole point is text that appears at the
 *edges*, and that's precisely what a transcript can pin. Add
 `tests/transcripts/scenes.transcript`; the last command proves `recurring`
 works by re-entering:

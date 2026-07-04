@@ -192,7 +192,7 @@ match how a person would actually talk about the object.
 
 ## Test it
 
-Add `tests/transcripts/readables.transcript` — it pins the read-versus-examine
+Add `tests/transcripts/readables.transcript`; it pins the read-versus-examine
 distinction on both the plaque and the brochure:
 
 ```text

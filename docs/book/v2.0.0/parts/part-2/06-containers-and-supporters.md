@@ -180,7 +180,7 @@ new behavior.
 
 ## Test it
 
-Add `tests/transcripts/containers.transcript` — note how the assertions pin
+Add `tests/transcripts/containers.transcript`, and note how the assertions pin
 the *behavior* (contents ride along, scenery refuses) rather than exact prose:
 
 ```text

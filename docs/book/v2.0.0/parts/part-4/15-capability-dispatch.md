@@ -342,7 +342,7 @@ behavior returns the bite message instead. One verb, the entity decides.
 
 ## Test it
 
-One verb, four outcomes — a perfect shape for a transcript. Add
+One verb with four outcomes is a perfect shape for a transcript. Add
 `tests/transcripts/petting.transcript`:
 
 ```text
