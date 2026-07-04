@@ -236,6 +236,76 @@ That's the whole file: imports, `config`, the `class` with `createPlayer` and
 > inventory             Check what you're carrying (nothing yet)
 ```
 
+## Prove it: your first transcript test
+
+Playing through the "Try it" list confirms the room works *today*. A
+**transcript test** confirms it still works after every change you'll ever
+make — and you have twenty-nine chapters of changes ahead of you. A transcript
+is a plain-text file that reads like a play session: a small header, then each
+`>` line is a command and each `[OK: …]` line is an assertion checked against
+that command's output.
+
+Create a `tests/transcripts/` folder in your project and save this as
+`tests/transcripts/first-room.transcript`:
+
+```text
+title: First room
+story: familyzoo
+description: The entrance, the sign, and the booth respond
+
+---
+
+> look
+[OK: contains "Zoo Entrance"]
+[OK: contains "welcome sign"]
+
+> examine sign
+[OK: contains "brightly painted"]
+
+> examine booth
+[OK: contains "Self-Guided Tours"]
+
+> take sign
+[OK: contains "fixed in place"]
+
+> inventory
+[OK: matches /./]
+```
+
+The header's three lines name the test; `---` ends it. `[OK: contains "…"]`
+passes when the command's output contains the text (matching is
+case-insensitive). Now run everything:
+
+```bash
+npx sharpee build --test
+```
+
+The build compiles the story, then replays every transcript it finds against a
+fresh copy of the game:
+
+```text
+Running: tests/transcripts/first-room.transcript
+  "First room"
+
+  > look                                             PASS
+  > examine sign                                     PASS
+  > examine booth                                    PASS
+  > take sign                                        PASS
+  > inventory                                        PASS
+
+  5 passed
+
+✓ All tests passed!
+```
+
+That's the whole discipline. From here on, every chapter that adds something
+playable ends with a **Test it** block: one more file for this folder, a
+green suite before you move on. By the last page you'll have a suite that
+plays the entire zoo — and the moment a future change breaks an earlier
+chapter's behavior, a red line will point at exactly what stopped working.
+(Transcripts can also assert on *events* and *world state*, and chain into
+full walkthroughs; Chapter 29 covers all of that.)
+
 ## Key takeaway
 
 A Sharpee story is a class with a config, a player creator, and a world

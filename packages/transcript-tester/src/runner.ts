@@ -1423,9 +1423,21 @@ function evaluateStateExpression(
 }
 
 /**
- * Find an entity by name in the world model
+ * Find an entity by name in the world model.
+ *
+ * `player` is a reserved word that always resolves to the player entity via
+ * `world.getPlayer()`, regardless of what the story named it — so
+ * `[STATE: true, player.inventory contains …]` works even when the player
+ * entity is called "yourself". Otherwise entities match by name, by id, by
+ * their IdentityTrait name, or by any of their IdentityTrait aliases.
  */
 function findEntity(name: string, world: WorldModel): any {
+  // Reserved word: the player, whatever the story named it.
+  if (name === 'player' && world.getPlayer) {
+    const player = world.getPlayer();
+    if (player) return player;
+  }
+
   // Try findEntityByName first
   if (world.findEntityByName) {
     const entity = world.findEntityByName(name);
@@ -1447,8 +1459,11 @@ function findEntity(name: string, world: WorldModel): any {
     const entities = world.getAllEntities();
     for (const entity of entities) {
       if (entity.name === name || entity.id === name) return entity;
-      // Check identity trait for aliases
-      const identity = entity.traits?.identity || entity.get?.('IdentityTrait');
+      // Check the identity trait for its name and aliases. The trait key is
+      // TraitType.IDENTITY = 'identity'; traits may live on a Map or be
+      // reachable through entity.get().
+      const identity =
+        entity.get?.('identity') ?? entity.traits?.get?.('identity') ?? entity.traits?.identity;
       if (identity) {
         if (identity.name === name) return entity;
         if (identity.aliases?.includes(name)) return entity;

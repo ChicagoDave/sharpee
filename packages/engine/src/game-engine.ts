@@ -882,6 +882,29 @@ export class GameEngine {
       throw new Error('Engine must have a story set before executing turns');
     }
 
+    // Command chaining (classic IF): "open gate. south", "take feed; feed
+    // goats", or "unlock gate with keycard then open gate" run each statement
+    // as its own full turn, in order. A failed statement flushes the rest of
+    // the line, matching player expectations from Inform-style interpreters.
+    // Skipped while an alternate input mode is active (ADR-137) — mode
+    // handlers own the raw line, punctuation and all.
+    if (typeof input === 'string' && !this.world.getStateValue(INPUT_MODE_STATE_KEY)) {
+      const statements = splitChainedInput(input);
+      if (statements.length > 1) {
+        let result: TurnResult | undefined;
+        for (const statement of statements) {
+          result = await this.executeTurn(statement);
+          if (!result.success) break;
+        }
+        return result!;
+      }
+      // A single statement that differs from the raw line had separator
+      // punctuation to shed (e.g. a trailing period): run the cleaned form.
+      if (statements.length === 1 && statements[0] !== input) {
+        return this.executeTurn(statements[0]);
+      }
+    }
+
     // Create undo snapshot BEFORE processing the turn
     // Skip for meta/info commands that shouldn't create undo points
     // (Phase 6 remediation - use MetaCommandRegistry instead of hardcoded list)
@@ -2475,3 +2498,17 @@ export class GameEngine {
 
 }
 
+
+/**
+ * Split a raw input line into chained statements (ADR pending — classic IF
+ * command chaining). Separators are `.`, `;`, and the standalone word `then`.
+ * Commas are NOT separators — they belong to multi-object phrases
+ * ("take lamp, sword"). Empty statements (doubled or trailing separators)
+ * are dropped.
+ */
+export function splitChainedInput(input: string): string[] {
+  return input
+    .split(/(?:[.;]|\bthen\b)+/i)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+}

@@ -215,6 +215,65 @@ resolve once the light is on.
 > look                        Dark again
 ```
 
+## Test it
+
+Darkness is state, and state is what tests are best at. Add
+`tests/transcripts/light-and-dark.transcript`:
+
+```text
+title: Light and dark
+story: familyzoo
+description: The flashlight lifts the darkness
+
+---
+
+> take keycard
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Main Path"]
+
+> unlock gate with keycard
+[OK: not contains "can't"]
+
+> open gate
+[OK: not contains "can't"]
+
+> south
+[OK: contains "Supply Room"]
+
+> take flashlight
+[OK: contains "Taken"]
+
+> south
+[OK: contains "dark"]
+
+> look
+[OK: contains "dark"]
+
+> north
+[OK: contains "Supply Room"]
+
+> switch on flashlight
+[OK: not contains "can't"]
+
+> south
+[OK: contains "Nocturnal Animals Exhibit"]
+[OK: contains "moonlight"]
+
+> examine owl
+[OK: contains "heart-shaped"]
+
+> examine gliders
+[OK: contains "sugar gliders"]
+
+> switch off flashlight
+[OK: not contains "can't"]
+
+> look
+[OK: contains "dark"]
+```
+
 ## Key takeaway
 
 `isDark: true` on a `RoomTrait` makes a room pitch black, locking out interaction

@@ -133,7 +133,8 @@ story.
 sharpee build
 ```
 
-`build` compiles `src/` and produces two things in `dist/`:
+`build` compiles `src/` and produces two artifacts you care about in `dist/`
+(alongside TypeScript's `.d.ts` declaration files):
 
 - `dist/index.js`: your compiled story.
 - `dist/<id>.sharpee`: a single zipped **story bundle**, the unit you hand to a

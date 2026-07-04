@@ -56,6 +56,7 @@ zookeeper.add(new ActorTrait({ isPlayer: false }));
 zookeeper.add(new NpcTrait({
   behaviorId: 'zoo-keeper-patrol',  // must match the behavior's id
   canMove: true,                    // allowed to change rooms
+  announcesMovement: true,          // "The zookeeper leaves to the east."
   isAlive: true,
   isConscious: true,
 }));
@@ -66,6 +67,13 @@ world.moveEntity(zookeeper.id, mainPath.id);
 The `behaviorId` is the crucial link: it must exactly match the `id` of a
 behavior you register later. `canMove` decides whether this NPC is allowed to walk
 between rooms. The parrot, which stays put, sets it to `false`.
+
+`announcesMovement` is what makes the patrol *visible*: when Sam walks out of
+(or into) the player's room, the platform prints a line like "The zookeeper
+leaves to the east." It defaults to `false` — a silent NPC that changes rooms
+between turns is imperceptible until the player types `look` — so switch it on
+for any NPC whose comings and goings the player should notice. (Moves between
+two rooms the player isn't in stay silent either way.)
 
 > **The mistake everyone makes once:** a `behaviorId` that doesn't match any
 > registered behavior's `id`. The NPC exists and you can examine it, but it never
@@ -178,10 +186,13 @@ platform's language layer (`@sharpee/lang-en-us`). You don't register them in
 
 NPC behaviors don't fire until the `NpcPlugin` is registered with the engine.
 That happens in `onEngineReady()`, the story hook called after the engine is
-fully built, which is where any plugin needing the engine reference is set up. The
+fully built, which is where any plugin needing the engine reference is set up.
+Chapter 13 already gave your story an `onEngineReady` (it holds the two chain
+handlers), so *add* the plugin code below at the top of that existing method —
+don't declare a second one. The
 patrol route references `this.roomIds`, the field you started in Chapter 13; make
 sure `initializeWorld` records `mainPath`, `pettingZoo`, and `aviary` there so the
-route can name them:
+route can name them (extend both the field's type and the recording block):
 
 ```typescript
 onEngineReady(engine: GameEngine): void {
@@ -221,13 +232,53 @@ defined with `id: 'zoo-parrot'` to begin with.
 
 ```
 > south                     Walk to the Main Path, where Sam patrols
-> examine zookeeper         See Sam's description
-> wait                      Sam patrols on toward the petting zoo
-> wait                      …and on toward the aviary
+> examine zookeeper         See Sam's description (this uses up Sam's one-turn pause)
+> wait                      "The zookeeper leaves to the east."
 > west                      Aviary, meet the parrot
 > examine parrot            See the macaw
 > wait                      The parrot might squawk
 > wait                      …or not; it's a coin flip each turn
+```
+
+(Without `announcesMovement: true` on Sam's `NpcTrait`, that wait prints only
+"Time passes..." — the patrol still happens, invisibly. And the timing is
+worth noticing: `waitTurns: 1` means Sam pauses one turn at each stop, so the
+turn you spend examining him is the turn he rests; he walks on the next.)
+
+## Test it
+
+NPCs act on their own clock, so the test pins the *turn* things happen on as
+much as the text. Add `tests/transcripts/npcs.transcript` (the two closing
+waits assert nothing specific — the parrot's squawk is a coin flip):
+
+```text
+title: NPCs
+story: familyzoo
+description: Sam patrols visibly; the parrot greets and squawks
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> examine zookeeper
+[OK: contains "Sam"]
+
+> wait
+[OK: contains "leaves to the east"]
+
+> west
+[OK: contains "Aviary"]
+[OK: contains "ruffles its feathers"]
+
+> examine parrot
+[OK: contains "scarlet macaw"]
+
+> wait
+[OK: matches /./]
+
+> wait
+[OK: matches /./]
 ```
 
 ## Key takeaway

@@ -37,7 +37,10 @@ description: Verify the brass key unlocks the cellar door
 
 - **Text assertions** — `[OK: contains "..."]`, `[OK: not contains "..."]`, `[OK: matches /regex/]`
 - **Event assertions** — Verify semantic events by type, position, and data
-- **State assertions** — Check entity properties and inventory after commands
+- **State assertions** — Check entity properties and inventory after commands.
+  `player` is a reserved word for the player entity (whatever the story named
+  it); other entity references resolve by name, id, or IdentityTrait alias:
+  `[STATE: true, player.inventory contains feed]`
 - **Control flow** — `GOAL/END GOAL`, `IF/END IF`, `WHILE/END WHILE`, `DO/UNTIL`, `RETRY`
 - **Save/restore** — Checkpoint world state for walkthrough chaining
 - **Navigation** — `[NAVIGATE TO: "Room"]` auto-pathfinds via BFS

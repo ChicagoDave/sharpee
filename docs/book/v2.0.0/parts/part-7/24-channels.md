@@ -85,7 +85,14 @@ graphical browser from exactly the same code.
 
 When your story has a UI signal the standard channels don't cover, such as an
 ambient mood line, a custom HUD value, or a trigger for a story-specific overlay,
-you define your own **`IOChannel`** in the `registerChannels` hook. A channel is an
+you define your own **`IOChannel`** in the `registerChannels` hook. The hook's
+types come from `@sharpee/if-domain`, so this chapter adds one import:
+
+```typescript
+import type { IChannelRegistry, ChannelProduceContext } from '@sharpee/if-domain';
+```
+
+A channel is an
 object with an
 `id`, a `contentType`, a `mode`, an `emit` policy, and a `produce` closure:
 
@@ -102,7 +109,7 @@ registerChannels(registry: IChannelRegistry): void {
     contentType: 'text',
     mode: 'replace',
     emit: 'sparse',          // only re-emit when the value changes
-    produce: (ctx) => {
+    produce: (ctx: ChannelProduceContext) => {
       const world = ctx.world as WorldModel;
       const room = world.getEntity(world.getLocation(world.getPlayer()!.id)!);
       // a mood line for the current room, or '' to clear the line

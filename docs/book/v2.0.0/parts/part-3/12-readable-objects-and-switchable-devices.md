@@ -8,11 +8,13 @@ clicks on and off but sheds no light at all. This chapter covers two small,
 self-contained traits that round out an ordinary world: `ReadableTrait` for
 things with words, and `SwitchableTrait` for devices with an on/off state.
 
-`ReadableTrait` is new this chapter; `SwitchableTrait` you met in *Light & Dark*.
-Both come from the world-model package:
+`ReadableTrait` is new this chapter; `SwitchableTrait` you met in *Light & Dark*
+and your file already imports it. Add only the new name to your world-model
+import (TypeScript rejects importing the same identifier twice, so don't paste a
+second `SwitchableTrait`):
 
 ```typescript
-import { ReadableTrait, SwitchableTrait } from '@sharpee/world-model';
+import { ReadableTrait } from '@sharpee/world-model';
 ```
 
 The snippets below go in `initializeWorld`, alongside the rooms you've built since
@@ -174,11 +176,73 @@ match how a person would actually talk about the object.
 > examine plaque             See the brass plaque itself
 > west                       Back to Main Path
 > unlock gate with keycard   Open the staff area
-> open gate; south           Supply Room
+> open gate                  Open the staff gate
+> south                      Supply Room
 > examine radio              See the battered radio
 > switch on radio            Click, it's on
 > switch off radio           Click, off again
 > take radio                 Can't, it's scenery
+```
+
+## Test it
+
+Add `tests/transcripts/readables.transcript` — it pins the read-versus-examine
+distinction on both the plaque and the brochure:
+
+```text
+title: Readables and switchables
+story: familyzoo
+description: Plaque, brochure, and radio carry state
+
+---
+
+> take brochure
+[OK: contains "Taken"]
+
+> take keycard
+[OK: contains "Taken"]
+
+> read brochure
+[OK: contains "Your Guide"]
+
+> examine brochure
+[OK: contains "glossy"]
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> read plaque
+[OK: contains "PYGMY GOATS"]
+
+> examine plaque
+[OK: contains "brass plaque"]
+
+> west
+[OK: contains "Main Path"]
+
+> unlock gate with keycard
+[OK: not contains "can't"]
+
+> open gate
+[OK: not contains "can't"]
+
+> south
+[OK: contains "Supply Room"]
+
+> examine radio
+[OK: contains "duct tape"]
+
+> switch on radio
+[OK: not contains "can't"]
+
+> switch off radio
+[OK: not contains "can't"]
+
+> take radio
+[OK: contains "fixed in place"]
 ```
 
 ## Key takeaway

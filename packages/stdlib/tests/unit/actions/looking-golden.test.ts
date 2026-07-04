@@ -108,14 +108,79 @@ describe('lookingAction (Golden Pattern)', () => {
     test('should handle empty rooms', () => {
       const { world, player, room } = setupBasicWorld();
       // Room only has player in it, no other items
-      
+
       const command = createCommand(IFActions.LOOKING);
       const context = createRealTestContext(lookingAction, world, command);
-      
+
       const events = executeWithValidation(lookingAction, context);
-      
+
       // Should not emit list contents event for empty room
       const listEvent = events.find(e => e.type === 'if.event.list.contents');
+      expect(listEvent).toBeUndefined();
+    });
+
+    test('should exclude scenery from the contents list', () => {
+      // Scenery belongs in the room's description prose, not the
+      // "You can see … here." enumeration — but a scenery supporter's
+      // contents must still surface via openContainerContents.
+      const { world, player, room } = setupBasicWorld();
+
+      const ball = world.createEntity('red ball', 'object');
+
+      const fence = world.createEntity('iron fence', 'object');
+      fence.add({ type: TraitType.SCENERY });
+
+      const bench = world.createEntity('park bench', 'object');
+      bench.add({ type: TraitType.SUPPORTER });
+      bench.add({ type: TraitType.SCENERY });
+
+      [ball, fence, bench].forEach(entity => {
+        world.moveEntity(entity.id, room.id);
+      });
+
+      const penny = world.createEntity('souvenir penny', 'object');
+      world.moveEntity(penny.id, bench.id);
+
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+
+      const events = executeWithValidation(lookingAction, context);
+
+      const listEvent = events.find(e => e.type === 'if.event.list.contents');
+      expect(listEvent).toBeDefined();
+
+      // The rendered list names only the portable ball.
+      const params = (listEvent!.data as any).params;
+      expect(params.count).toBe(1);
+      const listedNames = params.items.items.map((np: any) => np.name);
+      expect(listedNames).toEqual(['red ball']);
+
+      // The scenery bench still reports what rests on it.
+      const surfaceEvents = events.filter(
+        e => e.type === 'if.event.list.contents' &&
+             (e.data as any).containerId === bench.id
+      );
+      expect(surfaceEvents).toHaveLength(1);
+      expect((surfaceEvents[0].data as any).itemNames).toEqual(['souvenir penny']);
+      expect((surfaceEvents[0].data as any).preposition).toBe('on');
+    });
+
+    test('should not emit a contents list when only scenery is present', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const fence = world.createEntity('iron fence', 'object');
+      fence.add({ type: TraitType.SCENERY });
+      world.moveEntity(fence.id, room.id);
+
+      const command = createCommand(IFActions.LOOKING);
+      const context = createRealTestContext(lookingAction, world, command);
+
+      const events = executeWithValidation(lookingAction, context);
+
+      const listEvent = events.find(
+        e => e.type === 'if.event.list.contents' &&
+             (e.data as any).messageId?.includes('contents_list')
+      );
       expect(listEvent).toBeUndefined();
     });
   });

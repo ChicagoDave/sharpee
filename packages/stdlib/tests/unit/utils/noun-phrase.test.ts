@@ -105,6 +105,59 @@ describe('nounPhraseFor', () => {
     expect(np.articleType).toBe('none');
   });
 
+  test('explicit article "the" → articleType "definite"', () => {
+    const world = new WorldModel();
+    const gate = makeEntity(world, 'staff gate', { article: 'the' });
+
+    expect(nounPhraseFor(gate).articleType).toBe('definite');
+  });
+
+  test('explicit article "some" → articleType "some" (number unaffected)', () => {
+    const world = new WorldModel();
+    const gliders = makeEntity(world, 'sugar gliders', { article: 'some' });
+
+    const np = nounPhraseFor(gliders);
+
+    expect(np.articleType).toBe('some');
+    expect(np.number).toBe('singular'); // article never implies number
+  });
+
+  test('explicit article "some" + grammaticalNumber plural (the book\'s zoo shape)', () => {
+    const world = new WorldModel();
+    const signs = makeEntity(world, 'direction signs', {
+      article: 'some',
+      grammaticalNumber: 'plural',
+    });
+
+    const np = nounPhraseFor(signs);
+
+    expect(np.articleType).toBe('some');
+    expect(np.number).toBe('plural');
+  });
+
+  test('explicit empty article → articleType "none"', () => {
+    const world = new WorldModel();
+    const self = makeEntity(world, 'yourself', { article: '' });
+
+    expect(nounPhraseFor(self).articleType).toBe('none');
+  });
+
+  test('semantic noun signals outrank the explicit article', () => {
+    const world = new WorldModel();
+    const alice = makeEntity(world, 'Alice', { properName: true, article: 'the' });
+    const water = makeEntity(world, 'water', { nounType: 'mass', article: 'the' });
+
+    expect(nounPhraseFor(alice).articleType).toBe('none');
+    expect(nounPhraseFor(water).articleType).toBe('some');
+  });
+
+  test('unique nounType → articleType "definite" (ADR-095: "the sun")', () => {
+    const world = new WorldModel();
+    const sun = makeEntity(world, 'sun', { nounType: 'unique' });
+
+    expect(nounPhraseFor(sun).articleType).toBe('definite');
+  });
+
   test('grammaticalNumber "plural" → number "plural"', () => {
     const world = new WorldModel();
     const coins = makeEntity(world, 'coins', { grammaticalNumber: 'plural' });

@@ -143,11 +143,14 @@ their **ids**, with no installs and no extra dependencies:
 
 Because a theme is just a token block, shipping your own takes two small pieces:
 
-1. **Write a `[data-theme]` token block** in your author override stylesheet,
-   `browser/<story-id>.css` (the build links it *last*, so it wins the cascade):
+1. **Write a `[data-theme]` token block** in your author override stylesheet —
+   the `browser/*.css` file `sharpee init-browser` created, named after your
+   project's *package name* (for the tutorial project that's
+   `browser/my-zoo.css`, not the story's `config.id`). The build links it
+   *last*, so it wins the cascade:
 
    ```css
-   /* browser/familyzoo.css */
+   /* browser/my-zoo.css */
    [data-theme="zoo-sunny"] {
      --theme-bg: #fffaf0;          /* warm cream */
      --theme-text: #2f2a24;

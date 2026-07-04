@@ -398,6 +398,47 @@ describe('goingAction (Golden Pattern)', () => {
       });
     });
 
+    test('should exclude scenery from the destination contents list', () => {
+      const world = new WorldModel();
+      const player = world.createEntity('yourself', 'object');
+      player.add({ type: TraitType.ACTOR, isPlayer: true });
+      world.setPlayer(player.id);
+
+      const room1 = world.createEntity('Garden', 'object');
+      const room2 = world.createEntity('Library', 'object');
+
+      room1.add({
+        type: TraitType.ROOM,
+        exits: { [Direction.NORTH]: { destination: room2.id } }
+      });
+      room2.add({
+        type: TraitType.ROOM,
+        exits: { [Direction.SOUTH]: { destination: room1.id } },
+        visited: true
+      });
+
+      // A portable book and a scenery statue in the destination.
+      const book = world.createEntity('dusty book', 'object');
+      const statue = world.createEntity('marble statue', 'object');
+      statue.add({ type: TraitType.SCENERY });
+      world.moveEntity(book.id, room2.id);
+      world.moveEntity(statue.id, room2.id);
+
+      world.moveEntity(player.id, room1.id);
+
+      const command = createCommand(IFActions.GOING);
+      command.parsed.extras = { direction: Direction.NORTH };
+      const context = createRealTestContext(goingAction, world, command);
+
+      const events = executeWithValidation(goingAction, context);
+
+      // The auto-look contents list names only the portable book.
+      const listEvent = events.find(e => e.type === 'if.event.list.contents');
+      expect(listEvent).toBeDefined();
+      expect((listEvent!.data as any).itemNames).toEqual(['dusty book']);
+      expect((listEvent!.data as any).params.count).toBe(1);
+    });
+
     test('should handle direction abbreviations', () => {
       const world = new WorldModel();
       const player = world.createEntity('yourself', 'object');

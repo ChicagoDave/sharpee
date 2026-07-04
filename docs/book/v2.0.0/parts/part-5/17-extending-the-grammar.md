@@ -60,9 +60,12 @@ Players say the same thing different ways. Register a pattern for each phrasing,
 all mapping to the same action:
 
 ```typescript
-grammar.define('photograph :thing').mapsTo('zoo.action.photographing').withPriority(150).build();
-grammar.define('photo :thing').mapsTo('zoo.action.photographing').withPriority(150).build();
-grammar.define('snap :thing').mapsTo('zoo.action.photographing').withPriority(150).build();
+grammar.define('photograph :thing')
+  .mapsTo('zoo.action.photographing').withPriority(150).build();
+grammar.define('photo :thing')
+  .mapsTo('zoo.action.photographing').withPriority(150).build();
+grammar.define('snap :thing')
+  .mapsTo('zoo.action.photographing').withPriority(150).build();
 ```
 
 Now `photograph toucan`, `photo toucan`, and `snap toucan` all reach the same verb.

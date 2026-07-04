@@ -228,11 +228,15 @@ The engine now *has* the action, but the parser still doesn't recognize the word
 extendParser(parser: Parser): void {
   const grammar = parser.getStoryGrammar();
 
-  grammar.define('feed :thing').mapsTo(FEED_ACTION_ID).withPriority(150).build();
+  grammar.define('feed :thing')
+    .mapsTo(FEED_ACTION_ID).withPriority(150).build();
 
-  grammar.define('photograph :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
-  grammar.define('photo :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
-  grammar.define('snap :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
+  grammar.define('photograph :thing')
+    .mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
+  grammar.define('photo :thing')
+    .mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
+  grammar.define('snap :thing')
+    .mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
 }
 ```
 
@@ -289,14 +293,64 @@ re-voiced without touching its logic.
 ## Try it
 
 ```
-> south; east               Go to the Petting Zoo
+> south                     Main Path
+> east                      Petting Zoo
 > take feed                 Get the bag of feed
 > feed goats                The goats eat happily
 > feed goats                "You've already fed them."
 > photograph goats          "You don't have a camera." (blocked)
-> west; west; west          Head to the Gift Shop
+> west                      Main Path
+> west                      Aviary
+> west                      Gift Shop
 > take camera               Grab the camera
 > photograph press          Click! Photo taken
+```
+
+## Test it
+
+A custom verb has three registrations to forget, so test all of its moods:
+works, refuses politely, and blocks without the camera. Add
+`tests/transcripts/custom-actions.transcript`:
+
+```text
+title: Custom actions
+story: familyzoo
+description: Feed and photograph are real verbs
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+
+> feed goats
+[OK: contains "devour"]
+
+> feed goats
+[OK: contains "already fed"]
+
+> photograph goats
+[OK: contains "don't have a camera"]
+
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> west
+[OK: contains "Gift Shop"]
+
+> take camera
+[OK: contains "Taken"]
+
+> photograph press
+[OK: contains "Click!"]
 ```
 
 ## Key takeaway

@@ -113,7 +113,7 @@ export const zooAmbienceChannel: IOChannel<string> = {
 // ============================================================================
 //
 // One shared ambient channel id ('environment') whose source swaps as the
-// player moves, mirroring the Dungeo pattern. Background images use the
+// player moves from area to area. Background images use the
 // standard `image:background` channel (no registration needed — emitting
 // `media.image.show { layer: 'background' }` is enough).
 

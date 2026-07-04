@@ -215,8 +215,10 @@ getCustomActions(): any[] {
 Give it grammar patterns in `extendParser`:
 
 ```typescript
-grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
-grammar.define('stroke :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
+grammar.define('pet :thing')
+  .mapsTo(PETTING_ACTION_ID).withPriority(150).build();
+grammar.define('stroke :thing')
+  .mapsTo(PETTING_ACTION_ID).withPriority(150).build();
 ```
 
 And register its four message ids in `extendLanguage`. Without these, petting
@@ -291,12 +293,51 @@ behavior returns the bite message instead. One verb, the entity decides.
 ## Try it
 
 ```
-> south; east               Go to the Petting Zoo
+> south                     Main Path
+> east                      Petting Zoo
 > pet goats                 They lean in, bleating happily
 > pet rabbits               Soft and fuzzy
 > pet dispenser             "You can't pet that." (no PettableTrait)
-> west; west                Aviary
+> west                      Main Path
+> west                      Aviary
 > pet parrot                CHOMP! It bites!
+```
+
+## Test it
+
+One verb, four outcomes — a perfect shape for a transcript. Add
+`tests/transcripts/petting.transcript`:
+
+```text
+title: Petting
+story: familyzoo
+description: One pet verb, per-animal outcomes
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> pet goats
+[OK: contains "leans into your hand"]
+
+> pet rabbits
+[OK: contains "incredibly soft"]
+
+> pet dispenser
+[OK: contains "can't pet"]
+
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> pet parrot
+[OK: contains "CHOMP"]
 ```
 
 ## Key takeaway

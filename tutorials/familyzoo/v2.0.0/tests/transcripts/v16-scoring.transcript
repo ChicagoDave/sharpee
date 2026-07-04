@@ -105,11 +105,12 @@ description: Verify scoring for room visits, feeding, item collection, and win s
 > switch on flashlight
 [OK: contains "switch"]
 
-# Visit Nocturnal Exhibit (5 pts) — this should trigger victory (75 pts total)
+# Visit Nocturnal Exhibit (5 pts) — the 75th point lands here, and the victory
+# daemon fires in this same turn's scheduler tick, so the win message is part
+# of THIS turn's output (not a later one).
 > south
 [OK: contains "Nocturnal"]
+[OK: contains "You have won"]
 
-# Victory should have triggered — check for win message
-# (The victory daemon runs after the player's turn)
 > score
 [OK: contains "perfect score"]

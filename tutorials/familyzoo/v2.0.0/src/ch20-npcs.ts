@@ -602,7 +602,7 @@ class FamilyZooStory implements Story {
     const zookeeper = world.createEntity('zookeeper', EntityType.ACTOR);
     zookeeper.add(new IdentityTrait({ name: 'zookeeper', description: 'A friendly zookeeper in khaki overalls. A name tag reads "Sam."', aliases: ['keeper', 'zookeeper', 'sam'], properName: false, article: 'a' }));
     zookeeper.add(new ActorTrait({ isPlayer: false }));
-    zookeeper.add(new NpcTrait({ behaviorId: 'zoo-keeper-patrol', canMove: true, isAlive: true, isConscious: true }));
+    zookeeper.add(new NpcTrait({ behaviorId: 'zoo-keeper-patrol', canMove: true, announcesMovement: true, isAlive: true, isConscious: true }));
     world.moveEntity(zookeeper.id, mainPath.id);
 
     // The parrot NPC also gets PettableTrait so "pet parrot" works via capability dispatch

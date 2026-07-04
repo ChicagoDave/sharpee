@@ -84,6 +84,19 @@ which bolts it into the Petting Zoo.
 ## SupporterTrait
 
 A supporter is the surface counterpart: things rest *on* it rather than *in* it.
+`SupporterTrait` is the one new trait this chapter uses, so add it to the trait
+import you started in Chapter 2:
+
+```typescript
+import {
+  IdentityTrait,
+  ActorTrait,
+  ContainerTrait,
+  RoomTrait,
+  SceneryTrait,
+  SupporterTrait,   // new this chapter
+} from '@sharpee/world-model';
+```
 
 ```typescript
 const parkBench = world.createEntity('park bench', EntityType.SUPPORTER);
@@ -150,6 +163,57 @@ new behavior.
 > east                   Go to the Petting Zoo
 > take dispenser         Can't: it's scenery
 > examine dispenser      But you can look at it
+```
+
+## Test it
+
+Add `tests/transcripts/containers.transcript` — note how the assertions pin
+the *behavior* (contents ride along, scenery refuses) rather than exact prose:
+
+```text
+title: Containers and supporters
+story: familyzoo
+description: Backpack, dispenser, and bench hold things
+
+---
+
+> take backpack
+[OK: contains "Taken"]
+
+> take map
+[OK: contains "Taken"]
+
+> put map in backpack
+[OK: contains "backpack"]
+[OK: not contains "can't"]
+
+> look in backpack
+[OK: contains "map"]
+
+> inventory
+[OK: contains "backpack"]
+
+> south
+[OK: contains "Main Path"]
+
+> take penny
+[OK: contains "Taken"]
+
+> put penny on bench
+[OK: contains "bench"]
+[OK: not contains "can't"]
+
+> look
+[OK: contains "penny"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take dispenser
+[OK: contains "fixed in place"]
+
+> examine dispenser
+[OK: contains "coin-operated"]
 ```
 
 ## Key takeaway

@@ -22,7 +22,9 @@ cd my-game && npm install        # pull the platform from npm
 sharpee build                    # compile src/ → dist/, emit the .sharpee bundle
 ```
 
-`sharpee build` produces two things in `dist/`: the compiled story (`dist/index.js`)
+`sharpee build` produces the two artifacts you care about in `dist/` (alongside
+declaration files and, once the browser client is added, `dist/web/`): the
+compiled story (`dist/index.js`)
 and a **`.sharpee` bundle**, a single zipped file of your whole story, the unit you
 hand to anything that runs Sharpee stories.
 
