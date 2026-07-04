@@ -74,13 +74,28 @@ export function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext, opts?: Nou
 
   const properName = identity.properName || identity.nounType === 'proper';
 
-  // articleType default: proper → none, mass → some, else indefinite. A template
-  // article hint overrides this downstream in parsePhraseTemplate.
+  // articleType: semantic noun signals win (proper → none, mass → some,
+  // unique → definite per ADR-095); otherwise honor the entity's explicit
+  // `article` field ('the' → definite, 'some' → some, '' → none), with
+  // 'a'/'an' — the IdentityTrait default — mapping to indefinite. A template
+  // article hint overrides all of this downstream in parsePhraseTemplate.
   let articleType: NounPhrase['articleType'] = 'indefinite';
   if (properName) {
     articleType = 'none';
   } else if (identity.nounType === 'mass') {
     articleType = 'some';
+  } else if (identity.nounType === 'unique') {
+    articleType = 'definite';
+  } else {
+    const article = identity.article?.trim().toLowerCase();
+    if (article === 'the') {
+      articleType = 'definite';
+    } else if (article === 'some') {
+      articleType = 'some';
+    } else if (article === '') {
+      articleType = 'none';
+    }
+    // 'a', 'an', undefined, or anything unrecognized → indefinite (default).
   }
 
   const np: NounPhrase = {

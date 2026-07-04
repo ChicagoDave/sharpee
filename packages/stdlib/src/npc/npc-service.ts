@@ -649,12 +649,19 @@ export class NpcService implements INpcService {
     let hearingId: string;
     let params: Record<string, unknown>;
 
+    // Direction constants are language-neutral UPPERCASE tokens ('EAST'); the
+    // npc.leaves/npc.enters templates render the param through
+    // {verbatim:direction}, so bind the lowercase surface form the player
+    // should read ("leaves to the east", not "to the EAST").
     if (from === playerLocation) {            // departure
       sightId = direction
         ? (overrides.leaves ?? NpcMessages.NPC_LEAVES)
         : (overrides.departs ?? NpcMessages.NPC_DEPARTS);
       hearingId = NpcMessages.NPC_HEARD_DEPARTS;
-      params = { speaker: nounPhraseFor(npc), ...(direction ? { direction } : {}) };
+      params = {
+        speaker: nounPhraseFor(npc),
+        ...(direction ? { direction: direction.toLowerCase() } : {}),
+      };
     } else if (to === playerLocation) {       // arrival
       sightId = direction
         ? (overrides.enters ?? NpcMessages.NPC_ENTERS)
@@ -662,7 +669,10 @@ export class NpcService implements INpcService {
       hearingId = NpcMessages.NPC_HEARD_ARRIVES;
       // The player sees the NPC arrive *from* the direction it came.
       const dir = direction ? getOppositeDirection(direction) : undefined;
-      params = { speaker: nounPhraseFor(npc), ...(dir ? { direction: dir } : {}) };
+      params = {
+        speaker: nounPhraseFor(npc),
+        ...(dir ? { direction: dir.toLowerCase() } : {}),
+      };
     } else {
       return [];                              // a move the player can't witness
     }

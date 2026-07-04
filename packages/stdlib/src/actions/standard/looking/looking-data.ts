@@ -348,8 +348,13 @@ export function determineLookingMessage(
     return { messageId: 'examine_surroundings', params };
   }
 
-  // Get items directly in the room (not inside containers)
+  // Get items directly in the room (not inside containers). Scenery is
+  // excluded from the "You can see …" list: fixed furnishings are expected to
+  // be named in the room's description prose, not enumerated after it. (Their
+  // *contents* still render via openContainerContents — a scenery bench stays
+  // out of the list while "On the park bench you see …" still prints.)
   const directInRoom = visible.filter(e => {
+    if (e.hasTrait(TraitType.SCENERY)) return false;
     const itemLocation = context.world.getLocation(e.id);
     return itemLocation === location.id;
   });

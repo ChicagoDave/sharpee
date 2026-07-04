@@ -476,8 +476,13 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Emit room description (specialized handler renders this)
     events.push(context.event('if.event.room.description', roomDescData));
 
-    // Emit contents list if there are visible items
-    if (destinationContents.length > 0) {
+    // Emit contents list if there are visible items. Scenery is excluded, as
+    // in the looking action: fixed furnishings belong to the room's
+    // description prose, not the "You can see …" enumeration.
+    const listableContents = destinationContents.filter(
+      e => !e.hasTrait(TraitType.SCENERY)
+    );
+    if (listableContents.length > 0) {
       // PhraseList of NounPhrases (ADR-192): the Assembler's list authority renders
       // articles + conjunction in the lang layer. Use looking's messageId namespace
       // since this is auto-look.
@@ -487,13 +492,13 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           items: {
             kind: 'list' as const,
             conj: 'and' as const,
-            items: destinationContents.map(e => nounPhraseFor(e)),
+            items: listableContents.map(e => nounPhraseFor(e)),
           },
-          count: destinationContents.length
+          count: listableContents.length
         },
         locationId: destinationRoom.id,
-        itemIds: destinationContents.map(e => e.id),
-        itemNames: destinationContents.map(e => e.name)
+        itemIds: listableContents.map(e => e.id),
+        itemNames: listableContents.map(e => e.name)
       }));
     }
 
