@@ -1,6 +1,8 @@
 entranceRoom.exits = {
-  [Direction.SOUTH]: { destination: mainPath.id },   // entrance → path
+  // entrance → path
+  [Direction.SOUTH]: { destination: mainPath.id },
 };
 mainPathRoom.exits = {
-  [Direction.NORTH]: { destination: entrance.id },    // path → entrance (the way back)
+  // path → entrance (the way back)
+  [Direction.NORTH]: { destination: entrance.id },
 };

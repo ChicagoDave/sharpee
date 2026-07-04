@@ -1,7 +1,12 @@
-import type { Choice, Literal, Optional } from '@sharpee/if-domain';
+import type {
+  Choice,
+  Literal,
+  Optional,
+} from '@sharpee/if-domain';
 import { OpenableBehavior } from '@sharpee/world-model';
 
-const lit = (text: string): Literal => ({ kind: 'literal', text });
+const lit = (text: string): Literal =>
+  ({ kind: 'literal', text });
 
 const openClause: Optional = {
   kind: 'optional',

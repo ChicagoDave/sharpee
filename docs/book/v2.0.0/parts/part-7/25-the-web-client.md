@@ -18,13 +18,19 @@ The orchestrator is `BrowserClient`. A story's browser entry point creates one,
 hands it the page's elements, connects the engine, and starts:
 
 ```typescript
-import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+import {
+  STORY_VERSION,
+  ENGINE_VERSION,
+  BUILD_DATE,
+} from './version.js';
 
 const client = new BrowserClient({
   storagePrefix: 'familyzoo-',
-  defaultTheme: 'zoo-sunny',            // the theme applied on first load / restore
-  // The clickable theme menu is generated at build time from your package.json
-  // `sharpee.themes` (Chapter 26); this array is metadata the generator fills in.
+  // the theme applied on first load / restore
+  defaultTheme: 'zoo-sunny',
+  // The clickable theme menu is generated at build time
+  // from your package.json `sharpee.themes` (Chapter 26);
+  // this array is metadata the generator fills in.
   themes: [
     { id: 'zoo-sunny', name: 'Zoo Sunny' },
     { id: 'modern-dark', name: 'Modern Dark' },
@@ -33,15 +39,18 @@ const client = new BrowserClient({
   storyInfo: {
     title: 'Family Zoo',
     authors: 'You',
-    version: STORY_VERSION,        // all three stamped into './version.js'
+    // all three stamped into './version.js'
+    version: STORY_VERSION,
     engineVersion: ENGINE_VERSION, // by `sharpee build`
     buildDate: BUILD_DATE,
   },
 });
 
-client.initialize(elements);          // page elements (after DOMContentLoaded)
+// page elements (after DOMContentLoaded)
+client.initialize(elements);
 client.connectEngine(engine, world);  // wire the engine
-await client.start();                 // boot, restore autosave, first look
+// boot, restore autosave, first look
+await client.start();
 ```
 
 You rarely write this by hand. `sharpee init-browser` scaffolds the entry point
@@ -58,7 +67,8 @@ from the previous chapter) and subscribes to exactly two engine signals:
 
 ```typescript
 engine.on('channel:manifest', (cmgt) => renderer.applyCmgt(cmgt));
-engine.on('channel:packet',  (packet) => renderer.applyTurnPacket(packet));
+engine.on('channel:packet',
+  (packet) => renderer.applyTurnPacket(packet));
 ```
 
 That's the whole rendering path. At startup the engine emits one **manifest** (the
@@ -119,7 +129,8 @@ const renderer = client.getChannelRenderer();
 renderer.registerRenderer('score', {
   onValue: (value) => {
     const { current } = value as { current: number };
-    const el = document.getElementById('score-turns'); // the platform status element
+    // the platform status element
+    const el = document.getElementById('score-turns');
     if (el) el.textContent = `★ ${current}`;
   },
 });
@@ -139,7 +150,8 @@ reuse thereafter:
 ```typescript
 renderer.registerRenderer('zoo.ambience', {
   onValue: (value) => {
-    const main = document.getElementById('main-window'); // a stable platform container
+    // a stable platform container
+    const main = document.getElementById('main-window');
     if (!main) return;
     let line = document.getElementById('zoo-ambience');
     if (!line) {

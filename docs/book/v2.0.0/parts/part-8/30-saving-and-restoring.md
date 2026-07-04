@@ -30,7 +30,9 @@ once:
 let behaviorSwapped = false;
 scheduler.registerDaemon({
   id: 'zoo.daemon.parrot_behavior_swap',
-  condition: (ctx) => !behaviorSwapped && ctx.world.getStateValue('zoo.after_hours') === true,
+  condition: (ctx) =>
+    !behaviorSwapped &&
+    ctx.world.getStateValue('zoo.after_hours') === true,
   run: () => {
     behaviorSwapped = true;
     npcService.removeBehavior('zoo-parrot');
@@ -47,8 +49,13 @@ would think the swap hadn't happened and try to run again. The daemon avoids tha
 implementing two hooks:
 
 ```typescript
-  getRunnerState(): Record<string, unknown> { return { behaviorSwapped }; },
-  restoreRunnerState(state): void { behaviorSwapped = (state.behaviorSwapped as boolean) ?? false; },
+  getRunnerState(): Record<string, unknown> {
+    return { behaviorSwapped };
+  },
+  restoreRunnerState(state): void {
+    behaviorSwapped =
+      (state.behaviorSwapped as boolean) ?? false;
+  },
 ```
 
 `getRunnerState` hands the engine the transient flag to fold into the save;

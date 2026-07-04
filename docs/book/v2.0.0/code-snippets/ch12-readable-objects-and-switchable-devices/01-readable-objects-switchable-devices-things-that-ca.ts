@@ -1,1 +1,1 @@
-import { ReadableTrait, SwitchableTrait } from '@sharpee/world-model';
+import { ReadableTrait } from '@sharpee/world-model';

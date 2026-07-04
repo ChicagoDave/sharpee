@@ -1,9 +1,10 @@
-const brochure = world.createEntity('zoo brochure', EntityType.ITEM);
+const brochure = world
+  .createEntity('zoo brochure', EntityType.ITEM);
 brochure.add(new IdentityTrait({
   name: 'zoo brochure',
   description:
-    'A glossy tri-fold brochure with "WILLOWBROOK FAMILY ZOO" on ' +
-    'the cover in cheerful yellow letters.',
+    'A glossy tri-fold brochure with "WILLOWBROOK FAMILY ' +
+    'ZOO" on the cover in cheerful yellow letters.',
   aliases: ['brochure', 'zoo brochure', 'pamphlet', 'leaflet'],
   properName: false,
   article: 'a',

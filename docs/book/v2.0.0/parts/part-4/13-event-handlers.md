@@ -60,7 +60,8 @@ world.chainEvent(
   'if.event.dropped',
   (event, w) => {
     const data = event.data as Record<string, any>;
-    if (data.itemId !== feedId) return null;   // not our item, ignore
+    // not our item, ignore
+    if (data.itemId !== feedId) return null;
     return {
       id: `goats-react-${Date.now()}`,
       type: 'zoo.event.goats_react',
@@ -118,8 +119,11 @@ class FamilyZooStory implements Story {
 
   private roomIds: { giftShop: string; pettingZoo: string } =
     { giftShop: '', pettingZoo: '' };
-  private entityIds: { animalFeed: string; penny: string; souvenirPress: string } =
-    { animalFeed: '', penny: '', souvenirPress: '' };
+  private entityIds: {
+    animalFeed: string;
+    penny: string;
+    souvenirPress: string;
+  } = { animalFeed: '', penny: '', souvenirPress: '' };
 
   // createPlayer / initializeWorld / onEngineReady …
 }
@@ -135,13 +139,14 @@ giftShop.add(new RoomTrait({ exits: {}, isDark: false }));
 giftShop.add(new IdentityTrait({
   name: 'Gift Shop',
   description:
-    'A small zoo gift shop crammed with stuffed animals and postcards. A large ' +
-    'souvenir penny press stands near the door. The aviary is back to the east.',
+    'A small zoo gift shop crammed with stuffed animals and ' +
+    'postcards. A large souvenir penny press stands near the ' +
+    'door. The aviary is back to the east.',
   aliases: ['gift shop', 'shop', 'store'],
   article: 'the',
 }));
-// Connect it west of the Aviary (and back east). This replaces the Aviary
-// exits from Chapter 4, adding the west passage.
+// Connect it west of the Aviary (and back east). This replaces
+// the Aviary exits from Chapter 4, adding the west passage.
 aviary.get(RoomTrait)!.exits = {
   [Direction.EAST]: { destination: mainPath.id },
   [Direction.WEST]: { destination: giftShop.id },
@@ -150,16 +155,22 @@ giftShop.get(RoomTrait)!.exits = {
   [Direction.EAST]: { destination: aviary.id },
 };
 
-const souvenirPress = world.createEntity('souvenir press', EntityType.CONTAINER);
+const souvenirPress = world.createEntity(
+  'souvenir press',
+  EntityType.CONTAINER,
+);
 souvenirPress.add(new IdentityTrait({
   name: 'souvenir press',
   description:
-    'A heavy cast-iron machine with a crank handle and a slot that accepts ' +
-    'pennies. A sign reads: "INSERT PENNY, TURN HANDLE, KEEP FOREVER!"',
+    'A heavy cast-iron machine with a crank handle and a slot ' +
+    'that accepts pennies. A sign reads: "INSERT PENNY, TURN ' +
+    'HANDLE, KEEP FOREVER!"',
   aliases: ['press', 'souvenir press', 'penny press', 'machine'],
   article: 'a',
 }));
-souvenirPress.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
+souvenirPress.add(new ContainerTrait({
+  capacity: { maxItems: 1 },
+}));
 souvenirPress.add(new SceneryTrait());
 world.moveEntity(souvenirPress.id, giftShop.id);
 
@@ -193,11 +204,15 @@ const pettingZooId = this.roomIds.pettingZoo;
 
 world.chainEvent(
   'if.event.dropped',
-  (event: ISemanticEvent, w: IWorldModel): ISemanticEvent | null => {
+  (
+    event: ISemanticEvent,
+    w: IWorldModel,
+  ): ISemanticEvent | null => {
     const data = event.data as Record<string, any>;
 
     // Is it the feed, dropped in the petting zoo?
-    if (data.itemId !== feedId || data.toLocation !== pettingZooId) {
+    if (data.itemId !== feedId ||
+        data.toLocation !== pettingZooId) {
       return null;
     }
 
@@ -211,10 +226,11 @@ world.chainEvent(
       timestamp: Date.now(),
       entities: {},
       data: {
-        text: 'The pygmy goats spot the bag of feed and rush over! They ' +
-              'crowd around, bleating excitedly, and devour the corn and ' +
-              'pellets in seconds. The smallest goat looks up at you with ' +
-              'big grateful eyes.',
+        text:
+          'The pygmy goats spot the bag of feed and rush over! ' +
+          'They crowd around, bleating excitedly, and devour ' +
+          'the corn and pellets in seconds. The smallest goat ' +
+          'looks up at you with big grateful eyes.',
       },
     };
   },
@@ -237,18 +253,26 @@ const pressId = this.entityIds.souvenirPress;
 
 world.chainEvent(
   'if.event.put_in',
-  (event: ISemanticEvent, w: IWorldModel): ISemanticEvent | null => {
+  (
+    event: ISemanticEvent,
+    w: IWorldModel,
+  ): ISemanticEvent | null => {
     const data = event.data as Record<string, any>;
-    if (data.itemId !== pennyId || data.targetId !== pressId) return null;
+    if (data.itemId !== pennyId ||
+        data.targetId !== pressId) return null;
 
     // 1. Destroy the input
     w.removeEntity(pennyId);
 
     // 2. Create the output
-    const pressedPenny = w.createEntity('pressed penny', EntityType.ITEM);
+    const pressedPenny = w.createEntity(
+      'pressed penny',
+      EntityType.ITEM,
+    );
     pressedPenny.add(new IdentityTrait({
       name: 'pressed penny',
-      description: 'A flattened oval of copper with an embossed toucan.',
+      description:
+        'A flattened oval of copper with an embossed toucan.',
       aliases: ['pressed penny', 'pressed coin', 'souvenir'],
       properName: false,
       article: 'a',
@@ -265,9 +289,11 @@ world.chainEvent(
       timestamp: Date.now(),
       entities: {},
       data: {
-        text: 'CLUNK! CRUNCH! WHIRRR! The souvenir press swallows the penny ' +
-              'and spits out a beautiful pressed penny with an embossed ' +
-              'toucan design. You pocket it proudly.',
+        text:
+          'CLUNK! CRUNCH! WHIRRR! The souvenir press swallows ' +
+          'the penny and spits out a beautiful pressed penny ' +
+          'with an embossed toucan design. You pocket it ' +
+          'proudly.',
       },
     };
   },

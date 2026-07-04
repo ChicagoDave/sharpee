@@ -13,11 +13,14 @@ the action types from the last chapter:
 ```typescript
 import {
   ITrait, IFEntity,
-  CapabilityBehavior, CapabilityValidationResult, CapabilitySharedData,
+  CapabilityBehavior, CapabilityValidationResult,
+  CapabilitySharedData,
   CapabilityEffect, createEffect,
   findTraitWithCapability,
 } from '@sharpee/world-model';
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import {
+  Action, ActionContext, ValidationResult,
+} from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 ```
 
@@ -74,8 +77,11 @@ const PetMessages = {
 } as const;
 
 const pettingBehavior: CapabilityBehavior = {
-  validate(_entity, _world, _actorId, _shared): CapabilityValidationResult {
-    return { valid: true };          // every pettable animal accepts a pet
+  validate(
+    _entity, _world, _actorId, _shared,
+  ): CapabilityValidationResult {
+    // every pettable animal accepts a pet
+    return { valid: true };
   },
 
   execute(_entity, _world, _actorId, _shared): void {
@@ -96,7 +102,9 @@ const pettingBehavior: CapabilityBehavior = {
     })];
   },
 
-  blocked(entity, _world, _actorId, error, _shared): CapabilityEffect[] {
+  blocked(
+    entity, _world, _actorId, error, _shared,
+  ): CapabilityEffect[] {
     return [createEffect('zoo.event.petting_blocked', {
       messageId: error,
       params: { target: entity.name },
@@ -146,20 +154,33 @@ const pettingAction: Action = {
 
   validate(context: ActionContext): ValidationResult {
     const entity = context.command.directObject?.entity;
-    if (!entity) return { valid: false, error: PetMessages.CANT_PET };
+    if (!entity) {
+      return { valid: false, error: PetMessages.CANT_PET };
+    }
 
     // Find the trait on the target that claims this capability
-    const trait = findTraitWithCapability(entity, PETTING_ACTION_ID);
-    if (!trait) return { valid: false, error: PetMessages.CANT_PET };
+    const trait =
+      findTraitWithCapability(entity, PETTING_ACTION_ID);
+    if (!trait) {
+      return { valid: false, error: PetMessages.CANT_PET };
+    }
 
-    // Look up the behavior registered on this world for that trait + capability
-    const behavior = context.world.getBehaviorForCapability(trait, PETTING_ACTION_ID);
-    if (!behavior) return { valid: false, error: PetMessages.CANT_PET };
+    // Look up the behavior registered on this world for that
+    // trait + capability
+    const behavior = context.world
+      .getBehaviorForCapability(trait, PETTING_ACTION_ID);
+    if (!behavior) {
+      return { valid: false, error: PetMessages.CANT_PET };
+    }
 
     // Delegate validation to the behavior
     const sharedData: CapabilitySharedData = {};
-    const result = behavior.validate(entity, context.world, context.player.id, sharedData);
-    if (!result.valid) return { valid: false, error: result.error };
+    const result = behavior.validate(
+      entity, context.world, context.player.id, sharedData,
+    );
+    if (!result.valid) {
+      return { valid: false, error: result.error };
+    }
 
     // Carry the resolved behavior into the later phases
     context.sharedData.capEntity = entity;
@@ -170,21 +191,35 @@ const pettingAction: Action = {
 
   execute(context: ActionContext): void {
     const entity = context.sharedData.capEntity as IFEntity;
-    const behavior = context.sharedData.capBehavior as CapabilityBehavior;
-    const shared = context.sharedData.capSharedData as CapabilitySharedData;
-    if (entity && behavior) behavior.execute(entity, context.world, context.player.id, shared);
+    const behavior =
+      context.sharedData.capBehavior as CapabilityBehavior;
+    const shared =
+      context.sharedData.capSharedData as CapabilitySharedData;
+    if (entity && behavior) {
+      behavior.execute(
+        entity, context.world, context.player.id, shared,
+      );
+    }
   },
 
   report(context: ActionContext): ISemanticEvent[] {
     const entity = context.sharedData.capEntity as IFEntity;
-    const behavior = context.sharedData.capBehavior as CapabilityBehavior;
-    const shared = context.sharedData.capSharedData as CapabilitySharedData;
+    const behavior =
+      context.sharedData.capBehavior as CapabilityBehavior;
+    const shared =
+      context.sharedData.capSharedData as CapabilitySharedData;
     if (!entity || !behavior) return [];
-    const effects = behavior.report(entity, context.world, context.player.id, shared);
-    return effects.map(effect => context.event(effect.type, effect.payload));
+    const effects = behavior.report(
+      entity, context.world, context.player.id, shared,
+    );
+    return effects.map(effect =>
+      context.event(effect.type, effect.payload));
   },
 
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  blocked(
+    context: ActionContext,
+    result: ValidationResult,
+  ): ISemanticEvent[] {
     return [context.event('zoo.event.petting_blocked', {
       messageId: result.error || PetMessages.CANT_PET,
     })];
@@ -226,14 +261,16 @@ prints raw ids like `zoo.petting.goats`:
 
 ```typescript
 language.addMessage(PetMessages.PET_GOATS,
-  'You pet the nearest goat. It leans into your hand and bleats happily; the ' +
-  'others crowd around demanding equal attention.');
+  'You pet the nearest goat. It leans into your hand and ' +
+  'bleats happily; the others crowd around demanding equal ' +
+  'attention.');
 language.addMessage(PetMessages.PET_RABBITS,
-  'You gently stroke one of the rabbits. Its fur is incredibly soft, and it ' +
-  'twitches its nose at you contentedly.');
+  'You gently stroke one of the rabbits. Its fur is ' +
+  'incredibly soft, and it twitches its nose at you ' +
+  'contentedly.');
 language.addMessage(PetMessages.PET_PARROT,
-  'You reach toward the parrot. CHOMP! It nips your finger. "NO TOUCHING!" it ' +
-  'squawks indignantly.');
+  'You reach toward the parrot. CHOMP! It nips your ' +
+  'finger. "NO TOUCHING!" it squawks indignantly.');
 language.addMessage(PetMessages.CANT_PET,
   "You can't pet that.");
 ```
@@ -259,8 +296,8 @@ const parrot = world.createEntity('parrot', EntityType.ACTOR);
 parrot.add(new IdentityTrait({
   name: 'parrot',
   description:
-    'A magnificent scarlet macaw perched on a rope, watching you with one ' +
-    'bright, calculating eye.',
+    'A magnificent scarlet macaw perched on a rope, watching ' +
+    'you with one bright, calculating eye.',
   aliases: ['parrot', 'macaw', 'scarlet macaw'],
   article: 'a',
 }));

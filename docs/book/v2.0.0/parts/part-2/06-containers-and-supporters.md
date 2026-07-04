@@ -31,7 +31,10 @@ player carries an inventory because the player entity itself has a
 `ContainerTrait`. In this chapter we put it on ordinary objects too.
 
 ```typescript
-const backpack = world.createEntity('backpack', EntityType.CONTAINER);
+const backpack = world.createEntity(
+  'backpack',
+  EntityType.CONTAINER,
+);
 backpack.add(new IdentityTrait({
   name: 'backpack',
   description: 'A small red canvas backpack.',
@@ -64,16 +67,20 @@ player's own inventory. A fixed container, like the dispenser below, is for
 built-in storage the player can reach into but never walk off with:
 
 ```typescript
-const dispenser = world.createEntity('feed dispenser', EntityType.CONTAINER);
+const dispenser = world.createEntity(
+  'feed dispenser',
+  EntityType.CONTAINER,
+);
 dispenser.add(new IdentityTrait({
   name: 'feed dispenser',
   description:
-    'A coin-operated feed dispenser mounted on a wooden post, its glass ' +
-    'globe half full of pellets.',
+    'A coin-operated feed dispenser mounted on a wooden post, ' +
+    'its glass globe half full of pellets.',
   aliases: ['dispenser', 'feed dispenser', 'machine', 'globe'],
 }));
 dispenser.add(new ContainerTrait({ capacity: { maxItems: 3 } }));
-dispenser.add(new SceneryTrait());   // can't take the dispenser itself
+// can't take the dispenser itself
+dispenser.add(new SceneryTrait());
 world.moveEntity(dispenser.id, pettingZoo.id);
 ```
 
@@ -99,14 +106,20 @@ import {
 ```
 
 ```typescript
-const parkBench = world.createEntity('park bench', EntityType.SUPPORTER);
+const parkBench = world.createEntity(
+  'park bench',
+  EntityType.SUPPORTER,
+);
 parkBench.add(new IdentityTrait({
   name: 'park bench',
-  description: 'A weathered wooden bench worn smooth by decades of visitors.',
+  description:
+    'A weathered wooden bench worn smooth by decades of ' +
+    'visitors.',
   aliases: ['bench', 'park bench', 'seat'],
 }));
 parkBench.add(new SupporterTrait({ capacity: { maxItems: 3 } }));
-parkBench.add(new SceneryTrait());   // can't take the bench itself
+// can't take the bench itself
+parkBench.add(new SceneryTrait());
 world.moveEntity(parkBench.id, mainPath.id);
 ```
 

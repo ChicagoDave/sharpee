@@ -27,8 +27,9 @@ from earlier chapters.
 
 ```typescript
 plaque.add(new ReadableTrait({
-  text: 'PYGMY GOATS: These Nigerian Dwarf goats are gentle, curious, ' +
-        'and always hungry.',
+  text:
+    'PYGMY GOATS: These Nigerian Dwarf goats are gentle, ' +
+    'curious, and always hungry.',
 }));
 ```
 
@@ -54,24 +55,26 @@ Plaques are scenery you can read but can't take. Each includes `IdentityTrait`,
 `ReadableTrait`, and `SceneryTrait`.
 
 ```typescript
-const pettingPlaque = world.createEntity('info plaque', EntityType.SCENERY);
+const pettingPlaque = world
+  .createEntity('info plaque', EntityType.SCENERY);
 pettingPlaque.add(new IdentityTrait({
   name: 'info plaque',
   description:
-    'A brass plaque mounted on a wooden post near the petting zoo ' +
-    'gate. It has text etched into the metal.',
+    'A brass plaque mounted on a wooden post near the petting ' +
+    'zoo gate. It has text etched into the metal.',
   aliases: ['plaque', 'info plaque', 'brass plaque'],
   properName: false,
   article: 'an',
 }));
 pettingPlaque.add(new ReadableTrait({
   text:
-    'PYGMY GOATS: These Nigerian Dwarf goats are gentle, curious, ' +
-    'and always hungry. They can eat up to 3% of their body weight ' +
-    'daily. Please use only zoo-approved feed from the dispensers.\n\n' +
-    'HOLLAND LOP RABBITS: Known for their floppy ears and calm ' +
-    'temperament. Our pair, Biscuit and Marmalade, were born right ' +
-    'here at Willowbrook in 2023.',
+    'PYGMY GOATS: These Nigerian Dwarf goats are gentle, ' +
+    'curious, and always hungry. They can eat up to 3% of ' +
+    'their body weight daily. Please use only zoo-approved ' +
+    'feed from the dispensers.\n\nHOLLAND LOP RABBITS: Known ' +
+    'for their floppy ears and calm temperament. Our pair, ' +
+    'Biscuit and Marmalade, were born right here at ' +
+    'Willowbrook in 2023.',
 }));
 world.moveEntity(pettingPlaque.id, pettingZoo.id);
 ```
@@ -89,12 +92,13 @@ breaks are yours to place.
 player can pick the object up and read it anywhere:
 
 ```typescript
-const brochure = world.createEntity('zoo brochure', EntityType.ITEM);
+const brochure = world
+  .createEntity('zoo brochure', EntityType.ITEM);
 brochure.add(new IdentityTrait({
   name: 'zoo brochure',
   description:
-    'A glossy tri-fold brochure with "WILLOWBROOK FAMILY ZOO" on ' +
-    'the cover in cheerful yellow letters.',
+    'A glossy tri-fold brochure with "WILLOWBROOK FAMILY ' +
+    'ZOO" on the cover in cheerful yellow letters.',
   aliases: ['brochure', 'zoo brochure', 'pamphlet', 'leaflet'],
   properName: false,
   article: 'a',
@@ -127,14 +131,16 @@ const radio = world.createEntity('radio', EntityType.ITEM);
 radio.add(new IdentityTrait({
   name: 'radio',
   description:
-    'A battered portable radio held together with duct tape. A faded ' +
-    'sticker on the side reads "ZOO FM | All Animals, All The Time."',
+    'A battered portable radio held together with duct ' +
+    'tape. A faded sticker on the side reads "ZOO FM | All ' +
+    'Animals, All The Time."',
   aliases: ['radio', 'portable radio'],
   properName: false,
   article: 'a',
 }));
 radio.add(new SwitchableTrait({ isOn: false }));   // starts off
-radio.add(new SceneryTrait());                       // bolted to the shelf
+// bolted to the shelf
+radio.add(new SceneryTrait());
 world.moveEntity(radio.id, supplyRoom.id);
 ```
 

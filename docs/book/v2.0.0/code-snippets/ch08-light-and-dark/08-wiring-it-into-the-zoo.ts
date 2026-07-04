@@ -1,1 +1,3 @@
-import { LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
+import {
+  LightSourceTrait, SwitchableTrait,
+} from '@sharpee/world-model';

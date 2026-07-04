@@ -107,7 +107,8 @@ Authors run tests through the build CLI, which compiles, bundles, and tests in o
 step:
 
 ```bash
-npx sharpee build --test                 # run every transcript it finds
+# run every transcript it finds
+npx sharpee build --test
 npx sharpee build --test --stop-on-failure
 ```
 

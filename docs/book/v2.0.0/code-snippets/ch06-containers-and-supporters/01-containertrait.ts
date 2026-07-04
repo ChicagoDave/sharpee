@@ -1,4 +1,7 @@
-const backpack = world.createEntity('backpack', EntityType.CONTAINER);
+const backpack = world.createEntity(
+  'backpack',
+  EntityType.CONTAINER,
+);
 backpack.add(new IdentityTrait({
   name: 'backpack',
   description: 'A small red canvas backpack.',

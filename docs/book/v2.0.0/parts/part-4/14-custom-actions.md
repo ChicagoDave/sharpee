@@ -10,11 +10,15 @@ text. This chapter feeds the goats and snaps photos to show all three.
 Wiring an action touches several packages, so this chapter's imports span a few:
 
 ```typescript
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import {
+  Action, ActionContext, ValidationResult,
+} from '@sharpee/stdlib';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
+import {
+  IdentityTrait, IFEntity, EntityType,
+} from '@sharpee/world-model';
 ```
 
 The action objects below are top-level `const`s. The three registration methods
@@ -34,7 +38,9 @@ const feedAction: Action = {
 
   // Phase 1: can the action proceed?
   validate(context: ActionContext): ValidationResult {
-    if (!hasRequiredItem) return { valid: false, error: 'no_feed' };
+    if (!hasRequiredItem) {
+      return { valid: false, error: 'no_feed' };
+    }
     return { valid: true };
   },
 
@@ -45,12 +51,20 @@ const feedAction: Action = {
 
   // Phase 3: success events (text output)
   report(context: ActionContext): ISemanticEvent[] {
-    return [context.event('zoo.event.fed', { messageId: 'fed_goats' })];
+    return [context.event('zoo.event.fed', {
+      messageId: 'fed_goats',
+    })];
   },
 
-  // Phase 4: failure events (runs instead of execute/report if invalid)
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('zoo.event.feeding_blocked', { messageId: result.error })];
+  // Phase 4: failure events (runs instead of
+  // execute/report if invalid)
+  blocked(
+    context: ActionContext,
+    result: ValidationResult,
+  ): ISemanticEvent[] {
+    return [context.event('zoo.event.feeding_blocked', {
+      messageId: result.error,
+    })];
   },
 };
 ```
@@ -85,16 +99,25 @@ const feedAction: Action = {
     const target = context.command.directObject?.entity;
 
     // Player must be carrying the feed
-    const inventory = context.world.getContents(context.player.id);
+    const inventory = context.world
+      .getContents(context.player.id);
     const hasFeed = inventory.some(item =>
       item.get(IdentityTrait)?.aliases?.includes('feed'));
-    if (!hasFeed) return { valid: false, error: FeedMessages.NO_FEED };
+    if (!hasFeed) {
+      return { valid: false, error: FeedMessages.NO_FEED };
+    }
 
     // There must be a target, and it must be feedable
-    if (!target) return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
-    const name = target.get(IdentityTrait)?.name?.toLowerCase() || '';
-    const feedable = ['pygmy goats', 'rabbits'].some(a => name.includes(a));
-    if (!feedable) return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
+    if (!target) {
+      return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
+    }
+    const name =
+      target.get(IdentityTrait)?.name?.toLowerCase() || '';
+    const feedable = ['pygmy goats', 'rabbits']
+      .some(a => name.includes(a));
+    if (!feedable) {
+      return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
+    }
 
     // Not already fed
     if (context.world.getStateValue(`fed-${target.id}`)) {
@@ -108,24 +131,35 @@ const feedAction: Action = {
 
   execute(context: ActionContext): void {
     const target = context.sharedData.feedTarget as IFEntity;
-    if (target) context.world.setStateValue(`fed-${target.id}`, true);
+    if (target) {
+      context.world.setStateValue(`fed-${target.id}`, true);
+    }
   },
 
   report(context: ActionContext): ISemanticEvent[] {
     const target = context.sharedData.feedTarget as IFEntity;
-    const name = target?.get(IdentityTrait)?.name?.toLowerCase() || '';
+    const name =
+      target?.get(IdentityTrait)?.name?.toLowerCase() || '';
 
     let messageId: string = FeedMessages.FED_GENERIC;
-    if (name.includes('goats')) messageId = FeedMessages.FED_GOATS;
-    else if (name.includes('rabbits')) messageId = FeedMessages.FED_RABBITS;
+    if (name.includes('goats')) {
+      messageId = FeedMessages.FED_GOATS;
+    } else if (name.includes('rabbits')) {
+      messageId = FeedMessages.FED_RABBITS;
+    }
 
     return [context.event('zoo.event.fed', {
       messageId,
-      params: { animal: target?.get(IdentityTrait)?.name || 'animal' },
+      params: {
+        animal: target?.get(IdentityTrait)?.name || 'animal',
+      },
     })];
   },
 
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  blocked(
+    context: ActionContext,
+    result: ValidationResult,
+  ): ISemanticEvent[] {
     return [context.event('zoo.event.feeding_blocked', {
       messageId: result.error || FeedMessages.NOT_AN_ANIMAL,
     })];
@@ -163,10 +197,13 @@ const photographAction: Action = {
   group: 'interaction',
 
   validate(context: ActionContext): ValidationResult {
-    const inventory = context.world.getContents(context.player.id);
+    const inventory = context.world
+      .getContents(context.player.id);
     const hasCamera = inventory.some(item =>
       item.get(IdentityTrait)?.aliases?.includes('camera'));
-    if (!hasCamera) return { valid: false, error: PhotoMessages.NO_CAMERA };
+    if (!hasCamera) {
+      return { valid: false, error: PhotoMessages.NO_CAMERA };
+    }
 
     const target = context.command.directObject?.entity;
     if (target) context.sharedData.photoTarget = target;
@@ -178,15 +215,20 @@ const photographAction: Action = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const target = context.sharedData.photoTarget as IFEntity | undefined;
-    const name = target?.get(IdentityTrait)?.name || 'the scenery';
+    const target =
+      context.sharedData.photoTarget as IFEntity | undefined;
+    const name =
+      target?.get(IdentityTrait)?.name || 'the scenery';
     return [context.event('zoo.event.photographed', {
       messageId: PhotoMessages.TOOK_PHOTO,
       params: { target: name },
     })];
   },
 
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  blocked(
+    context: ActionContext,
+    result: ValidationResult,
+  ): ISemanticEvent[] {
     return [context.event('zoo.event.photographing_blocked', {
       messageId: result.error || PhotoMessages.NO_CAMERA,
     })];
@@ -198,10 +240,15 @@ The camera it looks for is an ordinary item. Add it to the gift shop (the room
 from Chapter 13) in `initializeWorld`:
 
 ```typescript
-const camera = world.createEntity('disposable camera', EntityType.ITEM);
+const camera = world.createEntity(
+  'disposable camera',
+  EntityType.ITEM,
+);
 camera.add(new IdentityTrait({
   name: 'disposable camera',
-  description: 'A cheap yellow disposable camera with "ZOO MEMORIES" on the side.',
+  description:
+    'A cheap yellow disposable camera with "ZOO MEMORIES" ' +
+    'on the side.',
   aliases: ['camera', 'disposable camera'],
   article: 'a',
 }));
@@ -253,7 +300,8 @@ The action returns *message IDs*, not sentences. Register the actual text in
 
 ```typescript
 extendLanguage(language: LanguageProvider): void {
-  // Feed action: every FeedMessages id needs text, or the player sees raw ids.
+  // Feed action: every FeedMessages id needs text, or the
+  // player sees raw ids.
   language.addMessage(FeedMessages.NO_FEED,
     "You don't have any animal feed.");
   language.addMessage(FeedMessages.NOT_AN_ANIMAL,
@@ -261,11 +309,13 @@ extendLanguage(language: LanguageProvider): void {
   language.addMessage(FeedMessages.ALREADY_FED,
     "You've already fed them. They look contentedly full.");
   language.addMessage(FeedMessages.FED_GOATS,
-    'You scatter some feed on the ground. The pygmy goats rush over, ' +
-    'bleating excitedly, and devour the corn and pellets in seconds.');
+    'You scatter some feed on the ground. The pygmy goats ' +
+    'rush over, bleating excitedly, and devour the corn and ' +
+    'pellets in seconds.');
   language.addMessage(FeedMessages.FED_RABBITS,
-    'You sprinkle some pellets near the rabbits. They hop over cautiously, ' +
-    'then munch away happily, their little noses twitching.');
+    'You sprinkle some pellets near the rabbits. They hop ' +
+    'over cautiously, then munch away happily, their little ' +
+    'noses twitching.');
   language.addMessage(FeedMessages.FED_GENERIC,
     'You offer some feed. The animal eats it gratefully.');
 
@@ -273,7 +323,8 @@ extendLanguage(language: LanguageProvider): void {
   language.addMessage(PhotoMessages.NO_CAMERA,
     "You don't have a camera. There's one in the gift shop.");
   language.addMessage(PhotoMessages.TOOK_PHOTO,
-    "Click! You snap a photo of {the target}. That one's going on the fridge.");
+    "Click! You snap a photo of {the target}. That one's " +
+    "going on the fridge.");
 }
 ```
 

@@ -206,10 +206,15 @@ For a clause that appears only when something is true, build an `Optional`. Its
 condition is resolved by *your code*, from world state, at the moment you emit:
 
 ```typescript
-import type { Choice, Literal, Optional } from '@sharpee/if-domain';
+import type {
+  Choice,
+  Literal,
+  Optional,
+} from '@sharpee/if-domain';
 import { OpenableBehavior } from '@sharpee/world-model';
 
-const lit = (text: string): Literal => ({ kind: 'literal', text });
+const lit = (text: string): Literal =>
+  ({ kind: 'literal', text });
 
 const openClause: Optional = {
   kind: 'optional',

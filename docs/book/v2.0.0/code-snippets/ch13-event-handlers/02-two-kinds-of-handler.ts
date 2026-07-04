@@ -2,7 +2,8 @@ world.chainEvent(
   'if.event.dropped',
   (event, w) => {
     const data = event.data as Record<string, any>;
-    if (data.itemId !== feedId) return null;   // not our item, ignore
+    // not our item, ignore
+    if (data.itemId !== feedId) return null;
     return {
       id: `goats-react-${Date.now()}`,
       type: 'zoo.event.goats_react',

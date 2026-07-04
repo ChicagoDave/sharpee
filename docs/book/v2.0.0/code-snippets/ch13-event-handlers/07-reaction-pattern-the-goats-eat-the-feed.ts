@@ -3,11 +3,15 @@ const pettingZooId = this.roomIds.pettingZoo;
 
 world.chainEvent(
   'if.event.dropped',
-  (event: ISemanticEvent, w: IWorldModel): ISemanticEvent | null => {
+  (
+    event: ISemanticEvent,
+    w: IWorldModel,
+  ): ISemanticEvent | null => {
     const data = event.data as Record<string, any>;
 
     // Is it the feed, dropped in the petting zoo?
-    if (data.itemId !== feedId || data.toLocation !== pettingZooId) {
+    if (data.itemId !== feedId ||
+        data.toLocation !== pettingZooId) {
       return null;
     }
 
@@ -21,10 +25,11 @@ world.chainEvent(
       timestamp: Date.now(),
       entities: {},
       data: {
-        text: 'The pygmy goats spot the bag of feed and rush over! They ' +
-              'crowd around, bleating excitedly, and devour the corn and ' +
-              'pellets in seconds. The smallest goat looks up at you with ' +
-              'big grateful eyes.',
+        text:
+          'The pygmy goats spot the bag of feed and rush over! ' +
+          'They crowd around, bleating excitedly, and devour ' +
+          'the corn and pellets in seconds. The smallest goat ' +
+          'looks up at you with big grateful eyes.',
       },
     };
   },

@@ -13,7 +13,8 @@ function createFeedingTimeFuse(): Fuse {
       return [{
         id: `zoo-feeding-${ctx.turn}`, type: 'game.message',
         timestamp: Date.now(), entities: {},
-        data: { messageId: TimedMessages.FEEDING_TIME }, narrate: true,
+        data: { messageId: TimedMessages.FEEDING_TIME },
+        narrate: true,
       }];
     },
   };

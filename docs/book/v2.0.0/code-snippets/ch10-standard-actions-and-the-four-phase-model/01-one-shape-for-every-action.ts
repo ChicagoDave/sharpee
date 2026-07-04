@@ -3,6 +3,10 @@ const someAction: Action = {
 
   validate(context): ValidationResult { /* can this happen? */ },
   execute(context): void           { /* change the world */ },
-  report(context): ISemanticEvent[]  { /* record what happened */ },
-  blocked(context, result): ISemanticEvent[] { /* explain the refusal */ },
+  report(context): ISemanticEvent[] {
+    /* record what happened */
+  },
+  blocked(context, result): ISemanticEvent[] {
+    /* explain the refusal */
+  },
 };

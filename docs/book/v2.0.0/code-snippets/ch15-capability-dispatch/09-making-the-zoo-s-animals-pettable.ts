@@ -7,8 +7,8 @@ const parrot = world.createEntity('parrot', EntityType.ACTOR);
 parrot.add(new IdentityTrait({
   name: 'parrot',
   description:
-    'A magnificent scarlet macaw perched on a rope, watching you with one ' +
-    'bright, calculating eye.',
+    'A magnificent scarlet macaw perched on a rope, watching ' +
+    'you with one bright, calculating eye.',
   aliases: ['parrot', 'macaw', 'scarlet macaw'],
   article: 'a',
 }));

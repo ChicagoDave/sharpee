@@ -1,5 +1,7 @@
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
-import type { Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import type {
+  Daemon, Fuse, SchedulerContext,
+} from '@sharpee/plugin-scheduler';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 

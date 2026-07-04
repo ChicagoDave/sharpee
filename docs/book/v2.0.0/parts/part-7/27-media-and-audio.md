@@ -151,11 +151,22 @@ helpers keep the body readable: `mediaEvent` builds a `media.*` semantic event, 
 import type { Effect } from '@sharpee/event-processor';
 
 let mediaCounter = 0;
-function mediaEvent(type: string, data: Record<string, unknown>): ISemanticEvent {
-  return { id: `zoo-media-${++mediaCounter}`, type, timestamp: Date.now(),
-           entities: {}, data };
+function mediaEvent(
+  type: string,
+  data: Record<string, unknown>,
+): ISemanticEvent {
+  return {
+    id: `zoo-media-${++mediaCounter}`,
+    type,
+    timestamp: Date.now(),
+    entities: {},
+    data,
+  };
 }
-function emit(type: string, data: Record<string, unknown>): Effect {
+function emit(
+  type: string,
+  data: Record<string, unknown>,
+): Effect {
   return { type: 'emit', event: mediaEvent(type, data) };
 }
 ```
@@ -170,7 +181,8 @@ that have none:
 engine.getEventProcessor().registerHandler(
   'if.event.actor_moved',
   (event: ISemanticEvent): Effect[] => {
-    const data = event.data as { toRoom?: string; destination?: string } | undefined;
+    const data = event.data as
+      { toRoom?: string; destination?: string } | undefined;
     const toRoom = data?.toRoom ?? data?.destination;
     if (!toRoom) return [];
 
@@ -179,11 +191,16 @@ engine.getEventProcessor().registerHandler(
     if (atmosphere) {
       for (const a of atmosphere.ambient) {
         effects.push(emit('media.ambient.play', {
-          src: a.src, channel: a.channel, volume: a.volume, loop: true,
+          src: a.src,
+          channel: a.channel,
+          volume: a.volume,
+          loop: true,
         }));
       }
     } else {
-      effects.push(emit('media.ambient.stop', { channel: 'environment' }));
+      effects.push(emit('media.ambient.stop', {
+        channel: 'environment',
+      }));
     }
     return effects;
   },
@@ -203,11 +220,16 @@ import { createAmbientChannel } from '@sharpee/stdlib';
 registry.add(createAmbientChannel('environment'));
 
 // Browser side, in the browser entry:
-import { createAmbientChannelRenderer } from '@sharpee/platform-browser';
+import {
+  createAmbientChannelRenderer,
+} from '@sharpee/platform-browser';
 
 client.getChannelRenderer().registerRenderer(
   'ambient:environment',
-  createAmbientChannelRenderer(client.getAudioManager(), 'environment'),
+  createAmbientChannelRenderer(
+    client.getAudioManager(),
+    'environment',
+  ),
 );
 ```
 

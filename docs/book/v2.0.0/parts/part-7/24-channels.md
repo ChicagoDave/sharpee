@@ -89,7 +89,10 @@ you define your own **`IOChannel`** in the `registerChannels` hook. The hook's
 types come from `@sharpee/if-domain`, so this chapter adds one import:
 
 ```typescript
-import type { IChannelRegistry, ChannelProduceContext } from '@sharpee/if-domain';
+import type {
+  IChannelRegistry,
+  ChannelProduceContext,
+} from '@sharpee/if-domain';
 ```
 
 A channel is an
@@ -99,8 +102,11 @@ object with an
 ```typescript
 // A mood line per room; rooms not listed clear the line.
 const AMBIENCE_BY_ROOM: Record<string, string> = {
-  'Aviary': 'The air is alive with birdsong and the rustle of wings.',
-  'Nocturnal Animals Exhibit': 'Your eyes strain against the warm red dark.',
+  'Aviary':
+    'The air is alive with birdsong and the rustle of ' +
+    'wings.',
+  'Nocturnal Animals Exhibit':
+    'Your eyes strain against the warm red dark.',
 };
 
 registerChannels(registry: IChannelRegistry): void {
@@ -108,10 +114,12 @@ registerChannels(registry: IChannelRegistry): void {
     id: 'zoo.ambience',
     contentType: 'text',
     mode: 'replace',
-    emit: 'sparse',          // only re-emit when the value changes
+    // only re-emit when the value changes
+    emit: 'sparse',
     produce: (ctx: ChannelProduceContext) => {
       const world = ctx.world as WorldModel;
-      const room = world.getEntity(world.getLocation(world.getPlayer()!.id)!);
+      const room = world.getEntity(
+        world.getLocation(world.getPlayer()!.id)!);
       // a mood line for the current room, or '' to clear the line
       return room ? AMBIENCE_BY_ROOM[room.name] ?? '' : '';
     },

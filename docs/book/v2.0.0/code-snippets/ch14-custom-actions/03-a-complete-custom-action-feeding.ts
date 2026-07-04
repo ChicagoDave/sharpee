@@ -17,16 +17,25 @@ const feedAction: Action = {
     const target = context.command.directObject?.entity;
 
     // Player must be carrying the feed
-    const inventory = context.world.getContents(context.player.id);
+    const inventory = context.world
+      .getContents(context.player.id);
     const hasFeed = inventory.some(item =>
       item.get(IdentityTrait)?.aliases?.includes('feed'));
-    if (!hasFeed) return { valid: false, error: FeedMessages.NO_FEED };
+    if (!hasFeed) {
+      return { valid: false, error: FeedMessages.NO_FEED };
+    }
 
     // There must be a target, and it must be feedable
-    if (!target) return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
-    const name = target.get(IdentityTrait)?.name?.toLowerCase() || '';
-    const feedable = ['pygmy goats', 'rabbits'].some(a => name.includes(a));
-    if (!feedable) return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
+    if (!target) {
+      return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
+    }
+    const name =
+      target.get(IdentityTrait)?.name?.toLowerCase() || '';
+    const feedable = ['pygmy goats', 'rabbits']
+      .some(a => name.includes(a));
+    if (!feedable) {
+      return { valid: false, error: FeedMessages.NOT_AN_ANIMAL };
+    }
 
     // Not already fed
     if (context.world.getStateValue(`fed-${target.id}`)) {
@@ -40,24 +49,35 @@ const feedAction: Action = {
 
   execute(context: ActionContext): void {
     const target = context.sharedData.feedTarget as IFEntity;
-    if (target) context.world.setStateValue(`fed-${target.id}`, true);
+    if (target) {
+      context.world.setStateValue(`fed-${target.id}`, true);
+    }
   },
 
   report(context: ActionContext): ISemanticEvent[] {
     const target = context.sharedData.feedTarget as IFEntity;
-    const name = target?.get(IdentityTrait)?.name?.toLowerCase() || '';
+    const name =
+      target?.get(IdentityTrait)?.name?.toLowerCase() || '';
 
     let messageId: string = FeedMessages.FED_GENERIC;
-    if (name.includes('goats')) messageId = FeedMessages.FED_GOATS;
-    else if (name.includes('rabbits')) messageId = FeedMessages.FED_RABBITS;
+    if (name.includes('goats')) {
+      messageId = FeedMessages.FED_GOATS;
+    } else if (name.includes('rabbits')) {
+      messageId = FeedMessages.FED_RABBITS;
+    }
 
     return [context.event('zoo.event.fed', {
       messageId,
-      params: { animal: target?.get(IdentityTrait)?.name || 'animal' },
+      params: {
+        animal: target?.get(IdentityTrait)?.name || 'animal',
+      },
     })];
   },
 
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  blocked(
+    context: ActionContext,
+    result: ValidationResult,
+  ): ISemanticEvent[] {
     return [context.event('zoo.event.feeding_blocked', {
       messageId: result.error || FeedMessages.NOT_AN_ANIMAL,
     })];

@@ -74,14 +74,21 @@ When the player switches it on:
 3. Any dark room the player carries it into is now lit.
 
 ```typescript
-const flashlight = world.createEntity('flashlight', EntityType.ITEM);
+const flashlight = world.createEntity(
+  'flashlight',
+  EntityType.ITEM,
+);
 flashlight.add(new IdentityTrait({
   name: 'flashlight',
-  description: 'A heavy rubberized flashlight with a bright halogen bulb.',
+  description:
+    'A heavy rubberized flashlight with a bright halogen bulb.',
   aliases: ['flashlight', 'torch', 'light'],
 }));
 flashlight.add(new SwitchableTrait({ isOn: false }));
-flashlight.add(new LightSourceTrait({ brightness: 8, isLit: false }));
+flashlight.add(new LightSourceTrait({
+  brightness: 8,
+  isLit: false,
+}));
 world.moveEntity(flashlight.id, supplyRoom.id);
 ```
 
@@ -132,7 +139,9 @@ different flavor.
 Two new traits arrive this chapter, so add them to your world-model import:
 
 ```typescript
-import { LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
+import {
+  LightSourceTrait, SwitchableTrait,
+} from '@sharpee/world-model';
 ```
 
 The dark exhibit hangs off the Supply Room from Chapter 7. Build the room in full,
@@ -140,22 +149,33 @@ connect it south of the supply room (with the way back north), and populate it w
 the animals the flashlight will reveal:
 
 ```typescript
-const nocturnalExhibit = world.createEntity('Nocturnal Animals Exhibit', EntityType.ROOM);
+const nocturnalExhibit = world.createEntity(
+  'Nocturnal Animals Exhibit',
+  EntityType.ROOM,
+);
 nocturnalExhibit.add(new RoomTrait({ exits: {}, isDark: true }));
 nocturnalExhibit.add(new IdentityTrait({
   name: 'Nocturnal Animals Exhibit',
   description:
-    'A hushed, cavern-like hall lit by faint blue moonlight panels. Sugar ' +
-    'gliders leap between branches, wide-eyed bush babies cling to a rope, ' +
-    'and an enormous barn owl perches motionless on a stump.',
-  aliases: ['nocturnal exhibit', 'nocturnal animals', 'dark exhibit', 'exhibit'],
+    'A hushed, cavern-like hall lit by faint blue moonlight ' +
+    'panels. Sugar gliders leap between branches, wide-eyed ' +
+    'bush babies cling to a rope, and an enormous barn owl ' +
+    'perches motionless on a stump.',
+  aliases: [
+    'nocturnal exhibit', 'nocturnal animals',
+    'dark exhibit', 'exhibit',
+  ],
   article: 'the',
 }));
 
-// Connect it south of the Supply Room, with the way back north. This adds the
-// south passage to the Supply Room exits from Chapter 7.
+// Connect it south of the Supply Room, with the way back north.
+// This adds the south passage to the Supply Room exits from
+// Chapter 7.
 supplyRoom.get(RoomTrait)!.exits = {
-  [Direction.NORTH]: { destination: mainPath.id, via: staffGate.id },
+  [Direction.NORTH]: {
+    destination: mainPath.id,
+    via: staffGate.id,
+  },
   [Direction.SOUTH]: { destination: nocturnalExhibit.id },
 };
 nocturnalExhibit.get(RoomTrait)!.exits = {
@@ -163,28 +183,43 @@ nocturnalExhibit.get(RoomTrait)!.exits = {
 };
 
 // The animals: scenery, examinable only once the room is lit.
-const sugarGliders = world.createEntity('sugar gliders', EntityType.SCENERY);
+const sugarGliders = world.createEntity(
+  'sugar gliders',
+  EntityType.SCENERY,
+);
 sugarGliders.add(new IdentityTrait({
   name: 'sugar gliders',
-  description: 'A family of tiny sugar gliders with enormous dark eyes, gliding between branches.',
+  description:
+    'A family of tiny sugar gliders with enormous dark eyes, ' +
+    'gliding between branches.',
   aliases: ['sugar gliders', 'gliders', 'sugar glider'],
   article: 'some',
 }));
 world.moveEntity(sugarGliders.id, nocturnalExhibit.id);
 
-const bushBabies = world.createEntity('bush babies', EntityType.SCENERY);
+const bushBabies = world.createEntity(
+  'bush babies',
+  EntityType.SCENERY,
+);
 bushBabies.add(new IdentityTrait({
   name: 'bush babies',
-  description: 'Two bush babies with impossibly large round eyes, clinging to a rope.',
+  description:
+    'Two bush babies with impossibly large round eyes, ' +
+    'clinging to a rope.',
   aliases: ['bush babies', 'bush baby', 'galagos'],
   article: 'some',
 }));
 world.moveEntity(bushBabies.id, nocturnalExhibit.id);
 
-const barnOwl = world.createEntity('barn owl', EntityType.SCENERY);
+const barnOwl = world.createEntity(
+  'barn owl',
+  EntityType.SCENERY,
+);
 barnOwl.add(new IdentityTrait({
   name: 'barn owl',
-  description: 'An enormous barn owl with a heart-shaped white face, watching you without blinking.',
+  description:
+    'An enormous barn owl with a heart-shaped white face, ' +
+    'watching you without blinking.',
   aliases: ['barn owl', 'owl'],
   article: 'a',
 }));
