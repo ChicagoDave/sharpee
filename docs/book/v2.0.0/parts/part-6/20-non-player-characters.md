@@ -202,10 +202,30 @@ That happens in `onEngineReady()`, the story hook called after the engine is
 fully built, which is where any plugin needing the engine reference is set up.
 Chapter 13 already gave your story an `onEngineReady` (it holds the two chain
 handlers), so *add* the plugin code below at the top of that existing method;
-don't declare a second one. The
-patrol route references `this.roomIds`, the field you started in Chapter 13; make
-sure `initializeWorld` records `mainPath`, `pettingZoo`, and `aviary` there so the
-route can name them (extend both the field's type and the recording block):
+don't declare a second one.
+
+The patrol route references `this.roomIds`, the field you started in Chapter 13.
+That field currently remembers only `giftShop` and `pettingZoo`; the route also
+needs `mainPath` and `aviary`. Widen the field's declaration to this:
+
+```typescript
+private roomIds: {
+  giftShop: string;
+  pettingZoo: string;
+  mainPath: string;
+  aviary: string;
+} = { giftShop: '', pettingZoo: '', mainPath: '', aviary: '' };
+```
+
+Then add two lines to the Chapter 13 recording block in `initializeWorld` (both
+rooms already exist; you are only remembering their ids):
+
+```typescript
+this.roomIds.mainPath = mainPath.id;
+this.roomIds.aviary = aviary.id;
+```
+
+With the ids recorded, the registration itself looks like this:
 
 ```typescript
 onEngineReady(engine: GameEngine): void {

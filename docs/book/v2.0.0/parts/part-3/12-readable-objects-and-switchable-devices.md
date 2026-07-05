@@ -17,9 +17,9 @@ second `SwitchableTrait`):
 import { ReadableTrait } from '@sharpee/world-model';
 ```
 
-The snippets below go in `initializeWorld`, alongside the rooms you've built since
-Chapter 4. `entrance`, `pettingZoo`, and `supplyRoom` are the same room entities
-from earlier chapters.
+The snippets below go in `initializeWorld`, at the end as usual (the placement
+rule). `entrance`, `pettingZoo`, and `supplyRoom` are the same room entities
+from earlier chapters, all in scope there.
 
 ## ReadableTrait: what an object says
 

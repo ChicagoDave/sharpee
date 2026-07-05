@@ -179,8 +179,30 @@ world.chainEvent(
 );
 ```
 
-(`this.entityIds.zooMap` and `.brochure` are recorded in `initializeWorld` when you
-create those items, the same way Chapter 13 stored the feed and penny ids.)
+Those two ids aren't in `this.entityIds` yet; Chapter 13's field stopped at the
+feed, the penny, and the press. Widen the field's declaration to this:
+
+```typescript
+private entityIds: {
+  animalFeed: string;
+  penny: string;
+  souvenirPress: string;
+  zooMap: string;
+  brochure: string;
+} = {
+  animalFeed: '', penny: '', souvenirPress: '',
+  zooMap: '', brochure: '',
+};
+```
+
+Then add two lines to the Chapter 13 recording block in `initializeWorld` (the
+map has existed since Chapter 5 and the brochure since Chapter 12, so both
+variables are in scope there):
+
+```typescript
+this.entityIds.zooMap = zooMap.id;
+this.entityIds.brochure = brochure.id;
+```
 
 That covers eight of the twelve awards (40 of the 75 points). The remaining four
 ride the very same two patterns, so wire them up the same way. Feeding the goats or

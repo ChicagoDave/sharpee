@@ -24,8 +24,10 @@ window, and the engine manages the lifecycle.
 
 Scenes are created in `initializeWorld()` with `world.createScene()`. The scene
 methods (`createScene`, `isSceneActive`, `hasSceneHappened`, `hasSceneEnded`) are
-all on the `WorldModel` you already have in scope; the one symbol you import is
-`SceneTrait` (used later to read a scene's `activeTurns`), from `@sharpee/world-model`.
+all on the `WorldModel` you already have in scope, so the zoo's scene needs no
+new import. (One import appears later in this chapter: the *timed* scene example
+reads a scene's `activeTurns` through `SceneTrait`, from `@sharpee/world-model`.
+That example is illustrative; import the symbol only if you type it in.)
 The `begin` and `end` options are predicates over the world; each returns `true`
 when its moment has come. Here's a scene that's active only while the visitor is in
 the petting zoo:

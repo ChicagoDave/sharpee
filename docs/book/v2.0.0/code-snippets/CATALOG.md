@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **152 snippets** across 31 chapters (149 author, 3 reference).
+- **156 snippets** across 31 chapters (153 author, 3 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -35,12 +35,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-building-the-story.sh` | Building the story | bash | author | 132 |
 | 06 | `06-playing-it.sh` | Playing it | bash | author | 153 |
 | 07 | `07-playing-it.sh` | Playing it | bash | author | 169 |
-| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 209 |
-| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 221 |
-| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 229 |
-| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 237 |
-| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 243 |
-| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 251 |
+| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 211 |
+| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 223 |
+| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 231 |
+| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 239 |
+| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 245 |
+| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 253 |
 
 ## Your First Room: Entities, Traits, and the World
 
@@ -85,10 +85,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-everything-is-portable-by-default.ts` | Everything is portable by default | typescript | author | 22 |
-| 02 | `02-entitytype-scenery-makes-a-thing-fixed.ts` | EntityType.SCENERY makes a thing fixed | typescript | author | 48 |
-| 03 | `03-aliases-make-objects-findable.ts` | Aliases make objects findable | typescript | author | 99 |
-| 04 | `04-putting-it-together.ts` | Putting it together | typescript | author | 160 |
+| 01 | `01-everything-is-portable-by-default.ts` | Everything is portable by default | typescript | author | 24 |
+| 02 | `02-entitytype-scenery-makes-a-thing-fixed.ts` | EntityType.SCENERY makes a thing fixed | typescript | author | 50 |
+| 03 | `03-aliases-make-objects-findable.ts` | Aliases make objects findable | typescript | author | 101 |
+| 04 | `04-putting-it-together.ts` | Putting it together | typescript | author | 162 |
 
 ## Containers & Supporters: What Holds What
 
@@ -96,11 +96,11 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-containertrait.ts` | ContainerTrait | typescript | author | 33 |
-| 02 | `02-portable-vs-fixed-containers.ts` | Portable vs fixed containers | typescript | author | 69 |
-| 03 | `03-supportertrait.ts` | SupporterTrait | typescript | author | 97 |
-| 04 | `04-supportertrait.ts` | SupporterTrait | typescript | author | 108 |
-| 05 | `05-capacity-limits.ts` | Capacity limits | typescript | author | 137 |
+| 01 | `01-containertrait.ts` | ContainerTrait | typescript | author | 35 |
+| 02 | `02-portable-vs-fixed-containers.ts` | Portable vs fixed containers | typescript | author | 71 |
+| 03 | `03-supportertrait.ts` | SupporterTrait | typescript | author | 99 |
+| 04 | `04-supportertrait.ts` | SupporterTrait | typescript | author | 110 |
+| 05 | `05-capacity-limits.ts` | Capacity limits | typescript | author | 139 |
 
 ## Openable Things, Locked Doors & Keys: Gating the Way Through
 
@@ -114,7 +114,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 04 | `04-doortrait-and-the-exit-via-property.ts` | DoorTrait and the exit `via` property | typescript | author | 111 |
 | 05 | `05-doortrait-and-the-exit-via-property.ts` | DoorTrait and the exit `via` property | typescript | author | 122 |
 | 06 | `06-wiring-it-all-together.ts` | Wiring it all together | typescript | author | 161 |
-| 07 | `07-wiring-it-all-together.ts` | Wiring it all together | typescript | author | 171 |
+| 07 | `07-wiring-it-all-together.ts` | Wiring it all together | typescript | author | 173 |
 
 ## Light & Dark: What the Player Can See
 
@@ -125,12 +125,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-dark-rooms.ts` | Dark rooms | typescript | author | 19 |
 | 02 | `02-lightsourcetrait.ts` | LightSourceTrait | typescript | author | 35 |
 | 03 | `03-switchabletrait.ts` | SwitchableTrait | typescript | author | 50 |
-| 04 | `04-the-flashlight-pattern.ts` | The flashlight pattern | typescript | author | 76 |
-| 05 | `05-other-light-source-patterns.ts` | Other light-source patterns | typescript | author | 107 |
-| 06 | `06-other-light-source-patterns.ts` | Other light-source patterns | typescript | author | 113 |
-| 07 | `07-other-light-source-patterns.ts` | Other light-source patterns | typescript | author | 125 |
-| 08 | `08-wiring-it-into-the-zoo.ts` | Wiring it into the zoo | typescript | author | 141 |
-| 09 | `09-wiring-it-into-the-zoo.ts` | Wiring it into the zoo | typescript | author | 151 |
+| 04 | `04-the-flashlight-pattern.ts` | The flashlight pattern | typescript | author | 79 |
+| 05 | `05-other-light-source-patterns.ts` | Other light-source patterns | typescript | author | 110 |
+| 06 | `06-other-light-source-patterns.ts` | Other light-source patterns | typescript | author | 116 |
+| 07 | `07-other-light-source-patterns.ts` | Other light-source patterns | typescript | author | 128 |
+| 08 | `08-wiring-it-into-the-zoo.ts` | Wiring it into the zoo | typescript | author | 144 |
+| 09 | `09-wiring-it-into-the-zoo.ts` | Wiring it into the zoo | typescript | author | 156 |
 
 ## The Map & Regions: Grouping Rooms
 
@@ -177,10 +177,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 02 | `02-two-kinds-of-handler.ts` | Two kinds of handler | typescript | author | 58 |
 | 03 | `03-reading-the-event-data.ts` | Reading the event data | typescript | author | 93 |
 | 04 | `04-setting-up-the-gift-shop-the-press-and-remembering.ts` | Setting up: the gift shop, the press, and remembering IDs | typescript | author | 112 |
-| 05 | `05-setting-up-the-gift-shop-the-press-and-remembering.ts` | Setting up: the gift shop, the press, and remembering IDs | typescript | author | 136 |
-| 06 | `06-setting-up-the-gift-shop-the-press-and-remembering.ts` | Setting up: the gift shop, the press, and remembering IDs | typescript | author | 189 |
-| 07 | `07-reaction-pattern-the-goats-eat-the-feed.ts` | Reaction pattern: the goats eat the feed | typescript | author | 201 |
-| 08 | `08-transformation-pattern-put-a-in-get-b-out.ts` | Transformation pattern: put A in, get B out | typescript | author | 250 |
+| 05 | `05-setting-up-the-gift-shop-the-press-and-remembering.ts` | Setting up: the gift shop, the press, and remembering IDs | typescript | author | 138 |
+| 06 | `06-setting-up-the-gift-shop-the-press-and-remembering.ts` | Setting up: the gift shop, the press, and remembering IDs | typescript | author | 191 |
+| 07 | `07-reaction-pattern-the-goats-eat-the-feed.ts` | Reaction pattern: the goats eat the feed | typescript | author | 203 |
+| 08 | `08-transformation-pattern-put-a-in-get-b-out.ts` | Transformation pattern: put A in, get B out | typescript | author | 252 |
 
 ## Custom Actions: Teaching the Parser New Verbs
 
@@ -270,7 +270,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 02 | `02-creating-an-npc-entity.ts` | Creating an NPC entity | typescript | author | 43 |
 | 03 | `03-the-parrot-becomes-an-npc.ts` | The parrot becomes an NPC | typescript | author | 97 |
 | 04 | `04-writing-a-custom-behavior.ts` | Writing a custom behavior | typescript | author | 134 |
-| 05 | `05-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 210 |
+| 05 | `05-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 211 |
+| 06 | `06-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 223 |
+| 07 | `07-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 230 |
 
 ## Scenes: Named Windows of Story Time
 
@@ -278,11 +280,11 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-creating-a-scene.ts` | Creating a scene | typescript | author | 33 |
-| 02 | `02-querying-a-scene.ts` | Querying a scene | typescript | author | 51 |
-| 03 | `03-reacting-to-transitions.ts` | Reacting to transitions | typescript | author | 73 |
-| 04 | `04-reacting-to-transitions.ts` | Reacting to transitions | typescript | author | 90 |
-| 05 | `05-common-shapes.ts` | Common shapes | typescript | author | 117 |
+| 01 | `01-creating-a-scene.ts` | Creating a scene | typescript | author | 35 |
+| 02 | `02-querying-a-scene.ts` | Querying a scene | typescript | author | 53 |
+| 03 | `03-reacting-to-transitions.ts` | Reacting to transitions | typescript | author | 75 |
+| 04 | `04-reacting-to-transitions.ts` | Reacting to transitions | typescript | author | 92 |
+| 05 | `05-common-shapes.ts` | Common shapes | typescript | author | 119 |
 
 ## Turns, Timed Events & Daemons: Giving the World a Clock
 
@@ -309,10 +311,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 04 | `04-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 117 |
 | 05 | `05-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 128 |
 | 06 | `06-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 149 |
-| 07 | `07-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 191 |
-| 08 | `08-the-victory-daemon.ts` | The victory daemon | typescript | author | 230 |
-| 09 | `09-the-victory-daemon.ts` | The victory daemon | typescript | author | 268 |
-| 10 | `10-the-victory-daemon.ts` | The victory daemon | typescript | author | 275 |
+| 07 | `07-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 185 |
+| 08 | `08-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 202 |
+| 09 | `09-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 213 |
+| 10 | `10-the-victory-daemon.ts` | The victory daemon | typescript | author | 252 |
+| 11 | `11-the-victory-daemon.ts` | The victory daemon | typescript | author | 290 |
+| 12 | `12-the-victory-daemon.ts` | The victory daemon | typescript | author | 297 |
 
 # Volume VII — Presentation
 
@@ -333,8 +337,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-what-the-client-is-responsible-for.ts` | What the client is responsible for | typescript | author | 20 |
 | 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 71 |
-| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 132 |
-| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 155 |
+| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 133 |
+| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 156 |
 
 ## Decoration & Theming: Style Without HTML on the Wire
 
@@ -376,7 +380,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-running-them.sh` | Running them | bash | author | 111 |
+| 01 | `01-running-them.sh` | Running them | bash | author | 112 |
 
 ## Saving & Restoring: State Lives in the World
 

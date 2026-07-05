@@ -129,9 +129,11 @@ class FamilyZooStory implements Story {
 }
 ```
 
-In `initializeWorld`, add the Gift Shop west of the Aviary and the press inside it,
+In `initializeWorld`, at the end as usual (the placement rule), add the Gift Shop
+west of the Aviary and the press inside it,
 then record the IDs the handlers will match against (the `penny` and `animalFeed`
-entities were created back in Chapter 5):
+entities were created back in Chapter 5). The Aviary exits assignment below
+*replaces* Chapter 4's, so delete the old one (the replacement rule):
 
 ```typescript
 const giftShop = world.createEntity('Gift Shop', EntityType.ROOM);

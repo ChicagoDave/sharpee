@@ -296,6 +296,12 @@ case-insensitive). Now run everything:
 npx sharpee build --test
 ```
 
+A word on the spelling: `npx sharpee` reaches the same CLI you installed in
+Chapter 1 (`npx` runs a project-local copy when one exists and falls back to
+the global install), so plain `sharpee build --test` works identically. The
+book writes the `npx` form for test runs so the command still works if you
+ever install the devkit locally instead of globally.
+
 The build compiles the story, then replays every transcript it finds against a
 fresh copy of the game. The output below is trimmed to the part that matters;
 the real run also prints the build steps, absolute file paths, and a closing

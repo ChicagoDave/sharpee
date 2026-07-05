@@ -36,7 +36,8 @@ description: Feeding the pygmy goats awards points and marks them fed
 [OK: not contains "don't have"]
 ```
 
-Run it and the tester drives those commands through the real engine, checking each
+Save it as `tests/transcripts/feed-the-goats.transcript` and run the suite. The
+tester drives those commands through the real engine, checking each
 assertion against the actual output. A passing run is silent; a failing one tells you
 exactly which command produced the wrong result. Any line starting with `#` is a
 comment; by convention `##` lines are used as section headers to organize the

@@ -88,10 +88,16 @@ be browsed there, not typed in.
 - Chapters that add something playable end with a **Try it** (commands to type)
   and a **Test it** (the same ground as a transcript test for your suite;
   Chapter 2 introduces the mechanic, Chapter 29 completes it).
-- The zoo grows in **one file** until late in the book, so imports accumulate.
-  When a chapter shows an `import`, add only the names your file doesn't
-  already import; TypeScript rejects the same identifier imported twice.
-- Unless a chapter says otherwise, new world-building code goes at the **end of
-  `initializeWorld`** (before the player is placed), and new registrations go at
-  the **end of `onEngineReady`**. When a listing *replaces* an earlier one (an
-  exits table, a scene), delete the old version rather than keeping both.
+Three more conventions do so much work in the chapters ahead that they have
+names. The chapters cite them by name, so when a listing leaves you unsure
+where its code goes, the name is your pointer back to this page.
+
+- **The import rule.** The zoo grows in **one file** until late in the book,
+  so imports accumulate. When a chapter shows an `import`, add only the names
+  your file doesn't already import; TypeScript rejects the same identifier
+  imported twice.
+- **The placement rule.** Unless a chapter says otherwise, new world-building
+  code goes at the **end of `initializeWorld`** (before the player is placed),
+  and new registrations go at the **end of `onEngineReady`**.
+- **The replacement rule.** When a listing *replaces* an earlier one (an exits
+  table, a scene), delete the old version rather than keeping both.

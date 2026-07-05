@@ -7061,7 +7061,7 @@ context.event('game.message', {
 
     <section class="snip-chapter" id="ch20">
       <h2>Chapter 20: Non-Player Characters: Actors That Take Turns</h2>
-      <p class="snip-src">Book source: <code>docs/book/v2.0.0/parts/part-6/20-non-player-characters.md</code> · 5 step(s)</p>
+      <p class="snip-src">Book source: <code>docs/book/v2.0.0/parts/part-6/20-non-player-characters.md</code> · 7 step(s)</p>
       
       <h3 class="snip-section" id="ch20-s0">Non-Player Characters: Actors That Take Turns</h3>
       
@@ -7189,6 +7189,28 @@ const parrotBehavior: NpcBehavior = {
         <div class="snip">
           <div class="snip-head">
             <span class="snip-badge">step 5</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>private roomIds: {
+  giftShop: string;
+  pettingZoo: string;
+  mainPath: string;
+  aviary: string;
+} = { giftShop: '', pettingZoo: '', mainPath: '', aviary: '' };</code></pre>
+        </div>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 6</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>this.roomIds.mainPath = mainPath.id;
+this.roomIds.aviary = aviary.id;</code></pre>
+        </div>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 7</span>
             <span class="snip-lang">typescript</span>
             <button class="snip-copy" data-copy>copy</button>
           </div>
@@ -9102,7 +9124,7 @@ export default story;</code></pre>
 
     <section class="snip-chapter" id="ch23">
       <h2>Chapter 23: Scoring &amp; Endgame: Winning the Game</h2>
-      <p class="snip-src">Book source: <code>docs/book/v2.0.0/parts/part-6/23-scoring-and-endgame.md</code> · 10 step(s)</p>
+      <p class="snip-src">Book source: <code>docs/book/v2.0.0/parts/part-6/23-scoring-and-endgame.md</code> · 12 step(s)</p>
       
       <h3 class="snip-section" id="ch23-s0">The score ledger</h3>
       
@@ -9264,6 +9286,32 @@ world.chainEvent(
             <span class="snip-lang">typescript</span>
             <button class="snip-copy" data-copy>copy</button>
           </div>
+          <pre><code>private entityIds: {
+  animalFeed: string;
+  penny: string;
+  souvenirPress: string;
+  zooMap: string;
+  brochure: string;
+} = {
+  animalFeed: '', penny: '', souvenirPress: '',
+  zooMap: '', brochure: '',
+};</code></pre>
+        </div>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 8</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
+          <pre><code>this.entityIds.zooMap = zooMap.id;
+this.entityIds.brochure = brochure.id;</code></pre>
+        </div>
+        <div class="snip">
+          <div class="snip-head">
+            <span class="snip-badge">step 9</span>
+            <span class="snip-lang">typescript</span>
+            <button class="snip-copy" data-copy>copy</button>
+          </div>
           <pre><code>// inside the feeding action's execute(), after its existing
 // `const target = ...` line, keyed on which animal was fed:
 const name = target?.name?.toLowerCase() ?? '';
@@ -9291,7 +9339,7 @@ w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
       
         <div class="snip">
           <div class="snip-head">
-            <span class="snip-badge">step 8</span>
+            <span class="snip-badge">step 10</span>
             <span class="snip-lang">typescript</span>
             <button class="snip-copy" data-copy>copy</button>
           </div>
@@ -9331,7 +9379,7 @@ w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
         </div>
         <div class="snip">
           <div class="snip-head">
-            <span class="snip-badge">step 9</span>
+            <span class="snip-badge">step 11</span>
             <span class="snip-lang">typescript</span>
             <button class="snip-copy" data-copy>copy</button>
           </div>
@@ -9339,7 +9387,7 @@ w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
         </div>
         <div class="snip">
           <div class="snip-head">
-            <span class="snip-badge">step 10</span>
+            <span class="snip-badge">step 12</span>
             <span class="snip-lang">typescript</span>
             <button class="snip-copy" data-copy>copy</button>
           </div>

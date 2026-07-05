@@ -119,7 +119,8 @@ Because each channel maps to one registered renderer, customizing the UI is
 *re-registering*. After the platform defaults are in place, available from
 `connectEngine` onward, a story grabs the renderer and registers its own. All of
 these registrations live in `src/browser-entry.ts`, after `connectEngine` and
-before `client.start()`; the scaffolded entry marks the spot with a comment.
+before `client.start()`; the scaffolded entry's file-header comment names this
+spot ("Add any story-specific channel/audio renderers before `client.start()`").
 There are two cases, and they differ in one way: whether the channel already has
 a place on the page.
 

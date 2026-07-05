@@ -166,7 +166,9 @@ import {
 
 Here is the whole puzzle, in order: a new room behind the gate (with its shelves),
 the keycard the player finds, the gate itself as an `EntityType.DOOR` wearing all
-five traits, and the exits wired through it on both sides.
+five traits, and the exits wired through it on both sides. The whole block goes
+at the end of `initializeWorld` (the placement rule), and where it replaces the
+Main Path exits from Chapter 4, delete the old assignment (the replacement rule).
 
 ```typescript
 // A new room, behind the gate.

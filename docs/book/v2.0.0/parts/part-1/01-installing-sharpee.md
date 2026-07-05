@@ -188,13 +188,15 @@ author:
 | `sharpee init [dir] [-y]` | Scaffold a new story project (`-y` skips the prompts) |
 | `sharpee init-browser` | Add a web client (`src/browser-entry.ts`) |
 | `sharpee build` | Compile `src/` and emit the `.sharpee` bundle (and the web client, if present) |
+| `sharpee build --test` | Build, then replay the project's transcript tests (Chapter 2 introduces these) |
 | `sharpee build-browser` | Rebuild only the web client → `dist/web/` |
 | `sharpee introspect` | Print the project's rooms, objects, and NPCs as JSON |
 | `sharpee ifid` | Generate or validate an IFID (a story's unique identifier) |
 | `sharpee register <location> [--name]` | Register a story name→path mapping, so `build` works from anywhere |
 | `sharpee list` | List registered stories |
 
-Run `sharpee` with no arguments any time to see the current list.
+Run `sharpee` with no arguments any time to see this help summarized, and
+`sharpee list` to see which stories are registered.
 
 ## A TypeScript primer
 

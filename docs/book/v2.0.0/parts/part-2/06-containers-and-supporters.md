@@ -28,7 +28,9 @@ You put the souvenir penny on the park bench.
 
 A container holds entities inside it. You've already met this trait once: the
 player carries an inventory because the player entity itself has a
-`ContainerTrait`. In this chapter we put it on ordinary objects too.
+`ContainerTrait`. In this chapter we put it on ordinary objects too. This block
+and the chapter's other two (the dispenser and the bench) all follow the
+placement rule: end of `initializeWorld`, before the player is placed.
 
 ```typescript
 const backpack = world.createEntity(

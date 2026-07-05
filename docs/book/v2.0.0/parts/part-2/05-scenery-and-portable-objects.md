@@ -17,7 +17,9 @@ time: **an entity is takeable unless you say otherwise.** Create something with 
 rooms, and drop it wherever they like. There is no `PortableTrait`, because
 portability isn't a feature you add. It's the starting state.
 
-So a souvenir penny needs only its identity and a home:
+So a souvenir penny needs only its identity and a home. Like every
+world-building block from here on, it goes at the end of `initializeWorld`,
+before the player is placed (the placement rule from How to Read This Book):
 
 ```typescript
 const penny = world.createEntity(

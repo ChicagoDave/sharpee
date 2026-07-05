@@ -73,6 +73,9 @@ When the player switches it on:
 2. `LightSourceTrait.isLit` becomes `true`; the engine links the two.
 3. Any dark room the player carries it into is now lit.
 
+This block starts life in the Supply Room, so it follows the placement rule
+(end of `initializeWorld`, where `supplyRoom` is already in scope):
+
 ```typescript
 const flashlight = world.createEntity(
   'flashlight',
@@ -146,7 +149,9 @@ import {
 
 The dark exhibit hangs off the Supply Room from Chapter 7. Build the room in full,
 connect it south of the supply room (with the way back north), and populate it with
-the animals the flashlight will reveal:
+the animals the flashlight will reveal. The block follows the placement rule, and
+its new Supply Room exits table *replaces* Chapter 7's, so delete the old one
+(the replacement rule):
 
 ```typescript
 const nocturnalExhibit = world.createEntity(
