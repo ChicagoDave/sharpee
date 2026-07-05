@@ -181,10 +181,11 @@ That's it. The build adds *Zoo Sunny* to the menu; selecting it flips
 pane, dialogs, and input from your four variables (and the `:root` defaults for the
 rest).
 
-If you *want* to push past the tokens (Family Zoo, for instance, deliberately puts
-its green on the title and menu bars instead of the engine's default, the status bar),
-add a few **flourish** rules under the same `[data-theme]` selector in that same
-stylesheet:
+**Flourish** rules push past the tokens when you want to. Family Zoo does:
+it deliberately puts its green on the title and menu bars instead of the
+engine's default, the status bar. These two rules are part of the zoo's
+theme, so add them to `browser/my-zoo.css` under the same `[data-theme]`
+selector, below the token block:
 
 ```css
 [data-theme="zoo-sunny"] .sharpee-menu-bar {

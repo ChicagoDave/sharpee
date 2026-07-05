@@ -72,12 +72,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-exits-live-on-the-room.ts` | Exits live on the room | typescript | author | 21 |
-| 02 | `02-two-rules-that-trip-up-everyone.ts` | Two rules that trip up everyone | typescript | author | 40 |
-| 03 | `03-getting-a-trait-back-with-get.ts` | Getting a trait back with `.get()` | typescript | author | 62 |
-| 04 | `04-getting-a-trait-back-with-get.ts` | Getting a trait back with `.get()` | typescript | author | 70 |
-| 05 | `05-putting-it-together.ts` | Putting it together | typescript | author | 82 |
-| 06 | `06-putting-it-together.ts` | Putting it together | typescript | author | 94 |
+| 01 | `01-exits-live-on-the-room.ts` | Exits live on the room | typescript | author | 26 |
+| 02 | `02-two-rules-that-trip-up-everyone.ts` | Two rules that trip up everyone | typescript | author | 45 |
+| 03 | `03-getting-a-trait-back-with-get.ts` | Getting a trait back with `.get()` | typescript | author | 67 |
+| 04 | `04-getting-a-trait-back-with-get.ts` | Getting a trait back with `.get()` | typescript | author | 75 |
+| 05 | `05-putting-it-together.ts` | Putting it together | typescript | author | 87 |
+| 06 | `06-putting-it-together.ts` | Putting it together | typescript | author | 99 |
 
 ## Scenery & Portable Objects: Everything Is Portable by Default
 
@@ -139,9 +139,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 42 |
-| 02 | `02-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 58 |
-| 03 | `03-crossing-the-boundary.ts` | Crossing the boundary | typescript | author | 98 |
-| 04 | `04-nesting-and-querying.ts` | Nesting and querying | typescript | author | 123 |
+| 02 | `02-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 60 |
+| 03 | `03-crossing-the-boundary.ts` | Crossing the boundary | typescript | author | 100 |
+| 04 | `04-nesting-and-querying.ts` | Nesting and querying | typescript | author | 125 |
 
 # Volume III — Making It Interactive
 
@@ -206,12 +206,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-capability-dispatch-one-verb-many-rules.ts` | Capability Dispatch: One Verb, Many Rules | typescript | author | 13 |
 | 02 | `02-1-a-trait-that-declares-a-capability.ts` | 1. A trait that declares a capability | typescript | author | 48 |
 | 03 | `03-2-a-behavior-that-implements-the-capability.ts` | 2. A behavior that implements the capability | typescript | author | 71 |
-| 04 | `04-3-registration-that-links-trait-to-behavior.ts` | 3. Registration that links trait to behavior | typescript | author | 134 |
-| 05 | `05-the-dispatch-action.ts` | The dispatch action | typescript | author | 148 |
-| 06 | `06-the-dispatch-action.ts` | The dispatch action | typescript | author | 244 |
-| 07 | `07-the-dispatch-action.ts` | The dispatch action | typescript | author | 252 |
-| 08 | `08-the-dispatch-action.ts` | The dispatch action | typescript | author | 262 |
-| 09 | `09-making-the-zoo-s-animals-pettable.ts` | Making the zoo's animals pettable | typescript | author | 289 |
+| 04 | `04-3-registration-that-links-trait-to-behavior.ts` | 3. Registration that links trait to behavior | typescript | author | 136 |
+| 05 | `05-the-dispatch-action.ts` | The dispatch action | typescript | author | 150 |
+| 06 | `06-the-dispatch-action.ts` | The dispatch action | typescript | author | 246 |
+| 07 | `07-the-dispatch-action.ts` | The dispatch action | typescript | author | 254 |
+| 08 | `08-the-dispatch-action.ts` | The dispatch action | typescript | author | 264 |
+| 09 | `09-making-the-zoo-s-animals-pettable.ts` | Making the zoo's animals pettable | typescript | author | 291 |
 
 ## Custom Traits & Behaviors: Data and Logic, Kept Apart
 
@@ -349,7 +349,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 81 |
 | 02 | `02-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 99 |
 | 03 | `03-built-in-themes-list-the-id.jsonc` | Built-in themes: list the id | jsonc | author | 141 |
-| 04 | `04-your-own-theme-three-lines-of-css-and-one-list-ent.css` | Your own theme: three lines of CSS and one list entry | css | author | 189 |
+| 04 | `04-your-own-theme-three-lines-of-css-and-one-list-ent.css` | Your own theme: three lines of CSS and one list entry | css | author | 190 |
 
 ## Media & Audio: Sight and Sound as Channels
 

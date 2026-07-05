@@ -16,7 +16,12 @@ connections between them.
 ## Exits live on the room
 
 Rooms are connected through **exits** on the `RoomTrait`. Each exit maps a
-compass direction to a destination, which is just the ID of another room:
+compass direction to a destination, which is just the ID of another room. The
+fragments in this section and the next are shapes to read, not code to type
+(the illustrative rule): `entranceRoom` stands for the entrance's `RoomTrait`,
+which the `.get()` section below shows you how to fetch, and the complete
+listing at the end of the chapter wires every exit inline without that
+intermediate variable.
 
 ```typescript
 entranceRoom.exits = {

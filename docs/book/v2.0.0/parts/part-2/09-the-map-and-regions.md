@@ -53,7 +53,9 @@ world.createRegion('reg-staff', {
 By convention region IDs take a `reg-` prefix, to tell them apart from room IDs at
 a glance.
 
-Then, after the rooms exist, assign each one to its region:
+Then assign each room to its region. The `assignRoom` block needs every room
+already created, so it goes at the end of `initializeWorld` with the chapter's
+other late additions (the placement rule):
 
 ```typescript
 world.assignRoom(entrance.id, 'reg-public');

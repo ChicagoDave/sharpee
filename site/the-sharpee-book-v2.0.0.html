@@ -1737,7 +1737,12 @@ and the connections between them.</p>
 <h2 data-number="4.1" id="exits-live-on-the-room"><span class="header-section-number">4.1</span> Exits live on the room</h2>
 <p>Rooms are connected through <strong>exits</strong> on the
 <code>RoomTrait</code>. Each exit maps a compass direction to a
-destination, which is just the ID of another room:</p>
+destination, which is just the ID of another room. The fragments in this
+section and the next are shapes to read, not code to type (the
+illustrative rule): <code>entranceRoom</code> stands for the entrance’s
+<code>RoomTrait</code>, which the <code>.get()</code> section below
+shows you how to fetch, and the complete listing at the end of the
+chapter wires every exit inline without that intermediate variable.</p>
 <div class="sourceCode" id="cb28"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>entranceRoom<span class="op">.</span><span class="at">exits</span> <span class="op">=</span> {</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  [Direction<span class="op">.</span><span class="at">SOUTH</span>]<span class="op">:</span> { destination<span class="op">:</span> mainPath<span class="op">.</span><span class="at">id</span> }<span class="op">,</span></span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
@@ -3294,7 +3299,10 @@ them:</p>
 <span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
 <p>By convention region IDs take a <code>reg-</code> prefix, to tell
 them apart from room IDs at a glance.</p>
-<p>Then, after the rooms exist, assign each one to its region:</p>
+<p>Then assign each room to its region. The <code>assignRoom</code>
+block needs every room already created, so it goes at the end of
+<code>initializeWorld</code> with the chapter’s other late additions
+(the placement rule):</p>
 <div class="sourceCode" id="cb73"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">assignRoom</span>(entrance<span class="op">.</span><span class="at">id</span><span class="op">,</span> <span class="st">&#39;reg-public&#39;</span>)<span class="op">;</span></span>
 <span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">assignRoom</span>(mainPath<span class="op">.</span><span class="at">id</span><span class="op">,</span> <span class="st">&#39;reg-public&#39;</span>)<span class="op">;</span></span>
 <span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">assignRoom</span>(pettingZoo<span class="op">.</span><span class="at">id</span><span class="op">,</span> <span class="st">&#39;reg-public&#39;</span>)<span class="op">;</span></span>
@@ -4811,9 +4819,10 @@ trait to behavior</h3>
 <p><code>world.registerCapabilityBehavior()</code> connects a trait
 type, a capability (action ID), and the behavior that handles them. The
 binding map belongs to this world instance: every game registers its own
-behaviors in <code>initializeWorld</code>, and registration is
-idempotent (re-registering a key just overwrites it), so there is no
-need to check whether it is already registered:</p>
+behaviors at the end of <code>initializeWorld</code>, after the animals
+exist (the exact spot is shown in the wiring section below), and
+registration is idempotent (re-registering a key just overwrites it), so
+there is no need to check whether it is already registered:</p>
 <div class="sourceCode" id="cb107"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">registerCapabilityBehavior</span>(</span>
 <span id="cb107-2"><a href="#cb107-2" aria-hidden="true" tabindex="-1"></a>  PettableTrait<span class="op">.</span><span class="at">type</span><span class="op">,</span>     <span class="co">// which trait</span></span>
 <span id="cb107-3"><a href="#cb107-3" aria-hidden="true" tabindex="-1"></a>  PETTING_ACTION_ID<span class="op">,</span>      <span class="co">// which capability</span></span>
@@ -7728,11 +7737,12 @@ value) and a menu <code>name</code>:</p>
 it flips <code>data-theme=&quot;zoo-sunny&quot;</code>, and the engine paints the
 window, menu, status bar, prose pane, dialogs, and input from your four
 variables (and the <code>:root</code> defaults for the rest).</p>
-<p>If you <em>want</em> to push past the tokens (Family Zoo, for
-instance, deliberately puts its green on the title and menu bars instead
-of the engine’s default, the status bar), add a few
-<strong>flourish</strong> rules under the same <code>[data-theme]</code>
-selector in that same stylesheet:</p>
+<p><strong>Flourish</strong> rules push past the tokens when you want
+to. Family Zoo does: it deliberately puts its green on the title and
+menu bars instead of the engine’s default, the status bar. These two
+rules are part of the zoo’s theme, so add them to
+<code>browser/my-zoo.css</code> under the same <code>[data-theme]</code>
+selector, below the token block:</p>
 <div class="sourceCode" id="cb187"><pre class="sourceCode css"><code class="sourceCode css"><span id="cb187-1"><a href="#cb187-1" aria-hidden="true" tabindex="-1"></a><span class="ex">[</span><span class="ss">data-theme</span><span class="op">=</span><span class="st">&quot;zoo-sunny&quot;</span><span class="ex">]</span> <span class="fu">.sharpee-menu-bar</span> {</span>
 <span id="cb187-2"><a href="#cb187-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">background</span><span class="ch">:</span> <span class="fu">var(</span><span class="va">--theme-menu-bg</span><span class="fu">)</span><span class="op">;</span></span>
 <span id="cb187-3"><a href="#cb187-3" aria-hidden="true" tabindex="-1"></a>}</span>

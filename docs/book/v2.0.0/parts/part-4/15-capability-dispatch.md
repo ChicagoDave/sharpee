@@ -127,7 +127,9 @@ those effects into semantic events.
 
 `world.registerCapabilityBehavior()` connects a trait type, a capability (action
 ID), and the behavior that handles them. The binding map belongs to this world
-instance: every game registers its own behaviors in `initializeWorld`, and
+instance: every game registers its own behaviors at the end of
+`initializeWorld`, after the animals exist (the exact spot is shown in the
+wiring section below), and
 registration is idempotent (re-registering a key just overwrites it), so there is
 no need to check whether it is already registered:
 
