@@ -108,13 +108,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-openabletrait.ts` | OpenableTrait | typescript | author | 19 |
-| 02 | `02-stocking-a-container-that-starts-closed.ts` | Stocking a container that starts closed | typescript | author | 55 |
-| 03 | `03-lockabletrait.ts` | LockableTrait | typescript | author | 73 |
-| 04 | `04-doortrait-and-the-exit-via-property.ts` | DoorTrait and the exit `via` property | typescript | author | 111 |
-| 05 | `05-doortrait-and-the-exit-via-property.ts` | DoorTrait and the exit `via` property | typescript | author | 122 |
-| 06 | `06-wiring-it-all-together.ts` | Wiring it all together | typescript | author | 161 |
-| 07 | `07-wiring-it-all-together.ts` | Wiring it all together | typescript | author | 173 |
+| 01 | `01-openabletrait.ts` | OpenableTrait | typescript | author | 21 |
+| 02 | `02-stocking-a-container-that-starts-closed.ts` | Stocking a container that starts closed | typescript | author | 57 |
+| 03 | `03-lockabletrait.ts` | LockableTrait | typescript | author | 75 |
+| 04 | `04-doortrait-and-the-exit-via-property.ts` | DoorTrait and the exit `via` property | typescript | author | 113 |
+| 05 | `05-doortrait-and-the-exit-via-property.ts` | DoorTrait and the exit `via` property | typescript | author | 124 |
+| 06 | `06-wiring-it-all-together.ts` | Wiring it all together | typescript | author | 163 |
+| 07 | `07-wiring-it-all-together.ts` | Wiring it all together | typescript | author | 175 |
 
 ## Light & Dark: What the Player Can See
 
@@ -338,7 +338,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-what-the-client-is-responsible-for.ts` | What the client is responsible for | typescript | author | 23 |
 | 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 77 |
 | 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 141 |
-| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 165 |
+| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 166 |
 
 ## Decoration & Theming: Style Without HTML on the Wire
 
@@ -380,7 +380,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-running-them.sh` | Running them | bash | author | 208 |
+| 01 | `01-running-them.sh` | Running them | bash | author | 212 |
 
 ## Saving & Restoring: State Lives in the World
 

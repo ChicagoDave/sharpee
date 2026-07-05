@@ -10438,7 +10438,8 @@ renderer.registerRenderer('score', {
             <span class="snip-lang">typescript</span>
             <button class="snip-copy" data-copy>copy</button>
           </div>
-          <pre><code>renderer.registerRenderer('zoo.ambience', {
+          <pre><code>const renderer = client.getChannelRenderer();
+renderer.registerRenderer('zoo.ambience', {
   onValue: (value) =&gt; {
     // a stable platform container
     const main = document.getElementById('main-window');

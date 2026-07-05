@@ -14,7 +14,9 @@ machinery.
 
 `OpenableTrait` gives an entity an open/closed state and hooks up the built-in
 `open` and `close` actions. On its own it just tracks a boolean; its power comes
-from combining with other traits.
+from combining with other traits. The lunchbox in this section and the next two
+is a demonstration prop, not part of the zoo; nothing to type until the puzzle
+listing later in the chapter (the illustrative rule).
 
 ```typescript
 lunchbox.add(new OpenableTrait({

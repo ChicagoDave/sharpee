@@ -1,3 +1,4 @@
+const renderer = client.getChannelRenderer();
 renderer.registerRenderer('zoo.ambience', {
   onValue: (value) => {
     // a stable platform container

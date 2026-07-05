@@ -160,9 +160,11 @@ JSON-tree fallback. Its renderer therefore makes its own element the first time 
 runs and reuses it after. This is exactly how the platform's built-in renderers
 work: they create DOM nodes and append them into the page's containers. Create once,
 reuse thereafter. This renderer *is* the zoo's; add it to `src/browser-entry.ts`
-at the spot described above:
+at the spot described above, complete with its own handle on the channel
+renderer:
 
 ```typescript
+const renderer = client.getChannelRenderer();
 renderer.registerRenderer('zoo.ambience', {
   onValue: (value) => {
     // a stable platform container

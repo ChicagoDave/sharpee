@@ -2609,7 +2609,9 @@ it. Doors then connect rooms through that machinery.</p>
 <p><code>OpenableTrait</code> gives an entity an open/closed state and
 hooks up the built-in <code>open</code> and <code>close</code> actions.
 On its own it just tracks a boolean; its power comes from combining with
-other traits.</p>
+other traits. The lunchbox in this section and the next two is a
+demonstration prop, not part of the zoo; nothing to type until the
+puzzle listing later in the chapter (the illustrative rule).</p>
 <div class="sourceCode" id="cb52"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>lunchbox<span class="op">.</span><span class="fu">add</span>(<span class="kw">new</span> <span class="fu">OpenableTrait</span>({</span>
 <span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  isOpen<span class="op">:</span> <span class="kw">false</span><span class="op">,</span>          <span class="co">// starts closed</span></span>
 <span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>  canClose<span class="op">:</span> <span class="kw">true</span><span class="op">,</span>         <span class="co">// the player can close it again</span></span>
@@ -7438,21 +7440,23 @@ element the first time it runs and reuses it after. This is exactly how
 the platform’s built-in renderers work: they create DOM nodes and append
 them into the page’s containers. Create once, reuse thereafter. This
 renderer <em>is</em> the zoo’s; add it to
-<code>src/browser-entry.ts</code> at the spot described above:</p>
-<div class="sourceCode" id="cb180"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb180-1"><a href="#cb180-1" aria-hidden="true" tabindex="-1"></a>renderer<span class="op">.</span><span class="fu">registerRenderer</span>(<span class="st">&#39;zoo.ambience&#39;</span><span class="op">,</span> {</span>
-<span id="cb180-2"><a href="#cb180-2" aria-hidden="true" tabindex="-1"></a>  onValue<span class="op">:</span> (value) <span class="kw">=&gt;</span> {</span>
-<span id="cb180-3"><a href="#cb180-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// a stable platform container</span></span>
-<span id="cb180-4"><a href="#cb180-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> main <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;main-window&#39;</span>)<span class="op">;</span></span>
-<span id="cb180-5"><a href="#cb180-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>main) <span class="cf">return</span><span class="op">;</span></span>
-<span id="cb180-6"><a href="#cb180-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> line <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;zoo-ambience&#39;</span>)<span class="op">;</span></span>
-<span id="cb180-7"><a href="#cb180-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>line) {</span>
-<span id="cb180-8"><a href="#cb180-8" aria-hidden="true" tabindex="-1"></a>      line <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">createElement</span>(<span class="st">&#39;div&#39;</span>)<span class="op">;</span></span>
-<span id="cb180-9"><a href="#cb180-9" aria-hidden="true" tabindex="-1"></a>      line<span class="op">.</span><span class="at">id</span> <span class="op">=</span> <span class="st">&#39;zoo-ambience&#39;</span><span class="op">;</span></span>
-<span id="cb180-10"><a href="#cb180-10" aria-hidden="true" tabindex="-1"></a>      main<span class="op">.</span><span class="fu">prepend</span>(line)<span class="op">;</span> <span class="co">// a mood line above the prose</span></span>
-<span id="cb180-11"><a href="#cb180-11" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb180-12"><a href="#cb180-12" aria-hidden="true" tabindex="-1"></a>    line<span class="op">.</span><span class="at">textContent</span> <span class="op">=</span> <span class="bu">String</span>(value <span class="op">??</span> <span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
-<span id="cb180-13"><a href="#cb180-13" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
-<span id="cb180-14"><a href="#cb180-14" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<code>src/browser-entry.ts</code> at the spot described above, complete
+with its own handle on the channel renderer:</p>
+<div class="sourceCode" id="cb180"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb180-1"><a href="#cb180-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> renderer <span class="op">=</span> client<span class="op">.</span><span class="fu">getChannelRenderer</span>()<span class="op">;</span></span>
+<span id="cb180-2"><a href="#cb180-2" aria-hidden="true" tabindex="-1"></a>renderer<span class="op">.</span><span class="fu">registerRenderer</span>(<span class="st">&#39;zoo.ambience&#39;</span><span class="op">,</span> {</span>
+<span id="cb180-3"><a href="#cb180-3" aria-hidden="true" tabindex="-1"></a>  onValue<span class="op">:</span> (value) <span class="kw">=&gt;</span> {</span>
+<span id="cb180-4"><a href="#cb180-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// a stable platform container</span></span>
+<span id="cb180-5"><a href="#cb180-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> main <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;main-window&#39;</span>)<span class="op">;</span></span>
+<span id="cb180-6"><a href="#cb180-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>main) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb180-7"><a href="#cb180-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> line <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;zoo-ambience&#39;</span>)<span class="op">;</span></span>
+<span id="cb180-8"><a href="#cb180-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>line) {</span>
+<span id="cb180-9"><a href="#cb180-9" aria-hidden="true" tabindex="-1"></a>      line <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">createElement</span>(<span class="st">&#39;div&#39;</span>)<span class="op">;</span></span>
+<span id="cb180-10"><a href="#cb180-10" aria-hidden="true" tabindex="-1"></a>      line<span class="op">.</span><span class="at">id</span> <span class="op">=</span> <span class="st">&#39;zoo-ambience&#39;</span><span class="op">;</span></span>
+<span id="cb180-11"><a href="#cb180-11" aria-hidden="true" tabindex="-1"></a>      main<span class="op">.</span><span class="fu">prepend</span>(line)<span class="op">;</span> <span class="co">// a mood line above the prose</span></span>
+<span id="cb180-12"><a href="#cb180-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb180-13"><a href="#cb180-13" aria-hidden="true" tabindex="-1"></a>    line<span class="op">.</span><span class="at">textContent</span> <span class="op">=</span> <span class="bu">String</span>(value <span class="op">??</span> <span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
+<span id="cb180-14"><a href="#cb180-14" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb180-15"><a href="#cb180-15" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
 <p>The renderer owns the element, so nothing needs to be added to the
 host page and it survives every rebuild. Style it from your override
 stylesheet (Chapter 26) by its id or a class you give it.</p>
@@ -8412,6 +8416,8 @@ closing <code>$save</code> writes a named checkpoint.</p>
 <pre class="text"><code>title: Feeding time
 story: familyzoo
 description: Resume at the pens and feed the goats
+
+---
 
 $restore at-the-pens
 

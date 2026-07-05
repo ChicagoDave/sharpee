@@ -153,6 +153,8 @@ title: Feeding time
 story: familyzoo
 description: Resume at the pens and feed the goats
 
+---
+
 $restore at-the-pens
 
 > feed goats
