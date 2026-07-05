@@ -55,7 +55,11 @@ export class DispenserTrait implements ITrait {
 ```
 
 That's the whole trait: pure data and a constructor that copies in any overrides,
-exactly like the built-ins. You add it to an entity the same way you add any trait:
+exactly like the built-ins. You would add it to an entity the same way you add
+any trait; the line below shows the shape only (the illustrative rule). The zoo
+leaves this pair unwired, as the honest note at the chapter's end explains, so
+nothing in `index.ts` changes in this chapter and there is no import to add
+there:
 
 ```typescript
 dispenser.add(new DispenserTrait({ chargesRemaining: 5 }));

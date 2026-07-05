@@ -114,7 +114,8 @@ Most scenes are one of a few patterns, all expressed through `begin`/`end`:
 - **One-shot trigger**: `begin` watches a flag (`w.getStateValue('alarmTripped')`)
   and `end` fires after a turn or two, so the beat plays once and never returns.
 - **Timed**: `end` checks how long the scene has run. A scene's `SceneTrait`
-  tracks `activeTurns`, so a storm can last a fixed stretch:
+  tracks `activeTurns`, so a storm can last a fixed stretch. (The storm is a
+  shape, not part of the zoo; nothing to type, per the illustrative rule.)
 
 ```typescript
 world.createScene('scene-storm', {

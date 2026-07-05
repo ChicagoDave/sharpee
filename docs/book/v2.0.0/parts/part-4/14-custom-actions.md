@@ -33,7 +33,10 @@ The action objects below are top-level `const`s. The three registration methods
 
 Every action, standard or custom, implements the same four-phase pattern you
 met in *The Standard Actions*. A custom action is just an `Action` object with
-those four methods:
+those four methods. The skeleton below is a schematic of that shape (the
+illustrative rule): `hasRequiredItem` is a stand-in that exists nowhere, so
+typed literally it would not compile. There is nothing to type until the real
+`feedAction` in the next section:
 
 ```typescript
 const feedAction: Action = {

@@ -15,7 +15,10 @@ each turn packet and paints it. Everything visible is the client's job. The engi
 never reaches for an element; it only emits channels.
 
 The orchestrator is `BrowserClient`. A story's browser entry point creates one,
-hands it the page's elements, connects the engine, and starts:
+hands it the page's elements, connects the engine, and starts. The listing
+below is the finished zoo snapshot's entry, shown so you can read the shape
+(the illustrative rule); your scaffolded `src/browser-entry.ts` already
+contains its own version, and that one stays as it is:
 
 ```typescript
 import {
@@ -61,7 +64,10 @@ the DOM, `connectEngine` subscribes to the engine, and `start` runs the opening
 turn. Your own scaffolded entry will differ from this listing in the
 particulars, because its theme ids, storage prefix, and story import come from
 your project rather than the zoo's; the shape is what matters, so leave the
-scaffold's values as they are.
+scaffold's values as they are. In particular, the snapshot's `defaultTheme:
+'zoo-sunny'` names a theme that doesn't exist in your project until Chapter 26
+creates it; the scaffold's `modern-dark` is the right value before then, and a
+fine one after.
 
 ## How a turn reaches the screen
 
@@ -128,7 +134,9 @@ a place on the page.
 already renders into a platform element, the status line. To change *how* it looks,
 re-register against the same id and write into that same element. Registration is
 last-write-wins, so your renderer simply replaces the platform's for that channel,
-without touching any other:
+without touching any other. The star renderer below shows the pattern; the zoo
+keeps the platform's score display, so this one is nothing to type (the
+illustrative rule):
 
 ```typescript
 const renderer = client.getChannelRenderer();
@@ -151,7 +159,8 @@ platform doesn't know it exists, so left alone its value falls to the renderer's
 JSON-tree fallback. Its renderer therefore makes its own element the first time it
 runs and reuses it after. This is exactly how the platform's built-in renderers
 work: they create DOM nodes and append them into the page's containers. Create once,
-reuse thereafter:
+reuse thereafter. This renderer *is* the zoo's; add it to `src/browser-entry.ts`
+at the spot described above:
 
 ```typescript
 renderer.registerRenderer('zoo.ambience', {

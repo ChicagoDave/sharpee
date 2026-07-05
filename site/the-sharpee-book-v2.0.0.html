@@ -732,8 +732,9 @@ play</a></li>
 <li><a href="#asserting-more-than-text" id="toc-asserting-more-than-text"><span class="toc-section-number">29.3</span> Asserting more than text</a></li>
 <li><a href="#handling-variable-outcomes" id="toc-handling-variable-outcomes"><span class="toc-section-number">29.4</span> Handling variable
 outcomes</a></li>
-<li><a href="#running-them" id="toc-running-them"><span class="toc-section-number">29.5</span> Running them</a></li>
-<li><a href="#key-takeaway-28" id="toc-key-takeaway-28"><span class="toc-section-number">29.6</span> Key takeaway</a></li>
+<li><a href="#your-first-walkthrough" id="toc-your-first-walkthrough"><span class="toc-section-number">29.5</span> Your first walkthrough</a></li>
+<li><a href="#running-them" id="toc-running-them"><span class="toc-section-number">29.6</span> Running them</a></li>
+<li><a href="#key-takeaway-28" id="toc-key-takeaway-28"><span class="toc-section-number">29.7</span> Key takeaway</a></li>
 </ul></li>
 <li><a href="#saving-restoring-state-lives-in-the-world" id="toc-saving-restoring-state-lives-in-the-world"><span class="toc-section-number">30</span> Saving &amp; Restoring: State Lives
 in the World</a>
@@ -969,10 +970,11 @@ prefixed <code>&gt;</code>.</p></li>
 <li><p>Chapters that add something playable end with a <strong>Try
 it</strong> (commands to type) and a <strong>Test it</strong> (the same
 ground as a transcript test for your suite; Chapter 2 introduces the
-mechanic, Chapter 29 completes it). Three more conventions do so much
+mechanic, Chapter 29 completes it). Four more conventions do so much
 work in the chapters ahead that they have names. The chapters cite them
-by name, so when a listing leaves you unsure where its code goes, the
-name is your pointer back to this page.</p></li>
+by name, so when a listing leaves you unsure where its code goes (or
+whether it goes in at all), the name is your pointer back to this
+page.</p></li>
 <li><p><strong>The import rule.</strong> The zoo grows in <strong>one
 file</strong> until late in the book, so imports accumulate. When a
 chapter shows an <code>import</code>, add only the names your file
@@ -986,6 +988,13 @@ new registrations go at the <strong>end of
 <li><p><strong>The replacement rule.</strong> When a listing
 <em>replaces</em> an earlier one (an exits table, a scene), delete the
 old version rather than keeping both.</p></li>
+<li><p><strong>The illustrative rule.</strong> Some listings show a
+shape without joining the zoo. You type a listing in only when the
+surrounding prose says to (“add this”, “type it in”, “create the file”,
+“goes in <code>initializeWorld</code>”). A listing framed as a
+supposition (“suppose”, “for example”, “to change how it looks”) or
+whose body is only comments is a shape to recognize, and the chapter
+says “nothing to type” wherever one could pass for real code.</p></li>
 </ul>
 <section id="volume-i-getting-started" class="part unnumbered part-page">
 <h1 class="part unnumbered">Volume I — Getting Started</h1>
@@ -3343,7 +3352,9 @@ being left,</li>
 being entered.</li>
 </ul>
 <p>You react to them exactly the way you’ll react to any event in Volume
-IV, by registering a handler:</p>
+IV, by registering a handler. The sketch below is a preview of that
+volume, not part of the zoo (the illustrative rule); its body is only a
+comment, and nothing to type in this chapter:</p>
 <div class="sourceCode" id="cb74"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">registerEventHandler</span>(</span>
 <span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;if.event.region_entered&#39;</span><span class="op">,</span></span>
 <span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>  (<span class="bu">event</span><span class="op">,</span> world) <span class="kw">=&gt;</span> {</span>
@@ -4298,7 +4309,11 @@ your <code>FamilyZooStory</code> class, alongside
 <h2 data-number="14.1" id="the-four-phase-action"><span class="header-section-number">14.1</span> The four-phase action</h2>
 <p>Every action, standard or custom, implements the same four-phase
 pattern you met in <em>The Standard Actions</em>. A custom action is
-just an <code>Action</code> object with those four methods:</p>
+just an <code>Action</code> object with those four methods. The skeleton
+below is a schematic of that shape (the illustrative rule):
+<code>hasRequiredItem</code> is a stand-in that exists nowhere, so typed
+literally it would not compile. There is nothing to type until the real
+<code>feedAction</code> in the next section:</p>
 <div class="sourceCode" id="cb95"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> feedAction<span class="op">:</span> Action <span class="op">=</span> {</span>
 <span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a>  id<span class="op">:</span> <span class="st">&#39;zoo.action.feeding&#39;</span><span class="op">,</span></span>
 <span id="cb95-3"><a href="#cb95-3" aria-hidden="true" tabindex="-1"></a>  group<span class="op">:</span> <span class="st">&#39;interaction&#39;</span><span class="op">,</span></span>
@@ -5081,8 +5096,11 @@ trait, so you write one. Put it in a new file,
 <span id="cb116-12"><a href="#cb116-12" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb116-13"><a href="#cb116-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>That’s the whole trait: pure data and a constructor that copies in
-any overrides, exactly like the built-ins. You add it to an entity the
-same way you add any trait:</p>
+any overrides, exactly like the built-ins. You would add it to an entity
+the same way you add any trait; the line below shows the shape only (the
+illustrative rule). The zoo leaves this pair unwired, as the honest note
+at the chapter’s end explains, so nothing in <code>index.ts</code>
+changes in this chapter and there is no import to add there:</p>
 <div class="sourceCode" id="cb117"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>dispenser<span class="op">.</span><span class="fu">add</span>(<span class="kw">new</span> <span class="fu">DispenserTrait</span>({ chargesRemaining<span class="op">:</span> <span class="dv">5</span> }))<span class="op">;</span></span></code></pre></div>
 <h2 data-number="16.3" id="defining-the-behavior"><span class="header-section-number">16.3</span> Defining the behavior</h2>
 <p>The trait holds the count; the <em>rule</em> (“you can dispense only
@@ -6222,7 +6240,9 @@ fires after a turn or two, so the beat plays once and never
 returns.</li>
 <li><strong>Timed</strong>: <code>end</code> checks how long the scene
 has run. A scene’s <code>SceneTrait</code> tracks
-<code>activeTurns</code>, so a storm can last a fixed stretch:</li>
+<code>activeTurns</code>, so a storm can last a fixed stretch. (The
+storm is a shape, not part of the zoo; nothing to type, per the
+illustrative rule.)</li>
 </ul>
 <div class="sourceCode" id="cb150"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">createScene</span>(<span class="st">&#39;scene-storm&#39;</span><span class="op">,</span> {</span>
 <span id="cb150-2"><a href="#cb150-2" aria-hidden="true" tabindex="-1"></a>  name<span class="op">:</span> <span class="st">&#39;Thunderstorm&#39;</span><span class="op">,</span></span>
@@ -6297,9 +6317,13 @@ a countdown timer that fires once when it reaches zero, optionally
 re-arming to fire again.</p>
 <p>Registration follows the same <code>onEngineReady()</code> pattern as
 the NPC plugin, and in fact lives in the <em>same</em>
-<code>onEngineReady</code>, alongside the NPC registration from Chapter
-20. The daemon <code>run</code> functions return
-<code>ISemanticEvent[]</code>, and one reads an
+<code>onEngineReady</code>. Put the scheduler block directly below the
+NPC registration from Chapter 20, exactly as the listing shows, with
+Chapter 13’s chain handlers staying below it. (This is a chapter saying
+otherwise than the placement rule: either spot inside the method works,
+because these registrations don’t depend on each other, but the
+listing’s position is the one to follow.) The daemon <code>run</code>
+functions return <code>ISemanticEvent[]</code>, and one reads an
 <code>IdentityTrait</code>, so the imports grow a little:</p>
 <div class="sourceCode" id="cb152"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb152-1"><a href="#cb152-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { SchedulerPlugin } <span class="im">from</span> <span class="st">&#39;@sharpee/plugin-scheduler&#39;</span><span class="op">;</span></span>
 <span id="cb152-2"><a href="#cb152-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="im">type</span> {</span>
@@ -7270,7 +7294,10 @@ and paints it. Everything visible is the client’s job. The engine never
 reaches for an element; it only emits channels.</p>
 <p>The orchestrator is <code>BrowserClient</code>. A story’s browser
 entry point creates one, hands it the page’s elements, connects the
-engine, and starts:</p>
+engine, and starts. The listing below is the finished zoo snapshot’s
+entry, shown so you can read the shape (the illustrative rule); your
+scaffolded <code>src/browser-entry.ts</code> already contains its own
+version, and that one stays as it is:</p>
 <div class="sourceCode" id="cb177"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb177-1"><a href="#cb177-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> {</span>
 <span id="cb177-2"><a href="#cb177-2" aria-hidden="true" tabindex="-1"></a>  STORY_VERSION<span class="op">,</span></span>
 <span id="cb177-3"><a href="#cb177-3" aria-hidden="true" tabindex="-1"></a>  ENGINE_VERSION<span class="op">,</span></span>
@@ -7314,7 +7341,11 @@ subscribes to the engine, and <code>start</code> runs the opening turn.
 Your own scaffolded entry will differ from this listing in the
 particulars, because its theme ids, storage prefix, and story import
 come from your project rather than the zoo’s; the shape is what matters,
-so leave the scaffold’s values as they are.</p>
+so leave the scaffold’s values as they are. In particular, the
+snapshot’s <code>defaultTheme: &#39;zoo-sunny&#39;</code> names a theme that
+doesn’t exist in your project until Chapter 26 creates it; the
+scaffold’s <code>modern-dark</code> is the right value before then, and
+a fine one after.</p>
 <h2 data-number="25.2" id="how-a-turn-reaches-the-screen"><span class="header-section-number">25.2</span> How a turn reaches the
 screen</h2>
 <p>Inside <code>connectEngine</code>, the client builds a
@@ -7384,7 +7415,9 @@ channel like <code>score</code> already renders into a platform element,
 the status line. To change <em>how</em> it looks, re-register against
 the same id and write into that same element. Registration is
 last-write-wins, so your renderer simply replaces the platform’s for
-that channel, without touching any other:</p>
+that channel, without touching any other. The star renderer below shows
+the pattern; the zoo keeps the platform’s score display, so this one is
+nothing to type (the illustrative rule):</p>
 <div class="sourceCode" id="cb179"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb179-1"><a href="#cb179-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> renderer <span class="op">=</span> client<span class="op">.</span><span class="fu">getChannelRenderer</span>()<span class="op">;</span></span>
 <span id="cb179-2"><a href="#cb179-2" aria-hidden="true" tabindex="-1"></a>renderer<span class="op">.</span><span class="fu">registerRenderer</span>(<span class="st">&#39;score&#39;</span><span class="op">,</span> {</span>
 <span id="cb179-3"><a href="#cb179-3" aria-hidden="true" tabindex="-1"></a>  onValue<span class="op">:</span> (value) <span class="kw">=&gt;</span> {</span>
@@ -7403,7 +7436,9 @@ platform doesn’t know it exists, so left alone its value falls to the
 renderer’s JSON-tree fallback. Its renderer therefore makes its own
 element the first time it runs and reuses it after. This is exactly how
 the platform’s built-in renderers work: they create DOM nodes and append
-them into the page’s containers. Create once, reuse thereafter:</p>
+them into the page’s containers. Create once, reuse thereafter. This
+renderer <em>is</em> the zoo’s; add it to
+<code>src/browser-entry.ts</code> at the spot described above:</p>
 <div class="sourceCode" id="cb180"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb180-1"><a href="#cb180-1" aria-hidden="true" tabindex="-1"></a>renderer<span class="op">.</span><span class="fu">registerRenderer</span>(<span class="st">&#39;zoo.ambience&#39;</span><span class="op">,</span> {</span>
 <span id="cb180-2"><a href="#cb180-2" aria-hidden="true" tabindex="-1"></a>  onValue<span class="op">:</span> (value) <span class="kw">=&gt;</span> {</span>
 <span id="cb180-3"><a href="#cb180-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// a stable platform container</span></span>
@@ -8219,13 +8254,13 @@ volume is about getting the zoo to players: testing, saving, building,
 and serving it.</p>
 <h1 data-number="29" id="transcript-testing-walkthroughs-proving-the-game-still-works"><span class="header-section-number">29</span> Transcript Testing &amp;
 Walkthroughs: Proving the Game Still Works</h1>
-<p>The zoo is a real game now, spread across seven files and two acts,
-and you’ve been protecting it since Chapter 2. Every <strong>Test
-it</strong> block along the way added a transcript to
-<code>tests/transcripts/</code>, so by now
-<code>npx sharpee build --test</code> replays fourteen recorded sessions
-against every build: the map, the gate, the dark, the goats, the
-scheduler, the win. That suite is why you could keep adding features
+<p>The zoo is a real game now (seven files and two acts in Chapter 28’s
+snapshot, one well-grown file if you stayed with yours), and you’ve been
+protecting it since Chapter 2. Every <strong>Test it</strong> block
+along the way added a transcript to <code>tests/transcripts/</code>, so
+by now <code>npx sharpee build --test</code> replays fourteen recorded
+sessions against every build: the map, the gate, the dark, the goats,
+the scheduler, the win. That suite is why you could keep adding features
 without fear of breaking chapter three. This chapter turns the habit
 into the full discipline: the assertion layers you haven’t used yet
 (events and world state), control flow for runs that vary, and
@@ -8301,15 +8336,14 @@ Useful when an action’s text varies but its event shouldn’t,
 e.g. confirming <code>feed goats</code> emits your
 <code>zoo.event.fed</code> event.</li>
 <li><strong>State</strong>:
-<code>[STATE: true, player.inventory contains feed]</code> checks the
-world model directly. This is the strongest assertion: it verifies the
-<em>mutation</em>, not just the words. After <code>feed goats</code>,
-assert the <code>fed-…</code> state flag is set and the score went up:
-the actual effects, not the message describing them. <code>player</code>
-is a reserved word for the player entity, whatever your story named it;
-every other entity reference resolves by name, id, or any of its
-<code>IdentityTrait</code> aliases (so <code>feed</code> finds the bag
-of animal feed).</li>
+<code>[STATE: true, yourself.inventory contains bag of animal feed]</code>
+checks the world model directly. This is the strongest assertion: it
+verifies the <em>mutation</em>, not just the words. In a state
+expression, refer to entities by the exact name they were created with
+(or by id): the zoo’s player entity has been named <code>yourself</code>
+since Chapter 2, and the bag was created as
+<code>bag of animal feed</code>. The <code>feed</code> you type in play
+is an alias, and here you want the created name.</li>
 </ul>
 <p>A message can read correctly while the world behind it is wrong (a
 score that never incremented, an item that was never consumed), and only
@@ -8324,7 +8358,9 @@ control-flow directives for that:</p>
 group commands into a named objective, with optional
 <code>[REQUIRES: …]</code> preconditions and <code>[ENSURES: …]</code>
 postconditions, so the goal fails if the world isn’t in the expected
-state before or after.</li>
+state before or after. Declare both on the lines directly under the
+<code>[GOAL: …]</code> line, and run with <code>--stop-on-failure</code>
+when you want a failed condition to fail the run.</li>
 <li><strong><code>[IF: …]</code> / <code>[END IF]</code></strong> runs
 commands only when a condition holds (the parrot is here, the trunk
 wasn’t stolen).</li>
@@ -8338,16 +8374,97 @@ after-hours act is the natural thing to bracket in a
 <code>[GOAL]</code>: <code>[ENSURES: …]</code> the after-hours bonus was
 scored once the closing sequence has run. (The single-file zoo has no
 second act yet, so skip this bracket if you stayed single-file.)</p>
-<h2 data-number="29.5" id="running-them"><span class="header-section-number">29.5</span> Running them</h2>
+<h2 data-number="29.5" id="your-first-walkthrough"><span class="header-section-number">29.5</span> Your first walkthrough</h2>
+<p>Unit transcripts prove features in isolation; only a walkthrough
+proves the game hangs together. Two short files are enough to see the
+mechanic work, because the point of a walkthrough is the state that
+crosses the file boundary. Create a <code>walkthroughs/</code> folder in
+the project root (a sibling of <code>tests/</code>) and save this as
+<code>walkthroughs/wt-01-into-the-zoo.transcript</code>:</p>
+<pre class="text"><code>title: Into the zoo
+story: familyzoo
+description: From the gate to the petting zoo, map and feed in hand
+
+---
+
+&gt; take map
+[OK: contains &quot;Taken&quot;]
+[EVENT: true, type=&quot;if.event.taken&quot;]
+
+&gt; south
+[OK: contains &quot;Main Path&quot;]
+
+&gt; east
+[OK: contains &quot;Petting Zoo&quot;]
+
+&gt; take feed
+[OK: contains &quot;Taken&quot;]
+[STATE: true, yourself.inventory contains bag of animal feed]
+
+$save at-the-pens</code></pre>
+<p>This is the assertion ladder from earlier in the chapter put to work:
+a text check on every turn, an <code>[EVENT:]</code> proving the take
+emitted its semantic event, and a <code>[STATE:]</code> reaching past
+the prose to confirm the bag really sits in the player’s inventory. The
+closing <code>$save</code> writes a named checkpoint.</p>
+<p>The second file resumes from that checkpoint. Save it as
+<code>walkthroughs/wt-02-feeding-time.transcript</code>:</p>
+<pre class="text"><code>title: Feeding time
+story: familyzoo
+description: Resume at the pens and feed the goats
+
+$restore at-the-pens
+
+&gt; feed goats
+[OK: contains &quot;devour&quot;]
+[EVENT: true, type=&quot;zoo.event.fed&quot;]
+
+&gt; score
+[OK: contains &quot;20 out of 75&quot;]</code></pre>
+<p>There is no walking back to the petting zoo and no second
+<code>take feed</code>; <code>$restore</code> picks up exactly where the
+first file saved, which is the entire point of a chain. The
+<code>feed goats</code> turn can only succeed because the bag crossed
+the file boundary, and the final assertion pins the running total at
+exactly twenty points (five for visiting the petting zoo, five for the
+map, ten for the goats), so any future change that disturbs early
+scoring fails here loudly.</p>
+<p>Run <code>npx sharpee build --test</code> again and the tester
+reports the chain ahead of the unit files (output trimmed as usual; the
+real run prints full paths and the unit-test block after it):</p>
+<pre class="text"><code>Walkthroughs: 2 files (chained)
+
+Running: walkthroughs/wt-01-into-the-zoo.transcript
+  &quot;Into the zoo&quot;
+
+  &gt; take map                                         PASS
+  &gt; south                                            PASS
+  &gt; east                                             PASS
+  &gt; take feed                                        PASS
+
+  4 passed
+
+Running: walkthroughs/wt-02-feeding-time.transcript
+  &quot;Feeding time&quot;
+
+  &gt; feed goats                                       PASS
+  &gt; score                                            PASS
+
+  2 passed</code></pre>
+<p>A real game’s walkthrough chain keeps going: wt-03 through the locked
+gate, wt-04 into the dark, one segment per stretch of play, each segment
+ending in a <code>$save</code> that the next file restores. The two-file
+chain you just ran is that discipline in miniature.</p>
+<h2 data-number="29.6" id="running-them"><span class="header-section-number">29.6</span> Running them</h2>
 <p>Authors run tests through the build CLI, which compiles, bundles, and
 tests in one step:</p>
-<div class="sourceCode" id="cb197"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb197-1"><a href="#cb197-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run every transcript it finds</span></span>
-<span id="cb197-2"><a href="#cb197-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> sharpee build <span class="at">--test</span></span>
-<span id="cb197-3"><a href="#cb197-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> sharpee build <span class="at">--test</span> <span class="at">--stop-on-failure</span></span></code></pre></div>
+<div class="sourceCode" id="cb200"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a><span class="co"># run every transcript it finds</span></span>
+<span id="cb200-2"><a href="#cb200-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> sharpee build <span class="at">--test</span></span>
+<span id="cb200-3"><a href="#cb200-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> sharpee build <span class="at">--test</span> <span class="at">--stop-on-failure</span></span></code></pre></div>
 <p>It runs <code>walkthroughs/wt-*.transcript</code> as a chain and
 <code>tests/transcripts/*.transcript</code> individually, exactly
 matching the two-kinds split.</p>
-<h2 data-number="29.6" id="key-takeaway-28"><span class="header-section-number">29.6</span> Key takeaway</h2>
+<h2 data-number="29.7" id="key-takeaway-28"><span class="header-section-number">29.7</span> Key takeaway</h2>
 <p>A transcript test replays a recorded sequence of commands through the
 real engine and checks each turn against assertions you write.
 <strong>Unit transcripts</strong> run in isolation on a fresh game;
@@ -8391,32 +8508,32 @@ yourself</h2>
 snapshot already walks into it on purpose so you can see the fix. The
 after-hours <strong>behavior swap</strong> daemon keeps a local flag so
 it only fires once:</p>
-<div class="sourceCode" id="cb198"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb198-1"><a href="#cb198-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> behaviorSwapped <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb198-2"><a href="#cb198-2" aria-hidden="true" tabindex="-1"></a>scheduler<span class="op">.</span><span class="fu">registerDaemon</span>({</span>
-<span id="cb198-3"><a href="#cb198-3" aria-hidden="true" tabindex="-1"></a>  id<span class="op">:</span> <span class="st">&#39;zoo.daemon.parrot_behavior_swap&#39;</span><span class="op">,</span></span>
-<span id="cb198-4"><a href="#cb198-4" aria-hidden="true" tabindex="-1"></a>  condition<span class="op">:</span> (ctx) <span class="kw">=&gt;</span></span>
-<span id="cb198-5"><a href="#cb198-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">!</span>behaviorSwapped <span class="op">&amp;&amp;</span></span>
-<span id="cb198-6"><a href="#cb198-6" aria-hidden="true" tabindex="-1"></a>    ctx<span class="op">.</span><span class="at">world</span><span class="op">.</span><span class="fu">getStateValue</span>(<span class="st">&#39;zoo.after_hours&#39;</span>) <span class="op">===</span> <span class="kw">true</span><span class="op">,</span></span>
-<span id="cb198-7"><a href="#cb198-7" aria-hidden="true" tabindex="-1"></a>  run<span class="op">:</span> () <span class="kw">=&gt;</span> {</span>
-<span id="cb198-8"><a href="#cb198-8" aria-hidden="true" tabindex="-1"></a>    behaviorSwapped <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb198-9"><a href="#cb198-9" aria-hidden="true" tabindex="-1"></a>    npcService<span class="op">.</span><span class="fu">removeBehavior</span>(<span class="st">&#39;zoo-parrot&#39;</span>)<span class="op">;</span></span>
-<span id="cb198-10"><a href="#cb198-10" aria-hidden="true" tabindex="-1"></a>    npcService<span class="op">.</span><span class="fu">registerBehavior</span>(parrotAfterHoursBehavior)<span class="op">;</span></span>
-<span id="cb198-11"><a href="#cb198-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> []<span class="op">;</span></span>
-<span id="cb198-12"><a href="#cb198-12" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
-<span id="cb198-13"><a href="#cb198-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">// …</span></span>
-<span id="cb198-14"><a href="#cb198-14" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb201"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb201-1"><a href="#cb201-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> behaviorSwapped <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb201-2"><a href="#cb201-2" aria-hidden="true" tabindex="-1"></a>scheduler<span class="op">.</span><span class="fu">registerDaemon</span>({</span>
+<span id="cb201-3"><a href="#cb201-3" aria-hidden="true" tabindex="-1"></a>  id<span class="op">:</span> <span class="st">&#39;zoo.daemon.parrot_behavior_swap&#39;</span><span class="op">,</span></span>
+<span id="cb201-4"><a href="#cb201-4" aria-hidden="true" tabindex="-1"></a>  condition<span class="op">:</span> (ctx) <span class="kw">=&gt;</span></span>
+<span id="cb201-5"><a href="#cb201-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">!</span>behaviorSwapped <span class="op">&amp;&amp;</span></span>
+<span id="cb201-6"><a href="#cb201-6" aria-hidden="true" tabindex="-1"></a>    ctx<span class="op">.</span><span class="at">world</span><span class="op">.</span><span class="fu">getStateValue</span>(<span class="st">&#39;zoo.after_hours&#39;</span>) <span class="op">===</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb201-7"><a href="#cb201-7" aria-hidden="true" tabindex="-1"></a>  run<span class="op">:</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb201-8"><a href="#cb201-8" aria-hidden="true" tabindex="-1"></a>    behaviorSwapped <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb201-9"><a href="#cb201-9" aria-hidden="true" tabindex="-1"></a>    npcService<span class="op">.</span><span class="fu">removeBehavior</span>(<span class="st">&#39;zoo-parrot&#39;</span>)<span class="op">;</span></span>
+<span id="cb201-10"><a href="#cb201-10" aria-hidden="true" tabindex="-1"></a>    npcService<span class="op">.</span><span class="fu">registerBehavior</span>(parrotAfterHoursBehavior)<span class="op">;</span></span>
+<span id="cb201-11"><a href="#cb201-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> []<span class="op">;</span></span>
+<span id="cb201-12"><a href="#cb201-12" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb201-13"><a href="#cb201-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">// …</span></span>
+<span id="cb201-14"><a href="#cb201-14" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
 <p>That <code>behaviorSwapped</code> variable lives in a closure,
 <strong>not</strong> in the world, so the world snapshot doesn’t capture
 it. Save after the swap, restore, and a naïve daemon would think the
 swap hadn’t happened and try to run again. The daemon avoids that by
 implementing two hooks:</p>
-<div class="sourceCode" id="cb199"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb199-1"><a href="#cb199-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">getRunnerState</span>()<span class="op">:</span> <span class="bu">Record</span><span class="op">&lt;</span><span class="dt">string</span><span class="op">,</span> <span class="dt">unknown</span><span class="op">&gt;</span> {</span>
-<span id="cb199-2"><a href="#cb199-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> { behaviorSwapped }<span class="op">;</span></span>
-<span id="cb199-3"><a href="#cb199-3" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
-<span id="cb199-4"><a href="#cb199-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">restoreRunnerState</span>(state)<span class="op">:</span> <span class="dt">void</span> {</span>
-<span id="cb199-5"><a href="#cb199-5" aria-hidden="true" tabindex="-1"></a>    behaviorSwapped <span class="op">=</span></span>
-<span id="cb199-6"><a href="#cb199-6" aria-hidden="true" tabindex="-1"></a>      (state<span class="op">.</span><span class="at">behaviorSwapped</span> <span class="im">as</span> <span class="dt">boolean</span>) <span class="op">??</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb199-7"><a href="#cb199-7" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span></code></pre></div>
+<div class="sourceCode" id="cb202"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb202-1"><a href="#cb202-1" aria-hidden="true" tabindex="-1"></a>  <span class="fu">getRunnerState</span>()<span class="op">:</span> <span class="bu">Record</span><span class="op">&lt;</span><span class="dt">string</span><span class="op">,</span> <span class="dt">unknown</span><span class="op">&gt;</span> {</span>
+<span id="cb202-2"><a href="#cb202-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> { behaviorSwapped }<span class="op">;</span></span>
+<span id="cb202-3"><a href="#cb202-3" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb202-4"><a href="#cb202-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">restoreRunnerState</span>(state)<span class="op">:</span> <span class="dt">void</span> {</span>
+<span id="cb202-5"><a href="#cb202-5" aria-hidden="true" tabindex="-1"></a>    behaviorSwapped <span class="op">=</span></span>
+<span id="cb202-6"><a href="#cb202-6" aria-hidden="true" tabindex="-1"></a>      (state<span class="op">.</span><span class="at">behaviorSwapped</span> <span class="im">as</span> <span class="dt">boolean</span>) <span class="op">??</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb202-7"><a href="#cb202-7" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span></code></pre></div>
 <p><code>getRunnerState</code> hands the engine the transient flag to
 fold into the save; <code>restoreRunnerState</code> reads it back.
 That’s the rule: <strong>any state you hold outside the world (a counter
@@ -8486,12 +8603,12 @@ is invoked through the repo’s <code>./sharpee</code> wrapper.)
 Crucially, <em>the platform is never rebuilt</em>:
 <code>@sharpee/sharpee</code> is an ordinary npm dependency your story
 compiles against, so your builds are fast and reproducible.</p>
-<div class="sourceCode" id="cb200"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb200-1"><a href="#cb200-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">-g</span> @sharpee/devkit   <span class="co"># one-time</span></span>
-<span id="cb200-2"><a href="#cb200-2" aria-hidden="true" tabindex="-1"></a><span class="co"># scaffold src/index.ts, package.json, tsconfig.json</span></span>
-<span id="cb200-3"><a href="#cb200-3" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> init my-game <span class="at">-y</span></span>
-<span id="cb200-4"><a href="#cb200-4" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-game <span class="kw">&amp;&amp;</span> <span class="ex">npm</span> install        <span class="co"># pull the platform from npm</span></span>
-<span id="cb200-5"><a href="#cb200-5" aria-hidden="true" tabindex="-1"></a><span class="co"># compile src/ → dist/, emit the .sharpee bundle</span></span>
-<span id="cb200-6"><a href="#cb200-6" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build</span></code></pre></div>
+<div class="sourceCode" id="cb203"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb203-1"><a href="#cb203-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">-g</span> @sharpee/devkit   <span class="co"># one-time</span></span>
+<span id="cb203-2"><a href="#cb203-2" aria-hidden="true" tabindex="-1"></a><span class="co"># scaffold src/index.ts, package.json, tsconfig.json</span></span>
+<span id="cb203-3"><a href="#cb203-3" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> init my-game <span class="at">-y</span></span>
+<span id="cb203-4"><a href="#cb203-4" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-game <span class="kw">&amp;&amp;</span> <span class="ex">npm</span> install        <span class="co"># pull the platform from npm</span></span>
+<span id="cb203-5"><a href="#cb203-5" aria-hidden="true" tabindex="-1"></a><span class="co"># compile src/ → dist/, emit the .sharpee bundle</span></span>
+<span id="cb203-6"><a href="#cb203-6" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build</span></code></pre></div>
 <p><code>sharpee build</code> produces the two artifacts you care about
 in <code>dist/</code> (alongside declaration files and, once the browser
 client is added, <code>dist/web/</code>): the compiled story
@@ -8502,8 +8619,8 @@ hand to anything that runs Sharpee stories.</p>
 <p>A <code>.sharpee</code> bundle needs a runner. For single-player,
 that runner is the framework-free browser client from Volume VII, and
 devkit builds a self-contained copy of it wrapped around your story:</p>
-<div class="sourceCode" id="cb201"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb201-1"><a href="#cb201-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> init-browser   <span class="co"># adds src/browser-entry.ts (once)</span></span>
-<span id="cb201-2"><a href="#cb201-2" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build          <span class="co"># now also emits the web client → dist/web/</span></span></code></pre></div>
+<div class="sourceCode" id="cb204"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb204-1"><a href="#cb204-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> init-browser   <span class="co"># adds src/browser-entry.ts (once)</span></span>
+<span id="cb204-2"><a href="#cb204-2" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build          <span class="co"># now also emits the web client → dist/web/</span></span></code></pre></div>
 <p><code>dist/web/</code> is the deliverable: an <code>index.html</code>
 and its assets with your story baked in. It has no server, no build
 step, and no runtime dependency: open <code>index.html</code> and the
@@ -8515,9 +8632,9 @@ files.</p>
 web.” Any static host works: a personal site, GitHub Pages, itch.io, an
 S3 bucket. To check it locally before you upload, point any static file
 server at the folder:</p>
-<div class="sourceCode" id="cb202"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb202-1"><a href="#cb202-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build</span>
-<span id="cb202-2"><a href="#cb202-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> http.server <span class="at">-d</span> dist/web</span>
-<span id="cb202-3"><a href="#cb202-3" aria-hidden="true" tabindex="-1"></a><span class="co"># then open the printed http://localhost:8000</span></span></code></pre></div>
+<div class="sourceCode" id="cb205"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb205-1"><a href="#cb205-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build</span>
+<span id="cb205-2"><a href="#cb205-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> http.server <span class="at">-d</span> dist/web</span>
+<span id="cb205-3"><a href="#cb205-3" aria-hidden="true" tabindex="-1"></a><span class="co"># then open the printed http://localhost:8000</span></span></code></pre></div>
 <p>Upload the contents of <code>dist/web/</code> and share the URL.
 There is nothing to install on the player’s side; their browser is the
 interpreter.</p>

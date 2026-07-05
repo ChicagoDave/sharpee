@@ -91,7 +91,9 @@ engine emits two events automatically:
 - `if.event.region_entered`, fired once for each region being entered.
 
 You react to them exactly the way you'll react to any event in Volume IV, by
-registering a handler:
+registering a handler. The sketch below is a preview of that volume, not part
+of the zoo (the illustrative rule); its body is only a comment, and nothing to
+type in this chapter:
 
 ```typescript
 world.registerEventHandler(

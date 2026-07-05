@@ -140,8 +140,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 42 |
 | 02 | `02-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 58 |
-| 03 | `03-crossing-the-boundary.ts` | Crossing the boundary | typescript | author | 96 |
-| 04 | `04-nesting-and-querying.ts` | Nesting and querying | typescript | author | 121 |
+| 03 | `03-crossing-the-boundary.ts` | Crossing the boundary | typescript | author | 98 |
+| 04 | `04-nesting-and-querying.ts` | Nesting and querying | typescript | author | 123 |
 
 # Volume III — Making It Interactive
 
@@ -189,13 +189,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-custom-actions-teaching-the-parser-new-verbs.ts` | Custom Actions: Teaching the Parser New Verbs | typescript | author | 16 |
-| 02 | `02-the-four-phase-action.ts` | The four-phase action | typescript | author | 38 |
-| 03 | `03-a-complete-custom-action-feeding.ts` | A complete custom action: feeding | typescript | author | 86 |
-| 04 | `04-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 191 |
-| 05 | `05-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 246 |
-| 06 | `06-telling-the-engine-getcustomactions.ts` | Telling the engine: getCustomActions | typescript | author | 267 |
-| 07 | `07-teaching-the-parser-extendparser.ts` | Teaching the parser: extendParser | typescript | author | 278 |
-| 08 | `08-supplying-the-text-extendlanguage.ts` | Supplying the text: extendLanguage | typescript | author | 305 |
+| 02 | `02-the-four-phase-action.ts` | The four-phase action | typescript | author | 41 |
+| 03 | `03-a-complete-custom-action-feeding.ts` | A complete custom action: feeding | typescript | author | 89 |
+| 04 | `04-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 194 |
+| 05 | `05-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 249 |
+| 06 | `06-telling-the-engine-getcustomactions.ts` | Telling the engine: getCustomActions | typescript | author | 270 |
+| 07 | `07-teaching-the-parser-extendparser.ts` | Teaching the parser: extendParser | typescript | author | 281 |
+| 08 | `08-supplying-the-text-extendlanguage.ts` | Supplying the text: extendLanguage | typescript | author | 308 |
 
 ## Capability Dispatch: One Verb, Many Rules
 
@@ -220,9 +220,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-defining-a-custom-trait.ts` | Defining a custom trait | typescript | author | 41 |
-| 02 | `02-defining-a-custom-trait.ts` | Defining a custom trait | typescript | author | 60 |
-| 03 | `03-defining-the-behavior.ts` | Defining the behavior | typescript | author | 76 |
-| 04 | `04-putting-the-pair-to-work.ts` | Putting the pair to work | typescript | author | 112 |
+| 02 | `02-defining-a-custom-trait.ts` | Defining a custom trait | typescript | author | 64 |
+| 03 | `03-defining-the-behavior.ts` | Defining the behavior | typescript | author | 80 |
+| 04 | `04-putting-the-pair-to-work.ts` | Putting the pair to work | typescript | author | 116 |
 
 # Volume V — Words
 
@@ -284,7 +284,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 02 | `02-querying-a-scene.ts` | Querying a scene | typescript | author | 53 |
 | 03 | `03-reacting-to-transitions.ts` | Reacting to transitions | typescript | author | 75 |
 | 04 | `04-reacting-to-transitions.ts` | Reacting to transitions | typescript | author | 92 |
-| 05 | `05-common-shapes.ts` | Common shapes | typescript | author | 119 |
+| 05 | `05-common-shapes.ts` | Common shapes | typescript | author | 120 |
 
 ## Turns, Timed Events & Daemons: Giving the World a Clock
 
@@ -292,12 +292,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-how-the-scheduler-ticks.ts` | How the scheduler ticks | typescript | author | 24 |
-| 02 | `02-how-the-scheduler-ticks.ts` | How the scheduler ticks | typescript | author | 48 |
-| 03 | `03-daemons-run-every-turn.ts` | Daemons: run every turn | typescript | author | 69 |
-| 04 | `04-conditional-daemons-react-to-state.ts` | Conditional daemons: react to state | typescript | author | 132 |
-| 05 | `05-fuses-count-down-and-fire.ts` | Fuses: count down and fire | typescript | author | 188 |
-| 06 | `06-giving-the-announcements-their-words.ts` | Giving the announcements their words | typescript | author | 225 |
+| 01 | `01-how-the-scheduler-ticks.ts` | How the scheduler ticks | typescript | author | 28 |
+| 02 | `02-how-the-scheduler-ticks.ts` | How the scheduler ticks | typescript | author | 52 |
+| 03 | `03-daemons-run-every-turn.ts` | Daemons: run every turn | typescript | author | 73 |
+| 04 | `04-conditional-daemons-react-to-state.ts` | Conditional daemons: react to state | typescript | author | 136 |
+| 05 | `05-fuses-count-down-and-fire.ts` | Fuses: count down and fire | typescript | author | 192 |
+| 06 | `06-giving-the-announcements-their-words.ts` | Giving the announcements their words | typescript | author | 229 |
 
 ## Scoring & Endgame: Winning the Game
 
@@ -335,10 +335,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-what-the-client-is-responsible-for.ts` | What the client is responsible for | typescript | author | 20 |
-| 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 71 |
-| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 133 |
-| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 156 |
+| 01 | `01-what-the-client-is-responsible-for.ts` | What the client is responsible for | typescript | author | 23 |
+| 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 77 |
+| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 141 |
+| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 165 |
 
 ## Decoration & Theming: Style Without HTML on the Wire
 
@@ -380,7 +380,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-running-them.sh` | Running them | bash | author | 112 |
+| 01 | `01-running-them.sh` | Running them | bash | author | 208 |
 
 ## Saving & Restoring: State Lives in the World
 

@@ -17,9 +17,13 @@ countdown timer that fires once when it reaches zero, optionally re-arming to fi
 again.
 
 Registration follows the same `onEngineReady()` pattern as the NPC plugin, and in
-fact lives in the *same* `onEngineReady`, alongside the NPC registration from
-Chapter 20. The daemon `run` functions return `ISemanticEvent[]`, and one reads an
-`IdentityTrait`, so the imports grow a little:
+fact lives in the *same* `onEngineReady`. Put the scheduler block directly below
+the NPC registration from Chapter 20, exactly as the listing shows, with Chapter
+13's chain handlers staying below it. (This is a chapter saying otherwise than
+the placement rule: either spot inside the method works, because these
+registrations don't depend on each other, but the listing's position is the one
+to follow.) The daemon `run` functions return `ISemanticEvent[]`, and one reads
+an `IdentityTrait`, so the imports grow a little:
 
 ```typescript
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
