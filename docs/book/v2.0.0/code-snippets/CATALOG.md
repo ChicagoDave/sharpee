@@ -34,13 +34,13 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 04 | `04-creating-a-story-project.sh` | Creating a story project | bash | author | 106 |
 | 05 | `05-building-the-story.sh` | Building the story | bash | author | 132 |
 | 06 | `06-playing-it.sh` | Playing it | bash | author | 153 |
-| 07 | `07-playing-it.sh` | Playing it | bash | author | 162 |
-| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 202 |
-| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 214 |
-| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 222 |
-| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 230 |
-| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 236 |
-| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 244 |
+| 07 | `07-playing-it.sh` | Playing it | bash | author | 169 |
+| 08 | `08-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 209 |
+| 09 | `09-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 221 |
+| 10 | `10-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 229 |
+| 11 | `11-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 237 |
+| 12 | `12-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 243 |
+| 13 | `13-a-typescript-primer.ts` | A TypeScript primer | typescript | author | 251 |
 
 ## Your First Room: Entities, Traits, and the World
 
@@ -88,7 +88,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-everything-is-portable-by-default.ts` | Everything is portable by default | typescript | author | 22 |
 | 02 | `02-entitytype-scenery-makes-a-thing-fixed.ts` | EntityType.SCENERY makes a thing fixed | typescript | author | 48 |
 | 03 | `03-aliases-make-objects-findable.ts` | Aliases make objects findable | typescript | author | 99 |
-| 04 | `04-putting-it-together.ts` | Putting it together | typescript | author | 159 |
+| 04 | `04-putting-it-together.ts` | Putting it together | typescript | author | 160 |
 
 ## Containers & Supporters: What Holds What
 
@@ -188,14 +188,14 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-custom-actions-teaching-the-parser-new-verbs.ts` | Custom Actions: Teaching the Parser New Verbs | typescript | author | 12 |
-| 02 | `02-the-four-phase-action.ts` | The four-phase action | typescript | author | 34 |
-| 03 | `03-a-complete-custom-action-feeding.ts` | A complete custom action: feeding | typescript | author | 82 |
-| 04 | `04-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 187 |
-| 05 | `05-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 242 |
-| 06 | `06-telling-the-engine-getcustomactions.ts` | Telling the engine: getCustomActions | typescript | author | 263 |
-| 07 | `07-teaching-the-parser-extendparser.ts` | Teaching the parser: extendParser | typescript | author | 274 |
-| 08 | `08-supplying-the-text-extendlanguage.ts` | Supplying the text: extendLanguage | typescript | author | 301 |
+| 01 | `01-custom-actions-teaching-the-parser-new-verbs.ts` | Custom Actions: Teaching the Parser New Verbs | typescript | author | 16 |
+| 02 | `02-the-four-phase-action.ts` | The four-phase action | typescript | author | 38 |
+| 03 | `03-a-complete-custom-action-feeding.ts` | A complete custom action: feeding | typescript | author | 86 |
+| 04 | `04-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 191 |
+| 05 | `05-a-second-action-photographing.ts` | A second action: photographing | typescript | author | 246 |
+| 06 | `06-telling-the-engine-getcustomactions.ts` | Telling the engine: getCustomActions | typescript | author | 267 |
+| 07 | `07-teaching-the-parser-extendparser.ts` | Teaching the parser: extendParser | typescript | author | 278 |
+| 08 | `08-supplying-the-text-extendlanguage.ts` | Supplying the text: extendLanguage | typescript | author | 305 |
 
 ## Capability Dispatch: One Verb, Many Rules
 
@@ -310,9 +310,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 128 |
 | 06 | `06-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 149 |
 | 07 | `07-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 191 |
-| 08 | `08-the-victory-daemon.ts` | The victory daemon | typescript | author | 225 |
-| 09 | `09-the-victory-daemon.ts` | The victory daemon | typescript | author | 263 |
-| 10 | `10-the-victory-daemon.ts` | The victory daemon | typescript | author | 270 |
+| 08 | `08-the-victory-daemon.ts` | The victory daemon | typescript | author | 230 |
+| 09 | `09-the-victory-daemon.ts` | The victory daemon | typescript | author | 268 |
+| 10 | `10-the-victory-daemon.ts` | The victory daemon | typescript | author | 275 |
 
 # Volume VII — Presentation
 
@@ -332,9 +332,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-what-the-client-is-responsible-for.ts` | What the client is responsible for | typescript | author | 20 |
-| 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 68 |
-| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 127 |
-| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 150 |
+| 02 | `02-how-a-turn-reaches-the-screen.ts` | How a turn reaches the screen | typescript | author | 71 |
+| 03 | `03-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 132 |
+| 04 | `04-overriding-a-renderer.ts` | Overriding a renderer | typescript | author | 155 |
 
 ## Decoration & Theming: Style Without HTML on the Wire
 
@@ -367,8 +367,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-each-file-exports-a-builder-and-its-ids.ts` | Each file exports a builder and its IDs | typescript | author | 59 |
-| 02 | `02-the-index-wires-it-together.ts` | The index wires it together | typescript | author | 87 |
+| 01 | `01-each-file-exports-a-builder-and-its-ids.ts` | Each file exports a builder and its IDs | typescript | author | 66 |
+| 02 | `02-the-index-wires-it-together.ts` | The index wires it together | typescript | author | 94 |
 
 ## Transcript Testing & Walkthroughs: Proving the Game Still Works
 
@@ -376,7 +376,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-running-them.sh` | Running them | bash | author | 109 |
+| 01 | `01-running-them.sh` | Running them | bash | author | 111 |
 
 ## Saving & Restoring: State Lives in the World
 

@@ -58,7 +58,10 @@ once, and `sharpee build --browser` regenerates the host page around it on each
 build; the build stops with an error if `src/browser-entry.ts` is missing. But
 knowing the three calls demystifies what the bundle is doing: `initialize` learns
 the DOM, `connectEngine` subscribes to the engine, and `start` runs the opening
-turn.
+turn. Your own scaffolded entry will differ from this listing in the
+particulars, because its theme ids, storage prefix, and story import come from
+your project rather than the zoo's; the shape is what matters, so leave the
+scaffold's values as they are.
 
 ## How a turn reaches the screen
 
@@ -114,9 +117,11 @@ it with CSS and replaces a renderer with a function. There is no framework API t
 
 Because each channel maps to one registered renderer, customizing the UI is
 *re-registering*. After the platform defaults are in place, available from
-`connectEngine` onward, a story grabs the renderer and registers its own. There are
-two cases, and they differ in one way: whether the channel already has a place on the
-page.
+`connectEngine` onward, a story grabs the renderer and registers its own. All of
+these registrations live in `src/browser-entry.ts`, after `connectEngine` and
+before `client.start()`; the scaffolded entry marks the spot with a comment.
+There are two cases, and they differ in one way: whether the channel already has
+a place on the page.
 
 **Replacing an existing channel's renderer.** A standard channel like `score`
 already renders into a platform element, the status line. To change *how* it looks,

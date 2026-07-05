@@ -955,7 +955,9 @@ through the complete game. Each chapter’s code matches a real, compiled
 snapshot in the book’s companion repository, under
 <code>tutorials/familyzoo/v2.0.0/src/</code>; browse it on GitHub at <a href="https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/v2.0.0/src" class="uri">https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/v2.0.0/src</a>.
 You don’t need to clone anything to read along; anything you read here,
-you can run.</p>
+you can run. The one exception is Chapter 28, a <strong>read-along
+tour</strong> of the finished multi-file project: its code lives in the
+companion repository and is meant to be browsed there, not typed in.</p>
 <h2 data-number="0.6" id="conventions"><span class="header-section-number">0.6</span> Conventions</h2>
 <ul>
 <li>Commands you type into the game are shown in a transcript block,
@@ -1114,9 +1116,18 @@ own.)</p>
 <p>A story bundle isn’t much fun to read as a <code>.sharpee</code>
 file; you want to <em>play</em> it. The simplest way is a self-contained
 web client. Add one to your project, then build:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> init-browser          <span class="co"># adds src/browser-entry.ts</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># now also emits a web client → dist/web/</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> init-browser   <span class="co"># adds the browser entry and its support files</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">sharpee</span> build          <span class="co"># now also emits a web client → dist/web/</span></span></code></pre></div>
+<p><code>init-browser</code> creates <code>src/browser-entry.ts</code>
+(the wiring file you’ll meet in Volume VII), a build-stamped
+<code>src/version.ts</code>, a
+<code>browser/&lt;package-name&gt;.css</code> stylesheet for your style
+overrides, and adds the browser runtime dependencies to
+<code>package.json</code>. If its output suggests running
+<code>npm install</code>, do so. One general note while you’re here: the
+CLI’s on-screen “next steps” hints can drift slightly between releases;
+when a hint and this book disagree, follow the book, whose flow every
+chapter builds on.</p>
 <p><code>dist/web/</code> is a complete, static web page. Serve it with
 any static file server and open it in a browser:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> http.server <span class="at">-d</span> dist/web</span></code></pre></div>
@@ -1285,7 +1296,8 @@ thing?” and “what can it <em>do</em>?”</p>
 The type is a hint to the engine: <code>EntityType.ROOM</code>,
 <code>EntityType.ITEM</code>, <code>EntityType.ACTOR</code>,
 <code>EntityType.SCENERY</code>, and so on.</p>
-<p>In this version we use five traits:</p>
+<p>In this version we construct four traits, and import a fifth for
+later:</p>
 <ul>
 <li><strong><code>IdentityTrait</code></strong>: a name, description,
 and aliases. Almost every entity has one. The <code>description</code>
@@ -1296,10 +1308,13 @@ character. <code>isPlayer: true</code> tells the engine this is
 <em>the</em> player.</li>
 <li><strong><code>ContainerTrait</code></strong>: lets an entity hold
 other entities. The player needs it to carry an inventory.</li>
-<li><strong><code>SceneryTrait</code></strong>: marks an entity as
-fixed. The player can examine it but not take it.</li>
 <li><strong><code>RoomTrait</code></strong>: marks an entity as a room,
 with exits and a darkness flag.</li>
+<li><strong><code>SceneryTrait</code></strong>: marks an entity as
+fixed, so the player can examine it but not take it. This chapter’s
+scenery gets its fixedness from <code>EntityType.SCENERY</code> alone,
+so the trait isn’t constructed here; it sits in the import block because
+Chapter 5 puts it to work.</li>
 </ul>
 <h2 data-number="2.3" id="the-shape-of-the-file"><span class="header-section-number">2.3</span> The shape of the file</h2>
 <p>Before the methods, the top of the file: the
@@ -1530,7 +1545,9 @@ contains the text (matching is case-insensitive). Now run
 everything:</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> sharpee build <span class="at">--test</span></span></code></pre></div>
 <p>The build compiles the story, then replays every transcript it finds
-against a fresh copy of the game:</p>
+against a fresh copy of the game. The output below is trimmed to the
+part that matters; the real run also prints the build steps, absolute
+file paths, and a closing totals block:</p>
 <pre class="text"><code>Running: tests/transcripts/first-room.transcript
   &quot;First room&quot;
 
@@ -2171,8 +2188,10 @@ one.</p>
 <p>Fill each room with scenery for atmosphere, then scatter a few
 takeable items. Scenery is typed <code>EntityType.SCENERY</code>, which
 fixes it in place; items get nothing extra. (The iron fence below is the
-same one from the <code>EntityType.SCENERY</code> section above,
-repeated here so the whole version is in one listing; add it once.)</p>
+same one from the <code>EntityType.SCENERY</code> section above, shown
+again so this listing reads whole; add it once. The souvenir penny you
+created earlier in the chapter is not re-shown; it stays where you typed
+it.)</p>
 <div class="sourceCode" id="cb41"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Scenery: the SCENERY type fixes it in place, examinable,</span></span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="co">// mentioned in room prose.</span></span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> fence <span class="op">=</span> world<span class="op">.</span><span class="fu">createEntity</span>(</span>
@@ -4222,7 +4241,11 @@ layer of Sharpee at once: the action logic, the grammar that recognizes
 the words, and the language that holds the text. This chapter feeds the
 goats and snaps photos to show all three.</p>
 <p>Wiring an action touches several packages, so this chapter’s imports
-span a few:</p>
+span a few. The block below is the complete set the chapter’s code
+relies on; your file already imports several of these
+(<code>ISemanticEvent</code> since Chapter 13, the world-model names
+since Chapter 2), so add only the ones you’re missing (TypeScript
+rejects importing the same identifier twice):</p>
 <div class="sourceCode" id="cb94"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb94-1"><a href="#cb94-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> {</span>
 <span id="cb94-2"><a href="#cb94-2" aria-hidden="true" tabindex="-1"></a>  Action<span class="op">,</span> ActionContext<span class="op">,</span> ValidationResult<span class="op">,</span></span>
 <span id="cb94-3"><a href="#cb94-3" aria-hidden="true" tabindex="-1"></a>} <span class="im">from</span> <span class="st">&#39;@sharpee/stdlib&#39;</span><span class="op">;</span></span>
@@ -6728,23 +6751,28 @@ way. Feeding the goats or rabbits and photographing an animal award
 inside their custom actions’ <code>execute()</code> (like petting,
 above); pressing a souvenir penny awards in the penny-press chain from
 Chapter 13 (like collecting the map):</p>
-<div class="sourceCode" id="cb164"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb164-1"><a href="#cb164-1" aria-hidden="true" tabindex="-1"></a><span class="co">// inside the feeding action&#39;s execute(), keyed on which</span></span>
-<span id="cb164-2"><a href="#cb164-2" aria-hidden="true" tabindex="-1"></a><span class="co">// animal was fed:</span></span>
-<span id="cb164-3"><a href="#cb164-3" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">awardScore</span>(ScoreIds<span class="op">.</span><span class="at">FEED_GOATS</span><span class="op">,</span></span>
-<span id="cb164-4"><a href="#cb164-4" aria-hidden="true" tabindex="-1"></a>  ScorePoints[ScoreIds<span class="op">.</span><span class="at">FEED_GOATS</span>]<span class="op">,</span> <span class="st">&#39;Fed the goats&#39;</span>)<span class="op">;</span></span>
-<span id="cb164-5"><a href="#cb164-5" aria-hidden="true" tabindex="-1"></a><span class="co">//   …and ScoreIds.FEED_RABBITS the same way when the</span></span>
-<span id="cb164-6"><a href="#cb164-6" aria-hidden="true" tabindex="-1"></a><span class="co">//   rabbits are fed.</span></span>
-<span id="cb164-7"><a href="#cb164-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb164-8"><a href="#cb164-8" aria-hidden="true" tabindex="-1"></a><span class="co">// inside the photograph action&#39;s execute():</span></span>
-<span id="cb164-9"><a href="#cb164-9" aria-hidden="true" tabindex="-1"></a>world<span class="op">.</span><span class="fu">awardScore</span>(ScoreIds<span class="op">.</span><span class="at">PHOTOGRAPH_ANIMAL</span><span class="op">,</span></span>
-<span id="cb164-10"><a href="#cb164-10" aria-hidden="true" tabindex="-1"></a>  ScorePoints[ScoreIds<span class="op">.</span><span class="at">PHOTOGRAPH_ANIMAL</span>]<span class="op">,</span></span>
-<span id="cb164-11"><a href="#cb164-11" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;Photographed an animal&#39;</span>)<span class="op">;</span></span>
-<span id="cb164-12"><a href="#cb164-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb164-13"><a href="#cb164-13" aria-hidden="true" tabindex="-1"></a><span class="co">// in the penny-press chain (Chapter 13), the same shape as</span></span>
-<span id="cb164-14"><a href="#cb164-14" aria-hidden="true" tabindex="-1"></a><span class="co">// the map award:</span></span>
-<span id="cb164-15"><a href="#cb164-15" aria-hidden="true" tabindex="-1"></a>w<span class="op">.</span><span class="fu">awardScore</span>(ScoreIds<span class="op">.</span><span class="at">COLLECT_PRESSED_PENNY</span><span class="op">,</span></span>
-<span id="cb164-16"><a href="#cb164-16" aria-hidden="true" tabindex="-1"></a>  ScorePoints[ScoreIds<span class="op">.</span><span class="at">COLLECT_PRESSED_PENNY</span>]<span class="op">,</span></span>
-<span id="cb164-17"><a href="#cb164-17" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;Pressed a souvenir penny&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb164"><pre class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb164-1"><a href="#cb164-1" aria-hidden="true" tabindex="-1"></a><span class="co">// inside the feeding action&#39;s execute(), after its existing</span></span>
+<span id="cb164-2"><a href="#cb164-2" aria-hidden="true" tabindex="-1"></a><span class="co">// `const target = ...` line, keyed on which animal was fed:</span></span>
+<span id="cb164-3"><a href="#cb164-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> name <span class="op">=</span> target<span class="op">?.</span><span class="at">name</span><span class="op">?.</span><span class="fu">toLowerCase</span>() <span class="op">??</span> <span class="st">&#39;&#39;</span><span class="op">;</span></span>
+<span id="cb164-4"><a href="#cb164-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (name<span class="op">.</span><span class="fu">includes</span>(<span class="st">&#39;goat&#39;</span>)) {</span>
+<span id="cb164-5"><a href="#cb164-5" aria-hidden="true" tabindex="-1"></a>  context<span class="op">.</span><span class="at">world</span><span class="op">.</span><span class="fu">awardScore</span>(ScoreIds<span class="op">.</span><span class="at">FEED_GOATS</span><span class="op">,</span></span>
+<span id="cb164-6"><a href="#cb164-6" aria-hidden="true" tabindex="-1"></a>    ScorePoints[ScoreIds<span class="op">.</span><span class="at">FEED_GOATS</span>]<span class="op">,</span> <span class="st">&#39;Fed the goats&#39;</span>)<span class="op">;</span></span>
+<span id="cb164-7"><a href="#cb164-7" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> <span class="cf">if</span> (name<span class="op">.</span><span class="fu">includes</span>(<span class="st">&#39;rabbit&#39;</span>)) {</span>
+<span id="cb164-8"><a href="#cb164-8" aria-hidden="true" tabindex="-1"></a>  context<span class="op">.</span><span class="at">world</span><span class="op">.</span><span class="fu">awardScore</span>(ScoreIds<span class="op">.</span><span class="at">FEED_RABBITS</span><span class="op">,</span></span>
+<span id="cb164-9"><a href="#cb164-9" aria-hidden="true" tabindex="-1"></a>    ScorePoints[ScoreIds<span class="op">.</span><span class="at">FEED_RABBITS</span>]<span class="op">,</span> <span class="st">&#39;Fed the rabbits&#39;</span>)<span class="op">;</span></span>
+<span id="cb164-10"><a href="#cb164-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb164-11"><a href="#cb164-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb164-12"><a href="#cb164-12" aria-hidden="true" tabindex="-1"></a><span class="co">// inside the photograph action&#39;s execute() (rename its unused</span></span>
+<span id="cb164-13"><a href="#cb164-13" aria-hidden="true" tabindex="-1"></a><span class="co">// `_context` parameter to `context`, now that the body uses it):</span></span>
+<span id="cb164-14"><a href="#cb164-14" aria-hidden="true" tabindex="-1"></a>context<span class="op">.</span><span class="at">world</span><span class="op">.</span><span class="fu">awardScore</span>(ScoreIds<span class="op">.</span><span class="at">PHOTOGRAPH_ANIMAL</span><span class="op">,</span></span>
+<span id="cb164-15"><a href="#cb164-15" aria-hidden="true" tabindex="-1"></a>  ScorePoints[ScoreIds<span class="op">.</span><span class="at">PHOTOGRAPH_ANIMAL</span>]<span class="op">,</span></span>
+<span id="cb164-16"><a href="#cb164-16" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;Photographed an animal&#39;</span>)<span class="op">;</span></span>
+<span id="cb164-17"><a href="#cb164-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb164-18"><a href="#cb164-18" aria-hidden="true" tabindex="-1"></a><span class="co">// in the penny-press chain (Chapter 13), after the pressed penny</span></span>
+<span id="cb164-19"><a href="#cb164-19" aria-hidden="true" tabindex="-1"></a><span class="co">// is handed to the player and before the handler returns:</span></span>
+<span id="cb164-20"><a href="#cb164-20" aria-hidden="true" tabindex="-1"></a>w<span class="op">.</span><span class="fu">awardScore</span>(ScoreIds<span class="op">.</span><span class="at">COLLECT_PRESSED_PENNY</span><span class="op">,</span></span>
+<span id="cb164-21"><a href="#cb164-21" aria-hidden="true" tabindex="-1"></a>  ScorePoints[ScoreIds<span class="op">.</span><span class="at">COLLECT_PRESSED_PENNY</span>]<span class="op">,</span></span>
+<span id="cb164-22"><a href="#cb164-22" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;Pressed a souvenir penny&#39;</span>)<span class="op">;</span></span></code></pre></div>
 <p>With all twelve awards in place the scores sum to the full 75, so the
 victory daemon below has a target it can actually reach. Leave any of
 these four out and the game caps at 40 (or wherever you stopped) and the
@@ -6836,9 +6864,6 @@ doubles as a full walkthrough of the game so far. Add
 story: familyzoo
 description: All 75 points are earnable and the game can be won
 
-# press a penny, read ...&quot;); expanded to the full 12 achievements.
-# &quot;&gt; south; east&quot; compound split as before.
-
 ---
 
 &gt; score
@@ -6919,8 +6944,7 @@ description: All 75 points are earnable and the game can be won
 &gt; switch on flashlight
 [OK: not contains &quot;can&#39;t&quot;]
 
-# The victory daemon fires on the turn the 75th point is awarded (this one),
-# not on the later `score` command as the book&#39;s Try-it annotation implies.
+# Victory fires on this move: the 75th point lands.
 &gt; south
 [OK: contains &quot;Nocturnal Animals Exhibit&quot;]
 [OK: contains &quot;JUNIOR ZOOKEEPER&quot;]
@@ -7220,8 +7244,11 @@ regenerates the host page around it on each build; the build stops with
 an error if <code>src/browser-entry.ts</code> is missing. But knowing
 the three calls demystifies what the bundle is doing:
 <code>initialize</code> learns the DOM, <code>connectEngine</code>
-subscribes to the engine, and <code>start</code> runs the opening
-turn.</p>
+subscribes to the engine, and <code>start</code> runs the opening turn.
+Your own scaffolded entry will differ from this listing in the
+particulars, because its theme ids, storage prefix, and story import
+come from your project rather than the zoo’s; the shape is what matters,
+so leave the scaffold’s values as they are.</p>
 <h2 data-number="25.2" id="how-a-turn-reaches-the-screen"><span class="header-section-number">25.2</span> How a turn reaches the
 screen</h2>
 <p>Inside <code>connectEngine</code>, the client builds a
@@ -7279,8 +7306,11 @@ a function. There is no framework API to learn.</p>
 <p>Because each channel maps to one registered renderer, customizing the
 UI is <em>re-registering</em>. After the platform defaults are in place,
 available from <code>connectEngine</code> onward, a story grabs the
-renderer and registers its own. There are two cases, and they differ in
-one way: whether the channel already has a place on the page.</p>
+renderer and registers its own. All of these registrations live in
+<code>src/browser-entry.ts</code>, after <code>connectEngine</code> and
+before <code>client.start()</code>; the scaffolded entry marks the spot
+with a comment. There are two cases, and they differ in one way: whether
+the channel already has a place on the page.</p>
 <p><strong>Replacing an existing channel’s renderer.</strong> A standard
 channel like <code>score</code> already renders into a platform element,
 the status line. To change <em>how</em> it looks, re-register against
@@ -7945,6 +7975,12 @@ and by now the Family Zoo has grown past what one file should hold. This
 chapter is the turn from <em>learning Sharpee</em> to <em>shipping a
 Sharpee game</em>. It starts where every growing project does: splitting
 one long file into many.</p>
+<p>One thing to know before you begin: this is the book’s one
+<strong>read-along chapter</strong>. The seven-file project it walks
+through is finished code in the companion repository, and you read it
+there rather than typing it in. Your own single-file zoo keeps working
+exactly as it is for every chapter that follows; adopting the split is
+optional and can happen whenever your project feels ready for it.</p>
 <h2 data-number="28.1" id="when-one-file-stops-working"><span class="header-section-number">28.1</span> When one file stops
 working</h2>
 <p>Through most of this book the zoo lived in a single source file
@@ -7963,8 +7999,9 @@ the prose changes together. Each becomes a file.</p>
 code type</h2>
 <p>Family Zoo splits into seven files, each owning one slice of the
 world. All seven live in the companion repository at <a href="https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/v2.0.0/src/ch28-multi-file"><code>tutorials/familyzoo/v2.0.0/src/ch28-multi-file/</code></a>;
-this chapter walks their structure rather than reprinting every line, so
-open them on GitHub alongside as we go:</p>
+this chapter walks their structure rather than reprinting every line.
+Open them on GitHub and read along as we go; there is nothing to type in
+this chapter:</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -8107,10 +8144,11 @@ elements by <strong>concern</strong>: things that change together are
 sticky, so they belong in the same file. Each file exposes a builder and
 a typed set of IDs that flow forward through the build, so files stay
 decoupled and the <code>Story</code> class in <code>index.ts</code> is
-just a thin wiring layer. Version 17 proves the structure by adding a
-whole second act (the after-hours phase) without making any one file
-harder to read. The rest of this volume is about getting the zoo to
-players: testing, saving, building, and serving it.</p>
+just a thin wiring layer. The <code>ch28-multi-file/</code> snapshot
+proves the structure by adding a whole second act (the after-hours
+phase) without making any one file harder to read. The rest of this
+volume is about getting the zoo to players: testing, saving, building,
+and serving it.</p>
 <h1 data-number="29" id="transcript-testing-walkthroughs-proving-the-game-still-works"><span class="header-section-number">29</span> Transcript Testing &amp;
 Walkthroughs: Proving the Game Still Works</h1>
 <p>The zoo is a real game now, spread across seven files and two acts,
@@ -8226,9 +8264,11 @@ loops (capped at 100 iterations), and <code>[NAVIGATE TO: &quot;Room&quot;]</cod
 walks the player somewhere by name; together they cope with a randomized
 exit or a roaming NPC without hard-coding one exact path.</li>
 </ul>
-<p>For the zoo, the after-hours act is the natural thing to bracket in a
+<p>For a zoo that has adopted Chapter 28’s multi-file project, the
+after-hours act is the natural thing to bracket in a
 <code>[GOAL]</code>: <code>[ENSURES: …]</code> the after-hours bonus was
-scored once the closing sequence has run.</p>
+scored once the closing sequence has run. (The single-file zoo has no
+second act yet, so skip this bracket if you stayed single-file.)</p>
 <h2 data-number="29.5" id="running-them"><span class="header-section-number">29.5</span> Running them</h2>
 <p>Authors run tests through the build CLI, which compiles, bundles, and
 tests in one step:</p>

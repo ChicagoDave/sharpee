@@ -7,7 +7,11 @@ and wiring one up means touching every layer of Sharpee at once: the action
 logic, the grammar that recognizes the words, and the language that holds the
 text. This chapter feeds the goats and snaps photos to show all three.
 
-Wiring an action touches several packages, so this chapter's imports span a few:
+Wiring an action touches several packages, so this chapter's imports span a few.
+The block below is the complete set the chapter's code relies on; your file
+already imports several of these (`ISemanticEvent` since Chapter 13, the
+world-model names since Chapter 2), so add only the ones you're missing
+(TypeScript rejects importing the same identifier twice):
 
 ```typescript
 import {

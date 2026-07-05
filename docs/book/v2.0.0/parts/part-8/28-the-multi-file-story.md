@@ -12,6 +12,13 @@ grown past what one file should hold. This chapter is the turn from *learning
 Sharpee* to *shipping a Sharpee game*. It starts where every growing project does:
 splitting one long file into many.
 
+One thing to know before you begin: this is the book's one **read-along
+chapter**. The seven-file project it walks through is finished code in the
+companion repository, and you read it there rather than typing it in. Your own
+single-file zoo keeps working exactly as it is for every chapter that follows;
+adopting the split is optional and can happen whenever your project feels ready
+for it.
+
 ## When one file stops working
 
 Through most of this book the zoo lived in a single source file because each chapter
@@ -30,8 +37,8 @@ rules change together; the prose changes together. Each becomes a file.
 Family Zoo splits into seven files, each owning one slice of the world. All seven
 live in the companion repository at
 [`tutorials/familyzoo/v2.0.0/src/ch28-multi-file/`](https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/v2.0.0/src/ch28-multi-file);
-this chapter walks their structure rather than reprinting every line, so open them
-on GitHub alongside as we go:
+this chapter walks their structure rather than reprinting every line. Open them on
+GitHub and read along as we go; there is nothing to type in this chapter:
 
 | File | Owns |
 |---|---|
@@ -137,7 +144,7 @@ As your story grows, one file becomes unwieldy. Split your story elements by
 **concern**: things that change together are sticky, so they belong in the same
 file. Each file exposes a builder and a typed set of IDs that flow forward through
 the build, so files stay decoupled and the `Story` class in `index.ts` is just a
-thin wiring layer. Version 17 proves the structure by adding a whole second act (the
-after-hours phase) without making any one file harder to read. The rest of this
-volume is about getting the zoo to players: testing, saving, building, and serving
-it.
+thin wiring layer. The `ch28-multi-file/` snapshot proves the structure by adding a
+whole second act (the after-hours phase) without making any one file harder to read.
+The rest of this volume is about getting the zoo to players: testing, saving,
+building, and serving it.

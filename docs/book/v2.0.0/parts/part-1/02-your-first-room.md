@@ -42,13 +42,13 @@ doors, even the player. An entity by itself is just an empty shell with an ID. Y
 
 You create entities with `world.createEntity(name, type)`. The type is a hint to the engine: `EntityType.ROOM`, `EntityType.ITEM`, `EntityType.ACTOR`, `EntityType.SCENERY`, and so on.
 
-In this version we use five traits:
+In this version we construct four traits, and import a fifth for later:
 
 - **`IdentityTrait`**: a name, description, and aliases. Almost every entity has one. The `description` is what `examine` shows; the `aliases` are the alternative words the parser will accept.
 - **`ActorTrait`**: marks an entity as a character. `isPlayer: true` tells the engine this is *the* player.
 - **`ContainerTrait`**: lets an entity hold other entities. The player needs it to carry an inventory.
-- **`SceneryTrait`**: marks an entity as fixed. The player can examine it but not take it.
 - **`RoomTrait`**: marks an entity as a room, with exits and a darkness flag.
+- **`SceneryTrait`**: marks an entity as fixed, so the player can examine it but not take it. This chapter's scenery gets its fixedness from `EntityType.SCENERY` alone, so the trait isn't constructed here; it sits in the import block because Chapter 5 puts it to work.
 
 ## The shape of the file
 
@@ -297,7 +297,9 @@ npx sharpee build --test
 ```
 
 The build compiles the story, then replays every transcript it finds against a
-fresh copy of the game:
+fresh copy of the game. The output below is trimmed to the part that matters;
+the real run also prints the build steps, absolute file paths, and a closing
+totals block:
 
 ```text
 Running: tests/transcripts/first-room.transcript

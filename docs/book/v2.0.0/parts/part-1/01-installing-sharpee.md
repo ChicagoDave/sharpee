@@ -151,10 +151,17 @@ it. The simplest way is a self-contained web client. Add one to your project, th
 build:
 
 ```bash
-sharpee init-browser          # adds src/browser-entry.ts
-# now also emits a web client → dist/web/
-sharpee build
+sharpee init-browser   # adds the browser entry and its support files
+sharpee build          # now also emits a web client → dist/web/
 ```
+
+`init-browser` creates `src/browser-entry.ts` (the wiring file you'll meet in
+Volume VII), a build-stamped `src/version.ts`, a `browser/<package-name>.css`
+stylesheet for your style overrides, and adds the browser runtime dependencies
+to `package.json`. If its output suggests running `npm install`, do so. One
+general note while you're here: the CLI's on-screen "next steps" hints can
+drift slightly between releases; when a hint and this book disagree, follow
+the book, whose flow every chapter builds on.
 
 `dist/web/` is a complete, static web page. Serve it with any static file
 server and open it in a browser:

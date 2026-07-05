@@ -75,7 +75,9 @@ a real, compiled snapshot in the book's companion repository, under
 `tutorials/familyzoo/v2.0.0/src/`; browse it on GitHub at
 <https://github.com/ChicagoDave/sharpee/tree/main/tutorials/familyzoo/v2.0.0/src>.
 You don't need to clone anything to read along; anything you read here, you can
-run.
+run. The one exception is Chapter 28, a **read-along tour** of the finished
+multi-file project: its code lives in the companion repository and is meant to
+be browsed there, not typed in.
 
 ## Conventions
 

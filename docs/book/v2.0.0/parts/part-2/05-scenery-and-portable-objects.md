@@ -153,8 +153,9 @@ Creating a thing as `EntityType.SCENERY` is just the quickest way to give it one
 Fill each room with scenery for atmosphere, then scatter a few takeable items.
 Scenery is typed `EntityType.SCENERY`, which fixes it in place; items get nothing
 extra. (The iron fence below is the same one from the `EntityType.SCENERY`
-section above, repeated here so the whole version is in one listing; add it
-once.)
+section above, shown again so this listing reads whole; add it once. The
+souvenir penny you created earlier in the chapter is not re-shown; it stays
+where you typed it.)
 
 ```typescript
 // Scenery: the SCENERY type fixes it in place, examinable,

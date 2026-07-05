@@ -98,8 +98,10 @@ fire on a different turn. Transcripts have control-flow directives for that:
   `[NAVIGATE TO: "Room"]` walks the player somewhere by name; together they cope with
   a randomized exit or a roaming NPC without hard-coding one exact path.
 
-For the zoo, the after-hours act is the natural thing to bracket in a `[GOAL]`:
-`[ENSURES: …]` the after-hours bonus was scored once the closing sequence has run.
+For a zoo that has adopted Chapter 28's multi-file project, the after-hours act
+is the natural thing to bracket in a `[GOAL]`: `[ENSURES: …]` the after-hours
+bonus was scored once the closing sequence has run. (The single-file zoo has no
+second act yet, so skip this bracket if you stayed single-file.)
 
 ## Running them
 

@@ -189,20 +189,25 @@ rabbits and photographing an animal award inside their custom actions' `execute(
 from Chapter 13 (like collecting the map):
 
 ```typescript
-// inside the feeding action's execute(), keyed on which
-// animal was fed:
-world.awardScore(ScoreIds.FEED_GOATS,
-  ScorePoints[ScoreIds.FEED_GOATS], 'Fed the goats');
-//   …and ScoreIds.FEED_RABBITS the same way when the
-//   rabbits are fed.
+// inside the feeding action's execute(), after its existing
+// `const target = ...` line, keyed on which animal was fed:
+const name = target?.name?.toLowerCase() ?? '';
+if (name.includes('goat')) {
+  context.world.awardScore(ScoreIds.FEED_GOATS,
+    ScorePoints[ScoreIds.FEED_GOATS], 'Fed the goats');
+} else if (name.includes('rabbit')) {
+  context.world.awardScore(ScoreIds.FEED_RABBITS,
+    ScorePoints[ScoreIds.FEED_RABBITS], 'Fed the rabbits');
+}
 
-// inside the photograph action's execute():
-world.awardScore(ScoreIds.PHOTOGRAPH_ANIMAL,
+// inside the photograph action's execute() (rename its unused
+// `_context` parameter to `context`, now that the body uses it):
+context.world.awardScore(ScoreIds.PHOTOGRAPH_ANIMAL,
   ScorePoints[ScoreIds.PHOTOGRAPH_ANIMAL],
   'Photographed an animal');
 
-// in the penny-press chain (Chapter 13), the same shape as
-// the map award:
+// in the penny-press chain (Chapter 13), after the pressed penny
+// is handed to the player and before the handler returns:
 w.awardScore(ScoreIds.COLLECT_PRESSED_PENNY,
   ScorePoints[ScoreIds.COLLECT_PRESSED_PENNY],
   'Pressed a souvenir penny');
@@ -318,9 +323,6 @@ title: Scoring and victory
 story: familyzoo
 description: All 75 points are earnable and the game can be won
 
-# press a penny, read ..."); expanded to the full 12 achievements.
-# "> south; east" compound split as before.
-
 ---
 
 > score
@@ -401,8 +403,7 @@ description: All 75 points are earnable and the game can be won
 > switch on flashlight
 [OK: not contains "can't"]
 
-# The victory daemon fires on the turn the 75th point is awarded (this one),
-# not on the later `score` command as the book's Try-it annotation implies.
+# Victory fires on this move: the 75th point lands.
 > south
 [OK: contains "Nocturnal Animals Exhibit"]
 [OK: contains "JUNIOR ZOOKEEPER"]
