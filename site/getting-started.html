@@ -23,16 +23,18 @@
 cd my-adventure
 npm install</code></pre>
 
-    <p>Build and play in your browser:</p>
+    <p>Add the browser client, then build and play:</p>
 
-    <pre><code>sharpee build
-open dist/web/index.html</code></pre>
+    <pre><code>sharpee init-browser
+npm install
+sharpee build
+python3 -m http.server -d dist/web</code></pre>
 
-    <p>That's it. You have a running story.</p>
+    <p>Open <code>http://localhost:8000</code> and you have a running story. (Any static file server works; the build also emits <code>dist/my-adventure.sharpee</code>, the portable story bundle.)</p>
 
     <h2>What You Get</h2>
 
-    <p>The starter project gives you a simple world with a couple of rooms and objects. From there, you build out your story by:</p>
+    <p>The starter project gives you a small working world. From there, you build out your story by:</p>
 
     <ul>
       <li>Creating rooms and connecting them</li>
@@ -48,17 +50,20 @@ open dist/web/index.html</code></pre>
       <li><code>init &lt;name&gt;</code> — Create a new story project</li>
       <li><code>init-browser</code> — Add a browser client to an existing project</li>
       <li><code>build</code> — Build your story bundle and browser client</li>
+      <li><code>build --test</code> — Build, then replay your transcript tests</li>
       <li><code>build-browser</code> — Rebuild the browser client only</li>
+      <li><code>introspect</code> — Print the project's rooms, objects, and NPCs as JSON</li>
       <li><code>ifid</code> — Generate or validate an IFID</li>
+      <li><code>register</code> / <code>list</code> — Name a story's location so <code>build</code> works from anywhere</li>
     </ul>
 
     <h2>Next Steps</h2>
 
-    <p>Try the tutorials to see how a real story comes together:</p>
+    <p>The main tutorial is <a href="the-sharpee-book-v2.0.0.html"><strong>The Sharpee Book</strong></a> (v2.0.0): it builds one complete game, the Family Zoo, across 31 chapters, from this same <code>sharpee init</code> to a themed, tested browser release. Also available:</p>
 
     <ul>
       <li><a href="cloak-of-darkness.html">Cloak of Darkness</a> — The classic IF benchmark, step by step</li>
-      <li><a href="family-zoo.html">Family Zoo</a> — A fuller example with multiple rooms and objects</li>
+      <li><a href="family-zoo.html">Family Zoo</a> — The book's game, with a legacy 17-step web tutorial</li>
     </ul>
 
   </main>

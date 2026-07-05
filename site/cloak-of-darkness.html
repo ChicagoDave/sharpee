@@ -224,10 +224,14 @@ export default story;</code></pre>
 
     <h2>Step 7: Build and Test</h2>
 
-    <p>Build your story:</p>
+    <p>Add the browser client (once per project), then build and serve:</p>
 
-    <pre><code>sharpee build
-open dist/web/index.html</code></pre>
+    <pre><code>sharpee init-browser
+npm install
+sharpee build
+python3 -m http.server -d dist/web</code></pre>
+
+    <p>Open <code>http://localhost:8000</code> to play.</p>
 
     <h2>Sample Playthrough</h2>
 

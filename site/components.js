@@ -36,11 +36,12 @@
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/packages/sharpee/docs/genai-api">API Reference</a>' +
       '<a href="https://github.com/ChicagoDave/sharpee/tree/main/docs/guides">Author Guides</a>' +
       '<hr>' +
-      '<div class="nav-section">Sharpee Book</div>' +
-      '<a href="the-sharpee-book.html">HTML Book</a>' +
-      '<a href="the-sharpee-book.epub" download>Download EPUB</a>' +
-      '<a href="the-sharpee-book.pdf" download>Download PDF</a>' +
+      '<div class="nav-section">The Sharpee Book (v2.0.0)</div>' +
+      '<a href="the-sharpee-book-v2.0.0.html">Read Online</a>' +
+      '<a href="the-sharpee-book-v2.0.0.epub" download>Download EPUB</a>' +
+      '<a href="the-sharpee-book-v2.0.0.pdf" download>Download PDF</a>' +
       link('book-snippets.html', 'Code Snippets') +
+      '<a href="the-sharpee-book.html">v1.5 Edition (previous)</a>' +
     '</nav>' +
     '<div class="theme-toggle">' +
       '<button id="theme-toggle">Light mode</button>' +
@@ -57,6 +58,21 @@
 
   var footer = document.getElementById('footer');
   if (footer) footer.innerHTML = footerHTML;
+
+  // Legacy banner — the zoo web tutorial predates the 2.x line; the book is current
+  if (currentPage.indexOf('zoo-') === 0) {
+    var content = document.querySelector('main.content');
+    if (content) {
+      var banner = document.createElement('div');
+      banner.setAttribute('style',
+        'border: 1px solid var(--accent); border-radius: 6px; padding: 0.75em 1em; margin-bottom: 1.5em;');
+      banner.innerHTML =
+        'This is the legacy Family Zoo web tutorial, written for Sharpee 1.x. ' +
+        'The current tutorial is <a href="the-sharpee-book-v2.0.0.html">The Sharpee Book (v2.0.0)</a>, ' +
+        'which builds the zoo in 31 chapters against Sharpee 2.1.';
+      content.insertBefore(banner, content.firstChild);
+    }
+  }
 
   // Zoo step tabs — only rendered on zoo tutorial pages
   var stepTabs = document.getElementById('step-tabs');
