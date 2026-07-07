@@ -62,6 +62,7 @@ import {
 } from './types';
 import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
+import { validateRoomSnippets } from './snippet-validation';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
 import { createActionContext } from './action-context-factory';
@@ -367,6 +368,10 @@ export class GameEngine {
 
     // Initialize story-specific world content (player must exist first)
     story.initializeWorld(this.world);
+
+    // ADR-209 AC-5: fail load synchronously (naming room and marker) if any
+    // snippet-bearing room's description carries an unbound {snippet:name}.
+    validateRoomSnippets(this.world);
 
     // Configure language provider with narrative settings (ADR-089)
     this.configureLanguageProviderNarrative(newPlayer);

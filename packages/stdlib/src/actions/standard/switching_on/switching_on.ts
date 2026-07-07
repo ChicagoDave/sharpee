@@ -16,6 +16,7 @@ import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
+  RoomTrait,
   SwitchableTrait,
   OpenableTrait,
   SwitchableBehavior,
@@ -324,6 +325,10 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       // title/description. Adding the looking messageId here routed the event
       // through the ADR-097 domain-message template path instead, whose {name}
       // formatter articles the bare room title ("a Shaft Room").
+      // ADR-209: the live room entity carries the snippet map (the snapshot
+      // doesn't); its presence triggers the engine handler's splice pass.
+      const roomEntity = context.world.getEntity(room.id);
+      const roomSnippets = roomEntity?.getTrait(RoomTrait)?.snippets;
       events.push(context.event('if.event.room.description', {
         // Domain data (for event listeners / handlers)
         room: room,
@@ -331,6 +336,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         roomId: room.id,
         roomName: room.name,
         roomDescription: room.description,
+        ...(roomSnippets ? { roomSnippets } : {}),
         includeContents: true,
         verbose: true
       }));

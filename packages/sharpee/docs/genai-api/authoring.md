@@ -53,12 +53,13 @@ export declare function createHelpers(world: IWorldModel): EntityHelpers;
 /**
  * RoomBuilder — fluent builder for room entities.
  *
- * Public interface: description, aliases, dark, build.
+ * Public interface: description, initialDescription, snippets, aliases,
+ * addTrait, dark, build.
  *
  * Owner context: @sharpee/helpers (ADR-140)
  */
 import { IFEntity } from '@sharpee/world-model';
-import type { IWorldModel, ITrait } from '@sharpee/world-model';
+import type { IWorldModel, ITrait, SnippetMap } from '@sharpee/world-model';
 /**
  * Fluent builder for creating room entities.
  *
@@ -74,6 +75,7 @@ export declare class RoomBuilder {
     private name;
     private _description?;
     private _initialDescription?;
+    private _snippets?;
     private _aliases?;
     private _isDark;
     private _traits;
@@ -95,6 +97,18 @@ export declare class RoomBuilder {
      * @returns this (for chaining)
      */
     initialDescription(desc: string): this;
+    /**
+     * Set the room's marker→snippet table (ADR-209).
+     *
+     * `{snippet:name}` markers in the room's `description` /
+     * `initialDescription` are spliced from these entries at render time.
+     * Populates `RoomTrait.snippets`; a room without a snippet map is never
+     * scanned for markers.
+     *
+     * @param map - Marker name → snippet entry table
+     * @returns this (for chaining)
+     */
+    snippets(map: SnippetMap): this;
     /**
      * Add name aliases for the room.
      *

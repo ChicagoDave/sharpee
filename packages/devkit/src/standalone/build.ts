@@ -172,6 +172,13 @@ export async function runBuildCommand(args: string[], projectDirArg?: string): P
   // Clean up temp story.js
   fs.unlinkSync(storyJsPath);
 
+  // --- Snippet lint (ADR-209 AC-6) ---
+  // Load the compiled story and warn on snippet entries whose marker appears
+  // in neither of a room's description texts (usually mid-edit drift). A
+  // warning only — the build proceeds. An UNBOUND marker, by contrast, fails
+  // the story load itself (engine AC-5) and therefore fails the build here.
+  await lintStorySnippets(projectDir);
+
   // --- Browser client ---
 
   console.log('--- Browser Client ---\n');
@@ -195,6 +202,41 @@ export async function runBuildCommand(args: string[], projectDirArg?: string): P
   }
 
   console.log('Build complete!\n');
+}
+
+/**
+ * Snippet lint (ADR-209 AC-6): load the compiled story and warn, naming room
+ * and entry, for every snippet entry whose marker appears in neither of its
+ * room's description texts. Warnings never fail the build; an unbound MARKER
+ * fails the story load itself (engine AC-5) and is reported as a build error.
+ * A story that can't load here for any other reason skips the lint silently —
+ * `--test` is the diagnosing path for load problems.
+ */
+async function lintStorySnippets(projectDir: string): Promise<void> {
+  let world: unknown;
+  try {
+    // Lazy-load so plain builds don't pay the import cost twice.
+    const { loadStory } = require('@sharpee/transcript-tester');
+    const game = await loadStory(projectDir);
+    world = game.world;
+  } catch (error: any) {
+    if (error?.name === 'SnippetValidationError') {
+      console.error('--- Snippet Lint ---\n');
+      console.error(`  Error: ${error.message}\n`);
+      process.exit(1);
+    }
+    return; // story didn't load in the build environment — lint skipped
+  }
+
+  const { lintUnusedSnippetEntries } = require('@sharpee/engine');
+  const unused = lintUnusedSnippetEntries(world);
+  if (unused.length > 0) {
+    console.log('--- Snippet Lint ---\n');
+    for (const u of unused) {
+      console.log(`  Warning: room "${u.room}": snippet entry '${u.entry}' matches no {snippet:${u.entry}} marker`);
+    }
+    console.log('');
+  }
 }
 
 /**

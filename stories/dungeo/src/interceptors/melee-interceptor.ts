@@ -219,6 +219,19 @@ function handleVillainDeath(
       const frame = createEmptyFrame(world);
       world.moveEntity(frame.id, lairRoomId ?? null);
 
+      // ADR-209: light up the lair's frame mention now that the frame exists.
+      // The mentions gate keeps it honest if the frame later leaves the room
+      // (broken into the frame piece, taken, etc.).
+      if (lairRoomId) {
+        const lairTrait = world.getEntity(lairRoomId)?.get(RoomTrait);
+        if (lairTrait?.snippets) {
+          lairTrait.snippets.frame = {
+            text: ' An empty frame hangs on the far wall.',
+            mentions: frame.id,
+          };
+        }
+      }
+
       // 4. Reveal all concealed treasures in the lair (MDL: OVISON restored on death)
       if (lairRoomId) {
         const lairContents = world.getContents(lairRoomId);

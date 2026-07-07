@@ -56,12 +56,24 @@ export class ConcealmentTestStory implements Story {
   initializeWorld(world: WorldModel): void {
     const player = world.getPlayer()!;
 
-    // Study — main test room with hiding spots
+    // Study — main test room with hiding spots. Carries an ADR-209 snippet in
+    // BOTH description texts: the first look (first visit) renders the
+    // initialDescription, the second the standard description, and the shared
+    // clock counter must advance across them (AC-9).
     const study = world.createEntity('study', EntityType.ROOM);
-    study.add(new RoomTrait());
+    study.add(new RoomTrait({
+      initialDescription:
+        'You step into a quiet study: heavy curtains, a large desk, a tall armoire.{snippet:clock}',
+      snippets: {
+        clock: [
+          ' A grandfather clock ticks softly in the corner.',
+          ' The grandfather clock ticks away, unhurried.',
+        ],
+      },
+    }));
     study.add(new IdentityTrait({
       name: 'Study',
-      description: 'A quiet study with heavy curtains, a large desk, and a tall armoire.',
+      description: 'A quiet study with heavy curtains, a large desk, and a tall armoire.{snippet:clock}',
     }));
 
     // Hall — connected room for movement tests
@@ -72,11 +84,51 @@ export class ConcealmentTestStory implements Story {
       description: 'A plain hallway.',
     }));
 
+    // Parlor — ADR-209 snippet test room, east of the hall. Exercises the
+    // splice pass end to end: a fixed string entry (cabinet), a cycling list
+    // (mantel), a duplicated marker resolving once per render (dust, AC-8),
+    // and a `mentions`-gated entry that evaporates while the trunk is out of
+    // the room (AC-4/Q9 — transitive containment; a CARRIED trunk still
+    // counts as present until its carrier leaves).
+    const trunk = world.createEntity('trunk', EntityType.ITEM);
+    trunk.add(new IdentityTrait({
+      name: 'battered trunk',
+      aliases: ['trunk'],
+      description: 'A battered steamer trunk, much travelled.',
+    }));
+
+    const parlor = world.createEntity('parlor', EntityType.ROOM);
+    parlor.add(new RoomTrait({
+      snippets: {
+        cabinet: ', next to a cabinet',
+        mantel: [
+          ', the mantel holding sentimental items',
+          ', its mantel crowded with keepsakes',
+          ', a few sentimental items on the mantel',
+        ],
+        dust: [' Thick dust', ' Thin dust'],
+        trunk: { text: ' A battered trunk sits in the corner.', mentions: trunk.id },
+      },
+    }));
+    parlor.add(new IdentityTrait({
+      name: 'Parlor',
+      description:
+        'The parlor has a doorway to the west{snippet:cabinet} and a marble ' +
+        'fireplace{snippet:mantel}.{snippet:dust} coats the shelves;' +
+        '{snippet:dust} hangs in the air.{snippet:trunk}',
+    }));
+    world.moveEntity(trunk.id, parlor.id);
+
     // Connect rooms
     const studyRoom = study.get(RoomTrait) as RoomTrait;
     const hallRoom = hall.get(RoomTrait) as RoomTrait;
+    const parlorRoom = parlor.get(RoomTrait) as RoomTrait;
     studyRoom.exits = { [Direction.NORTH]: { destination: hall.id } };
-    hallRoom.exits = { [Direction.SOUTH]: { destination: study.id } };
+    hallRoom.exits = {
+      [Direction.SOUTH]: { destination: study.id },
+      [Direction.EAST]: { destination: parlor.id },
+    };
+    parlorRoom.exits = { [Direction.WEST]: { destination: hall.id } };
 
     // Curtain — hide behind
     const curtain = world.createEntity('curtain', EntityType.SCENERY);

@@ -253,6 +253,9 @@ importers:
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@sharpee/transcript-tester':
         specifier: workspace:*
         version: link:../transcript-tester

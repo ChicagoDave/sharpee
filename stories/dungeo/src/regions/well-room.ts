@@ -92,7 +92,7 @@ and all the king's horses can't draw it up?'
   }
 
   const dingyCloset = createRoom(world, 'Dingy Closet',
-    'This is a small, dingy closet. A door leads north.');
+    'This is a small, dingy closet. A door leads north.{snippet:cage}');
 
   const teaRoom = createRoom(world, 'Tea Room',
     'This is a small room with a table. On the table are cakes of various sorts. Passages lead to the west, northwest, and east.');
@@ -544,6 +544,17 @@ function createDingyClosetObjects(world: WorldModel, roomId: string): void {
   }));
   cage.add(new SceneryTrait());
   world.moveEntity(cage.id, roomId);
+
+  // ADR-209: the closet's prose owns the cage mention, gated on the cage
+  // actually being present (the puzzle hurls it across the room but keeps it
+  // here; the gate covers any future relocation).
+  const closet = world.getEntity(roomId);
+  const closetTrait = closet?.get(RoomTrait);
+  if (closetTrait) {
+    closetTrait.snippets = {
+      cage: { text: ' A strange metal cage sits in the middle of the room.', mentions: cage.id },
+    };
+  }
 
   // White crystal sphere - treasure (6 take + 6 case = 12 total)
   const sphere = world.createEntity('white crystal sphere', EntityType.ITEM);

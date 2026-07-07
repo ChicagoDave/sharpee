@@ -57,8 +57,13 @@ export function createWhiteHouseRegion(world: WorldModel): WhiteHouseRoomIds {
   // === Create all rooms ===
 
   const westOfHouse = createRoom(world, 'West of House',
-    'This is an open field west of a white house with a boarded front door.',
+    'This is an open field west of a white house with a boarded front door.{snippet:mailbox}',
     ['west of house', 'field', 'open field']);
+  // ADR-209: scenery is not auto-listed; the room prose owns the quiet
+  // mention (MDL ODESC1 wording).
+  westOfHouse.get(RoomTrait)!.snippets = {
+    mailbox: ' There is a small mailbox here.',
+  };
 
   const northOfHouse = createRoom(world, 'North of House',
     'You are facing the north side of a white house. There is no door here, and all the windows are barred.',

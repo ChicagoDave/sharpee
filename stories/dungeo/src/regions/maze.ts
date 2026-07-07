@@ -141,8 +141,14 @@ export function createMazeRegion(world: WorldModel): MazeRoomIds {
     ['strange passage', 'passage']);
 
   const treasureRoom = createRoom(world, 'Treasure Room',
-    'This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.',
+    'This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.{snippet:frame}',
     ['treasure room', 'thief lair', 'thiefs lair']);
+  // ADR-209: the empty frame doesn't exist until the thief dies; the entry
+  // ships empty (splices nothing) and the melee interceptor fills it in when
+  // it spawns the frame (handler-driven mutation — set, never delete).
+  treasureRoom.get(RoomTrait)!.snippets = {
+    frame: '',
+  };
 
   const roomIds: MazeRoomIds = {
     gratingRoom: gratingRoom.id,

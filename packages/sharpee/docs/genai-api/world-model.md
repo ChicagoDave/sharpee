@@ -2496,6 +2496,7 @@ export declare function hasContainerProperties(trait: any): trait is IContainerC
 
 ```typescript
 import { ITrait } from '../trait';
+import { SnippetMap } from '@sharpee/if-domain';
 import { DirectionType } from '../../constants/directions';
 /**
  * Map position hint for an exit (ADR-113).
@@ -2539,6 +2540,15 @@ export interface IRoomData {
      * If set, takes precedence over literal `initialDescription`.
      */
     initialDescriptionId?: string;
+    /**
+     * Marker→snippet table (ADR-209). When present, `{snippet:name}` markers in
+     * `description` and `initialDescription` are spliced from these entries at
+     * render time; when absent, descriptions are never scanned (braces stay
+     * literal prose). Plain serializable data — selection counters live in the
+     * text-state store, not here. Handlers may mutate entries at runtime (set to
+     * `''` rather than deleting, so load-time validation stays meaningful).
+     */
+    snippets?: SnippetMap;
     /** Ambient sound description */
     ambientSound?: string;
     /** Ambient smell description */
@@ -2586,6 +2596,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     isUnderground: boolean;
     initialDescription?: string;
     initialDescriptionId?: string;
+    snippets?: SnippetMap;
     ambientSound?: string;
     ambientSmell?: string;
     regionId?: string;

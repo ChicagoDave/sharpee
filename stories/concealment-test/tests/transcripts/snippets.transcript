@@ -1,0 +1,88 @@
+title: Room-Description Snippets (ADR-209)
+story: concealment-test
+description: End-to-end splice pass - cycling variants, save/restore counters, mentions gate, duplicate markers, initial/standard shared counters
+
+---
+
+# --- AC-9: initialDescription and description share the clock counter ---
+# First look = first visit = initialDescription, clock pick 1.
+> look
+[OK: contains "You step into a quiet study"]
+[OK: contains "A grandfather clock ticks softly in the corner."]
+
+# Second look = standard description, clock pick 2 (shared counter advanced).
+> look
+[OK: contains "A quiet study with heavy curtains"]
+[OK: contains "The grandfather clock ticks away, unhurried."]
+
+# --- Reach the parlor ---
+> north
+[OK: contains "Hall"]
+
+# --- AC-1 shape: first parlor render — fixed cabinet entry, mantel pick 1,
+# duplicate dust marker resolving identically at both sites (AC-8),
+# trunk mention present (gate open).
+> east
+[OK: contains "Parlor"]
+[OK: contains "doorway to the west, next to a cabinet"]
+[OK: contains "fireplace, the mantel holding sentimental items."]
+[OK: contains "Thick dust coats the shelves; Thick dust hangs in the air."]
+[OK: contains "A battered trunk sits in the corner."]
+
+# --- AC-2: cycling advances in declaration order; dust flips together (AC-8) ---
+> look
+[OK: contains "next to a cabinet"]
+[OK: contains "fireplace, its mantel crowded with keepsakes."]
+[OK: contains "Thin dust coats the shelves; Thin dust hangs in the air."]
+
+# --- AC-3: save mid-cycle ---
+$save snippets-mid-cycle
+
+# mantel pick 3; dust wraps back to Thick.
+> look
+[OK: contains "fireplace, a few sentimental items on the mantel."]
+[OK: contains "Thick dust coats the shelves; Thick dust hangs in the air."]
+
+# AC-2: mantel wraps to pick 1.
+> look
+[OK: contains "fireplace, the mantel holding sentimental items."]
+
+# --- AC-3: restore — the cycle resumes where the save left it ---
+$restore snippets-mid-cycle
+
+> look
+[OK: contains "fireplace, a few sentimental items on the mantel."]
+[OK: contains "Thick dust coats the shelves; Thick dust hangs in the air."]
+
+# --- AC-4: the mentions gate follows the trunk (Q9: transitive containment) ---
+# Carry the trunk out of the parlor and leave it in the hall.
+> take trunk
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Hall"]
+
+> drop trunk
+[OK: contains "Dropped"]
+
+# Trunk elsewhere: its sentence evaporates; everything else still splices.
+> east
+[OK: contains "Parlor"]
+[OK: contains "next to a cabinet"]
+[OK: not contains "A battered trunk sits in the corner."]
+
+# Bring it home: the mention resumes (AC-4, entity returns).
+> west
+[OK: contains "Hall"]
+
+> take trunk
+[OK: contains "Taken"]
+
+> east
+[OK: contains "Parlor"]
+
+> drop trunk
+[OK: contains "Dropped"]
+
+> look
+[OK: contains "A battered trunk sits in the corner."]

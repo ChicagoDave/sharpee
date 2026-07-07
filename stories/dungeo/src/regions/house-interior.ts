@@ -53,10 +53,19 @@ export function createHouseInteriorRegion(world: WorldModel): HouseInteriorRoomI
     'This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.');
 
   const livingRoom = createRoom(world, 'Living Room',
-    'This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.');
+    'This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut.{snippet:trophycase}{snippet:rug}');
+  // ADR-209: quiet scenery mentions spliced into the prose. The rug entry is
+  // mutated by the rug-push interceptor once the trap door is revealed.
+  livingRoom.get(RoomTrait)!.snippets = {
+    trophycase: ' A trophy case takes up one corner of the room.',
+    rug: ' A large oriental rug lies in the center of the room.',
+  };
 
   const attic = createRoom(world, 'Attic',
-    'This is the attic. The only exit is stairs that lead down.', true);
+    'This is the attic. The only exit is stairs that lead down.{snippet:table}', true);
+  attic.get(RoomTrait)!.snippets = {
+    table: ' A large table occupies the middle of the room.',
+  };
 
   // === Set up connections ===
 

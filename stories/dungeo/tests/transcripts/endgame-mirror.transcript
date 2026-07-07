@@ -24,10 +24,12 @@ description: Test the Inside Mirror entry, pole operations, panel pushing, and e
 [OK: contains "structure"]
 
 # Enter the mirror structure using IN direction
+# The room's (faithful MDL) prose describes the poles and the mahogany panel;
+# scenery is no longer auto-listed (ADR-209), so assert on the prose wording.
 > in
 [OK: contains "Inside Mirror"]
-[OK: contains "short pole"]
-[OK: contains "mahogany panel"]
+[OK: contains "wooden pole"]
+[OK: contains "mahogany"]
 
 # Raise the pole (enables rotation)
 > raise pole

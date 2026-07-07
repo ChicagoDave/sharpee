@@ -190,6 +190,17 @@ describe('parsePhraseTemplate — Verbatim atom (ADR-200)', () => {
   it('throws PhraseParseError at parse time for an unbound verbatim param (AC-11)', () => {
     expect(() => parsePhraseTemplate('{verbatim:name}', {})).toThrow(PhraseParseError);
   });
+
+  it('passes a bound phrase value through untouched (ADR-209: spliced-description Sequence)', () => {
+    const spliced: Sequence = {
+      kind: 'seq',
+      parts: [
+        { kind: 'verbatim', text: 'A doorway to the north' },
+        { kind: 'literal', text: ', next to a cabinet' },
+      ],
+    };
+    expect(parsePhraseTemplate('{verbatim:description}', { description: spliced })).toBe(spliced);
+  });
 });
 
 // --- AC-8: legacy ':'-chain rejected ---------------------------------------

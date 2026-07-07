@@ -186,12 +186,16 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     isOutdoors: true,
     blockedExits: {
       [Direction.EAST]: 'The rainbow is beautiful, but it looks far too insubstantial to walk on.'
+    },
+    // ADR-209: the rainbow is scenery; the prose owns its quiet mention.
+    snippets: {
+      rainbow: ' A beautiful rainbow can be seen over the falls to the east.',
     }
   }));
   aragainFalls.add(new IdentityTrait({
     name: 'Aragain Falls',
     aliases: ['aragain falls', 'falls', 'waterfall'],
-    description: 'You are at the top of Aragain Falls, an enormous waterfall with a drop of about 450 feet. The only path here is on the north end.',
+    description: 'You are at the top of Aragain Falls, an enormous waterfall with a drop of about 450 feet. The only path here is on the north end.{snippet:rainbow}',
     properName: true,
     article: ''
   }));

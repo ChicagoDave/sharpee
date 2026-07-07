@@ -93,7 +93,11 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
     'This is the periphery of a large dome, which forms the ceiling of another room below. Protecting you from a precipitous drop is a wooden railing which circles the dome.');
 
   const tinyRoom = createRoom(world, 'Tiny Room',
-    'This is a tiny room with passages leading east and west.');
+    'This is a tiny room with passages leading east and west.{snippet:door}');
+  // ADR-209: quiet scenery mention — the puzzle door to the Dreary Room.
+  tinyRoom.get(RoomTrait)!.snippets = {
+    door: ' A small door is set in the north wall.',
+  };
 
   const drearyRoom = createRoom(world, 'Dreary Room',
     'This is a dreary room with passages leading north and east.');

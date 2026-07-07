@@ -38,3 +38,6 @@ export * from './sound';
 
 // Phrase algebra — language-neutral phrase contracts (ADR-192)
 export * from './phrase';
+
+// Room-description snippet contracts (ADR-209)
+export * from './snippets';

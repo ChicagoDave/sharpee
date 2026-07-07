@@ -140,6 +140,9 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
     // ADR-107: Message IDs for localization (take precedence over literals)
     roomNameId: identity?.nameId,
     roomDescriptionId: roomDescriptionId,
+    // ADR-209: the room's marker→snippet table; its presence tells the engine
+    // room handler to run the splice pass over the description text.
+    ...(roomTrait?.snippets ? { roomSnippets: roomTrait.snippets } : {}),
     includeContents: true,
     verbose: isVerbose,
     inVehicle: immediateContainer?.name || null,

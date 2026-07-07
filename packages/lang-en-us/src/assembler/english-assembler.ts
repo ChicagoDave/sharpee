@@ -518,6 +518,17 @@ function seededUnitFloat(entityId: string, messageKey: string, counter: number):
 }
 
 /**
+ * Same-key pick agreement within one top-level `realize()` pass (ADR-209 AC-8).
+ * Two `Choice` nodes sharing an `(entityId, messageKey)` in one realized tree
+ * — e.g. a duplicate `{snippet:x}` marker — yield the SAME alternative and
+ * advance the persisted counter once. Existing choice sites use unique keys,
+ * so their behavior is unchanged. Scoped per top-level pass (set/cleared by
+ * `realize`), so successive renders still advance normally; nested
+ * `renderToString` calls share the enclosing pass's picks.
+ */
+let activeChoicePicks: Map<string, Phrase> | null = null;
+
+/**
  * Select a `Choice`'s alternative from its persisted counter and advance the
  * counter (ADR-196 §2). This is the one place the Assembler writes `ctx.textState`
  * — the declared realize-time mutation (ADR-192 §7 / ADR-196 §4).
@@ -528,6 +539,16 @@ function seededUnitFloat(entityId: string, messageKey: string, counter: number):
  * @returns the selected alternative phrase (caller realizes it; may be Empty).
  */
 function selectChoice(choice: Choice, ctx: RenderContext): Phrase {
+  const memoKey = `${choice.entityId}\0${choice.messageKey}`;
+  const memoized = activeChoicePicks?.get(memoKey);
+  if (memoized !== undefined) return memoized;
+  const pick = pickChoiceAlternative(choice, ctx);
+  activeChoicePicks?.set(memoKey, pick);
+  return pick;
+}
+
+/** The counter read/advance half of `selectChoice` (memoized per pass above). */
+function pickChoiceAlternative(choice: Choice, ctx: RenderContext): Phrase {
   const { alternatives, selector, entityId, messageKey } = choice;
   const len = alternatives.length;
   if (len === 0) return { kind: 'empty' }; // defensive — the contract requires ≥ 1
@@ -873,6 +894,19 @@ export class EnglishAssembler implements Assembler {
    * @throws PhraseNotImplementedError when a reserved stub kind is encountered
    */
   realize(tree: Phrase, ctx: RenderContext): ITextBlock[] {
+    // Open a same-key Choice pick scope for this pass (ADR-209 AC-8) — only at
+    // the top level, so nested realizes (list items) share the enclosing scope.
+    const rootPass = activeChoicePicks === null;
+    if (rootPass) activeChoicePicks = new Map();
+    try {
+      return this.realizePass(tree, ctx);
+    } finally {
+      if (rootPass) activeChoicePicks = null;
+    }
+  }
+
+  /** The realize body, run inside the per-pass Choice pick scope. */
+  private realizePass(tree: Phrase, ctx: RenderContext): ITextBlock[] {
     let runs = realizeToRuns(tree, ctx, []);
     // Honor the optional position seam (ADR-201 §4): a context that declares it
     // starts sentence-initial flags the first word for capitalization. Absent →

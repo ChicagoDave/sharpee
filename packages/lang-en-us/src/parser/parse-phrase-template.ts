@@ -146,6 +146,11 @@ function parseVerb(inner: string, template: string, params: Record<string, unkno
  * Parse a `{verbatim:x}` head into a `Verbatim` atom (ADR-200): the last bare
  * token is the param whose value is rendered as opaque text. The param must be
  * bound — an unbound param fails at parse time (ADR-192 AC-11).
+ *
+ * A bound value that is already a phrase passes through untouched (matching
+ * `bindNounPhrase` / `{quote:…}`): ADR-209 binds a spliced-description
+ * `Sequence` as the `description` param of `{verbatim:description}` — the
+ * param's VALUE becomes composite while the template keeps its shape.
  */
 function parseVerbatim(inner: string, template: string, params: Record<string, unknown>): Phrase {
   const rest = inner.slice(inner.indexOf(':') + 1).trim();
@@ -157,7 +162,9 @@ function parseVerbatim(inner: string, template: string, params: Record<string, u
   if (!(name in params)) {
     throw new PhraseParseError(name, template, `verbatim param '${name}' is not bound`);
   }
-  return { kind: 'verbatim', text: String(params[name]) };
+  const value = params[name];
+  if (isPhraseValue(value)) return value;
+  return { kind: 'verbatim', text: String(value) };
 }
 
 /**

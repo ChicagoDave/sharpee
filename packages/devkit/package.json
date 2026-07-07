@@ -15,6 +15,7 @@
   "dependencies": {
     "@sharpee/bootstrap": "workspace:*",
     "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
     "@sharpee/transcript-tester": "workspace:*",
     "fflate": "^0.8.2"
   },

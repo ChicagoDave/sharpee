@@ -21,6 +21,7 @@ import {
   WorldModel,
   PushableTrait,
   RoomBehavior,
+  RoomTrait,
   Direction,
   TraitType,
 } from '@sharpee/world-model';
@@ -70,6 +71,14 @@ export const RugPushInterceptor: ActionInterceptor = {
     // Mark as pushed (prevents re-triggering)
     if (pushable) {
       pushable.state = 'pushed';
+    }
+
+    // ADR-209: the room prose's rug mention follows the rug's new position
+    // (handler-driven snippet mutation — set, never delete).
+    const livingRoomTrait = livingRoom?.get(RoomTrait);
+    if (livingRoomTrait?.snippets) {
+      livingRoomTrait.snippets.rug =
+        ' A large oriental rug lies to one side of the room, moved away from the trap door it once covered.';
     }
 
     // Flag for postReport

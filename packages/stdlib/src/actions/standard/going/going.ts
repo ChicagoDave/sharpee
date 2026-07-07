@@ -17,6 +17,7 @@ import {
   TraitType,
   IFEntity,
   IdentityTrait,
+  RoomTrait,
   RoomBehavior,
   OpenableBehavior,
   LockableBehavior,
@@ -455,12 +456,16 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       });
     const visibleSnapshots = captureEntitySnapshots(destinationContents, context.world);
 
+    const destinationSnippets = destinationRoom.getTrait(RoomTrait)?.snippets;
     const roomDescData = {
       room: roomSnapshot,
       visibleItems: visibleSnapshots,
       roomId: destinationRoom.id,
       roomName: destinationRoom.name,
       roomDescription: destinationRoom.description,
+      // ADR-209: presence of the snippet map triggers the engine handler's
+      // splice pass over the description text.
+      ...(destinationSnippets ? { roomSnippets: destinationSnippets } : {}),
       includeContents: true,
       verbose: true, // Always verbose after movement
       previousLocation: sharedData.previousLocation,

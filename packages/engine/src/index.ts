@@ -22,6 +22,9 @@ export * from './command-executor';
 // Universal capability dispatch (ADR-090 extension)
 export * from './capability-dispatch-helper';
 
+// Load-time room-snippet validation (ADR-209 AC-5)
+export * from './snippet-validation';
+
 // Parser interface for engine integration
 export * from './parser-interface';
 

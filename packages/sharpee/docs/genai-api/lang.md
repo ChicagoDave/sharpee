@@ -2129,6 +2129,8 @@ export declare class EnglishAssembler implements Assembler {
      * @throws PhraseNotImplementedError when a reserved stub kind is encountered
      */
     realize(tree: Phrase, ctx: RenderContext): ITextBlock[];
+    /** The realize body, run inside the per-pass Choice pick scope. */
+    private realizePass;
 }
 ```
 

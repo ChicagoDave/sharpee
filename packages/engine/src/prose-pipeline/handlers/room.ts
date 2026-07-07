@@ -19,6 +19,8 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
+import type { SnippetMap } from '@sharpee/if-domain';
+import { resolveSnippetDescription } from '@sharpee/stdlib';
 import type { HandlerContext } from './types';
 import { createBlock, createBlocks, extractValue } from '../assemble';
 import { phraseAvailable, renderViaPhrase } from '../phrase-render';
@@ -51,6 +53,8 @@ interface RoomDescriptionData {
   roomDescription?: string;
   roomNameId?: string;
   roomDescriptionId?: string;
+  /** ADR-209: the room's marker→snippet table; presence triggers the splice pass. */
+  roomSnippets?: SnippetMap;
 }
 
 /**
@@ -108,6 +112,29 @@ export function handleRoomDescription(
   if (description) {
     const resolvedDesc = extractValue(description);
     if (resolvedDesc) {
+      // ADR-209: a snippet-bearing room's description is spliced before binding —
+      // stdlib's resolver (scan/gate) turns the text into a Sequence of the
+      // author's prose segments and resolved snippet values. The presence gate
+      // reads the render world; `{ messageId }` texts resolve through the
+      // language provider (an unknown id splices nothing — AC-10). Rooms with
+      // no map bind the plain string exactly as before (AC-7).
+      let descriptionParam: unknown = resolvedDesc;
+      const roomId = data.roomId ?? data.room?.id;
+      if (data.roomSnippets && roomId && phraseAvailable(context)) {
+        const lp = context.languageProvider;
+        descriptionParam = resolveSnippetDescription(
+          resolvedDesc,
+          roomId,
+          data.roomSnippets,
+          context.makeRenderContext!({}).world,
+          lp
+            ? (id) => {
+                const msg = lp.getMessage(id, {});
+                return msg && msg !== id ? msg : undefined;
+              }
+            : undefined,
+        );
+      }
       // ADR-192/195: realize the description body through the phrase pipeline so
       // its `{slot:here}` occupant channel fills with the presence clauses staged
       // this turn. The room's prose is bound as a `{verbatim:description}` param;
@@ -117,7 +144,7 @@ export function handleRoomDescription(
         ? renderViaPhrase(
             context,
             ROOM_DESCRIPTION_BODY_ID,
-            { description: resolvedDesc },
+            { description: descriptionParam },
             BLOCK_KEYS.ROOM_DESCRIPTION,
           ) ?? createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc)
         : createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc);

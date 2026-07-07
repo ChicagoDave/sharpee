@@ -99,7 +99,17 @@ export interface PhraseList extends PhraseBase {
   conj: 'and' | 'or';
 }
 
-/** Combinator: ordered join under one punctuation authority. */
+/**
+ * Combinator: ordered join under one punctuation authority.
+ *
+ * ADR-209 (room-description snippets) reuses this kind as its splice carrier —
+ * the ADR's provisional `Seq` was never added because this IS it: the English
+ * Assembler realizes `parts` by in-order run concatenation with NO joining
+ * punctuation (parts abut byte-exactly; the whitespace authority only
+ * collapses, never inserts). A spliced description is a `Sequence` of
+ * `Verbatim` prose segments interleaved with resolved snippet values
+ * (`Literal` / `Choice`); `Empty` parts are absorbed.
+ */
 export interface Sequence extends PhraseBase {
   kind: 'seq';
   parts: Phrase[];

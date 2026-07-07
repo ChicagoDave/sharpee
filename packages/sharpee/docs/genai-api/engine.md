@@ -851,6 +851,60 @@ export declare function executeCapabilityReport(context: ActionContext): ISemant
 export declare function executeCapabilityBlocked(context: ActionContext, result: ValidationResult, actionId: string): ISemanticEvent[];
 ```
 
+### snippet-validation
+
+```typescript
+/**
+ * Load-time room-snippet validation (ADR-209 AC-5).
+ *
+ * After a story's `initializeWorld` returns, every snippet-bearing room's
+ * `description` and `initialDescription` are scanned with the shared
+ * marker-extraction helper; a `{snippet:name}` marker with no entry in the
+ * room's map fails story load synchronously, naming room and marker — the
+ * same posture as `PhraseParseError`. Rooms without a snippet map are never
+ * scanned (the opt-in rule, AC-7).
+ *
+ * Public interface: `validateRoomSnippets`, `SnippetValidationError`.
+ *
+ * Owner context: `@sharpee/engine` — story-load orchestration
+ * (`GameEngine.setStory`). Render-time degradation for maps mutated after
+ * load lives in the room-description handler path, not here.
+ */
+import type { WorldModel } from '@sharpee/world-model';
+/** Story-load failure for an unbound `{snippet:name}` marker (ADR-209 AC-5). */
+export declare class SnippetValidationError extends Error {
+    /** `(room, marker)` pairs with no snippet entry, in discovery order. */
+    readonly unbound: ReadonlyArray<{
+        room: string;
+        marker: string;
+    }>;
+    constructor(unbound: Array<{
+        room: string;
+        marker: string;
+    }>);
+}
+/**
+ * Validate every snippet-bearing room's descriptions against its snippet map.
+ *
+ * @param world the initialized world model (after `initializeWorld`)
+ * @throws SnippetValidationError naming every unbound `(room, marker)` pair
+ */
+export declare function validateRoomSnippets(world: WorldModel): void;
+/**
+ * Lint for snippet entries whose marker appears in NEITHER description text
+ * (ADR-209 AC-6, resolution Q4): usually mid-edit author drift. A warning,
+ * never an error — an unused entry renders nothing, unlike an unbound marker
+ * which puts broken text on screen. The devkit build prints these.
+ *
+ * @param world the initialized world model
+ * @returns `(room, entry)` pairs with no matching marker, in discovery order
+ */
+export declare function lintUnusedSnippetEntries(world: WorldModel): Array<{
+    room: string;
+    entry: string;
+}>;
+```
+
 ### parser-interface
 
 ```typescript
@@ -1452,6 +1506,14 @@ export declare class GameEngine {
      */
     off<K extends GameEngineEventName>(event: K, listener: GameEngineEventListener<K>): this;
 }
+/**
+ * Split a raw input line into chained statements (ADR pending — classic IF
+ * command chaining). Separators are `.`, `;`, and the standalone word `then`.
+ * Commas are NOT separators — they belong to multi-object phrases
+ * ("take lamp, sword"). Empty statements (doubled or trailing separators)
+ * are dropped.
+ */
+export declare function splitChainedInput(input: string): string[];
 export {};
 ```
 

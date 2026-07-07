@@ -1,7 +1,8 @@
 /**
  * RoomBuilder — fluent builder for room entities.
  *
- * Public interface: description, aliases, dark, build.
+ * Public interface: description, initialDescription, snippets, aliases,
+ * addTrait, dark, build.
  *
  * Owner context: @sharpee/helpers (ADR-140)
  */
@@ -11,7 +12,7 @@ import {
   IdentityTrait,
   RoomTrait,
 } from '@sharpee/world-model';
-import type { IWorldModel, ITrait } from '@sharpee/world-model';
+import type { IWorldModel, ITrait, SnippetMap } from '@sharpee/world-model';
 
 /**
  * Fluent builder for creating room entities.
@@ -26,6 +27,7 @@ import type { IWorldModel, ITrait } from '@sharpee/world-model';
 export class RoomBuilder {
   private _description?: string;
   private _initialDescription?: string;
+  private _snippets?: SnippetMap;
   private _aliases?: string[];
   private _isDark = false;
   private _traits: ITrait[] = [];
@@ -57,6 +59,22 @@ export class RoomBuilder {
    */
   initialDescription(desc: string): this {
     this._initialDescription = desc;
+    return this;
+  }
+
+  /**
+   * Set the room's marker→snippet table (ADR-209).
+   *
+   * `{snippet:name}` markers in the room's `description` /
+   * `initialDescription` are spliced from these entries at render time.
+   * Populates `RoomTrait.snippets`; a room without a snippet map is never
+   * scanned for markers.
+   *
+   * @param map - Marker name → snippet entry table
+   * @returns this (for chaining)
+   */
+  snippets(map: SnippetMap): this {
+    this._snippets = map;
     return this;
   }
 
@@ -102,6 +120,7 @@ export class RoomBuilder {
     entity.add(new RoomTrait({
       isDark: this._isDark,
       initialDescription: this._initialDescription,
+      snippets: this._snippets,
     }));
     entity.add(new IdentityTrait({
       name: this.name,
