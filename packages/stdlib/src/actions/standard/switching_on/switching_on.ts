@@ -341,8 +341,14 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         verbose: true
       }));
 
-      // Emit contents list if there are visible items
-      if (contents.length > 0) {
+      // Emit contents list if there are visible items. Scenery is excluded,
+      // as in the looking and going actions: fixed furnishings belong to the
+      // room's description prose (ADR-209 snippets), not the "You can see …"
+      // enumeration.
+      const listableContents = contents.filter(
+        e => !e.hasTrait(TraitType.SCENERY)
+      );
+      if (listableContents.length > 0) {
         // Bind a PhraseList of NounPhrases (ADR-192), matching looking-data.ts:
         // the Assembler's list authority renders articles, grouping, and the
         // locale conjunction. A bare NounPhrase[] stringifies each item to
@@ -353,9 +359,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
             items: {
               kind: 'list' as const,
               conj: 'and' as const,
-              items: contents.map(e => nounPhraseFor(e)),
+              items: listableContents.map(e => nounPhraseFor(e)),
             },
-            count: contents.length
+            count: listableContents.length
           }
         }));
       }
