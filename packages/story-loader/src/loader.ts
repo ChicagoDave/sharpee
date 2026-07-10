@@ -53,9 +53,9 @@ import {
   WorldModel,
 } from '@sharpee/world-model';
 import { LoadError } from './errors';
-
-/** World-state key prefix for entity `states:` (loader-internal, save-safe). */
-export const CHORD_STATE_PREFIX = 'chord.state.';
+import { Evaluator } from './evaluator';
+import { ChordRuntime } from './runtime';
+import { CHORD_STATE_PREFIX } from './state-keys';
 
 export interface StoryLoaderOptions {
   /**
@@ -66,6 +66,12 @@ export interface StoryLoaderOptions {
    * simply pass none.
    */
   hatchModules?: Record<string, Record<string, unknown>>;
+  /**
+   * Seed for the story's random stream (`randomly`, `one chance in <n>`).
+   * A fixed seed makes repeated runs byte-identical (AC-5); omitted, the
+   * stream is time-seeded.
+   */
+  seed?: number;
 }
 
 /**
@@ -83,8 +89,12 @@ export class ChordStory implements Story {
   readonly config: StoryConfig;
   /** Bound `define text` producers by hatch name. */
   readonly producers = new Map<string, PhraseProducer>();
+  /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
+  readonly runtime: ChordRuntime;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
   private readonly worldIds = new Map<string, string>();
+  /** World entity ID → IR entity ID (state lookups in the evaluator). */
+  private readonly irIds = new Map<string, string>();
   private world: WorldModel | null = null;
 
   constructor(
@@ -102,12 +112,24 @@ export class ChordStory implements Story {
       description: ir.meta.fields.blurb,
     };
     this.bindHatches(options);
+    this.runtime = new ChordRuntime(ir, this, new Evaluator(ir, this, options.seed));
   }
 
   /** The world entity ID for an IR entity ID (after initializeWorld). */
   entityId(irId: string): string | undefined {
     return this.worldIds.get(irId);
   }
+
+  /** The IR entity ID for a world entity ID. */
+  irIdOf(worldId: string): string | undefined {
+    return this.irIds.get(worldId);
+  }
+
+  /** The player's world id, once createPlayer has run. */
+  playerWorldId(): string | undefined {
+    return this.playerId;
+  }
+  private playerId: string | undefined;
 
   private bindHatches(options: StoryLoaderOptions): void {
     for (const hatch of this.ir.hatches) {
@@ -153,6 +175,15 @@ export class ChordStory implements Story {
         world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
       }
     }
+
+    // Flags start at their declared values.
+    for (const flag of this.ir.flags) {
+      world.setStateValue(`chord.flag.${flag.name}`, flag.initial);
+    }
+
+    // Bind the turn-by-turn runtime: rules, on-clause interceptors,
+    // derived-property chains (all per-world, keyed — ADR-207/208).
+    this.runtime.bind(world);
   }
 
   createPlayer(world: WorldModel): IFEntity {
@@ -171,7 +202,11 @@ export class ChordStory implements Story {
     );
     player.add(new ActorTrait({ isPlayer: true }));
     player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
-    if (irPlayer) this.worldIds.set(irPlayer.id, player.id);
+    this.playerId = player.id;
+    if (irPlayer) {
+      this.worldIds.set(irPlayer.id, player.id);
+      this.irIds.set(player.id, irPlayer.id);
+    }
 
     // Starting location: the player's `starts in`, else the first room.
     const startIr =
@@ -194,6 +229,10 @@ export class ChordStory implements Story {
       wearable.worn = true;
       wearable.wornBy = player.id;
     }
+
+    // Initial evaluation of derived properties (`dark while`) — the player
+    // and their possessions now exist, so conditions are decidable.
+    this.runtime.recomputeDerived(world);
 
     return player;
   }
@@ -297,6 +336,7 @@ export class ChordStory implements Story {
 
     this.applyTraitAdjectives(entity, irEntity, kind);
     this.worldIds.set(irEntity.id, entity.id);
+    this.irIds.set(entity.id, irEntity.id);
     return entity;
   }
 

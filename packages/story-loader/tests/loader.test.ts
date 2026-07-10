@@ -97,9 +97,9 @@ describe('cloak.story loads into a playable world', () => {
     expect(world.getStateValue(CHORD_STATE_PREFIX + 'message-in-the-sawdust')).toBe('intact');
   });
 
-  it('does not pre-darken the bar (dark-while is a Phase 5 derived property)', () => {
+  it('darkens the bar at load (dark-while initial evaluation: the player wears the cloak)', () => {
     const barRoom = entity('foyer-bar').get(TraitType.ROOM) as RoomTrait;
-    expect(barRoom.isDark ?? false).toBe(false);
+    expect(barRoom.isDark).toBe(true);
   });
 
   it('creates the default player with the story description, placed in the foyer', () => {

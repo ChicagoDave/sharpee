@@ -16,4 +16,12 @@
  */
 
 export { LoadError } from './errors';
-export { CHORD_STATE_PREFIX, ChordStory, createStory, StoryLoaderOptions } from './loader';
+export { ChordStory, createStory, StoryLoaderOptions } from './loader';
+export { Evaluator, EvalContext, EntityIdResolver } from './evaluator';
+export { ChordRuntime, ChordBehaviorTrait } from './runtime';
+export {
+  CHORD_FLAG_PREFIX,
+  CHORD_OCCURRENCE_PREFIX,
+  CHORD_RNG_KEY,
+  CHORD_STATE_PREFIX,
+} from './state-keys';
