@@ -1,0 +1,1375 @@
+/**
+ * parser.ts — the Chord recursive-descent parser (Phase A grammar subset).
+ *
+ * Purpose: turn lexed lines into a StoryFile AST. Line-driven: block
+ * structure comes from indentation (create blocks, `define phrases`,
+ * ordinal blocks are dedent-terminated) and explicit `end <keyword>`
+ * terminators (`when`, `on`, `if`, `select`, `define phrase`). After an
+ * error the parser resynchronizes at the next `end` or top-level keyword
+ * so one mistake yields one diagnostic (design.md §5.2).
+ *
+ * Public interface: parseStory().
+ * Owner context: @sharpee/chord (language frontend; browser-safe).
+ *
+ * Invariants:
+ * - The parser is vocabulary-free: entity names, event verbs, and phrase
+ *   keys are collected as raw words; the analyzer resolves them (Phase 3).
+ * - Prose is opaque except `{…}` markers, extracted with precise spans.
+ * - Every AST node carries a Span.
+ */
+import {
+  AwardStmt,
+  BlockedExitDecl,
+  ChangeStmt,
+  CompositionItem,
+  ConditionNode,
+  ConfigSetting,
+  CreateDecl,
+  Declaration,
+  DefineCondition,
+  DefineFlag,
+  DefinePhrase,
+  DefinePhrases,
+  DefineText,
+  DefineVerb,
+  EmitStmt,
+  ExitDecl,
+  IfStmt,
+  MoveStmt,
+  NameRef,
+  OnClause,
+  OrdinalBlock,
+  ParamBinding,
+  PatternPart,
+  PhraseEntry,
+  PhraseOverride,
+  PhraseStmt,
+  Placement,
+  RefuseStmt,
+  SelectArm,
+  SelectOnStmt,
+  SelectStrategyStmt,
+  SetStmt,
+  Statement,
+  StateName,
+  StoryFile,
+  StoryHeader,
+  TextMarker,
+  TextValue,
+  ValueExpr,
+  WhenRule,
+} from './ast';
+import { DiagnosticBag } from './diagnostics';
+import { lex, Line, Token } from './lexer';
+import { mergeSpans, Span, spanOf } from './span';
+
+const ARTICLES = new Set(['the', 'a', 'an']);
+const DIRECTIONS = new Set([
+  'north', 'south', 'east', 'west',
+  'northeast', 'northwest', 'southeast', 'southwest',
+  'up', 'down',
+]);
+const STRATEGIES = new Set(['randomly', 'cycling', 'ordered', 'once']);
+const ORDINALS: Record<string, number> = {
+  first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
+  sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+};
+/** Words that terminate a noun phrase in condition/statement positions. */
+const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'and', 'or', 'then', 'to', 'while', 'with']);
+const TOP_KEYWORDS = new Set(['story', 'create', 'define', 'when', 'once', 'every']);
+
+/**
+ * Parse `.story` source into an AST.
+ * @param source full `.story` text
+ * @param diagnostics receives lex + parse diagnostics; parse always returns
+ *   a (possibly partial) StoryFile — callers gate on diagnostics.hasErrors()
+ */
+export function parseStory(source: string, diagnostics: DiagnosticBag): StoryFile {
+  return new Parser(lex(source, diagnostics), diagnostics).parseFile();
+}
+
+/** Cursor over one line's tokens. */
+class Cursor {
+  i = 0;
+  constructor(readonly tokens: Token[], readonly line: Line) {}
+
+  peek(offset = 0): Token | null {
+    return this.tokens[this.i + offset] ?? null;
+  }
+  next(): Token | null {
+    return this.tokens[this.i++] ?? null;
+  }
+  atEnd(): boolean {
+    return this.i >= this.tokens.length;
+  }
+  /** Consume the next token iff it is the given word (case-sensitive). */
+  matchWord(word: string): Token | null {
+    const t = this.peek();
+    if (t && t.kind === 'word' && t.text === word) return this.next();
+    return null;
+  }
+  isWord(word: string, offset = 0): boolean {
+    const t = this.peek(offset);
+    return !!t && t.kind === 'word' && t.text === word;
+  }
+  /** Span from the current position to end of line (or whole line when spent). */
+  restSpan(): Span {
+    const t = this.peek();
+    if (t) return mergeSpans(t.span, this.tokens[this.tokens.length - 1].span);
+    return lineSpan(this.line);
+  }
+}
+
+function lineSpan(line: Line): Span {
+  if (line.tokens.length === 0) return spanOf(line.lineNo, line.indent + 1, Math.max(1, line.raw.trim().length));
+  return mergeSpans(line.tokens[0].span, line.tokens[line.tokens.length - 1].span);
+}
+
+function firstWord(line: Line): string | null {
+  const t = line.tokens[0];
+  return t && t.kind === 'word' ? t.text : null;
+}
+
+/** True for `end <keyword>` lines. */
+function isEndLine(line: Line): boolean {
+  return firstWord(line) === 'end';
+}
+
+class Parser {
+  private pos = 0;
+
+  constructor(
+    private readonly lines: Line[],
+    private readonly diagnostics: DiagnosticBag,
+  ) {}
+
+  // ------------------------------------------------------------------ file
+
+  parseFile(): StoryFile {
+    let header: StoryHeader | null = null;
+    const declarations: Declaration[] = [];
+    const start = this.lines[0] ? lineSpan(this.lines[0]) : spanOf(1, 1);
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent !== 0) {
+        this.diagnostics.error('parse.unexpected-indent', 'Unexpected indentation — expected a top-level declaration.', lineSpan(line));
+        this.recoverToTopLevel();
+        continue;
+      }
+      const word = firstWord(line);
+      switch (word) {
+        case 'story':
+          if (header) {
+            this.diagnostics.error('parse.duplicate-story-header', 'Duplicate story header — only one `story` line is allowed.', lineSpan(line));
+            this.recoverToTopLevel(true);
+          } else {
+            header = this.parseStoryHeader();
+          }
+          break;
+        case 'create':
+          declarations.push(this.parseCreate());
+          break;
+        case 'define': {
+          const d = this.parseDefine();
+          if (d) declarations.push(d);
+          break;
+        }
+        case 'when':
+          declarations.push(this.parseWhen());
+          break;
+        default:
+          this.diagnostics.error(
+            'parse.unknown-declaration',
+            `Unknown declaration \`${word ?? line.raw.trim()}\` — expected story, create, define, or when.`,
+            lineSpan(line),
+          );
+          this.recoverToTopLevel(true);
+      }
+    }
+
+    const last = this.lines[this.lines.length - 1];
+    return {
+      kind: 'story-file',
+      header,
+      declarations,
+      span: last ? mergeSpans(start, lineSpan(last)) : start,
+    };
+  }
+
+  /** Skip lines until the next top-level keyword at indent 0. */
+  private recoverToTopLevel(consumeCurrent = false): void {
+    if (consumeCurrent) this.pos++;
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent === 0 && TOP_KEYWORDS.has(firstWord(line) ?? '')) return;
+      this.pos++;
+    }
+  }
+
+  // ---------------------------------------------------------------- header
+
+  private parseStoryHeader(): StoryHeader {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('story');
+    const titleTok = c.peek();
+    let title = '';
+    if (titleTok && titleTok.kind === 'string') {
+      title = titleTok.text;
+      c.next();
+    } else {
+      this.diagnostics.error('parse.story-title', 'Expected a quoted story title after `story`.', c.restSpan());
+    }
+    let author = '';
+    if (c.matchWord('by')) {
+      const authorTok = c.peek();
+      if (authorTok && authorTok.kind === 'string') {
+        author = authorTok.text;
+        c.next();
+      } else {
+        this.diagnostics.error('parse.story-author', 'Expected a quoted author after `by`.', c.restSpan());
+      }
+    }
+
+    const fields: Record<string, string> = {};
+    let span = lineSpan(line);
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
+      const fieldLine = this.lines[this.pos++];
+      span = mergeSpans(span, lineSpan(fieldLine));
+      const key = firstWord(fieldLine);
+      const colon = fieldLine.tokens[1];
+      if (!key || !colon || colon.kind !== 'colon') {
+        this.diagnostics.error('parse.header-field', 'Expected `key: value` in the story header.', lineSpan(fieldLine));
+        continue;
+      }
+      const colonAt = fieldLine.raw.indexOf(':');
+      fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
+    }
+
+    return { kind: 'story-header', title, author, fields, span };
+  }
+
+  // ---------------------------------------------------------------- create
+
+  private parseCreate(): CreateDecl {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('create');
+    const name = this.parseNameRef(c, () => false);
+    if (name.words.length === 0) {
+      this.diagnostics.error('parse.create-name', 'Expected an entity name after `create`.', lineSpan(headLine));
+    }
+
+    const decl: CreateDecl = {
+      kind: 'create',
+      name,
+      aka: [],
+      compositions: [],
+      placement: null,
+      wears: [],
+      exits: [],
+      blockedExits: [],
+      states: [],
+      description: null,
+      phraseOverrides: [],
+      onClauses: [],
+      span: lineSpan(headLine),
+    };
+
+    let sawBlank = false;
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
+      const line = this.lines[this.pos];
+      sawBlank = sawBlank || line.afterBlank;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      const word = firstWord(line);
+      const cur = new Cursor(line.tokens, line);
+
+      if (word === 'aka') {
+        this.pos++;
+        cur.matchWord('aka');
+        decl.aka.push(...this.parseCommaWords(cur));
+      } else if (word === 'states' && cur.isWord('states') && line.tokens[1]?.kind === 'colon') {
+        this.pos++;
+        cur.next();
+        cur.next();
+        decl.states.push(...this.parseStateList(cur));
+      } else if (word === 'wears') {
+        this.pos++;
+        cur.matchWord('wears');
+        decl.wears.push(this.parseNameRef(cur, () => false));
+      } else if (word === 'starts' && cur.isWord('in', 1)) {
+        this.pos++;
+        cur.next();
+        cur.next();
+        decl.placement = this.finishPlacement('starts-in', cur, line);
+      } else if ((word === 'in' || word === 'on') && line.tokens[1] && line.tokens[1].kind === 'word' && ARTICLES.has(line.tokens[1].text)) {
+        this.pos++;
+        cur.next();
+        decl.placement = this.finishPlacement(word as 'in' | 'on', cur, line);
+      } else if (word === 'on') {
+        decl.onClauses.push(this.parseOnClause(line.indent));
+      } else if (word === 'phrase' && line.tokens[1]?.kind === 'word' && line.tokens[2]?.kind === 'colon') {
+        this.pos++;
+        decl.phraseOverrides.push(this.parsePhraseOverride(line));
+      } else if (word && DIRECTIONS.has(word) && cur.isWord('to', 1)) {
+        this.pos++;
+        cur.next();
+        cur.next();
+        const to = this.parseNameRef(cur, () => false);
+        decl.exits.push({ kind: 'exit', direction: word, to, span: lineSpan(line) } as ExitDecl);
+      } else if (word && DIRECTIONS.has(word) && cur.isWord('is', 1) && cur.isWord('blocked', 2)) {
+        this.pos++;
+        const blocked = this.parseBlockedExit(word, line);
+        if (blocked) decl.blockedExits.push(blocked);
+      } else if (!sawBlank || !line.afterBlank) {
+        if (sawBlank) {
+          this.diagnostics.error('parse.create-property', `Unrecognized line in \`create\` block: \`${line.raw.trim()}\`.`, lineSpan(line));
+          this.pos++;
+        } else {
+          this.pos++;
+          decl.compositions.push(...this.parseCompositionLine(cur, line));
+        }
+      } else {
+        const prose = this.parseProseParagraph(line.indent);
+        if (decl.description) {
+          this.diagnostics.error('parse.duplicate-description', 'This entity already has a description paragraph.', prose.span);
+        } else {
+          decl.description = prose;
+        }
+      }
+    }
+
+    return decl;
+  }
+
+  private finishPlacement(relation: Placement['relation'], c: Cursor, line: Line): Placement {
+    const place = this.parseNameRef(c, () => false);
+    if (place.words.length === 0) {
+      this.diagnostics.error('parse.placement', 'Expected a place name.', lineSpan(line));
+    }
+    return { kind: 'placement', relation, place, span: lineSpan(line) };
+  }
+
+  private parseBlockedExit(direction: string, line: Line): BlockedExitDecl | null {
+    // <direction> is blocked: <phrase-key>
+    const c = new Cursor(line.tokens, line);
+    c.next(); // direction
+    c.next(); // is
+    c.next(); // blocked
+    const colon = c.next();
+    if (!colon || colon.kind !== 'colon') {
+      this.diagnostics.error('parse.blocked-exit', 'Expected `: <phrase-key>` after `is blocked`.', lineSpan(line));
+      return null;
+    }
+    const key = c.next();
+    if (!key || key.kind !== 'word') {
+      this.diagnostics.error('parse.blocked-exit', 'Expected a phrase key after `is blocked:`.', lineSpan(line));
+      return null;
+    }
+    return { kind: 'blocked-exit', direction, phraseKey: key.text, span: lineSpan(line) };
+  }
+
+  private parseCompositionLine(c: Cursor, line: Line): CompositionItem[] {
+    const items: CompositionItem[] = [];
+    while (!c.atEnd()) {
+      const startTok = c.peek()!;
+      let article: string | null = null;
+      const first = c.peek();
+      if (first && first.kind === 'word' && ARTICLES.has(first.text)) {
+        article = first.text;
+        c.next();
+      }
+      const words: string[] = [];
+      while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('with') && !c.isWord('while')) {
+        if (c.peek()!.kind !== 'word') break;
+        words.push(c.next()!.text);
+        if (c.peek()?.kind === 'comma') break;
+      }
+      const config: ConfigSetting[] = [];
+      let condition: ConditionNode | null = null;
+      if (c.matchWord('with')) {
+        config.push(...this.parseConfigSettings(c, line));
+      }
+      if (c.matchWord('while')) {
+        condition = this.parseCondition(c, line);
+      }
+      const endTok = c.tokens[c.i - 1] ?? startTok;
+      if (words.length === 0) {
+        this.diagnostics.error('parse.composition', 'Expected a kind or trait name.', lineSpan(line));
+        break;
+      }
+      items.push({
+        kind: 'composition',
+        article,
+        words,
+        config,
+        condition,
+        span: mergeSpans(startTok.span, endTok.span),
+      });
+      if (c.peek()?.kind === 'comma') c.next();
+      else break;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.composition-trailing', `Unexpected trailing text in composition line: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return items;
+  }
+
+  private parseConfigSettings(c: Cursor, line: Line): ConfigSetting[] {
+    const settings: ConfigSetting[] = [];
+    for (;;) {
+      const startTok = c.peek();
+      const key: string[] = [];
+      while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and') && !c.isWord('while')) {
+        const t = c.peek()!;
+        // The last token of a setting is its value; words before it are the key.
+        const after = c.peek(1);
+        const isValuePosition = !after || after.kind === 'comma' || (after.kind === 'word' && (after.text === 'and' || after.text === 'while'));
+        if (isValuePosition && key.length > 0) break;
+        key.push(t.text);
+        c.next();
+      }
+      const valueTok = c.peek();
+      if (!valueTok || (valueTok.kind !== 'number' && valueTok.kind !== 'string' && valueTok.kind !== 'word')) {
+        this.diagnostics.error('parse.config-value', 'Expected a value to end this `with` setting.', c.restSpan());
+        break;
+      }
+      c.next();
+      settings.push({
+        key,
+        value: valueTok.text,
+        valueKind: valueTok.kind as ConfigSetting['valueKind'],
+        span: startTok ? mergeSpans(startTok.span, valueTok.span) : valueTok.span,
+      });
+      if (!c.matchWord('and')) break;
+    }
+    return settings;
+  }
+
+  private parsePhraseOverride(line: Line): PhraseOverride {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('phrase');
+    const key = c.next()!; // validated by caller
+    c.next(); // colon
+    let value: TextValue;
+    const str = c.peek();
+    if (str && str.kind === 'string') {
+      c.next();
+      value = this.textFromString(str);
+    } else {
+      value = this.parseProseParagraph(line.indent + 1, line.indent);
+    }
+    return { kind: 'phrase-override', key: key.text, value, span: mergeSpans(lineSpan(line), value.span) };
+  }
+
+  private parseCommaWords(c: Cursor): string[] {
+    const out: string[] = [];
+    let current: string[] = [];
+    while (!c.atEnd()) {
+      const t = c.next()!;
+      if (t.kind === 'comma') {
+        if (current.length) out.push(current.join(' '));
+        current = [];
+      } else {
+        current.push(t.text);
+      }
+    }
+    if (current.length) out.push(current.join(' '));
+    return out;
+  }
+
+  private parseStateList(c: Cursor): StateName[] {
+    const out: StateName[] = [];
+    while (!c.atEnd()) {
+      const t = c.next()!;
+      if (t.kind === 'word') out.push({ name: t.text, span: t.span });
+      else if (t.kind !== 'comma') {
+        this.diagnostics.error('parse.states', 'Expected a comma-separated list of state names.', t.span);
+      }
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------------ prose
+
+  /**
+   * Collect a prose paragraph: consecutive lines at indent >= minIndent with
+   * no intervening blank line. When `strictlyAbove` is given, lines must be
+   * indented strictly deeper than it (phrase-entry values).
+   */
+  private parseProseParagraph(minIndent: number, strictlyAbove?: number): TextValue {
+    const parts: string[] = [];
+    const markers: TextMarker[] = [];
+    let span: Span | null = null;
+    let first = true;
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const deepEnough = strictlyAbove !== undefined ? line.indent > strictlyAbove : line.indent >= minIndent;
+      if (!deepEnough || (!first && line.afterBlank) || isEndLine(line)) break;
+      this.pos++;
+      const text = line.raw.trim();
+      this.extractMarkers(line, markers);
+      parts.push(text);
+      span = span ? mergeSpans(span, lineSpan(line)) : lineSpan(line);
+      first = false;
+    }
+
+    return {
+      kind: 'text',
+      form: 'prose',
+      text: parts.join(' '),
+      markers,
+      span: span ?? spanOf(this.lines[this.pos - 1]?.lineNo ?? 1, 1),
+    };
+  }
+
+  private extractMarkers(line: Line, into: TextMarker[]): void {
+    const re = /\{([^}]*)\}/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(line.raw)) !== null) {
+      into.push({ content: m[1], span: spanOf(line.lineNo, m.index + 1, m[0].length) });
+    }
+  }
+
+  private textFromString(tok: Token): TextValue {
+    const markers: TextMarker[] = [];
+    const re = /\{([^}]*)\}/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(tok.text)) !== null) {
+      markers.push({ content: m[1], span: spanOf(tok.span.line, tok.span.column + 1 + m.index, m[0].length) });
+    }
+    return { kind: 'text', form: 'quoted', text: tok.text, markers, span: tok.span };
+  }
+
+  // ---------------------------------------------------------------- define
+
+  private parseDefine(): Declaration | null {
+    const line = this.lines[this.pos];
+    const sub = line.tokens[1];
+    const subWord = sub && sub.kind === 'word' ? sub.text : null;
+    switch (subWord) {
+      case 'condition':
+        return this.parseDefineCondition();
+      case 'phrase':
+        return this.parseDefinePhrase();
+      case 'phrases':
+        return this.parseDefinePhrases();
+      case 'verb':
+        return this.parseDefineVerb();
+      case 'text':
+        return this.parseDefineText();
+      case 'flag':
+        return this.parseDefineFlag();
+      case 'action':
+      case 'trait':
+      case 'sequence':
+        this.diagnostics.error(
+          'parse.phase-b-construct',
+          `\`define ${subWord}\` is not part of the Phase A grammar subset (Phase B).`,
+          lineSpan(line),
+        );
+        this.recoverPastEnd(subWord);
+        return null;
+      default:
+        this.diagnostics.error('parse.unknown-define', `Unknown declaration \`define ${subWord ?? ''}\`.`, lineSpan(line));
+        this.recoverToTopLevel(true);
+        return null;
+    }
+  }
+
+  /** Skip a Phase-B block through its `end <keyword>` line (or next top-level). */
+  private recoverPastEnd(keyword: string): void {
+    this.pos++;
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent === 0 && isEndLine(line) && line.tokens[1]?.text === keyword) {
+        this.pos++;
+        return;
+      }
+      if (line.indent === 0 && TOP_KEYWORDS.has(firstWord(line) ?? '')) return;
+      this.pos++;
+    }
+  }
+
+  private parseDefineCondition(): DefineCondition | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define condition
+    const name = c.next();
+    if (!name || name.kind !== 'word') {
+      this.diagnostics.error('parse.condition-name', 'Expected a condition name after `define condition`.', c.restSpan());
+      return null;
+    }
+    const colon = c.next();
+    if (!colon || colon.kind !== 'colon') {
+      this.diagnostics.error('parse.condition-colon', 'Expected `:` after the condition name.', c.restSpan());
+      return null;
+    }
+    const condition = this.parseCondition(c, line);
+    return { kind: 'define-condition', name: name.text, condition, span: lineSpan(line) };
+  }
+
+  private parseDefinePhrase(): DefinePhrase {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define phrase
+    const keyTok = c.next();
+    const key = keyTok && keyTok.kind === 'word' ? keyTok.text : '';
+    if (!key) {
+      this.diagnostics.error('parse.phrase-key', 'Expected a phrase key after `define phrase`.', lineSpan(headLine));
+    }
+    let strategy: string | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const s = c.next();
+      if (s && s.kind === 'word' && STRATEGIES.has(s.text)) {
+        strategy = s.text;
+      } else {
+        this.diagnostics.error('parse.phrase-strategy', 'Expected a strategy (randomly, cycling, ordered, once) after the comma.', s?.span ?? c.restSpan());
+      }
+    }
+
+    const variants: TextValue[] = [];
+    let span = lineSpan(headLine);
+    for (;;) {
+      const line = this.lines[this.pos];
+      if (!line) {
+        this.diagnostics.error('parse.unterminated-block', 'Missing `end phrase`.', span);
+        break;
+      }
+      if (isEndLine(line)) {
+        span = mergeSpans(span, lineSpan(line));
+        this.consumeEnd('phrase', headLine);
+        break;
+      }
+      if (firstWord(line) === 'or' && line.tokens.length === 1) {
+        this.pos++;
+        continue;
+      }
+      if (line.indent === 0 && TOP_KEYWORDS.has(firstWord(line) ?? '')) {
+        this.diagnostics.error('parse.unterminated-block', 'Missing `end phrase`.', span);
+        break;
+      }
+      const variant = this.parseProseParagraph(1, 0);
+      variants.push(variant);
+      span = mergeSpans(span, variant.span);
+    }
+
+    return { kind: 'define-phrase', key, strategy, variants, span };
+  }
+
+  private parseDefinePhrases(): DefinePhrases {
+    const headLine = this.lines[this.pos++];
+    const locTok = headLine.tokens[2];
+    let locale = '';
+    if (locTok && locTok.kind === 'word') {
+      locale = locTok.text;
+    } else {
+      this.diagnostics.error('parse.phrases-locale', 'Expected a locale after `define phrases` (e.g. en-US).', lineSpan(headLine));
+    }
+
+    const entries: PhraseEntry[] = [];
+    let span = lineSpan(headLine);
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
+      const line = this.lines[this.pos];
+      const key = line.tokens[0];
+      const colon = line.tokens[1];
+      if (!key || key.kind !== 'word' || !colon || colon.kind !== 'colon') {
+        this.diagnostics.error('parse.phrase-entry', 'Expected `key: <text>` in the phrases block.', lineSpan(line));
+        this.pos++;
+        continue;
+      }
+      this.pos++;
+      let value: TextValue;
+      const inline = line.tokens[2];
+      if (inline && inline.kind === 'string') {
+        value = this.textFromString(inline);
+      } else if (inline) {
+        // Bare unquoted text after the colon on the same line.
+        const colonAt = line.raw.indexOf(':');
+        const text = line.raw.slice(colonAt + 1).trim();
+        const markers: TextMarker[] = [];
+        this.extractMarkers(line, markers);
+        value = { kind: 'text', form: 'prose', text, markers, span: lineSpan(line) };
+      } else {
+        value = this.parseProseParagraph(line.indent + 1, line.indent);
+        if (value.text === '') {
+          this.diagnostics.error('parse.phrase-entry-empty', `Phrase \`${key.text}\` has no text.`, lineSpan(line));
+        }
+      }
+      entries.push({ key: key.text, value, span: mergeSpans(lineSpan(line), value.span) });
+      span = mergeSpans(span, entries[entries.length - 1].span);
+    }
+
+    return { kind: 'define-phrases', locale, entries, span };
+  }
+
+  private parseDefineVerb(): DefineVerb | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define verb
+    const verbs: string[] = [];
+    for (;;) {
+      const v = c.next();
+      if (!v || v.kind !== 'word') {
+        this.diagnostics.error('parse.verb-name', 'Expected a verb word.', v?.span ?? c.restSpan());
+        return null;
+      }
+      verbs.push(v.text);
+      if (!c.matchWord('or')) break;
+    }
+    if (!c.matchWord('means')) {
+      this.diagnostics.error('parse.verb-means', 'Expected `means <pattern>` in the verb definition.', c.restSpan());
+      return null;
+    }
+    const pattern: PatternPart[] = [];
+    while (!c.atEnd()) {
+      const t = c.next()!;
+      if (t.kind === 'lparen') {
+        const slot = c.next();
+        const close = c.next();
+        if (!slot || slot.kind !== 'word' || !close || close.kind !== 'rparen') {
+          this.diagnostics.error('parse.verb-slot', 'Expected `(something)` slot in the verb pattern.', t.span);
+          return null;
+        }
+        pattern.push({ kind: 'slot', word: slot.text, span: mergeSpans(t.span, close.span) });
+      } else if (t.kind === 'word') {
+        pattern.push({ kind: 'word', word: t.text, span: t.span });
+      } else {
+        this.diagnostics.error('parse.verb-pattern', `Unexpected \`${t.text}\` in the verb pattern.`, t.span);
+      }
+    }
+    return { kind: 'define-verb', verbs, pattern, span: lineSpan(line) };
+  }
+
+  private parseDefineText(): DefineText | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define text
+    const name = c.next();
+    if (!name || name.kind !== 'word') {
+      this.diagnostics.error('parse.text-name', 'Expected a producer name after `define text`.', c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('from')) {
+      this.diagnostics.error('parse.text-from', 'Expected `from "<module>"` in the hatch declaration.', c.restSpan());
+      return null;
+    }
+    const mod = c.next();
+    if (!mod || mod.kind !== 'string') {
+      this.diagnostics.error('parse.text-module', 'Expected a quoted module path after `from`.', c.restSpan());
+      return null;
+    }
+    return { kind: 'define-text', name: name.text, modulePath: mod.text, span: lineSpan(line) };
+  }
+
+  private parseDefineFlag(): DefineFlag | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define flag
+    const name = c.next();
+    if (!name || name.kind !== 'word') {
+      this.diagnostics.error('parse.flag-name', 'Expected a flag name after `define flag`.', c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('starts')) {
+      this.diagnostics.error('parse.flag-starts', 'Expected `starts <value>` in the flag declaration.', c.restSpan());
+      return null;
+    }
+    const value = c.next();
+    if (!value) {
+      this.diagnostics.error('parse.flag-value', 'Expected an initial value after `starts`.', c.restSpan());
+      return null;
+    }
+    return { kind: 'define-flag', name: name.text, initial: value.text, span: lineSpan(line) };
+  }
+
+  // ------------------------------------------------------------------ when
+
+  private parseWhen(): WhenRule {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('when');
+
+    const headerWords: string[] = [];
+    let headerSpan: Span | null = null;
+    while (!c.atEnd() && !c.isWord('while')) {
+      const t = c.next()!;
+      headerWords.push(t.text);
+      headerSpan = headerSpan ? mergeSpans(headerSpan, t.span) : t.span;
+    }
+    if (headerWords.length === 0) {
+      this.diagnostics.error('parse.when-header', 'Expected an event header after `when`.', lineSpan(headLine));
+    }
+
+    let condition: ConditionNode | null = null;
+    if (c.matchWord('while')) {
+      condition = this.parseCondition(c, headLine);
+    }
+
+    const body = this.parseStatements(headLine.indent, 'when');
+    const endSpan = this.consumeEnd('when', headLine);
+
+    return {
+      kind: 'when-rule',
+      headerWords,
+      headerSpan: headerSpan ?? lineSpan(headLine),
+      condition,
+      body,
+      span: mergeSpans(lineSpan(headLine), endSpan),
+    };
+  }
+
+  // ------------------------------------------------------------- on clause
+
+  private parseOnClause(indent: number): OnClause {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('on');
+    const action = c.next();
+    let actionWord = '';
+    if (action && action.kind === 'word') {
+      actionWord = action.text;
+    } else {
+      this.diagnostics.error('parse.on-action', 'Expected an action word after `on`.', lineSpan(headLine));
+    }
+    if (!c.matchWord('it')) {
+      this.diagnostics.error('parse.on-target', 'Expected `it` after the action (`on reading it`).', c.restSpan());
+    }
+
+    const body = this.parseStatements(headLine.indent, 'on');
+    const endSpan = this.consumeEnd('on', headLine);
+
+    return { kind: 'on-clause', action: actionWord, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  // ------------------------------------------------------------ statements
+
+  /**
+   * Parse statement lines until an `end`/`else`/`or`/`when`-arm boundary at
+   * or below `openIndent` is reached. The terminator line is NOT consumed.
+   */
+  private parseStatements(openIndent: number, blockKeyword: string): Statement[] {
+    const body: Statement[] = [];
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= openIndent) break;
+      if (isEndLine(line) || ((firstWord(line) === 'else' || firstWord(line) === 'or') && line.tokens.length === 1)) break;
+      const stmt = this.parseStatement(line, blockKeyword);
+      if (stmt) body.push(stmt);
+    }
+    return body;
+  }
+
+  private parseStatement(line: Line, blockKeyword: string): Statement | null {
+    const word = firstWord(line);
+    const c = new Cursor(line.tokens, line);
+
+    if (word && ORDINALS[word] !== undefined && c.isWord('time', 1)) {
+      return this.parseOrdinalBlock(line);
+    }
+
+    switch (word) {
+      case 'refuse':
+      case 'phrase': {
+        this.pos++;
+        c.next();
+        const key = c.next();
+        if (!key || key.kind !== 'word') {
+          this.diagnostics.error('parse.phrase-ref', `Expected a phrase key after \`${word}\`.`, c.restSpan());
+          return null;
+        }
+        const params = this.parseParams(c, line);
+        const node = { kind: word, phraseKey: key.text, params, span: lineSpan(line) };
+        return node as RefuseStmt | PhraseStmt;
+      }
+      case 'emit': {
+        this.pos++;
+        c.next();
+        const event: string[] = [];
+        while (!c.atEnd()) event.push(c.next()!.text);
+        if (event.length === 0) {
+          this.diagnostics.error('parse.emit', 'Expected an event name after `emit`.', lineSpan(line));
+          return null;
+        }
+        return { kind: 'emit', event, span: lineSpan(line) } as EmitStmt;
+      }
+      case 'set': {
+        this.pos++;
+        c.next();
+        const target = this.parseValueExpr(c, line, new Set(['to']));
+        if (!c.matchWord('to')) {
+          this.diagnostics.error('parse.set-to', 'Expected `to <value>` in the `set` statement.', c.restSpan());
+          return null;
+        }
+        const value = this.parseValueExpr(c, line, new Set());
+        return { kind: 'set', target, value, span: lineSpan(line) } as SetStmt;
+      }
+      case 'change': {
+        this.pos++;
+        c.next();
+        const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
+        if (!c.matchWord('to')) {
+          this.diagnostics.error('parse.change-to', 'Expected `to <state>` in the `change` statement.', c.restSpan());
+          return null;
+        }
+        const state = c.next();
+        if (!state || state.kind !== 'word') {
+          this.diagnostics.error('parse.change-state', 'Expected a state name after `to`.', c.restSpan());
+          return null;
+        }
+        return { kind: 'change', entity, state: state.text, span: lineSpan(line) } as ChangeStmt;
+      }
+      case 'move': {
+        this.pos++;
+        c.next();
+        const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
+        if (!c.matchWord('to')) {
+          this.diagnostics.error('parse.move-to', 'Expected `to <place>` in the `move` statement.', c.restSpan());
+          return null;
+        }
+        const place = this.parseNameRef(c, () => false);
+        return { kind: 'move', entity, place, span: lineSpan(line) } as MoveStmt;
+      }
+      case 'award': {
+        this.pos++;
+        c.next();
+        const expression: string[] = [];
+        let once = false;
+        while (!c.atEnd()) {
+          const t = c.next()!;
+          if (t.kind === 'comma' && c.isWord('once')) {
+            c.next();
+            once = true;
+            break;
+          }
+          expression.push(t.text);
+        }
+        return { kind: 'award', expression, once, span: lineSpan(line) } as AwardStmt;
+      }
+      case 'win':
+      case 'lose': {
+        this.pos++;
+        c.next();
+        const key = c.peek();
+        let phraseKey: string | null = null;
+        if (key && key.kind === 'word') {
+          phraseKey = key.text;
+          c.next();
+        }
+        return { kind: word, phraseKey, span: lineSpan(line) } as Statement;
+      }
+      case 'if':
+        return this.parseIf(line);
+      case 'select':
+        return this.parseSelect(line);
+      default:
+        this.diagnostics.error(
+          'parse.unknown-statement',
+          `Unknown statement \`${word ?? line.raw.trim()}\` in \`${blockKeyword}\` block.`,
+          lineSpan(line),
+        );
+        this.pos++;
+        return null;
+    }
+  }
+
+  private parseParams(c: Cursor, line: Line): ParamBinding[] {
+    const params: ParamBinding[] = [];
+    while (c.matchWord('with')) {
+      const start = c.peek();
+      const param: string[] = [];
+      while (!c.atEnd() && !(c.peek()!.kind === 'punct' && c.peek()!.text === '=')) {
+        param.push(c.next()!.text);
+      }
+      const eq = c.next();
+      if (!eq) {
+        this.diagnostics.error('parse.param-eq', 'Expected `= <value>` in the `with` binding.', c.restSpan());
+        break;
+      }
+      const value = this.parseValueExpr(c, line, new Set(['with']));
+      params.push({ param, value, span: start ? mergeSpans(start.span, value.span) : value.span });
+    }
+    return params;
+  }
+
+  private parseOrdinalBlock(headLine: Line): OrdinalBlock {
+    this.pos++;
+    const word = firstWord(headLine)!;
+    const body: Statement[] = [];
+    let span = lineSpan(headLine);
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (isEndLine(line)) break;
+      const stmt = this.parseStatement(line, 'ordinal');
+      if (stmt) {
+        body.push(stmt);
+        span = mergeSpans(span, stmt.span);
+      }
+    }
+    return { kind: 'ordinal', ordinal: ORDINALS[word], ordinalWord: word, body, span };
+  }
+
+  private parseIf(headLine: Line): IfStmt | null {
+    this.pos++;
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('if');
+
+    // Condition runs to the trailing `then`.
+    const thenIndex = headLine.tokens.map((t) => t.kind === 'word' && t.text === 'then').lastIndexOf(true);
+    if (thenIndex === -1) {
+      this.diagnostics.error('parse.if-then', 'Expected `then` at the end of the `if` line.', lineSpan(headLine));
+      return null;
+    }
+    const condCursor = new Cursor(headLine.tokens.slice(1, thenIndex), headLine);
+    const condition = this.parseCondition(condCursor, headLine);
+
+    const thenBody = this.parseStatements(headLine.indent, 'if');
+    let elseBody: Statement[] | null = null;
+    const elseLine = this.lines[this.pos];
+    if (elseLine && firstWord(elseLine) === 'else' && elseLine.indent === headLine.indent) {
+      this.pos++;
+      elseBody = this.parseStatements(headLine.indent, 'if');
+    }
+    const endSpan = this.consumeEnd('if', headLine);
+
+    return { kind: 'if', condition, then: thenBody, else: elseBody, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  private parseSelect(headLine: Line): SelectOnStmt | SelectStrategyStmt | null {
+    this.pos++;
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('select');
+
+    if (c.matchWord('on')) {
+      const subject = this.parseValueExpr(c, headLine, new Set());
+      const arms: SelectArm[] = [];
+      while (this.pos < this.lines.length) {
+        const line = this.lines[this.pos];
+        if (line.indent <= headLine.indent) break;
+        if (firstWord(line) === 'when') {
+          this.pos++;
+          const armCursor = new Cursor(line.tokens, line);
+          armCursor.next();
+          const valueTok = armCursor.next();
+          if (!valueTok || valueTok.kind !== 'word') {
+            this.diagnostics.error('parse.select-arm', 'Expected a value after `when` in the select arm.', lineSpan(line));
+            continue;
+          }
+          const body = this.parseStatements(line.indent, 'select');
+          arms.push({ value: valueTok.text, body, span: lineSpan(line) });
+        } else {
+          this.diagnostics.error('parse.select-body', `Expected \`when <value>\` arm in \`select on\`, got \`${line.raw.trim()}\`.`, lineSpan(line));
+          this.pos++;
+        }
+      }
+      const endSpan = this.consumeEnd('select', headLine);
+      return { kind: 'select-on', subject, arms, span: mergeSpans(lineSpan(headLine), endSpan) };
+    }
+
+    const strategyTok = c.next();
+    if (!strategyTok || strategyTok.kind !== 'word' || !STRATEGIES.has(strategyTok.text)) {
+      this.diagnostics.error('parse.select-strategy', 'Expected `on <value>` or a strategy (randomly, cycling, ordered, once) after `select`.', strategyTok?.span ?? lineSpan(headLine));
+      this.recoverPastEndNested('select', headLine.indent);
+      return null;
+    }
+    const alternatives: Statement[][] = [];
+    for (;;) {
+      alternatives.push(this.parseStatements(headLine.indent, 'select'));
+      const line = this.lines[this.pos];
+      if (line && firstWord(line) === 'or' && line.tokens.length === 1 && line.indent === headLine.indent) {
+        this.pos++;
+        continue;
+      }
+      break;
+    }
+    const endSpan = this.consumeEnd('select', headLine);
+    return { kind: 'select-strategy', strategy: strategyTok.text, alternatives, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /** Consume the expected `end <keyword>` line; diagnose a mismatch or absence. */
+  private consumeEnd(keyword: string, openLine: Line): Span {
+    const line = this.lines[this.pos];
+    if (line && isEndLine(line)) {
+      this.pos++;
+      const kw = line.tokens[1];
+      if (!kw || kw.kind !== 'word' || kw.text !== keyword) {
+        this.diagnostics.error(
+          'parse.end-mismatch',
+          `Expected \`end ${keyword}\` to close the block opened at line ${openLine.lineNo}, got \`${line.raw.trim()}\`.`,
+          lineSpan(line),
+        );
+      }
+      return lineSpan(line);
+    }
+    this.diagnostics.error(
+      'parse.unterminated-block',
+      `Missing \`end ${keyword}\` for the block opened at line ${openLine.lineNo}.`,
+      line ? lineSpan(line) : lineSpan(openLine),
+    );
+    return line ? lineSpan(line) : lineSpan(openLine);
+  }
+
+  /** Error recovery inside statement blocks: skip past a nested `end` at the open indent. */
+  private recoverPastEndNested(keyword: string, openIndent: number): void {
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= openIndent && isEndLine(line)) {
+        this.pos++;
+        return;
+      }
+      if (line.indent === 0 && TOP_KEYWORDS.has(firstWord(line) ?? '')) return;
+      this.pos++;
+    }
+  }
+
+  // ----------------------------------------------------------- expressions
+
+  /** Parse a name reference: optional article + words until a stop. */
+  private parseNameRef(c: Cursor, stop: (t: Token) => boolean): NameRef {
+    let article: string | null = null;
+    const first = c.peek();
+    let span: Span | null = first ? first.span : null;
+    if (first && first.kind === 'word' && ARTICLES.has(first.text)) {
+      article = first.text;
+      c.next();
+    }
+    const words: string[] = [];
+    while (!c.atEnd()) {
+      const t = c.peek()!;
+      if (t.kind !== 'word' && t.kind !== 'number') break;
+      if (stop(t)) break;
+      words.push(t.text);
+      span = span ? mergeSpans(span, t.span) : t.span;
+      c.next();
+    }
+    return { kind: 'name', article, words, span: span ?? spanOf(c.line.lineNo, 1) };
+  }
+
+  /**
+   * Parse a value expression: literal, name reference, or possessive chain
+   * (`the player's location`, `its state`). Stops at PHRASE_STOPS or any
+   * word in `extraStops`.
+   */
+  private parseValueExpr(c: Cursor, line: Line, extraStops: Set<string>): ValueExpr {
+    const first = c.peek();
+    if (!first) {
+      this.diagnostics.error('parse.value', 'Expected a value.', lineSpan(line));
+      return { kind: 'bare', words: [], span: lineSpan(line) };
+    }
+    if (first.kind === 'number' || first.kind === 'string') {
+      c.next();
+      return { kind: 'literal', value: first.text, literalKind: first.kind, span: first.span };
+    }
+
+    // `its <field>` — possessive on `it`.
+    if (first.kind === 'word' && first.text === 'its') {
+      c.next();
+      const field = this.collectWords(c, extraStops);
+      const base: ValueExpr = { kind: 'ref', ref: { kind: 'name', article: null, words: ['it'], span: first.span }, span: first.span };
+      return { kind: 'possessive', base, field: field.words, span: mergeSpans(first.span, field.span ?? first.span) };
+    }
+
+    let article: string | null = null;
+    let span: Span = first.span;
+    if (first.kind === 'word' && ARTICLES.has(first.text)) {
+      article = first.text;
+      c.next();
+    }
+
+    const words: string[] = [];
+    let possessiveBase: string | null = null;
+    while (!c.atEnd()) {
+      const t = c.peek()!;
+      if (t.kind !== 'word') break;
+      if (PHRASE_STOPS.has(t.text) || extraStops.has(t.text)) break;
+      c.next();
+      span = mergeSpans(span, t.span);
+      const poss = /^(.*)'s$/.exec(t.text);
+      if (poss) {
+        words.push(poss[1]);
+        possessiveBase = poss[1];
+        break;
+      }
+      words.push(t.text);
+    }
+
+    if (words.length === 0) {
+      this.diagnostics.error('parse.value', 'Expected a value.', first.span);
+      return { kind: 'bare', words: [], span: first.span };
+    }
+
+    const refExpr: ValueExpr = {
+      kind: 'ref',
+      ref: { kind: 'name', article, words, span },
+      span,
+    };
+
+    if (possessiveBase !== null) {
+      const field = this.collectWords(c, extraStops);
+      return { kind: 'possessive', base: refExpr, field: field.words, span: mergeSpans(span, field.span ?? span) };
+    }
+    return refExpr;
+  }
+
+  private collectWords(c: Cursor, extraStops: Set<string>): { words: string[]; span: Span | null } {
+    const words: string[] = [];
+    let span: Span | null = null;
+    while (!c.atEnd()) {
+      const t = c.peek()!;
+      if (t.kind !== 'word' || PHRASE_STOPS.has(t.text) || extraStops.has(t.text)) break;
+      words.push(t.text);
+      span = span ? mergeSpans(span, t.span) : t.span;
+      c.next();
+    }
+    return { words, span };
+  }
+
+  // ------------------------------------------------------------ conditions
+
+  /** `or`-composed condition (lowest precedence). */
+  private parseCondition(c: Cursor, line: Line): ConditionNode {
+    const left = this.parseConditionAnd(c, line);
+    if (!c.isWord('or')) return left;
+    const operands = [left];
+    let span = left.span;
+    while (c.matchWord('or')) {
+      const right = this.parseConditionAnd(c, line);
+      operands.push(right);
+      span = mergeSpans(span, right.span);
+    }
+    return { kind: 'or', operands, span };
+  }
+
+  private parseConditionAnd(c: Cursor, line: Line): ConditionNode {
+    const left = this.parseConditionUnary(c, line);
+    if (!c.isWord('and')) return left;
+    const operands = [left];
+    let span = left.span;
+    while (c.matchWord('and')) {
+      const right = this.parseConditionUnary(c, line);
+      operands.push(right);
+      span = mergeSpans(span, right.span);
+    }
+    return { kind: 'and', operands, span };
+  }
+
+  private parseConditionUnary(c: Cursor, line: Line): ConditionNode {
+    const t = c.peek();
+    if (!t) {
+      this.diagnostics.error('parse.condition', 'Expected a condition.', lineSpan(line));
+      return { kind: 'condition-ref', name: '', span: lineSpan(line) };
+    }
+
+    if (t.kind === 'word' && t.text === 'not') {
+      c.next();
+      const operand = this.parseConditionUnary(c, line);
+      return { kind: 'not', operand, span: mergeSpans(t.span, operand.span) };
+    }
+
+    if (t.kind === 'lparen') {
+      c.next();
+      const inner = this.parseCondition(c, line);
+      const close = c.next();
+      if (!close || close.kind !== 'rparen') {
+        this.diagnostics.error('parse.condition-paren', 'Missing closing `)` in the condition.', c.restSpan());
+      }
+      return inner;
+    }
+
+    // one chance in <n>
+    if (t.kind === 'word' && t.text === 'one' && c.isWord('chance', 1) && c.isWord('in', 2)) {
+      c.next();
+      c.next();
+      c.next();
+      const n = c.next();
+      if (!n || n.kind !== 'number') {
+        this.diagnostics.error('parse.chance', 'Expected a number after `one chance in`.', n?.span ?? c.restSpan());
+        return { kind: 'chance', n: 0, span: t.span };
+      }
+      return { kind: 'chance', n: Number(n.text), span: mergeSpans(t.span, n.span) };
+    }
+
+    // Bare single word (before a connective or end of condition): a named
+    // condition reference, e.g. `while in-darkness`.
+    if (t.kind === 'word' && !ARTICLES.has(t.text) && this.isBareConditionRef(c)) {
+      c.next();
+      return { kind: 'condition-ref', name: t.text, span: t.span };
+    }
+
+    // <subject> <predicate>
+    const subject = this.parseValueExpr(c, line, new Set());
+    return this.parsePredicate(c, line, subject);
+  }
+
+  /** True when the next word stands alone (connective or nothing follows). */
+  private isBareConditionRef(c: Cursor): boolean {
+    const after = c.peek(1);
+    if (!after) return true;
+    if (after.kind === 'rparen') return true;
+    return after.kind === 'word' && (after.text === 'and' || after.text === 'or' || after.text === 'then');
+  }
+
+  private parsePredicate(c: Cursor, line: Line, subject: ValueExpr): ConditionNode {
+    const t = c.peek();
+    if (!t || t.kind !== 'word') {
+      this.diagnostics.error('parse.predicate', 'Expected a predicate (is, has, holds, wears) after the subject.', t?.span ?? c.restSpan());
+      return { kind: 'predicate', subject, predicate: { kind: 'is', negated: false, value: { kind: 'bare', words: [], span: subject.span }, span: subject.span }, span: subject.span };
+    }
+
+    if (t.text === 'is') {
+      c.next();
+      const negated = !!c.matchWord('not');
+      if (c.isWord('a') || c.isWord('an')) {
+        c.next();
+        const cls = this.collectWords(c, new Set());
+        return {
+          kind: 'predicate',
+          subject,
+          predicate: { kind: 'is-a', negated, classifier: cls.words, span: cls.span ?? t.span },
+          span: mergeSpans(subject.span, cls.span ?? t.span),
+        };
+      }
+      if (c.isWord('in')) {
+        c.next();
+        const place = this.parseNameRef(c, () => false);
+        return {
+          kind: 'predicate',
+          subject,
+          predicate: { kind: 'is-in', negated, place, span: place.span },
+          span: mergeSpans(subject.span, place.span),
+        };
+      }
+      const value = this.parseValueExpr(c, line, new Set());
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'is', negated, value, span: value.span },
+        span: mergeSpans(subject.span, value.span),
+      };
+    }
+
+    if (t.text === 'has' || t.text === 'holds' || t.text === 'wears') {
+      c.next();
+      const thing = this.parseNameRef(c, () => false);
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: t.text as 'has' | 'holds' | 'wears', thing, span: thing.span },
+        span: mergeSpans(subject.span, thing.span),
+      };
+    }
+
+    this.diagnostics.error('parse.predicate', `Unknown predicate \`${t.text}\` — expected is, is a, is in, has, holds, or wears.`, t.span);
+    c.next();
+    return { kind: 'condition-ref', name: t.text, span: t.span };
+  }
+}

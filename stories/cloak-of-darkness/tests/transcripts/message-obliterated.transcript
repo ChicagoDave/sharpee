@@ -1,0 +1,43 @@
+title: Cloak golden gate — obliterated message loses
+story: cloak-of-darkness
+description: Three dark entries obliterate the message (first-time →
+  trampled, third-time → obliterated, per the stumble rule's ordinal
+  blocks); reading it obliterated is the lose ending. The second dark
+  entry stumbles without changing state. ADR-210 AC-1 golden gate
+  (frozen 2026-07-10).
+
+---
+
+# Dark entry 1: message goes to trampled
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+
+# Dark entry 2: stumble fires, no state change
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+
+# Dark entry 3: message goes to obliterated
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+
+# Hang up the cloak and return to the lit bar
+> west
+> remove cloak
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+> east
+> south
+[OK: contains "Foyer Bar"]
+
+# Obliterated message: the lose phrase and the defeat event
+> read message
+[OK: contains "trampled beyond recognition"]
+[OK: contains "You have lost"]
+[EVENT: true, type="story.defeat"]

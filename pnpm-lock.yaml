@@ -217,6 +217,21 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
+  packages/chord:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
   packages/core:
     dependencies:
       eventemitter3:
@@ -423,6 +438,10 @@ importers:
         version: 5.9.3
 
   packages/ide-protocol:
+    dependencies:
+      '@sharpee/chord':
+        specifier: workspace:*
+        version: link:../chord
     devDependencies:
       '@types/node':
         specifier: ^20.8.0
@@ -882,6 +901,21 @@ importers:
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
+  packages/story-loader:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
       rimraf:
         specifier: ^5.0.5
         version: 5.0.10

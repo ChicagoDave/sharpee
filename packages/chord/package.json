@@ -1,8 +1,9 @@
 {
-  "name": "@sharpee/ide-protocol",
+  "name": "@sharpee/chord",
   "version": "2.2.0",
-  "description": "Wire types for the Sharpee IDE project-introspection manifest (ADR-184)",
+  "description": "Chord story language compiler for Sharpee — lexer, parser, semantic analysis, Story IR wire types, diagnostics (ADR-210)",
   "main": "./dist/index.js",
+  "module": "./dist-esm/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -15,22 +16,15 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
-    "lint": "eslint src --ext .ts",
     "build:npm": "tsc --outDir dist",
     "test": "vitest",
     "test:ci": "vitest run"
   },
-  "dependencies": {
-    "@sharpee/chord": "workspace:*"
-  },
   "devDependencies": {
-    "@types/node": "^20.8.0",
-    "@typescript-eslint/eslint-plugin": "^6.7.4",
-    "@typescript-eslint/parser": "^6.7.4",
-    "eslint": "^8.50.0",
+    "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
-    "typescript": "^5.2.2",
-    "vitest": "^1.6.0"
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist",
@@ -39,17 +33,18 @@
   "keywords": [
     "interactive-fiction",
     "if",
+    "text-adventure",
     "sharpee",
-    "ide",
-    "introspection",
-    "protocol"
+    "chord",
+    "story-language",
+    "compiler"
   ],
   "author": "Sharpee Team",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ChicagoDave/sharpee.git",
-    "directory": "packages/ide-protocol"
+    "directory": "packages/chord"
   },
   "homepage": "https://github.com/ChicagoDave/sharpee#readme",
   "bugs": {
@@ -60,6 +55,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "module": "./dist-esm/index.js"
+  }
 }

@@ -835,10 +835,12 @@ eject-then-verify can run the same transcripts against both forms.
 
 ### 5.9 Verification strategy
 
-- **Golden gate:** the interpreted `cloak.story` must pass the existing
-  cloak-of-darkness transcripts unmodified (two documented divergences: blocked
+- **Golden gate:** the interpreted `cloak.story` must pass the cloak-of-darkness
+  golden transcripts unmodified (two documented divergences: blocked
   north exit replaces the Outside room; canonical re-darkening when the cloak is
   retrieved). Transcript tests are behavior-parity proofs; the harness exists.
+  (Amended 2026-07-10: no `.transcript` suite existed for cloak — the golden
+  suite is authored in Phase A against the hand-written story, then frozen.)
 - **Second gate:** friendly-zoo in `.story` form against its transcript suite —
   this exercises actions, dispatch, scheduler, NPC behaviors, scoring, and the
   hatch seam.

@@ -1,0 +1,36 @@
+title: Cloak golden gate — foyer, descriptions, blocked north exit
+story: cloak-of-darkness
+description: Room descriptions and traversal per the canonical cloak.story
+  (design.md §3.1). Divergence 1 from Firth's original — the Outside room is
+  replaced by a blocked north exit with the cant-leave phrase. Authored fresh
+  as the ADR-210 AC-1 golden gate (frozen 2026-07-10); runs against the
+  Chord-interpreted cloak.story, not the hand-written TS story.
+
+# The bar is deliberately not entered in this file — entering it while
+# carrying the cloak advances the message state (see message-*.transcript).
+---
+
+# Opening room: the Foyer description
+> look
+[OK: contains "Foyer of the Opera House"]
+[OK: contains "spacious hall, splendidly decorated in red and"]
+[OK: contains "doorways south and west"]
+
+# Player description
+> examine yourself
+[OK: contains "As good-looking as ever"]
+
+# Divergence 1: north is blocked with the cant-leave phrase (no Outside room)
+> north
+[OK: contains "You've only just arrived, and besides, the weather outside seems"]
+[OK: not contains "Outside"]
+
+# West to the Cloakroom
+> west
+[OK: contains "Cloakroom"]
+[OK: contains "once lined with hooks"]
+[OK: contains "though now only one remains"]
+
+# Back east to the Foyer
+> east
+[OK: contains "Foyer of the Opera House"]

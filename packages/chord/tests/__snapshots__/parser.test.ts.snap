@@ -1,0 +1,1724 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ac5-random.story (determinism fixture) > matches the golden AST snapshot 1`] = `
+{
+  "declarations": [
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 7,
+            "line": 7,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 23,
+          "endLine": 10,
+          "line": 10,
+        },
+        "text": "A bare eastern room.",
+      },
+      "exits": [
+        {
+          "direction": "west",
+          "kind": "exit",
+          "span": {
+            "column": 3,
+            "endColumn": 24,
+            "endLine": 8,
+            "line": 8,
+          },
+          "to": {
+            "article": "the",
+            "kind": "name",
+            "span": {
+              "column": 11,
+              "endColumn": 24,
+              "endLine": 8,
+              "line": 8,
+            },
+            "words": [
+              "West",
+              "Room",
+            ],
+          },
+        },
+      ],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 21,
+          "endLine": 6,
+          "line": 6,
+        },
+        "words": [
+          "East",
+          "Room",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 23,
+        "endLine": 10,
+        "line": 6,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 13,
+            "line": 13,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 23,
+          "endLine": 16,
+          "line": 16,
+        },
+        "text": "A bare western room.",
+      },
+      "exits": [
+        {
+          "direction": "east",
+          "kind": "exit",
+          "span": {
+            "column": 3,
+            "endColumn": 24,
+            "endLine": 14,
+            "line": 14,
+          },
+          "to": {
+            "article": "the",
+            "kind": "name",
+            "span": {
+              "column": 11,
+              "endColumn": 24,
+              "endLine": 14,
+              "line": 14,
+            },
+            "words": [
+              "East",
+              "Room",
+            ],
+          },
+        },
+      ],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 21,
+          "endLine": 12,
+          "line": 12,
+        },
+        "words": [
+          "West",
+          "Room",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 23,
+        "endLine": 16,
+        "line": 12,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 21,
+          "line": 21,
+        },
+        "text": "Determined-looking.",
+      },
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 18,
+          "endLine": 18,
+          "line": 18,
+        },
+        "words": [
+          "player",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 13,
+            "endColumn": 26,
+            "endLine": 19,
+            "line": 19,
+          },
+          "words": [
+            "East",
+            "Room",
+          ],
+        },
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 26,
+          "endLine": 19,
+          "line": 19,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 22,
+        "endLine": 21,
+        "line": 18,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "key": "crossing-mutter",
+      "kind": "define-phrase",
+      "span": {
+        "column": 1,
+        "endColumn": 11,
+        "endLine": 29,
+        "line": 23,
+      },
+      "strategy": "randomly",
+      "variants": [
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 32,
+            "endLine": 24,
+            "line": 24,
+          },
+          "text": "You mutter about the weather.",
+        },
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 26,
+            "line": 26,
+          },
+          "text": "You hum a scrap of tune.",
+        },
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 29,
+            "endLine": 28,
+            "line": 28,
+          },
+          "text": "Your footsteps echo oddly.",
+        },
+      ],
+    },
+    {
+      "body": [
+        {
+          "kind": "phrase",
+          "params": [],
+          "phraseKey": "crossing-mutter",
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 32,
+            "line": 32,
+          },
+        },
+      ],
+      "condition": null,
+      "headerSpan": {
+        "column": 6,
+        "endColumn": 37,
+        "endLine": 31,
+        "line": 31,
+      },
+      "headerWords": [
+        "the",
+        "player",
+        "enters",
+        "the",
+        "West",
+        "Room",
+      ],
+      "kind": "when-rule",
+      "span": {
+        "column": 1,
+        "endColumn": 9,
+        "endLine": 33,
+        "line": 31,
+      },
+    },
+    {
+      "body": [
+        {
+          "kind": "phrase",
+          "params": [],
+          "phraseKey": "crossing-mutter",
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 36,
+            "line": 36,
+          },
+        },
+      ],
+      "condition": null,
+      "headerSpan": {
+        "column": 6,
+        "endColumn": 37,
+        "endLine": 35,
+        "line": 35,
+      },
+      "headerWords": [
+        "the",
+        "player",
+        "enters",
+        "the",
+        "East",
+        "Room",
+      ],
+      "kind": "when-rule",
+      "span": {
+        "column": 1,
+        "endColumn": 9,
+        "endLine": 37,
+        "line": 35,
+      },
+    },
+    {
+      "body": [
+        {
+          "kind": "phrase",
+          "params": [],
+          "phraseKey": "lucky-draught",
+          "span": {
+            "column": 3,
+            "endColumn": 23,
+            "endLine": 40,
+            "line": 40,
+          },
+        },
+      ],
+      "condition": {
+        "kind": "chance",
+        "n": 3,
+        "span": {
+          "column": 44,
+          "endColumn": 59,
+          "endLine": 39,
+          "line": 39,
+        },
+      },
+      "headerSpan": {
+        "column": 6,
+        "endColumn": 37,
+        "endLine": 39,
+        "line": 39,
+      },
+      "headerWords": [
+        "the",
+        "player",
+        "enters",
+        "the",
+        "West",
+        "Room",
+      ],
+      "kind": "when-rule",
+      "span": {
+        "column": 1,
+        "endColumn": 9,
+        "endLine": 41,
+        "line": 39,
+      },
+    },
+    {
+      "entries": [
+        {
+          "key": "lucky-draught",
+          "span": {
+            "column": 3,
+            "endColumn": 59,
+            "endLine": 44,
+            "line": 44,
+          },
+          "value": {
+            "form": "quoted",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 18,
+              "endColumn": 59,
+              "endLine": 44,
+              "line": 44,
+            },
+            "text": "A lucky draught of air sweeps past you.",
+          },
+        },
+      ],
+      "kind": "define-phrases",
+      "locale": "en-US",
+      "span": {
+        "column": 1,
+        "endColumn": 59,
+        "endLine": 44,
+        "line": 43,
+      },
+    },
+  ],
+  "header": {
+    "author": "Sharpee Platform",
+    "fields": {
+      "blurb": "AC-5 gate fixture - both random forms, no other nondeterminism.",
+      "id": "ac5-random",
+      "version": "1.0.0",
+    },
+    "kind": "story-header",
+    "span": {
+      "column": 1,
+      "endColumn": 73,
+      "endLine": 4,
+      "line": 1,
+    },
+    "title": "Determinism Fixture",
+  },
+  "kind": "story-file",
+  "span": {
+    "column": 1,
+    "endColumn": 59,
+    "endLine": 44,
+    "line": 1,
+  },
+}
+`;
+
+exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapshot 1`] = `
+{
+  "declarations": [
+    {
+      "condition": {
+        "kind": "predicate",
+        "predicate": {
+          "kind": "is",
+          "negated": false,
+          "span": {
+            "column": 56,
+            "endColumn": 60,
+            "endLine": 6,
+            "line": 6,
+          },
+          "value": {
+            "kind": "ref",
+            "ref": {
+              "article": null,
+              "kind": "name",
+              "span": {
+                "column": 56,
+                "endColumn": 60,
+                "endLine": 6,
+                "line": 6,
+              },
+              "words": [
+                "dark",
+              ],
+            },
+            "span": {
+              "column": 56,
+              "endColumn": 60,
+              "endLine": 6,
+              "line": 6,
+            },
+          },
+        },
+        "span": {
+          "column": 31,
+          "endColumn": 60,
+          "endLine": 6,
+          "line": 6,
+        },
+        "subject": {
+          "base": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 31,
+                "endColumn": 43,
+                "endLine": 6,
+                "line": 6,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 31,
+              "endColumn": 43,
+              "endLine": 6,
+              "line": 6,
+            },
+          },
+          "field": [
+            "location",
+          ],
+          "kind": "possessive",
+          "span": {
+            "column": 31,
+            "endColumn": 52,
+            "endLine": 6,
+            "line": 6,
+          },
+        },
+      },
+      "kind": "define-condition",
+      "name": "in-darkness",
+      "span": {
+        "column": 1,
+        "endColumn": 60,
+        "endLine": 6,
+        "line": 6,
+      },
+    },
+    {
+      "aka": [
+        "foyer",
+        "hall",
+        "entrance",
+      ],
+      "blockedExits": [
+        {
+          "direction": "north",
+          "kind": "blocked-exit",
+          "phraseKey": "cant-leave",
+          "span": {
+            "column": 3,
+            "endColumn": 31,
+            "endLine": 13,
+            "line": 13,
+          },
+        },
+      ],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 9,
+            "line": 9,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 65,
+          "endLine": 17,
+          "line": 15,
+        },
+        "text": "You are standing in a spacious hall, splendidly decorated in red and gold, with glittering chandeliers overhead. The entrance from the street is to the north, and there are doorways south and west.",
+      },
+      "exits": [
+        {
+          "direction": "west",
+          "kind": "exit",
+          "span": {
+            "column": 3,
+            "endColumn": 24,
+            "endLine": 11,
+            "line": 11,
+          },
+          "to": {
+            "article": "the",
+            "kind": "name",
+            "span": {
+              "column": 11,
+              "endColumn": 24,
+              "endLine": 11,
+              "line": 11,
+            },
+            "words": [
+              "Cloakroom",
+            ],
+          },
+        },
+        {
+          "direction": "south",
+          "kind": "exit",
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 12,
+            "line": 12,
+          },
+          "to": {
+            "article": "the",
+            "kind": "name",
+            "span": {
+              "column": 12,
+              "endColumn": 25,
+              "endLine": 12,
+              "line": 12,
+            },
+            "words": [
+              "Foyer",
+              "Bar",
+            ],
+          },
+        },
+      ],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 36,
+          "endLine": 8,
+          "line": 8,
+        },
+        "words": [
+          "Foyer",
+          "of",
+          "the",
+          "Opera",
+          "House",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 71,
+        "endLine": 15,
+        "line": 8,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "cloakroom",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 20,
+            "line": 20,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 63,
+          "endLine": 24,
+          "line": 23,
+        },
+        "text": "The walls of this small room were clearly once lined with hooks, though now only one remains. The exit is a door to the east.",
+      },
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 21,
+          "endLine": 19,
+          "line": 19,
+        },
+        "words": [
+          "Cloakroom",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 67,
+        "endLine": 23,
+        "line": 19,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "bar",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 27,
+            "line": 27,
+          },
+          "words": [
+            "room",
+          ],
+        },
+        {
+          "article": null,
+          "condition": {
+            "kind": "predicate",
+            "predicate": {
+              "kind": "has",
+              "span": {
+                "column": 37,
+                "endColumn": 53,
+                "endLine": 27,
+                "line": 27,
+              },
+              "thing": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 37,
+                  "endColumn": 53,
+                  "endLine": 27,
+                  "line": 27,
+                },
+                "words": [
+                  "velvet",
+                  "cloak",
+                ],
+              },
+            },
+            "span": {
+              "column": 22,
+              "endColumn": 53,
+              "endLine": 27,
+              "line": 27,
+            },
+            "subject": {
+              "kind": "ref",
+              "ref": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 22,
+                  "endColumn": 32,
+                  "endLine": 27,
+                  "line": 27,
+                },
+                "words": [
+                  "player",
+                ],
+              },
+              "span": {
+                "column": 22,
+                "endColumn": 32,
+                "endLine": 27,
+                "line": 27,
+              },
+            },
+          },
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 11,
+            "endColumn": 53,
+            "endLine": 27,
+            "line": 27,
+          },
+          "words": [
+            "dark",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 56,
+          "endLine": 32,
+          "line": 30,
+        },
+        "text": "The bar, much rougher than you'd have guessed after the opulence of the foyer to the north, is completely empty. There seems to be some sort of message scrawled in the sawdust on the floor.",
+      },
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 21,
+          "endLine": 26,
+          "line": 26,
+        },
+        "words": [
+          "Foyer",
+          "Bar",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 70,
+        "endLine": 30,
+        "line": 26,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 27,
+          "endLine": 38,
+          "line": 38,
+        },
+        "text": "As good-looking as ever.",
+      },
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 18,
+          "endLine": 34,
+          "line": 34,
+        },
+        "words": [
+          "player",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 13,
+            "endColumn": 41,
+            "endLine": 35,
+            "line": 35,
+          },
+          "words": [
+            "Foyer",
+            "of",
+            "the",
+            "Opera",
+            "House",
+          ],
+        },
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 41,
+          "endLine": 35,
+          "line": 35,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 27,
+        "endLine": 38,
+        "line": 34,
+      },
+      "states": [],
+      "wears": [
+        {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 9,
+            "endColumn": 25,
+            "endLine": 36,
+            "line": 36,
+          },
+          "words": [
+            "velvet",
+            "cloak",
+          ],
+        },
+      ],
+    },
+    {
+      "aka": [
+        "cloak",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 42,
+            "line": 42,
+          },
+          "words": [
+            "wearable",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 37,
+          "endLine": 46,
+          "line": 44,
+        },
+        "text": "A handsome cloak, of velvet trimmed with satin, and slightly splattered with raindrops. Its blackness is so deep that it almost seems to suck light from the room.",
+      },
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 24,
+          "endLine": 40,
+          "line": 40,
+        },
+        "words": [
+          "velvet",
+          "cloak",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 63,
+        "endLine": 44,
+        "line": 40,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "hook",
+        "peg",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 50,
+            "line": 50,
+          },
+          "words": [
+            "scenery",
+          ],
+        },
+        {
+          "article": "a",
+          "condition": null,
+          "config": [
+            {
+              "key": [
+                "capacity",
+              ],
+              "span": {
+                "column": 29,
+                "endColumn": 39,
+                "endLine": 50,
+                "line": 50,
+              },
+              "value": "1",
+              "valueKind": "number",
+            },
+          ],
+          "kind": "composition",
+          "span": {
+            "column": 12,
+            "endColumn": 39,
+            "endLine": 50,
+            "line": 50,
+          },
+          "words": [
+            "supporter",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 53,
+          "endLine": 53,
+          "line": 53,
+        },
+        "text": "It's just a small brass hook, screwed to the wall.",
+      },
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 22,
+          "endLine": 48,
+          "line": 48,
+        },
+        "words": [
+          "brass",
+          "hook",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 19,
+            "endLine": 51,
+            "line": 51,
+          },
+          "words": [
+            "Cloakroom",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 51,
+          "line": 51,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 53,
+        "endLine": 53,
+        "line": 48,
+      },
+      "states": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "message",
+        "sawdust",
+        "floor",
+        "writing",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 57,
+            "line": 57,
+          },
+          "words": [
+            "scenery",
+          ],
+        },
+      ],
+      "description": null,
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 34,
+          "endLine": 55,
+          "line": 55,
+        },
+        "words": [
+          "message",
+          "in",
+          "the",
+          "sawdust",
+        ],
+      },
+      "onClauses": [
+        {
+          "action": "reading",
+          "body": [
+            {
+              "arms": [
+                {
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "message-intact",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 30,
+                        "endLine": 64,
+                        "line": 64,
+                      },
+                    },
+                    {
+                      "kind": "win",
+                      "phraseKey": null,
+                      "span": {
+                        "column": 9,
+                        "endColumn": 12,
+                        "endLine": 65,
+                        "line": 65,
+                      },
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 18,
+                    "endLine": 63,
+                    "line": 63,
+                  },
+                  "value": "intact",
+                },
+                {
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "message-trampled",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 32,
+                        "endLine": 67,
+                        "line": 67,
+                      },
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 20,
+                    "endLine": 66,
+                    "line": 66,
+                  },
+                  "value": "trampled",
+                },
+                {
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "message-obliterated",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 35,
+                        "endLine": 69,
+                        "line": 69,
+                      },
+                    },
+                    {
+                      "kind": "lose",
+                      "phraseKey": null,
+                      "span": {
+                        "column": 9,
+                        "endColumn": 13,
+                        "endLine": 70,
+                        "line": 70,
+                      },
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 23,
+                    "endLine": 68,
+                    "line": 68,
+                  },
+                  "value": "obliterated",
+                },
+              ],
+              "kind": "select-on",
+              "span": {
+                "column": 5,
+                "endColumn": 15,
+                "endLine": 71,
+                "line": 62,
+              },
+              "subject": {
+                "base": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": null,
+                    "kind": "name",
+                    "span": {
+                      "column": 15,
+                      "endColumn": 18,
+                      "endLine": 62,
+                      "line": 62,
+                    },
+                    "words": [
+                      "it",
+                    ],
+                  },
+                  "span": {
+                    "column": 15,
+                    "endColumn": 18,
+                    "endLine": 62,
+                    "line": 62,
+                  },
+                },
+                "field": [
+                  "state",
+                ],
+                "kind": "possessive",
+                "span": {
+                  "column": 15,
+                  "endColumn": 24,
+                  "endLine": 62,
+                  "line": 62,
+                },
+              },
+            },
+          ],
+          "kind": "on-clause",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 72,
+            "line": 61,
+          },
+        },
+      ],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 19,
+            "endLine": 58,
+            "line": 58,
+          },
+          "words": [
+            "Foyer",
+            "Bar",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 58,
+          "line": 58,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 61,
+        "line": 55,
+      },
+      "states": [
+        {
+          "name": "intact",
+          "span": {
+            "column": 11,
+            "endColumn": 17,
+            "endLine": 59,
+            "line": 59,
+          },
+        },
+        {
+          "name": "trampled",
+          "span": {
+            "column": 19,
+            "endColumn": 27,
+            "endLine": 59,
+            "line": 59,
+          },
+        },
+        {
+          "name": "obliterated",
+          "span": {
+            "column": 29,
+            "endColumn": 40,
+            "endLine": 59,
+            "line": 59,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "body": [
+        {
+          "kind": "phrase",
+          "params": [],
+          "phraseKey": "stumble",
+          "span": {
+            "column": 3,
+            "endColumn": 17,
+            "endLine": 75,
+            "line": 75,
+          },
+        },
+        {
+          "body": [
+            {
+              "entity": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 12,
+                  "endColumn": 23,
+                  "endLine": 77,
+                  "line": 77,
+                },
+                "words": [
+                  "message",
+                ],
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 35,
+                "endLine": 77,
+                "line": 77,
+              },
+              "state": "trampled",
+            },
+          ],
+          "kind": "ordinal",
+          "ordinal": 1,
+          "ordinalWord": "first",
+          "span": {
+            "column": 3,
+            "endColumn": 35,
+            "endLine": 77,
+            "line": 76,
+          },
+        },
+        {
+          "body": [
+            {
+              "entity": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 12,
+                  "endColumn": 23,
+                  "endLine": 79,
+                  "line": 79,
+                },
+                "words": [
+                  "message",
+                ],
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 38,
+                "endLine": 79,
+                "line": 79,
+              },
+              "state": "obliterated",
+            },
+          ],
+          "kind": "ordinal",
+          "ordinal": 3,
+          "ordinalWord": "third",
+          "span": {
+            "column": 3,
+            "endColumn": 38,
+            "endLine": 79,
+            "line": 78,
+          },
+        },
+      ],
+      "condition": {
+        "kind": "condition-ref",
+        "name": "in-darkness",
+        "span": {
+          "column": 44,
+          "endColumn": 55,
+          "endLine": 74,
+          "line": 74,
+        },
+      },
+      "headerSpan": {
+        "column": 6,
+        "endColumn": 37,
+        "endLine": 74,
+        "line": 74,
+      },
+      "headerWords": [
+        "the",
+        "player",
+        "enters",
+        "the",
+        "Foyer",
+        "Bar",
+      ],
+      "kind": "when-rule",
+      "span": {
+        "column": 1,
+        "endColumn": 9,
+        "endLine": 80,
+        "line": 74,
+      },
+    },
+    {
+      "kind": "define-verb",
+      "pattern": [
+        {
+          "kind": "word",
+          "span": {
+            "column": 32,
+            "endColumn": 35,
+            "endLine": 82,
+            "line": 82,
+          },
+          "word": "put",
+        },
+        {
+          "kind": "slot",
+          "span": {
+            "column": 36,
+            "endColumn": 47,
+            "endLine": 82,
+            "line": 82,
+          },
+          "word": "something",
+        },
+        {
+          "kind": "word",
+          "span": {
+            "column": 48,
+            "endColumn": 50,
+            "endLine": 82,
+            "line": 82,
+          },
+          "word": "on",
+        },
+        {
+          "kind": "slot",
+          "span": {
+            "column": 51,
+            "endColumn": 62,
+            "endLine": 82,
+            "line": 82,
+          },
+          "word": "something",
+        },
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 62,
+        "endLine": 82,
+        "line": 82,
+      },
+      "verbs": [
+        "hang",
+        "hook",
+      ],
+    },
+    {
+      "entries": [
+        {
+          "key": "cant-leave",
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 87,
+            "line": 85,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 25,
+              "endLine": 87,
+              "line": 86,
+            },
+            "text": "You've only just arrived, and besides, the weather outside seems to be getting worse.",
+          },
+        },
+        {
+          "key": "stumble",
+          "span": {
+            "column": 3,
+            "endColumn": 62,
+            "endLine": 88,
+            "line": 88,
+          },
+          "value": {
+            "form": "quoted",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 12,
+              "endColumn": 62,
+              "endLine": 88,
+              "line": 88,
+            },
+            "text": "Blundering around in the dark isn't a good idea!",
+          },
+        },
+        {
+          "key": "message-intact",
+          "span": {
+            "column": 3,
+            "endColumn": 70,
+            "endLine": 90,
+            "line": 89,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 70,
+              "endLine": 90,
+              "line": 90,
+            },
+            "text": "The message, neatly marked in the sawdust, reads... You have won!",
+          },
+        },
+        {
+          "key": "message-trampled",
+          "span": {
+            "column": 3,
+            "endColumn": 55,
+            "endLine": 91,
+            "line": 91,
+          },
+          "value": {
+            "form": "quoted",
+            "kind": "text",
+            "markers": [
+              {
+                "content": "garbled",
+                "span": {
+                  "column": 45,
+                  "endColumn": 54,
+                  "endLine": 91,
+                  "line": 91,
+                },
+              },
+            ],
+            "span": {
+              "column": 21,
+              "endColumn": 55,
+              "endLine": 91,
+              "line": 91,
+            },
+            "text": "You can just make out: {garbled}",
+          },
+        },
+        {
+          "key": "message-obliterated",
+          "span": {
+            "column": 3,
+            "endColumn": 69,
+            "endLine": 93,
+            "line": 92,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 69,
+              "endLine": 93,
+              "line": 93,
+            },
+            "text": "The message has been trampled beyond recognition. You have lost!",
+          },
+        },
+      ],
+      "kind": "define-phrases",
+      "locale": "en-US",
+      "span": {
+        "column": 1,
+        "endColumn": 69,
+        "endLine": 93,
+        "line": 84,
+      },
+    },
+    {
+      "kind": "define-text",
+      "modulePath": "./extras.ts",
+      "name": "garbled",
+      "span": {
+        "column": 1,
+        "endColumn": 39,
+        "endLine": 95,
+        "line": 95,
+      },
+    },
+  ],
+  "header": {
+    "author": "Roger Firth (Sharpee implementation)",
+    "fields": {
+      "blurb": "A basic IF demonstration - hang up your cloak!",
+      "id": "cloak-of-darkness",
+      "version": "1.0.0",
+    },
+    "kind": "story-header",
+    "span": {
+      "column": 1,
+      "endColumn": 56,
+      "endLine": 4,
+      "line": 1,
+    },
+    "title": "Cloak of Darkness",
+  },
+  "kind": "story-file",
+  "span": {
+    "column": 1,
+    "endColumn": 39,
+    "endLine": 95,
+    "line": 1,
+  },
+}
+`;

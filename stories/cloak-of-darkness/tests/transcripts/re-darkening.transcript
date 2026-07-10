@@ -1,0 +1,49 @@
+title: Cloak golden gate — re-darkening when the cloak is retrieved
+story: cloak-of-darkness
+description: Divergence 2 from Firth's original — `dark while the player
+  has the velvet cloak` is a derived property, so the bar re-darkens
+  whenever the player regains the cloak (and re-lights when they shed it),
+  including in place inside the bar. ADR-210 AC-1 golden gate (frozen
+  2026-07-10).
+
+---
+
+# Hang the cloak first: the bar starts lit
+> west
+> remove cloak
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+> east
+> south
+[OK: contains "Foyer Bar"]
+[OK: contains "message scrawled in the sawdust"]
+
+# Retrieve the cloak and come back: the bar is dark again, and this
+# first dark entry trips the stumble rule
+> north
+> west
+> take cloak
+[OK: contains "Taken"]
+
+> east
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> look
+[OK: contains "pitch dark"]
+
+# In-place recomputation: dropping the cloak inside the bar lights it...
+> drop cloak
+[OK: contains "Dropped"]
+
+> look
+[OK: contains "much rougher than you'd have guessed"]
+
+# ...and picking it back up darkens it again (no stumble — no entry occurred)
+> take cloak
+[OK: contains "Taken"]
+
+> look
+[OK: contains "pitch dark"]
+[OK: not contains "Blundering"]

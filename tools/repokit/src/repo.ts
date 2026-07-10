@@ -18,8 +18,11 @@ import { basename, dirname, join, resolve } from 'node:path';
 export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/core', 'core'],
   ['@sharpee/text-blocks', 'text-blocks'],
-  ['@sharpee/ide-protocol', 'ide-protocol'],
   ['@sharpee/if-domain', 'if-domain'],
+  // chord precedes ide-protocol: ide-protocol re-exports the Story IR schema
+  // from chord (ADR-210 Interface Contract 1).
+  ['@sharpee/chord', 'chord'],
+  ['@sharpee/ide-protocol', 'ide-protocol'],
   ['@sharpee/media', 'media'],
   ['@sharpee/world-model', 'world-model'],
   ['@sharpee/helpers', 'helpers'],
@@ -39,6 +42,7 @@ export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/story-runtime-baseline', 'story-runtime-baseline'],
   ['@sharpee/ext-testing', 'extensions/testing'],
   ['@sharpee/engine', 'engine'],
+  ['@sharpee/story-loader', 'story-loader'],
   ['@sharpee/bootstrap', 'bootstrap'],
   ['@sharpee/platform-browser', 'platform-browser'],
   ['@sharpee/sharpee', 'sharpee'],
