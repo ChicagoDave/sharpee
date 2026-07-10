@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/channel-service",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Channel-service platform — universal channel-I/O wire producer (ADR-163)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

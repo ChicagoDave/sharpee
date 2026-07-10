@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/devkit",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "The Sharpee CLI engine — build/test/verify/scaffold orchestration (ADR-180). Provides the `sharpee` command; orchestrates, tsf compiles.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
