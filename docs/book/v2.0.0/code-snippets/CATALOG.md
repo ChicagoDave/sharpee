@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **156 snippets** across 31 chapters (153 author, 3 reference).
+- **162 snippets** across 31 chapters (159 author, 3 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -76,8 +76,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 02 | `02-two-rules-that-trip-up-everyone.ts` | Two rules that trip up everyone | typescript | author | 45 |
 | 03 | `03-getting-a-trait-back-with-get.ts` | Getting a trait back with `.get()` | typescript | author | 67 |
 | 04 | `04-getting-a-trait-back-with-get.ts` | Getting a trait back with `.get()` | typescript | author | 75 |
-| 05 | `05-putting-it-together.ts` | Putting it together | typescript | author | 87 |
-| 06 | `06-putting-it-together.ts` | Putting it together | typescript | author | 99 |
+| 05 | `05-first-visits-get-their-own-prose.ts` | First visits get their own prose | typescript | author | 97 |
+| 06 | `06-putting-it-together.ts` | Putting it together | typescript | author | 129 |
+| 07 | `07-putting-it-together.ts` | Putting it together | typescript | author | 141 |
 
 ## Scenery & Portable Objects: Everything Is Portable by Default
 
@@ -89,6 +90,11 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 02 | `02-entitytype-scenery-makes-a-thing-fixed.ts` | EntityType.SCENERY makes a thing fixed | typescript | author | 50 |
 | 03 | `03-aliases-make-objects-findable.ts` | Aliases make objects findable | typescript | author | 101 |
 | 04 | `04-putting-it-together.ts` | Putting it together | typescript | author | 162 |
+| 05 | `05-room-description-snippets.ts` | Room-description snippets | typescript | author | 252 |
+| 06 | `06-room-description-snippets.ts` | Room-description snippets | typescript | author | 269 |
+| 07 | `07-lists-vary-the-text.ts` | Lists vary the text | typescript | author | 299 |
+| 08 | `08-lists-vary-the-text.ts` | Lists vary the text | typescript | author | 319 |
+| 09 | `09-mentions-ties-a-snippet-to-its-entity.ts` | `mentions` ties a snippet to its entity | typescript | author | 337 |
 
 ## Containers & Supporters: What Holds What
 
@@ -180,7 +186,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 05 | `05-setting-up-the-gift-shop-the-press-and-remembering.ts` | Setting up: the gift shop, the press, and remembering IDs | typescript | author | 138 |
 | 06 | `06-setting-up-the-gift-shop-the-press-and-remembering.ts` | Setting up: the gift shop, the press, and remembering IDs | typescript | author | 191 |
 | 07 | `07-reaction-pattern-the-goats-eat-the-feed.ts` | Reaction pattern: the goats eat the feed | typescript | author | 203 |
-| 08 | `08-transformation-pattern-put-a-in-get-b-out.ts` | Transformation pattern: put A in, get B out | typescript | author | 252 |
+| 08 | `08-transformation-pattern-put-a-in-get-b-out.ts` | Transformation pattern: put A in, get B out | typescript | author | 272 |
 
 ## Custom Actions: Teaching the Parser New Verbs
 
@@ -254,9 +260,9 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-pass-a-noun-phrase-not-a-name.ts` | Pass a noun phrase, not a name | typescript | author | 59 |
 | 02 | `02-lists.ts` | Lists | typescript | author | 128 |
-| 03 | `03-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 208 |
-| 04 | `04-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 237 |
-| 05 | `05-where-the-parameters-go-nest-them-under-params.ts` | Where the parameters go: nest them under `params` | typescript | author | 265 |
+| 03 | `03-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 210 |
+| 04 | `04-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 239 |
+| 05 | `05-where-the-parameters-go-nest-them-under-params.ts` | Where the parameters go: nest them under `params` | typescript | author | 274 |
 
 # Volume VI — Living Worlds
 
@@ -326,8 +332,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-defining-your-own-channel.ts` | Defining your own channel | typescript | author | 91 |
-| 02 | `02-defining-your-own-channel.ts` | Defining your own channel | typescript | author | 102 |
+| 01 | `01-defining-your-own-channel.ts` | Defining your own channel | typescript | author | 92 |
+| 02 | `02-defining-your-own-channel.ts` | Defining your own channel | typescript | author | 103 |
 
 ## The Web Client: A Framework-Free UI
 
@@ -380,7 +386,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-running-them.sh` | Running them | bash | author | 212 |
+| 01 | `01-running-them.sh` | Running them | bash | author | 217 |
 
 ## Saving & Restoring: State Lives in the World
 
@@ -388,8 +394,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-the-one-thing-you-must-save-yourself.ts` | The one thing you must save yourself | typescript | author | 29 |
-| 02 | `02-the-one-thing-you-must-save-yourself.ts` | The one thing you must save yourself | typescript | author | 51 |
+| 01 | `01-the-one-thing-you-must-save-yourself.ts` | The one thing you must save yourself | typescript | author | 31 |
+| 02 | `02-the-one-thing-you-must-save-yourself.ts` | The one thing you must save yourself | typescript | author | 53 |
 
 ## Building & Publishing: The Single-Player Browser Client
 
@@ -399,5 +405,5 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-the-author-toolchain.sh` | The author toolchain | bash | author | 18 |
 | 02 | `02-adding-the-browser-client.sh` | Adding the browser client | bash | author | 39 |
-| 03 | `03-hosting-it.sh` | Hosting it | bash | author | 55 |
+| 03 | `03-hosting-it.sh` | Hosting it | bash | author | 61 |
 

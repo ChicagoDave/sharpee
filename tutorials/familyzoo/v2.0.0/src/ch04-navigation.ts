@@ -140,15 +140,26 @@ class FamilyZooStory implements Story {
 
     // --- Aviary (NEW) ---
     const aviary = world.createEntity('Aviary', EntityType.ROOM);
-    aviary.add(new RoomTrait({ exits: {}, isDark: false }));
-    aviary.add(new IdentityTrait({
-      name: 'Aviary',
-      description:
+    aviary.add(new RoomTrait({
+      exits: {},
+      isDark: false,
+      // First-visit text (book ch4): arrival prose prints once, then the
+      // standing description below takes over.
+      initialDescription:
         'You step inside a soaring mesh dome that stretches high above ' +
         'the treetops. Brilliantly colored parrots chatter from rope ' +
         'perches, and a toucan eyes you curiously from a branch ' +
         'overhead. A small waterfall splashes into a stone basin where ' +
         'finches bathe. The exit back to the main path is to the east.',
+    }));
+    aviary.add(new IdentityTrait({
+      name: 'Aviary',
+      description:
+        'Inside the soaring mesh dome, brilliantly colored parrots ' +
+        'chatter from rope perches, and a toucan eyes you curiously ' +
+        'from a branch overhead. A small waterfall splashes into a ' +
+        'stone basin where finches bathe. The exit back to the main ' +
+        'path is to the east.',
       aliases: ['aviary', 'bird house', 'bird cage', 'dome'],
       properName: false,
       article: 'the',

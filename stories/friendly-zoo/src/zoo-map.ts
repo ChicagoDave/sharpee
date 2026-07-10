@@ -79,7 +79,7 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
     .build();
 
   const giftShop = room('Gift Shop')
-    .description('A small zoo gift shop crammed with stuffed animals and postcards. A large souvenir penny press machine stands near the door. A disposable camera sits on the counter. The aviary is back to the east.')
+    .description('A small zoo gift shop crammed with stuffed animals and postcards{snippet:pins}. A large souvenir penny press machine stands near the door. A disposable camera sits on the counter. The aviary is back to the east.')
     .aliases('gift shop', 'shop', 'store')
     .build();
 

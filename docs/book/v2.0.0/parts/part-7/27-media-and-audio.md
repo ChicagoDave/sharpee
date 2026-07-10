@@ -35,7 +35,7 @@ a clickable region that plays exactly like a typed verb.
 
 ## Capability gating
 
-The reason a terminal never mis-renders an image is **capability gating**, the
+The reason a text-only client never mis-renders an image is **capability gating**, the
 mechanism from the Channels chapter. At startup the client declares what it can do.
 The browser declares a full graphical profile, with `images`, `sound`, `music`,
 `animations`, and more all `true`, so every media channel appears in its manifest. A

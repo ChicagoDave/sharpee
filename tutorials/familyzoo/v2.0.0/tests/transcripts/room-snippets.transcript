@@ -1,0 +1,20 @@
+title: Room snippets
+story: familyzoo
+description: The rabbits snippet cycles, goes quiet, and wraps
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "hop near a hay bale"]
+
+> look
+[OK: contains "doze in a heap"]
+
+> look
+[OK: not contains "rabbits"]
+
+> look
+[OK: contains "hop near a hay bale"]

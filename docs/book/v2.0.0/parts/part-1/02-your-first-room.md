@@ -44,7 +44,7 @@ You create entities with `world.createEntity(name, type)`. The type is a hint to
 
 In this version we construct four traits, and import a fifth for later:
 
-- **`IdentityTrait`**: a name, description, and aliases. Almost every entity has one. The `description` is what `examine` shows; the `aliases` are the alternative words the parser will accept.
+- **`IdentityTrait`**: a name, description, and aliases. Almost every entity has one. The `description` is what `examine` shows; the `aliases` are the alternative words the parser will accept. (Curly braces in a description are ordinary text; Chapter 5 introduces the one opt-in exception.)
 - **`ActorTrait`**: marks an entity as a character. `isPlayer: true` tells the engine this is *the* player.
 - **`ContainerTrait`**: lets an entity hold other entities. The player needs it to carry an inventory.
 - **`RoomTrait`**: marks an entity as a room, with exits and a darkness flag.

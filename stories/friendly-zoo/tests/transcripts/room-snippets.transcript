@@ -1,0 +1,37 @@
+title: Room snippets
+story: friendly-zoo
+description: ADR-209 — the gift shop's pins snippet cycles across looks, goes
+  quiet on the empty entry, and wraps (the book ch5 example shape).
+---
+
+# Walk to the gift shop: entrance → main path → aviary → gift shop.
+> south
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+# Arrival at the gift shop is the snippet's first render: entry one.
+> west
+[OK: contains "Gift Shop"]
+[OK: contains "wobbles by the register"]
+
+# Second render advances the cycle.
+> look
+[OK: contains "picked half bare"]
+
+# Third entry is the empty string: the pins go unmentioned entirely.
+> look
+[OK: not contains "enamel"]
+
+# Fourth render wraps back to the first entry.
+> look
+[OK: contains "wobbles by the register"]
+
+# The entity is still fully examinable — the room only whispers it.
+> examine pins
+[OK: contains "costs more than it should"]
+
+# Scenery, so the taking action refuses in the plural.
+> take pins
+[OK: contains "are fixed in place"]

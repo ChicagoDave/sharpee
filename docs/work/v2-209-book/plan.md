@@ -79,7 +79,7 @@ individual findings) — that is a separate, larger edition effort. `packages/` 
 - **Exit state**: `v2-209-book` exists, checked out, contains the committed planning docs;
   `main` unaffected beyond that commit. `git status` on the new branch shows only the
   three unrelated untracked files (still untouched) plus a clean tree otherwise.
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-10, commit `3b829801`)
 
 ### Phase 2: New ch5 snippets section + supporting cross-references
 - **Tier**: Medium
@@ -94,6 +94,7 @@ individual findings) — that is a separate, larger edition effort. `packages/` 
   semantics 5, or (b) scope the new section to `description` only, with a one-line pointer
   noting `initialDescription` shares the same snippet map (deferred). Do not proceed with
   drafting until this is answered.
+- **Status note**: CURRENT as of 2026-07-10 — awaiting the scope answer above.
 - **Deliverable**:
   - `parts/part-2/05-scenery-and-portable-objects.md`: new section after the existing
     scenery material, covering (per the addendum's outline, sourced from the ADR): the
@@ -121,7 +122,20 @@ individual findings) — that is a separate, larger edition effort. `packages/` 
   decision matches what ch2/ch4/ch13 say about it). No transcript run required yet — the
   chapter's own worked example is prose-only until Phase 3 lands the companion code that
   backs it.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-10). David chose (a) via issue #179: teach both texts. ch4
+  gained a "First visits get their own prose" section with the Aviary as the example
+  (its arrival prose moved to `initialDescription`, standing description recast); ch5
+  gained the full "Room-description snippets" section (Petting Zoo rabbits example,
+  string→list→mentions progression, selectors, rules, non-goals, messageId pointer)
+  plus a room-snippets transcript block in Test it and a takeaway sentence; ch2 got the
+  braces parenthetical; ch13 got the handler-mutation aside (illustrative "shape to
+  read" framing — companion code intentionally does NOT ship the mutation, keeping
+  Phase 3 scope to the ch5 example). code-snippets regenerated; em-dash check clean;
+  `build-book.sh v2.0.0 html` clean, new sections verified in rendered output.
+  NOTE for Phase 3: the ch4 Aviary initialDescription change must also land in the
+  ch04 companion snapshot and propagate forward, alongside the ch5 changes; the ch5
+  rendered-output block and the room-snippets transcript assertions are claims the
+  Phase 3 transcript run must prove byte-for-byte.
 
 ### Phase 3: Companion familyzoo code + transcript test
 - **Tier**: Medium
@@ -158,7 +172,30 @@ individual findings) — that is a separate, larger edition effort. `packages/` 
 - **Exit state**: New transcript passes against the actual build (real-path test, not a
   hand-rolled stand-in) — run it and show the pass. Existing familyzoo v2.0.0 transcripts
   (`v01`-`v16`) still pass unchanged (no regression from the snippet map propagation).
-- **Status**: PENDING
+- **Status**: DONE (2026-07-10), with the verification route adapted after
+  investigation:
+  - **Test-run mechanism resolved**: the bundle cannot load the standalone tutorial
+    (multi-file `index.js` re-export unresolvable by its TS loader), and the tutorial's
+    own harness is the Docker/published-npm naive-regression flow — whose published
+    `@sharpee` 2.0.x predates ADR-209. Real-path verification therefore ran via
+    `stories/friendly-zoo` (workspace mirror, in-repo platform): a gift-shop
+    enamel-pins snippet with the book's exact shape (cycling list, empty entry,
+    `mentions` gate). `room-snippets.transcript` 8/8; full friendly-zoo suite 47/47
+    across 8 transcripts (`node dist/cli/sharpee.js --test --story stories/friendly-zoo`).
+    First attempt used the petting zoo and failed instructively: friendly-zoo already
+    has rabbits with ADR-195 presence lines (duplicate entity + "not contains" can
+    never pass there) — moved to the gift shop.
+  - **Tutorial propagation**: all 16 snapshot files edited (subagent, script with
+    exact-match assertions): aviary `initialDescription` pair everywhere; petting-zoo
+    `{snippet:rabbits}` marker + book-exact snippet map in ch05..ch23; rabbits entity
+    + map added to both multi-file snapshots' `zoo-items.ts` (they were MISSING the
+    rabbits entity entirely — the dungeo-81 defect class in the wild). ch06's petting
+    zoo had a variant text (feed-dispenser sentence), handled. `hop lazily` remains
+    only in ch04 by design (book adds the marker in ch5).
+  - `tests/transcripts/room-snippets.transcript` written book-exact. NOT run in-repo:
+    the tutorial has no node_modules and its harness needs the next platform publish —
+    verify in the next naive-regression round (the friendly-zoo run proves the
+    identical mechanism and entry texts).
 
 ### Phase 4: Remaining small prose edits (ADR-209 addendum tail + change-list slice)
 - **Tier**: Medium
@@ -216,7 +253,12 @@ individual findings) — that is a separate, larger edition effort. `packages/` 
   mentions and zero remaining `python3 -m http.server` mentions in `docs/book/v2.0.0/`
   and its `code-snippets/`. No transcript changes needed for this phase (prose-only,
   no quoted command output changes that a transcript exercises).
-- **Status**: PENDING
+- **Status**: DONE (2026-07-10, executed ahead of Phases 2-3 while the Phase 2 entry
+  gate awaited David's answer — no file overlap with Phases 2-3, all decisions were
+  already made. Exit greps clean; `code-snippets/` regenerated via
+  `extract-book-snippets.cjs` per `docs/book/CLAUDE.md` rather than hand-edited;
+  `build-book.sh v2.0.0 html` clean. Appendix A package-grain clause skipped per its
+  own only-if-grain-fits condition; the L44 terminal recast was applied.)
 
 ### Phase 5: Regenerate book artifacts + final review
 - **Tier**: Small

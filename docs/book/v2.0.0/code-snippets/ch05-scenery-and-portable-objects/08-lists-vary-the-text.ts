@@ -1,0 +1,4 @@
+rabbits: {
+  selector: 'random',
+  texts: [ /* ... */ ],
+},

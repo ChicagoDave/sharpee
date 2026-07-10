@@ -15,10 +15,12 @@ Volume VI. When the engine saves, it serializes the *entire* world into a single
 
 Because your game state is *in* the world rather than in loose variables scattered
 through your code, restoring is just rebuilding the world from that snapshot. Score,
-entity positions, container contents, state flags, relationships, the ID counters:
-all of it comes back, because all of it was in the world to begin with. The author
-who kept state in the world (as every earlier chapter taught) gets save/restore for
-free.
+entity positions, container contents, state flags, relationships, the ID counters,
+the selection counters behind `Choice` phrases and description snippets: all of it
+comes back, because all of it was in the world to begin with. The author who kept
+state in the world (as every earlier chapter taught) gets save/restore for free.
+That includes text variation: a cycling description snippet saved mid-cycle resumes
+exactly where it left off on restore.
 
 ## The one thing you must save yourself
 

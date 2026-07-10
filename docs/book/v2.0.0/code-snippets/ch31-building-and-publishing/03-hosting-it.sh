@@ -1,3 +1,3 @@
 sharpee build
-python3 -m http.server -d dist/web
-# then open the printed http://localhost:8000
+npx serve dist/web
+# then open the printed http://localhost:3000
