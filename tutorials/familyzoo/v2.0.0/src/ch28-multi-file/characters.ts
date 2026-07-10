@@ -21,6 +21,7 @@ import {
 import {
   NpcTrait,
   SceneryTrait,
+  RoomTrait,
 } from '@sharpee/world-model';
 import { createHelpers } from '@sharpee/helpers';
 import type { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
@@ -173,6 +174,20 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
     .addTrait(new PettableTrait('rabbits'))
     .in(pettingZooEntity)
     .build();
+
+  // Room-description snippet (ADR-209, book ch5): the rabbits clause is
+  // spliced at {snippet:rabbits} in the petting zoo's description, cycling
+  // with a legal empty entry and gated on the rabbits' presence.
+  pettingZooEntity.get(RoomTrait)!.snippets = {
+    rabbits: {
+      texts: [
+        ', while a pair of fluffy rabbits hop near a hay bale',
+        ', while the rabbits doze in a heap of loose hay',
+        '',
+      ],
+      mentions: rabbits.id,
+    },
+  };
 
   const parrotsScenery = object('parrots')
     .description('A raucous flock of scarlet macaws and grey African parrots.')

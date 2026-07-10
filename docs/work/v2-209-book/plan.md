@@ -192,10 +192,17 @@ individual findings) — that is a separate, larger edition effort. `packages/` 
     rabbits entity entirely — the dungeo-81 defect class in the wild). ch06's petting
     zoo had a variant text (feed-dispenser sentence), handled. `hop lazily` remains
     only in ch04 by design (book adds the marker in ch5).
-  - `tests/transcripts/room-snippets.transcript` written book-exact. NOT run in-repo:
-    the tutorial has no node_modules and its harness needs the next platform publish —
-    verify in the next naive-regression round (the friendly-zoo run proves the
-    identical mechanism and entry texts).
+  - `tests/transcripts/room-snippets.transcript` written book-exact.
+  - **Post-publish verification CLOSED (2026-07-10)**: after David published the
+    lockstep 2.2.0, the tutorial was stood up as a standalone project on the published
+    packages (`npm install` + `npx sharpee build --test`). First run 201/202: the two
+    multi-file snapshots already had a rabbits entity in `characters.ts` (missed by the
+    pre-propagation grep, which only covered zoo-map/zoo-items), so the propagation's
+    added entity caused a disambiguation clash on `examine rabbits`. Fix: duplicate
+    entity + map removed from both `zoo-items.ts`; the snippet map now lives in both
+    `characters.ts` after the existing rabbits creation. Re-run: **202/202 across all
+    17 transcripts** on published 2.2.0. The full PDF naive-executor round remains
+    available as the book-wide gate when David wants a run.
 
 ### Phase 4: Remaining small prose edits (ADR-209 addendum tail + change-list slice)
 - **Tier**: Medium
