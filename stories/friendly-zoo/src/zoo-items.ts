@@ -19,6 +19,7 @@ import {
   OpenableTrait,
   SwitchableTrait,
   ReadableTrait,
+  RoomTrait,
 } from '@sharpee/world-model';
 import { createHelpers } from '@sharpee/helpers';
 import type { RoomIds } from './zoo-map.js';
@@ -71,6 +72,30 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .aliases('feed', 'animal feed', 'bag of feed', 'corn')
     .in(pettingZooEntity)
     .build();
+
+  // Enamel-pin rack — quiet scenery surfaced by the gift shop's description
+  // snippet (ADR-209): the room prose whispers it via {snippet:pins}; examine
+  // gives the close-up from its own identity. Exercises the book ch5 example
+  // shape end to end (cycling list, legal empty entry, mentions presence gate)
+  // in a room with no ADR-195 presence contributors to muddy assertions.
+  const enamelPins = object('enamel pins')
+    .description('A spinning rack of enamel pins: parrots, pygmy goats, a grinning snake. Every one of them costs more than it should.')
+    .aliases('pins', 'pin', 'enamel pins', 'rack', 'pin rack')
+    .scenery()
+    .plural()
+    .in(giftShopEntity)
+    .build();
+
+  giftShopEntity.get(RoomTrait)!.snippets = {
+    pins: {
+      texts: [
+        ', and a spinning rack of enamel pins wobbles by the register',
+        ', and the enamel-pin rack stands picked half bare',
+        '',
+      ],
+      mentions: enamelPins.id,
+    },
+  };
 
   const penny = object('souvenir penny')
     .description('A shiny copper penny.')

@@ -167,7 +167,7 @@ the book, whose flow every chapter builds on.
 server and open it in a browser:
 
 ```bash
-python3 -m http.server -d dist/web
+npx serve dist/web
 ```
 
 That's the loop you'll use throughout the book: edit `src/`, `sharpee build`,

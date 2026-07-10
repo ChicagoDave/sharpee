@@ -232,6 +232,166 @@ penny are portable, the feed waits in the Petting Zoo, and the goats stay put.
 > choose the verb.) The multi-file chapter's `object()` builder (a fluent
 > alternative you'll meet in Chapter 28) spells this `.plural()`.
 
+## Room-description snippets
+
+Scenery lives in the room's prose, and that rule pushes real work onto the
+prose: every fence, bench, and animal wants its clause, and every later change
+means re-editing one long string. Sharpee gives room descriptions one
+purpose-built tool for this. A **snippet** is a piece of text you write,
+spliced into the description at a **marker** you place. The splice is purely
+mechanical. There is no generated prose and no rewriting; every rendered
+character is something you wrote.
+
+A marker is written `{snippet:name}` inside the description, and the room's
+`RoomTrait` carries a matching **snippet map** giving each marker its text.
+Take the Petting Zoo. Chapter 4 wrote the rabbits directly into its
+description; carve that clause out as a snippet instead. In the Chapter 4
+creation block, the description gains a marker where the clause used to be
+(the replacement rule):
+
+```typescript
+  pettingZoo.add(new IdentityTrait({
+    name: 'Petting Zoo',
+    description:
+      'A cheerful open-air enclosure filled with friendly ' +
+      'animals. Pygmy goats trot around nibbling at ' +
+      'visitors\' shoelaces{snippet:rabbits}. The main path ' +
+      'is back to the west.',
+    aliases: ['petting zoo', 'petting area', 'pen'],
+    article: 'the',
+  }));
+```
+
+Then, at the end of this chapter's scenery code, after the rabbits exist, the
+room gets its snippet map. `RoomTrait` data is yours to set through `.get()`,
+the same way Chapter 4 wired exits:
+
+```typescript
+pettingZoo.get(RoomTrait)!.snippets = {
+  rabbits:
+    ', while a pair of fluffy rabbits hop near a hay bale',
+};
+```
+
+Rendered, the paragraph is exactly the one Chapter 4 shipped:
+
+```
+A cheerful open-air enclosure filled with friendly animals. Pygmy goats trot
+around nibbling at visitors' shoelaces, while a pair of fluffy rabbits hop
+near a hay bale. The main path is back to the west.
+```
+
+Two details to notice. The snippet carries its own leading comma and space:
+the splice inserts the text and nothing else, so whatever spacing and
+punctuation the sentence needs travels with the snippet. And the room only
+*whispers* the rabbits while the entity keeps its full identity: `examine
+rabbits` still gives the close-up from the rabbits' own `IdentityTrait`, and
+nothing forces the spliced clause to name the entity the way the world model
+does. A quiet aside in the prose that rewards the player who examines it is
+exactly what this tool is for.
+
+So far the snippet has only moved a clause. The payoff comes in three parts.
+
+### Lists vary the text
+
+A snippet may be a list, and the platform picks one entry per render:
+
+```typescript
+pettingZoo.get(RoomTrait)!.snippets = {
+  rabbits: [
+    ', while a pair of fluffy rabbits hop near a hay bale',
+    ', while the rabbits doze in a heap of loose hay',
+    '',
+  ],
+};
+```
+
+A list **cycles** by default: the first entry on the first render, the second
+on the next, wrapping when it runs out. The empty string is a legal entry that
+renders nothing, so with this map every third look leaves the rabbits
+unmentioned. Selection is seeded and deterministic, never wall-clock
+randomness, and each entry's counter is saved with the game: transcripts
+replay identically (Chapter 29), and a saved game resumes its cycle where it
+left off (Chapter 30).
+
+Cycling is one of five selectors, and the long form names one explicitly:
+
+```typescript
+rabbits: {
+  selector: 'random',
+  texts: [ /* ... */ ],
+},
+```
+
+`cycling` takes turns, `stopping` advances and then stays on the last entry,
+`firstTime` uses the first entry once and the second ever after, `random`
+picks with a seeded generator, and `sticky` picks once and repeats that pick
+forever. Chapter 19 shows the same selectors at work inside message templates.
+
+### `mentions` ties a snippet to its entity
+
+The rabbits clause describes an entity that might not always be there. Name
+that entity in the entry and the snippet gates itself on the entity's
+presence:
+
+```typescript
+pettingZoo.get(RoomTrait)!.snippets = {
+  rabbits: {
+    texts: [
+      ', while a pair of fluffy rabbits hop near a hay bale',
+      ', while the rabbits doze in a heap of loose hay',
+      '',
+    ],
+    mentions: rabbits.id,
+  },
+};
+```
+
+A snippet with `mentions` renders only while that entity is in the room, with
+no bookkeeping from you: if the rabbits are ever moved away or removed from
+play, their clause simply evaporates from the description, and it returns when
+they do. Presence is transitive containment, so rabbits inside a hutch inside
+the room still count as here. The field does a second job as coverage
+metadata: it records, mechanically, which scenery this prose accounts for.
+
+### The map is data your handlers can edit
+
+The snippet map is plain data on the trait, so the event handlers of
+Chapter 13 may rewrite entries at runtime: swap in aftermath text after some
+event, or quiet a mention whose moment has passed. One convention keeps that
+safe: set an entry to the empty string rather than deleting it, so the
+load-time check described next stays meaningful.
+
+### The rules
+
+Snippets are opt-in, room by room. A room with no snippet map is never
+scanned: braces in its description are ordinary prose, which is why nothing
+you wrote before this section changes meaning. Giving a room a map is what
+turns every `{snippet:x}` in its description into a marker. One invariant
+follows, so keep it in mind: the same description text renders differently
+depending on whether the room has a snippet map.
+
+Mistakes fail loudly and early. A marker with no matching entry is an error
+the moment the story loads, naming the room and the marker. A map entry whose
+marker appears nowhere in the room's text is a `sharpee build` warning
+(Chapter 31), since it is usually mid-edit drift. And if a handler leaves a
+marker unbound at runtime, the render splices nothing and logs a warning
+rather than crashing the turn.
+
+Markers work in `initialDescription` too (the first-visit text from
+Chapter 4). Both texts share the room's one snippet map, and a marker used in
+both draws from the same entry and the same counter: a first visit that
+renders the initial text advances the cycle, and the next look continues it
+in the standing description.
+
+Two boundaries complete the picture. Snippets are not a general conditional
+text system: the map holds no functions, only text, and the one piece of
+world state it reads is the `mentions` presence gate. Anything more
+conditional belongs in an event handler editing the map. And for a localized
+story, any snippet text may be `{ messageId: '...' }` instead of a literal
+string, resolving through the language layer of Chapter 18; single-language
+stories just write the text.
+
 ## Try it
 
 ```
@@ -298,6 +458,38 @@ description: Portable by default; scenery fixed in place
 [OK: contains "fixed in place"]
 ```
 
+The rabbits snippet deserves its own pin, because its whole point is behavior
+across *repeated* looks: the cycle advances, goes quiet on the empty entry,
+and wraps. Add `tests/transcripts/room-snippets.transcript`:
+
+```text
+title: Room snippets
+story: familyzoo
+description: The rabbits snippet cycles, goes quiet, and wraps
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "hop near a hay bale"]
+
+> look
+[OK: contains "doze in a heap"]
+
+> look
+[OK: not contains "rabbits"]
+
+> look
+[OK: contains "hop near a hay bale"]
+```
+
+The third `look` lands on the empty entry, so the description says nothing
+about rabbits at all, and the fourth wraps back to the first clause. That
+sequence is reliable enough to assert on because snippet selection is seeded,
+not random at the wall clock.
+
 ## Key takeaway
 
 Items are portable by default: `EntityType.ITEM` plus an `IdentityTrait` is a
@@ -305,4 +497,6 @@ complete takeable object, no special trait required. `SceneryTrait` *removes*
 portability; it's what makes fences, benches, and animals fixed in place while
 still examinable. Reach for scenery on anything the player shouldn't pocket, and
 give every object generous aliases so it can be named the way a player would say
-it.
+it. And when the prose that mentions your scenery wants tuning or variety,
+room-description snippets splice author-written clauses at markers you place,
+deterministic, save-stable, and opt-in room by room.

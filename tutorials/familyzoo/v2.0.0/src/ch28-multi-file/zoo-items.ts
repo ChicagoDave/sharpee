@@ -19,6 +19,7 @@ import {
   OpenableTrait,
   SwitchableTrait,
   ReadableTrait,
+  RoomTrait,
 } from '@sharpee/world-model';
 import { createHelpers } from '@sharpee/helpers';
 import type { RoomIds } from './zoo-map.js';
@@ -71,6 +72,30 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .aliases('feed', 'animal feed', 'bag of feed', 'corn')
     .in(pettingZooEntity)
     .build();
+
+  // Rabbits — quiet scenery in the petting zoo, surfaced by the room's
+  // description snippet below rather than listed as loose contents.
+  const rabbits = object('rabbits')
+    .description('A pair of Holland Lop rabbits with floppy ears and twitching noses. One is pure white, the other brown and cream.')
+    .aliases('rabbits', 'rabbit', 'bunnies', 'bunny')
+    .scenery()
+    .plural()
+    .in(pettingZooEntity)
+    .build();
+
+  // Room-description snippet (ADR-209, book ch5): the rabbits clause is
+  // spliced at {snippet:rabbits}, cycling with a legal empty entry and
+  // gated on the rabbits' presence.
+  pettingZooEntity.get(RoomTrait)!.snippets = {
+    rabbits: {
+      texts: [
+        ', while a pair of fluffy rabbits hop near a hay bale',
+        ', while the rabbits doze in a heap of loose hay',
+        '',
+      ],
+      mentions: rabbits.id,
+    },
+  };
 
   const penny = object('souvenir penny')
     .description('A shiny copper penny.')

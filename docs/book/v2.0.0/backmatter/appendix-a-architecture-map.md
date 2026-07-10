@@ -41,7 +41,8 @@ every **channel** "what do you have this turn?" and assembles a **packet**. The
 The single idea that ties Volume VII back to everything before it: **every story-to-UI
 signal travels as a channel** — prose, score, location, prompt, images, sound. There
 is no special path for any of them. That data-only packet stream is what lets one
-unchanged story run in a terminal or a browser.
+unchanged story drive the browser client, the transcript tester, and the plain text
+stream a screen reader ingests.
 
 ## Where does this belong?
 

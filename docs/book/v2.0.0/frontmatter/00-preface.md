@@ -3,8 +3,10 @@
 Sharpee is a parser-based interactive-fiction authoring system. You write a
 story in TypeScript; Sharpee gives you a world model, a parser, a library of
 standard actions, and a presentation layer, and turns your code into a playable
-game you can run in a terminal, ship to the web, or host for many players at
-once.
+game you ship to the web. The same story also runs as a plain text stream in a
+terminal. That form is how you will test your game as you build it, and it is
+the form a blind player's screen reader or text-to-speech tooling ingests
+directly.
 
 This book teaches you to author with Sharpee by building one story,
 **Family Zoo**, from a single room to a complete, shippable game. It grows the

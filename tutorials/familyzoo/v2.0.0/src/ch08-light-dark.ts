@@ -102,11 +102,17 @@ class FamilyZooStory implements Story {
 
     const pettingZoo = world.createEntity('Petting Zoo', EntityType.ROOM);
     pettingZoo.add(new RoomTrait({ exits: {}, isDark: false }));
-    pettingZoo.add(new IdentityTrait({ name: 'Petting Zoo', description: 'A cheerful open-air enclosure filled with friendly animals. Pygmy goats trot around nibbling at visitors\' shoelaces, while a pair of fluffy rabbits hop lazily near a hay bale. A feed dispenser is mounted on a post near the entrance. The main path is back to the west.', aliases: ['petting zoo', 'petting area', 'pen'], properName: false, article: 'the' }));
+    pettingZoo.add(new IdentityTrait({ name: 'Petting Zoo', description: 'A cheerful open-air enclosure filled with friendly animals. Pygmy goats trot around nibbling at visitors\' shoelaces{snippet:rabbits}. A feed dispenser is mounted on a post near the entrance. The main path is back to the west.', aliases: ['petting zoo', 'petting area', 'pen'], properName: false, article: 'the' }));
 
     const aviary = world.createEntity('Aviary', EntityType.ROOM);
-    aviary.add(new RoomTrait({ exits: {}, isDark: false }));
-    aviary.add(new IdentityTrait({ name: 'Aviary', description: 'You step inside a soaring mesh dome. Brilliantly colored parrots chatter from rope perches, and a toucan eyes you curiously from a branch overhead. A small waterfall splashes into a stone basin. The exit back to the main path is to the east.', aliases: ['aviary', 'bird house', 'dome'], properName: false, article: 'the' }));
+    aviary.add(new RoomTrait({
+      exits: {},
+      isDark: false,
+      // First-visit text (book ch4): arrival prose prints once, then the
+      // standing description below takes over.
+      initialDescription: 'You step inside a soaring mesh dome. Brilliantly colored parrots chatter from rope perches, and a toucan eyes you curiously from a branch overhead. A small waterfall splashes into a stone basin. The exit back to the main path is to the east.',
+    }));
+    aviary.add(new IdentityTrait({ name: 'Aviary', description: 'Inside the soaring mesh dome, brilliantly colored parrots chatter from rope perches, and a toucan eyes you curiously from a branch overhead. A small waterfall splashes into a stone basin. The exit back to the main path is to the east.', aliases: ['aviary', 'bird house', 'dome'], properName: false, article: 'the' }));
 
     const supplyRoom = world.createEntity('Supply Room', EntityType.ROOM);
     supplyRoom.add(new RoomTrait({ exits: {}, isDark: false }));
@@ -217,6 +223,20 @@ class FamilyZooStory implements Story {
     const rabbits = world.createEntity('rabbits', EntityType.SCENERY);
     rabbits.add(new IdentityTrait({ name: 'rabbits', grammaticalNumber: 'plural', description: 'A pair of Holland Lop rabbits with floppy ears.', aliases: ['rabbits', 'rabbit', 'bunnies'], properName: false, article: 'some' }));
     world.moveEntity(rabbits.id, pettingZoo.id);
+
+    // Room-description snippet (ADR-209, book ch5): the rabbits clause is
+    // spliced at {snippet:rabbits}, cycling with a legal empty entry and
+    // gated on the rabbits' presence.
+    pettingZoo.get(RoomTrait)!.snippets = {
+      rabbits: {
+        texts: [
+          ', while a pair of fluffy rabbits hop near a hay bale',
+          ', while the rabbits doze in a heap of loose hay',
+          '',
+        ],
+        mentions: rabbits.id,
+      },
+    };
 
     const toucan = world.createEntity('toucan', EntityType.SCENERY);
     toucan.add(new IdentityTrait({ name: 'toucan', description: 'A Toco toucan with an enormous orange-and-black bill.', aliases: ['toucan', 'toco toucan'], properName: false, article: 'a' }));

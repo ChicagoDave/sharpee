@@ -43,8 +43,14 @@ sharpee build          # now also emits the web client → dist/web/
 
 `dist/web/` is the deliverable: an `index.html` and its assets with your story baked
 in. It has no server, no build step, and no runtime dependency: open `index.html` and the
-game runs. The same channel architecture that let one story drive a terminal or a
-browser is what makes the browser build nothing but static files.
+game runs. The same channel architecture that let one story drive both the browser
+client and the transcript tester's text stream is what makes the browser build
+nothing but static files.
+
+The build also lints your story text as it bundles. If a room's snippet map
+(chapter 5) contains an entry whose marker never appears in that room's
+description, `sharpee build` warns, naming the room and the entry, and the build
+still succeeds; the stray entry is usually mid-edit drift.
 
 ## Hosting it
 
@@ -54,8 +60,8 @@ before you upload, point any static file server at the folder:
 
 ```bash
 sharpee build
-python3 -m http.server -d dist/web
-# then open the printed http://localhost:8000
+npx serve dist/web
+# then open the printed http://localhost:3000
 ```
 
 Upload the contents of `dist/web/` and share the URL. There is nothing to install on

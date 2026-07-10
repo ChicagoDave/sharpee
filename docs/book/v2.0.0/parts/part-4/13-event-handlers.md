@@ -243,6 +243,26 @@ world.chainEvent(
 The `getStateValue`/`setStateValue` flag is the guard that keeps the goats from
 re-staging their feast every time the feed touches the ground.
 
+> **Handlers can retune room prose, too.** The snippet map from Chapter 5 is
+> plain data on the room's `RoomTrait`, and a handler may rewrite its entries
+> at runtime. The goats handler above could leave a trace of the feast in the
+> Petting Zoo's own description (a shape to read, not code to type):
+>
+> ```typescript
+> const zoo = w.getEntity(pettingZooId);
+> const roomTrait = zoo?.get(RoomTrait);
+> if (roomTrait?.snippets) {
+>   roomTrait.snippets.rabbits =
+>     ', while the rabbits nose through the scattered pellets';
+> }
+> ```
+>
+> This is the intended home for room prose that changes with the story:
+> aftermath text after an explosion, a mention that goes quiet after hours.
+> One convention keeps it safe: to silence an entry, set it to the empty
+> string `''` rather than deleting it, so the load-time unbound-marker check
+> from Chapter 5 stays meaningful.
+
 ## Transformation pattern: put A in, get B out
 
 A classic puzzle shape: the player puts one item into a machine and a different

@@ -55,12 +55,15 @@ export function createZooMap(world: WorldModel): { rooms: RoomIds; keycardId: st
     .build();
 
   const pettingZoo = room('Petting Zoo')
-    .description('A cheerful open-air enclosure filled with friendly animals. Pygmy goats trot around nibbling at visitors\' shoelaces, while a pair of fluffy rabbits hop lazily near a hay bale. A feed dispenser is mounted on a post. An info plaque is posted by the gate. The main path is back to the west.')
+    .description('A cheerful open-air enclosure filled with friendly animals. Pygmy goats trot around nibbling at visitors\' shoelaces{snippet:rabbits}. A feed dispenser is mounted on a post. An info plaque is posted by the gate. The main path is back to the west.')
     .aliases('petting zoo', 'petting area', 'pen')
     .build();
 
   const aviary = room('Aviary')
-    .description('You step inside a soaring mesh dome. Brilliantly colored parrots chatter from rope perches, and a toucan eyes you curiously from a branch overhead. A small waterfall splashes into a stone basin. An info plaque hangs near the entrance. The gift shop is to the west. The main path is back to the east.')
+    // First-visit text (book ch4): arrival prose prints once, then the
+    // standing description below takes over.
+    .initialDescription('You step inside a soaring mesh dome. Brilliantly colored parrots chatter from rope perches, and a toucan eyes you curiously from a branch overhead. A small waterfall splashes into a stone basin. An info plaque hangs near the entrance. The gift shop is to the west. The main path is back to the east.')
+    .description('Inside the soaring mesh dome, brilliantly colored parrots chatter from rope perches, and a toucan eyes you curiously from a branch overhead. A small waterfall splashes into a stone basin. An info plaque hangs near the entrance. The gift shop is to the west. The main path is back to the east.')
     .aliases('aviary', 'bird house', 'dome')
     .build();
 

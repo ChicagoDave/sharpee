@@ -79,6 +79,48 @@ if (roomTrait) {
 }
 ```
 
+## First visits get their own prose
+
+A room can carry two descriptions. The `description` on its `IdentityTrait` is
+the standing text: it prints every time the player looks or walks back in. The
+`RoomTrait` can also hold an **`initialDescription`**, and when it does, that
+text prints instead on the player's first visit only. The distinction matters
+because arrival prose reads perfectly once and oddly ever after: "You step
+inside a soaring mesh dome" is exactly right the first time the player walks
+into the Aviary, and slightly wrong every time after, when they are already
+standing in it.
+
+So the Aviary gets the pair. The arrival moment keeps its drama in
+`initialDescription`, and the standing `description` settles into plain
+present tense:
+
+```typescript
+const aviary = world.createEntity('Aviary', EntityType.ROOM);
+aviary.add(new RoomTrait({
+  exits: {},
+  isDark: false,
+  initialDescription:
+    'You step inside a soaring mesh dome. Brilliantly ' +
+    'colored parrots chatter from rope perches, and a toucan ' +
+    'eyes you curiously from a branch overhead. The exit ' +
+    'back to the main path is to the east.',
+}));
+aviary.add(new IdentityTrait({
+  name: 'Aviary',
+  description:
+    'Inside the soaring mesh dome, brilliantly colored ' +
+    'parrots chatter from rope perches, and a toucan eyes ' +
+    'you curiously from a branch overhead. The exit back to ' +
+    'the main path is to the east.',
+  aliases: ['aviary', 'bird house', 'dome'],
+  article: 'the',
+}));
+```
+
+Most rooms don't need the pair; write one only where the arrival genuinely
+reads differently from the stay. (For a localized story there is a message-ID
+variant, `initialDescriptionId`; Chapter 18 covers the language layer.)
+
 ## Putting it together
 
 This chapter adds one new import, `Direction`, to the world-model line from
@@ -150,14 +192,22 @@ initializeWorld(world: WorldModel): void {
   }));
 
   const aviary = world.createEntity('Aviary', EntityType.ROOM);
-  aviary.add(new RoomTrait({ exits: {}, isDark: false }));
-  aviary.add(new IdentityTrait({
-    name: 'Aviary',
-    description:
+  aviary.add(new RoomTrait({
+    exits: {},
+    isDark: false,
+    initialDescription:
       'You step inside a soaring mesh dome. Brilliantly ' +
       'colored parrots chatter from rope perches, and a toucan ' +
       'eyes you curiously from a branch overhead. The exit ' +
       'back to the main path is to the east.',
+  }));
+  aviary.add(new IdentityTrait({
+    name: 'Aviary',
+    description:
+      'Inside the soaring mesh dome, brilliantly colored ' +
+      'parrots chatter from rope perches, and a toucan eyes ' +
+      'you curiously from a branch overhead. The exit back to ' +
+      'the main path is to the east.',
     aliases: ['aviary', 'bird house', 'dome'],
     article: 'the',
   }));

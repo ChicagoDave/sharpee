@@ -10,8 +10,8 @@ You've built a complete game, but the book has quietly treated "what the player
 sees" as one thing: prose. A running story shows far more: where you are, your
 score, the turn count, a command prompt, and, in a rich client, images and sound.
 How does all of that travel from the engine to the screen, the same way whether the
-game runs in a terminal, a browser, or a multi-user server? Through **channels**,
-the foundation this whole volume builds on.
+game runs in the browser or as the plain text stream your tests and a screen reader
+consume? Through **channels**, the foundation this whole volume builds on.
 
 ## One surface for everything
 
@@ -31,10 +31,10 @@ each with its value. On the other side, the client hands each channel's payload 
 matching **renderer** that updates the corresponding piece of UI: the prose window,
 the status line, the score display.
 
-Because the packet is just data, the same turn packets can drive an in-process
-browser client *and* a multi-user server with one renderer per connected player.
-The engine produces signals; how (and where) they're drawn is entirely the client's
-business.
+Because the packet is just data, the same turn packets can drive the in-process
+browser client *and* the text-only client your transcript tests run against, each
+with its own renderers. The engine produces signals; how (and where) they're drawn
+is entirely the client's business.
 
 ## Channel modes
 
@@ -76,10 +76,11 @@ built becomes something a client can show.
 
 Not every client can display everything. At startup the client declares its
 **capabilities**, and the engine replies with a **manifest** listing the channels
-available to *that* client; a text-only terminal simply never sees the media
+available to *that* client; a text-only client simply never sees the media
 channels. After the manifest, the per-turn packets flow. As an author you rarely
-touch this. It's the machinery that lets one story serve a bare terminal and a
-graphical browser from exactly the same code.
+touch this. It's the machinery that lets one story serve the graphical browser
+client and a plain text stream from exactly the same code, and it is why a blind
+player's screen reader receives clean prose with no media payloads mixed in.
 
 ## Defining your own channel
 
@@ -160,6 +161,6 @@ prompt, media) travels as a named channel, and each turn the engine emits a pack
 of the ones that changed for the client to render. A channel's **mode**
 (`replace`/`append`/`event`) tells the renderer how its value behaves; the standard
 channels come free, and you add your own `IOChannel` in `registerChannels`,
-returning data, never UI. Because the wire is data-only, one story drives a
-terminal, a browser, or a multi-user server unchanged. That portability is the
-subject of the chapters ahead.
+returning data, never UI. Because the wire is data-only, one story drives the
+browser client, the transcript tester, and a screen reader's text stream unchanged.
+That portability is the subject of the chapters ahead.

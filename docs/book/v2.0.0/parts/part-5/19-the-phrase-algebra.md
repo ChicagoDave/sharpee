@@ -200,7 +200,9 @@ is already written, and nothing should touch it.
 You may have noticed what the template grammar *doesn't* have: no conditionals,
 no alternation, no random variation. That's deliberate. Templates stay dumb;
 **all branching happens in your code**, which builds a phrase value and binds it
-as a parameter like any other.
+as a parameter like any other. (The one packaged exception is a room's own
+description prose, where the snippets of chapter 5 give you variation without
+writing any code; they ride the same machinery you are about to meet.)
 
 For a clause that appears only when something is true, build an `Optional`. Its
 condition is resolved by *your code*, from world state, at the moment you emit:
@@ -255,6 +257,13 @@ Choice keys its progress to `(entityId, messageKey)`, and that counter is saved
 with the game, so variation is deterministic, replays identically in transcript
 tests, and survives save/restore. Give independent Choices distinct
 `messageKey`s so they advance independently.
+
+Room-description snippets (chapter 5) are a second consumer of this counter
+space: each snippet entry advances under its own key, `(roomId, markerName)`.
+The two live side by side in one keyspace, so follow one convention: never
+reuse a snippet marker's name as the `messageKey` of a Choice you attach to
+that same room entity, or the two counters will collide and advance each
+other.
 
 ## Where the parameters go: nest them under `params`
 
