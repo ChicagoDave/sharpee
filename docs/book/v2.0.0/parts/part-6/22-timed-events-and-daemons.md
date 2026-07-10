@@ -67,8 +67,12 @@ the player is.
 ## Daemons: run every turn
 
 A `Daemon` has an `id`, a `name`, a `run` function that returns events, and an
-optional `condition` that gates when it runs. Here's the PA announcer, which
-fires every fifth turn and walks through a sequence of closing announcements:
+optional `condition` that gates when it runs. The zoo's clockwork arrives as
+three factory functions (`createPAAnnouncementDaemon`,
+`createGoatBleatingDaemon`, and `createFeedingTimeFuse`); each is a plain
+top-level function declaration, placed before the story class next to
+`TimedMessages`. Here's the PA announcer, which fires every fifth turn and
+walks through a sequence of closing announcements:
 
 ```typescript
 function createPAAnnouncementDaemon(): Daemon {

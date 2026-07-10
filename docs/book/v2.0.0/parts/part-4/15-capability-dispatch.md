@@ -43,7 +43,9 @@ a **behavior** that implements it, and a **registration** that links the two.
 
 A custom trait lists the action IDs it responds to in a static `capabilities`
 array. `PettableTrait` also carries an `animalKind` so one trait type can stand
-in for several different animals:
+in for several different animals. Like Chapter 14's action objects, everything
+you type in this chapter (the trait, the behavior, the messages, and the
+action) is top-level code, placed before the story class:
 
 ```typescript
 class PettableTrait implements ITrait {

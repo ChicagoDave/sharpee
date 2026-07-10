@@ -347,6 +347,10 @@ pettingZoo.get(RoomTrait)!.snippets = {
 };
 ```
 
+This final form, the `texts` list plus `mentions`, is the version the zoo
+keeps; the plain string and the bare list above were stepping stones on the
+way to it.
+
 A snippet with `mentions` renders only while that entity is in the room, with
 no bookkeeping from you: if the rabbits are ever moved away or removed from
 play, their clause simply evaporates from the description, and it returns when

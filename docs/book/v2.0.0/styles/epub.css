@@ -101,6 +101,12 @@ pre {
   color: #5a5a5a;
 }
 
+.book-version {
+  display: block;
+  margin-top: 1em;
+  color: #5a5a5a;
+}
+
 .book-author {
   display: block;
   margin-top: 2em;

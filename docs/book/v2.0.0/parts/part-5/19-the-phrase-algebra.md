@@ -7,6 +7,11 @@ small grammar for the `{…}` placeholders in your templates, and a single rende
 called the **Assembler** that turns the finished result into English at the end of
 the turn. This chapter pulls that thread.
 
+One note before the tour: this is a reference chapter, and its listings are
+shapes to read, not code to type. The zoo's real uses of everything shown here
+are already in your file from Chapters 14 and 15; nothing in this chapter
+changes your project.
+
 ## The problem with hardcoded articles
 
 Suppose you write a template by hand:
@@ -205,7 +210,9 @@ description prose, where the snippets of chapter 5 give you variation without
 writing any code; they ride the same machinery you are about to meet.)
 
 For a clause that appears only when something is true, build an `Optional`. Its
-condition is resolved by *your code*, from world state, at the moment you emit:
+condition is resolved by *your code*, from world state, at the moment you emit.
+(The listings in this section are shapes as well: `ZooMessages` and the bare
+`gate` variable exist only on this page.)
 
 ```typescript
 import type {

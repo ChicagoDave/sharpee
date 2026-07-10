@@ -1,2 +1,10 @@
-this.entityIds.zooMap = zooMap.id;
-this.entityIds.brochure = brochure.id;
+private entityIds: {
+  animalFeed: string;
+  penny: string;
+  souvenirPress: string;
+  zooMap: string;
+  brochure: string;
+} = {
+  animalFeed: '', penny: '', souvenirPress: '',
+  zooMap: '', brochure: '',
+};

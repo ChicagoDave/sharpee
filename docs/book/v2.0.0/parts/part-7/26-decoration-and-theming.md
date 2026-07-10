@@ -160,8 +160,10 @@ Because a theme is just a token block, shipping your own takes two small pieces:
    /* browser/my-zoo.css */
    [data-theme="zoo-sunny"] {
      --theme-bg: #fffaf0;          /* warm cream */
+     --theme-bg-alt: #fff3da;       /* calmer cream, for quiet chrome */
      --theme-text: #2f2a24;
      --theme-accent: #4a9d52;       /* zoo green */
+     --theme-menu-bg: #4a9d52;      /* the green again, for the menu bar */
      --theme-font: "Nunito", "Segoe UI", system-ui, sans-serif;
    }
    ```
@@ -178,16 +180,21 @@ Because a theme is just a token block, shipping your own takes two small pieces:
 
 That's it. The build adds *Zoo Sunny* to the menu; selecting it flips
 `data-theme="zoo-sunny"`, and the engine paints the window, menu, status bar, prose
-pane, dialogs, and input from your four variables (and the `:root` defaults for the
+pane, dialogs, and input from your six variables (and the `:root` defaults for the
 rest).
 
 **Flourish** rules push past the tokens when you want to. Family Zoo does:
 it deliberately puts its green on the title and menu bars instead of the
-engine's default, the status bar. These two rules are part of the zoo's
-theme, so add them to `browser/my-zoo.css` under the same `[data-theme]`
-selector, below the token block:
+engine's default, the status bar. The token block above already stages that
+swap: `--theme-menu-bg` carries the green, and `--theme-bg-alt` is the calmer
+cream the status bar retreats to. These three rules complete it; they are
+part of the zoo's theme, so add them to `browser/my-zoo.css` under the same
+`[data-theme]` selector, below the token block:
 
 ```css
+[data-theme="zoo-sunny"] .sharpee-window-title-bar {
+  background: var(--theme-accent);
+}
 [data-theme="zoo-sunny"] .sharpee-menu-bar {
   background: var(--theme-menu-bg);
 }

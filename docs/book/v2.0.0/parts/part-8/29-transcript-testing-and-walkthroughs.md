@@ -4,8 +4,8 @@ The zoo is a real game now (seven files and two acts in Chapter 28's snapshot,
 one well-grown file if you stayed with yours), and you've
 been protecting it since Chapter 2. Every **Test it** block along the way added a
 transcript to `tests/transcripts/`, so by now `npx sharpee build --test` replays
-fourteen recorded sessions against every build: the map, the gate, the dark, the
-goats, the scheduler, the win. That suite is why you could keep adding features
+every session you have recorded, more than a dozen of them, against every build:
+the map, the gate, the dark, the goats, the scheduler, the win. That suite is why you could keep adding features
 without fear of breaking chapter three. This chapter turns the habit into the
 full discipline: the assertion layers you haven't used yet (events and world
 state), control flow for runs that vary, and **walkthroughs**, chained

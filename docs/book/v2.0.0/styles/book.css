@@ -187,6 +187,14 @@ h1.part {
   color: var(--muted);
 }
 
+.book-version {
+  display: block;
+  margin-top: 1.1em;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
 .book-author {
   display: block;
   margin-top: 2.4em;

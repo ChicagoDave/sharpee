@@ -15,11 +15,18 @@ that ID is what makes scoring safe: awarding the same ID twice does nothing the
 second time. You never have to worry about a player re-entering a room and scoring
 for it again.
 
-```typescript
-// Set the maximum in initializeWorld() so "score" can show
-// "X out of Y"
-world.setMaxScore(75);
+One line of this section is real project code. Type it at the end of
+`initializeWorld()` (the placement rule), so `score` can show "X out of Y":
 
+```typescript
+world.setMaxScore(75);
+```
+
+The rest of the API reads like this; it is a shape to read, not code to type
+(calling `awardScore` inside `initializeWorld` would score the points at
+startup, before the player has done anything):
+
+```typescript
 // Award points (idempotent): the same ID never scores twice
 const awarded = world.awardScore(
   'zoo.visit.petting_zoo',  // unique ID

@@ -1,30 +1,14 @@
-const mapId = this.entityIds.zooMap;
-world.chainEvent(
-  'if.event.taken',
-  (event: ISemanticEvent, w: IWorldModel) => {
-    const data = event.data as Record<string, any>;
-    if (data.itemId === mapId) {
-      w.awardScore(ScoreIds.COLLECT_MAP,
-        ScorePoints[ScoreIds.COLLECT_MAP],
-        'Collected the zoo map');
-    }
-    return null;
-  },
-  { key: 'zoo.chain.take-scoring' },
-);
+world.chainEvent('if.event.actor_moved', (event, w) => {
+  const data = event.data as Record<string, any>;
+  const toRoom = data.toRoom || data.destination;
+  if (!toRoom) return null;
 
-const brochureId = this.entityIds.brochure;
-world.chainEvent(
-  'if.event.read',
-  (event: ISemanticEvent, w: IWorldModel) => {
-    const data = event.data as Record<string, any>;
-    if (data.entityId === brochureId ||
-        data.targetId === brochureId) {
-      w.awardScore(ScoreIds.READ_BROCHURE,
-        ScorePoints[ScoreIds.READ_BROCHURE],
-        'Read the zoo brochure');
-    }
-    return null;
-  },
-  { key: 'zoo.chain.read-scoring' },
-);
+  const roomName =
+    w.getEntity(toRoom)?.get(IdentityTrait)?.name || '';
+  const scoreId = ROOM_SCORE_MAP[roomName];
+  if (!scoreId) return null;
+
+  w.awardScore(scoreId, ScorePoints[scoreId],
+    `Visited ${roomName}`);
+  return null;   // scoring is silent; no custom event
+}, { key: 'zoo.chain.room-visit-scoring' });

@@ -1,3 +1,6 @@
+[data-theme="zoo-sunny"] .sharpee-window-title-bar {
+  background: var(--theme-accent);
+}
 [data-theme="zoo-sunny"] .sharpee-menu-bar {
   background: var(--theme-menu-bg);
 }

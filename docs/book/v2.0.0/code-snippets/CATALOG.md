@@ -2,7 +2,7 @@
 
 Every code and config snippet from *The Sharpee Author and Developer Manual*, extracted verbatim and organized by chapter in reading order.
 
-- **162 snippets** across 31 chapters (159 author, 3 reference).
+- **163 snippets** across 31 chapters (160 author, 3 reference).
 - Game-session transcripts (the `> look` ... output examples) are **not** included; they are example play sessions, not code.
 - **author** snippets are the story code/config a reader writes (assembled in reading order into `src/index.ts` and project files).
 - **reference** snippets are "Under the Hood" excerpts of the platform's own source (interfaces/classes you *import*, not code you write); their filenames carry a `.reference.` infix and are named for the symbol they document.
@@ -210,14 +210,14 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-capability-dispatch-one-verb-many-rules.ts` | Capability Dispatch: One Verb, Many Rules | typescript | author | 13 |
-| 02 | `02-1-a-trait-that-declares-a-capability.ts` | 1. A trait that declares a capability | typescript | author | 48 |
-| 03 | `03-2-a-behavior-that-implements-the-capability.ts` | 2. A behavior that implements the capability | typescript | author | 71 |
-| 04 | `04-3-registration-that-links-trait-to-behavior.ts` | 3. Registration that links trait to behavior | typescript | author | 136 |
-| 05 | `05-the-dispatch-action.ts` | The dispatch action | typescript | author | 150 |
-| 06 | `06-the-dispatch-action.ts` | The dispatch action | typescript | author | 246 |
-| 07 | `07-the-dispatch-action.ts` | The dispatch action | typescript | author | 254 |
-| 08 | `08-the-dispatch-action.ts` | The dispatch action | typescript | author | 264 |
-| 09 | `09-making-the-zoo-s-animals-pettable.ts` | Making the zoo's animals pettable | typescript | author | 291 |
+| 02 | `02-1-a-trait-that-declares-a-capability.ts` | 1. A trait that declares a capability | typescript | author | 50 |
+| 03 | `03-2-a-behavior-that-implements-the-capability.ts` | 2. A behavior that implements the capability | typescript | author | 73 |
+| 04 | `04-3-registration-that-links-trait-to-behavior.ts` | 3. Registration that links trait to behavior | typescript | author | 138 |
+| 05 | `05-the-dispatch-action.ts` | The dispatch action | typescript | author | 152 |
+| 06 | `06-the-dispatch-action.ts` | The dispatch action | typescript | author | 248 |
+| 07 | `07-the-dispatch-action.ts` | The dispatch action | typescript | author | 256 |
+| 08 | `08-the-dispatch-action.ts` | The dispatch action | typescript | author | 266 |
+| 09 | `09-making-the-zoo-s-animals-pettable.ts` | Making the zoo's animals pettable | typescript | author | 293 |
 
 ## Custom Traits & Behaviors: Data and Logic, Kept Apart
 
@@ -258,11 +258,11 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-pass-a-noun-phrase-not-a-name.ts` | Pass a noun phrase, not a name | typescript | author | 59 |
-| 02 | `02-lists.ts` | Lists | typescript | author | 128 |
-| 03 | `03-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 210 |
-| 04 | `04-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 239 |
-| 05 | `05-where-the-parameters-go-nest-them-under-params.ts` | Where the parameters go: nest them under `params` | typescript | author | 274 |
+| 01 | `01-pass-a-noun-phrase-not-a-name.ts` | Pass a noun phrase, not a name | typescript | author | 64 |
+| 02 | `02-lists.ts` | Lists | typescript | author | 133 |
+| 03 | `03-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 217 |
+| 04 | `04-branching-stays-in-code.ts` | Branching stays in code | typescript | author | 246 |
+| 05 | `05-where-the-parameters-go-nest-them-under-params.ts` | Where the parameters go: nest them under `params` | typescript | author | 281 |
 
 # Volume VI — Living Worlds
 
@@ -300,10 +300,10 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-how-the-scheduler-ticks.ts` | How the scheduler ticks | typescript | author | 28 |
 | 02 | `02-how-the-scheduler-ticks.ts` | How the scheduler ticks | typescript | author | 52 |
-| 03 | `03-daemons-run-every-turn.ts` | Daemons: run every turn | typescript | author | 73 |
-| 04 | `04-conditional-daemons-react-to-state.ts` | Conditional daemons: react to state | typescript | author | 136 |
-| 05 | `05-fuses-count-down-and-fire.ts` | Fuses: count down and fire | typescript | author | 192 |
-| 06 | `06-giving-the-announcements-their-words.ts` | Giving the announcements their words | typescript | author | 229 |
+| 03 | `03-daemons-run-every-turn.ts` | Daemons: run every turn | typescript | author | 77 |
+| 04 | `04-conditional-daemons-react-to-state.ts` | Conditional daemons: react to state | typescript | author | 140 |
+| 05 | `05-fuses-count-down-and-fire.ts` | Fuses: count down and fire | typescript | author | 196 |
+| 06 | `06-giving-the-announcements-their-words.ts` | Giving the announcements their words | typescript | author | 233 |
 
 ## Scoring & Endgame: Winning the Game
 
@@ -311,18 +311,19 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
-| 01 | `01-the-score-ledger.ts` | The score ledger | typescript | author | 18 |
-| 02 | `02-defining-the-scoring-table.ts` | Defining the scoring table | typescript | author | 47 |
-| 03 | `03-defining-the-scoring-table.ts` | Defining the scoring table | typescript | author | 94 |
-| 04 | `04-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 117 |
-| 05 | `05-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 128 |
-| 06 | `06-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 149 |
-| 07 | `07-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 185 |
-| 08 | `08-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 202 |
-| 09 | `09-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 213 |
-| 10 | `10-the-victory-daemon.ts` | The victory daemon | typescript | author | 252 |
-| 11 | `11-the-victory-daemon.ts` | The victory daemon | typescript | author | 290 |
+| 01 | `01-the-score-ledger.ts` | The score ledger | typescript | author | 21 |
+| 02 | `02-the-score-ledger.ts` | The score ledger | typescript | author | 29 |
+| 03 | `03-defining-the-scoring-table.ts` | Defining the scoring table | typescript | author | 54 |
+| 04 | `04-defining-the-scoring-table.ts` | Defining the scoring table | typescript | author | 101 |
+| 05 | `05-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 124 |
+| 06 | `06-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 135 |
+| 07 | `07-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 156 |
+| 08 | `08-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 192 |
+| 09 | `09-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 209 |
+| 10 | `10-awarding-points-as-the-player-plays.ts` | Awarding points as the player plays | typescript | author | 220 |
+| 11 | `11-the-victory-daemon.ts` | The victory daemon | typescript | author | 259 |
 | 12 | `12-the-victory-daemon.ts` | The victory daemon | typescript | author | 297 |
+| 13 | `13-the-victory-daemon.ts` | The victory daemon | typescript | author | 304 |
 
 # Volume VII — Presentation
 
@@ -355,7 +356,7 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | 01 | `01-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 81 |
 | 02 | `02-theming-one-dom-many-skins.css` | Theming: one DOM, many skins | css | author | 99 |
 | 03 | `03-built-in-themes-list-the-id.jsonc` | Built-in themes: list the id | jsonc | author | 141 |
-| 04 | `04-your-own-theme-three-lines-of-css-and-one-list-ent.css` | Your own theme: three lines of CSS and one list entry | css | author | 190 |
+| 04 | `04-your-own-theme-three-lines-of-css-and-one-list-ent.css` | Your own theme: three lines of CSS and one list entry | css | author | 194 |
 
 ## Media & Audio: Sight and Sound as Channels
 

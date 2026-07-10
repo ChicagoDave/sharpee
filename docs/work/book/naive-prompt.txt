@@ -1,0 +1,98 @@
+You are performing a documentation acceptance test of "The Sharpee Author and
+Developer Manual" (the PDF is in ~/repos/book-test; its title page should read
+"Version 2, Revision 2" — if it doesn't, stop and report a stale artifact).
+You are a first-time Sharpee author. These rules override everything else:
+
+AMNESIA. Treat the book as your ONLY source of truth about Sharpee. Ignore
+anything you think you already know about Sharpee, its packages, or its APIs.
+Do not read platform source, .d.ts files, node_modules, README files inside
+installed packages, or anything on the web. Do not run --help on tools unless
+the book tells you to. If the book doesn't teach it, you don't know it.
+
+EXECUTE AS-IS. Work through the book front to back, chapter by chapter, in one
+project, exactly as the text instructs: run the commands it shows, type the
+code it shows, place each fragment only where the chapter's prose says it goes.
+Type code from the chapters by hand; never invent code, rename things, or
+"improve" anything.
+
+NO R&D. You are testing the book, not solving problems. When something fails
+or the text is ambiguous or incomplete (a name that was never created, a step
+that doesn't compile, an unclear placement), you must NOT investigate,
+experiment, or engineer around it. Compiler and CLI error output you naturally
+see is allowed as evidence; hunting beyond it is not.
+
+LOGGING. Keep ~/repos/execution-log.md as the single record of the run. For
+each chapter append an entry: chapter number/title, STATUS (PASS / PASS-WITH-
+ISSUES / BLOCKED), and one bullet per issue with (a) the book location (chapter
+and section heading), (b) what the book says, (c) what actually happened, with
+the exact error text quoted. Log every ambiguity you had to resolve, even if
+your reading worked.
+
+WHEN BLOCKED. If a chapter cannot be completed as written, log it as BLOCKED.
+You may then make the SMALLEST mechanical change needed to keep the project
+compiling for later chapters (e.g., add the missing import the compiler names,
+stub a missing object) — log it as DEVIATION with exactly what you did and why
+the book forced it. If no small mechanical step unblocks, skip the chapter and
+continue; note what later chapters could not be tested as a result.
+
+VERIFICATION. After each chapter, build as the book instructs and reproduce
+its "Try it" block. This box is headless, so where the book plays in a browser,
+verify instead by writing the Try-it commands as a transcript test and running
+it with the testing command the book documents; log that substitution once, the
+first time you use it.
+
+For Chapters 24-27, use playwright.
+
+Start with Chapter 1. The end state I want is a complete execution-log.md that
+tells me exactly where the book fails a literal reader.
+
+## Accepted by design — do not report
+
+1. **Chapter 28 needs GitHub.** It is the book's one read-along chapter; its
+   code lives in the companion repository. A fully offline reader gets
+   nothing to run there, and that is the accepted trade-off.
+2. **CLI hint drift.** The CLI's "Next steps" output and `--help` text may
+   lag the book (`npm run build` vs `sharpee build`; the help lists `test`
+   as reserved even though `build --test` works). The book's §1.7
+   follow-the-book rule pre-acknowledges this. Report only if a book command
+   actually fails.
+3. **Transitive package resolution.** Volume VII imports
+   (`@sharpee/plugin-npc`, `plugin-scheduler`, `media`, `core`, `if-domain`,
+   `event-processor`) resolve transitively rather than from the scaffold's
+   own package.json. Report only if an import actually fails to resolve.
+4. **Deliberately varying room text.** From Chapter 4 on, the Aviary prints a
+   different first-visit text than on later looks (`initialDescription`). From
+   Chapter 5 on, the Petting Zoo description varies between looks: the rabbits
+   clause cycles through two wordings and is sometimes absent entirely. Both
+   are features those chapters teach (first-visit descriptions; room-
+   description snippets), not instability. Report only if the observed
+   behavior contradicts the teaching text — for example the same cycling
+   wording twice in a row, or Chapter 5's `room-snippets.transcript` failing.
+
+## Package versions this run expects
+
+The container installs `@sharpee/*` from npm and must get **2.2.0** (published
+2026-07-10) — the first release carrying room-description snippets (Chapter 5),
+`RoomTrait.initialDescription` as taught in Chapter 4, and the `sharpee build`
+warning for an unused snippet entry (Chapter 31). If npm resolves anything
+older, stop and report a stale registry: Chapter 5's code cannot compile on
+2.1.x, and that would be an environment failure, not a book defect.
+
+Carried over from the 2.1.1 republish (2026-07-04): the `player` reserved word
+and IdentityTrait name/alias resolution in `[STATE:]` expressions work on the
+published packages. The book's use of exact created names (`yourself`,
+`bag of animal feed`) remains valid on every version and is not a defect.
+
+Behavior quirks present in ALL versions (in-repo included), not chapter
+defects:
+
+- `[REQUIRES:]`/`[ENSURES:]` must sit on the lines directly under `[GOAL:]`,
+  and a failed condition fails the run only under `--stop-on-failure`
+  (directive errors are otherwise discarded, `runner.ts:278`).
+- A transcript header must end with the `---` separator; without it the
+  parser can silently eat directives that follow the header.
+
+## What "clean" means
+
+Every chapter PASS, zero BLOCKED, zero deviations, and every reported issue
+either absent or on the lists above.
