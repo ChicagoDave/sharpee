@@ -94,7 +94,7 @@ All three advisory tensions from plan-review were confirmed as the plan's recomm
   - Story lifecycle binding: IR → `initializeWorld` (entities/traits/placement/states/flags), `extendLanguage` (phrases), default-player-aware `createPlayer`, per design.md's Update Contract table.
   - Unit tests (`packages/story-loader/test/`, Vitest): loading `cloak.story`'s IR produces a `WorldModel` with the correct rooms/entities/traits/placement (mirroring, and eventually superseding for Chord-authored stories, the assertions in `stories/cloak-of-darkness/tests/cloak-of-darkness.test.ts` — that existing file is untouched); phrase registration resolves all keys; the garbled hatch binds and produces output; win/lose emits the correct events and flag.
 - **Exit state**: Loading `cloak.story` through `story-loader` yields a fully-populated, playable-shaped `WorldModel` (rooms, cloak, hook, message, player) with all phrases registered and the hatch bound — but darkness-on-enter, message-state transitions, and the reading behavior are not yet wired (Phase 5). `pnpm --filter '@sharpee/story-loader' test` green.
-- **Status**: CURRENT
+- **Status**: COMPLETE (2026-07-10). loader.ts (ChordStory: initializeWorld two-pass build via createHelpers, kinds per prereqs §5, bidirectional connectRooms, RoomBehavior.blockExit with phrase text, chord.state.* seeding, default player + worn items, extendLanguage registration incl. `{variants}` templates for strategy phrases, PUT_ON verb mapping, hatch binding via host-supplied hatchModules — loader stays fs-free, pure-IR profile passes none) + errors.ts. if-domain endings.ts wire type (StoryEndingEvents, STORY_ENDING_FLAG) — the one approved platform delta — plus one packaging fix discovered en route: @sharpee/helpers exports map lacked a `default` condition (CJS-only package unresolvable from ESM). 17 loader tests green. Deferred to Phase 5 (noted): dark-while initial evaluation + turn-end rule; ReadableTrait question for `on reading it` targets.
 
 ### Phase 5: Story-loader behavior — when-rules, ordinals, entity-scoped on-blocks, seeded RNG
 - **Tier**: Large
@@ -110,7 +110,7 @@ All three advisory tensions from plan-review were confirmed as the plan's recomm
   - Seeded RNG: `randomly` and `one chance in <n>` route through `SeededRandom` (`@sharpee/core`, `packages/core/src/random/seeded-random.ts`) so repeated runs with a fixed seed are byte-identical (AC-5). Exercised by the Phase 1 synthetic fixture, now written as a real `.story` file and given a matching `.transcript` (or Vitest determinism test running the same seed twice and diffing output).
   - Unit tests: `select ordered`/`select on` blocks resolve correctly; ordinal-block state changes (`trampled`→`obliterated`) fire on the correct turn; `dark while` recomputes on enter; the AC-5 fixture produces byte-identical output across two seeded runs.
 - **Exit state**: A fully-interpreted `cloak.story` reacts correctly to `enter bar` (darkness), `read message` in each state (win/neutral/lose), and repeated stumbling (trampled→obliterated) — verified by direct `story-loader` unit tests, not yet by the CLI transcript harness (Phase 6). `pnpm --filter '@sharpee/story-loader' test` green.
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ### Phase 6: Integration gate — `sharpee compose`, IR round-trip, golden transcripts green
 - **Tier**: Medium

@@ -20,6 +20,14 @@
     "test": "vitest",
     "test:ci": "vitest run"
   },
+  "dependencies": {
+    "@sharpee/chord": "workspace:*",
+    "@sharpee/core": "workspace:*",
+    "@sharpee/engine": "workspace:*",
+    "@sharpee/helpers": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/world-model": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",

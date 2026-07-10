@@ -41,3 +41,6 @@ export * from './phrase';
 
 // Room-description snippet contracts (ADR-209)
 export * from './snippets';
+
+// Story ending contract (ADR-210 Prerequisite 3)
+export * from './endings';

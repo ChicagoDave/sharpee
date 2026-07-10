@@ -2,16 +2,18 @@
  * @sharpee/story-loader — the Story IR interpreter (ADR-210).
  *
  * Purpose: construct a generic `Story` implementation from compiled Story IR —
- * world building, phrase registration, event-rule binding, the AST-walking
- * expression evaluator, occurrence materialization, and seeded RNG.
+ * world building, phrase registration, custom vocabulary, endings, and (Phase 5)
+ * event-rule binding, the expression evaluator, occurrence materialization,
+ * and seeded RNG.
  *
- * Public interface: the root barrel. Phase A populates it with the loader;
- * until then it is intentionally empty.
+ * Public interface: createStory(), ChordStory, StoryLoaderOptions, LoadError,
+ * CHORD_STATE_PREFIX.
  *
  * Owner context: Chord runtime consumer. Language-neutral by design — it
  * consumes IR and never sees Chord syntax. Depends on the platform
- * (world-model, stdlib, engine, lang-{locale}, plugins, core); nothing
- * platform depends on it (ADR-210 Direction rule).
+ * (world-model, helpers, engine, if-domain, core); nothing platform depends
+ * on it (ADR-210 Direction rule).
  */
 
-export {};
+export { LoadError } from './errors';
+export { CHORD_STATE_PREFIX, ChordStory, createStory, StoryLoaderOptions } from './loader';
