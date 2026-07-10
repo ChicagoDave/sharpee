@@ -1,6 +1,6 @@
 # ADR-209: Room-Description Snippets — Author-Written Text Spliced at Explicit Markers
 
-## Status: ACCEPTED
+## Status: ACCEPTED — IMPLEMENTED (commits `354547a7`, `b56a1827`, 2026-07-07/08)
 
 > Accepted 2026-07-03 by David. Proposed the same day from a design
 > discussion (session daf0f1); **all seven open questions resolved by David**
@@ -10,7 +10,11 @@
 > if-domain, `Seq` phrase value, stdlib-owns-scan boundary resolution),
 > render-time graceful degradation for runtime map mutation,
 > duplicate-marker and presence-definition edge rules, and AC-1..AC-10.
-> Not yet implemented; implementation requires its own go-ahead.
+> **Implemented** across all six planned phases in commit `354547a7`
+> (2026-07-07; wire types, RoomTrait storage, splice pass, engine validation,
+> devkit lint, dungeo adoption) with the switching_on auto-look scenery
+> exclusion following in `b56a1827` (2026-07-08). All AC-1..AC-10 landed as
+> tests; dungeo walkthrough chain green.
 
 ## Date: 2026-07-03
 

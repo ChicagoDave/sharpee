@@ -1,6 +1,11 @@
 # ADR-107: Dual-Mode Authored Content
 
-## Status: PROPOSED
+## Status: ACCEPTED — IMPLEMENTED
+
+> Status amended 2026-07-09: this ADR sat at PROPOSED long after its surface
+> shipped — `initialDescription`/`descriptionMessageId` live on `RoomTrait`
+> (`packages/world-model/src/traits/room/roomTrait.ts`) and ADR-209 builds on
+> both fields as landed platform surface.
 
 ## Date: 2026-01-19
 
