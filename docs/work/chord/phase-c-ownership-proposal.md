@@ -164,6 +164,22 @@ feedable before the first bell, matching current behavior).
    branches within a firing clause's body. Different scopes, both canonical
    at their scope — no given-7 violation.
 
+6. **Requirements are `must` — single closed form (David, 2026-07-11:
+   "Single closed").** The scope-constraint line generalizes to a
+   requirement form, usable as a define-action line and as a behavior-body
+   statement: `<subject> must <predicate>: <phrase-key>` — e.g.
+   `the player must hold the disposable camera: no-camera`,
+   `the actor must have its food: no-feed`. Refusal splits into two honest
+   concepts: **requirements** (positive preconditions, `must`) and
+   **prohibitions** (positive hazard conditions, `refuse when`). The
+   loophole is gated shut per given 7: `refuse when` with a top-level
+   `not` is a load-time error with a fix-it pointing at the `must` form
+   ("state requirements positively") — one canonical form per polarity.
+   `refuse without <slot>` (parse cardinality) and `otherwise refuse`
+   (dispatch miss) are unaffected. Kills the polarity-inversion smell:
+   authors think in requirements; `not (…)` in a refusal was a requirement
+   wearing a disguise.
+
 Final ratchet entries for the package (including the exact `reversible`
 word and the `after` keyword) land with implementation, per the
 removals-with-replacements shipping rule.

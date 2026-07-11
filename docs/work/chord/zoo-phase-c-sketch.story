@@ -454,9 +454,7 @@ define trait feedable
       You offer some feed. The animal eats it gratefully.
 
   on feeding it
-    if not (the actor has its food) then
-      refuse no-feed
-    end if
+    the actor must have its food: no-feed
     if it is content then
       refuse already-fed
     end if
@@ -518,7 +516,7 @@ define action photographing
     photo :target
     snap :target
   score snapshot worth 5
-  refuse when not (the player holds the disposable camera): no-camera
+  the player must hold the disposable camera: no-camera
   award snapshot
   phrase took-photo
 
