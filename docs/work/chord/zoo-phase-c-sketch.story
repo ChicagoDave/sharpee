@@ -241,7 +241,7 @@ create the snake
   A thick-bodied python coiled behind glass, nearly invisible in the dim
   red light.
 
-  on every turn while after-hours and the player is in the Nocturnal Animals Exhibit, once
+  on every turn while after-hours, once
     award confession
     phrase confession
       A soft, sibilant voice drifts from behind the glass of the snake
@@ -463,13 +463,13 @@ define trait feedable
 end trait
 
 define trait chatty
-  on every turn while the player can see it and one chance in 2
+  on every turn while one chance in 2
     phrase parrot-chatter
   end on
 end trait
 
 define trait candid
-  on every turn while the player can see it and one chance in 2
+  on every turn while one chance in 2
     phrase parrot-candor
   end on
 end trait
@@ -480,7 +480,7 @@ define trait restless
       The pygmy goats are bleating loudly and headbutting the fence. They seem
       very hungry!
 
-  on every turn while it is hungry and the player can see it
+  on every turn while it is hungry
     phrase bleating
   end on
 end trait
@@ -537,7 +537,7 @@ create the zookeeper
     Sam the zookeeper is here, jingling a ring of keys.
 
   on every turn while after-hours, once
-    award farewell when the player can see it
+    award farewell
     phrase departs
       The zookeeper glances at the clock, unclips the walkie-talkie from his
       belt, and stretches. "Well, that's me done for the day. Zoo's all yours,
@@ -573,7 +573,7 @@ create the parrot
       {flavor}{aside}
   end on
 
-  on every turn while after-hours and the player is in the Aviary, once
+  on every turn while after-hours, once
     award confession
     phrase confession
       The parrot clears its throat — actually clears its throat — and fixes
@@ -609,7 +609,7 @@ create the pygmy goats
     award fed
   end after
 
-  on every turn while after-hours and the player is in the Petting Zoo, once
+  on every turn while after-hours, once
     award confession
     phrase confession
       Now that the keeper is gone, the goats exchange glances. The largest one
@@ -642,7 +642,7 @@ create the rabbits
     award fed
   end after
 
-  on every turn while after-hours and the player is in the Petting Zoo, once
+  on every turn while after-hours, once
     award confession
     phrase confession
       The rabbits stop mid-hop and look at each other. Biscuit twitches her

@@ -227,9 +227,43 @@ feedable before the first bell, matching current behavior).
    non-state trait fields (entity/number/name) — with flags gone at every
    scope, `set X to true/false` no longer parses anywhere.
 
+9. **Sequence steps can anchor to state transitions (David, 2026-07-11).**
+   Today a sequence's only anchor is the wall clock: `at turn N` is
+   absolute from story start (turn 1 = first command), `N turns later`
+   counts from the previous step's firing — a sequence cannot wait for
+   anything. New step anchor: `when <owner> becomes <state>`
+   (`when the story becomes after-hours`, `when the goats become hungry`)
+   joins `at turn N` / `N turns later`, so timelines chain off phases and
+   events, not just the clock. The Zoo keeps its wall-clock anchors —
+   a zoo genuinely runs on one; most stories don't. (Resolves in the same
+   design as the missing `every N turns starting at turn M` recurrence.)
+10. **Owner-scoped narration (David, 2026-07-11).** A phrase's reach
+    follows its owner — the stickiness principle applied to narration:
+    - **Story-owned behavior broadcasts.** Sequence/schedule phrases reach
+      the player everywhere — the PA system is correct *by construction*,
+      not by accident of "all scheduler phrases are global."
+    - **Entity-owned every-turn clauses fire only when the owner is on
+      stage** (player in the owner's location — presence, not sight, so
+      the snake speaks in the dark). They are performances: no audience,
+      no firing. This makes `, once` safe (a confession cannot be consumed
+      unwitnessed) and it deleted every hand-written scoping condition in
+      the sketch — `the player can see it` on chatty/candid/restless and
+      `the player is in <room>` on all four confessions were hand-rolled
+      copies of this rule, exactly as `gate-closed` was a hand-rolled
+      state adjective. The zookeeper's farewell now always lands on stage,
+      so its `award … when the player can see it` conditional dissolved
+      too (the sketch currently has no use for the decision-7 `when`
+      suffix — the suffix stays in the language).
+    - **Division of labor**: mutations that must happen unwitnessed belong
+      to story-owned schedules (the goats get hungry on the world clock);
+      entity clauses carry what the player experiences. A side effect to
+      pin in tests: `one chance in 2` in an entity clause now rolls only
+      on stage — no RNG consumed in empty rooms.
+
 Final ratchet entries for the package (including the exact `reversible`
-word, the `after` keyword, and the freed-`when` statement suffix) land
-with implementation, per the removals-with-replacements shipping rule.
+word, the `after` keyword, the freed-`when` statement suffix, and the
+step-anchor form) land with implementation, per the
+removals-with-replacements shipping rule.
 
 ## Migration sketch: `zoo-phase-c-sketch.story`
 
@@ -254,8 +288,11 @@ zoo.story` is untouched. What to look at, by category:
 - All 9 floating `when` rules and all 4 `once` blocks gone. Visit awards
   are `after entering it` on rooms; Aviary mood lines are `after entering
   it while …` on the Aviary; the four vignettes are `on every turn while
-  after-hours …, once` clauses on the zookeeper, goats, rabbits, parrot,
-  and snake.
+  after-hours, once` clauses on the zookeeper, goats, rabbits, parrot,
+  and snake — with NO location/visibility conditions: owner-scoped
+  narration (decision 10) fires them when the player shows up, so
+  chatty/candid/restless dropped `the player can see it` and every
+  confession dropped `the player is in <room>`.
 - `on` vs `after` split per decision 1: overrides/interceptions stay `on`
   (examining, reading, the dispatch-verb trait clauses); reactions are
   `after` (entering awards, feeding awards, taking the map).
