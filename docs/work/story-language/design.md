@@ -58,6 +58,30 @@ The design axioms, in the order they were established:
    (`randomly`, not `at random`; `ordered`, not `in order`). A multi-word form is
    admitted only when no single word exists; no current modifier qualifies.
 
+8. **Global true/false flags are forbidden.** (David, 2026-07-11, from the Phase B
+   DDD review — docs/work/chord/ddd-review.md.) There is no global boolean
+   namespace; `define flag` is removed from the language. Every fact is either
+   *derived* — a condition over world state (`dark while the player has the velvet
+   cloak`) — or *owned* — declared data or `states:` on the object the fact is
+   about. A global boolean flattens a state machine and shadows world truth; all
+   three Zoo flags (`gate-closed`, `after-hours`, `feeding-time-active`) failed
+   exactly this way. Entity-owned boolean fields (`fed: flag` in trait data) are
+   not global and are unaffected.
+9. **Stickiness: all behaviors belong to "something."** (David, 2026-07-11 —
+   promoted from the Phase B DDD review.) Behavior sticks to the data it operates
+   on — foundational DDD. Not just state: rules, reactions, and schedules attach
+   to the object they are about. A rule about entering the Aviary lives on the
+   Aviary, not in a floating `when` block; a vignette about the goats lives on the
+   goats. The story itself is an object — declared `states:` and data on the story
+   header — and is the sanctioned home ("cheat" location) for genuinely
+   story-scoped behavior: schedules, phases, endings, vocabulary. Type
+   definitions (`define trait`, `define action`) are unaffected: they declare
+   *kinds* of something, and their clauses are sticky to whatever composes them.
+   Together with given 8 this deletes Chord's unsticky half (floating `when`/
+   `once`/`every` rules, global flags, orphan phrase keys) rather than adding a
+   construct — the sticky forms (on-clauses, trait clauses, per-entity phrases)
+   already exist and are the language at its best.
+
 ---
 
 ## 2. Language Overview
