@@ -180,9 +180,36 @@ feedable before the first bell, matching current behavior).
    authors think in requirements; `not (…)` in a refusal was a requirement
    wearing a disguise.
 
+7. **`if` is dropped from the language (David, 2026-07-11: "If can be
+   dropped").** Given 4 amended. Every use decomposes: validation guards →
+   `must` requirements (`it must be hungry: already-fed` — decision 6
+   applied reflexively; the state-guard "if content refuse" was a
+   requirement in the other disguise); moment conditionals → statement
+   `when` suffix (`award farewell when the player can see it`); value
+   branching → `select` (unchanged). Evidence the loss is theoretical:
+   after decision 6, the entire Zoo sketch had exactly one `if` left
+   (the zookeeper's conditional award) and Cloak never had any. Ratchet
+   note: the freed `when` keyword (floating when-rules died in leg 3) is
+   reused as the statement suffix; the select-arm `when <value>` homonym
+   is positionally distinct but gets called out in the final entry.
+8. **`change` stays, gated against boolean cheating (David, 2026-07-11).**
+   `change` is the single visible mutation for state transitions and is
+   legal only against declared named states. Reserved state names:
+   `true`/`false` (and bare `yes`/`no`) are rejected at load
+   (`analysis.boolean-state`) — booleans cannot re-enter as two-value
+   state sets. Two-value sets with domain-meaningful names are the
+   intended form (`hungry`/`content` is a state machine; `true`/`false`
+   is a flag). Rationale for keeping `change`: silent state changes are
+   bugs — the body's one mutation line is what the behavior *does*; the
+   transition-table alternative (transitions declared on `states:`) was
+   considered and set aside for splitting one behavior across two homes.
+   Side effect noted for the final ratchet: body-level `set` shrinks to
+   non-state trait fields (entity/number/name) — with flags gone at every
+   scope, `set X to true/false` no longer parses anywhere.
+
 Final ratchet entries for the package (including the exact `reversible`
-word and the `after` keyword) land with implementation, per the
-removals-with-replacements shipping rule.
+word, the `after` keyword, and the freed-`when` statement suffix) land
+with implementation, per the removals-with-replacements shipping rule.
 
 ## Migration sketch: `zoo-phase-c-sketch.story`
 

@@ -455,9 +455,7 @@ define trait feedable
 
   on feeding it
     the actor must have its food: no-feed
-    if it is content then
-      refuse already-fed
-    end if
+    it must be hungry: already-fed
     change it to content
     emit fed
     phrase fed
@@ -539,9 +537,7 @@ create the zookeeper
     Sam the zookeeper is here, jingling a ring of keys.
 
   on every turn while after-hours, once
-    if the player can see it then
-      award farewell
-    end if
+    award farewell when the player can see it
     phrase departs
       The zookeeper glances at the clock, unclips the walkie-talkie from his
       belt, and stretches. "Well, that's me done for the day. Zoo's all yours,

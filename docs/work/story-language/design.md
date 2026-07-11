@@ -36,6 +36,15 @@ The design axioms, in the order they were established:
    if-then-else, select blocks, iterate-through, explicit `end` terminators. Domain
    statements (`refuse`, `phrase`, `set`, `change`, `move`, `emit`, `award`, `win`,
    `lose`) inside conventional blocks — no clever clause grammar.
+   *(Amended 2026-07-11, ownership package, David: "If can be dropped.")*
+   **if-then-else is removed.** Validation guards are `must`-form requirements
+   (`it must be hungry: already-fed`); moment conditionals are the statement
+   `when` suffix (`award farewell when the player can see it`); `select` blocks
+   remain the branching construct. And `change` is **gated to declared named
+   states** — `true`/`false` (and bare `yes`/`no`) are reserved, rejected as
+   state names ("no cheating"): booleans cannot re-enter as two-value state
+   sets; two values are fine when the names carry domain meaning
+   (`hungry`/`content` is a state machine; `true`/`false` is a flag).
 
 5. **Counting up and down is implied — the author defines no counting mechanism at
    all.** No counters, no count queries. The syntax differentiates multiple events by
