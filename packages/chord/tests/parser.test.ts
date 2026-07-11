@@ -172,7 +172,7 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
     ]);
   });
 
-  it('parses the en-US phrases block: prose joins, quoted forms, markers', () => {
+  it('parses the en-US phrases block: prose joins, markers', () => {
     const phrases = decls[10] as DefinePhrases;
     expect(phrases.locale).toBe('en-US');
     expect(phrases.entries.map((e) => e.key)).toEqual([
@@ -187,7 +187,7 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
       text: "You've only just arrived, and besides, the weather outside seems to be getting worse.",
     });
     expect(phrases.entries[1].value).toMatchObject({
-      form: 'quoted',
+      form: 'prose',
       text: "Blundering around in the dark isn't a good idea!",
     });
     expect(phrases.entries[3].value.markers).toMatchObject([{ content: 'garbled' }]);

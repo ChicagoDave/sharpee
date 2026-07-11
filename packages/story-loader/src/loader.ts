@@ -56,6 +56,7 @@ import { LoadError } from './errors';
 import { Evaluator } from './evaluator';
 import { ChordRuntime } from './runtime';
 import { CHORD_STATE_PREFIX } from './state-keys';
+import { withLineBreaks } from './text';
 
 export interface StoryLoaderOptions {
   /**
@@ -96,6 +97,10 @@ export class ChordStory implements Story {
   /** World entity ID → IR entity ID (state lookups in the evaluator). */
   private readonly irIds = new Map<string, string>();
   private world: WorldModel | null = null;
+  /** True once initializeWorld has built the world content. */
+  private worldBuilt = false;
+  /** True once the player has been placed/equipped (exactly-once guard). */
+  private playerFinalized = false;
 
   constructor(
     readonly ir: StoryIR,
@@ -184,6 +189,11 @@ export class ChordStory implements Story {
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
     // derived-property chains (all per-world, keyed — ADR-207/208).
     this.runtime.bind(world);
+    this.worldBuilt = true;
+
+    // Engine order (GameEngine.setStory): createPlayer ran before world
+    // content existed — the player can be placed and equipped only now.
+    if (this.playerId) this.finalizePlayer(world);
   }
 
   createPlayer(world: WorldModel): IFEntity {
@@ -207,6 +217,26 @@ export class ChordStory implements Story {
       this.worldIds.set(irPlayer.id, player.id);
       this.irIds.set(player.id, irPlayer.id);
     }
+
+    // Direct/test order: the world is already built, finalize immediately.
+    // Engine order (setStory calls createPlayer FIRST, then initializeWorld
+    // — "player must exist first"): initializeWorld finalizes instead.
+    if (this.worldBuilt) this.finalizePlayer(world);
+
+    return player;
+  }
+
+  /**
+   * Place and equip the player, then run the initial derived-property
+   * evaluation. Runs exactly once, from whichever lifecycle hook fires
+   * second — both the engine order (createPlayer → initializeWorld) and
+   * the direct order (initializeWorld → createPlayer) are supported.
+   */
+  private finalizePlayer(world: WorldModel): void {
+    if (this.playerFinalized) return;
+    this.playerFinalized = true;
+    const irPlayer = this.ir.entities.find((e) => e.isPlayer) ?? null;
+    const player = world.getEntity(this.playerId!)!;
 
     // Starting location: the player's `starts in`, else the first room.
     const startIr =
@@ -233,8 +263,6 @@ export class ChordStory implements Story {
     // Initial evaluation of derived properties (`dark while`) — the player
     // and their possessions now exist, so conditions are decidable.
     this.runtime.recomputeDerived(world);
-
-    return player;
   }
 
   extendLanguage(language: LanguageProvider): void {
@@ -425,7 +453,7 @@ export class ChordStory implements Story {
     if (!phrase) {
       throw new LoadError(`Phrase \`${key}\` is missing from the IR — the compiler gate should have caught this.`);
     }
-    return phrase.variants[0]?.text ?? '';
+    return withLineBreaks(phrase.variants[0]?.text ?? '');
   }
 }
 
@@ -448,11 +476,13 @@ function configValue(comp: IRComposition, key: string): string | undefined {
 
 /**
  * The Language Provider template for an IR phrase. Single-variant phrases
- * register their text; strategy phrases register a `{variants}` placeholder
- * the Phase 5 evaluator fills with a Choice atom at emit time (ADR-196).
+ * register their text (with `{br}` mapped to hard line breaks); verbatim
+ * and strategy phrases register a placeholder the runtime fills at emit
+ * time — a whitespace-exempt atom or a Choice atom (ADR-196).
  */
 function templateFor(phrase: IRPhrase): string {
-  if (phrase.strategy === null && phrase.variants.length === 1) return phrase.variants[0].text;
+  if (phrase.verbatim) return '{verbatim:text}';
+  if (phrase.strategy === null && phrase.variants.length === 1) return withLineBreaks(phrase.variants[0].text);
   return '{variants}';
 }
 

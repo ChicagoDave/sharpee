@@ -1,0 +1,70 @@
+title: Cloak AC-6 — occurrence counters and message state survive save/restore
+story: cloak-of-darkness
+description: ADR-210 AC-6 (added Phase 6, additive to the frozen golden six).
+  Stumble once (first-time ordinal tramples the message), save, stumble to
+  obliteration, then restore — the restored world must carry occurrence
+  count 1 and state trampled with no author-written persistence code, so
+  the two post-restore dark entries are the 2nd and 3rd, obliterating the
+  message again.
+
+---
+
+# Dark entry 1: first-time ordinal fires, message trampled
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+[OK: contains "Foyer of the Opera House"]
+
+$save ac6-one-stumble
+
+# Dark entries 2 and 3: third-time ordinal obliterates
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+[OK: contains "Foyer of the Opera House"]
+
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+[OK: contains "Foyer of the Opera House"]
+
+# Back to one stumble: chord.occurrence.* and chord.state.* are world
+# state, so the save carries them (AC-6's "no author persistence code")
+$restore ac6-one-stumble
+
+# If the counter restored to 1, these are entries 2 and 3 — obliteration
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+[OK: contains "Foyer of the Opera House"]
+
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> north
+[OK: contains "Foyer of the Opera House"]
+
+# Shed the cloak and read: obliterated is the lose ending
+> west
+[OK: contains "Cloakroom"]
+
+> remove cloak
+[OK: contains "You take off the velvet cloak"]
+
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+> east
+[OK: contains "Foyer of the Opera House"]
+
+> south
+[OK: contains "Foyer Bar"]
+
+> read message
+[OK: contains "trampled beyond recognition"]
+[OK: contains "You have lost"]
+[EVENT: true, type="story.defeat"]

@@ -333,7 +333,14 @@ class Parser {
       } else {
         const prose = this.parseProseParagraph(line.indent);
         if (decl.description) {
-          this.diagnostics.error('parse.duplicate-description', 'This entity already has a description paragraph.', prose.span);
+          // All consecutive bare paragraphs form the description — a later
+          // bare paragraph appends as a new paragraph (grammar log 2026-07-10).
+          decl.description = {
+            ...decl.description,
+            text: `${decl.description.text}\n\n${prose.text}`,
+            markers: [...decl.description.markers, ...prose.markers],
+            span: mergeSpans(decl.description.span, prose.span),
+          };
         } else {
           decl.description = prose;
         }
@@ -456,11 +463,21 @@ class Parser {
     const str = c.peek();
     if (str && str.kind === 'string') {
       c.next();
-      value = this.textFromString(str);
+      this.reportSameLineText(str.span);
+      value = this.textFromString(str); // recovery: keep the text so analysis continues
     } else {
       value = this.parseProseParagraph(line.indent + 1, line.indent);
     }
     return { kind: 'phrase-override', key: key.text, value, span: mergeSpans(lineSpan(line), value.span) };
+  }
+
+  /** Same-line phrase text (quoted or bare) was removed — grammar log 2026-07-10. */
+  private reportSameLineText(span: Span): void {
+    this.diagnostics.error(
+      'parse.phrase-text-form',
+      'Phrase text goes in an indented prose block — the same-line form was removed (grammar log 2026-07-10).',
+      span,
+    );
   }
 
   private parseCommaWords(c: Cursor): string[] {
@@ -494,12 +511,18 @@ class Parser {
   // ------------------------------------------------------------------ prose
 
   /**
-   * Collect a prose paragraph: consecutive lines at indent >= minIndent with
-   * no intervening blank line. When `strictlyAbove` is given, lines must be
-   * indented strictly deeper than it (phrase-entry values).
+   * Collect a prose block: consecutive lines at indent >= minIndent. When
+   * `strictlyAbove` is given, lines must be indented strictly deeper than it
+   * (phrase-entry values, variants, overrides) — and in that mode a blank
+   * line starts a new PARAGRAPH (`\n\n` in the text) instead of ending the
+   * block (grammar log 2026-07-10), since the block is already delimited by
+   * shallower-indented lines. In minIndent mode (create-block descriptions)
+   * a blank line still ends the block — the create loop merges consecutive
+   * bare paragraphs itself, keeping keyword lines out of prose.
    */
   private parseProseParagraph(minIndent: number, strictlyAbove?: number): TextValue {
-    const parts: string[] = [];
+    const paragraphs: string[][] = [];
+    let current: string[] = [];
     const markers: TextMarker[] = [];
     let span: Span | null = null;
     let first = true;
@@ -507,19 +530,65 @@ class Parser {
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
       const deepEnough = strictlyAbove !== undefined ? line.indent > strictlyAbove : line.indent >= minIndent;
-      if (!deepEnough || (!first && line.afterBlank) || isEndLine(line)) break;
+      if (!deepEnough || isEndLine(line)) break;
+      if (!first && line.afterBlank) {
+        if (strictlyAbove === undefined) break;
+        paragraphs.push(current);
+        current = [];
+      }
       this.pos++;
       const text = line.raw.trim();
       this.extractMarkers(line, markers);
-      parts.push(text);
+      current.push(text);
       span = span ? mergeSpans(span, lineSpan(line)) : lineSpan(line);
       first = false;
     }
+    if (current.length) paragraphs.push(current);
 
     return {
       kind: 'text',
       form: 'prose',
-      text: parts.join(' '),
+      text: paragraphs.map((p) => p.join(' ')).join('\n\n'),
+      markers,
+      span: span ?? spanOf(this.lines[this.pos - 1]?.lineNo ?? 1, 1),
+    };
+  }
+
+  /**
+   * Collect a verbatim block (`define phrase X, verbatim`): every line
+   * deeper than the head line, with line structure, interior blank lines,
+   * and relative indentation preserved exactly. The common leading indent
+   * is stripped; lines join with `\n`.
+   */
+  private parseVerbatimBlock(): TextValue {
+    const collected: Array<{ raw: string; blankBefore: boolean }> = [];
+    const markers: TextMarker[] = [];
+    let span: Span | null = null;
+    let first = true;
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      // Only a column-1 line (`end phrase`, next top-level keyword) ends the
+      // block — verbatim content may contain any words, including `end`.
+      if (line.indent === 0) break;
+      collected.push({ raw: line.raw, blankBefore: !first && line.afterBlank });
+      this.extractMarkers(line, markers);
+      span = span ? mergeSpans(span, lineSpan(line)) : lineSpan(line);
+      this.pos++;
+      first = false;
+    }
+
+    const common = Math.min(...collected.map((l) => l.raw.length - l.raw.trimStart().length));
+    const lines: string[] = [];
+    for (const l of collected) {
+      if (l.blankBefore) lines.push('');
+      lines.push(l.raw.slice(common).trimEnd());
+    }
+
+    return {
+      kind: 'text',
+      form: 'verbatim',
+      text: lines.join('\n'),
       markers,
       span: span ?? spanOf(this.lines[this.pos - 1]?.lineNo ?? 1, 1),
     };
@@ -533,6 +602,7 @@ class Parser {
     }
   }
 
+  /** Error-recovery only: a removed same-line quoted value, kept as prose text. */
   private textFromString(tok: Token): TextValue {
     const markers: TextMarker[] = [];
     const re = /\{([^}]*)\}/g;
@@ -540,7 +610,7 @@ class Parser {
     while ((m = re.exec(tok.text)) !== null) {
       markers.push({ content: m[1], span: spanOf(tok.span.line, tok.span.column + 1 + m.index, m[0].length) });
     }
-    return { kind: 'text', form: 'quoted', text: tok.text, markers, span: tok.span };
+    return { kind: 'text', form: 'prose', text: tok.text, markers, span: tok.span };
   }
 
   // ---------------------------------------------------------------- define
@@ -623,13 +693,16 @@ class Parser {
       this.diagnostics.error('parse.phrase-key', 'Expected a phrase key after `define phrase`.', lineSpan(headLine));
     }
     let strategy: string | null = null;
+    let verbatim = false;
     if (c.peek()?.kind === 'comma') {
       c.next();
       const s = c.next();
       if (s && s.kind === 'word' && STRATEGIES.has(s.text)) {
         strategy = s.text;
+      } else if (s && s.kind === 'word' && s.text === 'verbatim') {
+        verbatim = true; // grammar log 2026-07-10: whitespace-preserving text
       } else {
-        this.diagnostics.error('parse.phrase-strategy', 'Expected a strategy (randomly, cycling, ordered, once) after the comma.', s?.span ?? c.restSpan());
+        this.diagnostics.error('parse.phrase-strategy', 'Expected a strategy (randomly, cycling, ordered, once) or `verbatim` after the comma.', s?.span ?? c.restSpan());
       }
     }
 
@@ -647,6 +720,9 @@ class Parser {
         break;
       }
       if (firstWord(line) === 'or' && line.tokens.length === 1) {
+        if (verbatim) {
+          this.diagnostics.error('parse.verbatim-variants', 'A verbatim phrase has a single text — `or` variants need a strategy instead.', lineSpan(line));
+        }
         this.pos++;
         continue;
       }
@@ -654,12 +730,12 @@ class Parser {
         this.diagnostics.error('parse.unterminated-block', 'Missing `end phrase`.', span);
         break;
       }
-      const variant = this.parseProseParagraph(1, 0);
+      const variant = verbatim ? this.parseVerbatimBlock() : this.parseProseParagraph(1, 0);
       variants.push(variant);
       span = mergeSpans(span, variant.span);
     }
 
-    return { kind: 'define-phrase', key, strategy, variants, span };
+    return { kind: 'define-phrase', key, strategy, verbatim, variants, span };
   }
 
   private parseDefinePhrases(): DefinePhrases {
@@ -687,9 +763,11 @@ class Parser {
       let value: TextValue;
       const inline = line.tokens[2];
       if (inline && inline.kind === 'string') {
-        value = this.textFromString(inline);
+        this.reportSameLineText(inline.span);
+        value = this.textFromString(inline); // recovery: keep the text so analysis continues
       } else if (inline) {
-        // Bare unquoted text after the colon on the same line.
+        // Same-line bare text after the colon — removed with the quoted form.
+        this.reportSameLineText(inline.span);
         const colonAt = line.raw.indexOf(':');
         const text = line.raw.slice(colonAt + 1).trim();
         const markers: TextMarker[] = [];

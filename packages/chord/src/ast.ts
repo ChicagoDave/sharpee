@@ -50,12 +50,17 @@ export interface NameRef {
   span: Span;
 }
 
-/** Prose or quoted text; `{…}` markers extracted but not validated (parser stage). */
+/** Prose-block text; `{…}` markers extracted but not validated (parser stage). */
 export interface TextValue {
   kind: 'text';
-  /** 'quoted' = "..." on the declaration line; 'prose' = indented bare block. */
-  form: 'quoted' | 'prose';
-  /** The text with original inter-line whitespace collapsed to single spaces. */
+  /**
+   * 'prose' = indented bare block — inter-line whitespace collapsed, blank
+   * lines become `\n\n` paragraph breaks. 'verbatim' = line structure and
+   * indentation preserved exactly (`define phrase X, verbatim`). The quoted
+   * same-line form was removed (grammar log 2026-07-10).
+   */
+  form: 'prose' | 'verbatim';
+  /** The text (paragraphs separated by `\n\n`; verbatim lines by `\n`). */
   text: string;
   markers: TextMarker[];
   span: Span;
@@ -174,12 +179,14 @@ export interface DefineCondition {
   span: Span;
 }
 
-/** `define phrase <key>[, <strategy>] … end phrase` or single-line quoted form. */
+/** `define phrase <key>[, <strategy>|, verbatim] … end phrase`. */
 export interface DefinePhrase {
   kind: 'define-phrase';
   key: string;
   /** randomly | cycling | ordered | once — null for a plain phrase. */
   strategy: string | null;
+  /** Whitespace-preserving text (grammar log 2026-07-10); excludes strategies. */
+  verbatim: boolean;
   /** One entry when plain; several when `or`-separated variants. */
   variants: TextValue[];
   span: Span;

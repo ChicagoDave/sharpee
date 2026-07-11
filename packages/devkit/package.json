@@ -14,9 +14,12 @@
   },
   "dependencies": {
     "@sharpee/bootstrap": "workspace:*",
+    "@sharpee/chord": "workspace:*",
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
+    "@sharpee/story-loader": "workspace:*",
     "@sharpee/transcript-tester": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
     "fflate": "^0.8.2"
   },
   "devDependencies": {

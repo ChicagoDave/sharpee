@@ -13,26 +13,35 @@ description: Three dark entries obliterate the message (first-time →
 [OK: contains "Blundering around in the dark isn't a good idea!"]
 
 > north
+[OK: contains "Foyer of the Opera House"]
 
 # Dark entry 2: stumble fires, no state change
 > south
 [OK: contains "Blundering around in the dark isn't a good idea!"]
 
 > north
+[OK: contains "Foyer of the Opera House"]
 
 # Dark entry 3: message goes to obliterated
 > south
 [OK: contains "Blundering around in the dark isn't a good idea!"]
 
 > north
+[OK: contains "Foyer of the Opera House"]
 
 # Hang up the cloak and return to the lit bar
 > west
+[OK: contains "Cloakroom"]
+
 > remove cloak
+[OK: contains "You take off the velvet cloak"]
+
 > hang cloak on hook
 [OK: contains "put the velvet cloak on the brass hook"]
 
 > east
+[OK: contains "Foyer of the Opera House"]
+
 > south
 [OK: contains "Foyer Bar"]
 

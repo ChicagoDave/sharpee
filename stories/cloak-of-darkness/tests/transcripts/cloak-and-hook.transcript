@@ -27,14 +27,14 @@ description: Wearing, removing, hanging (custom verb), taking, and alias
 
 # Take it back — and exercise the hook's "peg" alias with the canonical form
 > take cloak
-[OK: contains "Taken"]
+[OK: contains "You take the velvet cloak from the brass hook"]
 
 > put cloak on peg
 [OK: contains "put the velvet cloak on the brass hook"]
 
 # Retrieve and wear again
 > take cloak
-[OK: contains "Taken"]
+[OK: contains "You take the velvet cloak from the brass hook"]
 
 > wear cloak
 [OK: contains "put on the velvet cloak"]

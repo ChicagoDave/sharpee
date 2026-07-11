@@ -12,13 +12,21 @@ description: One dark entry tramples the message (first-time ordinal in the
 
 # Back out, hang up the cloak
 > north
+[OK: contains "Foyer of the Opera House"]
+
 > west
+[OK: contains "Cloakroom"]
+
 > remove cloak
+[OK: contains "You take off the velvet cloak"]
+
 > hang cloak on hook
 [OK: contains "put the velvet cloak on the brass hook"]
 
 # Return to the lit bar and read the trampled message
 > east
+[OK: contains "Foyer of the Opera House"]
+
 > south
 [OK: contains "Foyer Bar"]
 

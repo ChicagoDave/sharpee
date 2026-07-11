@@ -102,5 +102,8 @@ description: Tests brick explosion puzzle - safe rusted shut, fuse countdown, sa
 # Test 7: Dusty Room is now blocked from Wide Ledge
 # ============================================================
 
+# The debris blocked-exit message now renders (going.ts checks blockedExits
+# before requiring an exit config — the message was authored but unreachable)
 > south
-[OK: contains "no obvious exits"]
+[OK: contains "blocked by debris from the recent explosion"]
+[EVENT: false, type="if.event.actor_moved"]

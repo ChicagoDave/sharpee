@@ -552,17 +552,13 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        cant_take_self: string;
-        already_have: string;
-        cant_take_room: string;
-        fixed_in_place: string;
-        container_full: string;
-        too_heavy: string;
-        cannot_take: string;
-        taken: string;
-        nothing_to_take: string;
-        taken_from: string;
-        taken_multi: string;
+        not_held: string;
+        nothing_to_drop: string;
+        dropped: string;
+        still_worn: string;
+        dropped_in: string;
+        dropped_on: string;
+        dropped_multi: string;
     };
     help: {
         description: string;
@@ -574,12 +570,17 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        not_held: string;
-        nothing_to_drop: string;
-        dropped: string;
-        dropped_in: string;
-        dropped_on: string;
-        dropped_multi: string;
+        cant_take_self: string;
+        already_have: string;
+        cant_take_room: string;
+        fixed_in_place: string;
+        container_full: string;
+        too_heavy: string;
+        cannot_take: string;
+        taken: string;
+        nothing_to_take: string;
+        taken_from: string;
+        taken_multi: string;
     };
     help: {
         description: string;
@@ -1538,35 +1539,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there: string;
-        already_hidden: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        revealed: string;
-        not_hidden: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         waited: string;
         waited_patiently: string;
         time_passes: string;
@@ -1802,6 +1774,35 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         nothing_to_repeat: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there: string;
+        already_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        revealed: string;
+        not_hidden: string;
     };
     help: {
         description: string;

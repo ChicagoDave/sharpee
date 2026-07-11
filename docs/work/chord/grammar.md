@@ -1,15 +1,17 @@
-# Chord Grammar — Implementation Notation
+# The Chord Grammar
 
-A living EBNF-style notation of the Chord grammar **exactly as the parser
-implements it** (`packages/chord/src/parser.ts`). It tracks the code, phase
-by phase, so the accepted language is always reviewable at a glance.
-Normative source: `docs/work/story-language/design.md` + ADR-210; grammar
-*changes* (anything not in design.md) require David's approval via
-`docs/architecture/chord-grammar-changes.md`.
+The complete grammar of the Chord story language (ADR-210) as implemented,
+including the 2026-07-10 grammar-log changes (prose-block-only phrase text,
+paragraph breaks, `{br}`, `verbatim`).
 
-**Current coverage: Phase A subset** (Cloak-complete). Constructs design.md
-defines but Phase A excludes are marked *Phase B* and are parse errors today
-(`parse.phase-b-construct`).
+Provenance: this is the full grammar as of 2026-07-10 (Phase A complete).
+The **living** copy that tracks the parser commit-by-commit is
+`docs/reference/chord-grammar.md`; grammar *changes* (anything beyond
+`docs/work/story-language/design.md`) require David's approval, logged in
+`docs/architecture/chord-grammar-changes.md` (a one-way ratchet).
+
+**Coverage: Phase A subset** (Cloak-complete). Constructs design.md defines
+but Phase A excludes are marked *Phase B* and are parse errors today.
 
 ## Notation conventions
 
@@ -47,6 +49,10 @@ STRING  = '"' any-except-'"' '"'                           (* no escapes *)
 MARKER  = "{" content "}"                                  (* inside text only *)
 ```
 
+Quoted strings appear only in non-prose positions: the story header
+(`story "…" by "…"`) and hatch module paths (`define text X from "./…"`).
+All prose is bare text in indented prose blocks.
+
 ## Top level
 
 ```
@@ -68,10 +74,10 @@ create-line  = "aka" alias { "," alias } NL
              | DIRECTION "to" name NL                      (* exit *)
              | DIRECTION "is" "blocked" ":" WORD NL        (* blocked exit, phrase key *)
              | "states" ":" WORD { "," WORD } NL           (* ordered states *)
-             | "phrase" WORD ":" NL prose-paragraph        (* per-entity override; prose block only *)
+             | "phrase" WORD ":" NL prose-block            (* per-entity override *)
              | on-clause
-             | prose-paragraph ;                           (* post-blank: description; consecutive
-                                                              bare paragraphs append (2026-07-10) *)
+             | prose-block ;                               (* post-blank: description; consecutive
+                                                              bare paragraphs append *)
 
 composition  = [ ARTICLE ] WORD                            (* article ⇒ kind noun; bare ⇒ trait *)
                [ "with" setting { "and" setting } ]
@@ -85,6 +91,12 @@ DIRECTION    = north | south | east | west | northeast | northwest
              | southeast | southwest | up | down ;
 ```
 
+Kind nouns (v1, prereqs §5): `a room`, `a door` *(Phase B — needs `between`)*,
+`a person`, `a container`, `a supporter`; no kind noun = plain thing.
+Trait adjectives (v1): `scenery`, `wearable`, `readable`, `openable`,
+`lockable`, `switchable`, `edible`, `pushable`, `pullable`, `light-source`,
+`plural`, `dark`.
+
 ## define
 
 ```
@@ -93,11 +105,10 @@ define-phrase    = "define" "phrase" WORD [ "," ( STRATEGY | "verbatim" ) ] NL
                    variant { "or" NL variant } "end" "phrase" NL ;
                    (* verbatim: single variant, line structure + relative
                       indentation preserved; no "or" variants *)
-variant          = prose-paragraph ;
+variant          = prose-block ;
 define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
-phrase-entry     = WORD ":" NL prose-paragraph ;           (* prose block only — the same-line
-                                                              quoted/bare forms were removed
-                                                              (grammar log 2026-07-10) *)
+phrase-entry     = WORD ":" NL prose-block ;               (* prose block only — same-line
+                                                              quoted/bare forms removed *)
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
 pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; name "br" reserved *)
@@ -105,18 +116,47 @@ define-flag      = "define" "flag" WORD "starts" token NL ;
 STRATEGY         = "randomly" | "cycling" | "ordered" | "once" ;
 ```
 
-### Prose blocks and formatting (grammar log 2026-07-10)
+## Prose blocks and formatting
 
-- A blank line inside a prose block is a **paragraph break** (`\n\n` in the
+- A prose block is consecutive bare indented lines; lines join with single
+  spaces (inter-line whitespace collapses).
+- A **blank line inside a prose block is a paragraph break** (`\n\n` in the
   compiled text → a fresh text block downstream). In `create` blocks the
   block still ends at a blank line so keyword lines stay out of prose;
   consecutive bare paragraphs all append to the description.
-- `{br}` is the **built-in hard-line-break marker** (flush line stacking,
+- **`{br}` is the built-in hard-line-break marker** (flush line stacking,
   no paragraph gap). `br` is reserved: it needs no declaration and cannot
   be used as a phrase or hatch name (`analysis.reserved-marker`).
-- `define phrase X, verbatim` preserves line structure, interior blank
+- **`define phrase X, verbatim`** preserves line structure, interior blank
   lines, and relative indentation (the common leading indent is stripped);
-  mutually exclusive with strategies and `or` variants.
+  mutually exclusive with strategies and `or` variants. Only a column-1
+  line ends a verbatim block, so its content may contain any words.
+- `{…}` markers otherwise name a declared hatch or phrase key (validated,
+  AC-3); formatter-chain forms (`{You}`, `{verb:is item}`) pass through.
+
+Example — every formatting construct together:
+
+```
+create the Hall
+  a room
+
+  The first paragraph of the description.
+
+  The second paragraph.
+
+define phrase engraving
+  Here lies the mighty grue.{br}
+  It could not see in daylight.
+end phrase
+
+define phrase treasure-map, verbatim
+      N
+    W + E
+      S
+
+  X marks the spot.
+end phrase
+```
 
 ## when
 
@@ -126,6 +166,9 @@ when-rule    = "when" header-words [ "while" condition ] NL
 header-words = WORD { WORD } ;   (* unsegmented: actor/verb/target split is the
                                     analyzer's job, against the event-selector map *)
 ```
+
+Event-verb set (Phase A): `enters`. Growing this set is a grammar change
+(governance log).
 
 ## Statements
 
@@ -150,6 +193,10 @@ select-strategy = "select" STRATEGY NL
 ordinal-block = ORDINAL "time" NL >>> { statement } ;
 ORDINAL      = "first" | "second" | … | "tenth" ;
 ```
+
+Phase-order rule (load-time gate): in an `on` clause, `refuse` statements
+must precede the first mutation (`analysis.refusal-after-mutation`).
+`refuse` is not legal in `when` rules.
 
 ## Conditions (closed selector grammar, Phase A subset)
 
@@ -180,49 +227,30 @@ ARTICLE      = "the" | "a" | "an" ;
 ```
 
 Noun phrases stop at: `is has holds wears can and or then to while with`.
+`randomly` and `one chance in <n>` route through the platform's seeded RNG
+(cursor persisted in world state) — repeated runs with a fixed seed are
+byte-identical (AC-5).
 
-## Implementation readings (design.md ambiguities, resolved in code)
+## Resolution and gates (analyzer)
 
-These are *readings* of design.md, not grammar additions — recorded here for
-review; if any is wrong it becomes a grammar-changes entry:
+- **Entity IDs** are the lowercased name words joined with `-`
+  (`the Foyer of the Opera House` → `foyer-of-the-opera-house`); the
+  article is stripped and kept separately. Resolution order: exact name →
+  exact alias → unique in-order word-subset. Ambiguity/misses are errors
+  with rename/nearest suggestions — never a guess.
+- **Descriptions and per-entity overrides become derived phrase keys**
+  (`<entity-id>.description`, `<entity-id>.<key>`) in the story's default
+  locale (Phase A: `en-US`).
+- **Load-time gate classes** (AC-3, each with `.story` line numbers):
+  missing phrase key · unknown predicate value (with nearest-valid
+  suggestion) · undeclared state · ambiguous reference (with rename
+  suggestion) · refusal after mutation · unbound `{…}` marker · reserved
+  marker name (`br`) · duplicate phrase.
+- **`is <word>` objects** must be a declared state of the subject entity,
+  a v1 trait adjective, a literal, or an entity name.
 
-1. **`define phrases <locale>` is dedent-terminated** (no `end phrases`) —
-   normative §3.1 shows none; the "define keeps explicit end" meta-rule is
-   read as applying to blocks with control flow.
-2. **`on` disambiguation in create blocks**: `on` + article ⇒ placement
-   (`on the table`); `on` + bare word ⇒ behavior clause (`on reading it`).
-3. **Composition vs. prose**: non-keyword lines *before* the first blank
-   line are composition; non-keyword paragraphs *after* a blank are the
-   description (consecutive bare paragraphs append — grammar log 2026-07-10).
-4. **`with` setting values**: the last token of each `and`-separated setting
-   is the value; preceding words are the key (`max items 5`).
-5. **Event headers stay unsegmented word lists** — actor/verb/target
-   segmentation needs the curated event-selector map, which is analyzer
-   (Phase 3) territory; the parser stays vocabulary-free.
-6. **Bare condition refs** (`while in-darkness`) are only taken when the
-   word stands alone; otherwise a subject–predicate parse is attempted.
-7. **Prose paragraphs join lines with single spaces**; markers keep precise
-   per-line spans for AC-3 diagnostics.
+## Full readings log
 
-## Analyzer readings (Phase 3 — resolution and gate policy)
-
-8. **Entity IDs** are the lowercased name words joined with `-`
-   (`the Foyer of the Opera House` → `foyer-of-the-opera-house`); the
-   article is stripped and kept separately. Resolution order: exact name →
-   exact alias → unique in-order word-subset (`the Foyer Bar` matches
-   nothing else). Ambiguity/misses are errors with rename/nearest
-   suggestions — never a guess.
-9. **Descriptions and per-entity overrides become derived phrase keys**
-   (`<entity-id>.description`, `<entity-id>.<key>`) registered in the
-   story's default locale (Phase A: `en-US`), per given 3.
-10. **Event-verb set (Phase A): `enters`.** The `when` header segments as
-    words-before-verb = actor, words-after = target; a header with no known
-    verb is a load error listing the known verbs. Growing this set is a
-    grammar change (governance log).
-11. **`is <word>` objects** must be a declared state of the subject entity,
-    a v1 trait adjective, a literal, or an entity name — anything else is
-    the unknown-value gate with a nearest-valid suggestion.
-12. **Marker validation (Phase A slice):** bare lowercase single-word
-    markers (`{garbled}`) must name a declared hatch or phrase key.
-    Formatter-chain forms (`{You}`, `{verb:is item}`, `{the item}`) are not
-    validated yet — that check lands with the full contract in Phase B/C.
+Design-ambiguity readings resolved in code (parser readings 1–7, analyzer
+readings 8–12) are recorded in `docs/reference/chord-grammar.md` — the
+living copy of this notation.

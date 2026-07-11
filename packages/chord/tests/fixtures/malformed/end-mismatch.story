@@ -14,4 +14,5 @@ create the message
   end select
 
 define phrases en-US
-  message-intact: "Fine."
+  message-intact:
+    Fine.

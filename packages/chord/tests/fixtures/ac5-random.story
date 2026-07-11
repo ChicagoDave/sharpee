@@ -41,4 +41,5 @@ when the player enters the West Room while one chance in 3
 end when
 
 define phrases en-US
-  lucky-draught: "A lucky draught of air sweeps past you."
+  lucky-draught:
+    A lucky draught of air sweeps past you.

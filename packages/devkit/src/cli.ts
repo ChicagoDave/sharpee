@@ -10,6 +10,7 @@
  *
  * Public interface: process argv -> subcommand dispatch -> process exit code.
  */
+import { runCompose } from './commands/compose';
 import { runIntrospect } from './commands/introspect';
 import { resolveStory, findMonorepoRoot } from './repo';
 // Author-project commands (devkit is the author tool; the in-repo platform build
@@ -29,6 +30,7 @@ Usage:
   sharpee build-browser [options]        Build the browser client for the current project
   sharpee init <name>                    Scaffold a new story project
   sharpee init-browser                   Add a browser client to the current project
+  sharpee compose <file.story> [opts]    Compile a Chord story to Story IR (ADR-210)
   sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
@@ -39,6 +41,10 @@ build (author project): compiles src/ + emits the .sharpee bundle; --browser als
 
 build-browser options:
   --no-minify | --no-sourcemap
+
+compose options:
+  --check              Run only the load-time gates (CI mode; no IR emitted)
+  -o, --out <file>     Write the IR JSON to a file instead of stdout
 
 Note: platform/in-repo builds — the packages, the CLI bundle, verify, test:npm — are
 repokit's job. In the monorepo use ./repokit; devkit is the author tool. A workspace
@@ -87,6 +93,8 @@ async function main(argv: string[]): Promise<number> {
       else await runBuildCommand(flags, dir);
       return 0;
     }
+    case 'compose':
+      return runCompose(rest);
     case 'build-browser':
       await runBuildBrowserCommand(rest);
       return 0;

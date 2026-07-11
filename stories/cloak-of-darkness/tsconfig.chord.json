@@ -1,0 +1,10 @@
+{
+  // Chord-era build (ADR-210 Phase A): compiles ONLY the hatch module the
+  // Chord-interpreted cloak.story binds (`define text garbled from
+  // "./extras.ts"` → dist/extras.js). The legacy hand-written TS story
+  // (src/index.ts and its runners) predates the current platform, no longer
+  // type-checks, and is intentionally left unbuilt — its Vitest suite loads
+  // src directly and is unaffected. Use `build:legacy` for the old full build.
+  "extends": "./tsconfig.json",
+  "include": ["src/extras.ts"]
+}

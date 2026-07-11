@@ -1,0 +1,41 @@
+title: Cloak AC-6 — undo reverts occurrence counters and message state
+story: cloak-of-darkness
+description: ADR-210 AC-6 (added Phase 6, additive to the frozen golden six).
+  Undoing the first dark entry must roll back the first-time ordinal's
+  trample along with the movement — occurrence counters and chord.state.*
+  are world state, so undo needs no author-written code. The message reads
+  intact (the win ending) afterward.
+
+---
+
+# Dark entry 1: first-time ordinal tramples the message
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+# Undo the entry: movement AND the trample roll back together
+> undo
+[EVENT: true, type="platform.undo_completed"]
+
+> look
+[OK: contains "Foyer of the Opera House"]
+
+# Hang up the cloak and read: the message is intact again — the win
+> west
+[OK: contains "Cloakroom"]
+
+> remove cloak
+[OK: contains "You take off the velvet cloak"]
+
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+> east
+[OK: contains "Foyer of the Opera House"]
+
+> south
+[OK: contains "Foyer Bar"]
+
+> read message
+[OK: contains "The message, neatly marked in the sawdust, reads"]
+[OK: contains "You have won"]
+[EVENT: true, type="story.victory"]

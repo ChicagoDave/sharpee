@@ -74,6 +74,12 @@ export const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/plugin-state-machine', './packages/plugin-state-machine/dist/index.js'],
   ['@sharpee/bootstrap', './packages/bootstrap/dist/index.js'],
   ['@sharpee/transcript-tester', './packages/transcript-tester/dist/index.js'],
+  // Chord `.story` support (ADR-210 Phase A): the CLI compiles + interprets
+  // .story files, so the frontend, the interpreter, and the interpreter's
+  // helpers dependency must resolve to the same in-bundle copies.
+  ['@sharpee/chord', './packages/chord/dist/index.js'],
+  ['@sharpee/story-loader', './packages/story-loader/dist/index.js'],
+  ['@sharpee/helpers', './packages/helpers/dist/index.js'],
 ];
 
 /** Hand-written CLI bundle declarations (build.sh build_bundle, 607-619) — verbatim. */

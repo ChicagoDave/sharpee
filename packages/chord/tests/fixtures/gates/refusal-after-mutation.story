@@ -11,4 +11,5 @@ create the box
   end on
 
 define phrases en-US
-  cant-read: "No."
+  cant-read:
+    No.

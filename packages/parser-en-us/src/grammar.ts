@@ -113,6 +113,42 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Wearing and taking off (wearables). The actions, messages, and verb
+  // data (lang-en-us verbs.ts) predate these rules; the grammar was the
+  // missing piece — "remove cloak" was unparseable and "take off :item"
+  // fell through to taking.
+  grammar
+    .forAction('if.action.wearing')
+    .verbs(['wear', 'don'])
+    .pattern(':item')
+    .build();
+
+  // "put on" is a phrasal verb - higher priority than generic put
+  grammar
+    .define('put on :item')
+    .mapsTo('if.action.wearing')
+    .withPriority(105)
+    .build();
+
+  grammar
+    .forAction('if.action.taking_off')
+    .verbs(['remove', 'doff'])
+    .pattern(':item')
+    .build();
+
+  // "take off" / "take :item off" are phrasal - higher priority than "take :item"
+  grammar
+    .define('take off :item')
+    .mapsTo('if.action.taking_off')
+    .withPriority(105)
+    .build();
+
+  grammar
+    .define('take :item off')
+    .mapsTo('if.action.taking_off')
+    .withPriority(105)
+    .build();
+
   // Eating (ADR-087: using forAction)
   grammar
     .forAction('if.action.eating')

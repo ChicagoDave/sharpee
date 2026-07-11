@@ -41,6 +41,7 @@ import {
   CHORD_OCCURRENCE_PREFIX,
   CHORD_STATE_PREFIX,
 } from './state-keys';
+import { withLineBreaks } from './text';
 
 /** Chord strategy adverb → phrase-algebra Choice selector (ADR-196). */
 const STRATEGY_SELECTOR: Record<string, Choice['selector']> = {
@@ -91,10 +92,26 @@ export class ChordRuntime {
   bind(world: WorldModel): void {
     this.ir.rules.forEach((rule, index) => this.bindRule(world, rule, index));
 
+    // The interceptor registry is keyed (traitType, actionId) — a second
+    // registration for the same action would REPLACE the first, silently
+    // disabling earlier entities' clauses. Group clauses by action and
+    // register one dispatching interceptor per action that routes by the
+    // action's target entity.
+    const byAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause }>>();
     for (const entity of this.ir.entities) {
       for (const clause of entity.onClauses) {
-        this.bindOnClause(world, entity, clause);
+        this.prepareOnClauseTarget(world, entity, clause);
+        const list = byAction.get(clause.action) ?? [];
+        list.push({ entity, clause });
+        byAction.set(clause.action, list);
       }
+    }
+    for (const [action, clauses] of byAction) {
+      world.registerActionInterceptor(
+        ChordBehaviorTrait.type,
+        `if.action.${action}`,
+        this.buildDispatchingInterceptor(clauses),
+      );
     }
 
     // Derived `dark while` — recompute when possession or location changes.
@@ -175,7 +192,8 @@ export class ChordRuntime {
 
   // ------------------------------------------------------------ on-clauses
 
-  private bindOnClause(world: WorldModel, entity: IREntity, clause: IROnClause): void {
+  /** Mark the clause's target entity so interceptor resolution finds it. */
+  private prepareOnClauseTarget(world: WorldModel, entity: IREntity, clause: IROnClause): void {
     const worldId = this.host.entityId(entity.id);
     if (!worldId) throw new LoadError(`Entity \`${entity.id}\` has no world instance.`, clause.span);
     const target = world.getEntity(worldId);
@@ -188,12 +206,36 @@ export class ChordRuntime {
     if (clause.action === 'reading' && !target.has(TraitType.READABLE)) {
       target.add(new ReadableTrait({ text: '' }));
     }
+  }
 
-    world.registerActionInterceptor(
-      ChordBehaviorTrait.type,
-      `if.action.${clause.action}`,
-      this.buildInterceptor(entity, clause),
-    );
+  /**
+   * One interceptor per action: each hook forwards to the clause whose
+   * entity is the action's target (per-clause interceptors keep their own
+   * occurrence keys and decision snapshots).
+   */
+  private buildDispatchingInterceptor(clauses: Array<{ entity: IREntity; clause: IROnClause }>): ActionInterceptor {
+    const runtime = this;
+    const arms = clauses.map(({ entity, clause }) => ({
+      entity,
+      interceptor: this.buildInterceptor(entity, clause),
+    }));
+    const armFor = (target: IFEntity): ActionInterceptor | undefined =>
+      arms.find((a) => runtime.host.entityId(a.entity.id) === target.id)?.interceptor;
+
+    return {
+      preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        return armFor(target)?.preValidate?.(target, world, actorId, data) ?? null;
+      },
+      postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        return armFor(target)?.postValidate?.(target, world, actorId, data) ?? null;
+      },
+      postExecute(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): void {
+        armFor(target)?.postExecute?.(target, world, actorId, data);
+      },
+      postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
+        return armFor(target)?.postReport?.(target, world, actorId, data) ?? {};
+      },
+    };
   }
 
   /**
@@ -499,10 +541,15 @@ export class ChordRuntime {
         if (producer) params[marker] = producer;
       }
     }
-    if (phrase.strategy) {
+    if (phrase.verbatim) {
+      // `{verbatim:text}` template (loader registration) — the atom is
+      // exempt from whitespace collapse, so line structure and interior
+      // spacing survive as authored (grammar log 2026-07-10).
+      params.text = phrase.variants[0]?.text ?? '';
+    } else if (phrase.strategy) {
       const choice: Choice = {
         kind: 'choice',
-        alternatives: phrase.variants.map((v): Literal => ({ kind: 'literal', text: v.text })),
+        alternatives: phrase.variants.map((v): Literal => ({ kind: 'literal', text: withLineBreaks(v.text) })),
         selector: STRATEGY_SELECTOR[phrase.strategy],
         entityId: 'chord',
         messageKey: overrideKey,

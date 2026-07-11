@@ -8,4 +8,5 @@ when the player enters the East Room
 end when
 
 define phrases en-US
-  stumble: "Careful!"
+  stumble:
+    Careful!

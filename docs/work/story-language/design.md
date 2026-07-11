@@ -242,7 +242,11 @@ end phrase
   (`{You} {open} {the item}`, `{verb:is item}`), and params ship as EntityInfo
   automatically (ADR-158 becomes compiler-enforced).
 - Prose block form (`phrase <id>` + indented bare text) exists because IF prose is
-  saturated with quotation marks; quoted form for short interjections.
+  saturated with quotation marks. **The prose block is the ONLY phrase-text form**
+  (grammar log 2026-07-10 — the quoted/bare same-line forms were removed; quotes
+  remain for header strings and hatch paths). A blank line inside a prose block is
+  a paragraph break; `{br}` is the built-in hard line break; `define phrase X,
+  verbatim` preserves whitespace exactly. §3.1 amended accordingly.
 - Inline prose anywhere is declare-and-emit sugar: it registers under a derived ID.
 - Two authoring modes, one IR: stdlib uses keys + `phrases <locale>` blocks
   (localizable); story authors may inline (compiler derives keys, registers in the
@@ -386,10 +390,12 @@ define phrases en-US
   cant-leave:
     You've only just arrived, and besides, the weather outside seems
     to be getting worse.
-  stumble: "Blundering around in the dark isn't a good idea!"
+  stumble:
+    Blundering around in the dark isn't a good idea!
   message-intact:
     The message, neatly marked in the sawdust, reads... You have won!
-  message-trampled: "You can just make out: {garbled}"
+  message-trampled:
+    You can just make out: {garbled}
   message-obliterated:
     The message has been trampled beyond recognition. You have lost!
 

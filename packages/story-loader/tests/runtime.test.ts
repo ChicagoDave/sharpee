@@ -192,8 +192,10 @@ create the player
   You.
 
 define phrases en-US
-  box-opened: "It creaks open."
-  box-already: "Already open."
+  box-opened:
+    It creaks open.
+  box-already:
+    Already open.
 `;
 
   it('reports along the branch the mutation was decided on, not the post-mutation state', () => {
@@ -309,8 +311,10 @@ when the player enters the Hall
 end when
 
 define phrases en-US
-  step-one: "First."
-  step-two: "Then, always."
+  step-one:
+    First.
+  step-two:
+    Then, always.
 `);
     const story = createStory(ir);
     const world = new WorldModel();
@@ -357,7 +361,8 @@ when the player enters the Room
 end when
 
 define phrases en-US
-  nope: "No."
+  nope:
+    No.
 `);
     const story = createStory(ir);
     const world = new WorldModel();

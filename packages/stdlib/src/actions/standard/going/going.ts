@@ -180,6 +180,20 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    // Check if the direction is blocked BEFORE requiring an exit config:
+    // a blockedExits entry means "this direction is deliberately refused
+    // with this message" whether or not an exit exists (a blocked-only
+    // direction has no destination — e.g. Chord's `north is blocked:`,
+    // ADR-210).
+    if (RoomBehavior.isExitBlocked(currentRoom, direction)) {
+      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction) || "You can't go that way.";
+      return {
+        valid: false,
+        error: GoingMessages.MOVEMENT_BLOCKED,
+        params: { direction: direction, message: blockedMessage }
+      };
+    }
+
     // Use RoomBehavior to get exit information
     const exitConfig = RoomBehavior.getExit(currentRoom, direction);
     if (!exitConfig) {
@@ -195,16 +209,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         valid: false,
         error: GoingMessages.NO_EXIT_THAT_WAY,
         params: { direction: direction }
-      };
-    }
-
-    // Check if exit is blocked
-    if (RoomBehavior.isExitBlocked(currentRoom, direction)) {
-      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction) || "You can't go that way.";
-      return {
-        valid: false,
-        error: GoingMessages.MOVEMENT_BLOCKED,
-        params: { direction: direction, message: blockedMessage }
       };
     }
 

@@ -151,7 +151,13 @@ class Analyzer {
     for (const decl of this.ast.declarations) {
       if (decl.kind === 'create') this.collectEntity(decl);
       else if (decl.kind === 'define-condition') this.conditionNames.add(decl.name);
-      else if (decl.kind === 'define-text') this.hatchNames.add(decl.name);
+      else if (decl.kind === 'define-text') {
+        if (decl.name === 'br') {
+          this.diagnostics.error('analysis.reserved-marker', '`br` is reserved for the built-in `{br}` line-break marker — pick another producer name.', decl.span);
+        } else {
+          this.hatchNames.add(decl.name);
+        }
+      }
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
     }
@@ -207,6 +213,7 @@ class Analyzer {
   private collectPhraseDecl(decl: DefinePhrase): void {
     this.registerPhrase(DEFAULT_LOCALE, decl.key, {
       strategy: (decl.strategy as IRPhrase['strategy']) ?? null,
+      ...(decl.verbatim ? { verbatim: true } : {}),
       variants: decl.variants.map((v) => this.variantOf(v)),
       span: decl.span,
     });
@@ -217,6 +224,11 @@ class Analyzer {
   }
 
   private registerPhrase(locale: string, key: string, phrase: IRPhrase): void {
+    if (key === 'br') {
+      // `{br}` is the built-in hard-line-break marker (grammar log 2026-07-10).
+      this.diagnostics.error('analysis.reserved-marker', '`br` is reserved for the built-in `{br}` line-break marker — pick another phrase name.', phrase.span);
+      return;
+    }
     let table = this.phrases.get(locale);
     if (!table) {
       table = new Map();
@@ -676,6 +688,7 @@ class Analyzer {
         for (const variant of phrase.variants) {
           for (const marker of variant.markers) {
             if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
+            if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
             if (this.hatchNames.has(marker)) continue;
             if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) continue;
             this.diagnostics.error(

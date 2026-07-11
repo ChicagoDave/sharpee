@@ -157,6 +157,27 @@ describe('cloak.story loads into a playable world', () => {
   });
 });
 
+describe('engine lifecycle order: createPlayer BEFORE initializeWorld (GameEngine.setStory)', () => {
+  // The engine creates the player first "so initializeWorld() can place
+  // them" — finalization (placement, worn items, initial darkness) must run
+  // from initializeWorld in that order, and exactly once.
+  it('places and equips the player, and darkens the bar', () => {
+    const story = createStory(compileFixture('cloak.story'), { hatchModules: CLOAK_MODULES });
+    const world = new WorldModel();
+    const player = story.createPlayer(world);
+    story.initializeWorld(world);
+
+    expect(world.getLocation(player.id)).toBe(story.entityId('foyer-of-the-opera-house'));
+    const cloak = world.getEntity(story.entityId('velvet-cloak')!)!;
+    expect(world.getLocation(cloak.id)).toBe(player.id);
+    const wearable = cloak.get(TraitType.WEARABLE) as WearableTrait;
+    expect(wearable.worn).toBe(true);
+    expect(wearable.wornBy).toBe(player.id);
+    const barRoom = world.getEntity(story.entityId('foyer-bar')!)!.get(TraitType.ROOM) as RoomTrait;
+    expect(barRoom.isDark).toBe(true);
+  });
+});
+
 describe('ac5-random.story loads (no hatches)', () => {
   it('builds both rooms and registers the strategy phrase as a variants template', () => {
     const story = createStory(compileFixture('ac5-random.story'));

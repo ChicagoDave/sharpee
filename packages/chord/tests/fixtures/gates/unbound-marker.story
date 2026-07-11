@@ -5,4 +5,5 @@ story "Gate 6" by "Nobody"
 define text garbled from "./extras.ts"
 
 define phrases en-US
-  spooky: "You see {gremlin} in the dark."
+  spooky:
+    You see {gremlin} in the dark.

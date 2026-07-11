@@ -12,10 +12,14 @@ description: Hang the cloak before ever entering the bar, then read the
 [OK: contains "Cloakroom"]
 
 > remove cloak
+[OK: contains "You take off the velvet cloak"]
+
 > hang cloak on hook
 [OK: contains "put the velvet cloak on the brass hook"]
 
 > east
+[OK: contains "Foyer of the Opera House"]
+
 > south
 [OK: contains "Foyer Bar"]
 [OK: contains "message scrawled in the sawdust"]

@@ -23,7 +23,7 @@ description: Room descriptions and traversal per the canonical cloak.story
 # Divergence 1: north is blocked with the cant-leave phrase (no Outside room)
 > north
 [OK: contains "You've only just arrived, and besides, the weather outside seems"]
-[OK: not contains "Outside"]
+[EVENT: false, type="if.event.actor_moved"]
 
 # West to the Cloakroom
 > west

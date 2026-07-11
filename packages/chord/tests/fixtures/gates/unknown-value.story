@@ -13,4 +13,5 @@ create the message
   end on
 
 define phrases en-US
-  message-intact: "Fine."
+  message-intact:
+    Fine.

@@ -10,11 +10,17 @@ description: Divergence 2 from Firth's original — `dark while the player
 
 # Hang the cloak first: the bar starts lit
 > west
+[OK: contains "Cloakroom"]
+
 > remove cloak
+[OK: contains "You take off the velvet cloak"]
+
 > hang cloak on hook
 [OK: contains "put the velvet cloak on the brass hook"]
 
 > east
+[OK: contains "Foyer of the Opera House"]
+
 > south
 [OK: contains "Foyer Bar"]
 [OK: contains "message scrawled in the sawdust"]
@@ -22,11 +28,17 @@ description: Divergence 2 from Firth's original — `dark while the player
 # Retrieve the cloak and come back: the bar is dark again, and this
 # first dark entry trips the stumble rule
 > north
+[OK: contains "Foyer of the Opera House"]
+
 > west
+[OK: contains "Cloakroom"]
+
 > take cloak
-[OK: contains "Taken"]
+[OK: contains "You take the velvet cloak from the brass hook"]
 
 > east
+[OK: contains "Foyer of the Opera House"]
+
 > south
 [OK: contains "Blundering around in the dark isn't a good idea!"]
 
