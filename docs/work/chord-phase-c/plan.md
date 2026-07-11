@@ -357,7 +357,17 @@ never a silent edit to a frozen story or its frozen transcripts.
   **No Phase 2 work starts until every entry in this phase is APPROVED by
   David** — this is the hard gate the proposal's "final ratchet entries...
   land with implementation" line requires done first, not concurrently.
-- **Status**: CURRENT
+- **Status**: CURRENT — drafts + spike DONE 2026-07-11, awaiting David's
+  approvals. All 13 entries drafted in `ratchet-drafts.md` (D1–D13) with
+  the removals and unchanged-only-extended lists. **Spike result**: zero
+  interceptor hooks fire on the dispatch path (empirically pinned;
+  registry resolves the binding but `buildDispatchAction` never consults
+  it) — mechanism chosen for `after`-on-dispatch is loader-internal
+  (compiles into the dispatch action's report phase alongside
+  `fireActionRules`), so NO platform change is needed and Checkpoint 2
+  reduces to confirming the mechanism. Open with David: CP2 (mechanism),
+  CP5 (`define score` fate), CP6 (sequence-scope mutation rule), plus
+  per-row approval of D1–D13.
 
 ### Phase 2: Chord frontend — new grammar in, old grammar out
 - **Tier**: Large
