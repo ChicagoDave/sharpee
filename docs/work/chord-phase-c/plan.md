@@ -357,17 +357,19 @@ never a silent edit to a frozen story or its frozen transcripts.
   **No Phase 2 work starts until every entry in this phase is APPROVED by
   David** — this is the hard gate the proposal's "final ratchet entries...
   land with implementation" line requires done first, not concurrently.
-- **Status**: CURRENT — drafts + spike DONE 2026-07-11, awaiting David's
-  approvals. All 13 entries drafted in `ratchet-drafts.md` (D1–D13) with
-  the removals and unchanged-only-extended lists. **Spike result**: zero
-  interceptor hooks fire on the dispatch path (empirically pinned;
-  registry resolves the binding but `buildDispatchAction` never consults
-  it) — mechanism chosen for `after`-on-dispatch is loader-internal
-  (compiles into the dispatch action's report phase alongside
-  `fireActionRules`), so NO platform change is needed and Checkpoint 2
-  reduces to confirming the mechanism. Open with David: CP2 (mechanism),
-  CP5 (`define score` fate), CP6 (sequence-scope mutation rule), plus
-  per-row approval of D1–D13.
+- **Status**: COMPLETE (2026-07-11). All 13 entries drafted
+  (`ratchet-drafts.md` D1–D13) and APPROVED by David same day ("Approve
+  all as drafted"), now transcribed into the official ratchet log as
+  normative. Checkpoint answers: CP2 = loader-internal `after`-on-dispatch
+  mechanism confirmed (spike empirically pinned that interceptor hooks
+  never fire on the dispatch path — `buildDispatchAction` never consults
+  the registry — so after-clauses compile into the dispatch action's
+  report phase beside `fireActionRules`; ZERO platform changes); CP5 =
+  top-level `define score` REMOVED (owner-attached `score … worth N` is
+  the single form; story-scoped scores use the story header); CP6 =
+  sequences may mutate the story or any named entity (bind no `it`).
+  Removals list and unchanged-only-extended list confirmed as Phase 2's
+  scope boundary. Phase 2 is unblocked and CURRENT.
 
 ### Phase 2: Chord frontend — new grammar in, old grammar out
 - **Tier**: Large
@@ -447,7 +449,10 @@ never a silent edit to a frozen story or its frozen transcripts.
   regenerated snapshots; shipping-story-reading tests are repointed at the
   new fixture with TODO markers in place; `pnpm --filter '@sharpee/chord'
   test` green.
-- **Status**: PENDING
+- **Status**: CURRENT (unblocked 2026-07-11 — all Phase 1 entries
+  APPROVED; CP5 answer: top-level `define score` joins the removals list,
+  so `worth N` on owners is the single form and the story header carries
+  story-scoped scores).
 
 ### Phase 3: Chord analysis — three-ring gate, routing, catalog, scope, step anchors
 - **Tier**: Large

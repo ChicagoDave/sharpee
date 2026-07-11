@@ -1,10 +1,13 @@
 # Phase C Phase 1 — Ratchet Entry Drafts (PROPOSED)
 
-Drafted 2026-07-11 per plan.md Phase 1. Each row below is a PROPOSED entry
-in the exact format of `docs/architecture/chord-grammar-changes.md`; on
-David's approval a row moves into the official log verbatim (dated, with
-the Decision column rewritten to record his approval). **None of these is
-normative yet. Phase 2 starts only when every row is APPROVED.**
+Drafted 2026-07-11 per plan.md Phase 1. **STATUS: ALL APPROVED — David,
+2026-07-11 ("Approve all as drafted"; CP2 = loader-internal mechanism
+confirmed; CP5 = top-level `define score` REMOVED; CP6 = named-entity
+mutations from sequences confirmed). All 13 entries plus the consolidated
+removals entry are transcribed into the official log
+(`docs/architecture/chord-grammar-changes.md`, 2026-07-11 rows) — the log
+is normative; this file is the working draft kept for the Phase 1 record.
+Phase 2 is unblocked.**
 
 ## Spike result (Risk 1 — gates entry D3)
 
