@@ -41,10 +41,16 @@ The design axioms, in the order they were established:
    (`it must be hungry: already-fed`); moment conditionals are the statement
    `when` suffix (`award farewell when the player can see it`); `select` blocks
    remain the branching construct. And `change` is **gated to declared named
-   states** — `true`/`false` (and bare `yes`/`no`) are reserved, rejected as
-   state names ("no cheating"): booleans cannot re-enter as two-value state
-   sets; two values are fine when the names carry domain meaning
-   (`hungry`/`content` is a state machine; `true`/`false` is a flag).
+   states**, where the boolean gate is pattern detection, not a reserved-word
+   list (David's clarification, 2026-07-11): catch any author implementing
+   pos/neg states and encourage real states. Three rings — literal booleans
+   (`true`/`false`/`yes`/`no`: error, no cheating); platform-shadow pairs
+   (`open`/`closed` etc.: error, compose the owning trait instead); and
+   negation-shaped pairs (`fed`/`unfed`, `not-X`, `un-X`, `non-X`, `X-less`:
+   error with an encouraging fix-it). The principle the diagnostic teaches:
+   a state names what the thing IS, never the absence of another state — the
+   unfound positive name is where the domain insight lives (`fed: flag` →
+   `hungry`/`content`).
 
 5. **Counting up and down is implied — the author defines no counting mechanism at
    all.** No counters, no count queries. The syntax differentiates multiple events by

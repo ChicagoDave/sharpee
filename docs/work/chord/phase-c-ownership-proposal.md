@@ -192,14 +192,34 @@ feedable before the first bell, matching current behavior).
    note: the freed `when` keyword (floating when-rules died in leg 3) is
    reused as the statement suffix; the select-arm `when <value>` homonym
    is positionally distinct but gets called out in the final entry.
-8. **`change` stays, gated against boolean cheating (David, 2026-07-11).**
-   `change` is the single visible mutation for state transitions and is
-   legal only against declared named states. Reserved state names:
-   `true`/`false` (and bare `yes`/`no`) are rejected at load
-   (`analysis.boolean-state`) — booleans cannot re-enter as two-value
-   state sets. Two-value sets with domain-meaningful names are the
-   intended form (`hungry`/`content` is a state machine; `true`/`false`
-   is a flag). Rationale for keeping `change`: silent state changes are
+8. **`change` stays, gated against boolean cheating (David, 2026-07-11;
+   clarified same day: "catch any author trying to implement pos/neg
+   states and encourage them to use real states").** `change` is the
+   single visible mutation for state transitions and is legal only
+   against declared named states. The boolean gate is **pattern
+   detection over the state set, not a reserved-word list** — three
+   rings, all load-time:
+   - `analysis.boolean-state` (error): literal boolean names —
+     `true`/`false`, bare `yes`/`no`. Flat refusal, no cheating.
+   - `analysis.shadow-state` (error): a declared set that reproduces a
+     platform-owned state pair — `open`/`closed`, `locked`/`unlocked`,
+     `on`/`off`, `lit`/`unlit`, `worn`/`unworn`. Fix-it: compose the
+     owning trait (`openable`, `lockable`, `switchable`, …) — the
+     platform already runs that state machine; leg 1's state adjectives
+     read it.
+   - `analysis.negated-state` (error, encouraging fix-it): a set where
+     one name is a **negation of another** — `not-X`, `un-X`, `non-X`,
+     `no-X`, `X-less`, or shared-stem prefix negation (`fed`/`unfed`,
+     `active`/`inactive`). Diagnostic teaches the principle: *a state
+     names what the thing IS, never the absence of another state.*
+     Example message: "`unfed` names the absence of `fed`, not a
+     condition of the goats. Name what they are when not fed —
+     feedable's answer was `hungry`/`content`." The unfound positive
+     name is where the domain insight lives — exactly how `fed: flag`
+     became `hungry`/`content`.
+   Two-value sets with domain-meaningful names are the intended form
+   (`hungry`/`content` is a state machine; `fed`/`unfed` is a flag in
+   costume). Rationale for keeping `change`: silent state changes are
    bugs — the body's one mutation line is what the behavior *does*; the
    transition-table alternative (transitions declared on `states:`) was
    considered and set aside for splitting one behavior across two homes.
