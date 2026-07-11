@@ -119,7 +119,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // fell through to taking.
   grammar
     .forAction('if.action.wearing')
-    .verbs(['wear', 'don'])
+    .verbs(['wear', 'don', 'equip'])
     .pattern(':item')
     .build();
 
@@ -132,7 +132,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .forAction('if.action.taking_off')
-    .verbs(['remove', 'doff'])
+    .verbs(['remove', 'doff', 'unequip'])
     .pattern(':item')
     .build();
 
