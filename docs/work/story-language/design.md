@@ -65,8 +65,13 @@ The design axioms, in the order they were established:
    cloak`) — or *owned* — declared data or `states:` on the object the fact is
    about. A global boolean flattens a state machine and shadows world truth; all
    three Zoo flags (`gate-closed`, `after-hours`, `feeding-time-active`) failed
-   exactly this way. Entity-owned boolean fields (`fed: flag` in trait data) are
-   not global and are unaffected.
+   exactly this way. Entity-owned boolean fields were initially exempted, then
+   removed too (David, 2026-07-11 follow-up): the `flag` field type leaves trait
+   data, replaced by **trait-declared states** — feedable's `fed: flag` was the
+   `hungry`/`content` state machine in disguise (its own already-fed message said
+   "contentedly full"), and it stored the wrong fact besides (one-shot feeding
+   under a recurring feeding-time schedule). Booleans are gone from the language
+   at every scope.
 9. **Stickiness: all behaviors belong to "something."** (David, 2026-07-11 —
    promoted from the Phase B DDD review.) Behavior sticks to the data it operates
    on — foundational DDD. Not just state: rules, reactions, and schedules attach

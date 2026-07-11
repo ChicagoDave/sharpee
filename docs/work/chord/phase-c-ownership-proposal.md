@@ -104,10 +104,22 @@ With legs 1–3 in place, each Zoo flag has a proper home, and `define flag`,
 | `after-hours` | story state (leg 2); `change the story to after-hours` in the closing sequence; every `while after-hours` condition unchanged in spelling |
 | `feeding-time-active` | state on the owner: `states: content, hungry` on the pygmy goats (or the Petting Zoo). The schedule does `change the pygmy goats to hungry`; feeding does `change … to content`; `restless` bleating reads `while it is hungry`. The lifecycle bug (feed the rabbits, feeding time never ends) becomes impossible to write |
 
-Entity-owned boolean *fields* (`fed: flag` in trait data) survive — they are
-owned data, not globals. Optional follow-up (not in this package): nudge
-authors from boolean fields toward two-value `states:` where a lifecycle
-exists.
+**Decision 5 (David, 2026-07-11): the `flag` field type leaves trait data
+too — booleans are gone at every scope.** Replacement: **trait-declared
+states** — a `states[, reversible]:` line inside `define trait`; every
+composer gets the state set, and the trait body may reference it
+(`if it is content then refuse already-fed`). Case study, feedable:
+`fed: flag` was the `hungry`/`content` machine in disguise (the already-fed
+message literally says "contentedly full"), it duplicated the fact
+`feeding-time-active` also shadowed, and it stored the *wrong* fact —
+one-shot feeding under a recurring feeding-time schedule. The state version
+unifies all four consumers (schedule sets hungry, feeding sets content and
+refuses when content, restless bleats while hungry) and makes feeding
+recurrent, which is what the PA announcements promised. Mutation placement
+rule reaffirmed: the transition (`change it to content`) lives in the trait
+behavior beside the refusal that depends on it, not in a reaction clause.
+Starting state = first declared value (`hungry, content` → starts hungry,
+feedable before the first bell, matching current behavior).
 
 ---
 
@@ -169,10 +181,13 @@ zoo.story` is untouched. What to look at, by category:
   `while not after-hours` conditions kept their exact spelling.
 - All three `define flag` lines gone. `gate-closed` and its two sync
   clauses are simply *deleted* — blocked exits now read
-  `while the staff gate is closed`. `feeding-time-active` became
-  `states, reversible: content, hungry` on the goats; the feeding sequence
-  does `change the pygmy goats to hungry`; `restless` bleats
-  `while it is hungry`.
+  `while the staff gate is closed`. `feeding-time-active` AND feedable's
+  `fed: flag` field (decision 5) collapsed into one trait-declared state
+  set: `states, reversible: hungry, content` on the feedable trait. The
+  feeding sequence does `change the pygmy goats to hungry`; the trait
+  behavior refuses `if it is content` and does `change it to content`;
+  `restless` bleats `while it is hungry`. Rabbits get the states for free
+  by composing feedable. Zero booleans remain in the story.
 - All 9 floating `when` rules and all 4 `once` blocks gone. Visit awards
   are `after entering it` on rooms; Aviary mood lines are `after entering
   it while …` on the Aviary; the four vignettes are `on every turn while

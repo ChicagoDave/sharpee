@@ -443,7 +443,7 @@ end trait
 define trait feedable
   data
     food: entity
-    fed: flag, starts false
+  states, reversible: hungry, content
 
   phrases en-US
     no-feed:
@@ -457,10 +457,10 @@ define trait feedable
     if not (the actor has its food) then
       refuse no-feed
     end if
-    if fed then
+    if it is content then
       refuse already-fed
     end if
-    set fed to true
+    change it to content
     emit fed
     phrase fed
   end on
@@ -596,7 +596,6 @@ create the pygmy goats
   pettable
   feedable with food the bag of animal feed
   restless
-  states, reversible: content, hungry
   score fed worth 10
   score confession worth 5
 
@@ -614,7 +613,6 @@ create the pygmy goats
 
   after feeding it
     award fed
-    change it to content
   end after
 
   on every turn while after-hours and the player is in the Petting Zoo, once
