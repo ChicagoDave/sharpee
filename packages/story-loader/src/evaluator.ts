@@ -21,12 +21,17 @@ import type { IRCondition, IRValue, StoryIR } from '@sharpee/chord';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
 import { RoomTrait, TraitType, WearableTrait, WorldModel } from '@sharpee/world-model';
 import { LoadError } from './errors';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX } from './state-keys';
+import { CHORD_FLAG_PREFIX, CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_TRAIT_PREFIX } from './state-keys';
 
 export interface EvalContext {
   world: WorldModel;
   /** IR entity id bound to `it` (the on-clause owner), when in scope. */
   it?: string;
+  /**
+   * Bound context values (Phase B dispatch): grammar-slot/role name →
+   * WORLD entity id (`animal` → the pet target, `actor` → the actor).
+   */
+  slots?: Record<string, string>;
 }
 
 /** Resolves IR ids to world ids (implemented by ChordStory). */
@@ -41,12 +46,21 @@ export class Evaluator {
   private readonly conditions = new Map<string, IRCondition>();
   private readonly rng: SeededRandom;
 
+  /** trait name → its `entity`-typed data-field names (IR→world translation). */
+  private readonly entityFields = new Map<string, Set<string>>();
+
   constructor(
     ir: StoryIR,
     private readonly ids: EntityIdResolver,
     seed?: number,
   ) {
     for (const c of ir.conditions) this.conditions.set(c.name, c.condition);
+    for (const trait of ir.traits) {
+      this.entityFields.set(
+        trait.name,
+        new Set(trait.data.filter((f) => f.type === 'entity').map((f) => f.name)),
+      );
+    }
     this.rng = createSeededRandom(seed);
   }
 
@@ -66,6 +80,11 @@ export class Evaluator {
         const named = this.conditions.get(cond.name);
         if (!named) throw new LoadError(`Unknown condition \`${cond.name}\` at evaluation time.`);
         return this.evalCondition(named, ctx);
+      }
+      case 'flag': {
+        // Declared flags read as truth tests (`while not after-hours`).
+        const value = ctx.world.getStateValue(CHORD_FLAG_PREFIX + cond.name);
+        return value === true || value === 'true';
       }
       case 'predicate':
         return this.evalPredicate(cond, ctx);
@@ -110,6 +129,17 @@ export class Evaluator {
         const entity = ctx.world.getEntity(thing);
         const wearable = entity?.get(TraitType.WEARABLE) as WearableTrait | undefined;
         return wearable?.worn === true && wearable.wornBy === wearer;
+      }
+      case 'can-see':
+      case 'can-reach': {
+        // Phase B semantics: co-location — subject and object share a
+        // containing room. (Full perception/reach services are a later
+        // refinement; this matches the Zoo constructs' intent.)
+        const subjectId = this.entityValue(cond.subject, ctx);
+        const objectId = this.entityValue(cond.object, ctx);
+        const subjectRoom = ctx.world.getContainingRoom(subjectId)?.id ?? ctx.world.getLocation(subjectId);
+        const objectRoom = ctx.world.getContainingRoom(objectId)?.id ?? ctx.world.getLocation(objectId);
+        return raw(subjectRoom !== undefined && subjectRoom === objectRoom);
       }
     }
   }
@@ -158,6 +188,17 @@ export class Evaluator {
         }
         return this.readField(base, value.field, ctx);
       }
+      case 'flag': {
+        const raw = ctx.world.getStateValue(CHORD_FLAG_PREFIX + value.name);
+        return raw ?? 'false';
+      }
+      case 'slot': {
+        const bound = ctx.slots?.[value.name];
+        if (!bound) {
+          throw new LoadError(`Context value \`${value.name}\` is not bound here.`);
+        }
+        return bound;
+      }
     }
   }
 
@@ -179,9 +220,42 @@ export class Evaluator {
         if (irId === undefined) throw new LoadError('Cannot read `state` of a non-story entity.');
         return ctx.world.getStateValue(CHORD_STATE_PREFIX + irId);
       }
-      default:
-        throw new LoadError(`Field \`${field}\` is not supported by the Phase A evaluator.`);
+      default: {
+        // Chord trait data fields (Phase B): stored as own properties on
+        // the entity's `chord.trait.*` instances. ONLY fields the trait
+        // declares as `entity`-typed translate IR id → world id — a plain
+        // word value may coincide with an entity id (`kind: parrot` on the
+        // parrot itself) and must stay a symbol.
+        const value = this.readChordTraitField(worldId, field, ctx);
+        if (value !== undefined) {
+          if (value.isEntityField && typeof value.value === 'string') {
+            const asEntity = this.ids.entityId(value.value);
+            if (asEntity) return asEntity;
+          }
+          return value.value;
+        }
+        throw new LoadError(`Field \`${field}\` is not supported here.`);
+      }
     }
+  }
+
+  /** Read a `define trait` data field off the entity's chord trait instances. */
+  private readChordTraitField(
+    worldId: string,
+    field: string,
+    ctx: EvalContext,
+  ): { value: unknown; isEntityField: boolean } | undefined {
+    const entity = ctx.world.getEntity(worldId);
+    if (!entity) return undefined;
+    for (const trait of entity.traits.values()) {
+      if (!trait.type.startsWith(CHORD_TRAIT_PREFIX)) continue;
+      const record = trait as unknown as Record<string, unknown>;
+      if (field in record) {
+        const traitName = trait.type.slice(CHORD_TRAIT_PREFIX.length);
+        return { value: record[field], isEntityField: this.entityFields.get(traitName)?.has(field) ?? false };
+      }
+    }
+    return undefined;
   }
 
   // --------------------------------------------------------------- helpers

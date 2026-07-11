@@ -145,7 +145,9 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
     hangCloak(cw);
     const result = readMessage(cw);
     expect(result.override).toMatchObject({ messageId: 'message-trampled' });
-    expect((result.override!.params as any).garbled).toBe(garbled);
+    // Producers are INVOKED at staging — params carry the returned atom,
+    // never the function (the template binder string-coerces non-Phrases).
+    expect((result.override!.params as any).garbled).toEqual({ kind: 'literal', text: 'swept aside' });
     expect(result.emit).toBeUndefined();
     expect(cw.world.getStateValue(STORY_ENDING_FLAG)).toBeUndefined();
   });

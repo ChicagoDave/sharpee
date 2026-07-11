@@ -16,7 +16,8 @@
  */
 
 export { LoadError } from './errors';
-export { ChordStory, createStory, StoryLoaderOptions } from './loader';
+export { EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS } from './event-contract';
+export { ChordDataTrait, ChordStory, createStory, StoryLoaderOptions } from './loader';
 export { Evaluator, EvalContext, EntityIdResolver } from './evaluator';
 export { ChordRuntime, ChordBehaviorTrait } from './runtime';
 export {
@@ -24,4 +25,5 @@ export {
   CHORD_OCCURRENCE_PREFIX,
   CHORD_RNG_KEY,
   CHORD_STATE_PREFIX,
+  CHORD_TRAIT_PREFIX,
 } from './state-keys';

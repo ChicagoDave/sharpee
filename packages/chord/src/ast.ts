@@ -38,7 +38,15 @@ export type Declaration =
   | DefineVerb
   | DefineText
   | DefineFlag
-  | WhenRule;
+  | WhenRule
+  // Phase B (design.md §2.2/§2.3/§2.5/§3.4):
+  | DefineTrait
+  | DefineAction
+  | DefineHatch
+  | DefineScore
+  | OnceRule
+  | EveryRule
+  | DefineSequence;
 
 /** A raw (unresolved) name reference: optional article + word sequence. */
 export interface NameRef {
@@ -114,11 +122,15 @@ export interface CompositionItem {
   span: Span;
 }
 
-/** One `with` setting: trailing number/string value, preceding words are the key. */
+/**
+ * One `with` setting. Values are a trailing number/string/word, or — when an
+ * article introduces the tail (`with food the handful of feed`, Phase B) — a
+ * multi-word entity name (`valueKind: 'name'`, article stripped).
+ */
 export interface ConfigSetting {
   key: string[];
   value: string;
-  valueKind: 'number' | 'string' | 'word';
+  valueKind: 'number' | 'string' | 'word' | 'name';
   span: Span;
 }
 
@@ -142,6 +154,11 @@ export interface BlockedExitDecl {
   direction: string;
   /** Phrase key emitted when the exit is tried. */
   phraseKey: string;
+  /**
+   * `is blocked while <cond>: <key>` — refusal applies only while the
+   * condition holds (grammar log 2026-07-10, Phase B). Null = always.
+   */
+  condition: ConditionNode | null;
   span: Span;
 }
 
@@ -158,11 +175,25 @@ export interface PhraseOverride {
   span: Span;
 }
 
-/** `on <action> it … end on` behavior clause inside a create block. */
+/**
+ * `on … end on` behavior clause — inside a create block or a `define trait`.
+ * Header forms (design.md §2.2):
+ *   `on <action> it [, before <trait> | , after <trait>]`  → binding 'it'
+ *   `on <action> anything as the <role>`                   → binding 'role'
+ *   `on every turn [while <condition>]`                    → binding 'every-turn'
+ */
 export interface OnClause {
   kind: 'on-clause';
-  /** The action word as written (gerund), e.g. `reading`. */
+  /** The action word as written (gerund), e.g. `reading`; `every turn` clauses use 'every-turn'. */
   action: string;
+  /** How the clause binds (Phase A only had 'it'). */
+  binding: 'it' | 'role' | 'every-turn';
+  /** Role name for `anything as the <role>` clauses. */
+  role: string | null;
+  /** `while <condition>` qualifier (every-turn clauses). */
+  condition: ConditionNode | null;
+  /** `, before <trait>` / `, after <trait>` explicit ordering. */
+  ordering: { relation: 'before' | 'after'; trait: string } | null;
   body: Statement[];
   span: Span;
 }
@@ -235,6 +266,134 @@ export interface DefineFlag {
 }
 
 // --------------------------------------------------------------------------
+// Phase B declarations (design.md §2.2/§2.3/§2.5/§3.4)
+// --------------------------------------------------------------------------
+
+/** `define trait <name> … end trait` — data, phrases, behavior clauses. */
+export interface DefineTrait {
+  kind: 'define-trait';
+  name: string;
+  data: TraitField[];
+  /** Embedded `phrases <locale>` block, if any. */
+  phrases: DefinePhrases | null;
+  onClauses: OnClause[];
+  span: Span;
+}
+
+/** One `data` field: `locked: flag`, `body part: optional name`, `kind: one of a, b, c`. */
+export interface TraitField {
+  /** Field name words (`body part`). */
+  name: string[];
+  /** flag | entity | number | name | one-of. */
+  type: 'flag' | 'entity' | 'number' | 'name' | 'one-of';
+  optional: boolean;
+  /** `starts <value>` initial, if declared. */
+  initial: string | null;
+  /** Members when type is 'one-of' (`one of goats, rabbits, parrot, snake`). */
+  oneOf: string[] | null;
+  span: Span;
+}
+
+/** `define action <name> … ` — grammar, scope constraints, refusals, body. */
+export interface DefineAction {
+  kind: 'define-action';
+  /** The action name as written (gerund), e.g. `petting`. */
+  name: string;
+  /** `grammar` block pattern lines. */
+  patterns: ActionPattern[];
+  /** `the <slot> must be <requirement>` lines. */
+  constraints: ScopeConstraint[];
+  /** `refuse without <slot>: <key>` / `refuse when <cond>: <key>` lines. */
+  refusals: ActionRefusal[];
+  /** `otherwise refuse <key>` — the dispatch-miss phrase. */
+  otherwise: { phraseKey: string; span: Span } | null;
+  /** Embedded `phrases <locale>` block, if any. */
+  phrases: DefinePhrases | null;
+  /** Standard-semantics body statements (design.md §2.3 taking), if any. */
+  body: Statement[];
+  span: Span;
+}
+
+/** One grammar-block pattern: words + `:slot`s, optional `→ each …` cardinality. */
+export interface ActionPattern {
+  parts: PatternPart[];
+  /** Cardinality expansion words after `→` (`each reachable item not already held`). */
+  cardinality: string[] | null;
+  span: Span;
+}
+
+/** `the <slot> must be <requirement>` (reachable, visible, held, …). */
+export interface ScopeConstraint {
+  slot: string;
+  requirement: string;
+  span: Span;
+}
+
+/** `refuse without <slot>: <key>` or `refuse when <condition>: <key>`. */
+export interface ActionRefusal {
+  kind: 'without' | 'when';
+  /** Slot name for `without`. */
+  slot: string | null;
+  /** Condition for `when`. */
+  condition: ConditionNode | null;
+  phraseKey: string;
+  span: Span;
+}
+
+/** `define action X from "./mod.ts"` / `define behavior X from "./mod.ts"` — TS hatches. */
+export interface DefineHatch {
+  kind: 'define-hatch';
+  hatchKind: 'action' | 'behavior';
+  name: string;
+  modulePath: string;
+  span: Span;
+}
+
+/** `define score <name> worth <n>` — score identity (dedup by identity, ADR-129). */
+export interface DefineScore {
+  kind: 'define-score';
+  name: string;
+  worth: number;
+  span: Span;
+}
+
+/** `once <condition> … end once` — fires once, then retires. */
+export interface OnceRule {
+  kind: 'once-rule';
+  condition: ConditionNode;
+  body: Statement[];
+  span: Span;
+}
+
+/** `every <n> turns [, <m> times] … end every` — recurring daemon. */
+export interface EveryRule {
+  kind: 'every-rule';
+  turns: number;
+  /** `, N times` limit, or null for unlimited. */
+  times: number | null;
+  body: Statement[];
+  span: Span;
+}
+
+/** `define sequence <name> … end sequence` — timeline of chained steps. */
+export interface DefineSequence {
+  kind: 'define-sequence';
+  /** Sequence name words (`closing time`). */
+  name: string[];
+  steps: SequenceStep[];
+  span: Span;
+}
+
+/** `at turn <n>` (absolute) or `<n> turns later` (relative) step. */
+export interface SequenceStep {
+  kind: 'sequence-step';
+  timing: 'at-turn' | 'later';
+  turns: number;
+  body: Statement[];
+  span: Span;
+}
+
+// --------------------------------------------------------------------------
 // when
 // --------------------------------------------------------------------------
 
@@ -285,6 +444,12 @@ export interface PhraseStmt {
   kind: 'phrase';
   phraseKey: string;
   params: ParamBinding[];
+  /**
+   * Declare-and-emit sugar (design.md §2.6/§3.3): an indented prose block
+   * after the statement registers the text under the key at load. Null when
+   * the key is declared elsewhere.
+   */
+  inlineText: TextValue | null;
   span: Span;
 }
 
@@ -446,7 +611,9 @@ export type Predicate =
   | { kind: 'is-in'; negated: boolean; place: NameRef; span: Span }
   | { kind: 'holds'; thing: NameRef; span: Span }
   | { kind: 'has'; thing: NameRef; span: Span }
-  | { kind: 'wears'; thing: NameRef; span: Span };
+  | { kind: 'wears'; thing: NameRef; span: Span }
+  /** `can see <thing>` / `can reach <thing>` (design.md §2.7; Phase B). */
+  | { kind: 'can'; ability: string; thing: NameRef; span: Span };
 
 /**
  * A value position: a name reference, possessive chain, literal, or bare word.

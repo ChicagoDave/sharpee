@@ -1,6 +1,5 @@
-story "Broken" by "Nobody"
-  id: broken-4
+story "Unterminated" by "Nobody"
+  id: unterminated
   version: 0.0.1
 
-define phrases en-US
-  stumble: "Blundering around in the dark
+define text garbled from "./extras.ts

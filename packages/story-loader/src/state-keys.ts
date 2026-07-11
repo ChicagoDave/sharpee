@@ -21,3 +21,6 @@ export const CHORD_OCCURRENCE_PREFIX = 'chord.occurrence.';
 
 /** The seeded-RNG cursor (persists the chance stream across save/restore). */
 export const CHORD_RNG_KEY = 'chord.rng';
+
+/** `define trait` runtime trait types: `chord.trait.<name>` (Phase B). */
+export const CHORD_TRAIT_PREFIX = 'chord.trait.';

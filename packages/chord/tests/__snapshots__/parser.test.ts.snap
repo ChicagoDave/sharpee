@@ -292,6 +292,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "body": [
         {
+          "inlineText": null,
           "kind": "phrase",
           "params": [],
           "phraseKey": "crossing-mutter",
@@ -329,6 +330,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "body": [
         {
+          "inlineText": null,
           "kind": "phrase",
           "params": [],
           "phraseKey": "crossing-mutter",
@@ -366,6 +368,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "body": [
         {
+          "inlineText": null,
           "kind": "phrase",
           "params": [],
           "phraseKey": "lucky-draught",
@@ -565,6 +568,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
       ],
       "blockedExits": [
         {
+          "condition": null,
           "direction": "north",
           "kind": "blocked-exit",
           "phraseKey": "cant-leave",
@@ -1182,12 +1186,14 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
       "onClauses": [
         {
           "action": "reading",
+          "binding": "it",
           "body": [
             {
               "arms": [
                 {
                   "body": [
                     {
+                      "inlineText": null,
                       "kind": "phrase",
                       "params": [],
                       "phraseKey": "message-intact",
@@ -1220,6 +1226,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                 {
                   "body": [
                     {
+                      "inlineText": null,
                       "kind": "phrase",
                       "params": [],
                       "phraseKey": "message-trampled",
@@ -1242,6 +1249,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                 {
                   "body": [
                     {
+                      "inlineText": null,
                       "kind": "phrase",
                       "params": [],
                       "phraseKey": "message-obliterated",
@@ -1315,7 +1323,10 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
               },
             },
           ],
+          "condition": null,
           "kind": "on-clause",
+          "ordering": null,
+          "role": null,
           "span": {
             "column": 3,
             "endColumn": 9,
@@ -1389,6 +1400,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
     {
       "body": [
         {
+          "inlineText": null,
           "kind": "phrase",
           "params": [],
           "phraseKey": "stumble",

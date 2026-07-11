@@ -1,0 +1,59 @@
+title: Zoo golden gate — scoring: pet/feed awards, dedupe, already-fed
+story: friendly-zoo
+description: Scoring as behavior-parity proof (AC-2 scoring category):
+  pet-an-animal awards 5 once (identity dedupe — a second pet of a
+  different animal does not re-award), feed-the-goats awards 10, the
+  already-fed refusal leaves the score unchanged. Authored against the TS
+  story 2026-07-11, then frozen.
+
+---
+
+> score
+[OK: contains "scored 0 out of 100"]
+
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+# First pet: +5
+> pet goats
+[OK: contains "bleats happily"]
+
+> score
+[OK: contains "scored 5 out of 100"]
+
+# Feed the goats: +10
+> take feed
+[OK: contains "Taken"]
+
+> feed goats
+[OK: contains "devour the corn and pellets"]
+
+> score
+[OK: contains "scored 15 out of 100"]
+
+# Feeding again refuses and does not re-award
+> feed goats
+[OK: contains "already fed them"]
+
+> score
+[OK: contains "scored 15 out of 100"]
+
+# Petting another animal does not re-award (dedupe by score identity)
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+# Entering the Aviary awards the room-visit score (+5)
+> score
+[OK: contains "scored 20 out of 100"]
+
+> pet parrot
+[OK: contains "parrot"]
+
+> score
+[OK: contains "scored 20 out of 100"]

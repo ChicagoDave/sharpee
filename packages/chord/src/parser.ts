@@ -18,6 +18,8 @@
  * - Every AST node carries a Span.
  */
 import {
+  ActionPattern,
+  ActionRefusal,
   AwardStmt,
   BlockedExitDecl,
   ChangeStmt,
@@ -26,13 +28,20 @@ import {
   ConfigSetting,
   CreateDecl,
   Declaration,
+  DefineAction,
   DefineCondition,
   DefineFlag,
+  DefineHatch,
   DefinePhrase,
   DefinePhrases,
+  DefineScore,
+  DefineSequence,
   DefineText,
+  DefineTrait,
   DefineVerb,
   EmitStmt,
+  EveryRule,
+  OnceRule,
   ExitDecl,
   IfStmt,
   MoveStmt,
@@ -46,12 +55,15 @@ import {
   PhraseStmt,
   Placement,
   RefuseStmt,
+  ScopeConstraint,
   SelectArm,
   SelectOnStmt,
   SelectStrategyStmt,
+  SequenceStep,
   SetStmt,
   Statement,
   StateName,
+  TraitField,
   StoryFile,
   StoryHeader,
   TextMarker,
@@ -135,6 +147,26 @@ function isEndLine(line: Line): boolean {
   return firstWord(line) === 'end';
 }
 
+/** Words that open a statement or block boundary inside behavior bodies. */
+const STATEMENT_OPENERS = new Set([
+  'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'award', 'win', 'lose',
+  'if', 'select', 'end', 'else', 'or', 'when', 'at',
+]);
+
+/**
+ * True when a line reads as a statement/boundary rather than bare prose —
+ * used to decide whether a deeper-indented line after `phrase <key>` is the
+ * declare-and-emit inline text. Case-sensitive on purpose: prose sentences
+ * start capitalized, statement keywords are lowercase.
+ */
+function isStatementLine(line: Line): boolean {
+  const word = firstWord(line);
+  if (word && STATEMENT_OPENERS.has(word)) return true;
+  if (word && ORDINALS[word] !== undefined) return true;
+  // `<n> turns later` sequence-step headers open with a number.
+  return line.tokens[0]?.kind === 'number' && line.tokens[1]?.text === 'turns';
+}
+
 class Parser {
   private pos = 0;
 
@@ -178,6 +210,16 @@ class Parser {
         case 'when':
           declarations.push(this.parseWhen());
           break;
+        case 'once': {
+          const d = this.parseOnce();
+          if (d) declarations.push(d);
+          break;
+        }
+        case 'every': {
+          const d = this.parseEvery();
+          if (d) declarations.push(d);
+          break;
+        }
         default:
           this.diagnostics.error(
             'parse.unknown-declaration',
@@ -359,11 +401,18 @@ class Parser {
   }
 
   private parseBlockedExit(direction: string, line: Line): BlockedExitDecl | null {
-    // <direction> is blocked: <phrase-key>
+    // <direction> is blocked [while <condition>]: <phrase-key>
+    // (conditional form: grammar log 2026-07-10, Phase B)
     const c = new Cursor(line.tokens, line);
     c.next(); // direction
     c.next(); // is
     c.next(); // blocked
+    let condition: ConditionNode | null = null;
+    if (c.matchWord('while')) {
+      const condTokens: Token[] = [];
+      while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
+      condition = this.parseCondition(new Cursor(condTokens, line), line);
+    }
     const colon = c.next();
     if (!colon || colon.kind !== 'colon') {
       this.diagnostics.error('parse.blocked-exit', 'Expected `: <phrase-key>` after `is blocked`.', lineSpan(line));
@@ -374,7 +423,7 @@ class Parser {
       this.diagnostics.error('parse.blocked-exit', 'Expected a phrase key after `is blocked:`.', lineSpan(line));
       return null;
     }
-    return { kind: 'blocked-exit', direction, phraseKey: key.text, span: lineSpan(line) };
+    return { kind: 'blocked-exit', direction, phraseKey: key.text, condition, span: lineSpan(line) };
   }
 
   private parseCompositionLine(c: Cursor, line: Line): CompositionItem[] {
@@ -430,12 +479,38 @@ class Parser {
       const key: string[] = [];
       while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and') && !c.isWord('while')) {
         const t = c.peek()!;
-        // The last token of a setting is its value; words before it are the key.
+        // An article starts an entity-name value (`with food the handful of
+        // feed`, Phase B) — everything after it is the value.
+        if (ARTICLES.has(t.text) && key.length > 0) break;
+        // Otherwise the last token of a setting is its value; words before
+        // it are the key.
         const after = c.peek(1);
         const isValuePosition = !after || after.kind === 'comma' || (after.kind === 'word' && (after.text === 'and' || after.text === 'while'));
         if (isValuePosition && key.length > 0) break;
         key.push(t.text);
         c.next();
+      }
+      const articleTok = c.peek();
+      if (articleTok && articleTok.kind === 'word' && ARTICLES.has(articleTok.text) && key.length > 0) {
+        c.next(); // article
+        const nameWords: string[] = [];
+        let lastTok = articleTok;
+        while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and') && !c.isWord('while')) {
+          lastTok = c.next()!;
+          nameWords.push(lastTok.text);
+        }
+        if (nameWords.length === 0) {
+          this.diagnostics.error('parse.config-value', 'Expected an entity name after the article.', c.restSpan());
+          break;
+        }
+        settings.push({
+          key,
+          value: nameWords.join(' '),
+          valueKind: 'name',
+          span: startTok ? mergeSpans(startTok.span, lastTok.span) : lastTok.span,
+        });
+        if (!c.matchWord('and')) break;
+        continue;
       }
       const valueTok = c.peek();
       if (!valueTok || (valueTok.kind !== 'number' && valueTok.kind !== 'string' && valueTok.kind !== 'word')) {
@@ -632,34 +707,20 @@ class Parser {
         return this.parseDefineText();
       case 'flag':
         return this.parseDefineFlag();
-      case 'action':
       case 'trait':
+        return this.parseDefineTrait();
+      case 'action':
+        return this.parseDefineAction();
+      case 'behavior':
+        return this.parseDefineBehaviorHatch();
+      case 'score':
+        return this.parseDefineScore();
       case 'sequence':
-        this.diagnostics.error(
-          'parse.phase-b-construct',
-          `\`define ${subWord}\` is not part of the Phase A grammar subset (Phase B).`,
-          lineSpan(line),
-        );
-        this.recoverPastEnd(subWord);
-        return null;
+        return this.parseDefineSequence();
       default:
         this.diagnostics.error('parse.unknown-define', `Unknown declaration \`define ${subWord ?? ''}\`.`, lineSpan(line));
         this.recoverToTopLevel(true);
         return null;
-    }
-  }
-
-  /** Skip a Phase-B block through its `end <keyword>` line (or next top-level). */
-  private recoverPastEnd(keyword: string): void {
-    this.pos++;
-    while (this.pos < this.lines.length) {
-      const line = this.lines[this.pos];
-      if (line.indent === 0 && isEndLine(line) && line.tokens[1]?.text === keyword) {
-        this.pos++;
-        return;
-      }
-      if (line.indent === 0 && TOP_KEYWORDS.has(firstWord(line) ?? '')) return;
-      this.pos++;
     }
   }
 
@@ -740,17 +801,27 @@ class Parser {
 
   private parseDefinePhrases(): DefinePhrases {
     const headLine = this.lines[this.pos++];
-    const locTok = headLine.tokens[2];
+    return this.parsePhrasesBlock(headLine, 2);
+  }
+
+  /**
+   * Parse a phrases block from its header line (`define phrases <locale>` at
+   * top level, or `phrases <locale>` inside a trait/action, Phase B). The
+   * locale token index distinguishes the two; entries are lines indented
+   * deeper than the header.
+   */
+  private parsePhrasesBlock(headLine: Line, localeTokenIndex: number): DefinePhrases {
+    const locTok = headLine.tokens[localeTokenIndex];
     let locale = '';
     if (locTok && locTok.kind === 'word') {
       locale = locTok.text;
     } else {
-      this.diagnostics.error('parse.phrases-locale', 'Expected a locale after `define phrases` (e.g. en-US).', lineSpan(headLine));
+      this.diagnostics.error('parse.phrases-locale', 'Expected a locale after `phrases` (e.g. en-US).', lineSpan(headLine));
     }
 
     const entries: PhraseEntry[] = [];
     let span = lineSpan(headLine);
-    while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > headLine.indent) {
       const line = this.lines[this.pos];
       const key = line.tokens[0];
       const colon = line.tokens[1];
@@ -869,6 +940,392 @@ class Parser {
     return { kind: 'define-flag', name: name.text, initial: value.text, span: lineSpan(line) };
   }
 
+  // -------------------------------------------- Phase B declarations (§2.2/§2.3/§2.5)
+
+  /** `define trait <name>` … `end trait` — data, phrases, on-clauses. */
+  private parseDefineTrait(): DefineTrait | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define trait
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.trait-name', 'Expected a trait name after `define trait`.', c.restSpan());
+      return null;
+    }
+
+    const data: TraitField[] = [];
+    let phrases: DefinePhrases | null = null;
+    const onClauses: OnClause[] = [];
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent === 0) {
+        if (isEndLine(line)) break;
+        this.diagnostics.error('parse.unterminated-block', 'Missing `end trait`.', lineSpan(headLine));
+        return { kind: 'define-trait', name: nameTok.text, data, phrases, onClauses, span: lineSpan(headLine) };
+      }
+      const word = firstWord(line);
+      if (word === 'data' && line.tokens.length === 1) {
+        this.pos++;
+        data.push(...this.parseTraitFields(line));
+      } else if (word === 'phrases') {
+        this.pos++;
+        phrases = this.parsePhrasesBlock(line, 1);
+      } else if (word === 'on') {
+        onClauses.push(this.parseOnClause(line.indent));
+      } else {
+        this.diagnostics.error('parse.trait-section', `Unrecognized line in \`define trait\`: \`${line.raw.trim()}\` — expected data, phrases, or an \`on\` clause.`, lineSpan(line));
+        this.pos++;
+      }
+    }
+    const endSpan = this.consumeEnd('trait', headLine);
+    return { kind: 'define-trait', name: nameTok.text, data, phrases, onClauses, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /** `data` block fields: `locked: flag`, `body part: optional name`, `kind: one of a, b`. */
+  private parseTraitFields(dataLine: Line): TraitField[] {
+    const fields: TraitField[] = [];
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > dataLine.indent) {
+      const line = this.lines[this.pos++];
+      const c = new Cursor(line.tokens, line);
+      const name: string[] = [];
+      while (!c.atEnd() && c.peek()!.kind === 'word') name.push(c.next()!.text);
+      const colon = c.next();
+      if (name.length === 0 || !colon || colon.kind !== 'colon') {
+        this.diagnostics.error('parse.trait-field', 'Expected `<field>: <type>` in the data block.', lineSpan(line));
+        continue;
+      }
+      const optional = !!c.matchWord('optional');
+      let type: TraitField['type'] | null = null;
+      let oneOf: string[] | null = null;
+      if (c.isWord('one') && c.isWord('of', 1)) {
+        c.next();
+        c.next();
+        type = 'one-of';
+        oneOf = [];
+        while (!c.atEnd()) {
+          const t = c.next()!;
+          if (t.kind === 'word') oneOf.push(t.text);
+          else if (t.kind !== 'comma') break;
+        }
+        if (oneOf.length === 0) {
+          this.diagnostics.error('parse.trait-field-oneof', 'Expected members after `one of`.', c.restSpan());
+        }
+      } else {
+        const typeTok = c.next();
+        if (typeTok && typeTok.kind === 'word' && ['flag', 'entity', 'number', 'name'].includes(typeTok.text)) {
+          type = typeTok.text as TraitField['type'];
+        } else {
+          this.diagnostics.error('parse.trait-field-type', 'Expected a field type: flag, entity, number, name, or `one of …`.', typeTok?.span ?? c.restSpan());
+          continue;
+        }
+      }
+      let initial: string | null = null;
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        if (c.matchWord('starts')) {
+          const v = c.next();
+          if (v) initial = v.text;
+          else this.diagnostics.error('parse.trait-field-starts', 'Expected a value after `starts`.', c.restSpan());
+        } else {
+          this.diagnostics.error('parse.trait-field-starts', 'Expected `starts <value>` after the comma.', c.restSpan());
+        }
+      }
+      fields.push({ name, type: type!, optional, initial, oneOf, span: lineSpan(line) });
+    }
+    return fields;
+  }
+
+  /** `define action <name>` — dispatch declaration (dedent-terminated) or `from "<mod>"` hatch. */
+  private parseDefineAction(): DefineAction | DefineHatch | null {
+    const headLine = this.lines[this.pos];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define action
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.action-name', 'Expected an action name after `define action`.', c.restSpan());
+      this.pos++;
+      return null;
+    }
+    if (c.isWord('from')) {
+      return this.parseHatchTail(headLine, c, 'action', nameTok.text);
+    }
+    this.pos++;
+
+    const patterns: ActionPattern[] = [];
+    const constraints: ScopeConstraint[] = [];
+    const refusals: ActionRefusal[] = [];
+    let otherwise: DefineAction['otherwise'] = null;
+    let phrases: DefinePhrases | null = null;
+    const body: Statement[] = [];
+    let span = lineSpan(headLine);
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent === 0) break; // dedent-terminated (no `end action`, design.md §2.3/§3.4)
+      const word = firstWord(line);
+      if (word === 'grammar' && line.tokens.length === 1) {
+        this.pos++;
+        patterns.push(...this.parseActionPatterns(line));
+      } else if (word === 'the' && line.tokens.some((t) => t.kind === 'word' && t.text === 'must')) {
+        this.pos++;
+        const sc = this.parseScopeConstraint(line);
+        if (sc) constraints.push(sc);
+      } else if (word === 'refuse' && (line.tokens[1]?.text === 'without' || line.tokens[1]?.text === 'when')) {
+        this.pos++;
+        const r = this.parseActionRefusal(line);
+        if (r) refusals.push(r);
+      } else if (word === 'otherwise') {
+        this.pos++;
+        const oc = new Cursor(line.tokens, line);
+        oc.next();
+        if (!oc.matchWord('refuse')) {
+          this.diagnostics.error('parse.action-otherwise', 'Expected `otherwise refuse <phrase-key>`.', lineSpan(line));
+        } else {
+          const key = oc.next();
+          if (key && key.kind === 'word') otherwise = { phraseKey: key.text, span: lineSpan(line) };
+          else this.diagnostics.error('parse.action-otherwise', 'Expected a phrase key after `otherwise refuse`.', oc.restSpan());
+        }
+      } else if (word === 'phrases') {
+        this.pos++;
+        phrases = this.parsePhrasesBlock(line, 1);
+      } else {
+        const stmt = this.parseStatement(line, 'action');
+        if (stmt) body.push(stmt);
+      }
+      span = mergeSpans(span, lineSpan(line));
+    }
+
+    return { kind: 'define-action', name: nameTok.text, patterns, constraints, refusals, otherwise, phrases, body, span };
+  }
+
+  /** grammar-block pattern lines: words + `:slot`s, optional `→ each …` cardinality. */
+  private parseActionPatterns(grammarLine: Line): ActionPattern[] {
+    const patterns: ActionPattern[] = [];
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > grammarLine.indent) {
+      const line = this.lines[this.pos++];
+      const parts: PatternPart[] = [];
+      let cardinality: string[] | null = null;
+      const c = new Cursor(line.tokens, line);
+      while (!c.atEnd()) {
+        const t = c.next()!;
+        if (t.kind === 'punct' && t.text === '→') {
+          cardinality = [];
+          while (!c.atEnd()) cardinality.push(c.next()!.text);
+          break;
+        }
+        if (t.kind === 'colon') {
+          const slot = c.next();
+          if (slot && slot.kind === 'word') {
+            parts.push({ kind: 'slot', word: slot.text, span: mergeSpans(t.span, slot.span) });
+          } else {
+            this.diagnostics.error('parse.action-slot', 'Expected a slot name after `:`.', t.span);
+          }
+        } else if (t.kind === 'word') {
+          parts.push({ kind: 'word', word: t.text, span: t.span });
+        } else {
+          this.diagnostics.error('parse.action-pattern', `Unexpected \`${t.text}\` in a grammar pattern.`, t.span);
+        }
+      }
+      if (parts.length === 0) {
+        this.diagnostics.error('parse.action-pattern', 'Empty grammar pattern.', lineSpan(line));
+        continue;
+      }
+      patterns.push({ parts, cardinality, span: lineSpan(line) });
+    }
+    return patterns;
+  }
+
+  /** `the <slot> must be <requirement>` */
+  private parseScopeConstraint(line: Line): ScopeConstraint | null {
+    const c = new Cursor(line.tokens, line);
+    c.next(); // the
+    const slot = c.next();
+    if (!slot || slot.kind !== 'word') {
+      this.diagnostics.error('parse.action-constraint', 'Expected a slot name after `the`.', c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('must') || !c.matchWord('be')) {
+      this.diagnostics.error('parse.action-constraint', 'Expected `must be <requirement>`.', c.restSpan());
+      return null;
+    }
+    const req = c.next();
+    if (!req || req.kind !== 'word') {
+      this.diagnostics.error('parse.action-constraint', 'Expected a requirement word (reachable, visible, …).', c.restSpan());
+      return null;
+    }
+    return { slot: slot.text, requirement: req.text, span: lineSpan(line) };
+  }
+
+  /** `refuse without <slot>: <key>` / `refuse when <condition>: <key>` */
+  private parseActionRefusal(line: Line): ActionRefusal | null {
+    const c = new Cursor(line.tokens, line);
+    c.next(); // refuse
+    const form = c.next()!.text as 'without' | 'when';
+    if (form === 'without') {
+      const slot = c.next();
+      const colon = c.next();
+      const key = c.next();
+      if (!slot || slot.kind !== 'word' || !colon || colon.kind !== 'colon' || !key || key.kind !== 'word') {
+        this.diagnostics.error('parse.action-refusal', 'Expected `refuse without <slot>: <phrase-key>`.', lineSpan(line));
+        return null;
+      }
+      return { kind: 'without', slot: slot.text, condition: null, phraseKey: key.text, span: lineSpan(line) };
+    }
+    // when: condition runs to the LAST colon; the key follows it.
+    const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
+    if (colonIndex === -1 || colonIndex !== line.tokens.length - 2) {
+      this.diagnostics.error('parse.action-refusal', 'Expected `refuse when <condition>: <phrase-key>`.', lineSpan(line));
+      return null;
+    }
+    const condCursor = new Cursor(line.tokens.slice(2, colonIndex), line);
+    const condition = this.parseCondition(condCursor, line);
+    const key = line.tokens[colonIndex + 1];
+    if (!key || key.kind !== 'word') {
+      this.diagnostics.error('parse.action-refusal', 'Expected a phrase key after the colon.', lineSpan(line));
+      return null;
+    }
+    return { kind: 'when', slot: null, condition, phraseKey: key.text, span: lineSpan(line) };
+  }
+
+  /** `define behavior <name> from "<module>"` — CapabilityBehavior hatch. */
+  private parseDefineBehaviorHatch(): DefineHatch | null {
+    const line = this.lines[this.pos];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define behavior
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.behavior-name', 'Expected a behavior name after `define behavior`.', c.restSpan());
+      this.pos++;
+      return null;
+    }
+    return this.parseHatchTail(line, c, 'behavior', nameTok.text);
+  }
+
+  /** Shared `from "<module>"` tail for action/behavior hatches. */
+  private parseHatchTail(line: Line, c: Cursor, hatchKind: 'action' | 'behavior', name: string): DefineHatch | null {
+    this.pos++;
+    if (!c.matchWord('from')) {
+      this.diagnostics.error('parse.hatch-from', 'Expected `from "<module>"` in the hatch declaration.', c.restSpan());
+      return null;
+    }
+    const mod = c.next();
+    if (!mod || mod.kind !== 'string') {
+      this.diagnostics.error('parse.hatch-module', 'Expected a quoted module path after `from`.', c.restSpan());
+      return null;
+    }
+    return { kind: 'define-hatch', hatchKind, name, modulePath: mod.text, span: lineSpan(line) };
+  }
+
+  /** `define score <name> worth <n>` */
+  private parseDefineScore(): DefineScore | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define score
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.score-name', 'Expected a score name after `define score`.', c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('worth')) {
+      this.diagnostics.error('parse.score-worth', 'Expected `worth <number>` in the score declaration.', c.restSpan());
+      return null;
+    }
+    const worth = c.next();
+    if (!worth || worth.kind !== 'number') {
+      this.diagnostics.error('parse.score-worth', 'Expected a number after `worth`.', c.restSpan());
+      return null;
+    }
+    return { kind: 'define-score', name: nameTok.text, worth: Number(worth.text), span: lineSpan(line) };
+  }
+
+  /** `once <condition>` … `end once` — fires once, then retires (§3.3). */
+  private parseOnce(): OnceRule | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('once');
+    if (c.atEnd()) {
+      this.diagnostics.error('parse.once-condition', 'Expected a condition after `once`.', lineSpan(headLine));
+      return null;
+    }
+    const condition = this.parseCondition(c, headLine);
+    const body = this.parseStatements(headLine.indent, 'once');
+    const endSpan = this.consumeEnd('once', headLine);
+    return { kind: 'once-rule', condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /** `every <n> turns [, <m> times]` … `end every` — recurring daemon (§2.5). */
+  private parseEvery(): EveryRule | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('every');
+    const n = c.next();
+    if (!n || n.kind !== 'number' || !c.matchWord('turns')) {
+      this.diagnostics.error('parse.every-turns', 'Expected `every <number> turns`.', lineSpan(headLine));
+      return null;
+    }
+    let times: number | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const m = c.next();
+      if (m && m.kind === 'number' && c.matchWord('times')) {
+        times = Number(m.text);
+      } else {
+        this.diagnostics.error('parse.every-times', 'Expected `<number> times` after the comma.', c.restSpan());
+      }
+    }
+    const body = this.parseStatements(headLine.indent, 'every');
+    const endSpan = this.consumeEnd('every', headLine);
+    return { kind: 'every-rule', turns: Number(n.text), times, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /** `define sequence <name>` … steps … `end sequence` — timeline (§2.5/§3.3). */
+  private parseDefineSequence(): DefineSequence | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define sequence
+    const name: string[] = [];
+    while (!c.atEnd() && c.peek()!.kind === 'word') name.push(c.next()!.text);
+    if (name.length === 0) {
+      this.diagnostics.error('parse.sequence-name', 'Expected a sequence name after `define sequence`.', c.restSpan());
+    }
+
+    const steps: SequenceStep[] = [];
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent === 0) break;
+      const sc = new Cursor(line.tokens, line);
+      let timing: SequenceStep['timing'] | null = null;
+      let turns = 0;
+      if (sc.matchWord('at') && sc.isWord('turn')) {
+        sc.next();
+        const n = sc.next();
+        if (n && n.kind === 'number') {
+          timing = 'at-turn';
+          turns = Number(n.text);
+        }
+      } else if (line.tokens[0]?.kind === 'number' && line.tokens[1]?.text === 'turns' && line.tokens[2]?.text === 'later') {
+        timing = 'later';
+        turns = Number(line.tokens[0].text);
+      }
+      if (!timing) {
+        this.diagnostics.error('parse.sequence-step', 'Expected `at turn <n>` or `<n> turns later` to open a sequence step.', lineSpan(line));
+        this.pos++;
+        continue;
+      }
+      this.pos++;
+      const body = this.parseStatements(line.indent, 'sequence');
+      steps.push({ kind: 'sequence-step', timing, turns, body, span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('sequence', headLine);
+    return { kind: 'define-sequence', name, steps, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
   // ------------------------------------------------------------------ when
 
   private parseWhen(): WhenRule {
@@ -918,14 +1375,62 @@ class Parser {
     } else {
       this.diagnostics.error('parse.on-action', 'Expected an action word after `on`.', lineSpan(headLine));
     }
-    if (!c.matchWord('it')) {
-      this.diagnostics.error('parse.on-target', 'Expected `it` after the action (`on reading it`).', c.restSpan());
+
+    let binding: OnClause['binding'] = 'it';
+    let role: string | null = null;
+    let condition: ConditionNode | null = null;
+    let ordering: OnClause['ordering'] = null;
+
+    if (actionWord === 'every' && c.isWord('turn')) {
+      // `on every turn [while <condition>]` (design.md §3.3, NPC-behavior shape).
+      c.next();
+      binding = 'every-turn';
+      actionWord = 'every-turn';
+      if (c.matchWord('while')) {
+        condition = this.parseCondition(c, headLine);
+      }
+    } else if (c.matchWord('anything')) {
+      // `on <action> anything as the <role>` (design.md §2.2 role binding).
+      binding = 'role';
+      if (!c.matchWord('as') || !c.matchWord('the')) {
+        this.diagnostics.error('parse.on-role', 'Expected `as the <role>` after `anything`.', c.restSpan());
+      }
+      const roleTok = c.next();
+      if (roleTok && roleTok.kind === 'word') {
+        role = roleTok.text;
+      } else {
+        this.diagnostics.error('parse.on-role', 'Expected a role name after `as the`.', c.restSpan());
+      }
+    } else {
+      if (!c.matchWord('it')) {
+        this.diagnostics.error('parse.on-target', 'Expected `it`, `anything as the <role>`, or `every turn` in the `on` header.', c.restSpan());
+      }
+      // `, before <trait>` / `, after <trait>` explicit ordering (§2.2).
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        const rel = c.next();
+        const traitTok = c.next();
+        if (rel && (rel.text === 'before' || rel.text === 'after') && traitTok && traitTok.kind === 'word') {
+          ordering = { relation: rel.text as 'before' | 'after', trait: traitTok.text };
+        } else {
+          this.diagnostics.error('parse.on-ordering', 'Expected `before <trait>` or `after <trait>` after the comma.', c.restSpan());
+        }
+      }
     }
 
     const body = this.parseStatements(headLine.indent, 'on');
     const endSpan = this.consumeEnd('on', headLine);
 
-    return { kind: 'on-clause', action: actionWord, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+    return {
+      kind: 'on-clause',
+      action: actionWord,
+      binding,
+      role,
+      condition,
+      ordering,
+      body,
+      span: mergeSpans(lineSpan(headLine), endSpan),
+    };
   }
 
   // ------------------------------------------------------------ statements
@@ -959,14 +1464,24 @@ class Parser {
       case 'phrase': {
         this.pos++;
         c.next();
-        const key = c.next();
-        if (!key || key.kind !== 'word') {
+        const key = this.readDottedKey(c);
+        if (!key) {
           this.diagnostics.error('parse.phrase-ref', `Expected a phrase key after \`${word}\`.`, c.restSpan());
           return null;
         }
         const params = this.parseParams(c, line);
-        const node = { kind: word, phraseKey: key.text, params, span: lineSpan(line) };
-        return node as RefuseStmt | PhraseStmt;
+        if (word === 'refuse') {
+          return { kind: 'refuse', phraseKey: key, params, span: lineSpan(line) } as RefuseStmt;
+        }
+        // Declare-and-emit sugar (§2.6/§3.3): a deeper-indented bare prose
+        // block after `phrase <key>` registers the text under the key.
+        let inlineText: TextValue | null = null;
+        const next = this.lines[this.pos];
+        if (next && next.indent > line.indent && !isStatementLine(next)) {
+          inlineText = this.parseProseParagraph(line.indent + 1, line.indent);
+        }
+        const span = inlineText ? mergeSpans(lineSpan(line), inlineText.span) : lineSpan(line);
+        return { kind: 'phrase', phraseKey: key, params, inlineText, span } as PhraseStmt;
       }
       case 'emit': {
         this.pos++;
@@ -1057,6 +1572,22 @@ class Parser {
         this.pos++;
         return null;
     }
+  }
+
+  /**
+   * Read a phrase key: a word, optionally continued by `.`-joined words
+   * (`zoo.pa.closing-3`, design.md §3.3). Returns null when no word follows.
+   */
+  private readDottedKey(c: Cursor): string | null {
+    const first = c.peek();
+    if (!first || first.kind !== 'word') return null;
+    c.next();
+    let key = first.text;
+    while (c.peek()?.kind === 'punct' && c.peek()!.text === '.' && c.peek(1)?.kind === 'word') {
+      c.next();
+      key += '.' + c.next()!.text;
+    }
+    return key;
   }
 
   private parseParams(c: Cursor, line: Line): ParamBinding[] {
@@ -1437,7 +1968,7 @@ class Parser {
 
     if (t.text === 'has' || t.text === 'holds' || t.text === 'wears') {
       c.next();
-      const thing = this.parseNameRef(c, () => false);
+      const thing = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
       return {
         kind: 'predicate',
         subject,
@@ -1446,7 +1977,24 @@ class Parser {
       };
     }
 
-    this.diagnostics.error('parse.predicate', `Unknown predicate \`${t.text}\` — expected is, is a, is in, has, holds, or wears.`, t.span);
+    if (t.text === 'can') {
+      // `can see <thing>` / `can reach <thing>` (design.md §2.7, Phase B).
+      c.next();
+      const ability = c.next();
+      if (!ability || ability.kind !== 'word' || (ability.text !== 'see' && ability.text !== 'reach')) {
+        this.diagnostics.error('parse.predicate-can', 'Expected `see` or `reach` after `can`.', ability?.span ?? c.restSpan());
+        return { kind: 'condition-ref', name: 'can', span: t.span };
+      }
+      const thing = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'can', ability: ability.text, thing, span: mergeSpans(ability.span, thing.span) },
+        span: mergeSpans(subject.span, thing.span),
+      };
+    }
+
+    this.diagnostics.error('parse.predicate', `Unknown predicate \`${t.text}\` — expected is, is a, is in, has, holds, wears, or can see/reach.`, t.span);
     c.next();
     return { kind: 'condition-ref', name: t.text, span: t.span };
   }

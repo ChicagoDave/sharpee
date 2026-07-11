@@ -158,6 +158,14 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    // === POST-VALIDATE HOOK ===
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return { valid: false, error: result.error, params: result.params };
+      }
+    }
+
     return { valid: true };
   },
 
@@ -175,6 +183,11 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     // Store result for report phase using sharedData
     const sharedData = getClosingSharedData(context);
     sharedData.closeResult = result;
+
+    // === POST-EXECUTE HOOK ===
+    if (sharedData.interceptor?.postExecute) {
+      sharedData.interceptor.postExecute(noun, context.world, context.player.id, sharedData.interceptorData!);
+    }
   },
 
   /**

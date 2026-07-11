@@ -2,6 +2,7 @@
 
 exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
 {
+  "actions": [],
   "conditions": [
     {
       "condition": {
@@ -21,6 +22,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         },
       },
       "name": "in-darkness",
+      "open": false,
       "span": {
         "column": 1,
         "endColumn": 60,
@@ -39,6 +41,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "article": "the",
       "blockedExits": [
         {
+          "condition": null,
           "direction": "north",
           "phraseKey": "cant-leave",
           "span": {
@@ -346,6 +349,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "onClauses": [
         {
           "action": "reading",
+          "binding": "it",
           "body": [
             {
               "arms": [
@@ -452,6 +456,10 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
               },
             },
           ],
+          "condition": null,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
           "span": {
             "column": 3,
             "endColumn": 9,
@@ -497,10 +505,13 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "wears": [],
     },
   ],
+  "everyRules": [],
   "flags": [],
   "format": "story language 1",
+  "hasHatches": true,
   "hatches": [
     {
+      "hatchKind": "text",
       "modulePath": "./extras.ts",
       "name": "garbled",
       "span": {
@@ -520,6 +531,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     },
     "title": "Cloak of Darkness",
   },
+  "onceRules": [],
   "phrases": {
     "defaultLocale": "en-US",
     "locales": {
@@ -696,6 +708,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
   },
   "rules": [
     {
+      "actionName": null,
       "actor": {
         "kind": "player",
       },
@@ -774,10 +787,16 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 80,
         "line": 74,
       },
-      "target": "foyer-bar",
+      "target": {
+        "id": "foyer-bar",
+        "kind": "entity",
+      },
       "verb": "enters",
     },
   ],
+  "scores": [],
+  "sequences": [],
+  "traits": [],
   "verbs": [
     {
       "pattern": [

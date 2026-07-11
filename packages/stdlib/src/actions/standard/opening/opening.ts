@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult, ActionInterceptor, InterceptorSharedData, applyInterceptorReportResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { OpenedEventData, ExitRevealedEventData } from './opening-events';
@@ -136,6 +136,14 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // === POST-VALIDATE HOOK ===
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return { valid: false, error: result.error, params: result.params };
+      }
+    }
+
     return { valid: true };
   },
   
@@ -150,12 +158,18 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     
     // Delegate to behavior for opening
     const result: IOpenResult = OpenableBehavior.open(noun);
-    
+
     // Store result for report phase using typed shared data
     const sharedData: OpeningSharedData = {
       openResult: result
     };
     context.sharedData.openResult = result;
+
+    // === POST-EXECUTE HOOK ===
+    const opening = getOpeningSharedData(context);
+    if (opening.interceptor?.postExecute) {
+      opening.interceptor.postExecute(noun, context.world, context.player.id, opening.interceptorData!);
+    }
   },
 
   /**
@@ -203,6 +217,17 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
 
     // Note: if.event.revealed is emitted by the opened event handler in stdlib
     // This ensures revealed events fire regardless of what action opened the container
+
+    // === POST-REPORT HOOK ===
+    const opening = getOpeningSharedData(context);
+    if (opening.interceptor?.postReport) {
+      const hookResult = opening.interceptor.postReport(
+        noun, context.world, context.player.id, opening.interceptorData!
+      );
+      if (hookResult) {
+        applyInterceptorReportResult(events, 'if.event.opened', hookResult, context);
+      }
+    }
 
     return events;
   },

@@ -25,6 +25,7 @@ import {
   IRComposition,
   IREntity,
   IRPhrase,
+  IRTraitDef,
   StoryIR,
 } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -32,14 +33,17 @@ import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
 import { createHelpers } from '@sharpee/helpers';
+import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import {
   ActorTrait,
+  CapabilityBehavior,
   ContainerTrait,
   Direction,
   DirectionType,
   EdibleTrait,
   IFEntity,
   IdentityTrait,
+  ITrait,
   LightSourceTrait,
   LockableTrait,
   OpenableTrait,
@@ -55,8 +59,22 @@ import {
 import { LoadError } from './errors';
 import { Evaluator } from './evaluator';
 import { ChordRuntime } from './runtime';
-import { CHORD_STATE_PREFIX } from './state-keys';
+import { CHORD_STATE_PREFIX, CHORD_TRAIT_PREFIX } from './state-keys';
 import { withLineBreaks } from './text';
+
+/**
+ * A `define trait` runtime instance: type `chord.trait.<name>`, data fields
+ * as own enumerable properties (world serialization covers them — AC-6).
+ */
+export class ChordDataTrait implements ITrait {
+  readonly type: string;
+  [field: string]: unknown;
+
+  constructor(type: string, values: Record<string, unknown>) {
+    this.type = type;
+    Object.assign(this, values);
+  }
+}
 
 export interface StoryLoaderOptions {
   /**
@@ -73,6 +91,13 @@ export interface StoryLoaderOptions {
    * stream is time-seeded.
    */
   seed?: number;
+  /**
+   * Load profile (design.md §5.6, AC-4): 'devkit' (default) binds hatches;
+   * 'pure-ir' REFUSES any hatch-bearing story at construction — before any
+   * binding, so no author-supplied code is touched. Hatch-free stories load
+   * identically under both.
+   */
+  profile?: 'devkit' | 'pure-ir';
 }
 
 /**
@@ -90,6 +115,10 @@ export class ChordStory implements Story {
   readonly config: StoryConfig;
   /** Bound `define text` producers by hatch name. */
   readonly producers = new Map<string, PhraseProducer>();
+  /** Bound `define action X from` hatches: four-phase Action objects by name. */
+  readonly boundActions = new Map<string, unknown>();
+  /** Bound `define behavior X from` hatches: CapabilityBehaviors by name. */
+  readonly boundBehaviors = new Map<string, CapabilityBehavior>();
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
@@ -137,19 +166,57 @@ export class ChordStory implements Story {
   private playerId: string | undefined;
 
   private bindHatches(options: StoryLoaderOptions): void {
+    // AC-4, pure-IR profile: refuse hatch-bearing stories BEFORE touching
+    // any module — no author-supplied code is read, called, or bound.
+    if ((options.profile ?? 'devkit') === 'pure-ir' && this.ir.hatches.length > 0) {
+      const names = this.ir.hatches.map((h) => `\`${h.name}\` (${h.modulePath})`).join(', ');
+      throw new LoadError(
+        `This profile runs pure-IR stories only — the story declares ${this.ir.hatches.length} TS hatch(es): ${names}. Load it with the devkit profile, or remove the hatches.`,
+      );
+    }
+
     for (const hatch of this.ir.hatches) {
       const module = options.hatchModules?.[hatch.modulePath];
       if (!module) {
         throw new LoadError(`Hatch module \`${hatch.modulePath}\` was not provided to the loader.`, hatch.span);
       }
       const bound = module[hatch.name];
-      if (typeof bound !== 'function') {
-        throw new LoadError(
-          `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a function'} — expected a dynamic-text producer export.`,
-          hatch.span,
-        );
+      const kind = hatch.hatchKind ?? 'text';
+      switch (kind) {
+        case 'text': {
+          if (typeof bound !== 'function') {
+            throw new LoadError(
+              `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a function'} — expected a dynamic-text producer export.`,
+              hatch.span,
+            );
+          }
+          this.producers.set(hatch.name, bound as PhraseProducer);
+          break;
+        }
+        case 'action': {
+          // Interface Contract 3: the export IS a four-phase Action.
+          const action = bound as { id?: unknown; validate?: unknown; execute?: unknown } | undefined;
+          if (!action || typeof action !== 'object' || typeof action.validate !== 'function' || typeof action.execute !== 'function') {
+            throw new LoadError(
+              `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not an Action'} — expected a four-phase Action export (validate/execute/report/blocked).`,
+              hatch.span,
+            );
+          }
+          this.boundActions.set(hatch.name, bound);
+          break;
+        }
+        case 'behavior': {
+          const behavior = bound as { validate?: unknown; execute?: unknown; report?: unknown } | undefined;
+          if (!behavior || typeof behavior !== 'object' || typeof behavior.validate !== 'function' || typeof behavior.execute !== 'function' || typeof behavior.report !== 'function') {
+            throw new LoadError(
+              `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a CapabilityBehavior'} — expected a validate/execute/report export.`,
+              hatch.span,
+            );
+          }
+          this.boundBehaviors.set(hatch.name, bound as CapabilityBehavior);
+          break;
+        }
       }
-      this.producers.set(hatch.name, bound as PhraseProducer);
     }
   }
 
@@ -174,7 +241,12 @@ export class ChordStory implements Story {
         world.connectRooms(entity.id, this.requireWorldId(exit.to, irEntity), toDirection(exit.direction, irEntity));
       }
       for (const blocked of irEntity.blockedExits) {
-        RoomBehavior.blockExit(entity, toDirection(blocked.direction, irEntity), this.phraseText(blocked.phraseKey));
+        // Unconditional blocks are static; `is blocked while <cond>` blocks
+        // are derived — the runtime recomputes them with dark-while (grammar
+        // log 2026-07-10; initial evaluation at player finalization).
+        if (blocked.condition === null) {
+          RoomBehavior.blockExit(entity, toDirection(blocked.direction, irEntity), this.phraseText(blocked.phraseKey));
+        }
       }
       if (irEntity.states.length > 0) {
         world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
@@ -184,6 +256,12 @@ export class ChordStory implements Story {
     // Flags start at their declared values.
     for (const flag of this.ir.flags) {
       world.setStateValue(`chord.flag.${flag.name}`, flag.initial);
+    }
+
+    // Declared scores set the ceiling (dedup-by-identity makes the sum
+    // exact — ADR-129).
+    if (this.ir.scores.length > 0) {
+      world.setMaxScore(this.ir.scores.reduce((sum, s) => sum + s.worth, 0));
     }
 
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
@@ -283,6 +361,51 @@ export class ChordStory implements Story {
     return { verbs: this.ir.verbs.map((v) => toVocabularyVerb(v)) };
   }
 
+  /**
+   * Custom actions for engine registration: `define action` dispatch
+   * actions (Phase B, §5.4) plus `define action X from` hatch Actions
+   * (grammar for hatch actions is the module's own concern).
+   */
+  getCustomActions(): unknown[] {
+    return [...this.runtime.buildDispatchActions(), ...this.boundActions.values()];
+  }
+
+  /**
+   * Register scheduler constructs (`once`/`every`/`define sequence`/
+   * every-turn trait clauses) as plugin-scheduler daemons. All progression
+   * state is world state — no runner-state plumbing (design.md §6).
+   */
+  onEngineReady(engine: { getPluginRegistry(): { register(plugin: unknown): void } }): void {
+    const daemons = this.runtime.buildSchedulerDaemons();
+    if (daemons.length === 0) return;
+    const plugin = new SchedulerPlugin();
+    engine.getPluginRegistry().register(plugin);
+    const scheduler = plugin.getScheduler();
+    for (const daemon of daemons) scheduler.registerDaemon(daemon);
+  }
+
+  /**
+   * Register `define action` grammar patterns as story grammar (ADR-087).
+   * The param is the Story contract's stdlib Parser; typed structurally at
+   * the use site to keep story-loader's dependency surface unchanged.
+   */
+  extendParser(parser: Parameters<NonNullable<Story['extendParser']>>[0]): void {
+    const grammar = (parser as unknown as {
+      getStoryGrammar(): {
+        define(pattern: string): { mapsTo(id: string): { withPriority(p: number): { build(): unknown } } };
+      };
+    }).getStoryGrammar();
+    for (const action of this.ir.actions) {
+      for (const pattern of action.patterns) {
+        if (pattern.cardinality) continue; // `→ each …` expansion is engine-owned (Phase C)
+        const text = pattern.parts
+          .map((part) => (part.kind === 'slot' ? `:${part.word}` : part.word))
+          .join(' ');
+        grammar.define(text).mapsTo(`chord.action.${action.name}`).withPriority(150).build();
+      }
+    }
+  }
+
   isComplete(): boolean {
     return this.world != null && this.world.getStateValue(STORY_ENDING_FLAG) != null;
   }
@@ -371,10 +494,17 @@ export class ChordStory implements Story {
   private applyTraitAdjectives(entity: IFEntity, irEntity: IREntity, kind: string | null): void {
     for (const trait of irEntity.traits) {
       if (trait.condition !== null) {
-        // Conditional composition: only room-`dark` is Phase A legal
-        // (Prerequisite 1 — derived property, wired by the Phase 5
-        // turn-end rule). Anything else is the Prerequisite 2 load error.
+        // Conditional composition legality (Prerequisite 2): room-`dark`
+        // (the Phase A derived property), or a declared trait whose clauses
+        // are ALL NPC-behavior-shaped (`on every turn …`) — the scheduler
+        // daemon evaluates the composition condition per turn (`chatty
+        // while not after-hours`). Anything else is the load error.
         if (trait.name === 'dark' && kind === 'room') continue;
+        const def = this.ir.traits.find((t) => t.name === trait.name);
+        if (def && def.onClauses.length > 0 && def.onClauses.every((c) => c.binding === 'every-turn')) {
+          entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
+          continue;
+        }
         throw new LoadError(
           `Conditional composition isn't supported for \`${trait.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
           trait.span,
@@ -416,13 +546,49 @@ export class ChordStory implements Story {
           }
           break; // unconditional dark handled by the room builder
         }
-        default:
+        default: {
+          // `define trait` instances (Phase B): a data trait typed
+          // `chord.trait.<name>` whose fields are own properties (mutable
+          // via `set`, serialized with the world — AC-6-safe).
+          const def = this.ir.traits.find((t) => t.name === trait.name);
+          if (def) {
+            entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
+            break;
+          }
           throw new LoadError(
-            `Trait \`${trait.name}\` is not supported by the Phase A loader.`,
+            `Trait \`${trait.name}\` is not declared (\`define trait ${trait.name}\`) and is not a v1 adjective.`,
             trait.span,
           );
+        }
       }
     }
+  }
+
+  /**
+   * Initial values for a `define trait` instance: declared `starts`
+   * defaults overlaid by the composition's `with` config. Entity-name
+   * values (`with food the handful of feed`) resolve to IR entity ids.
+   */
+  private traitFieldValues(def: IRTraitDef, comp: IRComposition): Record<string, unknown> {
+    const values: Record<string, unknown> = {};
+    for (const field of def.data) {
+      if (field.initial !== null) values[field.name] = field.initial;
+    }
+    for (const setting of comp.config) {
+      if (setting.valueKind === 'name') {
+        const lower = setting.value.toLowerCase();
+        const target = this.ir.entities.find(
+          (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
+        );
+        if (!target) {
+          throw new LoadError(`\`${setting.value}\` (config \`${setting.key}\`) names no entity.`, comp.span);
+        }
+        values[setting.key] = target.id;
+      } else {
+        values[setting.key] = setting.value;
+      }
+    }
+    return values;
   }
 
   private applyContainerConfig(entity: IFEntity, kind: IRComposition): void {

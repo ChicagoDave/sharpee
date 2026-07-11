@@ -19,7 +19,25 @@ import { ScopeLevel } from '../../../scope/types';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { emitIllustrations } from '../../helpers/emit-illustrations';
 import { buildEventData } from '../../data-builder-types';
-import { getStateClauses } from '@sharpee/world-model';
+import {
+  ActionInterceptor,
+  InterceptorSharedData,
+  applyInterceptorReportResult,
+  getStateClauses,
+} from '@sharpee/world-model';
+
+/**
+ * Shared data passed between phases — carries the resolved interceptor
+ * across phases (ADR-118; the reading.ts pattern).
+ */
+interface ExaminingSharedData {
+  interceptor?: ActionInterceptor;
+  interceptorData?: InterceptorSharedData;
+}
+
+function getExaminingSharedData(context: ActionContext): ExaminingSharedData {
+  return context.sharedData as ExaminingSharedData;
+}
 
 // Import our data builder
 import { examiningDataConfig, buildExaminingMessageParams } from './examining-data';
@@ -63,6 +81,22 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // Check for interceptor on the target entity (ADR-118)
+    const interceptorResult = context.world.getInterceptorForAction(noun, 'if.action.examining');
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {};
+    const sharedData = getExaminingSharedData(context);
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return { valid: false, error: result.error, params: result.params };
+      }
+    }
+
     // Check scope - must be able to see the target (unless examining yourself)
     if (noun.id !== actor.id) {
       const scopeCheck = context.requireScope(noun, ScopeLevel.VISIBLE);
@@ -71,12 +105,26 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    // === POST-VALIDATE HOOK ===
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return { valid: false, error: result.error, params: result.params };
+      }
+    }
+
     // Valid - all event data will be built in report()
     return { valid: true };
   },
-  
+
   execute(context: ActionContext): void {
-    // No mutations - examining is a read-only action
+    // No standard mutations - examining is a read-only action.
+    // === POST-EXECUTE HOOK === (interceptor clauses may mutate)
+    const sharedData = getExaminingSharedData(context);
+    const noun = context.command.directObject?.entity;
+    if (sharedData.interceptor?.postExecute && noun) {
+      sharedData.interceptor.postExecute(noun, context.world, context.player.id, sharedData.interceptorData!);
+    }
   },
   
   report(context: ActionContext): ISemanticEvent[] {
@@ -120,6 +168,17 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
+    // === POST-REPORT HOOK ===
+    const sharedData = getExaminingSharedData(context);
+    if (sharedData.interceptor?.postReport) {
+      const result = sharedData.interceptor.postReport(
+        noun, context.world, context.player.id, sharedData.interceptorData!
+      );
+      if (result) {
+        applyInterceptorReportResult(events, 'if.event.examined', result, context);
+      }
+    }
+
     return events;
   },
 
@@ -127,7 +186,7 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     // blocked() is called when validation fails
     const noun = context.command.directObject?.entity;
 
-    return [context.event('if.event.examined', {
+    const events: ISemanticEvent[] = [context.event('if.event.examined', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158);
@@ -137,6 +196,21 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       targetId: noun?.id,
       targetName: noun?.name
     })];
+
+    // === ON-BLOCKED HOOK ===
+    const sharedData = getExaminingSharedData(context);
+    if (sharedData.interceptor?.onBlocked && noun && result.error) {
+      const customEffects = sharedData.interceptor.onBlocked(
+        noun, context.world, context.player.id, result.error, sharedData.interceptorData!
+      );
+      if (customEffects) {
+        for (const effect of customEffects) {
+          events.push(context.event(effect.type, effect.payload));
+        }
+      }
+    }
+
+    return events;
   },
 
   group: "observation",

@@ -29,6 +29,15 @@ export interface StoryIR {
   hatches: IRHatch[];
   flags: IRFlagDef[];
   rules: IRRule[];
+  // Phase B (plan phase 3):
+  traits: IRTraitDef[];
+  actions: IRActionDef[];
+  scores: IRScoreDef[];
+  onceRules: IROnceRule[];
+  everyRules: IREveryRule[];
+  sequences: IRSequenceDef[];
+  /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
+  hasHatches: boolean;
 }
 
 export interface IRMeta {
@@ -81,7 +90,8 @@ export interface IRConfigSetting {
   /** Setting key words joined with a space (`max items`). */
   key: string;
   value: string;
-  valueKind: 'number' | 'string' | 'word';
+  /** 'name' = multi-word entity-name value (`with food the handful of feed`, Phase B). */
+  valueKind: 'number' | 'string' | 'word' | 'name';
 }
 
 export interface IRPlacement {
@@ -101,12 +111,28 @@ export interface IRExit {
 export interface IRBlockedExit {
   direction: string;
   phraseKey: string;
+  /** `is blocked while <cond>` — null = always blocked (grammar log 2026-07-10). */
+  condition: IRCondition | null;
   span: Span;
 }
 
 export interface IROnClause {
-  /** Action word as written (gerund), e.g. `reading`. */
+  /** Action word as written (gerund), e.g. `reading`; `every-turn` for `on every turn`. */
   action: string;
+  /** How the clause binds: target (`it`), role (`anything as the <role>`), or every turn. */
+  binding: 'it' | 'role' | 'every-turn';
+  /** Role name for role-bound clauses (validated against the action's roles). */
+  role: string | null;
+  /** `while` qualifier (every-turn clauses). */
+  condition: IRCondition | null;
+  /** Explicit `before`/`after` ordering between traits on the same action. */
+  ordering: { relation: 'before' | 'after'; trait: string } | null;
+  /**
+   * §5.4 compiler rule: clauses on standard-semantics actions compile to
+   * ActionInterceptors; clauses on dispatch verbs (`define action`) compile
+   * to CapabilityBehaviors. Null for every-turn clauses (daemon-shaped).
+   */
+  routing: 'interceptor' | 'capability' | null;
   /**
    * Statement tree in source order. The phase-order rule is enforced at
    * compile time; the loader partitions this into validate/execute/report.
@@ -154,6 +180,12 @@ export interface IRPhraseVariant {
 
 export interface IRNamedCondition {
   name: string;
+  /**
+   * True when the body references `it`/`its` — an OPEN condition, usable as
+   * a selection via `any <name>` (grammar log 2026-07-11). Closed conditions
+   * are plain truth tests.
+   */
+  open: boolean;
   condition: IRCondition;
   span: Span;
 }
@@ -169,6 +201,81 @@ export type IRPatternPart = { kind: 'word'; word: string } | { kind: 'slot'; wor
 export interface IRHatch {
   name: string;
   modulePath: string;
+  /** Target interface: dynamic-text producer, Action, or CapabilityBehavior. */
+  hatchKind: 'text' | 'action' | 'behavior';
+  span: Span;
+}
+
+// --------------------------------------------------------------------------
+// Phase B declarations
+// --------------------------------------------------------------------------
+
+/** `define trait` — data fields + behavior clauses (phrases fold into the table). */
+export interface IRTraitDef {
+  name: string;
+  data: IRTraitField[];
+  onClauses: IROnClause[];
+  span: Span;
+}
+
+export interface IRTraitField {
+  /** Field name words joined with a space (`body part`). */
+  name: string;
+  type: 'flag' | 'entity' | 'number' | 'name' | 'one-of';
+  optional: boolean;
+  initial: string | null;
+  oneOf: string[] | null;
+}
+
+/** `define action` — grammar, scope constraints, refusal ladder, body. */
+export interface IRActionDef {
+  name: string;
+  patterns: IRActionPattern[];
+  constraints: Array<{ slot: string; requirement: string }>;
+  refusals: IRActionRefusal[];
+  /** Dispatch-miss phrase key (`otherwise refuse …`), or null. */
+  otherwise: string | null;
+  body: IRStatement[];
+  span: Span;
+}
+
+export interface IRActionPattern {
+  parts: IRPatternPart[];
+  /** `→ each …` cardinality words, or null. */
+  cardinality: string[] | null;
+}
+
+export type IRActionRefusal =
+  | { kind: 'without'; slot: string; phraseKey: string; span: Span }
+  | { kind: 'when'; condition: IRCondition; phraseKey: string; span: Span };
+
+/** `define score <name> worth <n>` — dedup-by-identity award (ADR-129). */
+export interface IRScoreDef {
+  name: string;
+  worth: number;
+  span: Span;
+}
+
+/** `once <cond> …` — fires once, then retires. */
+export interface IROnceRule {
+  condition: IRCondition;
+  body: IRStatement[];
+  span: Span;
+}
+
+/** `every <n> turns [, <m> times] …` — recurring daemon. */
+export interface IREveryRule {
+  turns: number;
+  times: number | null;
+  body: IRStatement[];
+  span: Span;
+}
+
+/** `define sequence <name>` — chained-fuse timeline. */
+export interface IRSequenceDef {
+  /** Name words joined with a space (`closing time`). */
+  name: string;
+  steps: Array<{ timing: 'at-turn' | 'later'; turns: number; body: IRStatement[]; span: Span }>;
   span: Span;
 }
 
@@ -186,14 +293,22 @@ export interface IRFlagDef {
 export interface IRRule {
   /** The acting entity (`player` for the player). */
   actor: IRValue;
-  /** Event verb from the curated Phase A set (e.g. `enters`). */
+  /** Event verb: curated set (`enters`) or derived from a `define action` name (`pets`). */
   verb: string;
-  /** Entity ID of the event target. */
-  target: string;
+  /** The declared action this verb derives from, when it does (Phase B). */
+  actionName: string | null;
+  /** Event target: a specific entity, anything, or an open-condition selection. */
+  target: IRRuleTarget;
   condition: IRCondition | null;
   body: IRStatement[];
   span: Span;
 }
+
+export type IRRuleTarget =
+  | { kind: 'entity'; id: string }
+  | { kind: 'anything' }
+  /** `any <open-condition>` (grammar log 2026-07-11). */
+  | { kind: 'any-condition'; name: string };
 
 // --------------------------------------------------------------------------
 // statements
@@ -237,6 +352,10 @@ export type IRValue =
   | { kind: 'player' }
   | { kind: 'it' }
   | { kind: 'field'; base: IRValue; field: string }
+  /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
+  | { kind: 'slot'; name: string }
+  /** A declared story flag (`set after-hours to true`). */
+  | { kind: 'flag'; name: string }
   | { kind: 'symbol'; name: string };
 
 export type IRCondition =
@@ -245,9 +364,12 @@ export type IRCondition =
   | { kind: 'not'; operand: IRCondition }
   | { kind: 'chance'; n: number }
   | { kind: 'condition'; name: string }
+  /** A declared flag read as a truth test (`while not after-hours`). */
+  | { kind: 'flag'; name: string }
   | {
       kind: 'predicate';
-      pred: 'is' | 'is-a' | 'is-in' | 'has' | 'holds' | 'wears';
+      /** 'can-see'/'can-reach' land with Phase B (design.md §2.7). */
+      pred: 'is' | 'is-a' | 'is-in' | 'has' | 'holds' | 'wears' | 'can-see' | 'can-reach';
       negated: boolean;
       subject: IRValue;
       object: IRValue;

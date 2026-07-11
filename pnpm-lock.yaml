@@ -937,10 +937,16 @@ importers:
       '@sharpee/if-domain':
         specifier: workspace:*
         version: link:../if-domain
+      '@sharpee/plugin-scheduler':
+        specifier: workspace:*
+        version: link:../plugin-scheduler
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
     devDependencies:
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.27

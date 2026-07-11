@@ -7,9 +7,13 @@ Normative source: `docs/work/story-language/design.md` + ADR-210; grammar
 *changes* (anything not in design.md) require David's approval via
 `docs/architecture/chord-grammar-changes.md`.
 
-**Current coverage: Phase A subset** (Cloak-complete). Constructs design.md
-defines but Phase A excludes are marked *Phase B* and are parse errors today
-(`parse.phase-b-construct`).
+**Current coverage: Phase A subset + Phase B declarations** (plan:
+docs/work/chord-phase-b/plan.md, phase 2). `define trait`/`define action`
+(role binding, ordering, data blocks, grammar patterns, refusal forms),
+scheduler constructs (`once`/`every`/`define sequence`), `define score`,
+action/behavior hatches, conditional blocked exits, dotted phrase keys, and
+declare-and-emit inline prose all parse as of 2026-07-11 (analysis/loader:
+later phases).
 
 ## Notation conventions
 
@@ -53,9 +57,60 @@ MARKER  = "{" content "}"                                  (* inside text only *
 story-file   = [ story-header ] { declaration } ;
 story-header = "story" STRING "by" STRING NL >>> { WORD ":" rest-of-line NL } ;
 declaration  = create | define-condition | define-phrase | define-phrases
-             | define-verb | define-text | define-flag | when-rule ;
-             (* Phase B: define-action, define-trait, define-sequence, once, every *)
+             | define-verb | define-text | define-flag | when-rule
+             | define-trait | define-action | define-hatch | define-score
+             | once-rule | every-rule | define-sequence ;      (* Phase B, 2026-07-11 *)
 ```
+
+## Phase B declarations (2026-07-11; design.md §2.2/§2.3/§2.5/§3.4)
+
+```
+define-trait   = "define" "trait" WORD NL
+                 [ >>> "data" NL >>> { trait-field } ]
+                 [ >>> "phrases" LOCALE NL >>> { phrase-entry } ]
+                 { >>> on-clause }
+                 "end" "trait" NL ;
+trait-field    = field-words ":" [ "optional" ]
+                 ( "flag" | "entity" | "number" | "name"
+                 | "one" "of" WORD { "," WORD } )
+                 [ "," "starts" token ] NL ;
+
+on-clause      = "on" WORD "it" [ "," ("before"|"after") WORD ] NL body "end" "on"
+               | "on" WORD "anything" "as" "the" WORD NL body "end" "on"   (* role *)
+               | "on" "every" "turn" [ "while" condition ] NL body "end" "on" ;
+
+define-action  = "define" "action" WORD NL action-line* ;   (* dedent-terminated *)
+action-line    = "grammar" NL >>> { pattern-line }
+               | "the" WORD "must" "be" WORD NL             (* scope constraint *)
+               | "refuse" "without" WORD ":" WORD NL
+               | "refuse" "when" condition ":" WORD NL
+               | "otherwise" "refuse" WORD NL               (* dispatch miss *)
+               | "phrases" LOCALE NL >>> { phrase-entry }
+               | statement ;                                (* §2.3 body *)
+pattern-line   = ( WORD | ":" WORD )+ [ "→" WORD { WORD } ] NL ;  (* → = cardinality *)
+
+define-hatch   = "define" ("action"|"behavior") WORD "from" STRING NL ;
+define-score   = "define" "score" WORD "worth" NUMBER NL ;
+
+once-rule      = "once" condition NL >>> { statement } "end" "once" NL ;
+every-rule     = "every" NUMBER "turns" [ "," NUMBER "times" ] NL
+                 >>> { statement } "end" "every" NL ;
+define-sequence= "define" "sequence" WORD { WORD } NL
+                 { sequence-step } "end" "sequence" NL ;
+sequence-step  = ( "at" "turn" NUMBER | NUMBER "turns" "later" ) NL >>> { statement } ;
+```
+
+- **Conditional blocked exits** (grammar log 2026-07-10):
+  `DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL`.
+- **Dotted phrase keys** (`zoo.pa.closing-3`) in `refuse`/`phrase` statements.
+- **Declare-and-emit inline prose**: a deeper-indented bare prose block after
+  `phrase <key>` registers the text under the key (§2.6/§3.3).
+- **Config name values**: `with <key> the <entity name>` — an article starts
+  a multi-word entity-name value (`feedable with food the handful of feed`).
+- **`can see <thing>` / `can reach <thing>`** predicates join the condition
+  kit; `has`/`holds`/`wears` objects stop at connective words.
+- **Lexing**: a lone `"` with no closer on the line is prose punctuation
+  (multi-line dialogue); positions requiring strings diagnose at parse time.
 
 ## create
 

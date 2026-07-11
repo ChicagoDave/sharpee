@@ -1,0 +1,78 @@
+title: Zoo golden gate — PA timeline, feeding time, goat bleats
+story: friendly-zoo
+description: Deterministic scheduler beats as behavior-parity proof (AC-2
+  scheduler category): PA closing announcements at turns 5/10/15/20, the
+  feeding-time fuse at turn 11 with its 8-turn repeat at 19, and the goat
+  bleats on the three turns after feeding time while in the Petting Zoo.
+  Authored against the TS story 2026-07-11, then frozen.
+
+---
+
+# Turns 1-2: into the Petting Zoo
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+# Turns 3-4: quiet
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 5: first PA announcement
+> wait
+[OK: contains "closing in three hours"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 10: second PA announcement
+> wait
+[OK: contains "Two hours until closing"]
+
+# Turn 11: feeding time fires
+> wait
+[OK: contains "FEEDING TIME at the Petting Zoo"]
+
+# Turns 12-14: the goats bleat while feeding time is active
+> wait
+[OK: contains "bleating loudly and headbutting the fence"]
+
+> wait
+[OK: contains "bleating loudly and headbutting the fence"]
+
+> wait
+[OK: contains "bleating loudly and headbutting the fence"]
+
+# Turn 15: third PA announcement
+> wait
+[OK: contains "One hour until closing"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+# Turn 19: feeding time repeats on its 8-turn cycle
+> wait
+[OK: contains "FEEDING TIME at the Petting Zoo"]
+
+# Turn 20: the zoo closes
+> wait
+[OK: contains "The Willowbrook Family Zoo is now closed"]

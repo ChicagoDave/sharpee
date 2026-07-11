@@ -109,7 +109,7 @@ describe('cloak.story IR', () => {
     const rule = ir.rules[0];
     expect(rule.actor).toEqual({ kind: 'player' });
     expect(rule.verb).toBe('enters');
-    expect(rule.target).toBe('foyer-bar');
+    expect(rule.target).toEqual({ kind: 'entity', id: 'foyer-bar' });
     expect(rule.condition).toEqual({ kind: 'condition', name: 'in-darkness' });
     expect(rule.body).toMatchObject([
       { kind: 'phrase', phraseKey: 'stumble' },

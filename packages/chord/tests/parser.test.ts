@@ -261,9 +261,11 @@ describe('malformed fixtures — one mistake, one diagnostic, parsing continues'
     expect(result.ast.declarations.some((d) => d.kind === 'define-phrases')).toBe(true);
   });
 
-  it('unterminated string: lex error with the line number', () => {
+  it('unterminated string where a string is required: parse error at the site', () => {
+    // A lone `"` lexes as prose punctuation (multi-line dialogue support,
+    // 2026-07-11); positions that REQUIRE a string diagnose at parse time.
     const result = parse(fixture('malformed/unterminated-string.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'lex.unterminated-string' && e.span.line === 6)).toBe(true);
+    expect(errors.some((e) => e.code === 'parse.text-module' && e.span.line === 5)).toBe(true);
   });
 });

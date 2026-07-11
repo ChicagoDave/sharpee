@@ -115,9 +115,11 @@ function tokenizeLine(raw: string, lineNo: number, start: number, diagnostics: D
     if (ch === '"') {
       const close = raw.indexOf('"', pos + 1);
       if (close === -1) {
-        diagnostics.error('lex.unterminated-string', 'Unterminated string — missing closing ".', spanOf(lineNo, column, raw.length - pos));
-        tokens.push({ kind: 'string', text: raw.slice(pos + 1), span: spanOf(lineNo, column, raw.length - pos) });
-        pos = raw.length;
+        // A lone quote is prose punctuation (multi-line dialogue in prose
+        // blocks, e.g. design.md §3.3 PA announcements). Positions that
+        // REQUIRE a string (header, hatch paths) diagnose at parse time.
+        tokens.push({ kind: 'punct', text: ch, span: spanOf(lineNo, column) });
+        pos++;
       } else {
         tokens.push({ kind: 'string', text: raw.slice(pos + 1, close), span: spanOf(lineNo, column, close - pos + 1) });
         pos = close + 1;
