@@ -1,0 +1,5973 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golden IR snapshot 1`] = `
+{
+  "actions": [
+    {
+      "body": [],
+      "constraints": [
+        {
+          "requirement": "reachable",
+          "slot": "animal",
+        },
+      ],
+      "musts": [],
+      "name": "petting",
+      "otherwise": "cant-pet",
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "pet",
+            },
+            {
+              "kind": "slot",
+              "word": "animal",
+            },
+          ],
+        },
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "stroke",
+            },
+            {
+              "kind": "slot",
+              "word": "animal",
+            },
+          ],
+        },
+      ],
+      "refusals": [
+        {
+          "kind": "without",
+          "phraseKey": "cant-pet",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 34,
+            "endLine": 493,
+            "line": 493,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 496,
+        "line": 488,
+      },
+    },
+    {
+      "body": [],
+      "constraints": [
+        {
+          "requirement": "reachable",
+          "slot": "animal",
+        },
+      ],
+      "musts": [],
+      "name": "feeding",
+      "otherwise": "not-an-animal",
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "feed",
+            },
+            {
+              "kind": "slot",
+              "word": "animal",
+            },
+          ],
+        },
+      ],
+      "refusals": [
+        {
+          "kind": "without",
+          "phraseKey": "not-an-animal",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 39,
+            "endLine": 504,
+            "line": 504,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 507,
+        "line": 500,
+      },
+    },
+    {
+      "body": [
+        {
+          "expression": [
+            "action.photographing.snapshot",
+          ],
+          "kind": "award",
+          "once": false,
+          "span": {
+            "column": 3,
+            "endColumn": 17,
+            "endLine": 518,
+            "line": 518,
+          },
+          "stmtWhen": null,
+        },
+        {
+          "kind": "phrase",
+          "params": [],
+          "phraseKey": "took-photo",
+          "span": {
+            "column": 3,
+            "endColumn": 20,
+            "endLine": 519,
+            "line": 519,
+          },
+          "stmtWhen": null,
+        },
+      ],
+      "constraints": [],
+      "musts": [
+        {
+          "condition": {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "id": "disposable-camera",
+              "kind": "entity",
+            },
+            "pred": "holds",
+            "subject": {
+              "kind": "player",
+            },
+          },
+          "phraseKey": "no-camera",
+          "span": {
+            "column": 3,
+            "endColumn": 56,
+            "endLine": 517,
+            "line": 517,
+          },
+        },
+      ],
+      "name": "photographing",
+      "otherwise": null,
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "photograph",
+            },
+            {
+              "kind": "slot",
+              "word": "target",
+            },
+          ],
+        },
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "photo",
+            },
+            {
+              "kind": "slot",
+              "word": "target",
+            },
+          ],
+        },
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "snap",
+            },
+            {
+              "kind": "slot",
+              "word": "target",
+            },
+          ],
+        },
+      ],
+      "refusals": [],
+      "scores": [
+        {
+          "name": "action.photographing.snapshot",
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 516,
+            "line": 516,
+          },
+          "worth": 5,
+        },
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 521,
+        "line": 511,
+      },
+    },
+  ],
+  "conditions": [],
+  "entities": [
+    {
+      "aka": [
+        "entrance",
+        "gates",
+        "gate",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "zoo-entrance.description",
+      "exits": [
+        {
+          "direction": "south",
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 10,
+            "line": 10,
+          },
+          "to": "main-path",
+        },
+      ],
+      "id": "zoo-entrance",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 8,
+            "line": 8,
+          },
+        },
+      ],
+      "name": "Zoo Entrance",
+      "onClauses": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 75,
+        "endLine": 12,
+        "line": 7,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "path",
+        "gravel path",
+      ],
+      "article": "the",
+      "blockedExits": [
+        {
+          "condition": {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "kind": "symbol",
+              "name": "closed",
+            },
+            "pred": "is",
+            "subject": {
+              "id": "staff-gate",
+              "kind": "entity",
+            },
+          },
+          "direction": "south",
+          "phraseKey": "staff-gate-blocked",
+          "span": {
+            "column": 3,
+            "endColumn": 70,
+            "endLine": 23,
+            "line": 23,
+          },
+        },
+      ],
+      "descriptionKey": "main-path.description",
+      "exits": [
+        {
+          "direction": "east",
+          "span": {
+            "column": 3,
+            "endColumn": 26,
+            "endLine": 20,
+            "line": 20,
+          },
+          "to": "petting-zoo",
+        },
+        {
+          "direction": "west",
+          "span": {
+            "column": 3,
+            "endColumn": 21,
+            "endLine": 21,
+            "line": 21,
+          },
+          "to": "aviary",
+        },
+        {
+          "direction": "south",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 22,
+            "line": 22,
+          },
+          "to": "supply-room",
+        },
+      ],
+      "id": "main-path",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 18,
+            "line": 18,
+          },
+        },
+      ],
+      "name": "Main Path",
+      "onClauses": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 76,
+        "endLine": 25,
+        "line": 17,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "petting area",
+        "pen",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "petting-zoo.description",
+      "exits": [],
+      "id": "petting-zoo",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 31,
+            "line": 31,
+          },
+        },
+      ],
+      "name": "Petting Zoo",
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "petting-zoo.visit",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 40,
+                "line": 40,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 41,
+            "line": 39,
+          },
+        },
+      ],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 20,
+        "endLine": 39,
+        "line": 30,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "bird house",
+        "dome",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "aviary.description",
+      "exits": [
+        {
+          "direction": "west",
+          "span": {
+            "column": 3,
+            "endColumn": 24,
+            "endLine": 46,
+            "line": 46,
+          },
+          "to": "gift-shop",
+        },
+      ],
+      "id": "aviary",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 44,
+            "line": 44,
+          },
+        },
+      ],
+      "name": "Aviary",
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "aviary.visit",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 56,
+                "line": 56,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 57,
+            "line": 55,
+          },
+        },
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "parrot-notices",
+              "span": {
+                "column": 5,
+                "endColumn": 66,
+                "endLine": 61,
+                "line": 60,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": {
+            "kind": "not",
+            "operand": {
+              "kind": "story-state",
+              "state": "after-hours",
+            },
+          },
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 62,
+            "line": 59,
+          },
+        },
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "parrot-nods",
+              "span": {
+                "column": 5,
+                "endColumn": 27,
+                "endLine": 67,
+                "line": 65,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": {
+            "kind": "story-state",
+            "state": "after-hours",
+          },
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 68,
+            "line": 64,
+          },
+        },
+      ],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 38,
+        "endLine": 64,
+        "line": 43,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "storage room",
+        "storeroom",
+      ],
+      "article": "the",
+      "blockedExits": [
+        {
+          "condition": {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "kind": "symbol",
+              "name": "closed",
+            },
+            "pred": "is",
+            "subject": {
+              "id": "staff-gate",
+              "kind": "entity",
+            },
+          },
+          "direction": "north",
+          "phraseKey": "staff-gate-blocked",
+          "span": {
+            "column": 3,
+            "endColumn": 70,
+            "endLine": 74,
+            "line": 74,
+          },
+        },
+      ],
+      "descriptionKey": "supply-room.description",
+      "exits": [
+        {
+          "direction": "south",
+          "span": {
+            "column": 3,
+            "endColumn": 41,
+            "endLine": 73,
+            "line": 73,
+          },
+          "to": "nocturnal-animals-exhibit",
+        },
+      ],
+      "id": "supply-room",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 71,
+            "line": 71,
+          },
+        },
+      ],
+      "name": "Supply Room",
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "supply-room.visit",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 83,
+                "line": 83,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 84,
+            "line": 82,
+          },
+        },
+      ],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 20,
+        "endLine": 82,
+        "line": 70,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "nocturnal exhibit",
+        "nocturnal animals",
+        "exhibit",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "nocturnal-animals-exhibit.description",
+      "exits": [],
+      "id": "nocturnal-animals-exhibit",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 87,
+            "line": 87,
+          },
+        },
+      ],
+      "name": "Nocturnal Animals Exhibit",
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "nocturnal-animals-exhibit.visit",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 97,
+                "line": 97,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 98,
+            "line": 96,
+          },
+        },
+      ],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 20,
+        "endLine": 96,
+        "line": 86,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "dark",
+          "span": {
+            "column": 11,
+            "endColumn": 15,
+            "endLine": 87,
+            "line": 87,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "shop",
+        "store",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "gift-shop.description",
+      "exits": [],
+      "id": "gift-shop",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 101,
+            "line": 101,
+          },
+        },
+      ],
+      "name": "Gift Shop",
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "gift-shop.visit",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 110,
+                "line": 110,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 111,
+            "line": 109,
+          },
+        },
+      ],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 20,
+        "endLine": 109,
+        "line": 100,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "staff-parking-lot.description",
+      "exits": [],
+      "id": "staff-parking-lot",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 114,
+            "line": 114,
+          },
+        },
+      ],
+      "name": "Staff Parking Lot",
+      "onClauses": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 74,
+        "endLine": 116,
+        "line": 113,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "player.description",
+      "exits": [],
+      "id": "player",
+      "isPlayer": true,
+      "kinds": [],
+      "name": "player",
+      "onClauses": [],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 29,
+          "endLine": 119,
+          "line": 119,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 39,
+        "endLine": 121,
+        "line": 118,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "keycard",
+        "key card",
+        "card",
+        "key",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "staff-keycard.description",
+      "exits": [],
+      "id": "staff-keycard",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "staff keycard",
+      "onClauses": [],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 125,
+          "line": 125,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 73,
+        "endLine": 127,
+        "line": 123,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "gate",
+        "metal gate",
+        "staff door",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "staff-gate.description",
+      "exits": [],
+      "id": "staff-gate",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "staff gate",
+      "onClauses": [
+        {
+          "action": "examining",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "gate-look",
+              "span": {
+                "column": 5,
+                "endColumn": 20,
+                "endLine": 141,
+                "line": 138,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 142,
+            "line": 137,
+          },
+        },
+      ],
+      "placement": {
+        "place": "main-path",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 133,
+          "line": 133,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 18,
+        "endLine": 137,
+        "line": 130,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 132,
+            "line": 132,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "openable",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 132,
+            "line": 132,
+          },
+        },
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "key",
+              "value": "staff keycard",
+              "valueKind": "name",
+            },
+          ],
+          "name": "lockable",
+          "span": {
+            "column": 22,
+            "endColumn": 57,
+            "endLine": 132,
+            "line": 132,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "sign",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "welcome-sign.description",
+      "exits": [],
+      "id": "welcome-sign",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "welcome sign",
+      "onClauses": [],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 147,
+          "line": 147,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 77,
+        "endLine": 149,
+        "line": 144,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 146,
+            "line": 146,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "booth",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "ticket-booth.description",
+      "exits": [],
+      "id": "ticket-booth",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "ticket booth",
+      "onClauses": [],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 154,
+          "line": 154,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 56,
+        "endLine": 156,
+        "line": 151,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 153,
+            "line": 153,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "fence",
+        "railing",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "iron-fence.description",
+      "exits": [],
+      "id": "iron-fence",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "iron fence",
+      "onClauses": [],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 161,
+          "line": 161,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 53,
+        "endLine": 163,
+        "line": 158,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 160,
+            "line": 160,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "signs",
+        "arrow signs",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "direction-signs.description",
+      "exits": [],
+      "id": "direction-signs",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "direction signs",
+      "onClauses": [],
+      "placement": {
+        "place": "main-path",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 168,
+          "line": 168,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 64,
+        "endLine": 170,
+        "line": 165,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 167,
+            "line": 167,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 167,
+            "line": 167,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "flowers",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "flower-beds.description",
+      "exits": [],
+      "id": "flower-beds",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "flower beds",
+      "onClauses": [],
+      "placement": {
+        "place": "main-path",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 175,
+          "line": 175,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 39,
+        "endLine": 177,
+        "line": 172,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 174,
+            "line": 174,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 174,
+            "line": 174,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "hay",
+        "bale",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "hay-bale.description",
+      "exits": [],
+      "id": "hay-bale",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "hay bale",
+      "onClauses": [],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 182,
+          "line": 182,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 36,
+        "endLine": 184,
+        "line": 179,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 181,
+            "line": 181,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "toco toucan",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "toucan.description",
+      "exits": [],
+      "id": "toucan",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "toucan",
+      "onClauses": [],
+      "placement": {
+        "place": "aviary",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 189,
+          "line": 189,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 56,
+        "endLine": 191,
+        "line": 186,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 188,
+            "line": 188,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "water",
+        "basin",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "waterfall.description",
+      "exits": [],
+      "id": "waterfall",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "waterfall",
+      "onClauses": [],
+      "placement": {
+        "place": "aviary",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 196,
+          "line": 196,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 62,
+        "endLine": 198,
+        "line": 193,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 195,
+            "line": 195,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "perches",
+        "ropes",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "rope-perches.description",
+      "exits": [],
+      "id": "rope-perches",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "rope perches",
+      "onClauses": [],
+      "placement": {
+        "place": "aviary",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 203,
+          "line": 203,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 49,
+        "endLine": 205,
+        "line": 200,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 202,
+            "line": 202,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 202,
+            "line": 202,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "shelves",
+        "shelf",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "metal-shelves.description",
+      "exits": [],
+      "id": "metal-shelves",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "metal shelves",
+      "onClauses": [],
+      "placement": {
+        "place": "supply-room",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 210,
+          "line": 210,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 57,
+        "endLine": 212,
+        "line": 207,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 209,
+            "line": 209,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 209,
+            "line": 209,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "gliders",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "sugar-gliders.description",
+      "exits": [],
+      "id": "sugar-gliders",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "sugar gliders",
+      "onClauses": [],
+      "placement": {
+        "place": "nocturnal-animals-exhibit",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 35,
+          "endLine": 217,
+          "line": 217,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 58,
+        "endLine": 219,
+        "line": 214,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 216,
+            "line": 216,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 216,
+            "line": 216,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "galagos",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "bush-babies.description",
+      "exits": [],
+      "id": "bush-babies",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "bush babies",
+      "onClauses": [],
+      "placement": {
+        "place": "nocturnal-animals-exhibit",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 35,
+          "endLine": 224,
+          "line": 224,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 52,
+        "endLine": 226,
+        "line": 221,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 223,
+            "line": 223,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 223,
+            "line": 223,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "owl",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "barn-owl.description",
+      "exits": [],
+      "id": "barn-owl",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "barn owl",
+      "onClauses": [],
+      "placement": {
+        "place": "nocturnal-animals-exhibit",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 35,
+          "endLine": 231,
+          "line": 231,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 55,
+        "endLine": 233,
+        "line": 228,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 230,
+            "line": 230,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "python",
+        "snake enclosure",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "snake.description",
+      "exits": [],
+      "id": "snake",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "snake",
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "expression": [
+                "snake.confession",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 21,
+                "endLine": 245,
+                "line": 245,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "confession",
+              "span": {
+                "column": 5,
+                "endColumn": 14,
+                "endLine": 251,
+                "line": 246,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "story-state",
+            "state": "after-hours",
+          },
+          "narration": "presence",
+          "once": true,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 252,
+            "line": 244,
+          },
+        },
+      ],
+      "placement": {
+        "place": "nocturnal-animals-exhibit",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 35,
+          "endLine": 238,
+          "line": 238,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 40,
+        "endLine": 244,
+        "line": 235,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 237,
+            "line": 237,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "plush",
+        "toys",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "stuffed-animals.description",
+      "exits": [],
+      "id": "stuffed-animals",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "stuffed animals",
+      "onClauses": [],
+      "placement": {
+        "place": "gift-shop",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 257,
+          "line": 257,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 49,
+        "endLine": 259,
+        "line": 254,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 256,
+            "line": 256,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 256,
+            "line": 256,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "cards",
+        "postcard rack",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "postcards.description",
+      "exits": [],
+      "id": "postcards",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "postcards",
+      "onClauses": [],
+      "placement": {
+        "place": "gift-shop",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 264,
+          "line": 264,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 64,
+        "endLine": 266,
+        "line": 261,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 263,
+            "line": 263,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 263,
+            "line": 263,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "pins",
+        "pin",
+        "rack",
+        "pin rack",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "enamel-pins.description",
+      "exits": [],
+      "id": "enamel-pins",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "enamel pins",
+      "onClauses": [],
+      "placement": {
+        "place": "gift-shop",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 271,
+          "line": 271,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 74,
+        "endLine": 273,
+        "line": 268,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 270,
+            "line": 270,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 270,
+            "line": 270,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "board",
+        "notices",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "cork-board.description",
+      "exits": [],
+      "id": "cork-board",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "cork board",
+      "onClauses": [],
+      "placement": {
+        "place": "supply-room",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 279,
+          "line": 279,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 74,
+        "endLine": 281,
+        "line": 276,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 278,
+            "line": 278,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "plaque",
+        "brass plaque",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "info-plaque.description",
+      "exits": [],
+      "id": "info-plaque",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "info plaque",
+      "onClauses": [
+        {
+          "action": "reading",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "plaque-text",
+              "span": {
+                "column": 5,
+                "endColumn": 41,
+                "endLine": 297,
+                "line": 292,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 298,
+            "line": 291,
+          },
+        },
+      ],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 287,
+          "line": 287,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 291,
+        "line": 284,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 286,
+            "line": 286,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "readable",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 286,
+            "line": 286,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "information board",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "aviary-plaque.description",
+      "exits": [],
+      "id": "aviary-plaque",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "aviary plaque",
+      "onClauses": [
+        {
+          "action": "reading",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "plaque-text",
+              "span": {
+                "column": 5,
+                "endColumn": 74,
+                "endLine": 313,
+                "line": 308,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 314,
+            "line": 307,
+          },
+        },
+      ],
+      "placement": {
+        "place": "aviary",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 303,
+          "line": 303,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 307,
+        "line": 300,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 302,
+            "line": 302,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "readable",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 302,
+            "line": 302,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "warning",
+        "yellow sign",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "warning-sign.description",
+      "exits": [],
+      "id": "warning-sign",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "warning sign",
+      "onClauses": [
+        {
+          "action": "reading",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "sign-text",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 327,
+                "line": 324,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 328,
+            "line": 323,
+          },
+        },
+      ],
+      "placement": {
+        "place": "supply-room",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 319,
+          "line": 319,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 323,
+        "line": 316,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 318,
+            "line": 318,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "readable",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
+            "endLine": 318,
+            "line": 318,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "brochure",
+        "pamphlet",
+        "leaflet",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "zoo-brochure.description",
+      "exits": [],
+      "id": "zoo-brochure",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "zoo brochure",
+      "onClauses": [
+        {
+          "action": "reading",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "zoo-brochure.read",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 15,
+                "endLine": 339,
+                "line": 339,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "brochure-text",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 340,
+                "line": 340,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 341,
+            "line": 338,
+          },
+        },
+      ],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 333,
+          "line": 333,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 338,
+        "line": 330,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "readable",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 332,
+            "line": 332,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "map",
+        "folding map",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "zoo-map.description",
+      "exits": [],
+      "id": "zoo-map",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "zoo map",
+      "onClauses": [
+        {
+          "action": "taking",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "zoo-map.collected",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 20,
+                "endLine": 351,
+                "line": 351,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 352,
+            "line": 350,
+          },
+        },
+      ],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 345,
+          "line": 345,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 18,
+        "endLine": 350,
+        "line": 343,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "rucksack",
+        "pack",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "backpack.description",
+      "exits": [],
+      "id": "backpack",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "container",
+          "span": {
+            "column": 3,
+            "endColumn": 14,
+            "endLine": 356,
+            "line": 356,
+          },
+        },
+      ],
+      "name": "backpack",
+      "onClauses": [],
+      "placement": {
+        "place": "zoo-entrance",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 22,
+          "endLine": 357,
+          "line": 357,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 31,
+        "endLine": 359,
+        "line": 354,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "feed",
+        "animal feed",
+        "bag of feed",
+        "corn",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "bag-of-animal-feed.description",
+      "exits": [],
+      "id": "bag-of-animal-feed",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "bag of animal feed",
+      "onClauses": [],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 363,
+          "line": 363,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 62,
+        "endLine": 365,
+        "line": 361,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "penny",
+        "coin",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "souvenir-penny.description",
+      "exits": [],
+      "id": "souvenir-penny",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "souvenir penny",
+      "onClauses": [],
+      "placement": {
+        "place": "main-path",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 369,
+          "line": 369,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 24,
+        "endLine": 371,
+        "line": 367,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "bench",
+        "benches",
+        "seat",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "park-bench.description",
+      "exits": [],
+      "id": "park-bench",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "capacity",
+              "value": "3",
+              "valueKind": "number",
+            },
+          ],
+          "name": "supporter",
+          "span": {
+            "column": 12,
+            "endColumn": 39,
+            "endLine": 375,
+            "line": 375,
+          },
+        },
+      ],
+      "name": "park bench",
+      "onClauses": [],
+      "placement": {
+        "place": "main-path",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 376,
+          "line": 376,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 44,
+        "endLine": 378,
+        "line": 373,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 375,
+            "line": 375,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "lunch box",
+        "box",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "lunchbox.description",
+      "exits": [],
+      "id": "lunchbox",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "container",
+          "span": {
+            "column": 3,
+            "endColumn": 14,
+            "endLine": 382,
+            "line": 382,
+          },
+        },
+      ],
+      "name": "lunchbox",
+      "onClauses": [],
+      "placement": {
+        "place": "main-path",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 383,
+          "line": 383,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 62,
+        "endLine": 385,
+        "line": 380,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "openable",
+          "span": {
+            "column": 16,
+            "endColumn": 24,
+            "endLine": 382,
+            "line": 382,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "juice",
+        "drink",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "juice-box.description",
+      "exits": [],
+      "id": "juice-box",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "juice box",
+      "onClauses": [],
+      "placement": {
+        "place": "lunchbox",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 18,
+          "endLine": 389,
+          "line": 389,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 56,
+        "endLine": 391,
+        "line": 387,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "dispenser",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "feed-dispenser.description",
+      "exits": [],
+      "id": "feed-dispenser",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "container",
+          "span": {
+            "column": 3,
+            "endColumn": 14,
+            "endLine": 395,
+            "line": 395,
+          },
+        },
+      ],
+      "name": "feed dispenser",
+      "onClauses": [],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 396,
+          "line": 396,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 73,
+        "endLine": 398,
+        "line": 393,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "openable",
+          "span": {
+            "column": 16,
+            "endColumn": 24,
+            "endLine": 395,
+            "line": 395,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 26,
+            "endColumn": 33,
+            "endLine": 395,
+            "line": 395,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "press",
+        "penny press",
+        "machine",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "souvenir-press.description",
+      "exits": [],
+      "id": "souvenir-press",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "container",
+          "span": {
+            "column": 3,
+            "endColumn": 14,
+            "endLine": 403,
+            "line": 403,
+          },
+        },
+      ],
+      "name": "souvenir press",
+      "onClauses": [],
+      "placement": {
+        "place": "gift-shop",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 404,
+          "line": 404,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 75,
+        "endLine": 406,
+        "line": 401,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 16,
+            "endColumn": 23,
+            "endLine": 403,
+            "line": 403,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "torch",
+        "light",
+        "lamp",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "flashlight.description",
+      "exits": [],
+      "id": "flashlight",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "flashlight",
+      "onClauses": [],
+      "placement": {
+        "place": "supply-room",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 413,
+          "line": 413,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 34,
+        "endLine": 415,
+        "line": 410,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "light-source",
+          "span": {
+            "column": 3,
+            "endColumn": 15,
+            "endLine": 412,
+            "line": 412,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "switchable",
+          "span": {
+            "column": 17,
+            "endColumn": 27,
+            "endLine": 412,
+            "line": 412,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "portable radio",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "radio.description",
+      "exits": [],
+      "id": "radio",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "radio",
+      "onClauses": [],
+      "placement": {
+        "place": "supply-room",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 420,
+          "line": 420,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 73,
+        "endLine": 422,
+        "line": 417,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 419,
+            "line": 419,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "switchable",
+          "span": {
+            "column": 12,
+            "endColumn": 22,
+            "endLine": 419,
+            "line": 419,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "camera",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "disposable-camera.description",
+      "exits": [],
+      "id": "disposable-camera",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "disposable camera",
+      "onClauses": [],
+      "placement": {
+        "place": "gift-shop",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 428,
+          "line": 428,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 76,
+        "endLine": 430,
+        "line": 426,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "keeper",
+        "sam",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "zookeeper.description",
+      "exits": [],
+      "id": "zookeeper",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "person",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 529,
+            "line": 529,
+          },
+        },
+      ],
+      "name": "zookeeper",
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "expression": [
+                "zookeeper.farewell",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 19,
+                "endLine": 540,
+                "line": 540,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "departs",
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 546,
+                "line": 541,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "entity": {
+                "kind": "it",
+              },
+              "kind": "move",
+              "place": {
+                "id": "staff-parking-lot",
+                "kind": "entity",
+              },
+              "span": {
+                "column": 5,
+                "endColumn": 37,
+                "endLine": 547,
+                "line": 547,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "story-state",
+            "state": "after-hours",
+          },
+          "narration": "presence",
+          "once": true,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 548,
+            "line": 539,
+          },
+        },
+      ],
+      "placement": {
+        "place": "main-path",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 19,
+          "endLine": 531,
+          "line": 531,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 40,
+        "endLine": 539,
+        "line": 528,
+      },
+      "states": [],
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "macaw",
+        "scarlet macaw",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "parrot.description",
+      "exits": [],
+      "id": "parrot",
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "person",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 551,
+            "line": 551,
+          },
+        },
+      ],
+      "name": "parrot",
+      "onClauses": [
+        {
+          "action": "examining",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "parrot-look",
+              "span": {
+                "column": 5,
+                "endColumn": 22,
+                "endLine": 573,
+                "line": 569,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 574,
+            "line": 568,
+          },
+        },
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "expression": [
+                "parrot.confession",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 21,
+                "endLine": 577,
+                "line": 577,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "confession",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 583,
+                "line": 578,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "story-state",
+            "state": "after-hours",
+          },
+          "narration": "presence",
+          "once": true,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 584,
+            "line": 576,
+          },
+        },
+      ],
+      "placement": {
+        "place": "aviary",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 553,
+          "line": 553,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 40,
+        "endLine": 576,
+        "line": 550,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "pettable",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 554,
+            "line": 554,
+          },
+        },
+        {
+          "condition": {
+            "kind": "not",
+            "operand": {
+              "kind": "story-state",
+              "state": "after-hours",
+            },
+          },
+          "config": [],
+          "name": "chatty",
+          "span": {
+            "column": 3,
+            "endColumn": 31,
+            "endLine": 555,
+            "line": 555,
+          },
+        },
+        {
+          "condition": {
+            "kind": "story-state",
+            "state": "after-hours",
+          },
+          "config": [],
+          "name": "candid",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 556,
+            "line": 556,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "goats",
+        "goat",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "pygmy-goats.description",
+      "exits": [],
+      "id": "pygmy-goats",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "pygmy goats",
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "pygmy-goats.fed",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 14,
+                "endLine": 609,
+                "line": 609,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 610,
+            "line": 608,
+          },
+        },
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "expression": [
+                "pygmy-goats.confession",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 21,
+                "endLine": 613,
+                "line": 613,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "confession",
+              "span": {
+                "column": 5,
+                "endColumn": 56,
+                "endLine": 618,
+                "line": 614,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "story-state",
+            "state": "after-hours",
+          },
+          "narration": "presence",
+          "once": true,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 619,
+            "line": 612,
+          },
+        },
+      ],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 589,
+          "line": 589,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 40,
+        "endLine": 612,
+        "line": 586,
+      },
+      "states": [
+        "hungry",
+        "content",
+      ],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 588,
+            "line": 588,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 588,
+            "line": 588,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "pettable",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 590,
+            "line": 590,
+          },
+        },
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "food",
+              "value": "bag of animal feed",
+              "valueKind": "name",
+            },
+          ],
+          "name": "feedable",
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 591,
+            "line": 591,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "restless",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 592,
+            "line": 592,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "rabbit",
+        "bunnies",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "rabbits.description",
+      "exits": [],
+      "id": "rabbits",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "rabbits",
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "rabbits.fed",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 14,
+                "endLine": 642,
+                "line": 642,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 643,
+            "line": 641,
+          },
+        },
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "expression": [
+                "rabbits.confession",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 21,
+                "endLine": 646,
+                "line": 646,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "confession",
+              "span": {
+                "column": 5,
+                "endColumn": 21,
+                "endLine": 652,
+                "line": 647,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "story-state",
+            "state": "after-hours",
+          },
+          "narration": "presence",
+          "once": true,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 653,
+            "line": 645,
+          },
+        },
+      ],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 624,
+          "line": 624,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 40,
+        "endLine": 645,
+        "line": 621,
+      },
+      "states": [
+        "hungry",
+        "content",
+      ],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 623,
+            "line": 623,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 623,
+            "line": 623,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "pettable",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 625,
+            "line": 625,
+          },
+        },
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "food",
+              "value": "bag of animal feed",
+              "valueKind": "name",
+            },
+          ],
+          "name": "feedable",
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 626,
+            "line": 626,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "macaws",
+        "birds",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "parrots.description",
+      "exits": [],
+      "id": "parrots",
+      "isPlayer": false,
+      "kinds": [],
+      "name": "parrots",
+      "onClauses": [],
+      "placement": {
+        "place": "aviary",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 658,
+          "line": 658,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 62,
+        "endLine": 660,
+        "line": 655,
+      },
+      "states": [],
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "scenery",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 657,
+            "line": 657,
+          },
+        },
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
+            "endLine": 657,
+            "line": 657,
+          },
+        },
+      ],
+      "wears": [],
+    },
+  ],
+  "everyRules": [],
+  "flags": [],
+  "format": "story language 1",
+  "hasHatches": true,
+  "hatches": [
+    {
+      "hatchKind": "text",
+      "modulePath": "./chord-extras.ts",
+      "name": "flavor",
+      "span": {
+        "column": 1,
+        "endColumn": 44,
+        "endLine": 752,
+        "line": 752,
+      },
+    },
+    {
+      "hatchKind": "text",
+      "modulePath": "./chord-extras.ts",
+      "name": "aside",
+      "span": {
+        "column": 1,
+        "endColumn": 43,
+        "endLine": 753,
+        "line": 753,
+      },
+    },
+    {
+      "hatchKind": "text",
+      "modulePath": "./chord-extras.ts",
+      "name": "gate-status",
+      "span": {
+        "column": 1,
+        "endColumn": 49,
+        "endLine": 754,
+        "line": 754,
+      },
+    },
+  ],
+  "meta": {
+    "author": "Sharpee Team",
+    "fields": {
+      "blurb": "PHASE C SKETCH (givens 8+9 ownership package) — review artifact, does not compile under Phase B grammar.",
+      "id": "friendly-zoo",
+      "version": "0.0.2-phase-c-sketch",
+    },
+    "title": "Friendly Zoo",
+  },
+  "onceRules": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "already-fed": {
+          "span": {
+            "column": 5,
+            "endColumn": 59,
+            "endLine": 452,
+            "line": 451,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You've already fed them. They look contentedly full.",
+            },
+          ],
+        },
+        "aviary-plaque.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 57,
+            "endLine": 305,
+            "line": 305,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A colorful information board near the aviary entrance.",
+            },
+          ],
+        },
+        "aviary-plaque.plaque-text": {
+          "span": {
+            "column": 7,
+            "endColumn": 74,
+            "endLine": 313,
+            "line": 309,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "WELCOME TO THE AVIARY — Home to over 30 species!
+
+TOCO TOUCAN — Its bill weighs less than a smartphone.
+
+SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
+            },
+          ],
+        },
+        "aviary.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 8,
+            "endLine": 53,
+            "line": 49,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You step inside a soaring mesh dome. Brilliantly colored parrots chatter from rope perches, and a toucan eyes you curiously from a branch overhead. A small waterfall splashes into a stone basin. An info plaque hangs near the entrance. The gift shop is to the west. The main path is back to the east.",
+            },
+          ],
+        },
+        "aviary.parrot-nods": {
+          "span": {
+            "column": 7,
+            "endColumn": 27,
+            "endLine": 67,
+            "line": 66,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The parrot glances at you and nods, as if recognizing a fellow after-hours regular.",
+            },
+          ],
+        },
+        "aviary.parrot-notices": {
+          "span": {
+            "column": 7,
+            "endColumn": 66,
+            "endLine": 61,
+            "line": 61,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The parrot ruffles its feathers and eyes you with interest.",
+            },
+          ],
+        },
+        "backpack.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 31,
+            "endLine": 359,
+            "line": 359,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A small red canvas backpack.",
+            },
+          ],
+        },
+        "bag-of-animal-feed.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 62,
+            "endLine": 365,
+            "line": 365,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A small brown paper bag filled with dried corn and pellets.",
+            },
+          ],
+        },
+        "barn-owl.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 55,
+            "endLine": 233,
+            "line": 233,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "An enormous barn owl with a heart-shaped white face.",
+            },
+          ],
+        },
+        "bleating": {
+          "span": {
+            "column": 5,
+            "endColumn": 19,
+            "endLine": 481,
+            "line": 479,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The pygmy goats are bleating loudly and headbutting the fence. They seem very hungry!",
+            },
+          ],
+        },
+        "brochure-text": {
+          "span": {
+            "column": 1,
+            "endColumn": 11,
+            "endLine": 739,
+            "line": 729,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "WILLOWBROOK FAMILY ZOO — Your Guide
+
+EXHIBITS:
+  Petting Zoo — East from Main Path
+  Aviary — West from Main Path
+  Gift Shop — West from Aviary
+  Nocturnal Animals — Staff Area
+
+"Where every visit is a wild adventure!"",
+            },
+          ],
+          "verbatim": true,
+        },
+        "bush-babies.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 52,
+            "endLine": 226,
+            "line": 226,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Two bush babies with impossibly large round eyes.",
+            },
+          ],
+        },
+        "cant-pet": {
+          "span": {
+            "column": 5,
+            "endColumn": 26,
+            "endLine": 498,
+            "line": 497,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You can't pet that.",
+            },
+          ],
+        },
+        "cork-board.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 48,
+            "endLine": 282,
+            "line": 281,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A cork board with staff schedules. A note in red marker: "DON'T FORGET: nocturnal exhibit lights need new batteries!"",
+            },
+          ],
+        },
+        "direction-signs.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 64,
+            "endLine": 170,
+            "line": 170,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).",
+            },
+          ],
+        },
+        "disposable-camera.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 76,
+            "endLine": 430,
+            "line": 430,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A cheap yellow disposable camera with "ZOO MEMORIES" printed on the side.",
+            },
+          ],
+        },
+        "enamel-pins.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 47,
+            "endLine": 274,
+            "line": 273,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A spinning rack of enamel pins: parrots, pygmy goats, a grinning snake. Every one of them costs more than it should.",
+            },
+          ],
+        },
+        "fed": {
+          "span": {
+            "column": 5,
+            "endColumn": 58,
+            "endLine": 454,
+            "line": 453,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You offer some feed. The animal eats it gratefully.",
+            },
+          ],
+        },
+        "feed-dispenser.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 14,
+            "endLine": 399,
+            "line": 398,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A coin-operated feed dispenser mounted on a wooden post. Sign: "FREE — Just Turn!"",
+            },
+          ],
+        },
+        "flashlight.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 34,
+            "endLine": 415,
+            "line": 415,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A heavy-duty yellow flashlight.",
+            },
+          ],
+        },
+        "flower-beds.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 39,
+            "endLine": 177,
+            "line": 177,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Tidy beds of marigolds and petunias.",
+            },
+          ],
+        },
+        "gift-shop.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 55,
+            "endLine": 107,
+            "line": 105,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A small zoo gift shop crammed with stuffed animals and postcards. A large souvenir penny press machine stands near the door. A disposable camera sits on the counter. The aviary is back to the east.",
+            },
+          ],
+        },
+        "hay-bale.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 36,
+            "endLine": 184,
+            "line": 184,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A large round bale of golden hay.",
+            },
+          ],
+        },
+        "info-plaque.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 69,
+            "endLine": 289,
+            "line": 289,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A brass plaque mounted on a wooden post near the petting zoo gate.",
+            },
+          ],
+        },
+        "info-plaque.plaque-text": {
+          "span": {
+            "column": 7,
+            "endColumn": 41,
+            "endLine": 297,
+            "line": 293,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always hungry.
+
+HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marmalade, were born here in 2023.",
+            },
+          ],
+        },
+        "iron-fence.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 53,
+            "endLine": 163,
+            "line": 163,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A tall wrought-iron fence with animal silhouettes.",
+            },
+          ],
+        },
+        "juice-box.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 56,
+            "endLine": 391,
+            "line": 391,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A small juice box with a picture of a happy elephant.",
+            },
+          ],
+        },
+        "lunchbox.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 62,
+            "endLine": 385,
+            "line": 385,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A dented metal lunchbox decorated with cartoon zoo animals.",
+            },
+          ],
+        },
+        "main-path.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 56,
+            "endLine": 28,
+            "line": 25,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A wide gravel path winds through the heart of the zoo. Colorful direction signs point every which way. A park bench sits beside the path. To the east, the petting zoo. To the west, the aviary. A staff gate blocks the path to the south. The entrance is back to the north.",
+            },
+          ],
+        },
+        "metal-shelves.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 57,
+            "endLine": 212,
+            "line": 212,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Industrial metal shelving units stacked with supplies.",
+            },
+          ],
+        },
+        "no-camera": {
+          "span": {
+            "column": 5,
+            "endColumn": 61,
+            "endLine": 523,
+            "line": 522,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You don't have a camera. There's one in the gift shop.",
+            },
+          ],
+        },
+        "no-feed": {
+          "span": {
+            "column": 5,
+            "endColumn": 38,
+            "endLine": 450,
+            "line": 449,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You don't have any animal feed.",
+            },
+          ],
+        },
+        "nocturnal-animals-exhibit.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 94,
+            "line": 91,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A cool, dimly lit cavern designed to simulate nighttime. Glass enclosures line both walls with soft red lights. You can see sugar gliders, bush babies, and a barn owl. A warning sign is posted near the entrance. The exit leads back north to the supply room.",
+            },
+          ],
+        },
+        "not-an-animal": {
+          "span": {
+            "column": 5,
+            "endColumn": 41,
+            "endLine": 509,
+            "line": 508,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "That's not something you can feed.",
+            },
+          ],
+        },
+        "park-bench.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 378,
+            "line": 378,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A sturdy park bench painted forest green.",
+            },
+          ],
+        },
+        "parrot-candor": {
+          "span": {
+            "column": 1,
+            "endColumn": 11,
+            "endLine": 727,
+            "line": 712,
+          },
+          "strategy": "randomly",
+          "variants": [
+            {
+              "markers": [],
+              "text": "Finally, they're gone. Do you know how exhausting it is to say "Polly wants a cracker" eight hours a day?",
+            },
+            {
+              "markers": [],
+              "text": "Between you and me, the toucan is a complete diva. Won't shut up about its bill.",
+            },
+            {
+              "markers": [],
+              "text": "I have a degree in ornithology, you know. Well, I would, if birds could enroll.",
+            },
+            {
+              "markers": [],
+              "text": "The gift shop markup is criminal. Three dollars for a postcard? In this economy?",
+            },
+            {
+              "markers": [],
+              "text": "You seem alright. Most visitors just want selfies. At least you're still here.",
+            },
+          ],
+        },
+        "parrot-chatter": {
+          "span": {
+            "column": 1,
+            "endColumn": 11,
+            "endLine": 710,
+            "line": 700,
+          },
+          "strategy": "randomly",
+          "variants": [
+            {
+              "markers": [],
+              "text": "Polly wants a cracker!",
+            },
+            {
+              "markers": [],
+              "text": "SQUAWK! Pretty bird! Pretty bird!",
+            },
+            {
+              "markers": [],
+              "text": "Pieces of eight! Pieces of eight!",
+            },
+            {
+              "markers": [],
+              "text": "Who's a good bird? WHO'S A GOOD BIRD?",
+            },
+            {
+              "markers": [],
+              "text": "BAWK! Welcome to the zoo!",
+            },
+          ],
+        },
+        "parrot.confession": {
+          "span": {
+            "column": 7,
+            "endColumn": 25,
+            "endLine": 583,
+            "line": 579,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The parrot clears its throat — actually clears its throat — and fixes you with a knowing look. "Right then. Now that the performative squawking is over, let me tell you something: that toucan? Complete fraud. Can't even crack a nut properly. And don't get me started on the gift shop markup."",
+            },
+          ],
+        },
+        "parrot.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 35,
+            "endLine": 560,
+            "line": 559,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A magnificent scarlet macaw perched on a rope. It tilts its head and watches you with one bright eye.",
+            },
+          ],
+        },
+        "parrot.parrot-look": {
+          "span": {
+            "column": 7,
+            "endColumn": 22,
+            "endLine": 573,
+            "line": 570,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "flavor",
+                "aside",
+              ],
+              "text": "A magnificent scarlet macaw perched on a rope. It tilts its head and watches you with one bright eye.
+
+{flavor}{aside}",
+            },
+          ],
+        },
+        "parrot.petted": {
+          "span": {
+            "column": 3,
+            "endColumn": 43,
+            "endLine": 564,
+            "line": 562,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You reach toward the parrot. CHOMP! It nips your finger with its beak. "NO TOUCHING!" it squawks indignantly.",
+            },
+          ],
+        },
+        "parrot.presence": {
+          "span": {
+            "column": 3,
+            "endColumn": 62,
+            "endLine": 566,
+            "line": 565,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A scarlet macaw watches you with one bright, knowing eye.",
+            },
+          ],
+        },
+        "parrots.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 62,
+            "endLine": 660,
+            "line": 660,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A raucous flock of scarlet macaws and grey African parrots.",
+            },
+          ],
+        },
+        "petted": {
+          "span": {
+            "column": 5,
+            "endColumn": 44,
+            "endLine": 435,
+            "line": 434,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You pet the animal. It seems pleased.",
+            },
+          ],
+        },
+        "petting-zoo.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 37,
+            "endLine": 37,
+            "line": 35,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A cheerful open-air enclosure that smells of warm hay and fur. A feed dispenser is mounted on a post, and an info plaque is posted by the gate. The main path is back to the west.",
+            },
+          ],
+        },
+        "player.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 39,
+            "endLine": 121,
+            "line": 121,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Just an ordinary visitor to the zoo.",
+            },
+          ],
+        },
+        "postcards.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 64,
+            "endLine": 266,
+            "line": 266,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A spinning rack of postcards showing the zoo's greatest hits.",
+            },
+          ],
+        },
+        "pygmy-goats.confession": {
+          "span": {
+            "column": 7,
+            "endColumn": 56,
+            "endLine": 618,
+            "line": 615,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Now that the keeper is gone, the goats exchange glances. The largest one turns to you and bleats in a very deliberate pattern. You could swear it sounds like: "Finally. Do you have any idea what it's like being called 'cute' six hundred times a day? We are MAJESTIC."",
+            },
+          ],
+        },
+        "pygmy-goats.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 42,
+            "endLine": 596,
+            "line": 596,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Three pygmy goats hoping you have food.",
+            },
+          ],
+        },
+        "pygmy-goats.fed": {
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 604,
+            "line": 601,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You scatter some feed on the ground. The pygmy goats rush over, bleating excitedly, and devour the corn and pellets in seconds. The smallest goat looks up at you with big grateful eyes.",
+            },
+          ],
+        },
+        "pygmy-goats.petted": {
+          "span": {
+            "column": 3,
+            "endColumn": 72,
+            "endLine": 600,
+            "line": 598,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You reach down and pet the nearest goat. It leans into your hand and bleats happily. The others crowd around, demanding equal attention.",
+            },
+          ],
+        },
+        "pygmy-goats.presence": {
+          "span": {
+            "column": 3,
+            "endColumn": 76,
+            "endLine": 606,
+            "line": 605,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Three pygmy goats mill about hopefully, eyeing your pockets for snacks.",
+            },
+          ],
+        },
+        "rabbits.confession": {
+          "span": {
+            "column": 7,
+            "endColumn": 21,
+            "endLine": 652,
+            "line": 648,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The rabbits stop mid-hop and look at each other. Biscuit twitches her nose disapprovingly. Marmalade thumps his foot twice. You get the distinct impression they're critiquing the quality of today's pellets. "Barely adequate," the thumping seems to say. "Last Tuesday's batch was far superior."",
+            },
+          ],
+        },
+        "rabbits.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 50,
+            "endLine": 630,
+            "line": 630,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A pair of Holland Lop rabbits with floppy ears.",
+            },
+          ],
+        },
+        "rabbits.fed": {
+          "span": {
+            "column": 3,
+            "endColumn": 46,
+            "endLine": 637,
+            "line": 635,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You sprinkle some pellets near the rabbits. Biscuit and Marmalade hop over cautiously, then munch away happily.",
+            },
+          ],
+        },
+        "rabbits.petted": {
+          "span": {
+            "column": 3,
+            "endColumn": 42,
+            "endLine": 634,
+            "line": 632,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You gently stroke one of the rabbits. Its fur is incredibly soft. It twitches its nose at you contentedly.",
+            },
+          ],
+        },
+        "rabbits.presence": {
+          "span": {
+            "column": 3,
+            "endColumn": 75,
+            "endLine": 639,
+            "line": 638,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A pair of Holland Lop rabbits lounges near the hay bale, ears flopped.",
+            },
+          ],
+        },
+        "radio.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 26,
+            "endLine": 424,
+            "line": 422,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A battered portable radio held together with duct tape. The antenna is bent at a jaunty angle. A faded sticker on the side reads "ZOO FM — All Animals, All The Time."",
+            },
+          ],
+        },
+        "rope-perches.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 49,
+            "endLine": 205,
+            "line": 205,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Thick sisal ropes strung between wooden posts.",
+            },
+          ],
+        },
+        "snake.confession": {
+          "span": {
+            "column": 7,
+            "endColumn": 14,
+            "endLine": 251,
+            "line": 247,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A soft, sibilant voice drifts from behind the glass of the snake enclosure. "Ssso... you're the one who stayed. Good. Do you know what it's like in here? They keep the lights on 'dim' and call it 'nocturnal.' I haven't seen actual moonlight in three years. Three. Years."",
+            },
+          ],
+        },
+        "snake.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 13,
+            "endLine": 242,
+            "line": 241,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A thick-bodied python coiled behind glass, nearly invisible in the dim red light.",
+            },
+          ],
+        },
+        "souvenir-penny.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 24,
+            "endLine": 371,
+            "line": 371,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A shiny copper penny.",
+            },
+          ],
+        },
+        "souvenir-press.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 52,
+            "endLine": 408,
+            "line": 406,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A heavy cast-iron machine with a big crank handle. A slot on top accepts pennies, and the mechanism stamps them with a zoo animal design. A sign reads: "INSERT PENNY, TURN HANDLE, KEEP FOREVER!"",
+            },
+          ],
+        },
+        "staff-gate-blocked": {
+          "span": {
+            "column": 3,
+            "endColumn": 30,
+            "endLine": 743,
+            "line": 742,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The staff gate is closed.",
+            },
+          ],
+        },
+        "staff-gate.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 48,
+            "endLine": 135,
+            "line": 135,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A sturdy metal gate with a "STAFF ONLY" sign.",
+            },
+          ],
+        },
+        "staff-gate.gate-look": {
+          "span": {
+            "column": 7,
+            "endColumn": 20,
+            "endLine": 141,
+            "line": 139,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "gate-status",
+              ],
+              "text": "A sturdy metal gate with a "STAFF ONLY" sign.
+
+{gate-status}",
+            },
+          ],
+        },
+        "staff-keycard.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 8,
+            "endLine": 128,
+            "line": 127,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A white plastic keycard with "WILLOWBROOK ZOO — STAFF ONLY" printed in blue.",
+            },
+          ],
+        },
+        "staff-parking-lot.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 74,
+            "endLine": 116,
+            "line": 116,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A small staff parking lot beyond the zoo fence. Off limits to visitors.",
+            },
+          ],
+        },
+        "stuffed-animals.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 49,
+            "endLine": 259,
+            "line": 259,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Shelves of plush tigers, pandas, and penguins.",
+            },
+          ],
+        },
+        "sugar-gliders.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 58,
+            "endLine": 219,
+            "line": 219,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A family of tiny sugar gliders with enormous dark eyes.",
+            },
+          ],
+        },
+        "supply-room.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 80,
+            "line": 77,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A cluttered storage room behind the staff gate. Metal shelves line the walls. A cork board on the wall is covered with staff schedules. A battered radio sits on one of the shelves. The staff gate leads back north.",
+            },
+          ],
+        },
+        "ticket-booth.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 56,
+            "endLine": 156,
+            "line": 156,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A small wooden booth with a "Self-Guided Tours" sign.",
+            },
+          ],
+        },
+        "took-photo": {
+          "span": {
+            "column": 5,
+            "endColumn": 14,
+            "endLine": 526,
+            "line": 524,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "the target",
+              ],
+              "text": "Click! You snap a photo of {the target}. That one's going on the fridge.",
+            },
+          ],
+        },
+        "toucan.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 56,
+            "endLine": 191,
+            "line": 191,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A Toco toucan with an enormous orange-and-black bill.",
+            },
+          ],
+        },
+        "victory": {
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 750,
+            "line": 744,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Congratulations! You've earned your MASTER ZOOKEEPER badge! You've visited every exhibit, befriended the animals, collected souvenirs, and even stayed after hours to hear what the animals really think. The Willowbrook Family Zoo will never forget you!
+
+*** You have won ***",
+            },
+          ],
+        },
+        "warning-sign.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 61,
+            "endLine": 321,
+            "line": 321,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A yellow warning sign near the nocturnal exhibit entrance.",
+            },
+          ],
+        },
+        "warning-sign.sign-text": {
+          "span": {
+            "column": 7,
+            "endColumn": 25,
+            "endLine": 327,
+            "line": 325,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a flashlight. Do NOT use camera flash. (We don't talk about the Great Owl Incident of 2022.)",
+            },
+          ],
+        },
+        "waterfall.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 62,
+            "endLine": 198,
+            "line": 198,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A gentle artificial waterfall cascading into a stone basin.",
+            },
+          ],
+        },
+        "welcome-sign.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 77,
+            "endLine": 149,
+            "line": 149,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY ZOO."",
+            },
+          ],
+        },
+        "zoo-brochure.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 73,
+            "endLine": 336,
+            "line": 336,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A glossy tri-fold brochure with "WILLOWBROOK FAMILY ZOO" on the cover.",
+            },
+          ],
+        },
+        "zoo-entrance.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 50,
+            "endLine": 15,
+            "line": 12,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You stand before the wrought-iron gates of the Willowbrook Family Zoo. A cheerful welcome sign arches over the entrance, and a small ticket booth sits to one side. A sturdy iron fence runs along either side of the gates. The main path leads south into the zoo grounds.",
+            },
+          ],
+        },
+        "zoo-map.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 56,
+            "endLine": 348,
+            "line": 348,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A colorful folding map of the Willowbrook Family Zoo.",
+            },
+          ],
+        },
+        "zoo.feeding-time.announced": {
+          "span": {
+            "column": 7,
+            "endColumn": 54,
+            "endLine": 688,
+            "line": 687,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "*DING DONG* "It's FEEDING TIME at the Petting Zoo! Come watch our pygmy goats and rabbits enjoy their favorite snacks!"",
+            },
+          ],
+        },
+        "zoo.pa.closed": {
+          "span": {
+            "column": 7,
+            "endColumn": 48,
+            "endLine": 679,
+            "line": 678,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "*DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for visiting! We hope to see you again soon!"",
+            },
+          ],
+        },
+        "zoo.pa.closing-1": {
+          "span": {
+            "column": 7,
+            "endColumn": 40,
+            "endLine": 675,
+            "line": 674,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "*DING DONG* "Attention visitors! One hour until closing. Please begin making your way toward the exit."",
+            },
+          ],
+        },
+        "zoo.pa.closing-2": {
+          "span": {
+            "column": 7,
+            "endColumn": 47,
+            "endLine": 671,
+            "line": 670,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "*DING DONG* "Attention visitors! Two hours until closing. Don't forget to stop by the gift shop for souvenirs!"",
+            },
+          ],
+        },
+        "zoo.pa.closing-3": {
+          "span": {
+            "column": 7,
+            "endColumn": 21,
+            "endLine": 667,
+            "line": 665,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "*DING DONG* "Attention visitors! The Willowbrook Family Zoo will be closing in three hours. Please make sure to visit all exhibits before closing time!"",
+            },
+          ],
+        },
+        "zookeeper.departs": {
+          "span": {
+            "column": 7,
+            "endColumn": 16,
+            "endLine": 546,
+            "line": 542,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The zookeeper glances at the clock, unclips the walkie-talkie from his belt, and stretches. "Well, that's me done for the day. Zoo's all yours, I guess!" He gives you a friendly wave and ambles off toward the staff parking lot. A moment later, you hear an engine start and fade into the distance.",
+            },
+          ],
+        },
+        "zookeeper.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 66,
+            "endLine": 534,
+            "line": 534,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A friendly zookeeper in khaki overalls. A name tag reads "Sam."",
+            },
+          ],
+        },
+        "zookeeper.presence": {
+          "span": {
+            "column": 3,
+            "endColumn": 56,
+            "endLine": 537,
+            "line": 536,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Sam the zookeeper is here, jingling a ring of keys.",
+            },
+          ],
+        },
+      },
+    },
+  },
+  "rules": [],
+  "scores": [
+    {
+      "name": "petting-zoo.visit",
+      "span": {
+        "column": 3,
+        "endColumn": 22,
+        "endLine": 33,
+        "line": 33,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "aviary.visit",
+      "span": {
+        "column": 3,
+        "endColumn": 22,
+        "endLine": 47,
+        "line": 47,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "supply-room.visit",
+      "span": {
+        "column": 3,
+        "endColumn": 22,
+        "endLine": 75,
+        "line": 75,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "nocturnal-animals-exhibit.visit",
+      "span": {
+        "column": 3,
+        "endColumn": 22,
+        "endLine": 89,
+        "line": 89,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "gift-shop.visit",
+      "span": {
+        "column": 3,
+        "endColumn": 22,
+        "endLine": 103,
+        "line": 103,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "snake.confession",
+      "span": {
+        "column": 3,
+        "endColumn": 27,
+        "endLine": 239,
+        "line": 239,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "zoo-brochure.read",
+      "span": {
+        "column": 3,
+        "endColumn": 21,
+        "endLine": 334,
+        "line": 334,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "zoo-map.collected",
+      "span": {
+        "column": 3,
+        "endColumn": 26,
+        "endLine": 346,
+        "line": 346,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "action.photographing.snapshot",
+      "span": {
+        "column": 3,
+        "endColumn": 25,
+        "endLine": 516,
+        "line": 516,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "zookeeper.farewell",
+      "span": {
+        "column": 3,
+        "endColumn": 25,
+        "endLine": 532,
+        "line": 532,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "parrot.confession",
+      "span": {
+        "column": 3,
+        "endColumn": 27,
+        "endLine": 557,
+        "line": 557,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "pygmy-goats.fed",
+      "span": {
+        "column": 3,
+        "endColumn": 21,
+        "endLine": 593,
+        "line": 593,
+      },
+      "worth": 10,
+    },
+    {
+      "name": "pygmy-goats.confession",
+      "span": {
+        "column": 3,
+        "endColumn": 27,
+        "endLine": 594,
+        "line": 594,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "rabbits.fed",
+      "span": {
+        "column": 3,
+        "endColumn": 21,
+        "endLine": 627,
+        "line": 627,
+      },
+      "worth": 10,
+    },
+    {
+      "name": "rabbits.confession",
+      "span": {
+        "column": 3,
+        "endColumn": 27,
+        "endLine": 628,
+        "line": 628,
+      },
+      "worth": 5,
+    },
+  ],
+  "sequences": [
+    {
+      "name": "closing time",
+      "narration": "broadcast",
+      "span": {
+        "column": 1,
+        "endColumn": 13,
+        "endLine": 681,
+        "line": 662,
+      },
+      "steps": [
+        {
+          "anchor": null,
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closing-3",
+              "span": {
+                "column": 5,
+                "endColumn": 21,
+                "endLine": 667,
+                "line": 664,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 663,
+            "line": 663,
+          },
+          "timing": "at-turn",
+          "turns": 5,
+        },
+        {
+          "anchor": null,
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closing-2",
+              "span": {
+                "column": 5,
+                "endColumn": 47,
+                "endLine": 671,
+                "line": 669,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 668,
+            "line": 668,
+          },
+          "timing": "later",
+          "turns": 5,
+        },
+        {
+          "anchor": null,
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closing-1",
+              "span": {
+                "column": 5,
+                "endColumn": 40,
+                "endLine": 675,
+                "line": 673,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 672,
+            "line": 672,
+          },
+          "timing": "later",
+          "turns": 5,
+        },
+        {
+          "anchor": null,
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closed",
+              "span": {
+                "column": 5,
+                "endColumn": 48,
+                "endLine": 679,
+                "line": 677,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "entity": {
+                "kind": "story",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 36,
+                "endLine": 680,
+                "line": 680,
+              },
+              "state": "after-hours",
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 676,
+            "line": 676,
+          },
+          "timing": "later",
+          "turns": 5,
+        },
+      ],
+    },
+    {
+      "name": "feeding time",
+      "narration": "broadcast",
+      "span": {
+        "column": 1,
+        "endColumn": 13,
+        "endLine": 698,
+        "line": 683,
+      },
+      "steps": [
+        {
+          "anchor": null,
+          "body": [
+            {
+              "entity": {
+                "id": "pygmy-goats",
+                "kind": "entity",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 37,
+                "endLine": 685,
+                "line": 685,
+              },
+              "state": "hungry",
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.feeding-time.announced",
+              "span": {
+                "column": 5,
+                "endColumn": 54,
+                "endLine": 688,
+                "line": 686,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 13,
+            "endLine": 684,
+            "line": 684,
+          },
+          "timing": "at-turn",
+          "turns": 11,
+        },
+        {
+          "anchor": null,
+          "body": [
+            {
+              "entity": {
+                "id": "pygmy-goats",
+                "kind": "entity",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 37,
+                "endLine": 690,
+                "line": 690,
+              },
+              "state": "hungry",
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.feeding-time.announced",
+              "span": {
+                "column": 5,
+                "endColumn": 38,
+                "endLine": 691,
+                "line": 691,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 689,
+            "line": 689,
+          },
+          "timing": "later",
+          "turns": 8,
+        },
+        {
+          "anchor": null,
+          "body": [
+            {
+              "entity": {
+                "id": "pygmy-goats",
+                "kind": "entity",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 37,
+                "endLine": 693,
+                "line": 693,
+              },
+              "state": "hungry",
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.feeding-time.announced",
+              "span": {
+                "column": 5,
+                "endColumn": 38,
+                "endLine": 694,
+                "line": 694,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 692,
+            "line": 692,
+          },
+          "timing": "later",
+          "turns": 8,
+        },
+        {
+          "anchor": null,
+          "body": [
+            {
+              "entity": {
+                "id": "pygmy-goats",
+                "kind": "entity",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 37,
+                "endLine": 696,
+                "line": 696,
+              },
+              "state": "hungry",
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.feeding-time.announced",
+              "span": {
+                "column": 5,
+                "endColumn": 38,
+                "endLine": 697,
+                "line": 697,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 695,
+            "line": 695,
+          },
+          "timing": "later",
+          "turns": 8,
+        },
+      ],
+    },
+  ],
+  "story": {
+    "reversible": false,
+    "states": [
+      "open",
+      "after-hours",
+    ],
+  },
+  "traits": [
+    {
+      "data": [],
+      "name": "pettable",
+      "onClauses": [
+        {
+          "action": "petting",
+          "binding": "it",
+          "body": [
+            {
+              "event": "petted",
+              "kind": "emit",
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 438,
+                "line": 438,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "petted",
+              "span": {
+                "column": 5,
+                "endColumn": 18,
+                "endLine": 439,
+                "line": 439,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 440,
+            "line": 437,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 441,
+        "line": 432,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "data": [
+        {
+          "initial": null,
+          "name": "food",
+          "oneOf": null,
+          "optional": false,
+          "type": "entity",
+        },
+      ],
+      "name": "feedable",
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "condition": {
+                "kind": "predicate",
+                "negated": false,
+                "object": {
+                  "base": {
+                    "kind": "it",
+                  },
+                  "field": "food",
+                  "kind": "field",
+                },
+                "pred": "has",
+                "subject": {
+                  "kind": "slot",
+                  "name": "actor",
+                },
+              },
+              "kind": "must",
+              "phraseKey": "no-feed",
+              "span": {
+                "column": 5,
+                "endColumn": 42,
+                "endLine": 457,
+                "line": 457,
+              },
+            },
+            {
+              "condition": {
+                "kind": "predicate",
+                "negated": false,
+                "object": {
+                  "kind": "symbol",
+                  "name": "hungry",
+                },
+                "pred": "is",
+                "subject": {
+                  "kind": "it",
+                },
+              },
+              "kind": "must",
+              "phraseKey": "already-fed",
+              "span": {
+                "column": 5,
+                "endColumn": 35,
+                "endLine": 458,
+                "line": 458,
+              },
+            },
+            {
+              "entity": {
+                "kind": "it",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 459,
+                "line": 459,
+              },
+              "state": "content",
+              "stmtWhen": null,
+            },
+            {
+              "event": "fed",
+              "kind": "emit",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 460,
+                "line": 460,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "fed",
+              "span": {
+                "column": 5,
+                "endColumn": 15,
+                "endLine": 461,
+                "line": 461,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 462,
+            "line": 456,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 463,
+        "line": 443,
+      },
+      "states": [
+        "hungry",
+        "content",
+      ],
+      "statesReversible": true,
+    },
+    {
+      "data": [],
+      "name": "chatty",
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "parrot-chatter",
+              "span": {
+                "column": 5,
+                "endColumn": 26,
+                "endLine": 467,
+                "line": 467,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "chance",
+            "n": 2,
+          },
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 468,
+            "line": 466,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 469,
+        "line": 465,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "data": [],
+      "name": "candid",
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "parrot-candor",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 473,
+                "line": 473,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "chance",
+            "n": 2,
+          },
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 474,
+            "line": 472,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 475,
+        "line": 471,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "data": [],
+      "name": "restless",
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "bleating",
+              "span": {
+                "column": 5,
+                "endColumn": 20,
+                "endLine": 484,
+                "line": 484,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "kind": "symbol",
+              "name": "hungry",
+            },
+            "pred": "is",
+            "subject": {
+              "kind": "it",
+            },
+          },
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 485,
+            "line": 483,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 486,
+        "line": 477,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+  ],
+  "verbs": [],
+}
+`;

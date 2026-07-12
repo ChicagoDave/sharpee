@@ -28,13 +28,14 @@ import {
   DefineTrait,
   NameRef,
   OnClause,
+  StateName,
   Statement,
   StoryFile,
   TextValue,
   TraitField,
   ValueExpr,
 } from './ast';
-import { TRAIT_ADJECTIVES } from './catalog';
+import { EVENT_VERBS, PLATFORM_STATE_PAIRS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
 import { DiagnosticBag } from './diagnostics';
 import {
   IR_FORMAT,
@@ -54,6 +55,73 @@ import { Span } from './span';
 /** Phase A stories register text in this locale (design.md §2.6). */
 const DEFAULT_LOCALE = 'en-US';
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
+
+/** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
+const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
+
+/**
+ * Negation prefixes/suffix for ring 3 of the boolean-state gate (D9):
+ * `not-`/`un-`/`non-` (hyphenated or fused), `no-` (hyphenated only — bare
+ * `no` false-positives on words like `noon`), shared-stem prefixes
+ * (`active`/`inactive`), and the `-less` suffix.
+ */
+const NEGATION_PREFIXES = ['not-', 'not', 'un-', 'un', 'non-', 'non', 'no-', 'in', 'im', 'dis'];
+
+/** True when `candidate` is a negation-shaped form of `base` (D9 ring 3). */
+function isNegationOf(candidate: string, base: string): boolean {
+  if (base.length < 2) return false;
+  for (const prefix of NEGATION_PREFIXES) {
+    if (candidate === prefix + base) return true;
+  }
+  return candidate === `${base}-less` || candidate === `${base}less`;
+}
+
+/**
+ * Span-free structural fingerprint of a condition, for the duplicate-clause
+ * gate's per-condition event-clause key. Same shape → same string.
+ */
+function conditionFingerprint(cond: ConditionNode): string {
+  const value = (v: ValueExpr): string => {
+    switch (v.kind) {
+      case 'literal':
+        return `lit:${v.value}`;
+      case 'ref':
+        return `ref:${v.ref.words.join(' ').toLowerCase()}`;
+      case 'bare':
+        return `bare:${v.words.join(' ').toLowerCase()}`;
+      case 'possessive':
+        return `poss:${value(v.base)}.${v.field.join(' ').toLowerCase()}`;
+    }
+  };
+  switch (cond.kind) {
+    case 'or':
+    case 'and':
+      return `${cond.kind}(${cond.operands.map(conditionFingerprint).join(',')})`;
+    case 'not':
+      return `not(${conditionFingerprint(cond.operand)})`;
+    case 'chance':
+      return `chance:${cond.n}`;
+    case 'condition-ref':
+      return `cond:${cond.name}`;
+    case 'predicate': {
+      const p = cond.predicate;
+      switch (p.kind) {
+        case 'is':
+          return `is${p.negated ? '!' : ''}(${value(cond.subject)},${value(p.value)})`;
+        case 'is-a':
+          return `is-a${p.negated ? '!' : ''}(${value(cond.subject)},${p.classifier.join(' ').toLowerCase()})`;
+        case 'is-in':
+          return `is-in${p.negated ? '!' : ''}(${value(cond.subject)},${p.place.words.join(' ').toLowerCase()})`;
+        case 'has':
+        case 'holds':
+        case 'wears':
+          return `${p.kind}(${value(cond.subject)},${p.thing.words.join(' ').toLowerCase()})`;
+        case 'can':
+          return `can-${p.ability}(${value(cond.subject)},${p.thing.words.join(' ').toLowerCase()})`;
+      }
+    }
+  }
+}
 
 /**
  * Curated role vocabulary for standard-semantics actions (design.md §2.2:
@@ -160,7 +228,17 @@ interface EntitySymbol {
   nameWords: string[];
   aka: string[];
   states: string[];
+  /** Where each merged state was declared: 'own' or the composing trait's name (D8 collision gate). */
+  stateSource: Map<string, string>;
+  /** The entity's own `states:` line permits back-transitions (D4). */
+  ownReversible: boolean;
   decl: CreateDecl;
+}
+
+/** A declared state set with its forward-march policy (D4). */
+interface StateSetInfo {
+  states: string[];
+  reversible: boolean;
 }
 
 class Analyzer {
@@ -185,6 +263,14 @@ class Analyzer {
   private storyStates: string[] = [];
   /** trait name → trait-declared states (ratchet D8). */
   private traitStates = new Map<string, string[]>();
+  /** trait name → its `states:` line permits back-transitions (D4). */
+  private traitReversible = new Map<string, boolean>();
+  /**
+   * trait name → states visible on `it` inside the trait's clauses: its own
+   * set plus every composer's full merged set (D8: `restless` reads
+   * feedable's `hungry` — resolution is across the composer's trait set).
+   */
+  private traitVisibleStates = new Map<string, string[]>();
 
   constructor(
     private readonly ast: StoryFile,
@@ -256,6 +342,8 @@ class Analyzer {
         case 'define-sequence':
           ir.sequences.push({
             name: decl.name.join(' '),
+            // Decision 10: sequences are story-owned — narration broadcasts.
+            narration: 'broadcast',
             steps: decl.steps.map((step) => ({
               timing: step.timing,
               turns: step.turns,
@@ -312,11 +400,15 @@ class Analyzer {
 
   private buildTrait(decl: DefineTrait): IRTraitDef {
     const fields = new Map(decl.data.map((f) => [f.name.join(' '), f]));
+    // States visible on `it`: the trait's own set plus every composer's
+    // full merged set (D8 cross-trait resolution — `restless` reads
+    // feedable's `hungry`).
+    const visible = this.traitVisibleStates.get(decl.name) ?? decl.states.map((s) => s.name);
     const scope: Scope = {
       owner: null,
       fields,
       slots: null,
-      ownStates: decl.states.length ? decl.states.map((s) => s.name) : null,
+      ownStates: visible.length ? visible : null,
       scoreOwner: `trait.${decl.name}`,
     };
     return {
@@ -331,9 +423,44 @@ class Analyzer {
       states: decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
       scores: decl.scores.map((s) => ({ name: `trait.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      onClauses: decl.onClauses.map((c) => this.buildOnClause(c, scope)),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c) => this.buildOnClause(c, scope)),
       span: decl.span,
     };
+  }
+
+  /**
+   * Duplicate-clause gate (Phase C P3, adopted from the 2026-07-11 review):
+   * two clauses with the same (action, clauseKind, binding, role) on one
+   * owner silently mask at runtime (interceptor/capability registration is
+   * keyed) — a load error naming the first declaration. `on` vs `after` on
+   * the same action is legal (different lifecycle halves); every-turn
+   * clauses are exempt (daemons all fire). Event-verb clauses bind to the
+   * event stream individually — there the mask is per-condition, so a
+   * `while` condition differentiates (`after entering it while after-hours`
+   * beside `after entering it while not after-hours` is legal; two
+   * identically-conditioned clauses are not).
+   * Returns the clauses unchanged for fluent use.
+   */
+  private checkDuplicateClauses(clauses: OnClause[], ownerDesc: string): OnClause[] {
+    const seen = new Map<string, OnClause>();
+    for (const clause of clauses) {
+      if (clause.binding === 'every-turn') continue;
+      let key = `${clause.clauseKind}|${clause.action}|${clause.binding}|${clause.role ?? ''}`;
+      if (EVENT_VERBS.has(clause.action)) {
+        key += `|${clause.condition ? conditionFingerprint(clause.condition) : ''}`;
+      }
+      const first = seen.get(key);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-clause',
+          `A \`${clause.clauseKind} ${clause.action}\` clause is already declared on ${ownerDesc} at line ${first.span.line} — a second one would silently mask it. Merge the bodies (or split intercept/react across \`on\`/\`after\`).`,
+          clause.span,
+        );
+        continue;
+      }
+      seen.set(key, clause);
+    }
+    return clauses;
   }
 
   private buildAction(decl: DefineAction): IRActionDef {
@@ -362,6 +489,7 @@ class Analyzer {
         }
         return { kind: 'without' as const, slot: r.slot!, phraseKey: r.phraseKey, span: r.span };
       }
+      this.checkRefusalPolarity(r.condition!, r.span);
       return {
         kind: 'when' as const,
         condition: this.resolveCondition(r.condition!, scope),
@@ -402,6 +530,7 @@ class Analyzer {
   private collect(): void {
     // Story header: declared phases + story-owned scores (ratchet D2/D12).
     if (this.ast.header) {
+      this.checkStateSet(this.ast.header.states, 'the story');
       this.storyStates = this.ast.header.states.map((s) => s.name);
       for (const s of this.ast.header.scores) this.collectScore(s.name, s.worth, s.span, null);
     }
@@ -423,7 +552,11 @@ class Analyzer {
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
       else if (decl.kind === 'define-trait') {
         this.traitNames.add(decl.name);
-        if (decl.states.length) this.traitStates.set(decl.name, decl.states.map((s) => s.name));
+        if (decl.states.length) {
+          this.checkStateSet(decl.states, `trait \`${decl.name}\``);
+          this.traitStates.set(decl.name, decl.states.map((s) => s.name));
+          this.traitReversible.set(decl.name, decl.statesReversible);
+        }
         for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, `trait.${decl.name}`);
         if (decl.phrases) this.collectPhrasesBlock(decl.phrases);
         for (const clause of decl.onClauses) this.collectInlineTexts(clause.body);
@@ -445,13 +578,48 @@ class Analyzer {
 
     // Trait-declared states reach every composer (ratchet D8): merge each
     // trait's state set into the composing entity's, in composition order.
+    // The same state name arriving from two sources is the D8 collision
+    // gate — states are one namespace per entity.
     for (const e of this.entities) {
       for (const comp of e.decl.compositions) {
         if (comp.article) continue; // kind noun, not a trait
-        const states = this.traitStates.get(comp.words.join(' ').toLowerCase());
-        if (states) {
-          for (const s of states) if (!e.states.includes(s)) e.states.push(s);
+        const traitName = comp.words.join(' ').toLowerCase();
+        const states = this.traitStates.get(traitName);
+        if (!states) continue;
+        for (const s of states) {
+          const existing = e.stateSource.get(s);
+          if (existing !== undefined && existing !== traitName) {
+            const from = existing === 'own' ? `its own \`states:\` line` : `\`${existing}\``;
+            this.diagnostics.error(
+              'analysis.state-collision',
+              `State \`${s}\` reaches ${e.nameLower} from both ${from} and \`${traitName}\` — states are one namespace per entity; rename one.`,
+              comp.span,
+            );
+            continue;
+          }
+          if (existing === undefined) {
+            e.states.push(s);
+            e.stateSource.set(s, traitName);
+          }
         }
+      }
+    }
+
+    // Cross-trait visibility (D8): inside a trait's clauses, `it` may
+    // reference any state on any composer's full merged set — `restless`
+    // reads feedable's `hungry` without declaring it.
+    for (const [t, own] of this.traitStates) this.traitVisibleStates.set(t, [...own]);
+    for (const e of this.entities) {
+      for (const comp of e.decl.compositions) {
+        if (comp.article) continue;
+        const t = comp.words.join(' ').toLowerCase();
+        if (!this.traitNames.has(t)) continue;
+        let vis = this.traitVisibleStates.get(t);
+        if (!vis) {
+          vis = [];
+          this.traitVisibleStates.set(t, vis);
+        }
+        for (const s of e.states) if (!vis.includes(s)) vis.push(s);
       }
     }
 
@@ -471,21 +639,27 @@ class Analyzer {
           span: override.span,
         });
       }
-      for (const clause of e.decl.onClauses) this.collectInlineTexts(clause.body);
+      // Entity-owned clauses register their inline phrases under the
+      // owner-derived key (phrase-override mechanism) — four owners each
+      // declaring `phrase confession` must not collide (Phase C P3).
+      for (const clause of e.decl.onClauses) this.collectInlineTexts(clause.body, e.id);
     }
   }
 
   /**
    * Declare-and-emit sugar (§2.6): a `phrase <key>` statement carrying an
    * indented prose block registers the key at load — collected in pass 1 so
-   * pass 2's phrase-coverage gate sees it.
+   * pass 2's phrase-coverage gate sees it. Inside an entity-owned clause the
+   * key registers owner-scoped (`<entity-id>.<key>`, the phrase-override
+   * mechanism) so per-owner keys don't collide; ownerless scopes (traits,
+   * actions, sequences) keep the bare key.
    */
-  private collectInlineTexts(body: Statement[]): void {
+  private collectInlineTexts(body: Statement[], ownerId: string | null = null): void {
     for (const stmt of body) {
       switch (stmt.kind) {
         case 'phrase':
           if (stmt.inlineText) {
-            this.registerPhrase(DEFAULT_LOCALE, stmt.phraseKey, {
+            this.registerPhrase(DEFAULT_LOCALE, ownerId ? `${ownerId}.${stmt.phraseKey}` : stmt.phraseKey, {
               strategy: null,
               variants: [this.variantOf(stmt.inlineText)],
               span: stmt.inlineText.span,
@@ -493,17 +667,98 @@ class Analyzer {
           }
           break;
         case 'select-on':
-          for (const arm of stmt.arms) this.collectInlineTexts(arm.body);
+          for (const arm of stmt.arms) this.collectInlineTexts(arm.body, ownerId);
           break;
         case 'select-strategy':
-          for (const alt of stmt.alternatives) this.collectInlineTexts(alt);
+          for (const alt of stmt.alternatives) this.collectInlineTexts(alt, ownerId);
           break;
         case 'ordinal':
-          this.collectInlineTexts(stmt.body);
+          this.collectInlineTexts(stmt.body, ownerId);
           break;
         default:
           break;
       }
+    }
+  }
+
+  // ------------------------------------------------- state-set gates (D9)
+
+  /**
+   * The three-ring boolean-state gate (decision 8, ratchet D9) — pattern
+   * detection over every declared state set (story, trait, entity). Ring 1:
+   * literal booleans. Ring 2: a set reproducing a platform-owned pair.
+   * Ring 3: a state named as the negation of a sibling.
+   */
+  private checkStateSet(states: StateName[], ownerDesc: string): void {
+    const names = states.map((s) => s.name);
+    for (const s of states) {
+      if (BOOLEAN_STATE_WORDS.has(s.name)) {
+        this.diagnostics.error(
+          'analysis.boolean-state',
+          `\`${s.name}\` is a boolean literal, not a state — booleans are not part of Chord at any scope (given 8). Name what ${ownerDesc} IS in that condition.`,
+          s.span,
+        );
+      }
+    }
+    for (const { pair, trait } of PLATFORM_STATE_PAIRS) {
+      if (names.includes(pair[0]) && names.includes(pair[1])) {
+        const at = states.find((s) => s.name === pair[1]) ?? states[0];
+        this.diagnostics.error(
+          'analysis.shadow-state',
+          `\`${pair[0]}\`/\`${pair[1]}\` reproduces a platform-owned pair — compose \`${trait}\` and read the state live (\`is ${pair[0]}\`) instead of storing it.`,
+          at.span,
+        );
+      }
+    }
+    for (const a of states) {
+      for (const b of states) {
+        if (a === b) continue;
+        if (isNegationOf(b.name, a.name)) {
+          this.diagnostics.error(
+            'analysis.negated-state',
+            `\`${b.name}\` names the absence of \`${a.name}\`, not a condition of ${ownerDesc}. Name what it IS when not ${a.name} — feedable's answer was \`hungry\`/\`content\`. A state names what the thing IS, never the absence of another state.`,
+            b.span,
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * The declared set a state belongs to on an entity, with its
+   * forward-march policy (D4) — null when undeterminable.
+   */
+  private stateSetOf(sym: EntitySymbol | null, state: string): StateSetInfo | null {
+    if (sym) {
+      const source = sym.stateSource.get(state);
+      if (source === 'own') {
+        return { states: sym.decl.states.map((s) => s.name), reversible: sym.ownReversible };
+      }
+      if (source) {
+        const states = this.traitStates.get(source);
+        return states ? { states, reversible: this.traitReversible.get(source) ?? false } : null;
+      }
+      return null;
+    }
+    // Trait scope (`it` with no concrete owner): the declaring trait's set.
+    for (const [t, states] of this.traitStates) {
+      if (states.includes(state)) return { states, reversible: this.traitReversible.get(t) ?? false };
+    }
+    return null;
+  }
+
+  /**
+   * D4 forward-march, statically provable half: a `change` targeting the
+   * INITIAL state of a non-reversible set can never be a forward move.
+   * (The runtime enforces full ordering; this is the load-time gate.)
+   */
+  private checkChangeLegality(info: StateSetInfo | null, state: string, span: Span): void {
+    if (info && !info.reversible && info.states.length > 0 && info.states[0] === state) {
+      this.diagnostics.error(
+        'analysis.irreversible-state',
+        `\`${state}\` is the initial state of a forward-only set — \`change\` cannot go back. Add \`, reversible\` to the \`states:\` line to permit back-transitions (D4).`,
+        span,
+      );
     }
   }
 
@@ -514,12 +769,15 @@ class Analyzer {
       this.diagnostics.error('analysis.duplicate-entity', `An entity named \`${nameWords.join(' ')}\` already exists.`, decl.name.span);
       return;
     }
+    this.checkStateSet(decl.states, nameWords.join(' ').toLowerCase());
     const sym: EntitySymbol = {
       id,
       nameLower: nameWords.join(' ').toLowerCase(),
       nameWords: nameWords.map((w) => w.toLowerCase()),
       aka: decl.aka.map((a) => a.toLowerCase()),
       states: decl.states.map((s) => s.name),
+      stateSource: new Map(decl.states.map((s) => [s.name, 'own'])),
+      ownReversible: decl.statesReversible,
       decl,
     };
     this.entities.push(sym);
@@ -629,7 +887,9 @@ class Analyzer {
       // states (ratchet D8) — the loader initializes from states[0].
       states: sym ? sym.states : decl.states.map((s) => s.name),
       descriptionKey: decl.description ? `${id}.description` : null,
-      onClauses: decl.onClauses.map((c) => this.buildOnClause(c, entityScope(sym ?? null))),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
+        this.buildOnClause(c, entityScope(sym ?? null)),
+      ),
       span: decl.span,
     };
   }
@@ -672,6 +932,9 @@ class Analyzer {
       condition,
       ordering: clause.ordering,
       routing,
+      // Decision 10: all on-clauses are entity/trait-owned (ownership
+      // package) — their narration is presence-scoped.
+      narration: 'presence',
       body,
       span: clause.span,
     };
@@ -766,6 +1029,12 @@ class Analyzer {
               `\`${stmt.state}\` is not a declared state of the story${this.suggestText(stmt.state, this.storyStates)}.`,
               stmt.span,
             );
+          } else {
+            this.checkChangeLegality(
+              { states: this.storyStates, reversible: this.ast.header?.statesReversible ?? false },
+              stmt.state,
+              stmt.span,
+            );
           }
           return { kind: 'change', entity: { kind: 'story' }, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
         }
@@ -778,6 +1047,8 @@ class Analyzer {
             `\`${stmt.state}\` is not a declared state of ${sym?.nameLower ?? 'it'}${this.suggestText(stmt.state, validStates)}.`,
             stmt.span,
           );
+        } else if (validStates) {
+          this.checkChangeLegality(this.stateSetOf(sym ?? null, stmt.state), stmt.state, stmt.span);
         }
         return { kind: 'change', entity, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }
@@ -824,8 +1095,8 @@ class Analyzer {
         };
       }
       case 'refuse-when': {
-        // Prohibition (D6): refuse with the key while the hazard holds. The
-        // negated-requirement gate (top-level `not`) lands in Phase 3.
+        // Prohibition (D6): refuse with the key while the hazard holds.
+        this.checkRefusalPolarity(stmt.condition, stmt.span);
         this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
         return {
           kind: 'refuse-when',
@@ -837,12 +1108,24 @@ class Analyzer {
       case 'select-on': {
         const subject = this.resolveValue(stmt.subject, scope);
         const stateOwner = this.stateOwnerOf(subject, scope);
+        // Trait scope: `select on its state` validates against the visible
+        // state set (own + cross-trait, D8) with no concrete owner entity.
+        const traitStates =
+          !stateOwner && subject.kind === 'field' && subject.field === 'state' && subject.base.kind === 'it'
+            ? scope.ownStates
+            : null;
         const fieldValues = this.fieldValueSet(subject, scope);
         for (const arm of stmt.arms) {
           if (stateOwner && !stateOwner.states.includes(arm.value)) {
             this.diagnostics.error(
               'analysis.undeclared-state',
               `\`${arm.value}\` is not a declared state of ${stateOwner.nameLower}${this.suggestText(arm.value, stateOwner.states)}.`,
+              arm.span,
+            );
+          } else if (traitStates && !traitStates.includes(arm.value)) {
+            this.diagnostics.error(
+              'analysis.undeclared-state',
+              `\`${arm.value}\` is not a declared state of \`it\` here${this.suggestText(arm.value, traitStates)}.`,
               arm.span,
             );
           } else if (fieldValues && !fieldValues.includes(arm.value)) {
@@ -884,6 +1167,21 @@ class Analyzer {
   /** Resolve a statement `when` suffix (ratchet D7), or null. */
   private resolveStmtWhen(cond: ConditionNode | null, scope: Scope): IRCondition | null {
     return cond ? this.resolveCondition(cond, scope) : null;
+  }
+
+  /**
+   * D6 polarity gate: `refuse when` states a hazard that is PRESENT — a
+   * top-level `not` inverts a requirement, and requirements have one
+   * canonical form (`must`).
+   */
+  private checkRefusalPolarity(cond: ConditionNode, span: Span): void {
+    if (cond.kind === 'not') {
+      this.diagnostics.error(
+        'analysis.negated-requirement',
+        'State requirements positively — `refuse when not …` is not a form. Write `<subject> must <predicate>: <phrase-key>` for the requirement; `refuse when` is for hazards that are present.',
+        span,
+      );
+    }
   }
 
   /** The entity whose `states:` list governs a select-on subject, if determinable. */
@@ -1130,9 +1428,11 @@ class Analyzer {
       const validStates = subjectEntity?.states ?? (subject.kind === 'it' ? scope.ownStates ?? [] : []);
       if (validStates.includes(word)) return { kind: 'symbol', name: word };
       if (TRAIT_ADJECTIVES.has(word)) return { kind: 'symbol', name: word };
+      // State adjectives (ratchet D1): read live from world trait state.
+      if (STATE_ADJECTIVES.has(word)) return { kind: 'symbol', name: word };
       const exactEntity = this.entities.find((e) => e.nameLower === word.toLowerCase() || e.aka.includes(word.toLowerCase()));
       if (exactEntity) return { kind: 'entity', id: exactEntity.id };
-      const valid = [...validStates, ...TRAIT_ADJECTIVES];
+      const valid = [...validStates, ...TRAIT_ADJECTIVES, ...STATE_ADJECTIVES];
       this.diagnostics.error(
         'analysis.unknown-value',
         `\`${word}\` is not a state${subjectEntity ? ` of ${subjectEntity.nameLower}` : ''} or a known trait${this.suggestText(word, valid)}.`,

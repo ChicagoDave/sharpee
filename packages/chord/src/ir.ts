@@ -145,6 +145,16 @@ export interface IROnClause {
    */
   routing: 'interceptor' | 'capability' | null;
   /**
+   * Narration scope (decision 10, 2026-07-11): entity/trait-owned clauses
+   * are presence-scoped — the loader fires their narration only when the
+   * player shares the owner's location (performances need an audience;
+   * presence, not sight). Story-owned schedule/sequence bodies broadcast.
+   * All on-clauses are owner-attached under the ownership package, so this
+   * is always 'presence' — recorded explicitly for the loader (Phase 4) and
+   * IDE consumers.
+   */
+  narration: 'presence' | 'broadcast';
+  /**
    * Statement tree in source order. The phase-order rule is enforced at
    * compile time; the loader partitions this into validate/execute/report.
    */
@@ -302,6 +312,11 @@ export interface IREveryRule {
 export interface IRSequenceDef {
   /** Name words joined with a space (`closing time`). */
   name: string;
+  /**
+   * Narration scope (decision 10): sequences are story-owned — their
+   * narration broadcasts regardless of the player's location.
+   */
+  narration: 'broadcast';
   steps: IRSequenceStep[];
   span: Span;
 }

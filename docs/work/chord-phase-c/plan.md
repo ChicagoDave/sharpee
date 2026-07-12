@@ -576,7 +576,21 @@ never a silent edit to a frozen story or its frozen transcripts.
   IR snapshots with correct three-ring/must/routing/scope/anchor gates;
   `pnpm --filter '@sharpee/chord' test` and `pnpm --filter
   '@sharpee/ide-protocol' test` green.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-11). zoo-phase-c.story compiles with zero
+  diagnostics; chord 144/144, ide-protocol 11/11, story-loader 61/61,
+  devkit 22 green. One recorded deviation: the duplicate-clause gate keys
+  event-verb clauses per `while`-condition fingerprint (the migrated Zoo's
+  aviary legitimately declares three `after entering it` clauses
+  differentiated by condition, and the runtime binds event clauses
+  individually — no mask exists there; keyed interceptor/capability
+  registration keeps the strict owner+action+clauseKind rule) — APPROVED as
+  shipped (David, 2026-07-11). Select-on "exhaustiveness" implemented as
+  arm-validity against the owner's declared state set (extended to trait
+  scopes), not a missing-arm error — APPROVED to stay arm-validity-only
+  (David, 2026-07-11; a completeness gate would need its own ratchet
+  entry). D4 change-legality gates the statically provable half
+  (change-to-initial on a non-reversible set); full ordering is the P4
+  runtime's job.
 
 ### Phase 4: Story-loader/runtime — ownership semantics wired to world state
 - **Tier**: Large
