@@ -693,7 +693,14 @@ export type Predicate =
   | { kind: 'has'; thing: NameRef; span: Span }
   | { kind: 'wears'; thing: NameRef; span: Span }
   /** `can see <thing>` / `can reach <thing>` (design.md §2.7; Phase B). */
-  | { kind: 'can'; ability: string; thing: NameRef; span: Span };
+  | { kind: 'can'; ability: string; thing: NameRef; span: Span }
+  /**
+   * `must be any <open-condition>` membership (David, 2026-07-12 — each
+   * package P3): the subject satisfies the named open condition. Parsed
+   * only in the `must` infinitive-predicate position, never in ordinary
+   * condition predicates.
+   */
+  | { kind: 'is-any'; condition: string; span: Span };
 
 /**
  * A value position: a name reference, possessive chain, literal, bare word,

@@ -216,7 +216,9 @@ and found no open mechanism question, only implementation work.
   normative, ready for Phase 2 to implement verbatim) or sent back with
   changes requested. **No Phase 2 work starts until all three are APPROVED
   by David** — the same hard gate Phase A/B/C's Phase 1 used.
-- **Status**: CURRENT
+- **Status**: COMPLETE (2026-07-12 — E1/E2/E3 logged in
+  chord-grammar-changes.md and all three APPROVED by David, each-package
+  P1 sign-off)
 
 ### Phase 2: Chord frontend — lexer/parser for any/no/each/match
 - **Tier**: Medium
@@ -259,7 +261,9 @@ and found no open mechanism question, only implementation work.
   errors for well-formed input in every approved host position; malformed
   host placement (e.g. top-level `each`) produces a parse error;
   `pnpm --filter '@sharpee/chord' test` green.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-12 — chord 153/153, tsc clean; analyzer
+  stubs emit `analysis.each-package-pending` so new forms parse but do
+  not compile until Phase 3, keeping the pipeline atomic)
 
 ### Phase 3: Chord analyzer + IR — never-guess gates, wire-type additions
 - **Tier**: Medium
@@ -312,7 +316,29 @@ and found no open mechanism question, only implementation work.
   outside `each` produce the expected diagnostics; `pnpm --filter
   '@sharpee/chord' test` and `pnpm --filter '@sharpee/ide-protocol' test`
   green.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-12). IR additions landed (any-of/none-of/
+  each/match, plus `satisfies` for the must-be-any membership decision —
+  dated §3.5 deviation recorded in the proposal §6.5, reconcile at P5).
+  Gates live: `analysis.closed-condition-selection` revived verbatim
+  (any/no/each over closed; story-state variant), `analysis.match-outside-
+  each` (value + NameRef positions), `analysis.reserved-name` for `match`
+  (entity/alias/trait field/slot — David's P3 decision), open-condition-
+  truth fix-it names the live forms and the pointed-at form compiles in
+  the each-compile fixture. collectInlineTexts + checkPhaseOrder descend
+  into each bodies (P2 flag 1); `the match` maps like `it` in NameRef
+  positions (P2 flag 4). story-loader gained honest LoadError stubs for
+  the new IR kinds (evaluator switches are exhaustive-return; the runtime
+  statement switch would otherwise silently no-op `each`) — execution is
+  P4. Mutation-verification pass run: two flagged branch gaps closed with
+  tests (phase-order + inline-text descent into each bodies); the loader
+  throw-stubs stay untested by choice — P4 replaces them with real
+  evaluation + tests, pinning temporary throws is churn. Suites: chord
+  176/176 (+23), ide-protocol 11/11, story-loader 81/81, devkit
+  26+1skip; chord/story-loader/ide-protocol tsc clean.
+  P4 carry-flags: snapshotDecisions doesn't descend each bodies yet;
+  evaluator `is-a` still throws (quantifier conditions like
+  `it is a treasure` need it in P4); `satisfies`/`match` evaluation and
+  creation-order iteration all land P4.
 
 ### Phase 4: Story-loader evaluator/runtime + fixture story e2e
 - **Tier**: Medium
@@ -364,7 +390,42 @@ and found no open mechanism question, only implementation work.
   test` green; zero changes to any file under `stories/cloak-of-darkness/`
   or `stories/friendly-zoo/` (confirm via `git status` before closing this
   phase — this package touches no shipping story).
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-12). Evaluator: any-of/none-of via
+  short-circuit enumeration of ir.entities in DECLARATION order (= the
+  loader's instantiation order — Risk 3 resolved with zero world-model
+  touch, no reliance on Map iteration surviving save/restore);
+  `satisfies` membership (it bound to subject; a subject with no story
+  identity is outside the domain → false); is-a landed over IR kind
+  compositions (platform kinds only — room/container/person/supporter
+  are all the loader instantiates; arbitrary kinds like `treasure`
+  remain future scope); `the match` = ctx.match IR id, innermost via
+  context spread. Runtime: `each` executes per match through both the
+  single-pass (event clause/sequence/daemon) and two-phase capability
+  paths; the match set is SNAPSHOTTED pre-mutation in snapshotDecisions
+  (§5.4 — iteration is routing; without it the canonical
+  `each hungry-neighbor → change → phrase` would mutate everyone and
+  narrate no one). Snapshot deliberately does not descend each bodies:
+  nested each re-enumerates live and select-ons inside each bodies
+  decide live per pass (per-iteration decision keys are a recorded
+  follow-up; no shipped construct hits it). Fixture
+  each-iteration.story + each-runtime.test.ts (18 tests): creation-order
+  matchesOf, empty-set semantics both quantifiers + each no-op, match/it
+  coexistence + nested-each inner binding, exact report-sequence proof
+  of the snapshot (spotted-red→tucked→spotted-blue→tucked→tidy-note),
+  satisfies through the must ladder both polarities, E2 refusal over
+  the emptied set, AC-5 chance-in-each pinned per seed (42: miss/miss;
+  7: miss/hit). Mutation-verification pass ran; all five flagged gaps
+  closed with tests same session: each through BOTH standard-action
+  interceptor paths (entity buildInterceptor w/ snapshot proof via
+  noted×2, trait buildTraitInterceptor), each in a sequence-daemon step
+  (live-eval context class), set + award inside an each body (field
+  written per match, score deduped to one award), nested-each LIVE
+  re-enumeration pinned (inner-note ×1, a stale snapshot would emit 2),
+  and is-a false/negated-true for a subject with no story identity.
+  Found while closing: trait-field initial syntax is `, starts <v>`
+  (comma required; the parser silently drops an uncomma'd tail — noted
+  for a possible future lint). Suites: story-loader 99/99 (+18), chord
+  176, ide 11, devkit 26+1; shipping stories untouched (git fence).
 
 ### Phase 5: Regression, docs re-cut, package close
 - **Tier**: Small

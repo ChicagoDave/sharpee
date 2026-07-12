@@ -946,6 +946,14 @@ export class ChordRuntime {
             events.push(...this.execStatements(stmt.body, ctx, phase));
           }
           break;
+        case 'each':
+          // E3 (ratchet 2026-07-12): run the body once per matching entity
+          // in creation order, `the match` bound to it; `it` and every
+          // other binding pass through untouched. Empty set = no-op.
+          for (const irId of this.eachMatches(stmt, ctx)) {
+            events.push(...this.execStatements(stmt.body, { ...ctx, match: irId }, phase));
+          }
+          break;
       }
     }
     return events;
@@ -1044,6 +1052,15 @@ export class ChordRuntime {
           case 'ordinal':
             if (ctx.occurrence === stmt.ordinal) walk(stmt.body);
             break;
+          case 'each':
+            // Pin the match set pre-mutation (iteration is routing, same
+            // as a select arm): joined IR ids, '' for the empty set. The
+            // body is NOT walked — a select-on inside an `each` body may
+            // decide differently per match, and this map is keyed by
+            // statement identity alone, so those decide live per pass
+            // (recorded follow-up; no shipped construct hits it).
+            decisions.set(stmt, this.evaluator.matchesOf(stmt.condition, ctx).join('|'));
+            break;
           default:
             break;
         }
@@ -1051,6 +1068,19 @@ export class ChordRuntime {
     };
     walk(body);
     return decisions;
+  }
+
+  /**
+   * The match set for an `each` block: the pre-mutation snapshot when one
+   * exists (§5.4 — the report pass must visit the same entities the
+   * execute pass did, even after the body's own mutations change who
+   * matches), else a live enumeration (single-pass contexts: event
+   * clauses, sequences, daemons, and blocks nested inside another `each`).
+   */
+  private eachMatches(stmt: Extract<IRStatement, { kind: 'each' }>, ctx: ExecContext): string[] {
+    const snapped = ctx.decisions?.get(stmt);
+    if (snapped !== undefined) return snapped ? snapped.split('|') : [];
+    return this.evaluator.matchesOf(stmt.condition, ctx);
   }
 
   private decideSelectOn(stmt: Extract<IRStatement, { kind: 'select-on' }>, ctx: ExecContext): string {

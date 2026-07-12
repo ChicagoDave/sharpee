@@ -56,6 +56,10 @@ import { Span } from './span';
 const DEFAULT_LOCALE = 'en-US';
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
 
+/** Reserved-name gate text (David, 2026-07-12 — each package P3). */
+const RESERVED_MATCH_MESSAGE =
+  '`match` is reserved for the `each`-block binder `the match` (ratchet E3) — pick another name.';
+
 /** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
 
@@ -123,6 +127,8 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `${p.kind}(${value(cond.subject)},${p.thing.words.join(' ').toLowerCase()})`;
         case 'can':
           return `can-${p.ability}(${value(cond.subject)},${p.thing.words.join(' ').toLowerCase()})`;
+        case 'is-any':
+          return `is-any(${value(cond.subject)},${p.condition})`;
       }
     }
   }
@@ -149,12 +155,14 @@ interface Scope {
   ownStates: string[] | null;
   /** Score-owner key for `award` resolution (entity id, `trait.<t>`, `action.<a>`; null = story). */
   scoreOwner: string | null;
+  /** Inside an `each` block body — the `the match` binder is in scope (E3). */
+  inEach: boolean;
 }
 
-const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null };
+const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null, inEach: false };
 
 function entityScope(owner: EntitySymbol | null): Scope {
-  return { owner, fields: null, slots: null, ownStates: null, scoreOwner: owner?.id ?? null };
+  return { owner, fields: null, slots: null, ownStates: null, scoreOwner: owner?.id ?? null, inEach: false };
 }
 
 /** True when the scope binds `it` (entity clause or trait clause). */
@@ -218,6 +226,9 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         case 'can':
           return nameIsIt(p.thing);
         case 'is-a':
+        // The membership form's condition selects its own entities — the
+        // subject was already visited above (E1/P3).
+        case 'is-any':
           return false;
       }
     }
@@ -418,6 +429,7 @@ class Analyzer {
       slots: null,
       ownStates: visible.length ? visible : null,
       scoreOwner: `trait.${decl.name}`,
+      inEach: false,
     };
     return {
       name: decl.name,
@@ -473,7 +485,7 @@ class Analyzer {
 
   private buildAction(decl: DefineAction): IRActionDef {
     const slots = this.actionSlots.get(decl.name) ?? new Set<string>();
-    const scope: Scope = { owner: null, fields: null, slots, ownStates: null, scoreOwner: `action.${decl.name}` };
+    const scope: Scope = { owner: null, fields: null, slots, ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false };
 
     for (const constraint of decl.constraints) {
       if (!slots.has(constraint.slot)) {
@@ -560,6 +572,13 @@ class Analyzer {
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
       else if (decl.kind === 'define-trait') {
         this.traitNames.add(decl.name);
+        for (const field of decl.data) {
+          // Trait data fields resolve in value positions — the reserved-
+          // name gate covers them like entity names (E3/P3).
+          if (field.name.join(' ').toLowerCase() === 'match') {
+            this.diagnostics.error('analysis.reserved-name', RESERVED_MATCH_MESSAGE, field.span);
+          }
+        }
         if (decl.states.length) {
           this.checkStateSet(decl.states, `trait \`${decl.name}\``);
           this.traitStates.set(decl.name, decl.states.map((s) => s.name));
@@ -572,7 +591,15 @@ class Analyzer {
       else if (decl.kind === 'define-action') {
         const slots = new Set<string>();
         for (const pattern of decl.patterns) {
-          for (const part of pattern.parts) if (part.kind === 'slot') slots.add(part.word);
+          for (const part of pattern.parts) {
+            if (part.kind !== 'slot') continue;
+            // Grammar slots resolve in value positions — same reserved-
+            // name gate as entity names (E3/P3).
+            if (part.word.toLowerCase() === 'match') {
+              this.diagnostics.error('analysis.reserved-name', RESERVED_MATCH_MESSAGE, part.span);
+            }
+            slots.add(part.word);
+          }
         }
         this.actionSlots.set(decl.name, slots);
         for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, `action.${decl.name}`);
@@ -683,6 +710,9 @@ class Analyzer {
         case 'ordinal':
           this.collectInlineTexts(stmt.body, ownerId);
           break;
+        case 'each':
+          this.collectInlineTexts(stmt.body, ownerId);
+          break;
         default:
           break;
       }
@@ -773,6 +803,19 @@ class Analyzer {
   private collectEntity(decl: CreateDecl): void {
     const nameWords = decl.name.words;
     const id = nameWords.join('-').toLowerCase();
+    // `match` is a reserved value-position name (David, 2026-07-12 —
+    // each package P3): it is the `each`-block binder (`the match`, E3),
+    // resolved before entity lookup exactly as `it` is. Multi-word names
+    // containing the word stay legal.
+    if (id === 'match') {
+      this.diagnostics.error('analysis.reserved-name', RESERVED_MATCH_MESSAGE, decl.name.span);
+      return;
+    }
+    for (const alias of decl.aka) {
+      if (alias.toLowerCase() === 'match') {
+        this.diagnostics.error('analysis.reserved-name', RESERVED_MATCH_MESSAGE, decl.name.span);
+      }
+    }
     if (this.byId.has(id)) {
       this.diagnostics.error('analysis.duplicate-entity', `An entity named \`${nameWords.join(' ')}\` already exists.`, decl.name.span);
       return;
@@ -990,6 +1033,11 @@ class Analyzer {
         case 'ordinal':
           this.checkPhaseOrder(stmt.body, state);
           break;
+        case 'each':
+          // The block's body mutates per match — refusals after it (or
+          // inside it, after a mutation) violate the phase order.
+          this.checkPhaseOrder(stmt.body, state);
+          break;
         default:
           break;
       }
@@ -1170,23 +1218,20 @@ class Analyzer {
           body: stmt.body.map((s) => this.resolveStatement(s, scope)),
           span: stmt.span,
         };
-      case 'each':
-        // Phase 2 stub (each package): the block parses; the IR statement
-        // kind, the open-condition gate, and the runtime land in Phases
-        // 3/4. The load error keeps the pipeline atomic; the placeholder
-        // below is unreachable in practice (callers gate on hasErrors()).
-        // The body still resolves so nested diagnostics keep flowing.
-        this.diagnostics.error(
-          'analysis.each-package-pending',
-          `\`each ${stmt.condition}\` parses but does not compile yet — analyzer/IR support lands with the each package Phase 3.`,
-          stmt.span,
-        );
+      case 'each': {
+        // E3 (ratchet 2026-07-12): body-position iteration over a named
+        // OPEN condition — the same never-guess gate as `any`/`no`. The
+        // body resolves with the binder in scope; `it` keeps meaning the
+        // clause owner (no shadowing), so the scope is otherwise unchanged.
+        this.requireOpenCondition(stmt.condition, stmt.span, 'each');
+        const eachScope: Scope = { ...scope, inEach: true };
         return {
-          kind: 'ordinal',
-          ordinal: 1,
-          body: stmt.body.map((s) => this.resolveStatement(s, scope)),
+          kind: 'each',
+          condition: stmt.condition,
+          body: stmt.body.map((s) => this.resolveStatement(s, eachScope)),
           span: stmt.span,
         };
+      }
     }
   }
 
@@ -1238,16 +1283,25 @@ class Analyzer {
         return scoped ?? { kind: 'symbol', name: expr.words.join(' ') };
       }
       case 'match':
-        // Phase 2 stub (each package): `the match` parses; binder
-        // resolution and the analysis.match-outside-each gate land in
-        // Phase 3. The return value is a placeholder (load already failed).
-        this.diagnostics.error(
-          'analysis.each-package-pending',
-          '`the match` parses but does not compile yet — binder resolution lands with the each package Phase 3.',
-          expr.span,
-        );
-        return { kind: 'symbol', name: 'match' };
+        return this.resolveMatch(expr.span, scope);
     }
+  }
+
+  /**
+   * `the match` — the `each`-block binder (ratchet E3). Legal only inside
+   * an `each` body, at any nesting depth (the runtime binds innermost).
+   * Outside one there is no match to reference — a load error, never a
+   * guess (`analysis.match-outside-each`).
+   */
+  private resolveMatch(span: Span, scope: Scope): IRValue {
+    if (!scope.inEach) {
+      this.diagnostics.error(
+        'analysis.match-outside-each',
+        '`the match` is the `each`-block binder — outside an `each` body there is no match to reference. Use `it` for the clause owner, or name the entity.',
+        span,
+      );
+    }
+    return { kind: 'match' };
   }
 
   /**
@@ -1275,6 +1329,10 @@ class Analyzer {
   private resolveRefValue(ref: NameRef, scope: Scope): IRValue {
     const words = ref.words.map((w) => w.toLowerCase());
     if (words.length === 1 && words[0] === 'it') return { kind: 'it' };
+    // `the match` in NameRef positions (`change`/`move` targets, predicate
+    // things) resolves to the binder exactly as `it` does — before entity
+    // lookup; the name itself is reserved at declaration (E3/P3).
+    if (words.length === 1 && words[0] === 'match') return this.resolveMatch(ref.span, scope);
     if (words.length === 1 && PLAYER_WORDS.has(words[0])) return { kind: 'player' };
     // Boolean words are symbols, not entity lookups (`set fed to true`).
     if (words.length === 1 && (words[0] === 'true' || words[0] === 'false')) {
@@ -1368,7 +1426,7 @@ class Analyzer {
           if (this.openConditions.get(cond.name) && !scopeHasIt(scope)) {
             this.diagnostics.error(
               'analysis.open-condition-truth',
-              `\`${cond.name}\` is an open condition (it references \`it\`) — here there is no \`it\` to test. Use \`any ${cond.name}\` in a selection position, or a closed condition.`,
+              `\`${cond.name}\` is an open condition (it references \`it\`) — here there is no \`it\` to test. Use \`any ${cond.name}\` to test for a matching entity, \`no ${cond.name}\` to test for none, or a closed condition.`,
               cond.span,
             );
           }
@@ -1387,16 +1445,11 @@ class Analyzer {
       }
       case 'any-of':
       case 'none-of':
-        // Phase 2 stub (each package): the forms parse; the IR condition
-        // kinds and never-guess gates land in Phase 3. Erroring keeps the
-        // load atomic — never a guess. The return value is a placeholder
-        // (callers gate on hasErrors()).
-        this.diagnostics.error(
-          'analysis.each-package-pending',
-          `\`${cond.kind === 'any-of' ? 'any' : 'no'} ${cond.condition}\` parses but does not compile yet — analyzer/IR support lands with the each package Phase 3.`,
-          cond.span,
-        );
-        return { kind: 'condition', name: cond.condition };
+        // E1/E2 (ratchet 2026-07-12): existential / negated existential
+        // over a named OPEN condition. Closed, story-state, and unknown
+        // names are load errors — never a guess.
+        this.requireOpenCondition(cond.condition, cond.span, cond.kind === 'any-of' ? 'any' : 'no');
+        return { kind: cond.kind, condition: cond.condition };
       case 'predicate': {
         const subject = this.resolveValue(cond.subject, scope);
         switch (cond.predicate.kind) {
@@ -1440,9 +1493,46 @@ class Analyzer {
               subject,
               object: this.resolveEntityValue(cond.predicate.thing, scope),
             };
+          case 'is-any':
+            // `<subject> must be any <name>` membership (David, 2026-07-12
+            // — P3): the subject satisfies the named open condition (its
+            // `it` bound to the subject at evaluation).
+            this.requireOpenCondition(cond.predicate.condition, cond.predicate.span, 'any');
+            return { kind: 'satisfies', subject, condition: cond.predicate.condition };
         }
       }
     }
+  }
+
+  /**
+   * E1/E2/E3 never-guess gate: `any`/`no`/`each` (and `must be any`)
+   * reference a declared OPEN condition. A closed condition revives the
+   * pre-ownership gate verbatim (`analysis.closed-condition-selection`);
+   * story states and unknown names get their own errors.
+   */
+  private requireOpenCondition(name: string, span: Span, form: 'any' | 'no' | 'each'): void {
+    if (this.openConditions.get(name)) return;
+    if (this.conditionNames.has(name)) {
+      this.diagnostics.error(
+        'analysis.closed-condition-selection',
+        `\`${name}\` is a closed condition — it never mentions \`it\`, so it doesn't describe a thing. Reference \`it\` in the condition to make it a selection.`,
+        span,
+      );
+      return;
+    }
+    if (this.storyStates.includes(name)) {
+      this.diagnostics.error(
+        'analysis.closed-condition-selection',
+        `\`${name}\` is a story state (a truth test), not an open condition — \`${form}\` selects entities via a condition that references \`it\`.`,
+        span,
+      );
+      return;
+    }
+    this.diagnostics.error(
+      'analysis.unknown-condition',
+      `\`${name}\` is not a declared condition${this.suggestText(name, [...this.conditionNames])}.`,
+      span,
+    );
   }
 
   /**
@@ -1469,6 +1559,10 @@ class Analyzer {
         );
         return { kind: 'symbol', name: word };
       }
+      // The `each`-block binder: its state set is statically unknowable
+      // (any world entity may match) — same stance as `change the match
+      // to <state>`; the runtime resolves the word against the live match.
+      if (subject.kind === 'match') return { kind: 'symbol', name: word };
       const subjectEntity =
         subject.kind === 'entity' ? this.byId.get(subject.id) : subject.kind === 'it' ? scope.owner : null;
       // Trait scope: `it` validates against the trait's own declared states

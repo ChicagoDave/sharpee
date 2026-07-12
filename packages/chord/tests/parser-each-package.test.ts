@@ -114,6 +114,36 @@ describe('each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12)', ()
   });
 });
 
+describe('must be any <name> (membership, David 2026-07-12 — P3)', () => {
+  const mustLine = (predicate: string) =>
+    ['create the shed', '  a room', '', '  on prodding it', `    it must ${predicate}: nope`, '  end on'].join('\n');
+
+  it('parses standalone `be any <name>` as the is-any predicate', () => {
+    const result = parse(mustLine('be any barn-occupant'));
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const shed = result.ast.declarations.find((d): d is CreateDecl => d.kind === 'create')!;
+    expect(shed.onClauses[0].body[0]).toMatchObject({
+      kind: 'must',
+      predicate: { kind: 'is-any', condition: 'barn-occupant' },
+      phraseKey: 'nope',
+    });
+  });
+
+  it('keeps a value that merely starts with `any` on the ordinary parse', () => {
+    const result = parse(mustLine('be any old thing'));
+    const shed = result.ast.declarations.find((d): d is CreateDecl => d.kind === 'create')!;
+    expect(shed.onClauses[0].body[0]).toMatchObject({
+      kind: 'must',
+      predicate: { kind: 'is' },
+    });
+  });
+
+  it('rejects standalone `be no <name>` with parse.must-negative', () => {
+    const result = parse(mustLine('be no stray-treasure'));
+    expect(result.diagnostics.some((d) => d.code === 'parse.must-negative')).toBe(true);
+  });
+});
+
 describe('each host positions (parse-time, never top-level)', () => {
   it('rejects a top-level each block with parse.each-top-level', () => {
     const result = parse('story "T" by "A"\n\neach stray-treasure\n  phrase tidy\nend each\n');

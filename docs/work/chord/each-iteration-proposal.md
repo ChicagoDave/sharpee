@@ -177,6 +177,29 @@ named conditions only, per the ratchet direction.
 5. All suites green; Cloak 81/81 and Zoo 79/79 **untouched** through the
    rebuilt bundle.
 
+## 6.5 P3 implementation decisions (David, 2026-07-12 — recorded for the
+## P5 ratchet reconciliation)
+
+1. **`must be any <name>` parses** (P2 flag resolved). Semantics:
+   **membership** — `<subject> must be any <open-cond>: <key>` requires the
+   subject to satisfy the named open condition (the condition's `it` bound
+   to the subject at evaluation). Surface form: standalone-name rule, same
+   as the condition-position quantifiers (`be any old thing` keeps its
+   ordinary value parse). IR: `{ kind: 'satisfies', subject, condition }` —
+   a dated ADDITION to §3.5's pinned contract (any-of/none-of/each/match),
+   to be reconciled in the P5 ratchet pass. `must be no <name>` is a
+   negated requirement in disguise → `parse.must-negative` (D6 stance,
+   same as `must not`). Evaluation lands in Phase 4 with the quantifiers.
+2. **`match` is a reserved declaration name** (P2 flag resolved): an entity
+   named or aliased `match`, a trait data field `match`, or a grammar slot
+   `:match` is a load error (`analysis.reserved-name`) — the `br`
+   reservation precedent. The binder resolves before entity lookup exactly
+   as `it` does; multi-word names containing the word stay legal.
+3. **P3 detail**: in `is` comparisons with `the match` as subject, the
+   state set is statically unknowable (any world entity may match), so the
+   analyzer accepts the word as a symbol — same stance as `change the
+   match to <state>`; the runtime resolves it against the live match.
+
 ## 7. Checkpoints requiring David's decision
 
 1. **Universal quantifier**: ship `any` + `no` only, expressing universals

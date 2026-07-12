@@ -339,7 +339,13 @@ export type IRStatement =
   | { kind: 'refuse-when'; condition: IRCondition; phraseKey: string; span: Span }
   | { kind: 'select-on'; subject: IRValue; arms: IRSelectArm[]; span: Span }
   | { kind: 'select-strategy'; strategy: string; alternatives: IRStatement[][]; span: Span }
-  | { kind: 'ordinal'; ordinal: number; body: IRStatement[]; span: Span };
+  | { kind: 'ordinal'; ordinal: number; body: IRStatement[]; span: Span }
+  /**
+   * `each <open-condition> … end each` (ratchet E3, 2026-07-12): run the
+   * body once per matching world entity in creation order, `the match`
+   * bound to that entity; empty set = no-op.
+   */
+  | { kind: 'each'; condition: string; body: IRStatement[]; span: Span };
 
 export interface IRSelectArm {
   value: string;
@@ -368,6 +374,8 @@ export type IRValue =
   | { kind: 'field'; base: IRValue; field: string }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
+  /** The `each`-block binder `the match` (ratchet E3) — parallel to `it`. */
+  | { kind: 'match' }
   | { kind: 'symbol'; name: string };
 
 export type IRCondition =
@@ -378,6 +386,23 @@ export type IRCondition =
   | { kind: 'condition'; name: string }
   /** The story is in the named phase (`while after-hours`, ratchet D2). */
   | { kind: 'story-state'; state: string }
+  /**
+   * `any <open-condition>` (ratchet E1, 2026-07-12): true iff some world
+   * entity satisfies the named open condition; false over the empty set.
+   */
+  | { kind: 'any-of'; condition: string }
+  /**
+   * `no <open-condition>` (ratchet E2, 2026-07-12): true iff no entity
+   * satisfies the condition; true over the empty set.
+   */
+  | { kind: 'none-of'; condition: string }
+  /**
+   * `<subject> must be any <open-condition>` membership (David,
+   * 2026-07-12 — P3 decision, a dated addition to the proposal's §3.5
+   * contract): the subject satisfies the named open condition (the
+   * condition's `it` bound to the subject).
+   */
+  | { kind: 'satisfies'; subject: IRValue; condition: string }
   | {
       kind: 'predicate';
       /** 'can-see'/'can-reach' land with Phase B (design.md §2.7). */

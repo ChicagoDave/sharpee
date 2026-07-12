@@ -1297,6 +1297,31 @@ class Parser {
           const place = this.parseNameRef(c, () => false);
           return { kind: 'is-in', negated: false, place, span: place.span };
         }
+        // `be any <name>` — membership over a named open condition (David,
+        // 2026-07-12, each package P3). Same standalone-name rule as the
+        // condition-position quantifiers: a value that merely starts with
+        // `any` keeps its ordinary parse.
+        if (c.isWord('any')) {
+          const nameTok = c.peek(1);
+          if (nameTok && nameTok.kind === 'word' && this.isBareConditionRef(c, 1)) {
+            const anyTok = c.next()!;
+            c.next();
+            return { kind: 'is-any', condition: nameTok.text, span: mergeSpans(anyTok.span, nameTok.span) };
+          }
+        }
+        // `be no <name>` — a negated requirement in disguise (decision 6):
+        // same stance as `must not`.
+        if (c.isWord('no')) {
+          const nameTok = c.peek(1);
+          if (nameTok && nameTok.kind === 'word' && this.isBareConditionRef(c, 1)) {
+            this.diagnostics.error(
+              'parse.must-negative',
+              'State requirements positively — `must be no <name>` is not a form. Use `refuse when <condition>: <key>` for prohibitions.',
+              c.restSpan(),
+            );
+            return null;
+          }
+        }
         const value = this.parseValueExpr(c, line, new Set());
         return { kind: 'is', negated: false, value, span: value.span };
       }

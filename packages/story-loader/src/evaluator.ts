@@ -17,7 +17,7 @@
  * - Unknown constructs throw LoadError: the compiler gates should make
  *   these unreachable; reaching one is a loader bug, not author error.
  */
-import type { IRCondition, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRCondition, IREntity, IRValue, StoryIR } from '@sharpee/chord';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
 import {
   LightSourceTrait,
@@ -41,6 +41,12 @@ export interface EvalContext {
    * WORLD entity id (`animal` → the pet target, `actor` → the actor).
    */
   slots?: Record<string, string>;
+  /**
+   * IR entity id bound to `the match` — the innermost enclosing `each`
+   * block's current entity (ratchet E3). Nested blocks re-spread the
+   * context, so the innermost binding naturally wins; `it` is untouched.
+   */
+  match?: string;
 }
 
 /** Resolves IR ids to world ids (implemented by ChordStory). */
@@ -58,12 +64,23 @@ export class Evaluator {
   /** trait name → its `entity`-typed data-field names (IR→world translation). */
   private readonly entityFields = new Map<string, Set<string>>();
 
+  /**
+   * IR entities in declaration order — the quantifier enumeration domain
+   * and E3's pinned "creation order" (the loader instantiates in this
+   * order; save/restore cannot reorder it, so iteration and the RNG draws
+   * inside `each` bodies stay deterministic — AC-5).
+   */
+  private readonly irEntities: IREntity[];
+  private readonly irEntityById = new Map<string, IREntity>();
+
   constructor(
     ir: StoryIR,
     private readonly ids: EntityIdResolver,
     seed?: number,
   ) {
     for (const c of ir.conditions) this.conditions.set(c.name, c.condition);
+    this.irEntities = ir.entities;
+    for (const e of ir.entities) this.irEntityById.set(e.id, e);
     for (const trait of ir.traits) {
       this.entityFields.set(
         trait.name,
@@ -93,6 +110,24 @@ export class Evaluator {
       case 'story-state':
         // The story object's phase (`while after-hours`, ratchet D2).
         return ctx.world.getStateValue(CHORD_STORY_STATE_KEY) === cond.state;
+      case 'any-of':
+        // E1 (ratchet 2026-07-12): true iff some entity satisfies the
+        // named open condition; false over the empty set. Short-circuits.
+        return this.someMatch(cond.condition, ctx);
+      case 'none-of':
+        // E2: the negated existential — true over the empty set.
+        return !this.someMatch(cond.condition, ctx);
+      case 'satisfies': {
+        // `<subject> must be any <name>` membership (David, 2026-07-12):
+        // the subject satisfies the open condition — its `it` bound to
+        // the subject. A subject outside the quantification domain (no
+        // story identity) is not one of the matches: false, not a throw.
+        const named = this.namedCondition(cond.condition);
+        const subjectId = this.entityValue(cond.subject, ctx);
+        const irId = this.ids.irIdOf(subjectId);
+        if (irId === undefined) return false;
+        return this.evalCondition(named, { ...ctx, it: irId });
+      }
       case 'predicate':
         return this.evalPredicate(cond, ctx);
     }
@@ -112,8 +147,16 @@ export class Evaluator {
         return raw(String(subject) === String(this.evalValue(cond.object, ctx)));
       }
       case 'is-a': {
-        // Classification checks land with the quantifier grammar (Phase B).
-        throw new LoadError('`is a` classification is not supported by the Phase A evaluator.');
+        // Classification (landed with the each package, P4): the subject's
+        // IR kind-noun compositions (`a marble`, `a room`). An entity
+        // outside the story's IR classifies as nothing.
+        const subjectId = this.entityValue(cond.subject, ctx);
+        const irId = this.ids.irIdOf(subjectId);
+        const irEntity = irId !== undefined ? this.irEntityById.get(irId) : undefined;
+        if (!irEntity) return raw(false);
+        const classifier =
+          cond.object.kind === 'symbol' ? cond.object.name : String(this.evalValue(cond.object, ctx));
+        return raw(irEntity.kinds.some((k) => k.name === classifier));
       }
       case 'is-in': {
         const subjectId = this.entityValue(cond.subject, ctx);
@@ -252,7 +295,42 @@ export class Evaluator {
         }
         return bound;
       }
+      case 'match': {
+        // The `each`-block binder (ratchet E3) — the analyzer's
+        // match-outside-each gate makes an unbound read a loader bug.
+        if (!ctx.match) throw new LoadError('`the match` used outside an `each` block.');
+        return this.requireWorldId(ctx.match);
+      }
     }
+  }
+
+  // ------------------------------------------------------------ quantifiers
+
+  /** The named condition's body, or a loader-bug throw. */
+  private namedCondition(name: string): IRCondition {
+    const named = this.conditions.get(name);
+    if (!named) throw new LoadError(`Unknown condition \`${name}\` at evaluation time.`);
+    return named;
+  }
+
+  /** True when some domain entity satisfies the open condition (short-circuit). */
+  private someMatch(name: string, ctx: EvalContext): boolean {
+    const named = this.namedCondition(name);
+    return this.irEntities.some(
+      (e) => this.ids.entityId(e.id) !== undefined && this.evalCondition(named, { ...ctx, it: e.id }),
+    );
+  }
+
+  /**
+   * The entities satisfying a named open condition, as IR ids in
+   * declaration order — E3's pinned creation-order enumeration. Used by
+   * the runtime's `each` execution and its pre-mutation snapshot.
+   */
+  matchesOf(name: string, ctx: EvalContext): string[] {
+    const named = this.namedCondition(name);
+    return this.irEntities
+      .filter((e) => this.ids.entityId(e.id) !== undefined && this.evalCondition(named, { ...ctx, it: e.id }))
+      .map((e) => e.id);
   }
 
   /** Evaluate a value that must be an entity (world id). */
