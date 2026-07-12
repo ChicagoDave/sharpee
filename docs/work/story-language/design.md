@@ -162,16 +162,14 @@ syntax. `in`/`on`/`wears` lines are placement. Conditional composition
 ```
 define trait lockable
   data
-    locked: flag
     key: entity
+  states, reversible: locked, unlocked
 
   phrases en-US
     locked: "{capitalize the item} {verb:is item} locked."
 
   on opening it, before openable
-    if locked then
-      refuse locked
-    end if
+    it must be unlocked: locked
   end on
 end trait
 ```
@@ -206,11 +204,8 @@ define action taking
   award the item's points, once
 
   emit taken
-  if the previous location is a container or a supporter then
-    phrase taken-from
-  else
-    phrase taken
-  end if
+  phrase taken-from when the previous location is a container or a supporter
+  phrase taken when not (the previous location is a container or a supporter)
 ```
 
 - Multi-object commands are **grammar cardinality** (`take all → each …`); the
@@ -234,13 +229,16 @@ end iterate`, ordinal blocks (`first time`, `third time`) inside rules.
 Four number-free forms cover what counters did:
 
 ```
-when the player enters the Foyer Bar while in-darkness
-  phrase stumble
-  first time
-    change the message to trampled       ← ordinal blocks
-  third time
-    change the message to obliterated
-end when
+create the Foyer Bar
+  a room, dark while the player has the velvet cloak
+
+  after entering it while in-darkness
+    phrase stumble
+    first time
+      change the message to trampled     ← ordinal blocks
+    third time
+      change the message to obliterated
+  end after
 ```
 
 ```
@@ -380,6 +378,14 @@ create the Foyer Bar
   the foyer to the north, is completely empty. There seems to be some
   sort of message scrawled in the sawdust on the floor.
 
+  after entering it while in-darkness
+    phrase stumble
+    first time
+      change the message to trampled
+    third time
+      change the message to obliterated
+  end after
+
 create the player
   starts in the Foyer of the Opera House
   wears the velvet cloak
@@ -420,14 +426,6 @@ create the message in the sawdust
     end select
   end on
 
-when the player enters the Foyer Bar while in-darkness
-  phrase stumble
-  first time
-    change the message to trampled
-  third time
-    change the message to obliterated
-end when
-
 define verb hang or hook means put (something) on (something)
 
 define phrases en-US
@@ -454,8 +452,7 @@ prose inline and requiring no toolchain.
 
 ```
 define trait openable
-  data
-    open: flag, starts false
+  states, reversible: closed, open
 
   phrases en-US
     already-open: "{capitalize the item} {verb:is item} already open."
@@ -463,22 +460,16 @@ define trait openable
     opened-empty: "{You} {open} {the container}, which is empty."
 
   on opening it
-    if open then
-      refuse already-open
-    end if
-    set open to true
+    it must be closed: already-open
+    change it to open
     emit opened
-    if it is a container and it holds nothing then
-      phrase opened-empty
-    else
-      phrase opened
-    end if
+    phrase opened-empty when it is a container and it holds nothing
+    phrase opened when not (it is a container and it holds nothing)
   end on
 end trait
 
 define trait wearable
   data
-    worn: flag, starts false
     body part: optional name
 
   phrases en-US
@@ -487,13 +478,9 @@ define trait wearable
     worn:            "{You} {put on} {the item}."
 
   on wearing it
-    if worn then
-      refuse already-wearing
-    end if
-    if the actor wears any item where its body part is the item's body part then
-      refuse hands-full with other item = the match
-    end if
-    set worn to true
+    refuse when it is worn: already-wearing
+    refuse when the actor wears any item where its body part is the item's body part: hands-full with other item = the match
+    change it to worn
     emit worn
     phrase worn
   end on
@@ -509,12 +496,8 @@ define trait container
     too-heavy:      "Your load is too heavy. You will have to leave something behind."
 
   on taking anything as the taker
-    if the taker holds max items or more items where each is not worn then
-      refuse container-full
-    end if
-    if the taker's total weight plus the item's weight is over max weight then
-      refuse too-heavy
-    end if
+    refuse when the taker holds max items or more items where each is not worn: container-full
+    refuse when the taker's total weight plus the item's weight is over max weight: too-heavy
   end on
 end trait
 ```
@@ -526,8 +509,12 @@ privilege, not in kind.
 ### 3.3 Friendly Zoo — NPC chatter, timeline, phase flip
 
 ```
+story "Friendly Zoo" by "Sharpee Team"
+  id: friendly-zoo
+  states: open, after-hours
+
 define trait chatty
-  on every turn while the player can see it and one chance in 2
+  on every turn while one chance in 2
     phrase parrot-chatter
   end on
 end trait
@@ -539,8 +526,6 @@ or
 or
   Pieces of eight! Pieces of eight!
 end phrase
-
-define flag after-hours starts false
 
 define sequence closing time
   at turn 5
@@ -560,15 +545,20 @@ define sequence closing time
     phrase zoo.pa.closed
       *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for
       visiting! We hope to see you again soon!"
-    set after-hours to true
+    change the story to after-hours
 end sequence
 
-once after-hours
-  move Sam the zookeeper offstage
-  phrase zoo.after-hours.keeper-leaves
-    Sam the zookeeper checks her watch, waves goodnight to the animals,
-    and lets herself out through the staff gate.
-end once
+create the zookeeper
+  a person
+  aka keeper, sam
+  in the Main Path
+
+  on every turn while after-hours, once
+    phrase departs
+      Sam the zookeeper checks her watch, waves goodnight to the animals,
+      and lets herself out through the staff gate.
+    move it to the Staff Parking Lot
+  end on
 
 create the parrot
   a person
@@ -594,6 +584,8 @@ define action petting
   the animal must be reachable
   refuse without animal: pet-what
   otherwise refuse cant-pet
+  score pet-an-animal worth 5
+  award pet-an-animal
 
   phrases en-US
     pet-what: "Pet what?"
@@ -621,9 +613,7 @@ define trait pettable
     glass-way:   "You press your hand to the glass. The snake regards you coolly from the other side."
 
   on petting it
-    if kind is snake then
-      refuse glass-way
-    end if
+    refuse when kind is snake: glass-way
     emit petted
     select on kind
       when goats
@@ -639,7 +629,7 @@ end trait
 define trait feedable
   data
     food: entity
-    fed: flag, starts false
+  states, reversible: hungry, content
 
   phrases en-US
     no-food:     "You have nothing {the animal} would want to eat."
@@ -647,13 +637,9 @@ define trait feedable
     fed:         "{capitalize the animal} eagerly gobbles up the feed."
 
   on feeding it
-    if not (the actor has its food) then
-      refuse no-food
-    end if
-    if fed then
-      refuse already-fed
-    end if
-    set fed to true
+    the actor must have its food: no-food
+    it must be hungry: already-fed
+    change it to content
     emit fed
     phrase fed
   end on
@@ -665,23 +651,24 @@ create the pygmy goats
   in the Petting Zoo
   pettable with kind goats
   feedable with food the handful of feed
+  score fed worth 10
   phrase fed: "The goats butt each other out of the way to get at the feed. Happy chaos."
 
-define score pet-an-animal worth 5
-define score feed-the-goats worth 10
-define score feed-the-rabbits worth 10
+  after feeding it
+    award fed
+  end after
 
-when the player pets anything
-  award pet-an-animal
-end when
+create the rabbits
+  aka bunnies
+  plural
+  in the Petting Zoo
+  pettable with kind rabbits
+  feedable with food the handful of feed
+  score fed worth 10
 
-when the player feeds the pygmy goats
-  award feed-the-goats
-end when
-
-when the player feeds the rabbits
-  award feed-the-rabbits
-end when
+  after feeding it
+    award fed
+  end after
 ```
 
 Notes established by this example:
@@ -690,12 +677,14 @@ Notes established by this example:
   and phrases reference `the animal` throughout the action and its traits.
 - **`otherwise refuse <phrase>`** is the canonical last-resort form: it compiles to
   the dispatch-miss case (no trait claimed the action on this target).
-- **Scoring lives in story rules, not traits** — an improvement over the shipped
-  TS: `pettable`/`feedable` stay story-agnostic; the story attaches point values by
-  reacting to `petted`/`fed` events. Scores dedupe by identity (ADR-129), so
-  "once" is automatic.
-- **`define score X worth N`** declares score identities (replaces
-  ScoreIds/ScorePoints constant maps); `award <score>` is the statement.
+- **Scoring lives on owners, not in trait bodies** — an improvement over the shipped
+  TS: `pettable`/`feedable` stay story-agnostic; each entity (or action) attaches its
+  own point value with a `score` line and awards it in an `after` clause. Scores
+  dedupe by identity (ADR-129), so "once" is automatic.
+- **`score X worth N`** is an owner-attached line (create blocks, trait blocks,
+  action blocks, story header — replaces ScoreIds/ScorePoints constant maps);
+  identities are owner-scoped (the goats' `fed` ≠ the rabbits' `fed`) and
+  `award <name>` resolves to the owner's score.
 - **Per-entity phrase override** (`phrase fed: "…"` in a create block) overrides a
   trait's phrase for that entity via an entity-scoped registration the renderer
   prefers — the generalization of scenery's per-entity cant-take message. Lets a

@@ -1,15 +1,16 @@
-title: Zoo golden gate — scoring: pet/feed awards, dedupe, already-fed
+title: Zoo golden gate — scoring: visit/feed awards, already-fed
 story: friendly-zoo
 description: Scoring as behavior-parity proof (AC-2 scoring category):
-  pet-an-animal awards 5 once (identity dedupe — a second pet of a
-  different animal does not re-award), feed-the-goats awards 10, the
-  already-fed refusal leaves the score unchanged. Authored against the TS
-  story 2026-07-11, then frozen.
+  room visits award 5 each (Petting Zoo, Aviary), feed-the-goats awards 10,
+  petting awards nothing, and the already-fed refusal leaves the score
+  unchanged. Authored against the TS story 2026-07-11, then frozen;
+  max-score assertions revised 100 → 85 in Phase C P5 (gate-delta audit
+  Entry 1, David sign-off 2026-07-12).
 
 ---
 
 > score
-[OK: contains "scored 0 out of 100"]
+[OK: contains "scored 0 out of 85"]
 
 > south
 [OK: contains "Main Path"]
@@ -17,12 +18,12 @@ description: Scoring as behavior-parity proof (AC-2 scoring category):
 > east
 [OK: contains "Petting Zoo"]
 
-# First pet: +5
+# The Petting Zoo visit awarded +5; petting itself awards nothing
 > pet goats
 [OK: contains "bleats happily"]
 
 > score
-[OK: contains "scored 5 out of 100"]
+[OK: contains "scored 5 out of 85"]
 
 # Feed the goats: +10
 > take feed
@@ -32,16 +33,16 @@ description: Scoring as behavior-parity proof (AC-2 scoring category):
 [OK: contains "devour the corn and pellets"]
 
 > score
-[OK: contains "scored 15 out of 100"]
+[OK: contains "scored 15 out of 85"]
 
 # Feeding again refuses and does not re-award
 > feed goats
 [OK: contains "already fed them"]
 
 > score
-[OK: contains "scored 15 out of 100"]
+[OK: contains "scored 15 out of 85"]
 
-# Petting another animal does not re-award (dedupe by score identity)
+# Petting the parrot awards nothing either
 > west
 [OK: contains "Main Path"]
 
@@ -50,10 +51,10 @@ description: Scoring as behavior-parity proof (AC-2 scoring category):
 
 # Entering the Aviary awards the room-visit score (+5)
 > score
-[OK: contains "scored 20 out of 100"]
+[OK: contains "scored 20 out of 85"]
 
 > pet parrot
 [OK: contains "parrot"]
 
 > score
-[OK: contains "scored 20 out of 100"]
+[OK: contains "scored 20 out of 85"]

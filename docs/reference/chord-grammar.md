@@ -7,13 +7,18 @@ Normative source: `docs/work/story-language/design.md` + ADR-210; grammar
 *changes* (anything not in design.md) require David's approval via
 `docs/architecture/chord-grammar-changes.md`.
 
-**Current coverage: Phase A subset + Phase B declarations** (plan:
-docs/work/chord-phase-b/plan.md, phase 2). `define trait`/`define action`
-(role binding, ordering, data blocks, grammar patterns, refusal forms),
-scheduler constructs (`once`/`every`/`define sequence`), `define score`,
-action/behavior hatches, conditional blocked exits, dotted phrase keys, and
-declare-and-emit inline prose all parse as of 2026-07-11 (analysis/loader:
-later phases).
+**Current coverage: Phase A subset + Phase B declarations + Phase C
+ownership package** (plan: docs/work/chord-phase-c/plan.md) as of
+2026-07-12. Phase C lands the ownership ratchet entries D1–D13: owner-attached
+`on`/`after` clauses with `while` and `, once`, `states[, reversible]:` at
+story/entity/trait scope, `must` requirements, `refuse when` in body
+position, the statement-final `when` suffix, owner-attached `score … worth N`
+lines, `change … to <state>`, and the `when <owner> becomes <state>` sequence
+anchor. The floating half of the language is gone: top-level `when`/`once`/
+`every` rules, `define flag`, the `flag` field type, `if`/`else`/`end if`,
+and top-level `define score` no longer parse (each has a fix-it diagnostic
+naming its owner-attached replacement — error recovery, not grammar, so
+they have no productions below). Analysis/loader: later phases.
 
 ## Notation conventions
 
@@ -29,18 +34,21 @@ later phases).
 |---|---|---|
 | story header fields | `story` line | dedent |
 | `create` block | `create` line | dedent |
-| `define phrases <locale>` | header line | dedent |
+| `define phrases <locale>` / `phrases <locale>` | header line | dedent |
+| `define trait` | header line | `end trait` |
+| `define action` | header line | dedent |
+| `define sequence` | header line | `end sequence` |
+| sequence step | anchor line | dedent (next anchor or `end sequence`) |
 | ordinal block (`first time`) | ordinal line | dedent (or `end` of enclosing) |
 | prose block | first bare line | dedent (blank line = paragraph break; in `create` blocks a blank line ends the block, but later bare paragraphs append to the description) |
 | `define phrase` | header line | `end phrase` |
-| `when` rule | header line | `end when` |
-| `on` clause | header line | `end on` |
-| `if` | `if … then` line | `end if` (`else` at the `if`'s indent) |
+| `on` / `after` clause | header line | `end on` / `end after` (must match the opener) |
 | `select` | `select …` line | `end select` (`or` at the `select`'s indent) |
 
 - Indentation is **spaces only** (tab → `lex.tab-indent` error).
 - Recovery: after an error the parser resynchronizes at the next `end` line
-  or top-level keyword — one mistake, one diagnostic.
+  or top-level keyword — one mistake, one diagnostic. (The recovery set
+  still includes `when`/`once`/`every` so the removal fix-its land cleanly.)
 
 ## Tokens
 
@@ -55,76 +63,80 @@ MARKER  = "{" content "}"                                  (* inside text only *
 
 ```
 story-file   = [ story-header ] { declaration } ;
-story-header = "story" STRING "by" STRING NL >>> { WORD ":" rest-of-line NL } ;
+story-header = "story" STRING [ "by" STRING ] NL
+               >>> { states-line | score-line | WORD ":" rest-of-line NL } ;
 declaration  = create | define-condition | define-phrase | define-phrases
-             | define-verb | define-text | define-flag | when-rule
-             | define-trait | define-action | define-hatch | define-score
-             | once-rule | every-rule | define-sequence ;      (* Phase B, 2026-07-11 *)
+             | define-verb | define-text
+             | define-trait | define-action | define-hatch
+             | define-sequence ;
 ```
 
-## Phase B declarations (2026-07-11; design.md §2.2/§2.3/§2.5/§3.4)
+Removed from the top level (ownership package, ratchet 2026-07-11):
+`when` rules, `once <condition>` rules, `every N turns` rules,
+`define flag`, `define score`. Each removal is a parse error with a fix-it
+naming the owner-attached replacement (`parse.removed-when`,
+`parse.removed-once`, `parse.removed-every`, `parse.removed-flag`,
+`parse.removed-score`).
+
+## Ownership lines (Phase C; ratchet D2/D4/D8/D12)
+
+Two line forms shared across owners:
 
 ```
-define-trait   = "define" "trait" WORD NL
-                 [ >>> "data" NL >>> { trait-field } ]
-                 [ >>> "phrases" LOCALE NL >>> { phrase-entry } ]
-                 { >>> on-clause }
-                 "end" "trait" NL ;
-trait-field    = field-words ":" [ "optional" ]
-                 ( "flag" | "entity" | "number" | "name"
-                 | "one" "of" WORD { "," WORD } )
-                 [ "," "starts" token ] NL ;
-
-on-clause      = "on" WORD "it" [ "," ("before"|"after") WORD ] NL body "end" "on"
-               | "on" WORD "anything" "as" "the" WORD NL body "end" "on"   (* role *)
-               | "on" "every" "turn" [ "while" condition ] NL body "end" "on" ;
-
-define-action  = "define" "action" WORD NL action-line* ;   (* dedent-terminated *)
-action-line    = "grammar" NL >>> { pattern-line }
-               | "the" WORD "must" "be" WORD NL             (* scope constraint *)
-               | "refuse" "without" WORD ":" WORD NL
-               | "refuse" "when" condition ":" WORD NL
-               | "otherwise" "refuse" WORD NL               (* dispatch miss *)
-               | "phrases" LOCALE NL >>> { phrase-entry }
-               | statement ;                                (* §2.3 body *)
-pattern-line   = ( WORD | ":" WORD )+ [ "→" WORD { WORD } ] NL ;  (* → = cardinality *)
-
-define-hatch   = "define" ("action"|"behavior") WORD "from" STRING NL ;
-define-score   = "define" "score" WORD "worth" NUMBER NL ;
-
-once-rule      = "once" condition NL >>> { statement } "end" "once" NL ;
-every-rule     = "every" NUMBER "turns" [ "," NUMBER "times" ] NL
-                 >>> { statement } "end" "every" NL ;
-define-sequence= "define" "sequence" WORD { WORD } NL
-                 { sequence-step } "end" "sequence" NL ;
-sequence-step  = ( "at" "turn" NUMBER | NUMBER "turns" "later" ) NL >>> { statement } ;
+states-line  = "states" [ "," "reversible" ] ":" WORD { "," WORD } NL ;
+score-line   = "score" WORD "worth" NUMBER NL ;
 ```
 
-- **Conditional blocked exits** (grammar log 2026-07-10):
-  `DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL`.
-- **Dotted phrase keys** (`zoo.pa.closing-3`) in `refuse`/`phrase` statements.
-- **Declare-and-emit inline prose**: a deeper-indented bare prose block after
-  `phrase <key>` registers the text under the key (§2.6/§3.3).
-- **Config name values**: `with <key> the <entity name>` — an article starts
-  a multi-word entity-name value (`feedable with food the handful of feed`).
-- **`can see <thing>` / `can reach <thing>`** predicates join the condition
-  kit; `has`/`holds`/`wears` objects stop at connective words.
-- **Lexing**: a lone `"` with no closer on the line is prose punctuation
-  (multi-line dialogue); positions requiring strings diagnose at parse time.
+- `states-line` is legal in the **story header** (D2), **create blocks**,
+  and **define trait blocks** (D8). The owner starts in the first declared
+  state; without `reversible`, backward `change` is a load error
+  (`analysis.irreversible-state`, D4 — analyzer, not parser).
+- `score-line` is legal in the **story header**, **create blocks**,
+  **define trait blocks**, and **define action blocks** (D12). Score
+  identities are owner-scoped.
+
+## on / after clauses (ratchet D3/D5)
+
+Owner-attached behavior, legal in `create` blocks and `define trait` blocks:
+
+```
+on-clause    = ( "on" | "after" ) clause-form
+               [ "while" condition ]
+               { "," clause-modifier } NL
+               >>> { statement } "end" ( "on" | "after" ) NL ;
+                                        (* terminator matches the opener *)
+clause-form  = WORD "it"                          (* verb binding *)
+             | WORD "anything" "as" "the" WORD    (* role binding, §2.2 *)
+             | "every" "turn" ;                   (* `on` only *)
+clause-modifier = "once"                          (* D5: one lifetime firing *)
+             | ( "before" | "after" ) WORD ;      (* trait ordering, §2.2 *)
+```
+
+- `on <verb> it` intercepts (may `refuse`); `after <verb> it` reacts —
+  `refuse`, `refuse when`, and `must` inside an `after` body are parse
+  errors (`parse.react-refusal`, D3).
+- `after every turn` is a parse error (`parse.after-every-turn`) —
+  every-turn clauses are not reactions to an action.
+- `while` is legal on every binding; comma modifiers repeat and follow it.
+- Owner-scoped narration (D11) is semantics, not syntax: entity-owned
+  every-turn clauses fire only in the owner's presence.
 
 ## create
 
 ```
 create       = "create" name NL >>> { create-line } ;
 create-line  = "aka" alias { "," alias } NL
+             | states-line                                 (* ordered states, D2/D4 *)
+             | score-line                                  (* owner-attached score, D12 *)
              | composition { "," composition } NL          (* pre-blank paragraph only *)
              | placement NL
              | "wears" name NL
              | DIRECTION "to" name NL                      (* exit *)
-             | DIRECTION "is" "blocked" ":" WORD NL        (* blocked exit, phrase key *)
-             | "states" ":" WORD { "," WORD } NL           (* ordered states *)
-             | "phrase" WORD ":" NL prose-paragraph        (* per-entity override; prose block only *)
-             | on-clause
+             | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
+                                                           (* blocked exit, phrase key *)
+             | "phrase" WORD ":" NL prose-paragraph        (* per-entity override, e.g.
+                                                              `phrase presence:`; prose block only *)
+             | on-clause                                   (* `on`/`after`, D3 *)
              | prose-paragraph ;                           (* post-blank: description; consecutive
                                                               bare paragraphs append (2026-07-10) *)
 
@@ -133,9 +145,7 @@ composition  = [ ARTICLE ] WORD                            (* article ⇒ kind n
                [ "while" condition ] ;                     (* conditional trait, e.g. dark while … *)
 setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement… *)
-             | "starts" "in" name ;
-on-clause    = "on" WORD "it" NL                           (* …on + gerund = behavior clause *)
-               >>> { statement } "end" "on" NL ;
+             | "starts" "in" name ;                        (* …on + bare word = on-clause *)
 DIRECTION    = north | south | east | west | northeast | northwest
              | southeast | southwest | up | down ;
 ```
@@ -156,9 +166,11 @@ phrase-entry     = WORD ":" NL prose-paragraph ;           (* prose block only �
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
 pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; name "br" reserved *)
-define-flag      = "define" "flag" WORD "starts" token NL ;
 STRATEGY         = "randomly" | "cycling" | "ordered" | "once" ;
 ```
+
+`define flag` was removed (given 8, ratchet 2026-07-11): global booleans
+are gone; facts are derived conditions or owner states (`parse.removed-flag`).
 
 ### Prose blocks and formatting (grammar log 2026-07-10)
 
@@ -173,31 +185,89 @@ STRATEGY         = "randomly" | "cycling" | "ordered" | "once" ;
   lines, and relative indentation (the common leading indent is stripped);
   mutually exclusive with strategies and `or` variants.
 
-## when
+## Traits, actions, hatches, sequences (Phase B, extended by Phase C)
 
 ```
-when-rule    = "when" header-words [ "while" condition ] NL
-               >>> { statement } "end" "when" NL ;
-header-words = WORD { WORD } ;   (* unsegmented: actor/verb/target split is the
-                                    analyzer's job, against the event-selector map *)
+define-trait   = "define" "trait" WORD NL
+                 { trait-line }
+                 "end" "trait" NL ;
+trait-line     = "data" NL >>> { trait-field }
+               | states-line                               (* trait-declared states, D8 *)
+               | score-line                                (* D12 *)
+               | "phrases" LOCALE NL >>> { phrase-entry }
+               | on-clause ;
+trait-field    = field-words ":" [ "optional" ]
+                 ( "entity" | "number" | "name"
+                 | "one" "of" WORD { "," WORD } )
+                 [ "," "starts" token ] NL ;
 ```
+
+The `flag` field type was removed (given 8 / D8): a `flag`-typed field is a
+parse error (`parse.removed-flag-field`) pointing at trait `states`.
+
+```
+define-action  = "define" "action" WORD NL action-line* ;  (* dedent-terminated *)
+action-line    = "grammar" NL >>> { pattern-line }
+               | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
+               | must-line                                 (* D6 requirement (has colon) *)
+               | score-line                                (* D12 *)
+               | "refuse" "without" WORD ":" WORD NL
+               | "refuse" "when" condition ":" WORD NL
+               | "otherwise" "refuse" WORD NL              (* dispatch miss *)
+               | "phrases" LOCALE NL >>> { phrase-entry }
+               | statement ;                               (* §2.3 body *)
+pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ;  (* → = cardinality *)
+
+define-hatch   = "define" ("action"|"behavior") WORD "from" STRING NL ;
+
+define-sequence= "define" "sequence" WORD { WORD } NL
+                 { sequence-step } "end" "sequence" NL ;
+sequence-step  = step-anchor NL >>> { statement } ;
+step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)
+               | NUMBER "turns" "later"                    (* relative to previous step *)
+               | "when" name "becomes" WORD ;              (* state anchor, D10 *)
+```
+
+### must requirements (ratchet D6)
+
+Legal as a `define action` line AND as a body statement (never inside an
+`after` clause):
+
+```
+must-line    = must-subject "must" infinitive ":" WORD NL ;
+must-subject = value-expr ;    (* line must OPEN with lowercase `the`/`it`/`its`
+                                  so capitalized prose stays prose *)
+infinitive   = "be" ( ("a"|"an") WORD { WORD }             (* is-a *)
+                    | "in" name                            (* is-in *)
+                    | value-expr )                         (* is *)
+             | ( "have" | "hold" | "wear" ) name           (* has/holds/wears *)
+             | ( "see" | "reach" ) name ;                  (* can see/reach *)
+```
+
+`must not …` is a parse error (`parse.must-negative`): requirements are
+positive by design; prohibitions use `refuse when <condition>: <key>`
+(companion analyzer gate: `analysis.negated-requirement` on
+`refuse when not …`).
 
 ## Statements
 
 ```
-statement    = "refuse" WORD { param } NL
-             | "phrase" WORD { param } NL
-             | "emit" WORD { WORD } NL
+statement    = "refuse" phrase-key { param } NL            (* not in `after` bodies *)
+             | "refuse" "when" condition ":" WORD NL       (* prohibition, D6; not in `after` *)
+             | must-line                                   (* D6; not in `after` *)
+             | "phrase" phrase-key { param } [ stmt-when ] NL [ inline-prose ]
+             | "emit" WORD { WORD } [ stmt-when ] NL
              | "set" value-expr "to" value-expr NL
-             | "change" name "to" WORD NL                  (* explicit state transition *)
-             | "move" name "to" name NL
-             | "award" { token } [ "," "once" ] NL
-             | "win" [ WORD ] NL
-             | "lose" [ WORD ] NL
-             | if-stmt | select-on | select-strategy | ordinal-block ;
+             | "change" name "to" WORD [ stmt-when ] NL    (* state transition; name may be
+                                                              `the story` (D2) or any entity *)
+             | "move" name "to" name [ stmt-when ] NL
+             | "award" { token } [ "," "once" ] [ stmt-when ] NL
+             | "win" [ WORD ] [ stmt-when ] NL
+             | "lose" [ WORD ] [ stmt-when ] NL
+             | select-on | select-strategy | ordinal-block ;
+stmt-when    = "when" condition ;                          (* statement-final suffix, D7 *)
+phrase-key   = WORD { "." WORD } ;                         (* dotted keys: zoo.pa.closing-3 *)
 param        = "with" WORD { WORD } "=" value-expr ;
-if-stmt      = "if" condition "then" NL >>> { statement }
-               [ "else" NL >>> { statement } ] "end" "if" NL ;
 select-on    = "select" "on" value-expr NL
                >>> { "when" WORD NL >>> { statement } } "end" "select" NL ;
 select-strategy = "select" STRATEGY NL
@@ -206,7 +276,26 @@ ordinal-block = ORDINAL "time" NL >>> { statement } ;
 ORDINAL      = "first" | "second" | … | "tenth" ;
 ```
 
-## Conditions (closed selector grammar, Phase A subset)
+- **`if`/`else`/`end if` was removed** (ratchet 2026-07-11): `if` is a parse
+  error (`parse.removed-if`) pointing at `must` guards, the statement `when`
+  suffix, and `select`.
+- The **statement `when` suffix** (D7) is legal on `phrase`, `emit`,
+  `change`, `move`, `award`, `win`, `lose` — not on `set` or bare `refuse`.
+  It is positionally distinct from the select-arm `when <value>` header
+  (statement-final vs arm-header — homonym noted in the ratchet).
+- **Declare-and-emit inline prose** (§2.6/§3.3): a deeper-indented bare
+  prose block after `phrase <key>` registers the text under the key. A
+  deeper line counts as a statement (not inline text) when it opens with a
+  lowercase statement keyword, an ordinal, a `must`-shaped line, or
+  `<n> turns` — prose sentences start capitalized.
+- **Conditional blocked exits** (grammar log 2026-07-10):
+  `DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL`.
+- **Config name values**: `with <key> the <entity name>` — an article starts
+  a multi-word entity-name value (`feedable with food the handful of feed`).
+- **Lexing**: a lone `"` with no closer on the line is prose punctuation
+  (multi-line dialogue); positions requiring strings diagnose at parse time.
+
+## Conditions (closed selector grammar)
 
 Precedence lowest→highest: `or`, `and`, `not`.
 
@@ -216,15 +305,16 @@ and-expr     = unary { "and" unary } ;
 unary        = "not" unary
              | "(" condition ")"
              | "one" "chance" "in" NUMBER
-             | WORD                                        (* bare ⇒ named-condition ref,
-                                                              only when a connective or
-                                                              end-of-condition follows *)
+             | WORD                                        (* bare ⇒ named-condition or
+                                                              state ref, only when a
+                                                              connective or end-of-condition
+                                                              follows *)
              | value-expr predicate ;
 predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                               | "in" name                      (* is-in *)
                               | value-expr )                   (* is *)
-             | ( "has" | "holds" | "wears" ) name ;
-             (* Phase B: can see / can reach, comparisons, quantifiers, cardinality *)
+             | ( "has" | "holds" | "wears" ) name
+             | "can" ( "see" | "reach" ) name ;                (* Phase B *)
 
 value-expr   = NUMBER | STRING
              | "its" field-words                           (* possessive on `it` *)
@@ -235,6 +325,13 @@ ARTICLE      = "the" | "a" | "an" ;
 ```
 
 Noun phrases stop at: `is has holds wears can and or then to while with`.
+
+**State adjectives (D1) are not new syntax**: `the staff gate is closed`
+parses as the plain `is <value>` predicate; `open`, `closed`, `locked`,
+`unlocked`, `on`, `off`, `worn`, `lit` form a closed analyzer catalog
+(`STATE_ADJECTIVES` in `catalog.ts`) resolved live from world trait state.
+Likewise, a declared owner state (`after-hours`, `hungry`) is a valid
+bare-word ref or `is <word>` object — analyzer resolution, not parser.
 
 ## Implementation readings (design.md ambiguities, resolved in code)
 
@@ -251,11 +348,13 @@ review; if any is wrong it becomes a grammar-changes entry:
    description (consecutive bare paragraphs append — grammar log 2026-07-10).
 4. **`with` setting values**: the last token of each `and`-separated setting
    is the value; preceding words are the key (`max items 5`).
-5. **Event headers stay unsegmented word lists** — actor/verb/target
-   segmentation needs the curated event-selector map, which is analyzer
-   (Phase 3) territory; the parser stays vocabulary-free.
-6. **Bare condition refs** (`while in-darkness`) are only taken when the
-   word stands alone; otherwise a subject–predicate parse is attempted.
+5. **Clause verbs are single raw words** (`on feeding it`,
+   `after entering it`) — the parser is vocabulary-free; mapping a gerund
+   to a dispatch action or event selector is the analyzer's job. (The old
+   unsegmented `when`-header reading is obsolete with the when-rule removal.)
+6. **Bare condition refs** (`while in-darkness`, `while after-hours`) are
+   only taken when the word stands alone; otherwise a subject–predicate
+   parse is attempted.
 7. **Prose paragraphs join lines with single spaces**; markers keep precise
    per-line spans for AC-3 diagnostics.
 
@@ -270,14 +369,22 @@ review; if any is wrong it becomes a grammar-changes entry:
 9. **Descriptions and per-entity overrides become derived phrase keys**
    (`<entity-id>.description`, `<entity-id>.<key>`) registered in the
    story's default locale (Phase A: `en-US`), per given 3.
-10. **Event-verb set (Phase A): `enters`.** The `when` header segments as
-    words-before-verb = actor, words-after = target; a header with no known
-    verb is a load error listing the known verbs. Growing this set is a
-    grammar change (governance log).
+10. **Event-verb set: `entering`** (`EVENT_VERBS` in `catalog.ts`, gerund
+    register since the ownership package). An `on`/`after` clause verb is
+    either a known event verb or a dispatch-action gerund; growing the set
+    is a grammar change (governance log).
 11. **`is <word>` objects** must be a declared state of the subject entity,
-    a v1 trait adjective, a literal, or an entity name — anything else is
-    the unknown-value gate with a nearest-valid suggestion.
+    a v1 trait adjective, a state adjective (D1), a literal, or an entity
+    name — anything else is the unknown-value gate with a nearest-valid
+    suggestion.
 12. **Marker validation (Phase A slice):** bare lowercase single-word
     markers (`{garbled}`) must name a declared hatch or phrase key.
     Formatter-chain forms (`{You}`, `{verb:is item}`, `{the item}`) are not
     validated yet — that check lands with the full contract in Phase B/C.
+13. **State-set gates are analyzer territory**: the three-ring boolean-state
+    gate (D9: `analysis.boolean-state` / `analysis.shadow-state` /
+    `analysis.negated-state`), state collisions across composed traits
+    (D8: `analysis.state-collision`), irreversible-transition checking
+    (D4: `analysis.irreversible-state`), and the negated-requirement gate
+    (D6: `analysis.negated-requirement`) all fire after parse — the parser
+    accepts any word list in a `states-line`.

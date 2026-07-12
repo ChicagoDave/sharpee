@@ -113,13 +113,23 @@ Chord edition).
 
 ## 5. Genuine language gaps (the interesting output)
 
+> **Modernized 2026-07-12** to the Phase C ownership grammar (ratchet log:
+> `docs/architecture/chord-grammar-changes.md`). Examples rewritten in the
+> shipped syntax; conclusions unchanged (Finding 9).
+
 Enumerated, smallest-first — each would be a grammar-log/design decision:
 
-1. **Event-verb vocabulary.** Phase A ships `enters` only. Dungeo's handler
-   set needs: **exits** (fromRoom filter), **takes, drops, eats, throws,
-   pushes, reads, switches on**, plus system events **dies** and
-   **score-displayed**. Each is one row in the curated event-selector map +
-   a governance-log entry; the machinery (keyed chains) exists.
+1. **Event-verb vocabulary.** Handlers are now owner-attached `on <verb>ing
+   it` / `after <verb>ing it` clauses (ratchet D3); action verbs ride the
+   gerund register, so most of the original wish-list (**takes, drops, eats,
+   throws, pushes, reads, switches on**) is `after taking it`, `on reading
+   it`, etc. — the shipped Zoo shapes. The curated non-action event-verb set
+   (`EVENT_VERBS` in the chord catalog) still ships `entering` only. Dungeo
+   still needs: **leaving** (`after leaving it` on the room — ownership
+   makes the old fromRoom filter implicit), plus system events **dies** and
+   **score-displayed** (no owning verb clause). Each is one row in the
+   curated event-verb set + a governance-log entry; the machinery (D3
+   clause binding) exists.
 2. **Conditional blocked exits.** ~10 subsystems gate movement with
    command transformers (river without boat, rainbow until solid, chimney
    carry-limit, bank alarm by inventory, grue in darkness). The natural

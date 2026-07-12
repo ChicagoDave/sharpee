@@ -31,6 +31,14 @@ create the Foyer Bar
   the foyer to the north, is completely empty. There seems to be some
   sort of message scrawled in the sawdust on the floor.
 
+  after entering it while in-darkness
+    phrase stumble
+    first time
+      change the message to trampled
+    third time
+      change the message to obliterated
+  end after
+
 create the player
   starts in the Foyer of the Opera House
   wears the velvet cloak
@@ -70,14 +78,6 @@ create the message in the sawdust
         lose
     end select
   end on
-
-when the player enters the Foyer Bar while in-darkness
-  phrase stumble
-  first time
-    change the message to trampled
-  third time
-    change the message to obliterated
-end when
 
 define verb hang or hook means put (something) on (something)
 

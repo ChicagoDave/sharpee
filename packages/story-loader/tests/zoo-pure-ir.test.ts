@@ -1,13 +1,9 @@
 /**
- * zoo-pure-ir.test.ts — AC-4 sweep (Phase B gate): the pure-IR profile
- * must refuse a hatch-bearing story without reading a single hatch export,
- * and a hatch-stripped variant must load and build a world as plain data.
- *
- * TEMPORARY STAND-IN: the shipped stories/friendly-zoo/zoo.story still
- * uses the pre-ownership grammar and no longer compiles; until Phase C P5
- * migrates it, the sweep runs against the rewritten
- * packages/chord/tests/fixtures/traits-basic.story (2 TS hatches:
- * juggling + crowd-control).
+ * zoo-pure-ir.test.ts — AC-4 sweep against the REAL zoo.story (Phase B
+ * gate, restored in Phase C P5): the pure-IR profile must refuse the
+ * shipped Zoo (it declares 2 `define text ... from` hatches) without
+ * reading a single hatch export, and a hatch-stripped variant must load
+ * and build a world as plain data.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,7 +12,7 @@ import { compile } from '@sharpee/chord';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
 
-const TRAITS_BASIC = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures', 'traits-basic.story');
+const ZOO_STORY = join(__dirname, '..', '..', '..', 'stories', 'friendly-zoo', 'zoo.story');
 
 function compileSource(source: string) {
   const result = compile(source);
@@ -26,10 +22,9 @@ function compileSource(source: string) {
   return result.ir;
 }
 
-describe('AC-4 sweep: traits-basic.story (temporary stand-in for the migrated zoo.story)', () => {
-  const source = readFileSync(TRAITS_BASIC, 'utf8');
+describe('AC-4 sweep: the shipped zoo.story', () => {
+  const source = readFileSync(ZOO_STORY, 'utf8');
 
-  // TODO(phase-c-p5): repoint at the real, migrated zoo.story once Phase 5 lands
   it('pure-IR refuses it without touching any hatch export', () => {
     const ir = compileSource(source);
     expect(ir.hasHatches).toBe(true);
@@ -40,23 +35,20 @@ describe('AC-4 sweep: traits-basic.story (temporary stand-in for the migrated zo
       { get: () => { touched = true; return () => []; } },
     ) as Record<string, unknown>;
 
-    expect(() => createStory(ir, { profile: 'pure-ir', hatchModules: { './stunts.ts': tripwire } }))
+    expect(() => createStory(ir, { profile: 'pure-ir', hatchModules: { './chord-extras.ts': tripwire } }))
       .toThrow(LoadError);
-    expect(() => createStory(ir, { profile: 'pure-ir', hatchModules: { './stunts.ts': tripwire } }))
+    expect(() => createStory(ir, { profile: 'pure-ir', hatchModules: { './chord-extras.ts': tripwire } }))
       .toThrow(/pure-IR.*2 TS hatch/);
     expect(touched, 'no hatch export was read or executed').toBe(false);
   });
 
-  // TODO(phase-c-p5): repoint at the real, migrated zoo.story once Phase 5 lands
   it('a hatch-stripped variant loads and builds a world under pure-IR', () => {
-    // Strip the two `define action|behavior … from` declarations, plus the
-    // carrying-limit trait: its role-bound clause (`on taking anything as
-    // the taker`) is deliberately unwired in the runtime (post-Zoo scope)
-    // and bind() refuses to load it silently.
+    // Strip the two `define text ... from` declarations and the prose
+    // markers that reference them — everything else is the real Zoo.
     const stripped = source
-      .replace(/define trait carrying-limit[\s\S]*?end trait\n/, '')
       .split('\n')
-      .filter((line) => !/^define (action|behavior) \S+ from/.test(line))
+      .filter((line) => !/^define text \S+ from/.test(line))
+      .map((line) => line.replace(/\{(flavor|aside)\}/g, ''))
       .join('\n');
     const ir = compileSource(stripped);
     expect(ir.hasHatches).toBe(false);
@@ -64,8 +56,10 @@ describe('AC-4 sweep: traits-basic.story (temporary stand-in for the migrated zo
     const story = createStory(ir, { profile: 'pure-ir' });
     const world = new WorldModel();
     story.initializeWorld(world);
+    const player = story.createPlayer(world);
+    world.setPlayer(player.id);
 
-    expect(world.getAllEntities().length).toBeGreaterThan(1);
-    expect(world.getMaxScore()).toBe(1); // the snoozing action's napped score
+    expect(world.getAllEntities().length).toBeGreaterThan(20);
+    expect(world.getMaxScore()).toBe(85);
   });
 });

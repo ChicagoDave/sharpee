@@ -7,7 +7,11 @@
  * consumer stages (dynamic-text.ts), keyed to the parrot so the cycle
  * position survives save/restore.
  *
- * Public interface: flavor (a PhraseProducer, ADR-196).
+ * Public interface: flavor, aside (PhraseProducers, ADR-196). Both are
+ * Sharpee-API hatches per the legitimacy rule (design.md §5.6); the former
+ * gateStatus producer was retired in Phase C P5 into a pure-Chord
+ * state-conditional phrase (it read a loader-private state key by string,
+ * a namespace that no longer exists).
  * Owner context: @sharpee/story-friendly-zoo (story content; Chord edition).
  */
 import type { Choice, Literal, PhraseProducer } from '@sharpee/if-domain';
@@ -47,17 +51,3 @@ export const aside: PhraseProducer = () => {
   };
   return choice;
 };
-
-/**
- * Gate status line (C1 Optional shape): the mid-sentence clause appears
- * only while the staff gate stands open (reads the story's gate-closed
- * flag at render staging).
- */
-export const gateStatus: PhraseProducer = (ctx) => {
-  const world = (ctx as unknown as { world?: { getStateValue(key: string): unknown } }).world;
-  const closed = world?.getStateValue('chord.flag.gate-closed');
-  const open = !(closed === true || closed === 'true');
-  return lit(open ? 'The staff gate is set into the fence, standing wide open.' : 'The staff gate is set into the fence.');
-};
-
-export { gateStatus as 'gate-status' };

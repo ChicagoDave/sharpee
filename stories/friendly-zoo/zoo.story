@@ -1,11 +1,8 @@
 story "Friendly Zoo" by "Sharpee Team"
   id: friendly-zoo
-  version: 0.0.1
+  version: 0.0.2
   blurb: A small family zoo — a workspace testing target for the v2 platform.
-
-define flag after-hours starts false
-define flag feeding-time-active starts false
-define flag gate-closed starts true
+  states: open, after-hours
 
 create the Zoo Entrance
   a room
@@ -23,7 +20,7 @@ create the Main Path
   east to the Petting Zoo
   west to the Aviary
   south to the Supply Room
-  south is blocked while gate-closed: staff-gate-blocked
+  south is blocked while the staff gate is closed: staff-gate-blocked
 
   A wide gravel path winds through the heart of the zoo. Colorful direction
   signs point every which way. A park bench sits beside the path. To the
@@ -33,15 +30,21 @@ create the Main Path
 create the Petting Zoo
   a room
   aka petting area, pen
+  score visit worth 5
 
   A cheerful open-air enclosure that smells of warm hay and fur. A feed
   dispenser is mounted on a post, and an info plaque is posted by the gate.
   The main path is back to the west.
 
+  after entering it
+    award visit
+  end after
+
 create the Aviary
   a room
   aka bird house, dome
   west to the Gift Shop
+  score visit worth 5
 
   You step inside a soaring mesh dome. Brilliantly colored parrots chatter
   from rope perches, and a toucan eyes you curiously from a branch overhead.
@@ -49,33 +52,63 @@ create the Aviary
   the entrance. The gift shop is to the west. The main path is back to the
   east.
 
+  after entering it
+    award visit
+  end after
+
+  after entering it while not after-hours
+    phrase parrot-notices
+      The parrot ruffles its feathers and eyes you with interest.
+  end after
+
+  after entering it while after-hours
+    phrase parrot-nods
+      The parrot glances at you and nods, as if recognizing a fellow
+      after-hours regular.
+  end after
+
 create the Supply Room
   a room
   aka storage room, storeroom
   south to the Nocturnal Animals Exhibit
-  north is blocked while gate-closed: staff-gate-blocked
+  north is blocked while the staff gate is closed: staff-gate-blocked
+  score visit worth 5
 
   A cluttered storage room behind the staff gate. Metal shelves line the
   walls. A cork board on the wall is covered with staff schedules. A
   battered radio sits on one of the shelves. The staff gate leads back
   north.
 
+  after entering it
+    award visit
+  end after
+
 create the Nocturnal Animals Exhibit
   a room, dark
   aka nocturnal exhibit, nocturnal animals, exhibit
+  score visit worth 5
 
   A cool, dimly lit cavern designed to simulate nighttime. Glass enclosures
   line both walls with soft red lights. You can see sugar gliders, bush
   babies, and a barn owl. A warning sign is posted near the entrance. The
   exit leads back north to the supply room.
 
+  after entering it
+    award visit
+  end after
+
 create the Gift Shop
   a room
   aka shop, store
+  score visit worth 5
 
   A small zoo gift shop crammed with stuffed animals and postcards. A large
   souvenir penny press machine stands near the door. A disposable camera
   sits on the counter. The aviary is back to the east.
+
+  after entering it
+    award visit
+  end after
 
 create the Staff Parking Lot
   a room
@@ -104,16 +137,10 @@ create the staff gate
   on examining it
     phrase gate-look
       A sturdy metal gate with a "STAFF ONLY" sign.
-
-      {gate-status}
-  end on
-
-  on opening it
-    set gate-closed to false
-  end on
-
-  on closing it
-    set gate-closed to true
+    phrase gate-status-closed when it is closed
+      The staff gate is set into the fence.
+    phrase gate-status-open when it is open
+      The staff gate is set into the fence, standing wide open.
   end on
 
 create the welcome sign
@@ -207,6 +234,25 @@ create the barn owl
 
   An enormous barn owl with a heart-shaped white face.
 
+create the snake
+  aka python, snake enclosure
+  scenery
+  in the Nocturnal Animals Exhibit
+  score confession worth 5
+
+  A thick-bodied python coiled behind glass, nearly invisible in the dim
+  red light.
+
+  on every turn while after-hours, once
+    award confession
+    phrase confession
+      A soft, sibilant voice drifts from behind the glass of the snake
+      enclosure. "Ssso... you're the one who stayed. Good. Do you know what
+      it's like in here? They keep the lights on 'dim' and call it
+      'nocturnal.' I haven't seen actual moonlight in three years. Three.
+      Years."
+  end on
+
 create the stuffed animals
   aka plush, toys
   scenery, plural
@@ -245,7 +291,12 @@ create the info plaque
   A brass plaque mounted on a wooden post near the petting zoo gate.
 
   on reading it
-    phrase info-plaque-text
+    phrase plaque-text
+      PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always
+      hungry.
+
+      HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and
+      Marmalade, were born here in 2023.
   end on
 
 create the aviary plaque
@@ -256,7 +307,12 @@ create the aviary plaque
   A colorful information board near the aviary entrance.
 
   on reading it
-    phrase aviary-plaque-text
+    phrase plaque-text
+      WELCOME TO THE AVIARY — Home to over 30 species!
+
+      TOCO TOUCAN — Its bill weighs less than a smartphone.
+
+      SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.
   end on
 
 create the warning sign
@@ -267,26 +323,35 @@ create the warning sign
   A yellow warning sign near the nocturnal exhibit entrance.
 
   on reading it
-    phrase warning-sign-text
+    phrase sign-text
+      CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a
+      flashlight. Do NOT use camera flash. (We don't talk about the Great Owl
+      Incident of 2022.)
   end on
 
 create the zoo brochure
   aka brochure, pamphlet, leaflet
   readable
   in the Zoo Entrance
+  score read worth 5
 
   A glossy tri-fold brochure with "WILLOWBROOK FAMILY ZOO" on the cover.
 
   on reading it
-    award read-brochure
+    award read
     phrase brochure-text
   end on
 
 create the zoo map
   aka map, folding map
   in the Zoo Entrance
+  score collected worth 5
 
   A colorful folding map of the Willowbrook Family Zoo.
+
+  after taking it
+    award collected
+  end after
 
 create the backpack
   aka rucksack, pack
@@ -367,37 +432,20 @@ create the disposable camera
   A cheap yellow disposable camera with "ZOO MEMORIES" printed on the side.
 
 define trait pettable
-  data
-    kind: one of goats, rabbits, parrot, snake
-
   phrases en-US
-    pet-goats:
-      You reach down and pet the nearest goat. It leans into your hand and
-      bleats happily. The others crowd around, demanding equal attention.
-    pet-rabbits:
-      You gently stroke one of the rabbits. Its fur is incredibly soft. It
-      twitches its nose at you contentedly.
-    pet-parrot:
-      You reach toward the parrot. CHOMP! It nips your finger with its beak.
-      "NO TOUCHING!" it squawks indignantly.
+    petted:
+      You pet the animal. It seems pleased.
 
   on petting it
     emit petted
-    select on kind
-      when goats
-        phrase pet-goats
-      when rabbits
-        phrase pet-rabbits
-      when parrot
-        phrase pet-parrot
-    end select
+    phrase petted
   end on
 end trait
 
 define trait feedable
   data
     food: entity
-    fed: flag, starts false
+  states, reversible: hungry, content
 
   phrases en-US
     no-feed:
@@ -408,33 +456,34 @@ define trait feedable
       You offer some feed. The animal eats it gratefully.
 
   on feeding it
-    if not (the actor has its food) then
-      refuse no-feed
-    end if
-    if fed then
-      refuse already-fed
-    end if
-    set fed to true
+    the actor must have its food: no-feed
+    it must be hungry: already-fed
+    change it to content
     emit fed
     phrase fed
   end on
 end trait
 
 define trait chatty
-  on every turn while the player can see it and one chance in 2
+  on every turn while one chance in 2
     phrase parrot-chatter
   end on
 end trait
 
 define trait candid
-  on every turn while the player can see it and one chance in 2
+  on every turn while one chance in 2
     phrase parrot-candor
   end on
 end trait
 
 define trait restless
-  on every turn while feeding-time-active and the player can see it
-    phrase goats-bleating
+  phrases en-US
+    bleating:
+      The pygmy goats are bleating loudly and headbutting the fence. They seem
+      very hungry!
+
+  on every turn while it is hungry
+    phrase bleating
   end on
 end trait
 
@@ -466,8 +515,9 @@ define action photographing
     photograph :target
     photo :target
     snap :target
-  refuse when not (the player holds the disposable camera): no-camera
-  award photograph-animal
+  score snapshot worth 5
+  the player must hold the disposable camera: no-camera
+  award snapshot
   phrase took-photo
 
   phrases en-US
@@ -481,19 +531,41 @@ create the zookeeper
   a person
   aka keeper, sam
   in the Main Path
+  score farewell worth 5
 
   A friendly zookeeper in khaki overalls. A name tag reads "Sam."
+
+  phrase presence:
+    Sam the zookeeper is here, jingling a ring of keys.
+
+  on every turn while after-hours, once
+    award farewell
+    phrase departs
+      The zookeeper glances at the clock, unclips the walkie-talkie from his
+      belt, and stretches. "Well, that's me done for the day. Zoo's all yours,
+      I guess!" He gives you a friendly wave and ambles off toward the staff
+      parking lot. A moment later, you hear an engine start and fade into the
+      distance.
+    move it to the Staff Parking Lot
+  end on
 
 create the parrot
   a person
   aka macaw, scarlet macaw
   in the Aviary
-  pettable with kind parrot
+  pettable
   chatty while not after-hours
   candid while after-hours
+  score confession worth 5
 
   A magnificent scarlet macaw perched on a rope. It tilts its head and
   watches you with one bright eye.
+
+  phrase petted:
+    You reach toward the parrot. CHOMP! It nips your finger with its beak.
+    "NO TOUCHING!" it squawks indignantly.
+  phrase presence:
+    A scarlet macaw watches you with one bright, knowing eye.
 
   on examining it
     phrase parrot-look
@@ -503,31 +575,84 @@ create the parrot
       {flavor}{aside}
   end on
 
+  on every turn while after-hours, once
+    award confession
+    phrase confession
+      The parrot clears its throat — actually clears its throat — and fixes
+      you with a knowing look. "Right then. Now that the performative
+      squawking is over, let me tell you something: that toucan? Complete
+      fraud. Can't even crack a nut properly. And don't get me started on the
+      gift shop markup."
+  end on
+
 create the pygmy goats
   aka goats, goat
   scenery, plural
   in the Petting Zoo
-  pettable with kind goats
+  pettable
   feedable with food the bag of animal feed
   restless
+  score fed worth 10
+  score confession worth 5
+
+  Three pygmy goats hoping you have food.
+
+  phrase petted:
+    You reach down and pet the nearest goat. It leans into your hand and
+    bleats happily. The others crowd around, demanding equal attention.
   phrase fed:
     You scatter some feed on the ground. The pygmy goats rush over, bleating
     excitedly, and devour the corn and pellets in seconds. The smallest goat
     looks up at you with big grateful eyes.
+  phrase presence:
+    Three pygmy goats mill about hopefully, eyeing your pockets for snacks.
 
-  Three pygmy goats hoping you have food.
+  after feeding it
+    award fed
+  end after
+
+  on every turn while after-hours, once
+    award confession
+    phrase confession
+      Now that the keeper is gone, the goats exchange glances. The largest one
+      turns to you and bleats in a very deliberate pattern. You could swear it
+      sounds like: "Finally. Do you have any idea what it's like being called
+      'cute' six hundred times a day? We are MAJESTIC."
+  end on
 
 create the rabbits
   aka rabbit, bunnies
   scenery, plural
   in the Petting Zoo
-  pettable with kind rabbits
+  pettable
   feedable with food the bag of animal feed
+  score fed worth 10
+  score confession worth 5
+
+  A pair of Holland Lop rabbits with floppy ears.
+
+  phrase petted:
+    You gently stroke one of the rabbits. Its fur is incredibly soft. It
+    twitches its nose at you contentedly.
   phrase fed:
     You sprinkle some pellets near the rabbits. Biscuit and Marmalade hop
     over cautiously, then munch away happily.
+  phrase presence:
+    A pair of Holland Lop rabbits lounges near the hay bale, ears flopped.
 
-  A pair of Holland Lop rabbits with floppy ears.
+  after feeding it
+    award fed
+  end after
+
+  on every turn while after-hours, once
+    award confession
+    phrase confession
+      The rabbits stop mid-hop and look at each other. Biscuit twitches her
+      nose disapprovingly. Marmalade thumps his foot twice. You get the
+      distinct impression they're critiquing the quality of today's pellets.
+      "Barely adequate," the thumping seems to say. "Last Tuesday's batch was
+      far superior."
+  end on
 
 create the parrots
   aka macaws, birds
@@ -535,61 +660,6 @@ create the parrots
   in the Aviary
 
   A raucous flock of scarlet macaws and grey African parrots.
-
-define score visit-petting-zoo worth 5
-define score visit-aviary worth 5
-define score visit-gift-shop worth 5
-define score visit-supply-room worth 5
-define score visit-nocturnal worth 5
-define score feed-goats worth 10
-define score feed-rabbits worth 10
-define score collect-map worth 5
-define score collect-pressed-penny worth 10
-define score photograph-animal worth 5
-define score pet-animal worth 5
-define score read-brochure worth 5
-define score after-hours-goats worth 5
-define score after-hours-rabbits worth 5
-define score after-hours-parrot worth 5
-define score after-hours-snake worth 5
-define score after-hours-keeper-leaves worth 5
-
-when the player enters the Petting Zoo
-  award visit-petting-zoo
-end when
-
-when the player enters the Aviary
-  award visit-aviary
-end when
-
-when the player enters the Gift Shop
-  award visit-gift-shop
-end when
-
-when the player enters the Supply Room
-  award visit-supply-room
-end when
-
-when the player enters the Nocturnal Animals Exhibit
-  award visit-nocturnal
-end when
-
-when the player feeds the pygmy goats
-  award feed-goats
-  set feeding-time-active to false
-end when
-
-when the player feeds the rabbits
-  award feed-rabbits
-end when
-
-when the player enters the Aviary while not after-hours
-  phrase parrot-notices
-end when
-
-when the player enters the Aviary while after-hours
-  phrase parrot-nods
-end when
 
 define sequence closing time
   at turn 5
@@ -609,74 +679,25 @@ define sequence closing time
     phrase zoo.pa.closed
       *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for
       visiting! We hope to see you again soon!"
-    set after-hours to true
+    change the story to after-hours
 end sequence
 
 define sequence feeding time
   at turn 11
-    set feeding-time-active to true
+    change the pygmy goats to hungry
     phrase zoo.feeding-time.announced
       *DING DONG* "It's FEEDING TIME at the Petting Zoo! Come watch our pygmy
       goats and rabbits enjoy their favorite snacks!"
   8 turns later
-    set feeding-time-active to true
+    change the pygmy goats to hungry
     phrase zoo.feeding-time.announced
   8 turns later
-    set feeding-time-active to true
+    change the pygmy goats to hungry
     phrase zoo.feeding-time.announced
   8 turns later
-    set feeding-time-active to true
+    change the pygmy goats to hungry
     phrase zoo.feeding-time.announced
 end sequence
-
-once after-hours
-  if the player can see the zookeeper then
-    award after-hours-keeper-leaves
-  end if
-  phrase zoo.after-hours.keeper-leaves
-    The zookeeper glances at the clock, unclips the walkie-talkie from his
-    belt, and stretches. "Well, that's me done for the day. Zoo's all yours,
-    I guess!" He gives you a friendly wave and ambles off toward the staff
-    parking lot. A moment later, you hear an engine start and fade into the
-    distance.
-  move the zookeeper to the Staff Parking Lot
-end once
-
-once after-hours and the player is in the Petting Zoo
-  award after-hours-goats
-  phrase zoo.after-hours.goats
-    Now that the keeper is gone, the goats exchange glances. The largest one
-    turns to you and bleats in a very deliberate pattern. You could swear it
-    sounds like: "Finally. Do you have any idea what it's like being called
-    'cute' six hundred times a day? We are MAJESTIC."
-  award after-hours-rabbits
-  phrase zoo.after-hours.rabbits
-    The rabbits stop mid-hop and look at each other. Biscuit twitches her
-    nose disapprovingly. Marmalade thumps his foot twice. You get the
-    distinct impression they're critiquing the quality of today's pellets.
-    "Barely adequate," the thumping seems to say. "Last Tuesday's batch was
-    far superior."
-end once
-
-once after-hours and the player is in the Aviary
-  award after-hours-parrot
-  phrase zoo.after-hours.parrot
-    The parrot clears its throat — actually clears its throat — and fixes
-    you with a knowing look. "Right then. Now that the performative
-    squawking is over, let me tell you something: that toucan? Complete
-    fraud. Can't even crack a nut properly. And don't get me started on the
-    gift shop markup."
-end once
-
-once after-hours and the player is in the Nocturnal Animals Exhibit
-  award after-hours-snake
-  phrase zoo.after-hours.snake
-    A soft, sibilant voice drifts from behind the glass of the snake
-    enclosure. "Ssso... you're the one who stayed. Good. Do you know what
-    it's like in here? They keep the lights on 'dim' and call it
-    'nocturnal.' I haven't seen actual moonlight in three years. Three.
-    Years."
-end once
 
 define phrase parrot-chatter, randomly
   Polly wants a cracker!
@@ -722,30 +743,6 @@ end phrase
 define phrases en-US
   staff-gate-blocked:
     The staff gate is closed.
-  goats-bleating:
-    The pygmy goats are bleating loudly and headbutting the fence. They seem
-    very hungry!
-  parrot-notices:
-    The parrot ruffles its feathers and eyes you with interest.
-  parrot-nods:
-    The parrot glances at you and nods, as if recognizing a fellow
-    after-hours regular.
-  info-plaque-text:
-    PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always
-    hungry.
-
-    HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and
-    Marmalade, were born here in 2023.
-  aviary-plaque-text:
-    WELCOME TO THE AVIARY — Home to over 30 species!
-
-    TOCO TOUCAN — Its bill weighs less than a smartphone.
-
-    SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.
-  warning-sign-text:
-    CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a
-    flashlight. Do NOT use camera flash. (We don't talk about the Great Owl
-    Incident of 2022.)
   victory:
     Congratulations! You've earned your MASTER ZOOKEEPER badge! You've
     visited every exhibit, befriended the animals, collected souvenirs, and
@@ -753,15 +750,6 @@ define phrases en-US
     Willowbrook Family Zoo will never forget you!
 
     *** You have won ***
-  presence-zookeeper:
-    Sam the zookeeper is here, jingling a ring of keys.
-  presence-parrot:
-    A scarlet macaw watches you with one bright, knowing eye.
-  presence-goats:
-    Three pygmy goats mill about hopefully, eyeing your pockets for snacks.
-  presence-rabbits:
-    A pair of Holland Lop rabbits lounges near the hay bale, ears flopped.
 
 define text flavor from "./chord-extras.ts"
 define text aside from "./chord-extras.ts"
-define text gate-status from "./chord-extras.ts"

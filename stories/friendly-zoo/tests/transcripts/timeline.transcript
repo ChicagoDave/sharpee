@@ -1,10 +1,14 @@
-title: Zoo golden gate — PA timeline, feeding time, goat bleats
+title: Zoo golden gate — PA timeline, feeding time, goat bleats, keeper departure
 story: friendly-zoo
 description: Deterministic scheduler beats as behavior-parity proof (AC-2
   scheduler category): PA closing announcements at turns 5/10/15/20, the
-  feeding-time fuse at turn 11 with its 8-turn repeat at 19, and the goat
-  bleats on the three turns after feeding time while in the Petting Zoo.
-  Authored against the TS story 2026-07-11, then frozen.
+  feeding-time fuse at turn 11 with its 8-turn repeats, and hungry-goat
+  bleats while in the Petting Zoo. Authored against the TS story
+  2026-07-11, then frozen. Revised + extended in Phase C P5 (gate-delta
+  audit Entries 2-4, David sign-off 2026-07-12): goats start hungry so
+  bleats are pinned from turn 3; feeding is repeatable after each bell;
+  keeper departure is witnessed-only (decision 10) with `, once` preserved
+  off-stage.
 
 ---
 
@@ -15,12 +19,16 @@ description: Deterministic scheduler beats as behavior-parity proof (AC-2
 > east
 [OK: contains "Petting Zoo"]
 
-# Turns 3-4: quiet
+# Turns 3-4: the goats start hungry (states, reversible: hungry, content —
+# first-declared is initial), so they are already bleating before the
+# first feeding bell (audit Entry 2)
 > wait
 [OK: contains "Time passes"]
+[OK: contains "bleating loudly and headbutting the fence"]
 
 > wait
 [OK: contains "Time passes"]
+[OK: contains "bleating loudly and headbutting the fence"]
 
 # Turn 5: first PA announcement
 > wait
@@ -76,3 +84,46 @@ description: Deterministic scheduler beats as behavior-parity proof (AC-2
 # Turn 20: the zoo closes
 > wait
 [OK: contains "The Willowbrook Family Zoo is now closed"]
+
+# Turn 21: after-hours, still in the Petting Zoo — the keeper's departure
+# is witnessed-only (decision 10); nothing fires off-stage (audit Entry 3)
+> wait
+[OK: not contains "that's me done for the day"]
+
+# Turns 22-23: feeding is repeatable across bell cycles (audit Entry 4) —
+# the turn-19 bell left the goats hungry, so feeding succeeds now
+> take feed
+[OK: contains "Taken"]
+
+> feed goats
+[OK: contains "devour the corn and pellets"]
+
+# Turns 24-26: content goats — no bleating until the next bell
+> wait
+[OK: not contains "bleating loudly"]
+
+> wait
+[OK: not contains "bleating loudly"]
+
+> wait
+[OK: not contains "bleating loudly"]
+
+# Turn 27: the third feeding bell re-hungers the goats
+> wait
+[OK: contains "FEEDING TIME at the Petting Zoo"]
+
+# Turn 28: feeding succeeds AGAIN after the bell (the old one-shot fed
+# flag would have refused with "already fed")
+> feed goats
+[OK: contains "devour the corn and pellets"]
+
+# Turn 29: into the Main Path — the keeper is still here, and the armed
+# departure clause fires the first turn it is witnessed (`, once` was not
+# consumed off-stage)
+> west
+[OK: contains "zookeeper"]
+[OK: contains "that's me done for the day"]
+
+# Turn 30: he's gone — moved to the Staff Parking Lot
+> look
+[OK: not contains "zookeeper"]

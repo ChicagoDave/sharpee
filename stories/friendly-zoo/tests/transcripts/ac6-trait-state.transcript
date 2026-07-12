@@ -1,0 +1,46 @@
+title: Zoo AC-6 — trait-declared state survives undo and save/restore
+story: friendly-zoo
+description: ADR-210 AC-6, Phase C P5 (additive to the Phase B gate; P4
+  status note 3): feedable's `states, reversible: hungry, content` is a
+  TRAIT-declared set — Phase B's AC-6 transcripts covered occurrence
+  counters and entity-declared states only. Feeding flips the goats
+  hungry → content with no author-written persistence code: undo must roll
+  the transition back so feeding succeeds again, and the content refusal
+  must survive save/restore (a reset-to-initial would feed successfully).
+
+---
+
+# Into the Petting Zoo; the goats start hungry
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+
+> take feed
+[OK: contains "Taken"]
+
+# hungry → content
+> feed goats
+[OK: contains "devour the corn and pellets"]
+
+# Undo rolls the trait-state transition back along with the turn
+> undo
+[EVENT: true, type="platform.undo_completed"]
+
+# Hungry again: feeding succeeds a second time
+> feed goats
+[OK: contains "devour the corn and pellets"]
+
+$save ac6-goats-content
+
+# Content: the refusal proves the state
+> feed goats
+[OK: contains "already fed them"]
+
+$restore ac6-goats-content
+
+# Still content after restore — trait state rides the save with no author
+# persistence code
+> feed goats
+[OK: contains "already fed them"]

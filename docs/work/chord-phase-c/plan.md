@@ -826,7 +826,27 @@ never a silent edit to a frozen story or its frozen transcripts.
   `zoo-pure-ir.test.ts` (and any other Phase-2-repointed test) loads the
   real shipping stories again with no TODO markers remaining; a repo-wide
   `chord.flag` grep returns zero hits outside historical documentation.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-12). Audit written + empirically verified
+  BEFORE any frozen edit; all four entries individually approved by David
+  2026-07-12 (Entry 3 as Option A, Entry 4 riding Entry 3's extension —
+  see gate-delta-audit.md sign-off table). Cloak migrated byte-identical
+  to the P2 fixture — gate 81/81, zero revisions. Zoo migrated from the
+  sketch; gateStatus retired into pure Chord as `phrase gate-status-closed/
+  -open when it is closed/open` inside `on examining it` (stmtWhen + D1
+  adjectives; `select on its state` was NOT usable — it reads the declared-
+  states slot only, not trait adjectives) — wt-04 byte-identical, hatch +
+  `define text gate-status` deleted, flavor/aside remain. Zoo gate 71/71
+  (original 61 with Entry-1's six max-score revisions + 10 sanctioned new
+  assertions pinning early bleats, witnessed-only keeper departure with
+  `, once` off-stage preservation, and post-bell re-feeding). Pre-revision
+  run confirmed the ONLY failures were Entry 1's six `out of 100` lines —
+  zero unintentional deltas. zoo-pure-ir.test.ts restored to the real
+  zoo.story (2 hatches, max 85); repo-wide chord.flag sweep clean (docs
+  historical hits only). AC-6 trait-state rider (P4 note 3) delivered:
+  new ac6-trait-state.transcript pins feedable's hungry/content through
+  undo + save/restore in the CLI harness (8/8) — final Zoo tally 79/79 in
+  8 files. Suites: story-loader 73/73, chord 144/144, ide-protocol 11/11,
+  devkit 22.
 
 ### Phase 6: Full regression, docs re-cut, Phase C close
 - **Tier**: Medium
@@ -868,7 +888,52 @@ never a silent edit to a frozen story or its frozen transcripts.
   package ready to report closed. Books (the two Sharpee Book editions) are
   explicitly release-time and out of scope for this phase, per the v2
   release strategy.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-12). **Phase C ownership package CLOSED.**
+  - **Full regression green**: `./repokit build dungeo` clean; Dungeo
+    units 1699 passed / 9 expected failures / 4 skipped (107 transcripts)
+    and walkthrough chain 870/870 (17 transcripts, one-good-run) — the
+    zero-platform-touch forecast CONFIRMED by the unaffected-check; chord
+    144/144, story-loader 73/73, ide-protocol 11/11, devkit 22; Cloak
+    81/81; Zoo 79/79 — all against the rebuilt bundle.
+  - **AC-9 re-verified**: `EVENT_VERBS` = exactly `{entering}` (gerund
+    register per D3; the `enters` spelling in this plan was the pre-D3
+    draft name for the same single verb); trigger/payload map pinned by
+    the passing fixture; compile-time layer chains stdlib's
+    ActorMovedEventData.
+  - **Docs re-cut**: chord-grammar.md re-cut against parser.ts (every
+    production line-verified; removed when/once/every/flag/if/define-score
+    productions; added states/score/on-after/must/refuse-when-body/
+    stmt-when/change-to/step-anchor); design.md §2/§3 examples updated to
+    shipped forms (examples-only pass — §2 normative prose rows for the
+    removed forms flagged for a future normative pass, incl. a
+    `award …, once` statement-level owner question at §2.3);
+    dungeo-conversion.md §5 modernized (Finding 9 — only §5.1 was in
+    removed syntax; conclusions preserved; two overtaken-by-reality
+    conclusions flagged not changed: §5.2 conditional blocked exits
+    shipped in Phase B, §5.1's gap narrowed to `leaving` + system events;
+    §1/§2 stale examples out of Finding-9 scope); ratchet log fully
+    reconciled — D6 body-position `refuse when` RATIFIED (David,
+    2026-07-12) and the as-shipped reconciliation entry appended (gerund
+    event verb, dormant `any`, duplicate-clause rule, select-on
+    arm-validity); no entry left unreconciled.
+  - **Out-of-scope confirmed untouched** (all nine): victory trigger
+    (phrase defined, no win path), press mechanics, recurrence-offset
+    (feeding stays four explicit steps), Phase B gate exclusions (4 files),
+    event-verb growth, strategy-phrase ownership (chatter/candor stay
+    top-level), `each`/iterate (`any` dormant), role-bound trait clauses
+    (still throw at bind, runtime.ts), book re-cuts.
+  - **Four legs shipped**: (1) state adjectives — 8 live trait-read
+    predicates, zoo's blocked exits + pure-Chord gate-status prove them;
+    (2) story object — `states: open, after-hours` + `change the story to
+    after-hours`; (3) entity-attached rules — all floating forms removed,
+    zoo's 13 rules migrated onto owners; (4) `define flag` removed — all
+    3 zoo flags eliminated per the leg-4 table. **Ten owner decisions
+    shipped** as ratchet entries D3(1), D4(2), D12(3), D5(4), D8(5),
+    D6(6), D7(7), D9(8), D10(9), D11(10), reconciled as-shipped.
+  - Deferred follow-ups (tracked, not this package): hatch-context
+    narrowing + `'chord.'` lint (story-loader platform change, needs its
+    own go-ahead); design.md normative-prose pass; dungeo-conversion
+    §1/§2 example refresh.
 
 ## Risks
 
