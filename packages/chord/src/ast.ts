@@ -447,7 +447,23 @@ export type Statement =
   | MustRequirement
   | SelectOnStmt
   | SelectStrategyStmt
-  | OrdinalBlock;
+  | OrdinalBlock
+  | EachStmt;
+
+/**
+ * `each <condition-name> … end each` — body-position iteration block
+ * (ratchet E3, 2026-07-12). Hosts: `on`/`after` clause bodies, action
+ * bodies, trait clause bodies, sequence steps — never top-level (given 9).
+ * Inside the body `the match` is the iterated entity; `it` keeps meaning
+ * the clause owner. The open-condition requirement is the analyzer's gate.
+ */
+export interface EachStmt {
+  kind: 'each';
+  /** The named open condition selecting the matches. */
+  condition: string;
+  body: Statement[];
+  span: Span;
+}
 
 /**
  * `refuse when <condition>: <key>` in body position — the prohibition half
@@ -591,7 +607,40 @@ export interface OrdinalBlock {
 // expressions — the closed selector grammar (design.md §2.7, Phase A subset)
 // --------------------------------------------------------------------------
 
-export type ConditionNode = OrNode | AndNode | NotNode | PredicateNode | ChanceNode | NamedConditionRef;
+export type ConditionNode =
+  | OrNode
+  | AndNode
+  | NotNode
+  | PredicateNode
+  | ChanceNode
+  | NamedConditionRef
+  | AnyOfNode
+  | NoneOfNode;
+
+/**
+ * `any <condition-name>` — existential over a named open condition
+ * (ratchet E1, 2026-07-12): true iff some world entity satisfies it;
+ * false over the empty set. The open-condition requirement is the
+ * analyzer's gate.
+ */
+export interface AnyOfNode {
+  kind: 'any-of';
+  /** The named open condition doing the filtering. */
+  condition: string;
+  span: Span;
+}
+
+/**
+ * `no <condition-name>` — the negated existential, its own positive
+ * spelling (ratchet E2, 2026-07-12): true iff no entity satisfies the
+ * condition; true over the empty set.
+ */
+export interface NoneOfNode {
+  kind: 'none-of';
+  /** The named open condition doing the filtering. */
+  condition: string;
+  span: Span;
+}
 
 export interface OrNode {
   kind: 'or';
@@ -647,11 +696,15 @@ export type Predicate =
   | { kind: 'can'; ability: string; thing: NameRef; span: Span };
 
 /**
- * A value position: a name reference, possessive chain, literal, or bare word.
- * `its state` parses as possessive with subject `it`.
+ * A value position: a name reference, possessive chain, literal, bare word,
+ * or the `each`-block binder `the match` (ratchet E3, 2026-07-12).
+ * `its state` parses as possessive with subject `it`. In NameRef positions
+ * (`change`/`move` targets) `the match` stays a name reference — resolved
+ * to the binder at analysis, exactly as `it` is.
  */
 export type ValueExpr =
   | { kind: 'ref'; ref: NameRef; span: Span }
   | { kind: 'possessive'; base: ValueExpr; field: string[]; span: Span }
   | { kind: 'literal'; value: string; literalKind: 'number' | 'string'; span: Span }
-  | { kind: 'bare'; words: string[]; span: Span };
+  | { kind: 'bare'; words: string[]; span: Span }
+  | { kind: 'match'; span: Span };

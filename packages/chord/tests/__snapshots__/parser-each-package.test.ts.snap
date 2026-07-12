@@ -1,0 +1,1436 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > matches the golden AST snapshot 1`] = `
+{
+  "declarations": [
+    {
+      "condition": {
+        "kind": "predicate",
+        "predicate": {
+          "kind": "is",
+          "negated": false,
+          "span": {
+            "column": 41,
+            "endColumn": 47,
+            "endLine": 6,
+            "line": 6,
+          },
+          "value": {
+            "kind": "ref",
+            "ref": {
+              "article": null,
+              "kind": "name",
+              "span": {
+                "column": 41,
+                "endColumn": 47,
+                "endLine": 6,
+                "line": 6,
+              },
+              "words": [
+                "hungry",
+              ],
+            },
+            "span": {
+              "column": 41,
+              "endColumn": 47,
+              "endLine": 6,
+              "line": 6,
+            },
+          },
+        },
+        "span": {
+          "column": 35,
+          "endColumn": 47,
+          "endLine": 6,
+          "line": 6,
+        },
+        "subject": {
+          "kind": "ref",
+          "ref": {
+            "article": null,
+            "kind": "name",
+            "span": {
+              "column": 35,
+              "endColumn": 37,
+              "endLine": 6,
+              "line": 6,
+            },
+            "words": [
+              "it",
+            ],
+          },
+          "span": {
+            "column": 35,
+            "endColumn": 37,
+            "endLine": 6,
+            "line": 6,
+          },
+        },
+      },
+      "kind": "define-condition",
+      "name": "hungry-neighbor",
+      "span": {
+        "column": 1,
+        "endColumn": 47,
+        "endLine": 6,
+        "line": 6,
+      },
+    },
+    {
+      "condition": {
+        "kind": "and",
+        "operands": [
+          {
+            "kind": "predicate",
+            "predicate": {
+              "classifier": [
+                "treasure",
+              ],
+              "kind": "is-a",
+              "negated": false,
+              "span": {
+                "column": 42,
+                "endColumn": 50,
+                "endLine": 7,
+                "line": 7,
+              },
+            },
+            "span": {
+              "column": 34,
+              "endColumn": 50,
+              "endLine": 7,
+              "line": 7,
+            },
+            "subject": {
+              "kind": "ref",
+              "ref": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 34,
+                  "endColumn": 36,
+                  "endLine": 7,
+                  "line": 7,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "span": {
+                "column": 34,
+                "endColumn": 36,
+                "endLine": 7,
+                "line": 7,
+              },
+            },
+          },
+          {
+            "kind": "predicate",
+            "predicate": {
+              "kind": "is-in",
+              "negated": true,
+              "place": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 68,
+                  "endColumn": 83,
+                  "endLine": 7,
+                  "line": 7,
+                },
+                "words": [
+                  "Trophy",
+                  "Barn",
+                ],
+              },
+              "span": {
+                "column": 68,
+                "endColumn": 83,
+                "endLine": 7,
+                "line": 7,
+              },
+            },
+            "span": {
+              "column": 55,
+              "endColumn": 83,
+              "endLine": 7,
+              "line": 7,
+            },
+            "subject": {
+              "kind": "ref",
+              "ref": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 55,
+                  "endColumn": 57,
+                  "endLine": 7,
+                  "line": 7,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "span": {
+                "column": 55,
+                "endColumn": 57,
+                "endLine": 7,
+                "line": 7,
+              },
+            },
+          },
+        ],
+        "span": {
+          "column": 34,
+          "endColumn": 83,
+          "endLine": 7,
+          "line": 7,
+        },
+      },
+      "kind": "define-condition",
+      "name": "stray-treasure",
+      "span": {
+        "column": 1,
+        "endColumn": 83,
+        "endLine": 7,
+        "line": 7,
+      },
+    },
+    {
+      "condition": {
+        "kind": "and",
+        "operands": [
+          {
+            "kind": "predicate",
+            "predicate": {
+              "classifier": [
+                "treasure",
+              ],
+              "kind": "is-a",
+              "negated": false,
+              "span": {
+                "column": 41,
+                "endColumn": 49,
+                "endLine": 8,
+                "line": 8,
+              },
+            },
+            "span": {
+              "column": 33,
+              "endColumn": 49,
+              "endLine": 8,
+              "line": 8,
+            },
+            "subject": {
+              "kind": "ref",
+              "ref": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 33,
+                  "endColumn": 35,
+                  "endLine": 8,
+                  "line": 8,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "span": {
+                "column": 33,
+                "endColumn": 35,
+                "endLine": 8,
+                "line": 8,
+              },
+            },
+          },
+          {
+            "kind": "predicate",
+            "predicate": {
+              "kind": "holds",
+              "span": {
+                "column": 71,
+                "endColumn": 73,
+                "endLine": 8,
+                "line": 8,
+              },
+              "thing": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 71,
+                  "endColumn": 73,
+                  "endLine": 8,
+                  "line": 8,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+            },
+            "span": {
+              "column": 54,
+              "endColumn": 73,
+              "endLine": 8,
+              "line": 8,
+            },
+            "subject": {
+              "kind": "ref",
+              "ref": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 54,
+                  "endColumn": 64,
+                  "endLine": 8,
+                  "line": 8,
+                },
+                "words": [
+                  "player",
+                ],
+              },
+              "span": {
+                "column": 54,
+                "endColumn": 64,
+                "endLine": 8,
+                "line": 8,
+              },
+            },
+          },
+        ],
+        "span": {
+          "column": 33,
+          "endColumn": 73,
+          "endLine": 8,
+          "line": 8,
+        },
+      },
+      "kind": "define-condition",
+      "name": "alarm-trigger",
+      "span": {
+        "column": 1,
+        "endColumn": 73,
+        "endLine": 8,
+        "line": 8,
+      },
+    },
+    {
+      "data": [],
+      "kind": "define-trait",
+      "name": "skittish",
+      "onClauses": [
+        {
+          "action": "prodding",
+          "binding": "it",
+          "body": [
+            {
+              "condition": {
+                "condition": "stray-treasure",
+                "kind": "none-of",
+                "span": {
+                  "column": 17,
+                  "endColumn": 34,
+                  "endLine": 20,
+                  "line": 20,
+                },
+              },
+              "kind": "refuse-when",
+              "phraseKey": "all-clear",
+              "span": {
+                "column": 5,
+                "endColumn": 45,
+                "endLine": 20,
+                "line": 20,
+              },
+            },
+            {
+              "body": [
+                {
+                  "entity": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 14,
+                      "endColumn": 23,
+                      "endLine": 22,
+                      "line": 22,
+                    },
+                    "words": [
+                      "match",
+                    ],
+                  },
+                  "kind": "change",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 34,
+                    "endLine": 22,
+                    "line": 22,
+                  },
+                  "state": "spooked",
+                  "stmtWhen": null,
+                },
+              ],
+              "condition": "hungry-neighbor",
+              "kind": "each",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 23,
+                "line": 21,
+              },
+            },
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "scatter",
+              "span": {
+                "column": 5,
+                "endColumn": 19,
+                "endLine": 24,
+                "line": 24,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "condition": "alarm-trigger",
+            "kind": "any-of",
+            "span": {
+              "column": 24,
+              "endColumn": 41,
+              "endLine": 19,
+              "line": 19,
+            },
+          },
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 25,
+            "line": 19,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "all-clear",
+            "span": {
+              "column": 5,
+              "endColumn": 21,
+              "endLine": 15,
+              "line": 14,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 21,
+                "endLine": 15,
+                "line": 15,
+              },
+              "text": "Nothing stirs.",
+            },
+          },
+          {
+            "key": "scatter",
+            "span": {
+              "column": 5,
+              "endColumn": 27,
+              "endLine": 17,
+              "line": 16,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 27,
+                "endLine": 17,
+                "line": 17,
+              },
+              "text": "Everything scatters.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 27,
+          "endLine": 17,
+          "line": 13,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 26,
+        "line": 10,
+      },
+      "states": [
+        {
+          "name": "calm",
+          "span": {
+            "column": 11,
+            "endColumn": 15,
+            "endLine": 11,
+            "line": 11,
+          },
+        },
+        {
+          "name": "spooked",
+          "span": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 11,
+            "line": 11,
+          },
+        },
+      ],
+      "statesReversible": false,
+    },
+    {
+      "body": [
+        {
+          "body": [
+            {
+              "entity": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 10,
+                  "endColumn": 19,
+                  "endLine": 40,
+                  "line": 40,
+                },
+                "words": [
+                  "match",
+                ],
+              },
+              "kind": "move",
+              "place": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 23,
+                  "endColumn": 38,
+                  "endLine": 40,
+                  "line": 40,
+                },
+                "words": [
+                  "Trophy",
+                  "Barn",
+                ],
+              },
+              "span": {
+                "column": 5,
+                "endColumn": 38,
+                "endLine": 40,
+                "line": 40,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "condition": "stray-treasure",
+          "kind": "each",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 41,
+            "line": 39,
+          },
+        },
+        {
+          "inlineText": null,
+          "kind": "phrase",
+          "params": [],
+          "phraseKey": "tally-note",
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 42,
+            "line": 42,
+          },
+          "stmtWhen": {
+            "condition": "stray-treasure",
+            "kind": "any-of",
+            "span": {
+              "column": 26,
+              "endColumn": 44,
+              "endLine": 42,
+              "line": 42,
+            },
+          },
+        },
+      ],
+      "constraints": [],
+      "kind": "define-action",
+      "musts": [],
+      "name": "tallying",
+      "otherwise": null,
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "span": {
+                "column": 5,
+                "endColumn": 10,
+                "endLine": 30,
+                "line": 30,
+              },
+              "word": "tally",
+            },
+          ],
+          "span": {
+            "column": 5,
+            "endColumn": 10,
+            "endLine": 30,
+            "line": 30,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "nothing-stray",
+            "span": {
+              "column": 5,
+              "endColumn": 30,
+              "endLine": 35,
+              "line": 34,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 30,
+                "endLine": 35,
+                "line": 35,
+              },
+              "text": "Every treasure is home.",
+            },
+          },
+          {
+            "key": "tally-note",
+            "span": {
+              "column": 5,
+              "endColumn": 31,
+              "endLine": 37,
+              "line": 36,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 31,
+                "endLine": 37,
+                "line": 37,
+              },
+              "text": "One more for the ledger.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 31,
+          "endLine": 37,
+          "line": 33,
+        },
+      },
+      "refusals": [
+        {
+          "condition": {
+            "condition": "stray-treasure",
+            "kind": "none-of",
+            "span": {
+              "column": 15,
+              "endColumn": 32,
+              "endLine": 31,
+              "line": 31,
+            },
+          },
+          "kind": "when",
+          "phraseKey": "nothing-stray",
+          "slot": null,
+          "span": {
+            "column": 3,
+            "endColumn": 47,
+            "endLine": 31,
+            "line": 31,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 44,
+        "endLine": 42,
+        "line": 28,
+      },
+    },
+    {
+      "aka": [],
+      "blockedExits": [
+        {
+          "condition": {
+            "condition": "alarm-trigger",
+            "kind": "any-of",
+            "span": {
+              "column": 26,
+              "endColumn": 43,
+              "endLine": 46,
+              "line": 46,
+            },
+          },
+          "direction": "north",
+          "kind": "blocked-exit",
+          "phraseKey": "sealed-up",
+          "span": {
+            "column": 3,
+            "endColumn": 54,
+            "endLine": 46,
+            "line": 46,
+          },
+        },
+      ],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 45,
+            "line": 45,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 44,
+          "endLine": 48,
+          "line": 48,
+        },
+        "text": "A barn with a ledger and strong opinions.",
+      },
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 23,
+          "endLine": 44,
+          "line": 44,
+        },
+        "words": [
+          "Trophy",
+          "Barn",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 44,
+        "endLine": 48,
+        "line": 44,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [],
+      "description": null,
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 18,
+          "endLine": 50,
+          "line": 50,
+        },
+        "words": [
+          "player",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 13,
+            "endColumn": 28,
+            "endLine": 51,
+            "line": 51,
+          },
+          "words": [
+            "Trophy",
+            "Barn",
+          ],
+        },
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 28,
+          "endLine": 51,
+          "line": 51,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 28,
+        "endLine": 51,
+        "line": 50,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [],
+      "description": null,
+      "exits": [],
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 22,
+          "endLine": 53,
+          "line": 53,
+        },
+        "words": [
+          "pygmy",
+          "goat",
+        ],
+      },
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "body": [
+                {
+                  "entity": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 14,
+                      "endColumn": 23,
+                      "endLine": 59,
+                      "line": 59,
+                    },
+                    "words": [
+                      "match",
+                    ],
+                  },
+                  "kind": "change",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 34,
+                    "endLine": 59,
+                    "line": 59,
+                  },
+                  "state": "content",
+                  "stmtWhen": null,
+                },
+                {
+                  "inlineText": null,
+                  "kind": "phrase",
+                  "params": [
+                    {
+                      "param": [
+                        "animal",
+                      ],
+                      "span": {
+                        "column": 28,
+                        "endColumn": 46,
+                        "endLine": 60,
+                        "line": 60,
+                      },
+                      "value": {
+                        "kind": "match",
+                        "span": {
+                          "column": 37,
+                          "endColumn": 46,
+                          "endLine": 60,
+                          "line": 60,
+                        },
+                      },
+                    },
+                  ],
+                  "phraseKey": "fed-note",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 46,
+                    "endLine": 60,
+                    "line": 60,
+                  },
+                  "stmtWhen": null,
+                },
+                {
+                  "inlineText": null,
+                  "kind": "phrase",
+                  "params": [],
+                  "phraseKey": "hungry-note",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 50,
+                    "endLine": 61,
+                    "line": 61,
+                  },
+                  "stmtWhen": {
+                    "kind": "predicate",
+                    "predicate": {
+                      "kind": "is",
+                      "negated": false,
+                      "span": {
+                        "column": 44,
+                        "endColumn": 50,
+                        "endLine": 61,
+                        "line": 61,
+                      },
+                      "value": {
+                        "kind": "ref",
+                        "ref": {
+                          "article": null,
+                          "kind": "name",
+                          "span": {
+                            "column": 44,
+                            "endColumn": 50,
+                            "endLine": 61,
+                            "line": 61,
+                          },
+                          "words": [
+                            "hungry",
+                          ],
+                        },
+                        "span": {
+                          "column": 44,
+                          "endColumn": 50,
+                          "endLine": 61,
+                          "line": 61,
+                        },
+                      },
+                    },
+                    "span": {
+                      "column": 31,
+                      "endColumn": 50,
+                      "endLine": 61,
+                      "line": 61,
+                    },
+                    "subject": {
+                      "kind": "match",
+                      "span": {
+                        "column": 31,
+                        "endColumn": 40,
+                        "endLine": 61,
+                        "line": 61,
+                      },
+                    },
+                  },
+                },
+                {
+                  "body": [
+                    {
+                      "entity": {
+                        "article": "the",
+                        "kind": "name",
+                        "span": {
+                          "column": 14,
+                          "endColumn": 23,
+                          "endLine": 63,
+                          "line": 63,
+                        },
+                        "words": [
+                          "match",
+                        ],
+                      },
+                      "kind": "move",
+                      "place": {
+                        "article": "the",
+                        "kind": "name",
+                        "span": {
+                          "column": 27,
+                          "endColumn": 42,
+                          "endLine": 63,
+                          "line": 63,
+                        },
+                        "words": [
+                          "Trophy",
+                          "Barn",
+                        ],
+                      },
+                      "span": {
+                        "column": 9,
+                        "endColumn": 42,
+                        "endLine": 63,
+                        "line": 63,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "condition": "stray-treasure",
+                  "kind": "each",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 15,
+                    "endLine": 64,
+                    "line": 62,
+                  },
+                },
+              ],
+              "condition": "hungry-neighbor",
+              "kind": "each",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 65,
+                "line": 58,
+              },
+            },
+          ],
+          "clauseKind": "after",
+          "condition": {
+            "condition": "alarm-trigger",
+            "kind": "none-of",
+            "span": {
+              "column": 26,
+              "endColumn": 42,
+              "endLine": 57,
+              "line": 57,
+            },
+          },
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 66,
+            "line": 57,
+          },
+        },
+      ],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 21,
+            "endLine": 54,
+            "line": 54,
+          },
+          "words": [
+            "Trophy",
+            "Barn",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 54,
+          "line": 54,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 42,
+        "endLine": 57,
+        "line": 53,
+      },
+      "states": [
+        {
+          "name": "hungry",
+          "span": {
+            "column": 11,
+            "endColumn": 17,
+            "endLine": 55,
+            "line": 55,
+          },
+        },
+        {
+          "name": "content",
+          "span": {
+            "column": 19,
+            "endColumn": 26,
+            "endLine": 55,
+            "line": 55,
+          },
+        },
+      ],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "kind": "define-sequence",
+      "name": [
+        "closing",
+        "sweep",
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 13,
+        "endLine": 75,
+        "line": 68,
+      },
+      "steps": [
+        {
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "sweep-note",
+              "span": {
+                "column": 5,
+                "endColumn": 45,
+                "endLine": 70,
+                "line": 70,
+              },
+              "stmtWhen": {
+                "condition": "alarm-trigger",
+                "kind": "any-of",
+                "span": {
+                  "column": 28,
+                  "endColumn": 45,
+                  "endLine": 70,
+                  "line": 70,
+                },
+              },
+            },
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "guard-note",
+              "span": {
+                "column": 5,
+                "endColumn": 54,
+                "endLine": 71,
+                "line": 71,
+              },
+              "stmtWhen": {
+                "kind": "predicate",
+                "predicate": {
+                  "kind": "is",
+                  "negated": false,
+                  "span": {
+                    "column": 47,
+                    "endColumn": 54,
+                    "endLine": 71,
+                    "line": 71,
+                  },
+                  "value": {
+                    "kind": "ref",
+                    "ref": {
+                      "article": null,
+                      "kind": "name",
+                      "span": {
+                        "column": 47,
+                        "endColumn": 54,
+                        "endLine": 71,
+                        "line": 71,
+                      },
+                      "words": [
+                        "spooked",
+                      ],
+                    },
+                    "span": {
+                      "column": 47,
+                      "endColumn": 54,
+                      "endLine": 71,
+                      "line": 71,
+                    },
+                  },
+                },
+                "span": {
+                  "column": 28,
+                  "endColumn": 54,
+                  "endLine": 71,
+                  "line": 71,
+                },
+                "subject": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": null,
+                    "kind": "name",
+                    "span": {
+                      "column": 28,
+                      "endColumn": 43,
+                      "endLine": 71,
+                      "line": 71,
+                    },
+                    "words": [
+                      "no",
+                      "smoking",
+                      "sign",
+                    ],
+                  },
+                  "span": {
+                    "column": 28,
+                    "endColumn": 43,
+                    "endLine": 71,
+                    "line": 71,
+                  },
+                },
+              },
+            },
+            {
+              "body": [
+                {
+                  "entity": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 14,
+                      "endColumn": 23,
+                      "endLine": 73,
+                      "line": 73,
+                    },
+                    "words": [
+                      "match",
+                    ],
+                  },
+                  "kind": "change",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 34,
+                    "endLine": 73,
+                    "line": 73,
+                  },
+                  "state": "content",
+                  "stmtWhen": null,
+                },
+              ],
+              "condition": "hungry-neighbor",
+              "kind": "each",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 74,
+                "line": 72,
+              },
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 69,
+            "line": 69,
+          },
+          "state": null,
+          "timing": "at-turn",
+          "turns": 3,
+        },
+      ],
+    },
+    {
+      "entries": [
+        {
+          "key": "sealed-up",
+          "span": {
+            "column": 3,
+            "endColumn": 47,
+            "endLine": 79,
+            "line": 78,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 47,
+              "endLine": 79,
+              "line": 79,
+            },
+            "text": "The doors are sealed while treasure walks.",
+          },
+        },
+        {
+          "key": "fed-note",
+          "span": {
+            "column": 3,
+            "endColumn": 34,
+            "endLine": 81,
+            "line": 80,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [
+              {
+                "content": "animal",
+                "span": {
+                  "column": 25,
+                  "endColumn": 33,
+                  "endLine": 81,
+                  "line": 81,
+                },
+              },
+            ],
+            "span": {
+              "column": 5,
+              "endColumn": 34,
+              "endLine": 81,
+              "line": 81,
+            },
+            "text": "Chewing sounds from {animal}.",
+          },
+        },
+        {
+          "key": "hungry-note",
+          "span": {
+            "column": 3,
+            "endColumn": 19,
+            "endLine": 83,
+            "line": 82,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 19,
+              "endLine": 83,
+              "line": 83,
+            },
+            "text": "Still peckish.",
+          },
+        },
+        {
+          "key": "sweep-note",
+          "span": {
+            "column": 3,
+            "endColumn": 32,
+            "endLine": 85,
+            "line": 84,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 32,
+              "endLine": 85,
+              "line": 85,
+            },
+            "text": "The keeper sweeps the yard.",
+          },
+        },
+        {
+          "key": "guard-note",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 87,
+            "line": 86,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 27,
+              "endLine": 87,
+              "line": 87,
+            },
+            "text": "The sign hangs steady.",
+          },
+        },
+      ],
+      "kind": "define-phrases",
+      "locale": "en-US",
+      "span": {
+        "column": 1,
+        "endColumn": 27,
+        "endLine": 87,
+        "line": 77,
+      },
+    },
+  ],
+  "header": {
+    "author": "Sharpee Platform",
+    "fields": {
+      "blurb": "E1 any / E2 no / E3 each + the match binder (ratchet 2026-07-12) in every approved host position.",
+      "id": "each-package-parse",
+      "version": "0.0.1",
+    },
+    "kind": "story-header",
+    "scores": [],
+    "span": {
+      "column": 1,
+      "endColumn": 107,
+      "endLine": 4,
+      "line": 1,
+    },
+    "states": [],
+    "statesReversible": false,
+    "title": "Each Package Parse Fixture",
+  },
+  "kind": "story-file",
+  "span": {
+    "column": 1,
+    "endColumn": 27,
+    "endLine": 87,
+    "line": 1,
+  },
+}
+`;

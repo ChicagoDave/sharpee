@@ -37,6 +37,7 @@ import {
   DefineText,
   DefineTrait,
   DefineVerb,
+  EachStmt,
   EmitStmt,
   ExitDecl,
   MoveStmt,
@@ -147,7 +148,7 @@ function isEndLine(line: Line): boolean {
 /** Words that open a statement or block boundary inside behavior bodies. */
 const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'award', 'win', 'lose',
-  'if', 'select', 'end', 'else', 'or', 'when', 'at',
+  'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
 ]);
 
 /**
@@ -238,6 +239,15 @@ class Parser {
           this.diagnostics.error(
             'parse.removed-every',
             'Top-level `every N turns` rules were removed (ownership package, 2026-07-11) — use a story-owned `define sequence`, or an every-turn clause on the owner.',
+            lineSpan(line),
+          );
+          this.recoverToTopLevel(true);
+          break;
+        case 'each':
+          // Never top-level (given 9: all behavior is owned) — ratchet E3.
+          this.diagnostics.error(
+            'parse.each-top-level',
+            '`each` blocks run inside an owner\'s behavior — place the block in an `on`/`after` clause body, an action body, a trait clause body, or a sequence step (never top-level).',
             lineSpan(line),
           );
           this.recoverToTopLevel(true);
@@ -1751,6 +1761,8 @@ class Parser {
         return null;
       case 'select':
         return this.parseSelect(line);
+      case 'each':
+        return this.parseEachBlock(line, blockKeyword);
       default:
         this.diagnostics.error(
           'parse.unknown-statement',
@@ -1845,6 +1857,35 @@ class Parser {
       }
     }
     return { kind: 'ordinal', ordinal: ORDINALS[word], ordinalWord: word, body, span };
+  }
+
+  /**
+   * `each <condition-name> … end each` — body-position iteration block
+   * (ratchet E3, 2026-07-12). The body takes the host's statement kit —
+   * `blockKeyword` propagates so refusal legality follows the host clause
+   * (legal in `on`, error in `after`, exactly as outside the block).
+   * The open-condition requirement is the analyzer's gate, not the parser's.
+   */
+  private parseEachBlock(headLine: Line, blockKeyword: string): EachStmt | null {
+    this.pos++;
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('each');
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.each-condition', 'Expected a condition name after `each`.', c.restSpan());
+      this.recoverPastEndNested('each', headLine.indent);
+      return null;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error(
+        'parse.each-trailing',
+        `Unexpected \`${c.peek()!.text}\` after the condition name — an \`each\` header is \`each <condition-name>\`.`,
+        c.restSpan(),
+      );
+    }
+    const body = this.parseStatements(headLine.indent, blockKeyword);
+    const endSpan = this.consumeEnd('each', headLine);
+    return { kind: 'each', condition: nameTok.text, body, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
   private parseSelect(headLine: Line): SelectOnStmt | SelectStrategyStmt | null {
@@ -1971,6 +2012,22 @@ class Parser {
     if (first.kind === 'number' || first.kind === 'string') {
       c.next();
       return { kind: 'literal', value: first.text, literalKind: first.kind, span: first.span };
+    }
+
+    // `the match` — the `each`-block binder (ratchet E3, 2026-07-12).
+    // Only the exact form: a following name word keeps the ordinary
+    // reference parse (`the match box` stays an entity name). Position
+    // validity (inside an `each` body) is the analyzer's gate.
+    if (first.kind === 'word' && first.text === 'the') {
+      const m = c.peek(1);
+      const after = c.peek(2);
+      const matchStandsAlone =
+        !after || after.kind !== 'word' || PHRASE_STOPS.has(after.text) || extraStops.has(after.text);
+      if (m && m.kind === 'word' && m.text === 'match' && matchStandsAlone) {
+        c.next();
+        c.next();
+        return { kind: 'match', span: mergeSpans(first.span, m.span) };
+      }
     }
 
     // `its <field>` — possessive on `it`.
@@ -2101,6 +2158,24 @@ class Parser {
       return { kind: 'chance', n: Number(n.text), span: mergeSpans(t.span, n.span) };
     }
 
+    // `any <name>` / `no <name>` — existential / negated existential over a
+    // named open condition (ratchet E1/E2, 2026-07-12). Triggers only on the
+    // quantifier plus a single STANDALONE condition name, so a subject that
+    // merely starts with one of these words (`no smoking sign is …`) keeps
+    // its ordinary predicate parse.
+    if (t.kind === 'word' && (t.text === 'any' || t.text === 'no')) {
+      const nameTok = c.peek(1);
+      if (nameTok && nameTok.kind === 'word' && this.isBareConditionRef(c, 1)) {
+        c.next();
+        c.next();
+        return {
+          kind: t.text === 'any' ? 'any-of' : 'none-of',
+          condition: nameTok.text,
+          span: mergeSpans(t.span, nameTok.span),
+        };
+      }
+    }
+
     // Bare single word (before a connective or end of condition): a named
     // condition reference, e.g. `while in-darkness`.
     if (t.kind === 'word' && !ARTICLES.has(t.text) && this.isBareConditionRef(c)) {
@@ -2113,9 +2188,12 @@ class Parser {
     return this.parsePredicate(c, line, subject);
   }
 
-  /** True when the next word stands alone (connective, comma, or nothing follows). */
-  private isBareConditionRef(c: Cursor): boolean {
-    const after = c.peek(1);
+  /**
+   * True when the word at `offset` stands alone (connective, comma, or
+   * nothing follows) — a bare condition-name position.
+   */
+  private isBareConditionRef(c: Cursor, offset = 0): boolean {
+    const after = c.peek(offset + 1);
     if (!after) return true;
     if (after.kind === 'rparen' || after.kind === 'comma') return true;
     return after.kind === 'word' && (after.text === 'and' || after.text === 'or' || after.text === 'then');

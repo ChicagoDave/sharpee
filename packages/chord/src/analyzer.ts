@@ -91,6 +91,8 @@ function conditionFingerprint(cond: ConditionNode): string {
         return `bare:${v.words.join(' ').toLowerCase()}`;
       case 'possessive':
         return `poss:${value(v.base)}.${v.field.join(' ').toLowerCase()}`;
+      case 'match':
+        return 'match';
     }
   };
   switch (cond.kind) {
@@ -103,6 +105,9 @@ function conditionFingerprint(cond: ConditionNode): string {
       return `chance:${cond.n}`;
     case 'condition-ref':
       return `cond:${cond.name}`;
+    case 'any-of':
+    case 'none-of':
+      return `${cond.kind}:${cond.condition}`;
     case 'predicate': {
       const p = cond.predicate;
       switch (p.kind) {
@@ -181,6 +186,9 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         return visitValue(v.base);
       case 'literal':
         return false;
+      case 'match':
+        // The `each`-block binder is its own binding — not `it` (E3).
+        return false;
     }
   };
   switch (cond.kind) {
@@ -191,6 +199,10 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
       return conditionReferencesIt(cond.operand);
     case 'chance':
     case 'condition-ref':
+      return false;
+    case 'any-of':
+    case 'none-of':
+      // Quantifiers test the world, not the clause owner — no `it` here.
       return false;
     case 'predicate': {
       if (visitValue(cond.subject)) return true;
@@ -1158,6 +1170,23 @@ class Analyzer {
           body: stmt.body.map((s) => this.resolveStatement(s, scope)),
           span: stmt.span,
         };
+      case 'each':
+        // Phase 2 stub (each package): the block parses; the IR statement
+        // kind, the open-condition gate, and the runtime land in Phases
+        // 3/4. The load error keeps the pipeline atomic; the placeholder
+        // below is unreachable in practice (callers gate on hasErrors()).
+        // The body still resolves so nested diagnostics keep flowing.
+        this.diagnostics.error(
+          'analysis.each-package-pending',
+          `\`each ${stmt.condition}\` parses but does not compile yet — analyzer/IR support lands with the each package Phase 3.`,
+          stmt.span,
+        );
+        return {
+          kind: 'ordinal',
+          ordinal: 1,
+          body: stmt.body.map((s) => this.resolveStatement(s, scope)),
+          span: stmt.span,
+        };
     }
   }
 
@@ -1208,6 +1237,16 @@ class Analyzer {
         const scoped = this.resolveScopedWords(expr.words, scope);
         return scoped ?? { kind: 'symbol', name: expr.words.join(' ') };
       }
+      case 'match':
+        // Phase 2 stub (each package): `the match` parses; binder
+        // resolution and the analysis.match-outside-each gate land in
+        // Phase 3. The return value is a placeholder (load already failed).
+        this.diagnostics.error(
+          'analysis.each-package-pending',
+          '`the match` parses but does not compile yet — binder resolution lands with the each package Phase 3.',
+          expr.span,
+        );
+        return { kind: 'symbol', name: 'match' };
     }
   }
 
@@ -1346,6 +1385,18 @@ class Analyzer {
         );
         return { kind: 'condition', name: cond.name };
       }
+      case 'any-of':
+      case 'none-of':
+        // Phase 2 stub (each package): the forms parse; the IR condition
+        // kinds and never-guess gates land in Phase 3. Erroring keeps the
+        // load atomic — never a guess. The return value is a placeholder
+        // (callers gate on hasErrors()).
+        this.diagnostics.error(
+          'analysis.each-package-pending',
+          `\`${cond.kind === 'any-of' ? 'any' : 'no'} ${cond.condition}\` parses but does not compile yet — analyzer/IR support lands with the each package Phase 3.`,
+          cond.span,
+        );
+        return { kind: 'condition', name: cond.condition };
       case 'predicate': {
         const subject = this.resolveValue(cond.subject, scope);
         switch (cond.predicate.kind) {
