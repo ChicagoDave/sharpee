@@ -16,7 +16,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ActionMetadata } from '../../../validation';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait, ActionInterceptor, InterceptorSharedData, applyInterceptorReportResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { TakingMessages } from './taking-messages';
@@ -186,11 +186,20 @@ function validateMultiObject(context: ActionContext): ValidationResult {
   // Validate each entity, store results
   const results: TakingItemResult[] = items.map(item => {
     const validation = validateSingleEntity(context, item.entity);
-    return {
+    // validateSingleEntity stores the item's interceptor in the shared
+    // fields (single-object contract) — move it onto THIS result so each
+    // item's execute/report hooks fire with its own phase data (ADR-118).
+    const sharedData = getTakingSharedData(context);
+    const result: TakingItemResult = {
       entity: item.entity,
       success: validation.valid,
-      error: validation.valid ? undefined : validation.error
+      error: validation.valid ? undefined : validation.error,
+      interceptor: sharedData._interceptor,
+      interceptorData: sharedData._interceptorData
     };
+    delete sharedData._interceptor;
+    delete sharedData._interceptorData;
+    return result;
   });
 
   // Store results for execute/report phases
@@ -401,6 +410,10 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       for (const result of sharedData.multiObjectResults) {
         if (result.success) {
           executeSingleEntity(context, result.entity, result);
+          // === POST-EXECUTE HOOK (per item, ADR-118) ===
+          if (result.interceptor?.postExecute) {
+            result.interceptor.postExecute(result.entity, context.world, context.player.id, result.interceptorData ?? {});
+          }
         }
       }
       return;
@@ -409,6 +422,11 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Single object execution
     const noun = context.command.directObject!.entity!;
     executeSingleEntity(context, noun, sharedData);
+
+    // === POST-EXECUTE HOOK (ADR-118) ===
+    if (sharedData._interceptor?.postExecute) {
+      sharedData._interceptor.postExecute(noun, context.world, context.player.id, sharedData._interceptorData ?? {});
+    }
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -423,6 +441,13 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       for (const result of sharedData.multiObjectResults) {
         if (result.success) {
           reportSingleSuccess(context, result.entity, result, events, isMultiObject);
+          // === POST-REPORT HOOK (per item, ADR-118) ===
+          if (result.interceptor?.postReport) {
+            const reportResult = result.interceptor.postReport(result.entity, context.world, context.player.id, result.interceptorData ?? {});
+            if (reportResult) {
+              applyInterceptorReportResult(events, 'if.event.taken', reportResult, context);
+            }
+          }
         } else {
           reportSingleBlocked(context, result.entity, result.error!, events);
         }
@@ -433,6 +458,14 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Single object report
     const noun = context.command.directObject!.entity!;
     reportSingleSuccess(context, noun, sharedData, events, false);
+
+    // === POST-REPORT HOOK (ADR-118) ===
+    if (sharedData._interceptor?.postReport) {
+      const reportResult = sharedData._interceptor.postReport(noun, context.world, context.player.id, sharedData._interceptorData ?? {});
+      if (reportResult) {
+        applyInterceptorReportResult(events, 'if.event.taken', reportResult, context);
+      }
+    }
     return events;
   },
 

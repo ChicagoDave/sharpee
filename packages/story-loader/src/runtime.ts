@@ -535,6 +535,18 @@ export class ChordRuntime {
         }
         if (!entity) return { valid: false, error: def.otherwise ?? 'cant' };
 
+        const slots = runtime.slotBindings(primarySlot, entity, context.player);
+
+        // Action-level requirements (`<subject> must …: <key>`, D6) run
+        // after the refusal ladder, before dispatch — the action's own
+        // gate, evaluated in the slots context (wired with the each
+        // package's zoo-chain fixes, 2026-07-12).
+        for (const must of def.musts) {
+          if (!runtime.evaluator.evalCondition(must.condition, { world: context.world, slots })) {
+            return { valid: false, error: must.phraseKey };
+          }
+        }
+
         // Dispatch: the first trait on the target with a behavior bound for
         // this action claims it (per-world binding map, ADR-090/207).
         // Instance-type lookup: ChordDataTrait types are per-instance, so
@@ -545,13 +557,25 @@ export class ChordRuntime {
           behavior = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
           if (behavior) break;
         }
-        if (!behavior) return { valid: false, error: def.otherwise ?? 'cant' };
+        // A behavior host is optional when the action carries its own body
+        // (§5.4: the body IS the action's semantics — photographing has no
+        // per-trait behavior by design). No behavior AND no body = the
+        // dispatch miss, exactly as before.
+        if (!behavior && def.body.length === 0) return { valid: false, error: def.otherwise ?? 'cant' };
 
-        const capShared: CapabilitySharedData = {
-          chordSlots: runtime.slotBindings(primarySlot, entity, context.player),
-        };
-        const result = behavior.validate(entity, context.world, context.player.id, capShared);
-        if (!result.valid) return { valid: false, error: result.error };
+        const capShared: CapabilitySharedData = { chordSlots: slots };
+        if (behavior) {
+          const result = behavior.validate(entity, context.world, context.player.id, capShared);
+          if (!result.valid) return { valid: false, error: result.error };
+        }
+        if (def.body.length) {
+          // The body's own validate partition (leading refusals/musts) and
+          // the pre-mutation decision snapshot (§5.4).
+          const bodyCtx: ExecContext = { world: context.world, slots };
+          const refusal = runtime.findRefusal(def.body, bodyCtx);
+          if (refusal) return { valid: false, error: refusal };
+          context.sharedData.chordBodyDecisions = runtime.snapshotDecisions(def.body, bodyCtx);
+        }
         context.sharedData.capEntity = entity;
         context.sharedData.capBehavior = behavior;
         context.sharedData.capShared = capShared;
@@ -563,13 +587,22 @@ export class ChordRuntime {
         if (entity && behavior) {
           behavior.execute(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
         }
+        if (entity && def.body.length) {
+          runtime.execStatements(def.body, runtime.actionBodyCtx(primarySlot, entity, context), 'mutations');
+        }
       },
       report(context: DispatchContext): ISemanticEvent[] {
         const entity = context.sharedData.capEntity as IFEntity | undefined;
         const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
-        if (!entity || !behavior) return [];
-        const effects = behavior.report(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
-        const events = effects.map((e) => context.event(e.type, e.payload));
+        if (!entity) return [];
+        const events: ISemanticEvent[] = [];
+        if (behavior) {
+          const effects = behavior.report(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
+          events.push(...effects.map((e) => context.event(e.type, e.payload)));
+        }
+        if (def.body.length) {
+          events.push(...runtime.execStatements(def.body, runtime.actionBodyCtx(primarySlot, entity, context), 'reports'));
+        }
         events.push(...runtime.fireAfterClauses(def.name, entity, context.world));
         return events;
       },
@@ -585,6 +618,23 @@ export class ChordRuntime {
     const slots: Record<string, string> = { actor: player.id };
     if (primarySlot) slots[primarySlot] = entity.id;
     return slots;
+  }
+
+  /**
+   * Execution context for a `define action` body (§5.4): grammar slots
+   * bound, no `it` (action bodies have no owner), decision snapshot from
+   * validate carried through sharedData.
+   */
+  private actionBodyCtx(
+    primarySlot: string | undefined,
+    entity: IFEntity,
+    context: { world: WorldModel; player: IFEntity; sharedData: Record<string, unknown> },
+  ): ExecContext {
+    return {
+      world: context.world,
+      slots: this.slotBindings(primarySlot, entity, context.player),
+      decisions: context.sharedData.chordBodyDecisions as Map<IRStatement, string> | undefined,
+    };
   }
 
   // -------------------------------------------- scheduler constructs (Phase B)
@@ -1149,6 +1199,17 @@ export class ChordRuntime {
             );
           }
         }
+      }
+    }
+    // Grammar-slot params (`{the target}` in a dispatch-action or trait
+    // clause body, zoo-chain fixes 2026-07-12): the slot entity's name
+    // binds as the NounPhrase-default string — the template's own article
+    // hint supplies `the`/`a`. Producers above win on a name collision.
+    if (ctx.slots) {
+      for (const [name, worldId] of Object.entries(ctx.slots)) {
+        if (params[name] !== undefined) continue;
+        const slotEntity = ctx.world.getEntity(worldId);
+        if (slotEntity) params[name] = slotEntity.name;
       }
     }
     if (phrase.verbatim) {

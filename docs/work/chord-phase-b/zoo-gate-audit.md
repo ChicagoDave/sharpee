@@ -73,3 +73,28 @@ the repo — they rejoin the gate the moment the grammar grows the feature.
 wt-05). The 4 excluded files carry the corpus's other 26 assertions —
 17 of those pass too; the 9 failures above are the corpus's only
 failures.
+
+## Addendum — chained walkthrough conversion (David-directed, 2026-07-12)
+
+David: "Chained walkthrough testing is required." The wt corpus was
+reworked into ONE sequential full playthrough (docs/work/zoo-chain/):
+
+- `walkthroughs/wt-01…wt-05` are now chapters of a single chained run
+  (arrival → aviary/gift shop w/ the parrot save-restore cycle →
+  petting zoo at closing → keeper farewell/staff area → after-hours
+  confessions), ending in the story's first-ever **perfect score
+  85/85** — reachable only after the F1 platform fixes (taking
+  interceptor postExecute/postReport; dispatch-action bodies + musts).
+  Old wt-01-smoke / wt-04-optional / wt-05-choice-cycle are ABSORBED
+  (their assertions live on inside the chapters).
+- The two frozen EXCLUDED files (wt-02-slot-occupants, wt-03-slot-detail
+  — the table above) moved byte-identical to `walkthroughs/excluded/`;
+  still frozen, still awaiting the snippets/slot-contributor surfaces.
+- **Zoo gate as of 2026-07-12**: 5 atomic files (hatch-text / scoring /
+  state-assertions / timeline / ac6-trait-state, run per-file) PLUS the
+  chained walkthrough (`--test --chain walkthroughs/wt-*.transcript`,
+  37 assertions; the excluded/ subdir is outside the glob). Both green.
+- Timeline note for future chapters: a `$restore` rewinds world state
+  (sequence pointers, textState) but the ENGINE turn keeps counting, so
+  turn-timed broadcasts land one command earlier after a save/restore
+  pair — pinned empirically in wt-02/wt-03.

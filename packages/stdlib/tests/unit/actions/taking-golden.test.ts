@@ -620,3 +620,136 @@ describe('Taking Action Edge Cases', () => {
     });
   });
 });
+
+describe('Interceptor postExecute/postReport (ADR-118 full contract)', () => {
+  // The taking action historically wired only preValidate/postValidate —
+  // postExecute/postReport were never invoked, so interceptor mutations
+  // (e.g. a chord `after taking it` award) silently vanished (zoo map,
+  // found 2026-07-12 building the chained walkthrough).
+  const setup = () => {
+    const { world, player, room } = setupBasicWorld();
+    const item = world.createEntity('brass token', 'object');
+    world.moveEntity(item.id, room.id);
+    // Any trait type works as the interceptor registration key; READABLE
+    // is benign for taking.
+    item.add({ type: TraitType.READABLE, text: '' } as any);
+    return { world, player, room, item };
+  };
+  const drive = (world: WorldModel, item: any) => {
+    const context = createRealTestContext(
+      takingAction,
+      world,
+      createCommand(IFActions.TAKING, { entity: item, text: 'brass token' })
+    );
+    const validation = takingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingAction.execute(context);
+    return { context, events: takingAction.report(context) };
+  };
+
+  test('postExecute runs after the transfer and its world mutation persists', () => {
+    const { world, player, item } = setup();
+    const calls: string[] = [];
+    world.registerActionInterceptor(TraitType.READABLE, IFActions.TAKING, {
+      postExecute(target, w) {
+        calls.push('postExecute');
+        // The item must already be in the actor's inventory (post-transfer).
+        expect(w.getLocation(target.id)).toBe(player.id);
+        w.setStateValue('token.taken', true);
+      },
+      postReport() {
+        calls.push('postReport');
+        return {};
+      },
+    });
+
+    const { events } = drive(world, item);
+
+    // THE critical assertions: actual state, not just events.
+    expect(world.getLocation(item.id)).toBe(player.id);
+    expect(world.getStateValue('token.taken')).toBe(true);
+    expect(calls).toEqual(['postExecute', 'postReport']);
+    expectEvent(events, 'if.event.taken', { item: 'brass token' });
+  });
+
+  test('postReport emit appends events and override rewrites the taken messageId', () => {
+    const { world, item } = setup();
+    world.registerActionInterceptor(TraitType.READABLE, IFActions.TAKING, {
+      postReport() {
+        return {
+          override: { messageId: 'token.custom_taken', params: { glow: 'bright' } },
+          emit: [{ type: 'token.hummed', payload: { note: 'C' } }],
+        };
+      },
+    });
+
+    const { events } = drive(world, item);
+
+    const taken = events.find(e => e.type === 'if.event.taken')!;
+    expect((taken.data as any).messageId).toBe('token.custom_taken');
+    expect((taken.data as any).params).toEqual({ glow: 'bright' });
+    const hummed = events.find(e => e.type === 'token.hummed');
+    expect(hummed).toBeDefined();
+    // The test harness's event() may nest payloads under data.data.
+    const hummedData = ((hummed!.data as any)?.data ?? hummed!.data) as any;
+    expect(hummedData.note).toBe('C');
+  });
+
+  test('no interceptor: behavior unchanged, no hooks consulted', () => {
+    const { world, player, item } = setup();
+    const { events } = drive(world, item);
+    expect(world.getLocation(item.id)).toBe(player.id);
+    expectEvent(events, 'if.event.taken', { item: 'brass token' });
+  });
+});
+
+describe('Multi-object taking drives per-item interceptor hooks (ADR-118)', () => {
+  test('take all: postExecute/postReport fire once per item with per-item phase data', () => {
+    const { world, player, room } = setupBasicWorld();
+    const coin = world.createEntity('copper coin', 'object');
+    const gem = world.createEntity('green gem', 'object');
+    world.moveEntity(coin.id, room.id);
+    world.moveEntity(gem.id, room.id);
+    coin.add({ type: TraitType.READABLE, text: '' } as any);
+    gem.add({ type: TraitType.READABLE, text: '' } as any);
+
+    const executed: string[] = [];
+    const reported: string[] = [];
+    world.registerActionInterceptor(TraitType.READABLE, IFActions.TAKING, {
+      postValidate(target, _w, _a, data) {
+        // Per-item phase data: captured onto THIS item's result at
+        // validate (the old shared fields were last-item-wins).
+        (data as any).mark = target.name;
+        return null;
+      },
+      postExecute(target, w, _a, data) {
+        expect((data as any).mark).toBe(target.name);
+        executed.push(String(target.name));
+        w.setStateValue(`taken.${target.name}`, true);
+      },
+      postReport(target, _w, _a, data) {
+        expect((data as any).mark).toBe(target.name);
+        reported.push(String(target.name));
+        return {};
+      },
+    });
+
+    const command = createCommand(IFActions.TAKING, { entity: coin, text: 'all' });
+    (command.parsed.structure.directObject as any).isAll = true;
+    const context = createRealTestContext(takingAction, world, command);
+
+    const validation = takingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    takingAction.execute(context);
+
+    // State: both items transferred, both interceptor mutations landed.
+    expect(world.getLocation(coin.id)).toBe(player.id);
+    expect(world.getLocation(gem.id)).toBe(player.id);
+    expect(world.getStateValue('taken.copper coin')).toBe(true);
+    expect(world.getStateValue('taken.green gem')).toBe(true);
+
+    takingAction.report(context);
+    expect(executed.sort()).toEqual(['copper coin', 'green gem']);
+    expect(reported.sort()).toEqual(['copper coin', 'green gem']);
+  });
+});

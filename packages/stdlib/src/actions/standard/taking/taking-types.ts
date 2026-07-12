@@ -67,6 +67,10 @@ export interface TakingItemResult {
   previousLocation?: EntityId;
   implicitlyRemoved?: boolean;
   wasWorn?: boolean;
+  /** Interceptor bound to THIS item (ADR-118) — captured at validate so each item's hooks fire in execute/report */
+  interceptor?: ActionInterceptor;
+  /** Per-item interceptor phase data (decision snapshots, occurrence counters) */
+  interceptorData?: InterceptorSharedData;
 }
 
 /**
