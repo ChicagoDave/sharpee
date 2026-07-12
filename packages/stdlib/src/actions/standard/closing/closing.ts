@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, ActionInterceptor, InterceptorSharedData, applyInterceptorReportResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
 import { closedDataConfig } from './closing-data';
@@ -250,6 +250,17 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       contentsIds,
       item: noun.name
     }));
+
+    // === POST-REPORT HOOK (ADR-118) === — closing was the one standard
+    // action missing this half (interceptor-wiring audit, 2026-07-12):
+    // report-phase overrides/emits from `on closing it` clauses were
+    // silently dropped.
+    if (sharedData.interceptor?.postReport) {
+      const reportResult = sharedData.interceptor.postReport(noun, context.world, context.player.id, sharedData.interceptorData ?? {});
+      if (reportResult) {
+        applyInterceptorReportResult(events, 'if.event.closed', reportResult, context);
+      }
+    }
 
     return events;
   },

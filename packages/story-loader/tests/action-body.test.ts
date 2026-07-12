@@ -28,12 +28,15 @@ define action photographing
   the player must hold the camera: no-camera
   award snapshot
   phrase took-photo
+  phrase framed with subject = the gnome
 
   phrases en-US
     no-camera:
       You don't have a camera.
     took-photo:
       Click! You snap {the target}.
+    framed:
+      Framed: {the subject}.
 
 define action sweeping
   grammar
@@ -161,6 +164,12 @@ describe('action bodies execute through the §5.4 phases (behavior host optional
       (e) => e.type === 'chord.phrase' && (e.data as { messageId?: string }).messageId === 'took-photo',
     )!;
     expect(((photo.data as { params?: Record<string, unknown> }).params ?? {}).target).toBe('gnome');
+    // Authored `with subject = the gnome` params flow too (entity values
+    // pass as display names).
+    const framed = first.events.find(
+      (e) => e.type === 'chord.phrase' && (e.data as { messageId?: string }).messageId === 'framed',
+    )!;
+    expect(((framed.data as { params?: Record<string, unknown> }).params ?? {}).subject).toBe('gnome');
 
     const second = run(l, 'chord.action.photographing', 'gnome');
     expect(second.validation.valid).toBe(true);

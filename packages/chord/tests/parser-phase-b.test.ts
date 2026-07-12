@@ -245,3 +245,20 @@ describe('malformed Phase B fixtures — one mistake, one diagnostic', () => {
     expect(errors.some((e) => e.code === 'parse.action-refusal' && e.span.line === 8)).toBe(true);
   });
 });
+
+describe('trait data-field trailing tokens (zoo-chain finding, 2026-07-12)', () => {
+  it('an uncomma\'d `starts` tail is a parse error, not a silently dropped initial', () => {
+    const src = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\ndefine trait shiny\n  data\n    shine: number starts 1\nend trait\n';
+    const result = parse(src);
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    expect(errors.some((d) => d.code === 'parse.trait-field-trailing')).toBe(true);
+  });
+
+  it('the comma form still parses with the initial captured', () => {
+    const src = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\ndefine trait shiny\n  data\n    shine: number, starts 1\nend trait\n';
+    const result = parse(src);
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const trait = result.ast.declarations.find((d) => d.kind === 'define-trait') as { data: Array<{ initial: string | null }> };
+    expect(trait.data[0].initial).toBe('1');
+  });
+});

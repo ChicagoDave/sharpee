@@ -889,7 +889,7 @@ export class ChordRuntime {
     for (const stmt of body) {
       switch (stmt.kind) {
         case 'phrase':
-          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.phraseEvent(stmt.phraseKey, ctx));
+          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.phraseEvent(stmt.phraseKey, ctx, stmt.params));
           break;
         case 'emit':
           if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.rawEvent(stmt.event, {}));
@@ -1174,13 +1174,25 @@ export class ChordRuntime {
    * resolution (prereq 4), strategy variants as a persistent Choice atom,
    * and hatch producers bound by marker name.
    */
-  private phraseEvent(key: string, ctx: ExecContext): ISemanticEvent {
+  private phraseEvent(
+    key: string,
+    ctx: ExecContext,
+    stmtParams?: ReadonlyArray<{ param: string; value: IRValue }>,
+  ): ISemanticEvent {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     const overrideKey = ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
     const phrase = table[overrideKey];
     if (!phrase) throw new LoadError(`Phrase \`${key}\` is missing from the IR at emit time.`);
 
     const params: Record<string, unknown> = {};
+    // Authored `with <param> = <value>` bindings (zoo-chain follow-up,
+    // 2026-07-12): entity values pass as their display name (the template's
+    // article hint does the rest); scalars pass through.
+    for (const p of stmtParams ?? []) {
+      const value = this.evaluator.evalValue(p.value, ctx);
+      const asEntity = typeof value === 'string' ? ctx.world.getEntity(value) : undefined;
+      params[p.param] = asEntity ? asEntity.name : (value as string | number | boolean);
+    }
     for (const variant of phrase.variants) {
       for (const marker of variant.markers) {
         const producer = this.host.producers.get(marker);

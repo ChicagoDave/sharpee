@@ -479,7 +479,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const error = result.error || '';
     const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
 
-    return [context.event('if.event.take_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.take_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId,
       params: {
@@ -491,6 +491,21 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       itemId: noun?.id,
       reason: result.error
     })];
+
+    // === ON-BLOCKED HOOK (ADR-118, interceptor-wiring audit 2026-07-12) ===
+    const sharedData = getTakingSharedData(context);
+    if (sharedData._interceptor?.onBlocked && noun && result.error) {
+      const customEffects = sharedData._interceptor.onBlocked(
+        noun, context.world, context.player.id, result.error, sharedData._interceptorData ?? {}
+      );
+      if (customEffects) {
+        for (const effect of customEffects) {
+          events.push(context.event(effect.type, effect.payload));
+        }
+      }
+    }
+
+    return events;
   },
 
   group: "object_manipulation"

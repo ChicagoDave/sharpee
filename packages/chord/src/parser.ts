@@ -1163,6 +1163,16 @@ class Parser {
           this.diagnostics.error('parse.trait-field-starts', 'Expected `starts <value>` after the comma.', c.restSpan());
         }
       }
+      // Trailing tokens were previously dropped silently — `shine: number
+      // starts 1` (missing comma) parsed as a plain field with NO initial
+      // (found 2026-07-12 building the zoo chain). Never a guess.
+      if (!c.atEnd()) {
+        this.diagnostics.error(
+          'parse.trait-field-trailing',
+          'Unexpected words after the field type — an initial value is written `, starts <value>` (the comma is required).',
+          c.restSpan(),
+        );
+      }
       fields.push({ name, type: type!, optional, initial, oneOf, span: lineSpan(line) });
     }
     return fields;
