@@ -1,6 +1,6 @@
 # ADR-209: Room-Description Snippets — Author-Written Text Spliced at Explicit Markers
 
-## Status: ACCEPTED — IMPLEMENTED (commits `354547a7`, `b56a1827`, 2026-07-07/08)
+## Status: ACCEPTED — IMPLEMENTED (commits `354547a7`, `b56a1827`, 2026-07-07/08). Superseded in part by ADR-211 (authoring surface: verbatim splice, author-facing `mentions`, the selector dialect); machinery decisions remain in force.
 
 > Accepted 2026-07-03 by David. Proposed the same day from a design
 > discussion (session daf0f1); **all seven open questions resolved by David**

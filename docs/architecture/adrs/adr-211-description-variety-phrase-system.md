@@ -1,6 +1,6 @@
 # ADR-211: Description Variety Rides the Phrase System — Bare Fragments, Platform-Owned Joining, Condition-Gated Snippets
 
-## Status: DRAFT — PROPOSED (§Open Questions lists every call David makes)
+## Status: ACCEPTED (2026-07-12 — Q1–Q7 resolved by David; each resolution recorded inline in §Open questions)
 
 > Drafted 2026-07-12 from the zoo-surfaces Z2 discussion (David: "the
 > author shouldn't care about splicing in commas that connect to an
@@ -21,6 +21,16 @@
 > boundaries, messageId render-graceful posture), and AC-9/AC-10. The
 > one remaining review item is by design: Open Questions 1–7 are
 > David's to answer before implementation.
+>
+> **Accepted 2026-07-12** — David walked Q1–Q7 (session 034f09). Three
+> answers go beyond the drafted recommendations and are folded into the
+> Decision text: Q3 mints the `here` deictic NOW alongside `is in
+> <room>`; Q4 builds the registered-gate seam now AND wires the Chord
+> loader to it (any `while <condition>` on a fragment works — no
+> presence-only load error); Q5 reworks the adverb vocabulary to mirror
+> the machinery 1:1 (`cycling, stopping, randomly, sticky, first-time`;
+> `ordered`/`once` retire as phrase-strategy adverbs). AC-11/AC-12
+> added for the two now-in-scope behaviors.
 
 ## Date: 2026-07-12
 
@@ -197,20 +207,27 @@ condition-gated text).
   shipped resolver gate runs it unchanged. `mentions` thus survives as
   the *compiled representation* of a presence gate, not as a concept
   authors learn.
-- **A `here` deictic** (`while the enamel pins is here`) is desirable
-  sugar — the D11 primitive `playerPresentAt(world, irEntityId)`
-  (runtime.ts:776-786) and the render-side containment check are both
-  already keyed the right way — but it is NEW grammar and gets its own
-  ratchet entry when wanted (Open Question 3).
+- **The `here` deictic** (`while the enamel pins is here`) SHIPS NOW
+  alongside `is in <room>` (Q3 resolution) — the D11 primitive
+  `playerPresentAt(world, irEntityId)` (runtime.ts:776-786) and the
+  render-side containment check are both already keyed the right way.
+  It is new grammar and gets its own ratchet entry in the zoo-surfaces
+  package; on a room-description fragment it compiles to the same
+  presence form as `is in <this room>` (i.e. `mentions`).
 - **Arbitrary gates** (`while after-hours`, `while the cage is open`)
   cannot compile to plain data — `SnippetEntry` is serializable by
-  design (ADR-209 q2/q7) and must stay so. They need a **registered
-  gate seam**: the resolver accepts, alongside the data map, gates
-  registered per `(roomId, marker)` by the runtime that owns the
-  conditions (the Chord loader), the exact pattern the state-clauses
-  registry uses for examine detail (world-model state-clauses.ts:49-82).
-  Whether that seam ships now or when a story first needs it is Open
-  Question 4.
+  design (ADR-209 q2/q7) and must stay so. They ride a **registered
+  gate seam**, BUILT NOW (Q4 resolution): the resolver accepts,
+  alongside the data map, gates registered per `(roomId, marker)` by
+  the runtime that owns the conditions (the Chord loader), the exact
+  pattern the state-clauses registry uses for examine detail
+  (world-model state-clauses.ts:49-82). The Chord loader WIRES to the
+  seam immediately (Q4 follow-up): any `while <condition>` on a
+  fragment phrase works — presence conditions compile to `mentions`
+  data; every other condition registers on the seam at load. There is
+  no presence-only load error. Registered gates are re-registered at
+  load, so save/restore is unaffected (nothing gate-shaped is
+  serialized).
 
 The lint half of `mentions` (coverage metadata: "is every scenery entity
 mentioned or covered?") is preserved for free: a presence gate *names
@@ -219,13 +236,28 @@ its entity*, so the lint reads gates — data `mentions` in TS, compiled
 
 ### 4. One selection vocabulary, one mapping, stated once
 
-Chord strategy adverbs are the authoring names; Choice selectors are the
-machinery names. The mapping is fixed here and nowhere else:
-`cycling→cycling`, `randomly→random`, `ordered→stopping`,
-`once→firstTime`. `sticky` has no Chord adverb until a story asks
-(ratchet entry then); TS authors may use it directly. The loader's
-existing table (runtime.ts:57-60) gains the `once` row and becomes the
-single implementation of this paragraph.
+Chord strategy adverbs MIRROR the Choice selector names 1:1 (Q5
+resolution — no mapping table for authors to remember). The table is
+fixed here and nowhere else:
+
+| Chord adverb | Choice selector | Behavior |
+|---|---|---|
+| `cycling` | `cycling` | variants in order, wraps forever |
+| `stopping` | `stopping` | variants in order, stays on the last |
+| `randomly` | `random` | seeded random pick every render |
+| `sticky` | `sticky` | seeded random pick once, locked forever (save-persistent) |
+| `first-time` | `firstTime` | variant 1 on first render, variant 2 thereafter |
+
+The old `ordered` and `once` phrase-strategy adverbs RETIRE. No shipped
+`.story` uses either as a phrase strategy (zoo.story's only strategy
+adverb is `randomly`, which survives unchanged), so story migration is
+zero. The rule modifier `once` (`on every turn …, once`) is a different
+grammar site and is untouched — retiring the phrase-strategy `once`
+removes that same-word collision. The loader's existing table
+(runtime.ts:57-60) is rewritten to this table and remains the single
+implementation of this paragraph; the adverb renames and `sticky`/
+`first-time` additions are chord-grammar ratchet entries in the
+zoo-surfaces package.
 
 ### 5. Storage, keying, and rendering stay ADR-209's
 
@@ -293,8 +325,9 @@ export interface Spliced extends PhraseBase {
   description string; (2) populate `RoomTrait.snippets[<key>]` from the
   phrase (variants → texts with `nothing` → `''`; strategy → selector
   per the Decision 4 mapping); (3) compile a presence `while` gate
-  (`<entity> is in <this room>`) to `mentions: <entityId>`; any other
-  gate is a LoadError per Open Question 4's resolution. This runs inside
+  (`<entity> is in <this room>`, or the `here` deictic) to
+  `mentions: <entityId>`; any other `while` condition registers on the
+  gate seam per `(roomId, marker)` (Q4 resolution). This runs inside
   the loader's entity build — i.e. within `story.initializeWorld`, and
   therefore strictly BEFORE the engine's `validateRoomSnippets` call
   (game-engine.ts:374), whose unbound-marker check then covers compiled
@@ -308,13 +341,16 @@ export interface Spliced extends PhraseBase {
 
 **Touched packages** (complete list): `if-domain` (Spliced + guard),
 `lang-en-us` (Spliced realization + separator ownership),
-`stdlib` (resolver mode annotation), `engine` (load gate),
+`stdlib` (resolver mode annotation + the registered-gate seam),
+`engine` (load gate),
 `devkit` (lint message text only, if any), `world-model` (no change —
-storage as-is), `chord` (gate attachment per ratchet; marker compile
-metadata), `story-loader` (compile contract above; strategy map gains
-the `once→firstTime` row), `ide-protocol` (builds clean against the
-additive IR field — verification, not code). Stories per the Migration
-inventory. Anything outside this list is a stop-and-discuss checkpoint.
+storage as-is), `chord` (gate attachment per ratchet; `here` deictic;
+adverb renames + `sticky`/`first-time`; marker compile metadata),
+`story-loader` (compile contract above; strategy table rewritten to
+the Decision 4 table; gate registration on the seam), `ide-protocol`
+(builds clean against the additive IR field — verification, not code).
+Stories per the Migration inventory. Anything outside this list is a
+stop-and-discuss checkpoint.
 
 ### What stands (from ADR-209) / what falls
 
@@ -323,7 +359,7 @@ inventory. Anything outside this list is a stop-and-discuss checkpoint.
 | `Sequence` splice, `Empty` absorption | Verbatim splice — authors writing separators |
 | Choice counters, `(roomId, marker)` keying, textState persistence | `mentions` as an author-facing concept (→ compile target of presence `while`) |
 | Seeded determinism, single counter authority, once-per-render | The selector dialect as a second author vocabulary (→ one mapping) |
-| `RoomTrait.snippets` storage + `{snippet:name}` storage-form marker | ADR-209's "no conditions ever" (→ `while` + gate seam, presence first) |
+| `RoomTrait.snippets` storage + `{snippet:name}` storage-form marker | ADR-209's "no conditions ever" (→ `while`: presence compiles to data, everything else rides the gate seam) |
 | Load validation, unused-entry lint, mutation-at-runtime pattern | — |
 
 ## Migration inventory (from the deep dive; all mechanical)
@@ -346,37 +382,42 @@ inventory. Anything outside this list is a stop-and-discuss checkpoint.
   the Chord surface (`define phrase pins, cycling` + `{pins}`), which is
   what returns the four excluded transcripts to the AC-2 gate.
 
-## Open questions (David decides; recommendations stated)
+## Open questions — ALL RESOLVED by David 2026-07-12 (session 034f09)
 
-1. **TS surface scope.** (a) **Full unification (recommended)**: the
-   resolver applies the join rule; all TS entries migrate to bare
-   fragments (inventory above; byte-identical outputs; frozen
-   transcripts and saves untouched). One rule everywhere, per the two
-   edicts. (b) Chord-only: the loader normalizes (prepends separators at
-   compile time); TS keeps verbatim splice. Less churn, but the platform
-   then has two splice semantics forever and TS authors keep writing
-   commas.
-2. **The join rule itself.** Confirm site-determined mode (clause `, ` /
-   sentence ` `), the bare-fragment load/lint error, and the
-   clause-site-with-terminator warning. Alternative rejected as
-   guessing: inferring mode from fragment capitalization/punctuation.
-3. **Presence spelling in Chord.** (a) **Ship `is in <room>` now
-   (recommended)** — zero new grammar, compiles to `mentions`; add (b)
-   the `here` deictic (`while it is here` / `while the pins is here`) as
-   its own later ratchet entry, or mint it now alongside.
-4. **The registered-gate seam** (arbitrary non-presence gates). (a)
-   **Defer (recommended)**: non-presence `while` gates on description
-   fragments are a load error ("presence gates only, for now") until a
-   story needs more — the zoo needs none. (b) Build the seam now
-   (state-clauses-registry pattern), tested by fixture only.
-5. **Selector mapping.** Confirm the table in Decision 4 (incl.
-   `once→firstTime`; `sticky` TS-only for now).
-6. **Counter keying.** Confirm `(roomId, marker)` for marker sites,
-   `('chord', key)` for statement emissions, collision hazard stays
+1. **TS surface scope.** → **(a) Full unification.** The resolver
+   applies the join rule; all TS entries migrate to bare fragments
+   (inventory above; byte-identical outputs; frozen transcripts and
+   saves untouched). One splice semantics everywhere, per the two
+   edicts. (Rejected: Chord-only normalization — two splice semantics
+   forever.)
+2. **The join rule itself.** → **Confirmed as drafted.**
+   Site-determined mode (clause `, ` / sentence ` `), the bare-fragment
+   load/lint error, and the clause-site-with-terminator warning all
+   stand. (Rejected as guessing: inferring mode from fragment
+   capitalization/punctuation.)
+3. **Presence spelling in Chord.** → **Both, now.** `is in <room>`
+   ships (compiles to `mentions`) AND the `here` deictic is minted in
+   the same package as its own ratchet entry, compiling to the same
+   presence form. (The drafted defer-`here` recommendation was
+   declined.)
+4. **The registered-gate seam.** → **Build now AND wire Chord now.**
+   The seam ships (state-clauses-registry pattern) and the Chord loader
+   registers any non-presence `while` condition on it at load — full
+   generality, no presence-only load error. (The drafted defer
+   recommendation was declined.)
+5. **Selector mapping.** → **Reworked: adverbs mirror the machinery
+   1:1** — `cycling, stopping, randomly, sticky, first-time` (table in
+   Decision 4). `ordered` and `once` retire as phrase-strategy adverbs
+   (no story migration — nothing shipped uses them); the rule-modifier
+   `once` is untouched. `sticky` and `first-time` are new adverbs;
+   renames + additions land as chord-grammar ratchet entries.
+6. **Counter keying.** → **Confirmed.** `(roomId, marker)` for marker
+   sites, `('chord', key)` for statement emissions (two independent
+   counters per dual-use phrase, AC-8), collision hazard stays
    documentation-only.
-7. **ADR-209 bookkeeping.** Add a one-line "superseded in part by
-   ADR-211 (authoring surface)" note to 209's Status block (append-only
-   discipline; its machinery decisions remain in force).
+7. **ADR-209 bookkeeping.** → **Done** (same session): the one-line
+   "superseded in part by ADR-211 (authoring surface)" note is appended
+   to 209's Status block; its machinery decisions remain in force.
 
 ## Acceptance criteria (each lands as a test when implemented)
 
@@ -406,16 +447,28 @@ inventory. Anything outside this list is a stop-and-discuss checkpoint.
   mode; a punctuation-led resolved text logs and joins as-is (render
   never throws) — the load-time bare-fragment gate covers literal texts
   only.
+- **AC-11**: `while <entity> is here` on a Chord fragment compiles to
+  the same `mentions` form as `while <entity> is in <this room>` — the
+  two spellings gate identically (byte-identical render both ways).
+- **AC-12**: A non-presence `while` gate (e.g. `while after-hours`)
+  registers on the gate seam at load and gates its fragment at render;
+  after save/restore the gate still holds (re-registered at load,
+  nothing gate-shaped serialized); counters advance only when the
+  fragment renders per today's gated-Choice behavior.
+- **AC-13**: The retired phrase-strategy adverbs `ordered` and `once`
+  are a load error naming the replacement (`stopping` / `first-time`);
+  the rule-modifier `once` still parses.
 
 ## Consequences
 
 - Authors — TS and Chord alike — write words, never separators; the
   platform's punctuation-authority principle holds at every seam
   (slots, lists, and now splices).
-- Conditionality on description text becomes ordinary `while`, with
-  presence as its first (and for now only) compiled form; ADR-209's
-  serializable-data rule survives via the compile-target design and,
-  later, the gate seam.
+- Conditionality on description text becomes ordinary `while`, fully
+  general from day one: presence (either spelling) compiles to
+  serializable `mentions` data, every other condition rides the
+  registered-gate seam — so ADR-209's serializable-data rule survives
+  intact.
 - One selection vocabulary per audience with one fixed mapping; the
   ratchet governs additions.
 - The zoo-surfaces package's Z2 re-cuts against this ADR (the on-hold
@@ -431,3 +484,7 @@ from David's Z2 correction and his call to "backtrack to 209 and rethink
 the entire logic." Three-agent implementation dive reports informed every
 citation; agents mapped ADR-209's implementation, the Assembler's
 joining/selection machinery, and the Chord condition kit.
+
+Accepted 2026-07-12 (session 034f09, same branch): David resolved Q1–Q7
+one at a time; resolutions recorded inline and folded into Decisions 3
+and 4, the compile contract, the touched-packages list, and AC-11..13.
