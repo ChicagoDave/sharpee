@@ -107,7 +107,8 @@ export async function runCompose(rest: string[]): Promise<number> {
   story.createPlayer(world);
   console.error(
     `compose: ${file} loaded — ${result.ir.entities.length} entities, ` +
-      `${result.ir.rules.length} rules, ${result.ir.hatches.length} hatch(es)`
+      `${result.ir.traits.length} trait(s), ${result.ir.actions.length} action(s), ` +
+      `${result.ir.hatches.length} hatch(es)`
   );
 
   const json = JSON.stringify(result.ir, null, 2) + '\n';

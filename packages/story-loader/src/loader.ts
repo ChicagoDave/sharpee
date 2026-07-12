@@ -258,12 +258,6 @@ export class ChordStory implements Story {
       world.setStateValue(CHORD_STORY_STATE_KEY, this.ir.story.states[0]);
     }
 
-    // LEGACY (ownership package): ir.flags is always empty — the loop and
-    // the chord.flag.* namespace die with the Phase C P4 cleanup.
-    for (const flag of this.ir.flags) {
-      world.setStateValue(`chord.flag.${flag.name}`, flag.initial);
-    }
-
     // Declared scores set the ceiling (dedup-by-identity makes the sum
     // exact — ADR-129).
     if (this.ir.scores.length > 0) {

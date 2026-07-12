@@ -100,6 +100,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "line": 8,
       },
       "states": [],
+      "statesReversible": false,
       "traits": [],
       "wears": [],
     },
@@ -136,6 +137,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "line": 19,
       },
       "states": [],
+      "statesReversible": false,
       "traits": [],
       "wears": [],
     },
@@ -261,6 +263,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "line": 26,
       },
       "states": [],
+      "statesReversible": false,
       "traits": [
         {
           "condition": {
@@ -315,6 +318,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "line": 42,
       },
       "states": [],
+      "statesReversible": false,
       "traits": [],
       "wears": [
         "velvet-cloak",
@@ -341,6 +345,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "line": 48,
       },
       "states": [],
+      "statesReversible": false,
       "traits": [
         {
           "condition": null,
@@ -405,6 +410,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "line": 56,
       },
       "states": [],
+      "statesReversible": false,
       "traits": [
         {
           "condition": null,
@@ -586,6 +592,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "trampled",
         "obliterated",
       ],
+      "statesReversible": false,
       "traits": [
         {
           "condition": null,
@@ -602,8 +609,6 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "wears": [],
     },
   ],
-  "everyRules": [],
-  "flags": [],
   "format": "story language 1",
   "hasHatches": true,
   "hatches": [
@@ -628,7 +633,6 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     },
     "title": "Cloak of Darkness",
   },
-  "onceRules": [],
   "phrases": {
     "defaultLocale": "en-US",
     "locales": {
@@ -803,7 +807,6 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
     },
   },
-  "rules": [],
   "scores": [],
   "sequences": [],
   "story": {

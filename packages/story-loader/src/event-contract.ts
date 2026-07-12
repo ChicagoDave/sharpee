@@ -8,7 +8,8 @@
  * (`toRoom` on actor-moved). Renaming the event TYPE string is caught by
  * tests/event-selector.test.ts and the golden transcript gates.
  *
- * Public interface: EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS.
+ * Public interface: EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS,
+ * enteringDestination.
  * Owner context: @sharpee/story-loader (type-only stdlib dep; erased at emit).
  */
 import type { ActorMovedEventData } from '@sharpee/stdlib';
@@ -30,3 +31,17 @@ export const EVENT_TRIGGERS: Record<string, string> = {
 export const EVENT_PAYLOAD_FIELDS: { entering: keyof ActorMovedEventData & 'toRoom' } = {
   entering: 'toRoom',
 };
+
+/**
+ * Type-guarded read of an `entering` event's destination — the runtime's
+ * consumption-side half of the AC-9 contract (no blind payload casts). The
+ * return type is chained to the stdlib payload type so a field-type change
+ * fails this build too.
+ * @param data the raw event payload (unknown shape at the seam)
+ * @returns the destination room id, or undefined when absent/mis-shaped
+ */
+export function enteringDestination(data: unknown): ActorMovedEventData['toRoom'] | undefined {
+  if (typeof data !== 'object' || data === null) return undefined;
+  const value = (data as Record<string, unknown>)[EVENT_PAYLOAD_FIELDS.entering];
+  return typeof value === 'string' ? value : undefined;
+}

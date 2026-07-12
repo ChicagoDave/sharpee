@@ -56,10 +56,10 @@ describe('zoo-actions IR (§3.4 + ownership package)', () => {
   });
 
   it('compiles reactions as after-clauses on the owner (no floating rules)', () => {
-    expect(ir.rules).toEqual([]);
-    expect(ir.flags).toEqual([]);
-    expect(ir.onceRules).toEqual([]);
-    expect(ir.everyRules).toEqual([]);
+    expect('rules' in ir).toBe(false); // legacy array removed (Phase C P4)
+    expect('flags' in ir).toBe(false);
+    expect('onceRules' in ir).toBe(false);
+    expect('everyRules' in ir).toBe(false);
     const goats = ir.entities.find((e) => e.id === 'pygmy-goats')!;
     expect(goats.onClauses).toMatchObject([
       { clauseKind: 'after', action: 'feeding', binding: 'it', routing: 'capability' },
@@ -133,8 +133,8 @@ describe('zoo-timeline IR (§3.3 + ownership package)', () => {
     expect(ir.sequences[2].steps.map((s) => [s.timing, s.turns])).toEqual([
       ['at-turn', 3], ['later', 3], ['later', 3], ['later', 3],
     ]);
-    expect(ir.onceRules).toEqual([]);
-    expect(ir.everyRules).toEqual([]);
+    expect('onceRules' in ir).toBe(false);
+    expect('everyRules' in ir).toBe(false);
   });
 
   it('registers declare-and-emit inline phrases so coverage passes', () => {

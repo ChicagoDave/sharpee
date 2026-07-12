@@ -19,9 +19,18 @@
  */
 import type { IRCondition, IRValue, StoryIR } from '@sharpee/chord';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
-import { RoomTrait, TraitType, WearableTrait, WorldModel } from '@sharpee/world-model';
+import {
+  LightSourceTrait,
+  LockableTrait,
+  OpenableTrait,
+  RoomTrait,
+  SwitchableTrait,
+  TraitType,
+  WearableTrait,
+  WorldModel,
+} from '@sharpee/world-model';
 import { LoadError } from './errors';
-import { CHORD_FLAG_PREFIX, CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
 
 export interface EvalContext {
   world: WorldModel;
@@ -84,12 +93,6 @@ export class Evaluator {
       case 'story-state':
         // The story object's phase (`while after-hours`, ratchet D2).
         return ctx.world.getStateValue(CHORD_STORY_STATE_KEY) === cond.state;
-      case 'flag': {
-        // LEGACY (ownership package): never produced by the analyzer; dies
-        // with the Phase C P4 cleanup.
-        const value = ctx.world.getStateValue(CHORD_FLAG_PREFIX + cond.name);
-        return value === true || value === 'true';
-      }
       case 'predicate':
         return this.evalPredicate(cond, ctx);
     }
@@ -148,7 +151,11 @@ export class Evaluator {
     }
   }
 
-  /** `<subject> is <bare-word>`: a declared state or the `dark` trait. */
+  /**
+   * `<subject> is <bare-word>`: a declared state, a state adjective read
+   * live from world trait state (ratchet D1 — never stored), or the `dark`
+   * trait.
+   */
   private symbolHolds(subject: unknown, symbol: string, ctx: EvalContext): boolean {
     if (typeof subject === 'string') {
       // A state string read from a `state` field compares directly.
@@ -162,11 +169,54 @@ export class Evaluator {
         const irId = this.ids.irIdOf(subject);
         if (irId !== undefined) {
           const state = ctx.world.getStateValue(CHORD_STATE_PREFIX + irId);
-          if (state !== undefined) return state === symbol;
+          if (state !== undefined && state === symbol) return true;
         }
+        const adjective = this.stateAdjectiveHolds(entity, symbol);
+        if (adjective !== null) return adjective;
       }
     }
     return false;
+  }
+
+  /**
+   * State adjectives (ratchet D1): `open`/`closed`, `locked`/`unlocked`,
+   * `on`/`off`, `worn`, `lit` — pure reads of world trait state. Null when
+   * `symbol` is not a state adjective (or the trait is absent, so the
+   * adjective cannot hold either way).
+   */
+  private stateAdjectiveHolds(entity: NonNullable<ReturnType<WorldModel['getEntity']>>, symbol: string): boolean | null {
+    switch (symbol) {
+      case 'open':
+      case 'closed': {
+        const openable = entity.get(TraitType.OPENABLE) as OpenableTrait | undefined;
+        if (!openable) return null;
+        return symbol === 'open' ? openable.isOpen === true : openable.isOpen !== true;
+      }
+      case 'locked':
+      case 'unlocked': {
+        const lockable = entity.get(TraitType.LOCKABLE) as LockableTrait | undefined;
+        if (!lockable) return null;
+        return symbol === 'locked' ? lockable.isLocked === true : lockable.isLocked !== true;
+      }
+      case 'on':
+      case 'off': {
+        const switchable = entity.get(TraitType.SWITCHABLE) as SwitchableTrait | undefined;
+        if (!switchable) return null;
+        return symbol === 'on' ? switchable.isOn === true : switchable.isOn !== true;
+      }
+      case 'worn': {
+        const wearable = entity.get(TraitType.WEARABLE) as WearableTrait | undefined;
+        if (!wearable) return null;
+        return wearable.worn === true;
+      }
+      case 'lit': {
+        const source = entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait | undefined;
+        if (!source) return null;
+        return source.isLit === true;
+      }
+      default:
+        return null;
+    }
   }
 
   // ---------------------------------------------------------------- values
@@ -194,10 +244,6 @@ export class Evaluator {
           throw new LoadError(`Cannot read \`${value.field}\` of a non-entity value.`);
         }
         return this.readField(base, value.field, ctx);
-      }
-      case 'flag': {
-        const raw = ctx.world.getStateValue(CHORD_FLAG_PREFIX + value.name);
-        return raw ?? 'false';
       }
       case 'slot': {
         const bound = ctx.slots?.[value.name];

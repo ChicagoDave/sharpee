@@ -701,7 +701,24 @@ never a silent edit to a frozen story or its frozen transcripts.
   exit criterion); `pnpm --filter '@sharpee/story-loader' test` green —
   genuinely green, per the fixture-indirection ground rule below, not
   green-with-known-exceptions.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-11). story-loader 73/73 (+12 P4 tests in
+  tests/ownership-runtime.test.ts), chord 144/144, ide-protocol 11/11,
+  devkit 22 green; zero `chord.flag`/`CHORD_FLAG` references anywhere in
+  `packages/` (src + rebuilt dists). Legacy IR surface deleted wholesale
+  (flags/rules/onceRules/everyRules arrays, `if` statement, `flag`
+  value/condition/field-type kinds) — `if` removal is now compile-time
+  impossible, not a runtime check. IREntity gained `statesReversible` so
+  the runtime resolves a change target's declaring set. Notes: (1) the
+  decision-10 presence gate lives on the every-turn daemon paths (entity +
+  trait), checked before condition eval so off-stage clauses draw no RNG
+  and never consume `, once` — action/event clauses are inherently
+  witnessed; (2) P3's owner-scoped inline phrases surfaced in messageIds
+  (`sam-the-zookeeper.zoo.after-hours.keeper-leaves`) — scheduler test
+  expectation updated, rendered text unchanged; (3) the Gemini
+  undo-delta-safe item was verified already-true (states are
+  world-state writes); its AC-6 trait-state TRANSCRIPT coverage rides
+  Phase 5's CLI harness — unit-level transplant test added here; (4)
+  devkit compose's status line moved off `ir.rules`.
 
 ### Phase 5: Story migrations + gate delta audit (cloak, zoo, chord-extras)
 - **Tier**: Large

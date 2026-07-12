@@ -106,7 +106,7 @@ describe('cloak.story IR', () => {
   });
 
   it('resolves the bar stumble reaction as an owner after-clause (no floating rules)', () => {
-    expect(ir.rules).toEqual([]);
+    expect('rules' in ir).toBe(false); // legacy array removed (Phase C P4)
     const bar = ir.entities[2];
     expect(bar.onClauses).toHaveLength(1);
     const clause = bar.onClauses[0];
@@ -155,10 +155,10 @@ describe('cloak.story IR', () => {
     expect(ir.hatches).toMatchObject([{ name: 'garbled', modulePath: './extras.ts' }]);
   });
 
-  it('keeps the legacy floating-rule arrays empty', () => {
-    expect(ir.flags).toEqual([]);
-    expect(ir.onceRules).toEqual([]);
-    expect(ir.everyRules).toEqual([]);
+  it('carries no legacy floating-rule arrays (removed in Phase C P4)', () => {
+    expect('flags' in ir).toBe(false);
+    expect('onceRules' in ir).toBe(false);
+    expect('everyRules' in ir).toBe(false);
   });
 
   it('round-trips through JSON without loss', () => {

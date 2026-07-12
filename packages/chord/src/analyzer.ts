@@ -296,13 +296,9 @@ class Analyzer {
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       verbs: [],
       hatches: [],
-      flags: [],
-      rules: [],
       traits: [],
       actions: [],
       scores: this.scoreDecls,
-      onceRules: [],
-      everyRules: [],
       sequences: [],
       hasHatches: false,
     };
@@ -886,6 +882,7 @@ class Analyzer {
       // Merged set: own `states:` plus every composed trait's declared
       // states (ratchet D8) — the loader initializes from states[0].
       states: sym ? sym.states : decl.states.map((s) => s.name),
+      statesReversible: decl.statesReversible,
       descriptionKey: decl.description ? `${id}.description` : null,
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
         this.buildOnClause(c, entityScope(sym ?? null)),

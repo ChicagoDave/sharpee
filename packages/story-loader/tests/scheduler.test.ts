@@ -121,14 +121,14 @@ describe('zoo-timeline scheduler constructs', () => {
 
     // Turn 20: the phase flips earlier in the tick; Sam's clause fires.
     const at20 = tick(20);
-    expect(messageIdsOf(at20)).toContain('zoo.after-hours.keeper-leaves');
+    expect(messageIdsOf(at20)).toContain('sam-the-zookeeper.zoo.after-hours.keeper-leaves');
     // The statement `when` suffix (D7): the player IS in the Aviary.
     expect(messageIdsOf(at20)).toContain('keeper-wave');
     expect(world.getLocation(samId)).toBe(gateId);
 
     // `, once` (D5): firing again produces nothing and moves nothing.
     const again = tick(21);
-    expect(messageIdsOf(again)).not.toContain('zoo.after-hours.keeper-leaves');
+    expect(messageIdsOf(again)).not.toContain('sam-the-zookeeper.zoo.after-hours.keeper-leaves');
     expect(world.getLocation(samId)).toBe(gateId);
   });
 

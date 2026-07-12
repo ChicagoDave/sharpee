@@ -18,7 +18,7 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IREntity, IROnClause, IRRule, IRStatement, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IREntity, IROnClause, IRStatement, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
@@ -44,14 +44,13 @@ import {
 import { Evaluator, EvalContext } from './evaluator';
 import { LoadError } from './errors';
 import {
-  CHORD_FLAG_PREFIX,
   CHORD_OCCURRENCE_PREFIX,
   CHORD_STATE_PREFIX,
   CHORD_STORY_STATE_KEY,
   CHORD_TRAIT_PREFIX,
 } from './state-keys';
 import { withLineBreaks } from './text';
-import { EVENT_TRIGGERS } from './event-contract';
+import { enteringDestination, EVENT_TRIGGERS } from './event-contract';
 
 /** Chord strategy adverb → phrase-algebra Choice selector (ADR-196). */
 const STRATEGY_SELECTOR: Record<string, Choice['selector']> = {
@@ -242,10 +241,10 @@ export class ChordRuntime {
     event: ISemanticEvent,
     world: WorldModel,
   ): ISemanticEvent[] | null {
-    const data = (event.data ?? {}) as Record<string, unknown>;
     // The clause is about its owner: `after entering it` fires when the
-    // movement's destination IS the owner (payload field per the contract).
-    if (clause.action === 'entering' && data.toRoom !== this.host.entityId(entity.id)) return null;
+    // movement's destination IS the owner — read through the AC-9 payload
+    // guard, never a blind cast (the stdlib event is a foreign surface).
+    if (clause.action === 'entering' && enteringDestination(event.data) !== this.host.entityId(entity.id)) return null;
 
     const ctx: ExecContext = { world, it: entity.id };
     if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return null;
@@ -653,6 +652,12 @@ export class ChordRuntime {
           id: `chord.entity-turn.${irEntity.id}.${clauseIndex}`,
           name: `on every turn (${irEntity.id})`,
           run: (ctx) => {
+            // Presence gate (decision 10): performances need an audience —
+            // the clause does not FIRE off-stage. Checked before the
+            // condition so an off-stage `one chance in N` never draws the
+            // RNG (AC-5 determinism for on-stage firings) and `, once` is
+            // never consumed unwitnessed. Presence, not sight.
+            if (!this.playerPresentAt(ctx.world, irEntity.id)) return [];
             const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
             if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
             const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
@@ -684,6 +689,9 @@ export class ChordRuntime {
               const worldId = this.host.entityId(irEntity.id);
               const entity = worldId ? ctx.world.getEntity(worldId) : undefined;
               if (!entity?.has(traitType)) continue;
+              // Presence gate (decision 10) — before any condition so the
+              // RNG stream and `, once` are untouched off-stage.
+              if (!this.playerPresentAt(ctx.world, irEntity.id)) continue;
               const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
               if (comp.condition && !this.evaluator.evalCondition(comp.condition, evalCtx)) continue;
               if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) continue;
@@ -706,6 +714,24 @@ export class ChordRuntime {
   /** Scheduler-returned events must narrate to reach the transcript. */
   private narrated(events: ISemanticEvent[]): ISemanticEvent[] {
     return events.map((e) => ({ ...e, narrate: true } as ISemanticEvent));
+  }
+
+  /**
+   * Decision 10 presence semantics: the player shares the owner's location.
+   * A room owner means the player is IN that room; for anything else the
+   * two share a containing room (same co-location rule as can-see/can-reach
+   * — presence, not sight, so the snake speaks in darkness).
+   */
+  private playerPresentAt(world: WorldModel, irEntityId: string): boolean {
+    const ownerId = this.host.entityId(irEntityId);
+    const playerId = world.getPlayer()?.id;
+    if (!ownerId || !playerId) return false;
+    if (ownerId === playerId) return true;
+    const playerRoom = world.getContainingRoom(playerId)?.id ?? world.getLocation(playerId);
+    const owner = world.getEntity(ownerId);
+    if (owner?.has(TraitType.ROOM)) return playerRoom === ownerId;
+    const ownerRoom = world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId);
+    return ownerRoom !== undefined && ownerRoom === playerRoom;
   }
 
   /**
@@ -830,9 +856,28 @@ export class ChordRuntime {
           if (phase !== 'reports' && whenHolds(stmt)) {
             if (stmt.entity.kind === 'story') {
               // `change the story to <state>` — the story object's phase (D2).
+              this.checkForwardMarch(
+                this.ir.story.states,
+                this.ir.story.reversible,
+                ctx.world.getStateValue(CHORD_STORY_STATE_KEY),
+                stmt.state,
+                'the story',
+                stmt.span,
+              );
               ctx.world.setStateValue(CHORD_STORY_STATE_KEY, stmt.state);
             } else {
               const irId = this.irIdOfValue(stmt.entity, ctx);
+              const set = this.stateSetOf(irId, stmt.state);
+              if (set) {
+                this.checkForwardMarch(
+                  set.states,
+                  set.reversible,
+                  ctx.world.getStateValue(CHORD_STATE_PREFIX + irId),
+                  stmt.state,
+                  irId,
+                  stmt.span,
+                );
+              }
               ctx.world.setStateValue(CHORD_STATE_PREFIX + irId, stmt.state);
             }
           }
@@ -849,17 +894,13 @@ export class ChordRuntime {
         case 'set': {
           if (phase !== 'reports') {
             const value = this.evaluator.evalValue(stmt.value, ctx);
-            if (stmt.target.kind === 'flag' || stmt.target.kind === 'symbol') {
-              // Declared flags (analyzer emits 'flag'; 'symbol' kept for
-              // older IR) live in world state.
-              ctx.world.setStateValue(CHORD_FLAG_PREFIX + stmt.target.name, value);
-            } else if (stmt.target.kind === 'field') {
-              // Trait data fields (`set fed to true`) write the entity's
+            if (stmt.target.kind === 'field') {
+              // Trait data fields (`set its treats to 3`) write the entity's
               // chord trait instance — world state via traits (AC-6-safe).
               const baseId = this.evaluator.entityValue(stmt.target.base, ctx);
               this.writeChordTraitField(ctx.world, baseId, stmt.target.field, value, stmt.span);
             } else {
-              throw new LoadError('`set` targets a flag or a trait data field.', stmt.span);
+              throw new LoadError('`set` targets a trait data field.', stmt.span);
             }
           }
           break;
@@ -887,13 +928,6 @@ export class ChordRuntime {
           // The refusal partition is consumed by findRefusal (validate
           // phase); nothing to do in execute/report passes.
           break;
-        case 'if': {
-          const decided = ctx.decisions?.get(stmt);
-          const takeThen = decided !== undefined ? decided === 'then' : this.evaluator.evalCondition(stmt.condition, ctx);
-          const branch = takeThen ? stmt.then : stmt.else;
-          if (branch) events.push(...this.execStatements(branch, ctx, phase));
-          break;
-        }
         case 'select-on': {
           const decided = ctx.decisions?.get(stmt) ?? this.decideSelectOn(stmt, ctx);
           const arm = stmt.arms.find((a) => a.value === decided);
@@ -914,6 +948,54 @@ export class ChordRuntime {
       }
     }
     return events;
+  }
+
+  /**
+   * The declared set a `change` target state belongs to on an entity, with
+   * its D4 policy — a composed trait's set, or the entity's own `states:`
+   * line (merged list minus trait states). Null when the state is unknown
+   * (the analyzer gates that; being lenient here keeps the check pure).
+   */
+  private stateSetOf(irId: string, state: string): { states: string[]; reversible: boolean } | null {
+    const irEntity = this.ir.entities.find((e) => e.id === irId);
+    if (!irEntity) return null;
+    const traitStates = new Set<string>();
+    for (const comp of irEntity.traits) {
+      const trait = this.ir.traits.find((t) => t.name === comp.name);
+      if (!trait) continue;
+      if (trait.states.includes(state)) {
+        return { states: trait.states, reversible: trait.statesReversible };
+      }
+      for (const s of trait.states) traitStates.add(s);
+    }
+    const own = irEntity.states.filter((s) => !traitStates.has(s));
+    return own.includes(state) ? { states: own, reversible: irEntity.statesReversible } : null;
+  }
+
+  /**
+   * D4 forward-march, runtime half: within a non-reversible set, `change`
+   * may only move forward in declaration order. (The analyzer catches the
+   * statically provable case — change-to-initial; this catches the rest
+   * with the live current state.) Cross-set transitions and same-state
+   * no-ops pass.
+   */
+  private checkForwardMarch(
+    states: string[],
+    reversible: boolean,
+    current: unknown,
+    target: string,
+    ownerDesc: string,
+    span?: import('@sharpee/chord').Span,
+  ): void {
+    if (reversible || typeof current !== 'string') return;
+    const from = states.indexOf(current);
+    const to = states.indexOf(target);
+    if (from >= 0 && to >= 0 && to < from) {
+      throw new LoadError(
+        `\`change\` to \`${target}\` moves ${ownerDesc} backward in a forward-only set (currently \`${current}\`) — add \`, reversible\` to the \`states:\` line to permit back-transitions (D4).`,
+        span,
+      );
+    }
   }
 
   /**
@@ -955,13 +1037,6 @@ export class ChordRuntime {
             if (arm) walk(arm.body);
             break;
           }
-          case 'if': {
-            const takeThen = this.evaluator.evalCondition(stmt.condition, ctx);
-            decisions.set(stmt, takeThen ? 'then' : 'else');
-            const branch = takeThen ? stmt.then : stmt.else;
-            if (branch) walk(branch);
-            break;
-          }
           case 'select-strategy':
             stmt.alternatives.forEach((a) => walk(a));
             break;
@@ -986,7 +1061,7 @@ export class ChordRuntime {
     if (count === 0) return 0;
     // Occurrence-ordered strategies key off world state; randomly keys off
     // the persisted chance stream (via one draw per firing).
-    const key = CHORD_OCCURRENCE_PREFIX + `select.${this.ir.rules.length}.${stmt.span.line}`;
+    const key = CHORD_OCCURRENCE_PREFIX + `select.${stmt.span.line}`;
     const n = (ctx.world.getStateValue(key) as number | undefined) ?? 0;
     ctx.world.setStateValue(key, n + 1);
     switch (stmt.strategy) {

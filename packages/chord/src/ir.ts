@@ -29,19 +29,11 @@ export interface StoryIR {
   phrases: IRPhrases;
   verbs: IRVerbDef[];
   hatches: IRHatch[];
-  /** LEGACY (ownership package): always empty — `define flag` was removed. Dies in Phase C P4. */
-  flags: IRFlagDef[];
-  /** LEGACY (ownership package): always empty — floating `when` rules were removed. Dies in Phase C P4. */
-  rules: IRRule[];
   // Phase B (plan phase 3):
   traits: IRTraitDef[];
   actions: IRActionDef[];
   /** Owner-attached score identities (D12) — names are owner-qualified (`pygmy-goats.fed`). */
   scores: IRScoreDef[];
-  /** LEGACY (ownership package): always empty — floating `once` rules were removed. Dies in Phase C P4. */
-  onceRules: IROnceRule[];
-  /** LEGACY (ownership package): always empty — floating `every` rules were removed. Dies in Phase C P4. */
-  everyRules: IREveryRule[];
   sequences: IRSequenceDef[];
   /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
   hasHatches: boolean;
@@ -77,8 +69,18 @@ export interface IREntity {
   wears: string[];
   exits: IRExit[];
   blockedExits: IRBlockedExit[];
-  /** Ordered state names (`states: intact, trampled, obliterated`). */
+  /**
+   * Ordered state names — the entity's own `states:` line first, then every
+   * composed trait's declared set in composition order (D8 merge; one
+   * namespace per entity, collisions are load errors).
+   */
   states: string[];
+  /**
+   * The entity's OWN `states:` line permits back-transitions (D4). Trait
+   * sets carry their own flag on IRTraitDef — the runtime resolves a
+   * `change` target's declaring set for the forward-march check.
+   */
+  statesReversible: boolean;
   /** Phrase key of the description in the phrase table, or null. */
   descriptionKey: string | null;
   onClauses: IROnClause[];
@@ -247,7 +249,7 @@ export interface IRTraitDef {
 export interface IRTraitField {
   /** Field name words joined with a space (`body part`). */
   name: string;
-  type: 'flag' | 'entity' | 'number' | 'name' | 'one-of';
+  type: 'entity' | 'number' | 'name' | 'one-of';
   optional: boolean;
   initial: string | null;
   oneOf: string[] | null;
@@ -293,21 +295,6 @@ export interface IRScoreDef {
   span: Span;
 }
 
-/** `once <cond> …` — fires once, then retires. */
-export interface IROnceRule {
-  condition: IRCondition;
-  body: IRStatement[];
-  span: Span;
-}
-
-/** `every <n> turns [, <m> times] …` — recurring daemon. */
-export interface IREveryRule {
-  turns: number;
-  times: number | null;
-  body: IRStatement[];
-  span: Span;
-}
-
 /** `define sequence <name>` — chained-fuse timeline. */
 export interface IRSequenceDef {
   /** Name words joined with a space (`closing time`). */
@@ -332,37 +319,6 @@ export interface IRSequenceStep {
   span: Span;
 }
 
-export interface IRFlagDef {
-  name: string;
-  initial: string;
-  span: Span;
-}
-
-// --------------------------------------------------------------------------
-// rules
-// --------------------------------------------------------------------------
-
-/** A `when` rule with its event header segmented and resolved. */
-export interface IRRule {
-  /** The acting entity (`player` for the player). */
-  actor: IRValue;
-  /** Event verb: curated set (`enters`) or derived from a `define action` name (`pets`). */
-  verb: string;
-  /** The declared action this verb derives from, when it does (Phase B). */
-  actionName: string | null;
-  /** Event target: a specific entity, anything, or an open-condition selection. */
-  target: IRRuleTarget;
-  condition: IRCondition | null;
-  body: IRStatement[];
-  span: Span;
-}
-
-export type IRRuleTarget =
-  | { kind: 'entity'; id: string }
-  | { kind: 'anything' }
-  /** `any <open-condition>` (grammar log 2026-07-11). */
-  | { kind: 'any-condition'; name: string };
-
 // --------------------------------------------------------------------------
 // statements
 // --------------------------------------------------------------------------
@@ -381,8 +337,6 @@ export type IRStatement =
   | { kind: 'must'; condition: IRCondition; phraseKey: string; span: Span }
   /** `refuse when <cond>: <key>` as a body statement (prohibition, D6). */
   | { kind: 'refuse-when'; condition: IRCondition; phraseKey: string; span: Span }
-  /** LEGACY: `if` was removed (given 4 amended); never produced. Dies in Phase C P4. */
-  | { kind: 'if'; condition: IRCondition; then: IRStatement[]; else: IRStatement[] | null; span: Span }
   | { kind: 'select-on'; subject: IRValue; arms: IRSelectArm[]; span: Span }
   | { kind: 'select-strategy'; strategy: string; alternatives: IRStatement[][]; span: Span }
   | { kind: 'ordinal'; ordinal: number; body: IRStatement[]; span: Span };
@@ -414,8 +368,6 @@ export type IRValue =
   | { kind: 'field'; base: IRValue; field: string }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
-  /** LEGACY: flags were removed (given 8); never produced. Dies in Phase C P4. */
-  | { kind: 'flag'; name: string }
   | { kind: 'symbol'; name: string };
 
 export type IRCondition =
@@ -426,8 +378,6 @@ export type IRCondition =
   | { kind: 'condition'; name: string }
   /** The story is in the named phase (`while after-hours`, ratchet D2). */
   | { kind: 'story-state'; state: string }
-  /** LEGACY: flags were removed (given 8); never produced. Dies in Phase C P4. */
-  | { kind: 'flag'; name: string }
   | {
       kind: 'predicate';
       /** 'can-see'/'can-reach' land with Phase B (design.md §2.7). */

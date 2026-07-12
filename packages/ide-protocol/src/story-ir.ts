@@ -28,8 +28,6 @@ export type {
   IRVerbDef,
   IRPatternPart,
   IRHatch,
-  IRFlagDef,
-  IRRule,
   IRStatement,
   IRSelectArm,
   IRParam,
