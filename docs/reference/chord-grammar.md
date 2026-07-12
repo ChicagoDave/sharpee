@@ -8,8 +8,13 @@ Normative source: `docs/work/story-language/design.md` + ADR-210; grammar
 `docs/architecture/chord-grammar-changes.md`.
 
 **Current coverage: Phase A subset + Phase B declarations + Phase C
-ownership package** (plan: docs/work/chord-phase-c/plan.md) as of
-2026-07-12. Phase C lands the ownership ratchet entries D1–D13: owner-attached
+ownership package + the each package (E1–E3)** (plans:
+docs/work/chord-phase-c/plan.md, docs/work/chord-each/plan.md) as of
+2026-07-12. The each package adds the quantifier condition forms
+`any <open-condition>` / `no <open-condition>`, the body-position
+iteration block `each <open-condition> … end each` with the `the match`
+binder, and the `must be any <name>` membership requirement (David,
+2026-07-12). Phase C lands the ownership ratchet entries D1–D13: owner-attached
 `on`/`after` clauses with `while` and `, once`, `states[, reversible]:` at
 story/entity/trait scope, `must` requirements, `refuse when` in body
 position, the statement-final `when` suffix, owner-attached `score … worth N`
@@ -44,6 +49,7 @@ they have no productions below). Analysis/loader: later phases.
 | `define phrase` | header line | `end phrase` |
 | `on` / `after` clause | header line | `end on` / `end after` (must match the opener) |
 | `select` | `select …` line | `end select` (`or` at the `select`'s indent) |
+| `each` block (E3) | `each <name>` line | `end each` |
 
 - Indentation is **spaces only** (tab → `lex.tab-indent` error).
 - Recovery: after an error the parser resynchronizes at the next `end` line
@@ -239,6 +245,10 @@ must-subject = value-expr ;    (* line must OPEN with lowercase `the`/`it`/`its`
                                   so capitalized prose stays prose *)
 infinitive   = "be" ( ("a"|"an") WORD { WORD }             (* is-a *)
                     | "in" name                            (* is-in *)
+                    | "any" WORD                           (* membership over a named open
+                                                              condition (David, 2026-07-12);
+                                                              standalone-name rule, same as
+                                                              the condition quantifiers *)
                     | value-expr )                         (* is *)
              | ( "have" | "hold" | "wear" ) name           (* has/holds/wears *)
              | ( "see" | "reach" ) name ;                  (* can see/reach *)
@@ -247,7 +257,10 @@ infinitive   = "be" ( ("a"|"an") WORD { WORD }             (* is-a *)
 `must not …` is a parse error (`parse.must-negative`): requirements are
 positive by design; prohibitions use `refuse when <condition>: <key>`
 (companion analyzer gate: `analysis.negated-requirement` on
-`refuse when not …`).
+`refuse when not …`). `must be no <name>` (standalone name) is the same
+`parse.must-negative` error — a negated requirement in disguise; `must be
+any <name>` requires the SUBJECT to satisfy the named open condition
+(membership — the condition's `it` binds to the subject at evaluation).
 
 ## Statements
 
@@ -264,7 +277,7 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "award" { token } [ "," "once" ] [ stmt-when ] NL
              | "win" [ WORD ] [ stmt-when ] NL
              | "lose" [ WORD ] [ stmt-when ] NL
-             | select-on | select-strategy | ordinal-block ;
+             | select-on | select-strategy | ordinal-block | each-block ;
 stmt-when    = "when" condition ;                          (* statement-final suffix, D7 *)
 phrase-key   = WORD { "." WORD } ;                         (* dotted keys: zoo.pa.closing-3 *)
 param        = "with" WORD { WORD } "=" value-expr ;
@@ -274,7 +287,20 @@ select-strategy = "select" STRATEGY NL
                >>> { statement } { "or" NL >>> { statement } } "end" "select" NL ;
 ordinal-block = ORDINAL "time" NL >>> { statement } ;
 ORDINAL      = "first" | "second" | … | "tenth" ;
+each-block   = "each" WORD NL                              (* E3: iteration over a named
+                                                              open condition (analyzer gate) *)
+               >>> { statement } "end" "each" NL ;
 ```
+
+- **`each` blocks (ratchet E3, 2026-07-12)** parse through the shared
+  statement path, so they are legal exactly where statements are: `on`/
+  `after` clause bodies, action bodies, trait clause bodies, sequence
+  steps — and `refuse`/`must` legality inside the body follows the host
+  (legal in `on`, error in `after`). Never top-level
+  (`parse.each-top-level`); a missing condition name is
+  `parse.each-condition`; trailing words after the name are
+  `parse.each-trailing`. Nesting is legal; `the match` binds innermost.
+  The open-condition requirement is the analyzer's gate, not the parser's.
 
 - **`if`/`else`/`end if` was removed** (ratchet 2026-07-11): `if` is a parse
   error (`parse.removed-if`) pointing at `must` guards, the statement `when`
@@ -305,6 +331,11 @@ and-expr     = unary { "and" unary } ;
 unary        = "not" unary
              | "(" condition ")"
              | "one" "chance" "in" NUMBER
+             | ( "any" | "no" ) WORD                       (* E1/E2 quantifiers: only when
+                                                              the WORD stands alone — a
+                                                              subject merely starting with
+                                                              `no` (`no smoking sign is …`)
+                                                              keeps its predicate parse *)
              | WORD                                        (* bare ⇒ named-condition or
                                                               state ref, only when a
                                                               connective or end-of-condition
@@ -317,12 +348,22 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
              | "can" ( "see" | "reach" ) name ;                (* Phase B *)
 
 value-expr   = NUMBER | STRING
+             | "the" "match"                               (* E3 binder, standalone only —
+                                                              `the match box` stays a name *)
              | "its" field-words                           (* possessive on `it` *)
              | name [ "'s" field-words ]                   (* the player's location *)
              | WORD { WORD } ;                             (* bare words *)
 name         = [ ARTICLE ] WORD { WORD } ;
 ARTICLE      = "the" | "a" | "an" ;
 ```
+
+**`the match` (ratchet E3)** is the `each`-block binder: the iterated
+entity inside the block's body; `it` keeps meaning the clause owner. In
+NameRef positions (`change`/`move` targets, predicate things) it parses
+as an ordinary name reference and resolves to the binder at analysis,
+exactly as `it` does. Position enforcement is the analyzer's
+`analysis.match-outside-each` gate; `match` is a reserved declaration
+name (`analysis.reserved-name` — entity, alias, trait field, or slot).
 
 Noun phrases stop at: `is has holds wears can and or then to while with`.
 
@@ -388,3 +429,17 @@ review; if any is wrong it becomes a grammar-changes entry:
     (D4: `analysis.irreversible-state`), and the negated-requirement gate
     (D6: `analysis.negated-requirement`) all fire after parse — the parser
     accepts any word list in a `states-line`.
+14. **Quantifier gates (E1–E3)**: `any`/`no`/`each` (and `must be any`)
+    require a declared OPEN condition — a closed condition or story state
+    is `analysis.closed-condition-selection`, an undeclared name is
+    `analysis.unknown-condition`. `the match` outside an `each` body is
+    `analysis.match-outside-each`; `match` as a declared entity name,
+    alias, trait data field, or grammar slot is `analysis.reserved-name`.
+    The bare-open-condition-in-truth-position gate
+    (`analysis.open-condition-truth`) now names the live fix-it forms.
+    In `is` comparisons with `the match` as subject, the state set is
+    statically unknowable (any entity may match) — the word passes as a
+    symbol and the runtime resolves it, same stance as
+    `change the match to <state>`. Enumeration domain (evaluator):
+    all IR-declared entities, player and rooms included, in declaration
+    (creation) order.

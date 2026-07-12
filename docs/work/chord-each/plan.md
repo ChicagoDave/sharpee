@@ -473,7 +473,48 @@ and found no open mechanism question, only implementation work.
   re-cut; Cloak 81/81 and Zoo 79/79 confirmed untouched through the
   rebuilt bundle; package ready to report closed against all five §6
   criteria.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-12) — **PACKAGE CLOSED against all five
+  §6 criteria**:
+  1. Ratchet log: E1/E2/E3 Approved (2026-07-12, P1 sign-off) + the
+     as-shipped reconciliation entry appended (P5) with the dated P3/P4
+     decisions (must-be-any membership via `satisfies`; `must be no`
+     barred per D6; `match` reserved declaration name;
+     declaration-order enumeration domain + §5.4 match-set snapshot;
+     match-subject `is` passes as symbol; evaluator `is a` over platform
+     kinds). Underlying approvals in each-iteration-proposal.md §6.5.
+  2. Fixture story (each-iteration.story) exercises any/no/each
+     end-to-end through story-loader: existential true/false, empty-set
+     semantics all three forms, creation-order determinism (matchesOf +
+     the exact spotted-red→…→tidy-note report sequence), `the match` vs
+     `it` incl. one nested `each` (inner binding pinned live, ×1 not
+     ×2), AC-5 per-seed RNG pins — 18 tests across every execution path
+     (event clause, capability two-phase, entity + trait interceptors,
+     sequence daemon).
+  3. Analyzer gate fixtures with exact-code tests: quantifier-closed
+     (any/no/each over closed ×3), match-outside-each (value + NameRef),
+     story-state/unknown-condition/must-be-any-closed inline, reserved
+     name ×4 shapes, open-condition-truth message names the live forms
+     and the pointed-at form compiles (each-compile.story) — 20 tests.
+  4. ide-protocol builds + tests clean (11/11) against the IR additions;
+     chord-grammar.md re-cut for E1/E2/E3 + must-be-any + `the match`
+     (statements, conditions, value-expr, must-infinitive, layout table,
+     analyzer reading 14) — verified against parser.ts.
+  5. All suites green: chord 176/176, story-loader 99/99, ide-protocol
+     11/11, devkit 26+1skip; `./repokit build` clean; **Cloak 81/81 and
+     Zoo 79/79 UNTOUCHED through the rebuilt bundle** (zoo = the
+     David-approved 8-file/79-assertion gate set per the Phase B
+     gate-scope decision; the 4 excluded phrase-algebra files stay
+     excluded and unchanged).
+  Scope fence (E4) HELD: no numeric cardinality/comparisons, no `every`,
+  no inline descriptions, no `take all` changes (diff grep clean; the
+  no-dual is the only universal form). Gate-invocation notes for future
+  sessions: cloak runs WITHOUT `--chain` (`--story
+  stories/cloak-of-darkness/cloak.story --test
+  stories/cloak-of-darkness/tests/transcripts/*.transcript`; this
+  plan's own deliverable text saying `--chain` was wrong —
+  ac6-save-restore ends the story, so a chained alphabetical glob
+  poisons everything after it); zoo runs its 8 gate files explicitly,
+  never a glob (the corpus dirs also hold the 4 excluded files).
 
 ## Risks
 
