@@ -74,6 +74,9 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib
+      '@sharpee/story-loader':
+        specifier: workspace:*
+        version: link:../story-loader
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model

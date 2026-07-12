@@ -13,6 +13,7 @@
  */
 import * as path from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { lintHatchSources } from '../hatch-lint';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [-o <ir.json>]';
 
@@ -84,6 +85,24 @@ export async function runCompose(rest: string[]): Promise<number> {
     return 1;
   }
 
+  // Hatch source lint (design.md §5.6, authoritative layer): the chord.*
+  // state namespace is loader-private; a quoted literal in hatch source is
+  // a build error in --check and full mode alike. Comments don't trip it.
+  const storyDir = path.dirname(path.resolve(file));
+  const hatchFindings = lintHatchSources(
+    storyDir,
+    result.ir.hatches.map((h) => h.modulePath)
+  );
+  for (const f of hatchFindings) {
+    console.error(
+      `${f.file}:${f.line} error [hatch.chord-namespace] \`${f.text}\` — the chord.* state namespace is loader-private; hatches read the world through their context only (design.md §5.6)`
+    );
+  }
+  if (hatchFindings.length > 0) {
+    console.error(`compose: ${file} hatch source references chord.* (${hatchFindings.length} hit(s))`);
+    return 1;
+  }
+
   if (check) {
     console.error(`compose: ${file} is gate-clean (--check: IR not emitted)`);
     return 0;
@@ -93,7 +112,6 @@ export async function runCompose(rest: string[]): Promise<number> {
   const { createStory } = require('@sharpee/story-loader') as typeof import('@sharpee/story-loader');
   const { WorldModel } = require('@sharpee/world-model') as typeof import('@sharpee/world-model');
 
-  const storyDir = path.dirname(path.resolve(file));
   const hatchModules: Record<string, Record<string, unknown>> = {};
   for (const hatch of result.ir.hatches) {
     if (!(hatch.modulePath in hatchModules)) {

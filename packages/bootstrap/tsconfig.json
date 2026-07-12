@@ -19,6 +19,7 @@
     { "path": "../stdlib" },
     { "path": "../channel-service" },
     { "path": "../engine" },
+    { "path": "../story-loader" },
     { "path": "../extensions/testing" }
   ]
 }

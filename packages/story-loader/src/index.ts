@@ -17,6 +17,7 @@
 
 export { LoadError } from './errors';
 export { EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS } from './event-contract';
+export { HATCH_CONTEXT_VERSION, stagingRenderContext, findChordLiteral } from './hatch-context';
 export { ChordDataTrait, ChordStory, createStory, StoryLoaderOptions } from './loader';
 export { Evaluator, EvalContext, EntityIdResolver } from './evaluator';
 export { ChordRuntime, ChordBehaviorTrait } from './runtime';

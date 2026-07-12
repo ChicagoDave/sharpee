@@ -50,6 +50,7 @@ import {
   CHORD_TRAIT_PREFIX,
 } from './state-keys';
 import { withLineBreaks } from './text';
+import { stagingRenderContext } from './hatch-context';
 import { enteringDestination, EVENT_TRIGGERS } from './event-contract';
 
 /** Chord strategy adverb → phrase-algebra Choice selector (ADR-196). */
@@ -1107,7 +1108,16 @@ export class ChordRuntime {
           // Params carry phrase ATOMS, not functions — the template binder
           // string-coerces anything that isn't a Phrase (ADR-196: producers
           // are invoked at staging, their atoms realized by the assembler).
-          params[marker] = producer({ world: ctx.world } as unknown as Parameters<PhraseProducer>[0]);
+          // The context is the narrow staging facade (design.md §5.6): a
+          // producer reaching outside it fails HERE, named, not as an
+          // anonymous TypeError downstream.
+          try {
+            params[marker] = producer(stagingRenderContext(ctx.world));
+          } catch (error) {
+            throw new LoadError(
+              `Hatch \`${marker}\` threw while staging phrase \`${overrideKey}\`: ${error instanceof Error ? error.message : String(error)}. Hatches see the narrow staging context only (design.md §5.6).`,
+            );
+          }
         }
       }
     }

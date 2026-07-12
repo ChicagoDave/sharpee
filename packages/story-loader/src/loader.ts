@@ -58,6 +58,7 @@ import {
 } from '@sharpee/world-model';
 import { LoadError } from './errors';
 import { Evaluator } from './evaluator';
+import { findChordLiteral } from './hatch-context';
 import { ChordRuntime } from './runtime';
 import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
 import { withLineBreaks } from './text';
@@ -181,6 +182,19 @@ export class ChordStory implements Story {
         throw new LoadError(`Hatch module \`${hatch.modulePath}\` was not provided to the loader.`, hatch.span);
       }
       const bound = module[hatch.name];
+      // Bind-time `'chord.'` lint (design.md §5.6, best-effort backstop —
+      // the staging facade is the wall): the loader-private state namespace
+      // is off-limits to hatches; a quoted literal fails the bind atomically,
+      // like a missing export. The devkit source lint is the authoritative
+      // layer (this one can miss minified code and can trip on a quoted
+      // literal inside a compiled-in comment — reword the comment).
+      const chordLiteral = findChordLiteral(bound);
+      if (chordLiteral !== null) {
+        throw new LoadError(
+          `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` references the loader-private \`chord.*\` state namespace (\`${chordLiteral}\`) — hatches read the world through their context only (design.md §5.6). If the match is inside a comment, reword it.`,
+          hatch.span,
+        );
+      }
       const kind = hatch.hatchKind ?? 'text';
       switch (kind) {
         case 'text': {
