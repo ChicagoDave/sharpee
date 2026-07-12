@@ -1,6 +1,6 @@
 /**
  * analyzer.test.ts — resolution, the six AC-3 load-time gates, and the
- * versioned Story IR.
+ * versioned Story IR (ownership grammar, 2026-07-11).
  *
  * The gate tests assert the exact diagnostic code, the `.story` line
  * number, and the suggestion text — that trio IS the AC-3 contract.
@@ -28,7 +28,7 @@ describe('cloak.story IR', () => {
     expect(ir.format).toBe(IR_FORMAT);
   });
 
-  it('carries the story metadata', () => {
+  it('carries the story metadata and an empty story state machine', () => {
     expect(ir.meta).toEqual({
       title: 'Cloak of Darkness',
       author: 'Roger Firth (Sharpee implementation)',
@@ -38,6 +38,7 @@ describe('cloak.story IR', () => {
         blurb: 'A basic IF demonstration - hang up your cloak!',
       },
     });
+    expect(ir.story).toEqual({ states: [], reversible: false });
   });
 
   it('resolves entities to canonical IDs', () => {
@@ -104,14 +105,20 @@ describe('cloak.story IR', () => {
     expect(ir.phrases.defaultLocale).toBe('en-US');
   });
 
-  it('segments and resolves the stumble rule', () => {
-    expect(ir.rules).toHaveLength(1);
-    const rule = ir.rules[0];
-    expect(rule.actor).toEqual({ kind: 'player' });
-    expect(rule.verb).toBe('enters');
-    expect(rule.target).toEqual({ kind: 'entity', id: 'foyer-bar' });
-    expect(rule.condition).toEqual({ kind: 'condition', name: 'in-darkness' });
-    expect(rule.body).toMatchObject([
+  it('resolves the bar stumble reaction as an owner after-clause (no floating rules)', () => {
+    expect(ir.rules).toEqual([]);
+    const bar = ir.entities[2];
+    expect(bar.onClauses).toHaveLength(1);
+    const clause = bar.onClauses[0];
+    expect(clause).toMatchObject({
+      clauseKind: 'after',
+      action: 'entering',
+      binding: 'it',
+      once: false,
+      routing: 'interceptor',
+    });
+    expect(clause.condition).toEqual({ kind: 'condition', name: 'in-darkness' });
+    expect(clause.body).toMatchObject([
       { kind: 'phrase', phraseKey: 'stumble' },
       { kind: 'ordinal', ordinal: 1, body: [{ kind: 'change', entity: { kind: 'entity', id: 'message-in-the-sawdust' }, state: 'trampled' }] },
       { kind: 'ordinal', ordinal: 3, body: [{ kind: 'change', entity: { kind: 'entity', id: 'message-in-the-sawdust' }, state: 'obliterated' }] },
@@ -121,6 +128,7 @@ describe('cloak.story IR', () => {
   it('resolves the on-reading select against the owner states', () => {
     const message = ir.entities[6];
     expect(message.onClauses).toHaveLength(1);
+    expect(message.onClauses[0].clauseKind).toBe('on');
     const select = message.onClauses[0].body[0];
     expect(select).toMatchObject({
       kind: 'select-on',
@@ -147,6 +155,12 @@ describe('cloak.story IR', () => {
     expect(ir.hatches).toMatchObject([{ name: 'garbled', modulePath: './extras.ts' }]);
   });
 
+  it('keeps the legacy floating-rule arrays empty', () => {
+    expect(ir.flags).toEqual([]);
+    expect(ir.onceRules).toEqual([]);
+    expect(ir.everyRules).toEqual([]);
+  });
+
   it('round-trips through JSON without loss', () => {
     expect(JSON.parse(JSON.stringify(ir))).toEqual(ir);
   });
@@ -163,11 +177,14 @@ describe('ac5-random.story IR', () => {
     expect(result.diagnostics).toEqual([]);
   });
 
-  it('keeps the randomly strategy and chance condition', () => {
+  it('keeps the randomly strategy and the chance clause condition', () => {
     const table = result.ir.phrases.locales['en-US'];
     expect(table['crossing-mutter']).toMatchObject({ strategy: 'randomly' });
     expect(table['crossing-mutter'].variants).toHaveLength(3);
-    expect(result.ir.rules[2].condition).toEqual({ kind: 'chance', n: 3 });
+    const west = result.ir.entities.find((e) => e.id === 'west-room')!;
+    expect(west.onClauses).toHaveLength(2);
+    expect(west.onClauses[1].clauseKind).toBe('after');
+    expect(west.onClauses[1].condition).toEqual({ kind: 'chance', n: 3 });
   });
 });
 
@@ -196,7 +213,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.undeclared-state');
-    expect(errors[0].span.line).toBe(21);
+    expect(errors[0].span.line).toBe(11);
     expect(errors[0].message).toContain('smashed');
     expect(errors[0].message).toContain('message');
   });
@@ -206,7 +223,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.ambiguous-reference');
-    expect(errors[0].span.line).toBe(26);
+    expect(errors[0].span.line).toBe(11);
     expect(errors[0].message).toContain('brass hook');
     expect(errors[0].message).toContain('iron hook');
     expect(errors[0].message).toContain('rename');

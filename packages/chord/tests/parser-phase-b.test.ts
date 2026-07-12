@@ -1,7 +1,9 @@
 /**
- * parser-phase-b.test.ts — Phase B grammar: define trait/action, role
- * binding, scheduler constructs, define score, hatches, conditional blocked
- * exits, dotted phrase keys, inline-prose phrase sugar (plan phase 2).
+ * parser-phase-b.test.ts — Phase B grammar under the ownership package:
+ * define trait/action, trait states, role binding, sequences (wall-clock and
+ * becomes-anchored steps), owner-attached scores, must/refuse-when, the
+ * statement `when` suffix, hatches, conditional blocked exits, dotted phrase
+ * keys, inline-prose phrase sugar.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,11 +13,8 @@ import type {
   CreateDecl,
   DefineAction,
   DefineHatch,
-  DefineScore,
   DefineSequence,
   DefineTrait,
-  EveryRule,
-  OnceRule,
   PhraseStmt,
 } from '../src';
 
@@ -28,7 +27,7 @@ function parsedClean(name: string) {
   return result.ast;
 }
 
-describe('zoo-actions.story (design.md §3.4)', () => {
+describe('zoo-actions.story (design.md §3.4 + ownership package)', () => {
   const ast = parsedClean('zoo-actions.story');
   const decls = ast.declarations;
 
@@ -51,15 +50,23 @@ describe('zoo-actions.story (design.md §3.4)', () => {
       { name: ['kind'], type: 'one-of', oneOf: ['goats', 'rabbits', 'parrot', 'snake'], optional: false },
     ]);
     expect(pettable.phrases?.entries).toHaveLength(4);
-    expect(pettable.onClauses).toMatchObject([{ action: 'petting', binding: 'it', role: null }]);
+    expect(pettable.onClauses).toMatchObject([{ clauseKind: 'on', action: 'petting', binding: 'it', role: null }]);
   });
 
-  it('parses entity/flag data fields with starts defaults', () => {
+  it('parses entity data fields and trait states with reversible', () => {
     const feedable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'feedable')!;
-    expect(feedable.data).toMatchObject([
-      { name: ['food'], type: 'entity', initial: null },
-      { name: ['fed'], type: 'flag', initial: 'false' },
-    ]);
+    expect(feedable.data).toMatchObject([{ name: ['food'], type: 'entity', initial: null }]);
+    expect(feedable.states.map((s) => s.name)).toEqual(['hungry', 'content']);
+    expect(feedable.statesReversible).toBe(true);
+  });
+
+  it('parses must requirements and refuse-when statements in trait clauses', () => {
+    const feedable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'feedable')!;
+    expect(feedable.onClauses[0].body.map((s) => s.kind)).toEqual(['must', 'must', 'change', 'emit', 'phrase']);
+    expect(feedable.onClauses[0].body[0]).toMatchObject({ kind: 'must', phraseKey: 'no-food', predicate: { kind: 'has' } });
+    expect(feedable.onClauses[0].body[1]).toMatchObject({ kind: 'must', phraseKey: 'already-fed', predicate: { kind: 'is' } });
+    const pettable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'pettable')!;
+    expect(pettable.onClauses[0].body[0]).toMatchObject({ kind: 'refuse-when', phraseKey: 'glass-way' });
   });
 
   it('parses entity-name config values and prose-block overrides in create', () => {
@@ -70,12 +77,13 @@ describe('zoo-actions.story (design.md §3.4)', () => {
     expect(goats.phraseOverrides[0].value.text).toContain('Happy chaos');
   });
 
-  it('parses define score declarations', () => {
-    const scores = decls.filter((d): d is DefineScore => d.kind === 'define-score');
-    expect(scores).toMatchObject([
-      { name: 'pet-an-animal', worth: 5 },
-      { name: 'feed-the-goats', worth: 10 },
-    ]);
+  it('parses owner-attached score lines and the after-feeding reaction', () => {
+    const pettable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'pettable')!;
+    expect(pettable.scores).toMatchObject([{ name: 'petted', worth: 5 }]);
+    const goats = decls.find((d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'pygmy goats')!;
+    expect(goats.scores).toMatchObject([{ name: 'fed', worth: 10 }]);
+    expect(goats.onClauses).toMatchObject([{ clauseKind: 'after', action: 'feeding', binding: 'it' }]);
+    expect(goats.onClauses[0].body).toMatchObject([{ kind: 'award', expression: ['fed'] }]);
   });
 
   it('matches the golden AST snapshot', () => {
@@ -83,9 +91,15 @@ describe('zoo-actions.story (design.md §3.4)', () => {
   });
 });
 
-describe('zoo-timeline.story (design.md §3.3)', () => {
+describe('zoo-timeline.story (design.md §3.3 + ownership package)', () => {
   const ast = parsedClean('zoo-timeline.story');
   const decls = ast.declarations;
+  const sequences = decls.filter((d): d is DefineSequence => d.kind === 'define-sequence');
+
+  it('parses the story header states line', () => {
+    expect(ast.header?.states.map((s) => s.name)).toEqual(['open', 'after-hours']);
+    expect(ast.header?.statesReversible).toBe(false);
+  });
 
   it('parses every-turn trait clauses with can-see + chance conditions', () => {
     const chatty = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'chatty')!;
@@ -93,8 +107,8 @@ describe('zoo-timeline.story (design.md §3.3)', () => {
     expect(chatty.onClauses[0].condition).not.toBeNull();
   });
 
-  it('parses the closing-time sequence: 4 steps, at-turn then relative', () => {
-    const seq = decls.find((d): d is DefineSequence => d.kind === 'define-sequence')!;
+  it('parses the closing-time sequence: 4 steps ending in a story transition', () => {
+    const seq = sequences[0];
     expect(seq.name).toEqual(['closing', 'time']);
     expect(seq.steps.map((s) => [s.timing, s.turns])).toEqual([
       ['at-turn', 5],
@@ -105,19 +119,39 @@ describe('zoo-timeline.story (design.md §3.3)', () => {
     const firstPhrase = seq.steps[0].body[0] as PhraseStmt;
     expect(firstPhrase).toMatchObject({ kind: 'phrase', phraseKey: 'zoo.pa.closing-3' });
     expect(firstPhrase.inlineText?.text).toContain('closing in three hours');
-    // The last step carries the flag flip after its phrase.
-    expect(seq.steps[3].body.map((s) => s.kind)).toEqual(['phrase', 'set']);
+    // The last step flips the story phase after its phrase (ratchet D2).
+    expect(seq.steps[3].body.map((s) => s.kind)).toEqual(['phrase', 'change']);
+    expect(seq.steps[3].body[1]).toMatchObject({ kind: 'change', entity: { words: ['story'] }, state: 'after-hours' });
   });
 
-  it('parses once + every rules with inline-prose phrases', () => {
-    const once = decls.find((d): d is OnceRule => d.kind === 'once-rule')!;
-    expect(once.condition).toMatchObject({ kind: 'condition-ref', name: 'after-hours' });
-    expect(once.body.map((s) => s.kind)).toEqual(['move', 'phrase']);
-    expect((once.body[1] as PhraseStmt).phraseKey).toBe('zoo.after-hours.keeper-leaves');
+  it('parses the lockup sequence with a becomes-anchored step (ratchet D10)', () => {
+    expect(sequences.map((s) => s.name.join(' '))).toEqual(['closing time', 'lockup', 'goat bleats']);
+    const lockup = sequences[1];
+    expect(lockup.steps).toHaveLength(1);
+    expect(lockup.steps[0]).toMatchObject({ timing: 'becomes', turns: 0, state: 'after-hours' });
+    expect(lockup.steps[0].owner).toMatchObject({ words: ['story'] });
+    const bleats = sequences[2];
+    expect(bleats.steps.map((s) => [s.timing, s.turns])).toEqual([
+      ['at-turn', 3],
+      ['later', 3],
+      ['later', 3],
+      ['later', 3],
+    ]);
+  });
 
-    const every = decls.find((d): d is EveryRule => d.kind === 'every-rule')!;
-    expect(every).toMatchObject({ turns: 3, times: 4 });
-    expect((every.body[0] as PhraseStmt).inlineText?.text).toContain('bleats');
+  it("parses Sam's once-gated every-turn clause with a statement when suffix", () => {
+    const sam = decls.find((d): d is CreateDecl => d.kind === 'create' && d.name.words[0] === 'Sam')!;
+    expect(sam.onClauses).toHaveLength(1);
+    const clause = sam.onClauses[0];
+    expect(clause).toMatchObject({ clauseKind: 'on', action: 'every-turn', binding: 'every-turn', once: true });
+    expect(clause.condition).toMatchObject({ kind: 'condition-ref', name: 'after-hours' });
+    expect(clause.body.map((s) => s.kind)).toEqual(['move', 'phrase', 'phrase']);
+    const leaves = clause.body[1] as PhraseStmt;
+    expect(leaves.phraseKey).toBe('zoo.after-hours.keeper-leaves');
+    expect(leaves.inlineText?.text).toContain('waves goodnight');
+    const wave = clause.body[2] as PhraseStmt;
+    expect(wave.phraseKey).toBe('keeper-wave');
+    expect(wave.stmtWhen).toMatchObject({ kind: 'predicate' });
   });
 
   it('parses conditional trait composition on the parrot', () => {
@@ -131,13 +165,14 @@ describe('zoo-timeline.story (design.md §3.3)', () => {
   });
 });
 
-describe('traits-basic.story (design.md §2.2/§3.2)', () => {
+describe('traits-basic.story (design.md §2.2/§3.2 + ownership package)', () => {
   const ast = parsedClean('traits-basic.story');
   const decls = ast.declarations;
 
   it('parses before-ordering and role binding', () => {
-    const lockable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'lockable')!;
-    expect(lockable.onClauses[0].ordering).toEqual({ relation: 'before', trait: 'openable' });
+    const barrable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'barrable')!;
+    expect(barrable.onClauses[0].ordering).toEqual({ relation: 'before', trait: 'sealable' });
+    expect(barrable.onClauses[0].body[0]).toMatchObject({ kind: 'refuse-when', phraseKey: 'barred' });
 
     const limit = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'carrying-limit')!;
     expect(limit.onClauses[0]).toMatchObject({ action: 'taking', binding: 'role', role: 'taker' });
@@ -147,9 +182,21 @@ describe('traits-basic.story (design.md §2.2/§3.2)', () => {
     ]);
   });
 
-  it('parses cardinality arrows in action grammar', () => {
+  it('parses trait states with reversible and must/change/when-suffix statements', () => {
+    const sealable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'sealable')!;
+    expect(sealable.states.map((s) => s.name)).toEqual(['sealed', 'ajar']);
+    expect(sealable.statesReversible).toBe(true);
+    const body = sealable.onClauses[0].body;
+    expect(body.map((s) => s.kind)).toEqual(['must', 'change', 'emit', 'phrase']);
+    expect(body[0]).toMatchObject({ kind: 'must', phraseKey: 'already-ajar', predicate: { kind: 'is' } });
+    expect(body[1]).toMatchObject({ kind: 'change', state: 'ajar' });
+    expect((body[3] as PhraseStmt).stmtWhen).toMatchObject({ kind: 'and' });
+  });
+
+  it('parses cardinality arrows and the action-owned score line', () => {
     const snoozing = decls.find((d): d is DefineAction => d.kind === 'define-action' && d.name === 'snoozing')!;
     expect(snoozing.patterns[1].cardinality).toEqual(['each', 'quiet', 'corner']);
+    expect(snoozing.scores).toMatchObject([{ name: 'napped', worth: 1 }]);
   });
 
   it('parses action and behavior hatches', () => {
@@ -185,10 +232,11 @@ describe('malformed Phase B fixtures — one mistake, one diagnostic', () => {
     expect(errors.some((e) => e.code === 'parse.sequence-step' && e.span.line === 9)).toBe(true);
   });
 
-  it('every without a turn count', () => {
+  it('top-level every rule: removal diagnostic (ownership package)', () => {
     const result = parse(fixture('malformed/every-bad-header.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'parse.every-turns' && e.span.line === 5)).toBe(true);
+    expect(errors.some((e) => e.code === 'parse.removed-every' && e.span.line === 5)).toBe(true);
+    expect(errors.some((e) => e.message.includes('define sequence'))).toBe(true);
   });
 
   it('action refusal missing its colon', () => {

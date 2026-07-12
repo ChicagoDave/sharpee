@@ -7,9 +7,7 @@ create the message
   states: intact, trampled
 
   on reading it
-    if the message is intactt then
-      phrase message-intact
-    end if
+    phrase message-intact when the message is intactt
   end on
 
 define phrases en-US

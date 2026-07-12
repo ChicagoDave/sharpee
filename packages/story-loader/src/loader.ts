@@ -59,7 +59,7 @@ import {
 import { LoadError } from './errors';
 import { Evaluator } from './evaluator';
 import { ChordRuntime } from './runtime';
-import { CHORD_STATE_PREFIX, CHORD_TRAIT_PREFIX } from './state-keys';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
 import { withLineBreaks } from './text';
 
 /**
@@ -253,7 +253,13 @@ export class ChordStory implements Story {
       }
     }
 
-    // Flags start at their declared values.
+    // The story object starts in its first declared phase (ratchet D2).
+    if (this.ir.story.states.length > 0) {
+      world.setStateValue(CHORD_STORY_STATE_KEY, this.ir.story.states[0]);
+    }
+
+    // LEGACY (ownership package): ir.flags is always empty — the loop and
+    // the chord.flag.* namespace die with the Phase C P4 cleanup.
     for (const flag of this.ir.flags) {
       world.setStateValue(`chord.flag.${flag.name}`, flag.initial);
     }

@@ -33,9 +33,8 @@ import {
   TextValue,
   TraitField,
   ValueExpr,
-  WhenRule,
 } from './ast';
-import { EVENT_VERBS, TRAIT_ADJECTIVES } from './catalog';
+import { TRAIT_ADJECTIVES } from './catalog';
 import { DiagnosticBag } from './diagnostics';
 import {
   IR_FORMAT,
@@ -44,8 +43,7 @@ import {
   IREntity,
   IROnClause,
   IRPhrase,
-  IRRule,
-  IRRuleTarget,
+  IRScoreDef,
   IRStatement,
   IRTraitDef,
   IRValue,
@@ -74,12 +72,16 @@ interface Scope {
   owner: EntitySymbol | null;
   fields: Map<string, TraitField> | null;
   slots: Set<string> | null;
+  /** Trait-declared states visible on `it` in trait scope (ratchet D8). */
+  ownStates: string[] | null;
+  /** Score-owner key for `award` resolution (entity id, `trait.<t>`, `action.<a>`; null = story). */
+  scoreOwner: string | null;
 }
 
-const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null };
+const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null };
 
 function entityScope(owner: EntitySymbol | null): Scope {
-  return { owner, fields: null, slots: null };
+  return { owner, fields: null, slots: null, ownStates: null, scoreOwner: owner?.id ?? null };
 }
 
 /** True when the scope binds `it` (entity clause or trait clause). */
@@ -87,20 +89,9 @@ function scopeHasIt(scope: Scope): boolean {
   return scope.owner !== null || scope.fields !== null;
 }
 
-/**
- * Verb forms a `define action` gerund answers to in `when` headers
- * (petting → pets; feeding → feeds; taking → takes). Candidates only —
- * matching is against the declared set, ambiguity gated elsewhere.
- */
-function verbFormsOf(gerund: string): string[] {
-  if (!gerund.endsWith('ing')) return [gerund + 's'];
-  const stem = gerund.slice(0, -3);
-  const forms = new Set<string>([stem + 's', stem + 'es']);
-  if (stem.length >= 2 && stem[stem.length - 1] === stem[stem.length - 2]) {
-    forms.add(stem.slice(0, -1) + 's'); // petting → pet + s
-  }
-  return [...forms];
-}
+// The when-header verb-derivation table (petting → pets) died with floating
+// `when` rules (ownership package, ratchet 2026-07-11) — event clauses use
+// the same gerund register as every other on/after clause.
 
 /** True when a name reference is the word `it`. */
 function nameIsIt(ref: NameRef): boolean {
@@ -180,15 +171,20 @@ class Analyzer {
   /** locale → key → IRPhrase */
   private phrases = new Map<string, Map<string, IRPhrase>>();
   // Phase B namespaces:
-  private flagNames = new Set<string>();
   private traitNames = new Set<string>();
   /** action name → declared grammar-slot names. */
   private actionSlots = new Map<string, Set<string>>();
+  /** Owner-qualified score id (`pygmy-goats.fed`, story-level bare) → worth. */
   private scoreNames = new Map<string, number>();
-  /** when-header verb form → the declared action it derives from. */
-  private derivedVerbs = new Map<string, string>();
+  /** Owner-qualified score declarations, for ir.scores emission. */
+  private scoreDecls: IRScoreDef[] = [];
   /** condition name → OPEN (references `it`/`its`; usable as a selection). */
   private openConditions = new Map<string, boolean>();
+  // Ownership package (Phase C):
+  /** Story-declared phases (ratchet D2); bare names are condition refs. */
+  private storyStates: string[] = [];
+  /** trait name → trait-declared states (ratchet D8). */
+  private traitStates = new Map<string, string[]>();
 
   constructor(
     private readonly ast: StoryFile,
@@ -205,6 +201,10 @@ class Analyzer {
         author: this.ast.header?.author ?? '',
         fields: this.ast.header?.fields ?? {},
       },
+      story: {
+        states: this.storyStates,
+        reversible: this.ast.header?.statesReversible ?? false,
+      },
       entities: [],
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
@@ -214,7 +214,7 @@ class Analyzer {
       rules: [],
       traits: [],
       actions: [],
-      scores: [],
+      scores: this.scoreDecls,
       onceRules: [],
       everyRules: [],
       sequences: [],
@@ -247,37 +247,11 @@ class Analyzer {
         case 'define-hatch':
           ir.hatches.push({ name: decl.name, modulePath: decl.modulePath, hatchKind: decl.hatchKind, span: decl.span });
           break;
-        case 'define-flag':
-          ir.flags.push({ name: decl.name, initial: decl.initial, span: decl.span });
-          break;
-        case 'when-rule': {
-          const rule = this.buildRule(decl);
-          if (rule) ir.rules.push(rule);
-          break;
-        }
         case 'define-trait':
           ir.traits.push(this.buildTrait(decl));
           break;
         case 'define-action':
           ir.actions.push(this.buildAction(decl));
-          break;
-        case 'define-score':
-          ir.scores.push({ name: decl.name, worth: decl.worth, span: decl.span });
-          break;
-        case 'once-rule':
-          ir.onceRules.push({
-            condition: this.resolveCondition(decl.condition, TOP_SCOPE),
-            body: decl.body.map((s) => this.resolveStatement(s, TOP_SCOPE)),
-            span: decl.span,
-          });
-          break;
-        case 'every-rule':
-          ir.everyRules.push({
-            turns: decl.turns,
-            times: decl.times,
-            body: decl.body.map((s) => this.resolveStatement(s, TOP_SCOPE)),
-            span: decl.span,
-          });
           break;
         case 'define-sequence':
           ir.sequences.push({
@@ -285,6 +259,7 @@ class Analyzer {
             steps: decl.steps.map((step) => ({
               timing: step.timing,
               turns: step.turns,
+              anchor: this.resolveStepAnchor(step),
               body: step.body.map((s) => this.resolveStatement(s, TOP_SCOPE)),
               span: step.span,
             })),
@@ -306,11 +281,44 @@ class Analyzer {
     return ir;
   }
 
+  /** Resolve a `when <owner> becomes <state>` step anchor (ratchet D10). */
+  private resolveStepAnchor(step: { timing: string; owner: NameRef | null; state: string | null; span: Span }): { owner: string; state: string } | null {
+    if (step.timing !== 'becomes' || !step.owner || !step.state) return null;
+    const words = step.owner.words.map((w) => w.toLowerCase());
+    if (words.length === 1 && words[0] === 'story') {
+      if (!this.storyStates.includes(step.state)) {
+        this.diagnostics.error(
+          'analysis.undeclared-state',
+          `\`${step.state}\` is not a declared state of the story${this.suggestText(step.state, this.storyStates)}.`,
+          step.span,
+        );
+      }
+      return { owner: 'story', state: step.state };
+    }
+    const id = this.resolveEntityId(step.owner);
+    if (id === null) return null; // already reported
+    const sym = this.byId.get(id);
+    if (sym && !sym.states.includes(step.state)) {
+      this.diagnostics.error(
+        'analysis.undeclared-state',
+        `\`${step.state}\` is not a declared state of ${sym.nameLower}${this.suggestText(step.state, sym.states)}.`,
+        step.span,
+      );
+    }
+    return { owner: id, state: step.state };
+  }
+
   // ------------------------------------------------ Phase B declarations
 
   private buildTrait(decl: DefineTrait): IRTraitDef {
     const fields = new Map(decl.data.map((f) => [f.name.join(' '), f]));
-    const scope: Scope = { owner: null, fields, slots: null };
+    const scope: Scope = {
+      owner: null,
+      fields,
+      slots: null,
+      ownStates: decl.states.length ? decl.states.map((s) => s.name) : null,
+      scoreOwner: `trait.${decl.name}`,
+    };
     return {
       name: decl.name,
       data: decl.data.map((f) => ({
@@ -320,6 +328,9 @@ class Analyzer {
         initial: f.initial,
         oneOf: f.oneOf,
       })),
+      states: decl.states.map((s) => s.name),
+      statesReversible: decl.statesReversible,
+      scores: decl.scores.map((s) => ({ name: `trait.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
       onClauses: decl.onClauses.map((c) => this.buildOnClause(c, scope)),
       span: decl.span,
     };
@@ -327,7 +338,7 @@ class Analyzer {
 
   private buildAction(decl: DefineAction): IRActionDef {
     const slots = this.actionSlots.get(decl.name) ?? new Set<string>();
-    const scope: Scope = { owner: null, fields: null, slots };
+    const scope: Scope = { owner: null, fields: null, slots, ownStates: null, scoreOwner: `action.${decl.name}` };
 
     for (const constraint of decl.constraints) {
       if (!slots.has(constraint.slot)) {
@@ -361,6 +372,15 @@ class Analyzer {
 
     if (decl.otherwise) this.requirePhrase(decl.otherwise.phraseKey, decl.otherwise.span, null);
 
+    const musts = decl.musts.map((m) => {
+      this.requirePhrase(m.phraseKey, m.span, null);
+      return {
+        condition: this.resolveCondition({ kind: 'predicate', subject: m.subject, predicate: m.predicate, span: m.span }, scope),
+        phraseKey: m.phraseKey,
+        span: m.span,
+      };
+    });
+
     return {
       name: decl.name,
       patterns: decl.patterns.map((p) => ({
@@ -368,8 +388,10 @@ class Analyzer {
         cardinality: p.cardinality,
       })),
       constraints: decl.constraints.map((sc) => ({ slot: sc.slot, requirement: sc.requirement })),
+      musts,
       refusals,
       otherwise: decl.otherwise?.phraseKey ?? null,
+      scores: decl.scores.map((s) => ({ name: `action.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
       body: decl.body.map((s) => this.resolveStatement(s, scope)),
       span: decl.span,
     };
@@ -378,6 +400,12 @@ class Analyzer {
   // -------------------------------------------------------------- pass 1
 
   private collect(): void {
+    // Story header: declared phases + story-owned scores (ratchet D2/D12).
+    if (this.ast.header) {
+      this.storyStates = this.ast.header.states.map((s) => s.name);
+      for (const s of this.ast.header.scores) this.collectScore(s.name, s.worth, s.span, null);
+    }
+
     for (const decl of this.ast.declarations) {
       if (decl.kind === 'create') this.collectEntity(decl);
       else if (decl.kind === 'define-condition') {
@@ -393,9 +421,10 @@ class Analyzer {
       }
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
-      else if (decl.kind === 'define-flag') this.flagNames.add(decl.name);
       else if (decl.kind === 'define-trait') {
         this.traitNames.add(decl.name);
+        if (decl.states.length) this.traitStates.set(decl.name, decl.states.map((s) => s.name));
+        for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, `trait.${decl.name}`);
         if (decl.phrases) this.collectPhrasesBlock(decl.phrases);
         for (const clause of decl.onClauses) this.collectInlineTexts(clause.body);
       }
@@ -405,21 +434,24 @@ class Analyzer {
           for (const part of pattern.parts) if (part.kind === 'slot') slots.add(part.word);
         }
         this.actionSlots.set(decl.name, slots);
-        for (const form of verbFormsOf(decl.name)) this.derivedVerbs.set(form, decl.name);
+        for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, `action.${decl.name}`);
         if (decl.phrases) this.collectPhrasesBlock(decl.phrases);
         this.collectInlineTexts(decl.body);
       }
-      else if (decl.kind === 'define-score') {
-        if (this.scoreNames.has(decl.name)) {
-          this.diagnostics.error('analysis.duplicate-score', `Score \`${decl.name}\` is declared twice.`, decl.span);
-        } else {
-          this.scoreNames.set(decl.name, decl.worth);
-        }
-      }
-      else if (decl.kind === 'when-rule') this.collectInlineTexts(decl.body);
-      else if (decl.kind === 'once-rule' || decl.kind === 'every-rule') this.collectInlineTexts(decl.body);
       else if (decl.kind === 'define-sequence') {
         for (const step of decl.steps) this.collectInlineTexts(step.body);
+      }
+    }
+
+    // Trait-declared states reach every composer (ratchet D8): merge each
+    // trait's state set into the composing entity's, in composition order.
+    for (const e of this.entities) {
+      for (const comp of e.decl.compositions) {
+        if (comp.article) continue; // kind noun, not a trait
+        const states = this.traitStates.get(comp.words.join(' ').toLowerCase());
+        if (states) {
+          for (const s of states) if (!e.states.includes(s)) e.states.push(s);
+        }
       }
     }
 
@@ -460,10 +492,6 @@ class Analyzer {
             });
           }
           break;
-        case 'if':
-          this.collectInlineTexts(stmt.then);
-          if (stmt.else) this.collectInlineTexts(stmt.else);
-          break;
         case 'select-on':
           for (const arm of stmt.arms) this.collectInlineTexts(arm.body);
           break;
@@ -496,6 +524,18 @@ class Analyzer {
     };
     this.entities.push(sym);
     this.byId.set(id, sym);
+    for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, id);
+  }
+
+  /** Register an owner-attached score (ratchet D12) under its qualified id. */
+  private collectScore(name: string, worth: number, span: Span, ownerKey: string | null): void {
+    const qualified = ownerKey ? `${ownerKey}.${name}` : name;
+    if (this.scoreNames.has(qualified)) {
+      this.diagnostics.error('analysis.duplicate-score', `Score \`${name}\` is declared twice on this owner.`, span);
+      return;
+    }
+    this.scoreNames.set(qualified, worth);
+    this.scoreDecls.push({ name: qualified, worth, span });
   }
 
   private collectPhrasesBlock(decl: DefinePhrases): void {
@@ -585,7 +625,9 @@ class Analyzer {
           span: b.span,
         };
       }),
-      states: decl.states.map((s) => s.name),
+      // Merged set: own `states:` plus every composed trait's declared
+      // states (ratchet D8) — the loader initializes from states[0].
+      states: sym ? sym.states : decl.states.map((s) => s.name),
       descriptionKey: decl.description ? `${id}.description` : null,
       onClauses: decl.onClauses.map((c) => this.buildOnClause(c, entityScope(sym ?? null))),
       span: decl.span,
@@ -622,6 +664,8 @@ class Analyzer {
     const body = clause.body.map((s) => this.resolveStatement(s, clauseScope));
     this.checkPhaseOrder(clause.body, { mutated: false });
     return {
+      clauseKind: clause.clauseKind,
+      once: clause.once,
       action: clause.action,
       binding: clause.binding,
       role: clause.role,
@@ -655,17 +699,15 @@ class Analyzer {
           state.mutated = true;
           break;
         case 'refuse':
+        case 'must':
+        case 'refuse-when':
           if (state.mutated) {
             this.diagnostics.error(
               'analysis.refusal-after-mutation',
-              `Refusal after mutation — move the check above the first set/change/move (\`refuse ${stmt.phraseKey}\` must precede mutations).`,
+              `Refusal after mutation — move the check above the first set/change/move (\`${stmt.kind === 'must' ? 'must' : `refuse ${stmt.phraseKey}`}\` must precede mutations).`,
               stmt.span,
             );
           }
-          break;
-        case 'if':
-          this.checkPhaseOrder(stmt.then, state);
-          if (stmt.else) this.checkPhaseOrder(stmt.else, state);
           break;
         case 'select-on':
           for (const arm of stmt.arms) this.checkPhaseOrder(arm.body, state);
@@ -682,90 +724,6 @@ class Analyzer {
     }
   }
 
-  // ---------------------------------------------------------------- rules
-
-  private buildRule(rule: WhenRule): IRRule | null {
-    const verbIndex = rule.headerWords.findIndex(
-      (w) => EVENT_VERBS.has(w) || this.derivedVerbs.has(w),
-    );
-    if (verbIndex === -1) {
-      const known = [...EVENT_VERBS, ...this.derivedVerbs.keys()];
-      this.diagnostics.error(
-        'analysis.unknown-event',
-        `No known event verb in \`when ${rule.headerWords.join(' ')}\` — known verbs: ${known.join(', ')}.`,
-        rule.headerSpan,
-      );
-      return null;
-    }
-    const verb = rule.headerWords[verbIndex];
-    const actionName = this.derivedVerbs.get(verb) ?? null;
-    const actorWords = rule.headerWords.slice(0, verbIndex);
-    const targetWords = rule.headerWords.slice(verbIndex + 1);
-    const actor = this.resolveWordsAsValue(actorWords, rule.headerSpan);
-    const target = this.resolveRuleTarget(targetWords, rule.headerSpan);
-    if (target === null) return null; // already reported
-
-    return {
-      actor,
-      verb,
-      actionName,
-      target,
-      condition: rule.condition ? this.resolveCondition(rule.condition, TOP_SCOPE) : null,
-      body: rule.body.map((s) => this.resolveStatement(s, TOP_SCOPE)),
-      span: rule.span,
-    };
-  }
-
-  /**
-   * Rule target: a specific entity, `anything`, or `any <open-condition>`
-   * (grammar log 2026-07-11).
-   */
-  private resolveRuleTarget(targetWords: string[], span: Span): IRRuleTarget | null {
-    const words = this.stripArticle(targetWords);
-    if (words.length === 0) {
-      this.diagnostics.error('analysis.rule-target', 'The event header names no target.', span);
-      return null;
-    }
-    if (words.length === 1 && words[0].toLowerCase() === 'anything') {
-      return { kind: 'anything' };
-    }
-    if (words[0].toLowerCase() === 'any' && words.length === 2) {
-      const name = words[1];
-      if (!this.conditionNames.has(name)) {
-        this.diagnostics.error(
-          'analysis.unknown-condition',
-          `\`${name}\` is not a declared condition${this.suggestText(name, [...this.conditionNames])}.`,
-          span,
-        );
-        return null;
-      }
-      if (!this.openConditions.get(name)) {
-        // Never-guess gate: a closed condition doesn't describe a thing.
-        this.diagnostics.error(
-          'analysis.closed-condition-selection',
-          `\`${name}\` is a closed condition — it never mentions \`it\`, so it doesn't describe a thing. Reference \`it\` in the condition to make it a selection.`,
-          span,
-        );
-        return null;
-      }
-      return { kind: 'any-condition', name };
-    }
-    const id = this.resolveEntityId({ kind: 'name', article: null, words, span });
-    if (id === null) return null; // resolveEntityId already reported
-    return { kind: 'entity', id };
-  }
-
-  private stripArticle(words: string[]): string[] {
-    return words.length > 0 && ['the', 'a', 'an'].includes(words[0].toLowerCase()) ? words.slice(1) : words;
-  }
-
-  private resolveWordsAsValue(words: string[], span: Span): IRValue {
-    const stripped = this.stripArticle(words);
-    if (stripped.length === 1 && PLAYER_WORDS.has(stripped[0].toLowerCase())) return { kind: 'player' };
-    const id = this.resolveEntityId({ kind: 'name', article: null, words: stripped, span });
-    return id ? { kind: 'entity', id } : { kind: 'symbol', name: stripped.join(' ') };
-  }
-
   // ----------------------------------------------------------- statements
 
   private resolveStatement(stmt: Statement, scope: Scope): IRStatement {
@@ -773,19 +731,24 @@ class Analyzer {
       case 'refuse':
       case 'phrase': {
         this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
+        const params = stmt.params.map((p) => ({
+          param: p.param.join(' '),
+          value: this.resolveValue(p.value, scope),
+          span: p.span,
+        }));
+        if (stmt.kind === 'refuse') {
+          return { kind: 'refuse', phraseKey: stmt.phraseKey, params, span: stmt.span };
+        }
         return {
-          kind: stmt.kind,
+          kind: 'phrase',
           phraseKey: stmt.phraseKey,
-          params: stmt.params.map((p) => ({
-            param: p.param.join(' '),
-            value: this.resolveValue(p.value, scope),
-            span: p.span,
-          })),
+          params,
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
       }
       case 'emit':
-        return { kind: 'emit', event: stmt.event.join(' '), span: stmt.span };
+        return { kind: 'emit', event: stmt.event.join(' '), stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       case 'set':
         return {
           kind: 'set',
@@ -794,51 +757,83 @@ class Analyzer {
           span: stmt.span,
         };
       case 'change': {
+        // `change the story to <state>` targets the story object (D2).
+        const targetWords = stmt.entity.words.map((w) => w.toLowerCase());
+        if (targetWords.length === 1 && targetWords[0] === 'story') {
+          if (!this.storyStates.includes(stmt.state)) {
+            this.diagnostics.error(
+              'analysis.undeclared-state',
+              `\`${stmt.state}\` is not a declared state of the story${this.suggestText(stmt.state, this.storyStates)}.`,
+              stmt.span,
+            );
+          }
+          return { kind: 'change', entity: { kind: 'story' }, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        }
         const entity = this.resolveEntityValue(stmt.entity, scope);
         const sym = entity.kind === 'entity' ? this.byId.get(entity.id) : entity.kind === 'it' ? scope.owner : null;
-        if (sym && !sym.states.includes(stmt.state)) {
+        const validStates = sym ? sym.states : entity.kind === 'it' ? scope.ownStates : null;
+        if (validStates && !validStates.includes(stmt.state)) {
           this.diagnostics.error(
             'analysis.undeclared-state',
-            `\`${stmt.state}\` is not a declared state of ${sym.nameLower}${this.suggestText(stmt.state, sym.states)}.`,
+            `\`${stmt.state}\` is not a declared state of ${sym?.nameLower ?? 'it'}${this.suggestText(stmt.state, validStates)}.`,
             stmt.span,
           );
         }
-        return { kind: 'change', entity, state: stmt.state, span: stmt.span };
+        return { kind: 'change', entity, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }
       case 'move':
         return {
           kind: 'move',
           entity: this.resolveEntityValue(stmt.entity, scope),
           place: this.resolveEntityValue(stmt.place, scope),
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
       case 'award': {
-        // `award <score-name>` (Phase B) resolves against declared scores;
-        // possessive expressions (`the item's points`) pass through.
+        // `award <score-name>` resolves owner-first (ratchet D12): the
+        // enclosing owner's qualified id, then the story-level bare name.
+        let expression = stmt.expression;
         if (stmt.expression.length === 1 && !stmt.expression[0].includes("'")) {
           const name = stmt.expression[0];
-          if (!this.scoreNames.has(name) && this.scoreNames.size > 0) {
+          const qualified = scope.scoreOwner ? `${scope.scoreOwner}.${name}` : null;
+          if (qualified && this.scoreNames.has(qualified)) {
+            expression = [qualified];
+          } else if (!this.scoreNames.has(name) && this.scoreNames.size > 0) {
             this.diagnostics.error(
               'analysis.unknown-score',
-              `\`${name}\` is not a declared score${this.suggestText(name, [...this.scoreNames.keys()])}.`,
+              `\`${name}\` is not a declared score of this owner or the story${this.suggestText(name, [...this.scoreNames.keys()].map((k) => k.split('.').pop()!))}.`,
               stmt.span,
             );
           }
         }
-        return { kind: 'award', expression: stmt.expression, once: stmt.once, span: stmt.span };
+        return { kind: 'award', expression, once: stmt.once, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }
       case 'win':
       case 'lose':
         if (stmt.phraseKey) this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
-        return { kind: stmt.kind, phraseKey: stmt.phraseKey, span: stmt.span };
-      case 'if':
+        return { kind: stmt.kind, phraseKey: stmt.phraseKey, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      case 'must': {
+        // `<subject> must <predicate>: <key>` (ratchet D6) — a positive
+        // requirement; compiled as its predicate condition plus the key.
+        this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
         return {
-          kind: 'if',
-          condition: this.resolveCondition(stmt.condition, scope),
-          then: stmt.then.map((s) => this.resolveStatement(s, scope)),
-          else: stmt.else ? stmt.else.map((s) => this.resolveStatement(s, scope)) : null,
+          kind: 'must',
+          condition: this.resolveCondition({ kind: 'predicate', subject: stmt.subject, predicate: stmt.predicate, span: stmt.span }, scope),
+          phraseKey: stmt.phraseKey,
           span: stmt.span,
         };
+      }
+      case 'refuse-when': {
+        // Prohibition (D6): refuse with the key while the hazard holds. The
+        // negated-requirement gate (top-level `not`) lands in Phase 3.
+        this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
+        return {
+          kind: 'refuse-when',
+          condition: this.resolveCondition(stmt.condition, scope),
+          phraseKey: stmt.phraseKey,
+          span: stmt.span,
+        };
+      }
       case 'select-on': {
         const subject = this.resolveValue(stmt.subject, scope);
         const stateOwner = this.stateOwnerOf(subject, scope);
@@ -884,6 +879,11 @@ class Analyzer {
           span: stmt.span,
         };
     }
+  }
+
+  /** Resolve a statement `when` suffix (ratchet D7), or null. */
+  private resolveStmtWhen(cond: ConditionNode | null, scope: Scope): IRCondition | null {
+    return cond ? this.resolveCondition(cond, scope) : null;
   }
 
   /** The entity whose `states:` list governs a select-on subject, if determinable. */
@@ -934,7 +934,6 @@ class Analyzer {
       if (word === 'actor' && (scope.fields !== null || scope.slots !== null)) {
         return { kind: 'slot', name: 'actor' };
       }
-      if (this.flagNames.has(word)) return { kind: 'flag', name: word };
     }
     return null;
   }
@@ -1041,23 +1040,13 @@ class Analyzer {
           }
           return { kind: 'condition', name: cond.name };
         }
-        // A declared flag reads as a truth test (`while not after-hours`).
-        if (this.flagNames.has(cond.name)) {
-          return { kind: 'flag', name: cond.name };
-        }
-        // A flag-typed trait field reads as a truth test (`if fed then`).
-        if (scope.fields?.has(cond.name)) {
-          return {
-            kind: 'predicate',
-            pred: 'is',
-            negated: false,
-            subject: { kind: 'field', base: { kind: 'it' }, field: cond.name },
-            object: { kind: 'symbol', name: 'true' },
-          };
+        // A story state reads as a phase test (`while after-hours`, D2).
+        if (this.storyStates.includes(cond.name)) {
+          return { kind: 'story-state', state: cond.name };
         }
         this.diagnostics.error(
           'analysis.unknown-condition',
-          `\`${cond.name}\` is not a declared condition or flag${this.suggestText(cond.name, [...this.conditionNames, ...this.flagNames, ...(scope.fields ? [...scope.fields.keys()] : [])])}.`,
+          `\`${cond.name}\` is not a declared condition or story state${this.suggestText(cond.name, [...this.conditionNames, ...this.storyStates])}.`,
           cond.span,
         );
         return { kind: 'condition', name: cond.name };
@@ -1136,7 +1125,9 @@ class Analyzer {
       }
       const subjectEntity =
         subject.kind === 'entity' ? this.byId.get(subject.id) : subject.kind === 'it' ? scope.owner : null;
-      const validStates = subjectEntity?.states ?? [];
+      // Trait scope: `it` validates against the trait's own declared states
+      // (ratchet D8) when no concrete owner entity is in scope.
+      const validStates = subjectEntity?.states ?? (subject.kind === 'it' ? scope.ownStates ?? [] : []);
       if (validStates.includes(word)) return { kind: 'symbol', name: word };
       if (TRAIT_ADJECTIVES.has(word)) return { kind: 'symbol', name: word };
       const exactEntity = this.entities.find((e) => e.nameLower === word.toLowerCase() || e.aka.includes(word.toLowerCase()));
@@ -1158,7 +1149,6 @@ class Analyzer {
     const field = scope.fields.get(subject.field);
     if (!field) return null;
     if (field.type === 'one-of') return field.oneOf ?? [];
-    if (field.type === 'flag') return ['true', 'false'];
     return null;
   }
 

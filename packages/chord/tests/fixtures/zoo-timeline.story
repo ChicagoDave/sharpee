@@ -1,7 +1,8 @@
 story "Zoo Timeline Fixture" by "Sharpee Platform"
   id: zoo-timeline
   version: 0.0.1
-  blurb: design.md 3.3 - chatty trait, sequence, once, conditional composition.
+  blurb: design.md 3.3 + ownership package - story states, sequences, anchors, once clauses.
+  states: open, after-hours
 
 create the Aviary
   a room
@@ -39,8 +40,6 @@ or
   You should see what the flamingos say about you.
 end phrase
 
-define flag after-hours starts false
-
 define sequence closing time
   at turn 5
     phrase zoo.pa.closing-3
@@ -59,20 +58,26 @@ define sequence closing time
     phrase zoo.pa.closed
       *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for
       visiting! We hope to see you again soon!"
-    set after-hours to true
+    change the story to after-hours
 end sequence
 
-once after-hours
-  move Sam the zookeeper to the Staff Gate
-  phrase zoo.after-hours.keeper-leaves
-    Sam the zookeeper checks her watch, waves goodnight to the animals,
-    and lets herself out through the staff gate.
-end once
+define sequence lockup
+  when the story becomes after-hours
+    phrase zoo.lockup
+      Somewhere in the dark, a gate clangs shut.
+end sequence
 
-every 3 turns, 4 times
-  phrase goat-bleat
-    A pygmy goat bleats somewhere nearby.
-end every
+define sequence goat bleats
+  at turn 3
+    phrase goat-bleat
+      A pygmy goat bleats somewhere nearby.
+  3 turns later
+    phrase goat-bleat
+  3 turns later
+    phrase goat-bleat
+  3 turns later
+    phrase goat-bleat
+end sequence
 
 create the Staff Gate
   a room
@@ -86,6 +91,14 @@ create Sam the zookeeper
 
   Sam wrangles feed buckets with practiced ease.
 
+  on every turn while after-hours, once
+    move it to the Staff Gate
+    phrase zoo.after-hours.keeper-leaves
+      Sam the zookeeper checks her watch, waves goodnight to the animals,
+      and lets herself out through the staff gate.
+    phrase keeper-wave when the player is in the Aviary
+  end on
+
 create the parrot
   a person
   in the Aviary
@@ -93,3 +106,7 @@ create the parrot
   candid while after-hours
 
   A scarlet macaw with opinions.
+
+define phrases en-US
+  keeper-wave:
+    She gives you a little wave on the way out.

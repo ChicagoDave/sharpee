@@ -13,9 +13,13 @@
  */
 import type { ActorMovedEventData } from '@sharpee/stdlib';
 
-/** Chord event verb → stdlib event type it binds to (Phase A/B set). */
+/**
+ * Chord event verb → stdlib event type it binds to. Gerund register since
+ * the ownership package (ratchet D3): entity clauses read `after entering
+ * it`, so the map keys are gerunds.
+ */
 export const EVENT_TRIGGERS: Record<string, string> = {
-  enters: 'if.event.actor_moved',
+  entering: 'if.event.actor_moved',
 };
 
 /**
@@ -23,6 +27,6 @@ export const EVENT_TRIGGERS: Record<string, string> = {
  * compile-time probes: if stdlib renames a field, this file stops
  * compiling — the AC-9 CI failure.
  */
-export const EVENT_PAYLOAD_FIELDS: { enters: keyof ActorMovedEventData & 'toRoom' } = {
-  enters: 'toRoom',
+export const EVENT_PAYLOAD_FIELDS: { entering: keyof ActorMovedEventData & 'toRoom' } = {
+  entering: 'toRoom',
 };

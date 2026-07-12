@@ -22,18 +22,25 @@ export const IR_FORMAT = 'story language 1';
 export interface StoryIR {
   format: typeof IR_FORMAT;
   meta: IRMeta;
+  /** The story object's declared phases (ownership package D2). */
+  story: { states: string[]; reversible: boolean };
   entities: IREntity[];
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
   verbs: IRVerbDef[];
   hatches: IRHatch[];
+  /** LEGACY (ownership package): always empty — `define flag` was removed. Dies in Phase C P4. */
   flags: IRFlagDef[];
+  /** LEGACY (ownership package): always empty — floating `when` rules were removed. Dies in Phase C P4. */
   rules: IRRule[];
   // Phase B (plan phase 3):
   traits: IRTraitDef[];
   actions: IRActionDef[];
+  /** Owner-attached score identities (D12) — names are owner-qualified (`pygmy-goats.fed`). */
   scores: IRScoreDef[];
+  /** LEGACY (ownership package): always empty — floating `once` rules were removed. Dies in Phase C P4. */
   onceRules: IROnceRule[];
+  /** LEGACY (ownership package): always empty — floating `every` rules were removed. Dies in Phase C P4. */
   everyRules: IREveryRule[];
   sequences: IRSequenceDef[];
   /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
@@ -117,6 +124,10 @@ export interface IRBlockedExit {
 }
 
 export interface IROnClause {
+  /** `on` = intercept (may refuse; primary text), `after` = react (appends; ratchet D3). */
+  clauseKind: 'on' | 'after';
+  /** `, once` clause modifier — one lifetime firing (ratchet D5). */
+  once: boolean;
   /** Action word as written (gerund), e.g. `reading`; `every-turn` for `on every turn`. */
   action: string;
   /** How the clause binds: target (`it`), role (`anything as the <role>`), or every turn. */
@@ -210,10 +221,15 @@ export interface IRHatch {
 // Phase B declarations
 // --------------------------------------------------------------------------
 
-/** `define trait` — data fields + behavior clauses (phrases fold into the table). */
+/** `define trait` — data fields, trait-declared states, behavior clauses. */
 export interface IRTraitDef {
   name: string;
   data: IRTraitField[];
+  /** Trait-declared states (ratchet D8) — every composer gets the set. */
+  states: string[];
+  statesReversible: boolean;
+  /** Trait-owned scores (D12); names owner-qualified (`trait.<name>.<score>`). */
+  scores: IRScoreDef[];
   onClauses: IROnClause[];
   span: Span;
 }
@@ -227,15 +243,26 @@ export interface IRTraitField {
   oneOf: string[] | null;
 }
 
-/** `define action` — grammar, scope constraints, refusal ladder, body. */
+/** `define action` — grammar, scope constraints, requirements, refusal ladder, body. */
 export interface IRActionDef {
   name: string;
   patterns: IRActionPattern[];
   constraints: Array<{ slot: string; requirement: string }>;
+  /** `must` requirement lines (ratchet D6) — checked before the body. */
+  musts: IRMust[];
   refusals: IRActionRefusal[];
   /** Dispatch-miss phrase key (`otherwise refuse …`), or null. */
   otherwise: string | null;
+  /** Action-owned scores (D12); names owner-qualified (`action.<name>.<score>`). */
+  scores: IRScoreDef[];
   body: IRStatement[];
+  span: Span;
+}
+
+/** A resolved `must` requirement: refuse with the key unless the condition holds. */
+export interface IRMust {
+  condition: IRCondition;
+  phraseKey: string;
   span: Span;
 }
 
@@ -275,7 +302,18 @@ export interface IREveryRule {
 export interface IRSequenceDef {
   /** Name words joined with a space (`closing time`). */
   name: string;
-  steps: Array<{ timing: 'at-turn' | 'later'; turns: number; body: IRStatement[]; span: Span }>;
+  steps: IRSequenceStep[];
+  span: Span;
+}
+
+/** One step: wall-clock (`at turn N`/`N turns later`) or state anchor (D10). */
+export interface IRSequenceStep {
+  timing: 'at-turn' | 'later' | 'becomes';
+  /** Turn count for at-turn/later; 0 for becomes. */
+  turns: number;
+  /** State anchor for `becomes` steps: owner is `story` or an entity id. */
+  anchor?: { owner: string; state: string } | null;
+  body: IRStatement[];
   span: Span;
 }
 
@@ -316,14 +354,19 @@ export type IRRuleTarget =
 
 export type IRStatement =
   | { kind: 'refuse'; phraseKey: string; params: IRParam[]; span: Span }
-  | { kind: 'phrase'; phraseKey: string; params: IRParam[]; span: Span }
-  | { kind: 'emit'; event: string; span: Span }
+  | { kind: 'phrase'; phraseKey: string; params: IRParam[]; stmtWhen?: IRCondition | null; span: Span }
+  | { kind: 'emit'; event: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'set'; target: IRValue; value: IRValue; span: Span }
-  | { kind: 'change'; entity: IRValue; state: string; span: Span }
-  | { kind: 'move'; entity: IRValue; place: IRValue; span: Span }
-  | { kind: 'award'; expression: string[]; once: boolean; span: Span }
-  | { kind: 'win'; phraseKey: string | null; span: Span }
-  | { kind: 'lose'; phraseKey: string | null; span: Span }
+  | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
+  | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  | { kind: 'award'; expression: string[]; once: boolean; stmtWhen?: IRCondition | null; span: Span }
+  | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
+  | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
+  /** `must` requirement as a body statement (ratchet D6). */
+  | { kind: 'must'; condition: IRCondition; phraseKey: string; span: Span }
+  /** `refuse when <cond>: <key>` as a body statement (prohibition, D6). */
+  | { kind: 'refuse-when'; condition: IRCondition; phraseKey: string; span: Span }
+  /** LEGACY: `if` was removed (given 4 amended); never produced. Dies in Phase C P4. */
   | { kind: 'if'; condition: IRCondition; then: IRStatement[]; else: IRStatement[] | null; span: Span }
   | { kind: 'select-on'; subject: IRValue; arms: IRSelectArm[]; span: Span }
   | { kind: 'select-strategy'; strategy: string; alternatives: IRStatement[][]; span: Span }
@@ -351,10 +394,12 @@ export type IRValue =
   | { kind: 'entity'; id: string }
   | { kind: 'player' }
   | { kind: 'it' }
+  /** The story object (`change the story to after-hours`, ratchet D2). */
+  | { kind: 'story' }
   | { kind: 'field'; base: IRValue; field: string }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
-  /** A declared story flag (`set after-hours to true`). */
+  /** LEGACY: flags were removed (given 8); never produced. Dies in Phase C P4. */
   | { kind: 'flag'; name: string }
   | { kind: 'symbol'; name: string };
 
@@ -364,7 +409,9 @@ export type IRCondition =
   | { kind: 'not'; operand: IRCondition }
   | { kind: 'chance'; n: number }
   | { kind: 'condition'; name: string }
-  /** A declared flag read as a truth test (`while not after-hours`). */
+  /** The story is in the named phase (`while after-hours`, ratchet D2). */
+  | { kind: 'story-state'; state: string }
+  /** LEGACY: flags were removed (given 8); never produced. Dies in Phase C P4. */
   | { kind: 'flag'; name: string }
   | {
       kind: 'predicate';

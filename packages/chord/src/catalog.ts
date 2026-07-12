@@ -39,8 +39,9 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Event verbs the `when` header recognizes (Phase A slice of the curated
- * event-selector map — the full map with if.event.* bindings is the
- * loader's side of Interface Contract 2).
+ * Event verbs entity `on`/`after` clauses recognize beyond action gerunds
+ * (the curated event-selector map's language side; the if.event.* bindings
+ * are the loader's side of Interface Contract 2). Gerund register since
+ * the ownership package (ratchet D3): `after entering it`.
  */
-export const EVENT_VERBS: ReadonlySet<string> = new Set(['enters']);
+export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering']);

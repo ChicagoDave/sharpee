@@ -449,10 +449,48 @@ never a silent edit to a frozen story or its frozen transcripts.
   regenerated snapshots; shipping-story-reading tests are repointed at the
   new fixture with TODO markers in place; `pnpm --filter '@sharpee/chord'
   test` green.
-- **Status**: CURRENT (unblocked 2026-07-11 — all Phase 1 entries
-  APPROVED; CP5 answer: top-level `define score` joins the removals list,
-  so `worth N` on owners is the single form and the story header carries
-  story-scoped scores).
+- **Status**: COMPLETE (2026-07-12), WITH the core Phase 4 runtime slice
+  pulled forward — the fixture rewrites made story-loader's behavior
+  suites unexecutable against Phase B runtime semantics, so tree honesty
+  forced the two to land together (the removals-with-replacements rule
+  applying inside the package, not just across it). Delivered:
+  - Grammar in/out complete: ast/parser/ir/analyzer speak the ownership
+    package end to end; all seven removal diagnostics with fix-its; all
+    new forms parse and resolve (story/trait states + reversible,
+    on/after + `, once` + generalized `while`, must-form with infinitive
+    normalization, statement `when` suffix, owner-qualified scores with
+    owner-first award resolution, `becomes` step anchors,
+    `change the story`). IR additive; legacy arrays (`rules`/`flags`/
+    `onceRules`/`everyRules`) always empty, die in P4 cleanup.
+  - Runtime slice: event clauses (`after entering it`) bound per owner via
+    the selector contract (gerund register — EVENT_TRIGGERS/EVENT_VERBS
+    keyed `entering` now); on=override vs after=append in interceptors;
+    `, once` + `while` gating on action/event/every-turn clauses;
+    must/refuse-when in the validate partition; stmtWhen gating; story
+    state in world state (`chord.story.state`, init first-declared);
+    trait states merged into IREntity.states (init `states[0]` free);
+    sequences rework (later = relative to previous ACTUAL firing;
+    becomes anchors); entity every-turn daemons (the once-vignette
+    replacement); dispatch after-clauses fired in the report phase per
+    the P1 spike (fireAfterClauses replaces fireActionRules).
+  - Fixtures rewritten + compile clean (cloak, ac5-random, traits-basic,
+    zoo-actions, zoo-timeline, gates/, malformed/ incl. new
+    missing-end-after); zoo-phase-c.story fixture added (full sketch) with
+    the P2 parse gate green; zoo-pure-ir repointed at a temporary stand-in
+    with TODO(phase-c-p5) markers.
+  - Suites: chord 124/124 (was 103), story-loader 61/61, ide-protocol
+    11/11, devkit 22 passed. Bundle deliberately NOT rebuilt — shipping
+    stories migrate in P5; the golden gates keep running against the
+    pre-package bundle until then (the sanctioned mid-package window).
+  - Implementation findings for David: (1) `refuse when <cond>: <key>` is
+    also a BODY statement now — removing `if` left body-level prohibitions
+    (carrying-limit) inexpressible; same form as the action line, new
+    position, D6-consistent — needs his nod in the final ratchet entry;
+    (2) declare-and-emit inline phrases need OWNER-SCOPED registration
+    (four owners each declaring `phrase confession` collide today) — new
+    P3 line item; (3) the `any <open-condition>` selection form is dormant
+    (its only host position was when-rule targets) until `each`/iterate
+    lands — the closed-condition-selection gate tests retire with it.
 
 ### Phase 3: Chord analysis — three-ring gate, routing, catalog, scope, step anchors
 - **Tier**: Large
@@ -462,6 +500,21 @@ never a silent edit to a frozen story or its frozen transcripts.
 - **Entry state**: Phase 2 complete; AST covers all four legs' approved
   forms.
 - **Deliverable**:
+  - **Owner-scoped inline-phrase registration** (P2 discovery, 2026-07-12):
+    declare-and-emit inline phrases inside an entity/trait clause register
+    under the BARE key in the global table today, so four owners each
+    declaring `phrase confession` collide (`analysis.duplicate-phrase` on
+    the real zoo-phase-c fixture). Register them under the owner-derived
+    key (`<entity-id>.<key>` — the phrase-override mechanism; requirePhrase
+    already resolves owner-scoped keys), keeping bare keys for ownerless
+    scopes (sequences, actions).
+  - **Duplicate-clause gate** (adopted from the Gemini review 2026-07-11,
+    docs/work/chord/gemini-review.md "Eliminate Interceptor Masking"): two
+    clauses with the same (owner, action, clauseKind) on one entity/trait
+    silently mask at runtime today — make it load error
+    `analysis.duplicate-clause` with the first declaration's line in the
+    message. `on` vs `after` on the same action is legal (different
+    lifecycle halves).
   - The three-ring boolean-state gate (decision 8): `analysis.boolean-
     state` (literal `true`/`false`/`yes`/`no`), `analysis.shadow-state`
     (a declared state set reproducing a platform-owned pair — open/closed,
@@ -535,6 +588,15 @@ never a silent edit to a frozen story or its frozen transcripts.
     the Phase 1 spike — this phase implements per the confirmed mechanism
     (or David-approved fallback) recorded there rather than re-running the
     experiment.
+  - **Undo-delta-safe state storage** (adopted from the Gemini review
+    2026-07-11, "Review Trait Mutation Patterns"): trait-declared and
+    story states are stored via world-state writes (`setStateValue`
+    namespaces or serialized entity attributes proven AC-6-safe), never
+    bare object mutation outside the world model's persistence surface —
+    and the AC-6 undo/save transcripts must cover a trait-state
+    transition (Phase B's ac6 coverage exercised flags only). Related
+    hardening from the same review: narrow the runtime's event-payload
+    casts to type guards where events are consumed.
   - State adjectives (leg 1): condition evaluator reads world-model trait
     state directly (`isOpen`/`isLocked`/`isOn`/worn-relation/derived-light)
     for the new adjective forms — zero new world state, pure read.

@@ -1,10 +1,13 @@
 /**
- * parser.test.ts — golden parser tests for the Phase A grammar subset.
+ * parser.test.ts — golden parser tests for the core grammar (ownership
+ * package, 2026-07-11).
  *
- * cloak.story here is the design.md §3.1 text verbatim; the AST assertions
- * pin the structures Phase 3 (resolver/IR) consumes. Malformed fixtures pin
- * the resynchronize-and-report behavior (one mistake → one diagnostic,
- * later declarations still parse).
+ * cloak.story here is the design.md §3.1 text updated to the ownership
+ * grammar (behaviors live on their owners as `on`/`after` clauses); the AST
+ * assertions pin the structures Phase 3 (resolver/IR) consumes. Malformed
+ * fixtures pin the resynchronize-and-report behavior (one mistake → one
+ * diagnostic, later declarations still parse), and the removals describe
+ * pins the ownership-package parse errors with their fix-its.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,14 +23,13 @@ import {
   parse,
   PhraseStmt,
   SelectOnStmt,
-  WhenRule,
 } from '../src';
 
 function fixture(name: string): string {
   return readFileSync(join(__dirname, 'fixtures', name), 'utf8');
 }
 
-describe('cloak.story (design.md §3.1 verbatim)', () => {
+describe('cloak.story (design.md §3.1, ownership grammar)', () => {
   const result = parse(fixture('cloak.story'));
   const decls = result.ast.declarations;
   const creates = decls.filter((d): d is CreateDecl => d.kind === 'create');
@@ -57,7 +59,6 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
       'create', // velvet cloak
       'create', // brass hook
       'create', // message
-      'when-rule',
       'define-verb',
       'define-phrases',
       'define-text',
@@ -130,6 +131,7 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
     expect(message.states.map((s) => s.name)).toEqual(['intact', 'trampled', 'obliterated']);
     expect(message.onClauses).toHaveLength(1);
     const on = message.onClauses[0];
+    expect(on.clauseKind).toBe('on');
     expect(on.action).toBe('reading');
     expect(on.body).toHaveLength(1);
     const select = on.body[0] as SelectOnStmt;
@@ -147,14 +149,16 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
     ]);
   });
 
-  it('parses the stumble rule: header words, named condition, ordinal blocks', () => {
-    const rule = decls[8] as WhenRule;
-    expect(rule.headerWords).toEqual(['the', 'player', 'enters', 'the', 'Foyer', 'Bar']);
-    expect(rule.condition).toMatchObject({ kind: 'condition-ref', name: 'in-darkness' });
-    expect(rule.body).toHaveLength(3);
-    expect(rule.body[0]).toMatchObject({ kind: 'phrase', phraseKey: 'stumble' } satisfies Partial<PhraseStmt>);
-    const first = rule.body[1] as OrdinalBlock;
-    const third = rule.body[2] as OrdinalBlock;
+  it('parses the bar stumble reaction: after-clause, named condition, ordinal blocks', () => {
+    const bar = creates[2];
+    expect(bar.onClauses).toHaveLength(1);
+    const clause = bar.onClauses[0];
+    expect(clause).toMatchObject({ clauseKind: 'after', action: 'entering', binding: 'it', once: false });
+    expect(clause.condition).toMatchObject({ kind: 'condition-ref', name: 'in-darkness' });
+    expect(clause.body).toHaveLength(3);
+    expect(clause.body[0]).toMatchObject({ kind: 'phrase', phraseKey: 'stumble' } satisfies Partial<PhraseStmt>);
+    const first = clause.body[1] as OrdinalBlock;
+    const third = clause.body[2] as OrdinalBlock;
     expect(first).toMatchObject({ kind: 'ordinal', ordinal: 1, ordinalWord: 'first' });
     expect(first.body).toMatchObject([{ kind: 'change', entity: { words: ['message'] }, state: 'trampled' }]);
     expect(third).toMatchObject({ kind: 'ordinal', ordinal: 3, ordinalWord: 'third' });
@@ -162,7 +166,7 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
   });
 
   it('parses the hang verb definition', () => {
-    const verb = decls[9] as DefineVerb;
+    const verb = decls[8] as DefineVerb;
     expect(verb.verbs).toEqual(['hang', 'hook']);
     expect(verb.pattern).toMatchObject([
       { kind: 'word', word: 'put' },
@@ -173,7 +177,7 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
   });
 
   it('parses the en-US phrases block: prose joins, markers', () => {
-    const phrases = decls[10] as DefinePhrases;
+    const phrases = decls[9] as DefinePhrases;
     expect(phrases.locale).toBe('en-US');
     expect(phrases.entries.map((e) => e.key)).toEqual([
       'cant-leave',
@@ -194,7 +198,7 @@ describe('cloak.story (design.md §3.1 verbatim)', () => {
   });
 
   it('parses the garbled hatch declaration', () => {
-    const hatch = decls[11] as DefineText;
+    const hatch = decls[10] as DefineText;
     expect(hatch).toMatchObject({ name: 'garbled', modulePath: './extras.ts' });
   });
 
@@ -220,10 +224,13 @@ describe('ac5-random.story (determinism fixture)', () => {
     ]);
   });
 
-  it('parses one chance in 3 as a chance condition', () => {
-    const rules = result.ast.declarations.filter((d): d is WhenRule => d.kind === 'when-rule');
-    expect(rules).toHaveLength(3);
-    expect(rules[2].condition).toMatchObject({ kind: 'chance', n: 3 });
+  it('parses one chance in 3 as an after-clause while condition', () => {
+    const west = result.ast.declarations.filter((d): d is CreateDecl => d.kind === 'create')[1];
+    expect(west.name.words).toEqual(['West', 'Room']);
+    expect(west.onClauses).toHaveLength(2);
+    expect(west.onClauses[0]).toMatchObject({ clauseKind: 'after', action: 'entering', condition: null });
+    expect(west.onClauses[1]).toMatchObject({ clauseKind: 'after', action: 'entering' });
+    expect(west.onClauses[1].condition).toMatchObject({ kind: 'chance', n: 3 });
   });
 
   it('matches the golden AST snapshot', () => {
@@ -232,24 +239,35 @@ describe('ac5-random.story (determinism fixture)', () => {
 });
 
 describe('malformed fixtures — one mistake, one diagnostic, parsing continues', () => {
-  it('missing end when: single unterminated-block error, later create still parses', () => {
+  it('top-level when rule: removal diagnostic with the owner fix-it, later declarations still parse', () => {
     const result = parse(fixture('malformed/missing-end-when.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
-    expect(errors[0].code).toBe('parse.unterminated-block');
-    expect(errors[0].message).toContain('end when');
+    expect(errors[0].code).toBe('parse.removed-when');
+    expect(errors[0].message).toContain('after <verb> it');
     expect(result.ast.declarations.some((d) => d.kind === 'create')).toBe(true);
+    expect(result.ast.declarations.some((d) => d.kind === 'define-phrases')).toBe(true);
   });
 
-  it('unknown statement: single error naming the statement, rest of the rule parses', () => {
+  it('missing end after: single unterminated-block error, later create still parses', () => {
+    const result = parse(fixture('malformed/missing-end-after.story'));
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.unterminated-block');
+    expect(errors[0].message).toContain('end after');
+    const creates = result.ast.declarations.filter((d): d is CreateDecl => d.kind === 'create');
+    expect(creates.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('unknown statement: single error naming the statement, rest of the clause parses', () => {
     const result = parse(fixture('malformed/unknown-statement.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.unknown-statement');
     expect(errors[0].message).toContain('frobnicate');
-    expect(errors[0].span.line).toBe(6);
-    const rule = result.ast.declarations.find((d): d is WhenRule => d.kind === 'when-rule');
-    expect(rule?.body).toMatchObject([{ kind: 'phrase', phraseKey: 'stumble' }]);
+    expect(errors[0].span.line).toBe(11);
+    const east = result.ast.declarations.find((d): d is CreateDecl => d.kind === 'create');
+    expect(east?.onClauses[0].body).toMatchObject([{ kind: 'phrase', phraseKey: 'stumble' }]);
     expect(result.ast.declarations.some((d) => d.kind === 'define-phrases')).toBe(true);
   });
 
@@ -267,5 +285,66 @@ describe('malformed fixtures — one mistake, one diagnostic, parsing continues'
     const result = parse(fixture('malformed/unterminated-string.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors.some((e) => e.code === 'parse.text-module' && e.span.line === 5)).toBe(true);
+  });
+});
+
+describe('ownership-package removals — parse errors with fix-its (ratchet 2026-07-11)', () => {
+  const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+
+  function errorsOf(source: string) {
+    return parse(source).diagnostics.filter((d) => d.severity === 'error');
+  }
+
+  it('top-level once rule: removed, fix-it names the `, once` clause modifier', () => {
+    const errors = errorsOf(`${HEADER}once after-hours\n  phrase bye\nend once\n`);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.removed-once');
+    expect(errors[0].message).toContain(', once');
+  });
+
+  it('define flag: removed, fix-it names states and derived conditions', () => {
+    const errors = errorsOf(`${HEADER}define flag after-hours starts false\n`);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.removed-flag');
+    expect(errors[0].message).toContain('states:');
+  });
+
+  it('top-level define score: removed, fix-it names the owner-attached form', () => {
+    const errors = errorsOf(`${HEADER}define score gold worth 5\n`);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.removed-score');
+    expect(errors[0].message).toContain('score <name> worth N');
+  });
+
+  it('if statement: removed, fix-it names must, the when suffix, and select', () => {
+    const errors = errorsOf(
+      `${HEADER}create the Hall\n  a room\n\n  A hall.\n\n  on entering it\n    if it is a room\n      win\n    end if\n  end on\n`,
+    );
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.removed-if');
+    expect(errors[0].span.line).toBe(11);
+    expect(errors[0].message).toContain('must');
+    expect(errors[0].message).toContain('select');
+  });
+
+  it('flag trait-field type: removed, fix-it names trait states', () => {
+    const errors = errorsOf(`${HEADER}define trait sticky\n  data\n    glue: flag starts false\nend trait\n`);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.removed-flag-field');
+    expect(errors[0].message).toContain('states[, reversible]');
+  });
+
+  it('refuse inside an after clause: reactions cannot refuse (D3)', () => {
+    const errors = errorsOf(`${HEADER}create the Hall\n  a room\n\n  A hall.\n\n  after entering it\n    refuse nope\n  end after\n`);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.react-refusal');
+    expect(errors[0].message).toContain('`on` clause');
+  });
+
+  it('must not: negative requirements are not a form (D6)', () => {
+    const errors = errorsOf(`${HEADER}define trait guard\n  on opening it\n    it must not be locked: nope\n  end on\nend trait\n`);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.must-negative');
+    expect(errors[0].message).toContain('refuse when');
   });
 });

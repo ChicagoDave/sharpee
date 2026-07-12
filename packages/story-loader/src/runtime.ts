@@ -47,6 +47,7 @@ import {
   CHORD_FLAG_PREFIX,
   CHORD_OCCURRENCE_PREFIX,
   CHORD_STATE_PREFIX,
+  CHORD_STORY_STATE_KEY,
   CHORD_TRAIT_PREFIX,
 } from './state-keys';
 import { withLineBreaks } from './text';
@@ -112,10 +113,8 @@ export class ChordRuntime {
 
   // ------------------------------------------------------------------ bind
 
-  /** Register rules, on-clause interceptors, and derived-property chains. */
+  /** Register on/after clauses, event clauses, and derived-property chains. */
   bind(world: WorldModel): void {
-    this.ir.rules.forEach((rule, index) => this.bindRule(world, rule, index));
-
     // The interceptor registry is keyed (traitType, actionId) — a second
     // registration for the same action would REPLACE the first, silently
     // disabling earlier entities' clauses. Group clauses by action and
@@ -123,12 +122,21 @@ export class ChordRuntime {
     // action's target entity.
     const byAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause }>>();
     for (const entity of this.ir.entities) {
-      for (const clause of entity.onClauses) {
+      entity.onClauses.forEach((clause, clauseIndex) => {
+        // Entity every-turn clauses are scheduler daemons, not interceptors.
+        if (clause.binding === 'every-turn') return;
+        // Event clauses (`after entering it`) bind to the event stream per
+        // the selector contract — the ownership package's replacement for
+        // floating `when` rules.
+        if (EVENT_TRIGGERS[clause.action]) {
+          this.bindEventClause(world, entity, clause, clauseIndex);
+          return;
+        }
         this.prepareOnClauseTarget(world, entity, clause);
         const list = byAction.get(clause.action) ?? [];
         list.push({ entity, clause });
         byAction.set(clause.action, list);
-      }
+      });
     }
     for (const [action, clauses] of byAction) {
       world.registerActionInterceptor(
@@ -195,65 +203,61 @@ export class ChordRuntime {
     }
   }
 
-  // ----------------------------------------------------------------- rules
+  // ---------------------------------------------------------- event clauses
 
-  private bindRule(world: WorldModel, rule: IRRule, index: number): void {
-    this.forbidRefusals(rule.body, 'a `when` rule');
-    if (rule.actionName) {
-      // Derived-verb rules (`when the player pets anything`) bind to the
-      // declared action's dispatch path — loader phases 4-5 wire these.
-      return;
-    }
-    const trigger = EVENT_TRIGGERS[rule.verb];
-    if (!trigger) {
-      throw new LoadError(`Event verb \`${rule.verb}\` has no trigger binding in the Phase A runtime.`, rule.span);
-    }
+  /**
+   * Bind an event clause (`after entering it` on a room) to its trigger
+   * event per the selector contract — the ownership package's replacement
+   * for floating `when` rules: the same firing semantics, owned by the
+   * entity the event is about.
+   */
+  private bindEventClause(world: WorldModel, entity: IREntity, clause: IROnClause, clauseIndex: number): void {
+    const trigger = EVENT_TRIGGERS[clause.action];
+    const key = `chord.clause.${entity.id}.${clause.action}.${clauseIndex}`;
     world.chainEvent(
       trigger,
-      (event, w) => this.fireRule(rule, index, event, w as WorldModel),
-      { key: `chord.rule.${index}` },
+      (event, w) => this.fireEventClause(entity, clause, key, event, w as WorldModel),
+      { key },
     );
   }
 
-  /**
-   * Evaluate one rule against a trigger event. Public-for-tests via
-   * `fireRules`; the registered chain is the production path (the Phase 6
-   * golden transcripts exercise it end-to-end).
-   */
-  private fireRule(rule: IRRule, index: number, event: ISemanticEvent, world: WorldModel): ISemanticEvent[] | null {
-    const data = (event.data ?? {}) as Record<string, unknown>;
-    // Phase B target union: `enters` rules bind entity targets; anything/
-    // any-condition targets belong to dispatch-verb rules (phases 4-5).
-    const targetWorldId =
-      rule.target.kind === 'entity' ? this.host.entityId(rule.target.id) : undefined;
-    if (rule.verb === 'enters' && data.toRoom !== targetWorldId) return null;
-    if (rule.actor.kind === 'player') {
-      const actor = (event.entities as Record<string, unknown> | undefined)?.actor;
-      const playerId = world.getPlayer()?.id;
-      if (actor && playerId && actor !== playerId) return null;
+  /** Test/debug entry: run every event clause bound to this event type. */
+  fireEventClauses(world: WorldModel, event: ISemanticEvent): ISemanticEvent[] {
+    const out: ISemanticEvent[] = [];
+    for (const entity of this.ir.entities) {
+      entity.onClauses.forEach((clause, clauseIndex) => {
+        if (clause.binding === 'every-turn' || EVENT_TRIGGERS[clause.action] !== event.type) return;
+        const key = `chord.clause.${entity.id}.${clause.action}.${clauseIndex}`;
+        const produced = this.fireEventClause(entity, clause, key, event, world);
+        if (produced) out.push(...produced);
+      });
     }
-
-    const ctx: ExecContext = { world };
-    if (rule.condition && !this.evaluator.evalCondition(rule.condition, ctx)) return null;
-
-    const key = CHORD_OCCURRENCE_PREFIX + `rule.${index}`;
-    const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
-    world.setStateValue(key, occurrence);
-    ctx.occurrence = occurrence;
-    ctx.decisions = this.snapshotDecisions(rule.body, ctx);
-
-    return this.execStatements(rule.body, ctx);
+    return out;
   }
 
-  /** Test/debug entry: run every rule bound to this event. */
-  fireRules(world: WorldModel, event: ISemanticEvent): ISemanticEvent[] {
-    const out: ISemanticEvent[] = [];
-    this.ir.rules.forEach((rule, index) => {
-      if (EVENT_TRIGGERS[rule.verb] !== event.type) return;
-      const produced = this.fireRule(rule, index, event, world);
-      if (produced) out.push(...produced);
-    });
-    return out;
+  private fireEventClause(
+    entity: IREntity,
+    clause: IROnClause,
+    key: string,
+    event: ISemanticEvent,
+    world: WorldModel,
+  ): ISemanticEvent[] | null {
+    const data = (event.data ?? {}) as Record<string, unknown>;
+    // The clause is about its owner: `after entering it` fires when the
+    // movement's destination IS the owner (payload field per the contract).
+    if (clause.action === 'entering' && data.toRoom !== this.host.entityId(entity.id)) return null;
+
+    const ctx: ExecContext = { world, it: entity.id };
+    if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return null;
+
+    const occKey = CHORD_OCCURRENCE_PREFIX + key;
+    const occurrence = ((world.getStateValue(occKey) as number | undefined) ?? 0) + 1;
+    if (clause.once && occurrence > 1) return null; // `, once` — one lifetime firing (D5)
+    world.setStateValue(occKey, occurrence);
+    ctx.occurrence = occurrence;
+    ctx.decisions = this.snapshotDecisions(clause.body, ctx);
+
+    return this.execStatements(clause.body, ctx);
   }
 
   // ------------------------------------------------------------ on-clauses
@@ -305,17 +309,20 @@ export class ChordRuntime {
   }
 
   /**
-   * Compile one `on` clause to an ActionInterceptor via the §5.4 partition:
-   * leading refusals → preValidate; mutations → postExecute; phrase/emit/
-   * win/lose → postReport (first phrase overrides the primary message).
+   * Compile one `on`/`after` clause to an ActionInterceptor via the §5.4
+   * partition: leading refusals → preValidate (`on` only — `after` reacts
+   * and cannot refuse, ratchet D3); mutations → postExecute; phrase/emit/
+   * win/lose → postReport. An `on` clause's first phrase OVERRIDES the
+   * primary message; an `after` clause's phrases APPEND (D3).
    */
   private buildInterceptor(entity: IREntity, clause: IROnClause): ActionInterceptor {
     const runtime = this;
     const ownWorldId = () => runtime.host.entityId(entity.id);
+    const skipped = (data: InterceptorSharedData) => data.chordSkip === true;
 
     return {
       preValidate(target: IFEntity, world: WorldModel): InterceptorResult | null {
-        if (target.id !== ownWorldId()) return null;
+        if (target.id !== ownWorldId() || clause.clauseKind === 'after') return null;
         const ctx: ExecContext = { world, it: entity.id };
         const refusal = runtime.findRefusal(clause.body, ctx);
         return refusal ? { valid: false, error: refusal } : null;
@@ -323,23 +330,32 @@ export class ChordRuntime {
 
       postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         if (target.id !== ownWorldId()) return null;
+        const ctx: ExecContext = { world, it: entity.id };
+        if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
+          data.chordSkip = true; // `while <cond>` gate — clause sits out this firing
+          return null;
+        }
         const key = CHORD_OCCURRENCE_PREFIX + `on.${entity.id}.${clause.action}`;
         const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+        if (clause.once && occurrence > 1) {
+          data.chordSkip = true; // `, once` — one lifetime firing (D5)
+          return null;
+        }
         world.setStateValue(key, occurrence);
-        const ctx: ExecContext = { world, it: entity.id, occurrence };
+        ctx.occurrence = occurrence;
         data.chordOccurrence = occurrence;
         data.chordDecisions = runtime.snapshotDecisions(clause.body, ctx);
         return null;
       },
 
       postExecute(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): void {
-        if (target.id !== ownWorldId()) return;
+        if (target.id !== ownWorldId() || skipped(data)) return;
         const ctx = runtime.restoreCtx(world, entity.id, data);
         runtime.execStatements(clause.body, ctx, 'mutations');
       },
 
       postReport(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorReportResult {
-        if (target.id !== ownWorldId()) return {};
+        if (target.id !== ownWorldId() || skipped(data)) return {};
         const ctx = runtime.restoreCtx(world, entity.id, data);
         const reports = runtime.execStatements(clause.body, ctx, 'reports');
 
@@ -347,7 +363,7 @@ export class ChordRuntime {
         const emit: CapabilityEffect[] = [];
         for (const event of reports) {
           const payload = (event.data ?? {}) as Record<string, unknown>;
-          if (event.type === 'chord.phrase' && !result.override) {
+          if (clause.clauseKind === 'on' && event.type === 'chord.phrase' && !result.override) {
             result.override = {
               messageId: String(payload.messageId),
               params: (payload.params as Record<string, unknown>) ?? {},
@@ -554,7 +570,7 @@ export class ChordRuntime {
         if (!entity || !behavior) return [];
         const effects = behavior.report(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
         const events = effects.map((e) => context.event(e.type, e.payload));
-        events.push(...runtime.fireActionRules(def.name, entity, context.world));
+        events.push(...runtime.fireAfterClauses(def.name, entity, context.world));
         return events;
       },
       blocked(context: DispatchContext, result: { error?: string }): ISemanticEvent[] {
@@ -583,69 +599,76 @@ export class ChordRuntime {
   buildSchedulerDaemons(): SchedulerDaemon[] {
     const daemons: SchedulerDaemon[] = [];
 
-    this.ir.everyRules.forEach((rule, index) => {
-      const key = `${CHORD_OCCURRENCE_PREFIX}every.${index}`;
-      daemons.push({
-        id: `chord.every.${index}`,
-        name: `every ${rule.turns} turns`,
-        condition: (ctx) => {
-          if (ctx.turn <= 0 || ctx.turn % rule.turns !== 0) return false;
-          const fired = (ctx.world.getStateValue(key) as number | undefined) ?? 0;
-          return rule.times === null || fired < rule.times;
-        },
-        run: (ctx) => {
-          const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
-          ctx.world.setStateValue(key, fired);
-          return this.narrated(this.execStatements(rule.body, { world: ctx.world, occurrence: fired }));
-        },
-      });
-    });
-
-    this.ir.onceRules.forEach((rule, index) => {
-      const key = `${CHORD_OCCURRENCE_PREFIX}once.${index}`;
-      daemons.push({
-        id: `chord.once.${index}`,
-        name: `once rule ${index}`,
-        condition: (ctx) =>
-          !ctx.world.getStateValue(key) &&
-          this.evaluator.evalCondition(rule.condition, { world: ctx.world }),
-        run: (ctx) => {
-          ctx.world.setStateValue(key, true); // retires after firing
-          return this.narrated(this.execStatements(rule.body, { world: ctx.world, occurrence: 1 }));
-        },
-      });
-    });
-
     for (const sequence of this.ir.sequences) {
-      // Absolute firing turns: `at turn N` anchors; `N turns later` chains.
-      const schedule: number[] = [];
-      let at = 0;
-      for (const step of sequence.steps) {
-        at = step.timing === 'at-turn' ? step.turns : at + step.turns;
-        schedule.push(at);
-      }
+      // Steps arm in order: `at turn N` on the wall clock, `N turns later`
+      // relative to the PREVIOUS step's firing turn, `when <owner> becomes
+      // <state>` on a state anchor (ratchet D10). Pointer and last-fired
+      // turn live in world state — save/restore covers progression.
       const slug = sequence.name.replace(/\s+/g, '-');
       const key = `${CHORD_OCCURRENCE_PREFIX}sequence.${slug}`;
+      const firedKey = `${key}.turn`;
+      const stepReady = (step: (typeof sequence.steps)[number], world: WorldModel, turn: number): boolean => {
+        switch (step.timing) {
+          case 'at-turn':
+            return turn >= step.turns;
+          case 'later': {
+            const lastFired = (world.getStateValue(firedKey) as number | undefined) ?? 0;
+            return turn >= lastFired + step.turns;
+          }
+          case 'becomes': {
+            if (!step.anchor) return false;
+            if (step.anchor.owner === 'story') {
+              return world.getStateValue(CHORD_STORY_STATE_KEY) === step.anchor.state;
+            }
+            return world.getStateValue(CHORD_STATE_PREFIX + step.anchor.owner) === step.anchor.state;
+          }
+        }
+      };
       daemons.push({
         id: `chord.sequence.${slug}`,
         name: `sequence ${sequence.name}`,
         condition: (ctx) => {
           const next = (ctx.world.getStateValue(key) as number | undefined) ?? 0;
-          return next < schedule.length && ctx.turn >= schedule[next];
+          return next < sequence.steps.length && stepReady(sequence.steps[next], ctx.world, ctx.turn);
         },
         run: (ctx) => {
           const next = (ctx.world.getStateValue(key) as number | undefined) ?? 0;
           ctx.world.setStateValue(key, next + 1);
+          ctx.world.setStateValue(firedKey, ctx.turn);
           const step = sequence.steps[next];
           return this.narrated(this.execStatements(step.body, { world: ctx.world, occurrence: next + 1 }));
         },
       });
     }
 
-    // Every-turn trait clauses (`on every turn while …`): one daemon per
-    // clause, evaluated per entity carrying the trait. The composition
-    // condition (`chatty while not after-hours`) gates per entity per turn
-    // (Prerequisite 2's NPC-behavior shape).
+    // Entity every-turn clauses (`on every turn while …[, once]` in a
+    // create block): one daemon per clause, `it` = the owning entity
+    // (stickiness — the ownership package's replacement for floating
+    // `once <cond>` rules).
+    this.ir.entities.forEach((irEntity) => {
+      irEntity.onClauses.forEach((clause, clauseIndex) => {
+        if (clause.binding !== 'every-turn') return;
+        const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
+        daemons.push({
+          id: `chord.entity-turn.${irEntity.id}.${clauseIndex}`,
+          name: `on every turn (${irEntity.id})`,
+          run: (ctx) => {
+            const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
+            if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
+            const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
+            if (clause.once && fired > 1) return []; // `, once` (D5)
+            ctx.world.setStateValue(key, fired);
+            evalCtx.occurrence = fired;
+            return this.narrated(this.execStatements(clause.body, evalCtx));
+          },
+        });
+      });
+    });
+
+    // Every-turn trait clauses (`on every turn while …[, once]`): one
+    // daemon per clause, evaluated per entity carrying the trait. The
+    // composition condition (`chatty while not after-hours`) gates per
+    // entity per turn (Prerequisite 2's NPC-behavior shape).
     this.ir.traits.forEach((trait) => {
       trait.onClauses.forEach((clause, clauseIndex) => {
         if (clause.binding !== 'every-turn') return;
@@ -664,6 +687,11 @@ export class ChordRuntime {
               const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
               if (comp.condition && !this.evaluator.evalCondition(comp.condition, evalCtx)) continue;
               if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) continue;
+              const key = `${CHORD_OCCURRENCE_PREFIX}trait-turn.${trait.name}.${clauseIndex}.${irEntity.id}`;
+              const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
+              if (clause.once && fired > 1) continue; // `, once` (D5)
+              ctx.world.setStateValue(key, fired);
+              evalCtx.occurrence = fired;
               out.push(...this.execStatements(clause.body, evalCtx));
             }
             return this.narrated(out);
@@ -681,31 +709,29 @@ export class ChordRuntime {
   }
 
   /**
-   * Fire `when <actor> <derived-verb> <target>` rules after a dispatch
-   * action completes: target matches `anything`, the specific entity, or
-   * an `any <open-condition>` selection evaluated with `it` = the target.
+   * Fire the target entity's `after <verb> it` clauses when a dispatch
+   * action completes — the loader-internal mechanism the Phase 1 spike
+   * confirmed (interceptor hooks never fire on the dispatch path; the
+   * runtime owns these actions, so reactions run in their report phase).
    */
-  private fireActionRules(actionName: string, target: IFEntity, world: WorldModel): ISemanticEvent[] {
+  private fireAfterClauses(actionName: string, target: IFEntity, world: WorldModel): ISemanticEvent[] {
     const out: ISemanticEvent[] = [];
     const targetIrId = this.host.irIdOf(target.id);
-    this.ir.rules.forEach((rule, index) => {
-      if (rule.actionName !== actionName) return;
-      const matches =
-        rule.target.kind === 'anything' ||
-        (rule.target.kind === 'entity' && rule.target.id === targetIrId) ||
-        (rule.target.kind === 'any-condition' &&
-          targetIrId !== undefined &&
-          this.evaluator.evalCondition({ kind: 'condition', name: rule.target.name }, { world, it: targetIrId }));
-      if (!matches) return;
+    if (targetIrId === undefined) return out;
+    const irEntity = this.ir.entities.find((e) => e.id === targetIrId);
+    if (!irEntity) return out;
 
+    irEntity.onClauses.forEach((clause, clauseIndex) => {
+      if (clause.clauseKind !== 'after' || clause.action !== actionName) return;
       const ctx: ExecContext = { world, it: targetIrId };
-      if (rule.condition && !this.evaluator.evalCondition(rule.condition, ctx)) return;
-      const key = CHORD_OCCURRENCE_PREFIX + `rule.${index}`;
+      if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return;
+      const key = `${CHORD_OCCURRENCE_PREFIX}after.${irEntity.id}.${actionName}.${clauseIndex}`;
       const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+      if (clause.once && occurrence > 1) return; // `, once` (D5)
       world.setStateValue(key, occurrence);
       ctx.occurrence = occurrence;
-      ctx.decisions = this.snapshotDecisions(rule.body, ctx);
-      out.push(...this.execStatements(rule.body, ctx));
+      ctx.decisions = this.snapshotDecisions(clause.body, ctx);
+      out.push(...this.execStatements(clause.body, ctx));
     });
     return out;
   }
@@ -777,17 +803,23 @@ export class ChordRuntime {
     phase: 'all' | 'mutations' | 'reports' = 'all',
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
+    // Statement `when` suffix (ratchet D7): the statement acts only if the
+    // condition holds at execution. Evaluated per phase-pass over the same
+    // snapshot world — mutations and reports agree because the suffix runs
+    // before either phase's own mutations of this statement.
+    const whenHolds = (stmt: { stmtWhen?: import('@sharpee/chord').IRCondition | null }): boolean =>
+      !stmt.stmtWhen || this.evaluator.evalCondition(stmt.stmtWhen, ctx);
     for (const stmt of body) {
       switch (stmt.kind) {
         case 'phrase':
-          if (phase !== 'mutations') events.push(this.phraseEvent(stmt.phraseKey, ctx));
+          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.phraseEvent(stmt.phraseKey, ctx));
           break;
         case 'emit':
-          if (phase !== 'mutations') events.push(this.rawEvent(stmt.event, {}));
+          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.rawEvent(stmt.event, {}));
           break;
         case 'win':
         case 'lose':
-          if (phase !== 'mutations') {
+          if (phase !== 'mutations' && whenHolds(stmt)) {
             if (stmt.phraseKey) events.push(this.phraseEvent(stmt.phraseKey, ctx));
             events.push(
               this.host.triggerEnding(ctx.world, stmt.kind === 'win' ? 'victory' : 'defeat', stmt.phraseKey ?? undefined),
@@ -795,14 +827,19 @@ export class ChordRuntime {
           }
           break;
         case 'change': {
-          if (phase !== 'reports') {
-            const irId = this.irIdOfValue(stmt.entity, ctx);
-            ctx.world.setStateValue(CHORD_STATE_PREFIX + irId, stmt.state);
+          if (phase !== 'reports' && whenHolds(stmt)) {
+            if (stmt.entity.kind === 'story') {
+              // `change the story to <state>` — the story object's phase (D2).
+              ctx.world.setStateValue(CHORD_STORY_STATE_KEY, stmt.state);
+            } else {
+              const irId = this.irIdOfValue(stmt.entity, ctx);
+              ctx.world.setStateValue(CHORD_STATE_PREFIX + irId, stmt.state);
+            }
           }
           break;
         }
         case 'move': {
-          if (phase !== 'reports') {
+          if (phase !== 'reports' && whenHolds(stmt)) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
             const place = this.evaluator.entityValue(stmt.place, ctx);
             ctx.world.moveEntity(thing, place);
@@ -828,11 +865,12 @@ export class ChordRuntime {
           break;
         }
         case 'award': {
-          if (phase !== 'reports') {
+          if (phase !== 'reports' && whenHolds(stmt)) {
             // `award <score>` — dedup by identity (ADR-129), so repeat
-            // awards are no-ops and `, once` is automatic.
+            // awards are no-ops and `, once` is automatic. Names arrive
+            // owner-qualified from the analyzer (ratchet D12).
             if (stmt.expression.length !== 1) {
-              throw new LoadError('Only `award <score-name>` is supported (expression awards are Phase C).', stmt.span);
+              throw new LoadError('Only `award <score-name>` is supported (expression awards are later scope).', stmt.span);
             }
             const name = stmt.expression[0];
             const worth = this.scoreWorth.get(name);
@@ -844,8 +882,10 @@ export class ChordRuntime {
           break;
         }
         case 'refuse':
-          // Refusals are consumed by findRefusal (validate phase); reaching
-          // one here means phase-order enforcement failed upstream.
+        case 'must':
+        case 'refuse-when':
+          // The refusal partition is consumed by findRefusal (validate
+          // phase); nothing to do in execute/report passes.
           break;
         case 'if': {
           const decided = ctx.decisions?.get(stmt);
@@ -876,36 +916,26 @@ export class ChordRuntime {
     return events;
   }
 
-  /** Leading-refusal scan (§5.4 validate partition). */
+  /**
+   * Leading-refusal scan (§5.4 validate partition): unconditional `refuse`,
+   * `must` requirements (refuse when the requirement FAILS, ratchet D6),
+   * and `refuse when` prohibitions (refuse when the hazard HOLDS) — checked
+   * in source order until the first non-refusal statement.
+   */
   private findRefusal(body: IRStatement[], ctx: ExecContext): string | null {
     for (const stmt of body) {
       if (stmt.kind === 'refuse') return stmt.phraseKey;
-      if (stmt.kind === 'if') {
-        const branch = this.evaluator.evalCondition(stmt.condition, ctx) ? stmt.then : stmt.else;
-        if (branch) {
-          const found = this.findRefusal(branch, ctx);
-          if (found) return found;
-        }
+      if (stmt.kind === 'must') {
+        if (!this.evaluator.evalCondition(stmt.condition, ctx)) return stmt.phraseKey;
+        continue;
+      }
+      if (stmt.kind === 'refuse-when') {
+        if (this.evaluator.evalCondition(stmt.condition, ctx)) return stmt.phraseKey;
         continue;
       }
       break; // first non-refusal statement ends the validate partition
     }
     return null;
-  }
-
-  private forbidRefusals(body: IRStatement[], where: string): void {
-    for (const stmt of body) {
-      if (stmt.kind === 'refuse') {
-        throw new LoadError(`\`refuse\` is not meaningful in ${where} — rules react after the action.`, stmt.span);
-      }
-      if (stmt.kind === 'if') {
-        this.forbidRefusals(stmt.then, where);
-        if (stmt.else) this.forbidRefusals(stmt.else, where);
-      }
-      if (stmt.kind === 'select-on') stmt.arms.forEach((a) => this.forbidRefusals(a.body, where));
-      if (stmt.kind === 'select-strategy') stmt.alternatives.forEach((a) => this.forbidRefusals(a, where));
-      if (stmt.kind === 'ordinal') this.forbidRefusals(stmt.body, where);
-    }
   }
 
   /**

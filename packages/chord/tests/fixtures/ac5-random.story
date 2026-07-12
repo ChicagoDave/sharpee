@@ -9,11 +9,23 @@ create the East Room
 
   A bare eastern room.
 
+  after entering it
+    phrase crossing-mutter
+  end after
+
 create the West Room
   a room
   east to the East Room
 
   A bare western room.
+
+  after entering it
+    phrase crossing-mutter
+  end after
+
+  after entering it while one chance in 3
+    phrase lucky-draught
+  end after
 
 create the player
   starts in the East Room
@@ -27,18 +39,6 @@ or
 or
   Your footsteps echo oddly.
 end phrase
-
-when the player enters the West Room
-  phrase crossing-mutter
-end when
-
-when the player enters the East Room
-  phrase crossing-mutter
-end when
-
-when the player enters the West Room while one chance in 3
-  phrase lucky-draught
-end when
 
 define phrases en-US
   lucky-draught:

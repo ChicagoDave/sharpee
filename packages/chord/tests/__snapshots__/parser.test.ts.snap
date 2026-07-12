@@ -76,16 +76,50 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "Room",
         ],
       },
-      "onClauses": [],
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "crossing-mutter",
+              "span": {
+                "column": 5,
+                "endColumn": 27,
+                "endLine": 13,
+                "line": 13,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 14,
+            "line": 12,
+          },
+        },
+      ],
       "phraseOverrides": [],
       "placement": null,
+      "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 23,
-        "endLine": 10,
+        "endColumn": 20,
+        "endLine": 12,
         "line": 6,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -100,8 +134,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 13,
-            "line": 13,
+            "endLine": 17,
+            "line": 17,
           },
           "words": [
             "room",
@@ -115,8 +149,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 23,
-          "endLine": 16,
-          "line": 16,
+          "endLine": 20,
+          "line": 20,
         },
         "text": "A bare western room.",
       },
@@ -127,8 +161,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 24,
-            "endLine": 14,
-            "line": 14,
+            "endLine": 18,
+            "line": 18,
           },
           "to": {
             "article": "the",
@@ -136,8 +170,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
             "span": {
               "column": 11,
               "endColumn": 24,
-              "endLine": 14,
-              "line": 14,
+              "endLine": 18,
+              "line": 18,
             },
             "words": [
               "East",
@@ -153,24 +187,98 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "span": {
           "column": 8,
           "endColumn": 21,
-          "endLine": 12,
-          "line": 12,
+          "endLine": 16,
+          "line": 16,
         },
         "words": [
           "West",
           "Room",
         ],
       },
-      "onClauses": [],
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "crossing-mutter",
+              "span": {
+                "column": 5,
+                "endColumn": 27,
+                "endLine": 23,
+                "line": 23,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 24,
+            "line": 22,
+          },
+        },
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "lucky-draught",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 27,
+                "line": 27,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": {
+            "kind": "chance",
+            "n": 3,
+            "span": {
+              "column": 27,
+              "endColumn": 42,
+              "endLine": 26,
+              "line": 26,
+            },
+          },
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 28,
+            "line": 26,
+          },
+        },
+      ],
       "phraseOverrides": [],
       "placement": null,
+      "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 23,
-        "endLine": 16,
-        "line": 12,
+        "endColumn": 42,
+        "endLine": 26,
+        "line": 16,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -184,8 +292,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 21,
-          "line": 21,
+          "endLine": 33,
+          "line": 33,
         },
         "text": "Determined-looking.",
       },
@@ -197,8 +305,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "span": {
           "column": 8,
           "endColumn": 18,
-          "endLine": 18,
-          "line": 18,
+          "endLine": 30,
+          "line": 30,
         },
         "words": [
           "player",
@@ -214,8 +322,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 13,
             "endColumn": 26,
-            "endLine": 19,
-            "line": 19,
+            "endLine": 31,
+            "line": 31,
           },
           "words": [
             "East",
@@ -226,17 +334,19 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 26,
-          "endLine": 19,
-          "line": 19,
+          "endLine": 31,
+          "line": 31,
         },
       },
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 22,
-        "endLine": 21,
-        "line": 18,
+        "endLine": 33,
+        "line": 30,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -245,8 +355,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 29,
-        "line": 23,
+        "endLine": 41,
+        "line": 35,
       },
       "strategy": "randomly",
       "variants": [
@@ -257,8 +367,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 32,
-            "endLine": 24,
-            "line": 24,
+            "endLine": 36,
+            "line": 36,
           },
           "text": "You mutter about the weather.",
         },
@@ -269,8 +379,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 26,
-            "line": 26,
+            "endLine": 38,
+            "line": 38,
           },
           "text": "You hum a scrap of tune.",
         },
@@ -281,136 +391,13 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 29,
-            "endLine": 28,
-            "line": 28,
+            "endLine": 40,
+            "line": 40,
           },
           "text": "Your footsteps echo oddly.",
         },
       ],
       "verbatim": false,
-    },
-    {
-      "body": [
-        {
-          "inlineText": null,
-          "kind": "phrase",
-          "params": [],
-          "phraseKey": "crossing-mutter",
-          "span": {
-            "column": 3,
-            "endColumn": 25,
-            "endLine": 32,
-            "line": 32,
-          },
-        },
-      ],
-      "condition": null,
-      "headerSpan": {
-        "column": 6,
-        "endColumn": 37,
-        "endLine": 31,
-        "line": 31,
-      },
-      "headerWords": [
-        "the",
-        "player",
-        "enters",
-        "the",
-        "West",
-        "Room",
-      ],
-      "kind": "when-rule",
-      "span": {
-        "column": 1,
-        "endColumn": 9,
-        "endLine": 33,
-        "line": 31,
-      },
-    },
-    {
-      "body": [
-        {
-          "inlineText": null,
-          "kind": "phrase",
-          "params": [],
-          "phraseKey": "crossing-mutter",
-          "span": {
-            "column": 3,
-            "endColumn": 25,
-            "endLine": 36,
-            "line": 36,
-          },
-        },
-      ],
-      "condition": null,
-      "headerSpan": {
-        "column": 6,
-        "endColumn": 37,
-        "endLine": 35,
-        "line": 35,
-      },
-      "headerWords": [
-        "the",
-        "player",
-        "enters",
-        "the",
-        "East",
-        "Room",
-      ],
-      "kind": "when-rule",
-      "span": {
-        "column": 1,
-        "endColumn": 9,
-        "endLine": 37,
-        "line": 35,
-      },
-    },
-    {
-      "body": [
-        {
-          "inlineText": null,
-          "kind": "phrase",
-          "params": [],
-          "phraseKey": "lucky-draught",
-          "span": {
-            "column": 3,
-            "endColumn": 23,
-            "endLine": 40,
-            "line": 40,
-          },
-        },
-      ],
-      "condition": {
-        "kind": "chance",
-        "n": 3,
-        "span": {
-          "column": 44,
-          "endColumn": 59,
-          "endLine": 39,
-          "line": 39,
-        },
-      },
-      "headerSpan": {
-        "column": 6,
-        "endColumn": 37,
-        "endLine": 39,
-        "line": 39,
-      },
-      "headerWords": [
-        "the",
-        "player",
-        "enters",
-        "the",
-        "West",
-        "Room",
-      ],
-      "kind": "when-rule",
-      "span": {
-        "column": 1,
-        "endColumn": 9,
-        "endLine": 41,
-        "line": 39,
-      },
     },
     {
       "entries": [
@@ -454,12 +441,15 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "version": "1.0.0",
     },
     "kind": "story-header",
+    "scores": [],
     "span": {
       "column": 1,
       "endColumn": 73,
       "endLine": 4,
       "line": 1,
     },
+    "states": [],
+    "statesReversible": false,
     "title": "Determinism Fixture",
   },
   "kind": "story-file",
@@ -472,7 +462,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
 }
 `;
 
-exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapshot 1`] = `
+exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden AST snapshot 1`] = `
 {
   "declarations": [
     {
@@ -679,6 +669,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 71,
@@ -686,6 +677,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "line": 8,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -740,6 +732,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 67,
@@ -747,6 +740,7 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "line": 19,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -867,16 +861,133 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "Bar",
         ],
       },
-      "onClauses": [],
+      "onClauses": [
+        {
+          "action": "entering",
+          "binding": "it",
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "stumble",
+              "span": {
+                "column": 5,
+                "endColumn": 19,
+                "endLine": 35,
+                "line": 35,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "body": [
+                {
+                  "entity": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 14,
+                      "endColumn": 25,
+                      "endLine": 37,
+                      "line": 37,
+                    },
+                    "words": [
+                      "message",
+                    ],
+                  },
+                  "kind": "change",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 37,
+                    "endLine": 37,
+                    "line": 37,
+                  },
+                  "state": "trampled",
+                  "stmtWhen": null,
+                },
+              ],
+              "kind": "ordinal",
+              "ordinal": 1,
+              "ordinalWord": "first",
+              "span": {
+                "column": 5,
+                "endColumn": 37,
+                "endLine": 37,
+                "line": 36,
+              },
+            },
+            {
+              "body": [
+                {
+                  "entity": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 14,
+                      "endColumn": 25,
+                      "endLine": 39,
+                      "line": 39,
+                    },
+                    "words": [
+                      "message",
+                    ],
+                  },
+                  "kind": "change",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 40,
+                    "endLine": 39,
+                    "line": 39,
+                  },
+                  "state": "obliterated",
+                  "stmtWhen": null,
+                },
+              ],
+              "kind": "ordinal",
+              "ordinal": 3,
+              "ordinalWord": "third",
+              "span": {
+                "column": 5,
+                "endColumn": 40,
+                "endLine": 39,
+                "line": 38,
+              },
+            },
+          ],
+          "clauseKind": "after",
+          "condition": {
+            "kind": "condition-ref",
+            "name": "in-darkness",
+            "span": {
+              "column": 27,
+              "endColumn": 38,
+              "endLine": 34,
+              "line": 34,
+            },
+          },
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 40,
+            "line": 34,
+          },
+        },
+      ],
       "phraseOverrides": [],
       "placement": null,
+      "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 70,
-        "endLine": 30,
+        "endColumn": 38,
+        "endLine": 34,
         "line": 26,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -890,8 +1001,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 27,
-          "endLine": 38,
-          "line": 38,
+          "endLine": 46,
+          "line": 46,
         },
         "text": "As good-looking as ever.",
       },
@@ -903,8 +1014,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 8,
           "endColumn": 18,
-          "endLine": 34,
-          "line": 34,
+          "endLine": 42,
+          "line": 42,
         },
         "words": [
           "player",
@@ -920,8 +1031,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 13,
             "endColumn": 41,
-            "endLine": 35,
-            "line": 35,
+            "endLine": 43,
+            "line": 43,
           },
           "words": [
             "Foyer",
@@ -935,17 +1046,19 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 41,
-          "endLine": 35,
-          "line": 35,
+          "endLine": 43,
+          "line": 43,
         },
       },
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 27,
-        "endLine": 38,
-        "line": 34,
+        "endLine": 46,
+        "line": 42,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [
         {
           "article": "the",
@@ -953,8 +1066,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 9,
             "endColumn": 25,
-            "endLine": 36,
-            "line": 36,
+            "endLine": 44,
+            "line": 44,
           },
           "words": [
             "velvet",
@@ -977,8 +1090,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 42,
-            "line": 42,
+            "endLine": 50,
+            "line": 50,
           },
           "words": [
             "wearable",
@@ -992,8 +1105,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 37,
-          "endLine": 46,
-          "line": 44,
+          "endLine": 54,
+          "line": 52,
         },
         "text": "A handsome cloak, of velvet trimmed with satin, and slightly splattered with raindrops. Its blackness is so deep that it almost seems to suck light from the room.",
       },
@@ -1005,8 +1118,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 8,
           "endColumn": 24,
-          "endLine": 40,
-          "line": 40,
+          "endLine": 48,
+          "line": 48,
         },
         "words": [
           "velvet",
@@ -1016,13 +1129,15 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 63,
-        "endLine": 44,
-        "line": 40,
+        "endLine": 52,
+        "line": 48,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -1040,8 +1155,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 50,
-            "line": 50,
+            "endLine": 58,
+            "line": 58,
           },
           "words": [
             "scenery",
@@ -1058,8 +1173,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
               "span": {
                 "column": 29,
                 "endColumn": 39,
-                "endLine": 50,
-                "line": 50,
+                "endLine": 58,
+                "line": 58,
               },
               "value": "1",
               "valueKind": "number",
@@ -1069,8 +1184,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 12,
             "endColumn": 39,
-            "endLine": 50,
-            "line": 50,
+            "endLine": 58,
+            "line": 58,
           },
           "words": [
             "supporter",
@@ -1084,8 +1199,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 53,
-          "endLine": 53,
-          "line": 53,
+          "endLine": 61,
+          "line": 61,
         },
         "text": "It's just a small brass hook, screwed to the wall.",
       },
@@ -1097,8 +1212,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 8,
           "endColumn": 22,
-          "endLine": 48,
-          "line": 48,
+          "endLine": 56,
+          "line": 56,
         },
         "words": [
           "brass",
@@ -1115,8 +1230,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 6,
             "endColumn": 19,
-            "endLine": 51,
-            "line": 51,
+            "endLine": 59,
+            "line": 59,
           },
           "words": [
             "Cloakroom",
@@ -1126,17 +1241,19 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 51,
-          "line": 51,
+          "endLine": 59,
+          "line": 59,
         },
       },
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 53,
-        "endLine": 53,
-        "line": 48,
+        "endLine": 61,
+        "line": 56,
       },
       "states": [],
+      "statesReversible": false,
       "wears": [],
     },
     {
@@ -1156,8 +1273,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 57,
-            "line": 57,
+            "endLine": 65,
+            "line": 65,
           },
           "words": [
             "scenery",
@@ -1173,8 +1290,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 8,
           "endColumn": 34,
-          "endLine": 55,
-          "line": 55,
+          "endLine": 63,
+          "line": 63,
         },
         "words": [
           "message",
@@ -1200,9 +1317,10 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                       "span": {
                         "column": 9,
                         "endColumn": 30,
-                        "endLine": 64,
-                        "line": 64,
+                        "endLine": 72,
+                        "line": 72,
                       },
+                      "stmtWhen": null,
                     },
                     {
                       "kind": "win",
@@ -1210,16 +1328,17 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                       "span": {
                         "column": 9,
                         "endColumn": 12,
-                        "endLine": 65,
-                        "line": 65,
+                        "endLine": 73,
+                        "line": 73,
                       },
+                      "stmtWhen": null,
                     },
                   ],
                   "span": {
                     "column": 7,
                     "endColumn": 18,
-                    "endLine": 63,
-                    "line": 63,
+                    "endLine": 71,
+                    "line": 71,
                   },
                   "value": "intact",
                 },
@@ -1233,16 +1352,17 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                       "span": {
                         "column": 9,
                         "endColumn": 32,
-                        "endLine": 67,
-                        "line": 67,
+                        "endLine": 75,
+                        "line": 75,
                       },
+                      "stmtWhen": null,
                     },
                   ],
                   "span": {
                     "column": 7,
                     "endColumn": 20,
-                    "endLine": 66,
-                    "line": 66,
+                    "endLine": 74,
+                    "line": 74,
                   },
                   "value": "trampled",
                 },
@@ -1256,9 +1376,10 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                       "span": {
                         "column": 9,
                         "endColumn": 35,
-                        "endLine": 69,
-                        "line": 69,
+                        "endLine": 77,
+                        "line": 77,
                       },
+                      "stmtWhen": null,
                     },
                     {
                       "kind": "lose",
@@ -1266,16 +1387,17 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                       "span": {
                         "column": 9,
                         "endColumn": 13,
-                        "endLine": 70,
-                        "line": 70,
+                        "endLine": 78,
+                        "line": 78,
                       },
+                      "stmtWhen": null,
                     },
                   ],
                   "span": {
                     "column": 7,
                     "endColumn": 23,
-                    "endLine": 68,
-                    "line": 68,
+                    "endLine": 76,
+                    "line": 76,
                   },
                   "value": "obliterated",
                 },
@@ -1284,8 +1406,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 71,
-                "line": 62,
+                "endLine": 79,
+                "line": 70,
               },
               "subject": {
                 "base": {
@@ -1296,8 +1418,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                     "span": {
                       "column": 15,
                       "endColumn": 18,
-                      "endLine": 62,
-                      "line": 62,
+                      "endLine": 70,
+                      "line": 70,
                     },
                     "words": [
                       "it",
@@ -1306,8 +1428,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                   "span": {
                     "column": 15,
                     "endColumn": 18,
-                    "endLine": 62,
-                    "line": 62,
+                    "endLine": 70,
+                    "line": 70,
                   },
                 },
                 "field": [
@@ -1317,21 +1439,23 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
                 "span": {
                   "column": 15,
                   "endColumn": 24,
-                  "endLine": 62,
-                  "line": 62,
+                  "endLine": 70,
+                  "line": 70,
                 },
               },
             },
           ],
+          "clauseKind": "on",
           "condition": null,
           "kind": "on-clause",
+          "once": false,
           "ordering": null,
           "role": null,
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 72,
-            "line": 61,
+            "endLine": 80,
+            "line": 69,
           },
         },
       ],
@@ -1344,8 +1468,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 6,
             "endColumn": 19,
-            "endLine": 58,
-            "line": 58,
+            "endLine": 66,
+            "line": 66,
           },
           "words": [
             "Foyer",
@@ -1356,15 +1480,16 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 58,
-          "line": 58,
+          "endLine": 66,
+          "line": 66,
         },
       },
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 61,
-        "line": 55,
+        "endLine": 69,
+        "line": 63,
       },
       "states": [
         {
@@ -1372,8 +1497,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 11,
             "endColumn": 17,
-            "endLine": 59,
-            "line": 59,
+            "endLine": 67,
+            "line": 67,
           },
         },
         {
@@ -1381,8 +1506,8 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 19,
             "endColumn": 27,
-            "endLine": 59,
-            "line": 59,
+            "endLine": 67,
+            "line": 67,
           },
         },
         {
@@ -1390,131 +1515,13 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
           "span": {
             "column": 29,
             "endColumn": 40,
-            "endLine": 59,
-            "line": 59,
+            "endLine": 67,
+            "line": 67,
           },
         },
       ],
+      "statesReversible": false,
       "wears": [],
-    },
-    {
-      "body": [
-        {
-          "inlineText": null,
-          "kind": "phrase",
-          "params": [],
-          "phraseKey": "stumble",
-          "span": {
-            "column": 3,
-            "endColumn": 17,
-            "endLine": 75,
-            "line": 75,
-          },
-        },
-        {
-          "body": [
-            {
-              "entity": {
-                "article": "the",
-                "kind": "name",
-                "span": {
-                  "column": 12,
-                  "endColumn": 23,
-                  "endLine": 77,
-                  "line": 77,
-                },
-                "words": [
-                  "message",
-                ],
-              },
-              "kind": "change",
-              "span": {
-                "column": 5,
-                "endColumn": 35,
-                "endLine": 77,
-                "line": 77,
-              },
-              "state": "trampled",
-            },
-          ],
-          "kind": "ordinal",
-          "ordinal": 1,
-          "ordinalWord": "first",
-          "span": {
-            "column": 3,
-            "endColumn": 35,
-            "endLine": 77,
-            "line": 76,
-          },
-        },
-        {
-          "body": [
-            {
-              "entity": {
-                "article": "the",
-                "kind": "name",
-                "span": {
-                  "column": 12,
-                  "endColumn": 23,
-                  "endLine": 79,
-                  "line": 79,
-                },
-                "words": [
-                  "message",
-                ],
-              },
-              "kind": "change",
-              "span": {
-                "column": 5,
-                "endColumn": 38,
-                "endLine": 79,
-                "line": 79,
-              },
-              "state": "obliterated",
-            },
-          ],
-          "kind": "ordinal",
-          "ordinal": 3,
-          "ordinalWord": "third",
-          "span": {
-            "column": 3,
-            "endColumn": 38,
-            "endLine": 79,
-            "line": 78,
-          },
-        },
-      ],
-      "condition": {
-        "kind": "condition-ref",
-        "name": "in-darkness",
-        "span": {
-          "column": 44,
-          "endColumn": 55,
-          "endLine": 74,
-          "line": 74,
-        },
-      },
-      "headerSpan": {
-        "column": 6,
-        "endColumn": 37,
-        "endLine": 74,
-        "line": 74,
-      },
-      "headerWords": [
-        "the",
-        "player",
-        "enters",
-        "the",
-        "Foyer",
-        "Bar",
-      ],
-      "kind": "when-rule",
-      "span": {
-        "column": 1,
-        "endColumn": 9,
-        "endLine": 80,
-        "line": 74,
-      },
     },
     {
       "kind": "define-verb",
@@ -1718,12 +1725,15 @@ exports[`cloak.story (design.md §3.1 verbatim) > matches the golden AST snapsho
       "version": "1.0.0",
     },
     "kind": "story-header",
+    "scores": [],
     "span": {
       "column": 1,
       "endColumn": 56,
       "endLine": 4,
       "line": 1,
     },
+    "states": [],
+    "statesReversible": false,
     "title": "Cloak of Darkness",
   },
   "kind": "story-file",

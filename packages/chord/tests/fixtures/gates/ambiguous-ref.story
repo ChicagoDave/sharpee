@@ -7,6 +7,10 @@ create the Closet
 
   A closet.
 
+  after entering it
+    move the hook to the Closet
+  end after
+
 create the brass hook
   aka hook
   scenery
@@ -22,6 +26,3 @@ create the player
 
   You.
 
-when the player enters the Closet
-  move the hook to the Closet
-end when

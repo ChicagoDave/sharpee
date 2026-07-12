@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
+exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snapshot 1`] = `
 {
   "actions": [
     {
@@ -11,6 +11,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "slot": "animal",
         },
       ],
+      "musts": [],
       "name": "petting",
       "otherwise": "cant-pet",
       "patterns": [
@@ -54,6 +55,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           },
         },
       ],
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 16,
@@ -69,6 +71,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "slot": "animal",
         },
       ],
+      "musts": [],
       "name": "feeding",
       "otherwise": "not-hungry",
       "patterns": [
@@ -99,6 +102,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           },
         },
       ],
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 16,
@@ -186,24 +190,60 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
       "isPlayer": false,
       "kinds": [],
       "name": "pygmy goats",
-      "onClauses": [],
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "pygmy-goats.fed",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 14,
+                "endLine": 106,
+                "line": 106,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 107,
+            "line": 105,
+          },
+        },
+      ],
       "placement": {
         "place": "petting-zoo",
         "relation": "in",
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 102,
-          "line": 102,
+          "endLine": 98,
+          "line": 98,
         },
       },
       "span": {
         "column": 1,
-        "endColumn": 14,
+        "endColumn": 19,
         "endLine": 105,
-        "line": 99,
+        "line": 95,
       },
-      "states": [],
+      "states": [
+        "hungry",
+        "content",
+      ],
       "traits": [
         {
           "condition": null,
@@ -212,8 +252,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 101,
-            "line": 101,
+            "endLine": 97,
+            "line": 97,
           },
         },
         {
@@ -229,8 +269,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 103,
-            "line": 103,
+            "endLine": 99,
+            "line": 99,
           },
         },
         {
@@ -246,8 +286,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 41,
-            "endLine": 104,
-            "line": 104,
+            "endLine": 100,
+            "line": 100,
           },
         },
       ],
@@ -272,15 +312,15 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 110,
-          "line": 110,
+          "endLine": 111,
+          "line": 111,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 32,
-        "endLine": 112,
-        "line": 108,
+        "endLine": 113,
+        "line": 109,
       },
       "states": [],
       "traits": [],
@@ -305,15 +345,15 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 116,
-          "line": 116,
+          "endLine": 117,
+          "line": 117,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 42,
-        "endLine": 119,
-        "line": 114,
+        "endLine": 120,
+        "line": 115,
       },
       "states": [],
       "traits": [
@@ -330,8 +370,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 117,
-            "line": 117,
+            "endLine": 118,
+            "line": 118,
           },
         },
       ],
@@ -346,7 +386,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
   "meta": {
     "author": "Sharpee Platform",
     "fields": {
-      "blurb": "design.md 3.4 - custom dispatch actions, traits, scores.",
+      "blurb": "design.md 3.4 + ownership package - dispatch actions, trait states, owner scores.",
       "id": "zoo-actions",
       "version": "0.0.1",
     },
@@ -429,8 +469,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 42,
-            "endLine": 119,
-            "line": 119,
+            "endLine": 120,
+            "line": 120,
           },
           "strategy": null,
           "variants": [
@@ -444,8 +484,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 5,
             "endColumn": 90,
-            "endLine": 55,
-            "line": 54,
+            "endLine": 56,
+            "line": 55,
           },
           "strategy": null,
           "variants": [
@@ -459,8 +499,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 32,
-            "endLine": 112,
-            "line": 112,
+            "endLine": 113,
+            "line": 113,
           },
           "strategy": null,
           "variants": [
@@ -509,8 +549,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 5,
             "endColumn": 87,
-            "endLine": 49,
-            "line": 48,
+            "endLine": 50,
+            "line": 49,
           },
           "strategy": null,
           "variants": [
@@ -524,8 +564,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 5,
             "endColumn": 89,
-            "endLine": 53,
-            "line": 52,
+            "endLine": 54,
+            "line": 53,
           },
           "strategy": null,
           "variants": [
@@ -539,8 +579,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 5,
             "endColumn": 78,
-            "endLine": 51,
-            "line": 50,
+            "endLine": 52,
+            "line": 51,
           },
           "strategy": null,
           "variants": [
@@ -599,8 +639,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 78,
-            "endLine": 106,
-            "line": 105,
+            "endLine": 103,
+            "line": 102,
           },
           "strategy": null,
           "variants": [
@@ -613,96 +653,34 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
       },
     },
   },
-  "rules": [
-    {
-      "actionName": "petting",
-      "actor": {
-        "kind": "player",
-      },
-      "body": [
-        {
-          "expression": [
-            "pet-an-animal",
-          ],
-          "kind": "award",
-          "once": false,
-          "span": {
-            "column": 3,
-            "endColumn": 22,
-            "endLine": 125,
-            "line": 125,
-          },
-        },
-      ],
-      "condition": null,
-      "span": {
-        "column": 1,
-        "endColumn": 9,
-        "endLine": 126,
-        "line": 124,
-      },
-      "target": {
-        "kind": "anything",
-      },
-      "verb": "pets",
-    },
-    {
-      "actionName": "feeding",
-      "actor": {
-        "kind": "player",
-      },
-      "body": [
-        {
-          "expression": [
-            "feed-the-goats",
-          ],
-          "kind": "award",
-          "once": false,
-          "span": {
-            "column": 3,
-            "endColumn": 23,
-            "endLine": 129,
-            "line": 129,
-          },
-        },
-      ],
-      "condition": null,
-      "span": {
-        "column": 1,
-        "endColumn": 9,
-        "endLine": 130,
-        "line": 128,
-      },
-      "target": {
-        "id": "pygmy-goats",
-        "kind": "entity",
-      },
-      "verb": "feeds",
-    },
-  ],
+  "rules": [],
   "scores": [
     {
-      "name": "pet-an-animal",
+      "name": "trait.pettable.petted",
       "span": {
-        "column": 1,
-        "endColumn": 35,
-        "endLine": 121,
-        "line": 121,
+        "column": 3,
+        "endColumn": 23,
+        "endLine": 46,
+        "line": 46,
       },
       "worth": 5,
     },
     {
-      "name": "feed-the-goats",
+      "name": "pygmy-goats.fed",
       "span": {
-        "column": 1,
-        "endColumn": 37,
-        "endLine": 122,
-        "line": 122,
+        "column": 3,
+        "endColumn": 21,
+        "endLine": 101,
+        "line": 101,
       },
       "worth": 10,
     },
   ],
   "sequences": [],
+  "story": {
+    "reversible": false,
+    "states": [],
+  },
   "traits": [
     {
       "data": [
@@ -742,27 +720,14 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
                   "kind": "field",
                 },
               },
-              "else": null,
-              "kind": "if",
+              "kind": "refuse-when",
+              "phraseKey": "glass-way",
               "span": {
                 "column": 5,
-                "endColumn": 11,
-                "endLine": 60,
-                "line": 58,
+                "endColumn": 41,
+                "endLine": 59,
+                "line": 59,
               },
-              "then": [
-                {
-                  "kind": "refuse",
-                  "params": [],
-                  "phraseKey": "glass-way",
-                  "span": {
-                    "column": 7,
-                    "endColumn": 23,
-                    "endLine": 59,
-                    "line": 59,
-                  },
-                },
-              ],
             },
             {
               "event": "petted",
@@ -770,9 +735,24 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 16,
+                "endLine": 60,
+                "line": 60,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "expression": [
+                "trait.pettable.petted",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 17,
                 "endLine": 61,
                 "line": 61,
               },
+              "stmtWhen": null,
             },
             {
               "arms": [
@@ -788,6 +768,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
                         "endLine": 64,
                         "line": 64,
                       },
+                      "stmtWhen": null,
                     },
                   ],
                   "span": {
@@ -810,6 +791,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
                         "endLine": 66,
                         "line": 66,
                       },
+                      "stmtWhen": null,
                     },
                   ],
                   "span": {
@@ -832,6 +814,7 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
                         "endLine": 68,
                         "line": 68,
                       },
+                      "stmtWhen": null,
                     },
                   ],
                   "span": {
@@ -859,7 +842,9 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
               },
             },
           ],
+          "clauseKind": "on",
           "condition": null,
+          "once": false,
           "ordering": null,
           "role": null,
           "routing": "capability",
@@ -867,8 +852,20 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
             "column": 3,
             "endColumn": 9,
             "endLine": 70,
-            "line": 57,
+            "line": 58,
           },
+        },
+      ],
+      "scores": [
+        {
+          "name": "trait.pettable.petted",
+          "span": {
+            "column": 3,
+            "endColumn": 23,
+            "endLine": 46,
+            "line": 46,
+          },
+          "worth": 5,
         },
       ],
       "span": {
@@ -877,6 +874,8 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
         "endLine": 71,
         "line": 43,
       },
+      "states": [],
+      "statesReversible": false,
     },
     {
       "data": [
@@ -887,13 +886,6 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "optional": false,
           "type": "entity",
         },
-        {
-          "initial": "false",
-          "name": "fed",
-          "oneOf": null,
-          "optional": false,
-          "type": "flag",
-        },
       ],
       "name": "feedable",
       "onClauses": [
@@ -903,45 +895,29 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
           "body": [
             {
               "condition": {
-                "kind": "not",
-                "operand": {
-                  "kind": "predicate",
-                  "negated": false,
-                  "object": {
-                    "base": {
-                      "kind": "it",
-                    },
-                    "field": "food",
-                    "kind": "field",
+                "kind": "predicate",
+                "negated": false,
+                "object": {
+                  "base": {
+                    "kind": "it",
                   },
-                  "pred": "has",
-                  "subject": {
-                    "kind": "slot",
-                    "name": "actor",
-                  },
+                  "field": "food",
+                  "kind": "field",
+                },
+                "pred": "has",
+                "subject": {
+                  "kind": "slot",
+                  "name": "actor",
                 },
               },
-              "else": null,
-              "kind": "if",
+              "kind": "must",
+              "phraseKey": "no-food",
               "span": {
                 "column": 5,
-                "endColumn": 11,
-                "endLine": 89,
+                "endColumn": 42,
+                "endLine": 87,
                 "line": 87,
               },
-              "then": [
-                {
-                  "kind": "refuse",
-                  "params": [],
-                  "phraseKey": "no-food",
-                  "span": {
-                    "column": 7,
-                    "endColumn": 21,
-                    "endLine": 88,
-                    "line": 88,
-                  },
-                },
-              ],
             },
             {
               "condition": {
@@ -949,58 +925,35 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
                 "negated": false,
                 "object": {
                   "kind": "symbol",
-                  "name": "true",
+                  "name": "hungry",
                 },
                 "pred": "is",
                 "subject": {
-                  "base": {
-                    "kind": "it",
-                  },
-                  "field": "fed",
-                  "kind": "field",
-                },
-              },
-              "else": null,
-              "kind": "if",
-              "span": {
-                "column": 5,
-                "endColumn": 11,
-                "endLine": 92,
-                "line": 90,
-              },
-              "then": [
-                {
-                  "kind": "refuse",
-                  "params": [],
-                  "phraseKey": "already-fed",
-                  "span": {
-                    "column": 7,
-                    "endColumn": 25,
-                    "endLine": 91,
-                    "line": 91,
-                  },
-                },
-              ],
-            },
-            {
-              "kind": "set",
-              "span": {
-                "column": 5,
-                "endColumn": 20,
-                "endLine": 93,
-                "line": 93,
-              },
-              "target": {
-                "base": {
                   "kind": "it",
                 },
-                "field": "fed",
-                "kind": "field",
               },
-              "value": {
-                "kind": "symbol",
-                "name": "true",
+              "kind": "must",
+              "phraseKey": "already-fed",
+              "span": {
+                "column": 5,
+                "endColumn": 35,
+                "endLine": 88,
+                "line": 88,
               },
+            },
+            {
+              "entity": {
+                "kind": "it",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 89,
+                "line": 89,
+              },
+              "state": "content",
+              "stmtWhen": null,
             },
             {
               "event": "fed",
@@ -1008,9 +961,10 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 94,
-                "line": 94,
+                "endLine": 90,
+                "line": 90,
               },
+              "stmtWhen": null,
             },
             {
               "kind": "phrase",
@@ -1019,29 +973,38 @@ exports[`zoo-actions IR (§3.4) > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 95,
-                "line": 95,
+                "endLine": 91,
+                "line": 91,
               },
+              "stmtWhen": null,
             },
           ],
+          "clauseKind": "on",
           "condition": null,
+          "once": false,
           "ordering": null,
           "role": null,
           "routing": "capability",
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 96,
+            "endLine": 92,
             "line": 86,
           },
         },
       ],
+      "scores": [],
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 97,
+        "endLine": 93,
         "line": 73,
       },
+      "states": [
+        "hungry",
+        "content",
+      ],
+      "statesReversible": true,
     },
   ],
   "verbs": [],

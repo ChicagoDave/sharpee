@@ -29,10 +29,12 @@ describe('AC-9: event-selector map sync', () => {
     }
   });
 
-  it('pins the enters contract (type string + payload field)', () => {
-    // The type string is pinned here AND proven live by the Cloak/Zoo
-    // golden gates (the stumble rule fires on real movement events).
-    expect(EVENT_TRIGGERS.enters).toBe('if.event.actor_moved');
-    expect(EVENT_PAYLOAD_FIELDS.enters).toBe('toRoom');
+  it('pins the entering contract (type string + payload field)', () => {
+    // Gerund register since the ownership package (ratchet D3): entity
+    // clauses read `after entering it`. The type string is pinned here AND
+    // proven live by the Cloak/Zoo golden gates (the stumble clause fires
+    // on real movement events).
+    expect(EVENT_TRIGGERS.entering).toBe('if.event.actor_moved');
+    expect(EVENT_PAYLOAD_FIELDS.entering).toBe('toRoom');
   });
 });

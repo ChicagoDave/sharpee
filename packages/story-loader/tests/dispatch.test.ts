@@ -1,12 +1,14 @@
 /**
- * dispatch.test.ts — Phase B plan phase 4: `define action` → four-phase
- * dispatch actions; `define trait` dispatch clauses → CapabilityBehaviors;
- * score awards (dedup by identity); derived-verb `when` rules.
+ * dispatch.test.ts — Phase B plan phase 4 + Phase C ownership package:
+ * `define action` → four-phase dispatch actions; `define trait` dispatch
+ * clauses → CapabilityBehaviors; trait-declared states (D8); owner-attached
+ * scores (D12, dedup by identity); `after` reactions in the report phase.
  *
  * Behavior Statements verified here: petting/feeding mutate and report
- * through the capability path (fed flag set on the trait instance, score
- * awarded exactly once, refusals fire per the ladder), asserting on world
- * and trait STATE, not just returned events.
+ * through the capability path (the feedable state flips hungry → content
+ * in world state, owner-qualified scores awarded exactly once, refusals
+ * fire per the `must` ladder), asserting on WORLD STATE, not just
+ * returned events.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,7 +16,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { CHORD_TRAIT_PREFIX, ChordStory, createStory } from '../src';
+import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 
@@ -89,7 +91,9 @@ describe('zoo-actions dispatch (petting/feeding)', () => {
     expect(types).toContain('petted');
     const phrase = events.find((e) => (e.data as { messageId?: string })?.messageId === 'pet-goats');
     expect(phrase, 'species phrase from select-on kind').toBeDefined();
-    // The `when the player pets anything` rule awarded pet-an-animal.
+    // The trait clause's `award petted` resolved owner-qualified
+    // (`trait.pettable.petted`, worth 5 — ratchet D12) during the
+    // capability execute phase.
     expect(world.getScore()).toBe(5);
 
     // Award dedups by identity — a second pet does not double-score.
@@ -117,29 +121,35 @@ describe('zoo-actions dispatch (petting/feeding)', () => {
     expect(validation).toEqual({ valid: false, error: 'pet-what' });
   });
 
-  it('feeding: no-food refusal, then success sets fed on the trait and scores once', () => {
+  it('feeding: no-food refusal, then success flips hungry → content and scores once', () => {
     const feeding = actions.get('chord.action.feeding')!;
     const goats = entity('pygmy-goats');
 
-    // The player does not hold the feed yet.
+    // Composer entities START in the first declared trait state (D8).
+    expect(world.getStateValue(CHORD_STATE_PREFIX + 'pygmy-goats')).toBe('hungry');
+
+    // The player does not hold the feed yet: `the actor must have its food`.
     const first = run(feeding, goats);
     expect(first.validation).toEqual({ valid: false, error: 'no-food' });
+    expect(world.getStateValue(CHORD_STATE_PREFIX + 'pygmy-goats')).toBe('hungry');
 
-    // Pick up the feed: the feedable clause's `the actor has its food` holds.
+    // Pick up the feed: the feedable clause's `must` requirements hold.
     world.moveEntity(story.entityId('handful-of-feed')!, player.id);
     const second = run(feeding, goats);
     expect(second.validation.valid).toBe(true);
 
-    // State assertions: the trait field mutated; the rule awarded the score.
-    const feedable = goats.get(CHORD_TRAIT_PREFIX + 'feedable') as unknown as { fed: unknown };
-    expect(feedable.fed).toBe('true');
+    // State assertions: `change it to content` mutated world state; the
+    // goats' `after feeding it / award fed` reaction awarded the
+    // owner-qualified `pygmy-goats.fed` (worth 10) in the report phase.
+    expect(world.getStateValue(CHORD_STATE_PREFIX + 'pygmy-goats')).toBe('content');
     expect(world.getScore()).toBe(10);
-    const phrase = second.events.find((e) => (e.data as { messageId?: string })?.messageId === 'pygmy-goats.fed');
     // Per-entity override: the goats' own `phrase fed:` wins over the trait's.
-    expect(phrase ?? second.events.find((e) => (e.data as { messageId?: string })?.messageId === 'fed')).toBeDefined();
+    const phrase = second.events.find((e) => (e.data as { messageId?: string })?.messageId === 'pygmy-goats.fed');
+    expect(phrase, 'goats override of the fed phrase').toBeDefined();
 
-    // Already fed now refuses.
+    // Content now: `it must be hungry` fails, and the score stays put.
     const third = run(feeding, goats);
     expect(third.validation).toEqual({ valid: false, error: 'already-fed' });
+    expect(world.getScore()).toBe(10);
   });
 });

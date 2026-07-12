@@ -37,16 +37,17 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
   });
 
   it('undeclared state in change', () => {
-    // Line 77: `change the message to trampled` → a state not in `states:`.
+    // Line 37: `change the message to trampled` (bar after-clause, first
+    // time block) → a state not in `states:`.
     const errors = errorsOf(CLOAK.replace('change the message to trampled', 'change the message to smashed'));
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.undeclared-state');
-    expect(errors[0].span.line).toBe(77);
+    expect(errors[0].span.line).toBe(37);
     expect(errors[0].message).toContain('smashed');
   });
 
   it('ambiguous reference, with rename suggestion', () => {
-    // Line 36: the player `wears the cloak` while a second entity also
+    // Line 44: the player `wears the cloak` while a second entity also
     // carries the `cloak` alias — alias match is no longer unique.
     const mutated =
       CLOAK.replace('wears the velvet cloak', 'wears the cloak') +
@@ -54,14 +55,14 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(mutated);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.ambiguous-reference');
-    expect(errors[0].span.line).toBe(36);
+    expect(errors[0].span.line).toBe(44);
     expect(errors[0].message).toContain('velvet cloak');
     expect(errors[0].message).toContain('opera cloak');
   });
 
   it('refusal after mutation (phase-order rule, on-block)', () => {
     // The trampled branch mutates first (`change`), then refuses — the
-    // refuse lands on line 68 of the mutated copy.
+    // refuse lands on line 76 of the mutated copy.
     const mutated = CLOAK.replace(
       '        phrase message-trampled',
       '        change the message to obliterated\n        refuse message-trampled',
@@ -69,7 +70,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(mutated);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-after-mutation');
-    expect(errors[0].span.line).toBe(68);
+    expect(errors[0].span.line).toBe(76);
   });
 
   it('unbound marker in a phrase', () => {

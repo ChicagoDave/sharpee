@@ -21,7 +21,7 @@ import type { IRCondition, IRValue, StoryIR } from '@sharpee/chord';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
 import { RoomTrait, TraitType, WearableTrait, WorldModel } from '@sharpee/world-model';
 import { LoadError } from './errors';
-import { CHORD_FLAG_PREFIX, CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_TRAIT_PREFIX } from './state-keys';
+import { CHORD_FLAG_PREFIX, CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
 
 export interface EvalContext {
   world: WorldModel;
@@ -81,8 +81,12 @@ export class Evaluator {
         if (!named) throw new LoadError(`Unknown condition \`${cond.name}\` at evaluation time.`);
         return this.evalCondition(named, ctx);
       }
+      case 'story-state':
+        // The story object's phase (`while after-hours`, ratchet D2).
+        return ctx.world.getStateValue(CHORD_STORY_STATE_KEY) === cond.state;
       case 'flag': {
-        // Declared flags read as truth tests (`while not after-hours`).
+        // LEGACY (ownership package): never produced by the analyzer; dies
+        // with the Phase C P4 cleanup.
         const value = ctx.world.getStateValue(CHORD_FLAG_PREFIX + cond.name);
         return value === true || value === 'true';
       }
@@ -179,6 +183,9 @@ export class Evaluator {
         if (!ctx.it) throw new LoadError('`it` used outside an entity-scoped clause.');
         return this.requireWorldId(ctx.it);
       }
+      case 'story':
+        // The story object is not an entity — only `change` targets it.
+        throw new LoadError('The story object has no entity value — use `change the story to <state>`.');
       case 'entity':
         return this.requireWorldId(value.id);
       case 'field': {

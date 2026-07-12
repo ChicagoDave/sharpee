@@ -1,10 +1,11 @@
 /**
- * runtime.test.ts — Phase 5 gate: rules, ordinals, derived darkness, the
- * on-reading interceptor, and seeded determinism (AC-5/AC-6 groundwork).
+ * runtime.test.ts — Phase 5 gate, ownership-package grammar: entity event
+ * clauses (`after entering it`), ordinals, derived darkness, the on-reading
+ * interceptor, and seeded determinism (AC-5/AC-6 groundwork).
  *
- * Rules are driven through `fireRules` (the same handler the registered
- * chains call); the full chain path is exercised end-to-end by the Phase 6
- * golden transcripts.
+ * Event clauses are driven through `fireEventClauses` (the same handler the
+ * registered chains call); the full chain path is exercised end-to-end by
+ * the Phase 6 golden transcripts.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -13,7 +14,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
 import { RoomTrait, TraitType, WearableTrait, WorldModel } from '@sharpee/world-model';
-import { CHORD_STATE_PREFIX, ChordStory, createStory, LoadError } from '../src';
+import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 
@@ -50,7 +51,7 @@ function loadCloak(): CloakWorld {
 function enterBar({ story, world, playerId }: CloakWorld): ISemanticEvent[] {
   const barId = story.entityId('foyer-bar')!;
   world.moveEntity(playerId, barId);
-  return story.runtime.fireRules(world, {
+  return story.runtime.fireEventClauses(world, {
     id: `move-${Math.random()}`,
     type: 'if.event.actor_moved',
     timestamp: 0,
@@ -85,7 +86,7 @@ describe('derived darkness (dark while the player has the velvet cloak)', () => 
   });
 });
 
-describe('the stumble rule (when the player enters the Foyer Bar while in-darkness)', () => {
+describe('the stumble clause (the Foyer Bar\'s `after entering it while in-darkness`)', () => {
   it('fires the stumble phrase and advances message state on the 1st and 3rd dark entries', () => {
     const cw = loadCloak();
     const stateKey = CHORD_STATE_PREFIX + 'message-in-the-sawdust';
@@ -177,15 +178,16 @@ create the Room
 
 create the box
   in the Room
-  states: shut, open
+  states: shut, ajar
 
   on reading it
-    if the box is shut then
-      change the box to open
-      phrase box-opened
-    else
-      phrase box-already
-    end if
+    select on its state
+      when shut
+        change the box to ajar
+        phrase box-opened
+      when ajar
+        phrase box-already
+    end select
   end on
 
 create the player
@@ -212,7 +214,7 @@ define phrases en-US
     const first = {};
     lookup.interceptor.postValidate!(box, world, player.id, first);
     lookup.interceptor.postExecute!(box, world, player.id, first);
-    expect(world.getStateValue(CHORD_STATE_PREFIX + 'box')).toBe('open'); // mutation happened
+    expect(world.getStateValue(CHORD_STATE_PREFIX + 'box')).toBe('ajar'); // mutation happened
     const report1 = lookup.interceptor.postReport!(box, world, player.id, first);
     expect(report1.override).toMatchObject({ messageId: 'box-opened' }); // NOT box-already
 
@@ -238,7 +240,7 @@ describe('AC-5 groundwork: seeded determinism', () => {
     for (let i = 0; i < 10; i++) {
       const to = i % 2 === 0 ? west : east;
       world.moveEntity(player.id, to);
-      const events = story.runtime.fireRules(world, {
+      const events = story.runtime.fireEventClauses(world, {
         id: `m${i}`,
         type: 'if.event.actor_moved',
         timestamp: 0,
@@ -256,8 +258,8 @@ describe('AC-5 groundwork: seeded determinism', () => {
     expect(a).toEqual(b);
     // The strategy phrase fired on every crossing…
     expect(a.filter((m) => m === 'crossing-mutter')).toHaveLength(10);
-    // …and the chance rule fired on a strict, non-empty subset of the
-    // five west entries (the stream actually varies).
+    // …and the chance-gated clause fired on a strict, non-empty subset of
+    // the five west entries (the stream actually varies).
     const draughts = a.filter((m) => m === 'lucky-draught').length;
     expect(draughts).toBeGreaterThan(0);
     expect(draughts).toBeLessThan(5);
@@ -271,7 +273,7 @@ describe('AC-5 groundwork: seeded determinism', () => {
     world.setPlayer(player.id);
     const west = story.entityId('west-room')!;
     world.moveEntity(player.id, west);
-    const [event] = story.runtime.fireRules(world, {
+    const [event] = story.runtime.fireEventClauses(world, {
       id: 'm0',
       type: 'if.event.actor_moved',
       timestamp: 0,
@@ -299,18 +301,18 @@ create the Hall
 
   A hall.
 
+  after entering it
+    select ordered
+      phrase step-one
+    or
+      phrase step-two
+    end select
+  end after
+
 create the player
   starts in the Hall
 
   You.
-
-when the player enters the Hall
-  select ordered
-    phrase step-one
-  or
-    phrase step-two
-  end select
-end when
 
 define phrases en-US
   step-one:
@@ -327,7 +329,7 @@ define phrases en-US
 
     const fire = () =>
       story.runtime
-        .fireRules(world, {
+        .fireEventClauses(world, {
           id: `m${Math.random()}`,
           type: 'if.event.actor_moved',
           timestamp: 0,
@@ -342,9 +344,9 @@ define phrases en-US
   });
 });
 
-describe('runtime rejections', () => {
-  it('refuse inside a when rule is a bind-time LoadError', () => {
-    const ir = compileSource(`story "Bad" by "Nobody"
+describe('compile-time rejections', () => {
+  it('refuse inside an `after` clause is a parse error (reactions cannot refuse, D3)', () => {
+    const result = compile(`story "Bad" by "Nobody"
   id: bad
   version: 0.0.1
 
@@ -353,25 +355,22 @@ create the Room
 
   A room.
 
+  after entering it
+    refuse nope
+  end after
+
 create the player
   starts in the Room
 
   You.
 
-when the player enters the Room
-  refuse nope
-end when
-
 define phrases en-US
   nope:
     No.
 `);
-    const story = createStory(ir);
-    const world = new WorldModel();
-    expect(() => story.initializeWorld(world)).toThrow(LoadError);
-    expect(() => {
-      const s = createStory(ir);
-      s.initializeWorld(new WorldModel());
-    }).toThrow(/not meaningful/);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.diagnostics.map((d) => d.code)).toContain('parse.react-refusal');
+    }
   });
 });

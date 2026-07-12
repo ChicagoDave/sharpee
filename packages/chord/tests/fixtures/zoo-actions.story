@@ -1,7 +1,7 @@
 story "Zoo Actions Fixture" by "Sharpee Platform"
   id: zoo-actions
   version: 0.0.1
-  blurb: design.md 3.4 - custom dispatch actions, traits, scores.
+  blurb: design.md 3.4 + ownership package - dispatch actions, trait states, owner scores.
 
 create the Petting Zoo
   a room
@@ -43,6 +43,7 @@ define action feeding
 define trait pettable
   data
     kind: one of goats, rabbits, parrot, snake
+  score petted worth 5
 
   phrases en-US
     pet-goats:
@@ -55,10 +56,9 @@ define trait pettable
       You press your hand to the glass. The snake regards you coolly from the other side.
 
   on petting it
-    if kind is snake then
-      refuse glass-way
-    end if
+    refuse when kind is snake: glass-way
     emit petted
+    award petted
     select on kind
       when goats
         phrase pet-goats
@@ -73,7 +73,7 @@ end trait
 define trait feedable
   data
     food: entity
-    fed: flag, starts false
+  states, reversible: hungry, content
 
   phrases en-US
     no-food:
@@ -84,13 +84,9 @@ define trait feedable
       {capitalize the animal} eagerly gobbles up the feed.
 
   on feeding it
-    if not (the actor has its food) then
-      refuse no-food
-    end if
-    if fed then
-      refuse already-fed
-    end if
-    set fed to true
+    the actor must have its food: no-food
+    it must be hungry: already-fed
+    change it to content
     emit fed
     phrase fed
   end on
@@ -102,8 +98,13 @@ create the pygmy goats
   in the Petting Zoo
   pettable with kind goats
   feedable with food the handful of feed
+  score fed worth 10
   phrase fed:
     The goats butt each other out of the way to get at the feed. Happy chaos.
+
+  after feeding it
+    award fed
+  end after
 
 create the handful of feed
   aka feed
@@ -117,14 +118,3 @@ create the garden snake
   pettable with kind snake
 
   Coiled behind glass, radiating disdain.
-
-define score pet-an-animal worth 5
-define score feed-the-goats worth 10
-
-when the player pets anything
-  award pet-an-animal
-end when
-
-when the player feeds the pygmy goats
-  award feed-the-goats
-end when

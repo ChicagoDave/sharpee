@@ -27,6 +27,23 @@ export interface StoryHeader {
   author: string;
   /** Raw field values by key (id, version, blurb, ...), trimmed. */
   fields: Record<string, string>;
+  /**
+   * `states: a, b` — the story's phases (ownership package D2). The story
+   * starts in the first declared state; bare state names are condition refs.
+   */
+  states: StateName[];
+  /** `states, reversible:` — declared back-transitions allowed (D4). */
+  statesReversible: boolean;
+  /** `score <name> worth N` lines — story-owned score identities (D12). */
+  scores: ScoreDecl[];
+  span: Span;
+}
+
+/** `score <name> worth <n>` on an owner (create/trait/action/story — D12). */
+export interface ScoreDecl {
+  kind: 'score';
+  name: string;
+  worth: number;
   span: Span;
 }
 
@@ -37,16 +54,14 @@ export type Declaration =
   | DefinePhrases
   | DefineVerb
   | DefineText
-  | DefineFlag
-  | WhenRule
   // Phase B (design.md §2.2/§2.3/§2.5/§3.4):
   | DefineTrait
   | DefineAction
   | DefineHatch
-  | DefineScore
-  | OnceRule
-  | EveryRule
   | DefineSequence;
+// Removed by the ownership package (ratchet 2026-07-11): DefineFlag,
+// DefineScore, WhenRule, OnceRule, EveryRule — the parser emits removal
+// diagnostics with fix-its pointing at the owner-attached replacements.
 
 /** A raw (unresolved) name reference: optional article + word sequence. */
 export interface NameRef {
@@ -101,6 +116,10 @@ export interface CreateDecl {
   blockedExits: BlockedExitDecl[];
   /** `states: a, b, c` — ordered. */
   states: StateName[];
+  /** `states, reversible:` — declared back-transitions allowed (D4). */
+  statesReversible: boolean;
+  /** `score <name> worth N` lines — entity-owned scores (D12). */
+  scores: ScoreDecl[];
   /** First bare indented paragraph. */
   description: TextValue | null;
   /** Per-entity phrase overrides: `phrase <key>: <text>` lines. */
@@ -176,22 +195,29 @@ export interface PhraseOverride {
 }
 
 /**
- * `on … end on` behavior clause — inside a create block or a `define trait`.
- * Header forms (design.md §2.2):
- *   `on <action> it [, before <trait> | , after <trait>]`  → binding 'it'
- *   `on <action> anything as the <role>`                   → binding 'role'
- *   `on every turn [while <condition>]`                    → binding 'every-turn'
+ * `on|after … end on|end after` behavior clause — inside a create block or a
+ * `define trait`. Header forms (design.md §2.2 + ownership package D3/D5):
+ *   `on <action> it [, before <trait> | , after <trait>] [, once]`
+ *   `after <action> it [while <condition>] [, once]`       → reaction (D3)
+ *   `on <action> anything as the <role>`                    → binding 'role'
+ *   `on every turn [while <condition>] [, once]`            → binding 'every-turn'
+ * `on` intercepts (may refuse; phrase output is primary); `after` reacts
+ * (refuse is a parse error; phrase output appends).
  */
 export interface OnClause {
   kind: 'on-clause';
+  /** `on` = intercept, `after` = react (ratchet D3). */
+  clauseKind: 'on' | 'after';
   /** The action word as written (gerund), e.g. `reading`; `every turn` clauses use 'every-turn'. */
   action: string;
   /** How the clause binds (Phase A only had 'it'). */
   binding: 'it' | 'role' | 'every-turn';
   /** Role name for `anything as the <role>` clauses. */
   role: string | null;
-  /** `while <condition>` qualifier (every-turn clauses). */
+  /** `while <condition>` qualifier (all bindings since the ownership package). */
   condition: ConditionNode | null;
+  /** `, once` clause modifier — one lifetime firing (ratchet D5). */
+  once: boolean;
   /** `, before <trait>` / `, after <trait>` explicit ordering. */
   ordering: { relation: 'before' | 'after'; trait: string } | null;
   body: Statement[];
@@ -257,35 +283,39 @@ export interface DefineText {
   span: Span;
 }
 
-/** `define flag <name> starts <value>` */
-export interface DefineFlag {
-  kind: 'define-flag';
-  name: string;
-  initial: string;
-  span: Span;
-}
+// `define flag` was removed (given 8, ratchet 2026-07-11) — facts are
+// derived conditions or owned states.
 
 // --------------------------------------------------------------------------
 // Phase B declarations (design.md §2.2/§2.3/§2.5/§3.4)
 // --------------------------------------------------------------------------
 
-/** `define trait <name> … end trait` — data, phrases, behavior clauses. */
+/** `define trait <name> … end trait` — data, states, phrases, behavior clauses. */
 export interface DefineTrait {
   kind: 'define-trait';
   name: string;
   data: TraitField[];
+  /**
+   * `states[, reversible]: a, b` — trait-declared states (ratchet D8):
+   * every composer gets the set; resolution is across the composer's full
+   * trait set. Replaces the removed `flag` field type.
+   */
+  states: StateName[];
+  statesReversible: boolean;
+  /** `score <name> worth N` lines — trait-owned scores (D12). */
+  scores: ScoreDecl[];
   /** Embedded `phrases <locale>` block, if any. */
   phrases: DefinePhrases | null;
   onClauses: OnClause[];
   span: Span;
 }
 
-/** One `data` field: `locked: flag`, `body part: optional name`, `kind: one of a, b, c`. */
+/** One `data` field: `body part: optional name`, `kind: one of a, b, c`. */
 export interface TraitField {
   /** Field name words (`body part`). */
   name: string[];
-  /** flag | entity | number | name | one-of. */
-  type: 'flag' | 'entity' | 'number' | 'name' | 'one-of';
+  /** entity | number | name | one-of. `flag` was removed (given 8 / D8). */
+  type: 'entity' | 'number' | 'name' | 'one-of';
   optional: boolean;
   /** `starts <value>` initial, if declared. */
   initial: string | null;
@@ -301,16 +331,35 @@ export interface DefineAction {
   name: string;
   /** `grammar` block pattern lines. */
   patterns: ActionPattern[];
-  /** `the <slot> must be <requirement>` lines. */
+  /** `the <slot> must be <requirement>` lines (scope kit, no phrase key). */
   constraints: ScopeConstraint[];
+  /** `<subject> must <predicate>: <key>` requirement lines (ratchet D6). */
+  musts: MustRequirement[];
   /** `refuse without <slot>: <key>` / `refuse when <cond>: <key>` lines. */
   refusals: ActionRefusal[];
   /** `otherwise refuse <key>` — the dispatch-miss phrase. */
   otherwise: { phraseKey: string; span: Span } | null;
+  /** `score <name> worth N` lines — action-owned scores (D12). */
+  scores: ScoreDecl[];
   /** Embedded `phrases <locale>` block, if any. */
   phrases: DefinePhrases | null;
   /** Standard-semantics body statements (design.md §2.3 taking), if any. */
   body: Statement[];
+  span: Span;
+}
+
+/**
+ * `<subject> must <predicate>: <phrase-key>` — a positive requirement
+ * (ratchet D6); failing it refuses with the key. The predicate is written
+ * in the infinitive (`be hungry`, `have its food`, `hold the camera`) and
+ * normalized to the finite Predicate forms at parse.
+ * Doubles as a body statement.
+ */
+export interface MustRequirement {
+  kind: 'must';
+  subject: ValueExpr;
+  predicate: Predicate;
+  phraseKey: string;
   span: Span;
 }
 
@@ -349,31 +398,10 @@ export interface DefineHatch {
   span: Span;
 }
 
-/** `define score <name> worth <n>` — score identity (dedup by identity, ADR-129). */
-export interface DefineScore {
-  kind: 'define-score';
-  name: string;
-  worth: number;
-  span: Span;
-}
-
-/** `once <condition> … end once` — fires once, then retires. */
-export interface OnceRule {
-  kind: 'once-rule';
-  condition: ConditionNode;
-  body: Statement[];
-  span: Span;
-}
-
-/** `every <n> turns [, <m> times] … end every` — recurring daemon. */
-export interface EveryRule {
-  kind: 'every-rule';
-  turns: number;
-  /** `, N times` limit, or null for unlimited. */
-  times: number | null;
-  body: Statement[];
-  span: Span;
-}
+// `define score` (top-level), `once <cond>` rules, and `every N turns`
+// rules were removed (ownership package, ratchet 2026-07-11) — scores
+// attach to owners (ScoreDecl); once/every become owner clause modifiers
+// and story-owned schedules.
 
 /** `define sequence <name> … end sequence` — timeline of chained steps. */
 export interface DefineSequence {
@@ -384,30 +412,19 @@ export interface DefineSequence {
   span: Span;
 }
 
-/** `at turn <n>` (absolute) or `<n> turns later` (relative) step. */
+/**
+ * `at turn <n>` (absolute), `<n> turns later` (relative), or
+ * `when <owner> becomes <state>` (state anchor, ratchet D10) step.
+ */
 export interface SequenceStep {
   kind: 'sequence-step';
-  timing: 'at-turn' | 'later';
+  timing: 'at-turn' | 'later' | 'becomes';
+  /** Turn count for at-turn/later; 0 for becomes. */
   turns: number;
-  body: Statement[];
-  span: Span;
-}
-
-// --------------------------------------------------------------------------
-// when
-// --------------------------------------------------------------------------
-
-/** `when <event-header> [while <condition>] … end when` */
-export interface WhenRule {
-  kind: 'when-rule';
-  /**
-   * Unsegmented event-header words (`the player enters the Foyer Bar`).
-   * The analyzer segments actor/verb/target against the event-selector map.
-   */
-  headerWords: string[];
-  headerSpan: Span;
-  /** The `while` qualifier, if present. */
-  condition: ConditionNode | null;
+  /** Anchor owner for `becomes` steps (`the story`, an entity). */
+  owner: NameRef | null;
+  /** Anchor state for `becomes` steps. */
+  state: string | null;
   body: Statement[];
   span: Span;
 }
@@ -418,6 +435,7 @@ export interface WhenRule {
 
 export type Statement =
   | RefuseStmt
+  | RefuseWhenStmt
   | PhraseStmt
   | EmitStmt
   | SetStmt
@@ -426,10 +444,24 @@ export type Statement =
   | AwardStmt
   | WinStmt
   | LoseStmt
-  | IfStmt
+  | MustRequirement
   | SelectOnStmt
   | SelectStrategyStmt
   | OrdinalBlock;
+
+/**
+ * `refuse when <condition>: <key>` in body position — the prohibition half
+ * of decision 6 (requirements are `must`; prohibitions are `refuse when`).
+ */
+export interface RefuseWhenStmt {
+  kind: 'refuse-when';
+  condition: ConditionNode;
+  phraseKey: string;
+  span: Span;
+}
+// `if` was removed (given 4 amended, ratchet 2026-07-11): guards are `must`
+// requirements; moment conditionals are the statement `when` suffix
+// (`stmtWhen` below); branching is `select`.
 
 /** `refuse <phrase-key> [with <param> = <value>]…` */
 export interface RefuseStmt {
@@ -439,7 +471,7 @@ export interface RefuseStmt {
   span: Span;
 }
 
-/** `phrase <phrase-key> [with <param> = <value>]…` (semantic emission, given 6b). */
+/** `phrase <phrase-key> [with <param> = <value>]… [when <cond>]` (given 6b). */
 export interface PhraseStmt {
   kind: 'phrase';
   phraseKey: string;
@@ -450,6 +482,8 @@ export interface PhraseStmt {
    * the key is declared elsewhere.
    */
   inlineText: TextValue | null;
+  /** Statement `when` suffix (ratchet D7) — execute only if it holds. */
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
@@ -460,10 +494,11 @@ export interface ParamBinding {
   span: Span;
 }
 
-/** `emit <event-words>` */
+/** `emit <event-words> [when <cond>]` */
 export interface EmitStmt {
   kind: 'emit';
   event: string[];
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
@@ -475,50 +510,46 @@ export interface SetStmt {
   span: Span;
 }
 
-/** `change <entity> to <state>` — explicit state transition. */
+/** `change <entity> to <state> [when <cond>]` — explicit state transition. */
 export interface ChangeStmt {
   kind: 'change';
   entity: NameRef;
   state: string;
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
-/** `move <entity> to <place>` */
+/** `move <entity> to <place> [when <cond>]` */
 export interface MoveStmt {
   kind: 'move';
   entity: NameRef;
   place: NameRef;
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
-/** `award <quantity-words> [, once]` */
+/** `award <quantity-words> [, once] [when <cond>]` */
 export interface AwardStmt {
   kind: 'award';
   expression: string[];
   once: boolean;
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
-/** `win [<phrase-key>]` */
+/** `win [<phrase-key>] [when <cond>]` */
 export interface WinStmt {
   kind: 'win';
   phraseKey: string | null;
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
-/** `lose [<phrase-key>]` */
+/** `lose [<phrase-key>] [when <cond>]` */
 export interface LoseStmt {
   kind: 'lose';
   phraseKey: string | null;
-  span: Span;
-}
-
-/** `if <condition> then … [else …] end if` */
-export interface IfStmt {
-  kind: 'if';
-  condition: ConditionNode;
-  then: Statement[];
-  else: Statement[] | null;
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 

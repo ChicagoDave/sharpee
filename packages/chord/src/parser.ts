@@ -30,21 +30,17 @@ import {
   Declaration,
   DefineAction,
   DefineCondition,
-  DefineFlag,
   DefineHatch,
   DefinePhrase,
   DefinePhrases,
-  DefineScore,
   DefineSequence,
   DefineText,
   DefineTrait,
   DefineVerb,
   EmitStmt,
-  EveryRule,
-  OnceRule,
   ExitDecl,
-  IfStmt,
   MoveStmt,
+  MustRequirement,
   NameRef,
   OnClause,
   OrdinalBlock,
@@ -54,8 +50,10 @@ import {
   PhraseOverride,
   PhraseStmt,
   Placement,
+  Predicate,
   RefuseStmt,
   ScopeConstraint,
+  ScoreDecl,
   SelectArm,
   SelectOnStmt,
   SelectStrategyStmt,
@@ -69,7 +67,6 @@ import {
   TextMarker,
   TextValue,
   ValueExpr,
-  WhenRule,
 } from './ast';
 import { DiagnosticBag } from './diagnostics';
 import { lex, Line, Token } from './lexer';
@@ -163,8 +160,20 @@ function isStatementLine(line: Line): boolean {
   const word = firstWord(line);
   if (word && STATEMENT_OPENERS.has(word)) return true;
   if (word && ORDINALS[word] !== undefined) return true;
+  if (lineHasMust(line)) return true;
   // `<n> turns later` sequence-step headers open with a number.
   return line.tokens[0]?.kind === 'number' && line.tokens[1]?.text === 'turns';
+}
+
+/**
+ * True for `must`-requirement lines (ratchet D6): a lowercase subject
+ * opener plus a `must` token. Case-sensitive so capitalized prose
+ * ("The goats must be fed.") stays prose.
+ */
+function lineHasMust(line: Line): boolean {
+  const word = firstWord(line);
+  return (word === 'the' || word === 'it' || word === 'its')
+    && line.tokens.some((t) => t.kind === 'word' && t.text === 'must');
 }
 
 class Parser {
@@ -207,23 +216,36 @@ class Parser {
           if (d) declarations.push(d);
           break;
         }
+        // Ownership-package removals (ratchet 2026-07-11): floating rules
+        // are gone — each gets a fix-it naming its owner-attached form.
         case 'when':
-          declarations.push(this.parseWhen());
+          this.diagnostics.error(
+            'parse.removed-when',
+            'Top-level `when` rules were removed (ownership package, 2026-07-11) — attach the rule to its owner: `after <verb> it` on the entity or room it is about.',
+            lineSpan(line),
+          );
+          this.recoverToTopLevel(true);
           break;
-        case 'once': {
-          const d = this.parseOnce();
-          if (d) declarations.push(d);
+        case 'once':
+          this.diagnostics.error(
+            'parse.removed-once',
+            'Top-level `once <condition>` rules were removed (ownership package, 2026-07-11) — use a `, once` clause modifier on the owner: `on every turn while <condition>, once`.',
+            lineSpan(line),
+          );
+          this.recoverToTopLevel(true);
           break;
-        }
-        case 'every': {
-          const d = this.parseEvery();
-          if (d) declarations.push(d);
+        case 'every':
+          this.diagnostics.error(
+            'parse.removed-every',
+            'Top-level `every N turns` rules were removed (ownership package, 2026-07-11) — use a story-owned `define sequence`, or an every-turn clause on the owner.',
+            lineSpan(line),
+          );
+          this.recoverToTopLevel(true);
           break;
-        }
         default:
           this.diagnostics.error(
             'parse.unknown-declaration',
-            `Unknown declaration \`${word ?? line.raw.trim()}\` — expected story, create, define, or when.`,
+            `Unknown declaration \`${word ?? line.raw.trim()}\` — expected story, create, or define.`,
             lineSpan(line),
           );
           this.recoverToTopLevel(true);
@@ -275,11 +297,31 @@ class Parser {
     }
 
     const fields: Record<string, string> = {};
+    const states: StateName[] = [];
+    let statesReversible = false;
+    const scores: ScoreDecl[] = [];
     let span = lineSpan(line);
     while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
       const fieldLine = this.lines[this.pos++];
       span = mergeSpans(span, lineSpan(fieldLine));
       const key = firstWord(fieldLine);
+      // `states[, reversible]: a, b` — story phases (ratchet D2/D4).
+      if (key === 'states') {
+        const sc = new Cursor(fieldLine.tokens, fieldLine);
+        sc.next();
+        const parsed = this.parseStatesTail(sc, fieldLine);
+        if (parsed) {
+          states.push(...parsed.states);
+          statesReversible = parsed.reversible;
+        }
+        continue;
+      }
+      // `score <name> worth N` — story-owned score identity (ratchet D12).
+      if (key === 'score') {
+        const s = this.parseScoreLine(fieldLine);
+        if (s) scores.push(s);
+        continue;
+      }
       const colon = fieldLine.tokens[1];
       if (!key || !colon || colon.kind !== 'colon') {
         this.diagnostics.error('parse.header-field', 'Expected `key: value` in the story header.', lineSpan(fieldLine));
@@ -289,7 +331,52 @@ class Parser {
       fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
     }
 
-    return { kind: 'story-header', title, author, fields, span };
+    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, span };
+  }
+
+  /**
+   * Parse the tail of a `states` line after the `states` word:
+   * `[, reversible] : <name>, <name>…` (ratchet D2/D4/D8). Shared by the
+   * story header, create blocks, and trait blocks.
+   */
+  private parseStatesTail(c: Cursor, line: Line): { states: StateName[]; reversible: boolean } | null {
+    let reversible = false;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (c.matchWord('reversible')) {
+        reversible = true;
+      } else {
+        this.diagnostics.error('parse.states-modifier', 'Expected `reversible` after the comma in the `states` declaration.', c.restSpan());
+        return null;
+      }
+    }
+    const colon = c.next();
+    if (!colon || colon.kind !== 'colon') {
+      this.diagnostics.error('parse.states', 'Expected `:` after `states`.', c.restSpan());
+      return null;
+    }
+    return { states: this.parseStateList(c), reversible };
+  }
+
+  /** `score <name> worth <n>` — owner-attached score line (ratchet D12). */
+  private parseScoreLine(line: Line): ScoreDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('score');
+    const name = c.next();
+    if (!name || name.kind !== 'word') {
+      this.diagnostics.error('parse.score-name', 'Expected a score name after `score`.', c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('worth')) {
+      this.diagnostics.error('parse.score-worth', 'Expected `worth <number>` in the score line.', c.restSpan());
+      return null;
+    }
+    const worth = c.next();
+    if (!worth || worth.kind !== 'number') {
+      this.diagnostics.error('parse.score-worth', 'Expected a number after `worth`.', c.restSpan());
+      return null;
+    }
+    return { kind: 'score', name: name.text, worth: Number(worth.text), span: lineSpan(line) };
   }
 
   // ---------------------------------------------------------------- create
@@ -313,6 +400,8 @@ class Parser {
       exits: [],
       blockedExits: [],
       states: [],
+      statesReversible: false,
+      scores: [],
       description: null,
       phraseOverrides: [],
       onClauses: [],
@@ -331,11 +420,18 @@ class Parser {
         this.pos++;
         cur.matchWord('aka');
         decl.aka.push(...this.parseCommaWords(cur));
-      } else if (word === 'states' && cur.isWord('states') && line.tokens[1]?.kind === 'colon') {
+      } else if (word === 'states' && (line.tokens[1]?.kind === 'colon' || line.tokens[1]?.kind === 'comma')) {
         this.pos++;
         cur.next();
-        cur.next();
-        decl.states.push(...this.parseStateList(cur));
+        const parsed = this.parseStatesTail(cur, line);
+        if (parsed) {
+          decl.states.push(...parsed.states);
+          decl.statesReversible = parsed.reversible;
+        }
+      } else if (word === 'score') {
+        this.pos++;
+        const s = this.parseScoreLine(line);
+        if (s) decl.scores.push(s);
       } else if (word === 'wears') {
         this.pos++;
         cur.matchWord('wears');
@@ -350,7 +446,9 @@ class Parser {
         cur.next();
         decl.placement = this.finishPlacement(word as 'in' | 'on', cur, line);
       } else if (word === 'on') {
-        decl.onClauses.push(this.parseOnClause(line.indent));
+        decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
+      } else if (word === 'after') {
+        decl.onClauses.push(this.parseOnClause(line.indent, 'after'));
       } else if (word === 'phrase' && line.tokens[1]?.kind === 'word' && line.tokens[2]?.kind === 'colon') {
         this.pos++;
         decl.phraseOverrides.push(this.parsePhraseOverride(line));
@@ -706,7 +804,14 @@ class Parser {
       case 'text':
         return this.parseDefineText();
       case 'flag':
-        return this.parseDefineFlag();
+        // Removed — given 8 (ratchet 2026-07-11).
+        this.diagnostics.error(
+          'parse.removed-flag',
+          '`define flag` was removed (given 8: no global booleans) — model the fact as `states:` on its owner, or derive it with a condition over world state.',
+          lineSpan(line),
+        );
+        this.recoverToTopLevel(true);
+        return null;
       case 'trait':
         return this.parseDefineTrait();
       case 'action':
@@ -714,7 +819,14 @@ class Parser {
       case 'behavior':
         return this.parseDefineBehaviorHatch();
       case 'score':
-        return this.parseDefineScore();
+        // Removed — ratchet D12/CP5 (2026-07-11).
+        this.diagnostics.error(
+          'parse.removed-score',
+          '`define score` was removed (ownership package) — attach the score to its earning owner: `score <name> worth N` in the owner\'s create/trait/action block or the story header.',
+          lineSpan(line),
+        );
+        this.recoverToTopLevel(true);
+        return null;
       case 'sequence':
         return this.parseDefineSequence();
       default:
@@ -918,28 +1030,6 @@ class Parser {
     return { kind: 'define-text', name: name.text, modulePath: mod.text, span: lineSpan(line) };
   }
 
-  private parseDefineFlag(): DefineFlag | null {
-    const line = this.lines[this.pos++];
-    const c = new Cursor(line.tokens, line);
-    c.next();
-    c.next(); // define flag
-    const name = c.next();
-    if (!name || name.kind !== 'word') {
-      this.diagnostics.error('parse.flag-name', 'Expected a flag name after `define flag`.', c.restSpan());
-      return null;
-    }
-    if (!c.matchWord('starts')) {
-      this.diagnostics.error('parse.flag-starts', 'Expected `starts <value>` in the flag declaration.', c.restSpan());
-      return null;
-    }
-    const value = c.next();
-    if (!value) {
-      this.diagnostics.error('parse.flag-value', 'Expected an initial value after `starts`.', c.restSpan());
-      return null;
-    }
-    return { kind: 'define-flag', name: name.text, initial: value.text, span: lineSpan(line) };
-  }
-
   // -------------------------------------------- Phase B declarations (§2.2/§2.3/§2.5)
 
   /** `define trait <name>` … `end trait` — data, phrases, on-clauses. */
@@ -955,32 +1045,55 @@ class Parser {
     }
 
     const data: TraitField[] = [];
+    const states: StateName[] = [];
+    let statesReversible = false;
+    const scores: ScoreDecl[] = [];
     let phrases: DefinePhrases | null = null;
     const onClauses: OnClause[] = [];
+
+    const build = (span: Span): DefineTrait => ({
+      kind: 'define-trait', name: nameTok.text, data, states, statesReversible, scores, phrases, onClauses, span,
+    });
 
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
       if (line.indent === 0) {
         if (isEndLine(line)) break;
         this.diagnostics.error('parse.unterminated-block', 'Missing `end trait`.', lineSpan(headLine));
-        return { kind: 'define-trait', name: nameTok.text, data, phrases, onClauses, span: lineSpan(headLine) };
+        return build(lineSpan(headLine));
       }
       const word = firstWord(line);
       if (word === 'data' && line.tokens.length === 1) {
         this.pos++;
         data.push(...this.parseTraitFields(line));
+      } else if (word === 'states') {
+        // Trait-declared states (ratchet D8) — every composer gets the set.
+        this.pos++;
+        const sc = new Cursor(line.tokens, line);
+        sc.next();
+        const parsed = this.parseStatesTail(sc, line);
+        if (parsed) {
+          states.push(...parsed.states);
+          statesReversible = parsed.reversible;
+        }
+      } else if (word === 'score') {
+        this.pos++;
+        const s = this.parseScoreLine(line);
+        if (s) scores.push(s);
       } else if (word === 'phrases') {
         this.pos++;
         phrases = this.parsePhrasesBlock(line, 1);
       } else if (word === 'on') {
-        onClauses.push(this.parseOnClause(line.indent));
+        onClauses.push(this.parseOnClause(line.indent, 'on'));
+      } else if (word === 'after') {
+        onClauses.push(this.parseOnClause(line.indent, 'after'));
       } else {
-        this.diagnostics.error('parse.trait-section', `Unrecognized line in \`define trait\`: \`${line.raw.trim()}\` — expected data, phrases, or an \`on\` clause.`, lineSpan(line));
+        this.diagnostics.error('parse.trait-section', `Unrecognized line in \`define trait\`: \`${line.raw.trim()}\` — expected data, states, score, phrases, or an \`on\`/\`after\` clause.`, lineSpan(line));
         this.pos++;
       }
     }
     const endSpan = this.consumeEnd('trait', headLine);
-    return { kind: 'define-trait', name: nameTok.text, data, phrases, onClauses, span: mergeSpans(lineSpan(headLine), endSpan) };
+    return build(mergeSpans(lineSpan(headLine), endSpan));
   }
 
   /** `data` block fields: `locked: flag`, `body part: optional name`, `kind: one of a, b`. */
@@ -1014,10 +1127,18 @@ class Parser {
         }
       } else {
         const typeTok = c.next();
-        if (typeTok && typeTok.kind === 'word' && ['flag', 'entity', 'number', 'name'].includes(typeTok.text)) {
+        if (typeTok && typeTok.kind === 'word' && ['entity', 'number', 'name'].includes(typeTok.text)) {
           type = typeTok.text as TraitField['type'];
+        } else if (typeTok && typeTok.kind === 'word' && typeTok.text === 'flag') {
+          // Removed — given 8 / ratchet D8 (2026-07-11).
+          this.diagnostics.error(
+            'parse.removed-flag-field',
+            'The `flag` field type was removed (given 8: no booleans at any scope) — declare `states[, reversible]: …` on the trait and name what the thing IS in each state.',
+            typeTok.span,
+          );
+          continue;
         } else {
-          this.diagnostics.error('parse.trait-field-type', 'Expected a field type: flag, entity, number, name, or `one of …`.', typeTok?.span ?? c.restSpan());
+          this.diagnostics.error('parse.trait-field-type', 'Expected a field type: entity, number, name, or `one of …`.', typeTok?.span ?? c.restSpan());
           continue;
         }
       }
@@ -1056,8 +1177,10 @@ class Parser {
 
     const patterns: ActionPattern[] = [];
     const constraints: ScopeConstraint[] = [];
+    const musts: MustRequirement[] = [];
     const refusals: ActionRefusal[] = [];
     let otherwise: DefineAction['otherwise'] = null;
+    const scores: ScoreDecl[] = [];
     let phrases: DefinePhrases | null = null;
     const body: Statement[] = [];
     let span = lineSpan(headLine);
@@ -1069,10 +1192,21 @@ class Parser {
       if (word === 'grammar' && line.tokens.length === 1) {
         this.pos++;
         patterns.push(...this.parseActionPatterns(line));
-      } else if (word === 'the' && line.tokens.some((t) => t.kind === 'word' && t.text === 'must')) {
+      } else if (lineHasMust(line)) {
+        // With a `: <key>` tail it is a must-requirement (ratchet D6);
+        // without one it is the scope-constraint kit (`must be reachable`).
         this.pos++;
-        const sc = this.parseScopeConstraint(line);
-        if (sc) constraints.push(sc);
+        if (line.tokens.some((t) => t.kind === 'colon')) {
+          const m = this.parseMustLine(line);
+          if (m) musts.push(m);
+        } else {
+          const sc = this.parseScopeConstraint(line);
+          if (sc) constraints.push(sc);
+        }
+      } else if (word === 'score') {
+        this.pos++;
+        const s = this.parseScoreLine(line);
+        if (s) scores.push(s);
       } else if (word === 'refuse' && (line.tokens[1]?.text === 'without' || line.tokens[1]?.text === 'when')) {
         this.pos++;
         const r = this.parseActionRefusal(line);
@@ -1098,7 +1232,85 @@ class Parser {
       span = mergeSpans(span, lineSpan(line));
     }
 
-    return { kind: 'define-action', name: nameTok.text, patterns, constraints, refusals, otherwise, phrases, body, span };
+    return { kind: 'define-action', name: nameTok.text, patterns, constraints, musts, refusals, otherwise, scores, phrases, body, span };
+  }
+
+  /**
+   * `<subject> must <predicate>: <phrase-key>` — the D6 requirement form
+   * (define-action line AND body statement). The predicate is infinitive
+   * (`be hungry`, `have its food`, `hold the camera`) and normalized here.
+   */
+  private parseMustLine(line: Line): MustRequirement | null {
+    const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
+    if (colonIndex === -1 || colonIndex !== line.tokens.length - 2) {
+      this.diagnostics.error('parse.must', 'Expected `<subject> must <predicate>: <phrase-key>`.', lineSpan(line));
+      return null;
+    }
+    const keyTok = line.tokens[colonIndex + 1];
+    if (keyTok.kind !== 'word') {
+      this.diagnostics.error('parse.must', 'Expected a phrase key after the colon in the `must` requirement.', keyTok.span);
+      return null;
+    }
+    const c = new Cursor(line.tokens.slice(0, colonIndex), line);
+    const subject = this.parseValueExpr(c, line, new Set(['must']));
+    if (!c.matchWord('must')) {
+      this.diagnostics.error('parse.must', 'Expected `must` after the subject in the requirement.', c.restSpan());
+      return null;
+    }
+    if (c.isWord('not')) {
+      // Requirements are positive by design (decision 6) — same stance as
+      // the analysis.negated-requirement gate on `refuse when not`.
+      this.diagnostics.error('parse.must-negative', 'State requirements positively — `must not …` is not a form. Use `refuse when <condition>: <key>` for prohibitions.', c.restSpan());
+      return null;
+    }
+    const predicate = this.parseInfinitivePredicate(c, line);
+    if (!predicate) return null;
+    return { kind: 'must', subject, predicate, phraseKey: keyTok.text, span: lineSpan(line) };
+  }
+
+  /** Infinitive predicate after `must`: be / have / hold / wear / see / reach. */
+  private parseInfinitivePredicate(c: Cursor, line: Line): Predicate | null {
+    const t = c.next();
+    if (!t || t.kind !== 'word') {
+      this.diagnostics.error('parse.must-predicate', 'Expected a predicate after `must`: be, have, hold, wear, see, or reach.', t?.span ?? c.restSpan());
+      return null;
+    }
+    switch (t.text) {
+      case 'be': {
+        if (c.isWord('a') || c.isWord('an')) {
+          c.next();
+          const cls = this.collectWords(c, new Set());
+          return { kind: 'is-a', negated: false, classifier: cls.words, span: cls.span ?? t.span };
+        }
+        if (c.isWord('in')) {
+          c.next();
+          const place = this.parseNameRef(c, () => false);
+          return { kind: 'is-in', negated: false, place, span: place.span };
+        }
+        const value = this.parseValueExpr(c, line, new Set());
+        return { kind: 'is', negated: false, value, span: value.span };
+      }
+      case 'have': {
+        const thing = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        return { kind: 'has', thing, span: thing.span };
+      }
+      case 'hold': {
+        const thing = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        return { kind: 'holds', thing, span: thing.span };
+      }
+      case 'wear': {
+        const thing = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        return { kind: 'wears', thing, span: thing.span };
+      }
+      case 'see':
+      case 'reach': {
+        const thing = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        return { kind: 'can', ability: t.text, thing, span: mergeSpans(t.span, thing.span) };
+      }
+      default:
+        this.diagnostics.error('parse.must-predicate', `Unknown predicate \`${t.text}\` after \`must\` — expected be, have, hold, wear, see, or reach.`, t.span);
+        return null;
+    }
   }
 
   /** grammar-block pattern lines: words + `:slot`s, optional `→ each …` cardinality. */
@@ -1220,69 +1432,6 @@ class Parser {
     return { kind: 'define-hatch', hatchKind, name, modulePath: mod.text, span: lineSpan(line) };
   }
 
-  /** `define score <name> worth <n>` */
-  private parseDefineScore(): DefineScore | null {
-    const line = this.lines[this.pos++];
-    const c = new Cursor(line.tokens, line);
-    c.next();
-    c.next(); // define score
-    const nameTok = c.next();
-    if (!nameTok || nameTok.kind !== 'word') {
-      this.diagnostics.error('parse.score-name', 'Expected a score name after `define score`.', c.restSpan());
-      return null;
-    }
-    if (!c.matchWord('worth')) {
-      this.diagnostics.error('parse.score-worth', 'Expected `worth <number>` in the score declaration.', c.restSpan());
-      return null;
-    }
-    const worth = c.next();
-    if (!worth || worth.kind !== 'number') {
-      this.diagnostics.error('parse.score-worth', 'Expected a number after `worth`.', c.restSpan());
-      return null;
-    }
-    return { kind: 'define-score', name: nameTok.text, worth: Number(worth.text), span: lineSpan(line) };
-  }
-
-  /** `once <condition>` … `end once` — fires once, then retires (§3.3). */
-  private parseOnce(): OnceRule | null {
-    const headLine = this.lines[this.pos++];
-    const c = new Cursor(headLine.tokens, headLine);
-    c.matchWord('once');
-    if (c.atEnd()) {
-      this.diagnostics.error('parse.once-condition', 'Expected a condition after `once`.', lineSpan(headLine));
-      return null;
-    }
-    const condition = this.parseCondition(c, headLine);
-    const body = this.parseStatements(headLine.indent, 'once');
-    const endSpan = this.consumeEnd('once', headLine);
-    return { kind: 'once-rule', condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
-  }
-
-  /** `every <n> turns [, <m> times]` … `end every` — recurring daemon (§2.5). */
-  private parseEvery(): EveryRule | null {
-    const headLine = this.lines[this.pos++];
-    const c = new Cursor(headLine.tokens, headLine);
-    c.matchWord('every');
-    const n = c.next();
-    if (!n || n.kind !== 'number' || !c.matchWord('turns')) {
-      this.diagnostics.error('parse.every-turns', 'Expected `every <number> turns`.', lineSpan(headLine));
-      return null;
-    }
-    let times: number | null = null;
-    if (c.peek()?.kind === 'comma') {
-      c.next();
-      const m = c.next();
-      if (m && m.kind === 'number' && c.matchWord('times')) {
-        times = Number(m.text);
-      } else {
-        this.diagnostics.error('parse.every-times', 'Expected `<number> times` after the comma.', c.restSpan());
-      }
-    }
-    const body = this.parseStatements(headLine.indent, 'every');
-    const endSpan = this.consumeEnd('every', headLine);
-    return { kind: 'every-rule', turns: Number(n.text), times, body, span: mergeSpans(lineSpan(headLine), endSpan) };
-  }
-
   /** `define sequence <name>` … steps … `end sequence` — timeline (§2.5/§3.3). */
   private parseDefineSequence(): DefineSequence | null {
     const headLine = this.lines[this.pos++];
@@ -1302,7 +1451,10 @@ class Parser {
       const sc = new Cursor(line.tokens, line);
       let timing: SequenceStep['timing'] | null = null;
       let turns = 0;
-      if (sc.matchWord('at') && sc.isWord('turn')) {
+      let owner: NameRef | null = null;
+      let state: string | null = null;
+      if (sc.isWord('at') && sc.isWord('turn', 1)) {
+        sc.next();
         sc.next();
         const n = sc.next();
         if (n && n.kind === 'number') {
@@ -1312,82 +1464,67 @@ class Parser {
       } else if (line.tokens[0]?.kind === 'number' && line.tokens[1]?.text === 'turns' && line.tokens[2]?.text === 'later') {
         timing = 'later';
         turns = Number(line.tokens[0].text);
+      } else if (sc.isWord('when')) {
+        // `when <owner> becomes <state>` — state anchor (ratchet D10).
+        sc.next();
+        owner = this.parseNameRef(sc, (t) => t.kind === 'word' && t.text === 'becomes');
+        if (sc.matchWord('becomes')) {
+          const st = sc.next();
+          if (st && st.kind === 'word') {
+            timing = 'becomes';
+            state = st.text;
+          } else {
+            this.diagnostics.error('parse.sequence-anchor', 'Expected a state name after `becomes`.', sc.restSpan());
+          }
+        } else {
+          this.diagnostics.error('parse.sequence-anchor', 'Expected `when <owner> becomes <state>` in the step anchor.', sc.restSpan());
+        }
       }
       if (!timing) {
-        this.diagnostics.error('parse.sequence-step', 'Expected `at turn <n>` or `<n> turns later` to open a sequence step.', lineSpan(line));
+        this.diagnostics.error('parse.sequence-step', 'Expected `at turn <n>`, `<n> turns later`, or `when <owner> becomes <state>` to open a sequence step.', lineSpan(line));
         this.pos++;
         continue;
       }
       this.pos++;
       const body = this.parseStatements(line.indent, 'sequence');
-      steps.push({ kind: 'sequence-step', timing, turns, body, span: lineSpan(line) });
+      steps.push({ kind: 'sequence-step', timing, turns, owner, state, body, span: lineSpan(line) });
     }
     const endSpan = this.consumeEnd('sequence', headLine);
     return { kind: 'define-sequence', name, steps, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
-  // ------------------------------------------------------------------ when
-
-  private parseWhen(): WhenRule {
-    const headLine = this.lines[this.pos++];
-    const c = new Cursor(headLine.tokens, headLine);
-    c.matchWord('when');
-
-    const headerWords: string[] = [];
-    let headerSpan: Span | null = null;
-    while (!c.atEnd() && !c.isWord('while')) {
-      const t = c.next()!;
-      headerWords.push(t.text);
-      headerSpan = headerSpan ? mergeSpans(headerSpan, t.span) : t.span;
-    }
-    if (headerWords.length === 0) {
-      this.diagnostics.error('parse.when-header', 'Expected an event header after `when`.', lineSpan(headLine));
-    }
-
-    let condition: ConditionNode | null = null;
-    if (c.matchWord('while')) {
-      condition = this.parseCondition(c, headLine);
-    }
-
-    const body = this.parseStatements(headLine.indent, 'when');
-    const endSpan = this.consumeEnd('when', headLine);
-
-    return {
-      kind: 'when-rule',
-      headerWords,
-      headerSpan: headerSpan ?? lineSpan(headLine),
-      condition,
-      body,
-      span: mergeSpans(lineSpan(headLine), endSpan),
-    };
-  }
-
   // ------------------------------------------------------------- on clause
 
-  private parseOnClause(indent: number): OnClause {
+  /**
+   * `on <verb> it` (intercept) / `after <verb> it` (react, ratchet D3) /
+   * `on every turn` — with `while <cond>` on any binding and the `, once`
+   * clause modifier (D5). Terminated by `end on` / `end after`.
+   */
+  private parseOnClause(indent: number, clauseKind: 'on' | 'after'): OnClause {
     const headLine = this.lines[this.pos++];
     const c = new Cursor(headLine.tokens, headLine);
-    c.matchWord('on');
+    c.matchWord(clauseKind);
     const action = c.next();
     let actionWord = '';
     if (action && action.kind === 'word') {
       actionWord = action.text;
     } else {
-      this.diagnostics.error('parse.on-action', 'Expected an action word after `on`.', lineSpan(headLine));
+      this.diagnostics.error('parse.on-action', `Expected an action word after \`${clauseKind}\`.`, lineSpan(headLine));
     }
 
     let binding: OnClause['binding'] = 'it';
     let role: string | null = null;
     let condition: ConditionNode | null = null;
+    let once = false;
     let ordering: OnClause['ordering'] = null;
 
     if (actionWord === 'every' && c.isWord('turn')) {
-      // `on every turn [while <condition>]` (design.md §3.3, NPC-behavior shape).
+      // `on every turn [while <condition>] [, once]` (§3.3 + D5).
       c.next();
       binding = 'every-turn';
       actionWord = 'every-turn';
-      if (c.matchWord('while')) {
-        condition = this.parseCondition(c, headLine);
+      if (clauseKind === 'after') {
+        this.diagnostics.error('parse.after-every-turn', '`after every turn` is not a form — every-turn clauses are `on every turn` (they are not reactions to an action).', lineSpan(headLine));
       }
     } else if (c.matchWord('anything')) {
       // `on <action> anything as the <role>` (design.md §2.2 role binding).
@@ -1403,30 +1540,44 @@ class Parser {
       }
     } else {
       if (!c.matchWord('it')) {
-        this.diagnostics.error('parse.on-target', 'Expected `it`, `anything as the <role>`, or `every turn` in the `on` header.', c.restSpan());
-      }
-      // `, before <trait>` / `, after <trait>` explicit ordering (§2.2).
-      if (c.peek()?.kind === 'comma') {
-        c.next();
-        const rel = c.next();
-        const traitTok = c.next();
-        if (rel && (rel.text === 'before' || rel.text === 'after') && traitTok && traitTok.kind === 'word') {
-          ordering = { relation: rel.text as 'before' | 'after', trait: traitTok.text };
-        } else {
-          this.diagnostics.error('parse.on-ordering', 'Expected `before <trait>` or `after <trait>` after the comma.', c.restSpan());
-        }
+        this.diagnostics.error('parse.on-target', `Expected \`it\`, \`anything as the <role>\`, or \`every turn\` in the \`${clauseKind}\` header.`, c.restSpan());
       }
     }
 
-    const body = this.parseStatements(headLine.indent, 'on');
-    const endSpan = this.consumeEnd('on', headLine);
+    // `while <condition>` — legal on every binding (ownership package).
+    if (c.matchWord('while')) {
+      condition = this.parseCondition(c, headLine);
+    }
+
+    // Comma modifiers: `, once` (D5) and `, before/after <trait>` ordering (§2.2).
+    while (c.peek()?.kind === 'comma') {
+      c.next();
+      const mod = c.next();
+      if (mod && mod.kind === 'word' && mod.text === 'once') {
+        once = true;
+      } else if (mod && (mod.text === 'before' || mod.text === 'after')) {
+        const traitTok = c.next();
+        if (traitTok && traitTok.kind === 'word') {
+          ordering = { relation: mod.text as 'before' | 'after', trait: traitTok.text };
+        } else {
+          this.diagnostics.error('parse.on-ordering', `Expected a trait name after \`${mod.text}\`.`, c.restSpan());
+        }
+      } else {
+        this.diagnostics.error('parse.on-modifier', 'Expected `once`, `before <trait>`, or `after <trait>` after the comma.', mod?.span ?? c.restSpan());
+      }
+    }
+
+    const body = this.parseStatements(headLine.indent, clauseKind);
+    const endSpan = this.consumeEnd(clauseKind, headLine);
 
     return {
       kind: 'on-clause',
+      clauseKind,
       action: actionWord,
       binding,
       role,
       condition,
+      once,
       ordering,
       body,
       span: mergeSpans(lineSpan(headLine), endSpan),
@@ -1459,11 +1610,30 @@ class Parser {
       return this.parseOrdinalBlock(line);
     }
 
+    // `<subject> must <predicate>: <key>` body statement (ratchet D6).
+    if (lineHasMust(line)) {
+      this.pos++;
+      if (blockKeyword === 'after') {
+        this.reportRefusalInAfter(line);
+        return null;
+      }
+      return this.parseMustLine(line);
+    }
+
     switch (word) {
       case 'refuse':
       case 'phrase': {
         this.pos++;
         c.next();
+        // `refuse when <condition>: <key>` — the prohibition form (D6) in
+        // body position; same shape as the define-action line.
+        if (word === 'refuse' && c.isWord('when')) {
+          if (blockKeyword === 'after') {
+            this.reportRefusalInAfter(line);
+            return null;
+          }
+          return this.parseRefuseWhenStatement(line);
+        }
         const key = this.readDottedKey(c);
         if (!key) {
           this.diagnostics.error('parse.phrase-ref', `Expected a phrase key after \`${word}\`.`, c.restSpan());
@@ -1471,8 +1641,13 @@ class Parser {
         }
         const params = this.parseParams(c, line);
         if (word === 'refuse') {
+          if (blockKeyword === 'after') {
+            this.reportRefusalInAfter(line);
+            return null;
+          }
           return { kind: 'refuse', phraseKey: key, params, span: lineSpan(line) } as RefuseStmt;
         }
+        const stmtWhen = this.parseStatementWhen(c, line);
         // Declare-and-emit sugar (§2.6/§3.3): a deeper-indented bare prose
         // block after `phrase <key>` registers the text under the key.
         let inlineText: TextValue | null = null;
@@ -1481,18 +1656,19 @@ class Parser {
           inlineText = this.parseProseParagraph(line.indent + 1, line.indent);
         }
         const span = inlineText ? mergeSpans(lineSpan(line), inlineText.span) : lineSpan(line);
-        return { kind: 'phrase', phraseKey: key, params, inlineText, span } as PhraseStmt;
+        return { kind: 'phrase', phraseKey: key, params, inlineText, stmtWhen, span } as PhraseStmt;
       }
       case 'emit': {
         this.pos++;
         c.next();
         const event: string[] = [];
-        while (!c.atEnd()) event.push(c.next()!.text);
+        while (!c.atEnd() && !c.isWord('when')) event.push(c.next()!.text);
         if (event.length === 0) {
           this.diagnostics.error('parse.emit', 'Expected an event name after `emit`.', lineSpan(line));
           return null;
         }
-        return { kind: 'emit', event, span: lineSpan(line) } as EmitStmt;
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'emit', event, stmtWhen, span: lineSpan(line) } as EmitStmt;
       }
       case 'set': {
         this.pos++;
@@ -1518,7 +1694,8 @@ class Parser {
           this.diagnostics.error('parse.change-state', 'Expected a state name after `to`.', c.restSpan());
           return null;
         }
-        return { kind: 'change', entity, state: state.text, span: lineSpan(line) } as ChangeStmt;
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'change', entity, state: state.text, stmtWhen, span: lineSpan(line) } as ChangeStmt;
       }
       case 'move': {
         this.pos++;
@@ -1528,15 +1705,16 @@ class Parser {
           this.diagnostics.error('parse.move-to', 'Expected `to <place>` in the `move` statement.', c.restSpan());
           return null;
         }
-        const place = this.parseNameRef(c, () => false);
-        return { kind: 'move', entity, place, span: lineSpan(line) } as MoveStmt;
+        const place = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'move', entity, place, stmtWhen, span: lineSpan(line) } as MoveStmt;
       }
       case 'award': {
         this.pos++;
         c.next();
         const expression: string[] = [];
         let once = false;
-        while (!c.atEnd()) {
+        while (!c.atEnd() && !c.isWord('when')) {
           const t = c.next()!;
           if (t.kind === 'comma' && c.isWord('once')) {
             c.next();
@@ -1545,7 +1723,8 @@ class Parser {
           }
           expression.push(t.text);
         }
-        return { kind: 'award', expression, once, span: lineSpan(line) } as AwardStmt;
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'award', expression, once, stmtWhen, span: lineSpan(line) } as AwardStmt;
       }
       case 'win':
       case 'lose': {
@@ -1553,14 +1732,23 @@ class Parser {
         c.next();
         const key = c.peek();
         let phraseKey: string | null = null;
-        if (key && key.kind === 'word') {
+        if (key && key.kind === 'word' && key.text !== 'when') {
           phraseKey = key.text;
           c.next();
         }
-        return { kind: word, phraseKey, span: lineSpan(line) } as Statement;
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: word, phraseKey, stmtWhen, span: lineSpan(line) } as Statement;
       }
       case 'if':
-        return this.parseIf(line);
+        // Removed — given 4 amended (ratchet 2026-07-11).
+        this.diagnostics.error(
+          'parse.removed-if',
+          '`if` was removed (given 4 amended) — use a `must` requirement for guards (`it must be hungry: already-fed`), a statement `when` suffix for conditionals (`award X when <condition>`), or `select` for branching.',
+          lineSpan(line),
+        );
+        this.pos++;
+        this.recoverPastEndNested('if', line.indent);
+        return null;
       case 'select':
         return this.parseSelect(line);
       default:
@@ -1572,6 +1760,38 @@ class Parser {
         this.pos++;
         return null;
     }
+  }
+
+  /** The statement `when <condition>` suffix (ratchet D7); null when absent. */
+  private parseStatementWhen(c: Cursor, line: Line): ConditionNode | null {
+    if (!c.matchWord('when')) return null;
+    return this.parseCondition(c, line);
+  }
+
+  /** `refuse when <condition>: <key>` as a body statement (prohibition, D6). */
+  private parseRefuseWhenStatement(line: Line): Statement | null {
+    const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
+    if (colonIndex === -1 || colonIndex !== line.tokens.length - 2) {
+      this.diagnostics.error('parse.refuse-when', 'Expected `refuse when <condition>: <phrase-key>`.', lineSpan(line));
+      return null;
+    }
+    const keyTok = line.tokens[colonIndex + 1];
+    if (keyTok.kind !== 'word') {
+      this.diagnostics.error('parse.refuse-when', 'Expected a phrase key after the colon.', keyTok.span);
+      return null;
+    }
+    const condCursor = new Cursor(line.tokens.slice(2, colonIndex), line);
+    const condition = this.parseCondition(condCursor, line);
+    return { kind: 'refuse-when', condition, phraseKey: keyTok.text, span: lineSpan(line) };
+  }
+
+  /** `refuse`/`must` inside an `after` clause — reactions cannot refuse (D3). */
+  private reportRefusalInAfter(line: Line): void {
+    this.diagnostics.error(
+      'parse.react-refusal',
+      'Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.',
+      lineSpan(line),
+    );
   }
 
   /**
@@ -1625,32 +1845,6 @@ class Parser {
       }
     }
     return { kind: 'ordinal', ordinal: ORDINALS[word], ordinalWord: word, body, span };
-  }
-
-  private parseIf(headLine: Line): IfStmt | null {
-    this.pos++;
-    const c = new Cursor(headLine.tokens, headLine);
-    c.matchWord('if');
-
-    // Condition runs to the trailing `then`.
-    const thenIndex = headLine.tokens.map((t) => t.kind === 'word' && t.text === 'then').lastIndexOf(true);
-    if (thenIndex === -1) {
-      this.diagnostics.error('parse.if-then', 'Expected `then` at the end of the `if` line.', lineSpan(headLine));
-      return null;
-    }
-    const condCursor = new Cursor(headLine.tokens.slice(1, thenIndex), headLine);
-    const condition = this.parseCondition(condCursor, headLine);
-
-    const thenBody = this.parseStatements(headLine.indent, 'if');
-    let elseBody: Statement[] | null = null;
-    const elseLine = this.lines[this.pos];
-    if (elseLine && firstWord(elseLine) === 'else' && elseLine.indent === headLine.indent) {
-      this.pos++;
-      elseBody = this.parseStatements(headLine.indent, 'if');
-    }
-    const endSpan = this.consumeEnd('if', headLine);
-
-    return { kind: 'if', condition, then: thenBody, else: elseBody, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
   private parseSelect(headLine: Line): SelectOnStmt | SelectStrategyStmt | null {
@@ -1919,11 +2113,11 @@ class Parser {
     return this.parsePredicate(c, line, subject);
   }
 
-  /** True when the next word stands alone (connective or nothing follows). */
+  /** True when the next word stands alone (connective, comma, or nothing follows). */
   private isBareConditionRef(c: Cursor): boolean {
     const after = c.peek(1);
     if (!after) return true;
-    if (after.kind === 'rparen') return true;
+    if (after.kind === 'rparen' || after.kind === 'comma') return true;
     return after.kind === 'word' && (after.text === 'and' || after.text === 'or' || after.text === 'then');
   }
 

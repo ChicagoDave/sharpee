@@ -1,47 +1,38 @@
 story "Trait Declarations Fixture" by "Sharpee Platform"
   id: traits-basic
   version: 0.0.1
-  blurb: design.md 2.2/3.2 - data types, ordering, role binding, hatches.
+  blurb: design.md 2.2/3.2 + ownership package - data types, trait states, ordering, role binding, hatches.
+  states: open-hours, after-hours
 
-define trait openable
-  data
-    open: flag, starts false
+define trait sealable
+  states, reversible: sealed, ajar
 
   phrases en-US
-    already-open:
+    already-ajar:
       {capitalize the item} {verb:is item} already open.
-    opened:
+    unsealed:
       {You} {open} {the item}.
-    opened-empty:
+    unsealed-empty:
       {You} {open} {the container}, which is empty.
 
   on opening it
-    if open then
-      refuse already-open
-    end if
-    set open to true
-    emit opened
-    if it is a container and it holds nothing then
-      phrase opened-empty
-    else
-      phrase opened
-    end if
+    it must be sealed: already-ajar
+    change it to ajar
+    emit unsealed
+    phrase unsealed-empty when it is a container and it holds nothing
   end on
 end trait
 
-define trait lockable
+define trait barrable
   data
-    locked: flag
     key: entity
 
   phrases en-US
-    locked:
-      {capitalize the item} {verb:is item} locked.
+    barred:
+      {capitalize the item} {verb:is item} barred shut.
 
-  on opening it, before openable
-    if locked then
-      refuse locked
-    end if
+  on opening it, before sealable
+    refuse when its key is in the Break Room: barred
   end on
 end trait
 
@@ -55,9 +46,7 @@ define trait carrying-limit
       {You're} carrying too much already.
 
   on taking anything as the taker
-    if the taker holds the flimsy basket then
-      refuse hands-full
-    end if
+    refuse when the taker holds the flimsy basket: hands-full
   end on
 end trait
 
@@ -65,6 +54,7 @@ define action snoozing
   grammar
     snooze
     nap → each quiet corner
+  score napped worth 1
   otherwise refuse no-napping
 
   phrases en-US
@@ -85,8 +75,6 @@ create the flimsy basket
   in the Break Room
 
   Woven this morning, regretted by noon.
-
-define flag after-hours starts false
 
 define phrases en-US
   closed-up:

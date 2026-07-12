@@ -7,6 +7,10 @@ create the Foyer
 
   A room.
 
+  after entering it
+    change the message to smashed
+  end after
+
 create the message
   scenery
   in the Foyer
@@ -17,6 +21,3 @@ create the player
 
   You.
 
-when the player enters the Foyer
-  change the message to smashed
-end when

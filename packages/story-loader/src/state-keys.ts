@@ -24,3 +24,6 @@ export const CHORD_RNG_KEY = 'chord.rng';
 
 /** `define trait` runtime trait types: `chord.trait.<name>` (Phase B). */
 export const CHORD_TRAIT_PREFIX = 'chord.trait.';
+
+/** The story object's current phase (`states:` on the story header, D2). */
+export const CHORD_STORY_STATE_KEY = 'chord.story.state';

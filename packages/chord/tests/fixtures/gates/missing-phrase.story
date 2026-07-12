@@ -7,9 +7,9 @@ create the Foyer
 
   A room.
 
-when the player enters the Foyer
-  phrase nonexistent-key
-end when
+  after entering it
+    phrase nonexistent-key
+  end after
 
 create the player
   starts in the Foyer
