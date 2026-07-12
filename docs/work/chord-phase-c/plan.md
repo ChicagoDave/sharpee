@@ -136,8 +136,11 @@ grammar surfaces need CLI-visible changes — expected minimal),
 expected no change), and story content: `stories/cloak-of-darkness/
 cloak.story`, `stories/friendly-zoo/zoo.story`, `stories/friendly-zoo/src/
 chord-extras.ts` (the `gateStatus` producer currently reads `chord.flag.
-gate-closed` directly — Phase 5 must repoint it at the gate's `openable`
-state).
+gate-closed` directly — under the hatch legitimacy rule (design.md §5.6,
+David 2026-07-11) Phase 5 **retires** this hatch into a pure-Chord
+state-conditional phrase rather than repointing it; `flavor`/`aside` already
+comply as Sharpee-API hatches. Migration checklist line: no hatch module may
+reference `chord.*` state keys).
 
 **One specific risk to this zero-platform-touch forecast is flagged and
 tracked, not silently assumed away**: whether `after`-clauses reacting to a

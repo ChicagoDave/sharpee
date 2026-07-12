@@ -862,7 +862,42 @@ engine's seeded RNG service so transcript testing and undo/replay behave.
   stories only** (hatches refused at load); standalone authors with the devkit
   get the full seam. The seam is nominal and narrow by design.
 
-### 5.7 Backend B — the TypeScript emitter ("eject")
+**Hatch legitimacy rule (decision — David, 2026-07-11).** Any hatch doing IF
+work is either a Chord gap or a misuse of the hatch. A hatch is legitimate in
+exactly two shapes:
+
+1. **Sharpee-API hatch** — implements a public platform interface
+   (`PhraseProducer`, `Action`, `CapabilityBehavior`) and touches the world
+   only through public platform surfaces (typed contracts, traits, behaviors).
+2. **Pure-computation hatch** — arbitrary TypeScript doing non-IF work
+   (procedural generation, math, text crunching); data crosses the boundary
+   only through the implemented interface.
+
+Triage for everything else: if Chord already expresses it, the hatch is
+misuse — the fix is the Chord form. If Chord can't express it yet, the hatch
+is a **language gap**: file it, and the interim hatch still keeps to shape 1
+or 2. Hatch count is a language-gap metric; the pure-IR profile is the
+scoreboard.
+
+**The `chord.*` state namespace is off-limits to hatches.** Those keys are
+the loader's private encoding of Chord semantics; language ratchets change
+them without warning and nothing recompiles a hatch. Cautionary precedent
+(Phase C): zoo's `gateStatus` producer read `chord.flag.gate-closed` by
+string; the flag removal (givens 8+9) deleted the namespace, and the hatch
+would silently report the gate permanently open — no compile error, no load
+error, no diagnostic.
+
+**Enforcement is by construction, not policy.** The producer context *type*
+already omits world access — `gateStatus` cast its way through, which is the
+proof that policy without construction fails. The contract: the loader hands
+hatches a narrow, typed, versioned context exposing public surfaces only, so
+a hatch cannot misuse what it is never given; a load-time lint for `'chord.'`
+string literals in hatch modules backstops cast-arounds. The narrow context
+is also the IDE contract — the IDE can state exactly what a hatch *can* touch
+even when it can't see what the hatch does. Implementation (runtime context
+narrowing + lint) is a story-loader change tracked as Phase C follow-up work;
+until it lands the rule is enforced by review, and Phase C P5 retires the one
+violating hatch (below).
 
 `sharpee eject` walks the IR and emits fluent-layer TypeScript (the dream-cloak
 vocabulary — which survives as the emitter target and the loader's internal API,
