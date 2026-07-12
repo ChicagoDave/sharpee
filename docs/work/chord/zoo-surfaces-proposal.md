@@ -267,3 +267,26 @@ error (unconditional detail belongs in the description).
 7. **Sequencing**: one package landing all three surfaces (proposed — the
    gate re-entry is all-or-nothing per file anyway), or split (Z3a is the
    cheapest win; Z2 the largest grammar addition)?
+
+## Owner answers (David, 2026-07-12 — recorded verbatim intent)
+
+- **Z1 APPROVED** as proposed (`first time` prose in create blocks).
+- **Z2 REDIRECTED**: no dedicated `snippet` block — "the phrase evaluator
+  should handle commas": snippets are ORDINARY PHRASES using the existing
+  comma-strategy kit (`define phrase shop-bustle, cycling … or … end
+  phrase`) referenced from description prose via the normal `{<key>}`
+  marker (checkMarkers already resolves phrase keys). Open sub-question
+  for the ratchet draft: where the ADR-209 `mentions <entity>` presence
+  gate lives once snippets are plain phrases (phrase-level `when`? a
+  marker-site gate?) — draft options, David decides.
+- **Z3a REDIRECTED/EXPANDED**: not a single `presence` key — the author
+  writes ALL the lifecycle versions of an occupant's narration: e.g.
+  `entered`, `present`, `exited`, `disappeared` — a reserved key FAMILY
+  covering arrival/presence/departure/vanishing. Draft must propose the
+  exact key names, which are optional, and what each feeds
+  ({slot:here} for present; movement narration for entered/exited).
+- **Z3b APPROVED** as proposed (`phrase detail while <condition>:`).
+- **§3.5 APPROVED** (pipeline/IR contracts section as drafted).
+
+Next step: P1-style ratchet-entry drafts honoring these answers
+(new session; this session closed at context limit).
