@@ -1,7 +1,7 @@
 {
   "name": "@sharpee/story-loader",
-  "version": "2.2.0",
-  "description": "Story IR interpreter for Sharpee \u2014 a generic Story implementation constructed from Chord-compiled IR (ADR-210)",
+  "version": "3.0.0",
+  "description": "Story IR interpreter for Sharpee — a generic Story implementation constructed from Chord-compiled IR (ADR-210)",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
   "types": "./dist/index.d.ts",

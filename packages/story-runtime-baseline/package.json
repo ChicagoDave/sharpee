@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-runtime-baseline",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "Story Runtime Baseline manifest (ADR-178). Declares the canonical set of packages a .sharpee story bundle may import. Used by Zifmia to install the baseline transitively and by the story build to validate bundles against the contract.",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
