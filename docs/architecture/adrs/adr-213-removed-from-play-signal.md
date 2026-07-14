@@ -1,6 +1,6 @@
 # ADR-213: Removed-from-Play — a Witnessed Removal Signal at the `removeEntity` Choke Point
 
-## Status: DRAFT (Open questions 1–4 are David's to answer before implementation)
+## Status: ACCEPTED (2026-07-13 — all open questions resolved via interview: Q1 pre-deletion live entity, Q2 seam only, Q3 mint `remove` now, Q4 orphaning unsignaled)
 
 > Drafted 2026-07-13 from the chord-zoo-surfaces package planning
 > (session 0248bb). The Z3 `disappeared` channel investigation found
@@ -22,9 +22,15 @@
 ## Terminology
 
 - **Removed from play** — hard-deleted from the entity store via
-  `WorldModel.removeEntity`: spatial index removal, detach, then
-  `entities.delete(id)` (WorldModel.ts:818-833). Distinct from
+  `WorldModel.removeEntity`: spatial index removal, then
+  `entities.delete(id)` (WorldModel.ts:818-833; the intervening
+  detach branch is dead code — see the §1 implementation note). Distinct from
   *orphaning* (`moveEntity(id, null)` — parked nowhere, still exists).
+  **Resolved (Q4, 2026-07-13): orphaning stays unsignaled** — the
+  observer seam fires only in `removeEntity`; orphaned entities still
+  exist and can return, and bootstrap/setup null-moves must not
+  trigger observers. A witnessed orphaning that ever needs narration
+  is `exited`-family territory, not `disappeared`.
 - **Removal observer** — this ADR's new seam: a function invoked at the
   removal choke point, before deletion, with the live entity and its
   last containing room.
@@ -90,15 +96,32 @@ worldModel.onEntityRemoved(observer: EntityRemovalObserver): void;
   room is captured and before the spatial-index/store mutation —
   observers can read the entity's name, traits, and phrases; they
   cannot veto (removal is already decided; this is a fact
-  notification, named accordingly).
+  notification, named accordingly). **Resolved (Q1, 2026-07-13):
+  pre-deletion with the live entity is confirmed** — the post-deletion
+  snapshot alternative was rejected because it forces world-model to
+  guess what consumers need and re-touch the platform every time the
+  guess is wrong; the no-veto + logged-exception contract contains the
+  mid-removal exposure. Implementation note (corrected 2026-07-14,
+  chord-212-213-seams planning): `removeEntity`'s internal
+  `moveEntity(id, null)` branch (WorldModel.ts:826-830) is DEAD CODE —
+  `SpatialIndex.remove` deletes the entity's parent pointer as its
+  first step (SpatialIndex.ts:39-44), so the subsequent
+  `getLocation(id)` is always `undefined` and the null-move never
+  runs. The seam's rule is therefore: capture the containing room and
+  invoke observers BEFORE `spatialIndex.remove` (the first real
+  mutation); the dead branch is left as-is, flagged not silently
+  removed. The seam hooks `removeEntity` only and must never hang on
+  `moveEntity` — a direct orphaning call signals nothing (AC-7).
 - In-memory array, registration order, nothing serialized; callers
   re-register at load — the same lifecycle contract as the ADR-211
   gate seam and ADR-212's entry registry.
 - This is a *seam*, not an event-system change: nothing lands on the
   `if.event.*` bus, so the "events are messages, not pub/sub"
-  constraint the dungeo interceptor documents is unchanged. (Whether a
-  semantic `if.event.removed` should ALSO be emitted is Open
-  question 2.)
+  constraint the dungeo interceptor documents is unchanged.
+  **Resolved (Q2, 2026-07-13): seam only** — no `if.event.removed` is
+  emitted; the world-model's no-change-events posture survives intact.
+  If a story ever needs declarative `.on`-handler/chain reaction to
+  removals, a later ADR adds the bus event at this same choke point.
 
 ### 2. The `disappeared` channel rides it (story-loader)
 
@@ -131,16 +154,17 @@ double-narrates. The hazard "hand-written removal message + authored
 author-visible; documented, not guarded (the ADR-209 counter-collision
 posture). Call sites may migrate opportunistically.
 
-### 4. A Chord removal statement — minted separately
+### 4. A Chord removal statement — `remove <entity>`, minted now
 
-For Chord stories to remove entities themselves, the loader needs a
-removal statement (`remove <entity>` — spelling per Open question 3).
-That is new grammar: it takes its own ratchet entry and lands when a
-story needs it. Nothing in the zoo-surfaces package requires it (the
-zoo's only removal is TS-side, which §2 already covers), so this ADR
-defines the semantics — statement → `world.removeEntity` → observers
-fire, witnessed narration per §2 — but does not force it into the
-zoo-surfaces scope.
+**Resolved (Q3, 2026-07-13): the statement is minted now, spelled
+`remove`** (matching the `removeEntity` API). It takes its own ratchet
+entry and rides zoo-surfaces Phase 3 while the channel machinery is
+open, rather than waiting for the first story that needs it (dungeo's
+Chord migration will). Semantics: statement → `world.removeEntity` →
+observers fire → witnessed narration per §2. Nothing else in the
+zoo-surfaces package depends on it (the zoo's only removal is TS-side,
+which §2 already covers), so it is an additive deliverable there, not
+a dependency.
 
 ### Interface contracts
 
@@ -159,39 +183,13 @@ zoo-surfaces scope.
   world-setup swap, index.ts:122, predates story observers; a
   mid-game player removal is author-error territory and simply skips
   the channel).
-- **chord**: no change in this ADR; the removal statement (§4) is a
-  future ratchet entry.
+- **chord**: the `remove <entity>` statement (§4) — its own ratchet
+  entry, delivered with zoo-surfaces Phase 3.
 - **engine / stdlib / lang-en-us / if-domain**: no change.
 
-Touched packages: `world-model`, `story-loader` (+ `chord` only when
-§4's statement is minted). Anything outside this list is a
-stop-and-discuss checkpoint.
-
-## Open questions (David's)
-
-1. **Observer timing and payload.** Confirm pre-deletion invocation
-   with `(liveEntity, lastRoomId)`. The alternative — post-deletion
-   with a snapshot — forces the platform to guess what to snapshot;
-   pre-deletion lets the consumer read what it needs.
-   Recommendation: pre-deletion as drafted.
-2. **Seam only, or also a semantic event?** The observer seam is what
-   `disappeared` needs. Should `removeEntity` ALSO emit
-   `if.event.removed` on the event bus so story `.on` handlers and
-   chains can react declaratively? That reverses the world-model's
-   no-change-events posture at one method and is a bigger decision.
-   Recommendation: seam only now; the event can be a later ADR if a
-   story needs it.
-3. **The Chord statement.** Mint `remove <entity>` now (its own
-   ratchet entry, cheap while Z3's channel machinery is being built in
-   zoo-surfaces Phase 3) or defer until a story needs it (dungeo's
-   Chord migration will)? And the spelling: `remove` (matches the API)
-   vs `destroy`. Recommendation: defer; spelling decided at minting.
-4. **Orphaning.** `moveEntity(id, null)` parks an entity nowhere
-   without deleting it (bootstrap and some setup code use it). The
-   signal deliberately does NOT fire there — `disappeared` means
-   removed/destroyed per the ratchet. Confirm orphaning stays
-   unsignaled (a witnessed orphaning would be `exited` territory if it
-   ever needs narration).
+Touched packages: `world-model`, `story-loader`, `chord` (§4's
+statement). Anything outside this list is a stop-and-discuss
+checkpoint.
 
 ## Acceptance criteria (each lands as a test when implemented)
 
@@ -213,9 +211,12 @@ stop-and-discuss checkpoint.
   authored (dungeo chain + zoo chain green, unedited).
 - **AC-5**: an observer that throws is logged and does not abort the
   removal or the turn.
-- **AC-6** (lands with §4's statement, whenever minted): the Chord
-  removal statement removes the entity, fires the observers, and the
-  witnessed narration renders per AC-2.
+- **AC-6** (lands with §4's `remove` statement in zoo-surfaces
+  Phase 3): the Chord removal statement removes the entity, fires the
+  observers, and the witnessed narration renders per AC-2.
+- **AC-7**: `moveEntity(id, null)` (orphaning) invokes no removal
+  observer and narrates nothing — the seam fires only in
+  `removeEntity` (Q4 resolution pinned).
 
 ## Consequences
 
@@ -226,12 +227,14 @@ stop-and-discuss checkpoint.
   loader polling or wrapping every removal path — and it covers
   TS-initiated removals of Chord entities for free.
 - The world-model's no-change-events posture survives everywhere
-  except this one deliberate seam (and Open question 2 keeps the event
-  bus out of it unless David opts in).
+  except this one deliberate seam (Q2 resolved: the event bus stays
+  out of it; a later ADR may add `if.event.removed` if a story needs
+  it).
 - The zoo-surfaces plan's Phase 3 stop-and-discuss risk is resolved by
   decision rather than discovered mid-implementation.
-- Cost: one small world-model seam + one loader observer; the Chord
-  statement is deferred and separately ratcheted.
+- Cost: one small world-model seam + one loader observer + the Chord
+  `remove` statement (own ratchet entry, delivered with zoo-surfaces
+  Phase 3).
 
 ## Session
 

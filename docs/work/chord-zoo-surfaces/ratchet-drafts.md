@@ -103,6 +103,21 @@ migrations) — a 9-package touch list owned by ADR-211, not by this
 package. Sequencing between the two is CP7'. Any touch outside the
 combined ADR-211 list is a stop-and-discuss checkpoint.
 
+## Addendum — Z6 (drafted 2026-07-14, session 9ad631; TRANSCRIBED 2026-07-14 on David's "transcribe")
+
+> Minted by ADR-213 Q3 (resolved 2026-07-13 via adr-interview: "mint
+> now, spelled `remove`, rides zoo-surfaces Phase 3 as its own ratchet
+> entry"). Approval-in-principle is recorded in ADR-213 §4; this row is
+> the entry text for David's explicit "transcribe" into
+> `chord-grammar-changes.md` BEFORE Phase 3 implementation (the Z1–Z5
+> precedent). Two sub-decisions are proposed here beyond ADR-213's
+> pinned semantics and need David's eye: the D7/D13 kit memberships and
+> the remove-the-player load error.
+
+| # | Form (syntax) | Rationale | Example | Decision |
+|---|---------------|-----------|---------|----------|
+| Z6 | **`remove <entity>` statement** — takes the entity out of play entirely: compiles to `world.removeEntity`; ADR-213's pre-removal observers fire; a witnessed `phrase disappeared:` on the entity narrates per Z3 (player's room = the entity's last containing room; unwitnessed removals narrate nothing and consume nothing, D11). Removal is permanent — no statement restores a removed entity. Legal wherever `move` is (clause/action/trait bodies, sequence steps — joining D13's sequence mutation kit) and takes the D7 statement `when` suffix (`remove the crumbs when the seagull is here`); entity references resolve as `move`'s do (`it` = clause owner, `the match` inside `each`). Orphaning is deliberately NOT this statement (there is still no null `move` — parked-nowhere is not an author concept). Never-guess: `remove the player` is a load error (`analysis.remove-player` — the platform defines no post-removal player semantics; ADR-213 pins player removal as out of the channel's scope). | Chord's statement roster has no way to take an entity out of play (`move` requires a real destination, runtime.ts:937-944); every shipped disappearance is TS-side. ADR-213 (ACCEPTED 2026-07-13) built the platform signal at the `removeEntity` choke point; Q3 minted the statement now, spelled `remove` to match the one platform API (Given 7 — one form; no `destroy` synonym). | `after buying it` ⏎ `  remove the last balloon` ⏎ `end after` — witnessed, the balloon's `phrase disappeared:` renders; gated: `remove the crumbs when the seagull is here` | Approved + TRANSCRIBED (David, 2026-07-14 — "transcribe", incl. both sub-decisions; approval-in-principle ADR-213 Q3) |
+
 ## Checkpoints — ALL RESOLVED by David 2026-07-12 (session 034f09)
 
 - **CP1' (gate attachment spelling)** → **(a) Define-phrase header,

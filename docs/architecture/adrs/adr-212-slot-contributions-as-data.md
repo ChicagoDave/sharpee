@@ -1,6 +1,6 @@
 # ADR-212: Slot Contributions as Data — a Declarative Entry Registry Behind `{slot:here}`
 
-## Status: DRAFT (Open questions 1–4 are David's to answer before implementation)
+## Status: ACCEPTED (2026-07-13 — all open questions resolved via interview: Q1 seam now, Q2 engine, Q3 zoo migrates in-package, Q4 any slot key)
 
 > Drafted 2026-07-13 from the chord-zoo-surfaces package planning
 > (session 0248bb). The Z3 `present` channel investigation found that
@@ -106,11 +106,21 @@ export type SlotEntryGate =
 ```
 
 Registration: `engine.registerSlotEntry(entry)` (alongside
-`registerSlotContributor`, game-engine.ts:1817). Keyed
+`registerSlotContributor`, game-engine.ts:1817). **Resolved (Q2,
+2026-07-13): the registry lives in the engine's prose pipeline** — it
+sits beside the staging pass and contributor lifecycle it feeds, and
+`GameEngine.registerSlotEntry` delegates exactly as
+`registerSlotContributor` does; stdlib was rejected as a dependency
+inversion (the engine staging pass would consume stdlib-held data).
+Keyed
 `(slotKey, owner)`, idempotent-last-wins — the state-clauses shape
 (state-clauses.ts:49-51), not the contributor array's append-only
 shape, so a loader re-registering on restore is a no-op and a
-re-registered entry never double-contributes (AC-7). Entries are
+re-registered entry never double-contributes (AC-7). **Resolved (Q4,
+2026-07-13): `registerSlotEntry` accepts any slot key from day one** —
+the gate carries the semantics, not the key, so no registration-time
+key validation exists to lift later; `'here'` is simply the key the
+`present` channel and friendly-zoo use. Entries are
 never unregistered mid-session: an entry whose gate can no longer
 hold (owner moved, removed from play) is inert, not leaked, and the
 whole registry drops on reload. Nothing is serialized; callers
@@ -137,6 +147,10 @@ ADR-211 gate seam.
   data shape serializable-by-design while never artificially
   restricting `while` (the ADR-211 Q4 precedent). The Chord loader uses
   it if a `phrase present:` block ever carries a non-presence gate.
+  **Resolved (Q1, 2026-07-13): the predicate seam ships now** — the
+  two-member `SlotEntryGate` union above is the day-one shape, matching
+  the ADR-211 Q4 full-generality resolution; `owner-present` remains
+  the default so the data path costs nothing.
 
 ### 3. One platform contributor evaluates all entries
 
@@ -168,9 +182,12 @@ exactly like every other Choice.
   `Choice` per the Z5 adverb table, declaration order → `order`. No
   synthesized closures.
 - **friendly-zoo TS**: the hand-rolled table + closure
-  (index.ts:312-343) migrates to four `registerSlotEntry` calls (or is
-  deleted outright once zoo.story's `present` blocks take over in
-  zoo-surfaces Phase 4 — sequencing per Open question 3).
+  (index.ts:312-343) migrates to four `registerSlotEntry` calls **in
+  this ADR's implementation package** (resolved Q3, 2026-07-13) —
+  byte-identical against the shipped story (AC-1), proving the API on
+  a real TS consumer before the Chord loader depends on it.
+  Zoo-surfaces Phase 4 then deletes four data rows when zoo.story's
+  `present` blocks take over, not a closure.
 - **`registerSlotContributor` stands** for genuinely computed
   contributions (ADR-195 unchanged); the entry registry is sugar over
   the same staging pass, not a replacement.
@@ -194,29 +211,6 @@ Touched packages: `engine`, `story-loader`, `stories/friendly-zoo`
 (migration). Anything outside this list is a stop-and-discuss
 checkpoint.
 
-## Open questions (David's)
-
-1. **Gate generality.** Ship the predicate-gate escape hatch now
-   (matching the ADR-211 Q4 full-generality resolution), or
-   presence-only until a consumer needs more? Recommendation: ship the
-   seam now — it is the same pattern, and Z3's `present` semantics stay
-   the default so the data path costs nothing.
-2. **Registry home.** Engine prose pipeline (recommended — it owns the
-   staging pass and the contributor lifecycle) vs stdlib (where the
-   ADR-211 gate seam lives). The keying differs from both precedents
-   either way.
-3. **friendly-zoo migration timing.** Migrate the TS closure to entries
-   in this ADR's package (proves the API against the shipped story,
-   byte-identical), or let zoo-surfaces Phase 4 delete it when
-   zoo.story's `present` blocks take over? Recommendation: the former —
-   the API needs a TS consumer test regardless, and Phase 4 then
-   deletes data rows instead of a closure.
-4. **Slot-key scope.** Restrict `registerSlotEntry` to `'here'`
-   initially (the only slot with a platform-defined presence
-   semantics), or accept any slot key from day one? Recommendation: any
-   key — the gate carries the semantics, and restricting the key just
-   moves a load error to a place authors will trip on later.
-
 ## Acceptance criteria (each lands as a test when implemented)
 
 - **AC-1**: friendly-zoo's occupant presence expressed as four slot
@@ -231,8 +225,8 @@ checkpoint.
   (owner, counterKey), save-persistent; save/restore mid-cycle
   continues the cycle after entries are re-registered at load; a
   Chord-compiled entry's counter uses the channel key (`'present'`).
-- **AC-5**: a predicate-gated entry (if Q1 ships the seam) contributes
-  iff the predicate holds; nothing gate-shaped is serialized.
+- **AC-5**: a predicate-gated entry contributes iff the predicate
+  holds; nothing gate-shaped is serialized.
 - **AC-6**: a Chord `phrase present:` block compiles to an entry with
   no story-specific TS (fixture story; zoo-surfaces AC coverage rides
   this).
