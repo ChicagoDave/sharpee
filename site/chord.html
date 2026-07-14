@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chord — The Sharpee Story Language</title>
+  <meta name="description" content="Chord is Sharpee's story language: write your interactive fiction as a .story file that reads like the prose it produces, and compile it with sharpee compose.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+  <main class="content">
+    <div class="version-badge">New in Sharpee 3.0</div>
+
+    <h1>Chord — The Story Language</h1>
+
+    <p>Chord is Sharpee's story language. Instead of writing TypeScript against the platform API, you write a <code>.story</code> file — a declarative, block-structured language designed to read like the prose it produces. Chord ships with Sharpee 3.0, and version 1 of the language is locked: what you write today keeps working.</p>
+
+    <h2>What It Looks Like</h2>
+
+    <p>Here is a room, an exit that refuses politely, and the prose for it — from the Chord implementation of <em>Cloak of Darkness</em>:</p>
+
+    <pre><code>create the Foyer of the Opera House
+  a room
+  aka foyer, hall, entrance
+  west to the Cloakroom
+  south to the Foyer Bar
+  north is blocked: cant-leave
+
+  You are standing in a spacious hall, splendidly decorated in red and
+  gold, with glittering chandeliers overhead. The entrance from the
+  street is to the north, and there are doorways south and west.</code></pre>
+
+    <p>Objects declare their traits the same way — the same snap-together pieces you know from the platform, in plain words:</p>
+
+    <pre><code>create the brass hook
+  aka hook, peg
+  scenery, a supporter with capacity 1
+  in the Cloakroom
+
+  It's just a small brass hook, screwed to the wall.</code></pre>
+
+    <p>Behavior attaches directly to the thing that owns it. The message in the sawdust tracks its own state, and reacts when the player reads it:</p>
+
+    <pre><code>create the message in the sawdust
+  aka message, sawdust, floor, writing
+  scenery
+  in the Foyer Bar
+  states: intact, trampled, obliterated
+
+  on reading it
+    select on its state
+      when intact
+        phrase message-intact
+        win
+      when trampled
+        phrase message-trampled
+      when obliterated
+        phrase message-obliterated
+        lose
+    end select
+  end on</code></pre>
+
+    <p>And every piece of text lives in one place, registered by name — the same logic-and-prose separation the platform has always enforced, now built into the language:</p>
+
+    <pre><code>define phrases en-US
+  cant-leave:
+    You've only just arrived, and besides, the weather outside seems
+    to be getting worse.
+  stumble:
+    Blundering around in the dark isn't a good idea!</code></pre>
+
+    <p>The complete <em>Cloak of Darkness</em> is under 100 lines of Chord. The equivalent TypeScript implementation is 785 lines.</p>
+
+    <p>And it scales past toy examples: the entire <a href="family-zoo.html">Family Zoo</a> — the book's game, with NPCs, timed events, custom actions, and scoring — is written in Chord as a single <a href="https://github.com/ChicagoDave/sharpee/blob/main/stories/friendly-zoo/zoo.story"><code>zoo.story</code></a> file.</p>
+
+    <h2>How It Works</h2>
+
+    <p>Chord compiles to <em>Story IR</em> — a typed, JSON-serializable representation of your story — which Sharpee's story loader interprets at runtime. Your prose flows through the same phrase algebra as every other Sharpee story, your objects are the same traits and behaviors, and the parser understands the same commands. Chord is a new front door, not a separate engine.</p>
+
+    <p>The compiler runs a set of load-time gates over your story before it will produce anything: unknown states, unbound phrase markers, unreachable rules — each reported with the <code>.story</code> line number where you can fix it.</p>
+
+    <h2>Escape Hatches</h2>
+
+    <p>When a puzzle needs real code, you don't leave Chord — you declare a <em>hatch</em>: a named TypeScript export with a small, documented interface, bound when the story loads.</p>
+
+    <pre><code>define text garbled from "./extras.ts"</code></pre>
+
+    <p>Everything else stays declarative. Stories with no hatches are pure data.</p>
+
+    <h2>Try It</h2>
+
+    <p>The compiler ships with the CLI you already have:</p>
+
+    <pre><code>npm install -g @sharpee/devkit
+sharpee compose my-story.story</code></pre>
+
+    <p><code>compose</code> parses and analyzes your story, reports any diagnostics, proves the result actually loads, and emits the Story IR. Use <code>--check</code> to run only the gates (handy in CI), or <code>-o story-ir.json</code> to write the IR to a file.</p>
+
+    <h2>Reference</h2>
+
+    <ul>
+      <li><a href="https://github.com/ChicagoDave/sharpee/blob/main/docs/reference/chord-grammar.md">Chord grammar reference</a> — the full language, production by production</li>
+      <li><a href="https://github.com/ChicagoDave/sharpee/blob/main/docs/reference/chord.ebnf">chord.ebnf</a> — the standalone EBNF grammar</li>
+      <li><a href="https://github.com/ChicagoDave/sharpee/blob/main/packages/chord/tests/fixtures/cloak.story">cloak.story</a> — the complete <em>Cloak of Darkness</em> in Chord</li>
+      <li><a href="https://github.com/ChicagoDave/sharpee/blob/main/stories/friendly-zoo/zoo.story">zoo.story</a> — the complete Family Zoo in Chord, the language's full-scale reference story</li>
+    </ul>
+
+  </main>
+
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>

@@ -11,15 +11,28 @@
 
 <div class="page">
   <main class="content">
-    <div class="version-badge">Version 2.2 — now on npm</div>
+    <div class="version-badge">Version 3.0 — now on npm</div>
 
     <h1>Write Interactive Fiction.<br>It's Easier Than You Think.</h1>
 
     <p>Sharpee is a modern platform for writing parser-based interactive fiction. Build rich, explorable worlds — and focus on the writing.</p>
 
-    <p>Sharpee 2.2 is the current stable release, available now on npm. Install the CLI with <code>npm i -g @sharpee/devkit</code>, then run <code>sharpee init</code> to start a new story.</p>
+    <p>Sharpee 3.0 is the current stable release, available now on npm. Install the CLI with <code>npm i -g @sharpee/devkit</code>, then run <code>sharpee init</code> to start a new story.</p>
 
     <a class="cta" href="getting-started.html">Get Started</a>
+
+    <h2>New in 3.0: The Chord Story Language</h2>
+
+    <p>Sharpee 3.0 introduces <strong>Chord</strong>, a story language built for writers. Instead of TypeScript, you write a <code>.story</code> file that reads like the prose it produces:</p>
+
+    <pre><code>create the brass hook
+  aka hook, peg
+  scenery, a supporter with capacity 1
+  in the Cloakroom
+
+  It's just a small brass hook, screwed to the wall.</code></pre>
+
+    <p>Chord compiles to the same traits, behaviors, and phrases as the platform API — the classic <em>Cloak of Darkness</em> drops from 785 lines of TypeScript to under 100 lines of Chord. <a href="chord.html">Meet the language.</a></p>
 
     <h2>The Book Is Here</h2>
 
