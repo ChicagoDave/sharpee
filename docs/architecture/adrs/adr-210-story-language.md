@@ -240,8 +240,15 @@ grammar (completions computed from declarations).
 
 - Grammar additions (predicates, modifiers, statements) are a **one-way
   ratchet**; each requires an explicit decision recorded against this ADR's
-  lineage. The one-page grammar reference is generated from the parser's own
-  tables so documentation cannot drift.
+  lineage. The grammar reference (`docs/reference/chord-grammar.md`, with the
+  pure-EBNF extraction `docs/reference/chord.ebnf`) is hand-maintained
+  implementation notation synced against the parser: changes are gated by
+  `docs/architecture/chord-grammar-changes.md`, and drift is caught by
+  parser-verified review plus compile-checked documentation examples.
+  *(Amended 2026-07-14: the original bullet claimed the reference is generated
+  from the parser's tables — that generator was never shipped; hand-sync under
+  the governance log is the shipped mechanism. Table-generation remains
+  possible future tooling.)*
 - Published `.story` files freeze the format per version stamp; breaking
   grammar changes require a migration path.
 - stdlib action/event changes must keep the event-selector contract green

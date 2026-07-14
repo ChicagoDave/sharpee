@@ -1,7 +1,7 @@
 story "Friendly Zoo" by "Sharpee Team"
   id: friendly-zoo
   version: 0.0.2
-  blurb: A small family zoo — a workspace testing target for the v2 platform.
+  blurb: A small family zoo — a testing target for the v2 platform.
   states: open, after-hours
 
 create the Zoo Entrance
@@ -9,10 +9,10 @@ create the Zoo Entrance
   aka entrance, gates, gate
   south to the Main Path
 
-  You stand before the wrought-iron gates of the Willowbrook Family Zoo. A
-  cheerful welcome sign arches over the entrance, and a small ticket booth
-  sits to one side. A sturdy iron fence runs along either side of the gates.
-  The main path leads south into the zoo grounds.
+  You stand before the wrought-iron gates of the Willowbrook Family Zoo.
+  A cheerful welcome sign arches over the entrance, and a small ticket
+  booth sits to one side. A sturdy iron fence runs along either side of
+  the gates. The main path leads south into the zoo grounds.
 
 create the Main Path
   a room
@@ -22,10 +22,10 @@ create the Main Path
   south to the Supply Room
   south is blocked while the staff gate is closed: staff-gate-blocked
 
-  A wide gravel path winds through the heart of the zoo. Colorful direction
-  signs point every which way. A park bench sits beside the path. To the
-  east, the petting zoo. To the west, the aviary. A staff gate blocks the
-  path to the south. The entrance is back to the north.
+  A wide gravel path winds through the heart of the zoo. Colorful
+  direction signs point every which way. A park bench sits beside the
+  path. To the east, the petting zoo. To the west, the aviary. A staff
+  gate blocks the path to the south. The entrance is back to the north.
 
 create the Petting Zoo
   a room
@@ -33,8 +33,8 @@ create the Petting Zoo
   score visit worth 5
 
   A cheerful open-air enclosure that smells of warm hay and fur. A feed
-  dispenser is mounted on a post, and an info plaque is posted by the gate.
-  The main path is back to the west.
+  dispenser is mounted on a post, and an info plaque is posted by the
+  gate. The main path is back to the west.
 
   after entering it
     award visit
@@ -46,11 +46,11 @@ create the Aviary
   west to the Gift Shop
   score visit worth 5
 
-  You step inside a soaring mesh dome. Brilliantly colored parrots chatter
-  from rope perches, and a toucan eyes you curiously from a branch overhead.
-  A small waterfall splashes into a stone basin. An info plaque hangs near
-  the entrance. The gift shop is to the west. The main path is back to the
-  east.
+  You step inside a soaring mesh dome. Brilliantly colored parrots
+  chatter from rope perches, and a toucan eyes you curiously from a
+  branch overhead. A small waterfall splashes into a stone basin. An
+  info plaque hangs near the entrance. The gift shop is to the west. The
+  main path is back to the east.
 
   after entering it
     award visit
@@ -88,10 +88,10 @@ create the Nocturnal Animals Exhibit
   aka nocturnal exhibit, nocturnal animals, exhibit
   score visit worth 5
 
-  A cool, dimly lit cavern designed to simulate nighttime. Glass enclosures
-  line both walls with soft red lights. You can see sugar gliders, bush
-  babies, and a barn owl. A warning sign is posted near the entrance. The
-  exit leads back north to the supply room.
+  A cool, dimly lit cavern designed to simulate nighttime. Glass
+  enclosures line both walls with soft red lights. You can see sugar
+  gliders, bush babies, and a barn owl. A warning sign is posted near
+  the entrance. The exit leads back north to the supply room.
 
   after entering it
     award visit
@@ -102,9 +102,10 @@ create the Gift Shop
   aka shop, store
   score visit worth 5
 
-  A small zoo gift shop crammed with stuffed animals and postcards{pins}. A large
-  souvenir penny press machine stands near the door. A disposable camera
-  sits on the counter. The aviary is back to the east.
+  A small zoo gift shop crammed with stuffed animals and
+  postcards{pins}. A large souvenir penny press machine stands near the
+  door. A disposable camera sits on the counter. The aviary is back to
+  the east.
 
   after entering it
     award visit
@@ -113,7 +114,8 @@ create the Gift Shop
 create the Staff Parking Lot
   a room
 
-  A small staff parking lot beyond the zoo fence. Off limits to visitors.
+  A small staff parking lot beyond the zoo fence. Off limits to
+  visitors.
 
 create the player
   starts in the Zoo Entrance
@@ -148,7 +150,8 @@ create the welcome sign
   scenery
   in the Zoo Entrance
 
-  A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY ZOO."
+  A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY
+  ZOO."
 
 create the ticket booth
   aka booth
@@ -247,10 +250,10 @@ create the snake
     award confession
     phrase confession
       A soft, sibilant voice drifts from behind the glass of the snake
-      enclosure. "Ssso... you're the one who stayed. Good. Do you know what
-      it's like in here? They keep the lights on 'dim' and call it
-      'nocturnal.' I haven't seen actual moonlight in three years. Three.
-      Years."
+      enclosure. "Ssso... you're the one who stayed. Good. Do you know
+      what it's like in here? They keep the lights on 'dim' and call it
+      'nocturnal.' I haven't seen actual moonlight in three years.
+      Three. Years."
   end on
 
 create the stuffed animals
@@ -272,16 +275,16 @@ create the enamel pins
   scenery, plural
   in the Gift Shop
 
-  A spinning rack of enamel pins: parrots, pygmy goats, a grinning snake.
-  Every one of them costs more than it should.
+  A spinning rack of enamel pins: parrots, pygmy goats, a grinning
+  snake. Every one of them costs more than it should.
 
 create the cork board
   aka board, notices
   scenery
   in the Supply Room
 
-  A cork board with staff schedules. A note in red marker: "DON'T FORGET:
-  nocturnal exhibit lights need new batteries!"
+  A cork board with staff schedules. A note in red marker: "DON'T
+  FORGET: nocturnal exhibit lights need new batteries!"
 
 create the info plaque
   aka plaque, brass plaque
@@ -292,11 +295,11 @@ create the info plaque
 
   on reading it
     phrase plaque-text
-      PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and always
-      hungry.
+      PYGMY GOATS — These Nigerian Dwarf goats are gentle, curious, and
+      always hungry.
 
-      HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and
-      Marmalade, were born here in 2023.
+      HOLLAND LOP RABBITS — Known for their floppy ears. Our pair,
+      Biscuit and Marmalade, were born here in 2023.
   end on
 
 create the aviary plaque
@@ -312,7 +315,8 @@ create the aviary plaque
 
       TOCO TOUCAN — Its bill weighs less than a smartphone.
 
-      SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.
+      SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is
+      42.
   end on
 
 create the warning sign
@@ -325,8 +329,8 @@ create the warning sign
   on reading it
     phrase sign-text
       CAUTION: The Nocturnal Animals Exhibit is kept dark. Please use a
-      flashlight. Do NOT use camera flash. (We don't talk about the Great Owl
-      Incident of 2022.)
+      flashlight. Do NOT use camera flash. (We don't talk about the
+      Great Owl Incident of 2022.)
   end on
 
 create the zoo brochure
@@ -405,9 +409,9 @@ create the souvenir press
   a container, scenery
   in the Gift Shop
 
-  A heavy cast-iron machine with a big crank handle. A slot on top accepts
-  pennies, and the mechanism stamps them with a zoo animal design. A sign
-  reads: "INSERT PENNY, TURN HANDLE, KEEP FOREVER!"
+  A heavy cast-iron machine with a big crank handle. A slot on top
+  accepts pennies, and the mechanism stamps them with a zoo animal
+  design. A sign reads: "INSERT PENNY, TURN HANDLE, KEEP FOREVER!"
 
 create the flashlight
   aka torch, light, lamp
@@ -428,8 +432,8 @@ create the radio
   in the Supply Room
 
   A battered portable radio held together with duct tape. The antenna is
-  bent at a jaunty angle. A faded sticker on the side reads "ZOO FM — All
-  Animals, All The Time."
+  bent at a jaunty angle. A faded sticker on the side reads "ZOO FM —
+  All Animals, All The Time."
 
   phrase detail while it is on:
     It hums softly.
@@ -438,7 +442,8 @@ create the disposable camera
   aka camera
   in the Gift Shop
 
-  A cheap yellow disposable camera with "ZOO MEMORIES" printed on the side.
+  A cheap yellow disposable camera with "ZOO MEMORIES" printed on the
+  side.
 
 define phrase pins, cycling
   and a spinning rack of enamel pins wobbles by the register
@@ -496,8 +501,8 @@ end trait
 define trait restless
   phrases en-US
     bleating:
-      The pygmy goats are bleating loudly and headbutting the fence. They seem
-      very hungry!
+      The pygmy goats are bleating loudly and headbutting the fence.
+      They seem very hungry!
 
   on every turn while it is hungry
     phrase bleating
@@ -558,11 +563,11 @@ create the zookeeper
   on every turn while after-hours, once
     award farewell
     phrase departs
-      The zookeeper glances at the clock, unclips the walkie-talkie from his
-      belt, and stretches. "Well, that's me done for the day. Zoo's all yours,
-      I guess!" He gives you a friendly wave and ambles off toward the staff
-      parking lot. A moment later, you hear an engine start and fade into the
-      distance.
+      The zookeeper glances at the clock, unclips the walkie-talkie from
+      his belt, and stretches. "Well, that's me done for the day. Zoo's
+      all yours, I guess!" He gives you a friendly wave and ambles off
+      toward the staff parking lot. A moment later, you hear an engine
+      start and fade into the distance.
     move it to the Staff Parking Lot
   end on
 
@@ -579,15 +584,15 @@ create the parrot
   watches you with one bright eye.
 
   phrase petted:
-    You reach toward the parrot. CHOMP! It nips your finger with its beak.
-    "NO TOUCHING!" it squawks indignantly.
+    You reach toward the parrot. CHOMP! It nips your finger with its
+    beak. "NO TOUCHING!" it squawks indignantly.
   phrase present:
     A scarlet macaw watches you with one bright, knowing eye.
 
   on examining it
     phrase parrot-look
-      A magnificent scarlet macaw perched on a rope. It tilts its head and
-      watches you with one bright eye.
+      A magnificent scarlet macaw perched on a rope. It tilts its head
+      and watches you with one bright eye.
 
       {flavor}{aside}
   end on
@@ -595,11 +600,11 @@ create the parrot
   on every turn while after-hours, once
     award confession
     phrase confession
-      The parrot clears its throat — actually clears its throat — and fixes
-      you with a knowing look. "Right then. Now that the performative
-      squawking is over, let me tell you something: that toucan? Complete
-      fraud. Can't even crack a nut properly. And don't get me started on the
-      gift shop markup."
+      The parrot clears its throat — actually clears its throat — and
+      fixes you with a knowing look. "Right then. Now that the
+      performative squawking is over, let me tell you something: that
+      toucan? Complete fraud. Can't even crack a nut properly. And don't
+      get me started on the gift shop markup."
   end on
 
 create the pygmy goats
@@ -618,11 +623,12 @@ create the pygmy goats
     You reach down and pet the nearest goat. It leans into your hand and
     bleats happily. The others crowd around, demanding equal attention.
   phrase fed:
-    You scatter some feed on the ground. The pygmy goats rush over, bleating
-    excitedly, and devour the corn and pellets in seconds. The smallest goat
-    looks up at you with big grateful eyes.
+    You scatter some feed on the ground. The pygmy goats rush over,
+    bleating excitedly, and devour the corn and pellets in seconds. The
+    smallest goat looks up at you with big grateful eyes.
   phrase present:
-    Three pygmy goats mill about hopefully, eyeing your pockets for snacks.
+    Three pygmy goats mill about hopefully, eyeing your pockets for
+    snacks.
 
   after feeding it
     award fed
@@ -631,10 +637,11 @@ create the pygmy goats
   on every turn while after-hours, once
     award confession
     phrase confession
-      Now that the keeper is gone, the goats exchange glances. The largest one
-      turns to you and bleats in a very deliberate pattern. You could swear it
-      sounds like: "Finally. Do you have any idea what it's like being called
-      'cute' six hundred times a day? We are MAJESTIC."
+      Now that the keeper is gone, the goats exchange glances. The
+      largest one turns to you and bleats in a very deliberate pattern.
+      You could swear it sounds like: "Finally. Do you have any idea
+      what it's like being called 'cute' six hundred times a day? We are
+      MAJESTIC."
   end on
 
 create the rabbits
@@ -652,10 +659,11 @@ create the rabbits
     You gently stroke one of the rabbits. Its fur is incredibly soft. It
     twitches its nose at you contentedly.
   phrase fed:
-    You sprinkle some pellets near the rabbits. Biscuit and Marmalade hop
-    over cautiously, then munch away happily.
+    You sprinkle some pellets near the rabbits. Biscuit and Marmalade
+    hop over cautiously, then munch away happily.
   phrase present:
-    A pair of Holland Lop rabbits lounges near the hay bale, ears flopped.
+    A pair of Holland Lop rabbits lounges near the hay bale, ears
+    flopped.
 
   after feeding it
     award fed
@@ -664,11 +672,11 @@ create the rabbits
   on every turn while after-hours, once
     award confession
     phrase confession
-      The rabbits stop mid-hop and look at each other. Biscuit twitches her
-      nose disapprovingly. Marmalade thumps his foot twice. You get the
-      distinct impression they're critiquing the quality of today's pellets.
-      "Barely adequate," the thumping seems to say. "Last Tuesday's batch was
-      far superior."
+      The rabbits stop mid-hop and look at each other. Biscuit twitches
+      her nose disapprovingly. Marmalade thumps his foot twice. You get
+      the distinct impression they're critiquing the quality of today's
+      pellets. "Barely adequate," the thumping seems to say. "Last
+      Tuesday's batch was far superior."
   end on
 
 create the parrots
@@ -681,21 +689,21 @@ create the parrots
 define sequence closing time
   at turn 5
     phrase zoo.pa.closing-3
-      *DING DONG* "Attention visitors! The Willowbrook Family Zoo will be
-      closing in three hours. Please make sure to visit all exhibits before
-      closing time!"
+      *DING DONG* "Attention visitors! The Willowbrook Family Zoo will
+      be closing in three hours. Please make sure to visit all exhibits
+      before closing time!"
   5 turns later
     phrase zoo.pa.closing-2
-      *DING DONG* "Attention visitors! Two hours until closing. Don't forget
-      to stop by the gift shop for souvenirs!"
+      *DING DONG* "Attention visitors! Two hours until closing. Don't
+      forget to stop by the gift shop for souvenirs!"
   5 turns later
     phrase zoo.pa.closing-1
-      *DING DONG* "Attention visitors! One hour until closing. Please begin
-      making your way toward the exit."
+      *DING DONG* "Attention visitors! One hour until closing. Please
+      begin making your way toward the exit."
   5 turns later
     phrase zoo.pa.closed
-      *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for
-      visiting! We hope to see you again soon!"
+      *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you
+      for visiting! We hope to see you again soon!"
     change the story to after-hours
 end sequence
 
@@ -703,8 +711,8 @@ define sequence feeding time
   at turn 11
     change the pygmy goats to hungry
     phrase zoo.feeding-time.announced
-      *DING DONG* "It's FEEDING TIME at the Petting Zoo! Come watch our pygmy
-      goats and rabbits enjoy their favorite snacks!"
+      *DING DONG* "It's FEEDING TIME at the Petting Zoo! Come watch our
+      pygmy goats and rabbits enjoy their favorite snacks!"
   8 turns later
     change the pygmy goats to hungry
     phrase zoo.feeding-time.announced
@@ -732,17 +740,17 @@ define phrase parrot-candor, randomly
   Finally, they're gone. Do you know how exhausting it is to say "Polly
   wants a cracker" eight hours a day?
 or
-  Between you and me, the toucan is a complete diva. Won't shut up about its
-  bill.
+  Between you and me, the toucan is a complete diva. Won't shut up about
+  its bill.
 or
-  I have a degree in ornithology, you know. Well, I would, if birds could
-  enroll.
+  I have a degree in ornithology, you know. Well, I would, if birds
+  could enroll.
 or
-  The gift shop markup is criminal. Three dollars for a postcard? In this
-  economy?
+  The gift shop markup is criminal. Three dollars for a postcard? In
+  this economy?
 or
-  You seem alright. Most visitors just want selfies. At least you're still
-  here.
+  You seem alright. Most visitors just want selfies. At least you're
+  still here.
 end phrase
 
 define phrase brochure-text, verbatim
@@ -762,9 +770,9 @@ define phrases en-US
     The staff gate is closed.
   victory:
     Congratulations! You've earned your MASTER ZOOKEEPER badge! You've
-    visited every exhibit, befriended the animals, collected souvenirs, and
-    even stayed after hours to hear what the animals really think. The
-    Willowbrook Family Zoo will never forget you!
+    visited every exhibit, befriended the animals, collected souvenirs,
+    and even stayed after hours to hear what the animals really think.
+    The Willowbrook Family Zoo will never forget you!
 
     *** You have won ***
 

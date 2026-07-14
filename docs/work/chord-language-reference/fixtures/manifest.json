@@ -1,0 +1,10 @@
+{
+  "behavior/closed-condition.story": {
+    "expect": "fail",
+    "codes": ["analysis.closed-condition-selection"]
+  },
+  "migration/removed-flag.story": {
+    "expect": "fail",
+    "codes": ["parse.removed-flag"]
+  }
+}
