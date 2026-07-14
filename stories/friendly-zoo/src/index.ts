@@ -314,14 +314,13 @@ class FriendlyZooStory implements Story {
 
     // --- Room-occupant slot entries (ADR-212) ---
     //
-    // Declarative replacement for the hand-rolled ADR-195 S1 presence closure:
-    // one slot entry per occupant, feeding each room description's `{slot:here}`.
-    // The default `owner-present` gate performs the same player's-room check the
-    // closure computed by hand, the slot (sentence mode) still owns the connective
-    // grammar — each entry is bare content — and the fixed `order` keeps the
-    // joined line deterministic across save/restore (ADR-195 AC-5). Text resolves
-    // once here: the provider is static after `extendLanguage`, so this matches
-    // the closure's per-turn lookups byte for byte.
+    // The TS zoo is the CANONICAL Sharpee implementation (David, 2026-07-14):
+    // this is the reference registerSlotEntry usage, parallel to zoo.story's
+    // `phrase present:` blocks — the same story authored on both surfaces.
+    // One declarative entry per occupant feeds each room description's
+    // `{slot:here}`; the default `owner-present` gate supplies the presence
+    // check, the slot owns the connective grammar (bare content), and the
+    // fixed `order` keeps the joined line deterministic (ADR-195 AC-5).
     const language = engine.getLanguageProvider();
     if (language) {
       engine.registerSlotEntry({

@@ -74,7 +74,7 @@ describe('zoo-actions.story (design.md §3.4 + ownership package)', () => {
     const feedable = goats.compositions.find((comp) => comp.words[0] === 'feedable')!;
     expect(feedable.config).toMatchObject([{ key: ['food'], value: 'handful of feed', valueKind: 'name' }]);
     expect(goats.phraseOverrides).toMatchObject([{ key: 'fed' }]);
-    expect(goats.phraseOverrides[0].value.text).toContain('Happy chaos');
+    expect(goats.phraseOverrides[0].variants[0].text).toContain('Happy chaos');
   });
 
   it('parses owner-attached score lines and the after-feeding reaction', () => {

@@ -122,6 +122,11 @@ export interface CreateDecl {
   scores: ScoreDecl[];
   /** First bare indented paragraph. */
   description: TextValue | null;
+  /**
+   * `first time` prose block (Z1) — the first-VISIT description; compiles
+   * to `RoomTrait.initialDescription`. Rooms only (analyzer-enforced).
+   */
+  initialDescription: TextValue | null;
   /** Per-entity phrase overrides: `phrase <key>: <text>` lines. */
   phraseOverrides: PhraseOverride[];
   onClauses: OnClause[];
@@ -190,7 +195,15 @@ export interface StateName {
 export interface PhraseOverride {
   kind: 'phrase-override';
   key: string;
-  value: TextValue;
+  /** Optional strategy adverb (CP3 — channel phrases carry the Z5 set), null when plain. */
+  strategy: string | null;
+  /**
+   * Optional `while <condition>` (Z3b `detail` gates; `it` = the owner).
+   * Null when ungated.
+   */
+  condition: ConditionNode | null;
+  /** One entry when plain; several when `or`-separated variants (CP3). */
+  variants: TextValue[];
   span: Span;
 }
 
@@ -236,14 +249,20 @@ export interface DefineCondition {
   span: Span;
 }
 
-/** `define phrase <key>[, <strategy>|, verbatim] … end phrase`. */
+/** `define phrase <key>[, <strategy>|, verbatim] [while <condition>] … end phrase`. */
 export interface DefinePhrase {
   kind: 'define-phrase';
   key: string;
-  /** randomly | cycling | ordered | once — null for a plain phrase. */
+  /** randomly | cycling | stopping | sticky | first-time (Z5) — null for a plain phrase. */
   strategy: string | null;
   /** Whitespace-preserving text (grammar log 2026-07-10); excludes strategies. */
   verbatim: boolean;
+  /**
+   * Trailing `while <condition>` header gate (Z2/CP1'): a presence condition
+   * compiles to ADR-209 `mentions`; anything else registers on the ADR-211
+   * gate seam. Null when ungated.
+   */
+  condition: ConditionNode | null;
   /** One entry when plain; several when `or`-separated variants. */
   variants: TextValue[];
   span: Span;
@@ -441,6 +460,7 @@ export type Statement =
   | SetStmt
   | ChangeStmt
   | MoveStmt
+  | RemoveStmt
   | AwardStmt
   | WinStmt
   | LoseStmt
@@ -540,6 +560,19 @@ export interface MoveStmt {
   kind: 'move';
   entity: NameRef;
   place: NameRef;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `remove <entity> [when <cond>]` (Z6, ADR-213 Q3) — takes the entity out of
+ * play entirely (`world.removeEntity`; pre-removal observers fire; a
+ * witnessed `phrase disappeared:` narrates). Permanent — nothing restores a
+ * removed entity. Orphaning is deliberately NOT this statement.
+ */
+export interface RemoveStmt {
+  kind: 'remove';
+  entity: NameRef;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -689,6 +722,8 @@ export type Predicate =
   | { kind: 'is'; negated: boolean; value: ValueExpr; span: Span }
   | { kind: 'is-a'; negated: boolean; classifier: string[]; span: Span }
   | { kind: 'is-in'; negated: boolean; place: NameRef; span: Span }
+  /** `<subject> is here` — the Z4 deictic: subject shares the player's location. */
+  | { kind: 'is-here'; negated: boolean; span: Span }
   | { kind: 'holds'; thing: NameRef; span: Span }
   | { kind: 'has'; thing: NameRef; span: Span }
   | { kind: 'wears'; thing: NameRef; span: Span }

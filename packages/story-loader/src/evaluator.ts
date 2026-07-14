@@ -163,6 +163,20 @@ export class Evaluator {
         const placeId = this.entityValue(cond.object, ctx);
         return raw(this.isWithin(ctx.world, subjectId, placeId));
       }
+      case 'is-here': {
+        // Z4 deictic — Decision 10 presence semantics, mirroring the
+        // runtime's playerPresentAt: a room subject means the player is IN
+        // it; anything else shares the player's containing room; a
+        // no-location subject is never here (false, not an error).
+        const subjectId = this.entityValue(cond.subject, ctx);
+        const playerId = ctx.world.getPlayer()?.id;
+        if (!playerId) return raw(false);
+        if (subjectId === playerId) return raw(true);
+        const playerRoom = ctx.world.getContainingRoom(playerId)?.id ?? ctx.world.getLocation(playerId);
+        if (ctx.world.getEntity(subjectId)?.has(TraitType.ROOM)) return raw(playerRoom === subjectId);
+        const subjectRoom = ctx.world.getContainingRoom(subjectId)?.id ?? ctx.world.getLocation(subjectId);
+        return raw(subjectRoom !== undefined && subjectRoom === playerRoom);
+      }
       case 'has': {
         const owner = this.entityValue(cond.subject, ctx);
         const thing = this.entityValue(cond.object, ctx);

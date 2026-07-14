@@ -251,6 +251,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "id": "zoo-entrance",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -344,6 +345,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "id": "main-path",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -382,6 +384,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "petting-zoo.description",
       "exits": [],
       "id": "petting-zoo",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -465,6 +468,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "id": "aviary",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -643,6 +647,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "id": "supply-room",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -716,6 +721,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "nocturnal-animals-exhibit.description",
       "exits": [],
       "id": "nocturnal-animals-exhibit",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -800,6 +806,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "gift-shop.description",
       "exits": [],
       "id": "gift-shop",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -869,6 +876,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "staff-parking-lot.description",
       "exits": [],
       "id": "staff-parking-lot",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -904,6 +912,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "player.description",
       "exits": [],
       "id": "player",
+      "initialDescriptionKey": null,
       "isPlayer": true,
       "kinds": [],
       "name": "player",
@@ -941,6 +950,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "staff-keycard.description",
       "exits": [],
       "id": "staff-keycard",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "staff keycard",
@@ -977,6 +987,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "staff-gate.description",
       "exits": [],
       "id": "staff-gate",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "staff gate",
@@ -1083,6 +1094,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "welcome-sign.description",
       "exits": [],
       "id": "welcome-sign",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "welcome sign",
@@ -1129,6 +1141,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "ticket-booth.description",
       "exits": [],
       "id": "ticket-booth",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "ticket booth",
@@ -1176,6 +1189,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "iron-fence.description",
       "exits": [],
       "id": "iron-fence",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "iron fence",
@@ -1223,6 +1237,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "direction-signs.description",
       "exits": [],
       "id": "direction-signs",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "direction signs",
@@ -1280,6 +1295,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "flower-beds.description",
       "exits": [],
       "id": "flower-beds",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "flower beds",
@@ -1338,6 +1354,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "hay-bale.description",
       "exits": [],
       "id": "hay-bale",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "hay bale",
@@ -1384,6 +1401,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "toucan.description",
       "exits": [],
       "id": "toucan",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "toucan",
@@ -1431,6 +1449,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "waterfall.description",
       "exits": [],
       "id": "waterfall",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "waterfall",
@@ -1478,6 +1497,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "rope-perches.description",
       "exits": [],
       "id": "rope-perches",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "rope perches",
@@ -1536,6 +1556,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "metal-shelves.description",
       "exits": [],
       "id": "metal-shelves",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "metal shelves",
@@ -1593,6 +1614,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "sugar-gliders.description",
       "exits": [],
       "id": "sugar-gliders",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "sugar gliders",
@@ -1650,6 +1672,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "bush-babies.description",
       "exits": [],
       "id": "bush-babies",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "bush babies",
@@ -1707,6 +1730,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "barn-owl.description",
       "exits": [],
       "id": "barn-owl",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "barn owl",
@@ -1754,6 +1778,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "snake.description",
       "exits": [],
       "id": "snake",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "snake",
@@ -1850,6 +1875,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "stuffed-animals.description",
       "exits": [],
       "id": "stuffed-animals",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "stuffed animals",
@@ -1908,6 +1934,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "postcards.description",
       "exits": [],
       "id": "postcards",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "postcards",
@@ -1968,6 +1995,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "enamel-pins.description",
       "exits": [],
       "id": "enamel-pins",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "enamel pins",
@@ -2026,6 +2054,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "cork-board.description",
       "exits": [],
       "id": "cork-board",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "cork board",
@@ -2073,6 +2102,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "info-plaque.description",
       "exits": [],
       "id": "info-plaque",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "info plaque",
@@ -2162,6 +2192,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "aviary-plaque.description",
       "exits": [],
       "id": "aviary-plaque",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "aviary plaque",
@@ -2252,6 +2283,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "warning-sign.description",
       "exits": [],
       "id": "warning-sign",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "warning sign",
@@ -2343,6 +2375,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "zoo-brochure.description",
       "exits": [],
       "id": "zoo-brochure",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "zoo brochure",
@@ -2436,6 +2469,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "zoo-map.description",
       "exits": [],
       "id": "zoo-map",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "zoo map",
@@ -2505,6 +2539,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "backpack.description",
       "exits": [],
       "id": "backpack",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -2554,6 +2589,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "bag-of-animal-feed.description",
       "exits": [],
       "id": "bag-of-animal-feed",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "bag of animal feed",
@@ -2589,6 +2625,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "souvenir-penny.description",
       "exits": [],
       "id": "souvenir-penny",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "souvenir penny",
@@ -2625,6 +2662,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "park-bench.description",
       "exits": [],
       "id": "park-bench",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -2690,6 +2728,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "lunchbox.description",
       "exits": [],
       "id": "lunchbox",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -2749,6 +2788,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "juice-box.description",
       "exits": [],
       "id": "juice-box",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "juice box",
@@ -2783,6 +2823,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "feed-dispenser.description",
       "exits": [],
       "id": "feed-dispenser",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -2854,6 +2895,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "souvenir-press.description",
       "exits": [],
       "id": "souvenir-press",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -2914,6 +2956,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "flashlight.description",
       "exits": [],
       "id": "flashlight",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "flashlight",
@@ -2971,6 +3014,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "radio.description",
       "exits": [],
       "id": "radio",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "radio",
@@ -3028,6 +3072,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "disposable-camera.description",
       "exits": [],
       "id": "disposable-camera",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "disposable camera",
@@ -3063,6 +3108,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "zookeeper.description",
       "exits": [],
       "id": "zookeeper",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -3176,6 +3222,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "parrot.description",
       "exits": [],
       "id": "parrot",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -3346,6 +3393,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "pygmy-goats.description",
       "exits": [],
       "id": "pygmy-goats",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "pygmy goats",
@@ -3528,6 +3576,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "rabbits.description",
       "exits": [],
       "id": "rabbits",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "rabbits",
@@ -3699,6 +3748,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "descriptionKey": "parrots.description",
       "exits": [],
       "id": "parrots",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "parrots",

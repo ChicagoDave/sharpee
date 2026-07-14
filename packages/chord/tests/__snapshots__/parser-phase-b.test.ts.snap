@@ -979,6 +979,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "text": "Lockers, a kettle, one sagging couch.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -1027,6 +1028,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "text": "Woven this morning, regretted by noon.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -1197,6 +1199,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "text": "A straw-floored yard full of amiable animals.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -1243,6 +1246,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "text": "You.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -2435,6 +2439,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       ],
       "description": null,
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -2486,6 +2491,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       ],
       "phraseOverrides": [
         {
+          "condition": null,
           "key": "fed",
           "kind": "phrase-override",
           "span": {
@@ -2494,18 +2500,21 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
             "endLine": 103,
             "line": 102,
           },
-          "value": {
-            "form": "prose",
-            "kind": "text",
-            "markers": [],
-            "span": {
-              "column": 5,
-              "endColumn": 78,
-              "endLine": 103,
-              "line": 103,
+          "strategy": null,
+          "variants": [
+            {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 5,
+                "endColumn": 78,
+                "endLine": 103,
+                "line": 103,
+              },
+              "text": "The goats butt each other out of the way to get at the feed. Happy chaos.",
             },
-            "text": "The goats butt each other out of the way to get at the feed. Happy chaos.",
-          },
+          ],
         },
       ],
       "placement": {
@@ -2574,6 +2583,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "text": "A waxy paper cone of pellets.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -2676,6 +2686,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "text": "Coiled behind glass, radiating disdain.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -2794,6 +2805,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
         "text": "Bright cages and brighter noise.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -2839,6 +2851,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
         "text": "You.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -3134,6 +3147,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "statesReversible": false,
     },
     {
+      "condition": null,
       "key": "parrot-chatter",
       "kind": "define-phrase",
       "span": {
@@ -3184,6 +3198,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "verbatim": false,
     },
     {
+      "condition": null,
       "key": "parrot-candor",
       "kind": "define-phrase",
       "span": {
@@ -3652,6 +3667,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
         "text": "Staff only beyond this point.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -3717,6 +3733,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
         "text": "Sam wrangles feed buckets with practiced ease.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": null,
@@ -4014,6 +4031,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
         "text": "A scarlet macaw with opinions.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",

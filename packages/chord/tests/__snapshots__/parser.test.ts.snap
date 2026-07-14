@@ -61,6 +61,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           },
         },
       ],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -180,6 +181,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           },
         },
       ],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -298,6 +300,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "text": "Determined-looking.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -350,6 +353,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "wears": [],
     },
     {
+      "condition": null,
       "key": "crossing-mutter",
       "kind": "define-phrase",
       "span": {
@@ -648,6 +652,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           },
         },
       ],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -715,6 +720,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "text": "The walls of this small room were clearly once lined with hooks, though now only one remains. The exit is a door to the east.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -846,6 +852,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "text": "The bar, much rougher than you'd have guessed after the opulence of the foyer to the north, is completely empty. There seems to be some sort of message scrawled in the sawdust on the floor.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -1007,6 +1014,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "text": "As good-looking as ever.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -1111,6 +1119,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "text": "A handsome cloak, of velvet trimmed with satin, and slightly splattered with raindrops. Its blackness is so deep that it almost seems to suck light from the room.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -1205,6 +1214,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "text": "It's just a small brass hook, screwed to the wall.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -1283,6 +1293,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       ],
       "description": null,
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",

@@ -102,7 +102,7 @@ create the Gift Shop
   aka shop, store
   score visit worth 5
 
-  A small zoo gift shop crammed with stuffed animals and postcards. A large
+  A small zoo gift shop crammed with stuffed animals and postcards{pins}. A large
   souvenir penny press machine stands near the door. A disposable camera
   sits on the counter. The aviary is back to the east.
 
@@ -416,6 +416,12 @@ create the flashlight
 
   A heavy-duty yellow flashlight.
 
+  phrase detail while it is on:
+    It clicks faintly as it powers up.
+
+  phrase detail while it is lit:
+    A thin beam plays across the floor.
+
 create the radio
   aka portable radio
   scenery, switchable
@@ -425,11 +431,22 @@ create the radio
   bent at a jaunty angle. A faded sticker on the side reads "ZOO FM — All
   Animals, All The Time."
 
+  phrase detail while it is on:
+    It hums softly.
+
 create the disposable camera
   aka camera
   in the Gift Shop
 
   A cheap yellow disposable camera with "ZOO MEMORIES" printed on the side.
+
+define phrase pins, cycling
+  and a spinning rack of enamel pins wobbles by the register
+or
+  and the enamel-pin rack stands picked half bare
+or
+  nothing
+end phrase
 
 define trait pettable
   phrases en-US
@@ -535,7 +552,7 @@ create the zookeeper
 
   A friendly zookeeper in khaki overalls. A name tag reads "Sam."
 
-  phrase presence:
+  phrase present:
     Sam the zookeeper is here, jingling a ring of keys.
 
   on every turn while after-hours, once
@@ -564,7 +581,7 @@ create the parrot
   phrase petted:
     You reach toward the parrot. CHOMP! It nips your finger with its beak.
     "NO TOUCHING!" it squawks indignantly.
-  phrase presence:
+  phrase present:
     A scarlet macaw watches you with one bright, knowing eye.
 
   on examining it
@@ -604,7 +621,7 @@ create the pygmy goats
     You scatter some feed on the ground. The pygmy goats rush over, bleating
     excitedly, and devour the corn and pellets in seconds. The smallest goat
     looks up at you with big grateful eyes.
-  phrase presence:
+  phrase present:
     Three pygmy goats mill about hopefully, eyeing your pockets for snacks.
 
   after feeding it
@@ -637,7 +654,7 @@ create the rabbits
   phrase fed:
     You sprinkle some pellets near the rabbits. Biscuit and Marmalade hop
     over cautiously, then munch away happily.
-  phrase presence:
+  phrase present:
     A pair of Holland Lop rabbits lounges near the hay bale, ears flopped.
 
   after feeding it

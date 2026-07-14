@@ -53,12 +53,19 @@ import { withLineBreaks } from './text';
 import { stagingRenderContext } from './hatch-context';
 import { enteringDestination, EVENT_TRIGGERS } from './event-contract';
 
-/** Chord strategy adverb → phrase-algebra Choice selector (ADR-196). */
-const STRATEGY_SELECTOR: Record<string, Choice['selector']> = {
+/**
+ * Chord strategy adverb → phrase-algebra Choice selector (ADR-196).
+ * The Z5 table (ADR-211 Decision 4): adverbs mirror the selectors 1:1;
+ * `ordered`/`once` are retired at parse time and never reach here.
+ * Exported as the single implementation (ratchet Z5) — the loader's Z2
+ * snippet compile maps the same adverbs onto `SnippetEntry.selector`.
+ */
+export const STRATEGY_SELECTOR: Record<string, Choice['selector']> = {
   randomly: 'random',
   cycling: 'cycling',
-  ordered: 'stopping',
-  once: 'firstTime',
+  stopping: 'stopping',
+  sticky: 'sticky',
+  'first-time': 'firstTime',
 };
 
 
@@ -759,6 +766,21 @@ export class ChordRuntime {
       });
     });
 
+    // Z3: a `disappeared` narration enqueued OUTSIDE statement execution
+    // (a TS-initiated removeEntity — daemon, hatch, interceptor) has no
+    // report pass to drain it; this daemon delivers it on the tick.
+    // Registered only when the channel is authored, so channel-less
+    // stories keep their exact daemon roster.
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    if (Object.keys(table).some((key) => key.endsWith('.disappeared'))) {
+      daemons.push({
+        id: 'chord.channel-drain',
+        name: 'Z3 channel narration drain',
+        condition: () => this.pendingChannelEvents.length > 0,
+        run: () => this.drainChannelEvents(),
+      });
+    }
+
     return daemons;
   }
 
@@ -938,7 +960,18 @@ export class ChordRuntime {
           if (phase !== 'reports' && whenHolds(stmt)) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
             const place = this.evaluator.entityValue(stmt.place, ctx);
-            ctx.world.moveEntity(thing, place);
+            this.moveWithLifecycle(thing, place, ctx);
+          }
+          break;
+        }
+        case 'remove': {
+          if (phase !== 'reports' && whenHolds(stmt)) {
+            const thing = this.evaluator.entityValue(stmt.entity, ctx);
+            // Z6 (ADR-213): the loader's pre-removal observer fires inside
+            // removeEntity and enqueues any witnessed `disappeared`
+            // narration; the report-collecting pass drains it. Never
+            // rendered inline from the mutation pass.
+            ctx.world.removeEntity(thing);
           }
           break;
         }
@@ -1006,7 +1039,49 @@ export class ChordRuntime {
           break;
       }
     }
+    // Z3: witnessed lifecycle narration enqueued during mutation phases
+    // (move/remove above; the removal observer) lands in the next report-
+    // collecting pass. Mutations-only passes never drain — their return
+    // value is discarded by the interceptor call sites.
+    if (phase !== 'mutations') events.push(...this.drainChannelEvents());
     return events;
+  }
+
+  /**
+   * Z3: `move` with witnessed-only lifecycle narration (D11). `exited`
+   * fires when the player shares the mover's SOURCE room at the transition
+   * (and the move really changes rooms); `entered` when the player shares
+   * the DESTINATION room after arrival. Unwitnessed transitions narrate
+   * nothing and consume nothing; narration is enqueued, never emitted
+   * inline from the mutation pass. Moving the player itself never narrates.
+   *
+   * @param thingWorldId the moved entity's world id
+   * @param placeWorldId the destination's world id
+   * @param ctx the executing context (live world)
+   */
+  private moveWithLifecycle(thingWorldId: string, placeWorldId: string, ctx: ExecContext): void {
+    const world = ctx.world;
+    const roomOf = (id: string): string | undefined =>
+      world.getContainingRoom(id)?.id ?? world.getLocation(id);
+    const fromRoom = roomOf(thingWorldId);
+    world.moveEntity(thingWorldId, placeWorldId);
+
+    const playerId = world.getPlayer()?.id;
+    if (!playerId || thingWorldId === playerId) return;
+    const irId = this.host.irIdOf(thingWorldId);
+    if (!irId) return;
+    const toRoom = roomOf(thingWorldId);
+    if (fromRoom === toRoom) return; // not a room transition — nothing to witness
+    const playerRoom = roomOf(playerId);
+    if (playerRoom === undefined) return;
+    if (playerRoom === fromRoom) {
+      const event = this.channelEvent(irId, 'exited', world);
+      if (event) this.enqueueChannelEvent(event);
+    }
+    if (playerRoom === toRoom) {
+      const event = this.channelEvent(irId, 'entered', world);
+      if (event) this.enqueueChannelEvent(event);
+    }
   }
 
   /**
@@ -1141,16 +1216,25 @@ export class ChordRuntime {
     const count = stmt.alternatives.length;
     if (count === 0) return 0;
     // Occurrence-ordered strategies key off world state; randomly keys off
-    // the persisted chance stream (via one draw per firing).
+    // the persisted chance stream (via one draw per firing). Sticky (Z5)
+    // reuses the same slot with the Choice encoding instead of an
+    // occurrence count: stored = chosen index + 1, 0/undefined = unchosen.
     const key = CHORD_OCCURRENCE_PREFIX + `select.${stmt.span.line}`;
+    if (stmt.strategy === 'sticky') {
+      const stored = ctx.world.getStateValue(key) as number | undefined;
+      if (stored && stored > 0) return Math.min(stored - 1, count - 1);
+      const i = this.randomIndex(count, ctx);
+      ctx.world.setStateValue(key, i + 1);
+      return i;
+    }
     const n = (ctx.world.getStateValue(key) as number | undefined) ?? 0;
     ctx.world.setStateValue(key, n + 1);
     switch (stmt.strategy) {
       case 'cycling':
         return n % count;
-      case 'ordered':
+      case 'stopping':
         return Math.min(n, count - 1);
-      case 'once':
+      case 'first-time':
         return n === 0 ? 0 : Math.min(1, count - 1);
       case 'randomly':
         return this.randomIndex(count, ctx);
@@ -1169,15 +1253,54 @@ export class ChordRuntime {
 
   // --------------------------------------------------------------- phrases
 
+  /** Z3 lifecycle narration awaiting the next report-collecting pass (never rendered inline — ADR-213 §2). */
+  private readonly pendingChannelEvents: ISemanticEvent[] = [];
+
+  /** Enqueue witnessed channel narration (Z3) — it lands in the turn's report pass. */
+  enqueueChannelEvent(event: ISemanticEvent): void {
+    this.pendingChannelEvents.push(event);
+  }
+
+  /** Drain pending channel narration (Z3) — report-collecting passes and the drain daemon consume it. */
+  drainChannelEvents(): ISemanticEvent[] {
+    return this.pendingChannelEvents.splice(0, this.pendingChannelEvents.length);
+  }
+
+  /**
+   * Z3: build the channel phrase event for an owner (`entered` / `exited` /
+   * `disappeared`). The phrase is the owner's `<irId>.<channel>` block;
+   * `Choice` counters key `(ownerWorldId, channel)` — ADR-212 §4's owner +
+   * channel-key convention, shared with the `present` slot entries.
+   *
+   * @param ownerIrId the channel owner's IR entity id
+   * @param channel the channel key (`entered`/`exited`/`disappeared`)
+   * @param world the live world
+   * @returns the phrase event, or null when the owner has no such block
+   */
+  channelEvent(ownerIrId: string, channel: string, world: WorldModel): ISemanticEvent | null {
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    if (!table[`${ownerIrId}.${channel}`]) return null;
+    const ownerWorldId = this.host.entityId(ownerIrId);
+    if (!ownerWorldId) return null;
+    return this.phraseEvent(`${ownerIrId}.${channel}`, { world, it: ownerIrId }, undefined, {
+      entityId: ownerWorldId,
+      messageKey: channel,
+    });
+  }
+
   /**
    * Build the semantic event for `phrase <key>`: entity-scoped override
    * resolution (prereq 4), strategy variants as a persistent Choice atom,
    * and hatch producers bound by marker name.
+   *
+   * @param counter Z3 channel counter identity — overrides the default
+   *   `('chord', overrideKey)` Choice keying with `(owner, channelKey)`.
    */
   private phraseEvent(
     key: string,
     ctx: ExecContext,
     stmtParams?: ReadonlyArray<{ param: string; value: IRValue }>,
+    counter?: { entityId: string; messageKey: string },
   ): ISemanticEvent {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     const overrideKey = ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
@@ -1234,8 +1357,8 @@ export class ChordRuntime {
         kind: 'choice',
         alternatives: phrase.variants.map((v): Literal => ({ kind: 'literal', text: withLineBreaks(v.text) })),
         selector: STRATEGY_SELECTOR[phrase.strategy],
-        entityId: 'chord',
-        messageKey: overrideKey,
+        entityId: counter?.entityId ?? 'chord',
+        messageKey: counter?.messageKey ?? overrideKey,
       };
       params.variants = choice;
     }

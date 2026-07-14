@@ -27,10 +27,10 @@
     "@sharpee/helpers": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
+    "@sharpee/stdlib": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
-    "@sharpee/stdlib": "workspace:*",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",

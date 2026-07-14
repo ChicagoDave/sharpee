@@ -741,6 +741,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "text": "A barn with a ledger and strong opinions.",
       },
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -776,6 +777,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "compositions": [],
       "description": null,
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",
@@ -833,6 +835,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "compositions": [],
       "description": null,
       "exits": [],
+      "initialDescription": null,
       "kind": "create",
       "name": {
         "article": "the",

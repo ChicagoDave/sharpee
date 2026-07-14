@@ -83,6 +83,11 @@ export interface IREntity {
   statesReversible: boolean;
   /** Phrase key of the description in the phrase table, or null. */
   descriptionKey: string | null;
+  /**
+   * Phrase key of the `first time` (first-visit) description (Z1), or null.
+   * Rooms only — the loader binds it to `RoomTrait.initialDescription`.
+   */
+  initialDescriptionKey: string | null;
   onClauses: IROnClause[];
   span: Span;
 }
@@ -176,14 +181,21 @@ export interface IRPhrases {
 }
 
 export interface IRPhrase {
-  /** Choice strategy for multi-variant phrases, or null for a single text. */
-  strategy: 'randomly' | 'cycling' | 'ordered' | 'once' | null;
+  /** Choice strategy for multi-variant phrases, or null for a single text (Z5 adverbs, ADR-211 Decision 4). */
+  strategy: 'randomly' | 'cycling' | 'stopping' | 'sticky' | 'first-time' | null;
   /**
    * Whitespace-preserving text (`define phrase X, verbatim`, grammar log
    * 2026-07-10) — the loader must exempt it from whitespace collapse.
    * Present only when true (additive field; format stamp unchanged).
    */
   verbatim?: boolean;
+  /**
+   * Trailing `while <condition>` header gate (Z2/CP1', additive like
+   * `verbatim`): at a description-marker site a presence condition compiles
+   * to ADR-209 `mentions` and anything else registers on the ADR-211 gate
+   * seam keyed `(roomId, marker)`. Absent when ungated.
+   */
+  condition?: IRCondition;
   variants: IRPhraseVariant[];
   span: Span;
 }
@@ -330,6 +342,8 @@ export type IRStatement =
   | { kind: 'set'; target: IRValue; value: IRValue; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  /** `remove <entity>` (Z6, ADR-213 Q3) — out of play via `world.removeEntity`; observers fire. */
+  | { kind: 'remove'; entity: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'award'; expression: string[]; once: boolean; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -406,7 +420,7 @@ export type IRCondition =
   | {
       kind: 'predicate';
       /** 'can-see'/'can-reach' land with Phase B (design.md §2.7). */
-      pred: 'is' | 'is-a' | 'is-in' | 'has' | 'holds' | 'wears' | 'can-see' | 'can-reach';
+      pred: 'is' | 'is-a' | 'is-in' | 'is-here' | 'has' | 'holds' | 'wears' | 'can-see' | 'can-reach';
       negated: boolean;
       subject: IRValue;
       object: IRValue;

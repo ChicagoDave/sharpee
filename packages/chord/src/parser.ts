@@ -41,6 +41,7 @@ import {
   EmitStmt,
   ExitDecl,
   MoveStmt,
+  RemoveStmt,
   MustRequirement,
   NameRef,
   OnClause,
@@ -79,7 +80,10 @@ const DIRECTIONS = new Set([
   'northeast', 'northwest', 'southeast', 'southwest',
   'up', 'down',
 ]);
-const STRATEGIES = new Set(['randomly', 'cycling', 'ordered', 'once']);
+/** Z5 strategy adverbs (ADR-211 Decision 4). `ordered`/`once` are retired — load errors naming their replacement. */
+const STRATEGIES = new Set(['randomly', 'cycling', 'stopping', 'sticky', 'first-time']);
+/** Retired strategy adverb → its replacement, for the AC-13 fix-it diagnostic. */
+const RETIRED_STRATEGIES: Record<string, string> = { ordered: 'stopping', once: 'first-time' };
 const ORDINALS: Record<string, number> = {
   first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
   sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
@@ -147,7 +151,7 @@ function isEndLine(line: Line): boolean {
 
 /** Words that open a statement or block boundary inside behavior bodies. */
 const STATEMENT_OPENERS = new Set([
-  'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'award', 'win', 'lose',
+  'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
 ]);
 
@@ -413,6 +417,7 @@ class Parser {
       statesReversible: false,
       scores: [],
       description: null,
+      initialDescription: null,
       phraseOverrides: [],
       onClauses: [],
       span: lineSpan(headLine),
@@ -459,9 +464,51 @@ class Parser {
         decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
       } else if (word === 'after') {
         decl.onClauses.push(this.parseOnClause(line.indent, 'after'));
-      } else if (word === 'phrase' && line.tokens[1]?.kind === 'word' && line.tokens[2]?.kind === 'colon') {
+      } else if (
+        word === 'phrase' &&
+        line.tokens[1]?.kind === 'word' &&
+        line.tokens.some((t) => t.kind === 'colon')
+      ) {
+        // Colon anywhere on the line: the header may carry `, <strategy>`
+        // and/or `while <condition>` before it (CP3/Z3b).
         this.pos++;
         decl.phraseOverrides.push(this.parsePhraseOverride(line));
+      } else if (word && ORDINALS[word] !== undefined && cur.isWord('time', 1)) {
+        // Z1: a `first time` block whose body is bare prose is the
+        // first-VISIT description (RoomTrait.initialDescription). Other
+        // ordinals have no platform field at create scope — load errors,
+        // never a guess.
+        this.pos++;
+        if (word !== 'first') {
+          this.diagnostics.error(
+            'parse.create-ordinal-time',
+            `\`${word} time\` is not allowed in a \`create\` block — only \`first time\` exists (RoomTrait.initialDescription has no later-visit siblings).`,
+            lineSpan(line),
+          );
+          while (this.pos < this.lines.length && this.lines[this.pos].indent > line.indent && !isEndLine(this.lines[this.pos])) {
+            this.pos++;
+          }
+        } else if (decl.initialDescription) {
+          this.diagnostics.error(
+            'parse.first-time-duplicate',
+            'This `create` block already has a `first time` description.',
+            lineSpan(line),
+          );
+          while (this.pos < this.lines.length && this.lines[this.pos].indent > line.indent && !isEndLine(this.lines[this.pos])) {
+            this.pos++;
+          }
+        } else {
+          const next = this.lines[this.pos];
+          if (!next || next.indent <= line.indent || isEndLine(next)) {
+            this.diagnostics.error(
+              'parse.first-time-empty',
+              '`first time` needs an indented prose block beneath it.',
+              lineSpan(line),
+            );
+          } else {
+            decl.initialDescription = this.parseProseParagraph(next.indent, line.indent);
+          }
+        }
       } else if (word && DIRECTIONS.has(word) && cur.isWord('to', 1)) {
         this.pos++;
         cur.next();
@@ -641,17 +688,67 @@ class Parser {
     const c = new Cursor(line.tokens, line);
     c.matchWord('phrase');
     const key = c.next()!; // validated by caller
-    c.next(); // colon
-    let value: TextValue;
+
+    // CP3: optional `, <strategy>` (the Z5 adverb set, retired fix-its
+    // included) — `phrase present, cycling:`.
+    let strategy: string | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const s = c.next();
+      if (s && s.kind === 'word' && STRATEGIES.has(s.text)) {
+        strategy = s.text;
+      } else if (s && s.kind === 'word' && RETIRED_STRATEGIES[s.text]) {
+        this.diagnostics.error(
+          'parse.phrase-strategy-retired',
+          `\`${s.text}\` is no longer a strategy adverb — use \`${RETIRED_STRATEGIES[s.text]}\` (ADR-211 Decision 4).`,
+          s.span,
+        );
+      } else {
+        this.diagnostics.error('parse.phrase-strategy', 'Expected a strategy (randomly, cycling, stopping, sticky, first-time) after the comma.', s?.span ?? c.restSpan());
+      }
+    }
+
+    // Z3b: optional `while <condition>` up to the colon — `phrase detail
+    // while it is on:` (`it` = the owner; the analyzer resolves).
+    let condition: ConditionNode | null = null;
+    if (c.isWord('while')) {
+      c.next();
+      const condTokens: Token[] = [];
+      while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
+      condition = this.parseCondition(new Cursor(condTokens, line), line);
+    }
+    if (c.peek()?.kind === 'colon') {
+      c.next();
+    } else {
+      this.diagnostics.error('parse.phrase-override-colon', 'Expected `:` to end the `phrase` header.', c.restSpan());
+    }
+
+    const variants: TextValue[] = [];
     const str = c.peek();
     if (str && str.kind === 'string') {
       c.next();
       this.reportSameLineText(str.span);
-      value = this.textFromString(str); // recovery: keep the text so analysis continues
+      variants.push(this.textFromString(str)); // recovery: keep the text so analysis continues
     } else {
-      value = this.parseProseParagraph(line.indent + 1, line.indent);
+      // First variant, then `or`-separated further variants (CP3): `or`
+      // stands alone at the SAME indent as the `phrase` header line.
+      variants.push(this.parseProseParagraph(line.indent + 1, line.indent));
+      for (;;) {
+        const next = this.lines[this.pos];
+        if (!next || next.indent !== line.indent || firstWord(next) !== 'or' || next.tokens.length !== 1) break;
+        this.pos++;
+        variants.push(this.parseProseParagraph(line.indent + 1, line.indent));
+      }
     }
-    return { kind: 'phrase-override', key: key.text, value, span: mergeSpans(lineSpan(line), value.span) };
+    const last = variants[variants.length - 1];
+    return {
+      kind: 'phrase-override',
+      key: key.text,
+      strategy,
+      condition,
+      variants,
+      span: mergeSpans(lineSpan(line), last?.span ?? lineSpan(line)),
+    };
   }
 
   /** Same-line phrase text (quoted or bare) was removed — grammar log 2026-07-10. */
@@ -882,11 +979,27 @@ class Parser {
       const s = c.next();
       if (s && s.kind === 'word' && STRATEGIES.has(s.text)) {
         strategy = s.text;
+      } else if (s && s.kind === 'word' && RETIRED_STRATEGIES[s.text]) {
+        // Z5 / AC-13: retired adverbs are load errors that name their replacement.
+        this.diagnostics.error(
+          'parse.phrase-strategy-retired',
+          `\`${s.text}\` is no longer a strategy adverb — use \`${RETIRED_STRATEGIES[s.text]}\` (ADR-211 Decision 4).`,
+          s.span,
+        );
       } else if (s && s.kind === 'word' && s.text === 'verbatim') {
         verbatim = true; // grammar log 2026-07-10: whitespace-preserving text
       } else {
-        this.diagnostics.error('parse.phrase-strategy', 'Expected a strategy (randomly, cycling, ordered, once) or `verbatim` after the comma.', s?.span ?? c.restSpan());
+        this.diagnostics.error('parse.phrase-strategy', 'Expected a strategy (randomly, cycling, stopping, sticky, first-time) or `verbatim` after the comma.', s?.span ?? c.restSpan());
       }
+    }
+
+    // Z2/CP1': optional trailing `while <condition>` gates the fragment —
+    // presence conditions compile to `mentions`, anything else registers on
+    // the ADR-211 gate seam (resolution is the analyzer's/loader's job).
+    let condition: ConditionNode | null = null;
+    if (c.isWord('while')) {
+      c.next();
+      condition = this.parseCondition(c, headLine);
     }
 
     const variants: TextValue[] = [];
@@ -918,7 +1031,7 @@ class Parser {
       span = mergeSpans(span, variant.span);
     }
 
-    return { kind: 'define-phrase', key, strategy, verbatim, variants, span };
+    return { kind: 'define-phrase', key, strategy, verbatim, condition, variants, span };
   }
 
   private parseDefinePhrases(): DefinePhrases {
@@ -1754,6 +1867,19 @@ class Parser {
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'move', entity, place, stmtWhen, span: lineSpan(line) } as MoveStmt;
       }
+      case 'remove': {
+        // Z6 (ADR-213 Q3): `remove <entity> [when <cond>]` — out of play
+        // entirely, permanently. No `to` clause (orphaning is not a form).
+        this.pos++;
+        c.next();
+        const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+        if (entity.words.length === 0) {
+          this.diagnostics.error('parse.remove-entity', 'Expected an entity after `remove`.', c.restSpan());
+          return null;
+        }
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'remove', entity, stmtWhen, span: lineSpan(line) } as RemoveStmt;
+      }
       case 'award': {
         this.pos++;
         c.next();
@@ -1956,7 +2082,17 @@ class Parser {
 
     const strategyTok = c.next();
     if (!strategyTok || strategyTok.kind !== 'word' || !STRATEGIES.has(strategyTok.text)) {
-      this.diagnostics.error('parse.select-strategy', 'Expected `on <value>` or a strategy (randomly, cycling, ordered, once) after `select`.', strategyTok?.span ?? lineSpan(headLine));
+      // Z5 applies everywhere strategies are legal (ratchet 2026-07-12) —
+      // a retired adverb here gets the same fix-it as at `define phrase`.
+      if (strategyTok && strategyTok.kind === 'word' && RETIRED_STRATEGIES[strategyTok.text]) {
+        this.diagnostics.error(
+          'parse.select-strategy-retired',
+          `\`${strategyTok.text}\` is no longer a strategy adverb — use \`${RETIRED_STRATEGIES[strategyTok.text]}\` (ADR-211 Decision 4).`,
+          strategyTok.span,
+        );
+      } else {
+        this.diagnostics.error('parse.select-strategy', 'Expected `on <value>` or a strategy (randomly, cycling, stopping, sticky, first-time) after `select`.', strategyTok?.span ?? lineSpan(headLine));
+      }
       this.recoverPastEndNested('select', headLine.indent);
       return null;
     }
@@ -2262,6 +2398,18 @@ class Parser {
           subject,
           predicate: { kind: 'is-in', negated, place, span: place.span },
           span: mergeSpans(subject.span, place.span),
+        };
+      }
+      if (c.isWord('here')) {
+        // Z4 deictic: `<subject> is here` — subject shares the player's
+        // location. Must precede the generic value branch (`here` would
+        // otherwise parse as a bare value word).
+        const hereTok = c.next()!;
+        return {
+          kind: 'predicate',
+          subject,
+          predicate: { kind: 'is-here', negated, span: hereTok.span },
+          span: mergeSpans(subject.span, hereTok.span),
         };
       }
       const value = this.parseValueExpr(c, line, new Set());

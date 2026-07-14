@@ -290,7 +290,7 @@ describe('AC-5 groundwork: seeded determinism', () => {
   });
 });
 
-describe('select ordered (occurrence-ordered alternatives, sticks on last)', () => {
+describe('select stopping (occurrence-ordered alternatives, sticks on last — Z5 rename of `ordered`)', () => {
   it('advances through alternatives per firing and sticks on the last', () => {
     const ir = compileSource(`story "Ordered" by "Nobody"
   id: ordered
@@ -302,7 +302,7 @@ create the Hall
   A hall.
 
   after entering it
-    select ordered
+    select stopping
       phrase step-one
     or
       phrase step-two

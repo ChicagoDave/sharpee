@@ -23,11 +23,14 @@
 import {
   IR_FORMAT,
   IRComposition,
+  IRCondition,
   IREntity,
   IRPhrase,
   IRTraitDef,
   StoryIR,
 } from '@sharpee/chord';
+import type { Choice, Literal, Phrase, SnippetEntry } from '@sharpee/if-domain';
+import { registerSnippetGate } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
@@ -48,7 +51,9 @@ import {
   LockableTrait,
   OpenableTrait,
   ReadableTrait,
+  registerClauseContributor,
   RoomBehavior,
+  RoomTrait,
   SceneryTrait,
   SupporterTrait,
   SwitchableTrait,
@@ -59,9 +64,20 @@ import {
 import { LoadError } from './errors';
 import { Evaluator } from './evaluator';
 import { findChordLiteral } from './hatch-context';
-import { ChordRuntime } from './runtime';
+import { ChordRuntime, STRATEGY_SELECTOR } from './runtime';
 import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
 import { withLineBreaks } from './text';
+
+/**
+ * Marker trait for entities carrying loader-compiled `detail` providers
+ * (Z3b): the one state-clause contributor registered per load looks up the
+ * owner's gated detail specs through it. Data-free — the specs live on the
+ * loader (nothing serialized; re-registered every load).
+ */
+export class ChordDetailTrait implements ITrait {
+  static readonly type = 'chord.detail';
+  readonly type = ChordDetailTrait.type;
+}
 
 /**
  * A `define trait` runtime instance: type `chord.trait.<name>`, data fields
@@ -122,6 +138,8 @@ export class ChordStory implements Story {
   readonly boundBehaviors = new Map<string, CapabilityBehavior>();
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
+  /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
+  private readonly evaluator: Evaluator;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
   private readonly worldIds = new Map<string, string>();
   /** World entity ID → IR entity ID (state lookups in the evaluator). */
@@ -147,7 +165,8 @@ export class ChordStory implements Story {
       description: ir.meta.fields.blurb,
     };
     this.bindHatches(options);
-    this.runtime = new ChordRuntime(ir, this, new Evaluator(ir, this, options.seed));
+    this.evaluator = new Evaluator(ir, this, options.seed);
+    this.runtime = new ChordRuntime(ir, this, this.evaluator);
   }
 
   /** The world entity ID for an IR entity ID (after initializeWorld). */
@@ -265,6 +284,12 @@ export class ChordStory implements Story {
       if (irEntity.states.length > 0) {
         world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
       }
+      // Z2 (ADR-211): compile `{key}` description markers onto ADR-209
+      // snippet storage — atomically per room, before the engine's
+      // load-time `validateRoomSnippets` gate ever sees the texts.
+      if (entity.has(TraitType.ROOM)) {
+        this.compileRoomSnippets(world, irEntity, entity);
+      }
     }
 
     // The story object starts in its first declared phase (ratchet D2).
@@ -277,6 +302,14 @@ export class ChordStory implements Story {
     if (this.ir.scores.length > 0) {
       world.setMaxScore(this.ir.scores.reduce((sum, s) => sum + s.worth, 0));
     }
+
+    // Z3 (ADR-213): one pre-removal observer serves every authored
+    // `disappeared` block — witnessed-only, enqueued for the report pass.
+    this.registerRemovalObserver(world);
+
+    // Z3b: gated `detail` blocks — shipped trait fields where the condition
+    // matches them, a loader-owned state-clause provider for everything else.
+    this.compileDetailChannels(world);
 
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
     // derived-property chains (all per-world, keyed — ADR-207/208).
@@ -389,13 +422,84 @@ export class ChordStory implements Story {
    * every-turn trait clauses) as plugin-scheduler daemons. All progression
    * state is world state — no runner-state plumbing (design.md §6).
    */
-  onEngineReady(engine: { getPluginRegistry(): { register(plugin: unknown): void } }): void {
+  onEngineReady(engine: {
+    getPluginRegistry(): { register(plugin: unknown): void };
+    registerSlotEntry?(entry: ChordSlotEntry): void;
+  }): void {
     const daemons = this.runtime.buildSchedulerDaemons();
-    if (daemons.length === 0) return;
-    const plugin = new SchedulerPlugin();
-    engine.getPluginRegistry().register(plugin);
-    const scheduler = plugin.getScheduler();
-    for (const daemon of daemons) scheduler.registerDaemon(daemon);
+    if (daemons.length > 0) {
+      const plugin = new SchedulerPlugin();
+      engine.getPluginRegistry().register(plugin);
+      const scheduler = plugin.getScheduler();
+      for (const daemon of daemons) scheduler.registerDaemon(daemon);
+    }
+
+    // Z3 (ADR-212 §5): every `phrase present:` block compiles to ONE
+    // declarative slot entry — no synthesized closures; the platform's
+    // built-in contributor evaluates them.
+    this.registerPresentEntries(engine);
+  }
+
+  /**
+   * Z3 `present` channel → ADR-212 slot entries. One `registerSlotEntry`
+   * call per authoring entity: `slotKey: 'here'`, owner = the entity,
+   * content = variants as a `Choice` per the Z5 table (single plain variant
+   * → `Literal`), order = declaration order, `counterKey: 'present'` (the
+   * §4 owner + channel-key convention — the Choice's own keys match it).
+   * An ungated block relies on the platform's `owner-present` default; a
+   * `while`-gated block uses the predicate seam, ANDed with the same
+   * presence check so the gate narrows the channel rather than replacing
+   * its semantics.
+   *
+   * @param engine the engine surface (structural — absent method is a no-op)
+   */
+  private registerPresentEntries(engine: { registerSlotEntry?(entry: ChordSlotEntry): void }): void {
+    if (!engine.registerSlotEntry || !this.world) return;
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    let order = 0;
+    for (const irEntity of this.ir.entities) {
+      const phrase = table[`${irEntity.id}.present`];
+      if (!phrase) continue;
+      const ownerWorldId = this.worldIds.get(irEntity.id);
+      if (!ownerWorldId) continue;
+      const texts = phrase.variants.map((v) => (v.text === 'nothing' ? '' : withLineBreaks(v.text)));
+      const content: Phrase =
+        texts.length === 1 && !phrase.strategy
+          ? ({ kind: 'literal', text: texts[0] } satisfies Literal)
+          : ({
+              kind: 'choice',
+              alternatives: texts.map((text): Literal => ({ kind: 'literal', text })),
+              selector: STRATEGY_SELECTOR[phrase.strategy ?? 'cycling'],
+              // ADR-212 §4 caller contract: entityId = owner, messageKey =
+              // counterKey — the platform warns on a mismatch.
+              entityId: ownerWorldId,
+              messageKey: 'present',
+            } satisfies Choice);
+      const condition = phrase.condition;
+      engine.registerSlotEntry({
+        slotKey: 'here',
+        owner: ownerWorldId,
+        content,
+        order: order++,
+        counterKey: 'present',
+        ...(condition
+          ? {
+              gate: {
+                kind: 'predicate' as const,
+                holds: (world: WorldModel): boolean => {
+                  const playerId = world.getPlayer()?.id;
+                  const playerRoom = playerId ? world.getContainingRoom(playerId)?.id : undefined;
+                  return (
+                    playerRoom !== undefined &&
+                    world.getContainingRoom(ownerWorldId)?.id === playerRoom &&
+                    this.evaluator.evalCondition(condition, { world })
+                  );
+                },
+              },
+            }
+          : {}),
+      });
+    }
   }
 
   /**
@@ -456,6 +560,13 @@ export class ChordStory implements Story {
       case 'room': {
         const builder = h.room(irEntity.name);
         if (description) builder.description(description);
+        // Z1: `first time` prose → RoomTrait.initialDescription (first look
+        // shows it, later looks show the standard description — stdlib's
+        // looking-data reads the field; no stdlib change).
+        const initialDescription = irEntity.initialDescriptionKey
+          ? this.phraseText(irEntity.initialDescriptionKey)
+          : undefined;
+        if (initialDescription) builder.initialDescription(initialDescription);
         if (irEntity.aka.length) builder.aliases(...irEntity.aka);
         if (irEntity.traits.some((t) => t.name === 'dark' && t.condition === null)) builder.dark();
         entity = builder.build();
@@ -628,6 +739,185 @@ export class ChordStory implements Story {
   }
 
   /** Resolved default-locale text for a phrase key (single-variant read). */
+  /**
+   * Z2 (ADR-211): compile `{key}` strategy-phrase markers in this room's
+   * description prose onto ADR-209 storage. ATOMIC per room: every
+   * rewrite/entry/gate is computed first and applied only when the whole
+   * room compiled clean — a LoadError leaves the room untouched, never
+   * partial. Markers rewrite to `{snippet:key}`; variants populate
+   * `RoomTrait.snippets[key]` (`nothing` → `''`, strategy → selector via the
+   * Z5 table; a single-variant plain phrase compiles to a plain string
+   * entry); the phrase's `while` gate compiles — a presence condition on the
+   * marker's own room (`is here` / `is in <this room>`, non-negated) becomes
+   * `mentions`, anything else registers on the ADR-211 gate seam keyed
+   * `(roomId, marker)` (stdlib `registerSnippetGate` — in-memory, nothing
+   * serialized, re-registered every story load). Both description texts
+   * share one entry per marker (Z1/ADR-211 Q6: shared entries + counters).
+   *
+   * @param world the world being built (gate thunks close over it)
+   * @param irEntity the room's IR entity (presence-gate room identity)
+   * @param entity the built room entity
+   */
+  private compileRoomSnippets(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    const hatchNames = new Set(this.ir.hatches.map((h) => h.name));
+    const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+    const roomTrait = entity.get(TraitType.ROOM) as RoomTrait | undefined;
+    if (!roomTrait) return;
+
+    const texts: Array<{ value: string; apply: (t: string) => void }> = [];
+    if (identity && typeof identity.description === 'string') {
+      texts.push({ value: identity.description, apply: (t) => void (identity.description = t) });
+    }
+    if (typeof roomTrait.initialDescription === 'string') {
+      texts.push({ value: roomTrait.initialDescription, apply: (t) => void (roomTrait.initialDescription = t) });
+    }
+
+    // Compute phase — nothing is applied until every marker compiled.
+    const entries = new Map<string, SnippetEntry>();
+    const gates: Array<() => void> = [];
+    for (const slot of texts) {
+      for (const match of slot.value.matchAll(/\{([a-z][a-z0-9-]*)\}/g)) {
+        const marker = match[1];
+        if (marker === 'br' || hatchNames.has(marker) || entries.has(marker)) continue;
+        const phrase = table[marker];
+        if (!phrase) continue; // not a declared phrase — stays literal prose
+        if (phrase.verbatim) {
+          // The analyzer already errors here (analysis.verbatim-marker);
+          // this is the loader's defensive half of the same contract.
+          throw new LoadError(
+            `\`{${marker}}\` in \`${irEntity.name}\` names a verbatim phrase — verbatim text cannot splice at a description marker.`,
+            phrase.span,
+          );
+        }
+
+        const variantTexts = phrase.variants.map((v) => (v.text === 'nothing' ? '' : withLineBreaks(v.text)));
+        let mentions: string | undefined;
+        if (phrase.condition) {
+          const subject = presenceSubject(phrase.condition, irEntity.id);
+          if (subject) {
+            mentions = this.requireWorldId(subject, irEntity);
+          } else {
+            const condition = phrase.condition;
+            gates.push(() =>
+              registerSnippetGate(entity.id, marker, () => this.evaluator.evalCondition(condition, { world })),
+            );
+          }
+        }
+
+        const selector = phrase.strategy ? STRATEGY_SELECTOR[phrase.strategy] : undefined;
+        let entry: SnippetEntry;
+        if (!selector && variantTexts.length === 1) {
+          // Single-variant plain phrase → plain string entry, never a Choice.
+          entry = mentions ? { text: variantTexts[0], mentions } : variantTexts[0];
+        } else {
+          entry = {
+            // A plain multi-variant phrase takes ADR-209's short-form
+            // default (cycling); strategy phrases carry their Z5 selector.
+            selector: selector ?? 'cycling',
+            texts: variantTexts,
+            ...(mentions !== undefined ? { mentions } : {}),
+          };
+        }
+        entries.set(marker, entry);
+      }
+    }
+    if (entries.size === 0) return;
+
+    // Apply phase — rewrite texts, populate the map, register the gates.
+    for (const slot of texts) {
+      let rewritten = slot.value;
+      for (const marker of entries.keys()) {
+        rewritten = rewritten.split(`{${marker}}`).join(`{snippet:${marker}}`);
+      }
+      if (rewritten !== slot.value) slot.apply(rewritten);
+    }
+    roomTrait.snippets = { ...(roomTrait.snippets ?? {}), ...Object.fromEntries(entries) };
+    for (const register of gates) register();
+  }
+
+  /**
+   * Z3 (ADR-213 §2): register the one `disappeared` observer, when any
+   * entity authors the channel. On a successful removal: skip the player
+   * (out of the channel's scope), require an authored block, require the
+   * removal to be witnessed (the player's containing room equals the
+   * entity's last containing room), then ENQUEUE the phrase through the
+   * existing phrase-event path — never rendered inline from the observer.
+   * Unwitnessed removals enqueue nothing and consume nothing (D11).
+   * Orphaning never reaches here (the seam fires only in `removeEntity`).
+   *
+   * @param world the world being built (the observer closes over it)
+   */
+  private registerRemovalObserver(world: WorldModel): void {
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    if (!this.ir.entities.some((e) => table[`${e.id}.disappeared`])) return;
+    world.onEntityRemoved((entity, lastRoomId) => {
+      const playerId = world.getPlayer()?.id;
+      if (!playerId || entity.id === playerId) return;
+      const irId = this.irIds.get(entity.id);
+      if (!irId || !table[`${irId}.disappeared`]) return;
+      if (lastRoomId === null) return; // nowhere = nothing witnessable
+      const playerRoom = world.getContainingRoom(playerId)?.id ?? world.getLocation(playerId);
+      if (playerRoom !== lastRoomId) return; // unwitnessed: nothing enqueued, nothing consumed
+      const event = this.runtime.channelEvent(irId, 'disappeared', world);
+      if (event) this.runtime.enqueueChannelEvent(event);
+    });
+  }
+
+  /**
+   * Z3b: compile each entity's gated `detail` blocks. The two shipped trait
+   * shapes bind their fields directly — `while it is on` →
+   * `SwitchableTrait.detailWhenOn`, `while it is lit` →
+   * `LightSourceTrait.detailWhenLit` (both read by world-model's
+   * state-clauses registry). Any other condition joins the loader-owned
+   * provider: one marker trait per owner, ONE contributor registered per
+   * load (last-wins on the registry — the ADR-211/212 lifecycle), which
+   * evaluates the gate live at examine time.
+   *
+   * @param world the world being built (the provider closes over it)
+   */
+  private compileDetailChannels(world: WorldModel): void {
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    const providerSpecs = new Map<string, Array<{ irId: string; condition: IRCondition; text: string }>>();
+
+    for (const irEntity of this.ir.entities) {
+      const worldId = this.worldIds.get(irEntity.id);
+      if (!worldId) continue;
+      const entity = world.getEntity(worldId);
+      if (!entity) continue;
+      for (let i = 1; ; i++) {
+        const key = i === 1 ? `${irEntity.id}.detail` : `${irEntity.id}.detail.${i}`;
+        const phrase = table[key];
+        if (!phrase) break;
+        if (!phrase.condition) continue; // analyzer already errored (detail-unconditional)
+        const text = withLineBreaks(phrase.variants[0]?.text ?? '');
+        const shape = detailTraitShape(phrase.condition, irEntity.id);
+        if (shape === 'on' && entity.has(TraitType.SWITCHABLE)) {
+          (entity.get(TraitType.SWITCHABLE) as SwitchableTrait).detailWhenOn = text;
+        } else if (shape === 'lit' && entity.has(TraitType.LIGHT_SOURCE)) {
+          (entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait).detailWhenLit = text;
+        } else {
+          const specs = providerSpecs.get(worldId) ?? [];
+          specs.push({ irId: irEntity.id, condition: phrase.condition, text });
+          providerSpecs.set(worldId, specs);
+        }
+      }
+    }
+
+    if (providerSpecs.size === 0) return;
+    for (const worldId of providerSpecs.keys()) {
+      const entity = world.getEntity(worldId);
+      if (entity && !entity.has(ChordDetailTrait.type)) entity.add(new ChordDetailTrait());
+    }
+    registerClauseContributor(ChordDetailTrait.type, (entity) => {
+      const specs = providerSpecs.get(entity.id);
+      if (!specs) return [];
+      return specs
+        .filter((spec) => this.evaluator.evalCondition(spec.condition, { world, it: spec.irId }))
+        .map((spec) => spec.text);
+    });
+  }
+
   private phraseText(key: string): string {
     const phrase = this.ir.phrases.locales[this.ir.phrases.defaultLocale]?.[key];
     if (!phrase) {
@@ -635,6 +925,58 @@ export class ChordStory implements Story {
     }
     return withLineBreaks(phrase.variants[0]?.text ?? '');
   }
+}
+
+/**
+ * Structural slice of `GameEngine.registerSlotEntry`'s entry (ADR-212 §1) —
+ * typed at the use site to keep story-loader's dependency surface unchanged
+ * (the `extendParser` precedent).
+ */
+interface ChordSlotEntry {
+  slotKey: string;
+  owner: string;
+  content: Phrase;
+  order?: number;
+  gate?: { kind: 'predicate'; holds: (world: WorldModel) => boolean };
+  counterKey?: string;
+}
+
+/**
+ * The shipped trait-field shape of a `detail` gate: exactly `it is on` /
+ * `it is lit` on the owner, non-negated (Z3b/CP5') — else null and the
+ * loader-owned provider evaluates the condition live.
+ *
+ * @param cond the block's resolved gate
+ * @param ownerIrId the owning entity's IR id
+ * @returns 'on' | 'lit' | null
+ */
+function detailTraitShape(cond: IRCondition, ownerIrId: string): 'on' | 'lit' | null {
+  if (cond.kind !== 'predicate' || cond.pred !== 'is' || cond.negated) return null;
+  const subjectIsOwner =
+    cond.subject.kind === 'it' || (cond.subject.kind === 'entity' && cond.subject.id === ownerIrId);
+  if (!subjectIsOwner || cond.object.kind !== 'symbol') return null;
+  if (cond.object.name === 'on') return 'on';
+  if (cond.object.name === 'lit') return 'lit';
+  return null;
+}
+
+/**
+ * The presence-gate subject when `cond` is `<entity> is here` or
+ * `<entity> is in <this room>` (non-negated) — the two forms that compile to
+ * ADR-209 `mentions` at a marker site (Z2/AC-4/AC-11). Null for anything
+ * else (those register on the gate seam instead).
+ *
+ * @param cond the phrase's resolved header gate
+ * @param roomIrId the IR id of the room whose description hosts the marker
+ * @returns the subject's IR entity id, or null
+ */
+function presenceSubject(cond: IRCondition, roomIrId: string): string | null {
+  if (cond.kind !== 'predicate' || cond.negated || cond.subject.kind !== 'entity') return null;
+  if (cond.pred === 'is-here') return cond.subject.id;
+  if (cond.pred === 'is-in' && cond.object.kind === 'entity' && cond.object.id === roomIrId) {
+    return cond.subject.id;
+  }
+  return null;
 }
 
 /** Chord direction word → world-model DirectionType. */

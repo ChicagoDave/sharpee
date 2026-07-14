@@ -216,6 +216,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "descriptionKey": "trophy-barn.description",
       "exits": [],
       "id": "trophy-barn",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -251,6 +252,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "descriptionKey": null,
       "exits": [],
       "id": "player",
+      "initialDescriptionKey": null,
       "isPlayer": true,
       "kinds": [],
       "name": "player",
@@ -283,6 +285,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "descriptionKey": null,
       "exits": [],
       "id": "no-smoking-sign",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "no smoking sign",
@@ -330,6 +333,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "descriptionKey": null,
       "exits": [],
       "id": "pygmy-goat",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "pygmy goat",

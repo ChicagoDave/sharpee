@@ -60,6 +60,14 @@ const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
 const RESERVED_MATCH_MESSAGE =
   '`match` is reserved for the `each`-block binder `the match` (ratchet E3) — pick another name.';
 
+/**
+ * Z3/Z3b reserved channel keys — entity-owned, platform-PULLED phrase
+ * surfaces (occupant lifecycle family + examine detail). Bare declarations
+ * and `phrase`-statement pushes are load errors; the entity `phrase <key>:`
+ * block is the one authoring surface.
+ */
+const RESERVED_CHANNEL_KEYS = new Set(['present', 'entered', 'exited', 'disappeared', 'detail']);
+
 /** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
 
@@ -121,6 +129,8 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `is-a${p.negated ? '!' : ''}(${value(cond.subject)},${p.classifier.join(' ').toLowerCase()})`;
         case 'is-in':
           return `is-in${p.negated ? '!' : ''}(${value(cond.subject)},${p.place.words.join(' ').toLowerCase()})`;
+        case 'is-here':
+          return `is-here${p.negated ? '!' : ''}(${value(cond.subject)})`;
         case 'has':
         case 'holds':
         case 'wears':
@@ -226,6 +236,8 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         case 'can':
           return nameIsIt(p.thing);
         case 'is-a':
+        // `is here` has no object node — the subject was already visited above.
+        case 'is-here':
         // The membership form's condition selects its own entities — the
         // subject was already visited above (E1/P3).
         case 'is-any':
@@ -374,6 +386,14 @@ class Analyzer {
           });
           break;
         case 'define-phrase':
+          // Collected in pass 1; the Z2 header gate resolves here, in pass 2,
+          // where every entity symbol already exists (`while the zookeeper is
+          // here` may reference an entity declared after the phrase).
+          if (decl.condition) {
+            const entry = this.phrases.get(DEFAULT_LOCALE)?.get(decl.key);
+            if (entry) entry.condition = this.resolveCondition(decl.condition, TOP_SCOPE);
+          }
+          break;
         case 'define-phrases':
           break; // collected in pass 1
       }
@@ -385,6 +405,7 @@ class Analyzer {
     ir.hasHatches = ir.hatches.length > 0;
 
     this.checkMarkers();
+    this.checkDescriptionMarkers();
     return ir;
   }
 
@@ -667,10 +688,53 @@ class Analyzer {
           span: e.decl.description.span,
         });
       }
-      for (const override of e.decl.phraseOverrides) {
-        this.registerPhrase(DEFAULT_LOCALE, `${e.id}.${override.key}`, {
+      if (e.decl.initialDescription) {
+        // Z1: the `first time` prose — first-visit description, its own key.
+        this.registerPhrase(DEFAULT_LOCALE, `${e.id}.initial-description`, {
           strategy: null,
-          variants: [this.variantOf(override.value)],
+          variants: [this.variantOf(e.decl.initialDescription)],
+          span: e.decl.initialDescription.span,
+        });
+      }
+      let detailIndex = 0;
+      for (const override of e.decl.phraseOverrides) {
+        const isDetail = override.key === 'detail';
+        if (isDetail) detailIndex++;
+        // Z3b: multiple `detail` blocks per owner are legal (the one place a
+        // key repeats) — later blocks get deterministic suffixed keys in
+        // declaration order.
+        const key = isDetail && detailIndex > 1 ? `${e.id}.detail.${detailIndex}` : `${e.id}.${override.key}`;
+
+        if (isDetail && !override.condition) {
+          this.diagnostics.error(
+            'analysis.detail-unconditional',
+            '`phrase detail` needs a `while <condition>` — unconditional detail belongs in the description (Z3b).',
+            override.span,
+          );
+        }
+        if (isDetail && (override.variants.length > 1 || override.strategy)) {
+          this.diagnostics.error(
+            'analysis.detail-variants',
+            '`phrase detail` is one gated text per block — write another `phrase detail while …:` block for variety (Z3b).',
+            override.span,
+          );
+        }
+        // Never-guess: `while` on the lifecycle channels (entered/exited/
+        // disappeared) and on ordinary overrides has no pinned semantics;
+        // `present` gates ride the ADR-212 predicate seam, `detail` gates are
+        // Z3b's whole point.
+        if (override.condition && !isDetail && override.key !== 'present') {
+          this.diagnostics.error(
+            'analysis.override-gate',
+            `\`while\` on \`phrase ${override.key}:\` has no defined semantics — only \`detail\` and \`present\` blocks take a gate.`,
+            override.span,
+          );
+        }
+
+        this.registerPhrase(DEFAULT_LOCALE, key, {
+          strategy: (override.strategy as IRPhrase['strategy']) ?? null,
+          ...(override.condition ? { condition: this.resolveCondition(override.condition, entityScope(e)) } : {}),
+          variants: override.variants.map((v) => this.variantOf(v)),
           span: override.span,
         });
       }
@@ -876,6 +940,17 @@ class Analyzer {
       this.diagnostics.error('analysis.reserved-marker', '`br` is reserved for the built-in `{br}` line-break marker — pick another phrase name.', phrase.span);
       return;
     }
+    if (RESERVED_CHANNEL_KEYS.has(key)) {
+      // Z3/Z3b: channel keys are entity-owned surfaces — bare declarations
+      // shadow the channel. (Owner-scoped `<id>.<key>` registrations are the
+      // channels themselves and pass through here untouched.)
+      this.diagnostics.error(
+        'analysis.reserved-name',
+        `\`${key}\` is a reserved channel key — author it as an entity \`phrase ${key}:\` block, never as a standalone phrase.`,
+        phrase.span,
+      );
+      return;
+    }
     let table = this.phrases.get(locale);
     if (!table) {
       table = new Map();
@@ -906,6 +981,17 @@ class Analyzer {
       };
       if (comp.article) kinds.push(built);
       else traits.push(built);
+    }
+
+    // Z1: `first time` prose compiles to RoomTrait.initialDescription —
+    // only rooms carry that field, so any other kind is a load error
+    // until a platform surface exists (never a guess).
+    if (decl.initialDescription && !kinds.some((k) => k.name === 'room')) {
+      this.diagnostics.error(
+        'analysis.first-time-non-room',
+        `\`first time\` prose is only supported on rooms (it compiles to RoomTrait.initialDescription) — \`${decl.name.words.join(' ')}\` is not a room.`,
+        decl.initialDescription.span,
+      );
     }
 
     return {
@@ -939,6 +1025,7 @@ class Analyzer {
       states: sym ? sym.states : decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
       descriptionKey: decl.description ? `${id}.description` : null,
+      initialDescriptionKey: decl.initialDescription ? `${id}.initial-description` : null,
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
         this.buildOnClause(c, entityScope(sym ?? null)),
       ),
@@ -1010,6 +1097,7 @@ class Analyzer {
         case 'set':
         case 'change':
         case 'move':
+        case 'remove':
         case 'award':
           state.mutated = true;
           break;
@@ -1050,6 +1138,15 @@ class Analyzer {
     switch (stmt.kind) {
       case 'refuse':
       case 'phrase': {
+        if (RESERVED_CHANNEL_KEYS.has(stmt.phraseKey)) {
+          // Z3: channels are platform-PULLED — emitting one via a `phrase`
+          // (or `refuse`) statement is a load error, never a push.
+          this.diagnostics.error(
+            'analysis.channel-pushed',
+            `\`${stmt.phraseKey}\` is a platform-pulled channel — it narrates when its platform condition fires, never via a \`${stmt.kind}\` statement.`,
+            stmt.span,
+          );
+        }
         this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
         const params = stmt.params.map((p) => ({
           param: p.param.join(' '),
@@ -1108,6 +1205,28 @@ class Analyzer {
           this.checkChangeLegality(this.stateSetOf(sym ?? null, stmt.state), stmt.state, stmt.span);
         }
         return { kind: 'change', entity, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
+      case 'remove': {
+        // Z6 (ADR-213 Q3): entity references resolve as `move`'s do; the
+        // player is never removable (`analysis.remove-player` — the platform
+        // defines no post-removal player semantics).
+        const entity = this.resolveEntityValue(stmt.entity, scope);
+        if (
+          entity.kind === 'player' ||
+          (entity.kind === 'entity' && this.byId.get(entity.id)?.decl.name.words.join(' ').toLowerCase() === 'player')
+        ) {
+          this.diagnostics.error(
+            'analysis.remove-player',
+            '`remove the player` is not a thing — the platform defines no post-removal player semantics (ADR-213).',
+            stmt.span,
+          );
+        }
+        return {
+          kind: 'remove',
+          entity,
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
       }
       case 'move':
         return {
@@ -1473,6 +1592,26 @@ class Analyzer {
               subject,
               object: this.resolveEntityValue(cond.predicate.place, scope),
             };
+          case 'is-here': {
+            // Z4 deictic: entity-valued subjects only — a literal can
+            // never be "here", so reject at load rather than evaluating
+            // to a silent false. (A no-LOCATION entity evaluating false
+            // is a runtime semantic, not a load-time check.)
+            if (subject.kind === 'literal' || subject.kind === 'symbol' || subject.kind === 'story') {
+              this.diagnostics.error(
+                'analysis.here-subject',
+                '`is here` needs an entity subject — the deictic tests whether the subject shares the player\'s location.',
+                cond.predicate.span,
+              );
+            }
+            return {
+              kind: 'predicate',
+              pred: 'is-here',
+              negated: cond.predicate.negated,
+              subject,
+              object: { kind: 'symbol', name: 'here' },
+            };
+          }
           case 'has':
           case 'holds':
           case 'wears':
@@ -1642,6 +1781,64 @@ class Analyzer {
     }
   }
 
+  /**
+   * Z2 (ADR-211): validate `{key}` phrase markers in ROOM description prose
+   * — the sites the loader compiles to `{snippet:key}` + `RoomTrait.snippets`.
+   * Never-guess diagnostics live here: a separator-led variant is a load
+   * error with the bare-fragment fix-it (AC-3), a clause-site fragment ending
+   * in a sentence terminator is a lint warning, and a `verbatim` phrase at a
+   * description marker is a load error. `nothing` is the explicit empty
+   * variant and is exempt. The rewrite itself is the loader's, atomically
+   * with the snippet-map population.
+   */
+  private checkDescriptionMarkers(): void {
+    const table = this.phrases.get(DEFAULT_LOCALE);
+    if (!table) return;
+    const reportedBare = new Set<string>();
+    for (const e of this.entities) {
+      const isRoom = e.decl.compositions.some(
+        (c) => c.article && c.words.join(' ').toLowerCase() === 'room',
+      );
+      if (!isRoom) continue;
+      for (const key of [`${e.id}.description`, `${e.id}.initial-description`]) {
+        const desc = table.get(key);
+        if (!desc) continue;
+        for (const site of descriptionMarkerSites(desc.variants[0]?.text ?? '')) {
+          if (site.marker === 'br' || this.hatchNames.has(site.marker)) continue;
+          const target = table.get(site.marker);
+          if (!target) continue; // unbound → checkMarkers' analysis.unbound-marker
+          if (target.verbatim) {
+            this.diagnostics.error(
+              'analysis.verbatim-marker',
+              `\`{${site.marker}}\` in \`${key}\` names a \`verbatim\` phrase — verbatim text cannot splice at a description marker.`,
+              desc.span,
+            );
+            continue;
+          }
+          for (const variant of target.variants) {
+            if (variant.text === 'nothing') continue; // explicit empty variant (Z2)
+            if (SEPARATOR_LED.test(variant.text)) {
+              if (!reportedBare.has(site.marker)) {
+                reportedBare.add(site.marker);
+                this.diagnostics.error(
+                  'analysis.fragment-not-bare',
+                  `A variant of \`${site.marker}\` begins with punctuation/whitespace — write the fragment bare; the separator is platform-owned (ADR-211).`,
+                  target.span,
+                );
+              }
+            } else if (site.mode === 'clause' && /[.?!]$/.test(variant.text.trimEnd())) {
+              this.diagnostics.warning(
+                'analysis.fragment-terminator',
+                `\`{${site.marker}}\` sits mid-sentence in \`${key}\`, but a variant ends with a sentence terminator — the clause join (\`, \`) will read oddly.`,
+                target.span,
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
   // ---------------------------------------------------------- suggestions
 
   /** `— did you mean \`x\`?` when a near match exists, else empty. */
@@ -1649,6 +1846,54 @@ class Analyzer {
     const best = nearest(input, candidates);
     return best ? ` — did you mean \`${best}\`?` : '';
   }
+}
+
+/** Separator-shaped leading characters a bare fragment must not carry (mirrors the engine's ADR-211 gate). */
+const SEPARATOR_LED = /^[\s,.;:?!]/;
+
+/** One `{key}` occurrence in description prose with its ADR-211 site mode. */
+interface DescriptionMarkerSite {
+  marker: string;
+  /** 'clause' (mid-sentence), 'sentence' (after a terminator), 'boundary' (text start / paragraph edge). */
+  mode: 'clause' | 'sentence' | 'boundary';
+}
+
+/**
+ * Scan description prose for `{key}` marker sites and classify each per the
+ * ADR-211 join rule: mode comes from the nearest preceding non-marker,
+ * non-whitespace character (adjacent markers are transparent); `.?!;:` ⇒
+ * sentence, start-of-text / paragraph edge ⇒ boundary, else clause.
+ */
+function descriptionMarkerSites(text: string): DescriptionMarkerSite[] {
+  const sites: DescriptionMarkerSite[] = [];
+  for (const match of text.matchAll(/\{([a-z][a-z0-9-]*)\}/g)) {
+    let i = (match.index ?? 0) - 1;
+    let mode: DescriptionMarkerSite['mode'] | null = null;
+    while (i >= 0) {
+      const ch = text[i];
+      if (ch === '}') {
+        const open = text.lastIndexOf('{', i);
+        if (open >= 0 && /^\{[a-z][a-z0-9-]*\}$/.test(text.slice(open, i + 1))) {
+          i = open - 1; // adjacent marker: transparent — keep scanning left
+          continue;
+        }
+        mode = 'clause';
+        break;
+      }
+      if (ch === '\n' && text[i - 1] === '\n') {
+        mode = 'boundary';
+        break;
+      }
+      if (/\s/.test(ch)) {
+        i--;
+        continue;
+      }
+      mode = '.?!;:'.includes(ch) ? 'sentence' : 'clause';
+      break;
+    }
+    sites.push({ marker: match[1], mode: mode ?? 'boundary' });
+  }
+  return sites;
 }
 
 /** True when `needle` appears in `haystack` in order (not necessarily adjacent). */

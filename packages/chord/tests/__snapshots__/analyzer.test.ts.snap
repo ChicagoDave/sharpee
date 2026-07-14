@@ -76,6 +76,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         },
       ],
       "id": "foyer-of-the-opera-house",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -113,6 +114,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "descriptionKey": "cloakroom.description",
       "exits": [],
       "id": "cloakroom",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -150,6 +152,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "descriptionKey": "foyer-bar.description",
       "exits": [],
       "id": "foyer-bar",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -297,6 +300,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "descriptionKey": "player.description",
       "exits": [],
       "id": "player",
+      "initialDescriptionKey": null,
       "isPlayer": true,
       "kinds": [],
       "name": "player",
@@ -333,6 +337,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "descriptionKey": "velvet-cloak.description",
       "exits": [],
       "id": "velvet-cloak",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "velvet cloak",
@@ -371,6 +376,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "descriptionKey": "brass-hook.description",
       "exits": [],
       "id": "brass-hook",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [
         {
@@ -438,6 +444,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "descriptionKey": null,
       "exits": [],
       "id": "message-in-the-sawdust",
+      "initialDescriptionKey": null,
       "isPlayer": false,
       "kinds": [],
       "name": "message in the sawdust",

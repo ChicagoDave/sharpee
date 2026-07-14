@@ -37,6 +37,20 @@ All other citations in the required reading (`analyzer.ts:1617` `checkMarkers`, 
   - **Z1**: `parseCreate` (`parser.ts:394-501`) gains a `first time` branch in its line-dispatch (mirroring the `ORDINALS[word] && isWord('time',1)` recognition already used by `parseStatement`, `parser.ts:1654`, but as a new create-block case — `parseCreate` does not call `parseStatement`). Load errors: `second time`/`third time` at create scope (no platform field to bind to); `first time` prose on a non-room entity. IR: `IREntity` (rooms) gains `initialDescriptionKey: string | null`. Story-loader: bind `initialDescriptionKey` to `RoomTrait.initialDescription` at entity build time — the stdlib consumer (`looking-data.ts:298`) already reads this field, so no stdlib change.
 - **Tests**: `pnpm --filter '@sharpee/chord' test` — new parser/analyzer unit tests for Z5's retired-adverb load errors, the `ordered`/`once` fix-it text, Z4's predicate parse + non-entity-subject load error, Z1's create-block parse + both load errors. `pnpm --filter '@sharpee/story-loader' test` — unit test for STRATEGY_SELECTOR's five-entry table, a rule-site `while <entity> is here` fixture test (daemon/every-turn gate using `playerPresentAt`), and a fixture-story test proving `first time` renders on first look and the standard description on the second (RoomTrait.initialDescription assertion, not just event text).
 - **Exit state**: Both package test suites green. AC-13 (retired adverbs are load errors) and the Z1/Z4-rule-site fixture tests pass. No `.story` files touched yet (zoo migration is Phase 4). Commit checkpoint: chord + story-loader changes only, corpus untouched.
+- **Status**: DONE (2026-07-14 — chord 197/197 with golden snapshots
+  regenerated for the two additive fields; story-loader 111/111; workspace
+  tsc clean. Scope addition per the ratchet's "applies everywhere strategies
+  are legal": the `select` strategy site shares the STRATEGIES set, so it
+  gained the same retired-adverb fix-its and `decideStrategy` was rewritten
+  to the Z5 words (stopping/first-time renames + a new sticky arm using the
+  Choice stored-index encoding); the one existing `select ordered` test
+  migrated to `select stopping`. Deviations from plan letter: is-here rule-
+  site evaluation lives inline in evaluator.evalPredicate (the condition
+  choke point) mirroring playerPresentAt's exact semantics, rather than
+  calling the runtime-private method; Z1's first/later-look RENDER split is
+  pinned by stdlib's pre-existing looking-golden tests — the new story-loader
+  test asserts the RoomTrait.initialDescription binding, the surface this
+  phase adds.)
 
 ### Phase 2: Z2 — snippet markers, bare fragments, atomic per-room compile contract
 - **Tier**: Large
@@ -50,6 +64,26 @@ All other citations in the required reading (`analyzer.ts:1617` `checkMarkers`, 
   - **Counter keying**: confirm/preserve the existing dual-counter split — marker sites key `(roomId, marker)`; the same phrase emitted via a `phrase <key>` statement (`runtime.ts:1177-1244` `phraseEvent`, `'chord'` entity id around `runtime.ts:1237`) keeps its own independent counter and gets no separator (AC-8) — this is largely already-correct behavior per verification note 2; the deliverable here is a regression test pinning it, not new code, unless the marker-compile step above disturbs it.
 - **Tests**: chord unit tests for the trailing-`while` grammar, AC-3 (punctuation-led fragment load error + fix-it text), the clause-site-terminator lint, verbatim-at-marker load error, single-variant-string compile. story-loader unit/fixture tests: atomic contract (a deliberately malformed fixture room proves no partial registration on LoadError), AC-4, AC-11 (`here` and `is in <this room>` byte-identical render), AC-12 (non-presence gate fires via the seam, survives a save/restore round-trip since nothing gate-shaped serializes), AC-8 (dual counter). A fixture story (not zoo.story) exercising a gated `{key}` marker end-to-end via `node dist/cli/sharpee.js --test`.
 - **Exit state**: `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green; AC-3/4/8/11/12 covered by passing tests; the fixture-story transcript passes. No shipped story touched yet.
+- **Status**: DONE (2026-07-14 — chord 208/208 (AST snapshots regenerated:
+  additive `condition: null` on define-phrase nodes only); story-loader
+  119/119; stdlib 1333p/27s; workspace tsc clean (the ide-protocol re-export
+  verification); end-to-end fixture `packages/story-loader/tests/fixtures/
+  snippet-gate.{story,transcript}` 11/11 via the CLI bundle — mentions gate
+  and seam gate both flip live, separators clean when gated out. Notes:
+  (1) division of labor — the analyzer VALIDATES marker sites
+  (fragment-not-bare error + fix-it, clause-terminator lint,
+  verbatim-at-marker error, all in the new `checkDescriptionMarkers` pass);
+  the loader REWRITES + populates + registers, atomically per room
+  (compute-then-apply in `compileRoomSnippets`; the atomicity test drives a
+  hand-sabotaged IR to a LoadError and asserts the room untouched).
+  (2) `@sharpee/stdlib` moved devDep → runtime dep of story-loader (the
+  ADR-211 gate-seam wiring the seam was built for). (3) One-line stdlib
+  change OUTSIDE the touched-package list, flagged: `lookupSnippetGate`
+  added to the looking barrel — the registry module always declared it
+  public interface, but 211-core only barrel-exported register/clear;
+  needed for gate-registration assertions. (4) The atomic contract's
+  loader-side verbatim LoadError is defensive depth — the analyzer rejects
+  the same shape at compile, so only a hand-built IR can reach it.)
 
 ### Phase 3: Z3 + Z3b — entity-owned phrase channels (occupant lifecycle family, `detail`) + the `remove` statement — RE-CUT 2026-07-14 against ADR-212/213
 - **Tier**: Large
@@ -65,6 +99,31 @@ All other citations in the required reading (`analyzer.ts:1617` `checkMarkers`, 
   - **Chord `remove <entity>` statement (ADR-213 Q3)**: ratchet entry Z6 already TRANSCRIBED (David's "transcribe", 2026-07-14) into `docs/architecture/chord-grammar-changes.md` — implement to that row: chord AST/parser/IR statement alongside `move`, analyzer entity-reference validation matching `move`'s plus the `analysis.remove-player` load error, D7 `when`-suffix and D13 sequence-kit membership, loader runtime case calling `ctx.world.removeEntity` with the same `reports`-phase exclusion as `move` (`runtime.ts:937-944` precedent). No null-`move` overload — `remove` is its own statement.
 - **Tests**: chord analyzer tests for reserved-key load errors on all five keys (phrase declarations and entity overrides); chord parser/IR tests for the `remove` statement (parse, analyzer validation, IR shape). story-loader fixture-story tests (CP4 — loader-internal, fixture-tested, no zoo-transcript coverage required this phase): `present` entries with 0/1/N occupants (ordering + counter keyed owner+`'present'` + save/restore mid-cycle continues, overlapping ADR-212 AC-4/AC-6); each lifecycle channel witnessed-only and silent when unwitnessed; `disappeared` firing from BOTH a TS-initiated `removeEntity` and the new `remove` statement (ADR-213 AC-2/AC-6); a direct-orphaning fixture pinning that no `disappeared` narration renders (loader-level echo of ADR-213 AC-7); `detail`'s trait-field compile plus a non-trait-condition provider.
 - **Exit state**: `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green; all four Z3 channels, Z3b, and the `remove` statement pass their fixture-story tests; reserved-key load errors covered; the `remove` ratchet entry transcribed. Still no shipped story touched.
+- **Status**: DONE (2026-07-14 — chord 226/226 (AST snapshots regenerated:
+  PhraseOverride reshape strategy/condition/variants + RemoveStmt, one test
+  assertion migrated `override.value.text` → `variants[0].text`);
+  story-loader 131/131; workspace tsc clean; 30 new tests. Design notes:
+  (1) narration DELIVERY — witnessed lifecycle events (entered/exited from
+  the `move` case, disappeared from the ADR-213 observer) enqueue on a
+  runtime pending queue drained at the end of every report-collecting
+  `execStatements` pass (mutations-pass returns are discarded by the
+  interceptor call sites, so inline emission would be lost) plus a
+  `chord.channel-drain` scheduler daemon for TS-initiated removals outside
+  statement execution — registered only when a `disappeared` block is
+  authored, so channel-less stories keep their exact daemon roster.
+  (2) Channel Choice counters key `(ownerWorldId, channelKey)` via a
+  counter-override param on phraseEvent (ADR-212 §4 convention).
+  (3) A `while`-gated `present` block uses the ADR-212 predicate seam ANDed
+  with the owner-present check (the gate narrows the channel, never replaces
+  its presence semantics). (4) Never-guess additions: `while` on
+  entered/exited/disappeared and on ordinary overrides is a load error
+  (`analysis.override-gate`); `detail` is one gated text per block
+  (`analysis.detail-variants`); reserved-key enforcement landed in
+  `registerPhrase` (bare keys) + the phrase/refuse statement resolver
+  (`analysis.channel-pushed`) rather than per-call-site duplication —
+  owner-scoped `<id>.<key>` registrations pass through untouched, which IS
+  the authoring surface. (5) Multiple `detail` blocks per owner key as
+  `<id>.detail`, `<id>.detail.2`, … in declaration order.)
 
 ### Phase 4: zoo.story migration + transcript rejoin + excluded-file retirement
 - **Tier**: Medium
@@ -78,6 +137,40 @@ All other citations in the required reading (`analyzer.ts:1617` `checkMarkers`, 
   - **Transcript rejoin (CP6)**: re-author the assertions from `stories/friendly-zoo/walkthroughs/excluded/wt-02-slot-occupants.transcript` (occupant-presence clauses, 0/1/N occupants) and `wt-03-slot-detail.transcript` (on/off detail clauses) as new chained segments appended to the `wt-01…wt-05` chain (`stories/friendly-zoo/walkthroughs/`). Delete both files under `walkthroughs/excluded/` once the chain covers everything they asserted (David's recorded decision — deletion executes here; the freeze protects the gate files only, not these two).
 - **Tests / ACs**: `node dist/cli/sharpee.js --test --chain stories/friendly-zoo/walkthroughs/wt-*.transcript` — full chain green, AC-6 (the migrated zoo.story reproduces the excluded transcripts' assertions unedited in substance). Confirm dungeo's chain and concealment-test's 17/17 remain green (untouched by this package, but a build-order sanity check per `./repokit build --skip <pkg>` resumption) — do not re-author or edit any *other* story's transcripts (per `CLAUDE.md`: don't modify working transcripts).
 - **Exit state**: zoo walkthrough gate green with the two former excluded files deleted and their coverage absorbed into the chain; `zoo-items.ts` pins entry and the hand-rolled presence contributor removed; CP6 and CP7'(a) satisfied. This closes the chord-zoo-surfaces package.
+- **Status**: DONE with ONE deliberately deferred item (2026-07-14).
+  Landed: zoo.story `presence`→`present` ×4 (ADR-212 entries now feed
+  `{slot:here}`; the four TS-side `registerSlotEntry` calls were deleted per
+  this plan, then RESTORED the same day on David's canonical-surfaces
+  principle — the TS zoo is the canonical Sharpee implementation and keeps
+  the reference `registerSlotEntry` usage; the two stories author the same
+  game on their two surfaces);
+  `{pins}` marker + `define phrase pins, cycling` (three variants incl. the
+  explicit `nothing`) in zoo.story's Gift Shop; flashlight `detail while it
+  is on/lit` + radio `detail while it is on` blocks (the excluded wt-03
+  texts, re-authored as Z3b); CP6 rejoin as two NEW chained chapters
+  (`wt-06-occupants-and-pins`, `wt-07-object-detail` — 0/1/N occupants
+  incl. post-departure keeper absence, byte-precise pins comma-join/clean
+  `nothing` splice, 0/1/N detail) and BOTH `walkthroughs/excluded/` files
+  deleted (David's recorded decision, executed here). Gate: zoo chain
+  56/56 (7 chapters, run 1); zoo atomics 61/61; TS-story transcripts 10/10;
+  concealment-test 38/38; dungeo units 1703p/9xf/4s; dungeo chain 864/864
+  (run 1 — no flake this time).
+  RESOLVED (David, 2026-07-14): the TS-side `zoo-items.ts` pins entry is
+  KEPT — removal would have broken the gating `room-snippets.transcript`,
+  and per David both stories are maintained tutorial surfaces (the TS story
+  demonstrates the Sharpee API, zoo.story demonstrates Chord; the TS story
+  is updated as the platform evolves, never frozen). The pins entry is
+  already current idiom (bare fragments since the ADR-211 flag day) and
+  remains the shipping exercise of the hand-written SnippetMap surface
+  including the `mentions` gate. The plan's "remove the TS pins entry"
+  deliverable is closed as won't-do by owner decision.
+
+## PACKAGE COMPLETE (2026-07-14)
+
+Phases 1–4 DONE; the CP6/CP7' gate is green with the excluded files
+retired; the one open question resolved by David (TS pins entry kept —
+tutorial-surface principle above). `docs/architecture/
+chord-grammar-changes.md` rows Z1–Z6 are all IMPLEMENTED.
 
 ## Notes for the implementer
 
