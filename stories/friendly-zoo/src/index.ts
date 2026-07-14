@@ -312,35 +312,43 @@ class FriendlyZooStory implements Story {
   onEngineReady(engine: GameEngine): void {
     const world = engine.getWorld();
 
-    // --- Room-occupant slot contributor (ADR-195 S1) ---
+    // --- Room-occupant slot entries (ADR-212) ---
     //
-    // Realize-time staging: before any message renders this turn, append a
-    // presence clause to each room description's `{slot:here}` for every known
-    // occupant in the player's room. The slot (sentence mode) owns the connective
-    // grammar — each contribution is bare content. The fixed `order` keeps the
-    // joined line deterministic across save/restore (ADR-195 AC-5).
+    // Declarative replacement for the hand-rolled ADR-195 S1 presence closure:
+    // one slot entry per occupant, feeding each room description's `{slot:here}`.
+    // The default `owner-present` gate performs the same player's-room check the
+    // closure computed by hand, the slot (sentence mode) still owns the connective
+    // grammar — each entry is bare content — and the fixed `order` keeps the
+    // joined line deterministic across save/restore (ADR-195 AC-5). Text resolves
+    // once here: the provider is static after `extendLanguage`, so this matches
+    // the closure's per-turn lookups byte for byte.
     const language = engine.getLanguageProvider();
-    const presence: Array<{ id: string; order: number; messageId: string }> = [
-      { id: this.characterIds.zookeeper, order: 0, messageId: PresenceMessages.ZOOKEEPER },
-      { id: this.characterIds.parrot, order: 1, messageId: PresenceMessages.PARROT },
-      { id: this.characterIds.goats, order: 2, messageId: PresenceMessages.GOATS },
-      { id: this.characterIds.rabbits, order: 3, messageId: PresenceMessages.RABBITS },
-    ];
-
-    engine.registerSlotContributor((ctx) => {
-      const playerId = ctx.narrative?.playerId ?? world.getPlayer()?.id;
-      if (!playerId) return;
-      const room = ctx.world.getContainingRoom(playerId);
-      if (!room) return;
-      const presentIds = new Set(ctx.world.getEntityContents(room.id).map((e) => e.id));
-      for (const occupant of presence) {
-        if (!presentIds.has(occupant.id)) continue;
-        const text = language?.getMessage(occupant.messageId);
-        if (text) {
-          ctx.contribute('here', { kind: 'literal' as const, text }, { order: occupant.order });
-        }
-      }
-    });
+    if (language) {
+      engine.registerSlotEntry({
+        slotKey: 'here',
+        owner: this.characterIds.zookeeper,
+        content: { kind: 'literal', text: language.getMessage(PresenceMessages.ZOOKEEPER) },
+        order: 0,
+      });
+      engine.registerSlotEntry({
+        slotKey: 'here',
+        owner: this.characterIds.parrot,
+        content: { kind: 'literal', text: language.getMessage(PresenceMessages.PARROT) },
+        order: 1,
+      });
+      engine.registerSlotEntry({
+        slotKey: 'here',
+        owner: this.characterIds.goats,
+        content: { kind: 'literal', text: language.getMessage(PresenceMessages.GOATS) },
+        order: 2,
+      });
+      engine.registerSlotEntry({
+        slotKey: 'here',
+        owner: this.characterIds.rabbits,
+        content: { kind: 'literal', text: language.getMessage(PresenceMessages.RABBITS) },
+        order: 3,
+      });
+    }
 
     // --- NPC Plugin ---
     const npcPlugin = new NpcPlugin();

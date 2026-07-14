@@ -5952,6 +5952,24 @@ export interface RegionCrossings {
 }
 import { ScoreEntry } from './ScoreLedger';
 export { ScoreEntry } from './ScoreLedger';
+/**
+ * Pre-removal observer (ADR-213 §1).
+ *
+ * Invoked synchronously inside `removeEntity`, exactly once per SUCCESSFUL
+ * removal, BEFORE any mutation — the entity is still live and fully queryable,
+ * and `lastRoomId` is its containing room at that moment (`null` for a
+ * locationless entity). Observers cannot veto (removal is already decided —
+ * this is a fact notification); a throwing observer is logged and neither
+ * aborts the removal nor starves later observers. Never fired on orphaning
+ * (`moveEntity(id, null)`) or on a failed removal (unknown id).
+ *
+ * Registration is in-memory and ordered; nothing is serialized — callers
+ * re-register every story load (the ADR-211/ADR-212 registry lifecycle).
+ *
+ * @param entity - The live entity about to be removed.
+ * @param lastRoomId - Its containing room id at removal time, or `null`.
+ */
+export type EntityRemovalObserver = (entity: IFEntity, lastRoomId: string | null) => void;
 export interface IWorldModel {
     getDataStore(): IDataStore;
     /**
@@ -6077,6 +6095,13 @@ export interface IWorldModel {
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
     removeEntity(id: string): boolean;
+    /**
+     * Register a pre-removal observer (ADR-213 §1). See
+     * {@link EntityRemovalObserver} for the invocation contract.
+     *
+     * @param observer - Appended to the in-memory observer list (registration order).
+     */
+    onEntityRemoved(observer: EntityRemovalObserver): void;
     getAllEntities(): IFEntity[];
     updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
     getLocation(entityId: string): string | undefined;
@@ -6172,6 +6197,8 @@ export interface IWorldModel {
 }
 export declare class WorldModel implements IWorldModel {
     private entities;
+    /** Pre-removal observers (ADR-213 §1) — registration order, never serialized. */
+    private removalObservers;
     private state;
     private playerId;
     private spatialIndex;
@@ -6211,6 +6238,17 @@ export declare class WorldModel implements IWorldModel {
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
     removeEntity(id: string): boolean;
+    /**
+     * Register a pre-removal observer (ADR-213 §1).
+     *
+     * Observers run synchronously inside `removeEntity`, in registration order,
+     * once per successful removal, before any mutation — never on orphaning
+     * (`moveEntity(id, null)`) and never on a failed removal. In-memory only;
+     * nothing is serialized, so callers re-register every story load.
+     *
+     * @param observer - The observer to append.
+     */
+    onEntityRemoved(observer: EntityRemovalObserver): void;
     getAllEntities(): IFEntity[];
     updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
     getLocation(entityId: string): string | undefined;
@@ -6595,7 +6633,7 @@ import type { CapabilityBehavior } from '../capabilities/capability-behavior';
 import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
 import type { ActionInterceptor } from '../capabilities/action-interceptor';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding';
-import type { IWorldModel, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel';
+import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel';
 import type { ScoreEntry } from './ScoreLedger';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
@@ -6663,6 +6701,7 @@ export declare class AuthorModel implements IWorldModel {
     getEntity(id: string): IFEntity | undefined;
     hasEntity(id: string): boolean;
     removeEntity(id: string): boolean;
+    onEntityRemoved(observer: EntityRemovalObserver): void;
     getAllEntities(): IFEntity[];
     updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
     getLocation(entityId: string): string | undefined;

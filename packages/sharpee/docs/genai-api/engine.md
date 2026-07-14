@@ -1073,7 +1073,7 @@ import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
-import { IProsePipeline, type SlotContributor } from './prose-pipeline';
+import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
@@ -1398,6 +1398,19 @@ export declare class GameEngine {
      * @param contributor the slot contributor to register.
      */
     registerSlotContributor(contributor: SlotContributor): void;
+    /**
+     * Register a declarative slot entry (ADR-212 §1).
+     *
+     * Stories (and the Chord loader) call this from `onEngineReady` instead of
+     * hand-writing a presence closure: the entry's gate is evaluated once per
+     * turn in the staging pass, before story-registered contributors, and its
+     * content contributes to `slotKey` while the gate holds. Keyed
+     * `(slotKey, owner)`, last-wins; nothing is serialized — re-register every
+     * story load. No-op if the text service is not yet constructed.
+     *
+     * @param entry the slot entry to register (or replace).
+     */
+    registerSlotEntry(entry: SlotEntry): void;
     /**
      * Register save/restore hooks
      */

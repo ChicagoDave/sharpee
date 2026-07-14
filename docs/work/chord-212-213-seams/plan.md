@@ -284,8 +284,9 @@ task's instruction; this plan does not compete for "current" status.
 - **Exit state**: `pnpm --filter '@sharpee/engine' test` green. Zero runtime
   behavior change for any existing story — nothing calls `registerSlotEntry`
   yet (friendly-zoo's migration is Phase 3). Committable on its own.
-- **Status**: CURRENT (of this plan — `.current-plan` itself is untouched
-  and still points at `chord-211-core`; see plan header)
+- **Status**: DONE (2026-07-14 — engine suite 501 pass/7 skip including 14
+  new slot-entry tests; engine tsc clean. `.current-plan` repointed to this
+  plan at implementation start, `chord-211-core` being PACKAGE COMPLETE.)
 
 ### Phase 2: ADR-213 — the world-model removal observer seam
 - **Tier**: Small
@@ -348,7 +349,13 @@ task's instruction; this plan does not compete for "current" status.
   zoo, penny press, destructible transform) executes identically; this
   phase only adds an always-empty observer list being iterated (a no-op
   loop) until Phase 3 exercises it. Committable on its own.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-14 — world-model suite 1330 pass/10 skip including
+  8 new observer tests; workspace tsc clean. One deviation from the "no
+  AuthorModel code change" expectation: adding `onEntityRemoved` to
+  `IWorldModel` forces a one-line pass-through on `AuthorModel`, which
+  implements the interface — the `removeEntity` pass-through itself is
+  unchanged as planned, and the pass-through test fires observers through
+  AuthorModel as specified.)
 
 ### Phase 3: friendly-zoo migration (ADR-212 Q3) + combined regression gate
 - **Tier**: Medium
@@ -428,7 +435,27 @@ task's instruction; this plan does not compete for "current" status.
   sites confirmed byte-identical (ADR-213 AC-4, zoo half). This is the
   acceptance gate for the whole `chord-212-213-seams` package — once green,
   `chord-zoo-surfaces` Phase 3 may begin.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-14 — migration landed; gate green. Evidence:
+  engine 501p/7s + world-model 1330p/10s; `./repokit build friendly-zoo`
+  clean (NOTE: `build dungeo` does NOT rebuild friendly-zoo's dist — the
+  build-order caution this plan flagged was real); zoo.story wt chain 37/37
+  unedited (the 2026-07-12 gate — wt chain runs `--story
+  stories/friendly-zoo/zoo.story`, NOT the TS story; this plan's "the
+  walkthrough chain already exercises" assumption predated that conversion);
+  zoo.story atomic 61/61; TS-story transcripts 10/10; AC-1 byte-identity
+  proven directly by an A/B diff of the full 5-chapter TS-story chain
+  output, closure vs entries — identical except one RNG parrot ambient
+  line; dungeo units green (run 2; run 1 had one RNG flake); dungeo wt
+  chain 912/912 on run 3 (one-good-run rule; runs 1–2 were documented-family
+  RNG cascades: blue-sphere timing, combat). Flagged to David, not fixed:
+  (1) `DestructibleBehavior.transformTo` removal still has no transcript
+  coverage; (2) no gating transcript asserts the TS story's presence lines
+  post-zoo.story-conversion — the A/B diff is the standing evidence.)
+
+## PACKAGE COMPLETE (2026-07-14)
+
+All three phases DONE; the Phase 3 combined gate is green. `chord-zoo-surfaces`
+Phase 3 is unblocked.
 
 ## AC coverage summary (this package vs. `chord-zoo-surfaces`)
 

@@ -25,7 +25,9 @@ export {
   // Scene reaction callbacks (ADR-186)
   SceneEventContext,
   SceneReaction,
-  SceneCallback
+  SceneCallback,
+  // Pre-removal observer seam (ADR-213)
+  EntityRemovalObserver
 } from './WorldModel';
 
 // Re-export grammar vocabulary types from if-domain for convenience

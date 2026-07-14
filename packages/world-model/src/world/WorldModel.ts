@@ -169,6 +169,25 @@ export interface RegionCrossings {
 import { ScoreLedger, ScoreEntry } from './ScoreLedger';
 export { ScoreEntry } from './ScoreLedger';
 
+/**
+ * Pre-removal observer (ADR-213 §1).
+ *
+ * Invoked synchronously inside `removeEntity`, exactly once per SUCCESSFUL
+ * removal, BEFORE any mutation — the entity is still live and fully queryable,
+ * and `lastRoomId` is its containing room at that moment (`null` for a
+ * locationless entity). Observers cannot veto (removal is already decided —
+ * this is a fact notification); a throwing observer is logged and neither
+ * aborts the removal nor starves later observers. Never fired on orphaning
+ * (`moveEntity(id, null)`) or on a failed removal (unknown id).
+ *
+ * Registration is in-memory and ordered; nothing is serialized — callers
+ * re-register every story load (the ADR-211/ADR-212 registry lifecycle).
+ *
+ * @param entity - The live entity about to be removed.
+ * @param lastRoomId - Its containing room id at removal time, or `null`.
+ */
+export type EntityRemovalObserver = (entity: IFEntity, lastRoomId: string | null) => void;
+
 // Interface and class with same name in same file - TypeScript standard pattern
 export interface IWorldModel {
   // Get the data store for sharing with AuthorModel
@@ -317,6 +336,13 @@ export interface IWorldModel {
   getEntity(id: string): IFEntity | undefined;
   hasEntity(id: string): boolean;
   removeEntity(id: string): boolean;
+  /**
+   * Register a pre-removal observer (ADR-213 §1). See
+   * {@link EntityRemovalObserver} for the invocation contract.
+   *
+   * @param observer - Appended to the in-memory observer list (registration order).
+   */
+  onEntityRemoved(observer: EntityRemovalObserver): void;
   getAllEntities(): IFEntity[];
   updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
 
@@ -467,6 +493,8 @@ const TYPE_PREFIXES: Record<string, string> = {
 
 export class WorldModel implements IWorldModel {
   private entities: Map<string, IFEntity> = new Map();
+  /** Pre-removal observers (ADR-213 §1) — registration order, never serialized. */
+  private removalObservers: EntityRemovalObserver[] = [];
   private state: WorldState = {};
   private playerId: string | undefined;
   private spatialIndex: SpatialIndex;
@@ -819,10 +847,28 @@ export class WorldModel implements IWorldModel {
     const entity = this.entities.get(id);
     if (!entity) return false;
 
+    // ADR-213 §1: capture the containing room and notify observers BEFORE the
+    // first real mutation (spatialIndex.remove clears the parent pointer, so
+    // the room is unrecoverable afterward). Observers see the live entity and
+    // cannot veto; one observer's exception is logged and neither aborts the
+    // removal nor stops the remaining observers (AC-5).
+    const lastRoomId = this.getContainingRoom(id)?.id ?? null;
+    for (const observer of this.removalObservers) {
+      try {
+        observer(entity, lastRoomId);
+      } catch (error) {
+        console.error(`onEntityRemoved observer threw during removeEntity('${id}'):`, error);
+      }
+    }
+
     // Remove from spatial index
     this.spatialIndex.remove(id);
 
     // Remove from any containers
+    // NOTE (ADR-213 investigation, 2026-07-14): dead branch — spatialIndex
+    // .remove() above already cleared the parent pointer, so getLocation(id)
+    // is always undefined here. Left as-is deliberately (flagged, not
+    // silently removed).
     const location = this.getLocation(id);
     if (location) {
       this.moveEntity(id, null);
@@ -830,6 +876,20 @@ export class WorldModel implements IWorldModel {
 
     // Remove entity
     return this.entities.delete(id);
+  }
+
+  /**
+   * Register a pre-removal observer (ADR-213 §1).
+   *
+   * Observers run synchronously inside `removeEntity`, in registration order,
+   * once per successful removal, before any mutation — never on orphaning
+   * (`moveEntity(id, null)`) and never on a failed removal. In-memory only;
+   * nothing is serialized, so callers re-register every story load.
+   *
+   * @param observer - The observer to append.
+   */
+  onEntityRemoved(observer: EntityRemovalObserver): void {
+    this.removalObservers.push(observer);
   }
 
   getAllEntities(): IFEntity[] {

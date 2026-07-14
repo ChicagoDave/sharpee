@@ -1214,7 +1214,7 @@ export * from './undoing';
 export * from './again';
 export * from './hiding';
 import { TraceAction } from '../author';
-export declare const standardActions: (TraceAction | import("..").Action)[];
+export declare const standardActions: (import("..").Action | TraceAction)[];
 ```
 
 ### actions/author/trace
