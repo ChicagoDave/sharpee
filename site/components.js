@@ -25,6 +25,7 @@
       link('index.html', 'Home') +
       link('getting-started.html', 'Getting Started') +
       link('chord.html', 'The Chord Language') +
+      link('chord-reference.html', 'Chord Reference') +
       '<hr>' +
       link('cloak-of-darkness.html', 'Cloak of Darkness') +
       sidebarLink('family-zoo.html', 'Family Zoo') +

@@ -154,9 +154,14 @@ Section numbers refer to `docs/reference/chord-language.md`.
 - [x] Retired: `ordered`/`once` strategy adverbs → `stopping`/`first-time` (load errors with fix-its) — §6.3 (migration/retired-ordered.story)
 - [x] Lexing note: lone `"` is prose punctuation (multi-line dialogue) — §2.6 (world/prose-markers.story)
 
-## Fixture ↔ doc traceability (Phase 6 gate)
+## Fixture ↔ doc traceability (Phase 6 gate — CLOSED 2026-07-14)
 
 - Every checked row cites at least one fixture under
   `docs/work/chord-language-reference/fixtures/`; every fixture is cited by at
   least one doc code block (`<!-- fixture: <relpath> -->` marker convention,
-  see `verify-examples.mjs` header).
+  see `verify-examples.mjs` header) — or, for expected-fail fixtures, by its
+  diagnostic code appearing in the doc prose.
+- **Automated and green** (Phase 6): `verify-examples.mjs` 40/40 compile as
+  documented; `verify-traceability.mjs` 57/57 doc blocks verbatim + 40/40
+  fixtures referenced (both directions). Full results in
+  `verification-report.md`.
