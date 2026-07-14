@@ -65,9 +65,10 @@ export class ConcealmentTestStory implements Story {
       initialDescription:
         'You step into a quiet study: heavy curtains, a large desk, a tall armoire.{snippet:clock}',
       snippets: {
+        // Bare fragments (ADR-211): sentence sites in both description texts.
         clock: [
-          ' A grandfather clock ticks softly in the corner.',
-          ' The grandfather clock ticks away, unhurried.',
+          'A grandfather clock ticks softly in the corner.',
+          'The grandfather clock ticks away, unhurried.',
         ],
       },
     }));
@@ -100,14 +101,20 @@ export class ConcealmentTestStory implements Story {
     const parlor = world.createEntity('parlor', EntityType.ROOM);
     parlor.add(new RoomTrait({
       snippets: {
-        cabinet: ', next to a cabinet',
+        // Bare fragments (ADR-211). cabinet/mantel: clause sites (platform `, `).
+        // dust — the corpus's one flagged edge case, resolved 2026-07-14: its
+        // first site follows `.` and its second follows `;`. Neither takes a
+        // comma; `;`/`:` already carry the join, so classifySite treats them
+        // as sentence sites (space join) — byte-identical to the old
+        // leading-space entries at both sites. trunk: sentence site.
+        cabinet: 'next to a cabinet',
         mantel: [
-          ', the mantel holding sentimental items',
-          ', its mantel crowded with keepsakes',
-          ', a few sentimental items on the mantel',
+          'the mantel holding sentimental items',
+          'its mantel crowded with keepsakes',
+          'a few sentimental items on the mantel',
         ],
-        dust: [' Thick dust', ' Thin dust'],
-        trunk: { text: ' A battered trunk sits in the corner.', mentions: trunk.id },
+        dust: ['Thick dust', 'Thin dust'],
+        trunk: { text: 'A battered trunk sits in the corner.', mentions: trunk.id },
       },
     }));
     parlor.add(new IdentityTrait({

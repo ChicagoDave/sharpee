@@ -87,10 +87,11 @@ export function createZooItems(world: WorldModel, rooms: RoomIds): ItemIds {
     .build();
 
   giftShopEntity.get(RoomTrait)!.snippets = {
+    // Bare fragments (ADR-211): clause site — the platform supplies the `, `.
     pins: {
       texts: [
-        ', and a spinning rack of enamel pins wobbles by the register',
-        ', and the enamel-pin rack stands picked half bare',
+        'and a spinning rack of enamel pins wobbles by the register',
+        'and the enamel-pin rack stands picked half bare',
         '',
       ],
       mentions: enamelPins.id,

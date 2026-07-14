@@ -1,11 +1,17 @@
 /**
- * Room-description snippet resolver (ADR-209) — the scan/gate/resolve pass.
+ * Room-description snippet resolver (ADR-209 machinery, ADR-211 join rule) —
+ * the scan/gate/resolve pass.
  *
  * Splits a room description at `{snippet:name}` markers and builds the spliced
  * `Sequence` phrase: `Verbatim` prose segments interleaved with each marker's
  * resolved value (`Literal` for a fixed text, `Choice` for a variant list,
- * `Empty` for a gated-out / empty entry). Purely mechanical — every rendered
- * character is author-written.
+ * `Empty` for a gated-out / empty entry), each wrapped in a mode-annotated
+ * `Spliced` computed from the AUTHORED marker site (ADR-211 Decision 2).
+ * Fragments are BARE — this resolver emits no separator characters, ever; the
+ * join characters (`', '` / `' '`) are locale realization and belong to the
+ * Assembler. Boundary sites (start of text, paragraph edge) never wrap in
+ * `Spliced` at all: their separator is always empty, so the content phrase is
+ * emitted directly.
  *
  * Public interface: `resolveSnippetDescription`, `SnippetWorldQueries`.
  *
@@ -25,6 +31,7 @@ import type {
   SnippetText,
 } from '@sharpee/if-domain';
 import { SNIPPET_MARKER_PATTERN } from '@sharpee/if-domain';
+import { lookupSnippetGate } from './snippet-gate-registry';
 
 /**
  * The world surface the presence gate needs — a structural subset of
@@ -83,7 +90,41 @@ function resolveText(
     );
     return '';
   }
+  // Bare-fragment rule on RESOLVED texts (ADR-211 AC-10): literal texts are
+  // gated at load; a messageId resolves at render, so enforcement here is the
+  // broken-build log posture — warn and join as-is, never throw mid-turn.
+  if (resolved !== '' && SEPARATOR_LED.test(resolved)) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[snippet] room "${roomId}": message '${item.messageId}' for marker '${marker}' is not a bare fragment ` +
+        `(leads with punctuation/whitespace) — the separator is platform-owned; joining as-is`,
+    );
+  }
   return resolved;
+}
+
+/** Separator-shaped leading characters a bare fragment must not carry (ADR-211). */
+const SEPARATOR_LED = /^[\s,.;:?!]/;
+
+/**
+ * Classify one marker site from the authored prose PRECEDING it (ADR-211
+ * Decision 2 edge rules). Markers are transparent — `precedingProse` is the
+ * concatenation of prose segments only, so an adjacent marker contributes no
+ * characters and the mode comes from the nearest real prose character.
+ */
+function classifySite(precedingProse: string): 'clause' | 'sentence' | 'boundary' {
+  let i = precedingProse.length - 1;
+  let newlines = 0;
+  while (i >= 0 && /\s/.test(precedingProse[i])) {
+    if (precedingProse[i] === '\n') newlines++;
+    i--;
+  }
+  if (i < 0) return 'boundary'; // start of text
+  if (newlines >= 2) return 'boundary'; // paragraph edge
+  // `.?!` end a sentence; `;:` don't, but they already ARE the join — a comma
+  // after them is never English, so they take the space-join too (the
+  // concealment-test dust site pinned this; ADR-211 Decision 2 amended).
+  return /[.?!;:]/.test(precedingProse[i]) ? 'sentence' : 'clause';
 }
 
 /**
@@ -140,6 +181,23 @@ export function resolveSnippetDescription(
       if (!present) return { kind: 'empty' };
     }
 
+    // Registered gate (ADR-211 Decision 3 / Q4): a non-presence `while`
+    // condition registered per (roomId, marker) by the runtime that owns it.
+    // Applied alongside — never replacing — the `mentions` data gate above;
+    // both must hold. A throwing gate follows the render-graceful posture:
+    // log, splice nothing, never abort the turn.
+    const gate = lookupSnippetGate(roomId, name);
+    if (gate !== undefined) {
+      let holds = false;
+      try {
+        holds = gate();
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(`[snippet] room "${roomId}": gate for marker '${name}' threw: ${err}`);
+      }
+      if (!holds) return { kind: 'empty' };
+    }
+
     const texts = norm.texts.map((t) => resolveText(t, roomId, name, resolveMessage));
 
     // Single fixed text (string / SnippetText form): Literal, every render.
@@ -162,10 +220,15 @@ export function resolveSnippetDescription(
     };
   };
 
+  // The authored prose seen so far — the site classifier's input. Markers are
+  // transparent (they contribute no characters), so only prose accrues.
+  let precedingProse = '';
+
   for (let i = 0; i < pieces.length; i++) {
     if (i % 2 === 0) {
       // Prose segment — opaque author text, exempt from whitespace collapse.
       if (pieces[i] !== '') parts.push({ kind: 'verbatim', text: pieces[i] });
+      precedingProse += pieces[i];
     } else {
       const name = pieces[i];
       let phrase = resolved.get(name);
@@ -173,7 +236,16 @@ export function resolveSnippetDescription(
         phrase = resolveMarker(name);
         resolved.set(name, phrase);
       }
-      parts.push(phrase);
+      // ADR-211 Decision 2: the SITE decides the join mode — per occurrence,
+      // so a duplicate marker shares its resolved phrase (AC-8: one Choice
+      // node, one counter advance) but each site wraps it in its own mode.
+      // Boundary sites emit the content directly (their separator is always
+      // empty; `Spliced.mode` stays a true two-value enum), and a resolved
+      // `Empty` (gated-out / unbound / empty text) needs no wrapper — there
+      // is nothing to join.
+      const mode = classifySite(precedingProse);
+      const wrap = mode !== 'boundary' && phrase.kind !== 'empty';
+      parts.push(wrap ? { kind: 'spliced', mode, content: phrase } : phrase);
     }
   }
 

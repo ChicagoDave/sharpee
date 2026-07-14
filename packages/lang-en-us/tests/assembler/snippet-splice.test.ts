@@ -1,12 +1,15 @@
 /**
- * @file ADR-209 Phase 1 — Sequence as the snippet splice carrier.
+ * @file ADR-209 Phase 1 / ADR-211 Phase 4 — Sequence as the snippet splice
+ * carrier, fragments bare inside mode-annotated `Spliced` wrappers.
  *
  * ADR-209's provisional `Seq` kind was NOT added: the existing `Sequence`
  * (`kind: 'seq'`) already realizes as in-order run concatenation with no
  * joining punctuation (see the decision comment in if-domain `phrase.ts`).
- * These tests pin that contract in the exact shape Phase 3's resolver will
- * build — `Verbatim` prose segments interleaved with `Literal` / `Choice`
- * snippet values — so a later Assembler change can't silently break splicing.
+ * These tests pin that contract in the exact shape the resolver builds under
+ * ADR-211 — `Verbatim` prose segments interleaved with `Spliced`-wrapped
+ * BARE `Literal` / `Choice` snippet values — so a later Assembler change
+ * can't silently break splicing. The rendered bytes are identical to the
+ * pre-ADR-211 verbatim-splice outputs (AC-1's equivalence).
  *
  * Covers the assembler half of AC-1 (byte-exact study render, first visit)
  * and AC-2 (cycling advances in declaration order and wraps).
@@ -18,6 +21,7 @@ import type {
   Literal,
   Verbatim,
   Sequence,
+  Spliced,
   Choice,
   Empty,
   RenderContext,
@@ -59,6 +63,7 @@ const verbatim = (text: string): Verbatim => ({ kind: 'verbatim', text });
 const lit = (text: string): Literal => ({ kind: 'literal', text });
 const seq = (parts: Phrase[]): Sequence => ({ kind: 'seq', parts });
 const empty: Empty = { kind: 'empty' };
+const spliced = (mode: Spliced['mode'], content: Phrase): Spliced => ({ kind: 'spliced', mode, content });
 const choice = (
   selector: Choice['selector'],
   alternatives: Phrase[],
@@ -68,23 +73,27 @@ const choice = (
 
 // --- the ADR-209 study example, spliced at the assembler level ---------------
 
-// Author prose split at the two markers; snippet entries per the ADR.
+// Author prose split at the two markers; BARE entries in clause-site wrappers
+// (ADR-211 shape) — rendered bytes identical to the old verbatim splice.
 const studyParts = (roomId: string): Phrase[] => [
   verbatim('The study has a doorway to the north'),
-  lit(', next to a cabinet'), // string entry: spliced verbatim, every render
+  spliced('clause', lit('next to a cabinet')), // string entry, every render
   verbatim(
     ' and encompassing the entire south wall is a custom designed marble ' +
       'fireplace with nymphs holding poker and broom',
   ),
-  choice(
-    'cycling',
-    [
-      lit(', the mantel holding sentimental items'),
-      lit(', its mantel crowded with keepsakes'),
-      lit(', a few sentimental items on the mantel'),
-    ],
-    'mantel',
-    roomId,
+  spliced(
+    'clause',
+    choice(
+      'cycling',
+      [
+        lit('the mantel holding sentimental items'),
+        lit('its mantel crowded with keepsakes'),
+        lit('a few sentimental items on the mantel'),
+      ],
+      'mantel',
+      roomId,
+    ),
   ),
   verbatim('.'),
 ];
@@ -125,11 +134,11 @@ describe('Sequence splices snippets byte-exactly (ADR-209 Phase 1)', () => {
     const ctx = makeCtx();
     const tree = seq([
       verbatim('Dust motes drift'),
-      choice('cycling', [lit(', catching the light'), lit('')], 'motes', 'room:attic'),
+      spliced('clause', choice('cycling', [lit('catching the light'), lit('')], 'motes', 'room:attic')),
       verbatim('.'),
     ]);
     expect(renderWith(tree, ctx)).toBe('Dust motes drift, catching the light.');
-    expect(renderWith(tree, ctx)).toBe('Dust motes drift.');
+    expect(renderWith(tree, ctx)).toBe('Dust motes drift.'); // empty winner absorbs the separator too
   });
 
   it('concatenation inserts nothing between parts — no separator, no collapse across verbatim prose', () => {
@@ -141,14 +150,16 @@ describe('Sequence splices snippets byte-exactly (ADR-209 Phase 1)', () => {
   it('AC-8: a duplicate marker (same-key Choice at two sites) splices the same text and advances once', () => {
     const textState = inMemoryTextState();
     const ctx = makeCtx(textState);
-    const dust = choice(
-      'cycling',
-      [lit(', thick'), lit(', thin')],
-      'dust',
-      'room:cellar',
-    );
-    // The resolver reuses ONE node for a duplicate marker; both sites realize it.
-    const tree = seq([verbatim('Dust'), dust, verbatim(' everywhere; dust'), dust, verbatim('.')]);
+    const dust = choice('cycling', [lit('thick'), lit('thin')], 'dust', 'room:cellar');
+    // The resolver reuses ONE content node for a duplicate marker; each site
+    // gets its own mode wrapper (ADR-211) — both realize the same pick.
+    const tree = seq([
+      verbatim('Dust'),
+      spliced('clause', dust),
+      verbatim(' everywhere; dust'),
+      spliced('clause', dust),
+      verbatim('.'),
+    ]);
     expect(renderWith(tree, ctx)).toBe('Dust, thick everywhere; dust, thick.');
     // One advance for the whole render: the next render picks the NEXT variant.
     expect(renderWith(tree, makeCtx(textState))).toBe('Dust, thin everywhere; dust, thin.');

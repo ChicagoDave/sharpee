@@ -28,6 +28,7 @@ import {
   Slot,
   Optional,
   Choice,
+  Spliced,
   RenderContext,
   isLiteral,
   isNounPhrase,
@@ -41,6 +42,7 @@ import {
   isSlot,
   isOptional,
   isChoice,
+  isSpliced,
 } from '../../src/phrase';
 
 // One representative value per kind (foundational kinds carry their full
@@ -175,6 +177,43 @@ describe('ADR-196 Phase 1 — enriched Optional + Choice contract', () => {
     };
     expect(isChoice(onceOnly)).toBe(true);
     expect(onceOnly.alternatives[1].kind).toBe('empty');
+  });
+});
+
+describe('ADR-211 Phase 1 — Spliced wrapper contract', () => {
+  const clauseSpliced: Spliced = {
+    kind: 'spliced',
+    mode: 'clause',
+    content: { kind: 'literal', text: 'and a spinning rack of enamel pins wobbles by the register' },
+  };
+  const sentenceSpliced: Spliced = {
+    kind: 'spliced',
+    mode: 'sentence',
+    content: choice, // content is any Phrase — a Choice carries the variant machinery
+  };
+
+  it('isSpliced accepts both modes and rejects every other kind', () => {
+    expect(isSpliced(clauseSpliced)).toBe(true);
+    expect(isSpliced(sentenceSpliced)).toBe(true);
+    for (const other of all) {
+      expect(isSpliced(other.phrase), `isSpliced(${other.phrase.kind})`).toBe(false);
+    }
+  });
+
+  it('other guards reject a Spliced value', () => {
+    for (const other of all) {
+      expect(other.guard(clauseSpliced), `${other.name}(spliced)`).toBe(false);
+    }
+  });
+
+  it('mode is a two-value enum and content is a bare Phrase (no separator fields exist)', () => {
+    // The separator is platform-owned at realize time (ADR-211 Decision 2); the
+    // wrapper carries only site mode + content — no separator/boundary field.
+    expect(clauseSpliced.mode).toBe('clause');
+    expect(sentenceSpliced.mode).toBe('sentence');
+    expect(clauseSpliced.content.kind).toBe('literal');
+    expect(sentenceSpliced.content.kind).toBe('choice');
+    expect(Object.keys(clauseSpliced).sort()).toEqual(['content', 'kind', 'mode']);
   });
 });
 

@@ -50,6 +50,7 @@ import {
   isSlot,
   isOptional,
   isChoice,
+  isSpliced,
   isSentence,
   isQuote,
 } from '@sharpee/if-domain';
@@ -736,6 +737,21 @@ function realizeToRuns(
     // Empty leaves no runs (once-only text).
     const own = extendDeco(deco, phrase.decorations);
     return realizeToRuns(selectChoice(phrase, ctx), ctx, own);
+  }
+
+  if (isSpliced(phrase)) {
+    // Spliced (ADR-211 §2): a description-marker fragment annotated with its
+    // marker-site join mode. A fragment that absorbs to nothing (the `nothing`
+    // variant, a gated-out fragment) renders the host prose as if the marker
+    // were absent — no separator either. Otherwise the platform supplies the
+    // separator the author never writes: `, ` at a clause site, ` ` at a
+    // sentence site. The separator CHARACTERS live here (locale realization);
+    // the mode was computed producer-side from the authored prose, and
+    // boundary sites never wrap in Spliced at all (resolver contract).
+    const own = extendDeco(deco, phrase.decorations);
+    const runs = realizeToRuns(phrase.content, ctx, own);
+    if (!runs.some((r) => r.text.length > 0)) return [];
+    return [{ text: phrase.mode === 'clause' ? ', ' : ' ', verbatim: false, deco: own }, ...runs];
   }
 
   if (isSentence(phrase)) {

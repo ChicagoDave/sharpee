@@ -225,8 +225,9 @@ function handleVillainDeath(
       if (lairRoomId) {
         const lairTrait = world.getEntity(lairRoomId)?.get(RoomTrait);
         if (lairTrait?.snippets) {
+          // Bare fragment (ADR-211): sentence site.
           lairTrait.snippets.frame = {
-            text: ' An empty frame hangs on the far wall.',
+            text: 'An empty frame hangs on the far wall.',
             mentions: frame.id,
           };
         }

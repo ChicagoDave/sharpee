@@ -149,6 +149,13 @@ no per-phrase setting, no heuristic over the fragment text:
 - **Sentence site** — the marker follows a sentence terminator, a
   paragraph edge, or starts the text. A non-empty fragment joins with
   **`  ` (one space)**, or nothing at a paragraph edge/start.
+  **Amended 2026-07-14 (211-core Phase 4, the flagged dust edge case):
+  `;` and `:` classify as sentence sites too** — they don't end a
+  sentence, but they already ARE the join, and a comma after them is
+  never English. The concealment-test dust site (`shelves;{dust}`)
+  pinned this: the space join reproduces the shipped bytes; the
+  `.?!`-only set would have emitted `";, "`. The classification set is
+  `.?!;:`; the separator stays the two-value clause/sentence pair.
 - **Empty fragment** (the `nothing` variant, a gated-out fragment, or a
   runtime-set `''`) joins **nothing** — the host prose renders as if the
   marker were absent, both modes. (This is today's `Empty` absorption,

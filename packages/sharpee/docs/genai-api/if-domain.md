@@ -2827,7 +2827,7 @@ export interface IAudibilityEvent {
  * `messageId → formatter-chain → string` pipeline with
  * `messageId → phrase tree → Assembler → ITextBlock[]`.
  *
- * Public interface: the `Phrase` union (13 members), `PhraseProducer`,
+ * Public interface: the `Phrase` union (16 members), `PhraseProducer`,
  * `RenderContext` (with the `reference` / `textState` / `contribute` write +
  * `slotContributions` read seams), `Assembler`, and the `isX` kind type guards.
  *
@@ -3056,6 +3056,24 @@ export interface Choice extends PhraseBase {
     messageKey: string;
 }
 /**
+ * Wrapper — a mode-annotated splice part (ADR-211 §Interface contracts). Carries
+ * a description-marker fragment together with the join mode its MARKER SITE was
+ * classified as (from the authored host prose, never from the fragment text):
+ * `clause` (mid-sentence) or `sentence` (after a terminator). The site-mode
+ * classification is producer-side (stdlib snippet resolver); the separator
+ * CHARACTERS (`', '` / `' '`) are locale realization and belong to the
+ * Assembler — none appear here (file invariant). Boundary sites (start of text,
+ * paragraph edge) never wrap in `Spliced` at all: their separator is always
+ * empty, so the resolver emits `content` directly.
+ */
+export interface Spliced extends PhraseBase {
+    kind: 'spliced';
+    /** Join mode computed from the authored marker site. */
+    mode: 'clause' | 'sentence';
+    /** The fragment (bare — never carries its own separator). */
+    content: Phrase;
+}
+/**
  * Atom — a sentence boundary (ADR-201 §2). Declares that `child` realizes as a
  * sentence: its first glyph is capitalized and a terminal mark is emitted at its
  * close. The structural carrier of "capitalize the start" (ADR-202) — the
@@ -3088,7 +3106,7 @@ export interface Quote extends PhraseBase {
  * `Verb` in ADR-199, and `Sentence`/`Quote` in ADR-201; remaining stubs are
  * reserved for their follow-on ADRs. Extension is additive.
  */
-export type Phrase = Literal | NounPhrase | PhraseList | Sequence | Empty | Verb | Pronoun | Numeral | Verbatim | Contents | Slot | Optional | Choice | Sentence | Quote;
+export type Phrase = Literal | NounPhrase | PhraseList | Sequence | Empty | Verb | Pronoun | Numeral | Verbatim | Contents | Slot | Optional | Choice | Spliced | Sentence | Quote;
 /**
  * Read-only world access for realization. Language-neutral subset of the world
  * model exposed to the Assembler — no mutation, no parser or command surface.
@@ -3273,6 +3291,8 @@ export declare function isSlot(p: Phrase): p is Slot;
 export declare function isOptional(p: Phrase): p is Optional;
 /** @returns true if the phrase is a `Choice` (ADR-196). */
 export declare function isChoice(p: Phrase): p is Choice;
+/** @returns true if the phrase is a `Spliced` wrapper (ADR-211). */
+export declare function isSpliced(p: Phrase): p is Spliced;
 /** @returns true if the phrase is a `Sentence` (ADR-201). */
 export declare function isSentence(p: Phrase): p is Sentence;
 /** @returns true if the phrase is a `Quote` (ADR-201). */

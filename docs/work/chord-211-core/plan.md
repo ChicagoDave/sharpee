@@ -138,7 +138,7 @@ two drifts are worth flagging to David during review, not blocking:
   whole workspace still builds — do not let Phase 1 land in a
   workspace-broken state even though `if-domain` itself is green.
   Committable on its own once the full-workspace build is confirmed.
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-14 — Spliced + isSpliced + union at 16 members + header count corrected; 20/20 if-domain tests; full `./repokit build dungeo` green — no exhaustive `never` assertion exists over `Phrase` anywhere, the Assembler's guard chain ends in a defensive runtime throw, so the widened union breaks nothing; concealment-test 38/38 and dungeo unit transcripts 1704-pass confirm zero behavior change)
 
 ### Phase 2: lang-en-us Assembler realizes Spliced (isolated, additive)
 - **Tier**: Medium
@@ -176,7 +176,16 @@ two drifts are worth flagging to David during review, not blocking:
   still emits its current (pre-ADR-211) shape, so nothing in production
   code paths constructs a `Spliced` yet. New isolated Assembler tests
   green; full `lang-en-us` unit suite green. Committable on its own.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-14 — realizeSpliced case in the realizeToRuns
+  guard chain (separator run `, `/` ` prepended, absorbed content emits
+  neither text nor separator); 10 new isolated tests in
+  tests/assembler/spliced.test.ts covering AC-1/AC-2/AC-9 assembler
+  halves incl. counter-advances-on-empty-winner and all four
+  adjacent-sibling combinations; full suite 405/405 via
+  `pnpm --filter '@sharpee/lang-en-us' exec vitest run` (the root-level
+  `npx vitest run packages/lang-en-us/` invocation lacks the package
+  config's globals — 6 files fail collection that way, pre-existing);
+  package builds clean)
 
 ### Phase 3: stdlib registered gate seam (scaffold only, Q4)
 - **Tier**: Small
@@ -213,7 +222,16 @@ two drifts are worth flagging to David during review, not blocking:
   current caller, so `resolveSnippetDescription`'s output is provably
   identical to before this phase for every existing room). New seam unit
   tests green; full `stdlib` unit suite green. Committable on its own.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-14 — snippet-gate-registry.ts beside the
+  resolver: registerSnippetGate/lookupSnippetGate/clearSnippetGates,
+  `(roomId\0marker)`-keyed last-wins Map, thunk-shaped `SnippetGate`
+  (`() => boolean`, registrant closes over its own world access);
+  resolver consults it after the `mentions` check — both must hold; a
+  throwing gate warns and splices nothing (render-graceful). Exported
+  through the looking barrel for the package-2 loader. 10 new tests
+  (AC-12 core scope incl. the counter clause via Empty-vs-Choice node
+  shape, mentions+gate composition, per-room keying, no-op proof);
+  stdlib suite 1329 pass / 27 skip; package builds clean)
 
 ### Phase 4: Flag day — resolver switch, full TS-entry migration, engine gate, full regression
 - **Tier**: Large
@@ -315,4 +333,29 @@ two drifts are worth flagging to David during review, not blocking:
   scope) all landed as tests. One commit lands the entire flag day. This
   is the acceptance gate for the whole `211-core` package — once green,
   `chord-zoo-surfaces` (package 2) can begin riding it.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-14 — all sub-steps landed together; working tree
+  uncommitted pending David's finalize, which satisfies the one-atomic-commit
+  rule. Resolver emits mode-annotated Spliced (boundary sites and Empty
+  resolutions unwrapped); engine gate rejects separator-led literals (AC-3;
+  messageId texts stay render-graceful with the join-as-is warn, AC-10);
+  all literal entries + both handler mutations migrated bare across
+  dungeo (10 entries, incl. the already-empty frame) / zoo (1) /
+  concealment (5). THE DUST EDGE CASE resolved by widening
+  the classification set to `.?!;:` — `;`/`:` already carry the join, a
+  comma after them is never English; ADR-211 Decision 2 amended with a
+  dated note; byte-identity proven. Suites: stdlib 1333, lang-en-us 405,
+  engine 487, if-domain 20, all green; concealment 38/38 unedited; zoo wt
+  chain 37/37 vs zoo.story + TS-story transcripts 10/10 (pins
+  byte-identical); dungeo units 1689 + full wt chain 918/918 (run 2; run 1
+  hit the documented thief-coffin RNG flake). devkit lint catch verified by
+  inspection (catches by error NAME, unchanged; message covers both failure
+  kinds); ide-protocol built clean in the full build. Harness notes: the
+  CLI bundle bakes stories/dungeo as its default story — other stories need
+  `--story stories/concealment-test` / `--story
+  stories/friendly-zoo/zoo.story`; zoo unit transcripts are SPLIT between
+  the TS story (room-snippets, entrance-initial-description) and zoo.story
+  (all others).)
+
+## PACKAGE COMPLETE (2026-07-14): all four phases DONE; the all-or-nothing
+gate is green. `chord-zoo-surfaces` may begin riding this package; its
+Phase 3 additionally requires `chord-212-213-seams` (planned, not started).

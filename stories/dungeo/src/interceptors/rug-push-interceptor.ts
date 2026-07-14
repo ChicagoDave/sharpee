@@ -74,11 +74,12 @@ export const RugPushInterceptor: ActionInterceptor = {
     }
 
     // ADR-209: the room prose's rug mention follows the rug's new position
-    // (handler-driven snippet mutation — set, never delete).
+    // (handler-driven snippet mutation — set, never delete). Bare fragment
+    // (ADR-211): sentence site — the platform supplies the join space.
     const livingRoomTrait = livingRoom?.get(RoomTrait);
     if (livingRoomTrait?.snippets) {
       livingRoomTrait.snippets.rug =
-        ' A large oriental rug lies to one side of the room, moved away from the trap door it once covered.';
+        'A large oriental rug lies to one side of the room, moved away from the trap door it once covered.';
     }
 
     // Flag for postReport
