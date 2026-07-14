@@ -7,10 +7,19 @@ Normative source: `docs/work/story-language/design.md` + ADR-210; grammar
 *changes* (anything not in design.md) require David's approval via
 `docs/architecture/chord-grammar-changes.md`.
 
+A pure-EBNF extraction of the productions below (no ratchet history or
+analyzer notes) lives in `docs/reference/chord.ebnf`; keep the two in sync.
+
 **Current coverage: Phase A subset + Phase B declarations + Phase C
-ownership package + the each package (E1–E3)** (plans:
-docs/work/chord-phase-c/plan.md, docs/work/chord-each/plan.md) as of
-2026-07-12. The each package adds the quantifier condition forms
+ownership package + the each package (E1–E3) + the zoo-surfaces package
+(Z1/Z4/Z5, CP1'/CP3/Z3b, Z6)** (plans: docs/work/chord-phase-c/plan.md,
+docs/work/chord-each/plan.md, docs/work/chord-zoo-surfaces/plan.md) as of
+2026-07-14. The zoo-surfaces package adds the `first time` create block
+(Z1), the `is here` deictic predicate (Z4), the five-adverb STRATEGY set
+with `ordered`/`once` retired (Z5), the trailing `while` gate on
+`define phrase` headers (CP1'), the reshaped per-entity `phrase` override
+header with strategy/`while`/`or`-variants (CP3/Z3b), and the `remove`
+statement (Z6). The each package adds the quantifier condition forms
 `any <open-condition>` / `no <open-condition>`, the body-position
 iteration block `each <open-condition> … end each` with the `the match`
 binder, and the `must be any <name>` membership requirement (David,
@@ -140,8 +149,7 @@ create-line  = "aka" alias { "," alias } NL
              | DIRECTION "to" name NL                      (* exit *)
              | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
                                                            (* blocked exit, phrase key *)
-             | "phrase" WORD ":" NL prose-paragraph        (* per-entity override, e.g.
-                                                              `phrase presence:`; prose block only *)
+             | phrase-override                             (* per-entity override, CP3/Z3b *)
              | "first" "time" NL >>> prose-paragraph       (* Z1: first-VISIT description →
                                                               RoomTrait.initialDescription;
                                                               rooms only; `second time` etc.
@@ -149,6 +157,14 @@ create-line  = "aka" alias { "," alias } NL
              | on-clause                                   (* `on`/`after`, D3 *)
              | prose-paragraph ;                           (* post-blank: description; consecutive
                                                               bare paragraphs append (2026-07-10) *)
+
+phrase-override = "phrase" WORD [ "," STRATEGY ] [ "while" condition ] ":" NL
+                  variant { "or" NL variant } ;
+                  (* CP3/Z3b: `or` stands alone at the header's indent;
+                     `detail` requires `while` and is single-text; `while`
+                     on lifecycle channels / ordinary overrides is
+                     `analysis.override-gate`; repeating `detail` keys
+                     (`<id>.detail.2`, …) are analyzer-derived *)
 
 composition  = [ ARTICLE ] WORD                            (* article ⇒ kind noun; bare ⇒ trait *)
                [ "with" setting { "and" setting } ]
@@ -164,7 +180,8 @@ DIRECTION    = north | south | east | west | northeast | northwest
 
 ```
 define-condition = "define" "condition" WORD ":" condition NL ;
-define-phrase    = "define" "phrase" WORD [ "," ( STRATEGY | "verbatim" ) ] NL
+define-phrase    = "define" "phrase" WORD [ "," ( STRATEGY | "verbatim" ) ]
+                   [ "while" condition ] NL                (* CP1' trailing gate *)
                    variant { "or" NL variant } "end" "phrase" NL ;
                    (* verbatim: single variant, line structure + relative
                       indentation preserved; no "or" variants *)
@@ -283,6 +300,10 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "change" name "to" WORD [ stmt-when ] NL    (* state transition; name may be
                                                               `the story` (D2) or any entity *)
              | "move" name "to" name [ stmt-when ] NL
+             | "remove" name [ stmt-when ] NL              (* Z6: out of play entirely,
+                                                              permanently; no `to` clause;
+                                                              never the player
+                                                              (analysis.remove-player) *)
              | "award" { token } [ "," "once" ] [ stmt-when ] NL
              | "win" [ WORD ] [ stmt-when ] NL
              | "lose" [ WORD ] [ stmt-when ] NL
@@ -315,7 +336,8 @@ each-block   = "each" WORD NL                              (* E3: iteration over
   error (`parse.removed-if`) pointing at `must` guards, the statement `when`
   suffix, and `select`.
 - The **statement `when` suffix** (D7) is legal on `phrase`, `emit`,
-  `change`, `move`, `award`, `win`, `lose` — not on `set` or bare `refuse`.
+  `change`, `move`, `remove`, `award`, `win`, `lose` — not on `set` or
+  bare `refuse`.
   It is positionally distinct from the select-arm `when <value>` header
   (statement-final vs arm-header — homonym noted in the ratchet).
 - **Declare-and-emit inline prose** (§2.6/§3.3): a deeper-indented bare

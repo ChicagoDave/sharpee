@@ -1,0 +1,274 @@
+(* ==========================================================================
+   Chord Grammar — EBNF
+   ==========================================================================
+   Machine-oriented extraction of the Chord grammar as the parser implements
+   it (packages/chord/src/parser.ts). The annotated version — layout rules,
+   ratchet history, analyzer gates, implementation readings — lives in
+   docs/reference/chord-grammar.md; keep the two in sync (grammar changes
+   require David's approval via docs/architecture/chord-grammar-changes.md).
+
+   Coverage: Phase A subset + Phase B declarations + Phase C ownership
+   package + the each package (E1–E3) + ADR-211/zoo-surfaces (Z1/Z4/Z5,
+   CP1'/CP3/Z3b/Z6), as of 2026-07-14.
+
+   Notation:
+     UPPER      = token class          "quoted" = literal word
+     [ x ]      = optional             { x }    = zero or more
+     x | y      = alternatives         (* … *)  = comment
+     NL         = end of source line (Chord is line-oriented)
+     >>>        = an indented block follows (layout; EBNF cannot express
+                  indentation — see the Layout table in chord-grammar.md)
+
+   Layout summary (normative in chord-grammar.md):
+     - Indentation is spaces only; a tab is a lex error.
+     - Blocks open with their header line and close at dedent or their
+       explicit "end <kw>" terminator per the Layout table.
+     - A blank line inside a prose block is a paragraph break; in create
+       blocks a blank line ends the block, but later bare paragraphs
+       append to the description.
+   ========================================================================== *)
+
+
+(* ---- Tokens ------------------------------------------------------------ *)
+
+WORD    = letter { letter | digit | "'" | "-" | "_" } ;   (* cant-leave, you'd *)
+NUMBER  = digit { digit } { "." digit { digit } } ;        (* 1, 20, 1.0.0 *)
+STRING  = '"' any-except-'"' '"' ;                         (* no escapes *)
+MARKER  = "{" content "}" ;                                (* inside prose text only *)
+LOCALE  = WORD ;                                           (* e.g. en-US *)
+
+
+(* ---- Top level --------------------------------------------------------- *)
+
+story-file   = [ story-header ] { declaration } ;
+story-header = "story" STRING [ "by" STRING ] NL
+               >>> { states-line | score-line | WORD ":" rest-of-line NL } ;
+declaration  = create | define-condition | define-phrase | define-phrases
+             | define-verb | define-text
+             | define-trait | define-action | define-hatch
+             | define-sequence ;
+
+(* Removed from the top level (ownership ratchet 2026-07-11) — parse errors
+   with owner-attached fix-its, so they have no productions: `when` rules,
+   `once <condition>` rules, `every N turns` rules, `define flag`,
+   `define score`, and `if`/`else`/`end if` anywhere. *)
+
+
+(* ---- Ownership lines (D2/D4/D8/D12) ------------------------------------ *)
+
+states-line  = "states" [ "," "reversible" ] ":" WORD { "," WORD } NL ;
+               (* legal in story header, create blocks, define trait blocks *)
+score-line   = "score" WORD "worth" NUMBER NL ;
+               (* legal in story header, create, define trait, define action *)
+
+
+(* ---- on / after clauses (D3/D5) ---------------------------------------- *)
+
+on-clause    = ( "on" | "after" ) clause-form
+               [ "while" condition ]
+               { "," clause-modifier } NL
+               >>> { statement } "end" ( "on" | "after" ) NL ;
+                                        (* terminator matches the opener *)
+clause-form  = WORD "it"                          (* verb binding *)
+             | WORD "anything" "as" "the" WORD    (* role binding *)
+             | "every" "turn" ;                   (* `on` only *)
+clause-modifier = "once"                          (* D5: one lifetime firing *)
+             | ( "before" | "after" ) WORD ;      (* trait ordering *)
+
+(* `refuse`/`refuse when`/`must` inside an `after` body are parse errors;
+   `after every turn` is a parse error. *)
+
+
+(* ---- create ------------------------------------------------------------ *)
+
+create       = "create" name NL >>> { create-line } ;
+create-line  = "aka" alias { "," alias } NL
+             | states-line
+             | score-line
+             | composition { "," composition } NL          (* pre-blank paragraph only *)
+             | placement NL
+             | "wears" name NL
+             | DIRECTION "to" name NL                      (* exit *)
+             | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
+                                                           (* blocked exit, phrase key *)
+             | phrase-override                             (* per-entity override, CP3/Z3b *)
+             | "first" "time" NL >>> prose-paragraph       (* Z1: first-visit description;
+                                                              rooms only *)
+             | on-clause
+             | prose-paragraph ;                           (* post-blank: description;
+                                                              consecutive bare paragraphs
+                                                              append *)
+
+phrase-override = "phrase" WORD
+                  [ "," STRATEGY ] [ "while" condition ] ":" NL
+                  variant { "or" NL variant } ;
+                  (* `or` stands alone at the header's indent; repeating
+                     `detail` keys (`<id>.detail.2`, …) are analyzer-derived *)
+                  (* `detail` requires `while` and is single-text; `while` on
+                     lifecycle channels / ordinary overrides is an error.
+                     Reserved channel keys (present, entered, exited,
+                     disappeared, detail) cannot be declared bare or pushed
+                     via statements — analyzer gates. *)
+
+composition  = [ ARTICLE ] WORD                            (* article => kind noun;
+                                                              bare => trait *)
+               [ "with" setting { "and" setting } ]
+               [ "while" condition ] ;                     (* conditional trait *)
+setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
+placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement; *)
+             | "starts" "in" name ;                        (* on + bare word = on-clause *)
+DIRECTION    = "north" | "south" | "east" | "west"
+             | "northeast" | "northwest" | "southeast" | "southwest"
+             | "up" | "down" ;
+
+
+(* ---- define ------------------------------------------------------------ *)
+
+define-condition = "define" "condition" WORD ":" condition NL ;
+define-phrase    = "define" "phrase" WORD [ "," ( STRATEGY | "verbatim" ) ]
+                   [ "while" condition ] NL                (* CP1' trailing gate *)
+                   variant { "or" NL variant } "end" "phrase" NL ;
+                   (* verbatim: single variant, line structure + relative
+                      indentation preserved; no strategies, no "or" variants *)
+variant          = prose-paragraph ;
+define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
+phrase-entry     = WORD ":" NL prose-paragraph ;           (* prose block only *)
+define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
+pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
+define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; "br" reserved *)
+STRATEGY         = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;
+                   (* Z5: mirrors the Choice selectors 1:1. `ordered`/`once`
+                      are retired — load errors naming `stopping`/`first-time`.
+                      The RULE modifier `, once` (D5) is a different site and
+                      still parses. *)
+
+
+(* ---- Traits, actions, hatches, sequences ------------------------------- *)
+
+define-trait   = "define" "trait" WORD NL
+                 { trait-line }
+                 "end" "trait" NL ;
+trait-line     = "data" NL >>> { trait-field }
+               | states-line
+               | score-line
+               | "phrases" LOCALE NL >>> { phrase-entry }
+               | on-clause ;
+trait-field    = field-words ":" [ "optional" ]
+                 ( "entity" | "number" | "name"
+                 | "one" "of" WORD { "," WORD } )
+                 [ "," "starts" token ] NL ;
+                 (* the `flag` field type is a parse error pointing at
+                    trait `states` *)
+
+define-action  = "define" "action" WORD NL action-line* ;  (* dedent-terminated *)
+action-line    = "grammar" NL >>> { pattern-line }
+               | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
+               | must-line                                 (* D6 requirement (has colon) *)
+               | score-line
+               | "refuse" "without" WORD ":" WORD NL
+               | "refuse" "when" condition ":" WORD NL
+               | "otherwise" "refuse" WORD NL              (* dispatch miss *)
+               | "phrases" LOCALE NL >>> { phrase-entry }
+               | statement ;
+pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ; (* → = cardinality *)
+
+define-hatch   = "define" ( "action" | "behavior" ) WORD "from" STRING NL ;
+
+define-sequence= "define" "sequence" WORD { WORD } NL
+                 { sequence-step } "end" "sequence" NL ;
+sequence-step  = step-anchor NL >>> { statement } ;
+step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)
+               | NUMBER "turns" "later"                    (* relative to previous step *)
+               | "when" name "becomes" WORD ;              (* state anchor, D10 *)
+
+
+(* ---- must requirements (D6) -------------------------------------------- *)
+(* Legal as a define-action line AND as a body statement (never in `after`).
+   The line must OPEN with lowercase `the`/`it`/`its` so capitalized prose
+   stays prose. `must not …` and `must be no <name>` are parse errors —
+   prohibitions use `refuse when <condition>: <key>`. *)
+
+must-line    = must-subject "must" infinitive ":" WORD NL ;
+must-subject = value-expr ;
+infinitive   = "be" ( ( "a" | "an" ) WORD { WORD }         (* is-a *)
+                    | "in" name                            (* is-in *)
+                    | "any" WORD                           (* membership over a named
+                                                              open condition *)
+                    | value-expr )                         (* is *)
+             | ( "have" | "hold" | "wear" ) name           (* has/holds/wears *)
+             | ( "see" | "reach" ) name ;                  (* can see/reach *)
+
+
+(* ---- Statements --------------------------------------------------------- *)
+
+statement    = "refuse" phrase-key { param } NL            (* not in `after` bodies *)
+             | "refuse" "when" condition ":" WORD NL       (* prohibition; not in `after` *)
+             | must-line                                   (* not in `after` *)
+             | "phrase" phrase-key { param } [ stmt-when ] NL [ inline-prose ]
+             | "emit" WORD { WORD } [ stmt-when ] NL
+             | "set" value-expr "to" value-expr NL
+             | "change" name "to" WORD [ stmt-when ] NL    (* name may be `the story`
+                                                              or any entity *)
+             | "move" name "to" name [ stmt-when ] NL
+             | "remove" name [ stmt-when ] NL              (* Z6: remove from play;
+                                                              never the player *)
+             | "award" { token } [ "," "once" ] [ stmt-when ] NL
+             | "win" [ WORD ] [ stmt-when ] NL
+             | "lose" [ WORD ] [ stmt-when ] NL
+             | select-on | select-strategy | ordinal-block | each-block ;
+stmt-when    = "when" condition ;                          (* statement-final suffix, D7:
+                                                              legal on phrase, emit, change,
+                                                              move, remove, award, win, lose —
+                                                              not on set or bare refuse *)
+phrase-key   = WORD { "." WORD } ;                         (* dotted keys: zoo.pa.closing-3 *)
+param        = "with" WORD { WORD } "=" value-expr ;
+select-on    = "select" "on" value-expr NL
+               >>> { "when" WORD NL >>> { statement } } "end" "select" NL ;
+select-strategy = "select" STRATEGY NL
+               >>> { statement } { "or" NL >>> { statement } } "end" "select" NL ;
+ordinal-block = ORDINAL "time" NL >>> { statement } ;
+ORDINAL      = "first" | "second" | "third" | "fourth" | "fifth"
+             | "sixth" | "seventh" | "eighth" | "ninth" | "tenth" ;
+each-block   = "each" WORD NL                              (* E3: iteration over a named
+                                                              open condition *)
+               >>> { statement } "end" "each" NL ;
+               (* legal exactly where statements are; never top-level;
+                  nesting legal; `the match` binds innermost *)
+
+
+(* ---- Conditions (closed selector grammar) ------------------------------- *)
+(* Precedence lowest → highest: or, and, not. *)
+
+condition    = and-expr { "or" and-expr } ;
+and-expr     = unary { "and" unary } ;
+unary        = "not" unary
+             | "(" condition ")"
+             | "one" "chance" "in" NUMBER
+             | ( "any" | "no" ) WORD                       (* E1/E2 quantifiers: only when
+                                                              the WORD stands alone *)
+             | WORD                                        (* bare => named-condition or
+                                                              state ref, only when a
+                                                              connective or end-of-condition
+                                                              follows *)
+             | value-expr predicate ;
+predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
+                              | "in" name                      (* is-in *)
+                              | "here"                         (* Z4 deictic: subject shares
+                                                                  the player's location;
+                                                                  entity subjects only *)
+                              | value-expr )                   (* is *)
+             | ( "has" | "holds" | "wears" ) name
+             | "can" ( "see" | "reach" ) name ;
+
+value-expr   = NUMBER | STRING
+             | "the" "match"                               (* E3 binder, standalone only —
+                                                              `the match box` stays a name *)
+             | "its" field-words                           (* possessive on `it` *)
+             | name [ "'s" field-words ]                   (* the player's location *)
+             | WORD { WORD } ;                             (* bare words *)
+name         = [ ARTICLE ] WORD { WORD } ;
+ARTICLE      = "the" | "a" | "an" ;
+
+(* Noun phrases stop at: is has holds wears can and or then to while with.
+   State adjectives (open, closed, locked, unlocked, on, off, worn, lit) are
+   the plain `is <value>` predicate — a closed analyzer catalog, not syntax. *)
