@@ -96,7 +96,8 @@ export function createUndergroundRegion(world: WorldModel): UndergroundRoomIds {
     'This is a tiny room with passages leading east and west.{snippet:door}');
   // ADR-209: quiet scenery mention — the puzzle door to the Dreary Room.
   tinyRoom.get(RoomTrait)!.snippets = {
-    door: ' A small door is set in the north wall.',
+    // Bare fragment (ADR-211): sentence site.
+    door: 'A small door is set in the north wall.',
   };
 
   const drearyRoom = createRoom(world, 'Dreary Room',

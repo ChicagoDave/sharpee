@@ -1,0 +1,31 @@
+title: Cloak golden gate — intact message wins
+story: cloak-of-darkness
+description: Hang the cloak before ever entering the bar, then read the
+  intact message — the win ending. ADR-210 AC-1 golden gate (frozen
+  2026-07-10). The ending event asserts the if-domain wire type approved
+  in prereqs.md §3.
+
+---
+
+# Straight to the cloakroom; never enter the bar in darkness
+> west
+[OK: contains "Cloakroom"]
+
+> remove cloak
+[OK: contains "You take off the velvet cloak"]
+
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+> east
+[OK: contains "Foyer of the Opera House"]
+
+> south
+[OK: contains "Foyer Bar"]
+[OK: contains "message scrawled in the sawdust"]
+
+# Intact message: the win phrase and the victory event
+> read message
+[OK: contains "The message, neatly marked in the sawdust, reads"]
+[OK: contains "You have won"]
+[EVENT: true, type="story.victory"]

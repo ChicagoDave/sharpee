@@ -57,14 +57,17 @@ export function createHouseInteriorRegion(world: WorldModel): HouseInteriorRoomI
   // ADR-209: quiet scenery mentions spliced into the prose. The rug entry is
   // mutated by the rug-push interceptor once the trap door is revealed.
   livingRoom.get(RoomTrait)!.snippets = {
-    trophycase: ' A trophy case takes up one corner of the room.',
-    rug: ' A large oriental rug lies in the center of the room.',
+    // Bare fragments (ADR-211): both sentence sites — adjacent markers each
+    // get their own platform-supplied join space.
+    trophycase: 'A trophy case takes up one corner of the room.',
+    rug: 'A large oriental rug lies in the center of the room.',
   };
 
   const attic = createRoom(world, 'Attic',
     'This is the attic. The only exit is stairs that lead down.{snippet:table}', true);
   attic.get(RoomTrait)!.snippets = {
-    table: ' A large table occupies the middle of the room.',
+    // Bare fragment (ADR-211): sentence site.
+    table: 'A large table occupies the middle of the room.',
   };
 
   // === Set up connections ===

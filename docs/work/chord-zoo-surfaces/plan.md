@@ -1,0 +1,180 @@
+# Session Plan: chord-zoo-surfaces — land the Z1–Z5 Chord authoring surfaces
+
+**Created**: 2026-07-13
+**Overall scope**: Package 2 of 2 (CP7' "core first" sequencing). Lands five new Chord authoring surfaces on top of the ADR-211 platform core (package 1, `chord-211-core`, planned separately): `first time` room descriptions (Z1), bare-fragment description snippets with condition gates (Z2), the occupant-lifecycle phrase-channel family (Z3), the entity `detail` channel (Z3b), the `here` deictic (Z4), the reworked strategy-adverb vocabulary (Z5), and the `remove <entity>` statement (ADR-213 Q3, own ratchet entry) — then migrates `stories/friendly-zoo` onto them and rejoins the two excluded transcripts to the walkthrough gate. Phase 3 additionally requires the ADR-212/213 implementation package (engine slot-entry registry + world-model removal observer seam) to have landed first.
+**Bounded contexts touched**: `@sharpee/chord` (grammar, analyzer, IR), `@sharpee/story-loader` (compile contract, runtime), `stories/friendly-zoo` (zoo.story, transcripts). No other package — anything else discovered mid-phase is a stop-and-discuss per `CLAUDE.md`'s platform-change rule.
+**Key domain language**: fragment / marker site / gate seam / channel (Z3 present/entered/exited/disappeared) / deictic (`here`) / strategy adverb / atomic compile contract / witnessed-only (D11).
+
+## References consulted
+- `docs/work/chord-zoo-surfaces/ratchet-drafts.md` — the spec: six APPROVED+TRANSCRIBED entries (Z1–Z5) and all resolved checkpoints CP1'–CP7'; this plan's phases map 1:1 onto its entries and must not re-open any checkpoint.
+- `docs/architecture/adrs/adr-211-description-variety-phrase-system.md` (ACCEPTED) — constrains the atomic per-room Chord/story-loader compile contract, Decision 3 (gates: presence/here → `mentions`, everything else → the registered gate seam built by package 1), Decision 4 (adverb table), and pins the touched-package list — this package's surfaces may only touch `chord` + `story-loader` + stories, riding package 1's seam rather than rebuilding it.
+- `docs/architecture/chord-grammar-changes.md` — the normative one-way ratchet log; its Z1–Z5 rows (2026-07-12) are the authoritative transcription and take precedence over ratchet-drafts.md where they differ (none found).
+- `docs/architecture/adrs/adr-210-story-language.md` (ACCEPTED) — pins `@sharpee/chord` / `@sharpee/story-loader` package boundaries and the dependency direction ("nothing platform depends on the language packages"; the loader is a platform consumer) — Phase 3's loader-internal channel plumbing must not leak into chord, and chord's grammar/IR work must not import story-loader.
+- `docs/architecture/adrs/adr-209-room-description-snippets.md` (ACCEPTED — IMPLEMENTED, superseded in part by ADR-211) — the machinery (`RoomTrait.snippets`, `mentions` gate, Choice counters, `(roomId, marker)` keying) that Z2/Z4 compile onto; its machinery decisions remain in force even though its authoring-surface decisions fell to ADR-211.
+- `docs/architecture/adrs/adr-212-slot-contributions-as-data.md` (ACCEPTED 2026-07-13) — the declarative slot-entry registry (`registerSlotEntry`, engine prose pipeline per Q2) that Phase 3's `present` channel compiles onto; Q3 resolved that friendly-zoo's hand-rolled closure migrates to entries in ADR-212's own implementation package, BEFORE this package's Phase 3.
+- `docs/architecture/adrs/adr-213-removed-from-play-signal.md` (ACCEPTED 2026-07-13) — the pre-removal observer seam (`onEntityRemoved`) that Phase 3's `disappeared` channel rides, and the Q3 resolution minting the Chord `remove <entity>` statement now, riding this package's Phase 3 as its own ratchet entry.
+- `docs/context/project-profile.md` — test/build conventions (`pnpm --filter` per-package unit tests, `.transcript` walkthroughs run via the bundle, strict TypeScript, no path aliases) and the mutation-signature guidance for Domain Modeling / Event Sourcing that this plan's fixture tests must satisfy.
+- `docs/context/session-20260713-1314-v2-210-chord-a.md` (most recent session) — records this exact planning task as its open goal; no other unresolved blocker carries into this plan.
+
+## Investigation notes (drift found, folded into phases below)
+
+Two claims in `ratchet-drafts.md` / ADR-211 drift from the current code and are corrected here (both trivial, neither blocks planning):
+- **STRATEGY_SELECTOR today** (`packages/story-loader/src/runtime.ts:57-62`) is `randomly→random, cycling→cycling, ordered→stopping, once→firstTime` — four adverbs, not the five implied by "`cycling|stopping|randomly|ordered|once`" in verification note 9. There is **no `stopping` adverb today** (only the `ordered` word, which already maps to the `stopping` selector) — Phase 1 renames `ordered→stopping` and `once→first-time` as words, adds `sticky`, and the `Choice['selector']` target set (`packages/if-domain/src/phrase.ts:263`) is already `cycling|stopping|sticky|random|firstTime` — no `if-domain` change needed, confirming the touched-package list.
+- **Z3's `present` channel is not "riding shipped machinery."** The ADR-195 S1 `{slot:here}` contributor API (`packages/if-domain/src/phrase.ts:207-221,417-471`, `GameEngine.registerSlotContributor` at `packages/engine/src/game-engine.ts:1817`) exists generically, but every current consumer (`stories/friendly-zoo/src/index.ts:312-343`) hand-writes its contributor in TS. Story-loader has **no** IR-driven synthesis of a slot contributor from a `phrase present:` block yet — Phase 3 must build that plumbing, not just wire an existing seam. Similarly, **no `move`-adjacent removal/destroy IR statement exists** anywhere in `chord/src/ir.ts` or `story-loader/src/runtime.ts` — Z3's `disappeared` channel needs its firing condition designed during Phase 3 rather than assumed as "hook the removal path." **RESOLVED (2026-07-14 re-cut): both gaps were raised as ADRs per David's standing instruction and are now ACCEPTED — ADR-212 (slot entries as data; `present` compiles to `registerSlotEntry`, no synthesized closures) and ADR-213 (pre-removal observer seam; `disappeared` rides it, and the Chord `remove <entity>` statement is minted in Phase 3 per its Q3). Phase 3 below is cut against them; the former stop-and-discuss is closed by decision.**
+
+All other citations in the required reading (`analyzer.ts:1617` `checkMarkers`, `runtime.ts:937` `move`, `runtime.ts:776-786` `playerPresentAt`, `IRPhrase.verbatim?` precedent at `ir.ts:186`, `state-clauses.ts:49-82`, `looking-data.ts:298`, zoo.story's dormant `presence` blocks at lines 538/567/607/640) checked out exactly.
+
+## Phases
+
+### Phase 1: Independent primitives — Z5 adverb rework, Z4 `here` deictic, Z1 `first time` room descriptions
+- **Tier**: Medium
+- **Budget**: 250 tool calls
+- **Domain focus**: `@sharpee/chord` grammar/IR (strategy adverbs, condition kit, room `create`-block parsing) and the `@sharpee/story-loader` pieces each primitive terminates in. All three are mutually independent (no shared code path) and independent of Phase 2/3's marker and channel machinery, so they land together as one session's worth of small, self-contained surfaces.
+- **Entry state**: `chord-211-core` (package 1) has landed — Spliced atom, join rule, registered gate seam, stdlib resolver mode annotation, engine load gate, and the TS-entry migrations are in and the existing corpus (dungeo, concealment-test) renders byte-identical (AC-1/5/7 green). This package does not begin before that gate is confirmed.
+- **Deliverable**:
+  - **Z5**: `packages/chord/src/parser.ts:82` `STRATEGIES` set becomes `{randomly, cycling, stopping, sticky, first-time}`; `ir.ts:180` `IRPhrase.strategy` union updated to match; `ordered` and `once` become load errors at the same site (`parser.ts:888` diagnostic) naming their replacement (AC-13); `story-loader/src/runtime.ts:57-62` `STRATEGY_SELECTOR` rewritten to the ADR-211 Decision 4 table (`stopping→stopping`, `sticky→sticky`, `first-time→firstTime` added; `random`/`cycling` unchanged); `docs/reference/chord-grammar.md:175` updated. Rule-modifier `, once` (D5, a different grammar site) is untouched — add a regression test proving both parse independently.
+  - **Z4**: new `is-here` predicate through the one condition choke point — AST (`ast.ts`, alongside the existing `is-in` node), `parser.ts` (`parsePredicate`, ~line 2257, alongside the `is in <room>` branch), `analyzer.ts` (non-entity-subject load error; note "no-location entity evaluates false" is a *runtime* semantic, not a load-time check), `ir.ts:409` predicate union (`is-here` alongside `is-in`). Story-loader gets the **rule-site** evaluation only this phase: `evaluator.ts` / `runtime.ts` case for `is-here` calling the existing `playerPresentAt` (`runtime.ts:776-786`) unchanged. The **fragment-gate** evaluation context (marker's own room, compiling to `mentions`) is Phase 2's job — do not implement it here; a fragment-site `here` should parse and IR-compile in this phase but the loader's marker-gate compiler doesn't exist yet until Phase 2, so defer any fragment-context test to Phase 2.
+  - **Z1**: `parseCreate` (`parser.ts:394-501`) gains a `first time` branch in its line-dispatch (mirroring the `ORDINALS[word] && isWord('time',1)` recognition already used by `parseStatement`, `parser.ts:1654`, but as a new create-block case — `parseCreate` does not call `parseStatement`). Load errors: `second time`/`third time` at create scope (no platform field to bind to); `first time` prose on a non-room entity. IR: `IREntity` (rooms) gains `initialDescriptionKey: string | null`. Story-loader: bind `initialDescriptionKey` to `RoomTrait.initialDescription` at entity build time — the stdlib consumer (`looking-data.ts:298`) already reads this field, so no stdlib change.
+- **Tests**: `pnpm --filter '@sharpee/chord' test` — new parser/analyzer unit tests for Z5's retired-adverb load errors, the `ordered`/`once` fix-it text, Z4's predicate parse + non-entity-subject load error, Z1's create-block parse + both load errors. `pnpm --filter '@sharpee/story-loader' test` — unit test for STRATEGY_SELECTOR's five-entry table, a rule-site `while <entity> is here` fixture test (daemon/every-turn gate using `playerPresentAt`), and a fixture-story test proving `first time` renders on first look and the standard description on the second (RoomTrait.initialDescription assertion, not just event text).
+- **Exit state**: Both package test suites green. AC-13 (retired adverbs are load errors) and the Z1/Z4-rule-site fixture tests pass. No `.story` files touched yet (zoo migration is Phase 4). Commit checkpoint: chord + story-loader changes only, corpus untouched.
+- **Status**: DONE (2026-07-14 — chord 197/197 with golden snapshots
+  regenerated for the two additive fields; story-loader 111/111; workspace
+  tsc clean. Scope addition per the ratchet's "applies everywhere strategies
+  are legal": the `select` strategy site shares the STRATEGIES set, so it
+  gained the same retired-adverb fix-its and `decideStrategy` was rewritten
+  to the Z5 words (stopping/first-time renames + a new sticky arm using the
+  Choice stored-index encoding); the one existing `select ordered` test
+  migrated to `select stopping`. Deviations from plan letter: is-here rule-
+  site evaluation lives inline in evaluator.evalPredicate (the condition
+  choke point) mirroring playerPresentAt's exact semantics, rather than
+  calling the runtime-private method; Z1's first/later-look RENDER split is
+  pinned by stdlib's pre-existing looking-golden tests — the new story-loader
+  test asserts the RoomTrait.initialDescription binding, the surface this
+  phase adds.)
+
+### Phase 2: Z2 — snippet markers, bare fragments, atomic per-room compile contract
+- **Tier**: Large
+- **Budget**: 400 tool calls
+- **Domain focus**: the core of this package — `@sharpee/chord`'s `define phrase <key>, <strategy> [while <condition>]` header grammar and `{<key>}` marker validation/compilation, plus `@sharpee/story-loader`'s atomic per-room compile contract onto ADR-209's `RoomTrait.snippets` storage, wired to package 1's registered gate seam.
+- **Entry state**: Phase 1 committed (Z4/Z5 land so the gate condition and adverb vocabulary this phase compiles against already parse). Package 1's registered gate seam (`(roomId, marker)`-keyed registration API, per ADR-211 Decision 3/Q4) is confirmed present and its shape read before writing the wiring call — if the seam's actual signature differs from what ADR-211's Interface Contracts section describes, stop and reconcile with `chord-211-core` rather than guessing.
+- **Deliverable**:
+  - **Grammar (CP1')**: trailing `while <condition>` on the `define phrase` header (`parser.ts`, spliced into `parseDefinePhrase` right after the strategy/`verbatim` branch at `parser.ts:889`, reusing `parseCondition` — the same call used by the three existing `while` hosts at `parser.ts:519,558,1593`). `IRPhrase` gains the optional `condition?: IRCondition` field (`ir.ts:178-189`, additive per the `verbatim?` precedent at `ir.ts:186`) — confirm `@sharpee/ide-protocol`'s re-export (`packages/ide-protocol/src/story-ir.ts:14-38`) still builds clean (it's a type-only re-export, so this should be a verification step, not a code change).
+  - **Marker compile** (`analyzer.ts:1617` `checkMarkers`, extended — not rewritten, since it already generically resolves `{marker}` references for every declared phrase including room descriptions via `descriptionKey`, `analyzer.ts:941`): `{<key>}` in room prose resolving to a declared strategy phrase compiles to `{snippet:<key>}` in the description string. Never-guess diagnostics: a variant beginning with punctuation/whitespace is a load error with the "write the fragment bare" fix-it (AC-3); a clause-site fragment ending in a sentence terminator is a lint warning; a `verbatim` phrase referenced at a description marker is a load error; a single-variant plain phrase at a marker site compiles to a plain string entry (not a Choice).
+  - **Loader atomic compile contract** (`story-loader`, inside `story.initializeWorld`, strictly before the engine's `validateRoomSnippets` call per ADR-211): for each room description phrase containing `{<key>}`, ALL steps or a `LoadError` — never a partial room: (1) rewrite marker to `{snippet:<key>}`; (2) populate `RoomTrait.snippets[<key>]` from the phrase's variants (`nothing` → `''`) and strategy → selector (Phase 1's table); (3) compile the phrase's `while` condition — `is-in <this room>` or `is-here` on the marker's own room → `mentions: <entityId>` (AC-4, AC-11 byte-identical to `is in <this room>`); any other condition registers on package 1's gate seam keyed `(roomId, marker)` (AC-12, Q4 full generality — no presence-only error).
+  - **Counter keying**: confirm/preserve the existing dual-counter split — marker sites key `(roomId, marker)`; the same phrase emitted via a `phrase <key>` statement (`runtime.ts:1177-1244` `phraseEvent`, `'chord'` entity id around `runtime.ts:1237`) keeps its own independent counter and gets no separator (AC-8) — this is largely already-correct behavior per verification note 2; the deliverable here is a regression test pinning it, not new code, unless the marker-compile step above disturbs it.
+- **Tests**: chord unit tests for the trailing-`while` grammar, AC-3 (punctuation-led fragment load error + fix-it text), the clause-site-terminator lint, verbatim-at-marker load error, single-variant-string compile. story-loader unit/fixture tests: atomic contract (a deliberately malformed fixture room proves no partial registration on LoadError), AC-4, AC-11 (`here` and `is in <this room>` byte-identical render), AC-12 (non-presence gate fires via the seam, survives a save/restore round-trip since nothing gate-shaped serializes), AC-8 (dual counter). A fixture story (not zoo.story) exercising a gated `{key}` marker end-to-end via `node dist/cli/sharpee.js --test`.
+- **Exit state**: `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green; AC-3/4/8/11/12 covered by passing tests; the fixture-story transcript passes. No shipped story touched yet.
+- **Status**: DONE (2026-07-14 — chord 208/208 (AST snapshots regenerated:
+  additive `condition: null` on define-phrase nodes only); story-loader
+  119/119; stdlib 1333p/27s; workspace tsc clean (the ide-protocol re-export
+  verification); end-to-end fixture `packages/story-loader/tests/fixtures/
+  snippet-gate.{story,transcript}` 11/11 via the CLI bundle — mentions gate
+  and seam gate both flip live, separators clean when gated out. Notes:
+  (1) division of labor — the analyzer VALIDATES marker sites
+  (fragment-not-bare error + fix-it, clause-terminator lint,
+  verbatim-at-marker error, all in the new `checkDescriptionMarkers` pass);
+  the loader REWRITES + populates + registers, atomically per room
+  (compute-then-apply in `compileRoomSnippets`; the atomicity test drives a
+  hand-sabotaged IR to a LoadError and asserts the room untouched).
+  (2) `@sharpee/stdlib` moved devDep → runtime dep of story-loader (the
+  ADR-211 gate-seam wiring the seam was built for). (3) One-line stdlib
+  change OUTSIDE the touched-package list, flagged: `lookupSnippetGate`
+  added to the looking barrel — the registry module always declared it
+  public interface, but 211-core only barrel-exported register/clear;
+  needed for gate-registration assertions. (4) The atomic contract's
+  loader-side verbatim LoadError is defensive depth — the analyzer rejects
+  the same shape at compile, so only a hand-built IR can reach it.)
+
+### Phase 3: Z3 + Z3b — entity-owned phrase channels (occupant lifecycle family, `detail`) + the `remove` statement — RE-CUT 2026-07-14 against ADR-212/213
+- **Tier**: Large
+- **Budget**: 400 tool calls
+- **Domain focus**: reserved phrase-key enforcement in `@sharpee/chord`'s analyzer, the Chord `remove <entity>` statement (grammar/IR + loader case, per ADR-213 Q3), and the `@sharpee/story-loader` wiring of the occupant lifecycle channel family (`present`/`entered`/`exited`/`disappeared`) and the entity `detail` channel onto the ADR-212/213 platform seams.
+- **Entry state**: Phase 1 (Z5 adverbs, since channel phrases may carry strategy adverbs per CP3) and Phase 2 (the `IRPhrase.condition` field, since Z3b's `detail` blocks are gated phrases) both committed. **Additionally, the ADR-212/213 implementation package (planned separately, like `chord-211-core`) has landed**: engine's `registerSlotEntry` registry with friendly-zoo's closure already migrated to four entries (ADR-212 Q3, byte-identical, zoo chain green) and world-model's `onEntityRemoved` observer seam (ADR-213 AC-1/5/7 green). Read both APIs' actual shapes before wiring; if either differs from its ADR's Interface Contracts section, stop and reconcile with that package rather than guessing.
+- **Deliverable**:
+  - **Reserved-key enforcement**: `present`, `entered`, `exited`, `disappeared`, `detail` join the `br`/`match` reservation class. Per investigation, this is **not** a single list — `br` and `match` are each checked at multiple hardcoded call sites (`analyzer.ts:565,874` for `br`; `analyzer.ts:579,599,811,816` via `RESERVED_MATCH_MESSAGE`). Add the five new keys at the equivalent phrase-key-declaration and entity-phrase-override call sites, following the existing pattern rather than introducing a new list (Given 7 — one canonical mechanism, don't invent a second reservation system).
+  - **Z3b `detail`**: `phrase detail while <condition>:` on entities, IR reuses Phase 2's `IRPhrase.condition`; loader compiles `while it is on` → `SwitchableTrait.detailWhenOn`, `while it is lit` → `LightSourceTrait.detailWhenLit` (both fields already exist, read by `world-model/src/state-clauses.ts:49-82`'s `registerClauseContributor`/`getStateClauses`, confirmed exported); any other condition registers a **loader-owned** state-clause provider following the same registry pattern (not a world-model change — `world-model` stays untouched per the touched-package list). No-`while` on `phrase detail` is a load error. Multiple `detail` blocks per owner are legal (declaration order, independent contributions).
+  - **Z3 `present` (rides ADR-212)**: at load, each entity with a `phrase present:` block compiles to **one `engine.registerSlotEntry` call** (ADR-212 §5) — `slotKey: 'here'`, `owner` = the entity id, `content` = variants → `Choice` per the Z5 adverb table (single variant → plain `Literal`), `order` = declaration order, gate omitted (the `owner-present` default IS the channel's semantics; a `while`-gated `present` block, if the grammar ever allows one, uses the predicate-gate seam), `counterKey: 'present'` (ADR-212 §4's owner + channel-key convention). **No synthesized closures and no `registerSlotContributor` use** — the platform's built-in contributor evaluates the entries.
+  - **Z3 `entered`/`exited`**: hook the `move` statement (`runtime.ts:937-944`), witnessed-only (D11) via `playerPresentAt` at the moment of the transition, not polled.
+  - **Z3 `disappeared` (rides ADR-213)**: the loader registers **one removal observer** at load (`worldModel.onEntityRemoved`, ADR-213 §2). On removal of an entity with a `phrase disappeared:` block: if the player's containing room equals `lastRoomId`, enqueue the phrase through the existing phrase-event path (`runtime.ts:1177-1244`) — never render inline from the observer; unwitnessed removals enqueue nothing and consume nothing; counters key owner + `'disappeared'`; player-entity removal skips the channel; orphaning (`moveEntity(id, null)`) never fires (ADR-213 AC-7). This covers TS-initiated removals of Chord-authored entities for free (the zookeeper case).
+  - **Chord `remove <entity>` statement (ADR-213 Q3)**: ratchet entry Z6 already TRANSCRIBED (David's "transcribe", 2026-07-14) into `docs/architecture/chord-grammar-changes.md` — implement to that row: chord AST/parser/IR statement alongside `move`, analyzer entity-reference validation matching `move`'s plus the `analysis.remove-player` load error, D7 `when`-suffix and D13 sequence-kit membership, loader runtime case calling `ctx.world.removeEntity` with the same `reports`-phase exclusion as `move` (`runtime.ts:937-944` precedent). No null-`move` overload — `remove` is its own statement.
+- **Tests**: chord analyzer tests for reserved-key load errors on all five keys (phrase declarations and entity overrides); chord parser/IR tests for the `remove` statement (parse, analyzer validation, IR shape). story-loader fixture-story tests (CP4 — loader-internal, fixture-tested, no zoo-transcript coverage required this phase): `present` entries with 0/1/N occupants (ordering + counter keyed owner+`'present'` + save/restore mid-cycle continues, overlapping ADR-212 AC-4/AC-6); each lifecycle channel witnessed-only and silent when unwitnessed; `disappeared` firing from BOTH a TS-initiated `removeEntity` and the new `remove` statement (ADR-213 AC-2/AC-6); a direct-orphaning fixture pinning that no `disappeared` narration renders (loader-level echo of ADR-213 AC-7); `detail`'s trait-field compile plus a non-trait-condition provider.
+- **Exit state**: `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green; all four Z3 channels, Z3b, and the `remove` statement pass their fixture-story tests; reserved-key load errors covered; the `remove` ratchet entry transcribed. Still no shipped story touched.
+- **Status**: DONE (2026-07-14 — chord 226/226 (AST snapshots regenerated:
+  PhraseOverride reshape strategy/condition/variants + RemoveStmt, one test
+  assertion migrated `override.value.text` → `variants[0].text`);
+  story-loader 131/131; workspace tsc clean; 30 new tests. Design notes:
+  (1) narration DELIVERY — witnessed lifecycle events (entered/exited from
+  the `move` case, disappeared from the ADR-213 observer) enqueue on a
+  runtime pending queue drained at the end of every report-collecting
+  `execStatements` pass (mutations-pass returns are discarded by the
+  interceptor call sites, so inline emission would be lost) plus a
+  `chord.channel-drain` scheduler daemon for TS-initiated removals outside
+  statement execution — registered only when a `disappeared` block is
+  authored, so channel-less stories keep their exact daemon roster.
+  (2) Channel Choice counters key `(ownerWorldId, channelKey)` via a
+  counter-override param on phraseEvent (ADR-212 §4 convention).
+  (3) A `while`-gated `present` block uses the ADR-212 predicate seam ANDed
+  with the owner-present check (the gate narrows the channel, never replaces
+  its presence semantics). (4) Never-guess additions: `while` on
+  entered/exited/disappeared and on ordinary overrides is a load error
+  (`analysis.override-gate`); `detail` is one gated text per block
+  (`analysis.detail-variants`); reserved-key enforcement landed in
+  `registerPhrase` (bare keys) + the phrase/refuse statement resolver
+  (`analysis.channel-pushed`) rather than per-call-site duplication —
+  owner-scoped `<id>.<key>` registrations pass through untouched, which IS
+  the authoring surface. (5) Multiple `detail` blocks per owner key as
+  `<id>.detail`, `<id>.detail.2`, … in declaration order.)
+
+### Phase 4: zoo.story migration + transcript rejoin + excluded-file retirement
+- **Tier**: Medium
+- **Budget**: 250 tool calls
+- **Domain focus**: `stories/friendly-zoo` — apply Phases 1–3's surfaces to the shipping story and close CP6/CP7's all-or-nothing gate re-entry for the two excluded transcripts.
+- **Entry state**: Phases 1–3 committed and green (chord + story-loader unit suites, all fixture-story tests). This is the only phase that touches a shipping story or the walkthrough gate — do not start it with any of Phases 1–3 incomplete, since CP7' requires the underlying surfaces to be proven before the story rides them.
+- **Deliverable**:
+  - **Pins migration**: remove the TS-side `pins` snippet entry (`stories/friendly-zoo/src/zoo-items.ts:76-98`) in favor of `define phrase pins, cycling` + a `{pins}` marker in zoo.story's Gift Shop description (Z2). Gate left OFF per verification note 4 (nothing observes it; the dungeo trunk case is the first real gated consumer, out of this package's scope).
+  - **Presence → present rename**: zoo.story's four dormant `phrase presence:` blocks (`zoo.story:538,567,607,640`) become `phrase present:` (one-word rename, CP3) — their text is already a byte-for-byte duplicate of the hand-written `PresenceMessages` in `stories/friendly-zoo/src/language.ts:78-81`, so this activates Phase 3's `present` compilation (ADR-212 slot entries) and lets the story's four TS-side `registerSlotEntry` calls (the ADR-212 package's Q3 migration of the former hand-rolled contributor at `index.ts:312-343`) be deleted — data rows out, `.story` blocks in.
+  - **Detail migration**: identify the zoo entities currently using `detailWhenOn`/`detailWhenLit` (or TS-side equivalents) that the excluded `wt-03-slot-detail.transcript` exercises, and re-author them as `phrase detail while it is on/lit:` blocks (Z3b) in zoo.story.
+  - **Transcript rejoin (CP6)**: re-author the assertions from `stories/friendly-zoo/walkthroughs/excluded/wt-02-slot-occupants.transcript` (occupant-presence clauses, 0/1/N occupants) and `wt-03-slot-detail.transcript` (on/off detail clauses) as new chained segments appended to the `wt-01…wt-05` chain (`stories/friendly-zoo/walkthroughs/`). Delete both files under `walkthroughs/excluded/` once the chain covers everything they asserted (David's recorded decision — deletion executes here; the freeze protects the gate files only, not these two).
+- **Tests / ACs**: `node dist/cli/sharpee.js --test --chain stories/friendly-zoo/walkthroughs/wt-*.transcript` — full chain green, AC-6 (the migrated zoo.story reproduces the excluded transcripts' assertions unedited in substance). Confirm dungeo's chain and concealment-test's 17/17 remain green (untouched by this package, but a build-order sanity check per `./repokit build --skip <pkg>` resumption) — do not re-author or edit any *other* story's transcripts (per `CLAUDE.md`: don't modify working transcripts).
+- **Exit state**: zoo walkthrough gate green with the two former excluded files deleted and their coverage absorbed into the chain; `zoo-items.ts` pins entry and the hand-rolled presence contributor removed; CP6 and CP7'(a) satisfied. This closes the chord-zoo-surfaces package.
+- **Status**: DONE with ONE deliberately deferred item (2026-07-14).
+  Landed: zoo.story `presence`→`present` ×4 (ADR-212 entries now feed
+  `{slot:here}`; the four TS-side `registerSlotEntry` calls were deleted per
+  this plan, then RESTORED the same day on David's canonical-surfaces
+  principle — the TS zoo is the canonical Sharpee implementation and keeps
+  the reference `registerSlotEntry` usage; the two stories author the same
+  game on their two surfaces);
+  `{pins}` marker + `define phrase pins, cycling` (three variants incl. the
+  explicit `nothing`) in zoo.story's Gift Shop; flashlight `detail while it
+  is on/lit` + radio `detail while it is on` blocks (the excluded wt-03
+  texts, re-authored as Z3b); CP6 rejoin as two NEW chained chapters
+  (`wt-06-occupants-and-pins`, `wt-07-object-detail` — 0/1/N occupants
+  incl. post-departure keeper absence, byte-precise pins comma-join/clean
+  `nothing` splice, 0/1/N detail) and BOTH `walkthroughs/excluded/` files
+  deleted (David's recorded decision, executed here). Gate: zoo chain
+  56/56 (7 chapters, run 1); zoo atomics 61/61; TS-story transcripts 10/10;
+  concealment-test 38/38; dungeo units 1703p/9xf/4s; dungeo chain 864/864
+  (run 1 — no flake this time).
+  RESOLVED (David, 2026-07-14): the TS-side `zoo-items.ts` pins entry is
+  KEPT — removal would have broken the gating `room-snippets.transcript`,
+  and per David both stories are maintained tutorial surfaces (the TS story
+  demonstrates the Sharpee API, zoo.story demonstrates Chord; the TS story
+  is updated as the platform evolves, never frozen). The pins entry is
+  already current idiom (bare fragments since the ADR-211 flag day) and
+  remains the shipping exercise of the hand-written SnippetMap surface
+  including the `mentions` gate. The plan's "remove the TS pins entry"
+  deliverable is closed as won't-do by owner decision.
+
+## PACKAGE COMPLETE (2026-07-14)
+
+Phases 1–4 DONE; the CP6/CP7' gate is green with the excluded files
+retired; the one open question resolved by David (TS pins entry kept —
+tutorial-surface principle above). `docs/architecture/
+chord-grammar-changes.md` rows Z1–Z6 are all IMPLEMENTED.
+
+## Notes for the implementer
+
+- Never auto-retry a failed build or test (`CLAUDE.md`) — report and wait for explicit go-ahead between phases, and especially before Phase 4's gate re-entry.
+- Platform changes (anything in `packages/`) need David's go-ahead per package before implementation starts, per `CLAUDE.md`'s platform-change rule — this plan is the proposal; each phase still needs its own explicit "go" before coding.
+- Build/test commands: `./repokit build` (full platform + bundle); `node dist/cli/sharpee.js --test [--chain] stories/friendly-zoo/walkthroughs/*.transcript` for transcripts; `pnpm --filter '@sharpee/chord' test` / `pnpm --filter '@sharpee/story-loader' test` for units. Never `2>&1` with pnpm.
+- Phase 3's former `disappeared` design risk is CLOSED by ADR-213 (ACCEPTED 2026-07-13); the phase was re-cut 2026-07-14 against ADR-212/213. Phase 3's new hard prerequisite is the ADR-212/213 implementation package — do not start Phase 3 before it lands and its zoo-chain/AC gates are confirmed green.

@@ -855,14 +855,19 @@ export declare function executeCapabilityBlocked(context: ActionContext, result:
 
 ```typescript
 /**
- * Load-time room-snippet validation (ADR-209 AC-5).
+ * Load-time room-snippet validation (ADR-209 AC-5; ADR-211 AC-3 bare-fragment
+ * gate).
  *
  * After a story's `initializeWorld` returns, every snippet-bearing room's
  * `description` and `initialDescription` are scanned with the shared
  * marker-extraction helper; a `{snippet:name}` marker with no entry in the
  * room's map fails story load synchronously, naming room and marker — the
  * same posture as `PhraseParseError`. Rooms without a snippet map are never
- * scanned (the opt-in rule, AC-7).
+ * scanned (the opt-in rule, AC-7). Additionally (ADR-211), every LITERAL
+ * snippet text must be a bare fragment: a non-empty text leading with
+ * punctuation or whitespace fails load with the fix-it — the separator is
+ * platform-owned. `{ messageId }` texts resolve at render and stay
+ * render-graceful there (ADR-211 AC-10), never checked here.
  *
  * Public interface: `validateRoomSnippets`, `SnippetValidationError`.
  *
@@ -871,16 +876,29 @@ export declare function executeCapabilityBlocked(context: ActionContext, result:
  * load lives in the room-description handler path, not here.
  */
 import type { WorldModel } from '@sharpee/world-model';
-/** Story-load failure for an unbound `{snippet:name}` marker (ADR-209 AC-5). */
+/**
+ * Story-load failure for room snippets: unbound `{snippet:name}` markers
+ * (ADR-209 AC-5) and non-bare literal fragments (ADR-211 AC-3).
+ */
 export declare class SnippetValidationError extends Error {
     /** `(room, marker)` pairs with no snippet entry, in discovery order. */
     readonly unbound: ReadonlyArray<{
         room: string;
         marker: string;
     }>;
+    /** `(room, marker, text)` triples whose literal text is not bare, in discovery order. */
+    readonly notBare: ReadonlyArray<{
+        room: string;
+        marker: string;
+        text: string;
+    }>;
     constructor(unbound: Array<{
         room: string;
         marker: string;
+    }>, notBare?: Array<{
+        room: string;
+        marker: string;
+        text: string;
     }>);
 }
 /**
@@ -1055,7 +1073,7 @@ import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
-import { IProsePipeline, type SlotContributor } from './prose-pipeline';
+import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
@@ -1380,6 +1398,19 @@ export declare class GameEngine {
      * @param contributor the slot contributor to register.
      */
     registerSlotContributor(contributor: SlotContributor): void;
+    /**
+     * Register a declarative slot entry (ADR-212 §1).
+     *
+     * Stories (and the Chord loader) call this from `onEngineReady` instead of
+     * hand-writing a presence closure: the entry's gate is evaluated once per
+     * turn in the staging pass, before story-registered contributors, and its
+     * content contributes to `slotKey` while the gate holds. Keyed
+     * `(slotKey, owner)`, last-wins; nothing is serialized — re-register every
+     * story load. No-op if the text service is not yet constructed.
+     *
+     * @param entry the slot entry to register (or replace).
+     */
+    registerSlotEntry(entry: SlotEntry): void;
     /**
      * Register save/restore hooks
      */

@@ -1,0 +1,42 @@
+title: Cloak golden gate — trampled message (neutral outcome)
+story: cloak-of-darkness
+description: One dark entry tramples the message (first-time ordinal in the
+  stumble rule); reading it trampled shows the garbled hatch text and the
+  game continues — no ending. ADR-210 AC-1 golden gate (frozen 2026-07-10).
+
+---
+
+# First dark entry: stumble fires, message goes to trampled
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+# Back out, hang up the cloak
+> north
+[OK: contains "Foyer of the Opera House"]
+
+> west
+[OK: contains "Cloakroom"]
+
+> remove cloak
+[OK: contains "You take off the velvet cloak"]
+
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+# Return to the lit bar and read the trampled message
+> east
+[OK: contains "Foyer of the Opera House"]
+
+> south
+[OK: contains "Foyer Bar"]
+
+> read message
+[OK: contains "You can just make out"]
+[OK: not contains "You have won"]
+[OK: not contains "You have lost"]
+[EVENT: false, type="story.victory"]
+[EVENT: false, type="story.defeat"]
+
+# Neutral outcome: the game is still running
+> look
+[OK: contains "Foyer Bar"]

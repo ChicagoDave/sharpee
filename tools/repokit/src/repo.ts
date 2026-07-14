@@ -18,8 +18,11 @@ import { basename, dirname, join, resolve } from 'node:path';
 export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/core', 'core'],
   ['@sharpee/text-blocks', 'text-blocks'],
-  ['@sharpee/ide-protocol', 'ide-protocol'],
   ['@sharpee/if-domain', 'if-domain'],
+  // chord precedes ide-protocol: ide-protocol re-exports the Story IR schema
+  // from chord (ADR-210 Interface Contract 1).
+  ['@sharpee/chord', 'chord'],
+  ['@sharpee/ide-protocol', 'ide-protocol'],
   ['@sharpee/media', 'media'],
   ['@sharpee/world-model', 'world-model'],
   ['@sharpee/helpers', 'helpers'],
@@ -39,6 +42,7 @@ export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/story-runtime-baseline', 'story-runtime-baseline'],
   ['@sharpee/ext-testing', 'extensions/testing'],
   ['@sharpee/engine', 'engine'],
+  ['@sharpee/story-loader', 'story-loader'],
   ['@sharpee/bootstrap', 'bootstrap'],
   ['@sharpee/platform-browser', 'platform-browser'],
   ['@sharpee/sharpee', 'sharpee'],
@@ -70,6 +74,12 @@ export const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/plugin-state-machine', './packages/plugin-state-machine/dist/index.js'],
   ['@sharpee/bootstrap', './packages/bootstrap/dist/index.js'],
   ['@sharpee/transcript-tester', './packages/transcript-tester/dist/index.js'],
+  // Chord `.story` support (ADR-210 Phase A): the CLI compiles + interprets
+  // .story files, so the frontend, the interpreter, and the interpreter's
+  // helpers dependency must resolve to the same in-bundle copies.
+  ['@sharpee/chord', './packages/chord/dist/index.js'],
+  ['@sharpee/story-loader', './packages/story-loader/dist/index.js'],
+  ['@sharpee/helpers', './packages/helpers/dist/index.js'],
 ];
 
 /** Hand-written CLI bundle declarations (build.sh build_bundle, 607-619) — verbatim. */

@@ -1,0 +1,54 @@
+title: Zoo Walkthrough 6 — Occupants and the Pin Rack
+story: friendly-zoo
+description: Chained chapter 6 (CP6 rejoin of excluded wt-02-slot-occupants, plus the Z2 pins marker). The zoo.story `phrase present:` blocks feed {slot:here} via ADR-212 slot entries — 0/1/N occupant clauses, keeper absent after his wt-04 departure — and the Gift Shop's {pins} cycling fragment splices with the platform-owned clause comma, including the explicit `nothing` variant. Runs after wt-05 with --chain; after-hours state persists.
+---
+
+# --- 1 occupant: the macaw is fixed in the Aviary (we ended wt-05 here) ---
+> look
+[OK: contains "Aviary"]
+[OK: contains "A scarlet macaw watches you with one bright, knowing eye."]
+
+# --- 0 occupants, post-departure: Sam left for the parking lot in wt-04 ---
+> east
+[OK: contains "Main Path"]
+[OK: not contains "Sam the zookeeper is here"]
+
+# --- 0 occupants: the Zoo Entrance never had any ---
+> north
+[OK: contains "Zoo Entrance"]
+[OK: not contains "is here, jingling"]
+[OK: not contains "mill about"]
+[OK: not contains "scarlet macaw watches you"]
+
+# --- N occupants: goats AND rabbits, in declaration order ---
+> south
+[OK: contains "Main Path"]
+
+> east
+[OK: contains "Petting Zoo"]
+[OK: contains "Three pygmy goats mill about hopefully, eyeing your pockets for snacks."]
+[OK: contains "A pair of Holland Lop rabbits lounges near the hay bale, ears flopped."]
+[OK: contains "snacks. A pair of Holland Lop"]
+
+# --- The pin rack: {pins} cycling fragment, counter keyed (room, pins). ---
+# wt-02's arrival consumed variant 1; this arrival renders variant 2 with
+# the platform-owned clause comma.
+> west
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+> west
+[OK: contains "Gift Shop"]
+[OK: contains "postcards, and the enamel-pin rack stands picked half bare. A large"]
+
+# Variant 3 is the explicit `nothing` — the prose joins clean, no separator.
+> look
+[OK: contains "postcards. A large"]
+[OK: not contains "wobbles by the register"]
+[OK: not contains "picked half bare"]
+
+# The cycle wraps to variant 1.
+> look
+[OK: contains "postcards, and a spinning rack of enamel pins wobbles by the register. A large"]

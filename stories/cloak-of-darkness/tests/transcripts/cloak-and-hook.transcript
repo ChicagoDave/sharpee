@@ -1,0 +1,40 @@
+title: Cloak golden gate — cloak handling and the brass hook
+story: cloak-of-darkness
+description: Wearing, removing, hanging (custom verb), taking, and alias
+  resolution for the cloak and hook per cloak.story. The `hang` verb is
+  `define verb hang or hook means put (something) on (something)`.
+  ADR-210 AC-1 golden gate (frozen 2026-07-10).
+
+---
+
+# The player starts wearing the cloak
+> examine cloak
+[OK: contains "handsome cloak, of velvet trimmed with satin"]
+
+# Into the Cloakroom
+> west
+[OK: contains "Cloakroom"]
+
+> examine hook
+[OK: contains "small brass hook, screwed to the wall"]
+
+# Remove the cloak, then hang it with the story-defined verb
+> remove cloak
+[OK: contains "take off the velvet cloak"]
+
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+# Take it back — and exercise the hook's "peg" alias with the canonical form
+> take cloak
+[OK: contains "You take the velvet cloak from the brass hook"]
+
+> put cloak on peg
+[OK: contains "put the velvet cloak on the brass hook"]
+
+# Retrieve and wear again
+> take cloak
+[OK: contains "You take the velvet cloak from the brass hook"]
+
+> wear cloak
+[OK: contains "put on the velvet cloak"]

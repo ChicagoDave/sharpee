@@ -37,7 +37,7 @@ import {
   channelRegistry,
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
-import { IProsePipeline, ProsePipeline, type SlotContributor } from './prose-pipeline';
+import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
@@ -1816,6 +1816,22 @@ export class GameEngine {
    */
   registerSlotContributor(contributor: SlotContributor): void {
     this.textService?.registerSlotContributor(contributor);
+  }
+
+  /**
+   * Register a declarative slot entry (ADR-212 §1).
+   *
+   * Stories (and the Chord loader) call this from `onEngineReady` instead of
+   * hand-writing a presence closure: the entry's gate is evaluated once per
+   * turn in the staging pass, before story-registered contributors, and its
+   * content contributes to `slotKey` while the gate holds. Keyed
+   * `(slotKey, owner)`, last-wins; nothing is serialized — re-register every
+   * story load. No-op if the text service is not yet constructed.
+   *
+   * @param entry the slot entry to register (or replace).
+   */
+  registerSlotEntry(entry: SlotEntry): void {
+    this.textService?.registerSlotEntry(entry);
   }
 
   /**

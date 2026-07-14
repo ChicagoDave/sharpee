@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.chord.json",
+    "build:legacy": "tsc",
     "build:dev": "tsc -p tsconfig.dev.json",
     "build:deps": "tsc --build tsconfig.dev.json",
     "dev": "tsc -p tsconfig.dev.json --watch",
@@ -22,7 +23,6 @@
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/platform-browser": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
-    "@sharpee/text-service": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {

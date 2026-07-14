@@ -65,7 +65,8 @@ export function createDamRegion(world: WorldModel): DamRoomIds {
   // ADR-209: quiet scenery mention (MDL DAM-ROOM wording) — the sluice-gate
   // control panel with its bolt and bubble.
   dam.get(RoomTrait)!.snippets = {
-    panel: ' There is a control panel here. There is a large metal bolt on the panel. Above the bolt is a small green plastic bubble.',
+    // Bare fragment (ADR-211): sentence site.
+    panel: 'There is a control panel here. There is a large metal bolt on the panel. Above the bolt is a small green plastic bubble.',
   };
 
   const damBase = createRoom(world, 'Dam Base',
@@ -75,7 +76,8 @@ export function createDamRegion(world: WorldModel): DamRoomIds {
     'This is a small maintenance room. Various tools line the walls.{snippet:buttons}');
   // ADR-209: one snippet covers the control panel and all four buttons.
   maintenanceRoom.get(RoomTrait)!.snippets = {
-    buttons: ' On one wall is a control panel with a group of buttons labelled in EBCDIC, in different colors: a blue button, a yellow button, a brown button, and a red button.',
+    // Bare fragment (ADR-211): sentence site.
+    buttons: 'On one wall is a control panel with a group of buttons labelled in EBCDIC, in different colors: a blue button, a yellow button, a brown button, and a red button.',
   };
 
   const reservoirSouth = createRoom(world, 'Reservoir South',

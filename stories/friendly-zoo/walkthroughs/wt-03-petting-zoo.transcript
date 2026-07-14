@@ -1,0 +1,42 @@
+title: Zoo Walkthrough 3 — Petting Zoo at Closing Time
+story: friendly-zoo
+description: Chained full-playthrough, chapter 3 of 5. Feeding both animals, closing time landing mid-pet (same-turn confessions, decision 10 presence rule), and the first photograph (dispatch-action body — the zoo-chain loader fix, 2026-07-12). Continues from wt-02.
+---
+
+# Turn 15: the one-hour PA rides the walk back to the Main Path.
+> east
+[OK: contains "Main Path"]
+[OK: contains "One hour until closing"]
+
+# The goats have been hungry all along — the restless daemon bleats.
+> east
+[OK: contains "Petting Zoo"]
+[OK: contains "bag of animal feed"]
+[OK: contains "bleating loudly"]
+
+> take feed
+[OK: contains "Taken"]
+
+# Feeding awards `fed` (goats) through the feedable capability path —
+# and the second feeding call re-hungers them the same turn.
+> feed goats
+[OK: contains "You offer some feed"]
+[OK: contains "devour the corn and pellets"]
+[OK: contains "FEEDING TIME"]
+
+> feed rabbits
+[OK: contains "Biscuit and Marmalade"]
+[OK: contains "bleating loudly"]
+
+# Turn 20: the zoo CLOSES mid-pet. The goats' and rabbits' confessions
+# fire the same turn — we're standing right here (presence, decision 10).
+> pet goats
+[OK: contains "leans into your hand and bleats happily"]
+[OK: contains "now closed"]
+[OK: contains "We are MAJESTIC"]
+[OK: contains "Last Tuesday's batch was far superior"]
+
+# The photograph action has no behavior host — its own body awards
+# `snapshot` and reports, with {the target} bound from the grammar slot.
+> photograph goats
+[OK: contains "Click! You snap a photo of the pygmy goats"]

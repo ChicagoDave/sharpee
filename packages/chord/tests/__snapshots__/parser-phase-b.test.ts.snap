@@ -1,0 +1,4165 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matches the golden AST snapshot 1`] = `
+{
+  "declarations": [
+    {
+      "data": [],
+      "kind": "define-trait",
+      "name": "sealable",
+      "onClauses": [
+        {
+          "action": "opening",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "must",
+              "phraseKey": "already-ajar",
+              "predicate": {
+                "kind": "is",
+                "negated": false,
+                "span": {
+                  "column": 16,
+                  "endColumn": 22,
+                  "endLine": 19,
+                  "line": 19,
+                },
+                "value": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": null,
+                    "kind": "name",
+                    "span": {
+                      "column": 16,
+                      "endColumn": 22,
+                      "endLine": 19,
+                      "line": 19,
+                    },
+                    "words": [
+                      "sealed",
+                    ],
+                  },
+                  "span": {
+                    "column": 16,
+                    "endColumn": 22,
+                    "endLine": 19,
+                    "line": 19,
+                  },
+                },
+              },
+              "span": {
+                "column": 5,
+                "endColumn": 36,
+                "endLine": 19,
+                "line": 19,
+              },
+              "subject": {
+                "kind": "ref",
+                "ref": {
+                  "article": null,
+                  "kind": "name",
+                  "span": {
+                    "column": 5,
+                    "endColumn": 7,
+                    "endLine": 19,
+                    "line": 19,
+                  },
+                  "words": [
+                    "it",
+                  ],
+                },
+                "span": {
+                  "column": 5,
+                  "endColumn": 7,
+                  "endLine": 19,
+                  "line": 19,
+                },
+              },
+            },
+            {
+              "entity": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 12,
+                  "endColumn": 14,
+                  "endLine": 20,
+                  "line": 20,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 22,
+                "endLine": 20,
+                "line": 20,
+              },
+              "state": "ajar",
+              "stmtWhen": null,
+            },
+            {
+              "event": [
+                "unsealed",
+              ],
+              "kind": "emit",
+              "span": {
+                "column": 5,
+                "endColumn": 18,
+                "endLine": 21,
+                "line": 21,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "unsealed-empty",
+              "span": {
+                "column": 5,
+                "endColumn": 70,
+                "endLine": 22,
+                "line": 22,
+              },
+              "stmtWhen": {
+                "kind": "and",
+                "operands": [
+                  {
+                    "kind": "predicate",
+                    "predicate": {
+                      "classifier": [
+                        "container",
+                      ],
+                      "kind": "is-a",
+                      "negated": false,
+                      "span": {
+                        "column": 40,
+                        "endColumn": 49,
+                        "endLine": 22,
+                        "line": 22,
+                      },
+                    },
+                    "span": {
+                      "column": 32,
+                      "endColumn": 49,
+                      "endLine": 22,
+                      "line": 22,
+                    },
+                    "subject": {
+                      "kind": "ref",
+                      "ref": {
+                        "article": null,
+                        "kind": "name",
+                        "span": {
+                          "column": 32,
+                          "endColumn": 34,
+                          "endLine": 22,
+                          "line": 22,
+                        },
+                        "words": [
+                          "it",
+                        ],
+                      },
+                      "span": {
+                        "column": 32,
+                        "endColumn": 34,
+                        "endLine": 22,
+                        "line": 22,
+                      },
+                    },
+                  },
+                  {
+                    "kind": "predicate",
+                    "predicate": {
+                      "kind": "holds",
+                      "span": {
+                        "column": 63,
+                        "endColumn": 70,
+                        "endLine": 22,
+                        "line": 22,
+                      },
+                      "thing": {
+                        "article": null,
+                        "kind": "name",
+                        "span": {
+                          "column": 63,
+                          "endColumn": 70,
+                          "endLine": 22,
+                          "line": 22,
+                        },
+                        "words": [
+                          "nothing",
+                        ],
+                      },
+                    },
+                    "span": {
+                      "column": 54,
+                      "endColumn": 70,
+                      "endLine": 22,
+                      "line": 22,
+                    },
+                    "subject": {
+                      "kind": "ref",
+                      "ref": {
+                        "article": null,
+                        "kind": "name",
+                        "span": {
+                          "column": 54,
+                          "endColumn": 56,
+                          "endLine": 22,
+                          "line": 22,
+                        },
+                        "words": [
+                          "it",
+                        ],
+                      },
+                      "span": {
+                        "column": 54,
+                        "endColumn": 56,
+                        "endLine": 22,
+                        "line": 22,
+                      },
+                    },
+                  },
+                ],
+                "span": {
+                  "column": 32,
+                  "endColumn": 70,
+                  "endLine": 22,
+                  "line": 22,
+                },
+              },
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 23,
+            "line": 18,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "already-ajar",
+            "span": {
+              "column": 5,
+              "endColumn": 57,
+              "endLine": 12,
+              "line": 11,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "capitalize the item",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 28,
+                    "endLine": 12,
+                    "line": 12,
+                  },
+                },
+                {
+                  "content": "verb:is item",
+                  "span": {
+                    "column": 29,
+                    "endColumn": 43,
+                    "endLine": 12,
+                    "line": 12,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 57,
+                "endLine": 12,
+                "line": 12,
+              },
+              "text": "{capitalize the item} {verb:is item} already open.",
+            },
+          },
+          {
+            "key": "unsealed",
+            "span": {
+              "column": 5,
+              "endColumn": 31,
+              "endLine": 14,
+              "line": 13,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "You",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 12,
+                    "endLine": 14,
+                    "line": 14,
+                  },
+                },
+                {
+                  "content": "open",
+                  "span": {
+                    "column": 13,
+                    "endColumn": 19,
+                    "endLine": 14,
+                    "line": 14,
+                  },
+                },
+                {
+                  "content": "the item",
+                  "span": {
+                    "column": 20,
+                    "endColumn": 30,
+                    "endLine": 14,
+                    "line": 14,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 31,
+                "endLine": 14,
+                "line": 14,
+              },
+              "text": "{You} {open} {the item}.",
+            },
+          },
+          {
+            "key": "unsealed-empty",
+            "span": {
+              "column": 5,
+              "endColumn": 52,
+              "endLine": 16,
+              "line": 15,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "You",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 12,
+                    "endLine": 16,
+                    "line": 16,
+                  },
+                },
+                {
+                  "content": "open",
+                  "span": {
+                    "column": 13,
+                    "endColumn": 19,
+                    "endLine": 16,
+                    "line": 16,
+                  },
+                },
+                {
+                  "content": "the container",
+                  "span": {
+                    "column": 20,
+                    "endColumn": 35,
+                    "endLine": 16,
+                    "line": 16,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 52,
+                "endLine": 16,
+                "line": 16,
+              },
+              "text": "{You} {open} {the container}, which is empty.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 52,
+          "endLine": 16,
+          "line": 10,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 24,
+        "line": 7,
+      },
+      "states": [
+        {
+          "name": "sealed",
+          "span": {
+            "column": 23,
+            "endColumn": 29,
+            "endLine": 8,
+            "line": 8,
+          },
+        },
+        {
+          "name": "ajar",
+          "span": {
+            "column": 31,
+            "endColumn": 35,
+            "endLine": 8,
+            "line": 8,
+          },
+        },
+      ],
+      "statesReversible": true,
+    },
+    {
+      "data": [
+        {
+          "initial": null,
+          "name": [
+            "key",
+          ],
+          "oneOf": null,
+          "optional": false,
+          "span": {
+            "column": 5,
+            "endColumn": 16,
+            "endLine": 28,
+            "line": 28,
+          },
+          "type": "entity",
+        },
+      ],
+      "kind": "define-trait",
+      "name": "barrable",
+      "onClauses": [
+        {
+          "action": "opening",
+          "binding": "it",
+          "body": [
+            {
+              "condition": {
+                "kind": "predicate",
+                "predicate": {
+                  "kind": "is-in",
+                  "negated": false,
+                  "place": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 31,
+                      "endColumn": 45,
+                      "endLine": 35,
+                      "line": 35,
+                    },
+                    "words": [
+                      "Break",
+                      "Room",
+                    ],
+                  },
+                  "span": {
+                    "column": 31,
+                    "endColumn": 45,
+                    "endLine": 35,
+                    "line": 35,
+                  },
+                },
+                "span": {
+                  "column": 17,
+                  "endColumn": 45,
+                  "endLine": 35,
+                  "line": 35,
+                },
+                "subject": {
+                  "base": {
+                    "kind": "ref",
+                    "ref": {
+                      "article": null,
+                      "kind": "name",
+                      "span": {
+                        "column": 17,
+                        "endColumn": 20,
+                        "endLine": 35,
+                        "line": 35,
+                      },
+                      "words": [
+                        "it",
+                      ],
+                    },
+                    "span": {
+                      "column": 17,
+                      "endColumn": 20,
+                      "endLine": 35,
+                      "line": 35,
+                    },
+                  },
+                  "field": [
+                    "key",
+                  ],
+                  "kind": "possessive",
+                  "span": {
+                    "column": 17,
+                    "endColumn": 24,
+                    "endLine": 35,
+                    "line": 35,
+                  },
+                },
+              },
+              "kind": "refuse-when",
+              "phraseKey": "barred",
+              "span": {
+                "column": 5,
+                "endColumn": 53,
+                "endLine": 35,
+                "line": 35,
+              },
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": {
+            "relation": "before",
+            "trait": "sealable",
+          },
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 36,
+            "line": 34,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "barred",
+            "span": {
+              "column": 5,
+              "endColumn": 56,
+              "endLine": 32,
+              "line": 31,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "capitalize the item",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 28,
+                    "endLine": 32,
+                    "line": 32,
+                  },
+                },
+                {
+                  "content": "verb:is item",
+                  "span": {
+                    "column": 29,
+                    "endColumn": 43,
+                    "endLine": 32,
+                    "line": 32,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 56,
+                "endLine": 32,
+                "line": 32,
+              },
+              "text": "{capitalize the item} {verb:is item} barred shut.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 56,
+          "endLine": 32,
+          "line": 30,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 37,
+        "line": 26,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "data": [
+        {
+          "initial": null,
+          "name": [
+            "max",
+            "items",
+          ],
+          "oneOf": null,
+          "optional": true,
+          "span": {
+            "column": 5,
+            "endColumn": 31,
+            "endLine": 41,
+            "line": 41,
+          },
+          "type": "number",
+        },
+        {
+          "initial": null,
+          "name": [
+            "body",
+            "part",
+          ],
+          "oneOf": null,
+          "optional": true,
+          "span": {
+            "column": 5,
+            "endColumn": 29,
+            "endLine": 42,
+            "line": 42,
+          },
+          "type": "name",
+        },
+      ],
+      "kind": "define-trait",
+      "name": "carrying-limit",
+      "onClauses": [
+        {
+          "action": "taking",
+          "binding": "role",
+          "body": [
+            {
+              "condition": {
+                "kind": "predicate",
+                "predicate": {
+                  "kind": "holds",
+                  "span": {
+                    "column": 33,
+                    "endColumn": 50,
+                    "endLine": 49,
+                    "line": 49,
+                  },
+                  "thing": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 33,
+                      "endColumn": 50,
+                      "endLine": 49,
+                      "line": 49,
+                    },
+                    "words": [
+                      "flimsy",
+                      "basket",
+                    ],
+                  },
+                },
+                "span": {
+                  "column": 17,
+                  "endColumn": 50,
+                  "endLine": 49,
+                  "line": 49,
+                },
+                "subject": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 17,
+                      "endColumn": 26,
+                      "endLine": 49,
+                      "line": 49,
+                    },
+                    "words": [
+                      "taker",
+                    ],
+                  },
+                  "span": {
+                    "column": 17,
+                    "endColumn": 26,
+                    "endLine": 49,
+                    "line": 49,
+                  },
+                },
+              },
+              "kind": "refuse-when",
+              "phraseKey": "hands-full",
+              "span": {
+                "column": 5,
+                "endColumn": 62,
+                "endLine": 49,
+                "line": 49,
+              },
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": "taker",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 50,
+            "line": 48,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "hands-full",
+            "span": {
+              "column": 5,
+              "endColumn": 42,
+              "endLine": 46,
+              "line": 45,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "You're",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 15,
+                    "endLine": 46,
+                    "line": 46,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 42,
+                "endLine": 46,
+                "line": 46,
+              },
+              "text": "{You're} carrying too much already.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 42,
+          "endLine": 46,
+          "line": 44,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 51,
+        "line": 39,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "body": [],
+      "constraints": [],
+      "kind": "define-action",
+      "musts": [],
+      "name": "snoozing",
+      "otherwise": {
+        "phraseKey": "no-napping",
+        "span": {
+          "column": 3,
+          "endColumn": 30,
+          "endLine": 58,
+          "line": 58,
+        },
+      },
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "span": {
+                "column": 5,
+                "endColumn": 11,
+                "endLine": 55,
+                "line": 55,
+              },
+              "word": "snooze",
+            },
+          ],
+          "span": {
+            "column": 5,
+            "endColumn": 11,
+            "endLine": 55,
+            "line": 55,
+          },
+        },
+        {
+          "cardinality": [
+            "each",
+            "quiet",
+            "corner",
+          ],
+          "parts": [
+            {
+              "kind": "word",
+              "span": {
+                "column": 5,
+                "endColumn": 8,
+                "endLine": 56,
+                "line": 56,
+              },
+              "word": "nap",
+            },
+          ],
+          "span": {
+            "column": 5,
+            "endColumn": 28,
+            "endLine": 56,
+            "line": 56,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "no-napping",
+            "span": {
+              "column": 5,
+              "endColumn": 35,
+              "endLine": 62,
+              "line": 61,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 35,
+                "endLine": 62,
+                "line": 62,
+              },
+              "text": "There is no napping on duty.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 35,
+          "endLine": 62,
+          "line": 60,
+        },
+      },
+      "refusals": [],
+      "scores": [
+        {
+          "kind": "score",
+          "name": "napped",
+          "span": {
+            "column": 3,
+            "endColumn": 23,
+            "endLine": 57,
+            "line": 57,
+          },
+          "worth": 1,
+        },
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 60,
+        "line": 53,
+      },
+    },
+    {
+      "hatchKind": "action",
+      "kind": "define-hatch",
+      "modulePath": "./stunts.ts",
+      "name": "juggling",
+      "span": {
+        "column": 1,
+        "endColumn": 42,
+        "endLine": 64,
+        "line": 64,
+      },
+    },
+    {
+      "hatchKind": "behavior",
+      "kind": "define-hatch",
+      "modulePath": "./stunts.ts",
+      "name": "crowd-control",
+      "span": {
+        "column": 1,
+        "endColumn": 49,
+        "endLine": 65,
+        "line": 65,
+      },
+    },
+    {
+      "aka": [],
+      "blockedExits": [
+        {
+          "condition": {
+            "kind": "condition-ref",
+            "name": "after-hours",
+            "span": {
+              "column": 26,
+              "endColumn": 37,
+              "endLine": 69,
+              "line": 69,
+            },
+          },
+          "direction": "north",
+          "kind": "blocked-exit",
+          "phraseKey": "closed-up",
+          "span": {
+            "column": 3,
+            "endColumn": 48,
+            "endLine": 69,
+            "line": 69,
+          },
+        },
+      ],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 68,
+            "line": 68,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 40,
+          "endLine": 71,
+          "line": 71,
+        },
+        "text": "Lockers, a kettle, one sagging couch.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 22,
+          "endLine": 67,
+          "line": 67,
+        },
+        "words": [
+          "Break",
+          "Room",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 40,
+        "endLine": 71,
+        "line": 67,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [
+        "basket",
+      ],
+      "blockedExits": [],
+      "compositions": [],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 41,
+          "endLine": 77,
+          "line": 77,
+        },
+        "text": "Woven this morning, regretted by noon.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 25,
+          "endLine": 73,
+          "line": 73,
+        },
+        "words": [
+          "flimsy",
+          "basket",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 20,
+            "endLine": 75,
+            "line": 75,
+          },
+          "words": [
+            "Break",
+            "Room",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 20,
+          "endLine": 75,
+          "line": 75,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 41,
+        "endLine": 77,
+        "line": 73,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "entries": [
+        {
+          "key": "closed-up",
+          "span": {
+            "column": 3,
+            "endColumn": 42,
+            "endLine": 81,
+            "line": 80,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 42,
+              "endLine": 81,
+              "line": 81,
+            },
+            "text": "The north door is bolted after hours.",
+          },
+        },
+      ],
+      "kind": "define-phrases",
+      "locale": "en-US",
+      "span": {
+        "column": 1,
+        "endColumn": 42,
+        "endLine": 81,
+        "line": 79,
+      },
+    },
+  ],
+  "header": {
+    "author": "Sharpee Platform",
+    "fields": {
+      "blurb": "design.md 2.2/3.2 + ownership package - data types, trait states, ordering, role binding, hatches.",
+      "id": "traits-basic",
+      "version": "0.0.1",
+    },
+    "kind": "story-header",
+    "scores": [],
+    "span": {
+      "column": 1,
+      "endColumn": 34,
+      "endLine": 5,
+      "line": 1,
+    },
+    "states": [
+      {
+        "name": "open-hours",
+        "span": {
+          "column": 11,
+          "endColumn": 21,
+          "endLine": 5,
+          "line": 5,
+        },
+      },
+      {
+        "name": "after-hours",
+        "span": {
+          "column": 23,
+          "endColumn": 34,
+          "endLine": 5,
+          "line": 5,
+        },
+      },
+    ],
+    "statesReversible": false,
+    "title": "Trait Declarations Fixture",
+  },
+  "kind": "story-file",
+  "span": {
+    "column": 1,
+    "endColumn": 42,
+    "endLine": 81,
+    "line": 1,
+  },
+}
+`;
+
+exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the golden AST snapshot 1`] = `
+{
+  "declarations": [
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 7,
+            "line": 7,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 48,
+          "endLine": 9,
+          "line": 9,
+        },
+        "text": "A straw-floored yard full of amiable animals.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 23,
+          "endLine": 6,
+          "line": 6,
+        },
+        "words": [
+          "Petting",
+          "Zoo",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 48,
+        "endLine": 9,
+        "line": 6,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 7,
+          "endLine": 14,
+          "line": 14,
+        },
+        "text": "You.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 18,
+          "endLine": 11,
+          "line": 11,
+        },
+        "words": [
+          "player",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 13,
+            "endColumn": 28,
+            "endLine": 12,
+            "line": 12,
+          },
+          "words": [
+            "Petting",
+            "Zoo",
+          ],
+        },
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 28,
+          "endLine": 12,
+          "line": 12,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 7,
+        "endLine": 14,
+        "line": 11,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "body": [],
+      "constraints": [
+        {
+          "requirement": "reachable",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 31,
+            "endLine": 20,
+            "line": 20,
+          },
+        },
+      ],
+      "kind": "define-action",
+      "musts": [],
+      "name": "petting",
+      "otherwise": {
+        "phraseKey": "cant-pet",
+        "span": {
+          "column": 3,
+          "endColumn": 28,
+          "endLine": 22,
+          "line": 22,
+        },
+      },
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "span": {
+                "column": 5,
+                "endColumn": 8,
+                "endLine": 18,
+                "line": 18,
+              },
+              "word": "pet",
+            },
+            {
+              "kind": "slot",
+              "span": {
+                "column": 9,
+                "endColumn": 16,
+                "endLine": 18,
+                "line": 18,
+              },
+              "word": "animal",
+            },
+          ],
+          "span": {
+            "column": 5,
+            "endColumn": 16,
+            "endLine": 18,
+            "line": 18,
+          },
+        },
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "span": {
+                "column": 5,
+                "endColumn": 8,
+                "endLine": 19,
+                "line": 19,
+              },
+              "word": "pat",
+            },
+            {
+              "kind": "slot",
+              "span": {
+                "column": 9,
+                "endColumn": 16,
+                "endLine": 19,
+                "line": 19,
+              },
+              "word": "animal",
+            },
+          ],
+          "span": {
+            "column": 5,
+            "endColumn": 16,
+            "endLine": 19,
+            "line": 19,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "pet-what",
+            "span": {
+              "column": 5,
+              "endColumn": 16,
+              "endLine": 26,
+              "line": 25,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 16,
+                "endLine": 26,
+                "line": 26,
+              },
+              "text": "Pet what?",
+            },
+          },
+          {
+            "key": "cant-pet",
+            "span": {
+              "column": 5,
+              "endColumn": 81,
+              "endLine": 28,
+              "line": 27,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "capitalize the animal",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 30,
+                    "endLine": 28,
+                    "line": 28,
+                  },
+                },
+                {
+                  "content": "verb:isn't animal",
+                  "span": {
+                    "column": 31,
+                    "endColumn": 50,
+                    "endLine": 28,
+                    "line": 28,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 81,
+                "endLine": 28,
+                "line": 28,
+              },
+              "text": "{capitalize the animal} {verb:isn't animal} the sort of thing you can pet.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 81,
+          "endLine": 28,
+          "line": 24,
+        },
+      },
+      "refusals": [
+        {
+          "condition": null,
+          "kind": "without",
+          "phraseKey": "pet-what",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 34,
+            "endLine": 21,
+            "line": 21,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 24,
+        "line": 16,
+      },
+    },
+    {
+      "body": [],
+      "constraints": [
+        {
+          "requirement": "reachable",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 31,
+            "endLine": 33,
+            "line": 33,
+          },
+        },
+      ],
+      "kind": "define-action",
+      "musts": [],
+      "name": "feeding",
+      "otherwise": {
+        "phraseKey": "not-hungry",
+        "span": {
+          "column": 3,
+          "endColumn": 30,
+          "endLine": 35,
+          "line": 35,
+        },
+      },
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "span": {
+                "column": 5,
+                "endColumn": 9,
+                "endLine": 32,
+                "line": 32,
+              },
+              "word": "feed",
+            },
+            {
+              "kind": "slot",
+              "span": {
+                "column": 10,
+                "endColumn": 17,
+                "endLine": 32,
+                "line": 32,
+              },
+              "word": "animal",
+            },
+          ],
+          "span": {
+            "column": 5,
+            "endColumn": 17,
+            "endLine": 32,
+            "line": 32,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "feed-what",
+            "span": {
+              "column": 5,
+              "endColumn": 17,
+              "endLine": 39,
+              "line": 38,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 17,
+                "endLine": 39,
+                "line": 39,
+              },
+              "text": "Feed what?",
+            },
+          },
+          {
+            "key": "not-hungry",
+            "span": {
+              "column": 5,
+              "endColumn": 66,
+              "endLine": 41,
+              "line": 40,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "capitalize the animal",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 30,
+                    "endLine": 41,
+                    "line": 41,
+                  },
+                },
+                {
+                  "content": "verb:doesn't animal",
+                  "span": {
+                    "column": 31,
+                    "endColumn": 52,
+                    "endLine": 41,
+                    "line": 41,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 66,
+                "endLine": 41,
+                "line": 41,
+              },
+              "text": "{capitalize the animal} {verb:doesn't animal} want feeding.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 66,
+          "endLine": 41,
+          "line": 37,
+        },
+      },
+      "refusals": [
+        {
+          "condition": null,
+          "kind": "without",
+          "phraseKey": "feed-what",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 35,
+            "endLine": 34,
+            "line": 34,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 37,
+        "line": 30,
+      },
+    },
+    {
+      "data": [
+        {
+          "initial": null,
+          "name": [
+            "kind",
+          ],
+          "oneOf": [
+            "goats",
+            "rabbits",
+            "parrot",
+            "snake",
+          ],
+          "optional": false,
+          "span": {
+            "column": 5,
+            "endColumn": 47,
+            "endLine": 45,
+            "line": 45,
+          },
+          "type": "one-of",
+        },
+      ],
+      "kind": "define-trait",
+      "name": "pettable",
+      "onClauses": [
+        {
+          "action": "petting",
+          "binding": "it",
+          "body": [
+            {
+              "condition": {
+                "kind": "predicate",
+                "predicate": {
+                  "kind": "is",
+                  "negated": false,
+                  "span": {
+                    "column": 25,
+                    "endColumn": 30,
+                    "endLine": 59,
+                    "line": 59,
+                  },
+                  "value": {
+                    "kind": "ref",
+                    "ref": {
+                      "article": null,
+                      "kind": "name",
+                      "span": {
+                        "column": 25,
+                        "endColumn": 30,
+                        "endLine": 59,
+                        "line": 59,
+                      },
+                      "words": [
+                        "snake",
+                      ],
+                    },
+                    "span": {
+                      "column": 25,
+                      "endColumn": 30,
+                      "endLine": 59,
+                      "line": 59,
+                    },
+                  },
+                },
+                "span": {
+                  "column": 17,
+                  "endColumn": 30,
+                  "endLine": 59,
+                  "line": 59,
+                },
+                "subject": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": null,
+                    "kind": "name",
+                    "span": {
+                      "column": 17,
+                      "endColumn": 21,
+                      "endLine": 59,
+                      "line": 59,
+                    },
+                    "words": [
+                      "kind",
+                    ],
+                  },
+                  "span": {
+                    "column": 17,
+                    "endColumn": 21,
+                    "endLine": 59,
+                    "line": 59,
+                  },
+                },
+              },
+              "kind": "refuse-when",
+              "phraseKey": "glass-way",
+              "span": {
+                "column": 5,
+                "endColumn": 41,
+                "endLine": 59,
+                "line": 59,
+              },
+            },
+            {
+              "event": [
+                "petted",
+              ],
+              "kind": "emit",
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 60,
+                "line": 60,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "expression": [
+                "petted",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 17,
+                "endLine": 61,
+                "line": 61,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "arms": [
+                {
+                  "body": [
+                    {
+                      "inlineText": null,
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "pet-goats",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 25,
+                        "endLine": 64,
+                        "line": 64,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 17,
+                    "endLine": 63,
+                    "line": 63,
+                  },
+                  "value": "goats",
+                },
+                {
+                  "body": [
+                    {
+                      "inlineText": null,
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "pet-rabbits",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 27,
+                        "endLine": 66,
+                        "line": 66,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 19,
+                    "endLine": 65,
+                    "line": 65,
+                  },
+                  "value": "rabbits",
+                },
+                {
+                  "body": [
+                    {
+                      "inlineText": null,
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "pet-parrot",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 26,
+                        "endLine": 68,
+                        "line": 68,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 18,
+                    "endLine": 67,
+                    "line": 67,
+                  },
+                  "value": "parrot",
+                },
+              ],
+              "kind": "select-on",
+              "span": {
+                "column": 5,
+                "endColumn": 15,
+                "endLine": 69,
+                "line": 62,
+              },
+              "subject": {
+                "kind": "ref",
+                "ref": {
+                  "article": null,
+                  "kind": "name",
+                  "span": {
+                    "column": 15,
+                    "endColumn": 19,
+                    "endLine": 62,
+                    "line": 62,
+                  },
+                  "words": [
+                    "kind",
+                  ],
+                },
+                "span": {
+                  "column": 15,
+                  "endColumn": 19,
+                  "endLine": 62,
+                  "line": 62,
+                },
+              },
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 70,
+            "line": 58,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "pet-goats",
+            "span": {
+              "column": 5,
+              "endColumn": 87,
+              "endLine": 50,
+              "line": 49,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 87,
+                "endLine": 50,
+                "line": 50,
+              },
+              "text": "The pygmy goats crowd around, bleating happily as you scratch behind their ears.",
+            },
+          },
+          {
+            "key": "pet-rabbits",
+            "span": {
+              "column": 5,
+              "endColumn": 78,
+              "endLine": 52,
+              "line": 51,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 78,
+                "endLine": 52,
+                "line": 52,
+              },
+              "text": "Biscuit and Marmalade twitch their noses and lean into your hand. Soft!",
+            },
+          },
+          {
+            "key": "pet-parrot",
+            "span": {
+              "column": 5,
+              "endColumn": 89,
+              "endLine": 54,
+              "line": 53,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 89,
+                "endLine": 54,
+                "line": 54,
+              },
+              "text": "The parrot tilts its head and lets you smooth its feathers, watching you sideways.",
+            },
+          },
+          {
+            "key": "glass-way",
+            "span": {
+              "column": 5,
+              "endColumn": 90,
+              "endLine": 56,
+              "line": 55,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 7,
+                "endColumn": 90,
+                "endLine": 56,
+                "line": 56,
+              },
+              "text": "You press your hand to the glass. The snake regards you coolly from the other side.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 90,
+          "endLine": 56,
+          "line": 48,
+        },
+      },
+      "scores": [
+        {
+          "kind": "score",
+          "name": "petted",
+          "span": {
+            "column": 3,
+            "endColumn": 23,
+            "endLine": 46,
+            "line": 46,
+          },
+          "worth": 5,
+        },
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 71,
+        "line": 43,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "data": [
+        {
+          "initial": null,
+          "name": [
+            "food",
+          ],
+          "oneOf": null,
+          "optional": false,
+          "span": {
+            "column": 5,
+            "endColumn": 17,
+            "endLine": 75,
+            "line": 75,
+          },
+          "type": "entity",
+        },
+      ],
+      "kind": "define-trait",
+      "name": "feedable",
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "kind": "must",
+              "phraseKey": "no-food",
+              "predicate": {
+                "kind": "has",
+                "span": {
+                  "column": 25,
+                  "endColumn": 33,
+                  "endLine": 87,
+                  "line": 87,
+                },
+                "thing": {
+                  "article": null,
+                  "kind": "name",
+                  "span": {
+                    "column": 25,
+                    "endColumn": 33,
+                    "endLine": 87,
+                    "line": 87,
+                  },
+                  "words": [
+                    "its",
+                    "food",
+                  ],
+                },
+              },
+              "span": {
+                "column": 5,
+                "endColumn": 42,
+                "endLine": 87,
+                "line": 87,
+              },
+              "subject": {
+                "kind": "ref",
+                "ref": {
+                  "article": "the",
+                  "kind": "name",
+                  "span": {
+                    "column": 5,
+                    "endColumn": 14,
+                    "endLine": 87,
+                    "line": 87,
+                  },
+                  "words": [
+                    "actor",
+                  ],
+                },
+                "span": {
+                  "column": 5,
+                  "endColumn": 14,
+                  "endLine": 87,
+                  "line": 87,
+                },
+              },
+            },
+            {
+              "kind": "must",
+              "phraseKey": "already-fed",
+              "predicate": {
+                "kind": "is",
+                "negated": false,
+                "span": {
+                  "column": 16,
+                  "endColumn": 22,
+                  "endLine": 88,
+                  "line": 88,
+                },
+                "value": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": null,
+                    "kind": "name",
+                    "span": {
+                      "column": 16,
+                      "endColumn": 22,
+                      "endLine": 88,
+                      "line": 88,
+                    },
+                    "words": [
+                      "hungry",
+                    ],
+                  },
+                  "span": {
+                    "column": 16,
+                    "endColumn": 22,
+                    "endLine": 88,
+                    "line": 88,
+                  },
+                },
+              },
+              "span": {
+                "column": 5,
+                "endColumn": 35,
+                "endLine": 88,
+                "line": 88,
+              },
+              "subject": {
+                "kind": "ref",
+                "ref": {
+                  "article": null,
+                  "kind": "name",
+                  "span": {
+                    "column": 5,
+                    "endColumn": 7,
+                    "endLine": 88,
+                    "line": 88,
+                  },
+                  "words": [
+                    "it",
+                  ],
+                },
+                "span": {
+                  "column": 5,
+                  "endColumn": 7,
+                  "endLine": 88,
+                  "line": 88,
+                },
+              },
+            },
+            {
+              "entity": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 12,
+                  "endColumn": 14,
+                  "endLine": 89,
+                  "line": 89,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 89,
+                "line": 89,
+              },
+              "state": "content",
+              "stmtWhen": null,
+            },
+            {
+              "event": [
+                "fed",
+              ],
+              "kind": "emit",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 90,
+                "line": 90,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "fed",
+              "span": {
+                "column": 5,
+                "endColumn": 15,
+                "endLine": 91,
+                "line": 91,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 92,
+            "line": 86,
+          },
+        },
+      ],
+      "phrases": {
+        "entries": [
+          {
+            "key": "no-food",
+            "span": {
+              "column": 5,
+              "endColumn": 55,
+              "endLine": 80,
+              "line": 79,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "the animal",
+                  "span": {
+                    "column": 24,
+                    "endColumn": 36,
+                    "endLine": 80,
+                    "line": 80,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 55,
+                "endLine": 80,
+                "line": 80,
+              },
+              "text": "You have nothing {the animal} would want to eat.",
+            },
+          },
+          {
+            "key": "already-fed",
+            "span": {
+              "column": 5,
+              "endColumn": 74,
+              "endLine": 82,
+              "line": 81,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "capitalize the animal",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 30,
+                    "endLine": 82,
+                    "line": 82,
+                  },
+                },
+                {
+                  "content": "verb:has animal",
+                  "span": {
+                    "column": 31,
+                    "endColumn": 48,
+                    "endLine": 82,
+                    "line": 82,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 74,
+                "endLine": 82,
+                "line": 82,
+              },
+              "text": "{capitalize the animal} {verb:has animal} had quite enough already.",
+            },
+          },
+          {
+            "key": "fed",
+            "span": {
+              "column": 5,
+              "endColumn": 59,
+              "endLine": 84,
+              "line": 83,
+            },
+            "value": {
+              "form": "prose",
+              "kind": "text",
+              "markers": [
+                {
+                  "content": "capitalize the animal",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 30,
+                    "endLine": 84,
+                    "line": 84,
+                  },
+                },
+              ],
+              "span": {
+                "column": 7,
+                "endColumn": 59,
+                "endLine": 84,
+                "line": 84,
+              },
+              "text": "{capitalize the animal} eagerly gobbles up the feed.",
+            },
+          },
+        ],
+        "kind": "define-phrases",
+        "locale": "en-US",
+        "span": {
+          "column": 3,
+          "endColumn": 59,
+          "endLine": 84,
+          "line": 78,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 93,
+        "line": 73,
+      },
+      "states": [
+        {
+          "name": "hungry",
+          "span": {
+            "column": 23,
+            "endColumn": 29,
+            "endLine": 76,
+            "line": 76,
+          },
+        },
+        {
+          "name": "content",
+          "span": {
+            "column": 31,
+            "endColumn": 38,
+            "endLine": 76,
+            "line": 76,
+          },
+        },
+      ],
+      "statesReversible": true,
+    },
+    {
+      "aka": [
+        "goats",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 97,
+            "line": 97,
+          },
+          "words": [
+            "plural",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [
+            {
+              "key": [
+                "kind",
+              ],
+              "span": {
+                "column": 17,
+                "endColumn": 27,
+                "endLine": 99,
+                "line": 99,
+              },
+              "value": "goats",
+              "valueKind": "word",
+            },
+          ],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 99,
+            "line": 99,
+          },
+          "words": [
+            "pettable",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [
+            {
+              "key": [
+                "food",
+              ],
+              "span": {
+                "column": 17,
+                "endColumn": 41,
+                "endLine": 100,
+                "line": 100,
+              },
+              "value": "handful of feed",
+              "valueKind": "name",
+            },
+          ],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 41,
+            "endLine": 100,
+            "line": 100,
+          },
+          "words": [
+            "feedable",
+          ],
+        },
+      ],
+      "description": null,
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 23,
+          "endLine": 95,
+          "line": 95,
+        },
+        "words": [
+          "pygmy",
+          "goats",
+        ],
+      },
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "fed",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 14,
+                "endLine": 106,
+                "line": 106,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 107,
+            "line": 105,
+          },
+        },
+      ],
+      "phraseOverrides": [
+        {
+          "condition": null,
+          "key": "fed",
+          "kind": "phrase-override",
+          "span": {
+            "column": 3,
+            "endColumn": 78,
+            "endLine": 103,
+            "line": 102,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "form": "prose",
+              "kind": "text",
+              "markers": [],
+              "span": {
+                "column": 5,
+                "endColumn": 78,
+                "endLine": 103,
+                "line": 103,
+              },
+              "text": "The goats butt each other out of the way to get at the feed. Happy chaos.",
+            },
+          ],
+        },
+      ],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 21,
+            "endLine": 98,
+            "line": 98,
+          },
+          "words": [
+            "Petting",
+            "Zoo",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 98,
+          "line": 98,
+        },
+      },
+      "scores": [
+        {
+          "kind": "score",
+          "name": "fed",
+          "span": {
+            "column": 3,
+            "endColumn": 21,
+            "endLine": 101,
+            "line": 101,
+          },
+          "worth": 10,
+        },
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 19,
+        "endLine": 105,
+        "line": 95,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [
+        "feed",
+      ],
+      "blockedExits": [],
+      "compositions": [],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 32,
+          "endLine": 113,
+          "line": 113,
+        },
+        "text": "A waxy paper cone of pellets.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 27,
+          "endLine": 109,
+          "line": 109,
+        },
+        "words": [
+          "handful",
+          "of",
+          "feed",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 21,
+            "endLine": 111,
+            "line": 111,
+          },
+          "words": [
+            "Petting",
+            "Zoo",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 111,
+          "line": 111,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 32,
+        "endLine": 113,
+        "line": 109,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [
+        "snake",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": null,
+          "condition": null,
+          "config": [
+            {
+              "key": [
+                "kind",
+              ],
+              "span": {
+                "column": 17,
+                "endColumn": 27,
+                "endLine": 118,
+                "line": 118,
+              },
+              "value": "snake",
+              "valueKind": "word",
+            },
+          ],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 118,
+            "line": 118,
+          },
+          "words": [
+            "pettable",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 42,
+          "endLine": 120,
+          "line": 120,
+        },
+        "text": "Coiled behind glass, radiating disdain.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 24,
+          "endLine": 115,
+          "line": 115,
+        },
+        "words": [
+          "garden",
+          "snake",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 21,
+            "endLine": 117,
+            "line": 117,
+          },
+          "words": [
+            "Petting",
+            "Zoo",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 117,
+          "line": 117,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 42,
+        "endLine": 120,
+        "line": 115,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+  ],
+  "header": {
+    "author": "Sharpee Platform",
+    "fields": {
+      "blurb": "design.md 3.4 + ownership package - dispatch actions, trait states, owner scores.",
+      "id": "zoo-actions",
+      "version": "0.0.1",
+    },
+    "kind": "story-header",
+    "scores": [],
+    "span": {
+      "column": 1,
+      "endColumn": 91,
+      "endLine": 4,
+      "line": 1,
+    },
+    "states": [],
+    "statesReversible": false,
+    "title": "Zoo Actions Fixture",
+  },
+  "kind": "story-file",
+  "span": {
+    "column": 1,
+    "endColumn": 42,
+    "endLine": 120,
+    "line": 1,
+  },
+}
+`;
+
+exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the golden AST snapshot 1`] = `
+{
+  "declarations": [
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 8,
+            "line": 8,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 35,
+          "endLine": 10,
+          "line": 10,
+        },
+        "text": "Bright cages and brighter noise.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 18,
+          "endLine": 7,
+          "line": 7,
+        },
+        "words": [
+          "Aviary",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 35,
+        "endLine": 10,
+        "line": 7,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 7,
+          "endLine": 15,
+          "line": 15,
+        },
+        "text": "You.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 18,
+          "endLine": 12,
+          "line": 12,
+        },
+        "words": [
+          "player",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 13,
+            "endColumn": 23,
+            "endLine": 13,
+            "line": 13,
+          },
+          "words": [
+            "Aviary",
+          ],
+        },
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 23,
+          "endLine": 13,
+          "line": 13,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 7,
+        "endLine": 15,
+        "line": 12,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "data": [],
+      "kind": "define-trait",
+      "name": "chatty",
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "parrot-chatter",
+              "span": {
+                "column": 5,
+                "endColumn": 26,
+                "endLine": 19,
+                "line": 19,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "and",
+            "operands": [
+              {
+                "kind": "predicate",
+                "predicate": {
+                  "ability": "see",
+                  "kind": "can",
+                  "span": {
+                    "column": 38,
+                    "endColumn": 44,
+                    "endLine": 18,
+                    "line": 18,
+                  },
+                  "thing": {
+                    "article": null,
+                    "kind": "name",
+                    "span": {
+                      "column": 42,
+                      "endColumn": 44,
+                      "endLine": 18,
+                      "line": 18,
+                    },
+                    "words": [
+                      "it",
+                    ],
+                  },
+                },
+                "span": {
+                  "column": 23,
+                  "endColumn": 44,
+                  "endLine": 18,
+                  "line": 18,
+                },
+                "subject": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 23,
+                      "endColumn": 33,
+                      "endLine": 18,
+                      "line": 18,
+                    },
+                    "words": [
+                      "player",
+                    ],
+                  },
+                  "span": {
+                    "column": 23,
+                    "endColumn": 33,
+                    "endLine": 18,
+                    "line": 18,
+                  },
+                },
+              },
+              {
+                "kind": "chance",
+                "n": 2,
+                "span": {
+                  "column": 49,
+                  "endColumn": 64,
+                  "endLine": 18,
+                  "line": 18,
+                },
+              },
+            ],
+            "span": {
+              "column": 23,
+              "endColumn": 64,
+              "endLine": 18,
+              "line": 18,
+            },
+          },
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 20,
+            "line": 18,
+          },
+        },
+      ],
+      "phrases": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 21,
+        "line": 17,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "data": [],
+      "kind": "define-trait",
+      "name": "candid",
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "parrot-candor",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 25,
+                "line": 25,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "and",
+            "operands": [
+              {
+                "kind": "predicate",
+                "predicate": {
+                  "ability": "see",
+                  "kind": "can",
+                  "span": {
+                    "column": 38,
+                    "endColumn": 44,
+                    "endLine": 24,
+                    "line": 24,
+                  },
+                  "thing": {
+                    "article": null,
+                    "kind": "name",
+                    "span": {
+                      "column": 42,
+                      "endColumn": 44,
+                      "endLine": 24,
+                      "line": 24,
+                    },
+                    "words": [
+                      "it",
+                    ],
+                  },
+                },
+                "span": {
+                  "column": 23,
+                  "endColumn": 44,
+                  "endLine": 24,
+                  "line": 24,
+                },
+                "subject": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 23,
+                      "endColumn": 33,
+                      "endLine": 24,
+                      "line": 24,
+                    },
+                    "words": [
+                      "player",
+                    ],
+                  },
+                  "span": {
+                    "column": 23,
+                    "endColumn": 33,
+                    "endLine": 24,
+                    "line": 24,
+                  },
+                },
+              },
+              {
+                "kind": "chance",
+                "n": 2,
+                "span": {
+                  "column": 49,
+                  "endColumn": 64,
+                  "endLine": 24,
+                  "line": 24,
+                },
+              },
+            ],
+            "span": {
+              "column": 23,
+              "endColumn": 64,
+              "endLine": 24,
+              "line": 24,
+            },
+          },
+          "kind": "on-clause",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 26,
+            "line": 24,
+          },
+        },
+      ],
+      "phrases": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 27,
+        "line": 23,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "condition": null,
+      "key": "parrot-chatter",
+      "kind": "define-phrase",
+      "span": {
+        "column": 1,
+        "endColumn": 11,
+        "endLine": 35,
+        "line": 29,
+      },
+      "strategy": "randomly",
+      "variants": [
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 25,
+            "endLine": 30,
+            "line": 30,
+          },
+          "text": "Polly wants a cracker!",
+        },
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 36,
+            "endLine": 32,
+            "line": 32,
+          },
+          "text": "SQUAWK! Pretty bird! Pretty bird!",
+        },
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 36,
+            "endLine": 34,
+            "line": 34,
+          },
+          "text": "Pieces of eight! Pieces of eight!",
+        },
+      ],
+      "verbatim": false,
+    },
+    {
+      "condition": null,
+      "key": "parrot-candor",
+      "kind": "define-phrase",
+      "span": {
+        "column": 1,
+        "endColumn": 11,
+        "endLine": 41,
+        "line": 37,
+      },
+      "strategy": "randomly",
+      "variants": [
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 41,
+            "endLine": 38,
+            "line": 38,
+          },
+          "text": "Honestly? The crackers here are stale.",
+        },
+        {
+          "form": "prose",
+          "kind": "text",
+          "markers": [],
+          "span": {
+            "column": 3,
+            "endColumn": 51,
+            "endLine": 40,
+            "line": 40,
+          },
+          "text": "You should see what the flamingos say about you.",
+        },
+      ],
+      "verbatim": false,
+    },
+    {
+      "kind": "define-sequence",
+      "name": [
+        "closing",
+        "time",
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 13,
+        "endLine": 62,
+        "line": 43,
+      },
+      "steps": [
+        {
+          "body": [
+            {
+              "inlineText": {
+                "form": "prose",
+                "kind": "text",
+                "markers": [],
+                "span": {
+                  "column": 7,
+                  "endColumn": 21,
+                  "endLine": 48,
+                  "line": 46,
+                },
+                "text": "*DING DONG* "Attention visitors! The Willowbrook Family Zoo will be closing in three hours. Please make sure to visit all exhibits before closing time!"",
+              },
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closing-3",
+              "span": {
+                "column": 5,
+                "endColumn": 21,
+                "endLine": 48,
+                "line": 45,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 44,
+            "line": 44,
+          },
+          "state": null,
+          "timing": "at-turn",
+          "turns": 5,
+        },
+        {
+          "body": [
+            {
+              "inlineText": {
+                "form": "prose",
+                "kind": "text",
+                "markers": [],
+                "span": {
+                  "column": 7,
+                  "endColumn": 47,
+                  "endLine": 52,
+                  "line": 51,
+                },
+                "text": "*DING DONG* "Attention visitors! Two hours until closing. Don't forget to stop by the gift shop for souvenirs!"",
+              },
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closing-2",
+              "span": {
+                "column": 5,
+                "endColumn": 47,
+                "endLine": 52,
+                "line": 50,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 49,
+            "line": 49,
+          },
+          "state": null,
+          "timing": "later",
+          "turns": 5,
+        },
+        {
+          "body": [
+            {
+              "inlineText": {
+                "form": "prose",
+                "kind": "text",
+                "markers": [],
+                "span": {
+                  "column": 7,
+                  "endColumn": 40,
+                  "endLine": 56,
+                  "line": 55,
+                },
+                "text": "*DING DONG* "Attention visitors! One hour until closing. Please begin making your way toward the exit."",
+              },
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closing-1",
+              "span": {
+                "column": 5,
+                "endColumn": 40,
+                "endLine": 56,
+                "line": 54,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 53,
+            "line": 53,
+          },
+          "state": null,
+          "timing": "later",
+          "turns": 5,
+        },
+        {
+          "body": [
+            {
+              "inlineText": {
+                "form": "prose",
+                "kind": "text",
+                "markers": [],
+                "span": {
+                  "column": 7,
+                  "endColumn": 48,
+                  "endLine": 60,
+                  "line": 59,
+                },
+                "text": "*DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for visiting! We hope to see you again soon!"",
+              },
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.pa.closed",
+              "span": {
+                "column": 5,
+                "endColumn": 48,
+                "endLine": 60,
+                "line": 58,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "entity": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 12,
+                  "endColumn": 21,
+                  "endLine": 61,
+                  "line": 61,
+                },
+                "words": [
+                  "story",
+                ],
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 36,
+                "endLine": 61,
+                "line": 61,
+              },
+              "state": "after-hours",
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 57,
+            "line": 57,
+          },
+          "state": null,
+          "timing": "later",
+          "turns": 5,
+        },
+      ],
+    },
+    {
+      "kind": "define-sequence",
+      "name": [
+        "lockup",
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 13,
+        "endLine": 68,
+        "line": 64,
+      },
+      "steps": [
+        {
+          "body": [
+            {
+              "inlineText": {
+                "form": "prose",
+                "kind": "text",
+                "markers": [],
+                "span": {
+                  "column": 7,
+                  "endColumn": 49,
+                  "endLine": 67,
+                  "line": 67,
+                },
+                "text": "Somewhere in the dark, a gate clangs shut.",
+              },
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.lockup",
+              "span": {
+                "column": 5,
+                "endColumn": 49,
+                "endLine": 67,
+                "line": 66,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": {
+            "article": "the",
+            "kind": "name",
+            "span": {
+              "column": 8,
+              "endColumn": 17,
+              "endLine": 65,
+              "line": 65,
+            },
+            "words": [
+              "story",
+            ],
+          },
+          "span": {
+            "column": 3,
+            "endColumn": 37,
+            "endLine": 65,
+            "line": 65,
+          },
+          "state": "after-hours",
+          "timing": "becomes",
+          "turns": 0,
+        },
+      ],
+    },
+    {
+      "kind": "define-sequence",
+      "name": [
+        "goat",
+        "bleats",
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 13,
+        "endLine": 80,
+        "line": 70,
+      },
+      "steps": [
+        {
+          "body": [
+            {
+              "inlineText": {
+                "form": "prose",
+                "kind": "text",
+                "markers": [],
+                "span": {
+                  "column": 7,
+                  "endColumn": 44,
+                  "endLine": 73,
+                  "line": 73,
+                },
+                "text": "A pygmy goat bleats somewhere nearby.",
+              },
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "goat-bleat",
+              "span": {
+                "column": 5,
+                "endColumn": 44,
+                "endLine": 73,
+                "line": 72,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 71,
+            "line": 71,
+          },
+          "state": null,
+          "timing": "at-turn",
+          "turns": 3,
+        },
+        {
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "goat-bleat",
+              "span": {
+                "column": 5,
+                "endColumn": 22,
+                "endLine": 75,
+                "line": 75,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 74,
+            "line": 74,
+          },
+          "state": null,
+          "timing": "later",
+          "turns": 3,
+        },
+        {
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "goat-bleat",
+              "span": {
+                "column": 5,
+                "endColumn": 22,
+                "endLine": 77,
+                "line": 77,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 76,
+            "line": 76,
+          },
+          "state": null,
+          "timing": "later",
+          "turns": 3,
+        },
+        {
+          "body": [
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "goat-bleat",
+              "span": {
+                "column": 5,
+                "endColumn": 22,
+                "endLine": 79,
+                "line": 79,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "kind": "sequence-step",
+          "owner": null,
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 78,
+            "line": 78,
+          },
+          "state": null,
+          "timing": "later",
+          "turns": 3,
+        },
+      ],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 83,
+            "line": 83,
+          },
+          "words": [
+            "room",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 32,
+          "endLine": 85,
+          "line": 85,
+        },
+        "text": "Staff only beyond this point.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 22,
+          "endLine": 82,
+          "line": 82,
+        },
+        "words": [
+          "Staff",
+          "Gate",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": null,
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 32,
+        "endLine": 85,
+        "line": 82,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [
+        "Sam",
+        "zookeeper",
+      ],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 88,
+            "line": 88,
+          },
+          "words": [
+            "person",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 49,
+          "endLine": 92,
+          "line": 92,
+        },
+        "text": "Sam wrangles feed buckets with practiced ease.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": null,
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 25,
+          "endLine": 87,
+          "line": 87,
+        },
+        "words": [
+          "Sam",
+          "the",
+          "zookeeper",
+        ],
+      },
+      "onClauses": [
+        {
+          "action": "every-turn",
+          "binding": "every-turn",
+          "body": [
+            {
+              "entity": {
+                "article": null,
+                "kind": "name",
+                "span": {
+                  "column": 10,
+                  "endColumn": 12,
+                  "endLine": 95,
+                  "line": 95,
+                },
+                "words": [
+                  "it",
+                ],
+              },
+              "kind": "move",
+              "place": {
+                "article": "the",
+                "kind": "name",
+                "span": {
+                  "column": 16,
+                  "endColumn": 30,
+                  "endLine": 95,
+                  "line": 95,
+                },
+                "words": [
+                  "Staff",
+                  "Gate",
+                ],
+              },
+              "span": {
+                "column": 5,
+                "endColumn": 30,
+                "endLine": 95,
+                "line": 95,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "inlineText": {
+                "form": "prose",
+                "kind": "text",
+                "markers": [],
+                "span": {
+                  "column": 7,
+                  "endColumn": 51,
+                  "endLine": 98,
+                  "line": 97,
+                },
+                "text": "Sam the zookeeper checks her watch, waves goodnight to the animals, and lets herself out through the staff gate.",
+              },
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo.after-hours.keeper-leaves",
+              "span": {
+                "column": 5,
+                "endColumn": 51,
+                "endLine": 98,
+                "line": 96,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "inlineText": null,
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "keeper-wave",
+              "span": {
+                "column": 5,
+                "endColumn": 56,
+                "endLine": 99,
+                "line": 99,
+              },
+              "stmtWhen": {
+                "kind": "predicate",
+                "predicate": {
+                  "kind": "is-in",
+                  "negated": false,
+                  "place": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 46,
+                      "endColumn": 56,
+                      "endLine": 99,
+                      "line": 99,
+                    },
+                    "words": [
+                      "Aviary",
+                    ],
+                  },
+                  "span": {
+                    "column": 46,
+                    "endColumn": 56,
+                    "endLine": 99,
+                    "line": 99,
+                  },
+                },
+                "span": {
+                  "column": 29,
+                  "endColumn": 56,
+                  "endLine": 99,
+                  "line": 99,
+                },
+                "subject": {
+                  "kind": "ref",
+                  "ref": {
+                    "article": "the",
+                    "kind": "name",
+                    "span": {
+                      "column": 29,
+                      "endColumn": 39,
+                      "endLine": 99,
+                      "line": 99,
+                    },
+                    "words": [
+                      "player",
+                    ],
+                  },
+                  "span": {
+                    "column": 29,
+                    "endColumn": 39,
+                    "endLine": 99,
+                    "line": 99,
+                  },
+                },
+              },
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "kind": "condition-ref",
+            "name": "after-hours",
+            "span": {
+              "column": 23,
+              "endColumn": 34,
+              "endLine": 94,
+              "line": 94,
+            },
+          },
+          "kind": "on-clause",
+          "once": true,
+          "ordering": null,
+          "role": null,
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 100,
+            "line": 94,
+          },
+        },
+      ],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 16,
+            "endLine": 90,
+            "line": 90,
+          },
+          "words": [
+            "Aviary",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 90,
+          "line": 90,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 40,
+        "endLine": 94,
+        "line": 87,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "blockedExits": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 103,
+            "line": 103,
+          },
+          "words": [
+            "person",
+          ],
+        },
+        {
+          "article": null,
+          "condition": {
+            "kind": "not",
+            "operand": {
+              "kind": "condition-ref",
+              "name": "after-hours",
+              "span": {
+                "column": 20,
+                "endColumn": 31,
+                "endLine": 105,
+                "line": 105,
+              },
+            },
+            "span": {
+              "column": 16,
+              "endColumn": 31,
+              "endLine": 105,
+              "line": 105,
+            },
+          },
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 31,
+            "endLine": 105,
+            "line": 105,
+          },
+          "words": [
+            "chatty",
+          ],
+        },
+        {
+          "article": null,
+          "condition": {
+            "kind": "condition-ref",
+            "name": "after-hours",
+            "span": {
+              "column": 16,
+              "endColumn": 27,
+              "endLine": 106,
+              "line": 106,
+            },
+          },
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 106,
+            "line": 106,
+          },
+          "words": [
+            "candid",
+          ],
+        },
+      ],
+      "description": {
+        "form": "prose",
+        "kind": "text",
+        "markers": [],
+        "span": {
+          "column": 3,
+          "endColumn": 33,
+          "endLine": 108,
+          "line": 108,
+        },
+        "text": "A scarlet macaw with opinions.",
+      },
+      "exits": [],
+      "initialDescription": null,
+      "kind": "create",
+      "name": {
+        "article": "the",
+        "kind": "name",
+        "span": {
+          "column": 8,
+          "endColumn": 18,
+          "endLine": 102,
+          "line": 102,
+        },
+        "words": [
+          "parrot",
+        ],
+      },
+      "onClauses": [],
+      "phraseOverrides": [],
+      "placement": {
+        "kind": "placement",
+        "place": {
+          "article": "the",
+          "kind": "name",
+          "span": {
+            "column": 6,
+            "endColumn": 16,
+            "endLine": 104,
+            "line": 104,
+          },
+          "words": [
+            "Aviary",
+          ],
+        },
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 16,
+          "endLine": 104,
+          "line": 104,
+        },
+      },
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 33,
+        "endLine": 108,
+        "line": 102,
+      },
+      "states": [],
+      "statesReversible": false,
+      "wears": [],
+    },
+    {
+      "entries": [
+        {
+          "key": "keeper-wave",
+          "span": {
+            "column": 3,
+            "endColumn": 48,
+            "endLine": 112,
+            "line": 111,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 48,
+              "endLine": 112,
+              "line": 112,
+            },
+            "text": "She gives you a little wave on the way out.",
+          },
+        },
+      ],
+      "kind": "define-phrases",
+      "locale": "en-US",
+      "span": {
+        "column": 1,
+        "endColumn": 48,
+        "endLine": 112,
+        "line": 110,
+      },
+    },
+  ],
+  "header": {
+    "author": "Sharpee Platform",
+    "fields": {
+      "blurb": "design.md 3.3 + ownership package - story states, sequences, anchors, once clauses.",
+      "id": "zoo-timeline",
+      "version": "0.0.1",
+    },
+    "kind": "story-header",
+    "scores": [],
+    "span": {
+      "column": 1,
+      "endColumn": 28,
+      "endLine": 5,
+      "line": 1,
+    },
+    "states": [
+      {
+        "name": "open",
+        "span": {
+          "column": 11,
+          "endColumn": 15,
+          "endLine": 5,
+          "line": 5,
+        },
+      },
+      {
+        "name": "after-hours",
+        "span": {
+          "column": 17,
+          "endColumn": 28,
+          "endLine": 5,
+          "line": 5,
+        },
+      },
+    ],
+    "statesReversible": false,
+    "title": "Zoo Timeline Fixture",
+  },
+  "kind": "story-file",
+  "span": {
+    "column": 1,
+    "endColumn": 48,
+    "endLine": 112,
+    "line": 1,
+  },
+}
+`;

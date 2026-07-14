@@ -1,0 +1,34 @@
+title: Zoo Walkthrough 1 — Arrival
+story: friendly-zoo
+description: Chained full-playthrough, chapter 1 of 5. Entrance pickups (map, brochure, keycard), the first closing announcement at turn 5, and the walk to the Main Path. Run the wt chain with --chain; state persists into wt-02.
+---
+
+# --- Zoo Entrance: opening room + contents list ---
+> look
+[OK: contains "Zoo Entrance"]
+[OK: contains "Willowbrook"]
+[OK: contains "staff keycard"]
+
+# Identity description through the phrase path
+> examine yourself
+[OK: contains "visitor"]
+
+# Souvenir map: taking awards `collected` via the after-taking clause
+# (interceptor postExecute — the zoo-chain stdlib fix, 2026-07-12).
+> take map
+[OK: contains "Taken"]
+
+# Readable with implicit take; awards `read`
+> read brochure
+[OK: contains "first taking the zoo brochure"]
+[OK: contains "WILLOWBROOK FAMILY ZOO"]
+[OK: contains "EXHIBITS"]
+
+# Turn 5: the PA timeline's first closing announcement rides this turn.
+> take keycard
+[OK: contains "Taken"]
+[OK: contains "closing in three hours"]
+
+> south
+[OK: contains "Main Path"]
+[OK: contains "zookeeper"]

@@ -1,0 +1,1021 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snapshot 1`] = `
+{
+  "actions": [
+    {
+      "body": [],
+      "constraints": [
+        {
+          "requirement": "reachable",
+          "slot": "animal",
+        },
+      ],
+      "musts": [],
+      "name": "petting",
+      "otherwise": "cant-pet",
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "pet",
+            },
+            {
+              "kind": "slot",
+              "word": "animal",
+            },
+          ],
+        },
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "pat",
+            },
+            {
+              "kind": "slot",
+              "word": "animal",
+            },
+          ],
+        },
+      ],
+      "refusals": [
+        {
+          "kind": "without",
+          "phraseKey": "pet-what",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 34,
+            "endLine": 21,
+            "line": 21,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 24,
+        "line": 16,
+      },
+    },
+    {
+      "body": [],
+      "constraints": [
+        {
+          "requirement": "reachable",
+          "slot": "animal",
+        },
+      ],
+      "musts": [],
+      "name": "feeding",
+      "otherwise": "not-hungry",
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "feed",
+            },
+            {
+              "kind": "slot",
+              "word": "animal",
+            },
+          ],
+        },
+      ],
+      "refusals": [
+        {
+          "kind": "without",
+          "phraseKey": "feed-what",
+          "slot": "animal",
+          "span": {
+            "column": 3,
+            "endColumn": 35,
+            "endLine": 34,
+            "line": 34,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 16,
+        "endLine": 37,
+        "line": 30,
+      },
+    },
+  ],
+  "conditions": [],
+  "entities": [
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "petting-zoo.description",
+      "exits": [],
+      "id": "petting-zoo",
+      "initialDescriptionKey": null,
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 7,
+            "line": 7,
+          },
+        },
+      ],
+      "name": "Petting Zoo",
+      "onClauses": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 48,
+        "endLine": 9,
+        "line": 6,
+      },
+      "states": [],
+      "statesReversible": false,
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "player.description",
+      "exits": [],
+      "id": "player",
+      "initialDescriptionKey": null,
+      "isPlayer": true,
+      "kinds": [],
+      "name": "player",
+      "onClauses": [],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 28,
+          "endLine": 12,
+          "line": 12,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 7,
+        "endLine": 14,
+        "line": 11,
+      },
+      "states": [],
+      "statesReversible": false,
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "goats",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": null,
+      "exits": [],
+      "id": "pygmy-goats",
+      "initialDescriptionKey": null,
+      "isPlayer": false,
+      "kinds": [],
+      "name": "pygmy goats",
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "expression": [
+                "pygmy-goats.fed",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 14,
+                "endLine": 106,
+                "line": 106,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "after",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 107,
+            "line": 105,
+          },
+        },
+      ],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 98,
+          "line": 98,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 19,
+        "endLine": 105,
+        "line": 95,
+      },
+      "states": [
+        "hungry",
+        "content",
+      ],
+      "statesReversible": false,
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "plural",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 97,
+            "line": 97,
+          },
+        },
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "kind",
+              "value": "goats",
+              "valueKind": "word",
+            },
+          ],
+          "name": "pettable",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 99,
+            "line": 99,
+          },
+        },
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "food",
+              "value": "handful of feed",
+              "valueKind": "name",
+            },
+          ],
+          "name": "feedable",
+          "span": {
+            "column": 3,
+            "endColumn": 41,
+            "endLine": 100,
+            "line": 100,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "feed",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "handful-of-feed.description",
+      "exits": [],
+      "id": "handful-of-feed",
+      "initialDescriptionKey": null,
+      "isPlayer": false,
+      "kinds": [],
+      "name": "handful of feed",
+      "onClauses": [],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 111,
+          "line": 111,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 32,
+        "endLine": 113,
+        "line": 109,
+      },
+      "states": [],
+      "statesReversible": false,
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [
+        "snake",
+      ],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": "garden-snake.description",
+      "exits": [],
+      "id": "garden-snake",
+      "initialDescriptionKey": null,
+      "isPlayer": false,
+      "kinds": [],
+      "name": "garden snake",
+      "onClauses": [],
+      "placement": {
+        "place": "petting-zoo",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 117,
+          "line": 117,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 42,
+        "endLine": 120,
+        "line": 115,
+      },
+      "states": [],
+      "statesReversible": false,
+      "traits": [
+        {
+          "condition": null,
+          "config": [
+            {
+              "key": "kind",
+              "value": "snake",
+              "valueKind": "word",
+            },
+          ],
+          "name": "pettable",
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 118,
+            "line": 118,
+          },
+        },
+      ],
+      "wears": [],
+    },
+  ],
+  "format": "story language 1",
+  "hasHatches": false,
+  "hatches": [],
+  "meta": {
+    "author": "Sharpee Platform",
+    "fields": {
+      "blurb": "design.md 3.4 + ownership package - dispatch actions, trait states, owner scores.",
+      "id": "zoo-actions",
+      "version": "0.0.1",
+    },
+    "title": "Zoo Actions Fixture",
+  },
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "already-fed": {
+          "span": {
+            "column": 5,
+            "endColumn": 74,
+            "endLine": 82,
+            "line": 81,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "capitalize the animal",
+                "verb:has animal",
+              ],
+              "text": "{capitalize the animal} {verb:has animal} had quite enough already.",
+            },
+          ],
+        },
+        "cant-pet": {
+          "span": {
+            "column": 5,
+            "endColumn": 81,
+            "endLine": 28,
+            "line": 27,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "capitalize the animal",
+                "verb:isn't animal",
+              ],
+              "text": "{capitalize the animal} {verb:isn't animal} the sort of thing you can pet.",
+            },
+          ],
+        },
+        "fed": {
+          "span": {
+            "column": 5,
+            "endColumn": 59,
+            "endLine": 84,
+            "line": 83,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "capitalize the animal",
+              ],
+              "text": "{capitalize the animal} eagerly gobbles up the feed.",
+            },
+          ],
+        },
+        "feed-what": {
+          "span": {
+            "column": 5,
+            "endColumn": 17,
+            "endLine": 39,
+            "line": 38,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Feed what?",
+            },
+          ],
+        },
+        "garden-snake.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 42,
+            "endLine": 120,
+            "line": 120,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Coiled behind glass, radiating disdain.",
+            },
+          ],
+        },
+        "glass-way": {
+          "span": {
+            "column": 5,
+            "endColumn": 90,
+            "endLine": 56,
+            "line": 55,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You press your hand to the glass. The snake regards you coolly from the other side.",
+            },
+          ],
+        },
+        "handful-of-feed.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 32,
+            "endLine": 113,
+            "line": 113,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A waxy paper cone of pellets.",
+            },
+          ],
+        },
+        "no-food": {
+          "span": {
+            "column": 5,
+            "endColumn": 55,
+            "endLine": 80,
+            "line": 79,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "the animal",
+              ],
+              "text": "You have nothing {the animal} would want to eat.",
+            },
+          ],
+        },
+        "not-hungry": {
+          "span": {
+            "column": 5,
+            "endColumn": 66,
+            "endLine": 41,
+            "line": 40,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [
+                "capitalize the animal",
+                "verb:doesn't animal",
+              ],
+              "text": "{capitalize the animal} {verb:doesn't animal} want feeding.",
+            },
+          ],
+        },
+        "pet-goats": {
+          "span": {
+            "column": 5,
+            "endColumn": 87,
+            "endLine": 50,
+            "line": 49,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The pygmy goats crowd around, bleating happily as you scratch behind their ears.",
+            },
+          ],
+        },
+        "pet-parrot": {
+          "span": {
+            "column": 5,
+            "endColumn": 89,
+            "endLine": 54,
+            "line": 53,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The parrot tilts its head and lets you smooth its feathers, watching you sideways.",
+            },
+          ],
+        },
+        "pet-rabbits": {
+          "span": {
+            "column": 5,
+            "endColumn": 78,
+            "endLine": 52,
+            "line": 51,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Biscuit and Marmalade twitch their noses and lean into your hand. Soft!",
+            },
+          ],
+        },
+        "pet-what": {
+          "span": {
+            "column": 5,
+            "endColumn": 16,
+            "endLine": 26,
+            "line": 25,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Pet what?",
+            },
+          ],
+        },
+        "petting-zoo.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 48,
+            "endLine": 9,
+            "line": 9,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A straw-floored yard full of amiable animals.",
+            },
+          ],
+        },
+        "player.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 7,
+            "endLine": 14,
+            "line": 14,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You.",
+            },
+          ],
+        },
+        "pygmy-goats.fed": {
+          "span": {
+            "column": 3,
+            "endColumn": 78,
+            "endLine": 103,
+            "line": 102,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The goats butt each other out of the way to get at the feed. Happy chaos.",
+            },
+          ],
+        },
+      },
+    },
+  },
+  "scores": [
+    {
+      "name": "trait.pettable.petted",
+      "span": {
+        "column": 3,
+        "endColumn": 23,
+        "endLine": 46,
+        "line": 46,
+      },
+      "worth": 5,
+    },
+    {
+      "name": "pygmy-goats.fed",
+      "span": {
+        "column": 3,
+        "endColumn": 21,
+        "endLine": 101,
+        "line": 101,
+      },
+      "worth": 10,
+    },
+  ],
+  "sequences": [],
+  "story": {
+    "reversible": false,
+    "states": [],
+  },
+  "traits": [
+    {
+      "data": [
+        {
+          "initial": null,
+          "name": "kind",
+          "oneOf": [
+            "goats",
+            "rabbits",
+            "parrot",
+            "snake",
+          ],
+          "optional": false,
+          "type": "one-of",
+        },
+      ],
+      "name": "pettable",
+      "onClauses": [
+        {
+          "action": "petting",
+          "binding": "it",
+          "body": [
+            {
+              "condition": {
+                "kind": "predicate",
+                "negated": false,
+                "object": {
+                  "kind": "symbol",
+                  "name": "snake",
+                },
+                "pred": "is",
+                "subject": {
+                  "base": {
+                    "kind": "it",
+                  },
+                  "field": "kind",
+                  "kind": "field",
+                },
+              },
+              "kind": "refuse-when",
+              "phraseKey": "glass-way",
+              "span": {
+                "column": 5,
+                "endColumn": 41,
+                "endLine": 59,
+                "line": 59,
+              },
+            },
+            {
+              "event": "petted",
+              "kind": "emit",
+              "span": {
+                "column": 5,
+                "endColumn": 16,
+                "endLine": 60,
+                "line": 60,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "expression": [
+                "trait.pettable.petted",
+              ],
+              "kind": "award",
+              "once": false,
+              "span": {
+                "column": 5,
+                "endColumn": 17,
+                "endLine": 61,
+                "line": 61,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "arms": [
+                {
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "pet-goats",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 25,
+                        "endLine": 64,
+                        "line": 64,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 17,
+                    "endLine": 63,
+                    "line": 63,
+                  },
+                  "value": "goats",
+                },
+                {
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "pet-rabbits",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 27,
+                        "endLine": 66,
+                        "line": 66,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 19,
+                    "endLine": 65,
+                    "line": 65,
+                  },
+                  "value": "rabbits",
+                },
+                {
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "params": [],
+                      "phraseKey": "pet-parrot",
+                      "span": {
+                        "column": 9,
+                        "endColumn": 26,
+                        "endLine": 68,
+                        "line": 68,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "span": {
+                    "column": 7,
+                    "endColumn": 18,
+                    "endLine": 67,
+                    "line": 67,
+                  },
+                  "value": "parrot",
+                },
+              ],
+              "kind": "select-on",
+              "span": {
+                "column": 5,
+                "endColumn": 15,
+                "endLine": 69,
+                "line": 62,
+              },
+              "subject": {
+                "base": {
+                  "kind": "it",
+                },
+                "field": "kind",
+                "kind": "field",
+              },
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 70,
+            "line": 58,
+          },
+        },
+      ],
+      "scores": [
+        {
+          "name": "trait.pettable.petted",
+          "span": {
+            "column": 3,
+            "endColumn": 23,
+            "endLine": 46,
+            "line": 46,
+          },
+          "worth": 5,
+        },
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 71,
+        "line": 43,
+      },
+      "states": [],
+      "statesReversible": false,
+    },
+    {
+      "data": [
+        {
+          "initial": null,
+          "name": "food",
+          "oneOf": null,
+          "optional": false,
+          "type": "entity",
+        },
+      ],
+      "name": "feedable",
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "condition": {
+                "kind": "predicate",
+                "negated": false,
+                "object": {
+                  "base": {
+                    "kind": "it",
+                  },
+                  "field": "food",
+                  "kind": "field",
+                },
+                "pred": "has",
+                "subject": {
+                  "kind": "slot",
+                  "name": "actor",
+                },
+              },
+              "kind": "must",
+              "phraseKey": "no-food",
+              "span": {
+                "column": 5,
+                "endColumn": 42,
+                "endLine": 87,
+                "line": 87,
+              },
+            },
+            {
+              "condition": {
+                "kind": "predicate",
+                "negated": false,
+                "object": {
+                  "kind": "symbol",
+                  "name": "hungry",
+                },
+                "pred": "is",
+                "subject": {
+                  "kind": "it",
+                },
+              },
+              "kind": "must",
+              "phraseKey": "already-fed",
+              "span": {
+                "column": 5,
+                "endColumn": 35,
+                "endLine": 88,
+                "line": 88,
+              },
+            },
+            {
+              "entity": {
+                "kind": "it",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 25,
+                "endLine": 89,
+                "line": 89,
+              },
+              "state": "content",
+              "stmtWhen": null,
+            },
+            {
+              "event": "fed",
+              "kind": "emit",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 90,
+                "line": 90,
+              },
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "fed",
+              "span": {
+                "column": 5,
+                "endColumn": 15,
+                "endLine": 91,
+                "line": 91,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": null,
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "capability",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 92,
+            "line": 86,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 93,
+        "line": 73,
+      },
+      "states": [
+        "hungry",
+        "content",
+      ],
+      "statesReversible": true,
+    },
+  ],
+  "verbs": [],
+}
+`;

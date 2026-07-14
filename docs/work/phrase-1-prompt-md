@@ -1,0 +1,37 @@
+The image should be max 640px wide for a ghost header image. A clean technical pipeline diagram titled "Phrase Algebra — Post-Turn Text Emission",
+developer-documentation aesthetic: flat vector illustration, soft off-white background
+with a faint grid, crisp legible labels, generous whitespace, no skeuomorphism. 3:2
+aspect.
+
+Layout is a horizontal left-to-right flow with five labeled stages connected by thin
+arrows:
+
+STAGE 1 "Action executes" — a small rounded card showing a turn/command glyph.
+
+STAGE 2 "Domain Events" — a short vertical stack of 3 small event chips labeled
+"DoorUnlocked", "ItemTaken", "RoomEntered", flowing rightward.
+
+STAGE 3 "Map to phrase terms" — arrows from each event into the next stage.
+
+STAGE 4 (the centerpiece, largest) "Phrase Algebra expression" — a neat node-link tree
+drawn top-down inside a panel, presented as an algebraic expression tree. Root node
+"Sequence" labeled as an OPERATOR (combinator). Its children: a "NounPhrase" leaf
+labeled OPERAND (atom), a "Verb" leaf labeled OPERAND (atom), and a "Slot: here" node
+labeled OPERATOR (combinator) which itself has two children: an "Optional" wrapper
+labeled UNARY OPERATOR (modifier) containing a "Literal" leaf (operand), and a "Choice"
+wrapper labeled UNARY OPERATOR (modifier). Color-code by role using a legend: OPERAND
+(atom) = teal, OPERATOR (combinator) = indigo, UNARY OPERATOR (modifier) = amber. Each
+node is a small rounded pill with a monospace label. Render this stage to read like a
+math expression tree, not just a flowchart.
+
+STAGE 5 "Evaluate + Emit" — a panel listing four small check-marked passes in order:
+"Agreement (number · person · case · gender)", "Slot collection (multi-source)",
+"Empty absorption (no dangling commas)", "Punctuation authority". An arrow exits to a
+dark terminal-style output card showing the emitted line in monospace green text:
+"You unlock the oak door with the brass key."
+
+Include a compact legend box (bottom-left) mapping the three role colors to OPERAND,
+OPERATOR, UNARY OPERATOR (with atom/combinator/modifier as smaller secondary labels).
+Typography: sans-serif for stage titles, monospace for all node and code labels.
+Restrained palette of teal, indigo, amber on near-white with charcoal text. Sharp,
+high-contrast, presentation-quality, no clutter. 

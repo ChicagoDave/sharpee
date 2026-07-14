@@ -23,8 +23,9 @@
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
-import type { LanguageProvider } from '@sharpee/if-domain';
+import type { LanguageProvider, RenderContext } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
+import type { WorldModel } from '@sharpee/world-model';
 
 import { filterEvents } from './stages/filter';
 import { sortEventsForProse } from './stages/sort';
@@ -50,7 +51,7 @@ import { handleImplicitTake } from './handlers/implicit-take';
 import { handleCommandFailed } from './handlers/command-failed';
 import { handleClientQuery } from './handlers/client-query';
 
-import type { IProsePipeline, SlotContributor } from './types';
+import type { IProsePipeline, SlotContributor, SlotEntry } from './types';
 
 /**
  * Engine-internal prose pipeline.
@@ -66,6 +67,12 @@ export class ProsePipeline implements IProsePipeline {
   private readonly world?: WorldModelLike;
   /** Realize-time slot contributors, run in registration order each turn (ADR-195 §3). */
   private readonly slotContributors: SlotContributor[] = [];
+  /**
+   * Declarative slot entries (ADR-212 §1), keyed `(slotKey, owner)` — the
+   * `\0`-joined memo-key shape. Last-wins on re-registration (AC-7); never
+   * serialized, dropped with the pipeline on reload.
+   */
+  private readonly slotEntries = new Map<string, SlotEntry>();
 
   /**
    * @param languageProvider the active language provider (template → text)
@@ -94,6 +101,87 @@ export class ProsePipeline implements IProsePipeline {
     this.slotContributors.push(contributor);
   }
 
+  /**
+   * Register a declarative slot entry (ADR-212 §1). Keyed `(slotKey, owner)`,
+   * last-wins: `Map.set` replaces any prior entry under the same key, so a
+   * loader re-registering on story load never double-contributes (AC-7).
+   *
+   * `Choice` content carries its own counter keys; the caller contract
+   * (ADR-212 §4) is `entityId === owner` and `messageKey === counterKey ??
+   * slotKey`. A mismatch is a silent double-counter bug, so it is warned on
+   * here — never rewritten, never thrown (render-graceful posture).
+   *
+   * @param entry the slot entry to register (or replace).
+   */
+  registerSlotEntry(entry: SlotEntry): void {
+    if (entry.content.kind === 'choice') {
+      const expectedKey = entry.counterKey ?? entry.slotKey;
+      if (
+        entry.content.entityId !== entry.owner ||
+        entry.content.messageKey !== expectedKey
+      ) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[slot-entry] Choice content for ("${entry.slotKey}", "${entry.owner}") is counter-keyed ` +
+            `("${entry.content.entityId}", "${entry.content.messageKey}"); expected ` +
+            `("${entry.owner}", "${expectedKey}"). The counter will not track this entry's owner/counterKey.`,
+        );
+      }
+    }
+    this.slotEntries.set(`${entry.slotKey}\0${entry.owner}`, entry);
+  }
+
+  /**
+   * Evaluate every registered slot entry against this turn's staging context
+   * (ADR-212 §3) and contribute the content of each whose gate holds. Runs
+   * BEFORE story-registered contributors — platform entries first, then
+   * closures in registration order (deterministic `(order, insertion)` seq).
+   *
+   * Gate semantics: `owner-present` holds iff the owner shares the player's
+   * containing room at staging time; an owner missing from the world resolves
+   * to no room and simply never holds (AC-3 — a removed owner is inert, not an
+   * error). A `predicate` gate is story/runtime code: a throw is warned and
+   * treated as not-holding (render-graceful), never allowed to abort the turn.
+   *
+   * @param staging this turn's shared staging render context.
+   */
+  private stageSlotEntries(staging: RenderContext): void {
+    if (this.slotEntries.size === 0) return;
+    const playerId = staging.narrative?.playerId;
+    const playerRoomId =
+      playerId !== undefined
+        ? staging.world.getContainingRoom(playerId)?.id
+        : undefined;
+
+    for (const entry of this.slotEntries.values()) {
+      const gate = entry.gate ?? { kind: 'owner-present' as const };
+      let holds = false;
+      if (gate.kind === 'owner-present') {
+        // Both rooms must EXIST and match — a roomless player never gates an
+        // entry in, even against an equally roomless owner.
+        holds =
+          playerRoomId !== undefined &&
+          staging.world.getContainingRoom(entry.owner)?.id === playerRoomId;
+      } else {
+        try {
+          // The pipeline holds the minimal `WorldModelLike` surface; in
+          // production it IS the live `WorldModel` the predicate contract
+          // (ADR-212 §2) promises story code.
+          holds = gate.holds(this.world as WorldModel);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[slot-entry] predicate gate for ("${entry.slotKey}", "${entry.owner}") threw: ` +
+              `${(e as Error).message}. Entry contributes nothing this turn.`,
+          );
+        }
+      }
+      if (holds) {
+        staging.contribute(entry.slotKey, entry.content, { order: entry.order });
+      }
+    }
+  }
+
   processTurn(events: ISemanticEvent[]): ITextBlock[] {
     const filtered = filterEvents(events);
     const sorted = sortEventsForProse(filtered);
@@ -118,12 +206,18 @@ export class ProsePipeline implements IProsePipeline {
     };
 
     // ADR-195 §3: stage realize-time slot contributions BEFORE any message
-    // realizes. Each contributor runs once, in registration order, against a turn
-    // RenderContext whose `contribute` writes the per-turn store every later
-    // message context peeks via `slotContributions`. World-less pipelines have no
-    // factory, so there is nothing to stage into — contributors do not run.
-    if (makeRenderContext && this.slotContributors.length > 0) {
+    // realizes. Declarative slot entries (ADR-212) stage first — platform
+    // entries before story closures — then each contributor runs once, in
+    // registration order, against a turn RenderContext whose `contribute`
+    // writes the per-turn store every later message context peeks via
+    // `slotContributions`. World-less pipelines have no factory, so there is
+    // nothing to stage into — neither entries nor contributors run.
+    if (
+      makeRenderContext &&
+      (this.slotEntries.size > 0 || this.slotContributors.length > 0)
+    ) {
       const staging = makeRenderContext({});
+      this.stageSlotEntries(staging);
       for (const contributor of this.slotContributors) {
         contributor(staging);
       }

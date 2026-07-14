@@ -35,8 +35,11 @@ description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 [OK: contains "rainbow"]
 
 # Try to go east onto rainbow before waving - should be blocked
+# (the authored blocked-exit message renders now that going.ts checks
+# blockedExits before requiring an exit config)
 > east
-[OK: contains "can't go that way"]
+[OK: contains "too insubstantial to walk on"]
+[EVENT: false, type="if.event.actor_moved"]
 
 # Wave the stick to create solid rainbow
 > wave stick
@@ -69,4 +72,5 @@ description: Tests WAVE action and rainbow exit mechanics at Aragain Falls
 
 # Should no longer be able to go east
 > east
-[OK: contains "can't go that way"]
+[OK: contains "too insubstantial to walk on"]
+[EVENT: false, type="if.event.actor_moved"]

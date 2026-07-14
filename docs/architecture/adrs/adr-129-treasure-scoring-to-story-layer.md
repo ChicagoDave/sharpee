@@ -1,6 +1,14 @@
 # ADR-129: Transactional Score Ledger and Treasure Scoring Split
 
-## Status: PROPOSED
+## Status: ACCEPTED (implemented; status corrected 2026-07-14)
+
+> Status-line correction, 2026-07-14 (story-ts proposal review): this ADR
+> was left at PROPOSED while its decision shipped and became load-bearing —
+> the transactional `ScoreLedger` lives on `WorldModel` (`awardScore`,
+> dedup-by-identity), stories/dungeo and the Chord story-loader award
+> through it, and the loader cites this ADR in code ("Declared scores set
+> the ceiling (dedup-by-identity makes the sum exact — ADR-129)").
+> The record now matches reality; no decision content changed.
 
 ## Date: 2026-02-12
 

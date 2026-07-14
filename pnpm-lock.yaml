@@ -74,6 +74,9 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib
+      '@sharpee/story-loader':
+        specifier: workspace:*
+        version: link:../story-loader
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
@@ -217,6 +220,21 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
+  packages/chord:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
   packages/core:
     dependencies:
       eventemitter3:
@@ -250,15 +268,24 @@ importers:
       '@sharpee/bootstrap':
         specifier: workspace:*
         version: link:../bootstrap
+      '@sharpee/chord':
+        specifier: workspace:*
+        version: link:../chord
       '@sharpee/core':
         specifier: workspace:*
         version: link:../core
       '@sharpee/engine':
         specifier: workspace:*
         version: link:../engine
+      '@sharpee/story-loader':
+        specifier: workspace:*
+        version: link:../story-loader
       '@sharpee/transcript-tester':
         specifier: workspace:*
         version: link:../transcript-tester
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
@@ -423,6 +450,10 @@ importers:
         version: 5.9.3
 
   packages/ide-protocol:
+    dependencies:
+      '@sharpee/chord':
+        specifier: workspace:*
+        version: link:../chord
     devDependencies:
       '@types/node':
         specifier: ^20.8.0
@@ -892,6 +923,46 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
+  packages/story-loader:
+    dependencies:
+      '@sharpee/chord':
+        specifier: workspace:*
+        version: link:../chord
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@sharpee/helpers':
+        specifier: workspace:*
+        version: link:../helpers
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../if-domain
+      '@sharpee/plugin-scheduler':
+        specifier: workspace:*
+        version: link:../plugin-scheduler
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../world-model
+    devDependencies:
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
   packages/story-runtime-baseline:
     dependencies:
       '@sharpee/core':
@@ -1099,6 +1170,46 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
+  stories/cloak-of-darkness:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@sharpee/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@sharpee/event-processor':
+        specifier: workspace:*
+        version: link:../../packages/event-processor
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../../packages/if-domain
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../../packages/lang-en-us
+      '@sharpee/parser-en-us':
+        specifier: workspace:*
+        version: link:../../packages/parser-en-us
+      '@sharpee/platform-browser':
+        specifier: workspace:*
+        version: link:../../packages/platform-browser
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../../packages/stdlib
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../../packages/world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.19
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
 
   stories/dungeo:
     dependencies:

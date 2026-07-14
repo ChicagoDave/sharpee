@@ -27,3 +27,7 @@ export {
   isEntityCategory,
   isSourceRef,
 } from './guards.js';
+
+// Chord Story IR schema (ADR-210 Interface Contract 1) — source of truth
+// is @sharpee/chord; published here beside the manifest types.
+export * from './story-ir.js';

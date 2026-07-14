@@ -30,6 +30,7 @@ import type {
 } from '../capabilities/interceptor-binding';
 import type {
   IWorldModel,
+  EntityRemovalObserver,
   EventHandler,
   EventValidator,
   EventPreviewer,
@@ -165,6 +166,10 @@ export class AuthorModel implements IWorldModel {
 
   removeEntity(id: string): boolean {
     return this.worldModel.removeEntity(id);
+  }
+
+  onEntityRemoved(observer: EntityRemovalObserver): void {
+    this.worldModel.onEntityRemoved(observer);
   }
 
   getAllEntities(): IFEntity[] {

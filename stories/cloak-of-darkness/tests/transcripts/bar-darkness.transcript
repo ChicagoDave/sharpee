@@ -1,0 +1,41 @@
+title: Cloak golden gate — darkness in the bar
+story: cloak-of-darkness
+description: The Foyer Bar is dark while the player has the cloak
+  (`a room, dark while the player has the velvet cloak`), the stumble
+  rule fires on dark entry, the message is out of scope in the dark, and
+  hanging the cloak lights the bar. ADR-210 AC-1 golden gate (frozen
+  2026-07-10).
+
+# Note: this file's first dark entry moves the message to `trampled`
+# (first-time ordinal in the stumble rule). Reading outcomes for each
+# state are asserted in the message-*.transcript files.
+---
+
+# Enter the bar wearing the cloak: dark, and the stumble phrase fires
+> south
+[OK: contains "Blundering around in the dark isn't a good idea!"]
+
+> look
+[OK: contains "pitch dark"]
+[OK: not contains "message scrawled in the sawdust"]
+
+# The message is not in scope while dark
+> read message
+[OK: contains "can't see"]
+
+# Leave, hang up the cloak
+> north
+[OK: contains "Foyer of the Opera House"]
+
+> west
+> remove cloak
+> hang cloak on hook
+[OK: contains "put the velvet cloak on the brass hook"]
+
+# Return: the bar is lit now — full description, no stumble
+> east
+> south
+[OK: contains "Foyer Bar"]
+[OK: contains "much rougher than you'd have guessed"]
+[OK: contains "message scrawled in the sawdust"]
+[OK: not contains "Blundering"]

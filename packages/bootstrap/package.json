@@ -28,6 +28,7 @@
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/channel-service": "workspace:*",
     "@sharpee/engine": "workspace:*",
+    "@sharpee/story-loader": "workspace:*",
     "@sharpee/ext-testing": "workspace:*"
   },
   "devDependencies": {

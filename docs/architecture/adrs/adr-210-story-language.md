@@ -32,11 +32,14 @@
   in earlier drafts) — a declarative, block-structured language for authoring
   Sharpee stories; file extension `.story`. The CLI verb is **`sharpee
   compose`** (compile `.story` → IR/bundle): you compose a Chord story.
-  Package working names (`@sharpee/story-lang`, `@sharpee/story-loader`) to be
-  revisited against the name at Phase A package creation.
+  Package names decided at Phase A creation (owner, 2026-07-10):
+  **`@sharpee/chord`** (frontend — replaces working name `@sharpee/story-lang`)
+  and **`@sharpee/story-loader`** (kept: the loader is language-neutral, it
+  consumes IR and never sees Chord syntax). Only `@sharpee/chord` defines the
+  IR; no separate IR package (no second frontend is anticipated).
 - **Story IR** — the typed, JSON-serializable intermediate representation a
   `.story` file parses to. Nodes carry source spans.
-- **Loader** — the runtime interpreter (working name `@sharpee/story-loader`):
+- **Loader** — the runtime interpreter (`@sharpee/story-loader`):
   a generic `Story` implementation constructed from IR.
 - **Emitter** — the `sharpee eject` backend that transforms IR into fluent-style
   TypeScript. One-way.
@@ -161,9 +164,9 @@ New packages (working names):
 
 | Package | Owns | Depends on |
 |---|---|---|
-| `@sharpee/story-lang` | lexer, parser, semantic analysis, **IR wire types**, diagnostics | nothing platform-runtime (browser-safe; `if-domain` types at most) |
+| `@sharpee/chord` | lexer, parser, semantic analysis, **IR wire types**, diagnostics | nothing platform-runtime (browser-safe; `if-domain` types at most) |
 | `@sharpee/story-loader` | the generic `Story` built from IR; expression evaluator; occurrence materialization | world-model, stdlib, engine, lang-{locale}, plugin-scheduler, plugin-state-machine, core (`SeededRandom`) |
-| emitter | `sharpee eject` command | story-lang (IR) + devkit (Phase D; lives in devkit) |
+| emitter | `sharpee eject` command | chord (IR) + devkit (Phase D; lives in devkit) |
 
 **Direction rule:** nothing platform depends on the language packages. The
 compiler is pure (parse anywhere, including the playground); the loader is a
@@ -197,9 +200,13 @@ cannot dangle.
 
 ## Interface Contracts
 
-1. **IR schema** — versioned wire format published in `@sharpee/ide-protocol`
-   beside the ADR-184 manifest types; nodes carry source spans; the
-   introspection manifest is generated from it.
+1. **IR schema** — versioned wire format; nodes carry source spans; the
+   introspection manifest is generated from it. Canonical source of truth is
+   `@sharpee/chord` (per the Packages table); `@sharpee/ide-protocol`
+   re-exports it beside the ADR-184 manifest types. This gives ide-protocol
+   (tooling, not runtime) a dependency on chord; the Direction rule
+   constrains the *runtime* platform, which still never depends on the
+   language packages. (Owner-confirmed 2026-07-10.)
 2. **Event-selector / context-value contract** — the map from language forms
    (`enters`, `reads`, `the previous location`, grammar slot names) to
    `if.event.*` types and payload shapes is **verified against** stdlib's
@@ -275,10 +282,13 @@ land as reduced fallbacks first.
 
 ## Acceptance Criteria
 
-- **AC-1** `cloak.story`, interpreted by the loader, passes the existing
-  cloak-of-darkness transcript suite unmodified except two documented
+- **AC-1** `cloak.story`, interpreted by the loader, passes the
+  cloak-of-darkness golden transcript suite unmodified except two documented
   divergences (blocked north exit replaces the Outside room; canonical
-  re-darkening when the cloak is retrieved). *Gate for Phase A.*
+  re-darkening when the cloak is retrieved). *Gate for Phase A.* (Amended
+  2026-07-10: no `.transcript` suite existed for cloak-of-darkness — only a
+  Vitest unit suite — so the golden suite is authored in Phase A against the
+  hand-written story's behavior, then frozen as this gate.)
 - **AC-2** `friendly-zoo.story` passes the zoo transcript suite, exercising
   custom actions, dispatch, scheduler, NPC behaviors, scoring, and one hatch.
   *Gate for Phase B.*
@@ -306,7 +316,10 @@ land as reduced fallbacks first.
 ## Implementation Phasing
 
 - **Phase A — Cloak-complete core** (lexer/parser/IR, loader subset, seeded
-  RNG): gate AC-1, AC-3, AC-5, AC-6, AC-10.
+  RNG): gate AC-1, AC-3, AC-5, AC-6, AC-10. Includes the ActionInterceptor
+  half of four-phase compilation for entity-scoped `on`-blocks (required by
+  AC-1 for `cloak.story`'s `on reading it`); the CapabilityBehavior/dispatch
+  half stays in Phase B. (Phasing note added 2026-07-10.)
 - **Phase B — Zoo-complete** (action/trait declarations, four-phase compilation,
   role binding, scheduler, phrase strategies, hatch contract): gate AC-2, AC-4,
   AC-9.

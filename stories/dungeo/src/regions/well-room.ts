@@ -552,7 +552,8 @@ function createDingyClosetObjects(world: WorldModel, roomId: string): void {
   const closetTrait = closet?.get(RoomTrait);
   if (closetTrait) {
     closetTrait.snippets = {
-      cage: { text: ' A strange metal cage sits in the middle of the room.', mentions: cage.id },
+      // Bare fragment (ADR-211): sentence site; the mentions gate is unchanged.
+      cage: { text: 'A strange metal cage sits in the middle of the room.', mentions: cage.id },
     };
   }
 

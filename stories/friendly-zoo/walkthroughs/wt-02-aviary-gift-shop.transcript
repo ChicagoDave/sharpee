@@ -1,0 +1,53 @@
+title: Zoo Walkthrough 2 — Aviary and Gift Shop
+story: friendly-zoo
+description: Chained full-playthrough, chapter 2 of 5. The parrot's cycling flavor with the once-only aside, cycle position surviving save/restore (absorbs the old wt-05 choice-cycle proof, ADR-196 C2), and the camera pickup. Continues from wt-01.
+---
+
+# Into the aviary (visit score) — the parrot notices new arrivals.
+> west
+[OK: contains "Aviary"]
+[OK: contains "The parrot ruffles its feathers and eyes you with interest"]
+
+# Examine 1 — cycle variant 0 + the first-time aside.
+> examine parrot
+[OK: contains "whistles a jaunty tune"]
+[OK: contains "rescues from the illegal pet trade"]
+
+# Examine 2 — cycle variant 1; the once-only aside is gone.
+> examine parrot
+[OK: contains "Pretty bird"]
+[OK: not contains "rescues from the illegal pet trade"]
+
+# Save with the cycle counter at 2.
+$save parrot-mid
+
+# Examine 3 — cycle variant 2. Turn 10: the two-hour PA rides this turn.
+> examine parrot
+[OK: contains "theatrical disdain"]
+[OK: contains "Two hours until closing"]
+
+# Restore: the world (and its textState counter) goes back to 2.
+$restore parrot-mid
+
+# Resumes at variant 2 — the counter persisted in the save (AC-8).
+# The engine turn marches on through a restore while the world's
+# sequence pointers rewind, so the replayed two-hour PA and the first
+# feeding call both ride this turn.
+> examine parrot
+[OK: contains "theatrical disdain"]
+[OK: not contains "whistles a jaunty tune"]
+[OK: contains "FEEDING TIME"]
+
+# West to the gift shop (visit score).
+> west
+[OK: contains "Gift Shop"]
+[OK: contains "disposable camera"]
+
+> take camera
+[OK: contains "Taken"]
+
+> examine pins
+[OK: contains "costs more than it should"]
+
+> east
+[OK: contains "Aviary"]

@@ -36,6 +36,21 @@ The design axioms, in the order they were established:
    if-then-else, select blocks, iterate-through, explicit `end` terminators. Domain
    statements (`refuse`, `phrase`, `set`, `change`, `move`, `emit`, `award`, `win`,
    `lose`) inside conventional blocks — no clever clause grammar.
+   *(Amended 2026-07-11, ownership package, David: "If can be dropped.")*
+   **if-then-else is removed.** Validation guards are `must`-form requirements
+   (`it must be hungry: already-fed`); moment conditionals are the statement
+   `when` suffix (`award farewell when the player can see it`); `select` blocks
+   remain the branching construct. And `change` is **gated to declared named
+   states**, where the boolean gate is pattern detection, not a reserved-word
+   list (David's clarification, 2026-07-11): catch any author implementing
+   pos/neg states and encourage real states. Three rings — literal booleans
+   (`true`/`false`/`yes`/`no`: error, no cheating); platform-shadow pairs
+   (`open`/`closed` etc.: error, compose the owning trait instead); and
+   negation-shaped pairs (`fed`/`unfed`, `not-X`, `un-X`, `non-X`, `X-less`:
+   error with an encouraging fix-it). The principle the diagnostic teaches:
+   a state names what the thing IS, never the absence of another state — the
+   unfound positive name is where the domain insight lives (`fed: flag` →
+   `hungry`/`content`).
 
 5. **Counting up and down is implied — the author defines no counting mechanism at
    all.** No counters, no count queries. The syntax differentiates multiple events by
@@ -57,6 +72,35 @@ The design axioms, in the order they were established:
    **Meta-rule:** modifiers are adverbs — one word wherever English has one
    (`randomly`, not `at random`; `ordered`, not `in order`). A multi-word form is
    admitted only when no single word exists; no current modifier qualifies.
+
+8. **Global true/false flags are forbidden.** (David, 2026-07-11, from the Phase B
+   DDD review — docs/work/chord/ddd-review.md.) There is no global boolean
+   namespace; `define flag` is removed from the language. Every fact is either
+   *derived* — a condition over world state (`dark while the player has the velvet
+   cloak`) — or *owned* — declared data or `states:` on the object the fact is
+   about. A global boolean flattens a state machine and shadows world truth; all
+   three Zoo flags (`gate-closed`, `after-hours`, `feeding-time-active`) failed
+   exactly this way. Entity-owned boolean fields were initially exempted, then
+   removed too (David, 2026-07-11 follow-up): the `flag` field type leaves trait
+   data, replaced by **trait-declared states** — feedable's `fed: flag` was the
+   `hungry`/`content` state machine in disguise (its own already-fed message said
+   "contentedly full"), and it stored the wrong fact besides (one-shot feeding
+   under a recurring feeding-time schedule). Booleans are gone from the language
+   at every scope.
+9. **Stickiness: all behaviors belong to "something."** (David, 2026-07-11 —
+   promoted from the Phase B DDD review.) Behavior sticks to the data it operates
+   on — foundational DDD. Not just state: rules, reactions, and schedules attach
+   to the object they are about. A rule about entering the Aviary lives on the
+   Aviary, not in a floating `when` block; a vignette about the goats lives on the
+   goats. The story itself is an object — declared `states:` and data on the story
+   header — and is the sanctioned home ("cheat" location) for genuinely
+   story-scoped behavior: schedules, phases, endings, vocabulary. Type
+   definitions (`define trait`, `define action`) are unaffected: they declare
+   *kinds* of something, and their clauses are sticky to whatever composes them.
+   Together with given 8 this deletes Chord's unsticky half (floating `when`/
+   `once`/`every` rules, global flags, orphan phrase keys) rather than adding a
+   construct — the sticky forms (on-clauses, trait clauses, per-entity phrases)
+   already exist and are the language at its best.
 
 ---
 
@@ -118,16 +162,14 @@ syntax. `in`/`on`/`wears` lines are placement. Conditional composition
 ```
 define trait lockable
   data
-    locked: flag
     key: entity
+  states, reversible: locked, unlocked
 
   phrases en-US
     locked: "{capitalize the item} {verb:is item} locked."
 
   on opening it, before openable
-    if locked then
-      refuse locked
-    end if
+    it must be unlocked: locked
   end on
 end trait
 ```
@@ -162,11 +204,8 @@ define action taking
   award the item's points, once
 
   emit taken
-  if the previous location is a container or a supporter then
-    phrase taken-from
-  else
-    phrase taken
-  end if
+  phrase taken-from when the previous location is a container or a supporter
+  phrase taken when not (the previous location is a container or a supporter)
 ```
 
 - Multi-object commands are **grammar cardinality** (`take all → each …`); the
@@ -190,13 +229,16 @@ end iterate`, ordinal blocks (`first time`, `third time`) inside rules.
 Four number-free forms cover what counters did:
 
 ```
-when the player enters the Foyer Bar while in-darkness
-  phrase stumble
-  first time
-    change the message to trampled       ← ordinal blocks
-  third time
-    change the message to obliterated
-end when
+create the Foyer Bar
+  a room, dark while the player has the velvet cloak
+
+  after entering it while in-darkness
+    phrase stumble
+    first time
+      change the message to trampled     ← ordinal blocks
+    third time
+      change the message to obliterated
+  end after
 ```
 
 ```
@@ -242,7 +284,11 @@ end phrase
   (`{You} {open} {the item}`, `{verb:is item}`), and params ship as EntityInfo
   automatically (ADR-158 becomes compiler-enforced).
 - Prose block form (`phrase <id>` + indented bare text) exists because IF prose is
-  saturated with quotation marks; quoted form for short interjections.
+  saturated with quotation marks. **The prose block is the ONLY phrase-text form**
+  (grammar log 2026-07-10 — the quoted/bare same-line forms were removed; quotes
+  remain for header strings and hatch paths). A blank line inside a prose block is
+  a paragraph break; `{br}` is the built-in hard line break; `define phrase X,
+  verbatim` preserves whitespace exactly. §3.1 amended accordingly.
 - Inline prose anywhere is declare-and-emit sugar: it registers under a derived ID.
 - Two authoring modes, one IR: stdlib uses keys + `phrases <locale>` blocks
   (localizable); story authors may inline (compiler derives keys, registers in the
@@ -332,6 +378,14 @@ create the Foyer Bar
   the foyer to the north, is completely empty. There seems to be some
   sort of message scrawled in the sawdust on the floor.
 
+  after entering it while in-darkness
+    phrase stumble
+    first time
+      change the message to trampled
+    third time
+      change the message to obliterated
+  end after
+
 create the player
   starts in the Foyer of the Opera House
   wears the velvet cloak
@@ -372,24 +426,18 @@ create the message in the sawdust
     end select
   end on
 
-when the player enters the Foyer Bar while in-darkness
-  phrase stumble
-  first time
-    change the message to trampled
-  third time
-    change the message to obliterated
-end when
-
 define verb hang or hook means put (something) on (something)
 
 define phrases en-US
   cant-leave:
     You've only just arrived, and besides, the weather outside seems
     to be getting worse.
-  stumble: "Blundering around in the dark isn't a good idea!"
+  stumble:
+    Blundering around in the dark isn't a good idea!
   message-intact:
     The message, neatly marked in the sawdust, reads... You have won!
-  message-trampled: "You can just make out: {garbled}"
+  message-trampled:
+    You can just make out: {garbled}
   message-obliterated:
     The message has been trampled beyond recognition. You have lost!
 
@@ -404,8 +452,7 @@ prose inline and requiring no toolchain.
 
 ```
 define trait openable
-  data
-    open: flag, starts false
+  states, reversible: closed, open
 
   phrases en-US
     already-open: "{capitalize the item} {verb:is item} already open."
@@ -413,22 +460,16 @@ define trait openable
     opened-empty: "{You} {open} {the container}, which is empty."
 
   on opening it
-    if open then
-      refuse already-open
-    end if
-    set open to true
+    it must be closed: already-open
+    change it to open
     emit opened
-    if it is a container and it holds nothing then
-      phrase opened-empty
-    else
-      phrase opened
-    end if
+    phrase opened-empty when it is a container and it holds nothing
+    phrase opened when not (it is a container and it holds nothing)
   end on
 end trait
 
 define trait wearable
   data
-    worn: flag, starts false
     body part: optional name
 
   phrases en-US
@@ -437,13 +478,9 @@ define trait wearable
     worn:            "{You} {put on} {the item}."
 
   on wearing it
-    if worn then
-      refuse already-wearing
-    end if
-    if the actor wears any item where its body part is the item's body part then
-      refuse hands-full with other item = the match
-    end if
-    set worn to true
+    refuse when it is worn: already-wearing
+    refuse when the actor wears any item where its body part is the item's body part: hands-full with other item = the match
+    change it to worn
     emit worn
     phrase worn
   end on
@@ -459,12 +496,8 @@ define trait container
     too-heavy:      "Your load is too heavy. You will have to leave something behind."
 
   on taking anything as the taker
-    if the taker holds max items or more items where each is not worn then
-      refuse container-full
-    end if
-    if the taker's total weight plus the item's weight is over max weight then
-      refuse too-heavy
-    end if
+    refuse when the taker holds max items or more items where each is not worn: container-full
+    refuse when the taker's total weight plus the item's weight is over max weight: too-heavy
   end on
 end trait
 ```
@@ -476,8 +509,12 @@ privilege, not in kind.
 ### 3.3 Friendly Zoo — NPC chatter, timeline, phase flip
 
 ```
+story "Friendly Zoo" by "Sharpee Team"
+  id: friendly-zoo
+  states: open, after-hours
+
 define trait chatty
-  on every turn while the player can see it and one chance in 2
+  on every turn while one chance in 2
     phrase parrot-chatter
   end on
 end trait
@@ -489,8 +526,6 @@ or
 or
   Pieces of eight! Pieces of eight!
 end phrase
-
-define flag after-hours starts false
 
 define sequence closing time
   at turn 5
@@ -510,15 +545,20 @@ define sequence closing time
     phrase zoo.pa.closed
       *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for
       visiting! We hope to see you again soon!"
-    set after-hours to true
+    change the story to after-hours
 end sequence
 
-once after-hours
-  move Sam the zookeeper offstage
-  phrase zoo.after-hours.keeper-leaves
-    Sam the zookeeper checks her watch, waves goodnight to the animals,
-    and lets herself out through the staff gate.
-end once
+create the zookeeper
+  a person
+  aka keeper, sam
+  in the Main Path
+
+  on every turn while after-hours, once
+    phrase departs
+      Sam the zookeeper checks her watch, waves goodnight to the animals,
+      and lets herself out through the staff gate.
+    move it to the Staff Parking Lot
+  end on
 
 create the parrot
   a person
@@ -544,6 +584,8 @@ define action petting
   the animal must be reachable
   refuse without animal: pet-what
   otherwise refuse cant-pet
+  score pet-an-animal worth 5
+  award pet-an-animal
 
   phrases en-US
     pet-what: "Pet what?"
@@ -571,9 +613,7 @@ define trait pettable
     glass-way:   "You press your hand to the glass. The snake regards you coolly from the other side."
 
   on petting it
-    if kind is snake then
-      refuse glass-way
-    end if
+    refuse when kind is snake: glass-way
     emit petted
     select on kind
       when goats
@@ -589,7 +629,7 @@ end trait
 define trait feedable
   data
     food: entity
-    fed: flag, starts false
+  states, reversible: hungry, content
 
   phrases en-US
     no-food:     "You have nothing {the animal} would want to eat."
@@ -597,13 +637,9 @@ define trait feedable
     fed:         "{capitalize the animal} eagerly gobbles up the feed."
 
   on feeding it
-    if not (the actor has its food) then
-      refuse no-food
-    end if
-    if fed then
-      refuse already-fed
-    end if
-    set fed to true
+    the actor must have its food: no-food
+    it must be hungry: already-fed
+    change it to content
     emit fed
     phrase fed
   end on
@@ -615,23 +651,24 @@ create the pygmy goats
   in the Petting Zoo
   pettable with kind goats
   feedable with food the handful of feed
+  score fed worth 10
   phrase fed: "The goats butt each other out of the way to get at the feed. Happy chaos."
 
-define score pet-an-animal worth 5
-define score feed-the-goats worth 10
-define score feed-the-rabbits worth 10
+  after feeding it
+    award fed
+  end after
 
-when the player pets anything
-  award pet-an-animal
-end when
+create the rabbits
+  aka bunnies
+  plural
+  in the Petting Zoo
+  pettable with kind rabbits
+  feedable with food the handful of feed
+  score fed worth 10
 
-when the player feeds the pygmy goats
-  award feed-the-goats
-end when
-
-when the player feeds the rabbits
-  award feed-the-rabbits
-end when
+  after feeding it
+    award fed
+  end after
 ```
 
 Notes established by this example:
@@ -640,12 +677,14 @@ Notes established by this example:
   and phrases reference `the animal` throughout the action and its traits.
 - **`otherwise refuse <phrase>`** is the canonical last-resort form: it compiles to
   the dispatch-miss case (no trait claimed the action on this target).
-- **Scoring lives in story rules, not traits** — an improvement over the shipped
-  TS: `pettable`/`feedable` stay story-agnostic; the story attaches point values by
-  reacting to `petted`/`fed` events. Scores dedupe by identity (ADR-129), so
-  "once" is automatic.
-- **`define score X worth N`** declares score identities (replaces
-  ScoreIds/ScorePoints constant maps); `award <score>` is the statement.
+- **Scoring lives on owners, not in trait bodies** — an improvement over the shipped
+  TS: `pettable`/`feedable` stay story-agnostic; each entity (or action) attaches its
+  own point value with a `score` line and awards it in an `after` clause. Scores
+  dedupe by identity (ADR-129), so "once" is automatic.
+- **`score X worth N`** is an owner-attached line (create blocks, trait blocks,
+  action blocks, story header — replaces ScoreIds/ScorePoints constant maps);
+  identities are owner-scoped (the goats' `fed` ≠ the rabbits' `fed`) and
+  `award <name>` resolves to the owner's score.
 - **Per-entity phrase override** (`phrase fed: "…"` in a create block) overrides a
   trait's phrase for that entity via an entity-scoped registration the renderer
   prefers — the generalization of scenery's per-entity cant-take message. Lets a
@@ -812,7 +851,42 @@ engine's seeded RNG service so transcript testing and undo/replay behave.
   stories only** (hatches refused at load); standalone authors with the devkit
   get the full seam. The seam is nominal and narrow by design.
 
-### 5.7 Backend B — the TypeScript emitter ("eject")
+**Hatch legitimacy rule (decision — David, 2026-07-11).** Any hatch doing IF
+work is either a Chord gap or a misuse of the hatch. A hatch is legitimate in
+exactly two shapes:
+
+1. **Sharpee-API hatch** — implements a public platform interface
+   (`PhraseProducer`, `Action`, `CapabilityBehavior`) and touches the world
+   only through public platform surfaces (typed contracts, traits, behaviors).
+2. **Pure-computation hatch** — arbitrary TypeScript doing non-IF work
+   (procedural generation, math, text crunching); data crosses the boundary
+   only through the implemented interface.
+
+Triage for everything else: if Chord already expresses it, the hatch is
+misuse — the fix is the Chord form. If Chord can't express it yet, the hatch
+is a **language gap**: file it, and the interim hatch still keeps to shape 1
+or 2. Hatch count is a language-gap metric; the pure-IR profile is the
+scoreboard.
+
+**The `chord.*` state namespace is off-limits to hatches.** Those keys are
+the loader's private encoding of Chord semantics; language ratchets change
+them without warning and nothing recompiles a hatch. Cautionary precedent
+(Phase C): zoo's `gateStatus` producer read `chord.flag.gate-closed` by
+string; the flag removal (givens 8+9) deleted the namespace, and the hatch
+would silently report the gate permanently open — no compile error, no load
+error, no diagnostic.
+
+**Enforcement is by construction, not policy.** The producer context *type*
+already omits world access — `gateStatus` cast its way through, which is the
+proof that policy without construction fails. The contract: the loader hands
+hatches a narrow, typed, versioned context exposing public surfaces only, so
+a hatch cannot misuse what it is never given; a load-time lint for `'chord.'`
+string literals in hatch modules backstops cast-arounds. The narrow context
+is also the IDE contract — the IDE can state exactly what a hatch *can* touch
+even when it can't see what the hatch does. Implementation (runtime context
+narrowing + lint) is a story-loader change tracked as Phase C follow-up work;
+until it lands the rule is enforced by review, and Phase C P5 retires the one
+violating hatch (below).
 
 `sharpee eject` walks the IR and emits fluent-layer TypeScript (the dream-cloak
 vocabulary — which survives as the emitter target and the loader's internal API,
@@ -835,10 +909,12 @@ eject-then-verify can run the same transcripts against both forms.
 
 ### 5.9 Verification strategy
 
-- **Golden gate:** the interpreted `cloak.story` must pass the existing
-  cloak-of-darkness transcripts unmodified (two documented divergences: blocked
+- **Golden gate:** the interpreted `cloak.story` must pass the cloak-of-darkness
+  golden transcripts unmodified (two documented divergences: blocked
   north exit replaces the Outside room; canonical re-darkening when the cloak is
   retrieved). Transcript tests are behavior-parity proofs; the harness exists.
+  (Amended 2026-07-10: no `.transcript` suite existed for cloak — the golden
+  suite is authored in Phase A against the hand-written story, then frozen.)
 - **Second gate:** friendly-zoo in `.story` form against its transcript suite —
   this exercises actions, dispatch, scheduler, NPC behaviors, scoring, and the
   hatch seam.

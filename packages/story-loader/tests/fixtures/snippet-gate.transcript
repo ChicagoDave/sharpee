@@ -1,0 +1,47 @@
+title: Snippet gate fixture — Z2 gated markers end-to-end
+story: snippet-gate
+description: A gated {key} marker renders through the full platform stack. The `note` fragment rides the mentions gate (the brass bell is here — presence in the marker's room), the `hum` fragment rides the ADR-211 registered gate seam (the machine is humming — a state condition). Both start gated out; the description must render clean with no stray separators.
+---
+
+# Both fragments gated out: clean prose, no separators leak.
+> look
+[OK: contains "Shelves line the walls. A door leads north."]
+[OK: not contains "brass bell gleams"]
+[OK: not contains "vibrates"]
+
+# Flip the seam-gated condition: the machine starts humming.
+> examine machine
+[OK: contains "shudders into a low hum"]
+
+# The hum fragment now splices at its clause site (platform comma).
+> look
+[OK: contains "walls, and the air vibrates faintly."]
+[OK: not contains "brass bell gleams"]
+
+# Fetch the bell — presence (mentions) gates the note fragment in.
+> north
+[OK: contains "cramped annex"]
+
+> take bell
+[OK: contains "Taken"]
+
+> south
+[OK: contains "Lab"]
+
+# Both fragments now render, in marker order, each with its own comma join.
+> look
+[OK: contains "walls, and a brass bell gleams on a shelf, and the air vibrates faintly."]
+
+# Drop the bell in the annex again: the note fragment gates back out.
+> north
+[OK: contains "Annex"]
+
+> drop bell
+[OK: contains "Dropped"]
+
+> south
+[OK: contains "Lab"]
+
+> look
+[OK: contains "walls, and the air vibrates faintly."]
+[OK: not contains "brass bell gleams"]

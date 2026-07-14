@@ -1,0 +1,53 @@
+/**
+ * chord-extras.ts — TS escape hatch for zoo.story (ADR-210 §5.6).
+ *
+ * Bound by `define text flavor from "./chord-extras.ts"`: the loader binds
+ * the named export to the `{flavor}` marker in the parrot's description.
+ * Returns the same persistent cycling Choice the hand-written story's C2
+ * consumer stages (dynamic-text.ts), keyed to the parrot so the cycle
+ * position survives save/restore.
+ *
+ * Public interface: flavor, aside (PhraseProducers, ADR-196). Both are
+ * Sharpee-API hatches per the legitimacy rule (design.md §5.6); the former
+ * gateStatus producer was retired in Phase C P5 into a pure-Chord
+ * state-conditional phrase (it read a loader-private state key by string,
+ * a namespace that no longer exists).
+ * Owner context: @sharpee/story-friendly-zoo (story content; Chord edition).
+ */
+import type { Choice, Literal, PhraseProducer } from '@sharpee/if-domain';
+
+const lit = (text: string): Literal => ({ kind: 'literal', text });
+
+/** Cycling parrot flavor line (C2), keyed to the parrot entity. */
+export const flavor: PhraseProducer = () => {
+  const choice: Choice = {
+    kind: 'choice',
+    selector: 'cycling',
+    alternatives: [
+      lit('The parrot ruffles its scarlet feathers and whistles a jaunty tune.'),
+      lit('The parrot cocks its head and rasps, "Pretty bird! Pretty bird!"'),
+      lit('The parrot preens one wing, ignoring you with theatrical disdain.'),
+    ],
+    entityId: 'zoo-parrot',
+    messageKey: 'parrot-cycle',
+  };
+  return choice;
+};
+
+/**
+ * Once-only plaque aside (C2 firstTime): the leading space lives inside
+ * alt[0]; later examinations get Empty, ending the sentence cleanly.
+ */
+export const aside: PhraseProducer = () => {
+  const choice: Choice = {
+    kind: 'choice',
+    selector: 'firstTime',
+    alternatives: [
+      lit(' (A small plaque notes the macaws are rescues from the illegal pet trade.)'),
+      { kind: 'empty' } as never,
+    ],
+    entityId: 'zoo-parrot',
+    messageKey: 'parrot-aside',
+  };
+  return choice;
+};

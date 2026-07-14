@@ -1,0 +1,827 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > matches the golden IR snapshot 1`] = `
+{
+  "actions": [
+    {
+      "body": [
+        {
+          "body": [
+            {
+              "entity": {
+                "kind": "match",
+              },
+              "kind": "move",
+              "place": {
+                "id": "trophy-barn",
+                "kind": "entity",
+              },
+              "span": {
+                "column": 5,
+                "endColumn": 38,
+                "endLine": 41,
+                "line": 41,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "condition": "stray-treasure",
+          "kind": "each",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 42,
+            "line": 40,
+          },
+        },
+        {
+          "kind": "phrase",
+          "params": [],
+          "phraseKey": "tally-note",
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 43,
+            "line": 43,
+          },
+          "stmtWhen": {
+            "condition": "stray-treasure",
+            "kind": "any-of",
+          },
+        },
+      ],
+      "constraints": [],
+      "musts": [
+        {
+          "condition": {
+            "condition": "barn-occupant",
+            "kind": "satisfies",
+            "subject": {
+              "kind": "player",
+            },
+          },
+          "phraseKey": "not-here",
+          "span": {
+            "column": 3,
+            "endColumn": 49,
+            "endLine": 32,
+            "line": 32,
+          },
+        },
+      ],
+      "name": "tallying",
+      "otherwise": null,
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "tally",
+            },
+          ],
+        },
+      ],
+      "refusals": [],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 44,
+        "endLine": 43,
+        "line": 29,
+      },
+    },
+  ],
+  "conditions": [
+    {
+      "condition": {
+        "kind": "and",
+        "operands": [
+          {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "kind": "symbol",
+              "name": "treasure",
+            },
+            "pred": "is-a",
+            "subject": {
+              "kind": "it",
+            },
+          },
+          {
+            "kind": "predicate",
+            "negated": true,
+            "object": {
+              "id": "trophy-barn",
+              "kind": "entity",
+            },
+            "pred": "is-in",
+            "subject": {
+              "kind": "it",
+            },
+          },
+        ],
+      },
+      "name": "stray-treasure",
+      "open": true,
+      "span": {
+        "column": 1,
+        "endColumn": 83,
+        "endLine": 6,
+        "line": 6,
+      },
+    },
+    {
+      "condition": {
+        "kind": "and",
+        "operands": [
+          {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "kind": "symbol",
+              "name": "treasure",
+            },
+            "pred": "is-a",
+            "subject": {
+              "kind": "it",
+            },
+          },
+          {
+            "kind": "predicate",
+            "negated": false,
+            "object": {
+              "kind": "it",
+            },
+            "pred": "holds",
+            "subject": {
+              "kind": "player",
+            },
+          },
+        ],
+      },
+      "name": "alarm-trigger",
+      "open": true,
+      "span": {
+        "column": 1,
+        "endColumn": 73,
+        "endLine": 7,
+        "line": 7,
+      },
+    },
+    {
+      "condition": {
+        "kind": "predicate",
+        "negated": false,
+        "object": {
+          "id": "trophy-barn",
+          "kind": "entity",
+        },
+        "pred": "is-in",
+        "subject": {
+          "kind": "it",
+        },
+      },
+      "name": "barn-occupant",
+      "open": true,
+      "span": {
+        "column": 1,
+        "endColumn": 57,
+        "endLine": 8,
+        "line": 8,
+      },
+    },
+  ],
+  "entities": [
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [
+        {
+          "condition": {
+            "condition": "alarm-trigger",
+            "kind": "any-of",
+          },
+          "direction": "north",
+          "phraseKey": "sealed-up",
+          "span": {
+            "column": 3,
+            "endColumn": 54,
+            "endLine": 47,
+            "line": 47,
+          },
+        },
+      ],
+      "descriptionKey": "trophy-barn.description",
+      "exits": [],
+      "id": "trophy-barn",
+      "initialDescriptionKey": null,
+      "isPlayer": false,
+      "kinds": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "room",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 46,
+            "line": 46,
+          },
+        },
+      ],
+      "name": "Trophy Barn",
+      "onClauses": [],
+      "placement": null,
+      "span": {
+        "column": 1,
+        "endColumn": 44,
+        "endLine": 49,
+        "line": 45,
+      },
+      "states": [],
+      "statesReversible": false,
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": null,
+      "exits": [],
+      "id": "player",
+      "initialDescriptionKey": null,
+      "isPlayer": true,
+      "kinds": [],
+      "name": "player",
+      "onClauses": [],
+      "placement": {
+        "place": "trophy-barn",
+        "relation": "starts-in",
+        "span": {
+          "column": 3,
+          "endColumn": 28,
+          "endLine": 52,
+          "line": 52,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 28,
+        "endLine": 52,
+        "line": 51,
+      },
+      "states": [],
+      "statesReversible": false,
+      "traits": [],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": null,
+      "exits": [],
+      "id": "no-smoking-sign",
+      "initialDescriptionKey": null,
+      "isPlayer": false,
+      "kinds": [],
+      "name": "no smoking sign",
+      "onClauses": [],
+      "placement": {
+        "place": "trophy-barn",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 56,
+          "line": 56,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 21,
+        "endLine": 56,
+        "line": 54,
+      },
+      "states": [
+        "calm",
+        "spooked",
+      ],
+      "statesReversible": false,
+      "traits": [
+        {
+          "condition": null,
+          "config": [],
+          "name": "skittish",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 55,
+            "line": 55,
+          },
+        },
+      ],
+      "wears": [],
+    },
+    {
+      "aka": [],
+      "article": "the",
+      "blockedExits": [],
+      "descriptionKey": null,
+      "exits": [],
+      "id": "pygmy-goat",
+      "initialDescriptionKey": null,
+      "isPlayer": false,
+      "kinds": [],
+      "name": "pygmy goat",
+      "onClauses": [
+        {
+          "action": "feeding",
+          "binding": "it",
+          "body": [
+            {
+              "body": [
+                {
+                  "kind": "phrase",
+                  "params": [
+                    {
+                      "param": "animal",
+                      "span": {
+                        "column": 28,
+                        "endColumn": 46,
+                        "endLine": 64,
+                        "line": 64,
+                      },
+                      "value": {
+                        "kind": "match",
+                      },
+                    },
+                  ],
+                  "phraseKey": "fed-note",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 46,
+                    "endLine": 64,
+                    "line": 64,
+                  },
+                  "stmtWhen": null,
+                },
+                {
+                  "kind": "phrase",
+                  "params": [],
+                  "phraseKey": "hungry-note",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 50,
+                    "endLine": 65,
+                    "line": 65,
+                  },
+                  "stmtWhen": {
+                    "kind": "predicate",
+                    "negated": false,
+                    "object": {
+                      "kind": "symbol",
+                      "name": "hungry",
+                    },
+                    "pred": "is",
+                    "subject": {
+                      "kind": "match",
+                    },
+                  },
+                },
+                {
+                  "body": [
+                    {
+                      "entity": {
+                        "kind": "match",
+                      },
+                      "kind": "move",
+                      "place": {
+                        "id": "trophy-barn",
+                        "kind": "entity",
+                      },
+                      "span": {
+                        "column": 9,
+                        "endColumn": 42,
+                        "endLine": 67,
+                        "line": 67,
+                      },
+                      "stmtWhen": null,
+                    },
+                  ],
+                  "condition": "stray-treasure",
+                  "kind": "each",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 15,
+                    "endLine": 68,
+                    "line": 66,
+                  },
+                },
+              ],
+              "condition": "barn-occupant",
+              "kind": "each",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 69,
+                "line": 63,
+              },
+            },
+          ],
+          "clauseKind": "after",
+          "condition": {
+            "condition": "alarm-trigger",
+            "kind": "none-of",
+          },
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 70,
+            "line": 62,
+          },
+        },
+      ],
+      "placement": {
+        "place": "trophy-barn",
+        "relation": "in",
+        "span": {
+          "column": 3,
+          "endColumn": 21,
+          "endLine": 59,
+          "line": 59,
+        },
+      },
+      "span": {
+        "column": 1,
+        "endColumn": 42,
+        "endLine": 62,
+        "line": 58,
+      },
+      "states": [
+        "hungry",
+        "content",
+      ],
+      "statesReversible": false,
+      "traits": [],
+      "wears": [],
+    },
+  ],
+  "format": "story language 1",
+  "hasHatches": false,
+  "hatches": [],
+  "meta": {
+    "author": "Sharpee Platform",
+    "fields": {
+      "blurb": "E1 any / E2 no / E3 each + the match + must-be-any compiling to IR (each package P3).",
+      "id": "each-package-compile",
+      "version": "0.0.1",
+    },
+    "title": "Each Package Compile Fixture",
+  },
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "all-clear": {
+          "span": {
+            "column": 5,
+            "endColumn": 21,
+            "endLine": 15,
+            "line": 14,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Nothing stirs.",
+            },
+          ],
+        },
+        "fed-note": {
+          "span": {
+            "column": 3,
+            "endColumn": 27,
+            "endLine": 84,
+            "line": 83,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Chewing sounds nearby.",
+            },
+          ],
+        },
+        "hungry-note": {
+          "span": {
+            "column": 3,
+            "endColumn": 19,
+            "endLine": 86,
+            "line": 85,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Still peckish.",
+            },
+          ],
+        },
+        "not-here": {
+          "span": {
+            "column": 5,
+            "endColumn": 31,
+            "endLine": 36,
+            "line": 35,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "You are not in the barn.",
+            },
+          ],
+        },
+        "scatter": {
+          "span": {
+            "column": 5,
+            "endColumn": 27,
+            "endLine": 17,
+            "line": 16,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "Everything scatters.",
+            },
+          ],
+        },
+        "sealed-up": {
+          "span": {
+            "column": 3,
+            "endColumn": 47,
+            "endLine": 82,
+            "line": 81,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The doors are sealed while treasure walks.",
+            },
+          ],
+        },
+        "sweep-note": {
+          "span": {
+            "column": 3,
+            "endColumn": 32,
+            "endLine": 88,
+            "line": 87,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "The keeper sweeps the yard.",
+            },
+          ],
+        },
+        "tally-note": {
+          "span": {
+            "column": 5,
+            "endColumn": 31,
+            "endLine": 38,
+            "line": 37,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "One more for the ledger.",
+            },
+          ],
+        },
+        "trophy-barn.description": {
+          "span": {
+            "column": 3,
+            "endColumn": 44,
+            "endLine": 49,
+            "line": 49,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "A barn with a ledger and strong opinions.",
+            },
+          ],
+        },
+      },
+    },
+  },
+  "scores": [],
+  "sequences": [
+    {
+      "name": "closing sweep",
+      "narration": "broadcast",
+      "span": {
+        "column": 1,
+        "endColumn": 13,
+        "endLine": 78,
+        "line": 72,
+      },
+      "steps": [
+        {
+          "anchor": null,
+          "body": [
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "sweep-note",
+              "span": {
+                "column": 5,
+                "endColumn": 54,
+                "endLine": 74,
+                "line": 74,
+              },
+              "stmtWhen": {
+                "kind": "predicate",
+                "negated": false,
+                "object": {
+                  "kind": "symbol",
+                  "name": "spooked",
+                },
+                "pred": "is",
+                "subject": {
+                  "id": "no-smoking-sign",
+                  "kind": "entity",
+                },
+              },
+            },
+            {
+              "body": [
+                {
+                  "entity": {
+                    "kind": "match",
+                  },
+                  "kind": "change",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 34,
+                    "endLine": 76,
+                    "line": 76,
+                  },
+                  "state": "spooked",
+                  "stmtWhen": null,
+                },
+              ],
+              "condition": "barn-occupant",
+              "kind": "each",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 77,
+                "line": 75,
+              },
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 12,
+            "endLine": 73,
+            "line": 73,
+          },
+          "timing": "at-turn",
+          "turns": 3,
+        },
+      ],
+    },
+  ],
+  "story": {
+    "reversible": false,
+    "states": [],
+  },
+  "traits": [
+    {
+      "data": [],
+      "name": "skittish",
+      "onClauses": [
+        {
+          "action": "prodding",
+          "binding": "it",
+          "body": [
+            {
+              "condition": {
+                "condition": "barn-occupant",
+                "kind": "satisfies",
+                "subject": {
+                  "kind": "it",
+                },
+              },
+              "kind": "must",
+              "phraseKey": "all-clear",
+              "span": {
+                "column": 5,
+                "endColumn": 44,
+                "endLine": 20,
+                "line": 20,
+              },
+            },
+            {
+              "condition": {
+                "condition": "stray-treasure",
+                "kind": "none-of",
+              },
+              "kind": "refuse-when",
+              "phraseKey": "all-clear",
+              "span": {
+                "column": 5,
+                "endColumn": 45,
+                "endLine": 21,
+                "line": 21,
+              },
+            },
+            {
+              "body": [
+                {
+                  "entity": {
+                    "kind": "match",
+                  },
+                  "kind": "change",
+                  "span": {
+                    "column": 7,
+                    "endColumn": 34,
+                    "endLine": 23,
+                    "line": 23,
+                  },
+                  "state": "spooked",
+                  "stmtWhen": null,
+                },
+              ],
+              "condition": "barn-occupant",
+              "kind": "each",
+              "span": {
+                "column": 5,
+                "endColumn": 13,
+                "endLine": 24,
+                "line": 22,
+              },
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "scatter",
+              "span": {
+                "column": 5,
+                "endColumn": 19,
+                "endLine": 25,
+                "line": 25,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "clauseKind": "on",
+          "condition": {
+            "condition": "alarm-trigger",
+            "kind": "any-of",
+          },
+          "narration": "presence",
+          "once": false,
+          "ordering": null,
+          "role": null,
+          "routing": "interceptor",
+          "span": {
+            "column": 3,
+            "endColumn": 9,
+            "endLine": 26,
+            "line": 19,
+          },
+        },
+      ],
+      "scores": [],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 27,
+        "line": 10,
+      },
+      "states": [
+        "calm",
+        "spooked",
+      ],
+      "statesReversible": false,
+    },
+  ],
+  "verbs": [],
+}
+`;

@@ -465,3 +465,38 @@ describe('World State Mutations', () => {
     expect(openableAfter.isOpen).toBe(false);
   });
 });
+
+describe('Interceptor postReport (ADR-118, interceptor-wiring audit 2026-07-12)', () => {
+  test('postReport override rewrites if.event.closed; emits append', () => {
+    const { world, player, room } = setupBasicWorld();
+    const box = world.createEntity('music box', 'object');
+    box.add({ type: TraitType.OPENABLE, isOpen: true, canClose: true } as any);
+    world.moveEntity(box.id, room.id);
+
+    world.registerActionInterceptor(TraitType.OPENABLE, IFActions.CLOSING, {
+      postReport() {
+        return {
+          override: { messageId: 'box.custom_closed', params: { tune: 'stops' } },
+          emit: [{ type: 'box.silenced', payload: { final: true } }],
+        };
+      },
+    });
+
+    const context = createRealTestContext(
+      closingAction,
+      world,
+      createCommand(IFActions.CLOSING, { entity: box, text: 'music box' })
+    );
+    const validation = closingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    closingAction.execute(context);
+    // State: actually closed.
+    expect((box.get(OpenableTrait) as any).isOpen).toBe(false);
+
+    const events = closingAction.report(context);
+    const closed = events.find(e => e.type === 'if.event.closed')!;
+    expect((closed.data as any).messageId).toBe('box.custom_closed');
+    expect((closed.data as any).params).toEqual({ tune: 'stops' });
+    expect(events.some(e => e.type === 'box.silenced')).toBe(true);
+  });
+});

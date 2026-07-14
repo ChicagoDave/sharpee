@@ -15,7 +15,13 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, ReadableTrait } from '@sharpee/world-model';
+import {
+  TraitType,
+  ReadableTrait,
+  ActionInterceptor,
+  InterceptorSharedData,
+  applyInterceptorReportResult
+} from '@sharpee/world-model';
 import { nounPhraseFor } from '../../../utils';
 import {
   ReadingEventData,
@@ -23,12 +29,15 @@ import {
 } from './reading-events';
 
 /**
- * Shared data passed between execute and report phases
+ * Shared data passed between execute and report phases.
+ * Carries the resolved interceptor across phases (ADR-118).
  */
 interface ReadingSharedData {
   readEvent?: ISemanticEvent;
   messageId?: string;
   params?: Record<string, any>;
+  interceptor?: ActionInterceptor;
+  interceptorData?: InterceptorSharedData;
 }
 
 function getReadingSharedData(context: ActionContext): ReadingSharedData {
@@ -78,6 +87,28 @@ export const reading: Action = {
 
     const target = directObject.entity;
 
+    // Check for interceptor on the target entity (ADR-118)
+    const interceptorResult = context.world.getInterceptorForAction(target, 'if.action.reading');
+    const interceptor = interceptorResult?.interceptor;
+    const interceptorData: InterceptorSharedData = {};
+
+    // Store for later phases (blocked needs access to onBlocked)
+    const sharedData = getReadingSharedData(context);
+    sharedData.interceptor = interceptor;
+    sharedData.interceptorData = interceptorData;
+
+    // === PRE-VALIDATE HOOK ===
+    if (interceptor?.preValidate) {
+      const result = interceptor.preValidate(target, context.world, context.player.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return {
+          valid: false,
+          error: result.error,
+          params: result.params
+        };
+      }
+    }
+
     // Check scope - must be able to see the target
     const scopeCheck = context.requireScope(target, ScopeLevel.VISIBLE);
     if (!scopeCheck.ok) {
@@ -120,6 +151,18 @@ export const reading: Action = {
       // If ability is required but player doesn't have it
       // TODO: Check if player has the required ability
       // For now, we'll assume they do if requiredAbility is set
+    }
+
+    // === POST-VALIDATE HOOK ===
+    if (interceptor?.postValidate) {
+      const result = interceptor.postValidate(target, context.world, context.player.id, interceptorData);
+      if (result !== null && !result.valid) {
+        return {
+          valid: false,
+          error: result.error,
+          params: result.params
+        };
+      }
     }
 
     return { valid: true };
@@ -178,11 +221,17 @@ export const reading: Action = {
     sharedData.readEvent = readEvent;
     sharedData.messageId = messageId;
     sharedData.params = params;
+
+    // === POST-EXECUTE HOOK ===
+    if (sharedData.interceptor?.postExecute) {
+      sharedData.interceptor.postExecute(target, context.world, context.player.id, sharedData.interceptorData!);
+    }
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.read', {
+    const sharedData = getReadingSharedData(context);
+    const events: ISemanticEvent[] = [context.event('if.event.read', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -191,6 +240,20 @@ export const reading: Action = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    // === ON-BLOCKED HOOK ===
+    if (sharedData.interceptor?.onBlocked && target && result.error) {
+      const customEffects = sharedData.interceptor.onBlocked(
+        target, context.world, context.player.id, result.error, sharedData.interceptorData!
+      );
+      if (customEffects) {
+        for (const effect of customEffects) {
+          events.push(context.event(effect.type, effect.payload));
+        }
+      }
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -211,6 +274,16 @@ export const reading: Action = {
       targetName: String(target?.attributes.name || 'something'),
       text: sharedData.params?.text
     }));
+
+    // === POST-REPORT HOOK ===
+    if (sharedData.interceptor?.postReport && target) {
+      const result = sharedData.interceptor.postReport(
+        target, context.world, context.player.id, sharedData.interceptorData!
+      );
+      if (result) {
+        applyInterceptorReportResult(events, 'if.event.read', result, context);
+      }
+    }
 
     return events;
   }

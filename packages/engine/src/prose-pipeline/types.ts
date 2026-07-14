@@ -21,7 +21,8 @@
 
 import type { ISemanticEvent } from '@sharpee/core';
 import type { ITextBlock } from '@sharpee/text-blocks';
-import type { RenderContext } from '@sharpee/if-domain';
+import type { Phrase, RenderContext } from '@sharpee/if-domain';
+import type { WorldModel } from '@sharpee/world-model';
 
 /**
  * A realize-time slot contributor (ADR-195 §3).
@@ -33,6 +34,51 @@ import type { RenderContext } from '@sharpee/if-domain';
  * host messages realize, so it needs no turn-time (ADR-163) channel.
  */
 export type SlotContributor = (ctx: RenderContext) => void;
+
+/**
+ * Gate on a declarative slot entry (ADR-212 §2).
+ *
+ * - `owner-present` (the default): the entry contributes iff the owner shares
+ *   the player's containing room at staging time — the same transitive check
+ *   the `mentions` gate uses.
+ * - `predicate`: the registered-seam escape hatch (the ADR-211 Q4 posture) —
+ *   a TS function supplied by whatever runtime owns the condition, called
+ *   against the live world each staging pass. Never serialized; like every
+ *   entry, re-registered on story load.
+ */
+export type SlotEntryGate =
+  | { kind: 'owner-present' }
+  | { kind: 'predicate'; holds: (world: WorldModel) => boolean };
+
+/**
+ * A declarative slot entry (ADR-212 §1): data in, prose out.
+ *
+ * One platform-owned staging step evaluates every registered entry each turn,
+ * before story-registered `SlotContributor` closures run; an entry whose gate
+ * holds contributes `content` to `slotKey` with `order`. Registration is keyed
+ * `(slotKey, owner)`, idempotent-last-wins (AC-7); entries are never
+ * unregistered mid-session and nothing here is serialized — callers
+ * re-register every story load.
+ */
+export interface SlotEntry {
+  /** The slot the entry feeds (`'here'` for the present channel). Any key is accepted (ADR-212 Q4). */
+  slotKey: string;
+  /** Owner entity id — the default gate's subject and the `Choice` counter keyspace. */
+  owner: string;
+  /** Bare contributed content (`Literal` | `Choice`) — the slot owns all joining. */
+  content: Phrase;
+  /** `SlotContributionOptions.order` for the slot's `(order asc, insertion asc)` sort; default 0. */
+  order?: number;
+  /** Contribution gate; default `{ kind: 'owner-present' }`. */
+  gate?: SlotEntryGate;
+  /**
+   * `Choice` counter key; defaults to `slotKey`. Caller contract (ADR-212 §4):
+   * `Choice` content must carry `entityId === owner` and
+   * `messageKey === counterKey ?? slotKey` — the platform warns on mismatch
+   * but never rewrites.
+   */
+  counterKey?: string;
+}
 
 /**
  * Per-turn prose translator.
@@ -68,4 +114,17 @@ export interface IProsePipeline {
    * @param contributor the slot contributor to run each turn.
    */
   registerSlotContributor(contributor: SlotContributor): void;
+
+  /**
+   * Register a declarative slot entry (ADR-212 §1).
+   *
+   * Keyed `(slotKey, owner)`, idempotent-last-wins: re-registering the same key
+   * replaces the prior entry — one contribution, never two (AC-7). Entries are
+   * evaluated once per turn in the staging pass, BEFORE story-registered slot
+   * contributors, and contribute only while their gate holds. Nothing is
+   * serialized; callers re-register every story load.
+   *
+   * @param entry the slot entry to register (or replace).
+   */
+  registerSlotEntry(entry: SlotEntry): void;
 }

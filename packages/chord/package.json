@@ -1,0 +1,59 @@
+{
+  "name": "@sharpee/chord",
+  "version": "2.2.0",
+  "description": "Chord story language compiler for Sharpee — lexer, parser, semantic analysis, Story IR wire types, diagnostics (ADR-210)",
+  "main": "./dist/index.js",
+  "module": "./dist-esm/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js",
+      "esm": "./dist-esm/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.esm.json",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
+    "build:npm": "tsc --outDir dist",
+    "test": "vitest",
+    "test:ci": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  },
+  "files": [
+    "dist",
+    "dist-esm"
+  ],
+  "keywords": [
+    "interactive-fiction",
+    "if",
+    "text-adventure",
+    "sharpee",
+    "chord",
+    "story-language",
+    "compiler"
+  ],
+  "author": "Sharpee Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/chord"
+  },
+  "homepage": "https://github.com/ChicagoDave/sharpee#readme",
+  "bugs": {
+    "url": "https://github.com/ChicagoDave/sharpee/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

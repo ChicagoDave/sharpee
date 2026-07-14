@@ -22,6 +22,7 @@ import {
   type TraitSummary,
   SCHEMA_VERSION,
 } from '@sharpee/ide-protocol';
+import { HATCH_CONTEXT_VERSION } from '@sharpee/story-loader';
 
 /**
  * Derive an entity's project-tree category from its runtime trait set.
@@ -94,5 +95,6 @@ export function buildManifest(
     story,
     generatedFrom,
     entities,
+    hatchContextVersion: HATCH_CONTEXT_VERSION,
   };
 }

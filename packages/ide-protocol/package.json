@@ -20,6 +20,9 @@
     "test": "vitest",
     "test:ci": "vitest run"
   },
+  "dependencies": {
+    "@sharpee/chord": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^20.8.0",
     "@typescript-eslint/eslint-plugin": "^6.7.4",

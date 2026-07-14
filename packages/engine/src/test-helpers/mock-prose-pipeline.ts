@@ -55,6 +55,11 @@ export class MockProsePipeline implements IProsePipeline {
   registerSlotContributor(): void {
     // Intentionally inert — the mock's processTurn ignores the slot channel.
   }
+
+  /** ADR-212: same — no slot channel, so entries have nothing to feed. */
+  registerSlotEntry(): void {
+    // Intentionally inert — the mock's processTurn ignores the slot channel.
+  }
 }
 
 export function createMockProsePipeline(): IProsePipeline {

@@ -97,6 +97,12 @@ if (require.main === module) {
   const readline = require('readline');
   const transcriptTester = require('../packages/transcript-tester/dist/index.js');
   const bootstrap = require('@sharpee/bootstrap');
+  // Chord (ADR-210 Phase A): the CLI is the host layer for `.story` stories —
+  // it compiles the source and owns hatch-module resolution. These live here,
+  // not in bootstrap, because no platform package may depend on @sharpee/chord
+  // or @sharpee/story-loader (ADR-210 direction rule).
+  const chord = require('../packages/chord/dist/index.js');
+  const storyLoader = require('../packages/story-loader/dist/index.js');
 
   const { GameEngine, WorldModel, EntityType, Parser, LanguageProvider, PerceptionService, TestingExtension } = exports;
 
@@ -193,7 +199,7 @@ Options:
   --verbose, -v        Show detailed output for each command
   --emit-traits        Show entity traits for objects referenced in events (implies --verbose)
   --stop-on-failure, -s Stop on first failure
-  --story <path>       Story path (default: stories/dungeo)
+  --story <path>       Story directory, or a Chord .story file (default: stories/dungeo)
   --help, -h           Show this help message
 
 Examples:
@@ -206,10 +212,62 @@ Examples:
 `);
   }
 
+  // A --story path is either a story directory (compiled module story) or a
+  // Chord `.story` file. Saves live beside the story in both cases.
+  function storyDirOf(storyPath) {
+    return storyPath.endsWith('.story') ? path.dirname(storyPath) : storyPath;
+  }
+
+  // Hatch policy (ADR-210 §5.6): `define text X from "./extras.ts"` names
+  // authored TypeScript; the CLI loads its compiled JS — `<storyDir>/dist/…`
+  // (tsc output) first, then the path as given (pre-compiled JS beside the
+  // .story file).
+  function requireHatchModule(storyDir, modulePath) {
+    const base = modulePath.replace(/\.(ts|js)$/, '');
+    const candidates = [
+      path.resolve(storyDir, 'dist', `${base}.js`),
+      path.resolve(storyDir, `${base}.js`),
+    ];
+    const found = candidates.find((p) => fs.existsSync(p));
+    if (!found) {
+      throw new Error(
+        `Hatch module "${modulePath}" not found for ${storyDir}. Tried:\n  ${candidates.join('\n  ')}`
+      );
+    }
+    return require(found);
+  }
+
+  // Compile a `.story` file and interpret it via @sharpee/story-loader.
+  // Load-time-gate diagnostics abort with `.story` line numbers (AC-3).
+  function loadChordStory(storyFile) {
+    const source = fs.readFileSync(storyFile, 'utf-8');
+    const result = chord.compile(source);
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    if (!result.ok) {
+      const lines = errors.map(
+        (d) => `  ${storyFile}:${d.span.line}:${d.span.column} [${d.code}] ${d.message}`
+      );
+      throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
+    }
+    const storyDir = path.dirname(storyFile);
+    const hatchModules = {};
+    for (const hatch of result.ir.hatches) {
+      if (!(hatch.modulePath in hatchModules)) {
+        hatchModules[hatch.modulePath] = requireHatchModule(storyDir, hatch.modulePath);
+      }
+    }
+    return storyLoader.createStory(result.ir, { hatchModules });
+  }
+
   // Single loader (ADR-180): resolve the story module (entry-aware) and assemble
   // the game via @sharpee/bootstrap. Replaces the former inline copy; the
   // channel-packet assembly now lives once in bootstrap.assembleGame.
+  // A path ending in `.story` is compiled + interpreted instead of required
+  // (`entry` applies only to module stories and is ignored for `.story` files).
   function loadStoryAndCreateGame(storyPath, entry) {
+    if (storyPath.endsWith('.story')) {
+      return bootstrap.assembleGame(loadChordStory(storyPath));
+    }
     const modulePath = bootstrap.resolveStoryModulePath(storyPath, entry);
     const storyModule = require(modulePath);
     const story = storyModule.story || storyModule.default;
@@ -367,7 +425,7 @@ Examples:
       const game = loadStoryAndCreateGame(options.storyPath);
 
       if (options.restore) {
-        const savesDir = path.join(options.storyPath, 'saves');
+        const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
         const savePath = path.join(savesDir, `${options.restore}.json`);
         if (!fs.existsSync(savePath)) {
           console.error(`Save file not found: ${savePath}`);
@@ -544,7 +602,7 @@ Examples:
       const game = loadStoryAndCreateGame(options.storyPath);
 
       if (options.restore) {
-        const savesDir = path.join(options.storyPath, 'saves');
+        const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
         const savePath = path.join(savesDir, `${options.restore}.json`);
         if (!fs.existsSync(savePath)) {
           console.error(`Save file not found: ${savePath}`);
@@ -608,7 +666,7 @@ Examples:
           game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry);
         }
 
-        const savesDirectory = path.join(options.storyPath, 'saves');
+        const savesDirectory = path.join(storyDirOf(options.storyPath), 'saves');
         const result = await transcriptTester.runTranscript(transcript, game, {
           verbose: options.verbose,
           emitTraits: options.emitTraits,

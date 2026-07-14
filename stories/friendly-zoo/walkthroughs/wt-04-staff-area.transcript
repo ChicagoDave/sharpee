@@ -1,0 +1,42 @@
+title: Zoo Walkthrough 4 — Keeper's Farewell and the Staff Area
+story: friendly-zoo
+description: Chained full-playthrough, chapter 4 of 5. The witnessed-only keeper departure, the staff-gate Optional clause (absorbs the old wt-04 optional proof, ADR-196 C1), and the supply room. Continues from wt-03.
+---
+
+# The keeper waited, unwitnessed, past closing — his once-only farewell
+# fires the moment we arrive (D11: `, once` cannot burn off-stage).
+> west
+[OK: contains "Main Path"]
+[OK: contains "Zoo's all yours"]
+[OK: contains "engine start and fade into the distance"]
+
+# Gate CLOSED: the Optional clause is absent, the sentence ends cleanly.
+> examine staff gate
+[OK: contains "The staff gate is set into the fence."]
+[OK: not contains "standing wide open"]
+
+# The gate ships unlocked — the keycard errand is a red herring.
+> unlock staff gate with keycard
+[OK: contains "already unlocked"]
+
+> open staff gate
+[OK: contains "You open the staff gate"]
+
+# Gate OPEN: the Optional clause renders inline, before the period.
+> examine staff gate
+[OK: contains "The staff gate is set into the fence, standing wide open."]
+
+# Turn 27: the third feeding call rides the walk into the supply room.
+> south
+[OK: contains "Supply Room"]
+[OK: contains "flashlight"]
+
+> read warning sign
+[OK: contains "CAUTION"]
+[OK: contains "Great Owl Incident of 2022"]
+
+> take flashlight
+[OK: contains "Taken"]
+
+> turn on flashlight
+[OK: contains "banishing the darkness"]

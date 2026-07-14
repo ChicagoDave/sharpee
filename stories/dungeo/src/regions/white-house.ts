@@ -62,7 +62,8 @@ export function createWhiteHouseRegion(world: WorldModel): WhiteHouseRoomIds {
   // ADR-209: scenery is not auto-listed; the room prose owns the quiet
   // mention (MDL ODESC1 wording).
   westOfHouse.get(RoomTrait)!.snippets = {
-    mailbox: ' There is a small mailbox here.',
+    // Bare fragment (ADR-211): sentence site — the platform supplies the join space.
+    mailbox: 'There is a small mailbox here.',
   };
 
   const northOfHouse = createRoom(world, 'North of House',

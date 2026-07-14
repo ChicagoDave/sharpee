@@ -1,0 +1,40 @@
+title: Zoo Walkthrough 7 — Object Detail by Lamplight
+story: friendly-zoo
+description: Chained chapter 7 (CP6 rejoin of excluded wt-03-slot-detail). The zoo.story `phrase detail while …:` blocks (Z3b) feed the examine {slot:detail} — the radio's switchable hum via SwitchableTrait.detailWhenOn, the flashlight's on/lit pair via both trait fields. 0/1/N detail clauses. Runs after wt-06 with --chain; the flashlight has been on since wt-04.
+---
+
+# --- Back to the Supply Room (the staff gate has stood open since wt-04) ---
+> east
+[OK: contains "Aviary"]
+
+> east
+[OK: contains "Main Path"]
+
+> south
+[OK: contains "Supply Room"]
+
+# --- 0 detail: the radio is off; the examine text is clean ---
+> examine radio
+[OK: contains "battered portable radio"]
+[OK: not contains "It hums softly"]
+
+# --- 1 detail: switched on, the radio's detail clause appends ---
+> turn on radio
+[OK: contains "radio"]
+
+> examine radio
+[OK: contains "It hums softly."]
+
+# --- N detail: the flashlight has been on (and lit) since wt-04 ---
+> examine flashlight
+[OK: contains "heavy-duty yellow flashlight"]
+[OK: contains "It clicks faintly as it powers up."]
+[OK: contains "A thin beam plays across the floor."]
+
+# --- back to 0: switched off, both clauses gate out ---
+> turn off flashlight
+[OK: contains "flashlight"]
+
+> examine flashlight
+[OK: not contains "It clicks faintly"]
+[OK: not contains "thin beam"]

@@ -1,13 +1,19 @@
 /**
- * Tests for load-time room-snippet validation (ADR-209 AC-5).
+ * Tests for load-time room-snippet validation (ADR-209 AC-5; ADR-211 AC-3
+ * bare-fragment gate).
  *
  * Behavior Statement (validateRoomSnippets):
  *   DOES   throw SnippetValidationError naming every (room, marker) pair where
  *          a snippet-bearing room's description or initialDescription carries
- *          a {snippet:name} with no map entry; mutates nothing.
+ *          a {snippet:name} with no map entry, AND every (room, marker, text)
+ *          whose literal snippet text leads with punctuation/whitespace (the
+ *          ADR-211 bare-fragment gate; '' is the legal empty variant and
+ *          exempt; { messageId } texts resolve at render and are not checked
+ *          here); mutates nothing.
  *   WHEN   GameEngine.setStory calls it right after initializeWorld returns.
- *   BECAUSE an unbound marker puts broken text on screen — fail loudly at
- *          load, the PhraseParseError posture.
+ *   BECAUSE an unbound marker puts broken text on screen, and a non-bare
+ *          fragment would double-separate under the platform join rule —
+ *          fail loudly at load, the PhraseParseError posture.
  *   REJECTS never for rooms without a map (opt-in, AC-7), and never for
  *          unused entries (that asymmetry is the devkit lint, AC-6).
  *
@@ -53,10 +59,10 @@ describe('validateRoomSnippets (ADR-209 AC-5)', () => {
     expect(() => validateRoomSnippets(world)).not.toThrow();
   });
 
-  it('passes a snippet-bearing room whose markers are all bound', () => {
+  it('passes a snippet-bearing room whose markers are all bound (bare fragments)', () => {
     makeRoom(world, 'Study', 'A doorway{snippet:cabinet} and a fireplace{snippet:mantel}.', {
-      cabinet: ', next to a cabinet',
-      mantel: [', the mantel holding keepsakes'],
+      cabinet: 'next to a cabinet',
+      mantel: ['the mantel holding keepsakes'],
     });
     expect(() => validateRoomSnippets(world)).not.toThrow();
   });
@@ -72,7 +78,7 @@ describe('validateRoomSnippets (ADR-209 AC-5)', () => {
       world,
       'Foyer',
       'The foyer.',
-      { rug: ', a worn rug underfoot' },
+      { rug: 'a worn rug underfoot' },
       'You step into the foyer{snippet:rug}{snippet:chandelier}.',
     );
     expect(() => validateRoomSnippets(world)).toThrow(/room "Foyer": marker 'chandelier'/);
@@ -96,10 +102,69 @@ describe('validateRoomSnippets (ADR-209 AC-5)', () => {
 
   it('does not throw for an unused snippet entry (that is the devkit lint, AC-6)', () => {
     makeRoom(world, 'Study', 'A doorway{snippet:cabinet}.', {
-      cabinet: ', next to a cabinet',
+      cabinet: 'next to a cabinet',
       unused: 'never spliced',
     });
     expect(() => validateRoomSnippets(world)).not.toThrow();
+  });
+
+  describe('bare-fragment gate (ADR-211 AC-3)', () => {
+    it('fails load for a comma-led string entry, naming room/entry with the fix-it', () => {
+      makeRoom(world, 'Study', 'A doorway{snippet:cabinet}.', {
+        cabinet: ', next to a cabinet',
+      });
+      expect(() => validateRoomSnippets(world)).toThrow(SnippetValidationError);
+      expect(() => validateRoomSnippets(world)).toThrow(
+        /room "Study": entry 'cabinet' .* is not a bare fragment — write the fragment bare/,
+      );
+    });
+
+    it('fails load for a whitespace-led variant in a list or long-form entry', () => {
+      makeRoom(world, 'Foyer', 'A rug{snippet:rug} and dust{snippet:dust}.', {
+        rug: ['a worn rug', ' a leading-space variant'],
+        dust: { selector: 'cycling', texts: ['thick dust', { text: '\tthin dust' }] },
+      });
+      try {
+        validateRoomSnippets(world);
+        throw new Error('expected SnippetValidationError');
+      } catch (e) {
+        const err = e as SnippetValidationError;
+        expect(err.notBare).toEqual([
+          { room: 'Foyer', marker: 'rug', text: ' a leading-space variant' },
+          { room: 'Foyer', marker: 'dust', text: '\tthin dust' },
+        ]);
+      }
+    });
+
+    it('the empty string is the legal empty variant — exempt from the gate', () => {
+      makeRoom(world, 'Study', 'A doorway{snippet:pins}.', {
+        pins: ['a spinning rack of pins', ''],
+      });
+      expect(() => validateRoomSnippets(world)).not.toThrow();
+    });
+
+    it('{ messageId } texts are not checked at load (render-graceful there, AC-10)', () => {
+      makeRoom(world, 'Study', 'A doorway{snippet:cabinet}.', {
+        cabinet: { messageId: 'story.snippets.cabinet' }, // may resolve non-bare; render logs it
+      });
+      expect(() => validateRoomSnippets(world)).not.toThrow();
+    });
+
+    it('reports unbound markers and non-bare texts together in one error', () => {
+      makeRoom(world, 'Study', 'A doorway{snippet:missing}.', {
+        cabinet: ', next to a cabinet', // unused AND non-bare — still gated
+      });
+      try {
+        validateRoomSnippets(world);
+        throw new Error('expected SnippetValidationError');
+      } catch (e) {
+        const err = e as SnippetValidationError;
+        expect(err.unbound).toEqual([{ room: 'Study', marker: 'missing' }]);
+        expect(err.notBare).toEqual([
+          { room: 'Study', marker: 'cabinet', text: ', next to a cabinet' },
+        ]);
+      }
+    });
   });
 });
 

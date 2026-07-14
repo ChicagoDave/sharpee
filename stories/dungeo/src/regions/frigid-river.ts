@@ -189,7 +189,8 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
     },
     // ADR-209: the rainbow is scenery; the prose owns its quiet mention.
     snippets: {
-      rainbow: ' A beautiful rainbow can be seen over the falls to the east.',
+      // Bare fragment (ADR-211): sentence site.
+      rainbow: 'A beautiful rainbow can be seen over the falls to the east.',
     }
   }));
   aragainFalls.add(new IdentityTrait({

@@ -7,6 +7,9 @@ packages:
   - stories/dungeo
   - stories/channel-service-test
   - stories/friendly-zoo
+  # Chord golden gate (ADR-210 Phase A): membership makes `./repokit build
+  # cloak-of-darkness` emit dist/extras.js (the cloak.story hatch module).
+  - stories/cloak-of-darkness
   # tutorials/familyzoo is a standalone book-aligned project that consumes the
   # published @sharpee/* npm packages — it is no longer a workspace member.
   - tools/shite
